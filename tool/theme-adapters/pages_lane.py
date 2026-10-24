@@ -89,6 +89,9 @@ _OPTIONS = {
     # Activity / Saved loading cards: edge to edge rounded cards (v1.21.23) or
     # the 16px-inset square cards of a57b9dab.
     'activity.loadingCards': ('edge', 'inset'),
+    # Search page failure: a warning Banner with a Retry button (v1.21.23) or
+    # the bordered card of a57b9dab.
+    'search.failure': ('banner', 'card'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -111,6 +114,7 @@ OPTION_VALUES = {
     'emptyState.look': ('plain', 'recipe'),
     'skeleton.look': ('fill', 'ink'),
     'activity.loadingCards': ('edge', 'inset'),
+    'search.failure': ('banner', 'card'),
 }
 
 # ---------------------------------------------------------------- colours

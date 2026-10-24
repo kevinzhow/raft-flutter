@@ -180,6 +180,7 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'emptyState.look': {'plain', 'recipe'},
   'skeleton.look': {'fill', 'ink'},
   'activity.loadingCards': {'edge', 'inset'},
+  'search.failure': {'banner', 'card'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

@@ -684,6 +684,7 @@
         "emptyState.look": "recipe",
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
+        "search.failure": "card",
         "standalone.buttonSize": "md"
       }
     },
@@ -1374,6 +1375,7 @@
         "emptyState.look": "recipe",
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
+        "search.failure": "card",
         "standalone.buttonSize": "md"
       }
     }

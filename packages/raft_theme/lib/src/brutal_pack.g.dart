@@ -696,6 +696,7 @@ const String brutalThemePackJson = r'''{
         "emptyState.look": "recipe",
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
+        "search.failure": "card",
         "standalone.buttonSize": "md"
       }
     },
@@ -1386,6 +1387,7 @@ const String brutalThemePackJson = r'''{
         "emptyState.look": "recipe",
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
+        "search.failure": "card",
         "standalone.buttonSize": "md"
       }
     }

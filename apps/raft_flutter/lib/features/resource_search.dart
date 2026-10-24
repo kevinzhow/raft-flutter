@@ -425,6 +425,36 @@ class ResourceSearchResults extends StatelessWidget {
         : onSortRecent != null
         ? ('Sort by Newest', onSortRecent)
         : (null, null);
+    final t = RaftTokens.of(context);
+    // v1.21.23 MessageSearchPage: a warning AppBanner (`mx-4`, icon, title,
+    // body and an outline sm button); the pre-theme looks keep the plain card
+    // shared with the quick switcher (search.failure).
+    if (t.option('search.failure', or: 'banner') == 'banner') {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: RaftBanner(
+          live: false,
+          status: RaftBannerRecipeStatus.warning,
+          glyph: RaftGlyph.triangleAlert,
+          title: raftText(context, title),
+          description: raftText(context, body),
+          footer: action.$1 == null
+              ? null
+              : Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: RaftButton(
+                      label: raftText(context, action.$1!),
+                      uiVariant: RaftButtonVariant.outline,
+                      uiSize: RaftButtonSize.sm,
+                      onPressed: action.$2,
+                    ),
+                  ),
+                ),
+        ),
+      );
+    }
     return RaftQuickSwitcherErrorCard(
       title: raftText(context, title),
       body: raftText(context, body),
