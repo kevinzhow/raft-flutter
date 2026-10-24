@@ -58,6 +58,14 @@ _OPTIONS = {
     # MenuItem (product `ui/MenuItem`): `min-h-9 gap-2.5 rounded-control px-2.5 py-1.5`,
     # callout medium ink, `hover:bg-brand-soft`; the ghost `sm` button recipe before.
     'menuItem.style': ('raft', 'recipe'),
+    # FormField / Field: raft-ui 0.7 `field` (label footnote 13 semibold leading-none,
+    # hint caption, error caption semibold, 6px gaps); a 14/20 label, 4px margins
+    # and a mt-1 message before.
+    'field.layout': ('raft', 'recipe'),
+    # InputGroup / PrefixedInput / SlugInput: raft-ui 0.7 `inputGroup` (h-11, 1.5px
+    # line-strong border, rounded-control, a fill-muted addon with a hairline, the
+    # field type step); the generated group recipe before.
+    'inputGroup.style': ('raft', 'recipe'),
 }
 
 # Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
@@ -73,6 +81,8 @@ OPTION_VALUES = {
     'selectionPopover.style': ('raft', 'recipe'),
     'progress.style': ('raft', 'recipe'),
     'menuItem.style': ('raft', 'recipe'),
+    'field.layout': ('raft', 'recipe'),
+    'inputGroup.style': ('raft', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours

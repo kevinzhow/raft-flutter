@@ -71,7 +71,11 @@ Widget _frame(
           fontFamily: RaftTokens.of(context).headingFont,
           fontSize: 16,
           height: 1.5,
-          color: Colors.black,
+          // `<main class="... text-foreground">` in the current Source; the
+          // frozen looks were captured with `text-black`.
+          color: ctx.againstWeb
+              ? RaftTokens.of(context).colors['foreground']
+              : Colors.black,
           leadingDistribution: TextLeadingDistribution.even,
         ),
         child: OverflowBox(

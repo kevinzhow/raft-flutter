@@ -175,6 +175,8 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'selectionPopover.style': {'recipe', 'raft'},
   'progress.style': {'recipe', 'raft'},
   'menuItem.style': {'recipe', 'raft'},
+  'field.layout': {'recipe', 'raft'},
+  'inputGroup.style': {'recipe', 'raft'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

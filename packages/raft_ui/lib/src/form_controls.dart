@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
+import 'localization.dart' show raftText;
 import 'recipe_surface.dart';
 import 'recipes/field.g.dart' as gen;
 import 'recipes/input.g.dart';
@@ -48,9 +49,83 @@ class RaftField extends StatelessWidget {
   final bool compact;
   final Widget? labelAccessory;
 
+  /// raft-ui 0.7 `field` under the product `FormField`: `flex-col gap-1.5`, a
+  /// `leading-none` label (`text-footnote`, `text-caption` when compact) in
+  /// semibold muted ink, the asterisk and `(optional)` in hint ink after `ml-1`,
+  /// then a `text-caption` description or a semibold `danger-strong` error.
+  Widget _buildRaft(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    final step = compact ? RaftTypeScale.caption : RaftTypeScale.footnote;
+    // `leading-none` loses to the size step's own line height (measured 18).
+    final labelStyle = t.scale(
+      step,
+      weight: FontWeight.w600,
+      color: ui.foregroundMuted,
+    );
+    final labelText = Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: raftText(context, label)),
+          if (required) ...[
+            const WidgetSpan(child: SizedBox(width: 4)),
+            TextSpan(text: '*', style: TextStyle(color: ui.foregroundHint)),
+          ],
+          if (optional) ...[
+            const WidgetSpan(child: SizedBox(width: 4)),
+            TextSpan(
+              text: raftText(context, optionalLabel),
+              style: TextStyle(
+                fontWeight: FontWeight.w400,
+                color: ui.foregroundHint,
+              ),
+            ),
+          ],
+        ],
+      ),
+      style: labelStyle,
+    );
+    final message = error ?? hint;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        labelAccessory == null
+            ? labelText
+            : Row(
+                children: [
+                  Flexible(child: labelText),
+                  const SizedBox(width: 4),
+                  labelAccessory!,
+                ],
+              ),
+        const SizedBox(height: 6),
+        child,
+        if (message != null) ...[
+          const SizedBox(height: 6),
+          Semantics(
+            liveRegion: error != null,
+            child: Text(
+              raftText(context, message),
+              style: error != null
+                  ? t.scale(
+                      RaftTypeScale.caption,
+                      weight: FontWeight.w600,
+                      color: ui['danger-strong'],
+                    )
+                  : t.scale(RaftTypeScale.caption, color: ui.foregroundHint),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.option('field.layout', or: 'recipe') == 'raft') {
+      return _buildRaft(context, t);
+    }
     final rt = t.recipeTokens;
     final states = t.recipeStates(
       extra: [if (error != null) 'group/field:data-invalid'],
@@ -669,9 +744,126 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput>
     super.dispose();
   }
 
+  /// raft-ui 0.7 `inputGroup` (`h-11 overflow-hidden rounded-control
+  /// border-[1.5px] border-line-strong bg-layer-card`, `focus-within:shadow-focus`)
+  /// with a `container` addon (`fill-muted`, `border-r border-line-hairline`,
+  /// `px-3`, `font-mono text-mono-code` hint ink) and the field type step.
+  Widget _buildRaft(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    final focused = focus.hasFocus;
+    final disabled = !widget.enabled;
+    final radius = t.size('radius.control', fallback: 8);
+    final border = raftControlBorderPx(context, 1.5);
+    final rule = raftControlBorderPx(context, 1);
+    final borderColor = disabled
+        ? ui.lineHairline
+        : widget.invalid
+        ? ui['danger-strong']
+        : ui.lineStrong;
+    final addonInk = disabled ? ui.foregroundDisabled : ui.foregroundHint;
+    final addonStyle = t.scale(
+      RaftTypeScale.monoCode,
+      mono: true,
+      color: addonInk,
+    );
+    final field = t.fieldStyle.copyWith(
+      fontWeight: widget.controlWeight,
+      color: disabled ? ui.foregroundDisabled : ui.foreground,
+    );
+    final Widget addon = widget.leading != null
+        ? widget.leading!
+        : widget.leadingIcon != null
+        ? ExcludeSemantics(
+            child: RaftIcon(widget.leadingIcon!, size: 14, color: addonInk),
+          )
+        : ExcludeSemantics(child: Text(widget.prefix, style: addonStyle));
+    return Semantics(
+      label: widget.semanticLabel,
+      child: hoverRegion(
+        Container(
+          height: 44,
+          width: double.infinity,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: disabled ? ui.fillMuted : ui.layerCard,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: borderColor, width: border),
+            boxShadow: focused && !disabled ? t.focusShadows : null,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: widget.leading != null
+                    ? EdgeInsets.zero
+                    : const EdgeInsets.symmetric(horizontal: 12),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: ui.fillMuted,
+                  border: Border(
+                    right: BorderSide(color: ui.lineHairline, width: rule),
+                  ),
+                ),
+                child: addon,
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: widget.leadingIcon == null ? 12 : 0,
+                    right: 12,
+                  ),
+                  child: Center(
+                    child: TextField(
+                    contextMenuBuilder: RaftTextSelectionToolbar.editableText,
+                    autofillHints: null,
+                    autofocus: widget.autofocus,
+                    controller: controller,
+                    focusNode: focus,
+                    readOnly: widget.readOnly,
+                    enabled: widget.enabled,
+                    onChanged: widget.onChanged,
+                    onSubmitted: widget.onSubmitted,
+                    inputFormatters: widget.inputFormatters,
+                    maxLength: widget.maxLength,
+                    buildCounter: widget.maxLength == null
+                        ? null
+                        : (
+                            _, {
+                            required currentLength,
+                            required isFocused,
+                            maxLength,
+                          }) => null,
+                    style: field,
+                    strutStyle: StrutStyle.fromTextStyle(
+                      field,
+                      forceStrutHeight: true,
+                    ),
+                    cursorColor: field.color,
+                    decoration: _bare(
+                      hintText: widget.hintText,
+                      hintStyle: field.copyWith(
+                        color: disabled
+                            ? ui.foregroundDisabled
+                            : ui.foregroundHint,
+                      ),
+                    ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.option('inputGroup.style', or: 'recipe') == 'raft') {
+      return _buildRaft(context, t);
+    }
     final rt = t.recipeTokens;
     final focused = focus.hasFocus;
     final g = RaftInputGroupRecipe.resolve(

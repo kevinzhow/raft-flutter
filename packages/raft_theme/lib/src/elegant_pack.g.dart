@@ -672,7 +672,9 @@ const String elegantThemePackJson = r'''{
         "avatarListRow.style": "recipe",
         "selectionPopover.style": "recipe",
         "progress.style": "recipe",
-        "menuItem.style": "recipe"
+        "menuItem.style": "recipe",
+        "field.layout": "recipe",
+        "inputGroup.style": "recipe"
       }
     },
     "dark": {
@@ -1300,7 +1302,9 @@ const String elegantThemePackJson = r'''{
         "avatarListRow.style": "recipe",
         "selectionPopover.style": "recipe",
         "progress.style": "recipe",
-        "menuItem.style": "recipe"
+        "menuItem.style": "recipe",
+        "field.layout": "recipe",
+        "inputGroup.style": "recipe"
       }
     }
   }
