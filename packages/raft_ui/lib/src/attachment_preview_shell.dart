@@ -184,7 +184,10 @@ class _RaftAttachmentPreviewShellState
           )
         : RaftLightboxHeader(
             title: widget.filename,
-            leading: RaftFileTypeBadge(filename: widget.filename),
+            leading: RaftFileTypeBadge(
+              filename: widget.filename,
+              headerLabel: true,
+            ),
             borderWidth: 1,
             onClose: widget.onClose,
             actions: actions,

@@ -46,9 +46,14 @@ class RaftFileTypeBadge extends StatelessWidget {
     super.key,
     required this.filename,
     this.size = const Size(32, 16),
+    this.headerLabel = false,
   });
   final String filename;
   final Size size;
+
+  /// The toolbar's file-type label (raft-ui 0.7 lightbox `headerLabel`), not the
+  /// small badge of an attachment card.
+  final bool headerLabel;
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
@@ -56,7 +61,8 @@ class RaftFileTypeBadge extends StatelessWidget {
     final extension = filename.split('.').last.toUpperCase();
     final background = component.semantics.badgeBackground(extension);
     if (background == null) return const SizedBox.shrink();
-    if (tokens.option('lightbox.style', or: 'recipe') == 'raft') {
+    if (headerLabel &&
+        tokens.option('lightbox.style', or: 'recipe') == 'raft') {
       // `headerLabel`: `h-[22px] rounded-chip bg-fill-muted px-1.5 py-0
       // text-caption font-semibold text-foreground-muted`.
       return Container(
