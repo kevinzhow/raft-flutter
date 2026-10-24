@@ -263,6 +263,86 @@ void main() {
       await client.dispose();
     });
 
+    test(
+      '[BP-READ-066] a newer served read version beats an older local read',
+      () async {
+        Map<String, dynamic> row(String parent, String thread, int? version) =>
+            {
+              ..._row(parent, thread),
+              'unreadCount': 3,
+              'latestActivitySeq': '10',
+              'readStateVersion': ?version,
+            };
+        final (w, a, client) = await _fixture(
+          followed: [
+            row('m', 't1', 7), // server state newer than the ledger (v5)
+            row('n', 't2', 5), // same version: not newer
+            row('o', 't3', 4), // ledger newer
+            row('p', 't4', null), // no version served: 0
+          ],
+        );
+        for (final scope in ['t1', 't2', 't3', 't4']) {
+          w.readState.consumeUpdate(
+            {
+              'serverId': 's1',
+              'scopeId': scope,
+              'maxReadSeq': 10,
+              'readStateVersion': 5,
+            },
+            serverId: 's1',
+            principalId: 'alice',
+          );
+        }
+        final store = w.followedThreads;
+        await store.refresh();
+        int unread(String id) =>
+            store.threads.firstWhere(
+                  (r) => r['threadChannelId'] == id,
+                )['unreadCount']
+                as int;
+        expect(unread('t1'), 3);
+        expect(unread('t2'), 3);
+        expect(unread('t3'), 0);
+        expect(unread('t4'), 0);
+        w.dispose();
+        await client.dispose();
+      },
+    );
+
+    test(
+      '[BP-READ-066] a row held at 0 for the same activity stays read',
+      () async {
+        Map<String, dynamic> row(String seq, int unread) => {
+          ..._row('m', 't1'),
+          'unreadCount': unread,
+          'latestActivitySeq': seq,
+          'firstUnreadMessageId': unread > 0 ? 'r1' : null,
+          'hasMention': unread > 0,
+        };
+        final (w, a, client) = await _fixture(followed: [row('10', 0)]);
+        final store = w.followedThreads;
+        await store.refresh();
+        Map<String, dynamic> t1() => store.threads.single;
+        // No ledger entry at all: the previous local 0 for seq 10 holds.
+        a.routes[_followed] = (_) => {
+          'threads': [row('10', 4)],
+        };
+        await store.refresh();
+        expect(t1()['unreadCount'], 0);
+        expect(t1()['firstUnreadMessageId'], isNull);
+        expect(t1()['hasMention'], isFalse);
+        // New activity (seq 11): the served unread is real and is kept.
+        a.routes[_followed] = (_) => {
+          'threads': [row('11', 4)],
+        };
+        await store.refresh();
+        expect(t1()['unreadCount'], 4);
+        expect(t1()['firstUnreadMessageId'], 'r1');
+        w.dispose();
+        await client.dispose();
+      },
+    );
+
     test('thread:updated patches a followed row without a request', () async {
       final (w, a, client) = await _fixture(
         followed: [_row('m', 't1'), _row('n', 't2')],

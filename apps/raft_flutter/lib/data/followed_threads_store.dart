@@ -59,9 +59,10 @@ class FollowedThreadsStore extends ChangeNotifier {
   final Listenable? authority;
   final bool Function(String threadChannelId)? isOpen;
 
-  /// The newest read frontier this device already accepted for a thread (the
-  /// read ledger's `maxReadSeq`), or null when none is known.
-  final BigInt? Function(String threadChannelId)? readFrontier;
+  /// The read this device already accepted for a thread (the read ledger's
+  /// `maxReadSeq` and `readStateVersion`), or null when none is known.
+  final ({BigInt maxReadSeq, int version})? Function(String threadChannelId)?
+  readFrontier;
   StreamSubscription<RaftEvent>? _subscription;
 
   WorkspaceEntityScope? _scope;
@@ -217,7 +218,7 @@ class FollowedThreadsStore extends ChangeNotifier {
         if (next is! String || next.isEmpty || next == cursor) break;
         cursor = next;
       }
-      _setRows(_projectKnownReads(rows));
+      _setRows(_projectKnownReads(rows, _rows));
       for (final entry in _overrides.entries.toList()) {
         if (!_inFlight.contains(entry.key) &&
             _byParent.containsKey(entry.key) == entry.value.following) {
@@ -246,23 +247,43 @@ class FollowedThreadsStore extends ChangeNotifier {
     }
   }
 
-  /// Source applyKnownReadStateProjectionsToFollowedThreads: a served row whose
-  /// newest activity is covered by a read this device already accepted shows
-  /// no unread, so a response older than that read cannot bring a badge back.
-  /// Only a covered frontier clears a row (same rule as [projectFullyRead]);
-  /// a read never raises unread.
+  /// Source applyKnownReadStateProjectionsToFollowedThreads (v1.21.23): a
+  /// served row with unread shows read when this device already holds that
+  /// thread at 0 for the same latest activity ([previous] is the row list
+  /// being replaced), or when the ledger's read is newer than the served row's
+  /// `readStateVersion` (default 0) and covers the row's latest activity seq.
+  /// Both clear through [projectFullyRead], so unread, jump target and mark go
+  /// together; a read never raises unread and a row without a latest seq keeps
+  /// the served state.
   List<Map<String, dynamic>> _projectKnownReads(
     List<Map<String, dynamic>> rows,
+    List<Map<String, dynamic>> previous,
   ) {
     final frontier = readFrontier;
-    if (frontier == null) return rows;
-    return [
-      for (final row in rows)
-        switch (row['threadChannelId']) {
-          final String id => projectFullyRead(row, frontier(id)),
-          _ => row,
-        },
-    ];
+    final before = {for (final row in previous) row['threadChannelId']: row};
+    return [for (final row in rows) _projectKnownRead(row, before, frontier)];
+  }
+
+  Map<String, dynamic> _projectKnownRead(
+    Map<String, dynamic> row,
+    Map<Object?, Map<String, dynamic>> before,
+    ({BigInt maxReadSeq, int version})? Function(String)? frontier,
+  ) {
+    final id = row['threadChannelId'];
+    final latest = canonicalWireSeq(row['latestActivitySeq']);
+    if (id is! String || latest == null) return row;
+    final local = before[id];
+    if (local != null &&
+        local['unreadCount'] == 0 &&
+        canonicalWireSeq(local['latestActivitySeq']) == latest) {
+      return projectFullyRead(row, latest);
+    }
+    final ledger = frontier?.call(id);
+    final served = row['readStateVersion'];
+    if (ledger == null || ledger.version <= (served is int ? served : 0)) {
+      return row;
+    }
+    return projectFullyRead(row, ledger.maxReadSeq);
   }
 
   Future<void> follow(String parentMessageId) =>

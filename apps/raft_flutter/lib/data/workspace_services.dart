@@ -66,12 +66,12 @@ class WorkspaceServices {
             final server = authority.client.serverId,
                 user = authority.client.user?.id;
             if (server == null || user == null) return null;
-            final read = authority.readState.state(
-              server,
-              user,
-              id,
-            )?['maxReadSeq'];
-            return read is int ? BigInt.from(read) : null;
+            final state = authority.readState.state(server, user, id);
+            final read = state?['maxReadSeq'],
+                version = state?['readStateVersion'];
+            return read is int && version is int
+                ? (maxReadSeq: BigInt.from(read), version: version)
+                : null;
           },
         );
     this.entityDirectory =
