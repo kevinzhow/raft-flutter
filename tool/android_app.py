@@ -219,7 +219,12 @@ def require_absent_package(adb_command, run=call):
     # missing data-directory metadata as permission for a fresh installation.
     packages = run([*adb_command, 'shell', 'pm', 'list', 'packages', '-u', PACKAGE])
     state = run([*adb_command, 'shell', 'dumpsys', 'package', PACKAGE])
-    if packages.strip() or state.strip() != f'Unable to find package: {PACKAGE}':
+    # Android's package filter is a substring search, so the isolated lab
+    # package also appears. Require valid output, then match the exact identity.
+    rows = [line.strip() for line in packages.splitlines() if line.strip()]
+    if any(not re.fullmatch(r'package:[A-Za-z0-9_.]+', line) for line in rows):
+        raise SafetyError('Cannot verify package absence from unrecognized package listing.')
+    if f'package:{PACKAGE}' in rows or state.strip() != f'Unable to find package: {PACKAGE}':
         raise SafetyError('First installation requires a completely absent package, including retained data and other users.')
 
 

@@ -195,11 +195,33 @@ class InstallTest(unittest.TestCase):
         self.assertFalse(self.mutations())
         self.assertNotIn('start', str(self.commands))
 
+    def test_first_install_allows_distinct_packages_matching_android_filter(self):
+        self.old = f'Unable to find package: {android.PACKAGE}\n'
+        self.retained_packages = (f'package:{android.LAB_PACKAGE}\n'
+                                  f'package:{android.PACKAGE}.other\n')
+        report = self.update(first_install=True, check_only=True)
+        self.assertEqual(report['status'], 'preflight-passed')
+        self.assertFalse(self.mutations())
+        self.assertEqual(self.update(first_install=True)['status'], 'verified')
+        self.assertEqual(len(self.mutations()), 1)
+        self.assertNotIn('uninstall', str(self.commands))
+        self.assertNotIn('clear', str(self.commands))
+
+    def test_first_install_rejects_unrecognized_package_listing(self):
+        self.old = f'Unable to find package: {android.PACKAGE}\n'
+        for listing in ('Error: unavailable', 'package:', 'unexpected output'):
+            with self.subTest(listing=listing):
+                self.retained_packages = listing
+                with self.assertRaises(android.SafetyError):
+                    self.update(first_install=True)
+                self.assertFalse(self.mutations())
+
     def test_first_install_rejects_existing_retained_and_concurrently_added_package(self):
         absent = f'Unable to find package: {android.PACKAGE}\n'
         for state, retained, concurrent in ((dump(), '', False),
                                              (dump(installed=False), '', False),
                                              (absent, f'package:{android.PACKAGE}\n', False),
+                                             (absent, f'package:{android.LAB_PACKAGE}\npackage:{android.PACKAGE}\n', False),
                                              (absent, '', True)):
             with self.subTest(state=state, retained=retained, concurrent=concurrent):
                 self.old, self.retained_packages = state, retained
