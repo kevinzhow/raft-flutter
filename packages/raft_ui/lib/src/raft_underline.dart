@@ -24,10 +24,16 @@ class RaftUnderlineSpan extends TextSpan {
     super.semanticsLabel,
     this.color,
     this.active = true,
+    this.offset,
+    this.thickness,
   });
 
   final Color? color;
   final bool active;
+
+  /// Per-run stroke metrics (Web `underline-offset-[3px] decoration-[1.5px]`
+  /// of TextLink); null keeps the theme's [RaftUnderlineMetrics].
+  final double? offset, thickness;
 
   /// RenderParagraph keeps its old span when a new one compares identical, so
   /// an underline that toggled (hover) must report a paint difference.
@@ -35,7 +41,10 @@ class RaftUnderlineSpan extends TextSpan {
   RenderComparison compareTo(InlineSpan other) {
     final base = super.compareTo(other);
     if (other is RaftUnderlineSpan &&
-        (other.color != color || other.active != active)) {
+        (other.color != color ||
+            other.active != active ||
+            other.offset != offset ||
+            other.thickness != thickness)) {
       return base.index < RenderComparison.paint.index
           ? RenderComparison.paint
           : base;
@@ -48,10 +57,13 @@ class RaftUnderlineSpan extends TextSpan {
       super == other &&
       other is RaftUnderlineSpan &&
       other.color == color &&
-      other.active == active;
+      other.active == active &&
+      other.offset == offset &&
+      other.thickness == thickness;
 
   @override
-  int get hashCode => Object.hash(super.hashCode, color, active);
+  int get hashCode =>
+      Object.hash(super.hashCode, color, active, offset, thickness);
 }
 
 /// An inline run with a background (inline code, the search `mark`).
@@ -105,6 +117,8 @@ class RaftUnderlinedText extends StatelessWidget {
     this.style,
     this.underline = true,
     this.underlineColor,
+    this.underlineOffset,
+    this.underlineThickness,
     this.maxLines,
     this.overflow,
     this.textAlign,
@@ -116,6 +130,7 @@ class RaftUnderlinedText extends StatelessWidget {
   final TextStyle? style;
   final bool underline;
   final Color? underlineColor;
+  final double? underlineOffset, underlineThickness;
   final int? maxLines;
   final TextOverflow? overflow;
   final TextAlign? textAlign;
@@ -125,7 +140,13 @@ class RaftUnderlinedText extends StatelessWidget {
   @override
   Widget build(BuildContext context) => RaftUnderlines(
     child: Text.rich(
-      RaftUnderlineSpan(text: data, color: underlineColor, active: underline),
+      RaftUnderlineSpan(
+        text: data,
+        color: underlineColor,
+        active: underline,
+        offset: underlineOffset,
+        thickness: underlineThickness,
+      ),
       style: style,
       maxLines: maxLines,
       overflow: overflow,
@@ -358,7 +379,16 @@ class _RenderRaftUnderlines extends RenderProxyBox {
     RenderParagraph paragraph,
   ) {
     var position = 0;
-    final runs = <({TextSelection range, TextStyle style, Color? color})>[];
+    final runs =
+        <
+          ({
+            TextSelection range,
+            TextStyle style,
+            Color? color,
+            double? offset,
+            double? thickness,
+          })
+        >[];
     // A marker covers its text and its children's; an inner marker inside an
     // active one is already covered (no double paint).
     void visit(InlineSpan span, TextStyle inherited, bool covered) {
@@ -377,6 +407,8 @@ class _RenderRaftUnderlines extends RenderProxyBox {
             range: TextSelection(baseOffset: start, extentOffset: position),
             style: style,
             color: span is RaftUnderlineSpan ? span.color : null,
+            offset: span is RaftUnderlineSpan ? span.offset : null,
+            thickness: span is RaftUnderlineSpan ? span.thickness : null,
           ));
         }
       } else if (span is PlaceholderSpan) {
@@ -414,13 +446,15 @@ class _RenderRaftUnderlines extends RenderProxyBox {
       void drawSegment() {
         if (segment == null) return;
         final baseline = firstBaseline + segment.top;
-        final top = (baseline + _metrics.offset * scale).roundToDouble();
+        final top =
+            (baseline + (run.offset ?? _metrics.offset) * scale)
+                .roundToDouble();
         strokes.add((
           rect: Rect.fromLTWH(
             segment.left,
             top,
             segment.width,
-            _metrics.thickness * scale,
+            (run.thickness ?? _metrics.thickness) * scale,
           ),
           paint: paint,
           baseline: baseline,

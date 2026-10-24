@@ -326,6 +326,11 @@ const String raftThemePackJson = r'''{
         "layer-select-disabled": "#f3f3f3",
         "line-select": "#141111",
         "line-select-disabled": "rgba(20 17 17 / 0.149)",
+        "line-auth-header": "rgba(20 17 17 / 0.451)",
+        "foreground-splash": "rgba(20 17 17 / 0.678)",
+        "foreground-eyebrow": "rgba(20 17 17 / 0.62)",
+        "foreground-text-link": "#141111",
+        "foreground-legal-link": "#1447e6",
         "layer-button-primary-hover": "#ff99c3",
         "foreground-button-primary": "#141111",
         "layer-button-standard": "#ffffff",
@@ -730,7 +735,19 @@ const String raftThemePackJson = r'''{
         "stroke.spinnerRing": 0,
         "ratio.spinnerRingRadius": 0.4166666666666667,
         "space.spinnerRingInset": 0,
-        "opacity.spinnerArc": 0.8
+        "opacity.spinnerArc": 0.8,
+        "size.authBar": 56,
+        "type.authTitle.size": 22,
+        "type.authTitle.line": 28,
+        "type.authDescription.size": 15,
+        "type.authDescription.line": 20,
+        "type.splash.size": 17,
+        "type.splash.line": 22,
+        "type.notFoundTitle.size": 22,
+        "type.notFoundTitle.line": 28,
+        "type.notFoundBody.line": 20,
+        "type.sectionEyebrow.size": 13,
+        "type.sectionEyebrow.line": 18
       },
       "type": {
         "hero": [
@@ -886,7 +903,12 @@ const String raftThemePackJson = r'''{
         "confirm.slug": "chip",
         "confirm.explanation": "dangerBanner",
         "spinner.ringShape": "sweep",
-        "spinner.foreground": "inherited"
+        "spinner.foreground": "inherited",
+        "auth.submitSize": "xl",
+        "auth.links": "underlined",
+        "standalone.surface": "sidebar",
+        "auth.fieldLabel": "tokens",
+        "standalone.buttonSize": "lg"
       }
     },
     "dark": {
@@ -1153,6 +1175,11 @@ const String raftThemePackJson = r'''{
         "layer-select-disabled": "#32322f",
         "line-select": "#e5e5e2",
         "line-select-disabled": "rgba(250 250 247 / 0.102)",
+        "line-auth-header": "rgba(250 250 247 / 0.259)",
+        "foreground-splash": "#c4c4c1",
+        "foreground-eyebrow": "#9e9e9b",
+        "foreground-text-link": "#e5e5e2",
+        "foreground-legal-link": "#8ec5ff",
         "layer-button-primary-hover": "#ff99c3",
         "foreground-button-primary": "#141111",
         "layer-button-standard": "#242422",
@@ -1557,7 +1584,19 @@ const String raftThemePackJson = r'''{
         "stroke.spinnerRing": 0,
         "ratio.spinnerRingRadius": 0.4166666666666667,
         "space.spinnerRingInset": 0,
-        "opacity.spinnerArc": 0.8
+        "opacity.spinnerArc": 0.8,
+        "size.authBar": 56,
+        "type.authTitle.size": 22,
+        "type.authTitle.line": 28,
+        "type.authDescription.size": 15,
+        "type.authDescription.line": 20,
+        "type.splash.size": 17,
+        "type.splash.line": 22,
+        "type.notFoundTitle.size": 22,
+        "type.notFoundTitle.line": 28,
+        "type.notFoundBody.line": 20,
+        "type.sectionEyebrow.size": 13,
+        "type.sectionEyebrow.line": 18
       },
       "type": {
         "hero": [
@@ -1713,7 +1752,12 @@ const String raftThemePackJson = r'''{
         "confirm.slug": "chip",
         "confirm.explanation": "dangerBanner",
         "spinner.ringShape": "sweep",
-        "spinner.foreground": "inherited"
+        "spinner.foreground": "inherited",
+        "auth.submitSize": "xl",
+        "auth.links": "underlined",
+        "standalone.surface": "sidebar",
+        "auth.fieldLabel": "tokens",
+        "standalone.buttonSize": "lg"
       }
     }
   }

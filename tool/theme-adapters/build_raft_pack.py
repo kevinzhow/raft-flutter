@@ -29,6 +29,7 @@ import re
 import sys
 
 from button_contract import button_colors
+import pages_lane
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TOKENS = 'packages/raft_ui/lib/src/tokens'
@@ -428,6 +429,9 @@ OPTIONS_RAFT = {
     'spinner.ringShape': 'sweep', 'spinner.foreground': 'inherited',
 }
 
+GEOMETRY_RAFT.update(pages_lane.geometry_raft())
+OPTIONS_RAFT.update(pages_lane.options_raft())
+
 CASE_RAFT = {'dialogShellTitle': 'none','heading': 'none', 'label': 'none', 'badge': 'none'}
 
 
@@ -510,6 +514,7 @@ def build() -> dict:
             'line-select': 'line-strong', 'line-select-disabled': 'line-hairline',
         }.items():
             out[target] = out[source]
+        pages_lane.raft_aliases(out)
         out.update(button_colors('raftDark' if palette is dark else 'raftLight', out))
         return out
 

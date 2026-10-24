@@ -7,6 +7,7 @@ import 'components.dart';
 import 'css_pixel_snap.dart';
 import 'design_primitives.dart';
 import 'localization.dart';
+import 'page_tokens.dart';
 import 'recipes/button_variants.g.dart';
 import 'theme.dart';
 
@@ -35,7 +36,7 @@ class RaftServerAccessDeniedPage extends StatelessWidget {
     final body = RaftTypography.heading(
       t,
       size: 14,
-      line: 24,
+      line: t.size('type.notFoundBody.line', fallback: 20),
       weight: FontWeight.w400,
       color: t.muted,
     );
@@ -70,8 +71,8 @@ class RaftServerAccessDeniedPage extends StatelessWidget {
               raftText(context, 'Server not found'),
               style: RaftTypography.heading(
                 t,
-                size: 24,
-                line: 32,
+                size: t.size('type.notFoundTitle.size', fallback: 22),
+                line: t.size('type.notFoundTitle.line', fallback: 28),
                 weight: RaftTypography.black(t),
                 color: t.strong,
               ),
@@ -87,14 +88,16 @@ class RaftServerAccessDeniedPage extends StatelessWidget {
               serverName == null ? 'Choose a Server' : 'Go to My Server',
             ),
             variant: RaftControlVariant.outline,
-            size: RaftButtonRecipeSize.md,
+            size: t.option('standalone.buttonSize', or: 'lg') == 'lg'
+                ? RaftButtonRecipeSize.lg
+                : RaftButtonRecipeSize.md,
             onPressed: onContinue,
           ),
         ],
       ),
     );
     return Material(
-      color: t.canvas,
+      color: t.standaloneSurface,
       child: DefaultTextStyle.merge(
         style: TextStyle(
           fontFamily: t.headingFont,

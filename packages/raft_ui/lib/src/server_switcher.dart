@@ -22,6 +22,7 @@ import 'recipes/context_menu.g.dart';
 import 'recipes/popover.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'text_scaling.dart' show RaftChrome;
+import 'page_tokens.dart';
 import 'theme.dart';
 import 'sized_image.dart';
 import 'tooltip.dart' show RaftTooltip;
@@ -462,9 +463,10 @@ class RaftServerResolutionBody extends StatelessWidget {
     // The splash is a page of its own (Material + page text style), never bare
     // text: outside a Material Flutter paints the debug fallback style (yellow
     // double underline). `safe-top` pads the status bar like the Web div.
-    // Brutal keeps the Web `bg-brutal-cream`; elegant (light and dark) uses
-    // the theme canvas, so the splash never flashes cream in dark mode.
-    final canvas = t.canvas;
+    // Web v1.21.23 `bg-layer-sidebar` + `text-headline text-foreground-muted`;
+    // the pre-theme looks keep the canvas and the strong 20/28 label
+    // (standalone.surface, type.splash.*, foreground-splash).
+    final canvas = t.standaloneSurface;
     return RaftStatusBarHost(
       fallback: canvas,
       expand: true,
@@ -478,15 +480,7 @@ class RaftServerResolutionBody extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
             child: Center(
-              child: Text(
-                raftText(context, label),
-                style: RaftTypography.body(
-                  t,
-                  size: 20,
-                  line: 28,
-                  weight: FontWeight.w700,
-                ),
-              ),
+              child: Text(raftText(context, label), style: t.splashLabel()),
             ),
           ),
         ),

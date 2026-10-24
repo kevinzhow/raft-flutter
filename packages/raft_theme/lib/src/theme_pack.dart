@@ -163,6 +163,12 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'button.hoverSurface': {'overlay', 'variant'},
   'button.linkDecoration': {'underline', 'none'},
   'button.linkPadding': {'none', 'size'},
+  // Page lane (Web v1.21.23 pages; tool/theme-adapters/pages_lane.py).
+  'auth.submitSize': {'xl', 'lg'},
+  'auth.links': {'underlined', 'hover'},
+  'standalone.surface': {'sidebar', 'canvas'},
+  'standalone.buttonSize': {'lg', 'md'},
+  'auth.fieldLabel': {'tokens', 'recipe'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).
