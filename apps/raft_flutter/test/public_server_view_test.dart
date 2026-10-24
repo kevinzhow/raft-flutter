@@ -154,7 +154,8 @@ void main() {
         onSignIn: () => signIn++,
         onRegister: () => register++,
       );
-      expect(find.text('Public channels'.toUpperCase()), findsOneWidget);
+      // Raft look (the default): the SectionEyebrow as written, not uppercased.
+      expect(find.text('Public channels'), findsOneWidget);
       expect(find.text('general'), findsWidgets);
       expect(find.text('Welcome to the community'), findsOneWidget);
       expect(
@@ -335,7 +336,10 @@ void main() {
       expect(find.text('Sign In'), findsNothing);
       await t.tap(find.byKey(const ValueKey('public-join-guest')));
       await t.pumpAndSettle();
-      expect(find.text('Join as Guest'), findsNWidgets(3));
+      // The banner button and the dialog's confirm; the dialog is titled as the
+      // v1.21.23 question.
+      expect(find.text('Join as Guest'), findsNWidgets(2));
+      expect(find.text('Join this server?'), findsOneWidget);
       await t.tap(find.byKey(const ValueKey('public-join-confirm')));
       await t.pumpAndSettle();
       expect(client.calls, contains('POST $_base/join-as-guest'));
@@ -367,7 +371,10 @@ void main() {
       await t.tap(find.byKey(const ValueKey('public-join-confirm')));
       await t.pumpAndSettle();
       expect(find.text('Failed to join this public server'), findsWidgets);
-      expect(find.text('Join as Guest'), findsNWidgets(3));
+      // The banner button and the dialog's confirm; the dialog is titled as the
+      // v1.21.23 question.
+      expect(find.text('Join as Guest'), findsNWidgets(2));
+      expect(find.text('Join this server?'), findsOneWidget);
     });
 
     testWidgets(

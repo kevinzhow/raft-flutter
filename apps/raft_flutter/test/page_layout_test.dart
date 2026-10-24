@@ -108,10 +108,13 @@ void main() {
             tester.getSize(find.byKey(const Key('page-header-surface'))),
             Size(size.width, recipe.height),
           );
-          expect(tester.widget<Text>(find.text('Tasks')).style, recipe.title);
+          // Raft look: the tasks head is the shared AppPanelHeader bar (no
+          // icon tile, PanelTitle 17); the recipe styles are the pre-theme
+          // 16px title.
+          expect(tester.widget<Text>(find.text('Tasks')).style!.fontSize, 17);
           expect(
-            tester.widget<Text>(find.text('4 channel tasks')).style,
-            recipe.subtitle,
+            tester.widget<Text>(find.text('4 channel tasks')).style!.fontSize,
+            recipe.subtitle.fontSize,
           );
         }
         expect(tester.takeException(), isNull);

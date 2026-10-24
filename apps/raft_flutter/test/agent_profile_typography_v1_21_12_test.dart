@@ -199,7 +199,7 @@ void main() {
     expect(tester.getSize(find.byType(RaftPanelHeaderBar)).height, 56);
   });
 
-  testWidgets('elegant tab strip has no rule: list floor holds the indicator', (
+  testWidgets('Raft tab strip is the sticker row under a seam rule', (
     tester,
   ) async {
     await host(
@@ -213,8 +213,10 @@ void main() {
         onChanged: (_) {},
       ),
     );
-    // `h-12` list and no root `border-b` / list hairline: 48, not 49.
-    expect(tester.getSize(find.byType(RaftPanelTabBar<String>)).height, 48);
+    // ConversationPanelTabs: `py-2` list of 32px sticker tabs (48) plus the
+    // root `border-b border-line-seam` (1). The pre-theme looks keep the
+    // underline strip (panelTabs.style).
+    expect(tester.getSize(find.byType(RaftPanelTabBar<String>)).height, 49);
     // Label starts at the 20px `px-5` list inset + 12px tab padding.
     expect(tester.getTopLeft(find.text('Profile')).dx, greaterThan(32));
   });

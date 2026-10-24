@@ -276,7 +276,9 @@ void main() {
         findsNWidgets(3),
       );
       expect(find.text('Subagent: Plan', findRichText: true), findsOneWidget);
-      expect(find.text('Subagent', findRichText: true), findsOneWidget);
+      // The bare badge of the no-type row and, in the Raft look, the title of
+      // the system row (the Web row keeps the entry title beside its badge).
+      expect(find.text('Subagent', findRichText: true), findsNWidgets(2));
     });
   });
 }

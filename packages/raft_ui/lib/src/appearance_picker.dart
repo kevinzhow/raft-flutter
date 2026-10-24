@@ -119,8 +119,10 @@ class RaftAppearanceModeCards extends StatelessWidget {
       container: true,
       label: raftText(context, 'Appearance mode'),
       child: wide
+          // The three cards hold the same content, so they share one height
+          // without stretching (which breaks under a scroll view).
           ? Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 8,
               children: [for (final c in cards) Expanded(child: c)],
             )
