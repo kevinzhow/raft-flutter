@@ -11,7 +11,6 @@ import 'viewport_breakpoints.dart';
 import 'icons.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'sidebar_section.dart';
-import 'raft/blink_snap.dart';
 import 'theme.dart';
 import 'status_bar.dart';
 import 'text_scaling.dart';
@@ -928,51 +927,48 @@ class _ComposerTaskToggleState extends State<RaftComposerTaskToggle> {
             ? null
             : () => widget.onChanged!(!widget.checked),
         child: ExcludeSemantics(
-          // Blink paints the toggle at a whole pixel.
-          child: RaftBlinkSnap(
-            child: RaftControl(
-              key: const ValueKey('composer-as-task-toggle'),
-              minimumTargetSize: face,
-              focusNode: focus,
-              focusOnPointer: false,
-              visualHeight: face,
-              padding: EdgeInsets.zero,
-              shadow: false,
-              tooltip: widget.tooltip,
-              recipe: _ComposerTaskControlRecipe(t),
-              onPressed: widget.onChanged == null
-                  ? null
-                  : () => widget.onChanged!(!widget.checked),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RaftCheckboxIndicator(
-                    checked: widget.checked,
-                    disabled: native && widget.onChanged == null,
-                    size: t.size('size.composerTaskCheckbox', fallback: 20),
-                    style: native
-                        ? null
-                        : RaftCheckboxIndicatorStyle(
-                            fill: widget.checked
-                                ? t.colors['layer-composer-task-checked']
-                                : t.panel,
-                            borderColor: t.colors['line-composer-task'],
-                            markColor: t.colors['foreground-inverse'],
-                            radius: 0,
-                            borderWidth:
-                                t.option('checkbox.mark', or: 'strokeCheck') ==
-                                    'thickStroke'
-                                ? 2
-                                : 1,
-                            // Both a57 optional appearances use the same mark.
-                            markSize: 10,
-                            markStrokeWidth: 4,
-                          ),
-                  ),
-                  SizedBox(width: t.size('space.composerTaskGap', fallback: 8)),
-                  Text(widget.label),
-                ],
-              ),
+          child: RaftControl(
+            key: const ValueKey('composer-as-task-toggle'),
+            minimumTargetSize: face,
+            focusNode: focus,
+            focusOnPointer: false,
+            visualHeight: face,
+            padding: EdgeInsets.zero,
+            shadow: false,
+            tooltip: widget.tooltip,
+            recipe: _ComposerTaskControlRecipe(t),
+            onPressed: widget.onChanged == null
+                ? null
+                : () => widget.onChanged!(!widget.checked),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RaftCheckboxIndicator(
+                  checked: widget.checked,
+                  disabled: native && widget.onChanged == null,
+                  size: t.size('size.composerTaskCheckbox', fallback: 20),
+                  style: native
+                      ? null
+                      : RaftCheckboxIndicatorStyle(
+                          fill: widget.checked
+                              ? t.colors['layer-composer-task-checked']
+                              : t.panel,
+                          borderColor: t.colors['line-composer-task'],
+                          markColor: t.colors['foreground-inverse'],
+                          radius: 0,
+                          borderWidth:
+                              t.option('checkbox.mark', or: 'strokeCheck') ==
+                                  'thickStroke'
+                              ? 2
+                              : 1,
+                          // Both a57 optional appearances use the same mark.
+                          markSize: 10,
+                          markStrokeWidth: 4,
+                        ),
+                ),
+                SizedBox(width: t.size('space.composerTaskGap', fallback: 8)),
+                Text(widget.label),
+              ],
             ),
           ),
         ),
