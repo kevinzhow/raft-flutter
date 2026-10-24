@@ -157,7 +157,9 @@ class RaftChannelJoinFooter extends StatelessWidget {
                 : RaftButtonRecipeSize.md,
             glyph: RaftGlyph.logIn,
             glyphSize: 14,
-            gap: t.option('channelFooter.joinSize', or: 'md') == 'lg' ? null : 6,
+            gap: t.option('channelFooter.joinSize', or: 'md') == 'lg'
+                ? null
+                : 6,
             expand: true,
             fontWeight: FontWeight.w700,
             label:

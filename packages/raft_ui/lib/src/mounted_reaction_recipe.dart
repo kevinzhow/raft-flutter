@@ -34,9 +34,8 @@ class RaftMountedReactionRecipe extends RaftControlRecipe {
   @override
   Color get focusRing => tokens.colors['line-strong']!;
   @override
-  BorderRadius get radius => BorderRadius.circular(
-    raft ? tokens.size('radius.chip', fallback: 6) : 4,
-  );
+  BorderRadius get radius =>
+      BorderRadius.circular(raft ? tokens.size('radius.chip', fallback: 6) : 4);
   @override
   EdgeInsets get padding => raft
       ? const EdgeInsets.only(left: 6, right: 8)
@@ -277,9 +276,8 @@ class RaftMountedReactionAdd extends StatelessWidget {
 class _ReactionAddRecipe extends RaftMountedReactionRecipe {
   const _ReactionAddRecipe(super.tokens, {super.raft});
   @override
-  EdgeInsets get padding => raft
-      ? const EdgeInsets.symmetric(horizontal: 6)
-      : super.padding;
+  EdgeInsets get padding =>
+      raft ? const EdgeInsets.symmetric(horizontal: 6) : super.padding;
   @override
   Color backgroundFor({bool hovered = false}) =>
       super.backgroundFor(hovered: hovered);

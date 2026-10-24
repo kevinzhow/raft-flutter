@@ -348,7 +348,10 @@ void main() {
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: Scaffold(
               body: Align(
                 alignment: Alignment.bottomCenter,

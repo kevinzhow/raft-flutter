@@ -24,7 +24,10 @@ void main() {
       '${dark ? 'dark' : 'light'} real surface preserves caller text, selection and hover',
       (tester) async {
         var taps = 0;
-        final theme = raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark);
+        final theme = raftTheme(
+          pack: packForThemeId(elegantThemePackId),
+          dark: dark,
+        );
         await tester.pumpWidget(
           host(
             theme,
@@ -70,7 +73,10 @@ void main() {
     testWidgets(
       '${dark ? 'dark' : 'light'} real progress paints inherited variable shadows and clamps',
       (tester) async {
-        final theme = raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark);
+        final theme = raftTheme(
+          pack: packForThemeId(elegantThemePackId),
+          dark: dark,
+        );
         await tester.pumpWidget(
           host(
             theme,
@@ -120,7 +126,10 @@ void main() {
       (tester) async {
         final controller = TextEditingController();
         final focus = FocusNode();
-        final themes = [raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark), raftTheme(pack: packForThemeId(elegantThemePackId), dark: !dark)];
+        final themes = [
+          raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+          raftTheme(pack: packForThemeId(elegantThemePackId), dark: !dark),
+        ];
         Widget input(ThemeData theme) => host(
           theme,
           RaftTextInput(

@@ -171,11 +171,7 @@ class RaftRecipeButton extends StatelessWidget {
       iconEndPaddingRight: base.iconEndPaddingRight,
       text: step == null
           ? base.text
-          : RaftTypeStyle(
-              step.$1,
-              step.$2,
-              fontWeight: base.text.fontWeight,
-            ),
+          : RaftTypeStyle(step.$1, step.$2, fontWeight: base.text.fontWeight),
       // The recipe's `[&_svg:not([class*='size-'])]` rule wins over a glyph's
       // own size attribute, so [glyphSize] only applies to the recipe surface.
       icon: base.icon,
@@ -197,7 +193,9 @@ class RaftRecipeButton extends StatelessWidget {
     var text = t.scale(
       metrics.text,
       color: fg,
-      weight: fontWeight ?? raftFontWeight(t.size('type.button.weight', fallback: 700)),
+      weight:
+          fontWeight ??
+          raftFontWeight(t.size('type.button.weight', fallback: 700)),
     );
     if (underline) {
       text = text.copyWith(
@@ -260,8 +258,8 @@ class RaftRecipeButton extends StatelessWidget {
                   horizontal: metrics.paddingX,
                   vertical: wraps ? 4 : 0,
                 ));
-    final shown = state.focusVisible ||
-        (focusRing && (focusNode?.hasFocus ?? false));
+    final shown =
+        state.focusVisible || (focusRing && (focusNode?.hasFocus ?? false));
     Widget box = RaftButtonSurface(
       variant: variantValue,
       size: sizeValue,
@@ -280,7 +278,8 @@ class RaftRecipeButton extends StatelessWidget {
     );
     if (t.option('button.disabledSurface', or: 'muted') == 'opacity' &&
         disabled) {
-      final o = disabledOpacity ?? t.size('opacity.buttonDisabled', fallback: 1);
+      final o =
+          disabledOpacity ?? t.size('opacity.buttonDisabled', fallback: 1);
       if (o < 1) box = Opacity(opacity: o, child: box);
     }
     return box;

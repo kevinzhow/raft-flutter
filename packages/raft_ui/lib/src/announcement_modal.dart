@@ -394,10 +394,7 @@ class _Label extends StatelessWidget {
             key: const ValueKey('announcement-label'),
             style: raft
                 ? t
-                      .scale(
-                        RaftTypeScale.caption,
-                        color: t.ui.foregroundMuted,
-                      )
+                      .scale(RaftTypeScale.caption, color: t.ui.foregroundMuted)
                       .copyWith(fontFamilyFallback: t.fontFallback)
                 : raftCssTextStyle(
                     family: t.bodyFont,

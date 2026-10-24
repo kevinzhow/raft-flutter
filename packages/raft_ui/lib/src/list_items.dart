@@ -1572,7 +1572,6 @@ class _RenderAutoMarginWrap extends RenderBox
       defaultHitTestChildren(result, position: position);
 }
 
-
 /// The popover's search row: `flex h-10 items-center gap-2 border-b
 /// border-line-hairline px-3 text-foreground-hint`, the focus ring drawn
 /// inside the edge (`focus-within:shadow-[inset_0_0_0_2px_var(--foreground)]`).
@@ -1624,9 +1623,7 @@ class _RaftSearchRowState extends State<_RaftSearchRow> {
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       foregroundDecoration: focused
-          ? BoxDecoration(
-              border: Border.all(color: ui.foreground, width: 2),
-            )
+          ? BoxDecoration(border: Border.all(color: ui.foreground, width: 2))
           : null,
       decoration: BoxDecoration(
         border: Border(
@@ -1700,10 +1697,7 @@ class _RaftSelectionRow extends StatelessWidget {
           child: Row(
             children: [
               if (o.reserveLeadingSlot || o.leading != null) ...[
-                SizedBox.square(
-                  dimension: 20,
-                  child: Center(child: o.leading),
-                ),
+                SizedBox.square(dimension: 20, child: Center(child: o.leading)),
                 const SizedBox(width: 8),
               ],
               Expanded(
@@ -1720,7 +1714,6 @@ class _RaftSelectionRow extends StatelessWidget {
     );
   }
 }
-
 
 /// `border-t` of a rounded box: only the top edge, following the corner arcs.
 class _RoundedTopRule extends CustomPainter {

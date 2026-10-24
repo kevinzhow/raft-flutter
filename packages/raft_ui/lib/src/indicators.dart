@@ -411,8 +411,8 @@ class _RaftSkeletonState extends State<RaftSkeleton>
     final themedFill = t.colors['foreground-strong']!.withValues(alpha: .08);
     // raft-ui 0.7 `skeleton`: every variant is a `bg-fill-muted` block with the
     // sticker radius (line h-3); an avatar stand-in is a square block as well.
-    final box = t.option('skeleton.style', or: 'recipe') == 'raft' &&
-            !widget.themed
+    final box =
+        t.option('skeleton.style', or: 'recipe') == 'raft' && !widget.themed
         ? Container(
             width: widget.width,
             height:

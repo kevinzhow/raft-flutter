@@ -44,7 +44,14 @@ class RaftTooltipRecipe {
     letterSpacing: -.065,
     color: foreground,
   );
-  List<BoxShadow> get shadows => tokens.dark
+  List<BoxShadow> get shadows =>
+      tokens.option('tooltip.style', or: 'recipe') == 'raft'
+      ? [
+          // `shadow-float`: the pack's elevation, CSS top-first.
+          for (final layer in tokens.shadowLayers('shadow.float').reversed)
+            if (!layer.inset) layer.toBoxShadow(),
+        ]
+      : tokens.dark
       ? [
           BoxShadow(
             color: Colors.black.withValues(alpha: .55),

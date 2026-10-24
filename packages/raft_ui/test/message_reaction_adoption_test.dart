@@ -13,7 +13,10 @@ void main() {
           var taps = 0;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+              theme: raftTheme(
+                pack: packForThemeId(elegantThemePackId),
+                dark: dark,
+              ),
               home: Scaffold(
                 body: RaftDensityScope(
                   density: density,
@@ -85,7 +88,10 @@ void main() {
       (t) async {
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: const Scaffold(
               body: Center(
                 child: RaftMessageTile(

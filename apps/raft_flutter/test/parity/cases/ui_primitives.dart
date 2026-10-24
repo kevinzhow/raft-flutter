@@ -271,42 +271,44 @@ final ParityCase _formField = ParityCase(
       '!border-brutal-red ring-2 ring-brutal-red/60 (invalid); against the Web '
       'the raft-ui Input (default chrome) is used.',
   build: (ctx) {
-    final chrome = ctx.againstWeb ? RaftInputChrome.recipe : RaftInputChrome.legacy;
+    final chrome = ctx.againstWeb
+        ? RaftInputChrome.recipe
+        : RaftInputChrome.legacy;
     return _frame(
-    ctx,
-    height: 296,
-    child: _column(12, [
-      RaftField(
-        label: 'Email',
-        required: true,
-        child: RaftTextInput(
-          initialValue: 'cindy@slock.ai',
-          readOnly: true,
-          chrome: chrome,
+      ctx,
+      height: 296,
+      child: _column(12, [
+        RaftField(
+          label: 'Email',
+          required: true,
+          child: RaftTextInput(
+            initialValue: 'cindy@slock.ai',
+            readOnly: true,
+            chrome: chrome,
+          ),
         ),
-      ),
-      RaftField(
-        label: 'Description',
-        optional: true,
-        hint: 'Shown in channel discovery.',
-        child: RaftTextInput(
-          initialValue: 'Visual parity fixture',
-          readOnly: true,
-          chrome: chrome,
+        RaftField(
+          label: 'Description',
+          optional: true,
+          hint: 'Shown in channel discovery.',
+          child: RaftTextInput(
+            initialValue: 'Visual parity fixture',
+            readOnly: true,
+            chrome: chrome,
+          ),
         ),
-      ),
-      RaftField(
-        label: 'Server Name',
-        compact: true,
-        error: 'Name is required',
-        child: RaftTextInput(
-          initialValue: '',
-          readOnly: true,
-          invalid: true,
-          chrome: chrome,
+        RaftField(
+          label: 'Server Name',
+          compact: true,
+          error: 'Name is required',
+          child: RaftTextInput(
+            initialValue: '',
+            readOnly: true,
+            invalid: true,
+            chrome: chrome,
+          ),
         ),
-      ),
-    ]),
+      ]),
     );
   },
 );
@@ -844,38 +846,39 @@ final ParityCase _select = ParityCase(
 /// `font-mono text-mono-meta text-foreground-muted` line. Elegant / Brutal are
 /// scored against the frozen render of the `text-black` / `text-black/50` markup
 /// the earlier Source used, so only the Web comparison reads the tokens.
-Widget _surfaceItemBody(ParityContext ctx, String title, String detail) => Builder(
-  builder: (context) {
-    final t = RaftTokens.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontFamily: t.bodyFont,
-            fontSize: 14,
-            height: 20 / 14,
-            fontWeight: FontWeight.w700,
-            color: ctx.againstWeb ? t.colors['foreground'] : Colors.black,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          detail,
-          style: RaftTypography.mono(
-            t,
-            size: 12,
-            line: 16,
-            color: ctx.againstWeb
-                ? t.colors['foreground-muted']
-                : Colors.black.withValues(alpha: .5),
-          ),
-        ),
-      ],
+Widget _surfaceItemBody(ParityContext ctx, String title, String detail) =>
+    Builder(
+      builder: (context) {
+        final t = RaftTokens.of(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: t.bodyFont,
+                fontSize: 14,
+                height: 20 / 14,
+                fontWeight: FontWeight.w700,
+                color: ctx.againstWeb ? t.colors['foreground'] : Colors.black,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              detail,
+              style: RaftTypography.mono(
+                t,
+                size: 12,
+                line: 16,
+                color: ctx.againstWeb
+                    ? t.colors['foreground-muted']
+                    : Colors.black.withValues(alpha: .5),
+              ),
+            ),
+          ],
+        );
+      },
     );
-  },
-);
 
 final ParityCase _surfaceListItem = ParityCase(
   widgets: const ['raft_ui:RaftSurfaceListItem'],

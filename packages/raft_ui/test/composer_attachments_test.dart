@@ -21,7 +21,10 @@ Future<void> _pump(
   ValueChanged<RaftComposerAttachment>? onPreview,
 }) => tester.pumpWidget(
   MaterialApp(
-    theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark).copyWith(platform: platform),
+    theme: raftTheme(
+      pack: packForThemeId(elegantThemePackId),
+      dark: dark,
+    ).copyWith(platform: platform),
     home: Scaffold(
       body: Stack(
         children: [

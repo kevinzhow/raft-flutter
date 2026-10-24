@@ -12,7 +12,10 @@ void main() {
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: const Scaffold(
               body: DefaultTextStyle(
                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -50,7 +53,10 @@ void main() {
           RaftBannerRecipeStatus status,
         ) => tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: Scaffold(
               body: SizedBox(
                 width: 300,

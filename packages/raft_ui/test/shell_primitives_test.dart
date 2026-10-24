@@ -8,7 +8,10 @@ void main() {
   Future<void> pump(WidgetTester tester, bool dark, Widget child) =>
       tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+          theme: raftTheme(
+            pack: packForThemeId(elegantThemePackId),
+            dark: dark,
+          ),
           home: Scaffold(
             body: Align(alignment: Alignment.topLeft, child: child),
           ),

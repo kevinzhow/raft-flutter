@@ -68,7 +68,10 @@ class RaftField extends StatelessWidget {
           TextSpan(text: raftText(context, label)),
           if (required) ...[
             const WidgetSpan(child: SizedBox(width: 4)),
-            TextSpan(text: '*', style: TextStyle(color: ui.foregroundHint)),
+            TextSpan(
+              text: '*',
+              style: TextStyle(color: ui.foregroundHint),
+            ),
           ],
           if (optional) ...[
             const WidgetSpan(child: SizedBox(width: 4)),
@@ -814,39 +817,39 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput>
                   ),
                   child: Center(
                     child: TextField(
-                    contextMenuBuilder: RaftTextSelectionToolbar.editableText,
-                    autofillHints: null,
-                    autofocus: widget.autofocus,
-                    controller: controller,
-                    focusNode: focus,
-                    readOnly: widget.readOnly,
-                    enabled: widget.enabled,
-                    onChanged: widget.onChanged,
-                    onSubmitted: widget.onSubmitted,
-                    inputFormatters: widget.inputFormatters,
-                    maxLength: widget.maxLength,
-                    buildCounter: widget.maxLength == null
-                        ? null
-                        : (
-                            _, {
-                            required currentLength,
-                            required isFocused,
-                            maxLength,
-                          }) => null,
-                    style: field,
-                    strutStyle: StrutStyle.fromTextStyle(
-                      field,
-                      forceStrutHeight: true,
-                    ),
-                    cursorColor: field.color,
-                    decoration: _bare(
-                      hintText: widget.hintText,
-                      hintStyle: field.copyWith(
-                        color: disabled
-                            ? ui.foregroundDisabled
-                            : ui.foregroundHint,
+                      contextMenuBuilder: RaftTextSelectionToolbar.editableText,
+                      autofillHints: null,
+                      autofocus: widget.autofocus,
+                      controller: controller,
+                      focusNode: focus,
+                      readOnly: widget.readOnly,
+                      enabled: widget.enabled,
+                      onChanged: widget.onChanged,
+                      onSubmitted: widget.onSubmitted,
+                      inputFormatters: widget.inputFormatters,
+                      maxLength: widget.maxLength,
+                      buildCounter: widget.maxLength == null
+                          ? null
+                          : (
+                              _, {
+                              required currentLength,
+                              required isFocused,
+                              maxLength,
+                            }) => null,
+                      style: field,
+                      strutStyle: StrutStyle.fromTextStyle(
+                        field,
+                        forceStrutHeight: true,
                       ),
-                    ),
+                      cursorColor: field.color,
+                      decoration: _bare(
+                        hintText: widget.hintText,
+                        hintStyle: field.copyWith(
+                          color: disabled
+                              ? ui.foregroundDisabled
+                              : ui.foregroundHint,
+                        ),
+                      ),
                     ),
                   ),
                 ),

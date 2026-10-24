@@ -273,12 +273,7 @@ class DocumentAttachmentRecipe {
           line: 16,
           color: tokens.colors['foreground'],
         )
-      : RaftTypography.mono(
-          tokens,
-          size: 11,
-          line: 16.5,
-          color: tokens.strong,
-        );
+      : RaftTypography.mono(tokens, size: 11, line: 16.5, color: tokens.strong);
   TextStyle get text =>
       RaftTypography.mono(tokens, size: 12, line: 20, color: tokens.strong);
   TextStyle get heading => RaftTypography.body(

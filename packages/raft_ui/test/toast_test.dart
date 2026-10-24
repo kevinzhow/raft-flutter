@@ -20,7 +20,10 @@ void main() {
           var copied = 0;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+              theme: raftTheme(
+                pack: packForThemeId(elegantThemePackId),
+                dark: dark,
+              ),
               builder: (context, child) => MediaQuery(
                 data: MediaQuery.of(context)
                     .copyWith(textScaler: TextScaler.linear(scale)),
@@ -66,7 +69,10 @@ void main() {
         addTearDown(focus.dispose);
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: Scaffold(
               body: Column(
                 children: [

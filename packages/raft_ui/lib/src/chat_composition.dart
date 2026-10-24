@@ -931,49 +931,49 @@ class _ComposerTaskToggleState extends State<RaftComposerTaskToggle> {
           // Blink paints the toggle at a whole pixel.
           child: RaftBlinkSnap(
             child: RaftControl(
-            key: const ValueKey('composer-as-task-toggle'),
-            minimumTargetSize: face,
-            focusNode: focus,
-            focusOnPointer: false,
-            visualHeight: face,
-            padding: EdgeInsets.zero,
-            shadow: false,
-            tooltip: widget.tooltip,
-            recipe: _ComposerTaskControlRecipe(t),
-            onPressed: widget.onChanged == null
-                ? null
-                : () => widget.onChanged!(!widget.checked),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RaftCheckboxIndicator(
-                  checked: widget.checked,
-                  disabled: native && widget.onChanged == null,
-                  size: t.size('size.composerTaskCheckbox', fallback: 20),
-                  style: native
-                      ? null
-                      : RaftCheckboxIndicatorStyle(
-                          fill: widget.checked
-                              ? t.colors['layer-composer-task-checked']
-                              : t.panel,
-                          borderColor: t.colors['line-composer-task'],
-                          markColor: t.colors['foreground-inverse'],
-                          radius: 0,
-                          borderWidth:
-                              t.option('checkbox.mark', or: 'strokeCheck') ==
-                                  'thickStroke'
-                              ? 2
-                              : 1,
-                          // Both a57 optional appearances use the same mark.
-                          markSize: 10,
-                          markStrokeWidth: 4,
-                        ),
-                ),
-                SizedBox(width: t.size('space.composerTaskGap', fallback: 8)),
-                Text(widget.label),
-              ],
+              key: const ValueKey('composer-as-task-toggle'),
+              minimumTargetSize: face,
+              focusNode: focus,
+              focusOnPointer: false,
+              visualHeight: face,
+              padding: EdgeInsets.zero,
+              shadow: false,
+              tooltip: widget.tooltip,
+              recipe: _ComposerTaskControlRecipe(t),
+              onPressed: widget.onChanged == null
+                  ? null
+                  : () => widget.onChanged!(!widget.checked),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RaftCheckboxIndicator(
+                    checked: widget.checked,
+                    disabled: native && widget.onChanged == null,
+                    size: t.size('size.composerTaskCheckbox', fallback: 20),
+                    style: native
+                        ? null
+                        : RaftCheckboxIndicatorStyle(
+                            fill: widget.checked
+                                ? t.colors['layer-composer-task-checked']
+                                : t.panel,
+                            borderColor: t.colors['line-composer-task'],
+                            markColor: t.colors['foreground-inverse'],
+                            radius: 0,
+                            borderWidth:
+                                t.option('checkbox.mark', or: 'strokeCheck') ==
+                                    'thickStroke'
+                                ? 2
+                                : 1,
+                            // Both a57 optional appearances use the same mark.
+                            markSize: 10,
+                            markStrokeWidth: 4,
+                          ),
+                  ),
+                  SizedBox(width: t.size('space.composerTaskGap', fallback: 8)),
+                  Text(widget.label),
+                ],
+              ),
             ),
-          ),
           ),
         ),
       ),

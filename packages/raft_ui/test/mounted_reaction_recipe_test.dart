@@ -79,7 +79,8 @@ void main() {
   });
 
   test('mounted selected/failure/hover rules differ from generic RUI chip', () {
-    final t = raftTheme(pack: packForThemeId(elegantThemePackId)).extension<RaftTokens>()!;
+    final t = raftTheme(pack: packForThemeId(elegantThemePackId))
+        .extension<RaftTokens>()!;
     final error = RaftMountedReactionRecipe(t, failure: true);
     expect(error.radius, BorderRadius.circular(4));
     expect(error.padding, const EdgeInsets.symmetric(horizontal: 6));

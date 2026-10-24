@@ -681,7 +681,8 @@ const String elegantThemePackJson = r'''{
         "reaction.style": "recipe",
         "lightbox.style": "recipe",
         "document.style": "recipe",
-        "messageToolbar.style": "recipe"
+        "messageToolbar.style": "recipe",
+        "tooltip.style": "recipe"
       }
     },
     "dark": {
@@ -1318,7 +1319,8 @@ const String elegantThemePackJson = r'''{
         "reaction.style": "recipe",
         "lightbox.style": "recipe",
         "document.style": "recipe",
-        "messageToolbar.style": "recipe"
+        "messageToolbar.style": "recipe",
+        "tooltip.style": "recipe"
       }
     }
   }

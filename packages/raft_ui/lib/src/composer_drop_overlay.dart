@@ -184,9 +184,16 @@ class _DashedRoundedPainter extends CustomPainter {
       ..color = color
       ..strokeWidth = width
       ..style = PaintingStyle.stroke;
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height).deflate(width / 2);
+    final rect = Rect.fromLTWH(
+      0,
+      0,
+      size.width,
+      size.height,
+    ).deflate(width / 2);
     final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius - width / 2)));
+      ..addRRect(
+        RRect.fromRectAndRadius(rect, Radius.circular(radius - width / 2)),
+      );
     final dash = width * 3;
     for (final metric in path.computeMetrics()) {
       final count = (metric.length / (dash * 2)).round().clamp(1, 100000);

@@ -30,10 +30,9 @@ import 'thread_composer/fake_workspace.dart';
 Map<String, dynamic> _fixture(ParityContext ctx) =>
     ctx.fixtures['ext:composer-attachments'] as Map<String, dynamic>;
 
-Map<String, dynamic> _kind(ParityContext ctx) =>
-    Map<String, dynamic>.from(
-      (_fixture(ctx)['kinds'] as Map)[ctx.props['kind']] as Map,
-    );
+Map<String, dynamic> _kind(ParityContext ctx) => Map<String, dynamic>.from(
+  (_fixture(ctx)['kinds'] as Map)[ctx.props['kind']] as Map,
+);
 
 /// The fixture routes of the case (`routes` overridden by its `routeSet`).
 Map<String, dynamic> _routes(ParityContext ctx) {
@@ -203,7 +202,8 @@ class _HostState extends State<_Host> {
                 key: const Key('composer-as-task'),
                 checked: alsoCreateTask,
                 label: raftText(context, 'As Task'),
-                onChanged: (checked) => setState(() => alsoCreateTask = checked),
+                onChanged: (checked) =>
+                    setState(() => alsoCreateTask = checked),
               ),
         onAttach: () {},
         onImagePick: () {},

@@ -223,9 +223,9 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
           ),
           Expanded(
             child: Container(
-   clipBehavior: Clip.antiAlias,
-   decoration: BoxDecoration(
-     borderRadius: recipe.radius,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: recipe.radius,
                 color: recipe.paper,
                 border: Border.fromBorderSide(recipe.border),
                 boxShadow: shadow,
@@ -348,9 +348,9 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                   ),
                   Expanded(
                     child: Container(
-   clipBehavior: Clip.antiAlias,
-   decoration: BoxDecoration(
-     borderRadius: recipe.radius,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        borderRadius: recipe.radius,
                         color: recipe.paper,
                         border: Border.fromBorderSide(recipe.border),
                         boxShadow: shadow,

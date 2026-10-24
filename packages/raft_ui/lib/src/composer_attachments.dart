@@ -205,7 +205,8 @@ class RaftComposerAttachments extends StatelessWidget {
           if (chips.isNotEmpty)
             Padding(
               // raft-ui 0.7 `attachments`: `pt-1.5 pe-1.5`.
-              padding: t.option('composerAttachment.style', or: 'recipe') == 'raft'
+              padding:
+                  t.option('composerAttachment.style', or: 'recipe') == 'raft'
                   ? const EdgeInsets.only(top: 6, right: 6)
                   : root.padding,
               child: RaftReorderableWrap<RaftComposerAttachment>(
@@ -420,7 +421,10 @@ class _AttachmentChipState extends State<_AttachmentChip> {
     final overlays = <Widget>[
       if (item.status == RaftComposerAttachmentStatus.checking)
         wash(ui.layerCard.withValues(alpha: .8), [
-          const Padding(padding: EdgeInsets.only(bottom: 4), child: RaftSpinner()),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: RaftSpinner(),
+          ),
           RaftCssText(
             raftText(context, 'Checking file…'),
             textAlign: TextAlign.center,
@@ -429,7 +433,10 @@ class _AttachmentChipState extends State<_AttachmentChip> {
         ]),
       if (item.status == RaftComposerAttachmentStatus.uploading) ...[
         wash(ui.layerCard.withValues(alpha: .8), [
-          const Padding(padding: EdgeInsets.only(bottom: 4), child: RaftSpinner()),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: RaftSpinner(),
+          ),
           RaftCssText(
             item.progress >= 99
                 ? raftText(context, 'Finishing upload…')
@@ -465,21 +472,17 @@ class _AttachmentChipState extends State<_AttachmentChip> {
         ),
       ],
       if (item.status == RaftComposerAttachmentStatus.failed)
-        wash(
-          ui.layerCard.withValues(alpha: .9),
-          [
-            RaftCssText(
-              raftText(context, 'Upload failed'),
-              textAlign: TextAlign.center,
-              style: t.scale(
-                RaftTypeScale.caption,
-                weight: FontWeight.w600,
-                color: ui['danger-strong'],
-              ),
+        wash(ui.layerCard.withValues(alpha: .9), [
+          RaftCssText(
+            raftText(context, 'Upload failed'),
+            textAlign: TextAlign.center,
+            style: t.scale(
+              RaftTypeScale.caption,
+              weight: FontWeight.w600,
+              color: ui['danger-strong'],
             ),
-          ],
-          border: Border.all(color: ui['danger-strong'], width: hairline),
-        ),
+          ),
+        ], border: Border.all(color: ui['danger-strong'], width: hairline)),
     ];
     final removeSize = 20.0;
     final stickerRadius = t.size('radius.sticker', fallback: 4);
@@ -518,10 +521,7 @@ class _AttachmentChipState extends State<_AttachmentChip> {
               key: ValueKey('composer-attachment-box-${item.id}'),
               child: Stack(
                 clipBehavior: Clip.none,
-                children: [
-                  body,
-                  if (image) ...overlays else ...overlays,
-                ],
+                children: [body, if (image) ...overlays else ...overlays],
               ),
             ),
           ),
@@ -1017,14 +1017,19 @@ class _FailureRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RaftCssText(item.name, style: style.copyWith(fontWeight: FontWeight.w700)),
+        RaftCssText(
+          item.name,
+          style: style.copyWith(fontWeight: FontWeight.w700),
+        ),
         RaftCssText(
           item.error ?? raftText(context, 'Upload failed'),
           style: style.copyWith(color: ui.foregroundMuted),
         ),
         if (item.progress > 0)
           RaftCssText(
-            raftFormat(context, '{progress}% sent', {'progress': item.progress}),
+            raftFormat(context, '{progress}% sent', {
+              'progress': item.progress,
+            }),
             style: style.copyWith(fontWeight: FontWeight.w700),
           ),
       ],
@@ -1051,7 +1056,9 @@ class _FailureRow extends StatelessWidget {
           uiSize: RaftButtonSize.iconSm,
           label: '',
           glyph: RaftGlyph.x,
-          semanticLabel: raftFormat(context, 'Remove {file}', {'file': item.name}),
+          semanticLabel: raftFormat(context, 'Remove {file}', {
+            'file': item.name,
+          }),
           onPressed: onRemove,
         ),
       ],

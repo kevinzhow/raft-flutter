@@ -90,6 +90,9 @@ _OPTIONS = {
     # 32px buttons with 18px glyphs, ring-1 line-seam + shadow-float, a fill-pressed
     # row wash); the 28px strip inside the row before.
     'messageToolbar.style': ('raft', 'recipe'),
+    # Tooltip: raft-ui 0.7 `tooltip` (`rounded-chip bg-layer-hud shadow-float`, the
+    # pack's float elevation); the hard-coded Elegant triple shadow before.
+    'tooltip.style': ('raft', 'recipe'),
 }
 
 # Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
@@ -112,6 +115,7 @@ OPTION_VALUES = {
     'lightbox.style': ('raft', 'recipe'),
     'document.style': ('raft', 'recipe'),
     'messageToolbar.style': ('raft', 'recipe'),
+    'tooltip.style': ('raft', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours

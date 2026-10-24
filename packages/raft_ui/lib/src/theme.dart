@@ -340,6 +340,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
         if (!layer.inset) layer.toBoxShadow(),
     ];
   }
+
   static RaftTokens of(BuildContext context) {
     final theme = Theme.of(context);
     return theme.extension<RaftTokens>() ??
