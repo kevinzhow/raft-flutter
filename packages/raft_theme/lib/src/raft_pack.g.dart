@@ -333,6 +333,8 @@ const String raftThemePackJson = r'''{
         "layer-onboarding-pane": "#ffd440",
         "line-onboarding-dot": "rgba(20 17 17 / 0.451)",
         "line-onboarding-panel": "rgba(20 17 17 / 0.451)",
+        "layer-input-addon": "#f3f3f3",
+        "foreground-input-addon": "rgba(20 17 17 / 0.62)",
         "foreground-legal-link": "#1447e6",
         "layer-button-primary-hover": "#ff99c3",
         "foreground-button-primary": "#141111",
@@ -754,6 +756,9 @@ const String raftThemePackJson = r'''{
         "size.onboardingDotGrid": 14,
         "size.onboardingDotRadius": 1.5,
         "opacity.onboardingDots": 0.7,
+        "type.inputAddon.size": 13,
+        "type.inputAddon.line": 20,
+        "type.inputAddon.weight": 400,
         "type.sectionEyebrow.size": 13,
         "type.sectionEyebrow.line": 18
       },
@@ -931,6 +936,9 @@ const String raftThemePackJson = r'''{
         "appearance.layout": "web23",
         "formSection.look": "web23",
         "formField.label": "tokens",
+        "rootError.look": "web23",
+        "onboarding.heading": "web23",
+        "onboarding.preview": "sticker",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1205,6 +1213,8 @@ const String raftThemePackJson = r'''{
         "layer-onboarding-pane": "#0d0d0b",
         "line-onboarding-dot": "rgba(250 250 247 / 0.259)",
         "line-onboarding-panel": "rgba(250 250 247 / 0.259)",
+        "layer-input-addon": "#32322f",
+        "foreground-input-addon": "#9e9e9b",
         "foreground-legal-link": "#8ec5ff",
         "layer-button-primary-hover": "#ff99c3",
         "foreground-button-primary": "#141111",
@@ -1626,6 +1636,9 @@ const String raftThemePackJson = r'''{
         "size.onboardingDotGrid": 14,
         "size.onboardingDotRadius": 1.5,
         "opacity.onboardingDots": 0.7,
+        "type.inputAddon.size": 13,
+        "type.inputAddon.line": 20,
+        "type.inputAddon.weight": 400,
         "type.sectionEyebrow.size": 13,
         "type.sectionEyebrow.line": 18
       },
@@ -1803,6 +1816,9 @@ const String raftThemePackJson = r'''{
         "appearance.layout": "web23",
         "formSection.look": "web23",
         "formField.label": "tokens",
+        "rootError.look": "web23",
+        "onboarding.heading": "web23",
+        "onboarding.preview": "sticker",
         "standalone.buttonSize": "lg"
       }
     }

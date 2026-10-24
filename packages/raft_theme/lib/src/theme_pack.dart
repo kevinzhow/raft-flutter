@@ -184,6 +184,9 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'appearance.layout': {'web23', 'legacy'},
   'formSection.look': {'web23', 'legacy'},
   'formField.label': {'tokens', 'recipe'},
+  'rootError.look': {'web23', 'legacy'},
+  'onboarding.heading': {'web23', 'legacy'},
+  'onboarding.preview': {'sticker', 'brutal'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

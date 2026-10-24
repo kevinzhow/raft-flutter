@@ -24,6 +24,8 @@ import 'recipes/field.g.dart' as field_recipe;
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'status_bar.dart';
+import 'raft/ui_tokens.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'theme.dart' hide RaftFieldRecipe;
 import 'recipe_surface.dart' show RaftCssBoxDecoration, RaftRecipeBinding;
 
@@ -1026,7 +1028,7 @@ class RaftAuthHandleGroup extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: t.product.softSignal,
+                color: t.colors['layer-input-addon'],
                 border: Border(
                   right: BorderSide(color: t.semantic.lineHairline),
                 ),
@@ -1035,10 +1037,14 @@ class RaftAuthHandleGroup extends StatelessWidget {
                 '@',
                 style: RaftTypography.mono(
                   t,
-                  size: 16,
-                  line: 24,
-                  color: t.muted,
-                ).copyWith(fontWeight: FontWeight.w700),
+                  size: t.size('type.inputAddon.size', fallback: 13),
+                  line: t.size('type.inputAddon.line', fallback: 20),
+                  color: t.colors['foreground-input-addon'],
+                ).copyWith(
+                  fontWeight: t.size('type.inputAddon.weight', fallback: 400) >= 600
+                      ? FontWeight.w700
+                      : FontWeight.w400,
+                ),
               ),
             ),
             Expanded(child: child),
@@ -1696,6 +1702,41 @@ class RaftOnboardingHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // v1.21.23: eyebrow `font-mono text-mono-meta text-foreground-hint`, title
+    // `mt-2 text-title sm:text-display`, description `mt-3 text-subhead
+    // text-foreground-muted`; a57b9dab: 10px bold eyebrow, 24/30 title, 14/20.
+    if (t.option('onboarding.heading', or: 'web23') == 'web23') {
+      final display = MediaQuery.sizeOf(context).width >= 640;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            eyebrow,
+            style: RaftTypography.mono(
+              t,
+              size: 12,
+              line: 16,
+              color: t.colors['foreground-hint'],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: t
+                .scale(
+                  display ? RaftTypeScale.display : RaftTypeScale.title,
+                  color: t.colors['foreground'],
+                )
+                .copyWith(fontFamily: t.headingFont),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            description,
+            style: t.scale(RaftTypeScale.subhead, color: t.muted),
+          ),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

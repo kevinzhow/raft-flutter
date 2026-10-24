@@ -52,6 +52,12 @@ class RaftRootErrorFallback extends StatelessWidget {
     final safe = MediaQuery.paddingOf(context);
     final hasStack = stack != null && stack!.isNotEmpty;
     final hasComponents = componentStack != null && componentStack!.isNotEmpty;
+    // v1.21.23 RootErrorFallback: a DS dialog card (16px radius, `p-5`, seam
+    // ring + float shadow) with code boxes and a 44px pink button; the
+    // pre-theme looks keep the a57b9dab card (rootError.look).
+    if (t.option('rootError.look', or: 'web23') == 'web23') {
+      return _web(context, t, safe, hasStack, hasComponents);
+    }
     final card = Container(
       key: const ValueKey('root-error-card'),
       clipBehavior: Clip.antiAlias,
@@ -183,6 +189,211 @@ class RaftRootErrorFallback extends StatelessWidget {
       ),
     );
   }
+}
+
+extension on RaftRootErrorFallback {
+  Widget _web(
+    BuildContext context,
+    RaftTokens t,
+    EdgeInsets safe,
+    bool hasStack,
+    bool hasComponents,
+  ) {
+    final c = t.colors;
+    Widget code(Widget child) => Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: c['layer-code'],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: c['line-hairline']!),
+      ),
+      child: child,
+    );
+    TextStyle mono({Color? color}) => RaftTypography.mono(
+      t,
+      size: 13,
+      line: 20,
+      color: color ?? c['foreground'],
+    );
+    Widget disclosure(String key, String title, String body, bool open) =>
+        KeyedSubtree(
+          key: ValueKey(key),
+          child: code(
+            _WebDisclosure(
+              title: title,
+              body: body,
+              open: open,
+              mono: mono(color: c['foreground-muted']),
+              summary: RaftTypography.body(
+                t,
+                size: 13,
+                line: 18,
+                weight: FontWeight.w600,
+                color: c['foreground'],
+              ),
+              marker: c['foreground']!,
+            ),
+          ),
+        );
+    final card = Container(
+      key: const ValueKey('root-error-card'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: c['layer-popover'],
+        borderRadius: BorderRadius.circular(
+          t.size('radius.dialog', fallback: 16),
+        ),
+        border: Border.all(color: c['line-seam']!),
+        boxShadow: t.themeShadows.lg.paintOrder,
+      ),
+      child: Semantics(
+        container: true,
+        liveRegion: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                raftText(context, 'Something went wrong'),
+                style: RaftTypography.body(
+                  t,
+                  size: 17,
+                  line: 22,
+                  weight: FontWeight.w700,
+                  color: c['foreground'],
+                ),
+              ),
+            ),
+            if (message.isNotEmpty)
+              KeyedSubtree(
+                key: const ValueKey('root-error-message'),
+                child: code(Text(message, style: mono())),
+              ),
+            if (hasStack)
+              disclosure(
+                'root-error-stack',
+                raftText(context, 'Stack trace'),
+                stack!,
+                false,
+              ),
+            if (hasComponents)
+              disclosure(
+                'root-error-component-stack',
+                raftText(context, 'Component stack'),
+                componentStack!,
+                componentStackOpen,
+              ),
+            const SizedBox(height: 20),
+            Align(
+              alignment: Alignment.centerRight,
+              child: RaftButton(
+                key: const ValueKey('root-error-reload'),
+                label: raftText(context, 'Reload app'),
+                variant: RaftControlVariant.accent,
+                size: RaftButtonRecipeSize.lg,
+                onPressed: onReload,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    return Material(
+      color: c['layer-canvas'],
+      child: DefaultTextStyle.merge(
+        style: TextStyle(fontFamily: t.bodyFont, color: c['foreground']),
+        child: LayoutBuilder(
+          builder: (context, box) => SingleChildScrollView(
+            primary: false,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: box.hasBoundedHeight ? box.maxHeight : 0,
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  24 + safe.left,
+                  24 + safe.top,
+                  24 + safe.right,
+                  24 + safe.bottom,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 672),
+                    child: RaftCssPixelSnap(
+                      child: RaftSelectionArea(child: card),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// `<details>` of the v1.21.23 fallback: a 13/18 600 summary with the native
+/// marker and a `max-h-48` scrollable `<pre>` 8px below.
+class _WebDisclosure extends StatefulWidget {
+  const _WebDisclosure({
+    required this.title,
+    required this.body,
+    required this.open,
+    required this.mono,
+    required this.summary,
+    required this.marker,
+  });
+  final String title, body;
+  final bool open;
+  final TextStyle mono, summary;
+  final Color marker;
+  @override
+  State<_WebDisclosure> createState() => _WebDisclosureState();
+}
+
+class _WebDisclosureState extends State<_WebDisclosure> {
+  late bool open = widget.open;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      RaftInteractive(
+        semanticLabel: widget.title,
+        onPressed: () => setState(() => open = !open),
+        builder: (context, state) => Opacity(
+          opacity: state.pressed ? .6 : 1,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 13,
+                height: 18,
+                child: CustomPaint(
+                  painter: _DisclosureMarker(open: open, color: widget.marker),
+                ),
+              ),
+              Expanded(child: Text(widget.title, style: widget.summary)),
+            ],
+          ),
+        ),
+      ),
+      if (open) ...[
+        const SizedBox(height: 8),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 192),
+          child: SingleChildScrollView(
+            primary: false,
+            child: Text(widget.body, style: widget.mono),
+          ),
+        ),
+      ],
+    ],
+  );
 }
 
 double _snapLine(BuildContext context, RaftTokens t, double line) {

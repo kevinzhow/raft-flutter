@@ -73,11 +73,24 @@ const _black = Color(0xFF000000);
 BoxDecoration _brutalCard({
   Color color = const Color(0xFFFFFFFF),
   bool shadow = false,
-}) => BoxDecoration(
-  color: color,
-  border: Border.all(color: _black, width: 2),
-  boxShadow: shadow ? RaftProductShadows.shadowBrutalLg.outer : null,
-);
+  RaftTokens? t,
+}) {
+  // v1.21.23 preview cards: `rounded-container border-[1.5px]
+  // border-line-strong shadow-sticker`; a57b9dab drew square 2px black boxes
+  // with the brutal shadow (onboarding.preview).
+  final web = t != null && t.option('onboarding.preview', or: 'sticker') == 'sticker';
+  return BoxDecoration(
+    color: color,
+    borderRadius: web
+        ? BorderRadius.circular(t.size('radius.container', fallback: 10))
+        : null,
+    border: Border.all(
+      color: web ? t.colors['line-strong']! : _black,
+      width: web ? 1.5 : 2,
+    ),
+    boxShadow: shadow ? RaftProductShadows.shadowBrutalLg.outer : null,
+  );
+}
 
 TextStyle _text(
   RaftTokens t,
@@ -357,7 +370,7 @@ class RaftServerCreatePreview extends StatelessWidget {
               Container(
                 width: 32,
                 height: 32,
-                decoration: _brutalCard(color: t.product.softSignal),
+                decoration: _brutalCard(color: t.product.softSignal, t: t),
                 child: const Center(
                   child: RaftIcon(RaftGlyph.hash, size: 16, color: _black),
                 ),
@@ -470,7 +483,7 @@ class RaftServerCreatePreview extends StatelessWidget {
       child: SizedBox(
         height: 520,
         child: Container(
-          decoration: _brutalCard(shadow: true),
+          decoration: _brutalCard(shadow: true, t: t),
           clipBehavior: Clip.hardEdge,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -579,7 +592,7 @@ class RaftIdentityImpactPreview extends StatelessWidget {
       ),
     );
     final channelCard = Container(
-      decoration: _brutalCard(shadow: true),
+      decoration: _brutalCard(shadow: true, t: t),
       clipBehavior: Clip.hardEdge,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -596,7 +609,7 @@ class RaftIdentityImpactPreview extends StatelessWidget {
                 Container(
                   width: 29,
                   height: 29,
-                  decoration: _brutalCard(color: t.product.softSignal),
+                  decoration: _brutalCard(color: t.product.softSignal, t: t),
                   child: const Center(
                     child: RaftIcon(RaftGlyph.hash, size: 15, color: _black),
                   ),
@@ -730,7 +743,7 @@ class RaftIdentityImpactPreview extends StatelessWidget {
     );
     final profileCard = Container(
       padding: const EdgeInsets.all(16),
-      decoration: _brutalCard(shadow: true),
+      decoration: _brutalCard(shadow: true, t: t),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

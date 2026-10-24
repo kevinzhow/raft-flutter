@@ -37,6 +37,10 @@ _GEOMETRY = {
     # (v1.21.23) / 1px dots on a 16px grid at 60% (a57b9dab).
     'size.onboardingDotGrid': (14, 16), 'size.onboardingDotRadius': (1.5, 1),
     'opacity.onboardingDots': (0.7, 0.6),
+    # InputGroup text addon: `font-mono text-mono-code` 13/20 (0.7.0); the
+    # a57b9dab addon was 16/24 bold.
+    'type.inputAddon.size': (13, 16), 'type.inputAddon.line': (20, 24),
+    'type.inputAddon.weight': (400, 700),
     # SectionEyebrow: `text-footnote font-bold` (13/18); a57b9dab: 12/16.
     'type.sectionEyebrow.size': (13, 12), 'type.sectionEyebrow.line': (18, 16),
 }
@@ -102,6 +106,15 @@ _OPTIONS = {
     # FormField label of the product forms (dialogs, settings): the raft-ui
     # Field label of v1.21.23 or the recipe label with `mb-1` of a57b9dab.
     'formField.label': ('tokens', 'recipe'),
+    # Root error fallback: the DS dialog card with code boxes (v1.21.23) or the
+    # a57b9dab card.
+    'rootError.look': ('web23', 'legacy'),
+    # First-server onboarding heading: mono 12 eyebrow, title / display, subhead
+    # (v1.21.23) or the 10px eyebrow, 24/30 title, 14/20 text of a57b9dab.
+    'onboarding.heading': ('web23', 'legacy'),
+    # Onboarding preview cards: rounded 1.5px line-strong cards (v1.21.23) or
+    # the square 2px black boxes of a57b9dab.
+    'onboarding.preview': ('sticker', 'brutal'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -128,6 +141,9 @@ OPTION_VALUES = {
     'appearance.layout': ('web23', 'legacy'),
     'formSection.look': ('web23', 'legacy'),
     'formField.label': ('tokens', 'recipe'),
+    'rootError.look': ('web23', 'legacy'),
+    'onboarding.heading': ('web23', 'legacy'),
+    'onboarding.preview': ('sticker', 'brutal'),
 }
 
 # ---------------------------------------------------------------- colours
@@ -145,6 +161,10 @@ _COLOR_ALIASES = {
     'layer-onboarding-pane': ('layer-frame', 'layer-canvas-muted'),
     'line-onboarding-dot': ('line-seam', 'line-strong'),
     'line-onboarding-panel': ('line-seam', 'line-hairline'),
+    # InputGroup addon (`variant="container"`): `bg-fill-muted`, hint mono text
+    # (0.7.0); a57b9dab: the soft-signal wash with muted bold mono.
+    'layer-input-addon': ('fill-muted', 'color-soft-signal'),
+    'foreground-input-addon': ('foreground-hint', 'foreground-muted'),
     # Legal links of the auth pages: `text-foreground-link` (Raft), muted before.
     'foreground-legal-link': ('foreground-link', 'foreground-muted'),
 }

@@ -272,6 +272,8 @@ const String brutalThemePackJson = r'''{
         "layer-onboarding-pane": "#ffffff",
         "line-onboarding-dot": "#141110",
         "line-onboarding-panel": "rgb(20 19 15 / 0.15)",
+        "layer-input-addon": "#ffd440",
+        "foreground-input-addon": "rgb(20 17 16 / 0.6)",
         "foreground-legal-link": "rgb(20 17 16 / 0.6)",
         "layer-button-primary-hover": "#ffd440",
         "foreground-button-primary": "#141110",
@@ -591,6 +593,9 @@ const String brutalThemePackJson = r'''{
         "size.onboardingDotGrid": 16,
         "size.onboardingDotRadius": 1,
         "opacity.onboardingDots": 0.6,
+        "type.inputAddon.size": 16,
+        "type.inputAddon.line": 24,
+        "type.inputAddon.weight": 700,
         "type.sectionEyebrow.size": 12,
         "type.sectionEyebrow.line": 16,
         "type.field.size": 16.0,
@@ -700,6 +705,9 @@ const String brutalThemePackJson = r'''{
         "appearance.layout": "legacy",
         "formSection.look": "legacy",
         "formField.label": "recipe",
+        "rootError.look": "legacy",
+        "onboarding.heading": "legacy",
+        "onboarding.preview": "brutal",
         "standalone.buttonSize": "md"
       }
     },
@@ -919,6 +927,8 @@ const String brutalThemePackJson = r'''{
         "layer-onboarding-pane": "#0d0d0b",
         "line-onboarding-dot": "#eeefec",
         "line-onboarding-panel": "rgb(250 250 250 / 0.06)",
+        "layer-input-addon": "#ffd440",
+        "foreground-input-addon": "#c4c4c1",
         "foreground-legal-link": "#c4c4c1",
         "layer-button-primary-hover": "{palette.elegantButton.primary.hover.dark}",
         "foreground-button-primary": "#f6d56b",
@@ -1251,6 +1261,9 @@ const String brutalThemePackJson = r'''{
         "size.onboardingDotGrid": 16,
         "size.onboardingDotRadius": 1,
         "opacity.onboardingDots": 0.6,
+        "type.inputAddon.size": 16,
+        "type.inputAddon.line": 24,
+        "type.inputAddon.weight": 700,
         "type.sectionEyebrow.size": 12,
         "type.sectionEyebrow.line": 16,
         "type.field.size": 14.0,
@@ -1394,6 +1407,9 @@ const String brutalThemePackJson = r'''{
         "appearance.layout": "legacy",
         "formSection.look": "legacy",
         "formField.label": "recipe",
+        "rootError.look": "legacy",
+        "onboarding.heading": "legacy",
+        "onboarding.preview": "brutal",
         "standalone.buttonSize": "md"
       }
     }

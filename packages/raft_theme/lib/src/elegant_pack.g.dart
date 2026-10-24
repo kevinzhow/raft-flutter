@@ -272,6 +272,8 @@ const String elegantThemePackJson = r'''{
         "layer-onboarding-pane": "#f8f8f7",
         "line-onboarding-dot": "#191815",
         "line-onboarding-panel": "rgb(25 25 25 / 0.08)",
+        "layer-input-addon": "#ffd440",
+        "foreground-input-addon": "#3d3d3a",
         "foreground-legal-link": "#3d3d3a",
         "layer-button-primary-hover": "#f3e4b3",
         "foreground-button-primary": "#655000",
@@ -595,6 +597,9 @@ const String elegantThemePackJson = r'''{
         "size.onboardingDotGrid": 16,
         "size.onboardingDotRadius": 1,
         "opacity.onboardingDots": 0.6,
+        "type.inputAddon.size": 16,
+        "type.inputAddon.line": 24,
+        "type.inputAddon.weight": 700,
         "type.sectionEyebrow.size": 12,
         "type.sectionEyebrow.line": 16,
         "type.field.size": 14.0,
@@ -704,6 +709,9 @@ const String elegantThemePackJson = r'''{
         "appearance.layout": "legacy",
         "formSection.look": "legacy",
         "formField.label": "recipe",
+        "rootError.look": "legacy",
+        "onboarding.heading": "legacy",
+        "onboarding.preview": "brutal",
         "standalone.buttonSize": "md"
       }
     },
@@ -923,6 +931,8 @@ const String elegantThemePackJson = r'''{
         "layer-onboarding-pane": "#0d0d0b",
         "line-onboarding-dot": "#eeefec",
         "line-onboarding-panel": "rgb(250 250 250 / 0.06)",
+        "layer-input-addon": "#ffd440",
+        "foreground-input-addon": "#c4c4c1",
         "foreground-legal-link": "#c4c4c1",
         "layer-button-primary-hover": "{palette.elegantButton.primary.hover.dark}",
         "foreground-button-primary": "#f6d56b",
@@ -1255,6 +1265,9 @@ const String elegantThemePackJson = r'''{
         "size.onboardingDotGrid": 16,
         "size.onboardingDotRadius": 1,
         "opacity.onboardingDots": 0.6,
+        "type.inputAddon.size": 16,
+        "type.inputAddon.line": 24,
+        "type.inputAddon.weight": 700,
         "type.sectionEyebrow.size": 12,
         "type.sectionEyebrow.line": 16,
         "type.field.size": 14.0,
@@ -1364,6 +1377,9 @@ const String elegantThemePackJson = r'''{
         "appearance.layout": "legacy",
         "formSection.look": "legacy",
         "formField.label": "recipe",
+        "rootError.look": "legacy",
+        "onboarding.heading": "legacy",
+        "onboarding.preview": "brutal",
         "standalone.buttonSize": "md"
       }
     }
