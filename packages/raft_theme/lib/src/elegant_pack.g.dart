@@ -681,6 +681,9 @@ const String elegantThemePackJson = r'''{
         "auth.links": "hover",
         "standalone.surface": "canvas",
         "auth.fieldLabel": "recipe",
+        "publicServer.sidebar": "legacy",
+        "publicServer.banner": "row",
+        "publicServer.channelTile": "plain",
         "standalone.buttonSize": "md"
       }
     },
@@ -1318,6 +1321,9 @@ const String elegantThemePackJson = r'''{
         "auth.links": "hover",
         "standalone.surface": "canvas",
         "auth.fieldLabel": "recipe",
+        "publicServer.sidebar": "legacy",
+        "publicServer.banner": "row",
+        "publicServer.channelTile": "plain",
         "standalone.buttonSize": "md"
       }
     }

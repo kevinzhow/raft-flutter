@@ -908,6 +908,9 @@ const String raftThemePackJson = r'''{
         "auth.links": "underlined",
         "standalone.surface": "sidebar",
         "auth.fieldLabel": "tokens",
+        "publicServer.sidebar": "shared",
+        "publicServer.banner": "stacked",
+        "publicServer.channelTile": "sticker",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1757,6 +1760,9 @@ const String raftThemePackJson = r'''{
         "auth.links": "underlined",
         "standalone.surface": "sidebar",
         "auth.fieldLabel": "tokens",
+        "publicServer.sidebar": "shared",
+        "publicServer.banner": "stacked",
+        "publicServer.channelTile": "sticker",
         "standalone.buttonSize": "lg"
       }
     }

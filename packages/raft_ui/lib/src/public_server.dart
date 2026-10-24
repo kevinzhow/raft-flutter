@@ -14,7 +14,10 @@ import 'computer_surfaces.dart' show RaftPanelHeaderIconTile;
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'mobile_navigation.dart' show RaftMobileRootHeader;
+import 'page_tokens.dart';
 import 'panel_layout.dart' show RaftCssText, RaftPanelHeaderBar;
+import 'sidebar_frame.dart' show RaftMountedSidebarFrame;
 import 'recipe_surface.dart';
 import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart'
@@ -24,7 +27,10 @@ import 'settings_layout.dart';
 import 'tooltip.dart' show RaftTooltip;
 import 'adaptive_workspace.dart' show RaftRailDestination, RaftWorkspaceRail;
 import 'workspace_shell.dart'
-    show RaftWorkspaceRailAction, RaftWorkspaceRailFooter;
+    show
+        RaftChatSidebarHeading,
+        RaftWorkspaceRailAction,
+        RaftWorkspaceRailFooter;
 import 'status_bar.dart';
 import 'theme.dart';
 import 'viewport_breakpoints.dart';
@@ -88,6 +94,24 @@ class _PublicSidebarFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // Web v1.21.23 builds the frame from the same rui SidebarRoot / SidebarHeader
+    // as the signed-in Sidebar; the Raft look shares that frame, the pre-theme
+    // looks keep their own column (publicServer.sidebar).
+    if (t.option('publicServer.sidebar', or: 'shared') == 'shared') {
+      final mobile =
+          raftBreakpointWidth(context) < RaftLayoutMetrics.desktopBreakpoint;
+      return SizedBox(
+        key: frameKey,
+        width: width,
+        child: RaftMountedSidebarFrame(
+          trailingEdge: !mobile || width.isFinite,
+          header: mobile
+              ? RaftMobileRootHeader(title: title)
+              : RaftChatSidebarHeading(label: title),
+          body: SingleChildScrollView(padding: padding, child: child),
+        ),
+      );
+    }
     final text = RaftSettingsText(t);
     final fill = t.colors['layer-canvas-muted']!;
     final rule = BorderSide(color: t.colors['line-muted']!, width: 1);
@@ -166,6 +190,7 @@ class RaftPublicChannelSidebar extends StatelessWidget {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
     final sm = raftBreakpointWidth(context) >= 640;
+    final shared = t.option('publicServer.sidebar', or: 'shared') == 'shared';
     return Semantics(
       container: true,
       label: raftText(context, label),
@@ -179,24 +204,39 @@ class RaftPublicChannelSidebar extends StatelessWidget {
             // `mb-1 flex h-6 items-center px-2`; below sm the column is too
             // narrow for one line at the signed-in metrics, so it wraps
             // (`max-sm:h-auto max-sm:min-h-6 text-[11px] tracking-wider`).
+            // v1.21.23: SectionEyebrow as written, sentence case 13/18 bold.
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 24),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    raftText(context, label).toUpperCase(),
-                    maxLines: sm ? 1 : null,
-                    overflow: sm ? TextOverflow.ellipsis : TextOverflow.clip,
-                    style: RaftTypography.inherited(
-                      t,
-                      size: sm ? 12 : 11,
-                      line: sm ? 16 : 16.5,
-                      weight: FontWeight.w700,
-                      color: text.strong,
-                    ).copyWith(letterSpacing: (sm ? 12 * .1 : 11 * .05)),
-                  ),
+                  child: shared
+                      ? Text(
+                          raftText(context, label),
+                          maxLines: sm ? 1 : null,
+                          overflow: sm
+                              ? TextOverflow.ellipsis
+                              : TextOverflow.clip,
+                          style: t.sectionEyebrow(),
+                        )
+                      : Text(
+                          raftText(context, label).toUpperCase(),
+                          maxLines: sm ? 1 : null,
+                          overflow: sm
+                              ? TextOverflow.ellipsis
+                              : TextOverflow.clip,
+                          style:
+                              RaftTypography.inherited(
+                                t,
+                                size: sm ? 12 : 11,
+                                line: sm ? 16 : 16.5,
+                                weight: FontWeight.w700,
+                                color: text.strong,
+                              ).copyWith(
+                                letterSpacing: (sm ? 12 * .1 : 11 * .05),
+                              ),
+                        ),
                 ),
               ),
             ),
@@ -283,29 +323,44 @@ class RaftPublicBottomBanner extends StatelessWidget {
         ),
         // On phones the copy and the actions stay on one row (small text and
         // small buttons): stacked, the banner was ~105px tall on a 390px phone.
-        child: LayoutBuilder(
-          builder: (context, box) => Row(
-            children: [
-              Expanded(child: copy),
-              const SizedBox(width: RaftSpace.x2),
-              // The copy keeps at least 120px beside the actions; wider
-              // actions (large text, long labels) shrink to fit instead of
-              // squeezing the sentence into a tall one-word column.
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: box.maxWidth.isFinite
-                      ? (box.maxWidth - RaftSpace.x2 - 120).clamp(0, 1e9)
-                      : double.infinity,
-                ),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: buttons,
+        // From sm up v1.21.23 stacks them (the action slot is `mt-2` under the
+        // description); the pre-theme looks kept the row (publicServer.banner).
+        child: !narrow &&
+                t.option('publicServer.banner', or: 'stacked') == 'stacked'
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  copy,
+                  const SizedBox(height: RaftSpace.x2),
+                  Align(alignment: Alignment.centerLeft, child: buttons),
+                ],
+              )
+            : LayoutBuilder(
+                builder: (context, box) => Row(
+                  children: [
+                    Expanded(child: copy),
+                    const SizedBox(width: RaftSpace.x2),
+                    // The copy keeps at least 120px beside the actions; wider
+                    // actions (large text, long labels) shrink to fit instead
+                    // of squeezing the sentence into a tall one-word column.
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: box.maxWidth.isFinite
+                            ? (box.maxWidth - RaftSpace.x2 - 120).clamp(
+                                0,
+                                1e9,
+                              )
+                            : double.infinity,
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: buttons,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -865,14 +920,44 @@ class RaftPublicChannelHeader extends StatelessWidget {
           ? null
           : const ValueKey('public-server-phone-back'),
       backTooltip: raftText(context, backLabel),
-      // AppPanelHeader `icon` with the default `bg-primary`.
-      iconSlot: RaftPanelHeaderIconTile(
-        glyph: RaftGlyph.hash,
-        background: t.colors['fill-muted']!,
-        borderless: !false,
-      ),
+      // AppPanelHeader `icon` with the default `bg-primary`; v1.21.23 passes
+      // `iconTone="location"`: the yellow "you are here" sticker.
+      iconSlot: t.option('publicServer.channelTile', or: 'sticker') == 'sticker'
+          ? const _LocationTile(glyph: RaftGlyph.hash)
+          : RaftPanelHeaderIconTile(
+              glyph: RaftGlyph.hash,
+              background: t.colors['fill-muted']!,
+              borderless: !false,
+            ),
     );
     return _publicHeaderStrip(t, bar);
+  }
+}
+
+/// raft-ui `PanelHeaderIcon` (location tone): `size-[27px] rounded-sticker
+/// border-[1.5px] border-sticker-ink bg-brand text-sticker-ink
+/// ring-[1.5px] ring-sticker-edge`, the glyph at 14px with a 2px stroke.
+class _LocationTile extends StatelessWidget {
+  const _LocationTile({required this.glyph});
+  final RaftGlyph glyph;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final ink = t.colors['sticker-ink']!;
+    return Container(
+      width: 27,
+      height: 27,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: t.colors['brand-400'],
+        borderRadius: BorderRadius.circular(t.size('radius.sticker', fallback: 4)),
+        border: Border.all(color: ink, width: 1.5),
+        boxShadow: [
+          BoxShadow(color: t.colors['sticker-edge']!, spreadRadius: 1.5),
+        ],
+      ),
+      child: RaftIcon(glyph, size: 14, color: ink, strokeWidth: 2),
+    );
   }
 }
 

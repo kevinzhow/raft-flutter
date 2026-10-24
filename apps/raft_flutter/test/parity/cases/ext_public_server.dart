@@ -11,7 +11,7 @@ import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/public_server_settings.dart';
 import 'package:raft_flutter/features/public_server_view.dart';
-import 'package:raft_ui/raft_ui.dart' show RaftAppearance;
+import 'package:raft_ui/raft_ui.dart' show RaftAppearance, RaftTokens;
 
 import '../parity_harness.dart';
 import 'screens/screen_fixture.dart';
@@ -48,8 +48,9 @@ Widget _page(ParityContext ctx) {
   // process captures many cases, so every case starts from a cold page: the
   // loading and error cases must not render an earlier case's data.
   PublicServerMemory.clear();
-  // The React provider pins its clock to the fixture instant; its locale
-  // formats times 24-hour.
+  // The React provider pins its clock to the fixture instant. Web v1.21.23
+  // (the Raft look) formats times 12-hour like the default MediaQuery here; the
+  // a57b9dab captures of the pre-theme looks are 24-hour.
   final now = DateTime.fromMillisecondsSinceEpoch(
     (ctx.fixtureData['locale']['nowEpochMillis'] as num).toInt(),
   );
@@ -92,10 +93,14 @@ Widget _page(ParityContext ctx) {
     onJoined: () async {},
   );
   return Builder(
-    builder: (context) => MediaQuery(
-      data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-      child: page,
-    ),
+    builder: (context) =>
+        RaftTokens.of(context).option('messageHeader.timePosition', or: 'x') ==
+            'inline'
+        ? MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: page,
+          )
+        : page,
   );
 }
 

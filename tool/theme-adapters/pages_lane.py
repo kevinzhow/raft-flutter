@@ -47,6 +47,16 @@ _OPTIONS = {
     # `foreground-field-label`, 6px to the control, `type.fieldLabel.*` /
     # `space.fieldGap`) in v1.21.23; a57b9dab drew the recipe label with a 4px gap.
     'auth.fieldLabel': ('tokens', 'recipe'),
+    # Public server page columns: the shared mounted Sidebar frame (v1.21.23
+    # builds them from the same SidebarRoot / SidebarHeader) or the page's own
+    # column of a57b9dab.
+    'publicServer.sidebar': ('shared', 'legacy'),
+    # Bottom banner at sm and up: copy over the action row (v1.21.23 grid) or
+    # copy and actions on one row (a57b9dab).
+    'publicServer.banner': ('stacked', 'row'),
+    # Channel header icon of the public page: the yellow location sticker
+    # (`iconTone="location"`, v1.21.23) or the neutral tile (a57b9dab).
+    'publicServer.channelTile': ('sticker', 'plain'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -58,6 +68,9 @@ OPTION_VALUES = {
     'standalone.surface': ('sidebar', 'canvas'),
     'standalone.buttonSize': ('lg', 'md'),
     'auth.fieldLabel': ('tokens', 'recipe'),
+    'publicServer.sidebar': ('shared', 'legacy'),
+    'publicServer.banner': ('stacked', 'row'),
+    'publicServer.channelTile': ('sticker', 'plain'),
 }
 
 # ---------------------------------------------------------------- colours

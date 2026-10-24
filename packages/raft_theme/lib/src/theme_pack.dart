@@ -169,6 +169,9 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'standalone.surface': {'sidebar', 'canvas'},
   'standalone.buttonSize': {'lg', 'md'},
   'auth.fieldLabel': {'tokens', 'recipe'},
+  'publicServer.sidebar': {'shared', 'legacy'},
+  'publicServer.banner': {'stacked', 'row'},
+  'publicServer.channelTile': {'sticker', 'plain'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).
