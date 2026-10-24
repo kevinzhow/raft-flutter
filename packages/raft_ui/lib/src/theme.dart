@@ -329,9 +329,17 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   /// drawn separately by surfaces.
   List<BoxShadow> get shadows => themeShadows.sm.outer;
 
-  /// The focus lift was Brutal's `--theme-shadow-md`; the Raft focus ring is a
-  /// follow-up, so focus adds nothing here.
-  List<BoxShadow> get focusShadows => shadows;
+  /// The keyboard focus ring (`shadow-focus`, the pack's `shadow.focusRing`
+  /// layers, CSS top-first so painted last-first). A pack that sets none keeps
+  /// the control shadow it always had (Brutal's lift).
+  List<BoxShadow> get focusShadows {
+    final ring = shadowLayers('shadow.focusRing');
+    if (ring.isEmpty) return shadows;
+    return [
+      for (final layer in ring.reversed)
+        if (!layer.inset) layer.toBoxShadow(),
+    ];
+  }
   static RaftTokens of(BuildContext context) {
     final theme = Theme.of(context);
     return theme.extension<RaftTokens>() ??

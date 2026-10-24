@@ -11,6 +11,7 @@ import 'viewport_breakpoints.dart';
 import 'icons.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'sidebar_section.dart';
+import 'raft/blink_snap.dart';
 import 'theme.dart';
 import 'status_bar.dart';
 import 'text_scaling.dart';
@@ -927,7 +928,9 @@ class _ComposerTaskToggleState extends State<RaftComposerTaskToggle> {
             ? null
             : () => widget.onChanged!(!widget.checked),
         child: ExcludeSemantics(
-          child: RaftControl(
+          // Blink paints the toggle at a whole pixel.
+          child: RaftBlinkSnap(
+            child: RaftControl(
             key: const ValueKey('composer-as-task-toggle'),
             minimumTargetSize: face,
             focusNode: focus,
@@ -970,6 +973,7 @@ class _ComposerTaskToggleState extends State<RaftComposerTaskToggle> {
                 Text(widget.label),
               ],
             ),
+          ),
           ),
         ),
       ),
