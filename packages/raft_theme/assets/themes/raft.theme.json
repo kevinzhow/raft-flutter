@@ -893,7 +893,8 @@
         "inputGroup.style": "raft",
         "announcement.style": "raft",
         "reaction.style": "raft",
-        "lightbox.style": "raft"
+        "lightbox.style": "raft",
+        "document.style": "raft"
       }
     },
     "dark": {
@@ -1740,7 +1741,8 @@
         "inputGroup.style": "raft",
         "announcement.style": "raft",
         "reaction.style": "raft",
-        "lightbox.style": "raft"
+        "lightbox.style": "raft",
+        "document.style": "raft"
       }
     }
   }

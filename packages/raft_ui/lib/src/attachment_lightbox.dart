@@ -51,10 +51,35 @@ class RaftFileTypeBadge extends StatelessWidget {
   final Size size;
   @override
   Widget build(BuildContext context) {
-    final component = AttachmentComponentRecipe(RaftTokens.of(context));
+    final tokens = RaftTokens.of(context);
+    final component = AttachmentComponentRecipe(tokens);
     final extension = filename.split('.').last.toUpperCase();
     final background = component.semantics.badgeBackground(extension);
     if (background == null) return const SizedBox.shrink();
+    if (tokens.option('lightbox.style', or: 'recipe') == 'raft') {
+      // `headerLabel`: `h-[22px] rounded-chip bg-fill-muted px-1.5 py-0
+      // text-caption font-semibold text-foreground-muted`.
+      return Container(
+        height: 22,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: tokens.ui.fillMuted,
+          borderRadius: BorderRadius.circular(
+            tokens.size('radius.chip', fallback: 6),
+          ),
+        ),
+        child: Text(
+          extension,
+          maxLines: 1,
+          style: tokens.scale(
+            RaftTypeScale.caption,
+            weight: FontWeight.w600,
+            color: tokens.ui.foregroundMuted,
+          ),
+        ),
+      );
+    }
     // A minimum box: it grows with its label above the default text size so
     // the extension is never cut.
     return ConstrainedBox(

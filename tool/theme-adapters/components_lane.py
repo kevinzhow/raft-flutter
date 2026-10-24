@@ -83,6 +83,9 @@ _OPTIONS = {
     # `text-headline font-bold` title, ghost icon buttons, line-seam rule);
     # `bg-black/75`, a 14/20 title and outlined icon buttons before.
     'lightbox.style': ('raft', 'recipe'),
+    # Document previews (csv / xlsx / text panes): raft-ui 0.7 card (rounded-container,
+    # hairlines, fill-muted header and stripes, mono-meta cells); square panes before.
+    'document.style': ('raft', 'recipe'),
 }
 
 # Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
@@ -103,6 +106,7 @@ OPTION_VALUES = {
     'announcement.style': ('raft', 'recipe'),
     'reaction.style': ('raft', 'recipe'),
     'lightbox.style': ('raft', 'recipe'),
+    'document.style': ('raft', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours

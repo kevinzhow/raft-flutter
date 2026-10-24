@@ -253,12 +253,32 @@ class DocumentAttachmentRecipe {
 
   /// The pane surface: `bg-layer-canvas-muted` / brutal `bg-brutal-cream/45`,
   /// over the shell's own canvas (brutal cream), so the same cream.
-  Color get background => tokens.colors['layer-canvas-muted']!;
-  Color get paper => tokens.panel;
+  /// raft-ui 0.7 preview panes (`document.style`): `bg-layer-sidebar`, a
+  /// `rounded-container border-line-hairline` card, `text-mono-meta` cells and
+  /// `fill-muted` header / stripes.
+  bool get raft => tokens.option('document.style', or: 'recipe') == 'raft';
+  BorderRadius get radius => raft
+      ? BorderRadius.circular(tokens.size('radius.container', fallback: 10))
+      : BorderRadius.zero;
+  Color get background => raft
+      ? tokens.colors['layer-sidebar']!
+      : tokens.colors['layer-canvas-muted']!;
+  Color get paper => raft ? tokens.colors['layer-card']! : tokens.panel;
   double get maxColumnWidth => 220;
   // `text-[11px]` inherits the root's `line-height: 1.5`: 16.5px.
-  TextStyle get tableText =>
-      RaftTypography.mono(tokens, size: 11, line: 16.5, color: tokens.strong);
+  TextStyle get tableText => raft
+      ? RaftTypography.mono(
+          tokens,
+          size: 12,
+          line: 16,
+          color: tokens.colors['foreground'],
+        )
+      : RaftTypography.mono(
+          tokens,
+          size: 11,
+          line: 16.5,
+          color: tokens.strong,
+        );
   TextStyle get text =>
       RaftTypography.mono(tokens, size: 12, line: 20, color: tokens.strong);
   TextStyle get heading => RaftTypography.body(
@@ -268,18 +288,27 @@ class DocumentAttachmentRecipe {
     weight: FontWeight.w700,
     color: tokens.muted,
   );
-  Color get tableHeader => tokens.colors['layer-canvas-muted']!;
-  Color get rowStripe => RaftPrimitiveColors.black.withValues(alpha: .03);
-  BorderSide get border =>
-      BorderSide(color: tokens.colors['line-muted']!, width: tokens.border);
+  Color get tableHeader =>
+      tokens.colors[raft ? 'fill-muted' : 'layer-canvas-muted']!;
+  Color get rowStripe => raft
+      ? tokens.colors['fill-muted']!.withValues(
+          alpha: tokens.colors['fill-muted']!.a * .5,
+        )
+      : RaftPrimitiveColors.black.withValues(alpha: .03);
+  BorderSide get border => BorderSide(
+    color: tokens.colors[raft ? 'line-hairline' : 'line-muted']!,
+    width: tokens.border,
+  );
   // Collapsed 1px borders add 0.5px to each side of a cell's row.
   EdgeInsets get cellInset =>
       // ds-allow: Web MarkdownContent.tsx td `py-1` under border-collapse (4px + 0.25px measured row growth)
       const EdgeInsets.symmetric(horizontal: 8, vertical: 4.25);
 
   /// Inner cell grid: `border border-line-muted theme-brutal:border-black/40`.
-  BorderSide get cellBorder =>
-      BorderSide(color: tokens.colors['line-muted']!, width: 1);
+  BorderSide get cellBorder => BorderSide(
+    color: tokens.colors[raft ? 'line-hairline' : 'line-muted']!,
+    width: 1,
+  );
 }
 
 /// Per-build heading padding, never cached across account/content changes.

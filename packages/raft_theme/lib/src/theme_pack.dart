@@ -180,6 +180,7 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'announcement.style': {'recipe', 'raft'},
   'reaction.style': {'recipe', 'raft'},
   'lightbox.style': {'recipe', 'raft'},
+  'document.style': {'recipe', 'raft'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).
