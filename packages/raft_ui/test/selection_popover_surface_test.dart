@@ -46,7 +46,7 @@ void main() {
       '${dark ? 'dark' : 'light'} Source default and caller retain distinct surface and actual inline-input geometry',
       (tester) async {
         await loadFonts(tester);
-        final theme = raftTheme(dark: dark),
+        final theme = raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
             controller = TextEditingController(text: 'des');
         final tokens = theme.extension<RaftTokens>()!;
         Widget popup(bool caller) => host(
@@ -130,7 +130,7 @@ void main() {
         var after = 0;
         await tester.pumpWidget(
           host(
-            raftTheme(dark: dark),
+            raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
             Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,7 +179,7 @@ void main() {
         final controller = TextEditingController(), focus = FocusNode();
         var selected = 0;
         Widget popup(bool nextDark, bool caller) {
-          final theme = raftTheme(dark: nextDark);
+          final theme = raftTheme(pack: packForThemeId(elegantThemePackId), dark: nextDark);
           return host(
             theme,
             RaftSelectionPopover(
@@ -260,7 +260,7 @@ void main() {
         await loadFonts(tester);
         final semantics = tester.ensureSemantics();
         await tester.pumpWidget(
-          host(raftTheme(dark: dark), selectionPopoverPreview()),
+          host(raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark), selectionPopoverPreview()),
         );
         await tester.tap(find.text('Choose Channel'));
         await tester.pumpAndSettle();

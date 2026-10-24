@@ -20,7 +20,7 @@ void main() {
           var copied = 0;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(dark: dark),
+              theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
               builder: (context, child) => MediaQuery(
                 data: MediaQuery.of(context)
                     .copyWith(textScaler: TextScaler.linear(scale)),
@@ -66,7 +66,7 @@ void main() {
         addTearDown(focus.dispose);
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(dark: dark),
+            theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
             home: Scaffold(
               body: Column(
                 children: [
@@ -184,7 +184,7 @@ void main() {
     var undone = 0;
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: Scaffold(body: RaftToastPortal(controller: controller)),
       ),
     );
@@ -218,7 +218,7 @@ void main() {
       addTearDown(controller.dispose);
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           builder: (context, child) =>
               RaftToastHost(controller: controller, child: child!),
           home: const Scaffold(body: SizedBox.expand()),
@@ -273,7 +273,7 @@ void main() {
       addTearDown(t.view.reset);
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           builder: (context, child) => RaftToastHost(child: child!),
           home: Scaffold(
             body: Column(

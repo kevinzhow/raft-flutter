@@ -82,10 +82,17 @@ void main() {
                   find.byType(RaftRecipeButton),
                 ], reason: 'legacy Elegant RaftErrorBanner small=$small');
               } else {
-                // Pinned raft-ui Banner root is items-start, including sm.
+                // raft-ui 0.7 `BannerAction` is `col-start-(--banner-text-col) mt-2`:
+                // a row under the copy, starting at its left edge.
                 expect(
-                  tester.getTopLeft(find.text('Could not load')).dy,
                   tester.getTopLeft(find.byType(RaftRecipeButton)).dy,
+                  greaterThanOrEqualTo(
+                    tester.getBottomLeft(find.text('Could not load')).dy,
+                  ),
+                );
+                expect(
+                  tester.getTopLeft(find.byType(RaftRecipeButton)).dx,
+                  tester.getTopLeft(find.text('Could not load')).dx,
                 );
               }
             }
@@ -137,6 +144,9 @@ void main() {
                 subtitle: '@cindy',
                 actionContent: [_button('Remove')],
               ),
+              // The recipe look centres the name with the action; the Raft
+              // `ListRow` centres the action on the whole two-line row.
+              themeId: elegantThemePackId,
             ),
           );
           expectVerticallyCentered(tester, [

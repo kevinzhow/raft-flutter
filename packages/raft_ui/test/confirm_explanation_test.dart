@@ -53,7 +53,7 @@ void main() {
     expect(t.widget<RaftBanner>(find.byType(RaftBanner)).live, isFalse);
   });
   for (final glyph in [null, RaftGlyph.info]) {
-    testWidgets('source default banner top aligns an action with copy $glyph', (
+    testWidgets('source default banner puts the action under the copy $glyph', (
       t,
     ) async {
       addTearDown(() => t.pumpWidget(const SizedBox()));
@@ -81,7 +81,9 @@ void main() {
       );
       final text = t.getRect(find.text('Reconnect to send'));
       final action = t.getRect(find.byKey(const ValueKey('retry')));
-      expect(text.top, action.top);
+      // raft-ui 0.7 `BannerAction`: a row under the copy, from its left edge.
+      expect(action.top, greaterThanOrEqualTo(text.bottom));
+      expect(action.left, text.left);
       if (glyph != null) expect(t.getRect(find.byType(RaftIcon)).top, text.top);
     });
   }

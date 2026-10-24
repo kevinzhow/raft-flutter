@@ -179,6 +179,7 @@ class RaftProgressBar extends StatelessWidget {
     };
     final ring = raftControlBorderPx(context, 1.5);
     final track = Container(
+      width: double.infinity,
       height: height,
       decoration: BoxDecoration(color: ui.fillMuted, borderRadius: radius),
       child: ClipRRect(
@@ -247,7 +248,11 @@ class RaftProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (t.option('progress.style', or: 'recipe') == 'raft') {
+    // The label row is where the Raft bar differs; a bare track keeps the
+    // recipe box (the usage cards size their rows around it, see
+    // text_scale_audit runtimeUsageCardPreview).
+    if (t.option('progress.style', or: 'recipe') == 'raft' &&
+        (label != null || showPercent)) {
       return _buildRaft(context, t);
     }
     final rt = t.recipeTokens;

@@ -196,7 +196,8 @@ void main() {
       await tester.pump();
       expect(strip().opacity, 1);
       final button = find.byKey(actionKey);
-      expect(tester.getSize(button), Size.square(28));
+      // raft-ui 0.7 messageItem `toolbarButton`: `size-8`.
+      expect(tester.getSize(button), Size.square(32));
       await mouse.moveTo(const Offset(2, 300));
       await tester.pump();
       expect(find.byType(RaftMessageToolbar), findsNothing);
@@ -355,11 +356,12 @@ void main() {
     expect(row(b, 1280).author.fontWeight, FontWeight.w700);
     // Elegant notes (meta, time) read `foreground-hint`.
     expect(row(e, 1280).time.color, e.colors['foreground-hint']);
+    // Raft: raft-ui 0.7 messageItem toolbar `right-3`. Legacy looks:
     // MessageHoverToolbar `right-2`, `max-md:right-0.5`, brutal `-right-1.5`.
-    expect(row(e, 1280).toolbarRight, 8);
-    expect(row(b, 1280).toolbarRight, 8);
-    expect(row(e, 390).toolbarRight, 2);
-    expect(row(b, 390).toolbarRight, 2);
+    expect(row(e, 1280).toolbarRight, 12);
+    expect(row(b, 1280).toolbarRight, 12);
+    expect(row(e, 390).toolbarRight, 12);
+    expect(row(b, 390).toolbarRight, 12);
   });
 
   test('the content ends with Web\'s mb-px only where the Web adds it', () {

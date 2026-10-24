@@ -14,7 +14,7 @@ void main() {
     final key = GlobalKey();
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: Scaffold(
@@ -81,7 +81,7 @@ void main() {
       final key = GlobalKey();
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           home: RepaintBoundary(
             key: key,
             child: Align(
@@ -161,6 +161,8 @@ void main() {
     final key = GlobalKey();
     await tester.pumpWidget(
       MaterialApp(
+        // black/10 is the recipe look; the Raft look paints fill-muted.
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: Center(

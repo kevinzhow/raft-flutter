@@ -12,7 +12,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: RaftAttachmentPreviewShell(
           filename: 'notes.txt',
           onClose: () {},
@@ -52,7 +52,7 @@ void main() {
     RaftCommentsSheetControls? seen;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: RaftAttachmentPreviewShell(
           filename: 'notes.txt',
           onClose: () {},
@@ -81,7 +81,7 @@ void main() {
         const inset = 34.0;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(),
+            theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
             builder: (context, child) => MediaQuery(
               data: MediaQueryData(
                 size: const Size(390, 844),

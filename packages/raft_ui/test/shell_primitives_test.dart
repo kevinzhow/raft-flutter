@@ -8,7 +8,7 @@ void main() {
   Future<void> pump(WidgetTester tester, bool dark, Widget child) =>
       tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(dark: dark),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
           home: Scaffold(
             body: Align(alignment: Alignment.topLeft, child: child),
           ),
@@ -92,7 +92,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: const Scaffold(
           body: Align(
             alignment: Alignment.bottomCenter,

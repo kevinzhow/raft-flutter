@@ -56,7 +56,9 @@ void main() {
     () {
       final r = RaftPopoverSurfaceRecipe(raftTheme().extension<RaftTokens>()!);
       expect(r.borderWidth, 0);
-      expect(r.radius, 6);
+      // `rounded-container ring-1 ring-line-seam` (raft-ui 0.7 popover).
+      expect(r.radius, 10);
+      expect(r.ringWidth, 1);
       expect(r.cssShadows.length, 2);
       expect(r.cssShadows[0].offset, const Offset(0, 1));
       expect(r.cssShadows[0].blur, 0);

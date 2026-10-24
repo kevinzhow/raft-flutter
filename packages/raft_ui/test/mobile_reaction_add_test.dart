@@ -15,7 +15,7 @@ void main() {
           int count = 2,
           RaftDensity density = RaftDensity.touch,
         }) => MaterialApp(
-          theme: raftTheme(dark: dark),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
           home: MediaQuery(
             data: MediaQueryData(size: Size(width, 720)),
             child: Scaffold(

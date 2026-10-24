@@ -16,7 +16,7 @@ const _desktopPastePlatforms = TargetPlatformVariant({
 Future<void> _pump(WidgetTester tester, RaftComposer composer) =>
     tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: Scaffold(
           body: Align(alignment: Alignment.bottomCenter, child: composer),
         ),
@@ -180,7 +180,7 @@ void main() {
       final inspecting = Completer<bool>();
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           home: Scaffold(
             body: Column(
               children: [
@@ -348,7 +348,7 @@ void main() {
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(dark: dark),
+            theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
             home: Scaffold(
               body: Align(
                 alignment: Alignment.bottomCenter,
@@ -393,7 +393,7 @@ void main() {
   testWidgets('drop overlay label is localized', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: Scaffold(
           body: Builder(
             builder: (context) => Localizations.override(

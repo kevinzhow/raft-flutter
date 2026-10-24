@@ -114,7 +114,9 @@ class RaftBanner extends StatelessWidget {
     // mt-2 flex flex-wrap gap-2`, a row under the copy; the description keeps
     // its own `font-normal` whatever the caller put on the root.
     final raft = t.option('banner.style', or: 'recipe') == 'raft';
-    final trailing = raft ? null : action;
+    // A caller that centres its action (`centerAction`) keeps it in the trailing cell.
+    final below = raft && !centerAction;
+    final trailing = below ? null : action;
     final weight = raft ? null : descriptionWeight;
     final base = recipe.root.text(
       tokens,
@@ -183,7 +185,7 @@ class RaftBanner extends StatelessWidget {
                       .copyWith(fontWeight: weight),
                 ),
               ?footer,
-              if (raft && action != null)
+              if (below && action != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Align(

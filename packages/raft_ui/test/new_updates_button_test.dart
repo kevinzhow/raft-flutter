@@ -13,7 +13,7 @@ void main() {
         var taps = 0;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(dark: dark),
+            theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
             home: Scaffold(
               body: Center(
                 child: SizedBox(

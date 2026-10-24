@@ -328,7 +328,8 @@ class _AttachmentChipState extends State<_AttachmentChip> {
           : item.mimeType;
       body = Container(
         width: 176,
-        height: 64,
+        // `h-16`: a minimum, so larger text never overflows the chip.
+        constraints: const BoxConstraints(minHeight: 64),
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: ui.fillMuted,

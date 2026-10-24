@@ -243,11 +243,23 @@ class RaftRecipeButton extends StatelessWidget {
       ),
     );
     final inline = sizeValue == RaftButtonSize.inline;
-    final EdgeInsets resolvedPadding =
-        padding ??
-        (inline || metrics.square
-            ? EdgeInsets.zero
-            : EdgeInsets.symmetric(horizontal: metrics.paddingX));
+    // Above the default text size the recipe height is a minimum and the label
+    // wraps, with the 4px the recipe path keeps above and below it.
+    final EdgeInsets resolvedPadding = padding != null
+        ? (wraps && !metrics.square
+              ? EdgeInsets.fromLTRB(
+                  padding!.left,
+                  math.max(padding!.top, 4),
+                  padding!.right,
+                  math.max(padding!.bottom, 4),
+                )
+              : padding!)
+        : (inline || metrics.square
+              ? EdgeInsets.zero
+              : EdgeInsets.symmetric(
+                  horizontal: metrics.paddingX,
+                  vertical: wraps ? 4 : 0,
+                ));
     final shown = state.focusVisible ||
         (focusRing && (focusNode?.hasFocus ?? false));
     Widget box = RaftButtonSurface(

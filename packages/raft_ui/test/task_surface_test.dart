@@ -9,7 +9,7 @@ import 'package:raft_ui/task_surface_previews.dart';
 import 'package:raft_ui/test_themes.dart';
 
 Widget host(Widget child, bool dark) => MaterialApp(
-  theme: raftTheme(dark: dark),
+  theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
   home: Scaffold(body: child),
 );
 

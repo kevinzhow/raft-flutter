@@ -20,7 +20,7 @@ Future<void> _pump(
   addTearDown(t.platformDispatcher.clearAllTestValues);
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(),
+      theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
       home: Scaffold(body: SingleChildScrollView(child: child)),
     ),
   );

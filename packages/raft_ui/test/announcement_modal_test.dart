@@ -32,7 +32,7 @@ Widget frame(
   Locale? locale,
   Size? size,
 }) => MaterialApp(
-  theme: raftTheme(dark: dark),
+  theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
   home: MediaQuery(
     data: MediaQueryData(size: size ?? const Size(800, 600)),
     child: Scaffold(

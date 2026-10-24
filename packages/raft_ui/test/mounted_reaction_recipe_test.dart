@@ -1,3 +1,4 @@
+import 'package:raft_ui/raft_ui.dart' show packForThemeId, elegantThemePackId;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/src/design_primitives.dart';
@@ -10,7 +11,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           home: const Center(
             child: RaftMountedReaction(
               label: 'Public reaction by artin',
@@ -78,7 +79,7 @@ void main() {
   });
 
   test('mounted selected/failure/hover rules differ from generic RUI chip', () {
-    final t = raftTheme().extension<RaftTokens>()!;
+    final t = raftTheme(pack: packForThemeId(elegantThemePackId)).extension<RaftTokens>()!;
     final error = RaftMountedReactionRecipe(t, failure: true);
     expect(error.radius, BorderRadius.circular(4));
     expect(error.padding, const EdgeInsets.symmetric(horizontal: 6));

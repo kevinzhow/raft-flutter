@@ -60,7 +60,8 @@ class RaftFileTypeBadge extends StatelessWidget {
       // `headerLabel`: `h-[22px] rounded-chip bg-fill-muted px-1.5 py-0
       // text-caption font-semibold text-foreground-muted`.
       return Container(
-        height: 22,
+        // `h-[22px]`, a minimum so the label is never cut at larger text sizes.
+        constraints: const BoxConstraints(minHeight: 22),
         padding: const EdgeInsets.symmetric(horizontal: 6),
         alignment: Alignment.center,
         decoration: BoxDecoration(

@@ -1,3 +1,4 @@
+import 'package:raft_ui/raft_ui.dart' show packForThemeId, elegantThemePackId;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,7 +17,7 @@ void main() {
       var activated = 0;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           home: Scaffold(
             body: Padding(
               padding: const EdgeInsets.only(top: 40),

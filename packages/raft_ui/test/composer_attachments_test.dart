@@ -21,7 +21,7 @@ Future<void> _pump(
   ValueChanged<RaftComposerAttachment>? onPreview,
 }) => tester.pumpWidget(
   MaterialApp(
-    theme: raftTheme(dark: dark).copyWith(platform: platform),
+    theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark).copyWith(platform: platform),
     home: Scaffold(
       body: Stack(
         children: [
@@ -245,7 +245,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           home: Scaffold(
             body: Align(
               alignment: Alignment.bottomCenter,
@@ -290,7 +290,7 @@ void main() {
       var blocked = 0, sent = 0;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           home: Scaffold(
             body: Align(
               alignment: Alignment.bottomCenter,
@@ -326,7 +326,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: const SizedBox(
           width: 300,
           height: 100,
