@@ -911,6 +911,7 @@ const String raftThemePackJson = r'''{
         "publicServer.sidebar": "shared",
         "publicServer.banner": "stacked",
         "publicServer.channelTile": "sticker",
+        "panelTabs.style": "sticker",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1763,6 +1764,7 @@ const String raftThemePackJson = r'''{
         "publicServer.sidebar": "shared",
         "publicServer.banner": "stacked",
         "publicServer.channelTile": "sticker",
+        "panelTabs.style": "sticker",
         "standalone.buttonSize": "lg"
       }
     }

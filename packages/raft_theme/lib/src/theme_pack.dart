@@ -172,6 +172,7 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'publicServer.sidebar': {'shared', 'legacy'},
   'publicServer.banner': {'stacked', 'row'},
   'publicServer.channelTile': {'sticker', 'plain'},
+  'panelTabs.style': {'sticker', 'underline'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

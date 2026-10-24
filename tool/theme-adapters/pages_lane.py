@@ -57,6 +57,9 @@ _OPTIONS = {
     # Channel header icon of the public page: the yellow location sticker
     # (`iconTone="location"`, v1.21.23) or the neutral tile (a57b9dab).
     'publicServer.channelTile': ('sticker', 'plain'),
+    # ConversationPanelTabs (agent / channel / human panels): the yellow sticker
+    # row (0.7.0 default TabsList) or the underline row (a57b9dab).
+    'panelTabs.style': ('sticker', 'underline'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -71,6 +74,7 @@ OPTION_VALUES = {
     'publicServer.sidebar': ('shared', 'legacy'),
     'publicServer.banner': ('stacked', 'row'),
     'publicServer.channelTile': ('sticker', 'plain'),
+    'panelTabs.style': ('sticker', 'underline'),
 }
 
 # ---------------------------------------------------------------- colours

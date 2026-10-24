@@ -875,6 +875,12 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
   Widget _strip(BuildContext context) {
     final grows = RaftScaled.grows(context);
     final t = RaftTokens.of(context);
+    // ConversationPanelTabs (0.7.0): the default TabsList variant is the yellow
+    // sticker row (`px-5 py-2`, `gap-0.5`, h-8 tabs); the pre-theme looks keep
+    // the underline row (panelTabs.style).
+    final sticker = t.option('panelTabs.style', or: 'sticker') == 'sticker';
+    final narrowStrip =
+        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     return Container(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: t.ui.lineSeam, width: 1)),
@@ -887,14 +893,22 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
             controller: scroll,
             scrollDirection: Axis.horizontal,
             child: Container(
-              height: grows ? null : 47,
-              constraints: grows ? const BoxConstraints(minHeight: 47) : null,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              height: grows ? null : (sticker ? 48 : 47),
+              constraints: grows
+                  ? BoxConstraints(minHeight: sticker ? 48 : 47)
+                  : null,
+              padding: sticker
+                  ? EdgeInsets.symmetric(
+                      horizontal: narrowStrip ? 16 : 20,
+                      vertical: 8,
+                    )
+                  : const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
                   for (var i = 0; i < widget.tabs.length; i++) ...[
-                    // raft-ui `TabsList variant="underline"`: `gap-5`.
-                    if (i > 0) const SizedBox(width: 20),
+                    // raft-ui `TabsList variant="underline"`: `gap-5`; the
+                    // default (sticker) list is `gap-0.5`.
+                    if (i > 0) SizedBox(width: sticker ? 2 : 20),
                     _reorderable(widget.tabs[i], _tab(widget.tabs[i])),
                   ],
                 ],
@@ -920,9 +934,17 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
           label: tab.label,
           glyph: tab.glyph,
           icon: tab.iconBuilder,
-          variant: RaftTabsVariant.underline,
+          variant:
+              RaftTokens.of(context).option('panelTabs.style', or: 'sticker') ==
+                  'sticker'
+              ? RaftTabsVariant.standard
+              : RaftTabsVariant.underline,
           selected: active,
-          height: 47,
+          height:
+              RaftTokens.of(context).option('panelTabs.style', or: 'sticker') ==
+                  'sticker'
+              ? 32
+              : 47,
           growsWithText: grows,
           onPressed: () => widget.onChanged(tab.id),
         ),

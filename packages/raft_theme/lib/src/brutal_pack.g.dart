@@ -680,6 +680,7 @@ const String brutalThemePackJson = r'''{
         "publicServer.sidebar": "legacy",
         "publicServer.banner": "row",
         "publicServer.channelTile": "plain",
+        "panelTabs.style": "underline",
         "standalone.buttonSize": "md"
       }
     },
@@ -1354,6 +1355,7 @@ const String brutalThemePackJson = r'''{
         "publicServer.sidebar": "legacy",
         "publicServer.banner": "row",
         "publicServer.channelTile": "plain",
+        "panelTabs.style": "underline",
         "standalone.buttonSize": "md"
       }
     }
