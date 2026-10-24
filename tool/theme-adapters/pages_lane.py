@@ -60,6 +60,9 @@ _OPTIONS = {
     # ConversationPanelTabs (agent / channel / human panels): the yellow sticker
     # row (0.7.0 default TabsList) or the underline row (a57b9dab).
     'panelTabs.style': ('sticker', 'underline'),
+    # Agent Workspace tab: v1.21.23 (canvas surfaces, seam rules, mono 13/20
+    # rows, info-soft selection, hint / muted callout states) or a57b9dab's.
+    'agentWorkspace.look': ('web23', 'legacy'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -75,6 +78,7 @@ OPTION_VALUES = {
     'publicServer.banner': ('stacked', 'row'),
     'publicServer.channelTile': ('sticker', 'plain'),
     'panelTabs.style': ('sticker', 'underline'),
+    'agentWorkspace.look': ('web23', 'legacy'),
 }
 
 # ---------------------------------------------------------------- colours

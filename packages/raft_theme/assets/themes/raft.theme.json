@@ -899,6 +899,7 @@
         "publicServer.banner": "stacked",
         "publicServer.channelTile": "sticker",
         "panelTabs.style": "sticker",
+        "agentWorkspace.look": "web23",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1752,6 +1753,7 @@
         "publicServer.banner": "stacked",
         "publicServer.channelTile": "sticker",
         "panelTabs.style": "sticker",
+        "agentWorkspace.look": "web23",
         "standalone.buttonSize": "lg"
       }
     }

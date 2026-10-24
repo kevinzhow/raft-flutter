@@ -685,6 +685,7 @@ const String elegantThemePackJson = r'''{
         "publicServer.banner": "row",
         "publicServer.channelTile": "plain",
         "panelTabs.style": "underline",
+        "agentWorkspace.look": "legacy",
         "standalone.buttonSize": "md"
       }
     },
@@ -1326,6 +1327,7 @@ const String elegantThemePackJson = r'''{
         "publicServer.banner": "row",
         "publicServer.channelTile": "plain",
         "panelTabs.style": "underline",
+        "agentWorkspace.look": "legacy",
         "standalone.buttonSize": "md"
       }
     }

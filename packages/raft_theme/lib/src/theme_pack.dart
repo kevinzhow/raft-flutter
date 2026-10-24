@@ -173,6 +173,7 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'publicServer.banner': {'stacked', 'row'},
   'publicServer.channelTile': {'sticker', 'plain'},
   'panelTabs.style': {'sticker', 'underline'},
+  'agentWorkspace.look': {'web23', 'legacy'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

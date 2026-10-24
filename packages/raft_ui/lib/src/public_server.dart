@@ -293,7 +293,11 @@ class RaftPublicBottomBanner extends StatelessWidget {
       raftText(context, message),
       style: recipe.description
           .text(tokens, base: base)
-          .copyWith(fontSize: narrow ? 12 : 14, fontWeight: FontWeight.w700),
+          .copyWith(
+            fontSize: narrow ? 12 : 14,
+            fontWeight: FontWeight.w700,
+            color: t.colors['foreground-banner-body'],
+          ),
     );
     final buttons = Row(
       mainAxisSize: MainAxisSize.min,

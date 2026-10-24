@@ -169,11 +169,15 @@ class RaftInlineIconButton extends StatefulWidget {
     required this.tooltip,
     this.size = 12,
     this.onPressed,
+    this.color,
   });
   final RaftGlyph glyph;
   final String tooltip;
   final double size;
   final VoidCallback? onPressed;
+
+  /// Resting colour (hover keeps the strong ink); null is the placeholder ink.
+  final Color? color;
   @override
   State<RaftInlineIconButton> createState() => _RaftInlineIconButtonState();
 }
@@ -185,7 +189,8 @@ class _RaftInlineIconButtonState extends State<RaftInlineIconButton> {
     final t = RaftTokens.of(context);
     final color = hovered
         ? (t.strong)
-        : raftPanelInk(t, .4, t.colors['foreground-placeholder']!);
+        : widget.color ??
+              raftPanelInk(t, .4, t.colors['foreground-placeholder']!);
     return RaftTooltip(
       message: widget.tooltip,
       excludeFromSemantics: true,
