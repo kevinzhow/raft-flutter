@@ -222,8 +222,8 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
             ),
           ),
           Expanded(
-            child: Container(
-              clipBehavior: Clip.antiAlias,
+            child: _PaneBox(
+              clipBehavior: recipe.raft ? Clip.antiAlias : Clip.none,
               decoration: BoxDecoration(
                 borderRadius: recipe.radius,
                 color: recipe.paper,
@@ -347,8 +347,8 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                     ),
                   ),
                   Expanded(
-                    child: Container(
-                      clipBehavior: Clip.antiAlias,
+                    child: _PaneBox(
+                      clipBehavior: recipe.raft ? Clip.antiAlias : Clip.none,
                       decoration: BoxDecoration(
                         borderRadius: recipe.radius,
                         color: recipe.paper,
@@ -542,8 +542,8 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                       ),
                     ),
                   ),
-                Container(
-                  clipBehavior: Clip.antiAlias,
+                _PaneBox(
+                  clipBehavior: recipe.raft ? Clip.antiAlias : Clip.none,
                   decoration: BoxDecoration(
                     borderRadius: recipe.radius,
                     color: recipe.paper,
@@ -608,8 +608,8 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                 ],
               ),
             ),
-            Container(
-              clipBehavior: Clip.antiAlias,
+            _PaneBox(
+              clipBehavior: recipe.raft ? Clip.antiAlias : Clip.none,
               decoration: BoxDecoration(
                 borderRadius: recipe.radius,
                 color: recipe.paper,
@@ -750,8 +750,8 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                   ),
                 ),
               if (empty)
-                Container(
-                  clipBehavior: Clip.antiAlias,
+                _PaneBox(
+                  clipBehavior: recipe.raft ? Clip.antiAlias : Clip.none,
                   decoration: BoxDecoration(
                     borderRadius: recipe.radius,
                     color: recipe.paper,
@@ -773,8 +773,8 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                   ),
                 )
               else
-                Container(
-                  clipBehavior: Clip.antiAlias,
+                _PaneBox(
+                  clipBehavior: recipe.raft ? Clip.antiAlias : Clip.none,
                   decoration: BoxDecoration(
                     borderRadius: recipe.radius,
                     color: recipe.paper,
@@ -898,4 +898,28 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
       ),
     );
   }
+}
+
+/// A preview pane. The Raft card clips to its rounded corners and insets its
+/// content by the border (like the Web box); the recipe panes stay a plain
+/// [DecoratedBox], which paints the border over the content.
+class _PaneBox extends StatelessWidget {
+  const _PaneBox({
+    required this.clipBehavior,
+    required this.decoration,
+    required this.child,
+  });
+
+  final Clip clipBehavior;
+  final BoxDecoration decoration;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => clipBehavior == Clip.none
+      ? DecoratedBox(decoration: decoration, child: child)
+      : Container(
+          clipBehavior: clipBehavior,
+          decoration: decoration,
+          child: child,
+        );
 }
