@@ -62,6 +62,17 @@ class WorkspaceServices {
           authority: authority,
           events: authority.client.events,
           isOpen: (id) => authority.threadChannelId == id,
+          readFrontier: (id) {
+            final server = authority.client.serverId,
+                user = authority.client.user?.id;
+            if (server == null || user == null) return null;
+            final read = authority.readState.state(
+              server,
+              user,
+              id,
+            )?['maxReadSeq'];
+            return read is int ? BigInt.from(read) : null;
+          },
         );
     this.entityDirectory =
         entityDirectory ??

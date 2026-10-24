@@ -213,6 +213,56 @@ void main() {
       },
     );
 
+    test('[BP-READ-066] a served page older than a known read keeps the thread read', () async {
+      Map<String, dynamic> row(String parent, String thread, String seq) => {
+        ..._row(parent, thread),
+        'unreadCount': 3,
+        'latestActivitySeq': seq,
+        'firstUnreadMessageId': 'r1',
+        'hasMention': true,
+      };
+      final (w, a, client) = await _fixture(
+        followed: [
+          row('m', 't1', '10'),
+          row('n', 't2', '11'),
+          row('o', 't3', '5'),
+        ],
+      );
+      // This device read t1 up to seq 10 and t2 up to seq 10 (one short of
+      // its newest activity); t3 has no accepted read.
+      for (final (scope, seq) in [('t1', 10), ('t2', 10)]) {
+        expect(
+          w.readState.consumeUpdate(
+            {
+              'serverId': 's1',
+              'scopeId': scope,
+              'maxReadSeq': seq,
+              'readStateVersion': 1,
+            },
+            serverId: 's1',
+            principalId: 'alice',
+          ),
+          'accepted',
+        );
+      }
+      final store = w.followedThreads;
+      await store.refresh();
+      Map<String, dynamic> byThread(String id) =>
+          store.threads.firstWhere((r) => r['threadChannelId'] == id);
+      // Covered by the read: the stale unread count does not come back.
+      expect(byThread('t1')['unreadCount'], 0);
+      expect(byThread('t1')['firstUnreadMessageId'], isNull);
+      expect(byThread('t1')['hasMention'], isFalse);
+      // Newer activity than the read, or no read at all: the served count stays.
+      expect(byThread('t2')['unreadCount'], 3);
+      expect(byThread('t3')['unreadCount'], 3);
+      // A later reload with the same stale payload still reads as read.
+      await store.refresh();
+      expect(byThread('t1')['unreadCount'], 0);
+      w.dispose();
+      await client.dispose();
+    });
+
     test('thread:updated patches a followed row without a request', () async {
       final (w, a, client) = await _fixture(
         followed: [_row('m', 't1'), _row('n', 't2')],

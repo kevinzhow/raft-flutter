@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart' show canonicalWireSeq;
 
+import 'resource_row_reconcile.dart' show projectFullyRead;
 import 'workspace_entity_directory.dart' show WorkspaceEntityScope;
 
 /// Source threadStore.followedThreads: the current principal's followed
@@ -28,6 +29,7 @@ class FollowedThreadsStore extends ChangeNotifier {
     this.authority,
     Stream<RaftEvent>? events,
     this.isOpen,
+    this.readFrontier,
   }) : _readScope = scope {
     authority?.addListener(_authorityChanged);
     _subscription = events?.listen(_event);
@@ -56,6 +58,10 @@ class FollowedThreadsStore extends ChangeNotifier {
   command;
   final Listenable? authority;
   final bool Function(String threadChannelId)? isOpen;
+
+  /// The newest read frontier this device already accepted for a thread (the
+  /// read ledger's `maxReadSeq`), or null when none is known.
+  final BigInt? Function(String threadChannelId)? readFrontier;
   StreamSubscription<RaftEvent>? _subscription;
 
   WorkspaceEntityScope? _scope;
@@ -211,7 +217,7 @@ class FollowedThreadsStore extends ChangeNotifier {
         if (next is! String || next.isEmpty || next == cursor) break;
         cursor = next;
       }
-      _setRows(rows);
+      _setRows(_projectKnownReads(rows));
       for (final entry in _overrides.entries.toList()) {
         if (!_inFlight.contains(entry.key) &&
             _byParent.containsKey(entry.key) == entry.value.following) {
@@ -238,6 +244,25 @@ class FollowedThreadsStore extends ChangeNotifier {
         }
       }
     }
+  }
+
+  /// Source applyKnownReadStateProjectionsToFollowedThreads: a served row whose
+  /// newest activity is covered by a read this device already accepted shows
+  /// no unread, so a response older than that read cannot bring a badge back.
+  /// Only a covered frontier clears a row (same rule as [projectFullyRead]);
+  /// a read never raises unread.
+  List<Map<String, dynamic>> _projectKnownReads(
+    List<Map<String, dynamic>> rows,
+  ) {
+    final frontier = readFrontier;
+    if (frontier == null) return rows;
+    return [
+      for (final row in rows)
+        switch (row['threadChannelId']) {
+          final String id => projectFullyRead(row, frontier(id)),
+          _ => row,
+        },
+    ];
   }
 
   Future<void> follow(String parentMessageId) =>
