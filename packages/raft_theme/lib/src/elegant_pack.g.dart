@@ -701,6 +701,7 @@ const String elegantThemePackJson = r'''{
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
         "search.failure": "card",
+        "appearance.layout": "legacy",
         "standalone.buttonSize": "md"
       }
     },
@@ -1358,6 +1359,7 @@ const String elegantThemePackJson = r'''{
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
         "search.failure": "card",
+        "appearance.layout": "legacy",
         "standalone.buttonSize": "md"
       }
     }

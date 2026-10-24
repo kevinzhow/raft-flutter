@@ -928,6 +928,7 @@ const String raftThemePackJson = r'''{
         "skeleton.look": "fill",
         "activity.loadingCards": "edge",
         "search.failure": "banner",
+        "appearance.layout": "web23",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1797,6 +1798,7 @@ const String raftThemePackJson = r'''{
         "skeleton.look": "fill",
         "activity.loadingCards": "edge",
         "search.failure": "banner",
+        "appearance.layout": "web23",
         "standalone.buttonSize": "lg"
       }
     }

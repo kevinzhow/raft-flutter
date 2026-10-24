@@ -446,9 +446,8 @@ class _RenderRaftUnderlines extends RenderProxyBox {
       void drawSegment() {
         if (segment == null) return;
         final baseline = firstBaseline + segment.top;
-        final top =
-            (baseline + (run.offset ?? _metrics.offset) * scale)
-                .roundToDouble();
+        final top = (baseline + (run.offset ?? _metrics.offset) * scale)
+            .roundToDouble();
         strokes.add((
           rect: Rect.fromLTWH(
             segment.left,

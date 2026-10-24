@@ -703,7 +703,8 @@ class RaftActivityLoadingList extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: t.panel,
-            borderRadius: t.option('activity.loadingCards', or: 'edge') == 'edge'
+            borderRadius:
+                t.option('activity.loadingCards', or: 'edge') == 'edge'
                 ? BorderRadius.circular(
                     t.size('radius.container', fallback: 10),
                   )

@@ -689,6 +689,7 @@
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
         "search.failure": "card",
+        "appearance.layout": "legacy",
         "standalone.buttonSize": "md"
       }
     },
@@ -1346,6 +1347,7 @@
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
         "search.failure": "card",
+        "appearance.layout": "legacy",
         "standalone.buttonSize": "md"
       }
     }

@@ -744,7 +744,9 @@ class RaftTaskBoardColumn extends StatelessWidget {
         width: 232,
         decoration: BoxDecoration(
           color: dropActive ? t.colors['fill-pressed'] : null,
-          borderRadius: BorderRadius.circular(t.size('radius.container', fallback: 10)),
+          borderRadius: BorderRadius.circular(
+            t.size('radius.container', fallback: 10),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

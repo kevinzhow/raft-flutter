@@ -16,17 +16,37 @@ class RaftAppearanceSectionRecipe {
   static const gap = 16.0;
   static const gapAbove = EdgeInsets.only(top: gap);
   BoxDecoration get card => RaftSettingsCard.decoration(t);
-  TextStyle get heading =>
-      RaftTypography.body(t, size: 14, line: 20, weight: FontWeight.w700);
-  TextStyle get description =>
-      RaftTypography.body(t, size: 12, line: 16, color: t.muted);
-  TextStyle get annotation => RaftTypography.body(
-    t,
-    size: 11,
-    line: 16,
-    color: t.muted,
-    weight: FontWeight.w700,
-  );
+
+  /// v1.21.23 AppearanceSection (`text-subhead font-semibold` title,
+  /// `text-footnote text-foreground-muted` description, `text-caption
+  /// text-foreground-hint` note) or the a57b9dab 14/12/11 hierarchy.
+  bool get web => t.option('appearance.layout', or: 'web23') == 'web23';
+  TextStyle get heading => web
+      ? RaftTypography.body(
+          t,
+          size: 15,
+          line: 20,
+          weight: FontWeight.w600,
+          color: t.colors['foreground'],
+        )
+      : RaftTypography.body(t, size: 14, line: 20, weight: FontWeight.w700);
+  TextStyle get description => web
+      ? RaftTypography.body(t, size: 13, line: 18, color: t.muted)
+      : RaftTypography.body(t, size: 12, line: 16, color: t.muted);
+  TextStyle get annotation => web
+      ? RaftTypography.body(
+          t,
+          size: 12,
+          line: 16,
+          color: t.colors['foreground-hint'],
+        )
+      : RaftTypography.body(
+          t,
+          size: 11,
+          line: 16,
+          color: t.muted,
+          weight: FontWeight.w700,
+        );
 }
 
 class RaftAppearanceSection extends StatelessWidget {
@@ -106,26 +126,45 @@ class RaftAppearanceSection extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          card([
-            title(
-              'Theme',
-              'Choose the visual style for this browser. Your choice is saved on this device.',
-            ),
-            const SizedBox(height: 12),
-            RaftAppearancePicker(
-              appearance: appearance,
-              onChanged: onAppearance,
-            ),
-          ]),
-          if (NativeAppIcon.instance.mobile) ...[
-            const SizedBox(height: RaftAppearanceSectionRecipe.gap),
-            const RaftSettingsSectionHeader(
-              label: 'App icon',
-              glyph: RaftGlyph.smartphone,
-            ),
-            const AppIconSettingsSection(),
+          if (r.web)
+            // Web `Card className="mb-6 p-4"`: the Light / Dark / System
+            // preview cards. The Raft / Elegant / Brutal look picker is a
+            // product addition and sits after the Web sections (below).
+            card([
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: title(
+                  'Theme',
+                  'Choose light, dark, or follow your device. Your choice is saved on this device.',
+                ),
+              ),
+              RaftAppearanceModeCards(
+                appearance: appearance,
+                onChanged: onAppearance,
+              ),
+            ])
+          else ...[
+            card([
+              title(
+                'Theme',
+                'Choose the visual style for this browser. Your choice is saved on this device.',
+              ),
+              const SizedBox(height: 12),
+              RaftAppearancePicker(
+                appearance: appearance,
+                onChanged: onAppearance,
+              ),
+            ]),
+            if (NativeAppIcon.instance.mobile) ...[
+              const SizedBox(height: RaftAppearanceSectionRecipe.gap),
+              const RaftSettingsSectionHeader(
+                label: 'App icon',
+                glyph: RaftGlyph.smartphone,
+              ),
+              const AppIconSettingsSection(),
+            ],
           ],
-          const SizedBox(height: RaftAppearanceSectionRecipe.gap),
+          SizedBox(height: r.web ? 24 : RaftAppearanceSectionRecipe.gap),
           const RaftSettingsSectionHeader(
             label: 'Appearance',
             glyph: RaftGlyph.type,
@@ -255,6 +294,32 @@ class RaftAppearanceSection extends StatelessWidget {
                 },
               ),
             ),
+          // Product additions that Web v1.21.23 has no counterpart for sit after
+          // its sections: the Raft / Elegant / Brutal look picker and, on a
+          // phone, the app icon.
+          if (r.web) ...[
+            const SizedBox(height: RaftAppearanceSectionRecipe.gap),
+            card([
+              title(
+                'Look',
+                'Choose the visual style for this browser. Your choice is saved on this device.',
+              ),
+              const SizedBox(height: 12),
+              RaftAppearancePicker(
+                appearance: appearance,
+                onChanged: onAppearance,
+                showMode: false,
+              ),
+            ]),
+            if (NativeAppIcon.instance.mobile) ...[
+              const SizedBox(height: RaftAppearanceSectionRecipe.gap),
+              const RaftSettingsSectionHeader(
+                label: 'App icon',
+                glyph: RaftGlyph.smartphone,
+              ),
+              const AppIconSettingsSection(),
+            ],
+          ],
         ],
       );
     },

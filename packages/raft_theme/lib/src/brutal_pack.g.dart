@@ -697,6 +697,7 @@ const String brutalThemePackJson = r'''{
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
         "search.failure": "card",
+        "appearance.layout": "legacy",
         "standalone.buttonSize": "md"
       }
     },
@@ -1388,6 +1389,7 @@ const String brutalThemePackJson = r'''{
         "skeleton.look": "ink",
         "activity.loadingCards": "inset",
         "search.failure": "card",
+        "appearance.layout": "legacy",
         "standalone.buttonSize": "md"
       }
     }

@@ -10,8 +10,8 @@ import 'theme.dart';
 extension RaftPageTokens on RaftTokens {
   /// `bg-layer-sidebar` of a standalone page (splash, server not found), or
   /// the canvas the pre-theme app painted there.
-  Color get standaloneSurface => option('standalone.surface', or: 'sidebar') ==
-          'sidebar'
+  Color get standaloneSurface =>
+      option('standalone.surface', or: 'sidebar') == 'sidebar'
       ? colors['layer-sidebar']!
       : canvas;
 

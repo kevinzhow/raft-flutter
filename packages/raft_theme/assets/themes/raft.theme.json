@@ -915,6 +915,7 @@
         "skeleton.look": "fill",
         "activity.loadingCards": "edge",
         "search.failure": "banner",
+        "appearance.layout": "web23",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1784,6 +1785,7 @@
         "skeleton.look": "fill",
         "activity.loadingCards": "edge",
         "search.failure": "banner",
+        "appearance.layout": "web23",
         "standalone.buttonSize": "lg"
       }
     }

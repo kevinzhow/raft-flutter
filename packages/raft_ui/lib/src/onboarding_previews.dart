@@ -47,11 +47,7 @@ class RaftOnboardingDotPane extends StatelessWidget {
 }
 
 class _DotGridPainter extends CustomPainter {
-  const _DotGridPainter(
-    this.color, {
-    required this.grid,
-    required this.radius,
-  });
+  const _DotGridPainter(this.color, {required this.grid, required this.radius});
   final Color color;
   final double grid, radius;
 

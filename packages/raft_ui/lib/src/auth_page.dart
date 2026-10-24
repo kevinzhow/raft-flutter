@@ -342,14 +342,15 @@ class RaftAuthField extends StatelessWidget {
                 height:
                     t.size('type.fieldLabel.line', fallback: 18) /
                     t.size('type.fieldLabel.size', fallback: 13),
-                fontWeight: FontWeight.values[(t.size(
-                              'type.fieldLabel.weight',
-                              fallback: 600,
-                            ) /
-                            100 -
-                        1)
-                    .round()
-                    .clamp(0, 8)],
+                fontWeight:
+                    FontWeight.values[(t.size(
+                                  'type.fieldLabel.weight',
+                                  fallback: 600,
+                                ) /
+                                100 -
+                            1)
+                        .round()
+                        .clamp(0, 8)],
                 color: t.colors['foreground-field-label'],
               )
         : style.label.textStyle(tokens);
@@ -378,7 +379,9 @@ class RaftAuthField extends StatelessWidget {
         if (helper != null) ...[
           // Field gap (v1.21.23) / gap-1 + mt-1 (a57b9dab).
           SizedBox(
-            height: fieldTokens ? labelGap : ((style.root.rowGap ?? 0) + 4).toDouble(),
+            height: fieldTokens
+                ? labelGap
+                : ((style.root.rowGap ?? 0) + 4).toDouble(),
           ),
           Text(
             helper!,
@@ -394,7 +397,9 @@ class RaftAuthField extends StatelessWidget {
         ],
         if (error != null) ...[
           SizedBox(
-            height: fieldTokens ? labelGap : ((style.root.rowGap ?? 0) + 4).toDouble(),
+            height: fieldTokens
+                ? labelGap
+                : ((style.root.rowGap ?? 0) + 4).toDouble(),
           ),
           Semantics(
             liveRegion: true,
@@ -511,8 +516,7 @@ class RaftAuthWideButton extends StatelessWidget {
       size: RaftButtonRecipeSize.lg,
       uiSize:
           variant == RaftControlVariant.accent &&
-              RaftTokens.of(context).option('auth.submitSize', or: 'xl') ==
-                  'xl'
+              RaftTokens.of(context).option('auth.submitSize', or: 'xl') == 'xl'
           ? RaftButtonSize.xl
           : null,
       expand: true,
@@ -841,10 +845,7 @@ class RaftAuthTextLink extends StatelessWidget {
               style: style.copyWith(color: color),
               // v1.21.23: a permanent 1.5px underline 3px below the baseline.
               underline:
-                  underlined ||
-                  inline ||
-                  state.hovered ||
-                  state.focusVisible,
+                  underlined || inline || state.hovered || state.focusVisible,
               underlineOffset: underlined ? 3 : null,
               underlineThickness: underlined ? 1.5 : null,
             ),

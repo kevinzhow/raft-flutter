@@ -181,6 +181,7 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'skeleton.look': {'fill', 'ink'},
   'activity.loadingCards': {'edge', 'inset'},
   'search.failure': {'banner', 'card'},
+  'appearance.layout': {'web23', 'legacy'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

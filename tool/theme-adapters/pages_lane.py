@@ -92,6 +92,10 @@ _OPTIONS = {
     # Search page failure: a warning Banner with a Retry button (v1.21.23) or
     # the bordered card of a57b9dab.
     'search.failure': ('banner', 'card'),
+    # Appearance page: Light / Dark / System preview cards first, the look
+    # picker and the app icon (product additions) after the Web sections, or
+    # the a57b9dab page.
+    'appearance.layout': ('web23', 'legacy'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -115,6 +119,7 @@ OPTION_VALUES = {
     'skeleton.look': ('fill', 'ink'),
     'activity.loadingCards': ('edge', 'inset'),
     'search.failure': ('banner', 'card'),
+    'appearance.layout': ('web23', 'legacy'),
 }
 
 # ---------------------------------------------------------------- colours

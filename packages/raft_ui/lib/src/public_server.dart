@@ -226,16 +226,13 @@ class RaftPublicChannelSidebar extends StatelessWidget {
                           overflow: sm
                               ? TextOverflow.ellipsis
                               : TextOverflow.clip,
-                          style:
-                              RaftTypography.inherited(
-                                t,
-                                size: sm ? 12 : 11,
-                                line: sm ? 16 : 16.5,
-                                weight: FontWeight.w700,
-                                color: text.strong,
-                              ).copyWith(
-                                letterSpacing: (sm ? 12 * .1 : 11 * .05),
-                              ),
+                          style: RaftTypography.inherited(
+                            t,
+                            size: sm ? 12 : 11,
+                            line: sm ? 16 : 16.5,
+                            weight: FontWeight.w700,
+                            color: text.strong,
+                          ).copyWith(letterSpacing: (sm ? 12 * .1 : 11 * .05)),
                         ),
                 ),
               ),
@@ -329,7 +326,8 @@ class RaftPublicBottomBanner extends StatelessWidget {
         // small buttons): stacked, the banner was ~105px tall on a 390px phone.
         // From sm up v1.21.23 stacks them (the action slot is `mt-2` under the
         // description); the pre-theme looks kept the row (publicServer.banner).
-        child: !narrow &&
+        child:
+            !narrow &&
                 t.option('publicServer.banner', or: 'stacked') == 'stacked'
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,10 +348,7 @@ class RaftPublicBottomBanner extends StatelessWidget {
                     ConstrainedBox(
                       constraints: BoxConstraints(
                         maxWidth: box.maxWidth.isFinite
-                            ? (box.maxWidth - RaftSpace.x2 - 120).clamp(
-                                0,
-                                1e9,
-                              )
+                            ? (box.maxWidth - RaftSpace.x2 - 120).clamp(0, 1e9)
                             : double.infinity,
                       ),
                       child: FittedBox(
@@ -954,7 +949,9 @@ class _LocationTile extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: t.colors['brand-400'],
-        borderRadius: BorderRadius.circular(t.size('radius.sticker', fallback: 4)),
+        borderRadius: BorderRadius.circular(
+          t.size('radius.sticker', fallback: 4),
+        ),
         border: Border.all(color: ink, width: 1.5),
         boxShadow: [
           BoxShadow(color: t.colors['sticker-edge']!, spreadRadius: 1.5),

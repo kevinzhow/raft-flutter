@@ -19,6 +19,7 @@ import 'recipes/recipe_runtime.dart';
 import 'panel_layout.dart';
 import 'text_measure.dart';
 import 'text_scaling.dart' show RaftScaled;
+import 'page_tokens.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
@@ -401,12 +402,11 @@ class RaftSectionEyebrow extends StatelessWidget {
   /// Inline spans after the label (e.g. the SectionHeader count).
   final List<InlineSpan>? trailing;
 
-  static TextStyle style(RaftTokens t, {Color? color}) => TextStyle(
-    fontSize: 12,
-    height: 16 / 12,
-    fontWeight: FontWeight.w700,
-    color: color ?? t.semantic.foregroundMuted,
-  );
+  /// SectionEyebrow: `text-footnote font-bold text-foreground-hint` in the
+  /// v1.21.23 look (13/18), `text-xs ... muted` (12/16) before; both come from
+  /// the pack (`type.sectionEyebrow.*`, `foreground-eyebrow`).
+  static TextStyle style(RaftTokens t, {Color? color}) =>
+      t.sectionEyebrow(color: color);
 
   @override
   Widget build(BuildContext context) {

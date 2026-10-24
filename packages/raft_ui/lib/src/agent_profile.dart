@@ -2045,7 +2045,10 @@ class RaftWorkspaceTreeView extends StatelessWidget {
         children: [
           Expanded(
             child: web
-                ? Text(raftText(context, 'Workspace'), style: t.sectionEyebrow())
+                ? Text(
+                    raftText(context, 'Workspace'),
+                    style: t.sectionEyebrow(),
+                  )
                 : RaftSectionEyebrow(raftText(context, 'Workspace')),
           ),
           // `size-8` icon buttons (16px glyphs) in v1.21.23; `size-7` / 13px.
@@ -2084,16 +2087,14 @@ class RaftWorkspaceTreeView extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         child: RaftCssText(
-          raftText(context, web && text == 'Loading files…' ? 'Loading...' : text),
+          raftText(
+            context,
+            web && text == 'Loading files…' ? 'Loading...' : text,
+          ),
           textAlign: TextAlign.center,
           style: web
               ? RaftTypography.body(t, size: 14, line: 20, color: placeholder)
-              : RaftTypography.mono(
-                  t,
-                  size: 14,
-                  line: 20,
-                  color: placeholder,
-                ),
+              : RaftTypography.mono(t, size: 14, line: 20, color: placeholder),
         ),
       ),
     );
@@ -2223,8 +2224,11 @@ class RaftWorkspaceTreeView extends StatelessWidget {
                   (web
                       ? RaftProductEmptyState(
                           title: raftText(context, 'Select a file to view'),
-                          icon: (context, size, color) =>
-                              RaftIcon(RaftGlyph.file, size: size, color: color),
+                          icon: (context, size, color) => RaftIcon(
+                            RaftGlyph.file,
+                            size: size,
+                            color: color,
+                          ),
                         )
                       : null) ??
                   Center(

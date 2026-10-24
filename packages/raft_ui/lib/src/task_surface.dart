@@ -559,7 +559,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         decoration: web
             ? null
             : BoxDecoration(
-                border: Border(bottom: BorderSide(color: raftPanelRuleColor(t))),
+                border: Border(
+                  bottom: BorderSide(color: raftPanelRuleColor(t)),
+                ),
               ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
