@@ -145,7 +145,7 @@ function ParityExtScWindowMarker({ p }: { p: ParityExtScProps }) {
 function ParityExtScView({ p }: { p: ParityExtScProps }) {
   useMemo(() => parityExtScPrimeStores(p), [p]);
   const brutal = p.theme === "brutal-light";
-  const shellVars = { ["--shell-header-height" as string]: brutal ? "62px" : "56px" } as ParityExtScCSSProperties;
+  const shellVars = { ["--shell-header-height" as string]: "56px" } as ParityExtScCSSProperties;
   const selected = parityExtScSelected(p);
   const channel = useChannelStore((s) => [...s.channels, ...s.dmChannels].find((c) => c.id === selected) ?? null);
   if (p.platform === "mobile") {

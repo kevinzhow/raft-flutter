@@ -29,6 +29,7 @@ import 'mounted_task_chip.dart' show RaftMessageTaskStatus;
 import 'task.dart';
 import 'task_status_badge.dart';
 import 'task_timeline.dart';
+import 'page_tokens.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 import 'thread_composition.dart';
@@ -37,6 +38,10 @@ import 'status_bar.dart';
 
 /// LegacyTaskPanel's container is selected by MainLayout, independently of
 /// the modern task modal and of the task's accepted metadata.
+/// Web v1.21.23 TaskProperties look (the Raft pack) or the a57b9dab one.
+bool _webHead(RaftTokens t) =>
+    t.option('taskModal.head', or: 'web23') == 'web23';
+
 enum RaftLegacyTaskPresentation { side, modal, mobileModal }
 
 /// Mounted Source TaskModalBar/TaskModalHead/TaskProperties and the separate
@@ -482,7 +487,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               },
             ),
           ),
-        historyBlock(context),
+        // v1.21.23 TaskProperties: the facts row first, History folds under it
+        // (`pt-4` section eyebrow); a57b9dab put the History block above.
+        if (!_webHead(t)) historyBlock(context),
         Wrap(
           key: const ValueKey('task-properties'),
           spacing: 24,
@@ -498,6 +505,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             ),
           ],
         ),
+        if (_webHead(t)) historyBlock(context),
         if (task['readOnlyReason'] != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -541,13 +549,18 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   /// text-left text-xs font-bold` + 14px chevron) and, open, `mt-3` content.
   Widget historyBlock(BuildContext context) {
     final t = RaftTokens.of(context);
+    final web = _webHead(t);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: web
+          ? const EdgeInsets.only(top: 16)
+          : const EdgeInsets.only(bottom: 16),
       child: Container(
-        padding: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: raftPanelRuleColor(t))),
-        ),
+        padding: web ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
+        decoration: web
+            ? null
+            : BoxDecoration(
+                border: Border(bottom: BorderSide(color: raftPanelRuleColor(t))),
+              ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -558,26 +571,29 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               builder: (context, state) => Semantics(
                 expanded: historyOpen,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: EdgeInsets.only(bottom: web ? 0 : 4),
                   child: Row(
                     spacing: 4,
                     children: [
                       RaftCssText(
                         raftText(context, 'History'),
-                        style: RaftTypography.body(
-                          t,
-                          size: 12,
-                          line: 16,
-                          weight: FontWeight.w700,
-                          color: t.strong,
-                        ),
+                        // SectionEyebrow: 13/18 bold hint (v1.21.23).
+                        style: web
+                            ? t.sectionEyebrow()
+                            : RaftTypography.body(
+                                t,
+                                size: 12,
+                                line: 16,
+                                weight: FontWeight.w700,
+                                color: t.strong,
+                              ),
                       ),
                       RaftIcon(
                         historyOpen
                             ? RaftGlyph.chevronDown
                             : RaftGlyph.chevronRight,
                         size: 14,
-                        color: t.strong,
+                        color: web ? t.colors['foreground-eyebrow'] : t.strong,
                       ),
                       const Spacer(),
                     ],
@@ -598,18 +614,30 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
 
   /// raft-ui `DescriptionDetails`: elegant `text-sm leading-5
   /// text-foreground-muted`, brutal `text-sm text-foreground`.
-  TextStyle detailsStyle(RaftTokens t) =>
-      RaftTypography.body(t, size: 14, line: 20, color: t.muted);
+  TextStyle detailsStyle(RaftTokens t) => RaftTypography.body(
+    t,
+    size: 14,
+    line: 20,
+    color: _webHead(t) ? t.colors['foreground'] : t.muted,
+  );
 
   /// raft-ui `DescriptionTerm`: elegant `text-[11px] font-medium leading-none
   /// text-foreground-placeholder`, brutal `text-xs text-foreground-strong/50`.
-  TextStyle termStyle(RaftTokens t) => RaftTypography.body(
-    t,
-    size: 11,
-    line: 11,
-    weight: FontWeight.w500,
-    color: t.colors['foreground-placeholder'],
-  );
+  TextStyle termStyle(RaftTokens t) => _webHead(t)
+      ? RaftTypography.body(
+          t,
+          size: 13,
+          line: 18,
+          weight: FontWeight.w500,
+          color: t.colors['foreground-hint'],
+        )
+      : RaftTypography.body(
+          t,
+          size: 11,
+          line: 11,
+          weight: FontWeight.w500,
+          color: t.colors['foreground-placeholder'],
+        );
 
   String createdBy(BuildContext context) {
     final task = widget.task;

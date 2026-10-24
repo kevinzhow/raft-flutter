@@ -71,6 +71,12 @@ _OPTIONS = {
     # Tasks board lane: flat 232px column (raft-ui 0.7.0 taskBoardColumn) or the
     # bordered 320px lane card of a57b9dab.
     'taskBoard.column': ('flat', 'card'),
+    # Task modal head: facts row then History (TaskProperties, v1.21.23) or the
+    # a57b9dab order with the 11px terms.
+    'taskModal.head': ('web23', 'legacy'),
+    # EmptyState: bare 36px hint icon + headline title (0.7.0) or the recipe tile
+    # of a57b9dab.
+    'emptyState.look': ('plain', 'recipe'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -89,6 +95,8 @@ OPTION_VALUES = {
     'agentWorkspace.look': ('web23', 'legacy'),
     'pageHeader.icon': ('none', 'tile'),
     'taskBoard.column': ('flat', 'card'),
+    'taskModal.head': ('web23', 'legacy'),
+    'emptyState.look': ('plain', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours

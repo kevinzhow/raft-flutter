@@ -91,7 +91,7 @@ function parityExtMbPrimeStores(props: ParityExtMbProps) {
 // `[--shell-header-height:62px]` (Brutal) / `56px` (Elegant).
 function parityExtMbShellVars(): ParityExtMbCSSProperties {
   const theme = new URLSearchParams(window.location.search).get("parityTheme");
-  return { ["--shell-header-height" as string]: theme === "brutal-light" ? "62px" : "56px" } as ParityExtMbCSSProperties;
+  return { ["--shell-header-height" as string]: "56px" } as ParityExtMbCSSProperties;
 }
 
 // InviteHumanDialog like the official host: owner (so `inviteMembers` holds) and the

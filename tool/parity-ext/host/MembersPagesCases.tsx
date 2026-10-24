@@ -83,7 +83,7 @@ function parityExtMpPrimeStores(props: ParityExtMpProps) {
 // `[--shell-header-height:62px]` (Brutal) / `56px` (Elegant).
 function parityExtMpShellVars(): ParityExtMpCSSProperties {
   const theme = new URLSearchParams(window.location.search).get("parityTheme");
-  return { ["--shell-header-height" as string]: theme === "brutal-light" ? "62px" : "56px" } as ParityExtMpCSSProperties;
+  return { ["--shell-header-height" as string]: "56px" } as ParityExtMpCSSProperties;
 }
 
 function ParityExtMpDialogBox({ props, caseId, children }: { props: ParityExtMpProps; caseId: string; children: ParityExtMpReactNode }) {

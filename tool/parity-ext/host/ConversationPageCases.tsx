@@ -97,7 +97,7 @@ function ParityExtCvWindowView({ p }: { p: ParityExtCvProps }) {
   useMemo(() => parityExtCvPrimeStores(p), [p]);
   const brutal = parityExtCvTheme() === "brutal-light";
   // AppShell root sets the header height the PanelHeader recipe reads.
-  const shellVars = { ["--shell-header-height" as string]: brutal ? "62px" : "56px" } as ParityExtCvCSSProperties;
+  const shellVars = { ["--shell-header-height" as string]: "56px" } as ParityExtCvCSSProperties;
   const mobile = p.platform === "mobile";
   const viewportHeight = window.innerHeight;
   const width = mobile ? 390 : p.surface === "thread" ? 400 : 1280 - (brutal ? 64 : 56) - 240;

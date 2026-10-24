@@ -685,6 +685,8 @@ const String brutalThemePackJson = r'''{
         "agentWorkspace.look": "legacy",
         "pageHeader.icon": "tile",
         "taskBoard.column": "card",
+        "taskModal.head": "legacy",
+        "emptyState.look": "recipe",
         "standalone.buttonSize": "md"
       }
     },
@@ -1364,6 +1366,8 @@ const String brutalThemePackJson = r'''{
         "agentWorkspace.look": "legacy",
         "pageHeader.icon": "tile",
         "taskBoard.column": "card",
+        "taskModal.head": "legacy",
+        "emptyState.look": "recipe",
         "standalone.buttonSize": "md"
       }
     }

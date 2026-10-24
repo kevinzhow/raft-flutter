@@ -116,7 +116,7 @@ function parityExtPrimeStores(props: ParityExtProps) {
 // `h-panel-header` reads it (index.css defaults to 62px without the shell).
 function parityExtShellVars(): ParityExtCSSProperties {
   const theme = new URLSearchParams(window.location.search).get("parityTheme");
-  return { ["--shell-header-height" as string]: theme === "brutal-light" ? "62px" : "56px" } as ParityExtCSSProperties;
+  return { ["--shell-header-height" as string]: "56px" } as ParityExtCSSProperties;
 }
 
 function ParityExtCaseView({ props }: { props: ParityExtProps }) {

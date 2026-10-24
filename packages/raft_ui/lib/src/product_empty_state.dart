@@ -4,6 +4,7 @@ import 'panel_layout.dart' show RaftCssText;
 import 'recipe_surface.dart';
 import 'recipes/empty_state.g.dart';
 import 'system_inset.dart' show raftScrollPadding;
+import 'design_primitives.dart' show RaftTypography;
 import 'theme.dart';
 
 /// Web `components/ui/EmptyState` (raft-ui `EmptyState` / `EmptyStateIcon` /
@@ -33,6 +34,64 @@ class RaftProductEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // raft-ui 0.7.0 EmptyState: a bare 36px `text-foreground-hint` icon, a
+    // `text-headline font-bold text-foreground-muted` title and a callout
+    // description (`px-6 py-12`, content `max-w-sm gap-2`); the pre-theme looks
+    // keep the recipe of a57b9dab (emptyState.look).
+    if (t.option('emptyState.look', or: 'plain') == 'plain') {
+      final base = DefaultTextStyle.of(context).style;
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 384),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  key: const ValueKey('empty-state-icon'),
+                  child: icon(context, 36, t.colors['foreground-hint']!),
+                ),
+                const SizedBox(height: 16),
+                RaftCssText(
+                  title,
+                  key: const ValueKey('empty-state-title'),
+                  textAlign: TextAlign.center,
+                  style: RaftTypography.body(
+                    t,
+                    size: 17,
+                    line: 22,
+                    weight: FontWeight.w700,
+                    color: t.colors['foreground-muted'],
+                  ).copyWith(fontFamily: base.fontFamily),
+                ),
+                if (description != null) ...[
+                  const SizedBox(height: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: RaftCssText(
+                      description!,
+                      textAlign: TextAlign.center,
+                      style: RaftTypography.body(
+                        t,
+                        size: 14,
+                        line: 20,
+                        color: t.colors['foreground-hint'],
+                      ).copyWith(fontFamily: base.fontFamily),
+                    ),
+                  ),
+                ],
+                if (action != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: action,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final rt = t.recipeTokens;
     final recipe = RaftEmptyStateRecipe.resolve(
       theme: t.recipeTheme,

@@ -176,6 +176,8 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'agentWorkspace.look': {'web23', 'legacy'},
   'pageHeader.icon': {'none', 'tile'},
   'taskBoard.column': {'flat', 'card'},
+  'taskModal.head': {'web23', 'legacy'},
+  'emptyState.look': {'plain', 'recipe'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

@@ -916,6 +916,8 @@ const String raftThemePackJson = r'''{
         "agentWorkspace.look": "web23",
         "pageHeader.icon": "none",
         "taskBoard.column": "flat",
+        "taskModal.head": "web23",
+        "emptyState.look": "plain",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1773,6 +1775,8 @@ const String raftThemePackJson = r'''{
         "agentWorkspace.look": "web23",
         "pageHeader.icon": "none",
         "taskBoard.column": "flat",
+        "taskModal.head": "web23",
+        "emptyState.look": "plain",
         "standalone.buttonSize": "lg"
       }
     }
