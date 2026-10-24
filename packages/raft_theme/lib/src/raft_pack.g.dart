@@ -744,6 +744,7 @@ const String raftThemePackJson = r'''{
         "type.authTitle.line": 28,
         "type.authDescription.size": 15,
         "type.authDescription.line": 20,
+        "type.authLegal.line": 16,
         "type.splash.size": 17,
         "type.splash.line": 22,
         "type.notFoundTitle.size": 22,
@@ -924,6 +925,8 @@ const String raftThemePackJson = r'''{
         "taskBoard.column": "flat",
         "taskModal.head": "web23",
         "emptyState.look": "plain",
+        "skeleton.look": "fill",
+        "activity.loadingCards": "edge",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1609,6 +1612,7 @@ const String raftThemePackJson = r'''{
         "type.authTitle.line": 28,
         "type.authDescription.size": 15,
         "type.authDescription.line": 20,
+        "type.authLegal.line": 16,
         "type.splash.size": 17,
         "type.splash.line": 22,
         "type.notFoundTitle.size": 22,
@@ -1789,6 +1793,8 @@ const String raftThemePackJson = r'''{
         "taskBoard.column": "flat",
         "taskModal.head": "web23",
         "emptyState.look": "plain",
+        "skeleton.look": "fill",
+        "activity.loadingCards": "edge",
         "standalone.buttonSize": "lg"
       }
     }

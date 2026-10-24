@@ -520,6 +520,7 @@ const Set<String> raftGeometryTokens = {
   'stroke.spinnerRing',
   'type.authDescription.line',
   'type.authDescription.size',
+  'type.authLegal.line',
   'type.authTitle.line',
   'type.authTitle.size',
   'type.bannerBody.line',

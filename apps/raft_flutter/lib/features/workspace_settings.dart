@@ -295,6 +295,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
               // Web mounts the page in `Panel edge="inset"` on the canvas, its
               // PanelHeader on the same surface.
               ownHeader: true,
+              headerIcon: true,
               contentColor: (t) => t.canvas,
             ),
           if (w.can('viewBilling'))

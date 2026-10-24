@@ -163,10 +163,24 @@ class RaftTaskLoadingList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // v1.21.23 TaskCardSkeleton: a Card (`rounded-container`, hairline) in the
+    // `px-5 py-4` viewport; the pre-theme looks drew a 4px-radius muted box.
+    final card = t.option('activity.loadingCards', or: 'edge') == 'edge';
     return ListView(
       primary: false,
       physics: const NeverScrollableScrollPhysics(),
-      padding: raftScrollPadding(context, const EdgeInsets.all(16)),
+      padding: raftScrollPadding(
+        context,
+        EdgeInsets.symmetric(
+          horizontal:
+              card &&
+                  MediaQuery.sizeOf(context).width >=
+                      RaftLayoutMetrics.desktopBreakpoint
+              ? t.size('space.tasksViewportInline', fallback: 20)
+              : 16,
+          vertical: 16,
+        ),
+      ),
       children: [
         for (var i = 0; i < 5; i++)
           Padding(
@@ -175,8 +189,15 @@ class RaftTaskLoadingList extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: t.card,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: t.colors['line-muted']!, width: 1),
+                borderRadius: BorderRadius.circular(
+                  card ? t.size('radius.container', fallback: 10) : 4,
+                ),
+                border: Border.all(
+                  color: card
+                      ? t.colors['line-hairline']!
+                      : t.colors['line-muted']!,
+                  width: 1,
+                ),
               ),
               child: const RaftSkeletonRow(lineFractions: [.5, .75]),
             ),

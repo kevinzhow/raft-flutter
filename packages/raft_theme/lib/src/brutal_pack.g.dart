@@ -581,6 +581,7 @@ const String brutalThemePackJson = r'''{
         "type.authTitle.line": 28,
         "type.authDescription.size": 14,
         "type.authDescription.line": 20,
+        "type.authLegal.line": 20,
         "type.splash.size": 20,
         "type.splash.line": 28,
         "type.notFoundTitle.size": 24,
@@ -693,6 +694,8 @@ const String brutalThemePackJson = r'''{
         "taskBoard.column": "card",
         "taskModal.head": "legacy",
         "emptyState.look": "recipe",
+        "skeleton.look": "ink",
+        "activity.loadingCards": "inset",
         "standalone.buttonSize": "md"
       }
     },
@@ -1234,6 +1237,7 @@ const String brutalThemePackJson = r'''{
         "type.authTitle.line": 28,
         "type.authDescription.size": 14,
         "type.authDescription.line": 20,
+        "type.authLegal.line": 20,
         "type.splash.size": 20,
         "type.splash.line": 28,
         "type.notFoundTitle.size": 24,
@@ -1380,6 +1384,8 @@ const String brutalThemePackJson = r'''{
         "taskBoard.column": "card",
         "taskModal.head": "legacy",
         "emptyState.look": "recipe",
+        "skeleton.look": "ink",
+        "activity.loadingCards": "inset",
         "standalone.buttonSize": "md"
       }
     }

@@ -21,6 +21,9 @@ _GEOMETRY = {
     # a57b9dab: `text-xl` 20/28 and `text-sm` 14/20.
     'type.authTitle.size': (22, 20), 'type.authTitle.line': (28, 28),
     'type.authDescription.size': (15, 14), 'type.authDescription.line': (20, 20),
+    # Legal notice under the auth forms: `text-caption` 12/16 (v1.21.23) vs the
+    # `leading-5` 20px line of a57b9dab.
+    'type.authLegal.line': (16, 20),
     # Standalone splash / not-found page label: `text-headline` 17/22 (App.tsx
     # AuthBootstrapStatus); a57b9dab drew it 20/28.
     'type.splash.size': (17, 20), 'type.splash.line': (22, 28),
@@ -81,6 +84,11 @@ _OPTIONS = {
     # EmptyState: bare 36px hint icon + headline title (0.7.0) or the recipe tile
     # of a57b9dab.
     'emptyState.look': ('plain', 'recipe'),
+    # Skeleton fill: `bg-fill-muted rounded-sticker` (0.7.0) or the ink wash.
+    'skeleton.look': ('fill', 'ink'),
+    # Activity / Saved loading cards: edge to edge rounded cards (v1.21.23) or
+    # the 16px-inset square cards of a57b9dab.
+    'activity.loadingCards': ('edge', 'inset'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -101,6 +109,8 @@ OPTION_VALUES = {
     'taskBoard.column': ('flat', 'card'),
     'taskModal.head': ('web23', 'legacy'),
     'emptyState.look': ('plain', 'recipe'),
+    'skeleton.look': ('fill', 'ink'),
+    'activity.loadingCards': ('edge', 'inset'),
 }
 
 # ---------------------------------------------------------------- colours

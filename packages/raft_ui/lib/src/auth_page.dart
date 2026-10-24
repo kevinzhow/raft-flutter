@@ -722,7 +722,7 @@ class _RaftAuthLegalNoticeState extends State<RaftAuthLegalNotice> {
       t,
       size: RaftSansSize.caption,
       color: t.muted,
-    ).copyWith(height: 20 / 12);
+    ).copyWith(height: t.size('type.authLegal.line', fallback: 16) / 12);
     return RaftUnderlines(
       child: Text.rich(
         textAlign: TextAlign.center,

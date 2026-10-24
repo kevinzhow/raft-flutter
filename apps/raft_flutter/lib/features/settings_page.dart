@@ -22,6 +22,7 @@ class RaftSettingsDestination {
     this.attached = true,
     this.ownHeader = false,
     this.contentColor,
+    this.headerIcon = false,
   }) : assert(builder != null || onOpen != null);
 
   /// A row that leaves the Settings page (external link or another route),
@@ -40,6 +41,7 @@ class RaftSettingsDestination {
        title = null,
        attached = true,
        ownHeader = false,
+       headerIcon = false,
        contentColor = null;
   final String id, label, group;
 
@@ -59,6 +61,10 @@ class RaftSettingsDestination {
 
   /// The panel header sits inside the content surface (AboutFeedbackPanel).
   final bool ownHeader;
+
+  /// The page passes an `icon` to its PanelHeader (RaftBench); Settings tabs
+  /// do not, so their head carries no tile in the Raft look.
+  final bool headerIcon;
 
   /// Content surface override (RaftSettingsPanelFrame.contentColor).
   final Color Function(RaftTokens)? contentColor;
@@ -200,6 +206,7 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
     Widget header() => RaftSettingsPanelHeader(
       title: active.title ?? active.label,
       glyph: active.glyph,
+      iconTile: active.headerIcon,
       mobile: mobile,
       backKey: const Key('mobile-settings-back'),
       backTooltip: 'Back',

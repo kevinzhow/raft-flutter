@@ -312,7 +312,22 @@ class _RaftSkeletonState extends State<RaftSkeleton>
     const black = RaftPrimitiveColors.black;
     final t = RaftTokens.of(context);
     final themedFill = t.colors['foreground-strong']!.withValues(alpha: .08);
-    final box = widget.themed && widget.variant != RaftSkeletonVariant.circle
+    // raft-ui 0.7.0 Skeleton: `bg-fill-muted rounded-sticker` for line, block
+    // and circle alike; the pre-theme looks keep the ink wash (skeleton.look).
+    final box = t.option('skeleton.look', or: 'fill') == 'fill'
+        ? Container(
+            width: widget.width,
+            height:
+                widget.height ??
+                (widget.variant == RaftSkeletonVariant.line ? 12 : null),
+            decoration: BoxDecoration(
+              color: t.colors['fill-muted'],
+              borderRadius: BorderRadius.circular(
+                t.size('radius.sticker', fallback: 4),
+              ),
+            ),
+          )
+        : widget.themed && widget.variant != RaftSkeletonVariant.circle
         ? Container(
             width: widget.width,
             height:

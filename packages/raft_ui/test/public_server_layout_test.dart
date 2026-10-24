@@ -7,18 +7,22 @@ import 'package:raft_ui/raft_ui.dart';
 // is an attached panel header, the loading and empty states use Spinner and
 // EmptyState, and older pages load from the timeline's top sentinel.
 void main() {
+  // The legacy column (a57b9dab frame, uppercase label) is what the
+  // pre-theme looks draw; the Raft look shares the mounted Sidebar frame
+  // (see the last group). The tests below name the look they check.
   Future<void> mount(
     WidgetTester tester,
     Widget child, {
     bool dark = false,
     Size size = const Size(1280, 800),
+    String pack = elegantThemePackId,
   }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = size;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(dark: dark),
+        theme: raftTheme(pack: packForThemeId(pack), dark: dark),
         home: Scaffold(body: child),
       ),
     );
@@ -293,4 +297,18 @@ void main() {
       expect(find.byType(RaftPanelIconButton), findsNothing);
     },
   );
+
+  testWidgets('Raft look: the channel column is the shared sidebar frame', (
+    tester,
+  ) async {
+    await mount(tester, sidebar(), pack: raftThemePackId);
+    final frame = find.byKey(const ValueKey('public-server-channel-sidebar'));
+    expect(tester.getSize(frame).width, 240);
+    // SectionEyebrow as written (v1.21.23): sentence case, not uppercased.
+    expect(find.text('Public channels'), findsOneWidget);
+    expect(find.text('PUBLIC CHANNELS'), findsNothing);
+    expect(find.byType(RaftNavItem), findsNWidgets(2));
+    expect(find.byType(RaftMountedSidebarFrame), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

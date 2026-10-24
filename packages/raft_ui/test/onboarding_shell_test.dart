@@ -54,7 +54,12 @@ void main() {
                       : const Color(0xff242422))
                 : light;
             expect((surface.decoration! as BoxDecoration).color, expected);
-            expect(t.getSize(find.byType(RaftAuthTopBar)).height, 62);
+            // Raft look: the 56px panel header (`h-panel-header`); the pre-theme
+            // looks kept the 62px fallback of a page outside the app shell.
+            expect(
+              t.getSize(find.byType(RaftAuthTopBar)).height,
+              id == raftThemePackId ? 56 : 62,
+            );
             expect(t.takeException(), isNull);
           }
         }
