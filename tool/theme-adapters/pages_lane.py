@@ -123,35 +123,6 @@ _OPTIONS = {
     'standalone.buttonSize': ('lg', 'md'),
 }
 
-# Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
-OPTION_VALUES = {
-    'auth.submitSize': ('xl', 'lg'),
-    'auth.links': ('underlined', 'hover'),
-    'standalone.surface': ('sidebar', 'canvas'),
-    'standalone.buttonSize': ('lg', 'md'),
-    'auth.fieldLabel': ('tokens', 'recipe'),
-    'publicServer.sidebar': ('shared', 'legacy'),
-    'publicServer.banner': ('stacked', 'row'),
-    'publicServer.channelTile': ('sticker', 'plain'),
-    'panelTabs.style': ('sticker', 'underline'),
-    'agentWorkspace.look': ('web23', 'legacy'),
-    'pageHeader.icon': ('none', 'tile'),
-    'taskBoard.column': ('flat', 'card'),
-    'taskModal.head': ('web23', 'legacy'),
-    'emptyState.look': ('plain', 'recipe'),
-    'skeleton.look': ('fill', 'ink'),
-    'activity.loadingCards': ('edge', 'inset'),
-    'search.failure': ('banner', 'card'),
-    'appearance.layout': ('web23', 'legacy'),
-    'formSection.look': ('web23', 'legacy'),
-    'formField.label': ('tokens', 'recipe'),
-    'rootError.look': ('web23', 'legacy'),
-    'onboarding.heading': ('web23', 'legacy'),
-    'onboarding.preview': ('sticker', 'brutal'),
-    'publicServer.confirmTitle': ('question', 'action'),
-    'publicServer.accountTime': ('yes', 'no'),
-}
-
 # ---------------------------------------------------------------- colours
 # role: (Raft source role, family source role). Values are existing roles.
 _COLOR_ALIASES = {

@@ -442,7 +442,16 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             key: const ValueKey('task-modal-title'),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: RaftTypography.heading(t, size: 18, line: 24.75),
+            // v1.21.23 PanelHeading is a bare flex slot: the title inherits the
+            // body text (16/24 regular); a57b9dab drew it 18px bold.
+            style: _webHead(t)
+                ? RaftTypography.body(
+                    t,
+                    size: 16,
+                    line: 24,
+                    color: t.colors['foreground'],
+                  ).copyWith(fontFamily: t.headingFont)
+                : RaftTypography.heading(t, size: 18, line: 24.75),
           ),
         ),
         if (description.isNotEmpty)
