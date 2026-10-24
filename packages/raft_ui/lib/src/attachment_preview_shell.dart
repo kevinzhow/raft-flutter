@@ -318,7 +318,7 @@ class _RaftAttachmentPreviewShellState
     return widget.page
         ? Material(color: pageRecipe.backdrop, child: scoped)
         : Dialog.fullscreen(
-            backgroundColor: raftLightboxBackdrop,
+            backgroundColor: raftLightboxBackdropOf(t),
             child: scoped,
           );
   }

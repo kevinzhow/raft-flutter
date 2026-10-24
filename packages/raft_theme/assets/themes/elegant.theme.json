@@ -666,7 +666,8 @@
         "field.layout": "recipe",
         "inputGroup.style": "recipe",
         "announcement.style": "recipe",
-        "reaction.style": "recipe"
+        "reaction.style": "recipe",
+        "lightbox.style": "recipe"
       }
     },
     "dark": {
@@ -1300,7 +1301,8 @@
         "field.layout": "recipe",
         "inputGroup.style": "recipe",
         "announcement.style": "recipe",
-        "reaction.style": "recipe"
+        "reaction.style": "recipe",
+        "lightbox.style": "recipe"
       }
     }
   }

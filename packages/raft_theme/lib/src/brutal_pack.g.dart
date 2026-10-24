@@ -674,7 +674,8 @@ const String brutalThemePackJson = r'''{
         "field.layout": "recipe",
         "inputGroup.style": "recipe",
         "announcement.style": "recipe",
-        "reaction.style": "recipe"
+        "reaction.style": "recipe",
+        "lightbox.style": "recipe"
       }
     },
     "dark": {
@@ -1342,7 +1343,8 @@ const String brutalThemePackJson = r'''{
         "field.layout": "recipe",
         "inputGroup.style": "recipe",
         "announcement.style": "recipe",
-        "reaction.style": "recipe"
+        "reaction.style": "recipe",
+        "lightbox.style": "recipe"
       }
     }
   }

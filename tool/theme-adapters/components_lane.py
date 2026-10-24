@@ -79,6 +79,10 @@ _OPTIONS = {
     # (h-6, rounded-chip, pl-1.5 pr-2, bg-fill-muted, mono-meta bold count,
     # attention-soft when mine, warning-soft on error); the mounted 20px chip before.
     'reaction.style': ('raft', 'recipe'),
+    # Lightbox / attachment preview chrome: raft-ui 0.7 `lightbox` (pack backdrop,
+    # `text-headline font-bold` title, ghost icon buttons, line-seam rule);
+    # `bg-black/75`, a 14/20 title and outlined icon buttons before.
+    'lightbox.style': ('raft', 'recipe'),
 }
 
 # Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
@@ -98,6 +102,7 @@ OPTION_VALUES = {
     'inputGroup.style': ('raft', 'recipe'),
     'announcement.style': ('raft', 'recipe'),
     'reaction.style': ('raft', 'recipe'),
+    'lightbox.style': ('raft', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours
