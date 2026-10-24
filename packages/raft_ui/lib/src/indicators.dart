@@ -5,6 +5,8 @@
 import 'package:flutter/material.dart';
 
 import 'raft/checkbox.dart';
+import 'raft/css_box.dart' show raftControlBorderPx;
+import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/checkbox.g.dart';
 import 'recipes/progress.g.dart';
@@ -155,9 +157,99 @@ class RaftProgressBar extends StatelessWidget {
   final bool showPercent;
   final RaftProgressRecipeSize size;
 
+  /// raft-ui 0.7 `progress` under the product `ProgressBar`: `mb-1.5` header
+  /// (`text-footnote font-semibold` label, `font-mono text-mono-meta
+  /// text-foreground-hint` value), an 8px `fill-muted` sticker-radius track and
+  /// an indicator ringed in sticker-ink (info for cyan / pink, success, warning).
+  Widget _buildRaft(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    final indeterminate = value == null || value!.isNaN;
+    final pct = indeterminate ? 0.0 : value!.clamp(0, 100).toDouble();
+    final radius = BorderRadius.circular(t.size('radius.sticker', fallback: 4));
+    final fill = switch (tone) {
+      RaftProgressRecipeVariant.success => ui.success,
+      RaftProgressRecipeVariant.warning => ui.warning,
+      RaftProgressRecipeVariant.danger => ui.danger,
+      _ => ui.info,
+    };
+    final height = switch (size) {
+      RaftProgressRecipeSize.sm => 6.0,
+      RaftProgressRecipeSize.lg => 10.0,
+      _ => 8.0,
+    };
+    final ring = raftControlBorderPx(context, 1.5);
+    final track = Container(
+      height: height,
+      decoration: BoxDecoration(color: ui.fillMuted, borderRadius: radius),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: FractionallySizedBox(
+            widthFactor: indeterminate ? .5 : pct / 100,
+            heightFactor: 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: fill, borderRadius: radius),
+              position: DecorationPosition.background,
+              child: DecoratedBox(
+                position: DecorationPosition.foreground,
+                decoration: BoxDecoration(
+                  borderRadius: radius,
+                  border: Border.all(color: ui.stickerInk, width: ring),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final bar = Semantics(
+      label: label,
+      value: indeterminate ? null : '${pct.round()}%',
+      child: track,
+    );
+    if (label == null && !(showPercent && !indeterminate)) return bar;
+    final header = Row(
+      children: [
+        Expanded(
+          child: label == null
+              ? const SizedBox.shrink()
+              : Text(
+                  label!,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.scale(
+                    RaftTypeScale.footnote,
+                    weight: FontWeight.w600,
+                    color: ui.foreground,
+                  ),
+                ),
+        ),
+        if (showPercent && !indeterminate)
+          Text(
+            '${pct.round()}%',
+            style: t.scale(
+              RaftTypeScale.monoMeta,
+              mono: true,
+              color: ui.foregroundHint,
+            ),
+          ),
+      ],
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [header, const SizedBox(height: 6), bar],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.option('progress.style', or: 'recipe') == 'raft') {
+      return _buildRaft(context, t);
+    }
     final rt = t.recipeTokens;
     final indeterminate = value == null || value!.isNaN;
     final pct = indeterminate ? 0.0 : value!.clamp(0, 100).toDouble();
@@ -312,7 +404,23 @@ class _RaftSkeletonState extends State<RaftSkeleton>
     const black = RaftPrimitiveColors.black;
     final t = RaftTokens.of(context);
     final themedFill = t.colors['foreground-strong']!.withValues(alpha: .08);
-    final box = widget.themed && widget.variant != RaftSkeletonVariant.circle
+    // raft-ui 0.7 `skeleton`: every variant is a `bg-fill-muted` block with the
+    // sticker radius (line h-3); an avatar stand-in is a square block as well.
+    final box = t.option('skeleton.style', or: 'recipe') == 'raft' &&
+            !widget.themed
+        ? Container(
+            width: widget.width,
+            height:
+                widget.height ??
+                (widget.variant == RaftSkeletonVariant.line ? 12 : null),
+            decoration: BoxDecoration(
+              color: t.colors['fill-muted'],
+              borderRadius: BorderRadius.circular(
+                t.size('radius.sticker', fallback: 4),
+              ),
+            ),
+          )
+        : widget.themed && widget.variant != RaftSkeletonVariant.circle
         ? Container(
             width: widget.width,
             height:

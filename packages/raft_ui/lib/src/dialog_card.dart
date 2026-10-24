@@ -182,7 +182,9 @@ class RaftRecipeButton extends StatelessWidget {
       gap: gap ?? base.gap,
       square: base.square,
     );
-    final isDisabled = disabled || onPressed == null;
+    // A button without a handler (display only) keeps its resting look; only
+    // `disabled` greys it, as in the recipe surface.
+    final isDisabled = disabled;
     final colors = RaftButtonColors.themed(
       t,
       variantValue,

@@ -306,9 +306,8 @@ Future<Map<String, dynamic>> captureParityCase(
     caseJson: visualCase,
     fixtures: fixtures,
     dark: dark,
-    againstWeb:
-        Platform.environment['PARITY_THEME_OVERRIDE']?.startsWith('raft') ??
-        false,
+    // The Raft look is the one scored against the Web render.
+    againstWeb: selection.pack == raftThemePackId,
   );
   try {
     final size = Size(ctx.width, ctx.height);

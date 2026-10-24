@@ -662,7 +662,13 @@ const String brutalThemePackJson = r'''{
         "button.surface": "recipe",
         "banner.style": "recipe",
         "channelFooter.joinSize": "md",
-        "composerAttachment.style": "recipe"
+        "composerAttachment.style": "recipe",
+        "skeleton.style": "recipe",
+        "surfaceItem.style": "recipe",
+        "avatarListRow.style": "recipe",
+        "selectionPopover.style": "recipe",
+        "progress.style": "recipe",
+        "menuItem.style": "recipe"
       }
     },
     "dark": {
@@ -1318,7 +1324,13 @@ const String brutalThemePackJson = r'''{
         "button.surface": "recipe",
         "banner.style": "recipe",
         "channelFooter.joinSize": "md",
-        "composerAttachment.style": "recipe"
+        "composerAttachment.style": "recipe",
+        "skeleton.style": "recipe",
+        "surfaceItem.style": "recipe",
+        "avatarListRow.style": "recipe",
+        "selectionPopover.style": "recipe",
+        "progress.style": "recipe",
+        "menuItem.style": "recipe"
       }
     }
   }

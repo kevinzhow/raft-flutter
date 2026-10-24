@@ -37,6 +37,27 @@ _OPTIONS = {
     # hairline, an always-visible remove square, layer-card washes, a soft failure
     # row); the generated recipe before.
     'composerAttachment.style': ('raft', 'recipe'),
+    # Skeleton: raft-ui 0.7 `skeleton` (a `fill-muted` block with the sticker radius for
+    # line, block and circle alike); black/10 squares and ink-ringed circles before.
+    'skeleton.style': ('raft', 'recipe'),
+    # SurfaceListItem: raft-ui 0.7 `Card variant="default"` with `bg-info-soft` when
+    # selected and a press overlay on hover (the hairline never changes); the
+    # recipe card with a coloured selected border and shadow before.
+    'surfaceItem.style': ('raft', 'recipe'),
+    # AvatarListRow: a raft-ui `ListRow` (16/24 600 title, Space Mono meta, hairline
+    # rules from the text edge) inside a `ListRowGroup`; a bordered surface card each before.
+    'avatarListRow.style': ('raft', 'recipe'),
+    # SelectionPopover: v1.21.23 `SelectionPopoverSections` (caption title and
+    # underlined Clear, a 40px search row with a hairline, 36px rounded rows, a 16px
+    # check, brand-soft hover); the bordered card with 36px divided rows before.
+    'selectionPopover.style': ('raft', 'recipe'),
+    # ProgressBar: raft-ui 0.7 `progress` (13/18 semibold label, mono hint value, an
+    # 8px fill-muted track, an info / success / warning indicator ringed in
+    # sticker-ink); the generated recipe with a mono muted label before.
+    'progress.style': ('raft', 'recipe'),
+    # MenuItem (product `ui/MenuItem`): `min-h-9 gap-2.5 rounded-control px-2.5 py-1.5`,
+    # callout medium ink, `hover:bg-brand-soft`; the ghost `sm` button recipe before.
+    'menuItem.style': ('raft', 'recipe'),
 }
 
 # Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
@@ -46,6 +67,12 @@ OPTION_VALUES = {
     'banner.style': ('raft', 'recipe'),
     'channelFooter.joinSize': ('lg', 'md'),
     'composerAttachment.style': ('raft', 'recipe'),
+    'skeleton.style': ('raft', 'recipe'),
+    'surfaceItem.style': ('raft', 'recipe'),
+    'avatarListRow.style': ('raft', 'recipe'),
+    'selectionPopover.style': ('raft', 'recipe'),
+    'progress.style': ('raft', 'recipe'),
+    'menuItem.style': ('raft', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours

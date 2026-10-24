@@ -893,7 +893,13 @@ const String raftThemePackJson = r'''{
         "button.surface": "ported",
         "banner.style": "raft",
         "channelFooter.joinSize": "lg",
-        "composerAttachment.style": "raft"
+        "composerAttachment.style": "raft",
+        "skeleton.style": "raft",
+        "surfaceItem.style": "raft",
+        "avatarListRow.style": "raft",
+        "selectionPopover.style": "raft",
+        "progress.style": "raft",
+        "menuItem.style": "raft"
       }
     },
     "dark": {
@@ -1727,7 +1733,13 @@ const String raftThemePackJson = r'''{
         "button.surface": "ported",
         "banner.style": "raft",
         "channelFooter.joinSize": "lg",
-        "composerAttachment.style": "raft"
+        "composerAttachment.style": "raft",
+        "skeleton.style": "raft",
+        "surfaceItem.style": "raft",
+        "avatarListRow.style": "raft",
+        "selectionPopover.style": "raft",
+        "progress.style": "raft",
+        "menuItem.style": "raft"
       }
     }
   }

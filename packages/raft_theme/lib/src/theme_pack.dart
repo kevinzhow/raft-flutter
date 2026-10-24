@@ -169,6 +169,12 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'banner.style': {'recipe', 'raft'},
   'channelFooter.joinSize': {'md', 'lg'},
   'composerAttachment.style': {'recipe', 'raft'},
+  'skeleton.style': {'recipe', 'raft'},
+  'surfaceItem.style': {'recipe', 'raft'},
+  'avatarListRow.style': {'recipe', 'raft'},
+  'selectionPopover.style': {'recipe', 'raft'},
+  'progress.style': {'recipe', 'raft'},
+  'menuItem.style': {'recipe', 'raft'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).
