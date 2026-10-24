@@ -1770,7 +1770,7 @@ class RaftOnboardingShell extends StatelessWidget {
     final safe = MediaQuery.paddingOf(context);
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
-    final divider = BorderSide(color: t.semantic.lineHairline);
+    final divider = BorderSide(color: t.colors['line-onboarding-panel']!);
     return Material(
       color: t.canvas,
       child: DefaultTextStyle.merge(

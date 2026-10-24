@@ -30,6 +30,10 @@ _GEOMETRY = {
     'type.notFoundBody.line': (20, 24),
     # TasksPanelViewport `px-5 py-4` (max-md `px-4`); a57b9dab used 16 all round.
     'space.tasksViewportInline': (20, 16),
+    # OnboardingCreateDotPane halftone: 1.5px dots on a 14px grid at 70% opacity
+    # (v1.21.23) / 1px dots on a 16px grid at 60% (a57b9dab).
+    'size.onboardingDotGrid': (14, 16), 'size.onboardingDotRadius': (1.5, 1),
+    'opacity.onboardingDots': (0.7, 0.6),
     # SectionEyebrow: `text-footnote font-bold` (13/18); a57b9dab: 12/16.
     'type.sectionEyebrow.size': (13, 12), 'type.sectionEyebrow.line': (18, 16),
 }
@@ -110,6 +114,10 @@ _COLOR_ALIASES = {
     'foreground-eyebrow': ('foreground-hint', 'foreground-muted'),
     # TextLink variant primary: ink in v1.21.23, accent-strong before.
     'foreground-text-link': ('foreground', 'accent-strong'),
+    # Onboarding brand pane: the frame colour (v1.21.23), the muted canvas before.
+    'layer-onboarding-pane': ('layer-frame', 'layer-canvas-muted'),
+    'line-onboarding-dot': ('line-seam', 'line-strong'),
+    'line-onboarding-panel': ('line-seam', 'line-hairline'),
     # Legal links of the auth pages: `text-foreground-link` (Raft), muted before.
     'foreground-legal-link': ('foreground-link', 'foreground-muted'),
 }

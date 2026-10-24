@@ -23,9 +23,15 @@ class RaftOnboardingDotPane extends StatelessWidget {
     final padding = MediaQuery.sizeOf(context).width >= 1280 ? 32.0 : 24.0;
     return ClipRect(
       child: ColoredBox(
-        color: t.semantic.layerCanvasMuted,
+        color: t.colors['layer-onboarding-pane']!,
         child: CustomPaint(
-          painter: _DotGridPainter(t.semantic.lineStrong.withValues(alpha: .6)),
+          painter: _DotGridPainter(
+            t.colors['line-onboarding-dot']!.withValues(
+              alpha: t.size('opacity.onboardingDots', fallback: .7),
+            ),
+            grid: t.size('size.onboardingDotGrid', fallback: 14),
+            radius: t.size('size.onboardingDotRadius', fallback: 1.5),
+          ),
           child: Padding(
             padding: EdgeInsets.all(padding),
             child: Column(
@@ -41,21 +47,29 @@ class RaftOnboardingDotPane extends StatelessWidget {
 }
 
 class _DotGridPainter extends CustomPainter {
-  const _DotGridPainter(this.color);
+  const _DotGridPainter(
+    this.color, {
+    required this.grid,
+    required this.radius,
+  });
   final Color color;
+  final double grid, radius;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = color;
-    for (var y = 8.0; y < size.height + 8; y += 16) {
-      for (var x = 8.0; x < size.width + 8; x += 16) {
-        canvas.drawCircle(Offset(x, y), 1, paint);
+    // A CSS `radial-gradient` tile centres its dot in the tile.
+    final half = grid / 2;
+    for (var y = half; y < size.height + half; y += grid) {
+      for (var x = half; x < size.width + half; x += grid) {
+        canvas.drawCircle(Offset(x, y), radius, paint);
       }
     }
   }
 
   @override
-  bool shouldRepaint(_DotGridPainter old) => old.color != color;
+  bool shouldRepaint(_DotGridPainter old) =>
+      old.color != color || old.grid != grid || old.radius != radius;
 }
 
 const _black = Color(0xFF000000);
