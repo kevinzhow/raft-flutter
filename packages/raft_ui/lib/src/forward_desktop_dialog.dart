@@ -15,7 +15,9 @@ import 'recipes/input_group.g.dart' show RaftInputGroupRecipeVariant;
 import 'theme.dart';
 
 Color _rule(RaftTokens t) => t.colors['line-muted']!;
-Color _panel(RaftTokens t) => t.colors['layer-panel']!;
+
+/// Web draws the dialog on raft-ui's `DialogSurface`: `bg-layer-popover`.
+Color _panel(RaftTokens t) => t.popover;
 
 /// `text-xs font-bold` strong label (selected count, Clear, error).
 TextStyle _label(RaftTokens t) => TextStyle(

@@ -243,6 +243,7 @@ class RaftChannelMembersModal extends StatelessWidget {
     );
     return RaftModalBackdrop(
       child: RaftRecipeCard(
+        dialog: true,
         maxWidth: 384, // max-w-sm
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -380,12 +381,11 @@ class RaftChannelMembersModal extends StatelessWidget {
       color: t.colors['foreground-muted'],
     );
     final list = Container(
-      // flex flex-col border bg-layer-panel shadow-raft-sm, brutal border-2
-      // border-black bg-white shadow-brutal-sm, max-h-72 (the members page
-      // fills the remaining height: `min-h-0 flex-1`).
+      // ChannelMemberListShell: raft-ui `Card` (`bg-layer-card`), max-h-72 (the
+      // members page fills the remaining height: `min-h-0 flex-1`).
       constraints: fill ? null : const BoxConstraints(maxHeight: 288),
       decoration: BoxDecoration(
-        color: t.panel,
+        color: t.card,
         border: Border.all(color: t.colors['line-muted']!, width: 1),
         boxShadow: t.themeShadows.sm.outer,
       ),
@@ -946,7 +946,8 @@ class _MembersPageState extends State<_MembersPage> {
         onPressed: m.addView ? m.onBack : m.onClose,
       ),
     );
-    final headerColor = (t.colors['layer-inset'])!;
+    // raft-ui `PanelHeader`: the shared panel header role.
+    final headerColor = t.colors['layer-panel-header']!;
     return RaftStatusBarSource(
       color: headerColor,
       child: Container(

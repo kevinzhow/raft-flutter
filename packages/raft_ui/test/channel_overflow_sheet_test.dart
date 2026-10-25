@@ -10,6 +10,57 @@ Widget _host(Widget child) => MaterialApp(
 );
 
 void main() {
+  // Web draws drawers and dialogs on raft-ui's `bg-layer-popover` (Drawer popup,
+  // DialogSurface), not on the page canvas (`layer-panel` in the Raft pack).
+  testWidgets(
+    'settings drawer and dialog card paint the popover role in dark',
+    (t) async {
+      final dark = MaterialApp(
+        theme: raftTheme(dark: true),
+        home: Scaffold(
+          body: Column(
+            children: [
+              Expanded(
+                child: RaftOverflowSheet(
+                  title: '#fixture',
+                  onClose: () {},
+                  children: const [],
+                ),
+              ),
+              Expanded(
+                child: RaftDialogCard(
+                  title: 'Dialog',
+                  onClose: () {},
+                  child: const Text('Body'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await t.pumpWidget(dark);
+      await t.pumpAndSettle();
+      final tokens = RaftTokens.of(t.element(find.byType(RaftOverflowSheet)));
+      final popover = tokens.popover;
+      expect(popover, isNot(tokens.panel));
+      final sheet = find.byKey(const ValueKey('channel-overflow-sheet'));
+      final drawer = t.widget<Material>(
+        find.descendant(of: sheet, matching: find.byType(Material)).first,
+      );
+      expect(drawer.color, popover);
+      final fills = [
+        for (final box in t.widgetList<DecoratedBox>(
+          find.descendant(
+            of: find.byType(RaftDialogCard),
+            matching: find.byType(DecoratedBox),
+          ),
+        ))
+          if (box.decoration is BoxDecoration)
+            (box.decoration as BoxDecoration).color,
+      ];
+      expect(fills, contains(popover));
+    },
+  );
   testWidgets('settings drawer lays out only visible panel rows', (t) async {
     var built = 0;
     await t.pumpWidget(

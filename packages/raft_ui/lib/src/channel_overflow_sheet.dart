@@ -27,8 +27,7 @@ import 'theme.dart';
 
 /// The drawer popup of `OverflowSheet`: `inset-y-0 right-0 h-dvh w-full
 /// max-w-[min(100vw,34rem)] flex-col rounded-none border-0
-/// theme-brutal:border-l-2 theme-brutal:border-line-strong bg-layer-panel
-/// theme-brutal:bg-brutal-cream`, a `h-panel-header` header and a
+/// theme-brutal:border-l-2 theme-brutal:border-line-strong bg-layer-popover`, a `h-panel-header` header and a
 /// `min-h-0 flex-1 overflow-y-auto py-2` body.
 class RaftOverflowSheet extends StatelessWidget {
   const RaftOverflowSheet({
@@ -73,7 +72,7 @@ class RaftOverflowSheet extends StatelessWidget {
     // `h-panel-header` reads `--shell-header-height`, which the AppShell root
     // sets; the drawer portals out of it, so Web paints the 62px fallback.
     const headerHeight = RaftMetrics.brutalPanelHeader;
-    final headerColor = t.colors['layer-panel']!;
+    final headerColor = t.popover;
     final edge = t.colors['line-muted']!;
     final titleStyle = raftCssTextStyle(
       family: t.bodyFont,
@@ -226,7 +225,7 @@ class _OverflowDrawerFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final size = MediaQuery.sizeOf(context);
-    final paper = t.colors['layer-panel']!;
+    final paper = t.popover;
     return Align(
       alignment: Alignment.centerRight,
       child: SizedBox(
@@ -990,9 +989,8 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
   }
 }
 
-/// The `card-brutal` utility (index.css): Elegant `border border-line-muted
-/// bg-layer-panel shadow-raft-md` (square), Brutal `border-2 border-black
-/// bg-white shadow-brutal` (the Card recipe paints that one).
+/// The unsaved-changes prompt: raft-ui `DialogSurface`, whose surface is
+/// `bg-layer-popover` (dialog-CY6S-Xqf.mjs), the same role as the drawer.
 class _PromptCard extends StatelessWidget {
   const _PromptCard({
     super.key,
@@ -1012,7 +1010,7 @@ class _PromptCard extends StatelessWidget {
         width: double.infinity,
         padding: padding,
         decoration: BoxDecoration(
-          color: t.colors['layer-panel'],
+          color: t.popover,
           border: Border.all(color: t.colors['line-muted']!),
           boxShadow: t.themeShadows.md.outer,
         ),

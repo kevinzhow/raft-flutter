@@ -61,10 +61,10 @@ void main() {
         final paint = t.widget<ColoredBox>(
           find.descendant(of: root, matching: find.byType(ColoredBox)).first,
         );
-        // The dark thread timeline sits on the card layer, the rest on panel.
+        // Web's ThreadPanel is `bg-layer-canvas` in both modes: panel.
         expect(
           paint.color,
-          (dark ? RaftTokenSet.dark : RaftTokenSet.light).colors.layerCard,
+          (dark ? RaftTokenSet.dark : RaftTokenSet.light).colors.layerPanel,
         );
         await t.pumpWidget(const SizedBox());
         await t.pump(const Duration(seconds: 1));
@@ -151,11 +151,8 @@ void main() {
                   .backgroundColor!;
             }
             final set = dark ? RaftTokenSet.dark : RaftTokenSet.light;
-            // Dark thread timeline: layer-card; every other surface: panel.
-            expect(
-              timelineColor,
-              dark && thread ? set.colors.layerCard : set.colors.layerPanel,
-            );
+            // Thread and channel timelines alike: panel (Web `bg-layer-canvas`).
+            expect(timelineColor, set.colors.layerPanel);
             final tokens = RaftTokens.of(t.element(find.byType(RaftChatView)));
             final recipe = RaftThreadCompositionRecipe(
               tokens,

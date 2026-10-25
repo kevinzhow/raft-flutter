@@ -73,6 +73,7 @@ class _RaftCommunityAgreementDialogState
       type: MaterialType.transparency,
       child: RaftModalBackdrop(
         child: RaftRecipeCard(
+          dialog: true,
           key: const ValueKey('community-agreement-card'),
           maxWidth: 512,
           padding: const EdgeInsets.all(20),

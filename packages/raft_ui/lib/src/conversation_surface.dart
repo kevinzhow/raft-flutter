@@ -16,13 +16,11 @@ class RaftConversationSurfaceRecipe {
   const RaftConversationSurfaceRecipe(this.tokens);
   final RaftTokens tokens;
 
-  Color background(RaftConversationSurfaceRole role) {
-    return switch (role) {
-      RaftConversationSurfaceRole.threadTimeline when tokens.dark =>
-        tokens.card,
-      _ => tokens.panel,
-    };
-  }
+  /// Every conversation surface sits on `layer-panel`. Web paints the thread
+  /// timeline the same as the channel one: raft-ui `ThreadPanelRoot` and
+  /// `ThreadPanelContent` are `bg-layer-canvas`, and `ThreadPanel.tsx` adds no
+  /// dark card layer (a dark thread timeline sits on the canvas in Web 1.21.23).
+  Color background(RaftConversationSurfaceRole role) => tokens.panel;
 }
 
 /// Gives transparent header/body slots the mounted panel's inherited surface.

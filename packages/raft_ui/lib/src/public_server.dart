@@ -585,18 +585,14 @@ BorderSide _publicRule(RaftTokens t) => BorderSide(
   width: 1,
 );
 
-/// The channel timeline's panel (ConversationPanelRoot): white, `layer-card` in
-/// Elegant dark.
+/// The channel timeline's panel (ConversationPanelRoot): `bg-layer-canvas`.
 class RaftPublicConversationSurface extends StatelessWidget {
   const RaftPublicConversationSurface({super.key, required this.child});
   final Widget child;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return ColoredBox(
-      color: t.dark ? t.card : t.colors['layer-canvas']!,
-      child: child,
-    );
+    return ColoredBox(color: t.colors['layer-canvas']!, child: child);
   }
 }
 

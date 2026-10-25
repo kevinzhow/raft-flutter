@@ -220,6 +220,7 @@ class _RaftSidebarSectionDialogState extends State<RaftSidebarSectionDialog> {
       );
     }
     return RaftRecipeCard(
+      dialog: true,
       maxWidth: 384, // max-w-sm
       padding: const EdgeInsets.all(20),
       child: Column(

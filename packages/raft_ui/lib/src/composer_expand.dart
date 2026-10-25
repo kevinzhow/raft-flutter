@@ -494,6 +494,7 @@ class _RaftComposerExpandedViewState extends State<RaftComposerExpandedView> {
         explicitChildNodes: true,
         label: widget.title,
         child: RaftRecipeCard(
+          dialog: true,
           maxWidth: RaftComposerExpandedView.dialogMaxWidth,
           padding: const EdgeInsets.all(RaftSpace.x6),
           child: Column(

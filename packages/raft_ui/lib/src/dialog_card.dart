@@ -687,12 +687,18 @@ class RaftRecipeCard extends StatelessWidget {
     this.padding = EdgeInsets.zero,
     this.maxWidth,
     this.background,
+    this.dialog = false,
     this.clip = false,
     this.transparentBorder = false,
   });
   final Widget child;
   final EdgeInsets padding;
   final double? maxWidth;
+
+  /// The card is a dialog's surface. Web draws every dialog on raft-ui's
+  /// `DialogSurface` (`bg-layer-popover`), not on the Card fill (`layer-card`).
+  /// An explicit [background] still wins.
+  final bool dialog;
 
   /// Call-site `bg-*` override of the Card fill.
   final Color? background;
@@ -712,6 +718,7 @@ class RaftRecipeCard extends StatelessWidget {
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: tokens,
     ).root;
+    final fill = background ?? (dialog ? t.popover : null);
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
       child: RaftRecipeBox(
@@ -721,12 +728,12 @@ class RaftRecipeCard extends StatelessWidget {
         padding: padding,
         applyText: false,
         clip: clip,
-        decorationOverride: background == null && !transparentBorder
+        decorationOverride: fill == null && !transparentBorder
             ? null
             : (d) {
                 final border = d.border;
                 return d.copyWith(
-                  color: background ?? d.color,
+                  color: fill ?? d.color,
                   border: transparentBorder && border is Border
                       ? Border(
                           top: border.top.copyWith(color: Colors.transparent),
@@ -907,6 +914,7 @@ class _RaftDialogCardState extends State<RaftDialogCard> {
       return ConstrainedBox(
         constraints: BoxConstraints(maxHeight: cap),
         child: RaftRecipeCard(
+          dialog: true,
           maxWidth: maxWidth,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -946,6 +954,7 @@ class _RaftDialogCardState extends State<RaftDialogCard> {
       );
     }
     return RaftRecipeCard(
+      dialog: true,
       maxWidth: maxWidth,
       padding: const EdgeInsets.all(24),
       child: Column(
