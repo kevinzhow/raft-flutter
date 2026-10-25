@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../platform/attachment_html_webview.dart'
+    show attachmentHtmlWebViewSupported;
 import 'artifact_link.dart';
 import 'artifact_viewer.dart';
 
@@ -50,6 +52,10 @@ Future<bool> confirmCustomProtocolLink(BuildContext context, Uri uri) {
   );
 }
 
+/// Test seam: pretend the platform has (or has no) WebView.
+@visibleForTesting
+bool? debugArtifactViewerSupported;
+
 /// Opens a link of a message body (Web MessageItem anchor): an artifact link
 /// opens in the app (its "Login with Raft" needs the app's session); other
 /// http, https and mailto links go to the system; an allowlisted custom scheme
@@ -57,7 +63,10 @@ Future<bool> confirmCustomProtocolLink(BuildContext context, Uri uri) {
 Future<void> openMessageLink(BuildContext context, String url) async {
   final uri = Uri.tryParse(url);
   if (uri == null) return;
-  if (ArtifactLinks.matches(uri)) {
+  // Linux and Windows have no platform WebView: the browser opens it, as it
+  // did before.
+  if (ArtifactLinks.matches(uri) &&
+      (debugArtifactViewerSupported ?? attachmentHtmlWebViewSupported)) {
     await openArtifactLink(context, uri);
   } else if (['https', 'http', 'mailto'].contains(uri.scheme)) {
     await launchUrl(uri, mode: LaunchMode.externalApplication);

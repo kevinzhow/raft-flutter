@@ -1,12 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/artifact_link.dart';
-import 'package:raft_flutter/features/artifact_viewer.dart';
 import 'package:raft_flutter/features/custom_protocol_link.dart';
 import 'package:raft_flutter/features/human_login.dart';
 import 'package:raft_flutter/features/human_login_scope.dart';
@@ -195,6 +193,17 @@ void main() {
       expect(cookieCalls, ['enableCookies']);
       expect(find.text('raft-artifacts.com'), findsOneWidget);
     });
+
+    testWidgets(
+      'without a platform WebView (Linux, Windows) the browser opens it',
+      (t) async {
+        debugArtifactViewerSupported = false;
+        addTearDown(() => debugArtifactViewerSupported = null);
+        await mount(t, api: FakeHumanLoginApi());
+        expect(viewer, findsNothing);
+        expect(launched, [artifact]);
+      },
+    );
 
     testWidgets('any path of the host opens in the app', (t) async {
       await mount(
