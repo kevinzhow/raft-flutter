@@ -84,7 +84,7 @@ class Ops:
         out = []
         node = self.objects[object_id].get('node')
         while node is not None and node in self.nodes:
-            _, type_, file, line, parent = self.nodes[node]
+            _, type_, file, line, parent = self.nodes[node][:5]  # a sixth entry carries recipe context
             out.append((type_, self.rel(file), line))
             node = parent
         return out

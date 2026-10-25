@@ -139,6 +139,11 @@ class AttributionTests(unittest.TestCase):
                 objects=[{'id': 0, 'type': 'RenderDecoratedBox', 'path': 'A[0]', 'node': 1}])
         self.assertEqual(len(ed.Ops(d, REPO).ops), 1)
 
+    def test_nodes_may_carry_a_sixth_recipe_context_entry(self):
+        nodes = [[0, 'RaftPanel', PRODUCT, 10, None], [1, 'RaftRecipeBox', PRODUCT, 40, 0, {'traced': True}]]
+        ops = ed.Ops(doc([], nodes=nodes, objects=[{'id': 0, 'type': 'X', 'path': 'A[0]', 'node': 1}]), REPO)
+        self.assertEqual([c[0] for c in ops.chain(0)], ['RaftRecipeBox', 'RaftPanel'])
+
     def test_locations_are_made_repo_relative(self):
         ops = ed.Ops(doc([]), REPO)
         self.assertEqual(ops.rel(f'file://{REPO}/packages/raft_ui/lib/a.dart'), 'packages/raft_ui/lib/a.dart')
