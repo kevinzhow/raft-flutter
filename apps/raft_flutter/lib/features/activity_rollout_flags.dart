@@ -35,10 +35,9 @@ class ActivityRolloutFlags extends ChangeNotifier {
   static ActivityRolloutFlags of(WorkspaceController w) =>
       _owners[w] ??= ActivityRolloutFlags._(w);
 
-  /// The flags of [w] when something already asked for them; null before
-  /// that. A page that only reads them (the Activity list, the timeline's
-  /// controls) leaves the request to the shell, which asks as it draws the
-  /// sidebar, so a surface mounted on its own makes no request.
+  /// The flags of [w] when a parent already asked for them; null before that.
+  /// The Activity page and sidebar each establish the shared owner before
+  /// painting their rows. Child controls can read it without starting work.
   static ActivityRolloutFlags? peek(WorkspaceController w) => _owners[w];
 
   static const threadUnreadBadgeKey = 'thread_unread_badge_v0';

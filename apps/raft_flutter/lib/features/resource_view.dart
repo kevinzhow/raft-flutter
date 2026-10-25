@@ -934,7 +934,8 @@ class _ResourceViewState extends State<ResourceView> {
   /// than read a second time.
   SourceActivityUnreadStore? sharedInbox;
 
-  void bindSharedInbox() {
+  void bindActivitySources() {
+    if (activityPage) ActivityRolloutFlags.of(w);
     sharedInbox?.removeListener(sharedInboxChanged);
     sharedInbox = activityPage
         ? (_services.activityUnreadIfBound?..addListener(sharedInboxChanged))
@@ -1740,7 +1741,7 @@ class _ResourceViewState extends State<ResourceView> {
     }
     w.addListener(authorityChanged);
     subscribeEvents();
-    bindSharedInbox();
+    bindActivitySources();
     unawaited(
       activateSearchMemory(
         restore: widget.restoreSearchState,
@@ -1825,7 +1826,7 @@ class _ResourceViewState extends State<ResourceView> {
     if (!identical(oldWidget.controller, w) ||
         oldWidget.section != widget.section) {
       events?.cancel();
-      bindSharedInbox();
+      bindActivitySources();
       subscribeEvents();
     }
     authorityChanged();
@@ -4193,7 +4194,7 @@ class _ResourceViewState extends State<ResourceView> {
   /// The conversation list (`activity_conversation_list_v0`) fills the page
   /// edge to edge: no inset around it and no gap between its rows.
   bool get activityListLayout =>
-      widget.section == 'activity' &&
+      activityPage &&
       ActivityRolloutFlags.peek(w)?.activityConversationList == true;
 
   /// The Activity row at [index] of [rows], with its section heading and
@@ -4236,8 +4237,7 @@ class _ResourceViewState extends State<ResourceView> {
         canonical: widget.onActivityCanonical != null,
         popupOpen: menuRowKey != null && menuRowKey == rowKey(row),
         savedView: enabledActivity && filter == 'saved',
-        listLayout:
-            ActivityRolloutFlags.peek(w)?.activityConversationList == true,
+        listLayout: activityListLayout,
         section: section,
         separator: separator,
         topRule: topRule,
