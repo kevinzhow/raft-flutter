@@ -16,11 +16,13 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/features/workspace_settings.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
+import 'package:raft_flutter/platform/app_update.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../parity_harness.dart';
 import 'members_settings/fixture_client.dart';
+import 'release_notes_source.dart';
 
 Map<String, dynamic> _fx(ParityContext ctx) =>
     ctx.fixtures['ext:settings'] as Map<String, dynamic>;
@@ -181,34 +183,42 @@ Widget _page(ParityContext ctx) {
   final now = DateTime.fromMillisecondsSinceEpoch(
     (ctx.fixtureData['locale']['nowEpochMillis'] as num).toInt(),
   );
+  Widget page(AppUpdateService? updates) => Material(
+    type: MaterialType.transparency,
+    child: WorkspaceSettings(
+      controller: w,
+      appUpdate: updates,
+      appearance: const RaftAppearance(mode: ThemeMode.light),
+      onAppearance: (_) {},
+      presentation: PersonalPresentationStore(),
+      notifications: NativeNotificationService(platform: TargetPlatform.linux),
+      onLogout: () async {},
+      initialTab: ctx.props['tab'] as String,
+      mobileRoot: false,
+      providerEnabled: flags.contains('providers'),
+      bridgeEnabled: flags.contains('bridge'),
+      labsEnabled: flags.contains('labs'),
+      now: () => now,
+      appVersion: _fx(ctx)['appVersion'] as String,
+      // The React render host's origin (the QR encodes `<origin>/download`).
+      frontendOrigin: Uri.parse(
+        'http://127.0.0.1:${Platform.environment['PARITY_EXT_WEB_PORT'] ?? '4396'}',
+      ),
+    ),
+  );
   return ctx.frame(
     width: mobile ? ctx.width : 1216,
     height: ctx.height,
     padding: EdgeInsets.zero,
-    child: Material(
-      type: MaterialType.transparency,
-      child: WorkspaceSettings(
-        controller: w,
-        appearance: const RaftAppearance(mode: ThemeMode.light),
-        onAppearance: (_) {},
-        presentation: PersonalPresentationStore(),
-        notifications: NativeNotificationService(
-          platform: TargetPlatform.linux,
-        ),
-        onLogout: () async {},
-        initialTab: ctx.props['tab'] as String,
-        mobileRoot: false,
-        providerEnabled: flags.contains('providers'),
-        bridgeEnabled: flags.contains('bridge'),
-        labsEnabled: flags.contains('labs'),
-        now: () => now,
-        appVersion: _fx(ctx)['appVersion'] as String,
-        // The React render host's origin (the QR encodes `<origin>/download`).
-        frontendOrigin: Uri.parse(
-          'http://127.0.0.1:${Platform.environment['PARITY_EXT_WEB_PORT'] ?? '4396'}',
-        ),
-      ),
-    ),
+    child: ctx.props['tab'] == 'release-notes'
+        ? ParityReleaseNotesSource(
+            load: () => fixtureClient.request('GET', '/release-notes'),
+            version: _fx(ctx)['appVersion'] as String,
+            now: now,
+            platform: mobile ? TargetPlatform.android : TargetPlatform.linux,
+            builder: page,
+          )
+        : page(null),
   );
 }
 

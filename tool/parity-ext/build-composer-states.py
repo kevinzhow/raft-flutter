@@ -180,7 +180,7 @@ for platform in ('desktop', 'mobile'):
     web, flutter = type_only(ASTASK_DRAFT)
     add('as-task', platform, 'as-task', 'Composer As task checked', height=200,
         interactions=web + [{'type': 'click', 'target': '[data-testid="composer-as-task-toggle"]'}],
-        android=flutter + [{'type': 'tap', 'key': 'composer-as-task', 'scroll': False}])
+        android=flutter + [{'type': 'tap', 'key': 'composer-as-task-toggle', 'scroll': False}])
     # 3.22 pending-mention strip: one agent, then two (Add all footer).
     send_case('pending-mention', platform, 'single', 'Pending-mention strip, one agent', 270)
     send_case('pending-mention', platform, 'multi', 'Pending-mention strip, two agents (Add all)', 340)

@@ -66,7 +66,7 @@ CONTROLS = [
     ('topbar-workspace', 'channel', 'frame', '[data-testid="desktop-workspace-trigger"]', None, ('default', 'hover', 'focus'), {}, 'topbar/AppTopBar.tsx'),
     ('composer-submit', 'channel', 'page', '[data-testid="composer-as-task-toggle"] ~ button', 'composer-submit',
      ('disabled', 'enabled', 'hover', 'pressed', 'focus'), {'prefill': 'Looks good to me'}, 'message/MessageInput.tsx'),
-    ('composer-as-task', 'channel', 'page', '[data-testid="composer-as-task-toggle"]', 'composer-as-task', ('default', 'hover', 'focus', 'checked'), {}, 'message/MessageInput.tsx'),
+    ('composer-as-task', 'channel', 'page', '[data-testid="composer-as-task-toggle"]', 'composer-as-task-toggle', ('default', 'hover', 'focus', 'checked'), {}, 'message/MessageInput.tsx'),
     # Activity page (ThreadsInbox rows; the Done check appears on row hover)
     ('activity-row', 'activity', 'page', '[data-testid="inbox-row"] >> nth=1', 'activity-channel-channel-android', DESKTOP_STATES, {}, 'thread/ThreadsInbox.tsx'),
     # Flutter: RaftConversationCard builds the Done action only after a hover its RaftHoverRegion accepts; the harness mouse
@@ -118,7 +118,9 @@ def steps(state, web, flutter, extra):
         return [{'type': 'focus', **wt}, mark_w], [{'type': 'focus', **ft}, mark_f]
     if state == 'checked':
         # the tap moves the pointer onto the control: park it by hovering the same control in both, then focus-free mark
-        return [{'type': 'click', **wt}, {'type': 'hover', **wt}, mark_w], [{'type': 'tap', 'mouse': True, **ft}, {'type': 'hover', **ft}, mark_f]
+        # This frame control is already visible. ensureVisible would scroll its
+        # ancestor PageViews and switch away from the conversation after the tap.
+        return [{'type': 'click', **wt}, {'type': 'hover', **wt}, mark_w], [{'type': 'tap', 'mouse': True, 'scroll': False, **ft}, {'type': 'hover', **ft}, mark_f]
     if state == 'toggled':
         return [{'type': 'click', **wt}, mark_w], [{'type': 'tap', 'mouse': True, **ft}, mark_f]
     raise ValueError(state)
