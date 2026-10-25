@@ -2,7 +2,7 @@
 # Regenerate the raft-ui component recipe layer end to end:
 #   extract.mjs  -> build/recipes/recipes.raw.json
 #   resolve.mjs  -> build/recipes/{recipes,coverage}.json, docs/component-recipes.md
-#   gen_dart.mjs -> packages/raft_ui/lib/src/recipes/*.g.dart (+ parity fixtures)
+#   gen_dart.mjs -> packages/raft_theme/lib/recipes/*.g.dart (+ parity fixtures)
 #
 # Usage: tool/recipes/run [--test] [--raft-ui-only]
 #   --test          also run the node tests (incl. determinism) and the Dart recipe tests

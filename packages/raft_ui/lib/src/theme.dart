@@ -178,6 +178,9 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   /// the old way (tests that construct a bare [RaftTokenSet]).
   final RaftModeValues? _mode;
 
+  /// Resolved pack data supplied to the independent recipe engine.
+  RaftModeValues? get themeValues => _mode;
+
   /// Every generated tier for this theme.
   RaftTokenSet get tokenSet =>
       _tokens ?? RaftTokenSet.of(raftThemeId(dark: dark));
@@ -185,9 +188,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   RaftProductColors get product => tokenSet.product;
   RaftComponentColors get components => tokenSet.components;
   RaftThemeShadows get themeShadows => tokenSet.shadows;
-
-  /// Whether the pack defines a shadow role, including an explicitly empty one.
-  bool hasShadowRole(String role) => _mode?.shadows.containsKey(role) ?? false;
 
   /// Named component shadow layers from the resolved pack, in CSS paint order.
   List<RaftCssShadow> shadowLayers(String role) => [

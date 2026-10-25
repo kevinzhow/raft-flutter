@@ -1,5 +1,5 @@
 name: raft_theme
-description: The theme contract — theme packs, parsing, validation and resolution, with no dependency on raft_ui.
+description: Independent theme packs and CSS recipe engine, with no application or raft_ui dependency.
 publish_to: none
 version: 0.1.0
 resolution: workspace
