@@ -11,6 +11,7 @@ import 'package:raft_updater/raft_updater.dart' show AppUpdater;
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'platform/artifact_web_data.dart' show clearArtifactWebData;
 import 'platform/cache_hygiene.dart' show purgeAccountCaches;
 import 'platform/device_timezone.dart' show readDeviceTimezone;
 import 'data/device_preferences.dart';
@@ -755,6 +756,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         final ended = created.lastEndReason;
         if (ended != null) {
           bootError = 'Your session has expired. Sign in again.';
+          // No account is known here to purge; the artifact browser's web
+          // data must not outlive the session either.
+          unawaited(clearArtifactWebData());
         }
         client = null;
         unawaited(created.dispose());

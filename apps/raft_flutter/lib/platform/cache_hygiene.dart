@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/attachment_disk_cache.dart';
+import 'artifact_web_data.dart';
 import 'cache_staging.dart';
 import 'session_store.dart';
 import 'video_cache.dart';
@@ -56,8 +57,10 @@ Future<int> removeOrphanVideoAccounts(
   return keep == null ? 0 : VideoCache.removeOrphanAccounts(keep);
 }
 
-/// Everything cached on this device for one account, attachments and videos:
-/// sign-out, a session the server ended, an account switch. Never throws; a
+/// Everything cached on this device for one account, attachments and videos,
+/// and what the in-app artifact browser kept (its cookies and storage are
+/// device-wide, so the next person never inherits them): sign-out, a session
+/// the server ended, an account switch. Never throws; a
 /// layer that cannot be emptied now is emptied by the next start-up pass.
 Future<void> purgeAccountCaches(String origin, String principal) async {
   try {
@@ -70,6 +73,7 @@ Future<void> purgeAccountCaches(String origin, String principal) async {
   } on Object {
     // Same.
   }
+  await clearArtifactWebData();
 }
 
 /// The one-time housekeeping at app start; no timers, every step best effort:

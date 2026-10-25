@@ -17,10 +17,14 @@ class FakeWebView extends WebViewPlatform {
   static WebResourceErrorCallback? _onError;
   static JavaScriptMode? javaScriptMode;
 
+  /// `cookies`, `localStorage`, `cache`: what the app asked to clear.
+  static final cleared = <String>[];
+
   static void reset() {
     loads.clear();
     shown = null;
     javaScriptMode = null;
+    cleared.clear();
     _onNavigationRequest = null;
     _onPageFinished = null;
     _onUrlChange = null;
@@ -67,6 +71,10 @@ class FakeWebView extends WebViewPlatform {
     PlatformNavigationDelegateCreationParams params,
   ) => _Delegate(params);
   @override
+  PlatformWebViewCookieManager createPlatformCookieManager(
+    PlatformWebViewCookieManagerCreationParams params,
+  ) => _Cookies(params);
+  @override
   PlatformWebViewWidget createPlatformWebViewWidget(
     PlatformWebViewWidgetCreationParams params,
   ) => _Widget(params);
@@ -89,6 +97,20 @@ class _Controller extends PlatformWebViewController {
 
   @override
   Future<String?> currentUrl() async => FakeWebView.shown;
+  @override
+  Future<void> clearLocalStorage() async =>
+      FakeWebView.cleared.add('localStorage');
+  @override
+  Future<void> clearCache() async => FakeWebView.cleared.add('cache');
+}
+
+class _Cookies extends PlatformWebViewCookieManager {
+  _Cookies(super.params) : super.implementation();
+  @override
+  Future<bool> clearCookies() async {
+    FakeWebView.cleared.add('cookies');
+    return true;
+  }
 }
 
 class _Delegate extends PlatformNavigationDelegate {
