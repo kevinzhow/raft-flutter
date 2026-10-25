@@ -1,5 +1,7 @@
 # Design-system migration map (apps/raft_flutter/lib → raft_ui)
 
+`tool/ds-audit` also guards `packages/raft_ui/lib` against the theme contract; see "Contract rules" below. The numbers in this document describe the app scope only.
+
 Snapshot: branch `cindy/ds-guard` on top of `3f3c72f`, measured with `tool/ds-audit`.
 The snapshot covers 125 Dart files. It found **1118 enforced violations in 65 files**
 (widget 492, style 626) and **0 allowlisted**. The ratchet baseline is
@@ -11,13 +13,13 @@ change as work lands.
 
 | Command | Effect |
 |---|---|
-| `tool/ds-audit` | Prints totals per category, the top 15 files and the comparison with the baseline. Writes `.local/ds-audit.json`, which holds every finding with file, line, column, category, name and argument shape. |
+| `tool/ds-audit` | Scans both scopes (`apps/raft_flutter/lib` and `packages/raft_ui/lib`). Prints totals per category, the top 20 files per scope and the comparison with the baseline. Writes `.local/ds-audit.json`, which holds every finding with file, line, column, category, name and argument shape. |
 | `tool/ds-audit --check` | Exits 1 if any file/category count is above the baseline (new files and new categories count from 0), or if a `ds-allow` comment has no reason. Counts below the baseline pass ("baseline can lower"). |
 | `tool/ds-audit --update-baseline` | Integration owner only, after merges: writes the current counts as a separate small commit. It refuses to raise any count unless you also pass `--accept-increase`, and a raised count must be reviewed. |
 | `tool/ds-audit --json <path>…` | Prints the aggregated report for arbitrary paths. The tests use this. |
 
 - **Ratchet test:** `tool/tests/test_ds_audit.py` runs in `tool/check-project`. It runs the
-  scanner over `apps/raft_flutter/lib` and fails on any per-file, per-category increase. When
+  scanner over both scopes and fails on any per-file, per-category increase. When
   counts go down, it passes and prints a "baseline can lower" note (a decrease never fails). The same file also pins the scanner
   semantics with exact counts on `apps/raft_flutter/test/fixtures/ds_audit_sample.dart`, which
   includes negative cases.
@@ -52,6 +54,32 @@ change as work lands.
 **Known blind spot:** a literal hidden behind a local constant (`const _gap = 12.0;
 SizedBox(height: _gap)`) is not counted. Reviewers should reject new private size or color
 constants in feature files.
+
+### Contract rules (`packages/raft_ui/lib`)
+
+Scope: every `*.dart` under `packages/raft_ui/lib` except generated `*.g.dart`, which are never
+scanned for the literal categories. Components read only the theme pack
+(docs/theme-contract.md 7.3); these categories count what bypasses it. All use the same resolved
+AST, the same `// ds-allow: <reason>` hatch and the same baseline file as the app scope. A literal
+passes when it is only geometry arithmetic: `/ 2`, `* 2`, `+ 1`, `- 1` or `-1` next to a
+non-literal (`radius - 1`, `size / 2`). Media chrome, brand artwork and Chromium blend helpers
+carry a `ds-allow` with the reason.
+
+| Category | Counted when |
+|---|---|
+| `contract.color_literal` | A `dart:ui` `Color(...)`/`Color.fromARGB`/`fromRGBO`/`Color.from` whose arguments contain a numeric literal, or any use of `Colors.*` from the Material library except `Colors.transparent`. `Color(value)` with a computed `value` does not count. |
+| `contract.font_size_literal` | A `fontSize:` argument containing a numeric literal in any call (`TextStyle(fontSize: 14)`, `copyWith(fontSize: 12)`, a raft_ui API). `fontSize: t.size * 1.1` counts; `fontSize: t.size` does not. |
+| `contract.radius_literal` | `BorderRadius.circular`/`BorderRadiusDirectional.circular`/`Radius.circular`/`Radius.elliptical` with a numeric literal in the arguments (`BorderRadius.all(Radius.circular(4))` counts once). `BorderRadius.circular(t.radius)` and `BorderRadius.zero` do not. |
+| `contract.stroke_width_literal` | A numeric literal in the `width:` argument of `BorderSide(...)`, `Border.all(...)` or `BorderSide.copyWith(...)`, in any `strokeWidth:` argument, or on the right of `..strokeWidth =`. |
+| `contract.theme_name_branch` | Any reference to a type or value named `RaftFamily`; any use of a member named `isElegant` or `isBrutal`; a `==`/`!=` or `switch` on a theme name, meaning a `RaftFamily` value, `themeId`, `packId`, `raftThemePackId`, `builtInRaftThemeId`, or the `id`/`name` of a `RaftThemePack`, `RaftTokenSet`, `RaftTokens` or `RaftTheme`. Light/dark checks (`Brightness`, `RaftThemeId`) are modes, not theme names, and do not count. |
+| `contract.legacy_recipe_theme` | A reference to the enum constants `RaftRecipeTheme.elegant` or `.brutal`, except inside `lib/src/recipes/` (the recipe runtime) and inside the single adapter function `raftRecipeTheme` in `panel_layout.dart`. Every other file should go through the adapter or, better, read the theme pack. |
+| `generated.recipe_constants` | Informational only, never checked and never part of the ratchet. Per `*.g.dart` file under a `recipes/` directory: the number of top-level `const` variables plus `static const` fields (enum constants are not counted). It shows how much of the recipe tables is still compiled in. |
+
+Rules are keyed by resolved declarations and by the names above, so a file that declares its own
+`RaftFamily` or `RaftTheme` stand-in is counted too (the fixture relies on this).
+`packages/raft_ui/test/fixtures/ds_audit_contract/` pins every category with negative cases, the
+allowlist, a malformed allow and a generated file; the exact counts live in
+`tool/tests/test_ds_audit.py`.
 
 ## 2. What raft_ui already exports
 

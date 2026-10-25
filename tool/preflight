@@ -5,7 +5,8 @@ It runs the cheap checks that have already cost full-check rounds, about a minut
 on a typical branch, and reports every result (it never stops at the first failure):
 
   structure-audit       tool/structure-audit --check (a hotspot module grew in lines or tokens)
-  ds-audit              tool/ds-audit --check (raw style literals; counts above the baseline)
+  ds-audit              tool/ds-audit --check (apps/raft_flutter/lib style literals and packages/raft_ui/lib theme-contract
+                        literals; counts above the baseline)
   docs-index            tool/tests/test_docs_index.py (every docs/ file is listed in docs/README.md)
   tool-tests            every tool/tests suite, only when a file under tool/ changed (a hook or script
                         change that breaks another tool's tests otherwise only fails in the full check)
@@ -439,7 +440,7 @@ def run_steps(runner, changes, max_tests):
 
     def design_system():
         return runner.command('ds-audit', [*tool_command('ds-audit'), '--check'], ok_detail='at or below the baseline',
-                              fail_detail='style literals above the baseline; see the log')
+                              fail_detail='style or theme-contract literals above the baseline; see the log')
 
     def docs_index():
         return runner.command('docs-index', [sys.executable, '-m', 'unittest', '-q', DOCS_INDEX_TEST], ok_detail='docs/README.md lists every doc',

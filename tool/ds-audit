@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure and ratchet design-system drift in apps/raft_flutter/lib.
+"""Measure and ratchet design-system drift in apps/raft_flutter/lib and theme-contract drift in packages/raft_ui/lib.
 
 The scan itself is a resolved-AST Dart program (tool/ds_audit) run with the
 pinned SDK; this wrapper aggregates its findings, writes .local/ds-audit.json,
@@ -10,6 +10,14 @@ baseline tool/ds-audit-baseline.json.
   tool/ds-audit --check             exit 1 if any file/category count grew (a decrease never fails)
   tool/ds-audit --update-baseline   lower the baseline to the current counts (integration branch only)
   tool/ds-audit --json PATH...      print aggregated JSON for given paths
+
+Two scopes share one baseline (files are keyed by path):
+  apps/raft_flutter/lib   widget.* and style.* (Material widgets and raw style literals);
+  packages/raft_ui/lib    contract.* (docs/theme-contract.md 7.3: literal colours, font sizes,
+                          radii and stroke widths, theme-name branches, direct RaftRecipeTheme use).
+Generated *.g.dart files in raft_ui are not scanned for literals; their `const`
+variables are counted per recipe file as `generated.recipe_constants`, which is
+informational and never fails --check.
 
 Workflow: a feature branch only has to keep every count at or below the baseline
 and never edits tool/ds-audit-baseline.json (parallel branches that lower the same
@@ -31,6 +39,9 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SCOPE = 'apps/raft_flutter/lib'
+CONTRACT_SCOPE = 'packages/raft_ui/lib'
+SCOPES = [SCOPE, CONTRACT_SCOPE]
+CONTRACT_SCOPES = [CONTRACT_SCOPE]  # scanned with the theme-contract rules
 BASELINE = ROOT / 'tool/ds-audit-baseline.json'
 REPORT = ROOT / '.local/ds-audit.json'
 UPDATE_HINT = 'tool/ds-audit --update-baseline'
@@ -53,14 +64,20 @@ def dart_executable():
     return pathlib.Path(flutter_root) / 'bin' / ('dart.bat' if os.name == 'nt' else 'dart')
 
 
-def run_scanner(paths):
-    """Return the raw scanner document ({scanned, errors, findings})."""
+def run_scanner(paths, contract=None):
+    """Return the raw scanner document ({scanned, errors, findings, generated}).
+
+    `contract` lists the directories (relative to the repo) scanned with the
+    theme-contract rules; it defaults to CONTRACT_SCOPES.
+    """
+    contract = CONTRACT_SCOPES if contract is None else contract
     package_config = ROOT / '.dart_tool/package_config.json'
     if not package_config.is_file() or '"ds_audit"' not in package_config.read_text():
         raise AuditError('workspace is not resolved; run `tool/flutter pub get` at the repository root')
     out = subprocess.run(
         [str(dart_executable()), f'--packages={package_config}',
-         str(ROOT / 'tool/ds_audit/bin/ds_audit.dart'), '--root', str(ROOT), *paths],
+         str(ROOT / 'tool/ds_audit/bin/ds_audit.dart'), '--root', str(ROOT),
+         *[arg for prefix in contract for arg in ('--contract', prefix)], *paths],
         cwd=ROOT, capture_output=True, text=True)
     if out.returncode != 0:
         raise AuditError(f'ds_audit scanner failed (exit {out.returncode}):\n{out.stderr.strip()}')
@@ -81,14 +98,17 @@ def aggregate(document):
             malformed.append(f"{f['file']}:{f['line']}: {f['allowError']}")
     as_dict = lambda table: {name: dict(sorted(c.items())) for name, c in sorted(table.items()) if c}
     files, allowed = as_dict(files), as_dict(allowed)
+    generated = dict(sorted(document.get('generated', {}).items()))
     return {
-        'version': 1,
-        'scope': SCOPE,
+        'version': 2,
+        'scopes': SCOPES,
         'scannedFiles': len(document['scanned']),
         'totals': totals(files),
         'allowedTotals': totals(allowed),
         'files': files,
         'allowed': allowed,
+        'generated': generated,
+        'generatedTotal': sum(generated.values()),
         'malformedAllows': malformed,
         'findings': document['findings'],
     }
@@ -121,12 +141,15 @@ def compare(baseline_files, current_files):
 
 def baseline_document(report):
     return {
-        'version': 1,
-        'scope': SCOPE,
+        'version': 2,
+        'scopes': SCOPES,
         'about': 'Ratchet for tool/ds-audit. Counts may only go down. Feature branches never edit this file; '
-                 f'the integration owner runs `{UPDATE_HINT}` after merges (separate small commit).',
+                 f'the integration owner runs `{UPDATE_HINT}` after merges (separate small commit). '
+                 '`generated` is informational (const variables per generated recipe file) and is never checked.',
         'totals': report['totals'],
         'files': report['files'],
+        'generatedTotal': report['generatedTotal'],
+        'generated': report['generated'],
     }
 
 
@@ -136,22 +159,29 @@ def load_baseline():
     return json.loads(BASELINE.read_text())
 
 
+def scope_of(name):
+    return next((scope for scope in SCOPES if name.startswith(scope + '/')), SCOPE)
+
+
 def format_summary(report, top):
-    lines = [f"ds-audit: {report['scannedFiles']} files in {report['scope']}"]
-    t = report['totals']
-    widget = sum(v for k, v in t.items() if k.startswith('widget.'))
-    style = sum(v for k, v in t.items() if k.startswith('style.'))
-    lines.append(f'enforced violations: {widget + style} (widget {widget}, style {style}); '
-                 f"allowlisted: {sum(report['allowedTotals'].values())}")
-    for category, count in sorted(t.items(), key=lambda kv: (-kv[1], kv[0])):
-        allowed = report['allowedTotals'].get(category, 0)
-        lines.append(f'  {category:28} {count:5}' + (f'  (+{allowed} allowlisted)' if allowed else ''))
-    ranked = sorted(report['files'].items(), key=lambda kv: (-sum(kv[1].values()), kv[0]))
-    lines.append(f'top {min(top, len(ranked))} files:')
-    for name, counts in ranked[:top]:
-        w = sum(v for k, v in counts.items() if k.startswith('widget.'))
-        s = sum(v for k, v in counts.items() if k.startswith('style.'))
-        lines.append(f'  {sum(counts.values()):4}  (widget {w:3}, style {s:3})  {name}')
+    lines = [f"ds-audit: {report['scannedFiles']} files in {', '.join(report['scopes'])}"]
+    for scope in report['scopes']:
+        files = {n: c for n, c in report['files'].items() if scope_of(n) == scope}
+        totals_ = totals(files)
+        allowed = totals({n: c for n, c in report['allowed'].items() if scope_of(n) == scope})
+        lines.append(f'{scope}: enforced violations {sum(totals_.values())}; allowlisted {sum(allowed.values())}')
+        for category, count in sorted(totals_.items(), key=lambda kv: (-kv[1], kv[0])):
+            extra = allowed.get(category, 0)
+            lines.append(f'  {category:30} {count:5}' + (f'  (+{extra} allowlisted)' if extra else ''))
+        ranked = sorted(files.items(), key=lambda kv: (-sum(kv[1].values()), kv[0]))
+        lines.append(f'  top {min(top, len(ranked))} files:')
+        for name, counts in ranked[:top]:
+            lines.append(f'  {sum(counts.values()):5}  {name}')
+    generated = report.get('generated', {})
+    if generated:
+        ranked = sorted(generated.items(), key=lambda kv: (-kv[1], kv[0]))
+        lines.append(f"generated.recipe_constants (informational, not checked): {report['generatedTotal']} "
+                     f'in {len(generated)} recipe files; largest {ranked[0][0]} ({ranked[0][1]})')
     return '\n'.join(lines)
 
 
@@ -160,7 +190,7 @@ def format_comparison(regressions, improvements):
     if regressions:
         lines.append(f'DESIGN-SYSTEM DRIFT GREW in {len(regressions)} file/category pair(s):')
         lines += [f'  {f}: {c} {b} -> {n}' for f, c, b, n in regressions]
-        lines.append('Use raft_ui components/tokens instead (docs/ds-migration.md). Genuinely '
+        lines.append('Use raft_ui components/tokens and the theme pack instead (docs/ds-migration.md). Genuinely '
                      'platform-only code may carry `// ds-allow: <reason>` for review.')
     if improvements:
         lines.append(f'baseline can lower: {len(improvements)} file/category count(s) went down. This does not fail '
@@ -174,19 +204,23 @@ def format_comparison(regressions, improvements):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('paths', nargs='*', help=f'files/dirs relative to the repo (default {SCOPE})')
+    parser.add_argument('paths', nargs='*', help=f"files/dirs relative to the repo (default {' and '.join(SCOPES)})")
     parser.add_argument('--check', action='store_true', help='fail on any count above the baseline')
     parser.add_argument('--update-baseline', action='store_true', help='write current counts to the baseline')
     parser.add_argument('--accept-increase', action='store_true',
                         help='with --update-baseline: also accept counts that grew (needs review)')
     parser.add_argument('--json', action='store_true', help='print the aggregated report as JSON')
-    parser.add_argument('--top', type=int, default=15)
+    parser.add_argument('--contract', action='append', default=[], metavar='DIR',
+                        help='also scan DIR (relative to the repo) with the theme-contract rules; for fixtures and spot checks')
+    parser.add_argument('--top', type=int, default=20)
     args = parser.parse_args(argv)
     custom = bool(args.paths)
+    if args.contract and not custom:
+        parser.error('--contract needs explicit paths')
     if custom and (args.check or args.update_baseline):
         parser.error('--check/--update-baseline always scan the full scope; do not pass paths')
     try:
-        report = aggregate(run_scanner(args.paths or [SCOPE]))
+        report = aggregate(run_scanner(args.paths or SCOPES, [*CONTRACT_SCOPES, *args.contract]))
     except AuditError as error:
         print(f'ds-audit: {error}', file=sys.stderr)
         return 2

@@ -1,30 +1,39 @@
 {
- "version": 1,
- "scope": "apps/raft_flutter/lib",
- "about": "Ratchet for tool/ds-audit. Counts may only go down. Feature branches never edit this file; the integration owner runs `tool/ds-audit --update-baseline` after merges (separate small commit).",
+ "version": 2,
+ "scopes": [
+  "apps/raft_flutter/lib",
+  "packages/raft_ui/lib"
+ ],
+ "about": "Ratchet for tool/ds-audit. Counts may only go down. Feature branches never edit this file; the integration owner runs `tool/ds-audit --update-baseline` after merges (separate small commit). `generated` is informational (const variables per generated recipe file) and is never checked.",
  "totals": {
+  "contract.color_literal": 270,
+  "contract.font_size_literal": 179,
+  "contract.legacy_recipe_theme": 34,
+  "contract.radius_literal": 200,
+  "contract.stroke_width_literal": 273,
+  "contract.theme_name_branch": 1,
   "style.border_radius": 10,
   "style.dimension": 36,
   "style.duration": 2,
-  "style.edge_insets": 50,
+  "style.edge_insets": 49,
   "style.font_size": 1,
   "style.font_weight": 5,
   "style.material_colors": 27,
-  "style.material_icons": 16,
-  "style.material_theme": 19,
-  "style.sized_box": 49,
+  "style.material_icons": 15,
+  "style.material_theme": 18,
+  "style.sized_box": 46,
   "style.text_metrics": 1,
   "style.text_style": 2,
-  "widget.button": 26,
+  "widget.button": 24,
   "widget.chip": 3,
-  "widget.dialog": 37,
-  "widget.icon_button": 10,
+  "widget.dialog": 36,
+  "widget.icon_button": 9,
   "widget.ink": 1,
-  "widget.list_tile": 20,
+  "widget.list_tile": 16,
   "widget.menu": 15,
-  "widget.other": 11,
-  "widget.progress": 12,
-  "widget.scaffold": 5,
+  "widget.other": 10,
+  "widget.progress": 11,
+  "widget.scaffold": 4,
   "widget.select": 3,
   "widget.surface": 4,
   "widget.text_field": 10
@@ -282,6 +291,877 @@
   "apps/raft_flutter/lib/platform/system_bars.dart": {
    "style.material_colors": 3,
    "style.material_theme": 2
+  },
+  "packages/raft_ui/lib/activity_selected_previews.dart": {
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/document_previews.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/media_browser_previews.dart": {
+   "contract.color_literal": 3
+  },
+  "packages/raft_ui/lib/previews.dart": {
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/rich_surface_visual_previews.dart": {
+   "contract.color_literal": 5
+  },
+  "packages/raft_ui/lib/src/action_card.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/activity_scope.dart": {
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/adaptive_workspace.dart": {
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/add_computer_dialog.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/add_members_dialog_view.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/agent_avatar_picker.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/agent_chat_view.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/agent_combobox.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/agent_create_form.dart": {
+   "contract.font_size_literal": 9,
+   "contract.legacy_recipe_theme": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/agent_profile.dart": {
+   "contract.color_literal": 5,
+   "contract.legacy_recipe_theme": 2,
+   "contract.radius_literal": 5,
+   "contract.stroke_width_literal": 5
+  },
+  "packages/raft_ui/lib/src/announcement_markdown.dart": {
+   "contract.font_size_literal": 2
+  },
+  "packages/raft_ui/lib/src/announcement_modal.dart": {
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/app_icon_choices.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/appearance_picker.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 6
+  },
+  "packages/raft_ui/lib/src/attachment_card.dart": {
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/attachment_comment_ref.dart": {
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/attachment_comments.dart": {
+   "contract.font_size_literal": 8,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/attachment_lightbox.dart": {
+   "contract.color_literal": 2,
+   "contract.font_size_literal": 6,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/attachment_preview_shell.dart": {
+   "contract.color_literal": 2,
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/src/attachment_tokens.dart": {
+   "contract.color_literal": 16,
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/attachment_transfer.dart": {
+   "contract.color_literal": 5,
+   "contract.font_size_literal": 2,
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/auth_page.dart": {
+   "contract.font_size_literal": 4,
+   "contract.legacy_recipe_theme": 2,
+   "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/avatar_pixel_data.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/brand.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/channel_footer.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/channel_header.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/channel_members_view.dart": {
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 8
+  },
+  "packages/raft_ui/lib/src/channel_overflow_sheet.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/chat_composition.dart": {
+   "contract.color_literal": 3,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/chinese_community_page.dart": {
+   "contract.radius_literal": 3
+  },
+  "packages/raft_ui/lib/src/cindy_setup_screen.dart": {
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 5
+  },
+  "packages/raft_ui/lib/src/collapsible.dart": {
+   "contract.color_literal": 3
+  },
+  "packages/raft_ui/lib/src/combobox_panel.dart": {
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/src/community_agreement_dialog.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/components.dart": {
+   "contract.font_size_literal": 5,
+   "contract.legacy_recipe_theme": 3,
+   "contract.radius_literal": 4,
+   "contract.stroke_width_literal": 4
+  },
+  "packages/raft_ui/lib/src/composer_attachments.dart": {
+   "contract.color_literal": 2,
+   "contract.font_size_literal": 1,
+   "contract.legacy_recipe_theme": 1,
+   "contract.radius_literal": 6,
+   "contract.stroke_width_literal": 4
+  },
+  "packages/raft_ui/lib/src/composer_drop_overlay.dart": {
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/composer_pending_mentions.dart": {
+   "contract.font_size_literal": 5,
+   "contract.legacy_recipe_theme": 2,
+   "contract.radius_literal": 4,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/composer_recipe.dart": {
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 3,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/composer_tool_button.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/computer_detail.dart": {
+   "contract.color_literal": 2,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/computer_surfaces.dart": {
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 5
+  },
+  "packages/raft_ui/lib/src/conversation_finder.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 3,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/conversation_list_row.dart": {
+   "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/copyable_code.dart": {
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/design_primitives.dart": {
+   "contract.color_literal": 16,
+   "contract.font_size_literal": 3,
+   "contract.radius_literal": 10,
+   "contract.stroke_width_literal": 9
+  },
+  "packages/raft_ui/lib/src/dialog_card.dart": {
+   "contract.color_literal": 5,
+   "contract.font_size_literal": 1,
+   "contract.legacy_recipe_theme": 1,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/document_preview.dart": {
+   "contract.font_size_literal": 3
+  },
+  "packages/raft_ui/lib/src/editor_groups.dart": {
+   "contract.color_literal": 2,
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/emoji_nav_icon.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/emoji_picker.dart": {
+   "contract.color_literal": 26,
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 6
+  },
+  "packages/raft_ui/lib/src/external_agent_setup.dart": {
+   "contract.font_size_literal": 2,
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/external_identity_panel.dart": {
+   "contract.font_size_literal": 4
+  },
+  "packages/raft_ui/lib/src/feedback_inbox.dart": {
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/feedback_workspace.dart": {
+   "contract.font_size_literal": 2,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/form_controls.dart": {
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/forward_composer.dart": {
+   "contract.font_size_literal": 7,
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/forward_desktop_dialog.dart": {
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 4
+  },
+  "packages/raft_ui/lib/src/html_preview.dart": {
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/src/icons.dart": {
+   "contract.color_literal": 3,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/indicators.dart": {
+   "contract.color_literal": 5,
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/inline_badge_editor.dart": {
+   "contract.color_literal": 2,
+   "contract.font_size_literal": 2,
+   "contract.legacy_recipe_theme": 3,
+   "contract.radius_literal": 3,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/inline_media.dart": {
+   "contract.color_literal": 9,
+   "contract.font_size_literal": 9,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 4
+  },
+  "packages/raft_ui/lib/src/inline_thread_surface.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/invite_accept_page.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/invite_human_dialog.dart": {
+   "contract.font_size_literal": 5
+  },
+  "packages/raft_ui/lib/src/large_content_viewer.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/lazy_markdown_document.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 2
+  },
+  "packages/raft_ui/lib/src/list_items.dart": {
+   "contract.font_size_literal": 7,
+   "contract.radius_literal": 3,
+   "contract.stroke_width_literal": 5
+  },
+  "packages/raft_ui/lib/src/list_page_parts.dart": {
+   "contract.font_size_literal": 2,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/markdown_outline.dart": {
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/src/media_browser.dart": {
+   "contract.color_literal": 22,
+   "contract.font_size_literal": 6,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/member_graph.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 3,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/mermaid_fullscreen.dart": {
+   "contract.color_literal": 4
+  },
+  "packages/raft_ui/lib/src/message_body.dart": {
+   "contract.color_literal": 3,
+   "contract.font_size_literal": 2
+  },
+  "packages/raft_ui/lib/src/message_content_tokens.dart": {
+   "contract.color_literal": 2,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/message_list_marker.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/message_reference_chip.dart": {
+   "contract.color_literal": 2,
+   "contract.font_size_literal": 3,
+   "contract.legacy_recipe_theme": 2,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/message_row_recipe.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 3,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/message_toolbar_glyphs.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/mobile_computer_list.dart": {
+   "contract.radius_literal": 3,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/mobile_navigation.dart": {
+   "contract.color_literal": 10,
+   "contract.radius_literal": 3,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/mobile_navigation_docked.dart": {
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/mobile_page_header.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/mobile_tabbar_config.dart": {
+   "contract.color_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/mobile_workspace_header.dart": {
+   "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/mounted_avatar_recipe.dart": {
+   "contract.color_literal": 2
+  },
+  "packages/raft_ui/lib/src/mounted_reaction_recipe.dart": {
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/mounted_task_chip.dart": {
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/notification_center.dart": {
+   "contract.color_literal": 5,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/notification_settings_card.dart": {
+   "contract.font_size_literal": 3,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/onboarding_previews.dart": {
+   "contract.color_literal": 4,
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 12
+  },
+  "packages/raft_ui/lib/src/page_recipes.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/page_tokens.dart": {
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/src/panel_edge.dart": {
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/panel_layout.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/presentation.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/preview_unavailable.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/profile_preview_card.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/provider_edit_view.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/public_page_mark.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/public_server.dart": {
+   "contract.font_size_literal": 2,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 5
+  },
+  "packages/raft_ui/lib/src/quick_reaction_picker.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/quick_switcher.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/quick_switcher_results.dart": {
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/quoted_message_card.dart": {
+   "contract.color_literal": 9,
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 3,
+   "contract.stroke_width_literal": 4
+  },
+  "packages/raft_ui/lib/src/raft/avatar.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/badge.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/button_colors.dart": {
+   "contract.color_literal": 5
+  },
+  "packages/raft_ui/lib/src/raft/button_surface.dart": {
+   "contract.legacy_recipe_theme": 1
+  },
+  "packages/raft_ui/lib/src/raft/checkbox.dart": {
+   "contract.color_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/icon_tile.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/list_row.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/raft/pixel_spinner.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/segmented_control.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/switch.dart": {
+   "contract.color_literal": 7,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/tabs.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/ui_tokens.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart": {
+   "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart": {
+   "contract.radius_literal": 3
+  },
+  "packages/raft_ui/lib/src/raftbench/raftbench_legacy_rules.dart": {
+   "contract.radius_literal": 3
+  },
+  "packages/raft_ui/lib/src/raftbench/raftbench_manager_overview.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/raftbench/raftbench_page_view.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/raftbench/raftbench_parts.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/rail_attention.dart": {
+   "contract.color_literal": 2,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/reaction_sprite.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/recipe_surface.dart": {
+   "contract.color_literal": 1,
+   "contract.legacy_recipe_theme": 1,
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/recipes/recipe_runtime.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/report_issue_dialog.dart": {
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/resource_cards.dart": {
+   "contract.font_size_literal": 1,
+   "contract.legacy_recipe_theme": 2,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/resource_rows.dart": {
+   "contract.font_size_literal": 1,
+   "contract.legacy_recipe_theme": 5,
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/rich_card_tokens.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/root_error_fallback.dart": {
+   "contract.radius_literal": 4
+  },
+  "packages/raft_ui/lib/src/runtime_error_banner.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/runtime_usage_card.dart": {
+   "contract.color_literal": 1,
+   "contract.stroke_width_literal": 5
+  },
+  "packages/raft_ui/lib/src/search_result_surface.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/select_field.dart": {
+   "contract.legacy_recipe_theme": 3,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/selected_text_quote.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/selection_toolbar_recipe.dart": {
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/src/server_access_denied.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/server_switcher_top_bar.dart": {
+   "contract.radius_literal": 3
+  },
+  "packages/raft_ui/lib/src/settings_administration.dart": {
+   "contract.color_literal": 1,
+   "contract.font_size_literal": 2,
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 10
+  },
+  "packages/raft_ui/lib/src/settings_app_editor.dart": {
+   "contract.stroke_width_literal": 12
+  },
+  "packages/raft_ui/lib/src/settings_applications.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 8
+  },
+  "packages/raft_ui/lib/src/settings_billing.dart": {
+   "contract.font_size_literal": 2,
+   "contract.stroke_width_literal": 7
+  },
+  "packages/raft_ui/lib/src/settings_controls.dart": {
+   "contract.color_literal": 2,
+   "contract.font_size_literal": 3,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/settings_layout.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/settings_resources.dart": {
+   "contract.color_literal": 3,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/settings_workspace.dart": {
+   "contract.color_literal": 4,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 4
+  },
+  "packages/raft_ui/lib/src/setup_resume_bar.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/setup_steps.dart": {
+   "contract.color_literal": 2,
+   "contract.font_size_literal": 4,
+   "contract.radius_literal": 9,
+   "contract.stroke_width_literal": 10
+  },
+  "packages/raft_ui/lib/src/sheet.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/sidebar_frame.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/sidebar_indicators.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/sidebar_section_dialog.dart": {
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/src/slack_bridge_wizard.dart": {
+   "contract.color_literal": 2,
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 9,
+   "contract.stroke_width_literal": 4
+  },
+  "packages/raft_ui/lib/src/small_icon_recipe.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/sos_dialog.dart": {
+   "contract.font_size_literal": 1
+  },
+  "packages/raft_ui/lib/src/switch_recipe.dart": {
+   "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/system_message.dart": {
+   "contract.color_literal": 2
+  },
+  "packages/raft_ui/lib/src/task.dart": {
+   "contract.font_size_literal": 5,
+   "contract.legacy_recipe_theme": 4,
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/task_surface.dart": {
+   "contract.color_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/task_timeline.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/theme.dart": {
+   "contract.color_literal": 6,
+   "contract.radius_literal": 2,
+   "contract.stroke_width_literal": 3,
+   "contract.theme_name_branch": 1
+  },
+  "packages/raft_ui/lib/src/thread_composition.dart": {
+   "contract.font_size_literal": 1,
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/thread_followers.dart": {
+   "contract.font_size_literal": 5,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/thread_replies.dart": {
+   "contract.font_size_literal": 4,
+   "contract.legacy_recipe_theme": 1
+  },
+  "packages/raft_ui/lib/src/toast.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/tokens/token_set.dart": {
+   "contract.color_literal": 1
+  },
+  "packages/raft_ui/lib/src/tooltip.dart": {
+   "contract.color_literal": 4,
+   "contract.font_size_literal": 1,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/video_controls.dart": {
+   "contract.color_literal": 12,
+   "contract.font_size_literal": 2,
+   "contract.radius_literal": 3,
+   "contract.stroke_width_literal": 2
+  },
+  "packages/raft_ui/lib/src/video_viewer.dart": {
+   "contract.color_literal": 3
+  },
+  "packages/raft_ui/lib/src/working_agents.dart": {
+   "contract.radius_literal": 2
+  },
+  "packages/raft_ui/lib/src/workspace_mode_card.dart": {
+   "contract.font_size_literal": 2,
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/workspace_shell.dart": {
+   "contract.stroke_width_literal": 3
+  },
+  "packages/raft_ui/lib/src/workspace_top_bar.dart": {
+   "contract.radius_literal": 1,
+   "contract.stroke_width_literal": 1
   }
+ },
+ "generatedTotal": 1968,
+ "generated": {
+  "packages/raft_ui/lib/src/recipes/activity_inbox_shell.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/activity_inbox_sidebar.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/activity_inbox_toolbar.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/alert_dialog.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/app_rail.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/app_shell.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/avatar.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/badge.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/banner.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/button_variants.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/card.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/checkbox.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/checkbox_indicator.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/code_block.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/combobox.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/composer.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/composer_attachment.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/composer_drop_overlay.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/composer_root.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/composer_suggestion_list.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/composer_toolbar_label.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/context_menu.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/conversation_panel.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/conversation_panel_empty_state.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/copyable_code.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/description_list.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/dialog.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/dot.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/drawer.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/drawer_motion.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/dropdown_menu.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/empty_state.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/field.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/file_preview.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/files.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/heading.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/inbox_item.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/inline_code.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/input.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/input_group.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/kbd.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/label.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/legacy_task_panel.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/lightbox.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/live_agent_activity_bar.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/markdown.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_action_card.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_action_card_content.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_attachment.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_block.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_embed.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_footer.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_forwarded_bundle.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_forwarded_bundle_gallery.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_forwarded_bundle_item.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_image_gallery.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_item.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_list.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_multi_select.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_quoted_preview.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_reaction.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_reference.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_replies.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_system.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_text_selection_toolbar.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_translation.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/message_video_preview.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/mobile_nav.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/mono.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/notification_center.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/panel.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/panel_action.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/panel_action_base.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/panel_header.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/panel_toggle_action.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/picker_trigger_button.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/popover.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/preview_card.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/profile_panel.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/progress.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/radio_group.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/recipe_utilities.g.dart": 1362,
+  "packages/raft_ui/lib/src/recipes/recipes.g.dart": 1,
+  "packages/raft_ui/lib/src/recipes/resizable.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/sans.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/scroll_area.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/search.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/search_entity.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/search_message.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/search_thread.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/segmented_control.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/select.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/separator.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/sidebar_item_recipe.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/sidebar_menu_recipe.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/sidebar_recipe.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/sidebar_section_recipe.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/skeleton.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/spinner.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/status.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/switch_recipe.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/table.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/tabs.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_board_column.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_card.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_card_status.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_chip.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_dnd.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_list_section.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_loading.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_status.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_status_border.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_status_soft.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/task_status_strong.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/tasks_panel.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/textarea.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/textarea_counter.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/textarea_group.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/thread_panel.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/toast_action.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/toast_styles.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/toggle_group.g.dart": 5,
+  "packages/raft_ui/lib/src/recipes/tooltip.g.dart": 5
  }
 }
