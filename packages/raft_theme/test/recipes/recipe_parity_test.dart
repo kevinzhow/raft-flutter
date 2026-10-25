@@ -1,3 +1,6 @@
+@Tags(['look-elegant', 'look-brutal'])
+library;
+
 // Checks every generated slot against the independent JS cascade oracle.
 // The committed fixture is complete, so a standalone copy needs no repository
 // build directory or raft_ui to verify source recipe values.
@@ -10,9 +13,7 @@ import 'package:raft_theme/recipes.dart';
 // Full theme matrix on purpose (theme/token/recipe test): never sampled, see
 // the independent theme engine.
 void main() {
-  final files = [
-    File('test/recipes/recipe_parity_cases.g.json'),
-  ];
+  final files = [File('test/recipes/recipe_parity_cases.g.json')];
   for (final file in files) {
     test('JS/Dart parity: ${file.path}', () {
       if (!file.existsSync()) {
