@@ -17,10 +17,11 @@
 ## 拆分
 
 1. contracts：全功能清单按用户场景、平台、角色/能力、现有 Web 行为、API/events、测试、进度列出；取已挂载协议，生成可生成的 Dart 模型，对空缺保留审计过的手写适配。建立主题/token、消息/同步、权限三套共享 fixture。
-2. raft_ui：分 primitive tokens、semantic tokens、组件 recipes；导出 Web 对应主题的 computed values 与源版本摘要，OKLCH/alpha/shadow/font metrics 转换经验证，生成 Dart ThemeExtension。基础控件到产品组合组件分层；包含 hover/focus/pressed/disabled/loading/error、键盘和语义。组件展示 app/golden 对照。无网络/领域依赖。
-3. raft_client：纯 Dart human auth/HTTP/socket，安全存储接口、refresh single-flight、server/account 隔离、typed errors、分页/上传、日志脱敏。未来可独立 SDK，不放 UI 状态。模型和通信分开。
-4. raft_sync：移植已启用的 snapshot/difference/event reducer、seq/epoch/去重/补偿、撤权清理、read state；共用 TS/Dart fixtures。Repository + Drift 落库并投影给 Riverpod。缓存离线读；离线写只按服务端幂等合同支持，失败发送显式重试。不能把 Riverpod 或数据库当同步算法。
-5. app/features：登录入驻、server/channel/DM、消息/thread、搜索/saved、Activity/read、tasks、agents/computers、settings/admin/integrations；每 feature 垂直实现 model/repository/controller/view，领域 reducer 尽量纯 Dart。共享实体和权限，避免页面独立重复 stores。
+2. raft_theme：独立主题包与配方引擎，提供解析、继承、校验、生成槽位、CSS状态层叠、包属性绑定和缓存，只依赖Flutter。`raft_ui` 通过适配器绑定平台字体和兼容颜色别名，旧recipe导入路径只转发；独立包测试不依赖App。生成表的迁移保留原来源，未绑定的属性仍是待迁移项。
+3. raft_ui：分 primitive tokens、semantic tokens、组件 recipes；导出 Web 对应主题的 computed values 与源版本摘要，OKLCH/alpha/shadow/font metrics 转换经验证，生成 Dart ThemeExtension。基础控件到产品组合组件分层；包含 hover/focus/pressed/disabled/loading/error、键盘和语义。组件展示 app/golden 对照。无网络/领域依赖。
+4. raft_client：纯 Dart human auth/HTTP/socket，安全存储接口、refresh single-flight、server/account 隔离、typed errors、分页/上传、日志脱敏。未来可独立 SDK，不放 UI 状态。模型和通信分开。
+5. raft_sync：移植已启用的 snapshot/difference/event reducer、seq/epoch/去重/补偿、撤权清理、read state；共用 TS/Dart fixtures。Repository + Drift 落库并投影给 Riverpod。缓存离线读；离线写只按服务端幂等合同支持，失败发送显式重试。不能把 Riverpod 或数据库当同步算法。
+6. app/features：登录入驻、server/channel/DM、消息/thread、搜索/saved、Activity/read、tasks、agents/computers、settings/admin/integrations；每 feature 垂直实现 model/repository/controller/view，领域 reducer 尽量纯 Dart。共享实体和权限，避免页面独立重复 stores。
 6. raft_platform + adaptive shell：Linux 侧栏/消息/线程多栏、调整栏宽/键盘/右键/拖拽/多窗口、通知和 URI；Android 单栏栈、sheet、返回、IME/分享/后台恢复/推送。宽度和输入决定布局，OS 控制系统服务。各宿主按 interface/capability 提供能力。Linux Wayland/X11、keyring缺失、通知激活；Android冷启/deeplink/token续期/后台推送都是实机验收。
 7. qa/tooling：主题/组件 golden、跨语言 sync vectors、角色与撤权、Web/Flutter相同任务回放、长消息和数万条历史、长时间掉线、多服务器、多窗口、Android生命周期、Linux窗口/发行打包。按协议、行为、视觉、平台四种证据定义完成。
 

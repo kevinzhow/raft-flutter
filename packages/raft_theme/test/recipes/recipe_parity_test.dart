@@ -1,19 +1,17 @@
-// Checks that the Dart cascade/var engine produces exactly the values the JS
-// resolver (tool/recipes/lib/cascade.mjs) computed. The committed sample
-// covers the first slot of every recipe; when `build/recipes/parity_cases.json`
-// exists (after `tool/recipes/run`), all slots are checked.
+// Checks every generated slot against the independent JS cascade oracle.
+// The committed fixture is complete, so a standalone copy needs no repository
+// build directory or raft_ui to verify source recipe values.
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_ui/recipes.dart';
+import 'package:raft_theme/recipes.dart';
 
 // Full theme matrix on purpose (theme/token/recipe test): never sampled, see
-// package:raft_ui/test_themes.dart.
+// the independent theme engine.
 void main() {
   final files = [
     File('test/recipes/recipe_parity_cases.g.json'),
-    File('../../build/recipes/parity_cases.json'),
   ];
   for (final file in files) {
     test('JS/Dart parity: ${file.path}', () {

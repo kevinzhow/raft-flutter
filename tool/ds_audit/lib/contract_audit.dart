@@ -52,7 +52,9 @@ bool isGeneratedRecipeFile(String path) =>
     isGeneratedFile(path) && path.contains('/recipes/');
 
 /// Files that implement the recipe runtime itself may name the legacy enum.
-bool isRecipeRuntimeFile(String path) => path.contains('/src/recipes/');
+bool isRecipeRuntimeFile(String path) =>
+    path.contains('/src/recipes/') ||
+    path.startsWith('packages/raft_theme/lib/recipes/');
 
 /// Counts `const` variables a generated recipe file declares: top-level
 /// `const` variables and `static const` fields. Enum constants are not

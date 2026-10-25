@@ -2,7 +2,7 @@
 ///
 /// A theme is data. This package owns the vocabulary (colour roles, numeric
 /// tokens, structural options) and the `raft-theme/1` file format; it does not
-/// import `raft_ui`, and it draws nothing. See `docs/theme-contract.md`.
+/// import `raft_ui`. The independent recipe engine is exported by `recipes.dart`. See `docs/theme-contract.md`.
 library;
 
 export 'src/built_in.dart';

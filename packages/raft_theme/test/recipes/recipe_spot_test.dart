@@ -1,8 +1,7 @@
 import 'package:flutter/animation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_ui/recipes.dart';
-import 'package:raft_ui/test_themes.dart';
+import 'package:raft_theme/recipes.dart';
 
 class _FakeTokens extends RaftTokenResolver {
   const _FakeTokens();
@@ -26,7 +25,7 @@ int _utility(String name) =>
     raftRecipeUtilities.indexWhere((u) => u.name == name);
 
 // Full theme matrix on purpose (theme/token/recipe test): never sampled, see
-// package:raft_ui/test_themes.dart.
+// package:raft_theme/test_themes.dart.
 void main() {
   RaftButtonRecipeStyle button(
     RaftRecipeTheme theme, {
@@ -121,14 +120,14 @@ void main() {
         states: {RaftRecipeStates.hover},
       );
       expect(hovered.root.backgroundColor?.tokenName, 'primaryHover');
-    }, skip: raftLookSkip(raftLookElegant, raftLookBrutal));
+    });
 
     test('brutal border width 2, elegant none', () {
       final brutal = button(RaftRecipeTheme.brutal).root;
       expect(brutal.borderWidth, const EdgeInsets.all(2));
       expect(brutal.borderColor?.tokenName, 'lineStrong');
       expect(button(RaftRecipeTheme.elegant).root.borderWidth, EdgeInsets.zero);
-    }, skip: raftLookSkip(raftLookElegant, raftLookBrutal));
+    });
 
     test('elegant active scale 0.985; brutal active translate', () {
       expect(
@@ -153,7 +152,7 @@ void main() {
         ).root.translate,
         const Offset(0, -1),
       );
-    }, skip: raftLookSkip(raftLookElegant, raftLookBrutal));
+    });
 
     test('shadow tokens and transitions', () {
       final brutal = button(RaftRecipeTheme.brutal).root;
@@ -172,7 +171,7 @@ void main() {
       expect([curve.a, curve.b, curve.c, curve.d], [0.4, 0, 0.2, 1]);
       expect(brutal.fontWeight, FontWeight.w700);
       expect(button(RaftRecipeTheme.elegant).root.fontWeight, FontWeight.w500);
-    }, skip: raftLookSkip(raftLookElegant, raftLookBrutal));
+    });
 
     test('elegant focus ring is a spread box-shadow', () {
       final root = button(
@@ -184,7 +183,7 @@ void main() {
           .map((s) => s.spread)
           .toList();
       expect(spreads, containsAll([1.0, 3.0])); // ring-offset-1 + ring-2
-    }, skip: raftLookSkip(raftLookElegant));
+    });
 
     test('elegant radius by size, brutal square', () {
       expect(
@@ -202,7 +201,7 @@ void main() {
         button(RaftRecipeTheme.brutal).root.borderRadius,
         BorderRadius.zero,
       );
-    }, skip: raftLookSkip(raftLookElegant, raftLookBrutal));
+    });
 
     test('decoration resolves tokens', () {
       const tokens = _FakeTokens();
@@ -210,13 +209,13 @@ void main() {
       final deco = root.decoration(tokens);
       expect(deco.border, Border.all(width: 2, color: const Color(0xFF000000)));
       expect(deco.boxShadow, tokens.shadow('themeShadowSm'));
-    }, skip: raftLookSkip(raftLookBrutal));
+    });
 
     test('pseudo-element and descendant targets', () {
       final root = button(RaftRecipeTheme.elegant).root;
       expect(root.before?.position, 'absolute');
       expect(root.target("& svg:not([class*='size-'])")?.width, 16);
-    }, skip: raftLookSkip(raftLookElegant));
+    });
   });
 
   test('every recipe resolves its default combination', () {

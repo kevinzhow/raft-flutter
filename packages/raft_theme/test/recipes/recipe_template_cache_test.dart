@@ -1,6 +1,6 @@
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_ui/recipes.dart';
+import 'package:raft_theme/recipes.dart';
 
 const _engine = RaftRecipeEngine([
   RaftUtility('base', 0, RaftUtilityStatus.resolved, [
@@ -74,7 +74,7 @@ Map<String, Object?> _values(RaftSlotStyle style) => {
 };
 
 // Full theme matrix on purpose (theme/token/recipe test): never sampled, see
-// package:raft_ui/test_themes.dart.
+// package:raft_theme/test_themes.dart.
 void main() {
   test('templates reuse cascades and bind the current token resolver', () {
     const states = RaftRecipeStates({'hover', 'dark'});

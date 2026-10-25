@@ -1,6 +1,6 @@
 # Design-system migration map (apps/raft_flutter/lib → raft_ui)
 
-`tool/ds-audit` also guards `packages/raft_ui/lib` against the theme contract; see "Contract rules" below. The numbers in this document describe the app scope only.
+`tool/ds-audit` also guards `packages/raft_ui/lib` and the independent recipe engine in `packages/raft_theme/lib/recipes` plus its CSS decoration, outer-shadow painter and cache helpers against the theme contract; see "Contract rules" below. The numbers in this document describe the app scope only.
 
 Snapshot: branch `cindy/ds-guard` on top of `3f3c72f`, measured with `tool/ds-audit`.
 The snapshot covers 125 Dart files. It found **1118 enforced violations in 65 files**
@@ -13,7 +13,7 @@ change as work lands.
 
 | Command | Effect |
 |---|---|
-| `tool/ds-audit` | Scans both scopes (`apps/raft_flutter/lib` and `packages/raft_ui/lib`). Prints totals per category, the top 20 files per scope and the comparison with the baseline. Writes `.local/ds-audit.json`, which holds every finding with file, line, column, category, name and argument shape. |
+| `tool/ds-audit` | Scans the App, raft_ui components and independent recipe-engine code; theme-pack value definitions are excluded. Prints totals per category, the top 20 files per scope and the comparison with the baseline. Writes `.local/ds-audit.json`, which holds every finding with file, line, column, category, name and argument shape. |
 | `tool/ds-audit --check` | Exits 1 if any file/category count is above the baseline (new files and new categories count from 0), or if a `ds-allow` comment has no reason. Counts below the baseline pass ("baseline can lower"). |
 | `tool/ds-audit --update-baseline` | Integration owner only, after merges: writes the current counts as a separate small commit. It refuses to raise any count unless you also pass `--accept-increase`, and a raised count must be reviewed. |
 | `tool/ds-audit --json <path>…` | Prints the aggregated report for arbitrary paths. The tests use this. |

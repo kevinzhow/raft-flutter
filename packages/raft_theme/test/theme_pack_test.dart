@@ -7,22 +7,27 @@ import 'package:raft_theme/raft_theme.dart';
 
 /// The pack the app ships, read from disk.
 ///
-/// `flutter test` runs from the package directory, the gate runs every test from `apps/raft_flutter`, and a
-/// developer may run it from the repository root, so the file is found by walking up rather than by a relative
-/// path: the pack's address in the repository is what stays fixed.
+/// Prefer the package's own assets; also support the repository-level gate.
 String shipPack() => packFile().readAsStringSync();
 
 File packFile() {
-  const relative = 'packages/raft_theme/assets/themes/raft.theme.json';
   var dir = Directory.current.absolute;
-  while (!File('${dir.path}/$relative').existsSync()) {
+  while (true) {
+    for (final relative in [
+      'assets/themes/raft.theme.json',
+      'packages/raft_theme/assets/themes/raft.theme.json',
+    ]) {
+      final file = File.fromUri(dir.uri.resolve(relative));
+      if (file.existsSync()) return file;
+    }
     final parent = dir.parent;
     if (parent.path == dir.path) {
-      throw StateError('$relative not found above ${Directory.current.path}');
+      throw StateError(
+        'Raft theme assets not found above ${Directory.current.path}',
+      );
     }
     dir = parent;
   }
-  return File('${dir.path}/$relative');
 }
 
 String packJson({

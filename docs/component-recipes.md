@@ -8,7 +8,7 @@ Every `tv()` recipe is evaluated with the real tailwind-variants + raft-ui `cn` 
 combination, and every resulting class is compiled by Tailwind v4 with raft-ui `styles.css` as input. Values below are
 after cascade and `var()` resolution: lengths in logical px, `token(x)` = foundation token `--x` in lowerCamelCase
 (resolved per theme at runtime), literal colours as `#AARRGGBB`. State rows show only properties that change.
-Authoritative data: `build/recipes/recipes.json`; Dart: `packages/raft_ui/lib/src/recipes/`.
+Authoritative data: `build/recipes/recipes.json`; Dart: `packages/raft_theme/lib/recipes/`.
 
 ## Coverage
 

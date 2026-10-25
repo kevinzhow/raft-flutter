@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart';
+import 'package:raft_theme/raft_theme.dart';
+import 'package:raft_theme/recipes.dart';
 
 const _engine = RaftRecipeEngine([
   RaftUtility('sample', 0, RaftUtilityStatus.resolved, [
@@ -16,32 +16,34 @@ const _engine = RaftRecipeEngine([
   ]),
 ], {});
 
-RaftTokens _tokens({double width = 39, bool dark = false}) => RaftTokens.theme(
-  dark: dark,
-  pack: RaftThemePack.parse(
-    jsonEncode({
-      'format': 'raft-theme/1',
-      'id': 'test-runtime',
-      'name': {'en': 'Runtime test'},
-      'version': '1.0.0',
-      'extends': 'raft',
-      'modes': {
-        for (final mode in ['light', 'dark'])
-          mode: {
-            'geometry': {
-              'radius.control': width,
-              'opacity.buttonDisabled': .75,
-            },
-            'colors': {'layer-panel': mode == 'light' ? '#123456' : '#abcdef'},
-            'shadows': {
-              'shadow.control': 'inset 2px 3px 4px 5px #123456',
-              'shadow.buttonHover': 'none',
-            },
+RaftThemeRecipeTokens _tokens({double width = 39, bool dark = false}) =>
+    RaftThemeRecipeTokens(
+      RaftThemePack.parse(
+        jsonEncode({
+          'format': 'raft-theme/1',
+          'id': 'test-runtime',
+          'name': {'en': 'Runtime test'},
+          'version': '1.0.0',
+          'extends': 'raft',
+          'modes': {
+            for (final mode in ['light', 'dark'])
+              mode: {
+                'geometry': {
+                  'radius.control': width,
+                  'opacity.buttonDisabled': .75,
+                },
+                'colors': {
+                  'layer-panel': mode == 'light' ? '#123456' : '#abcdef',
+                },
+                'shadows': {
+                  'shadow.control': 'inset 2px 3px 4px 5px #123456',
+                  'shadow.buttonHover': 'none',
+                },
+              },
           },
-      },
-    }),
-  ),
-);
+        }),
+      ).resolve(dark: dark, base: builtInRaftTheme),
+    );
 
 RaftSlotStyle _resolve(
   RaftTokenResolver resolver,
@@ -95,7 +97,7 @@ void main() {
         {'hover', 'disabled'},
       ]) {
         final style = _resolve(
-          _tokens().recipeTokens,
+          _tokens(),
           bindings,
           variant: variant,
           states: RaftRecipeStates(flags),
@@ -112,7 +114,7 @@ void main() {
   test('pack colors, unitless values and inset shadows reach slots', () {
     for (final dark in [false, true]) {
       final t = _tokens(dark: dark);
-      final style = _resolve(t.recipeTokens, const [
+      final style = _resolve(t, const [
         RaftRecipePackBinding(
           'root',
           'background-color',
@@ -134,7 +136,7 @@ void main() {
         ),
       ]);
       expect(
-        style.backgroundColor!.resolve(t.recipeTokens),
+        style.backgroundColor!.resolve(t),
         dark ? const Color(0xffabcdef) : const Color(0xff123456),
       );
       expect(style.opacity, .75);
@@ -144,16 +146,13 @@ void main() {
         [layer.offset.dx, layer.offset.dy, layer.blur, layer.spread],
         [2, 3, 4, 5],
       );
-      expect(layer.color.resolve(t.recipeTokens), const Color(0xff123456));
+      expect(layer.color.resolve(t), const Color(0xff123456));
       expect(
-        t.recipeTokens.recipeValue(RaftRecipeTokenKind.shadow, 'shadow.absent'),
+        t.recipeValue(RaftRecipeTokenKind.shadow, 'shadow.absent'),
         isNull,
       );
-      expect(
-        t.recipeTokens.recipeValue(RaftRecipeTokenKind.color, 'layer-absent'),
-        isNull,
-      );
-      final cleared = _resolve(t.recipeTokens, const [
+      expect(t.recipeValue(RaftRecipeTokenKind.color, 'layer-absent'), isNull);
+      final cleared = _resolve(t, const [
         RaftRecipePackBinding(
           'root',
           'box-shadow',
@@ -187,32 +186,44 @@ void main() {
         'radius.control',
       ),
     ];
-    final first = _resolve(_tokens().recipeTokens, bindings);
+    final first = _resolve(_tokens(), bindings);
     expect(first.width, 39);
     first.properties['width'] = const CssNum(999, 'px');
-    expect(_resolve(_tokens(width: 23).recipeTokens, bindings).width, 23);
-    expect(_resolve(_tokens().recipeSourceTokens, bindings).width, 8);
-    expect(_resolve(_tokens().recipeTokens, bindings).width, 39);
+    expect(_resolve(_tokens(width: 23), bindings).width, 23);
+    expect(
+      _resolve(
+        RaftThemeRecipeTokens(_tokens().values, bindComponents: false),
+        bindings,
+      ).width,
+      8,
+    );
+    expect(_resolve(_tokens(), bindings).width, 39);
     final t = _tokens();
     expect(
-      t.recipeSourceTokens.color('layerPanel'),
-      t.recipeTokens.color('layerPanel'),
+      RaftThemeRecipeTokens(
+        t.values,
+        bindComponents: false,
+      ).color('layerPanel'),
+      t.color('layerPanel'),
     );
     expect(
-      t.recipeSourceTokens.fontFamily('sansFont'),
-      t.recipeTokens.fontFamily('sansFont'),
+      RaftThemeRecipeTokens(
+        t.values,
+        bindComponents: false,
+      ).fontFamily('sansFont'),
+      t.fontFamily('sansFont'),
     );
     expect(
       RaftInputRecipe.resolve(
         theme: RaftRecipeTheme.elegant,
-        tokens: t.recipeTokens,
+        tokens: t,
       ).root.borderRadius,
       BorderRadius.circular(39),
     );
     expect(
       RaftInputRecipe.resolve(
         theme: RaftRecipeTheme.elegant,
-        tokens: t.recipeSourceTokens,
+        tokens: RaftThemeRecipeTokens(t.values, bindComponents: false),
       ).root.borderRadius,
       BorderRadius.circular(6),
     );
@@ -221,7 +232,7 @@ void main() {
   test('context snapshots survive copies and descendant extraction', () {
     final flags = <String>{'hover'};
     final style = _resolve(
-      _tokens().recipeTokens,
+      _tokens(),
       const [],
       states: RaftRecipeStates(flags, 600, 800, 400),
     );

@@ -19,6 +19,12 @@ CONTRACT_FIXTURES = 'packages/raft_ui/test/fixtures/ds_audit_contract'
 
 
 class CompareTest(unittest.TestCase):
+    def test_engine_directories_and_exact_helper_files_keep_their_audit_scope(self):
+        for scope in ds_audit.ENGINE_SCOPES:
+            name = scope if scope.endswith('.dart') else scope + '/sample.g.dart'
+            self.assertEqual(ds_audit.scope_of(name), scope)
+        self.assertNotIn('packages/raft_theme/lib/src/raft_pack.g.dart', ds_audit.SCOPES)
+
     def test_growth_new_category_and_new_file_are_regressions(self):
         baseline = {'a.dart': {'widget.list_tile': 2}, 'b.dart': {'style.sized_box': 1}}
         current = {'a.dart': {'widget.list_tile': 3, 'style.edge_insets': 1},
@@ -162,7 +168,13 @@ class ContractRatchetTest(unittest.TestCase):
     def test_baseline_document_lists_both_scopes_and_the_generated_counts(self):
         report = ds_audit.aggregate({'scanned': ['a.dart'], 'findings': [], 'generated': {'b.g.dart': 3}})
         document = ds_audit.baseline_document(report)
-        self.assertEqual(document['scopes'], ['apps/raft_flutter/lib', 'packages/raft_ui/lib'])
+        self.assertEqual(document['scopes'], [
+            'apps/raft_flutter/lib', 'packages/raft_ui/lib',
+            'packages/raft_theme/lib/recipes',
+            'packages/raft_theme/lib/src/css_recipe_decoration.dart',
+            'packages/raft_theme/lib/src/outer_shadow_painter.dart',
+            'packages/raft_theme/lib/src/lru_cache.dart',
+        ])
         self.assertEqual(document['generated'], {'b.g.dart': 3})
 
 

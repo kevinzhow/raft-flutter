@@ -29,7 +29,7 @@ export function writeDocs(path, model, coverage) {
   L.push('combination, and every resulting class is compiled by Tailwind v4 with raft-ui `styles.css` as input. Values below are');
   L.push('after cascade and `var()` resolution: lengths in logical px, `token(x)` = foundation token `--x` in lowerCamelCase');
   L.push('(resolved per theme at runtime), literal colours as `#AARRGGBB`. State rows show only properties that change.');
-  L.push('Authoritative data: `build/recipes/recipes.json`; Dart: `packages/raft_ui/lib/src/recipes/`.');
+  L.push('Authoritative data: `build/recipes/recipes.json`; Dart: `packages/raft_theme/lib/recipes/`.');
   L.push('');
   L.push('## Coverage');
   L.push('');

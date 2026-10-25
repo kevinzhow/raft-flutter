@@ -1,7 +1,8 @@
 import 'package:flutter/painting.dart';
+import 'package:raft_theme/raft_theme.dart' show RaftModeValues;
+import 'package:raft_theme/recipes.dart' show RaftThemeRecipeTokens;
 
 import '../theme.dart';
-import 'recipe_runtime.dart';
 
 /// Binds generated recipes to the generated foundation tokens of one theme.
 ///
@@ -9,45 +10,21 @@ import 'recipe_runtime.dart';
 /// (`--layer-panel` → `layerPanel`, `--theme-shadow-sm` → `themeShadowSm`);
 /// lookups go through the CSS-keyed maps so both generators stay the single
 /// source of their names.
-class RaftRecipeTokens extends RaftTokenResolver {
-  RaftRecipeTokens(this.tokens) : _bindComponents = true;
+class RaftRecipeTokens extends RaftThemeRecipeTokens {
+  RaftRecipeTokens(this.tokens)
+    : super(tokens.themeValues ?? const RaftModeValues());
 
-  /// Resolve the frozen source recipe for a renderer that only borrows its
-  /// original rings or sheens. Foundation colors and fonts still use [tokens].
-  RaftRecipeTokens.source(this.tokens) : _bindComponents = false;
-
-  final bool _bindComponents;
+  /// Frozen source component values with the current foundation lookups.
+  RaftRecipeTokens.source(this.tokens)
+    : super(
+        tokens.themeValues ?? const RaftModeValues(),
+        bindComponents: false,
+      );
 
   final RaftTokens tokens;
 
   @override
   Locale? get textLocale => tokens.textLocale;
-
-  @override
-  CssValue? recipeValue(RaftRecipeTokenKind kind, String name) {
-    if (!_bindComponents) return null;
-    switch (kind) {
-      case RaftRecipeTokenKind.number:
-        final value = tokens.size(name, fallback: double.nan);
-        return value.isNaN ? null : CssNum(value);
-      case RaftRecipeTokenKind.color:
-        final value = tokens.colors[name];
-        return value == null ? null : CssColor(value.toARGB32(), null, value);
-      case RaftRecipeTokenKind.shadow:
-        if (!tokens.hasShadowRole(name)) return null;
-        return CssList([
-          for (final layer in tokens.shadowLayers(name))
-            CssSeq([
-              if (layer.inset) const CssKeyword('inset'),
-              CssNum(layer.offset.dx, 'px'),
-              CssNum(layer.offset.dy, 'px'),
-              CssNum(layer.blur, 'px'),
-              CssNum(layer.spread, 'px'),
-              CssColor(layer.color.toARGB32(), null, layer.color),
-            ]),
-        ]);
-    }
-  }
 
   static final _cssNames = <String, String>{};
 
