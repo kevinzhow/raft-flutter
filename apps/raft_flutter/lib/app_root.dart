@@ -26,7 +26,6 @@ import 'features/incoming_share_review.dart';
 import 'data/raft_navigation_history.dart';
 import 'features/app_root_router.dart';
 import 'features/community_join.dart';
-import 'features/human_login.dart';
 import 'features/invite_accept_view.dart';
 import 'features/global_server_selector.dart';
 import 'features/public_server_view.dart';
@@ -48,7 +47,6 @@ import 'platform/native_sharing.dart';
 import 'platform/ios_share_session.dart';
 import 'platform/incoming_share_staging.dart';
 import 'platform/content_coordinator.dart';
-import 'platform/content_links.dart';
 import 'platform/workspace_cache.dart';
 import 'platform/desktop_title_bar.dart';
 import 'platform/system_bars.dart';
@@ -2139,18 +2137,6 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// Login with Raft for links opened in the in-app artifact browser; null
-  /// while signed out.
-  HumanLoginApi? humanLoginApi() {
-    final c = client;
-    if (c == null || c.user == null) return null;
-    return ClientHumanLoginApi(
-      client: c,
-      webOrigin: ContentLinks.originFor(c.origin),
-      directory: () => workspace?.servers ?? const [],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     privateRoutes.scopeChanged(
@@ -2182,7 +2168,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           child: AppServicesHost(
             services: widget.services,
             ownsAppUpdate: widget.ownsAppUpdate,
-            humanLogin: humanLoginApi(),
+            session: (client, workspace),
             child: RaftTextScaling(
               child: RepaintBoundary(
                 key: raftScreenshotKey,

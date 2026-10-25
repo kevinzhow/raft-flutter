@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/user_error.dart';
+import '../data/workspace_controller.dart' show WorkspaceController;
+import '../platform/content_links.dart';
 
 /// "Login with Raft" for third-party apps, the logic of Web
 /// `HumanLoginSetupPage.tsx` (`/login-with-raft/setup`, pinned v1.21.23):
@@ -390,6 +392,18 @@ class ClientHumanLoginApi implements HumanLoginApi {
   Future<dynamic> authorize(Map<String, Object?> body) =>
       client.post('/oauth/authorize/human', data: body);
 }
+
+/// The signed-in session's side of Login with Raft; null while signed out.
+HumanLoginApi? humanLoginFor(
+  RaftClient? client,
+  WorkspaceController? workspace,
+) => client == null || client.user == null
+    ? null
+    : ClientHumanLoginApi(
+        client: client,
+        webOrigin: ContentLinks.originFor(client.origin),
+        directory: () => workspace?.servers ?? const [],
+      );
 
 /// The English text of Web's `pages.humanLogin.*` errors (the catalog has the
 /// Chinese; the sheet localizes with `raftText`).

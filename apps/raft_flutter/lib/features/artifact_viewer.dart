@@ -320,7 +320,7 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
               color: t.panel,
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(RaftSpace.x6),
                   child: Column(
                     key: const ValueKey('artifact-viewer-error'),
                     mainAxisSize: MainAxisSize.min,
@@ -391,6 +391,7 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
     final safe = SafeArea(bottom: false, child: scoped);
     return widget.page
         ? safe
+        // ds-allow: full-bleed viewer shell, the same Dialog.fullscreen the attachment preview shell uses (raft_ui)
         : Dialog.fullscreen(backgroundColor: t.panel, child: safe);
   }
 

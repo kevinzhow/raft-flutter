@@ -196,7 +196,13 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
             {
               'b': (inner) => TextSpan(
                 text: inner,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                style: RaftTypography.inherited(
+                  t,
+                  size: 14,
+                  line: 20,
+                  weight: FontWeight.w700,
+                  color: t.ink,
+                ),
               ),
             },
             values: {'serviceName': serviceName},
@@ -273,6 +279,7 @@ class _Scrolls extends StatelessWidget {
     }
     return ConstrainedBox(
       constraints: BoxConstraints(
+        // ds-allow: the dialog card has no scroller below the large-text size; the body is capped to the window
         maxHeight: math.max(160, MediaQuery.sizeOf(context).height - 260),
       ),
       child: SingleChildScrollView(child: child),
@@ -289,10 +296,7 @@ class _AppCard extends StatelessWidget {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
     return RaftRecipeCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: RaftSpace.x3,
-        vertical: RaftSpace.x2 + 2,
-      ),
+      padding: const EdgeInsets.all(RaftSpace.x3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: RaftSpace.x3,
@@ -342,7 +346,7 @@ class _AppCard extends StatelessWidget {
   }
 }
 
-/// The Raft Server the app will be connected to: a fixed line for one server
+/// The Raft Server the app will be connected to: a fixed card for one server
 /// (what the setup URL names), a choice for several.
 class _ServerField extends StatelessWidget {
   const _ServerField({
@@ -360,70 +364,51 @@ class _ServerField extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
+    final several = choices.length > 1;
     return Column(
       key: const ValueKey('human-login-servers'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x1_5,
       children: [
         RaftDialogSectionEyebrow('Raft Server'),
-        RaftRecipeCard(
-          child: Column(
-            children: [
-              for (var i = 0; i < choices.length; i++)
-                InkWell(
-                  key: ValueKey('human-login-server-${choices[i].server.id}'),
-                  onTap: enabled && choices.length > 1
-                      ? () => onSelect(i)
-                      : null,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: RaftSpace.x3,
-                      vertical: RaftSpace.x2 + 2,
-                    ),
-                    child: Row(
-                      spacing: RaftSpace.x2,
-                      children: [
-                        if (choices.length > 1)
-                          Icon(
-                            i == selected
-                                ? Icons.radio_button_checked
-                                : Icons.radio_button_unchecked,
-                            size: 18,
-                            color: i == selected ? t.ink : t.muted,
-                          ),
-                        Expanded(
-                          child: Text(
-                            choices[i].server.label,
-                            style: RaftTypography.inherited(
-                              t,
-                              size: 14,
-                              line: 20,
-                              weight: FontWeight.w600,
-                              color: t.ink,
-                            ),
-                          ),
-                        ),
-                        if (choices[i].client.installRequired)
-                          Text(
-                            tr(
-                              choices[i].client.canInstall
-                                  ? 'Not installed'
-                                  : 'Admin needed',
-                            ),
-                            style: RaftTypography.inherited(
-                              t,
-                              size: 12,
-                              line: 16,
-                              color: t.muted,
-                            ),
-                          ),
-                      ],
+        for (var i = 0; i < choices.length; i++)
+          RaftChoiceCard(
+            key: ValueKey('human-login-server-${choices[i].server.id}'),
+            onPressed: enabled && several ? () => onSelect(i) : null,
+            padding: const EdgeInsets.all(RaftSpace.x3),
+            child: Row(
+              spacing: RaftSpace.x2,
+              children: [
+                if (several) RaftRadioMark(checked: i == selected),
+                Expanded(
+                  child: Text(
+                    choices[i].server.label,
+                    style: RaftTypography.inherited(
+                      t,
+                      size: 14,
+                      line: 20,
+                      weight: FontWeight.w600,
+                      color: t.ink,
                     ),
                   ),
                 ),
-            ],
+                if (choices[i].client.installRequired)
+                  Text(
+                    tr(
+                      choices[i].client.canInstall
+                          ? 'Not installed'
+                          : 'Admin needed',
+                    ),
+                    style: RaftTypography.inherited(
+                      t,
+                      size: 12,
+                      line: 16,
+                      color: t.muted,
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -583,7 +568,7 @@ class _TierGroup extends StatelessWidget {
                     size: 12,
                     line: 16,
                     color: t.ink,
-                  ).copyWith(fontWeight: FontWeight.w700),
+                  ),
                 ),
                 Text(
                   tr(oauthScopeCopy(scope)),
