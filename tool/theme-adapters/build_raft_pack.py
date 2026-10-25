@@ -30,6 +30,7 @@ import sys
 
 from button_contract import button_colors, component_geometry
 from framework_contract import RAFT_GEOMETRY, framework_colors
+from surface_contract import surface_colors
 import components_lane
 import pages_lane
 
@@ -538,6 +539,7 @@ def build() -> dict:
         components_lane.raft_aliases(out)
         pages_lane.raft_aliases(out)
         out.update(button_colors('raftDark' if palette is dark else 'raftLight', out))
+        out.update(surface_colors('raftDark' if palette is dark else 'raftLight', out))
         return out
 
     def stack(prefix: str) -> list[str]:

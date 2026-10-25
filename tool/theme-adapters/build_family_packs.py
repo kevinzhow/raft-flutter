@@ -31,6 +31,7 @@ import sys
 
 from button_contract import button_colors, button_palette, component_geometry
 from framework_contract import ELEGANT_GEOMETRY, BRUTAL_GEOMETRY, framework_colors
+from surface_contract import surface_colors
 import components_lane
 import pages_lane
 
@@ -854,6 +855,7 @@ def pack(pack_id: str, name_en: str, name_zh: str, values: dict,
         components_lane.family_aliases(colors)
         pages_lane.family_aliases(colors)
         colors.update(button_colors(spec['column'], colors))
+        colors.update(surface_colors(spec['column'], colors))
         return {
             'colors': colors,
             # Only the Elegant source modes carry these legacy preservation

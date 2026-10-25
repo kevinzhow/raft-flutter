@@ -592,7 +592,10 @@ class RaftPublicConversationSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return ColoredBox(color: t.colors['layer-canvas']!, child: child);
+    return ColoredBox(
+      color: t.colors['layer-conversation-content']!,
+      child: child,
+    );
   }
 }
 

@@ -72,7 +72,7 @@ class RaftOverflowSheet extends StatelessWidget {
     // `h-panel-header` reads `--shell-header-height`, which the AppShell root
     // sets; the drawer portals out of it, so Web paints the 62px fallback.
     const headerHeight = RaftMetrics.brutalPanelHeader;
-    final headerColor = t.popover;
+    final headerColor = t.colors['layer-drawer-header']!;
     final edge = t.colors['line-muted']!;
     final titleStyle = raftCssTextStyle(
       family: t.bodyFont,
@@ -225,7 +225,7 @@ class _OverflowDrawerFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final size = MediaQuery.sizeOf(context);
-    final paper = t.popover;
+    final paper = t.colors['layer-drawer']!;
     return Align(
       alignment: Alignment.centerRight,
       child: SizedBox(
@@ -1010,7 +1010,7 @@ class _PromptCard extends StatelessWidget {
         width: double.infinity,
         padding: padding,
         decoration: BoxDecoration(
-          color: t.popover,
+          color: t.colors['layer-dialog'],
           border: Border.all(color: t.colors['line-muted']!),
           boxShadow: t.themeShadows.md.outer,
         ),

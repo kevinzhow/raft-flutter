@@ -448,7 +448,15 @@ const String raftThemePackJson = r'''{
         "layer-button-accent-solid": "#ff99c3",
         "layer-button-accent-soft": "#ffd6e2",
         "layer-button-danger-high-contrast": "#f97264",
-        "foreground-button-danger-high-contrast": "#141111"
+        "foreground-button-danger-high-contrast": "#141111",
+        "layer-drawer": "#ffffff",
+        "layer-drawer-header": "#ffffff",
+        "layer-dialog": "#ffffff",
+        "layer-conversation-content": "#ffffff",
+        "layer-conversation-tab-page": "#00000000",
+        "layer-profile-content": "#ffffff",
+        "layer-member-list": "#ffffff",
+        "layer-member-header": "#ffffff"
       },
       "palette": {
         "palette-yellow-50": "#fff9ed",
@@ -1647,7 +1655,15 @@ const String raftThemePackJson = r'''{
         "layer-button-accent-solid": "#ff99c3",
         "layer-button-accent-soft": "rgba(208 69 124 / 0.161)",
         "layer-button-danger-high-contrast": "#f97264",
-        "foreground-button-danger-high-contrast": "#141111"
+        "foreground-button-danger-high-contrast": "#141111",
+        "layer-drawer": "#292927",
+        "layer-drawer-header": "#292927",
+        "layer-dialog": "#292927",
+        "layer-conversation-content": "#1b1b19",
+        "layer-conversation-tab-page": "#1b1b19",
+        "layer-profile-content": "#1b1b19",
+        "layer-member-list": "#242422",
+        "layer-member-header": "#1b1b19"
       },
       "palette": {
         "palette-yellow-50": "#fff9ed",

@@ -357,7 +357,7 @@ class RaftThreadSearchBar extends StatelessWidget {
       key: const Key('thread-search-bar'),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: t.panel,
+        color: t.colors['layer-conversation-content'],
         border: Border(
           bottom: BorderSide(color: t.colors['line-muted']!, width: 1),
         ),

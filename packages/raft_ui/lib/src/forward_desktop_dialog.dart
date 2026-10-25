@@ -17,7 +17,7 @@ import 'theme.dart';
 Color _rule(RaftTokens t) => t.colors['line-muted']!;
 
 /// Web draws the dialog on raft-ui's `DialogSurface`: `bg-layer-popover`.
-Color _panel(RaftTokens t) => t.popover;
+Color _panel(RaftTokens t) => t.colors['layer-dialog']!;
 
 /// `text-xs font-bold` strong label (selected count, Clear, error).
 TextStyle _label(RaftTokens t) => TextStyle(

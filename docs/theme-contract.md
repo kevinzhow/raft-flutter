@@ -111,6 +111,11 @@ dd6c1674 开始，交给 DeepDesign）。
 | `foreground-select-disabled` | Flutter 新增（Cindy 50cb5231） | Raft：foreground-disabled；Elegant 明暗：foreground-muted；Brutal 浅色：foreground-strong，深色沿 Elegant。 |
 | `layer-select` / `layer-select-disabled` | Flutter 新增（Cindy 50cb5231） | Raft：layer-card / fill-muted；Elegant 浅色：均 layer-panel，深色：均 fill-muted；Brutal 浅色：均 layer-panel，深色沿 Elegant。 |
 | `line-select` / `line-select-disabled` | Flutter 新增（Cindy 50cb5231） | Raft：line-strong / line-hairline；Elegant 明暗：均 line-muted（原环/阴影）；Brutal 浅色：均 foreground-strong，深色沿 Elegant。 |
+| `layer-drawer` / `layer-drawer-header` | 抽屉正文及头部 | Raft 均 layer-popover；Elegant 均 layer-panel；Brutal 浅色分别沿 a57 的 brutal-cream / color-soft-signal，深色沿 Elegant。 |
+| `layer-dialog` | 对话框、转发窗和未保存提示 | Raft 同 layer-popover；旧两套沿 a57 的 layer-panel（旧 Card 根配方也读 layerPanel），深色沿 Elegant。 |
+| `layer-conversation-content` / `layer-profile-content` | 会话内容和外部身份正文 | Raft 同 layer-canvas；旧两套浅色同 layer-panel、深色同 layer-card。 |
+| `layer-conversation-tab-page` | 会话 Tasks / Files 内容覆盖层 | 浅色透明，深色沿各包 layer-conversation-content。 |
+| `layer-member-list` / `layer-member-header` | 成员列表及页头 | Raft 分别同 layer-card / layer-canvas；旧列表同 layer-panel；Elegant 页头同 a57 的 layer-inset，Brutal 浅色页头同 color-soft-signal、深色沿 Elegant。 |
 
 
 附录给出了 159 个角色在三套主题下的全部取值，以及每个角色对到哪个 0.7.1 token。

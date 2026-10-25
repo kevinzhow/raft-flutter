@@ -387,7 +387,15 @@ const String elegantThemePackJson = r'''{
         "layer-button-accent-solid": "#fe7da8",
         "layer-button-accent-soft": "#ffd6e2",
         "layer-button-danger-high-contrast": "#8e2510",
-        "foreground-button-danger-high-contrast": "#ffffff"
+        "foreground-button-danger-high-contrast": "#ffffff",
+        "layer-drawer": "#ffffff",
+        "layer-drawer-header": "#ffffff",
+        "layer-dialog": "#ffffff",
+        "layer-conversation-content": "#ffffff",
+        "layer-conversation-tab-page": "#00000000",
+        "layer-profile-content": "#ffffff",
+        "layer-member-list": "#ffffff",
+        "layer-member-header": "#fcfcfb"
       },
       "palette": {
         "palette-messageMeta": "rgba(61 61 58 / 0.7)",
@@ -1365,7 +1373,15 @@ const String elegantThemePackJson = r'''{
         "layer-button-accent-solid": "#fe7da8",
         "layer-button-accent-soft": "{palette.elegantButton.accent.fill.dark}",
         "layer-button-danger-high-contrast": "#8e2510",
-        "foreground-button-danger-high-contrast": "#ffffff"
+        "foreground-button-danger-high-contrast": "#ffffff",
+        "layer-drawer": "#242422",
+        "layer-drawer-header": "#242422",
+        "layer-dialog": "#242422",
+        "layer-conversation-content": "#1b1b19",
+        "layer-conversation-tab-page": "#1b1b19",
+        "layer-profile-content": "#1b1b19",
+        "layer-member-list": "#242422",
+        "layer-member-header": "#131311"
       },
       "palette": {
         "palette-messageMeta": "rgba(196 196 193 / 0.7)",

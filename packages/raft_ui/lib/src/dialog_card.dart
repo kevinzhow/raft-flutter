@@ -696,7 +696,8 @@ class RaftRecipeCard extends StatelessWidget {
   final double? maxWidth;
 
   /// The card is a dialog's surface. Web draws every dialog on raft-ui's
-  /// `DialogSurface` (`bg-layer-popover`), not on the Card fill (`layer-card`).
+  /// `DialogSurface` (`bg-layer-popover`); the legacy packs keep their frozen
+  /// Card fill (`layer-panel`) through the dialog component role.
   /// An explicit [background] still wins.
   final bool dialog;
 
@@ -718,7 +719,7 @@ class RaftRecipeCard extends StatelessWidget {
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: tokens,
     ).root;
-    final fill = background ?? (dialog ? t.popover : null);
+    final fill = background ?? (dialog ? t.colors['layer-dialog'] : null);
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
       child: RaftRecipeBox(

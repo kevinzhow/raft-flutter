@@ -385,7 +385,7 @@ class RaftChannelMembersModal extends StatelessWidget {
       // members page fills the remaining height: `min-h-0 flex-1`).
       constraints: fill ? null : const BoxConstraints(maxHeight: 288),
       decoration: BoxDecoration(
-        color: t.card,
+        color: t.colors['layer-member-list'],
         border: Border.all(color: t.colors['line-muted']!, width: 1),
         boxShadow: t.themeShadows.sm.outer,
       ),
@@ -947,7 +947,7 @@ class _MembersPageState extends State<_MembersPage> {
       ),
     );
     // raft-ui `PanelHeader`: the shared panel header role.
-    final headerColor = t.colors['layer-panel-header']!;
+    final headerColor = t.colors['layer-member-header']!;
     return RaftStatusBarSource(
       color: headerColor,
       child: Container(

@@ -249,7 +249,7 @@ class _ConversationPanelState extends State<ConversationPanel> {
     final tokens = RaftTokens.of(context);
     // raft-ui ConversationPanelContent is `bg-layer-canvas` (the panel role);
     // in dark the Tasks and Files pages are transparent over it.
-    final surface = tokens.dark ? tokens.panel : tokens.panel.withAlpha(0);
+    final surface = tokens.colors['layer-conversation-tab-page']!;
     return Column(
       children: [
         if (hasTabs && !widget.hideHeader)
