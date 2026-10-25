@@ -430,6 +430,7 @@ def collect(a):
         cases[cid] = {'regions': len(doc['regions']), 'findings': len(doc['findings']), 'ignored': doc['ignored'],
                       'unattributed': len(doc['unattributed']), 'unchangedFraction': doc['unchangedFraction'],
                       'regionArea': round(sum(r['area'] for r in doc['regions']), 1),
+                      'aCount': sum(1 for it in [*doc['regions'], *doc['findings']] if it['class'] == 'a'),
                       'paintError': doc.get('paintError'), 'unsupportedLayers': doc.get('unsupportedLayers')}
         for source, item in items:
             site = item['site']
@@ -629,6 +630,10 @@ def build_report(a, missing, plan_counts):
         L.append(f"| {i} | {r['class']} | `{r['component']}` | {r['definedAt']} | {site_hint(r)} | {short_attrs(r['attrs'])} | "
                  f"{short_values(r['values'])} | {r['cases']} | {where_hint(r)} |")
     L += [''] + callout(rows, ['RaftThreadOverflowAction', 'RaftPanelIconButton'], 'The thread panel header overflow button (⋮)')
+    L += ['', 'Code path: `RaftThreadOverflowAction` (packages/raft_ui/lib/src/thread_composition.dart) builds `RaftPanelIconButton` '
+          '(packages/raft_ui/lib/src/panel_layout.dart), which resolves `RaftButtonRecipe.resolve(theme: raftRecipeTheme(t), variant: outline, '
+          'size: iconSm)` and paints `s.decoration(rt)` in a plain Container (not through the shared ported Button). The recipe is the baked Elegant '
+          'one (radius and hover offsets are literals in the generated recipe), so the extreme pack cannot move them.']
     n_set, set_text = settings_findings(a)
     L += ['', f'### Settings pages typography ({n_set} settings cases)', '']
     if set_text:
@@ -661,10 +666,14 @@ def build_report(a, missing, plan_counts):
     if missing:
         L += ['', f'## Cases not rendered ({len(missing)})', '', '| case | mode | missing render |', '| --- | --- | --- |']
         L += [f"| `{m['case']}` | {m['mode']} | {', '.join(m['missing'])} |" for m in missing[:400]]
-    worst = sorted(((v['regionArea'], c) for c, v in ok.items() if v['regions']), reverse=True)[:a.shots]
+    half = max(a.shots // 2, 1)
+    by_area = sorted(((v['regionArea'], c) for c, v in ok.items() if v['regions']), reverse=True)[:half]
+    by_a = sorted(((v['aCount'], c) for c, v in ok.items() if v['aCount']), reverse=True)
+    worst = list(by_area) + [(n, c) for n, c in by_a if c not in {c2 for _, c2 in by_area}][:a.shots - len(by_area)]
     if worst:
-        L += ['', '## Worst cases (left: Raft, middle: extreme pack, right: extreme with the unchanged regions boxed)', '']
-        L += [f'- `{c}`: {ok[c]["regions"]} region(s), {ok[c]["regionArea"]:g} logical px2, shots/{c}.png' for _, c in worst]
+        L += ['', '## Worst cases (left: Raft, middle: extreme pack, right: extreme with the unchanged regions boxed)', '',
+              f'First {len(by_area)} by unchanged area (often a full-screen media backdrop), then by number of class a findings.', '']
+        L += [f'- `{c}`: {ok[c]["regions"]} region(s), {ok[c]["regionArea"]:g} logical px2, {ok[c]["aCount"]} class a, shots/{c}.png' for _, c in worst]
     (out / 'extreme-theme-report.md').write_text('\n'.join(L) + '\n')
     return summary, rows, worst
 
