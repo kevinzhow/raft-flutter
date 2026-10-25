@@ -206,7 +206,12 @@ void main() {
         '(${size.width.toInt()}x${size.height.toInt()})', (t) async {
       final focus = FocusNode();
       addTearDown(focus.dispose);
+      // _setView replaces the view's root layer (size and pixel ratio); put the
+      // defaults back so the layer this test made is not the one left alive
+      // when it is the last test of the file.
       addTearDown(() {
+        t.view.resetPhysicalSize();
+        t.view.resetDevicePixelRatio();
         t.view.resetViewInsets();
         t.view.resetPadding();
         t.view.resetViewPadding();

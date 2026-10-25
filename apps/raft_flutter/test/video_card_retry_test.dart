@@ -114,6 +114,10 @@ void main() {
     expect(find.byKey(const Key('inline-video-failure')), findsNothing);
     expect(find.byKey(const Key('inline-video-play')), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
+    // The shared image cache still holds the decoded preview; release it in
+    // the test body, while it is leak-tracked (the global tearDown runs after
+    // tracking ended, so a last or lone test would report the cached image).
+    imageCache.clear();
   });
 
   testWidgets('a file the platform cannot decode offers only Download', (

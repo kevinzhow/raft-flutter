@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/platform/app_services.dart';
+import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/workspace_cache.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/app_root_router.dart';
@@ -266,6 +267,10 @@ class RootFixture {
       'raft.mode': theme == 'dark' ? 'dark' : 'light',
       ...preferences,
     });
+    // RaftApp adopts the preferences into the process-wide DevicePreferences
+    // on restore; left in place they carry this app's rail memory (the last
+    // visited Settings page) into whichever test runs next.
+    addTearDown(DevicePreferences.reset);
     t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.navigation,
       (call) async {
