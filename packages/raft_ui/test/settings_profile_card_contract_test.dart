@@ -6,7 +6,8 @@ import 'package:raft_ui/test_themes.dart';
 void main() {
   for (final (id, extent, radius, titleSize, titleLine, metaSize, metaLine)
       in raftThemeMatrix([
-        (raftThemePackId, 51.0, 10.0, 17.0, 22.0, 13.0, 18.0),
+        // Web v1.21.23 SettingsProfileCard uses text-mono-code: 13px/20px.
+        (raftThemePackId, 51.0, 10.0, 17.0, 22.0, 13.0, 20.0),
         (elegantThemePackId, 64.0, 0.0, 18.0, 22.5, 14.0, 20.0),
         (brutalThemePackId, 64.0, 0.0, 18.0, 22.5, 14.0, 20.0),
       ], look: (v) => raftLookOf(v.$1))) {

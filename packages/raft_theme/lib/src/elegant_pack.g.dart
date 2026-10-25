@@ -397,7 +397,8 @@ const String elegantThemePackJson = r'''{
         "layer-member-list": "#ffffff",
         "layer-member-header": "#fcfcfb",
         "layer-settings-card": "#ffffff",
-        "layer-settings-content": "#ffffff"
+        "layer-settings-content": "#ffffff",
+        "layer-settings-feedback-content": "#ffffff"
       },
       "palette": {
         "palette-messageMeta": "rgba(61 61 58 / 0.7)",
@@ -1389,7 +1390,8 @@ const String elegantThemePackJson = r'''{
         "layer-member-list": "#242422",
         "layer-member-header": "#131311",
         "layer-settings-card": "#242422",
-        "layer-settings-content": "#1b1b19"
+        "layer-settings-content": "#242422",
+        "layer-settings-feedback-content": "#1b1b19"
       },
       "palette": {
         "palette-messageMeta": "rgba(196 196 193 / 0.7)",

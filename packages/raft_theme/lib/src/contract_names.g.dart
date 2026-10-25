@@ -278,6 +278,7 @@ const Set<String> raftColorRoles = {
   'layer-select-hover',
   'layer-settings-card',
   'layer-settings-content',
+  'layer-settings-feedback-content',
   'layer-sidebar',
   'layer-sidebar-count',
   'layer-sidebar-item-active',

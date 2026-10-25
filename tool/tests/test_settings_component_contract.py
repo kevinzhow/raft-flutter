@@ -24,25 +24,26 @@ class SettingsComponentContractTests(unittest.TestCase):
                 self.assertEqual([geometry.get(k) for k in keys], expected[:5])
                 self.assertEqual(values['colors'].get('layer-settings-card'), expected[5])
                 self.assertEqual(values['colors'].get('layer-settings-content'), expected[6])
+                self.assertEqual(values['colors'].get('layer-settings-feedback-content'), expected[7])
 
     def test_raft_web_settings(self):
         # Web SidebarItem text-subhead, SidebarGroupLabel text-footnote,
         # handle text-mono-code; Card layer-card, Panel content layer-canvas.
         self.assert_pack('raft',
-                         [15, 20, 13, 18, 20, '#ffffff', '#ffffff'],
-                         [15, 20, 13, 18, 20, '#242422', '#1b1b19'])
+                         [15, 20, 13, 18, 20, '#ffffff', '#ffffff', '#ffffff'],
+                         [15, 20, 13, 18, 20, '#242422', '#1b1b19', '#1b1b19'])
 
     def test_elegant_original_settings(self):
         # a57 accent recipe is 13px with a 1.5 line height. Group label is
-        # 10/15; Card is panel, content is panel/light and card/dark.
+        # 10/15; ordinary content stays panel; only Feedback is card/dark.
         self.assert_pack('elegant',
-                         [13, 19.5, 10, 15, 20, '#ffffff', '#ffffff'],
-                         [13, 19.5, 10, 15, 20, '#242422', '#1b1b19'])
+                         [13, 19.5, 10, 15, 20, '#ffffff', '#ffffff', '#ffffff'],
+                         [13, 19.5, 10, 15, 20, '#242422', '#242422', '#1b1b19'])
 
     def test_brutal_original_settings_and_elegant_dark(self):
         self.assert_pack('brutal',
-                         [14, 20, 10, 15, 20, '#ffffff', '#ffffff'],
-                         [13, 19.5, 10, 15, 20, '#242422', '#1b1b19'])
+                         [14, 20, 10, 15, 20, '#ffffff', '#ffffff', '#ffffff'],
+                         [13, 19.5, 10, 15, 20, '#242422', '#242422', '#1b1b19'])
 
 
 if __name__ == '__main__':

@@ -11,7 +11,8 @@ Iterable<Color?> _fills(WidgetTester t, Finder scope) sync* {
     find.descendant(of: scope, matching: find.byType(DecoratedBox)),
   )) {
     if (box.decoration case BoxDecoration(:final color)) yield color;
-    if (box.decoration case RaftLayeredDecoration(:final base)) yield base.color;
+    if (box.decoration case RaftLayeredDecoration(:final base))
+      yield base.color;
   }
   for (final box in t.widgetList<ColoredBox>(
     find.descendant(of: scope, matching: find.byType(ColoredBox)),

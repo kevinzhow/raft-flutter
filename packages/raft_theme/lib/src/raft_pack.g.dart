@@ -458,7 +458,8 @@ const String raftThemePackJson = r'''{
         "layer-member-list": "#ffffff",
         "layer-member-header": "#ffffff",
         "layer-settings-card": "#ffffff",
-        "layer-settings-content": "#ffffff"
+        "layer-settings-content": "#ffffff",
+        "layer-settings-feedback-content": "#ffffff"
       },
       "palette": {
         "palette-yellow-50": "#fff9ed",
@@ -1671,7 +1672,8 @@ const String raftThemePackJson = r'''{
         "layer-member-list": "#242422",
         "layer-member-header": "#1b1b19",
         "layer-settings-card": "#242422",
-        "layer-settings-content": "#1b1b19"
+        "layer-settings-content": "#1b1b19",
+        "layer-settings-feedback-content": "#1b1b19"
       },
       "palette": {
         "palette-yellow-50": "#fff9ed",

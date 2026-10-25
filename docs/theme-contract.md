@@ -116,7 +116,8 @@ dd6c1674 开始，交给 DeepDesign）。
 | `layer-conversation-content` / `layer-profile-content` | 会话内容和外部身份正文 | Raft 同 layer-canvas；旧两套浅色同 layer-panel、深色同 layer-card。 |
 | `layer-conversation-tab-page` | 会话 Tasks / Files 内容覆盖层 | 浅色透明，深色沿各包 layer-conversation-content。 |
 | `layer-member-list` / `layer-member-header` | 成员列表及页头 | Raft 分别同 layer-card / layer-canvas；旧列表同 layer-panel；Elegant 页头同 a57 的 layer-inset，Brutal 浅色页头同 color-soft-signal、深色沿 Elegant。 |
-| `layer-settings-card` / `layer-settings-content` | 设置卡片及滚动内容 | Raft 分别同 layer-card / layer-canvas；旧卡片同 layer-panel，内容浅色同 layer-panel、深色同 layer-card。 |
+| `layer-settings-card` / `layer-settings-content` | 设置卡片及普通内容 | Raft 分别同 layer-card / layer-canvas；旧卡片和普通内容都同 layer-panel。 |
+| `layer-settings-feedback-content` | 设置面板的反馈内容 | Raft 同 layer-canvas；旧版浅色同 layer-panel、深色同 layer-card，保留 a57b9dab `feedbackSurface` 的独立覆盖。 |
 
 
 附录给出了 159 个角色在三套主题下的全部取值，以及每个角色对到哪个 0.7.1 token。

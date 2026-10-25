@@ -407,7 +407,7 @@ class RaftSettingsPanelFrame extends StatelessWidget {
   /// SettingsPanel's content div for the Feedback tab: `bg-layer-panel
   /// dark:bg-layer-card theme-brutal:bg-white`.
   static Color feedbackSurface(RaftTokens t) =>
-      t.colors['layer-settings-content'] ??
+      t.colors['layer-settings-feedback-content'] ??
       (t.dark ? t.colors['layer-card']! : t.panel);
 
   /// Null when the page brings its own header inside the content

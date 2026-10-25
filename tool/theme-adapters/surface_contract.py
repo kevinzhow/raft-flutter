@@ -24,8 +24,10 @@ def surface_colors(column, colors):
         'layer-profile-content': content,
         'layer-member-list': colors['layer-card' if raft else 'layer-panel'],
         'layer-member-header': colors['layer-canvas' if raft else 'color-soft-signal' if brutal else 'layer-inset'],
-        # Web SettingsPanel Card/content; a57 settings_layout.dart keeps its
-        # panel Card and a dark card layer only on the scrollable content.
+        # Web SettingsPanel uses canvas for both content contexts. a57
+        # settings_layout.dart:410 keeps ordinary content on panel; only
+        # feedbackSurface (:351) switches to card in dark mode.
         'layer-settings-card': colors['layer-card' if raft else 'layer-panel'],
-        'layer-settings-content': content,
+        'layer-settings-content': colors['layer-canvas' if raft else 'layer-panel'],
+        'layer-settings-feedback-content': content,
     }
