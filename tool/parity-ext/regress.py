@@ -151,6 +151,7 @@ def run_job(job, a):
     out = pathlib.Path(a.out) / job['dir']
     env_base = {k: v for k, v in os.environ.items() if k != 'PARITY_THEME_OVERRIDE'}
     look, mode = job['look'], job['mode']
+    failed = False
     for engine in ('official', 'ext'):
         ids = job[engine]
         if not ids:
@@ -178,6 +179,8 @@ def run_job(job, a):
         with open(log, 'w') as sink:
             r = subprocess.run(['nice', '-n', '15', *cmd], cwd=ROOT, env=env, stdout=sink, stderr=subprocess.STDOUT)
         print(f'[regress] {look}/{mode} {engine}: exit {r.returncode}, log {log}', flush=True)
+        failed = failed or r.returncode != 0
+    return int(failed)
 
 
 # ------------------------------------------------------------------------------------------------ summary
@@ -305,8 +308,14 @@ def command(a):
         print(f"[regress] plan {j['look']}/{j['mode']}: official {len(j['official'])}, ext {len(j['ext'])}")
     if a.plan_only:
         return
+    failed = False
     if not a.summary_only:
         for j in jobs:
-            run_job(j, a)
+            code = run_job(j, a)
+            failed = failed or code != 0
     ext_full, _ = manifests(a.out)
-    summarize(a, ext_full)
+    rows = summarize(a, ext_full)
+    missing = sum(row['score'] is None for row in rows)
+    if failed or missing or not rows:
+        print(f'[regress] FAILED: incomplete captures or failed jobs; {missing} case(s) without a score', file=sys.stderr)
+        sys.exit(1)

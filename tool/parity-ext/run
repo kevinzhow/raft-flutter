@@ -588,6 +588,11 @@ def cmd_run(a):
     t = summary['totals']
     print(f"extension {parity.PAIR}: {t['passing']}/{t['total']} passing = {t['percentage']}% (official 96%); "
           f"geometry pass {t['geometryPass']}/{t['total']} = {t['geometryPercentage']}%")
+    # Keep the diagnostic report, but an incomplete pair cannot be a successful run.
+    missing = sum(t.get(key, 0) for key in ('reactMissing', 'flutterCaptureFailed', 'notCovered'))
+    if missing:
+        print(f'extension capture incomplete: {missing} case(s) lack a reference or Flutter capture', file=sys.stderr)
+        sys.exit(1)
 
 
 def cmd_dom_dump(a):

@@ -83,10 +83,60 @@ class FrozenReferenceTests(unittest.TestCase):
 
 
 class RegressTests(unittest.TestCase):
+    def test_empty_report_cannot_succeed(self):
+        from argparse import Namespace
+        from unittest.mock import patch
+        args = Namespace(out='unused', plan_only=False, summary_only=True)
+        with patch.object(regress, 'plan', return_value=[]), \
+             patch.object(regress, 'manifests', return_value=([], [])), \
+             patch.object(regress.pathlib.Path, 'mkdir'), \
+             patch.object(regress, 'summarize', return_value=[]):
+            with self.assertRaises(SystemExit) as error:
+                regress.command(args)
+        self.assertEqual(error.exception.code, 1)
+
     def test_cell_counts_pass_line_and_unscored(self):
         rows = [{'score': 0.99}, {'score': 0.5}, {'score': None}]
         self.assertEqual(regress.cell(rows), '1/3 (74.5%), 1 no capture/ref')
         self.assertEqual(regress.cell([]), '-')
+
+    def test_regress_returns_failure_for_missing_reference_after_writing_summary(self):
+        from argparse import Namespace
+        from unittest.mock import patch
+        args = Namespace(out='unused', plan_only=False, summary_only=True)
+        with patch.object(regress, 'plan', return_value=[]), \
+             patch.object(regress, 'manifests', return_value=([], [])), \
+             patch.object(regress.pathlib.Path, 'mkdir'), \
+             patch.object(regress, 'summarize', return_value=[{'score': None}]) as summary:
+            with self.assertRaises(SystemExit) as error:
+                regress.command(args)
+        self.assertEqual(error.exception.code, 1)
+        summary.assert_called_once()
+
+    def test_regress_keeps_running_after_failed_job_and_reports_failure(self):
+        from argparse import Namespace
+        from unittest.mock import patch
+        jobs = [dict(look='raft', mode=m, ext=['a'], official=[]) for m in ['light', 'dark']]
+        args = Namespace(out='unused', plan_only=False, summary_only=False)
+        with patch.object(regress, 'plan', return_value=jobs), \
+             patch.object(regress, 'manifests', return_value=([], [])), \
+             patch.object(regress.pathlib.Path, 'mkdir'), \
+             patch.object(regress, 'run_job', side_effect=[1, 0]) as run_job, \
+             patch.object(regress, 'summarize', return_value=[{'score': 0.99}]):
+            with self.assertRaises(SystemExit) as error:
+                regress.command(args)
+        self.assertEqual(error.exception.code, 1)
+        self.assertEqual(run_job.call_count, 2)
+
+    def test_regress_retains_report_only_pixel_scores_when_captures_exist(self):
+        from argparse import Namespace
+        from unittest.mock import patch
+        args = Namespace(out='unused', plan_only=False, summary_only=True)
+        with patch.object(regress, 'plan', return_value=[]), \
+             patch.object(regress, 'manifests', return_value=([], [])), \
+             patch.object(regress.pathlib.Path, 'mkdir'), \
+             patch.object(regress, 'summarize', return_value=[{'score': 0.50}]):
+            regress.command(args)
 
     def test_each_look_reads_its_own_theme_names(self):
         self.assertEqual(regress.EXT_THEME['raft'], {'light': 'brutal-light', 'dark': 'elegant-dark'})
