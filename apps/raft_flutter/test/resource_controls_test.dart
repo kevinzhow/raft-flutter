@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/activity_rollout_flags.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/task_selection_filter.dart';
 
@@ -293,7 +294,12 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('Done'));
     await t.pumpAndSettle();
-    expect(c.mutations, isEmpty);
+    // Activity owns its layout flag query; an invalid frontier must still
+    // produce no Done (or other storage-domain) write.
+    expect(c.mutations, hasLength(1));
+    expect(c.mutations.single.path, '/feature-flags/evaluate');
+    expect(c.mutations.single.data['keys'], ActivityRolloutFlags.keys);
+    expect(c.mutations.single.data['serverId'], 's');
     expect(
       find.text('Refresh Activity before marking this conversation done.'),
       findsOneWidget,
@@ -403,10 +409,13 @@ void main() {
       // Source inboxStore1427–1441 performs Done, starts a human-self read-all,
       // and owns one awaited refresh. Preserve the exact storage-domain write.
       expect(c.mutations.map((m) => m.path), [
+        '/feature-flags/evaluate',
         '/channels/threads/follow',
         '/channels/threads/done',
         '/channels/t/read-all',
       ]);
+      expect(c.mutations.first.data['keys'], ActivityRolloutFlags.keys);
+      expect(c.mutations.first.data['serverId'], 's');
       final done = c.mutations[c.mutations.length - 2];
       expect(done.path, '/channels/threads/done');
       expect(done.data, {
