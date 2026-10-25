@@ -1184,6 +1184,19 @@ class RaftSlotStyle {
 
   final RaftRecipeContext? context;
 
+  /// Change a painted style without losing its recipe resolution diagnostics.
+  RaftSlotStyle copyWith({
+    Map<String, CssValue>? properties,
+    Map<String, Map<String, CssValue>>? targets,
+    List<String>? classes,
+  }) => RaftSlotStyle.contextual(
+    properties ?? this.properties,
+    targets ?? this.targets,
+    classes ?? this.classes,
+    tokens,
+    context: context,
+  );
+
   final Map<String, CssValue> properties;
   final Map<String, Map<String, CssValue>> targets;
 

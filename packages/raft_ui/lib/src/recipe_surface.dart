@@ -21,6 +21,9 @@ extension RaftRecipeBinding on RaftTokens {
 
   RaftRecipeTokens get recipeTokens => RaftRecipeTokens(this);
 
+  /// Frozen recipe geometry for references in an already themed renderer.
+  RaftRecipeTokens get recipeSourceTokens => RaftRecipeTokens.source(this);
+
   /// CSS interaction states for a recipe cascade; `dark` follows the theme.
   RaftRecipeStates recipeStates({
     bool hovered = false,
