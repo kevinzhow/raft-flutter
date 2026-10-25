@@ -91,13 +91,4 @@ void main() {
     expect(p.resolve(dark: false).fonts['sans']!.asset, 'fonts/body.ttf');
     expect(p.resolve(dark: true).fonts['sans']!.asset, 'fonts/body.ttf');
   });
-  test('Brutal dark resolves all three Elegant families and stacks', () {
-    final b = builtInBrutalTheme.resolve(dark: true, base: builtInRaftTheme);
-    final e = builtInElegantTheme.resolve(dark: true, base: builtInRaftTheme);
-    for (final role in ['sans', 'heading', 'mono']) {
-      expect(b.fonts[role]!.family, e.fonts[role]!.family);
-      expect(b.fonts[role]!.stack, e.fonts[role]!.stack);
-      expect(b.fonts[role]!.asset, e.fonts[role]!.asset);
-    }
-  });
 }

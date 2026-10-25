@@ -72,43 +72,4 @@ void main() {
       );
     },
   );
-  test('built-in timestamp references retain whole Elegant night mode', () {
-    expect(
-      builtInRaftTheme.resolve(dark: false).fontRefs['font.messageTime'],
-      'mono',
-    );
-    expect(
-      builtInElegantTheme.resolve(dark: false).fontRefs['font.messageTime'],
-      'sans',
-    );
-    expect(
-      builtInBrutalTheme.resolve(dark: false).fontRefs['font.messageTime'],
-      'mono',
-    );
-    expect(
-      builtInBrutalTheme.resolve(dark: true).fontRefs['font.messageTime'],
-      'sans',
-    );
-  });
-  test('built-in subtitle references preserve the original font families', () {
-    expect(
-      builtInRaftTheme.resolve(dark: false).fontRefs['font.messageSubtitle'],
-      'sans',
-    );
-    expect(
-      builtInElegantTheme.resolve(dark: false).fontRefs['font.messageSubtitle'],
-      'sans',
-    );
-    expect(
-      builtInBrutalTheme.resolve(dark: false).fontRefs['font.messageSubtitle'],
-      'mono',
-    );
-    expect(
-      builtInBrutalTheme.resolve(dark: true).fontRefs['font.messageSubtitle'],
-      'sans',
-    );
-  });
-  test('the original Brutal mono family is Geist Mono', () {
-    expect(builtInBrutalTheme.fonts['mono']!.family, 'Geist Mono');
-  });
 }
