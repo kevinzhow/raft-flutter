@@ -147,6 +147,8 @@ abstract final class RaftToastActionRecipe {
       [theme.name, variant?.css, size?.css, toastTheme?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftToastActionRecipeStyle(
       root: s[0],
@@ -169,6 +171,8 @@ abstract final class RaftToastActionRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

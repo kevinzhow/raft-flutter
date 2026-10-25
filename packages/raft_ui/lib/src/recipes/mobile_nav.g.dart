@@ -56,6 +56,8 @@ abstract final class RaftMobileNavRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftMobileNavRecipeStyle(root: s[0], item: s[1], itemLabel: s[2]);
   }
@@ -74,6 +76,8 @@ abstract final class RaftMobileNavRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

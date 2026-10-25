@@ -78,6 +78,8 @@ abstract final class RaftLiveAgentActivityBarRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftLiveAgentActivityBarRecipeStyle(
       root: s[0],
@@ -103,6 +105,8 @@ abstract final class RaftLiveAgentActivityBarRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

@@ -73,6 +73,8 @@ abstract final class RaftSpinnerRecipe {
       [theme.name, size?.css, variant?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftSpinnerRecipeStyle(root: s[0], ring: s[1]);
   }
@@ -91,6 +93,8 @@ abstract final class RaftSpinnerRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

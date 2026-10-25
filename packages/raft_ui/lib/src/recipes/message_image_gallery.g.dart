@@ -121,6 +121,8 @@ abstract final class RaftMessageImageGalleryRecipe {
       ],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftMessageImageGalleryRecipeStyle(
       root: s[0],
@@ -147,6 +149,8 @@ abstract final class RaftMessageImageGalleryRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

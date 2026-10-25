@@ -45,6 +45,8 @@ abstract final class RaftKbdRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftKbdRecipeStyle(root: s[0], group: s[1]);
   }
@@ -63,6 +65,8 @@ abstract final class RaftKbdRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

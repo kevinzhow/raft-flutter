@@ -44,6 +44,8 @@ abstract final class RaftTextareaCounterRecipe {
       [theme.name, overLimit?.toString()],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftTextareaCounterRecipeStyle(root: s[0]);
   }
@@ -62,6 +64,8 @@ abstract final class RaftTextareaCounterRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

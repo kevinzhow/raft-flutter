@@ -128,6 +128,8 @@ abstract final class RaftLegacyTaskPanelRecipe {
       [theme.name, framed?.toString()],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftLegacyTaskPanelRecipeStyle(
       frame: s[0],
@@ -161,6 +163,8 @@ abstract final class RaftLegacyTaskPanelRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

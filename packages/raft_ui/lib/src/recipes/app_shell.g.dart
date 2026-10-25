@@ -80,6 +80,8 @@ abstract final class RaftAppShellRecipe {
       [theme.name, overlay?.toString()],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftAppShellRecipeStyle(
       root: s[0],
@@ -105,6 +107,8 @@ abstract final class RaftAppShellRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }
