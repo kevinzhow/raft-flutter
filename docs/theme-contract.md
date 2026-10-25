@@ -116,6 +116,7 @@ dd6c1674 开始，交给 DeepDesign）。
 | `layer-conversation-content` / `layer-profile-content` | 会话内容和外部身份正文 | Raft 同 layer-canvas；旧两套浅色同 layer-panel、深色同 layer-card。 |
 | `layer-conversation-tab-page` | 会话 Tasks / Files 内容覆盖层 | 浅色透明，深色沿各包 layer-conversation-content。 |
 | `layer-member-list` / `layer-member-header` | 成员列表及页头 | Raft 分别同 layer-card / layer-canvas；旧列表同 layer-panel；Elegant 页头同 a57 的 layer-inset，Brutal 浅色页头同 color-soft-signal、深色沿 Elegant。 |
+| `layer-settings-card` / `layer-settings-content` | 设置卡片及滚动内容 | Raft 分别同 layer-card / layer-canvas；旧卡片同 layer-panel，内容浅色同 layer-panel、深色同 layer-card。 |
 
 
 附录给出了 159 个角色在三套主题下的全部取值，以及每个角色对到哪个 0.7.1 token。
@@ -181,7 +182,9 @@ Elegant 的 `stroke.control = 0` 配合 `control.edge = ring`（§5 #1）与 `sh
 | `size.field` | 44 | 36 † | 40 † |
 | `radius.settingsCard` | 10 | 0 | 0 |
 | `type.settingsCardTitle.size/line` | 17 / 22 | 18 / 22.5 | 18 / 22.5 |
-| `type.settingsCardMeta.size/line` | 13 / 18 | 14 / 20 | 14 / 20 |
+| `type.settingsSidebarItem.size/line` | 15 / 20 | 13 / 19.5 | 14 / 20 |
+| `type.settingsGroupLabel.size/line` | 13 / 18 | 10 / 15 | 10 / 15 |
+| `type.settingsCardMeta.size/line` | 13 / 20 | 14 / 20 | 14 / 20 |
 | `size.avatar.profileHero` | 99 | 64 | 64 |
 | `size.avatar.profileTile` | 51 | 64 | 64 |
 | `size.avatar.panelHeader` | 35 | 36 | 36 |

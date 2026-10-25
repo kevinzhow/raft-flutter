@@ -279,6 +279,9 @@ GEOMETRY_ELEGANT = {
     'space.composerHostInline': 12, 'space.composerHostTop': 12,
     'type.composerInput.line': 20, 'type.composerInputDesktop.size': 14,
     'type.settingsCardTitle.size': 18, 'type.settingsCardTitle.line': 22.5,
+    # a57 SettingsSidebar accent recipe: 13px x 1.5; group label 10/15.
+    'type.settingsSidebarItem.size': 13, 'type.settingsSidebarItem.line': 19.5,
+    'type.settingsGroupLabel.size': 10, 'type.settingsGroupLabel.line': 15,
     'type.settingsCardMeta.size': 14, 'type.settingsCardMeta.line': 20,
     # a57b9dab switch.dart:65-81 and primitive_tokens.dart:12.
     'size.switch.width.sm': 28, 'size.switch.width.md': 36,
@@ -464,6 +467,9 @@ GEOMETRY_BRUTAL = {
     'space.composerHostInline': 12, 'space.composerHostTop': 12,
     'type.composerInput.line': 20, 'type.composerInputDesktop.size': 14,
     'type.settingsCardTitle.size': 18, 'type.settingsCardTitle.line': 22.5,
+    # a57 SettingsSidebar accent recipe: 14/20; group label 10/15.
+    'type.settingsSidebarItem.size': 14, 'type.settingsSidebarItem.line': 20,
+    'type.settingsGroupLabel.size': 10, 'type.settingsGroupLabel.line': 15,
     'type.settingsCardMeta.size': 14, 'type.settingsCardMeta.line': 20,
     # a57b9dab switch.dart:65-81 and primitive_tokens.dart:12.
     'size.switch.width.sm': 28, 'size.switch.width.md': 36,

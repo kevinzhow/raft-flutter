@@ -303,7 +303,11 @@ GEOMETRY_RAFT = {
     'space.composerHostInline': 20, 'space.composerHostTop': 8,
     'type.composerInput.line': 24, 'type.composerInputDesktop.size': 16,
     'type.settingsCardTitle.size': 17, 'type.settingsCardTitle.line': 22,
-    'type.settingsCardMeta.size': 13, 'type.settingsCardMeta.line': 18,
+    # Web SettingsSidebar SidebarItem text-subhead / group text-footnote;
+    # SettingsPanel @handle text-mono-code (PR472 source table).
+    'type.settingsSidebarItem.size': 15, 'type.settingsSidebarItem.line': 20,
+    'type.settingsGroupLabel.size': 13, 'type.settingsGroupLabel.line': 18,
+    'type.settingsCardMeta.size': 13, 'type.settingsCardMeta.line': 20,
     # 0.7.1 switchRecipe (dist/index.mjs): border 1.5 + padding 2.5.
     'size.switch.width.sm': 50, 'size.switch.width.md': 50,
     'size.switch.height.sm': 30, 'size.switch.height.md': 30,

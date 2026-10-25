@@ -456,7 +456,9 @@ const String raftThemePackJson = r'''{
         "layer-conversation-tab-page": "#00000000",
         "layer-profile-content": "#ffffff",
         "layer-member-list": "#ffffff",
-        "layer-member-header": "#ffffff"
+        "layer-member-header": "#ffffff",
+        "layer-settings-card": "#ffffff",
+        "layer-settings-content": "#ffffff"
       },
       "palette": {
         "palette-yellow-50": "#fff9ed",
@@ -711,8 +713,12 @@ const String raftThemePackJson = r'''{
         "type.composerInputDesktop.size": 16,
         "type.settingsCardTitle.size": 17,
         "type.settingsCardTitle.line": 22,
+        "type.settingsSidebarItem.size": 15,
+        "type.settingsSidebarItem.line": 20,
+        "type.settingsGroupLabel.size": 13,
+        "type.settingsGroupLabel.line": 18,
         "type.settingsCardMeta.size": 13,
-        "type.settingsCardMeta.line": 18,
+        "type.settingsCardMeta.line": 20,
         "size.switch.width.sm": 50,
         "size.switch.width.md": 50,
         "size.switch.height.sm": 30,
@@ -1663,7 +1669,9 @@ const String raftThemePackJson = r'''{
         "layer-conversation-tab-page": "#1b1b19",
         "layer-profile-content": "#1b1b19",
         "layer-member-list": "#242422",
-        "layer-member-header": "#1b1b19"
+        "layer-member-header": "#1b1b19",
+        "layer-settings-card": "#242422",
+        "layer-settings-content": "#1b1b19"
       },
       "palette": {
         "palette-yellow-50": "#fff9ed",
@@ -1918,8 +1926,12 @@ const String raftThemePackJson = r'''{
         "type.composerInputDesktop.size": 16,
         "type.settingsCardTitle.size": 17,
         "type.settingsCardTitle.line": 22,
+        "type.settingsSidebarItem.size": 15,
+        "type.settingsSidebarItem.line": 20,
+        "type.settingsGroupLabel.size": 13,
+        "type.settingsGroupLabel.line": 18,
         "type.settingsCardMeta.size": 13,
-        "type.settingsCardMeta.line": 18,
+        "type.settingsCardMeta.line": 20,
         "size.switch.width.sm": 50,
         "size.switch.width.md": 50,
         "size.switch.height.sm": 30,

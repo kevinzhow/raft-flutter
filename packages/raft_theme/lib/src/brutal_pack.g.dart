@@ -395,7 +395,9 @@ const String brutalThemePackJson = r'''{
         "layer-conversation-tab-page": "#00000000",
         "layer-profile-content": "#ffffff",
         "layer-member-list": "#ffffff",
-        "layer-member-header": "#ffd440"
+        "layer-member-header": "#ffd440",
+        "layer-settings-card": "#ffffff",
+        "layer-settings-content": "#ffffff"
       },
       "palette": {
         "palette-orange-100": "#fde6de",
@@ -575,6 +577,10 @@ const String brutalThemePackJson = r'''{
         "type.composerInputDesktop.size": 14,
         "type.settingsCardTitle.size": 18,
         "type.settingsCardTitle.line": 22.5,
+        "type.settingsSidebarItem.size": 14,
+        "type.settingsSidebarItem.line": 20,
+        "type.settingsGroupLabel.size": 10,
+        "type.settingsGroupLabel.line": 15,
         "type.settingsCardMeta.size": 14,
         "type.settingsCardMeta.line": 20,
         "size.switch.width.sm": 28,
@@ -1381,7 +1387,9 @@ const String brutalThemePackJson = r'''{
         "layer-conversation-tab-page": "#1b1b19",
         "layer-profile-content": "#1b1b19",
         "layer-member-list": "#242422",
-        "layer-member-header": "#131311"
+        "layer-member-header": "#131311",
+        "layer-settings-card": "#242422",
+        "layer-settings-content": "#1b1b19"
       },
       "palette": {
         "palette-messageMeta": "rgba(196 196 193 / 0.7)",
@@ -1570,6 +1578,10 @@ const String brutalThemePackJson = r'''{
         "type.composerInputDesktop.size": 14,
         "type.settingsCardTitle.size": 18,
         "type.settingsCardTitle.line": 22.5,
+        "type.settingsSidebarItem.size": 13,
+        "type.settingsSidebarItem.line": 19.5,
+        "type.settingsGroupLabel.size": 10,
+        "type.settingsGroupLabel.line": 15,
         "type.settingsCardMeta.size": 14,
         "type.settingsCardMeta.line": 20,
         "size.switch.width.sm": 28,
