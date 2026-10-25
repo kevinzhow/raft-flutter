@@ -42,6 +42,8 @@ abstract final class RaftTaskCardStatusRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftTaskCardStatusRecipeStyle(base: s[0]);
   }
@@ -60,6 +62,8 @@ abstract final class RaftTaskCardStatusRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

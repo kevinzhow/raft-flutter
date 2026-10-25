@@ -58,6 +58,8 @@ abstract final class RaftSwitchRecipe {
       [theme.name, size?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftSwitchRecipeStyle(root: s[0], thumb: s[1]);
   }
@@ -76,6 +78,8 @@ abstract final class RaftSwitchRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

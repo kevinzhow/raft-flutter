@@ -17,6 +17,31 @@ class RaftRecipeTokens extends RaftTokenResolver {
   @override
   Locale? get textLocale => tokens.textLocale;
 
+  @override
+  CssValue? recipeValue(RaftRecipeTokenKind kind, String name) {
+    switch (kind) {
+      case RaftRecipeTokenKind.number:
+        final value = tokens.size(name, fallback: double.nan);
+        return value.isNaN ? null : CssNum(value);
+      case RaftRecipeTokenKind.color:
+        final value = tokens.colors[name];
+        return value == null ? null : CssColor(value.toARGB32(), null, value);
+      case RaftRecipeTokenKind.shadow:
+        if (!tokens.hasShadowRole(name)) return null;
+        return CssList([
+          for (final layer in tokens.shadowLayers(name))
+            CssSeq([
+              if (layer.inset) const CssKeyword('inset'),
+              CssNum(layer.offset.dx, 'px'),
+              CssNum(layer.offset.dy, 'px'),
+              CssNum(layer.blur, 'px'),
+              CssNum(layer.spread, 'px'),
+              CssColor(layer.color.toARGB32(), null, layer.color),
+            ]),
+        ]);
+    }
+  }
+
   static final _cssNames = <String, String>{};
 
   static String cssName(String camel) => _cssNames.putIfAbsent(

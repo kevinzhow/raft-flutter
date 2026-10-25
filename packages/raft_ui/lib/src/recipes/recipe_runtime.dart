@@ -360,6 +360,48 @@ abstract class RaftTokenResolver {
 
   /// Regional glyph locale, independent of translated UI copy.
   Locale? get textLocale => null;
+
+  /// A component value from a theme pack. Null keeps the source declaration.
+  /// Foundation-only resolvers and offline CSS parity therefore stay exact.
+  CssValue? recipeValue(RaftRecipeTokenKind kind, String name) => null;
+}
+
+enum RaftRecipeTokenKind { number, color, shadow }
+
+/// One measured property binding, scoped to a recipe slot and CSS target.
+/// Conditions are explicit axes and selector atoms, never inferred from a
+/// numeric value shared by unrelated utilities.
+class RaftRecipePackBinding {
+  const RaftRecipePackBinding(
+    this.slot,
+    this.property,
+    this.kind,
+    this.token, {
+    this.target = 'self',
+    this.unit = 'px',
+    this.props = const {},
+    this.when = const [],
+    this.unless = const [],
+  });
+
+  final String slot, property, token, target, unit;
+  final RaftRecipeTokenKind kind;
+  final Map<String, String> props;
+  final List<String> when, unless;
+
+  bool matches(RaftRecipeContext context) =>
+      slot == context.slot &&
+      props.entries.every((e) => context.props[e.key] == e.value) &&
+      when.every(context.states.matches) &&
+      !unless.any(context.states.matches);
+}
+
+/// Retained at the resolution boundary for source and visual diagnostics.
+class RaftRecipeContext {
+  const RaftRecipeContext(this.recipe, this.slot, this.props, this.states);
+  final String recipe, slot;
+  final Map<String, String?> props;
+  final RaftRecipeStates states;
 }
 
 /// A colour that may depend on foundation tokens.
@@ -654,24 +696,72 @@ List<RaftSlotStyle> raftResolveRecipe(
   List<List<int>> combos,
   List<String?> values,
   RaftRecipeStates states,
-  RaftTokenResolver? tokens,
-) {
+  RaftTokenResolver? tokens, {
+  String? recipeName,
+  List<String> slotNames = const [],
+  List<RaftRecipePackBinding> bindings = const [],
+}) {
   var index = 0;
   for (var k = 0; k < axes.length; k++) {
     index = index * axes[k].optionCount + axes[k].optionIndex(values[k]);
   }
   final cache = _generatedSlotTemplates[engine] ??=
       RaftLruCache<_SlotTemplateKey, RaftSlotStyle>(512);
+  final props = Map<String, String?>.unmodifiable({
+    for (var i = 0; i < axes.length; i++)
+      axes[i].name:
+          values[i] ?? (axes[i].allowsUnset ? null : axes[i].defaultValue),
+  });
+  final contextStates = RaftRecipeStates(
+    Set.unmodifiable(states.flags),
+    states.viewportWidth,
+    states.viewportHeight,
+    states.containerWidth,
+  );
   return [
-    for (final list in combos[index])
-      _bindSlotTemplate(
-        cache.putIfAbsent(
-          _SlotTemplateKey(lists[list], states),
-          () => engine.resolveSlot(lists[list], states),
+    for (var i = 0; i < combos[index].length; i++)
+      _bindRecipePack(
+        _bindSlotTemplate(
+          cache.putIfAbsent(
+            _SlotTemplateKey(lists[combos[index][i]], states),
+            () => engine.resolveSlot(lists[combos[index][i]], states),
+          ),
+          tokens,
         ),
-        tokens,
+        recipeName == null
+            ? null
+            : RaftRecipeContext(recipeName, slotNames[i], props, contextStates),
+        bindings,
       ),
   ];
+}
+
+RaftSlotStyle _bindRecipePack(
+  RaftSlotStyle style,
+  RaftRecipeContext? context,
+  List<RaftRecipePackBinding> bindings,
+) {
+  if (context == null) return style;
+  // The cascade cache contains source data only. Mutate this caller's copy so
+  // a user pack, state or slot can never contaminate another resolved style.
+  for (final binding in bindings) {
+    if (!binding.matches(context)) continue;
+    final value = style.tokens?.recipeValue(binding.kind, binding.token);
+    if (value == null) continue;
+    final target = binding.target == 'self'
+        ? style.properties
+        : style.targets.putIfAbsent(binding.target, () => {});
+    target[binding.property] = value is CssNum
+        ? CssNum(value.value, binding.unit)
+        : value;
+  }
+  return RaftSlotStyle.contextual(
+    style.properties,
+    style.targets,
+    style.classes,
+    style.tokens,
+    context: context,
+  );
 }
 
 // -------------------------------------------------------------------- engine
@@ -1081,7 +1171,18 @@ int? raftMixColors(String space, int c1, double? p1, int c2, double? p2) {
 /// resolved through [tokens] when provided. [targets] holds pseudo-elements
 /// (`::before`) and descendant rules (`& svg`, `:is(& *)[data-icon]`).
 class RaftSlotStyle {
-  RaftSlotStyle(this.properties, this.targets, this.classes, [this.tokens]);
+  RaftSlotStyle(this.properties, this.targets, this.classes, [this.tokens])
+    : context = null;
+
+  RaftSlotStyle.contextual(
+    this.properties,
+    this.targets,
+    this.classes,
+    this.tokens, {
+    required this.context,
+  });
+
+  final RaftRecipeContext? context;
 
   final Map<String, CssValue> properties;
   final Map<String, Map<String, CssValue>> targets;
@@ -1098,7 +1199,15 @@ class RaftSlotStyle {
   /// Style of a pseudo-element or descendant target, e.g. `::before`.
   RaftSlotStyle? target(String selector) {
     final t = targets[selector];
-    return t == null ? null : RaftSlotStyle(t, const {}, classes, tokens);
+    return t == null
+        ? null
+        : RaftSlotStyle.contextual(
+            t,
+            const {},
+            classes,
+            tokens,
+            context: context,
+          );
   }
 
   RaftSlotStyle? get before => target('::before');

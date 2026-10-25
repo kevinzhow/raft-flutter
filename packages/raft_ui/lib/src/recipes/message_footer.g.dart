@@ -95,6 +95,8 @@ abstract final class RaftMessageFooterRecipe {
       [badgeStatus?.css, elevation?.css, iconOnly?.toString(), theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftMessageFooterRecipeStyle(
       savedIndicator: s[0],
@@ -118,6 +120,8 @@ abstract final class RaftMessageFooterRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

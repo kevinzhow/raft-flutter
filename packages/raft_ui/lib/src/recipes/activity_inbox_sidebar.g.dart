@@ -60,6 +60,8 @@ abstract final class RaftActivityInboxSidebarRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftActivityInboxSidebarRecipeStyle(
       sidebar: s[0],
@@ -82,6 +84,8 @@ abstract final class RaftActivityInboxSidebarRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

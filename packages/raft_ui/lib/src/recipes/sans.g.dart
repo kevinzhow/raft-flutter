@@ -95,6 +95,8 @@ abstract final class RaftSansRecipe {
       [size?.css, variant?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftSansRecipeStyle(base: s[0]);
   }
@@ -113,6 +115,8 @@ abstract final class RaftSansRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

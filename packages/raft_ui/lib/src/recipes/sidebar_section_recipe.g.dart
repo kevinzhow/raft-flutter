@@ -108,6 +108,8 @@ abstract final class RaftSidebarSectionRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftSidebarSectionRecipeStyle(
       sidebarSection: s[0],
@@ -138,6 +140,8 @@ abstract final class RaftSidebarSectionRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

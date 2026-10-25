@@ -230,6 +230,8 @@ abstract final class RaftNotificationCenterRecipe {
       ],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftNotificationCenterRecipeStyle(
       trigger: s[0],
@@ -268,6 +270,8 @@ abstract final class RaftNotificationCenterRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

@@ -94,6 +94,8 @@ abstract final class RaftSearchMessageRecipe {
       [theme.name, nested?.toString(), selected?.toString()],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftSearchMessageRecipeStyle(
       message: s[0],
@@ -121,6 +123,8 @@ abstract final class RaftSearchMessageRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

@@ -1,0 +1,14 @@
+{
+  "input": [
+    {
+      "slot": "root",
+      "properties": {
+        "border-top-left-radius": {"kind": "number", "token": "radius.control"},
+        "border-top-right-radius": {"kind": "number", "token": "radius.control"},
+        "border-bottom-left-radius": {"kind": "number", "token": "radius.control"},
+        "border-bottom-right-radius": {"kind": "number", "token": "radius.control"}
+      },
+      "source": "Web v1.21.23 raft-ui 0.7.0 input rounded-control; a57b9dab Input radius 6 / 0, matching radius.control. Independent of state; padding remains a shape value."
+    }
+  ]
+}
