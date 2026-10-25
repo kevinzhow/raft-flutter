@@ -567,7 +567,9 @@ class RunGateRetryTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         (self.root / 'apps/raft_flutter/test').mkdir(parents=True)
         self.script, self.calls, self.analyze_ok = {}, [], True
-        env = unittest.mock.patch.dict(os.environ, {'RAFT_CHECK_MAX_FAILURES': '0', 'RAFT_CHECK_SHARDS': '2'})
+        # These fake runs test the default retry policy, independently of the
+        # enclosing gate's opt-out. The opt-out case overrides this below.
+        env = unittest.mock.patch.dict(os.environ, {'RAFT_CHECK_MAX_FAILURES': '0', 'RAFT_CHECK_SHARDS': '2', 'RAFT_CHECK_RETRIES': '3'})
         env.start()
         self.addCleanup(env.stop)
         for name, value in (('root', self.root), ('local', self.root / '.local'), ('app_dir', self.root / 'apps/raft_flutter')):
