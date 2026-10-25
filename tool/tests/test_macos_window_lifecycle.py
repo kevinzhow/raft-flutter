@@ -39,6 +39,8 @@ class MacOSWindowLifecycleTests(unittest.TestCase):
                  '-enable-testing', '-module-name', 'RaftMacAppDelegate',
                  str(ROOT / 'apps/raft_flutter/macos/Runner/AppDelegate.swift'),
                  str(ROOT / 'apps/raft_flutter/macos/Runner/MainFlutterWindow.swift'),
+                 str(ROOT / 'apps/raft_flutter/macos/Runner/AttachmentFilesChannel.swift'),
+                 str(ROOT / 'apps/raft_flutter/macos/Runner/AttachmentFileWriter.swift'),
                  str(registry),
                  '-emit-module-path', str(directory / 'RaftMacAppDelegate.swiftmodule'),
                  *common, '-o', str(library)],

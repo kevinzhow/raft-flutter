@@ -14,6 +14,8 @@ import 'package:raft_flutter/platform/cache_staging.dart';
 import 'package:raft_flutter/platform/video_cache.dart';
 import 'package:raft_flutter/platform/native_sharing.dart';
 
+import 'support/mock_attachment_writer.dart';
+
 const _origin = 'https://x.invalid';
 
 AttachmentImageStoreKey key(
@@ -502,6 +504,7 @@ void main() {
     });
 
     test('preview inputs and save copies are staged there too', () async {
+      mockAttachmentWriter();
       final files = AttachmentFiles(
         pickDestination: (_, _) async => p.join(root.path, 'saved.bin'),
         dio: Dio()..httpClientAdapter = _Bytes([1, 2, 3]),

@@ -121,14 +121,7 @@ class AttachmentFiles {
         onReceiveProgress: onProgress,
       );
       if (cancel.isCancelled || !authorized()) return null;
-      if (Platform.isAndroid) {
-        await channel.invokeMethod<void>('writeSaved', {
-          'uri': destination,
-          'path': temporary.path,
-        });
-      } else {
-        await XFile(temporary.path).saveTo(destination);
-      }
+      await _writeSaved(temporary, destination);
       return destination;
     } finally {
       if (await folder.exists()) await folder.delete(recursive: true);
@@ -157,14 +150,7 @@ class AttachmentFiles {
       destination = (await getSaveLocation(suggestedName: name))?.path;
     }
     if (destination == null || !authorized()) return null;
-    if (Platform.isAndroid) {
-      await channel.invokeMethod<void>('writeSaved', {
-        'uri': destination,
-        'path': source.path,
-      });
-    } else {
-      await XFile(source.path).saveTo(destination);
-    }
+    await _writeSaved(source, destination);
     return destination;
   }
 
@@ -206,14 +192,7 @@ class AttachmentFiles {
       final temporary = File(p.join(folder.path, name));
       await temporary.writeAsBytes(bytes, flush: true);
       if (!authorized()) return null;
-      if (Platform.isAndroid) {
-        await channel.invokeMethod<void>('writeSaved', {
-          'uri': destination,
-          'path': temporary.path,
-        });
-      } else {
-        await XFile(temporary.path).saveTo(destination);
-      }
+      await _writeSaved(temporary, destination);
       return destination;
     } finally {
       if (await folder.exists()) await folder.delete(recursive: true);
@@ -260,6 +239,19 @@ class AttachmentFiles {
       });
     } finally {
       if (await folder.exists()) await folder.delete(recursive: true);
+    }
+  }
+
+  Future<void> _writeSaved(File source, String destination) async {
+    if (Platform.isAndroid || Platform.isMacOS) {
+      // macOS publishes bytes atomically into the user-selected destination.
+      // File.copy would carry private cache quarantine metadata into it.
+      await channel.invokeMethod<void>('writeSaved', {
+        'uri': destination,
+        'path': source.path,
+      });
+    } else {
+      await XFile(source.path).saveTo(destination);
     }
   }
 

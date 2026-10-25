@@ -13,6 +13,8 @@ import 'package:raft_flutter/platform/attachment_files.dart';
 import 'package:raft_flutter/platform/content_links.dart';
 import 'package:raft_flutter/features/incoming_share_review.dart';
 
+import 'support/mock_attachment_writer.dart';
+
 class _RealHttp extends HttpOverrides {}
 
 void main() {
@@ -327,6 +329,7 @@ void main() {
   test(
     'PNG export byte leases are scoped; cancelled save writes nothing',
     () async {
+      mockAttachmentWriter();
       final folder = await Directory.systemTemp.createTemp('raft-png-export');
       final bytes = Uint8List.fromList([137, 80, 78, 71, 13, 10, 26, 10]);
       final sharing = NativeSharing(

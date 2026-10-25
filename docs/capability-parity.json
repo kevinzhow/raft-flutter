@@ -11095,7 +11095,7 @@
    "status": "covered",
    "webEntry": "ImageLightbox > Download icon | ChannelFilesPanel > 'Download file' / file preview | MessageItem attachment card > 'Download {filename}' icon, inline video/audio players (background URL load) | openDocumentPreview/openMediaPreview (PDF, CSV, XLSX, markdown, text, HTML, video, audio preview shell > Download)",
    "gate": "any member who can read the channel; guests read-only",
-   "flutterEntry": "attachment_media.dart url(); attachment_transfers.dart calls controller.attachmentMedia.url(); used by attachment_view.dart (card download/inline media), source_channel_files_view.dart ('Download file'), attachment_preview_dialog.dart, media_image_page.dart (Download)",
+   "flutterEntry": "attachment_media.dart url(); attachment_transfers.dart calls controller.attachmentMedia.url(); used by attachment_view.dart (card download/inline media), source_channel_files_view.dart ('Download file'), attachment_preview_dialog.dart, media_image_page.dart (Download); macOS AttachmentFilesChannel publishes bytes atomically into the NSSavePanel-selected file, without copying private cache quarantine metadata",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/attachment_media.dart",
@@ -11108,6 +11108,14 @@
     {
      "file": "apps/raft_flutter/lib/features/source_channel_files_view.dart",
      "needle": "'Download File'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/platform/attachment_files.dart",
+     "needle": "Future<void> _writeSaved"
+    },
+    {
+     "file": "apps/raft_flutter/macos/Runner/AttachmentFileWriter.swift",
+     "needle": "try data.write(to: destination, options: .atomic)"
     }
    ],
    "justification": "",

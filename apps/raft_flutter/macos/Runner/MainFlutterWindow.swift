@@ -5,6 +5,7 @@ import AVFoundation
 import ImageIO
 
 class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftUpdatesWindow {
+  private var attachmentFilesChannel: AttachmentFilesChannel?
   private var interactionChannel: FlutterMethodChannel?
   private var memoryChannel: FlutterMethodChannel?
   private var titleBar: RaftTitleBar?
@@ -71,6 +72,9 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     let windowFrame = self.frame
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
+
+    attachmentFilesChannel = AttachmentFilesChannel(
+      messenger: flutterViewController.engine.binaryMessenger)
 
     memoryChannel = FlutterMethodChannel(
       name: "app.raft/device-memory", binaryMessenger: flutterViewController.engine.binaryMessenger)
