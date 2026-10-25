@@ -3278,6 +3278,46 @@
      "caseValidity": "unchecked"
     }
    ]
+  },
+  {
+   "id": "login.human-login-sheet",
+   "title": "Login with Raft confirmation (in-app artifact browser)",
+   "webEntry": "packages/web/src/pages/HumanLoginSetupPage.tsx (v1.21.23-source.1)",
+   "flutterEntry": "apps/raft_flutter/lib/features/human_login_sheet.dart",
+   "states": [
+    {
+     "state": "loading",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "Native sheet over the in-app browser: 'Loading available Raft Servers...' until the lookup answers, Cancel stays available. Widget tests (artifact_viewer_test.dart) cover it; Web's page is not a comparable surface."
+    },
+    {
+     "state": "empty",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "App registered on no server the account can use: Web's 'not registered' / 'no access' text with only Back. Widget tests cover both texts."
+    },
+    {
+     "state": "error",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "A refused authorization shows the server's error_description or Web's generic text; the person can retry or cancel (which returns the browser to the sign-in page). Widget tests cover refusal, generic failure and retry."
+    },
+    {
+     "state": "partial",
+     "web": "yes",
+     "flutter": "partial",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "install_required shows Web's 'Not installed on this Server' message with Login with Raft disabled; 'Install and continue' is phase 2 (docs/capability-parity.json ui:integrations.login-with-raft-consent-page)."
+    }
+   ]
   }
  ],
  "navigationCoverage": {

@@ -8962,7 +8962,7 @@
    "status": "covered",
    "webEntry": "Settings > Applications > Marketplace > app detail > 'Install to this server'; pages/HumanLoginSetupPage 'Install and continue'",
    "gate": "manageIntegrations",
-   "flutterEntry": "integrations_views.dart openListing() 'Install to this server'. The HumanLoginSetupPage entry has no Flutter equivalent (see ui:integrations.login-with-raft-consent-page)",
+   "flutterEntry": "integrations_views.dart openListing() 'Install to this server'. The HumanLoginSetupPage 'Install and continue' entry is not built yet (phase 2, see ui:integrations.login-with-raft-consent-page)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/integrations_views.dart",
@@ -9470,14 +9470,31 @@
    "area": "integrations-apps-mcp",
    "capability": "'Log in with Raft' consent/setup page for third-party apps (/login-with-raft/setup, legacy login-with-slock aliases): pick a server, review scopes, authorize or install",
    "background": false,
-   "status": "na",
+   "status": "partial",
    "webEntry": "App.tsx routes /login-with-raft/setup, /login-with-slock/setup, /login-with-slock-human/setup -> pages/HumanLoginSetupPage.tsx (GET /oauth/clients/lookup, POST /oauth/authorize/human, marketplace install)",
-   "gate": "",
-   "flutterEntry": "",
-   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted 'Login with Raft' consent page.",
-   "impact": "",
-   "size": "",
-   "flutterRefs": []
+   "gate": "Signed in; a link to an artifact that asks for Login with Raft",
+   "flutterEntry": "artifact_viewer.dart ArtifactViewer.onNavigationRequest -> human_login_sheet.dart showHumanLoginSheet (the three setup paths on the app's Raft Web origin)",
+   "justification": "In-app WebView takeover done (owner decision Kevin, 2026-10-25, #raft-flutter thread b673ca98, msg 0229eee3, which supersedes the 2026-10-21 'na' decision): an artifact link (raft-artifacts.com) opens in the app, and when its 'Login with Raft' reaches <Raft web>/login-with-raft/setup (or the legacy login-with-slock aliases) the app cancels that navigation, runs GET /oauth/clients/lookup, shows a native confirmation (app, server, requested scopes) and, only after the person confirms, POST /oauth/authorize/human with its own session, then loads the callback with code and state in the WebView. Not done (phase 2): 'Install and continue' for an app the server has not installed (the page shows Web's 'Not installed' message), and the Web page's FAQ and Log out header. A setup URL opened outside the in-app browser (system browser, another app) is still Web's.",
+   "impact": "A marketplace app that is not yet installed on the server cannot be installed from the confirmation; the person installs it from Settings > Applications first.",
+   "size": "M",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/artifact_viewer.dart",
+     "needle": "isHumanLoginSetupUri("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_login.dart",
+     "needle": "'/oauth/authorize/human'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_login.dart",
+     "needle": "'/oauth/clients/lookup'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_login_sheet.dart",
+     "needle": "class HumanLoginSheet"
+    }
+   ]
   },
   {
    "kind": "ui",
@@ -9722,14 +9739,31 @@
    "area": "integrations-apps-mcp",
    "capability": "'Login with Raft' consent page for third-party apps: client lookup, server picker with search, requested scopes, Install and continue, Login with Raft, FAQ",
    "background": false,
-   "status": "na",
+   "status": "partial",
    "webEntry": "pages/HumanLoginSetupPage (+ RequestedScopeConsent)",
    "gate": "Signed-in user",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted 'Login with Raft' consent page.",
-   "impact": "",
-   "size": ""
+   "flutterEntry": "human_login_sheet.dart HumanLoginSheet: app card, Raft Server, RequestedScopeConsent wording, Cancel / Login with Raft; install_required shows Web's message only",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/artifact_viewer.dart",
+     "needle": "isHumanLoginSetupUri("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_login.dart",
+     "needle": "'/oauth/authorize/human'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_login.dart",
+     "needle": "'/oauth/clients/lookup'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_login_sheet.dart",
+     "needle": "class HumanLoginSheet"
+    }
+   ],
+   "justification": "In-app WebView takeover done (owner decision Kevin, 2026-10-25, #raft-flutter thread b673ca98, msg 0229eee3, which supersedes the 2026-10-21 'na' decision): an artifact link (raft-artifacts.com) opens in the app, and when its 'Login with Raft' reaches <Raft web>/login-with-raft/setup (or the legacy login-with-slock aliases) the app cancels that navigation, runs GET /oauth/clients/lookup, shows a native confirmation (app, server, requested scopes) and, only after the person confirms, POST /oauth/authorize/human with its own session, then loads the callback with code and state in the WebView. Not done (phase 2): 'Install and continue' for an app the server has not installed (the page shows Web's 'Not installed' message), and the Web page's FAQ and Log out header. A setup URL opened outside the in-app browser (system browser, another app) is still Web's.",
+   "impact": "A marketplace app that is not yet installed on the server cannot be installed from the confirmation; the person installs it from Settings > Applications first.",
+   "size": "M"
   },
   {
    "kind": "ui",
@@ -14840,14 +14874,31 @@
    "area": "onboarding-auth",
    "capability": "Third-party 'Login with Raft' consent page (/login-with-raft/setup): choose server, install marketplace app, continue",
    "background": false,
-   "status": "na",
+   "status": "partial",
    "webEntry": "HumanLoginSetupPage",
    "gate": "signed in in browser; OAuth client request",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted 'Login with Raft' consent page.",
-   "impact": "",
-   "size": ""
+   "flutterEntry": "human_login_sheet.dart HumanLoginSheet (same page as ui:integrations.login-with-raft-consent-page)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/artifact_viewer.dart",
+     "needle": "isHumanLoginSetupUri("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_login.dart",
+     "needle": "'/oauth/authorize/human'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_login.dart",
+     "needle": "'/oauth/clients/lookup'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_login_sheet.dart",
+     "needle": "class HumanLoginSheet"
+    }
+   ],
+   "justification": "In-app WebView takeover done (owner decision Kevin, 2026-10-25, #raft-flutter thread b673ca98, msg 0229eee3, which supersedes the 2026-10-21 'na' decision): an artifact link (raft-artifacts.com) opens in the app, and when its 'Login with Raft' reaches <Raft web>/login-with-raft/setup (or the legacy login-with-slock aliases) the app cancels that navigation, runs GET /oauth/clients/lookup, shows a native confirmation (app, server, requested scopes) and, only after the person confirms, POST /oauth/authorize/human with its own session, then loads the callback with code and state in the WebView. Not done (phase 2): 'Install and continue' for an app the server has not installed (the page shows Web's 'Not installed' message), and the Web page's FAQ and Log out header. A setup URL opened outside the in-app browser (system browser, another app) is still Web's.",
+   "impact": "A marketplace app that is not yet installed on the server cannot be installed from the confirmation; the person installs it from Settings > Applications first.",
+   "size": "M"
   },
   {
    "kind": "ui",

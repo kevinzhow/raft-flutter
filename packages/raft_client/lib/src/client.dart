@@ -130,6 +130,9 @@ Map<String, dynamic> _errorDetails(Map? body) {
     // (COMPUTER_CAPABILITY_INSUFFICIENT) or needs a Raft Computer update
     // (MIGRATION_RESUMABLE_CAPABILITY_REQUIRED); the view validates the shape.
     'details',
+    // OAuth refusals (`invalid_scope`): the server's own sentence, which Web's
+    // Login with Raft page shows instead of the short error code.
+    'error_description',
   };
   dynamic freeze(dynamic value) {
     if (value is Map) {
@@ -159,6 +162,7 @@ Map<String, dynamic> _errorDetails(Map? body) {
       'email',
       'expiresAt',
       'providerMessage',
+      'error_description',
     }.contains(key)) {
       return value is String ? value : null;
     }

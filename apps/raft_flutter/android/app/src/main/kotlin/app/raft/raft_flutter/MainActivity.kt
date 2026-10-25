@@ -118,9 +118,11 @@ class MainActivity : FlutterActivity() {
         LaunchTheme.register(this, flutterEngine)
         NativePdfPreviewBridge(this, flutterEngine)
         NativeVideoFrameBridge(flutterEngine)
-        // Uploaded HTML previews run in an Android WebView. The app has no
-        // other WebView, so the process-wide cookie jar and web storage belong
-        // to the preview alone: never send or keep cookies, drop storage.
+        // Uploaded HTML previews run in an Android WebView. Its documents are
+        // hostile input, so the process-wide cookie jar and web storage belong
+        // to the preview while it is open: never send or keep cookies, drop
+        // storage. The artifact browser is the one other WebView; it switches
+        // cookies back on when it opens (`enableCookies`).
         // Mirrors the Web sandbox (opaque origin, no cookie/storage access).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.raft/html-preview-privacy")
             .setMethodCallHandler { call, result ->
@@ -130,6 +132,12 @@ class MainActivity : FlutterActivity() {
                         cookies.setAcceptCookie(false)
                         cookies.removeAllCookies { WebStorage.getInstance().deleteAllData(); result.success(null) }
                         cookies.flush()
+                    }
+                    // The in-app artifact browser needs its session cookie: it
+                    // switches back on what lockDown switched off.
+                    "enableCookies" -> {
+                        CookieManager.getInstance().setAcceptCookie(true)
+                        result.success(null)
                     }
                     "purge" -> {
                         val cookies = CookieManager.getInstance()

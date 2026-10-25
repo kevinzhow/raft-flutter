@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'artifact_link.dart';
+import 'artifact_viewer.dart';
+
 /// Web `markdownSanitizeSchema.ts` `MARKDOWN_EXTRA_HREF_PROTOCOLS`: the custom
 /// URL schemes a message body may link to, on top of http, https and mailto.
 /// Adding a scheme is a separate review upstream; this list mirrors it.
@@ -47,13 +50,16 @@ Future<bool> confirmCustomProtocolLink(BuildContext context, Uri uri) {
   );
 }
 
-/// Opens a link of a message body (Web MessageItem anchor): http, https and
-/// mailto go to the system; an allowlisted custom scheme asks first (task
-/// #734); every other scheme is not a link.
+/// Opens a link of a message body (Web MessageItem anchor): an artifact link
+/// opens in the app (its "Login with Raft" needs the app's session); other
+/// http, https and mailto links go to the system; an allowlisted custom scheme
+/// asks first (task #734); every other scheme is not a link.
 Future<void> openMessageLink(BuildContext context, String url) async {
   final uri = Uri.tryParse(url);
   if (uri == null) return;
-  if (['https', 'http', 'mailto'].contains(uri.scheme)) {
+  if (ArtifactLinks.matches(uri)) {
+    await openArtifactLink(context, uri);
+  } else if (['https', 'http', 'mailto'].contains(uri.scheme)) {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   } else if (isAllowedCustomProtocol(uri) &&
       await confirmCustomProtocolLink(context, uri) &&

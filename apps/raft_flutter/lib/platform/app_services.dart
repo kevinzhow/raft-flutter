@@ -4,6 +4,8 @@ import 'package:raft_ui/raft_ui.dart' show RaftLinkScope;
 
 import '../data/local_error_diagnostics.dart';
 import '../features/custom_protocol_link.dart';
+import '../features/human_login.dart' show HumanLoginApi;
+import '../features/human_login_scope.dart';
 
 import 'app_update.dart';
 import 'local_network_access.dart';
@@ -65,10 +67,15 @@ class AppServicesHost extends StatefulWidget {
     super.key,
     required this.services,
     this.ownsAppUpdate = false,
+    this.humanLogin,
     required this.child,
   });
   final AppServices services;
   final bool ownsAppUpdate;
+
+  /// The signed-in session's side of Login with Raft, for artifact links
+  /// opened from anywhere below; null while signed out.
+  final HumanLoginApi? humanLogin;
   final Widget child;
 
   @override
@@ -120,7 +127,10 @@ class _AppServicesHostState extends State<AppServicesHost>
     services: widget.services,
     // Every markdown host without a link handler of its own opens links the
     // way a message does (Web `MarkdownLink`).
-    child: RaftLinkScope(open: openMessageLink, child: widget.child),
+    child: HumanLoginScope(
+      api: widget.humanLogin,
+      child: RaftLinkScope(open: openMessageLink, child: widget.child),
+    ),
   );
 
   @override
