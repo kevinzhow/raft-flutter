@@ -113,7 +113,7 @@ test('pipeline is deterministic and committed outputs are current', { timeout: 1
       ['docs/component-recipes.md', 'docs/component-recipes.md'],
       ...files(join(runs[0], 'pkg')).map((f) => {
         const rel = relative(join(runs[0], 'pkg'), f);
-        return [join('pkg', rel), join('packages/raft_ui', rel)];
+        return [join('pkg', rel), join('packages/raft_theme', rel)];
       }),
     ];
     for (const [fresh, repoPath] of committed) {

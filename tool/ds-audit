@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure and ratchet design-system drift in apps/raft_flutter/lib and theme-contract drift in packages/raft_ui/lib.
+"""Measure and ratchet design-system drift in apps/raft_flutter/lib and theme-contract drift in components and the independent recipe engine.
 
 The scan itself is a resolved-AST Dart program (tool/ds_audit) run with the
 pinned SDK; this wrapper aggregates its findings, writes .local/ds-audit.json,
@@ -15,7 +15,8 @@ Two scopes share one baseline (files are keyed by path):
   apps/raft_flutter/lib   widget.* and style.* (Material widgets and raw style literals);
   packages/raft_ui/lib    contract.* (docs/theme-contract.md 7.3: literal colours, font sizes,
                           radii and stroke widths, theme-name branches, direct RaftRecipeTheme use).
-Generated *.g.dart files in raft_ui are not scanned for literals; their `const`
+The independent recipe tables and runtime are also scanned; theme pack data definitions are not.
+Generated *.g.dart recipe files are not scanned for literals; their `const`
 variables are counted per recipe file as `generated.recipe_constants`, which is
 informational and never fails --check.
 
@@ -40,8 +41,14 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SCOPE = 'apps/raft_flutter/lib'
 CONTRACT_SCOPE = 'packages/raft_ui/lib'
-SCOPES = [SCOPE, CONTRACT_SCOPE]
-CONTRACT_SCOPES = [CONTRACT_SCOPE]  # scanned with the theme-contract rules
+ENGINE_SCOPES = [
+    'packages/raft_theme/lib/recipes',
+    'packages/raft_theme/lib/src/css_recipe_decoration.dart',
+    'packages/raft_theme/lib/src/outer_shadow_painter.dart',
+    'packages/raft_theme/lib/src/lru_cache.dart',
+]
+SCOPES = [SCOPE, CONTRACT_SCOPE, *ENGINE_SCOPES]
+CONTRACT_SCOPES = [CONTRACT_SCOPE, *ENGINE_SCOPES]  # excludes theme-pack definitions
 BASELINE = ROOT / 'tool/ds-audit-baseline.json'
 REPORT = ROOT / '.local/ds-audit.json'
 UPDATE_HINT = 'tool/ds-audit --update-baseline'
@@ -160,7 +167,7 @@ def load_baseline():
 
 
 def scope_of(name):
-    return next((scope for scope in SCOPES if name.startswith(scope + '/')), SCOPE)
+    return next((scope for scope in SCOPES if name == scope or name.startswith(scope + '/')), SCOPE)
 
 
 def format_summary(report, top):

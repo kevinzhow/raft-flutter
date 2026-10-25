@@ -9,19 +9,22 @@ import 'package:raft_theme/raft_theme.dart';
 /// theme; these tests are what make `build_family_packs.py` output trustworthy.
 String _readPack(String relative) {
   var dir = Directory.current.absolute;
-  while (!File('${dir.path}/$relative').existsSync()) {
+  while (true) {
+    for (final candidate in [relative, 'packages/raft_theme/$relative']) {
+      final file = File.fromUri(dir.uri.resolve(candidate));
+      if (file.existsSync()) return file.readAsStringSync();
+    }
     final parent = dir.parent;
     if (parent.path == dir.path) {
       throw StateError('$relative not found above ${Directory.current.path}');
     }
     dir = parent;
   }
-  return File('${dir.path}/$relative').readAsStringSync();
 }
 
 const _families = <String, String>{
-  'elegant': 'packages/raft_theme/assets/themes/elegant.theme.json',
-  'brutal': 'packages/raft_theme/assets/themes/brutal.theme.json',
+  'elegant': 'assets/themes/elegant.theme.json',
+  'brutal': 'assets/themes/brutal.theme.json',
 };
 
 /// Raft plus both families, keyed by id, so `extends: "raft"` resolves.

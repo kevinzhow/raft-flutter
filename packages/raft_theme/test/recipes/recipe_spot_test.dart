@@ -1,7 +1,7 @@
 import 'package:flutter/animation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_ui/recipes.dart';
+import 'package:raft_theme/recipes.dart';
 
 class _FakeTokens extends RaftTokenResolver {
   const _FakeTokens();
@@ -25,7 +25,7 @@ int _utility(String name) =>
     raftRecipeUtilities.indexWhere((u) => u.name == name);
 
 // Full theme matrix on purpose (theme/token/recipe test): never sampled, see
-// package:raft_ui/test_themes.dart.
+// package:raft_theme/test_themes.dart.
 void main() {
   RaftButtonRecipeStyle button(
     RaftRecipeTheme theme, {
