@@ -10,7 +10,13 @@ import 'recipe_runtime.dart';
 /// lookups go through the CSS-keyed maps so both generators stay the single
 /// source of their names.
 class RaftRecipeTokens extends RaftTokenResolver {
-  RaftRecipeTokens(this.tokens);
+  RaftRecipeTokens(this.tokens) : _bindComponents = true;
+
+  /// Resolve the frozen source recipe for a renderer that only borrows its
+  /// original rings or sheens. Foundation colors and fonts still use [tokens].
+  RaftRecipeTokens.source(this.tokens) : _bindComponents = false;
+
+  final bool _bindComponents;
 
   final RaftTokens tokens;
 
@@ -19,6 +25,7 @@ class RaftRecipeTokens extends RaftTokenResolver {
 
   @override
   CssValue? recipeValue(RaftRecipeTokenKind kind, String name) {
+    if (!_bindComponents) return null;
     switch (kind) {
       case RaftRecipeTokenKind.number:
         final value = tokens.size(name, fallback: double.nan);
