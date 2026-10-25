@@ -5,6 +5,7 @@
   tool/parity-ext/run dom-dump [--cases <id|glob>[,...]] [--out DIR]   # diagnostic, writes no PNGs
   tool/parity-ext/run summary
   tool/parity-ext/run publish [--no-verify]
+  tool/parity-ext/run extreme [--level L] [--mode light|dark|all] [--cases GLOB] ...   # tool/parity-ext/extreme.py
 
 Same pipeline as tool/parity (official React provider spec + Playwright config
 as generated copies, Flutter provider test/parity/parity_capture_test.dart,
@@ -661,6 +662,10 @@ def main():
     import regress  # noqa: E402  (tool/parity-ext/regress.py)
     regress.add_arguments(g)
     g.set_defaults(fn=regress.command)
+    x = sub.add_parser('extreme', help='extreme-theme check (docs/theme-contract.md section 8): what the Raft look paints without reading the pack')
+    import extreme  # noqa: E402  (tool/parity-ext/extreme.py)
+    extreme.add_arguments(x)
+    x.set_defaults(fn=extreme.command)
     d = sub.add_parser('dom-dump', help='diagnostic: dump the Web DOM geometry/style of the capture target per case')
     d.add_argument('--cases', default='components.search-overlay.*', help='ids or globs (default: search overlay)')
     d.add_argument('--out', default=str(OUT / 'react-dom'))

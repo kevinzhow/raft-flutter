@@ -67,6 +67,38 @@ rule and word list in `tool/parity-ext/sampling.py`. Write your builder so the s
 variant. `--cases` globs only see the sampled manifest; set `PARITY_EXT_ALL_THEMES=1` to run an elegant case that
 sampling dropped (`PARITY_EXT_ALL_DARK=1` keeps every elegant-dark case; elegant-light stays sampled).
 
+## Extreme-theme check
+
+Finds what the Raft look paints without reading the theme pack (docs/theme-contract.md section 8, "User theme"). Flutter
+only, no Web capture, **not part of the gate**; run it under `taskset` / `nice` on a shared machine.
+
+```bash
+export PARITY_RAFT_SOURCE=<raft-source checkout>   # fixtures and the official case list
+tool/parity-ext/run extreme --plan-only            # the Raft cases it would render (regress plan, light + dark)
+tool/parity-ext/run extreme --level page --mode light --cases 'components.settings.*' --out /tmp/<you>/extreme
+tool/parity-ext/run extreme --out /mnt/data/tmp/<you>/extreme --shards 2 --jobs 2   # everything; resumes
+```
+
+How it works (`tool/parity-ext/extreme.py`, differ in `extreme_diff.py`, tests `tool/tests/test_extreme_diff.py`):
+
+1. `tool/parity-ext/extreme_pack.py` generates the test-only user pack
+   `apps/raft_flutter/test/parity/fixtures/extreme.theme.json` (`extends: raft`; every colour role and palette entry a loud
+   value per family, every geometry token moved, radii 40, strokes 0, type slots +8, fonts the pinned mono, shadows none).
+   Names come from `contract_names.g.dart`, so a new role cannot be skipped; `--check` and `packages/raft_theme/test/extreme_pack_test.dart`
+   keep it current. The harness loads it through `RaftThemePack.parse`, the path every user pack takes (override `extreme-case`, like `raft-case`).
+2. With `PARITY_PAINT_OPS=1` the harness captures the whole viewport and writes `<case>.ops.json` beside the PNG: a second paint of
+   the render tree into a recording canvas (`apps/raft_flutter/test/support/paint_ops.dart`) with each drawing call, its bounds,
+   colour, radii, stroke and the render object / widget (`--track-widget-creation` file:line) that painted it. Each case is rendered
+   in Raft, Raft with the extreme pack, and (as evidence) the normal Elegant and Brutal packs.
+3. The differ lists pixel regions identical in the Raft and extreme renders (glyph interiors, images, vector art and the test harness are
+   ignored) and maps each to the widget that painted it, and lists paint ops whose colour / radius / stroke / font size / family / shadow did
+   not move. Entries are ranked by widget class and source file; each is classed a (the same widget paints a different value in
+   Elegant or Brutal: likely defect), b (identical in all looks: possible shared form, contract 3.3) or c (no evidence).
+
+Output: `<out>/report/extreme-theme-report.md` and `.json`, `<out>/report/shots/` (side-by-sides of the worst cases). Keep the report out of the
+repo (the branch `cindy/extreme-theme-shots` holds one run). `--force-render` / `--force-analysis` redo steps; `--analyze-only` and `--report-only`
+reuse earlier renders.
+
 ## Page inventory
 
 The page inventory lists every Web page / modal / state and which have a brutal-light case (official id or extension id)

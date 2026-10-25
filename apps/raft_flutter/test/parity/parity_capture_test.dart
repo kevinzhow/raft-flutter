@@ -79,12 +79,17 @@ void main() {
     File('../../tool/reference-patches/notification-center.json')
         .readAsStringSync(),
   );
-  final patterns = (env['PARITY_CASES'] ?? '')
-      .split(',')
-      .map((p) => p.trim())
-      .where((p) => p.isNotEmpty)
-      .map((p) => RegExp('^${RegExp.escape(p).replaceAll(r'\*', '.*')}\$'))
-      .toList();
+  // PARITY_CASES_FILE: one id / glob per line (a whole-suite id list does not fit in an environment variable).
+  final casesFile = env['PARITY_CASES_FILE'];
+  final patterns =
+      ((casesFile == null
+              ? env['PARITY_CASES'] ?? ''
+              : File(casesFile).readAsLinesSync().join(',')))
+          .split(',')
+          .map((p) => p.trim())
+          .where((p) => p.isNotEmpty)
+          .map((p) => RegExp('^${RegExp.escape(p).replaceAll(r'\*', '.*')}\$'))
+          .toList();
   bool skipped(Map c) {
     final s = c['skip'];
     return s == true || (s is Map && s['enabled'] != false);

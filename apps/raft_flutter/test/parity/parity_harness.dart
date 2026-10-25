@@ -23,6 +23,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_svg/flutter_svg.dart' show vg;
 import 'package:raft_ui/raft_ui.dart';
 
+import '../support/paint_ops.dart';
+import '../support/recipe_context.dart';
 import 'geometry_dump.dart';
 
 /// Builds the real Flutter widget tree for one official case.
@@ -190,11 +192,32 @@ class ParityContext {
   if (override != null && override.endsWith('-case')) {
     final look = override.substring(0, override.length - '-case'.length);
     final dark = extTheme is String && extTheme.endsWith('dark');
+    // `extreme-case`: the test-only extreme user pack (tool/parity-ext/extreme_pack.py), loaded by
+    // [parityPackFor] through the same parser a user pack goes through.
+    if (look == 'extreme') return (pack: parityExtremePackId, dark: dark);
     return named('$look-${dark ? 'dark' : 'light'}');
   }
   if (override != null && override.isNotEmpty) return named(override);
   if (extTheme is String) return named(extTheme);
   return (pack: raftThemePackId, dark: false);
+}
+
+/// Id of the test-only extreme pack (`extreme-case`); see `fixtures/extreme.theme.json`.
+const String parityExtremePackId = 'user:extreme';
+
+RaftThemePack? _extremePack;
+
+/// The pack for [id]: a built-in one, or the extreme user pack read from disk and validated by the real loader
+/// (`RaftThemePack.parse`, the path every user pack takes). `PARITY_EXTREME_PACK` overrides the file.
+RaftThemePack parityPackFor(String id) {
+  if (id != parityExtremePackId) return packForThemeId(id);
+  return _extremePack ??= RaftThemePack.parse(
+    File(
+      Platform.environment['PARITY_EXTREME_PACK'] ??
+          'test/parity/fixtures/extreme.theme.json',
+    ).readAsStringSync(),
+    origin: 'extreme',
+  );
 }
 
 /// The selected pack and brightness recorded beside the captured image.
@@ -302,6 +325,10 @@ Future<Map<String, dynamic>> captureParityCase(
     override: Platform.environment['PARITY_THEME_OVERRIDE'],
   );
   final dark = selection.dark;
+  // Extreme-theme check (tool/parity-ext/extreme_diff.py): capture the whole viewport instead of the case's
+  // target crop (a themed size change must not change the image size), tolerate the overflow errors a huge type
+  // scale causes, and write the paint-op record of the final tree beside the image.
+  final paintOps = Platform.environment['PARITY_PAINT_OPS'] == '1';
   final ctx = ParityContext(
     caseJson: visualCase,
     fixtures: fixtures,
@@ -315,8 +342,10 @@ Future<Map<String, dynamic>> captureParityCase(
     t.view.devicePixelRatio = ctx.density;
     addTearDown(t.view.reset);
 
+    if (paintOps) installRecipeTrace();
+    addTearDown(removeRecipeTrace);
     final rootKey = GlobalKey(debugLabel: 'parity-root');
-    final raft = raftTheme(dark: dark, pack: packForThemeId(selection.pack));
+    final raft = raftTheme(dark: dark, pack: parityPackFor(selection.pack));
     final tokens = raft.extension<RaftTokens>()!;
     final selectedFonts = {
       'heading': tokens.headingFont,
@@ -385,7 +414,10 @@ Future<Map<String, dynamic>> captureParityCase(
     await t.pump();
     // Never write a capture of a build/layout error screen.
     final error = t.takeException();
-    if (error != null) {
+    if (error != null &&
+        !(paintOps &&
+            (selection.pack == parityExtremePackId ||
+                error.toString().contains('overflowed')))) {
       throw StateError('case ${ctx.id} threw while rendering: $error');
     }
 
@@ -417,19 +449,22 @@ Future<Map<String, dynamic>> captureParityCase(
       );
     }
     final targetContext = keyed ?? ctx.targetKey.currentContext;
+    Rect? paintOpsTarget;
     if ((keyed != null || ctx.targetUsed) && targetContext != null) {
       final box = targetContext.findRenderObject()! as RenderBox;
       final origin = box.localToGlobal(Offset.zero, ancestor: rootBox);
       final raw = origin & box.size;
       rect = raw.intersect(Offset.zero & size);
       if (rect != raw) targetNote = 'target clamped to viewport like React';
+      paintOpsTarget = rect;
+      if (paintOps) rect = Offset.zero & size;
     }
     // Extension element crops (`capture.androidKey`) follow Playwright's
     // element screenshot, which captures the CSS-pixel rect enclosing a
     // fractional box (floor / ceil in CSS px, then scaled: a card at
     // y = 296.5 on a 3x page starts at device row 888, not 889); official
     // crops keep their rounding.
-    final enclose = keyed != null;
+    final enclose = keyed != null && !paintOps;
     final d = ctx.density;
     final pixelRect = enclose
         ? Rect.fromLTRB(
@@ -472,6 +507,28 @@ Future<Map<String, dynamic>> captureParityCase(
     });
 
     final id = ctx.id;
+    final opsJson = paintOps
+        ? (recordPaintOps(rootBox)
+            ..['target'] = paintOpsTarget == null
+                ? null
+                : [
+                    paintOpsTarget.left,
+                    paintOpsTarget.top,
+                    paintOpsTarget.right,
+                    paintOpsTarget.bottom,
+                  ]
+            ..['density'] = ctx.density
+            ..['pack'] = selection.pack
+            ..['dark'] = dark)
+        : null;
+    String? opsText;
+    if (opsJson != null) {
+      try {
+        opsText = json.encode(opsJson);
+      } catch (error) {
+        opsText = json.encode({'error': 'ops not encodable: $error'});
+      }
+    }
     final imageFile = File('${outputDir.path}/$id.png');
     final roundedRect = {
       'x': rect.left.round(),
@@ -531,6 +588,9 @@ Future<Map<String, dynamic>> captureParityCase(
       await imageFile.writeAsBytes(png!);
       await File('${outputDir.path}/$id.metadata.json')
           .writeAsString(const JsonEncoder.withIndent('  ').convert(metadata));
+      if (opsText != null) {
+        await File('${outputDir.path}/$id.ops.json').writeAsString(opsText);
+      }
       if (parityGeometryDumpEnabled) {
         await File('${outputDir.path}/$id.geometry.txt')
             .writeAsString(parityGeometryDump(rootBox, rect, rootBox));
@@ -547,6 +607,7 @@ Future<Map<String, dynamic>> captureParityCase(
       await t.pump();
       await t.pumpWidget(const SizedBox.shrink());
       await t.pump();
+      if (paintOps) t.takeException();
     } finally {
       ctx.dispose();
     }
