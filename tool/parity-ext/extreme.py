@@ -39,6 +39,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import threading
 import time
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -104,18 +105,21 @@ def android_dir(a, job, engine, look):
 
 # ------------------------------------------------------------------------------------------------ rendering
 _PARITY = None
+_PARITY_LOCK = threading.Lock()
 
 
 def shared_dir():
     """The Web source's visual-testing shared dir (fixtures and the official case list): tool/parity's SHARED
     ($PARITY_RAFT_SOURCE)."""
     global _PARITY
-    if _PARITY is None:
-        import importlib.machinery
-        import importlib.util
-        loader = importlib.machinery.SourceFileLoader('parity_extreme_adapter', str(ROOT / 'tool/parity'))
-        _PARITY = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
-        loader.exec_module(_PARITY)
+    with _PARITY_LOCK:  # the render lanes are threads
+        if _PARITY is None:
+            import importlib.machinery
+            import importlib.util
+            loader = importlib.machinery.SourceFileLoader('parity_extreme_adapter', str(ROOT / 'tool/parity'))
+            module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
+            loader.exec_module(module)
+            _PARITY = module
     return _PARITY.SHARED
 
 
@@ -682,14 +686,8 @@ def make_shots(a, jobs, worst):
     from PIL import Image, ImageDraw
     out = pathlib.Path(a.out) / 'report/shots'
     out.mkdir(parents=True, exist_ok=True)
-    where = {}
-    for job in jobs:
-        for engine in ('official', 'ext'):
-            for cid in job[engine]:
-                where[cid] = (job, engine)
     for _, cid in worst:
-        job, engine = where[cid]
-        d = android_dir(a, job, engine, 'raft'), android_dir(a, job, engine, 'extreme')
+        d = android_dir_any(a, cid, 'raft'), android_dir_any(a, cid, 'extreme')
         doc = json.loads((pathlib.Path(a.out) / 'analysis' / f'{cid}.json').read_text())
         n, e = Image.open(d[0] / f'{cid}.png').convert('RGB'), Image.open(d[1] / f'{cid}.png').convert('RGB')
         density = json.loads((d[1] / f'{cid}.ops.json').read_text()).get('density') or 1

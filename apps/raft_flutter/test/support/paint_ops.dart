@@ -256,6 +256,31 @@ class _OpContext extends TestRecordingPaintingContext {
     }
   }
 
+  final _layers = <LayerHandle<Layer>>[];
+
+  @override
+  ColorFilterLayer pushColorFilter(
+    Offset offset,
+    ColorFilter colorFilter,
+    PaintingContextCallback painter, {
+    ColorFilterLayer? oldLayer,
+  }) {
+    // The filter changes colours, not geometry: paint the child as is.
+    painter(this, offset);
+    final layer = ColorFilterLayer();
+    _layers.add(LayerHandle<Layer>(layer));
+    return layer;
+  }
+
+  @override
+  void dispose() {
+    for (final handle in _layers) {
+      handle.layer = null;
+    }
+    _layers.clear();
+    super.dispose();
+  }
+
   @override
   OpacityLayer pushOpacity(
     Offset offset,
