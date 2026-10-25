@@ -83,6 +83,31 @@ class FrozenReferenceTests(unittest.TestCase):
 
 
 class RegressTests(unittest.TestCase):
+    def test_explicit_selection_requires_its_reference(self):
+        from argparse import Namespace
+        from unittest.mock import patch
+        args = Namespace(out='unused', plan_only=False, summary_only=True, cases='example*')
+        rows = [{'score': 0.99, 'verdict': 'passing'}, {'score': None, 'verdict': 'react-missing'}]
+        with patch.object(regress, 'plan', return_value=[]), \
+             patch.object(regress, 'manifests', return_value=([], [])), \
+             patch.object(regress.pathlib.Path, 'mkdir'), \
+             patch.object(regress, 'summarize', return_value=rows):
+            with self.assertRaises(SystemExit) as error:
+                regress.command(args)
+        self.assertEqual(error.exception.code, 1)
+
+    def test_full_run_reports_known_structural_gaps_without_failing(self):
+        from argparse import Namespace
+        from unittest.mock import patch
+        args = Namespace(out='unused', plan_only=False, summary_only=True, cases=None)
+        rows = [{'score': 0.99, 'verdict': 'passing'},
+                *[{'score': None, 'verdict': v} for v in ['react-missing', 'not-covered', 'web-not-dark']]]
+        with patch.object(regress, 'plan', return_value=[]), \
+             patch.object(regress, 'manifests', return_value=([], [])), \
+             patch.object(regress.pathlib.Path, 'mkdir'), \
+             patch.object(regress, 'summarize', return_value=rows):
+            regress.command(args)
+
     def test_empty_report_cannot_succeed(self):
         from argparse import Namespace
         from unittest.mock import patch

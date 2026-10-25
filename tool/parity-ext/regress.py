@@ -164,6 +164,8 @@ def run_job(job, a):
         if engine == 'ext':
             # the sampled manifest keeps 1-2 cases per surface for the non-default themes; the regression wants all
             env['PARITY_EXT_ALL_THEMES'] = '1'
+            if not a.cases:
+                cmd += ['--allow-structural-gaps']
         if look == 'raft':
             if engine == 'ext':
                 env['PARITY_THEME_OVERRIDE'] = 'raft-case'  # official ids are the Raft look without an override
@@ -316,6 +318,9 @@ def command(a):
     ext_full, _ = manifests(a.out)
     rows = summarize(a, ext_full)
     missing = sum(row['score'] is None for row in rows)
-    if failed or missing or not rows:
+    structural = {'react-missing', 'not-covered', 'web-not-dark'}
+    blocking = sum(row['score'] is None and (bool(getattr(a, 'cases', None)) or row.get('verdict') not in structural)
+                   for row in rows)
+    if failed or blocking or not rows or all(row['score'] is None for row in rows):
         print(f'[regress] FAILED: incomplete captures or failed jobs; {missing} case(s) without a score', file=sys.stderr)
         sys.exit(1)

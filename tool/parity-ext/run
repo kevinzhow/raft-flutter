@@ -429,6 +429,15 @@ def react_capture(cases, refresh, dom_dump=None):
     print(f'react cache: stored {stored}/{len(need)} fresh capture(s)')
     if failed:
         print(f'react: some captures failed; see {log}')
+        # Missing Web surfaces can be known coverage gaps. A browser that did
+        # not launch (or crashed) is an environment failure, including when
+        # other references were restored from the cache.
+        text = log.read_text(errors='replace')
+        return any(marker in text for marker in (
+            'browserType.launch:', "Executable doesn't exist at",
+            'Target page, context or browser has been closed',
+        ))
+    return False
 
 
 def write_react_source(hits, captured, cache_dir):
@@ -562,13 +571,18 @@ def cmd_run(a):
     chosen = parity.select(ext_cases(), a.cases)
     if not chosen:
         sys.exit(f'no extension cases match {a.cases!r}')
+    chosen_ids = {case['id'] for case in chosen}
+    previous = OUT / 'summary.json'
+    expected = {row['id'] for row in json.loads(previous.read_text()).get('cases', [])
+                if row.get('react') and row['id'] in chosen_ids} if previous.is_file() else set()
+    environment_failed = False
     if a.frozen:
         # Elegant / Brutal: the reference is the frozen a57b9dab render, not the Web (frozen_ref.py).
         found, missing = frozen_ref.install(parity.RESULTS, [c['id'] for c in chosen], frozen_ref.search_dirs('ext'))
         print(f'frozen references: {len(found)} found, {len(missing)} without a frozen image', flush=True)
         (OUT / 'frozen-missing.json').write_text(json.dumps(missing, indent=1))
     else:
-        react_capture(chosen, a.refresh_react)
+        environment_failed = react_capture(chosen, a.refresh_react) is True
     if not a.skip_flutter:
         os.environ['PARITY_MANIFEST'] = str(MANIFEST)
         os.environ['PARITY_EXT_FIXTURES'] = str(FIXTURES)
@@ -588,10 +602,16 @@ def cmd_run(a):
     t = summary['totals']
     print(f"extension {parity.PAIR}: {t['passing']}/{t['total']} passing = {t['percentage']}% (official 96%); "
           f"geometry pass {t['geometryPass']}/{t['total']} = {t['geometryPercentage']}%")
-    # Keep the diagnostic report, but an incomplete pair cannot be a successful run.
-    missing = sum(t.get(key, 0) for key in ('reactMissing', 'flutterCaptureFailed', 'notCovered'))
-    if missing:
-        print(f'extension capture incomplete: {missing} case(s) lack a reference or Flutter capture', file=sys.stderr)
+    # Full runs retain known structural gaps. Explicit selections and references
+    # that succeeded in this output directory before must remain capturable.
+    missing = t.get('flutterCaptureFailed', 0)
+    if not getattr(a, 'allow_structural_gaps', False):
+        missing += t.get('reactMissing', 0) + t.get('notCovered', 0)
+    lost = {row['id'] for row in summary.get('cases', []) if row['id'] in expected and not row.get('react')}
+    no_references = t['total'] > 0 and t.get('reactCaptured', 0) == 0
+    if environment_failed or missing or lost or no_references:
+        print(f'extension capture failed: {missing} required capture(s) missing, {len(lost)} previous reference(s) lost; '
+              f'browser failure={environment_failed}, no references={no_references}', file=sys.stderr)
         sys.exit(1)
 
 
@@ -661,6 +681,8 @@ def main():
     r.add_argument('--skip-flutter', action='store_true')
     r.add_argument('--frozen', action='store_true',
                    help='compare against the frozen a57b9dab images (Elegant / Brutal looks) instead of the Web render')
+    r.add_argument('--allow-structural-gaps', action='store_true',
+                   help='full-suite mode: report known missing Web/frozen surfaces without failing; capture failures still fail')
     r.set_defaults(fn=cmd_run)
     g = sub.add_parser('regress', help='three-level (frame / page / component) x look (raft / elegant / brutal) regression')
     import regress  # noqa: E402  (tool/parity-ext/regress.py)
