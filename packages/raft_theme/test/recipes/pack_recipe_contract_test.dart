@@ -4,12 +4,41 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_theme/raft_theme.dart';
 import 'package:raft_theme/recipes.dart';
 
+Directory _themePackage() {
+  var ancestor = Directory.current;
+  while (true) {
+    for (final candidate in [
+      ancestor,
+      Directory.fromUri(ancestor.uri.resolve('packages/raft_theme/')),
+    ]) {
+      final pubspec = File.fromUri(candidate.uri.resolve('pubspec.yaml'));
+      if (pubspec.existsSync() &&
+          RegExp(
+            r'^name: raft_theme$',
+            multiLine: true,
+          ).hasMatch(pubspec.readAsStringSync())) {
+        return candidate;
+      }
+    }
+    final parent = ancestor.parent;
+    if (parent.path == ancestor.path) {
+      throw StateError(
+        'Cannot locate the raft_theme package from ${Directory.current.path}',
+      );
+    }
+    ancestor = parent;
+  }
+}
+
 void main() {
   test('the independent package has no application or raft_ui dependency', () {
-    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final package = _themePackage().uri;
+    final pubspec = File.fromUri(package.resolve('pubspec.yaml'))
+        .readAsStringSync();
+    expect(pubspec, matches(RegExp(r'^name: raft_theme$', multiLine: true)));
     expect(pubspec, isNot(matches(RegExp(r'^\s+raft_ui:', multiLine: true))));
-    for (final file in Directory(
-      'lib',
+    for (final file in Directory.fromUri(
+      package.resolve('lib/'),
     ).listSync(recursive: true).whereType<File>()) {
       if (!file.path.endsWith('.dart')) continue;
       expect(

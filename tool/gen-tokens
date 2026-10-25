@@ -1559,7 +1559,7 @@ RAFT_SOURCE_DEFAULT = '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d
 CHROMIUM_ARGS = ['--disable-lcd-text', '--font-render-hinting=none']  # tool/parity CHROMIUM_TEXT_ARGS['android']
 ORACLE_SCOPES = (('brutal', {'theme': 'brutal'}), ('elegantLight', {'theme': 'elegant', 'class': 'light'}),
                  ('elegantDark', {'theme': 'elegant', 'class': 'dark'}))
-RECIPES_DIR = ROOT / 'packages/raft_ui/lib/src/recipes'
+RECIPES_DIR = ROOT / 'packages/raft_theme/lib/recipes'
 
 
 def oracle_css(m: Model):
