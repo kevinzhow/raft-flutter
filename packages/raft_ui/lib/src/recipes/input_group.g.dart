@@ -92,6 +92,8 @@ abstract final class RaftInputGroupRecipe {
       [theme.name, align?.css, variant?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftInputGroupRecipeStyle(
       root: s[0],
@@ -115,6 +117,8 @@ abstract final class RaftInputGroupRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

@@ -61,6 +61,8 @@ abstract final class RaftMessageEmbedRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftMessageEmbedRecipeStyle(
       root: s[0],
@@ -84,6 +86,8 @@ abstract final class RaftMessageEmbedRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

@@ -69,6 +69,8 @@ abstract final class RaftLabelRecipe {
       [theme.name, size?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftLabelRecipeStyle(root: s[0], asterisk: s[1], sub: s[2]);
   }
@@ -87,6 +89,8 @@ abstract final class RaftLabelRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

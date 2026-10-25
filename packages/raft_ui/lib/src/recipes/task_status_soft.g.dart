@@ -59,6 +59,8 @@ abstract final class RaftTaskStatusSoftRecipe {
       [status?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftTaskStatusSoftRecipeStyle(base: s[0]);
   }
@@ -77,6 +79,8 @@ abstract final class RaftTaskStatusSoftRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

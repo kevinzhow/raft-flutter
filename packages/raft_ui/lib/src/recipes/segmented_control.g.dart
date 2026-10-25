@@ -63,6 +63,8 @@ abstract final class RaftSegmentedControlRecipe {
       [theme.name, disabled?.toString()],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftSegmentedControlRecipeStyle(
       root: s[0],
@@ -86,6 +88,8 @@ abstract final class RaftSegmentedControlRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

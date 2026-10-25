@@ -114,6 +114,8 @@ abstract final class RaftProgressRecipe {
       [theme.name, variant?.css, size?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftProgressRecipeStyle(
       root: s[0],
@@ -139,6 +141,8 @@ abstract final class RaftProgressRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

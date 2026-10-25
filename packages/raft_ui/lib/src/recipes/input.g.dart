@@ -29,6 +29,33 @@ abstract final class RaftInputRecipe {
     RaftRecipeAxis('theme', ['brutal', 'elegant'], null, false),
   ];
 
+  static const List<RaftRecipePackBinding> _packBindings = [
+    RaftRecipePackBinding(
+      'root',
+      'border-top-left-radius',
+      RaftRecipeTokenKind.number,
+      'radius.control',
+    ),
+    RaftRecipePackBinding(
+      'root',
+      'border-top-right-radius',
+      RaftRecipeTokenKind.number,
+      'radius.control',
+    ),
+    RaftRecipePackBinding(
+      'root',
+      'border-bottom-left-radius',
+      RaftRecipeTokenKind.number,
+      'radius.control',
+    ),
+    RaftRecipePackBinding(
+      'root',
+      'border-bottom-right-radius',
+      RaftRecipeTokenKind.number,
+      'radius.control',
+    ),
+  ];
+
   static RaftInputRecipeStyle resolve({
     required RaftRecipeTheme theme,
     RaftRecipeStates states = RaftRecipeStates.none,
@@ -42,6 +69,9 @@ abstract final class RaftInputRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
+      bindings: _packBindings,
     );
     return RaftInputRecipeStyle(root: s[0]);
   }
@@ -60,6 +90,9 @@ abstract final class RaftInputRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
+      bindings: _packBindings,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

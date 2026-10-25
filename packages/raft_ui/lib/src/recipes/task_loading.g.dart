@@ -45,6 +45,8 @@ abstract final class RaftTaskLoadingRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftTaskLoadingRecipeStyle(list: s[0], row: s[1]);
   }
@@ -63,6 +65,8 @@ abstract final class RaftTaskLoadingRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

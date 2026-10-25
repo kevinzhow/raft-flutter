@@ -92,6 +92,8 @@ abstract final class RaftHeadingRecipe {
       [level?.css, variant?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftHeadingRecipeStyle(base: s[0]);
   }
@@ -110,6 +112,8 @@ abstract final class RaftHeadingRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

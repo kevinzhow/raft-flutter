@@ -76,6 +76,8 @@ abstract final class RaftTaskChipRecipe {
       [theme.name, status?.css, variant?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftTaskChipRecipeStyle(root: s[0]);
   }
@@ -94,6 +96,8 @@ abstract final class RaftTaskChipRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

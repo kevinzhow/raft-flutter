@@ -75,6 +75,8 @@ abstract final class RaftDotRecipe {
       [theme.name, variant?.css],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftDotRecipeStyle(root: s[0]);
   }
@@ -93,6 +95,8 @@ abstract final class RaftDotRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

@@ -61,6 +61,8 @@ abstract final class RaftConversationPanelRecipe {
       [theme.name],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftConversationPanelRecipeStyle(
       root: s[0],
@@ -84,6 +86,8 @@ abstract final class RaftConversationPanelRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

@@ -152,6 +152,8 @@ abstract final class RaftMessageItemRecipe {
       [theme.name, compact?.toString()],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return RaftMessageItemRecipeStyle(
       root: s[0],
@@ -189,6 +191,8 @@ abstract final class RaftMessageItemRecipe {
       [for (final a in axes) props[a.name]],
       states,
       tokens,
+      recipeName: recipeName,
+      slotNames: slotNames,
     );
     return {for (var i = 0; i < slotNames.length; i++) slotNames[i]: s[i]};
   }

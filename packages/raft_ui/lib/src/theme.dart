@@ -186,6 +186,9 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   RaftComponentColors get components => tokenSet.components;
   RaftThemeShadows get themeShadows => tokenSet.shadows;
 
+  /// Whether the pack defines a shadow role, including an explicitly empty one.
+  bool hasShadowRole(String role) => _mode?.shadows.containsKey(role) ?? false;
+
   /// Named component shadow layers from the resolved pack, in CSS paint order.
   List<RaftCssShadow> shadowLayers(String role) => [
     for (final layer in _mode?.shadows[role] ?? const <RaftShadowSpec>[])
