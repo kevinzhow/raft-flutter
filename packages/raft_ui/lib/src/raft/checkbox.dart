@@ -126,7 +126,9 @@ class RaftCheckboxIndicator extends StatelessWidget {
                 size: inline?.markSize ?? (svg?.width ?? size) * markScale,
                 strokeWidth:
                     inline?.markStrokeWidth ??
-                    (stroke is CssNum ? stroke.value : 2),
+                    (stroke is CssNum
+                        ? stroke.value
+                        : const RaftIcon(RaftGlyph.check).strokeWidth),
                 color: inline?.markColor ?? root.foreground(rt),
               )
             : null,

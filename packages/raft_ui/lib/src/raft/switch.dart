@@ -159,10 +159,12 @@ class _SlotPaint {
     final count = a.rings.length > b.rings.length
         ? a.rings.length
         : b.rings.length;
-    const none = RaftRing(0, Color(0x00000000));
+    // CSS pads the shorter shadow list with transparent zero-spread layers.
+    RaftRing absent(RaftRing other) =>
+        RaftRing(0, other.color.withValues(alpha: 0));
     RaftRing ring(int i) {
-      final x = i < a.rings.length ? a.rings[i] : none;
-      final y = i < b.rings.length ? b.rings[i] : none;
+      final x = i < a.rings.length ? a.rings[i] : absent(b.rings[i]);
+      final y = i < b.rings.length ? b.rings[i] : absent(a.rings[i]);
       return RaftRing(
         x.spread + (y.spread - x.spread) * t,
         raftCssColorLerp(x.color, y.color, t)!,
