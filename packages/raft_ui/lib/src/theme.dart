@@ -121,6 +121,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     this.colors, {
     RaftTokenSet? tokens,
     RaftModeValues? mode,
+    this.themeOverrides,
     this.systemFonts = false,
     this.systemFontFamilies = const RaftFontFamilies(),
     this.textLocale,
@@ -163,6 +164,9 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       Map.unmodifiable({...raftColorMap(set), ...mode.colors, ...mode.palette}),
       tokens: set,
       mode: mode,
+      themeOverrides: themePack.builtIn
+          ? null
+          : (dark ? themePack.dark : themePack.light),
       systemFonts: systemFonts,
       systemFontFamilies: systemFontFamilies,
       textLocale: textLocale,
@@ -193,6 +197,11 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
 
   /// Resolved pack data supplied to the independent recipe engine.
   RaftModeValues? get themeValues => _mode;
+
+  /// Values explicitly declared by a user pack, before built-in defaults are
+  /// merged. Components apply these after source recipes: an explicit default
+  /// value must still win over structural selectors such as `:first-child`.
+  final RaftModeValues? themeOverrides;
 
   /// Every generated tier for this theme.
   RaftTokenSet get tokenSet =>
@@ -393,6 +402,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
           colors ?? this.colors,
           tokens: _tokens,
           mode: _mode,
+          themeOverrides: themeOverrides,
           systemFonts: systemFonts,
           systemFontFamilies: systemFontFamilies,
           textLocale: textLocale ?? this.textLocale,
