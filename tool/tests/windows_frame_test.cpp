@@ -202,8 +202,12 @@ void NativeHoverDoesNotStartFlutterTracking() {
   Check(w.changes == changes + 1, "native maximize hover must update shared paint state once");
   SendMessageW(w.hwnd, WM_NCMOUSEMOVE, HTMAXBUTTON, w.Point(641,25));
   Check(w.changes == changes + 1, "stationary native hover must not repeatedly notify Dart");
+  SendMessageW(w.hwnd, WM_NCMOUSEMOVE, HTTOP, w.Point(641,1));
+  Check(!w.frame->state().maximize_hovered,
+        "moving from maximize to another nonclient region must clear the highlight");
+  SendMessageW(w.hwnd, WM_NCMOUSEMOVE, HTMAXBUTTON, w.Point(641,25));
   SendMessageW(w.hwnd, WM_NCMOUSELEAVE, 0, 0);
-  Check(w.changes == changes + 2, "native hover leave must clear shared paint state once");
+  Check(w.changes == changes + 4, "native hover leave must clear shared paint state once");
 }
 void CloseOwnership() {
   Window w;

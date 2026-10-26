@@ -139,10 +139,10 @@ std::optional<LRESULT> WindowsFrame::HandleMessage(UINT message, WPARAM wp, LPAR
       return 0;
     }
     case WM_NCHITTEST: return HitTest(ScreenPoint(lp));
-    case WM_NCMOUSEMOVE:
+    case WM_NCMOUSEMOVE: {
+      const auto before = state_;
+      state_.maximize_hovered = wp == HTMAXBUTTON;
       if (wp == HTMAXBUTTON) {
-        const auto before = state_;
-        state_.maximize_hovered = true;
         if (!tracking_max_) {
           TRACKMOUSEEVENT tracking{sizeof(TRACKMOUSEEVENT), TME_NONCLIENT | TME_LEAVE, window_, 0};
           TrackMouseEvent(&tracking); tracking_max_ = true;
@@ -150,10 +150,11 @@ std::optional<LRESULT> WindowsFrame::HandleMessage(UINT message, WPARAM wp, LPAR
         // Forwarding WM_MOUSEMOVE to Flutter starts client TME_LEAVE tracking
         // on its child HWND, competing with this nonclient track. Report only
         // paint state; let DefWindowProc own the native snap-hover lifecycle.
-        NotifyIfChanged(before);
         // DefWindowProc still sees HTMAXBUTTON and can present Win11 snap layouts.
       }
+      NotifyIfChanged(before);
       break;
+    }
     case WM_NCMOUSELEAVE:
       if (tracking_max_) {
         const auto before = state_;
