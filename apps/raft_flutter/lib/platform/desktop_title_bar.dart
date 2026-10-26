@@ -7,6 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'window_title.dart';
+import 'desktop_caption_controls.dart';
 
 /// Who paints the desktop title bar.
 enum DesktopTitleBarMode {
@@ -33,6 +34,10 @@ class DesktopTitleBarState {
     this.fullscreen = false,
     this.leadingInset = 0,
     this.integrated = false,
+    this.customControls = false,
+    this.maximized = false,
+    this.active = true,
+    this.buttonLayout = ':minimize,maximize,close',
   });
 
   /// The title bar's height in logical pixels; zero when the window has none.
@@ -46,6 +51,9 @@ class DesktopTitleBarState {
 
   /// The native host owns the shared frame even during a zero-height layout.
   final bool integrated;
+  /// Capability flag: older runners retain their system decoration.
+  final bool customControls, maximized, active;
+  final String buttonLayout;
 
   @override
   bool operator ==(Object other) =>
@@ -53,10 +61,23 @@ class DesktopTitleBarState {
       other.height == height &&
       other.fullscreen == fullscreen &&
       other.leadingInset == leadingInset &&
-      other.integrated == integrated;
+      other.integrated == integrated &&
+      other.customControls == customControls &&
+      other.maximized == maximized &&
+      other.active == active &&
+      other.buttonLayout == buttonLayout;
 
   @override
-  int get hashCode => Object.hash(height, fullscreen, leadingInset, integrated);
+  int get hashCode => Object.hash(
+    height,
+    fullscreen,
+    leadingInset,
+    integrated,
+    customControls,
+    maximized,
+    active,
+    buttonLayout,
+  );
 }
 
 /// The colours the title bar wears, from the rail recipe of the current theme.
@@ -195,6 +216,12 @@ class DesktopTitleBarController {
                 ? state.value.leadingInset
                 : macosControlsInset)
           : measuredInset,
+      customControls: value['customControls'] == true,
+      maximized: value['maximized'] == true,
+      active: value['active'] != false,
+      buttonLayout: value['buttonLayout'] is String
+          ? value['buttonLayout'] as String
+          : ':minimize,maximize,close',
     );
   }
 
@@ -204,9 +231,7 @@ class DesktopTitleBarController {
   /// Window controls remain native; the row reserves [state]'s leading inset.
   Future<void> setIntegrated(bool enabled, {double height = 48}) async {
     await start();
-    if (mode == DesktopTitleBarMode.none ||
-        mode == DesktopTitleBarMode.nativeWithRule ||
-        _integrated == (enabled, height)) {
+    if (mode == DesktopTitleBarMode.none || _integrated == (enabled, height)) {
       return;
     }
     _integrated = (enabled, height);
@@ -250,6 +275,25 @@ class DesktopTitleBarController {
   Future<void> startDragging() => _fire('startDragging');
 
   Future<void> doubleClick() => _fire('doubleClick');
+
+  Future<void> captionAction(String action) => _fire(action);
+  Map<String, Object>? _captionRects;
+  Future<void> setCaptionButtonRects(Map<String, Object> rects) async {
+    final old = _captionRects;
+    if (old != null &&
+        old.length == rects.length &&
+        rects.entries.every(
+          (entry) => mapEquals(old[entry.key] as Map?, entry.value as Map),
+        )) {
+      return;
+    }
+    _captionRects = rects;
+    try {
+      await _channel.invokeMethod<void>('setCaptionButtonRects', rects);
+    } on MissingPluginException {
+      // Older runners keep native hit testing.
+    }
+  }
 
   Future<void> _fire(String method) async {
     try {
@@ -356,14 +400,28 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
         final macFrame =
             controller.mode == DesktopTitleBarMode.strip &&
             (state.integrated || state.height > 0 || state.fullscreen);
+        final custom = state.customControls;
+        final windows = controller.mode == DesktopTitleBarMode.nativeWithRule;
+        final layout = DesktopCaptionLayout.parse(state.buttonLayout);
+        final showButtons = custom && !state.fullscreen;
+        final leading = showButtons
+            ? layout.inset(layout.leading, windows: windows)
+            : 0.0;
+        final trailing = showButtons
+            ? layout.inset(layout.trailing, windows: windows)
+            : 0.0;
         final draggable =
             widget.integrated &&
-            (controller.mode == DesktopTitleBarMode.strip ||
-                controller.mode == DesktopTitleBarMode.native);
+            (custom ||
+                (controller.mode == DesktopTitleBarMode.strip ||
+                    controller.mode == DesktopTitleBarMode.native));
         final content = DesktopTitleBarScope(
-          leadingInset: widget.integrated && !state.fullscreen
+          leadingInset: custom
+              ? leading
+              : widget.integrated && !state.fullscreen
               ? state.leadingInset
               : 0,
+          trailingInset: trailing,
           onDragStart: draggable
               ? () => unawaited(controller.startDragging())
               : null,
@@ -373,18 +431,59 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
           child: RaftWindowChromeScope(
             // ds-allow: native window-control bounds, independent of theme spacing.
             overlayInsets: EdgeInsets.only(
-              top: macFrame && widget.integrated && !state.fullscreen
+              top: (macFrame || custom) && widget.integrated && !state.fullscreen
                   ? widget.integratedHeight
                   : 0,
             ),
             child: RaftAuthHeaderScope(
-              external: macFrame && !widget.integrated,
+              external: (macFrame || custom) && !widget.integrated,
               child: child!,
             ),
           ),
         );
         if (controller.mode == DesktopTitleBarMode.strip && !macFrame) {
           return content;
+        }
+        if (custom) {
+          final body = widget.integrated
+              ? content
+              : RaftDesktopTitleBar(
+                  height: widget.integratedHeight,
+                  title: Padding(
+                    // ds-allow: native caption content inset measured from Desktop 1.21.33.
+                    padding: EdgeInsets.only(left: leading + 32),
+                    child: const Align(
+                      alignment: Alignment.centerLeft,
+                      child: RaftBrandMark(RaftBrandMarkKind.logo, height: 20),
+                    ),
+                  ),
+                  onDragStart: () => unawaited(controller.startDragging()),
+                  onDoubleTap: () => unawaited(controller.doubleClick()),
+                  child: content,
+                );
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              body,
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                height: widget.integratedHeight,
+                child: DesktopCaptionControls(
+                  layout: layout,
+                  windows: windows,
+                  visible: showButtons,
+                  maximized: state.maximized,
+                  active: state.active,
+                  onAction: (action) =>
+                      unawaited(controller.captionAction(action)),
+                  onRects: (rects) =>
+                      unawaited(controller.setCaptionButtonRects(rects)),
+                ),
+              ),
+            ],
+          );
         }
         if (controller.mode == DesktopTitleBarMode.native ||
             (widget.integrated && !nativeCaption)) {
@@ -432,12 +531,13 @@ class DesktopTitleBarScope extends InheritedWidget {
   const DesktopTitleBarScope({
     super.key,
     required this.leadingInset,
+    this.trailingInset = 0,
     this.onDragStart,
     this.onDoubleTap,
     required super.child,
   });
 
-  final double leadingInset;
+  final double leadingInset, trailingInset;
   final VoidCallback? onDragStart;
   final VoidCallback? onDoubleTap;
 
@@ -447,6 +547,7 @@ class DesktopTitleBarScope extends InheritedWidget {
   @override
   bool updateShouldNotify(DesktopTitleBarScope oldWidget) =>
       leadingInset != oldWidget.leadingInset ||
+      trailingInset != oldWidget.trailingInset ||
       onDragStart != oldWidget.onDragStart ||
       onDoubleTap != oldWidget.onDoubleTap;
 }

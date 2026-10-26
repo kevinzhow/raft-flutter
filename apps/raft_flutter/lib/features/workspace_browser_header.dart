@@ -33,6 +33,7 @@ class WorkspaceBrowserHeader extends StatelessWidget {
       key: const ValueKey('workspace-top-bar'),
       searchKey: searchKey,
       leadingInset: native?.leadingInset ?? 0,
+      trailingInset: native?.trailingInset ?? 0,
       onDragStart: native?.onDragStart,
       onDoubleTap: native?.onDoubleTap,
       navigation: desktop
