@@ -266,17 +266,23 @@ class RaftSegmentedTrack extends StatelessWidget {
       );
     }
 
+    // The track is the control radius plus its inset: the official source nests
+    // `rounded-[11px]` around `p-[3px]` holding a `rounded-control` (8px) segment,
+    // so the two corners stay concentric.
+    final inset = 3.0;
+    final trackRadius = t.size('radius.control', fallback: 8) + inset;
+    final trackCorners = BorderRadius.circular(
+      trackRadius >= 999 ? 999 : trackRadius,
+    );
     if (expand) {
       return DecoratedBox(
         decoration: BoxDecoration(
           color: ui.fillMuted,
-          borderRadius: BorderRadius.circular(
-            t.size('radius.control', fallback: 8) + 3,
-          ),
+          borderRadius: trackCorners,
         ),
         child: Padding(
-          // ignore: raft_lints/off_grid_spacing -- the track's `p-[3px]` is an explicit arbitrary value in the raft-ui source.
-          padding: const EdgeInsets.all(3),
+          // ignore: raft_lints/off_grid_spacing -- the track's `p-[3px]` is an explicit arbitrary value in the raft-ui source (3px ink-to-sticker inset), not a spacing step.
+          padding: EdgeInsets.all(inset),
           child: Row(
             spacing: 2,
             children: [for (final child in children) Expanded(child: child)],
@@ -284,18 +290,10 @@ class RaftSegmentedTrack extends StatelessWidget {
         ),
       );
     }
-
-    // The track is the control radius plus its inset: the official source nests
-    // `rounded-[11px]` around `p-[3px]` holding a `rounded-control` (8px) segment,
-    // so the two corners stay concentric.
-    final inset = 3.0;
-    final trackRadius = t.size('radius.control', fallback: 8) + inset;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: ui.fillMuted,
-        borderRadius: BorderRadius.circular(
-          trackRadius >= 999 ? 999 : trackRadius,
-        ),
+        borderRadius: trackCorners,
       ),
       child: shrinkFrame
           ? _ShrinkingFrame(
