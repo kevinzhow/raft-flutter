@@ -876,9 +876,7 @@ class RaftAgentMoreDisclosure extends StatelessWidget {
                     expanded: open,
                     child: RaftCssOuterShadow(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          t.size('radius.control', fallback: 8),
-                        ),
+                        borderRadius: BorderRadius.circular(t.radius),
                         boxShadow: state.focusVisible ? t.focusShadows : null,
                       ),
                       child: row(hovered: state.hovered),

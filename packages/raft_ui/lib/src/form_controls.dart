@@ -218,8 +218,7 @@ class RaftField extends StatelessWidget {
           Row(
             spacing: _tw * 2,
             children: [
-              Flexible(child: labelText),
-              const Spacer(),
+              Expanded(child: labelText),
               SizedBox(
                 height:
                     (_tw * 8 -
