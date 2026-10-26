@@ -4,6 +4,8 @@
 // card of the current stage (connect, OAuth, channel pairs, preflight, enable,
 // health), plus the disconnect action. The app adapter owns the provisioning
 // requests, the draft channel pairs and every transition.
+import 'steps.dart';
+
 import 'package:flutter/material.dart';
 
 import 'banner.dart';
@@ -313,6 +315,14 @@ class RaftSlackWizardView extends StatelessWidget {
       _ => 1,
     };
     const labels = ['Connect', 'Channels', 'Health'];
+    // Raft look: raft-ui `Steps` (Web `SlackBridgeProgress`); the frozen looks keep the three pills.
+    if (t.isRaftLook) {
+      return RaftSteps(
+        semanticLabel: 'Slack bridge setup progress',
+        current: active,
+        steps: [for (final label in labels) RaftStep(title: label)],
+      );
+    }
     Widget step(int i) {
       final done = i < active, current = i == active;
       final Color fill = done

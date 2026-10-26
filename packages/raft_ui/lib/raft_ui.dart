@@ -79,6 +79,7 @@ export 'src/picker_trigger_button.dart';
 export 'src/radio_group.dart';
 export 'src/toggle_group.dart';
 export 'src/select_field.dart';
+export 'src/steps.dart';
 export 'src/overlays/dialog.dart';
 export 'src/recipes/button_variants.g.dart'
     show RaftButtonRecipeVariant, RaftButtonRecipeSize;
