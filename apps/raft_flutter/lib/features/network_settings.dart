@@ -315,7 +315,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
             title: 'Proxy',
             description: 'Choose how Raft reaches the network. Only HTTP proxies are supported.',
             child: RaftSegmentedControl<ProxyMode>(
-              style: RaftSegmentedStyle.tabs,
+              legacyStyle: RaftSegmentedStyle.tabs,
               value: mode,
               label: 'Proxy',
               items: [

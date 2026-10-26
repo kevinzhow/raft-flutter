@@ -5,12 +5,12 @@
 // app owns the request, the URL validation and the wire contract; the layout
 // and the copy live here.
 import 'raft/checkbox.dart' show RaftCheckbox;
+
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart' show RaftTypography;
 import 'icons.dart';
-import 'indicators.dart'
-    show RaftBadge, RaftStatusDot, RaftStatusDotSize;
+import 'indicators.dart' show RaftBadge, RaftStatusDot, RaftStatusDotSize;
 import 'localization.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart'

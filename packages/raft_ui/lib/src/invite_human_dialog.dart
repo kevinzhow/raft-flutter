@@ -3,6 +3,8 @@
 // Input + optional role Select + remove), "Add Another", the join-link field
 // with its limits, and Cancel / Send invites. Presentation only: the app owns
 // requests, billing gates and navigation.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
 import 'label.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 
@@ -200,12 +202,13 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              RaftRecipeSegmentedControl<String>(
+              RaftSegmentedControl<String>(
+                legacyStyle: RaftSegmentedStyle.recipe,
                 value: tab,
                 label: raftText(context, 'Invite method'),
                 items: const [
-                  ('email', null, 'By Email'),
-                  ('link', null, 'By Link'),
+                  RaftSegmentedOption(value: 'email', label: 'By Email'),
+                  RaftSegmentedOption(value: 'link', label: 'By Link'),
                 ],
                 onChanged: (v) => setState(() => tab = v),
               ),

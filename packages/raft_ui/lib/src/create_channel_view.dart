@@ -3,6 +3,8 @@
 // with Name, Description (optional), Visibility segmented control, Members
 // (optional) search + AGENTS/HUMANS picker and Cancel/Create Channel. The app
 // adapter owns loading, selection state and the create command.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
 import 'card.dart' show RaftCard;
 import 'raft/checkbox.dart' show RaftCheckboxIndicator;
 import 'raft/ui_tokens.dart';
@@ -117,12 +119,21 @@ class RaftCreateChannelDialogView extends StatelessWidget {
               label: 'Visibility',
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: RaftRecipeSegmentedControl<String>(
+                child: RaftSegmentedControl<String>(
+                  legacyStyle: RaftSegmentedStyle.recipe,
                   label: raftText(context, 'Channel visibility'),
                   value: visibility,
                   items: const [
-                    ('public', RaftGlyph.hash, 'Public'),
-                    ('private', RaftGlyph.lock, 'Private'),
+                    RaftSegmentedOption(
+                      value: 'public',
+                      glyph: RaftGlyph.hash,
+                      label: 'Public',
+                    ),
+                    RaftSegmentedOption(
+                      value: 'private',
+                      glyph: RaftGlyph.lock,
+                      label: 'Private',
+                    ),
                   ],
                   onChanged: submitting ? null : onVisibilityChanged,
                 ),

@@ -113,7 +113,7 @@ final _cases = <_Case>[
     'RaftSegmentedControl.tabs',
     (l) => RaftSegmentedControl<int>(
       value: 0,
-      style: RaftSegmentedStyle.tabs,
+      legacyStyle: RaftSegmentedStyle.tabs,
       onChanged: (_) {},
       items: [
         RaftSegmentedOption(value: 0, label: l),
@@ -122,11 +122,15 @@ final _cases = <_Case>[
     ),
   ),
   _Case(
-    'RaftRecipeSegmentedControl',
-    (l) => RaftRecipeSegmentedControl<int>(
+    'RaftSegmentedControl (recipe style)',
+    (l) => RaftSegmentedControl<int>(
+      legacyStyle: RaftSegmentedStyle.recipe,
       value: 0,
       onChanged: (_) {},
-      items: [(0, null, l), (1, null, l)],
+      items: [
+        RaftSegmentedOption(value: 0, label: l),
+        RaftSegmentedOption(value: 1, label: l),
+      ],
     ),
   ),
   _Case(

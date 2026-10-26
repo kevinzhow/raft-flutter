@@ -2496,7 +2496,7 @@ class _ResourceViewState extends State<ResourceView> {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: RaftSegmentedControl<String>(
-                        style: RaftSegmentedStyle.tabs,
+                        legacyStyle: RaftSegmentedStyle.tabs,
                         value: ['all', 'unread', 'mentions'].contains(filter)
                             ? filter
                             : '',
@@ -3616,7 +3616,7 @@ class _ResourceViewState extends State<ResourceView> {
                 shrinkFrame: t.option('resource.rows', or: 'cards') == 'flat',
                 // ThreadsInbox uses the raft-ui SegmentedControl recipe,
                 // rather than the older 11px tab-button presentation.
-                style: RaftSegmentedStyle.buttons,
+                legacyStyle: RaftSegmentedStyle.buttons,
                 value: ['all', 'unread', 'mentions'].contains(filter)
                     ? filter
                     : '',
@@ -5098,7 +5098,7 @@ class _ResourceViewState extends State<ResourceView> {
                   onPressed: () => createTask(sourceScope: scope),
                 ),
               RaftSegmentedControl<String>(
-                style: RaftSegmentedStyle.taskViews,
+                legacyStyle: RaftSegmentedStyle.taskViews,
                 value: taskLayout,
                 visualHeight: RaftMetrics.buttonMd,
                 minimumTargetSize: RaftMetrics.buttonMd,

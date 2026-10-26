@@ -6,18 +6,15 @@
 // My apps tabs, the search / category / layout filters, the three app
 // collections (grid or list), and the listing / installed-app detail cards.
 // The app supplies the projected rows and callbacks; class lists live here.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption;
 import 'card.dart' show RaftCard;
 
 import 'package:flutter/material.dart';
 
 import 'raft_underline.dart';
 import 'system_inset.dart';
-import 'design_primitives.dart'
-    show
-        RaftInteractive,
-        RaftSegmentedControl,
-        RaftSegmentedOption,
-        RaftTypography;
+import 'design_primitives.dart' show RaftInteractive, RaftTypography;
 import 'dialog_card.dart' show RaftCloseButton;
 import 'error_presentation.dart';
 import 'icons.dart';

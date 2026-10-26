@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+
 import 'package:raft_theme/raft_theme.dart' show RaftThemePack;
 
 import 'design_primitives.dart';
 import 'icons.dart';
-import 'dialog_card.dart';
 import 'localization.dart';
 import 'theme.dart';
 import 'raft/ui_tokens.dart';
@@ -43,13 +46,17 @@ class RaftAppearancePicker extends StatelessWidget {
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
-          child: RaftRecipeSegmentedControl<String>(
+          child: RaftSegmentedControl<String>(
             key: const Key('appearance-theme'),
+            legacyStyle: RaftSegmentedStyle.recipe,
             value: appearance.themeId,
             label: 'Theme',
             items: [
               for (final theme in builtInAppearanceThemes)
-                (theme.id, null, raftText(context, theme.en)),
+                RaftSegmentedOption(
+                  value: theme.id,
+                  label: raftText(context, theme.en),
+                ),
             ],
             onChanged: (id) => onChanged(appearance.copyWith(themeId: id)),
           ),
@@ -62,14 +69,15 @@ class RaftAppearancePicker extends StatelessWidget {
             alignment: Alignment.centerLeft,
             // raft-ui SegmentedControl, recipe geometry without touch-target
             // growth.
-            child: RaftRecipeSegmentedControl<ThemeMode>(
+            child: RaftSegmentedControl<ThemeMode>(
               key: const Key('appearance-mode'),
+              legacyStyle: RaftSegmentedStyle.recipe,
               value: appearance.mode,
               label: 'Appearance mode',
               items: const [
-                (ThemeMode.light, null, 'Light'),
-                (ThemeMode.dark, null, 'Dark'),
-                (ThemeMode.system, null, 'System'),
+                RaftSegmentedOption(value: ThemeMode.light, label: 'Light'),
+                RaftSegmentedOption(value: ThemeMode.dark, label: 'Dark'),
+                RaftSegmentedOption(value: ThemeMode.system, label: 'System'),
               ],
               onChanged: (mode) => onChanged(appearance.copyWith(mode: mode)),
             ),

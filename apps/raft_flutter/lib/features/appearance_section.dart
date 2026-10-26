@@ -195,7 +195,7 @@ class RaftAppearanceSection extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             RaftSegmentedControl<String>(
-              style: RaftSegmentedStyle.tabs,
+              legacyStyle: RaftSegmentedStyle.tabs,
               value: value.font,
               label: 'Message font size',
               items: [
@@ -290,7 +290,7 @@ class RaftAppearanceSection extends StatelessWidget {
                     ),
                     RaftSegmentedControl<RaftRailSide>(
                       key: const ValueKey('appearance-rail-side'),
-                      style: RaftSegmentedStyle.tabs,
+                      legacyStyle: RaftSegmentedStyle.tabs,
                       value: railSide!.side,
                       label: raftText(context, 'Navigation rail'),
                       items: [

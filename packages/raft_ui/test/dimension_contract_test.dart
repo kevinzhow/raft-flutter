@@ -136,7 +136,7 @@ void main() {
                     label: 'Font size',
                     value: value,
                     visualHeight: 32,
-                    style: RaftSegmentedStyle.buttons,
+                    legacyStyle: RaftSegmentedStyle.buttons,
                     onChanged: (next) => update(() => value = next),
                     items: const [
                       RaftSegmentedOption(value: 'small', label: 'Small'),

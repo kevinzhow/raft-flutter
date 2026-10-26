@@ -5,6 +5,7 @@
 // checkbox, an error line and Cancel / Save changes. The app adapter owns the
 // controllers and the PATCH.
 import 'raft/checkbox.dart' show RaftCheckbox;
+
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';

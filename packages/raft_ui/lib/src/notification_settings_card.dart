@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'raft/checkbox.dart' show RaftCheckbox;
+
 import 'package:flutter/rendering.dart';
 
 import 'icons.dart';

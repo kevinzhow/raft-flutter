@@ -3,6 +3,7 @@
 // administer. The connection is made directly, so the checkbox must be ticked
 // before the invite is submitted (RFC 075 section 4.5).
 import 'raft/checkbox.dart' show RaftCheckbox;
+
 import 'package:flutter/material.dart';
 
 import 'banner.dart';
