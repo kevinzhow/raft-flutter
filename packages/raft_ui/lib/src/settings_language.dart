@@ -100,7 +100,7 @@ class RaftLanguageRegionView extends StatelessWidget {
         value: options.any((o) => o.$1 == value) ? value : null,
         items: [
           for (final (v, text) in options)
-            DropdownMenuItem(value: v, child: Text(raftText(context, text))),
+            RaftSelectItem(value: v, label: raftText(context, text)),
         ],
         onChanged: disabled
             ? null

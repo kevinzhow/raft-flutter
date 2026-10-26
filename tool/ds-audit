@@ -64,6 +64,8 @@ BYPASS_ALLOWLIST = {
         'text_field': 'implements RaftTextInput, RaftTextarea, RaftInputGroup and RaftBareInput on TextField'},
     _UI + 'form_controls_frozen.dart': {
         'text_field': 'the frozen Elegant and Brutal paint of the same inputs (part of form_controls.dart; delete with the legacy looks)'},
+    _UI + 'select_field_frozen.dart': {
+        'select': 'the frozen Elegant and Brutal labelled Material dropdown (part of select_field.dart; delete with the legacy looks)'},
     _UI + 'dialog_card.dart': {
         'dialog': 'showRaftModal is the Raft dialog route host'},
     _UI + 'tooltip.dart': {

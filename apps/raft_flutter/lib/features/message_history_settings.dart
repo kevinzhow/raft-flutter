@@ -18,7 +18,8 @@ class MessageHistorySettings extends StatefulWidget {
   final HistoryAccount account;
 
   static Widget forWorkspace(WorkspaceController w) {
-    final db = MessageHistoryPages.storage(w.deviceStore.cache), user = w.client.user?.id;
+    final db = MessageHistoryPages.storage(w.deviceStore.cache),
+        user = w.client.user?.id;
     if (db == null || user == null) return const SizedBox.shrink();
     final account = HistoryAccount(w.client.origin, user);
     return MessageHistorySettings(
@@ -241,17 +242,14 @@ class _MessageHistorySettingsState extends State<MessageHistorySettings> {
                   value: value?.budget ?? historyBudgetTiers.first,
                   items: [
                     for (final tier in historyBudgetTiers)
-                      // ds-allow: RaftSelectField items are DropdownMenuItem
-                      DropdownMenuItem(
+                      RaftSelectItem(
                         value: tier,
-                        child: Text(
-                          tier == 0
-                              ? raftText(context, 'Keep all')
-                              : tier < (1 << 30)
-                              ? '512 MiB'
-                              : '${tier >> 30} GiB',
-                          key: Key('history-budget-$tier'),
-                        ),
+                        label: tier == 0
+                            ? raftText(context, 'Keep all')
+                            : tier < (1 << 30)
+                            ? '512 MiB'
+                            : '${tier >> 30} GiB',
+                        labelKey: Key('history-budget-$tier'),
                       ),
                   ],
                   onChanged: disabled

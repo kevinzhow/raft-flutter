@@ -306,13 +306,13 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                       height: 36, // chrome="field": the Input's box
                       label: raftText(context, 'Role'),
                       items: [
-                        DropdownMenuItem(
+                        RaftSelectItem(
                           value: 'member',
-                          child: Text(raftText(context, 'Member')),
+                          label: raftText(context, 'Member'),
                         ),
-                        DropdownMenuItem(
+                        RaftSelectItem(
                           value: 'guest',
-                          child: Text(raftText(context, 'Guest')),
+                          label: raftText(context, 'Guest'),
                         ),
                       ],
                       onChanged: (v) =>
@@ -360,8 +360,8 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
         ? raftText(context, 'Preparing invite link…')
         : link.url ?? raftText(context, 'Invite link unavailable');
     _linkController.text = urlText;
-    DropdownMenuItem<String> item(String v, String label) =>
-        DropdownMenuItem(value: v, child: Text(raftText(context, label)));
+    RaftSelectItem<String> item(String v, String label) =>
+        RaftSelectItem(value: v, label: raftText(context, label));
     final muted = t.colors['foreground-muted'];
     Widget labelText(String text) => Text(
       raftText(context, text),

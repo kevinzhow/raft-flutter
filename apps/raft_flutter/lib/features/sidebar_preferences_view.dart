@@ -228,20 +228,16 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
     );
   }
 
-  Widget sortPicker(String label, String key) =>
-      DropdownButtonFormField<String>(
-        key: ValueKey('$key:${prefs[key]}'),
-        initialValue: prefs[key] as String? ?? 'manual',
-        decoration: InputDecoration(labelText: raftText(context, label)),
-        items: [
-          for (final mode in modes.entries)
-            DropdownMenuItem(
-              value: mode.key,
-              child: Text(raftText(context, mode.value)),
-            ),
-        ],
-        onChanged: busy ? null : (value) => run(() => save({key: value})),
-      );
+  Widget sortPicker(String label, String key) => RaftLabeledSelect<String>(
+    fieldKey: ValueKey('$key:${prefs[key]}'),
+    label: label,
+    value: prefs[key] as String? ?? 'manual',
+    items: [
+      for (final mode in modes.entries)
+        RaftSelectItem(value: mode.key, label: raftText(context, mode.value)),
+    ],
+    onChanged: busy ? null : (value) => run(() => save({key: value})),
+  );
 
   Widget sectionOrderList() {
     final labels = {

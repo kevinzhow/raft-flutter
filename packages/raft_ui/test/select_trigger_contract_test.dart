@@ -22,7 +22,7 @@ void main() {
                     height: override,
                     value: 'codex',
                     items: const [
-                      DropdownMenuItem(value: 'codex', child: Text('Codex')),
+                      RaftSelectItem(value: 'codex', label: 'Codex'),
                     ],
                     onChanged: (_) {},
                   ),

@@ -555,10 +555,10 @@ class RaftAgentSelect<T> extends StatelessWidget {
     height: RaftTokens.of(context).size('size.fieldSelect', fallback: 36),
     items: [
       for (final option in options)
-        DropdownMenuItem<T>(
+        RaftSelectItem<T>(
           value: option.value,
           enabled: option.enabled,
-          child: Text(option.label),
+          label: option.label,
         ),
     ],
     onChanged: onChanged == null

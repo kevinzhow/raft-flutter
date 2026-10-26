@@ -55,9 +55,7 @@ void main() {
                 RaftButton(label: 'Confirm', onPressed: () => clicks++),
                 RaftSelectField<String>(
                   value: 'one',
-                  items: const [
-                    DropdownMenuItem(value: 'one', child: Text('One')),
-                  ],
+                  items: const [RaftSelectItem(value: 'one', label: 'One')],
                   onChanged: (_) {},
                 ),
               ],

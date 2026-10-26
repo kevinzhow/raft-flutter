@@ -999,10 +999,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
                   label: 'App category',
                   items: [
                     for (final c in integrationCategories)
-                      // ds-allow: RaftSelectField items are DropdownMenuItem
-                      DropdownMenuItem(
+                      RaftSelectItem(
                         value: c,
-                        child: Text(tr(integrationCategoryDisplay(c))),
+                        label: tr(integrationCategoryDisplay(c)),
                       ),
                   ],
                   onChanged: (v) {

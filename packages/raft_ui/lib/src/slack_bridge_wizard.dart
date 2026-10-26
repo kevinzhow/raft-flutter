@@ -571,10 +571,11 @@ class RaftSlackWizardView extends StatelessWidget {
         value: options.any((o) => o.value == value) ? value : null,
         items: [
           for (final o in options)
-            DropdownMenuItem(
+            RaftSelectItem(
               value: o.value,
               enabled: o.enabled,
-              child: RaftCssText(raftText(context, o.label)),
+              label: raftText(context, o.label),
+              cssText: true,
             ),
         ],
         onChanged: onChanged == null

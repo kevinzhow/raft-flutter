@@ -236,11 +236,7 @@ class _McpServerEditorState extends State<McpServerEditor> {
     value: value,
     items: [
       for (final item in choices.entries)
-        // ds-allow: DropdownMenuItem is the shared RaftSelectField item contract.
-        DropdownMenuItem(
-          value: item.key,
-          child: Text(raftText(context, item.value)),
-        ),
+        RaftSelectItem(value: item.key, label: raftText(context, item.value)),
     ],
     onChanged: onChanged == null
         ? null

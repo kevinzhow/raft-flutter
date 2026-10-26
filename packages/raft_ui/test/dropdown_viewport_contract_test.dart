@@ -113,10 +113,7 @@ void main() {
                         value: selected,
                         items: [
                           for (var i = 0; i < 40; i++)
-                            DropdownMenuItem(
-                              value: '$i',
-                              child: Text('Choice $i'),
-                            ),
+                            RaftSelectItem(value: '$i', label: 'Choice $i'),
                         ],
                         onChanged: choose,
                       ),

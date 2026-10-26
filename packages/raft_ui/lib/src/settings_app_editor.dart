@@ -1265,15 +1265,10 @@ class RaftAppPermissionsTable extends StatelessWidget {
                               }
                             : null,
                         items: [
-                          DropdownMenuItem(
-                            value: false,
-                            child: Text(tr('No access')),
-                          ),
-                          DropdownMenuItem(
+                          RaftSelectItem(value: false, label: tr('No access')),
+                          RaftSelectItem(
                             value: true,
-                            child: Text(
-                              tr(row.writeAccess ? 'Write' : 'Read-only'),
-                            ),
+                            label: tr(row.writeAccess ? 'Write' : 'Read-only'),
                           ),
                         ],
                       ),

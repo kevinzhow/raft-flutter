@@ -823,19 +823,19 @@ final ParityCase _select = ParityCase(
       RaftSelectField<String>(
         value: 'codex',
         items: const [
-          DropdownMenuItem(value: 'codex', child: Text('Codex')),
-          DropdownMenuItem(value: 'claude', child: Text('Claude')),
-          DropdownMenuItem(
+          RaftSelectItem(value: 'codex', label: 'Codex'),
+          RaftSelectItem(value: 'claude', label: 'Claude'),
+          RaftSelectItem(
             value: 'disabled',
             enabled: false,
-            child: Text('Unavailable Runtime'),
+            label: 'Unavailable Runtime',
           ),
         ],
         onChanged: (_) {},
       ),
       const RaftSelectField<String>(
         value: null,
-        items: [DropdownMenuItem(value: 'codex', child: Text('Codex'))],
+        items: [RaftSelectItem(value: 'codex', label: 'Codex')],
         onChanged: null,
       ),
     ]),

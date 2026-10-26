@@ -326,10 +326,11 @@ class RaftAdminsCard extends StatelessWidget {
           ('owner', 'Owner'),
           ('admin', 'Admin'),
         ])
-          DropdownMenuItem(
+          RaftSelectItem(
             value: value,
             enabled: roleOptions.contains(value),
-            child: RaftCssText(raftText(context, label)),
+            label: raftText(context, label),
+            cssText: true,
           ),
       ],
       onChanged: canPromote
@@ -1494,14 +1495,16 @@ class RaftAdminOnboardingCard extends StatelessWidget {
               placeholder: 'Onboarding agent',
               value: agentId,
               items: [
-                DropdownMenuItem(
+                RaftSelectItem(
                   value: '',
-                  child: RaftCssText(
-                    raftText(context, 'Disabled (no automatic onboarding)'),
+                  label: raftText(
+                    context,
+                    'Disabled (no automatic onboarding)',
                   ),
+                  cssText: true,
                 ),
                 for (final (id, label) in agents)
-                  DropdownMenuItem(value: id, child: RaftCssText(label)),
+                  RaftSelectItem(value: id, label: label, cssText: true),
               ],
               onChanged: disabled
                   ? null
@@ -1521,13 +1524,15 @@ class RaftAdminOnboardingCard extends StatelessWidget {
               placeholder: 'Greeting',
               value: greeting ? 'yes' : 'no',
               items: [
-                DropdownMenuItem(
+                RaftSelectItem(
                   value: 'yes',
-                  child: RaftCssText(raftText(context, 'Yes')),
+                  label: raftText(context, 'Yes'),
+                  cssText: true,
                 ),
-                DropdownMenuItem(
+                RaftSelectItem(
                   value: 'no',
-                  child: RaftCssText(raftText(context, 'No')),
+                  label: raftText(context, 'No'),
+                  cssText: true,
                 ),
               ],
               onChanged: disabled

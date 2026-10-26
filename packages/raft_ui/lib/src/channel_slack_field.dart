@@ -96,10 +96,10 @@ class RaftChannelSlackField extends StatelessWidget {
               value: options.any((o) => o.value == value) ? value : null,
               items: [
                 for (final option in options)
-                  DropdownMenuItem(
+                  RaftSelectItem(
                     value: option.value,
                     enabled: option.enabled,
-                    child: Text(option.label),
+                    label: option.label,
                   ),
               ],
               onChanged: enabled

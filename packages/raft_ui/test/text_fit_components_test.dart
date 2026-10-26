@@ -306,7 +306,7 @@ final _cases = <_Case>[
     (l) => RaftSelectField<String>(
       value: 'a',
       onChanged: (_) {},
-      items: [DropdownMenuItem(value: 'a', child: Text(l))],
+      items: [RaftSelectItem(value: 'a', label: l)],
     ),
   ),
   _Case('RaftPrefixedInput', (l) => RaftPrefixedInput(prefix: l)),

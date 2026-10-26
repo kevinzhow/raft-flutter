@@ -310,7 +310,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
       height: 40,
       items: [
         for (final (value, label) in categories)
-          DropdownMenuItem(value: value, child: Text(label)),
+          RaftSelectItem(value: value, label: label),
       ],
       onChanged: (value) {
         if (value != null) onCategory(value);

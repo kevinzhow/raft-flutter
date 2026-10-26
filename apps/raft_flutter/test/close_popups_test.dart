@@ -175,8 +175,8 @@ void main() {
             value: 'a',
             label: 'Pick one',
             items: const [
-              DropdownMenuItem(value: 'a', child: Text('Alpha')),
-              DropdownMenuItem(value: 'b', child: Text('Beta option')),
+              RaftSelectItem(value: 'a', label: 'Alpha'),
+              RaftSelectItem(value: 'b', label: 'Beta option'),
             ],
             onChanged: (_) {},
           ),

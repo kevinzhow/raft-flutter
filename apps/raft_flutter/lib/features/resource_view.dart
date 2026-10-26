@@ -2536,15 +2536,11 @@ class _ResourceViewState extends State<ResourceView> {
                                 'closed',
                               ]
                               .map(
-                                (s) => DropdownMenuItem(
+                                (s) => RaftSelectItem(
                                   value: s,
-                                  child: Text(
-                                    raftText(
-                                      context,
-                                      s == 'all'
-                                          ? 'All'
-                                          : raftTaskStatusLabel(s),
-                                    ),
+                                  label: raftText(
+                                    context,
+                                    s == 'all' ? 'All' : raftTaskStatusLabel(s),
                                   ),
                                 ),
                               )

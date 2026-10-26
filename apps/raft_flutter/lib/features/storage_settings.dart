@@ -278,13 +278,10 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
                   value: budget,
                   items: [
                     for (final tier in attachmentCacheBudgetTiers)
-                      // ds-allow: RaftSelectField items are DropdownMenuItem
-                      DropdownMenuItem(
+                      RaftSelectItem(
                         value: tier,
-                        child: Text(
-                          CacheBudget.label(tier),
-                          key: Key('storage-budget-$tier'),
-                        ),
+                        label: CacheBudget.label(tier),
+                        labelKey: Key('storage-budget-$tier'),
                       ),
                   ],
                   onChanged: cache == null ? null : chooseBudget,
