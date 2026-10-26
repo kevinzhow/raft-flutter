@@ -1,3 +1,5 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -69,6 +71,46 @@ Widget _app(
 );
 
 void main() {
+  testWidgets(
+    'root caption tooltips have an overlay and leave body interactive',
+    (tester) async {
+      _Runner(tester);
+      final controller = _controller(TargetPlatform.linux);
+      var taps = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          builder: (context, child) => DesktopTitleBar(
+            controller: controller,
+            integrated: true,
+            child: child!,
+          ),
+          home: GestureDetector(
+            key: const Key('root-caption-body'),
+            behavior: HitTestBehavior.opaque,
+            onTap: () => taps++,
+            child: const SizedBox.expand(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer();
+      await mouse.moveTo(
+        tester.getCenter(find.byKey(const Key('desktop-caption-close'))),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Close window'), findsOneWidget);
+      await mouse.moveTo(const Offset(20, 200));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(200, 200));
+      await tester.pump();
+      expect(taps, 1);
+      await mouse.removePointer();
+    },
+  );
   testWidgets('Linux captions occupy one row and call runner commands', (
     tester,
   ) async {
