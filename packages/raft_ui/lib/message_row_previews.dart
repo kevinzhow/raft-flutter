@@ -31,7 +31,7 @@ class _RowsState extends State<_Rows> {
               onChanged: (value) => setState(() => coarse = value),
               semanticLabel: 'Coarse pointer',
             ),
-            const Text('Coarse pointer'),
+            Flexible(child: Text('Coarse pointer')),
           ],
         ),
         Row(
@@ -42,7 +42,7 @@ class _RowsState extends State<_Rows> {
               onChanged: (value) => setState(() => thread = value),
               semanticLabel: 'Thread content context',
             ),
-            const Text('Thread content context'),
+            Flexible(child: Text('Thread content context')),
           ],
         ),
         RaftMessageRow(

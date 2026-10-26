@@ -197,7 +197,7 @@ class _InteractivePreviewState extends State<_InteractivePreview> {
                 onChanged: (value) => setState(() => failDelivery = value),
                 semanticLabel: 'Fail next delivery',
               ),
-              const Text('Fail next delivery'),
+              Flexible(child: Text('Fail next delivery')),
             ],
           ),
           RaftComposer(
@@ -256,7 +256,7 @@ class _InteractivePreviewState extends State<_InteractivePreview> {
                 onChanged: (value) => setState(() => failDelivery = value),
                 semanticLabel: 'Fail next submission',
               ),
-              const Text('Fail next submission'),
+              Flexible(child: Text('Fail next submission')),
             ],
           ),
           RaftButton(
