@@ -1,6 +1,8 @@
 import 'dart:ui' show PointerDeviceKind;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/platform/desktop_title_bar.dart';
@@ -71,6 +73,51 @@ Widget _app(
 );
 
 void main() {
+  testWidgets('Linux caption paint matches the shipped Web frame and glyph', (
+    tester,
+  ) async {
+    _Runner(tester);
+    final controller = _controller(TargetPlatform.linux);
+    const boundaryKey = Key('caption-reference-pixels');
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: boundaryKey,
+        child: _app(controller, integrated: false),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(boundaryKey),
+    );
+    await tester.runAsync(() async {
+      final image = await boundary.toImage(pixelRatio: 1);
+      final bytes = (await image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      ))!;
+      Color pixel(int x, int y) {
+        final offset = (y * image.width + x) * 4;
+        return Color.fromARGB(
+          bytes.getUint8(offset + 3),
+          bytes.getUint8(offset),
+          bytes.getUint8(offset + 1),
+          bytes.getUint8(offset + 2),
+        );
+      }
+
+      // Desktop 1.21.33, active light frame at 1x: 24px circles, 37px
+      // centre spacing, last centre 22px from the right. Its minimize line
+      // occupies one physical row; it is not a faded two-row stroke.
+      final centre = image.width - 22 - 2 * 37;
+      try {
+        expect(pixel(centre, 24), const Color(0xff141111));
+        expect(pixel(centre, 23), const Color(0xffe8c13b));
+        expect(pixel(centre, 16), const Color(0xffe8c13b));
+      } finally {
+        image.dispose();
+      }
+    });
+  });
+
   testWidgets(
     'root caption tooltips have an overlay and leave body interactive',
     (tester) async {

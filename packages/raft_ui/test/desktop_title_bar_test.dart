@@ -7,6 +7,21 @@ import 'package:raft_ui/test_themes.dart';
 /// (Brutal: 2 px black; Elegant: 1 px divider), no text, a drag area, and gone
 /// in fullscreen.
 void main() {
+  test('frame glyph role preserves frozen Elegant and Brutal colours', () {
+    for (final id in ['elegant', 'brutal']) {
+      for (final dark in [false, true]) {
+        final tokens = RaftTokens.theme(
+          dark: dark,
+          pack: RaftAppearance(themeId: id).pack,
+        );
+        expect(
+          RaftTitleBarRecipe(tokens).foreground,
+          RaftRailRecipe(tokens, viewportHeight: 800).foreground,
+        );
+      }
+    }
+  });
+
   for (final (dark) in raftThemeMatrix([(false), (true)], full: true)) {
     testWidgets(
       '${dark ? 'dark' : 'light'} strip wears the rail colours and rule',

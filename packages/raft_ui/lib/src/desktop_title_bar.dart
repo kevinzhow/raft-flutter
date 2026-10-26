@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
 
 import 'design_primitives.dart';
 import 'theme.dart';
@@ -18,8 +19,12 @@ class RaftTitleBarRecipe {
   Color get background => RaftRailRecipe(tokens, viewportHeight: 0).background;
 
   /// The glyph colour the system draws window controls in, where they sit on
-  /// [background] (the rail's foreground).
-  Color get foreground => RaftRailRecipe(tokens, viewportHeight: 0).foreground;
+  /// [background]. New packs declare the Web frame role; older packs retain
+  /// their frozen rail foreground.
+  Color get foreground => tokens.recipeSet == RaftRecipeSet.legacy
+      ? RaftRailRecipe(tokens, viewportHeight: 0).foreground
+      : tokens.colors['foreground-on-frame'] ??
+            RaftRailRecipe(tokens, viewportHeight: 0).foreground;
 
   /// The rail's divider: pure black in Brutal, the muted line in Elegant.
   Color get rule => RaftRailRecipe(tokens, viewportHeight: 0).border.color;
