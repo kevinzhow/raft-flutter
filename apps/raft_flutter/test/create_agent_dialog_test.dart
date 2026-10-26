@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -108,12 +109,18 @@ void main() {
     String? name,
     String? description,
     bool settle = true,
+    Locale locale = const Locale('en'),
+    bool dark = false,
+    RaftThemePack? pack,
   }) async {
     late Future<Map<String, dynamic>?> result;
     await t.binding.setSurfaceSize(const Size(390, 1400));
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: pack, locale: locale, dark: dark),
+        locale: locale,
+        supportedLocales: const [Locale('en'), Locale('zh')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -236,6 +243,97 @@ void main() {
       expect(w.posts, isEmpty);
     },
   );
+
+  for (final locale in [const Locale('en'), const Locale('zh')]) {
+    testWidgets('capacity upgrade uses Web copy ${locale.languageCode}', (
+      t,
+    ) async {
+      w
+        ..machines = [_machine]
+        ..billing = {
+          'displayName': 'Free',
+          'capacity': {'maxAgents': 2, 'maxUniversalSeats': -1},
+          'usage': {'agents': 2, 'universalSeats': 0},
+        };
+      await open(t, locale: locale);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftAgentInlineText &&
+              widget.action == 'Upgrade for more',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          locale.languageCode == 'zh' ? '升级以获取更多' : 'Upgrade for more',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+      if (locale.languageCode == 'zh') {
+        expect(
+          find.textContaining('套餐）。升级以获取更多', findRichText: true),
+          findsOneWidget,
+        );
+      }
+    });
+  }
+
+  testWidgets('capacity warning uses Web foreground in dark Raft look', (
+    t,
+  ) async {
+    w
+      ..machines = [_machine]
+      ..billing = {
+        'displayName': 'Free',
+        'capacity': {'maxAgents': 2, 'maxUniversalSeats': -1},
+        'usage': {'agents': 2, 'universalSeats': 0},
+      };
+    await open(t, dark: true);
+    final inline = find.byWidgetPredicate(
+      (widget) =>
+          widget is RaftAgentInlineText && widget.action == 'Upgrade for more',
+    );
+    final context = t.element(inline);
+    final tokens = RaftTokens.of(context);
+    final rich = find.descendant(
+      of: inline,
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText &&
+            widget.text.toPlainText().contains('Agent limit reached'),
+      ),
+    );
+    final text = t.widget<RichText>(rich).text as TextSpan;
+    expect(text.style!.color, tokens.colors['foreground']);
+    final body = text.children!.whereType<TextSpan>().first;
+    final action = body.children!.whereType<TextSpan>().last;
+    expect(action.style!.color, tokens.colors['foreground']);
+  });
+
+  for (final id in [elegantThemePackId, brutalThemePackId]) {
+    testWidgets('legacy capacity upgrade copy remains unchanged $id', (
+      t,
+    ) async {
+      w
+        ..machines = [_machine]
+        ..billing = {
+          'displayName': 'Free',
+          'capacity': {'maxAgents': 2, 'maxUniversalSeats': -1},
+          'usage': {'agents': 2, 'universalSeats': 0},
+        };
+      await open(t, pack: packForThemeId(id));
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftAgentInlineText &&
+              widget.action == 'Upgrade for More',
+        ),
+        findsOneWidget,
+      );
+    });
+  }
 
   testWidgets('a live model row without an id does not break the dialog', (
     t,

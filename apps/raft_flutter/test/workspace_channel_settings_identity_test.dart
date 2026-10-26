@@ -256,7 +256,7 @@ void main() {
         };
         await mountSettingsWorkspace(t, w, dark, PrivateRouteGuard());
         await tapSheetAction(t, 'Delete Channel');
-        await submitConfirmation(t, 'Delete Channel');
+        await submitConfirmation(t, 'Delete');
         expect(w.channel?.id, 'c1');
         expect(find.byType(RaftConfirmDialog), findsOneWidget);
         await t.runAsync(() async {

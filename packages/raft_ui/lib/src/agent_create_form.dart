@@ -41,6 +41,7 @@ import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
 import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'icons.dart';
 import 'indicators.dart' show RaftCheckbox, RaftCheckboxRecipeSize;
+import 'list_items.dart' show RaftSectionEyebrow;
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'panel_layout.dart' show RaftCssText;
@@ -600,6 +601,7 @@ class RaftAgentBanner extends StatelessWidget {
     this.title,
     this.action,
     this.onAction,
+    this.actionSeparator = ' ',
     this.backgroundColor,
     this.foregroundColor,
     this.actionForeground,
@@ -610,7 +612,7 @@ class RaftAgentBanner extends StatelessWidget {
   /// dark:bg-warning-soft and dark:!text-warning-strong). Null keeps the recipe.
   final Color? backgroundColor, foregroundColor, actionForeground;
   final String? title, action;
-  final String description;
+  final String description, actionSeparator;
   final VoidCallback? onAction;
   @override
   Widget build(BuildContext context) => RaftBanner(
@@ -626,6 +628,7 @@ class RaftAgentBanner extends StatelessWidget {
     // The frozen looks never put a gap under these titles.
     titleGap: RaftTokens.of(context).recipeSet == RaftRecipeSet.raft ? null : 0,
     linkAction: (label: action, onPressed: onAction),
+    linkSeparator: actionSeparator,
     backgroundColor: backgroundColor,
     foregroundColor: foregroundColor,
     actionForeground: actionForeground,
@@ -641,10 +644,11 @@ class RaftAgentInlineText extends StatefulWidget {
     super.key,
     this.action,
     this.onAction,
+    this.actionSeparator = ' ',
     this.style,
     this.actionForeground,
   });
-  final String text;
+  final String text, actionSeparator;
   final String? action;
   final VoidCallback? onAction;
   final TextStyle? style;
@@ -684,7 +688,7 @@ class _RaftAgentInlineTextState extends State<RaftAgentInlineText> {
         text: raftText(context, widget.text),
         children: [
           if (widget.action != null) ...[
-            const TextSpan(text: ' '),
+            TextSpan(text: widget.actionSeparator),
             TextSpan(
               text: raftText(context, widget.action!),
               recognizer: widget.onAction == null ? null : tap,
@@ -812,9 +816,8 @@ class RaftAgentHintNote extends StatelessWidget {
   }
 }
 
-/// RuntimeConfigFields "More" toggle: `flex items-center gap-1 text-sm
-/// font-bold text-foreground-muted` with a 16px
-/// chevron; open content sits `mt-3 space-y-3` below.
+/// RuntimeConfigFields "More" toggle: SectionEyebrow with a 14px chevron
+/// and 8px gap; open content sits `mt-3 space-y-3` below.
 class RaftAgentMoreDisclosure extends StatelessWidget {
   const RaftAgentMoreDisclosure({
     super.key,
@@ -830,40 +833,67 @@ class RaftAgentMoreDisclosure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final isRaft = t.isRaftLook;
+    Widget row({bool hovered = false}) {
+      final color = isRaft
+          ? t.colors[hovered ? 'foreground' : 'foreground-hint']
+          : t.muted;
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RaftIcon(
+            open ? RaftGlyph.chevronDown : RaftGlyph.chevronRight,
+            size: isRaft ? 14 : 16,
+            color: color,
+          ),
+          SizedBox(width: isRaft ? _tw * 2 : _tw),
+          if (isRaft)
+            RaftSectionEyebrow(raftText(context, label), color: color)
+          else
+            Text(
+              raftText(context, label),
+              style: TextStyle(
+                fontSize: 14,
+                height: 20 / 14,
+                fontWeight: FontWeight.w700,
+                color: t.muted,
+              ),
+            ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         Align(
           alignment: Alignment.centerLeft,
-          child: Semantics(
-            button: true,
-            expanded: open,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onToggle,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RaftIcon(
-                    open ? RaftGlyph.chevronDown : RaftGlyph.chevronRight,
-                    size: 16,
-                    color: t.muted,
-                  ),
-                  const SizedBox(width: _tw), // gap-1
-                  Text(
-                    raftText(context, label),
-                    style: TextStyle(
-                      fontSize: 14, // text-sm
-                      height: 20 / 14,
-                      fontWeight: FontWeight.w700,
-                      color: t.muted,
+          child: isRaft
+              ? RaftInteractive(
+                  onPressed: onToggle,
+                  builder: (context, state) => Semantics(
+                    expanded: open,
+                    child: RaftCssOuterShadow(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          t.size('radius.control', fallback: 8),
+                        ),
+                        boxShadow: state.focusVisible ? t.focusShadows : null,
+                      ),
+                      child: row(hovered: state.hovered),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                )
+              : Semantics(
+                  button: true,
+                  expanded: open,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onToggle,
+                    child: row(),
+                  ),
+                ),
         ),
         if (open)
           for (final child in children) ...[

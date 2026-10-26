@@ -1158,8 +1158,12 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         '"{name}" and all of its messages will be permanently deleted. This cannot be undone.',
         {'name': c.name},
       ),
-      confirmLabel: 'Delete Channel',
-      cancelLabel: 'Keep Channel',
+      confirmLabel: RaftTokens.of(context).isRaftLook
+          ? 'Delete'
+          : 'Delete Channel',
+      cancelLabel: RaftTokens.of(context).isRaftLook
+          ? 'Cancel'
+          : 'Keep Channel',
       loadingLabel: 'Deleting…',
       variant: RaftButtonRecipeVariant.danger,
       action: () async {

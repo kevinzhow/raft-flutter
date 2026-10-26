@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart' show RequestOptions;
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -76,6 +77,9 @@ Future<(WorkspaceController, MessageAdapter)> _open(
   Map<String, dynamic>? row,
   String? dmName,
   Size size = const Size(1280, 1800),
+  bool dark = false,
+  Locale locale = const Locale('en'),
+  RaftThemePack? pack,
 }) async {
   final (w, api) = (await t.runAsync(() => fixture(role)))!;
   addTearDown(w.dispose);
@@ -94,7 +98,10 @@ Future<(WorkspaceController, MessageAdapter)> _open(
   addTearDown(t.view.reset);
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(),
+      theme: raftTheme(dark: dark, pack: pack, locale: locale),
+      locale: locale,
+      supportedLocales: const [Locale('en'), Locale('zh')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: Builder(
         builder: (context) => Scaffold(
           body: Center(
@@ -464,6 +471,69 @@ void main() {
       expect(find.byType(RaftOverflowSheet), findsNothing);
     });
 
+    for (final dark in [false, true]) {
+      for (final locale in [const Locale('en'), const Locale('zh')]) {
+        testWidgets('Web delete confirmation ${locale.languageCode}/$dark', (
+          t,
+        ) async {
+          final (_, api) = await _open(t, dark: dark, locale: locale);
+          api.routes['DELETE /channels/c1'] = (_) => {};
+          api.routes['GET /channels'] = (_) => [];
+          final cancel = locale.languageCode == 'zh' ? '取消' : 'Cancel';
+          final delete = locale.languageCode == 'zh' ? '删除' : 'Delete';
+          Finder inDialog(String text) => find.descendant(
+            of: _id('channel-settings-confirm-dialog'),
+            matching: find.text(text),
+          );
+
+          await press(t, 'channel-settings-delete-action');
+          expect(inDialog(cancel), findsOneWidget);
+          expect(inDialog(delete), findsOneWidget);
+          expect(_writes(api), isEmpty);
+          await t.tap(inDialog(cancel));
+          await t.pumpAndSettle();
+          expect(_id('channel-settings-confirm-dialog'), findsNothing);
+          expect(find.byType(RaftOverflowSheet), findsOneWidget);
+          expect(_writes(api), isEmpty);
+
+          await press(t, 'channel-settings-delete-action');
+          await t.tap(inDialog(delete));
+          await t.pumpAndSettle(const Duration(milliseconds: 100));
+          expect(_writes(api).map((c) => '${c.method} ${c.path}'), [
+            'DELETE /channels/c1',
+          ]);
+          expect(find.byType(RaftOverflowSheet), findsNothing);
+          expect(_id('channel-settings-confirm-dialog'), findsNothing);
+        });
+      }
+    }
+
+    for (final id in [elegantThemePackId, brutalThemePackId]) {
+      testWidgets('legacy delete confirmation keeps existing copy $id', (
+        t,
+      ) async {
+        final (_, api) = await _open(t, pack: packForThemeId(id));
+        api.routes['DELETE /channels/c1'] = (_) => {};
+        api.routes['GET /channels'] = (_) => [];
+        Finder inDialog(String text) => find.descendant(
+          of: _id('channel-settings-confirm-dialog'),
+          matching: find.text(text),
+        );
+        await press(t, 'channel-settings-delete-action');
+        expect(inDialog('Keep Channel'), findsOneWidget);
+        await t.tap(inDialog('Keep Channel'));
+        await t.pumpAndSettle();
+        expect(_writes(api), isEmpty);
+        await press(t, 'channel-settings-delete-action');
+        await t.tap(inDialog('Delete Channel').last);
+        await t.pumpAndSettle(const Duration(milliseconds: 100));
+        expect(_writes(api).map((c) => '${c.method} ${c.path}'), [
+          'DELETE /channels/c1',
+        ]);
+        expect(find.byType(RaftOverflowSheet), findsNothing);
+      });
+    }
+
     testWidgets('delete asks first and DELETEs the channel', (t) async {
       final (_, api) = await _open(t);
       api.routes['DELETE /channels/c1'] = (_) => {};
@@ -471,7 +541,7 @@ void main() {
       await press(t, 'channel-settings-delete-action');
       expect(find.textContaining('permanently deleted'), findsOneWidget);
       expect(_writes(api), isEmpty);
-      await confirm(t, 'Delete Channel');
+      await confirm(t, 'Delete');
       expect(_writes(api).single.method, 'DELETE');
       expect(find.byType(RaftOverflowSheet), findsNothing);
     });

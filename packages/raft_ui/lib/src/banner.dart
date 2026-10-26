@@ -41,6 +41,7 @@ class RaftBanner extends StatelessWidget {
     this.textAlign,
     this.footer,
     this.linkAction,
+    this.linkSeparator = ' ',
     this.backgroundColor,
     this.foregroundColor,
     this.actionForeground,
@@ -51,6 +52,9 @@ class RaftBanner extends StatelessWidget {
   /// be clickable), set after the text in the link button's weight and colour.
   /// A null `label` is no link; a null `onPressed` shows it disabled.
   final ({String? label, VoidCallback? onPressed})? linkAction;
+
+  /// Text between the description and its inline link.
+  final String linkSeparator;
 
   /// Call-site `bg-*` / `text-*` classes on the Banner (a dark-only warning
   /// tint, say); null keeps the recipe. [actionForeground] colours the
@@ -239,6 +243,7 @@ class RaftBanner extends StatelessWidget {
     return RaftAgentInlineText(
       description,
       action: linkAction!.label,
+      actionSeparator: linkSeparator,
       onAction: linkAction!.onPressed,
       style: text.copyWith(color: color),
       actionForeground:

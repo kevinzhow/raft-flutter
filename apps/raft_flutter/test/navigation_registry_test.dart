@@ -797,7 +797,7 @@ void main() {
       expect(find.byKey(const ValueKey('feedback')), findsOneWidget);
     });
 
-    testWidgets('Create Agent "Upgrade for More" closes and opens Billing', (
+    testWidgets('Create Agent "Upgrade for more" closes and opens Billing', (
       tester,
     ) async {
       await setup(tester);
@@ -819,7 +819,7 @@ void main() {
       final context = tester.element(find.byType(WorkspaceView));
       unawaited(showManagedAgentForm(context, w));
       await tester.pumpAndSettle();
-      await tester.tapOnText(find.textRange.ofSubstring('Upgrade for More'));
+      await tester.tapOnText(find.textRange.ofSubstring('Upgrade for more'));
       await tester.pumpAndSettle();
       expect(find.byType(CreateAgentDialog), findsNothing);
       expect(w.location.route, RaftRoute.settings);

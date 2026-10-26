@@ -188,7 +188,13 @@ class RaftField extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: messageText ?? const Text(' ')),
+            Expanded(
+              child:
+                  messageText ??
+                  ExcludeSemantics(
+                    child: Text(' ', style: f.description.text(rt, base: base)),
+                  ),
+            ),
             if (counterText != null) ...[
               const SizedBox(width: _tw * 2),
               counterText,
