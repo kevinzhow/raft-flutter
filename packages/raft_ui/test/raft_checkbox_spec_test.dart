@@ -39,21 +39,20 @@ void main() {
       expect(tester.getSize(find.byType(RaftCheckbox)), const Size(20, 20));
       expect(_graphic(tester).radius, 4);
       await tester.pumpWidget(
-        _app(dark, RaftCheckbox(value: false, circle: true, onChanged: (_) {})),
+        _app(
+          dark,
+          RaftCheckbox(
+            value: false,
+            shape: RaftCheckboxShape.circle,
+            onChanged: (_) {},
+          ),
+        ),
       );
       expect(tester.getSize(find.byType(RaftCheckbox)), const Size(20, 20));
       expect(_graphic(tester).radius, 10);
       // The legacy sizes and the yellow variant collapse onto the single 0.7.1 look.
       await tester.pumpWidget(
-        _app(
-          dark,
-          RaftCheckbox(
-            value: true,
-            size: RaftCheckboxRecipeSize.lg,
-            primary: true,
-            onChanged: (_) {},
-          ),
-        ),
+        _app(dark, RaftCheckbox(value: true, onChanged: (_) {})),
       );
       expect(tester.getSize(find.byType(RaftCheckbox)), const Size(20, 20));
     });
@@ -213,19 +212,22 @@ void main() {
       await tester.pumpWidget(
         _app(
           dark,
-          const RaftCheckMarker(
+          const RaftCheckboxIndicator(
             checked: true,
             mark: RaftCheckboxMark.minus,
-            size: RaftCheckMarkerSize.lg,
           ),
         ),
       );
-      expect(tester.getSize(find.byType(RaftCheckMarker)), const Size(20, 20));
+      expect(
+        tester.getSize(find.byType(RaftCheckboxIndicator)),
+        const Size(20, 20),
+      );
       expect(_glyph(RaftGlyph.minus), findsOneWidget);
       await tester.pumpWidget(
         _app(
           dark,
-          const RaftCheckMarker(
+          const RaftCheckboxIndicator(
+            size: 14,
             checked: false,
             previewOnHover: true,
             hovered: true,
@@ -237,7 +239,14 @@ void main() {
         closeTo(ui.foreground.a * .2, .01),
       );
       await tester.pumpWidget(
-        _app(dark, const RaftCheckMarker(checked: false, previewOnHover: true)),
+        _app(
+          dark,
+          const RaftCheckboxIndicator(
+            size: 14,
+            checked: false,
+            previewOnHover: true,
+          ),
+        ),
       );
       expect(tester.widget<RaftIcon>(_glyph(RaftGlyph.check)).color!.a, 0);
     });

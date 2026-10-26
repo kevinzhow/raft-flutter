@@ -52,13 +52,13 @@ final Map<String, RaftSpecimenBuilder> raftFormSpecimens = {
       const RaftCheckbox(value: true, semanticLabel: 'Disabled checked'),
       RaftCheckbox(
         value: true,
-        circle: true,
+        shape: RaftCheckboxShape.circle,
         onChanged: _noop,
         semanticLabel: 'Circle checked',
       ),
       RaftCheckbox(
         value: false,
-        circle: true,
+        shape: RaftCheckboxShape.circle,
         onChanged: _noop,
         semanticLabel: 'Circle',
       ),
@@ -79,27 +79,15 @@ final Map<String, RaftSpecimenBuilder> raftFormSpecimens = {
     const Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        RaftCheckMarker(checked: false, size: RaftCheckMarkerSize.lg),
+        RaftCheckboxIndicator(checked: false),
         SizedBox(width: 16),
-        RaftCheckMarker(checked: true, size: RaftCheckMarkerSize.lg),
+        RaftCheckboxIndicator(checked: true),
         SizedBox(width: 16),
-        RaftCheckMarker(
-          checked: true,
-          size: RaftCheckMarkerSize.lg,
-          mark: RaftCheckboxMark.minus,
-        ),
+        RaftCheckboxIndicator(checked: true, mark: RaftCheckboxMark.minus),
         SizedBox(width: 16),
-        RaftCheckMarker(
-          checked: true,
-          circle: true,
-          size: RaftCheckMarkerSize.lg,
-        ),
+        RaftCheckboxIndicator(checked: true, shape: RaftCheckboxShape.circle),
         SizedBox(width: 16),
-        RaftCheckMarker(
-          checked: true,
-          disabled: true,
-          size: RaftCheckMarkerSize.lg,
-        ),
+        RaftCheckboxIndicator(checked: true, disabled: true),
       ],
     ),
   ]),

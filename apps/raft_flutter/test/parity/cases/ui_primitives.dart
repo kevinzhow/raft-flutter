@@ -365,18 +365,14 @@ final ParityCase _checkbox = ParityCase(
       ),
       _labelRow(
         8,
-        RaftCheckbox(
-          value: false,
-          onChanged: (_) {},
-          size: RaftCheckboxRecipeSize.md,
-        ),
+        RaftCheckbox(value: false, onChanged: (_) {}),
         'Permission row unchecked',
       ),
       Opacity(
         opacity: .6,
         child: _labelRow(
           8,
-          const RaftCheckbox(value: true, size: RaftCheckboxRecipeSize.md),
+          const RaftCheckbox(value: true),
           'Disabled checked',
         ),
       ),
@@ -385,26 +381,28 @@ final ParityCase _checkbox = ParityCase(
 );
 
 final ParityCase _checkMarker = ParityCase(
-  widgets: const ['raft_ui:RaftCheckMarker'],
+  widgets: const ['raft_ui:RaftCheckboxIndicator'],
   build: (ctx) => _frame(
     ctx,
     height: 112,
     child: Align(
       alignment: Alignment.topLeft,
       child: _column(12, [
-        _labelRow(12, const RaftCheckMarker(checked: true), 'Square checked'),
         _labelRow(
           12,
-          const RaftCheckMarker(checked: false, size: RaftCheckMarkerSize.md),
+          const RaftCheckboxIndicator(size: 14, checked: true),
+          'Square checked',
+        ),
+        _labelRow(
+          12,
+          const RaftCheckboxIndicator(size: 16, checked: false),
           'Square unchecked',
         ),
         _labelRow(
           12,
-          const RaftCheckMarker(
+          const RaftCheckboxIndicator(
             checked: true,
-            circle: true,
-            size: RaftCheckMarkerSize.lg,
-            yellow: true,
+            shape: RaftCheckboxShape.circle,
           ),
           'Circle yellow',
         ),

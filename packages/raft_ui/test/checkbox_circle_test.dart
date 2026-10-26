@@ -15,10 +15,7 @@ void main() {
               body: Center(
                 child: RaftCheckbox(
                   value: true,
-                  size: RaftCheckboxRecipeSize.lg,
-                  primary: true,
-                  circle: true,
-                  flatWhenChecked: true,
+                  shape: RaftCheckboxShape.circle,
                   onChanged: (_) {},
                 ),
               ),

@@ -138,7 +138,6 @@ class RaftAdminCheckboxRow extends StatelessWidget {
           child: RaftCheckbox(
             key: checkboxKey,
             value: checked,
-            size: RaftCheckboxRecipeSize.md,
             semanticLabel: raftText(context, title),
             onChanged: onChanged,
           ),

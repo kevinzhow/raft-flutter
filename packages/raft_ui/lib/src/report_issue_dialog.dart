@@ -5,6 +5,7 @@
 // "Report Submitted" confirmation. The app adapter owns the upload (scope
 // attestation, feedback-export worker, ticket) and passes it in as callbacks.
 // Tailwind classes written in the Web JSX are resolved in comments.
+import 'raft/checkbox.dart' show RaftCheckbox;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -19,7 +20,6 @@ import 'dialog_card.dart';
 import 'error_presentation.dart';
 import 'form_controls.dart' show RaftTextarea;
 import 'icons.dart';
-import 'indicators.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'recipes/button_variants.g.dart';

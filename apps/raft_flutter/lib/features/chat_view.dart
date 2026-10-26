@@ -3184,10 +3184,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       selectionLeading: selectable
           ? RaftCheckbox(
               value: checked,
-              size: RaftCheckboxRecipeSize.lg,
-              primary: true,
-              circle: true,
-              flatWhenChecked: true,
+              shape: RaftCheckboxShape.circle,
               semanticLabel: raftFormat(context, 'Select message by {name}', {
                 'name': m.author,
               }),

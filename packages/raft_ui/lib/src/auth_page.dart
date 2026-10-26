@@ -1,6 +1,7 @@
 // Web auth/onboarding page pieces (packages/web/src/components/brand/
 // AuthBrandShell.tsx, components/auth/*). Presentation only: the app owns
 // state, validation and requests and passes fields/callbacks in.
+import 'raft/checkbox.dart' show RaftCheckbox;
 import 'form_controls.dart'
     show
         RaftField,
@@ -28,13 +29,11 @@ import 'localization.dart';
 import 'onboarding_previews.dart';
 import 'page_tokens.dart';
 import 'recipes/button_variants.g.dart';
-import 'recipes/checkbox.g.dart';
-import 'recipes/recipe_runtime.dart';
 import 'status_bar.dart';
 import 'raft/ui_tokens.dart';
 import 'tokens/tokens.dart' show RaftTypeScale;
 import 'theme.dart' hide RaftFieldRecipe;
-import 'recipe_surface.dart' show RaftCssBoxDecoration, RaftRecipeBinding;
+import 'recipe_surface.dart' show RaftCssBoxDecoration;
 
 /// An enclosing desktop frame already provides the page's brand header.
 /// The shell retains its native-only server action in the page footer.
@@ -603,27 +602,16 @@ class _RaftAuthLegalCheckboxState extends State<RaftAuthLegalCheckbox> {
       weight: FontWeight.w400,
     ).copyWith(color: t.muted);
     final link = base.copyWith(fontWeight: FontWeight.w700, color: t.strong);
-    final size = RaftCheckboxRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
-      size: RaftCheckboxRecipeSize.md,
-      tokens: t.recipeTokens,
-    ).root.width!;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 2), // mt-0.5
-          child: SizedBox.square(
-            dimension: size,
-            child: Checkbox(
-              key: const Key('register-legal'),
-              value: widget.checked,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-              onChanged: widget.onChanged == null
-                  ? null
-                  : (v) => widget.onChanged!(v == true),
-            ),
+          child: RaftCheckbox(
+            key: const Key('register-legal'),
+            value: widget.checked,
+            legacyMaterial: true,
+            onChanged: widget.onChanged,
           ),
         ),
         const SizedBox(width: 10), // gap-2.5

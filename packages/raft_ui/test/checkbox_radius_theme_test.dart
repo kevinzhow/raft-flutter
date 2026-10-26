@@ -16,7 +16,7 @@ Widget _host(String id, {RaftCheckboxShape shape = RaftCheckboxShape.square}) =>
         body: RaftCheckbox(
           value: true,
           onChanged: (_) {},
-          circle: shape == RaftCheckboxShape.circle,
+          shape: shape,
         ),
       ),
     );

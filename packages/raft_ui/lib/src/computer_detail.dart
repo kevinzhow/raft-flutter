@@ -1682,10 +1682,8 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  RaftCheckMarker(
+                  RaftCheckboxIndicator(
                     checked: isSelected,
-                    size: RaftCheckMarkerSize.lg,
-                    yellow: true,
                     previewOnHover: true,
                   ),
                   const SizedBox(width: 12),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'raft/checkbox.dart' show RaftCheckbox;
 import 'package:flutter/rendering.dart';
 
 import 'icons.dart';
-import 'indicators.dart';
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'localization.dart';
 import 'components.dart';
@@ -233,7 +233,6 @@ class RaftNotificationSettingsCard extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 2),
                               child: RaftCheckbox(
                                 value: muted,
-                                size: RaftCheckboxRecipeSize.md,
                                 semanticLabel: raftText(
                                   context,
                                   'Mute this server',
