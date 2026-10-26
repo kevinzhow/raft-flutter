@@ -21,7 +21,8 @@ class WindowsFrame {
   struct Rect { double x = 0, y = 0, width = 0, height = 0; };
   using CaptionRects = std::array<Rect, 3>;  // minimize, maximize, close.
 
-  WindowsFrame(HWND window, HWND child, std::function<void()> changed);
+  WindowsFrame(HWND window, HWND child, std::function<void()> changed,
+      std::function<BOOL(TRACKMOUSEEVENT*)> track_mouse = ::TrackMouseEvent);
   ~WindowsFrame();
   WindowsFrame(const WindowsFrame&) = delete;
   WindowsFrame& operator=(const WindowsFrame&) = delete;
@@ -42,6 +43,7 @@ class WindowsFrame {
   void ForwardPointer(UINT message, WPARAM wp, LPARAM screen);
   HWND window_, child_;
   std::function<void()> changed_;
+  std::function<BOOL(TRACKMOUSEEVENT*)> track_mouse_;
   State state_;
   CaptionRects rects_{};
   double caption_layout_width_ = -1;

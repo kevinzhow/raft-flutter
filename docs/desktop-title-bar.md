@@ -193,6 +193,10 @@ input path. Caption positions from a different logical window width are ignored
 until the next Dart layout; unchanged positions survive height-only resize and
 DPI changes. Maximized content is constrained to the monitor work area, while
 borderless fullscreen uses the whole monitor and hides caption hit targets.
+Nonclient tracking requests both `TME_HOVER` and `TME_LEAVE` with the system
+hover timeout. Native move, hover and leave messages go directly through
+`DefWindowProc` before any plugin can consume them. A consumed one-shot hover
+is re-armed on a later move, without repeatedly restarting the timer.
 
 Close posts the ordinary `WM_CLOSE`, so the existing tray and orderly-exit owner
 decides whether to hide or quit. The frame never destroys the engine directly.

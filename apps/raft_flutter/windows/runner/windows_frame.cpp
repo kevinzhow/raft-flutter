@@ -18,8 +18,10 @@ bool Valid(const WindowsFrame::Rect& rect) {
 }
 }  // namespace
 
-WindowsFrame::WindowsFrame(HWND window, HWND child, std::function<void()> changed)
-    : window_(window), child_(child), changed_(std::move(changed)) {
+WindowsFrame::WindowsFrame(HWND window, HWND child, std::function<void()> changed,
+    std::function<BOOL(TRACKMOUSEEVENT*)> track_mouse)
+    : window_(window), child_(child), changed_(std::move(changed)),
+      track_mouse_(std::move(track_mouse)) {
   state_.active = GetForegroundWindow() == window_;
   state_.maximized = IsZoomed(window_) != FALSE;
 }
@@ -140,29 +142,36 @@ std::optional<LRESULT> WindowsFrame::HandleMessage(UINT message, WPARAM wp, LPAR
     }
     case WM_NCHITTEST: return HitTest(ScreenPoint(lp));
     case WM_NCMOUSEMOVE: {
+      const auto result = DefWindowProcW(window_, message, wp, lp);
       const auto before = state_;
       state_.maximize_hovered = wp == HTMAXBUTTON;
       if (wp == HTMAXBUTTON) {
         if (!tracking_max_) {
-          TRACKMOUSEEVENT tracking{sizeof(TRACKMOUSEEVENT), TME_NONCLIENT | TME_LEAVE, window_, 0};
-          TrackMouseEvent(&tracking); tracking_max_ = true;
+          TRACKMOUSEEVENT tracking{sizeof(TRACKMOUSEEVENT),
+              TME_NONCLIENT | TME_HOVER | TME_LEAVE, window_, HOVER_DEFAULT};
+          tracking_max_ = track_mouse_(&tracking) != FALSE;
         }
         // Forwarding WM_MOUSEMOVE to Flutter starts client TME_LEAVE tracking
         // on its child HWND, competing with this nonclient track. Report only
         // paint state; let DefWindowProc own the native snap-hover lifecycle.
-        // DefWindowProc still sees HTMAXBUTTON and can present Win11 snap layouts.
+      } else {
+        tracking_max_ = false;
       }
       NotifyIfChanged(before);
-      break;
+      return result;
     }
-    case WM_NCMOUSELEAVE:
-      if (tracking_max_) {
-        const auto before = state_;
-        tracking_max_ = false;
-        state_.maximize_hovered = false;
-        NotifyIfChanged(before);
-      }
-      break;
+    case WM_NCMOUSEHOVER:
+      // Windows consumes the hover request after delivering it. Preserve the
+      // system's Snap Layout handling and re-arm only on a later mouse move.
+      tracking_max_ = false;
+      return DefWindowProcW(window_, message, wp, lp);
+    case WM_NCMOUSELEAVE: {
+      const auto before = state_;
+      tracking_max_ = false;
+      state_.maximize_hovered = false;
+      NotifyIfChanged(before);
+      return DefWindowProcW(window_, message, wp, lp);
+    }
     case WM_NCLBUTTONDOWN:
     case WM_NCLBUTTONDBLCLK:
       if (wp == HTMAXBUTTON) {

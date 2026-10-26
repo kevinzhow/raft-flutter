@@ -20,6 +20,8 @@ void Check(bool value, const char* message) {
 struct Window {
   HWND hwnd = nullptr, child = nullptr;
   int closes = 0, changes = 0, moves = 0, downs = 0, leaves = 0;
+  int track_requests = 0;
+  TRACKMOUSEEVENT last_tracking{};
 #ifdef RAFT_FRAME_AVAILABLE
   std::unique_ptr<WindowsFrame> frame;
 #endif
@@ -67,7 +69,11 @@ struct Window {
         0, 0, 800, 600, hwnd, nullptr, GetModuleHandleW(nullptr), this);
     Check(child != nullptr, "create Flutter child stand-in");
 #ifdef RAFT_FRAME_AVAILABLE
-    frame = std::make_unique<WindowsFrame>(hwnd, child, [this] { ++changes; });
+    frame = std::make_unique<WindowsFrame>(hwnd, child, [this] { ++changes; },
+        [this](TRACKMOUSEEVENT* tracking) {
+          ++track_requests; last_tracking = *tracking;
+          return TrackMouseEvent(tracking);
+        });
     Check(frame->Enable(custom), "install child frame routing");
 #else
     (void)custom;
@@ -209,6 +215,26 @@ void NativeHoverDoesNotStartFlutterTracking() {
   SendMessageW(w.hwnd, WM_NCMOUSELEAVE, 0, 0);
   Check(w.changes == changes + 4, "native hover leave must clear shared paint state once");
 }
+void NativeHoverRequestsSystemHoverNotification() {
+  Window w; Rects(w);
+  SendMessageW(w.hwnd, WM_NCMOUSEMOVE, HTMAXBUTTON, w.Point(640,25));
+  Check((w.last_tracking.dwFlags & (TME_HOVER | TME_LEAVE | TME_NONCLIENT)) ==
+        (TME_HOVER | TME_LEAVE | TME_NONCLIENT),
+        "maximize tracking must request system NC hover as well as leave");
+  Check(w.last_tracking.dwHoverTime == HOVER_DEFAULT,
+        "native hover uses the system timeout instead of a zero timer");
+  const int requests = w.track_requests;
+  SendMessageW(w.hwnd, WM_NCMOUSEMOVE, HTMAXBUTTON, w.Point(641,25));
+  Check(w.track_requests == requests, "pointer movement must not continually reset the hover timer");
+  Check(w.frame->HandleMessage(WM_NCMOUSEHOVER, HTMAXBUTTON, w.Point(641,25)).has_value(),
+        "system NC hover must reach DefWindowProc before plugins can swallow it");
+  SendMessageW(w.hwnd, WM_NCMOUSELEAVE, 0, 0);
+  Check(!w.frame->state().maximize_hovered,
+        "leave after a consumed hover must clear the highlight even before another mouse move");
+  SendMessageW(w.hwnd, WM_NCMOUSEMOVE, HTMAXBUTTON, w.Point(642,25));
+  Check(w.track_requests == requests + 1,
+        "a later move must re-arm hover after Windows consumes its one-shot notification");
+}
 void CloseOwnership() {
   Window w;
   w.frame->Close(); Check(w.closes == 0, "caption close must defer to ordinary message owner");
@@ -232,8 +258,9 @@ int main() {
 #ifdef RAFT_FRAME_AVAILABLE
     HitTests(); InvalidAndStaleRects(); MaximumClientArea(); StateAndFullscreen();
     NativeHoverDoesNotStartFlutterTracking();
+    NativeHoverRequestsSystemHoverNotification();
     ForwardMaxPointer(); CloseOwnership(); FallbackAndLifetime();
-    std::cout << "PASS: 9 native frame scenarios (hidden windows; not visual/pointer acceptance)\n";
+    std::cout << "PASS: 10 native frame scenarios (hidden windows; not visual/pointer acceptance)\n";
 #endif
     return 0;
   } catch (const std::exception& e) { std::cerr << "FAIL: " << e.what() << '\n'; return 1; }
