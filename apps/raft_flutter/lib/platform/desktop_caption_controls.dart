@@ -90,6 +90,7 @@ class _DesktopCaptionControlsState extends State<DesktopCaptionControls> {
       _report();
       if (!widget.visible) return const SizedBox.shrink();
       Widget group(List<String> names) => Row(
+        textDirection: TextDirection.ltr,
         mainAxisSize: MainAxisSize.min,
         children: [
           for (final name in names)
