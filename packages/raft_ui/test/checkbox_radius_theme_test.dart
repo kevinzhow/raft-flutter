@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -11,13 +13,15 @@ import 'package:raft_ui/test_themes.dart';
 /// checked, because they are separate boxes that were each hardcoded to 4.
 Widget _host(String id, {RaftCheckboxShape shape = RaftCheckboxShape.square}) =>
     MaterialApp(
+      themeAnimationDuration: Duration.zero,
       theme: raftTheme(pack: packForThemeId(id)),
       home: Scaffold(
         body: RaftCheckbox(value: true, onChanged: (_) {}, shape: shape),
       ),
     );
 
-/// Both painted radii for one theme in its own tree.
+/// Both painted radii for one theme in its own tree. The Raft look paints recipe boxes, whose `rounded-full` radius
+/// exceeds the box and is clamped to half of it when painted; the frozen looks paint [RaftCssBox]es.
 ///
 /// A fresh tree per theme: reusing one leaves the previous theme's values in the
 /// element and the comparison then passes for the wrong reason.
@@ -28,6 +32,25 @@ Future<(double, double)> _painted(
 }) async {
   await tester.pumpWidget(_host(id, shape: shape));
   await tester.pump();
+  if (id == raftThemePackId) {
+    final radii = [
+      for (final c in tester.widgetList<Container>(
+        find.descendant(
+          of: find.byType(RaftCheckbox),
+          matching: find.byType(Container),
+        ),
+      ))
+        if (c.decoration is BoxDecoration)
+          math.min(
+            (c.decoration! as BoxDecoration).borderRadius!
+                .resolve(TextDirection.ltr)
+                .topLeft
+                .x,
+            10.0,
+          ),
+    ];
+    return (radii.first, radii.last);
+  }
   final boxes = tester.widgetList<RaftCssBox>(find.byType(RaftCssBox)).toList();
   return (boxes.first.radius, boxes.last.radius);
 }

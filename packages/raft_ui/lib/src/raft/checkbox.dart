@@ -1,13 +1,16 @@
-// raft-ui 0.7.1 `Checkbox` / `CheckboxIndicator` (dist `checkboxIndicator` + `checkbox`): a 20px ink-bordered sticker
-// square (or circle) with a lucide check / minus; unchecked is a `layer-card` box, checked fills with `foreground`,
-// disabled reads `fill-muted` / `foreground-disabled`. Keyboard focus draws the `focus-ring` on the 20px root.
+// raft-ui `Checkbox` / `CheckboxIndicator`, painted in the Raft look from the generated `checkbox` and
+// `checkboxIndicator` recipes (raft_theme recipes/checkbox.g.dart, checkbox_indicator.g.dart): box size, border,
+// radius, fill, mark colour and size, the focus ring and the disabled colours are whatever the recipe resolves for
+// the control's state. The frozen Elegant and Brutal paint lives in checkbox_frozen.dart.
 import 'package:flutter/material.dart';
 
 import '../control_typography.dart';
 import '../design_primitives.dart';
-import '../recipe_surface.dart' show RaftRecipeBinding;
+import '../recipe_surface.dart'
+    show RaftRecipeBinding, RaftRecipeBox, RaftSlotPaint;
 import '../recipes/checkbox.g.dart';
-import '../recipes/recipe_runtime.dart' show RaftRecipeTheme;
+import '../recipes/checkbox_indicator.g.dart';
+import '../recipes/recipe_runtime.dart' show CssNum, RaftRecipeTheme;
 import '../icons.dart';
 import '../theme.dart';
 import 'css_box.dart';
@@ -70,53 +73,61 @@ class RaftCheckboxIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final ui = t.ui;
-    final Color fill, border, ink;
-    // Translucent tokens are blended the way Blink does, over the box they sit on (the border over its own fill).
-    if (checked) {
-      final disabledFill = raftChromeBlend(
-        ui.foregroundDisabled,
-        ui.layerCanvas,
-      );
-      fill = disabled ? disabledFill : ui.foreground;
-      border = disabled
-          ? raftChromeBlend(ui.foregroundDisabled, disabledFill)
-          : ui.foreground;
-      ink = disabled ? ui.layerCard : ui['foreground-inverse'];
-    } else {
-      fill = disabled ? ui.fillMuted : ui.layerCard;
-      border = disabled
-          ? raftChromeBlend(ui.foregroundDisabled, ui.fillMuted)
-          : ui.lineStrong;
-      ink = previewOnHover && hovered
-          ? ui.foreground.withValues(alpha: ui.foreground.a * .2)
-          : const Color(0x00000000);
-    }
+    if (!t.isRaftLook) return _frozenIndicator(context, this);
+    final rt = t.recipeTokens;
+    final root = RaftCheckboxIndicatorRecipe.resolve(
+      theme: t.recipeTheme,
+      shape: shape == RaftCheckboxShape.circle
+          ? RaftCheckboxIndicatorRecipeShape.circle
+          : RaftCheckboxIndicatorRecipeShape.square,
+      checked: checked,
+      disabled: disabled,
+      previewOnHover: previewOnHover,
+      // `group-hover:text-foreground/20`: the parent row is hovered.
+      states: t.recipeStates(extra: [if (hovered) 'group:hover']),
+      tokens: rt,
+    ).root;
     final showMark = checked || previewOnHover;
+    final svg = root.target("& svg:not([class*='size-'])");
+    final stroke = root.target('& svg')?['stroke-width'];
+    // The recipe sizes the mark for its own 20px box; another [size] keeps that ratio.
+    final markScale = size / (root.width ?? size);
+    final inline = style;
     return ExcludeSemantics(
-      child: RaftCssBox(
-        // The square form is the theme's sticker corner; the circle form is a true
-        // circle at any size, which is why the official `rounded-full` stays
-        // `size / 2` rather than becoming a token.
-        radius:
-            style?.radius ??
-            (shape == RaftCheckboxShape.circle
-                ? size / 2
-                : t.size('radius.sticker', fallback: 4)),
-        fill: style?.fill ?? fill,
-        borderWidth: style?.borderWidth ?? raftControlBorderPx(context, 1.5),
-        borderColor: style?.borderColor ?? border,
+      child: RaftRecipeBox(
+        style: root,
+        tokens: rt,
         width: size,
         height: size,
         alignment: Alignment.center,
+        applyText: false,
+        applyOpacity: false,
+        // Blink floors the recipe's `border-[1.5px]` to device pixels.
+        decorationOverride: (d) {
+          d = raftSnapBorder(context, d);
+          if (inline == null) return d;
+          final side = (d.border as Border).top;
+          return d.copyWith(
+            color: inline.fill ?? d.color,
+            border: Border.all(
+              color: inline.borderColor ?? side.color,
+              width: inline.borderWidth ?? side.width,
+            ),
+            borderRadius: inline.radius == null
+                ? d.borderRadius
+                : BorderRadius.circular(inline.radius!),
+          );
+        },
         child: showMark
             ? RaftIcon(
                 mark == RaftCheckboxMark.minus
                     ? RaftGlyph.minus
                     : RaftGlyph.check,
-                size: style?.markSize ?? size * .7,
-                strokeWidth: style?.markStrokeWidth ?? 2,
-                color: style?.markColor ?? ink,
+                size: inline?.markSize ?? (svg?.width ?? size) * markScale,
+                strokeWidth:
+                    inline?.markStrokeWidth ??
+                    (stroke is CssNum ? stroke.value : 2),
+                color: inline?.markColor ?? root.foreground(rt),
               )
             : null,
       ),
@@ -153,10 +164,13 @@ class RaftCheckbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final ui = t.ui;
     final disabled = onChanged == null;
-    if (legacyMaterial && !t.isRaftLook)
-      return _frozenMaterialCheckbox(context, this);
+    if (!t.isRaftLook) {
+      return legacyMaterial
+          ? _frozenMaterialCheckbox(context, this)
+          : _frozenCheckbox(context, this);
+    }
+    final rt = t.recipeTokens;
     return RaftInteractive(
       onPressed: disabled
           ? null
@@ -167,17 +181,20 @@ class RaftCheckbox extends StatelessWidget {
       semanticLabel: semanticLabel,
       builder: (context, st) => Semantics(
         mixed: indeterminate,
-        child: RaftCssBox(
-          // `rounded-sticker` on the root, also for the circle shape: the official
-          // root keeps the sticker corner and the inner indicator draws the circle.
-          radius: t.size('radius.sticker', fallback: 4),
-          rings: [
-            if (st.focusVisible)
-              for (final layer in ui.focusRing.layers)
-                RaftRing(layer.spread, layer.color),
-          ],
+        child: RaftRecipeBox(
+          style: RaftCheckboxRecipe.resolve(
+            theme: t.recipeTheme,
+            states: t.recipeStates(
+              focusVisible: st.focusVisible,
+              extra: [if (disabled) 'data-disabled'],
+            ),
+            tokens: rt,
+          ).root,
+          tokens: rt,
           width: size,
           height: size,
+          applyText: false,
+          applyOpacity: false,
           child: ExcludeSemantics(
             child: RaftCheckboxIndicator(
               checked: value || indeterminate,
