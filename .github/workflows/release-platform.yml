@@ -120,6 +120,14 @@ jobs:
           if (-not (Test-Path $iscc)) { choco install innosetup --version=6.4.3 -y --no-progress }
           if (-not (Test-Path $iscc)) { throw 'Inno Setup 6 is unavailable' }
           "ISCC=$iscc" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Download the pinned Windows notification runtime
+        if: inputs.platform == 'windows'
+        shell: pwsh
+        run: |
+          $runtime = Join-Path $env:RUNNER_TEMP 'WindowsAppRuntimeInstall-x64.exe'
+          python tool/windows_installer.py --download-runtime $runtime
+          if ($LASTEXITCODE -ne 0) { throw 'Windows App Runtime download verification failed' }
+          "RAFT_WINDOWS_APP_RUNTIME_INSTALLER=$runtime" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Test Linux packaging tools
         if: inputs.platform == 'linux' || inputs.platform == 'appimage'
         run: |
