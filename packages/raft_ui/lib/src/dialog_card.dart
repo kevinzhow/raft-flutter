@@ -425,7 +425,11 @@ class _RaftModalBackdropState extends State<RaftModalBackdrop> {
       final content = KeyedSubtree(key: _slot, child: widget.child);
       return form == RaftSurfaceForm.sheet
           ? content
-          : SingleChildScrollView(child: content);
+          : LayoutBuilder(
+              builder: (context, box) => box.hasBoundedHeight
+                  ? SingleChildScrollView(child: content)
+                  : content,
+            );
     }
     final child = widget.child, onBackdrop = widget.onBackdrop;
     final t = RaftTokens.of(context);

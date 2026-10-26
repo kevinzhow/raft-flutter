@@ -83,6 +83,7 @@ RaftPresentedRoute<T> raftFormRoute<T>(
   dismissible: dismissible,
   label: label,
   dialogMaxWidth: dialogMaxWidth,
+  scrollDialogSurface: true,
   sheetInitialSize: sheetInitialSize,
 );
 
