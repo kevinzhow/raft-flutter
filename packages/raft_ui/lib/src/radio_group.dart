@@ -56,28 +56,35 @@ class RaftRadioGroup<T> extends StatefulWidget {
   State<RaftRadioGroup<T>> createState() => _RaftRadioGroupState<T>();
 }
 
-class _Registered<T> {
-  _Registered(this.value, this.enabled, this.focus);
-  final T value;
-  bool enabled;
-  final FocusNode focus;
-}
-
 class _RaftRadioGroupState<T> extends State<RaftRadioGroup<T>> {
-  final items = <_Registered<T>>[];
-
   void move(int delta) {
     if (widget.onChanged == null) return;
-    final enabled = [
-      for (final i in items)
-        if (i.enabled) i,
-    ];
+    // Read the mounted row order and current widget values at the key event.
+    // Mount-time registration becomes stale when rows are replaced or keyed
+    // rows move; nested groups must keep their own keyboard selection.
+    final enabled = <_RaftRadioGroupItemState<T>>[];
+    void visit(Element element) {
+      if (element is StatefulElement) {
+        final state = element.state;
+        if (state is _RaftRadioGroupItemState<T> &&
+            state.widget.enabled &&
+            state.context
+                    .getInheritedWidgetOfExactType<_RadioScope<T>>()
+                    ?.group ==
+                this) {
+          enabled.add(state);
+        }
+      }
+      element.visitChildElements(visit);
+    }
+
+    context.visitChildElements(visit);
     if (enabled.isEmpty) return;
-    final current = enabled.indexWhere((i) => i.value == widget.value);
+    final current = enabled.indexWhere((i) => i.widget.value == widget.value);
     final next =
         ((current < 0 ? (delta > 0 ? -1 : 0) : current) + delta) %
         enabled.length;
-    widget.onChanged!(enabled[next].value);
+    widget.onChanged!(enabled[next].widget.value);
     enabled[next].focus.requestFocus();
   }
 
@@ -144,32 +151,8 @@ class RaftRadioGroupItem<T> extends StatefulWidget {
 
 class _RaftRadioGroupItemState<T> extends State<RaftRadioGroupItem<T>> {
   final focus = FocusNode();
-  _RaftRadioGroupState<T>? group;
-  _Registered<T>? entry;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final next = context
-        .dependOnInheritedWidgetOfExactType<_RadioScope<T>>()
-        ?.group;
-    if (next != group) {
-      if (entry != null) group?.items.remove(entry);
-      group = next;
-      entry = _Registered<T>(widget.value, widget.enabled, focus);
-      group?.items.add(entry!);
-    }
-  }
-
-  @override
-  void didUpdateWidget(RaftRadioGroupItem<T> old) {
-    super.didUpdateWidget(old);
-    entry?.enabled = widget.enabled;
-  }
-
   @override
   void dispose() {
-    if (entry != null) group?.items.remove(entry);
     focus.dispose();
     super.dispose();
   }
