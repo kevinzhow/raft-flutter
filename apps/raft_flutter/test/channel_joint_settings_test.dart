@@ -497,7 +497,7 @@ void main() {
       findsOneWidget,
     );
     expect(key('channel-overflow-unsaved-save'), findsNothing);
-    await t.tap(find.text('Keep Editing'));
+    await t.tap(key('channel-overflow-unsaved-keep'));
     await t.pumpAndSettle();
     expect(find.byType(RaftOverflowSheet), findsOneWidget);
     expect(slugText(t), 'partner');

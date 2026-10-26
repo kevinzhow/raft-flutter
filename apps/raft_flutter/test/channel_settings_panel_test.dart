@@ -8,6 +8,7 @@ import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'message_presentation_test.dart' show MessageAdapter, fixture;
+import 'parity/parity_harness.dart' show loadParityFonts;
 
 // The channel / DM settings drawer as Web mounts it (ChannelOverflowMenu ->
 // OverflowSheet + EditChannelDialog presentation="panel").
@@ -80,6 +81,7 @@ Future<(WorkspaceController, MessageAdapter)> _open(
   bool dark = false,
   Locale locale = const Locale('en'),
   RaftThemePack? pack,
+  TargetPlatform? platform,
 }) async {
   final (w, api) = (await t.runAsync(() => fixture(role)))!;
   addTearDown(w.dispose);
@@ -98,7 +100,11 @@ Future<(WorkspaceController, MessageAdapter)> _open(
   addTearDown(t.view.reset);
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(dark: dark, pack: pack, locale: locale),
+      theme: raftTheme(
+        dark: dark,
+        pack: pack,
+        locale: locale,
+      ).copyWith(platform: platform),
       locale: locale,
       supportedLocales: const [Locale('en'), Locale('zh')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -362,8 +368,9 @@ void main() {
       await t.tapAt(const Offset(20, 20)); // the scrim
       await t.pumpAndSettle();
       expect(_id('channel-overflow-unsaved-prompt'), findsOneWidget);
-      await t.tap(find.text('Keep Editing'));
+      await t.tap(_id('channel-overflow-unsaved-keep'));
       await t.pumpAndSettle();
+      expect(_id('channel-overflow-unsaved-prompt'), findsNothing);
       expect(find.byType(RaftOverflowSheet), findsOneWidget);
       expect(_controller(t, 'channel-settings-name').text, 'draft');
       await t.tap(_id('channel-overflow-scrim'));
@@ -731,4 +738,69 @@ void main() {
     // belongs to the Elegant pack.
     expect(t.getSize(_id('channel-overflow-sheet')).width, 420.0);
   });
+
+  final promptScenarios = [
+    (
+      name: 'desktop',
+      size: const Size(1280, 800),
+      platform: TargetPlatform.linux,
+    ),
+    (
+      name: 'narrow desktop',
+      size: const Size(390, 844),
+      platform: TargetPlatform.linux,
+    ),
+    (
+      name: 'foldable portrait',
+      size: const Size(856, 944),
+      platform: TargetPlatform.android,
+    ),
+    (
+      name: 'foldable landscape',
+      size: const Size(944, 856),
+      platform: TargetPlatform.android,
+    ),
+  ];
+  for (final scenario in promptScenarios) {
+    for (final dark in [false, true]) {
+      for (final locale in [const Locale('en'), const Locale('zh')]) {
+        testWidgets(
+          'unsaved prompt ${scenario.name}/$dark/${locale.languageCode} keeps the draft from both button edges',
+          (t) async {
+            await t.runAsync(loadParityFonts);
+            final (_, api) = await _open(
+              t,
+              size: scenario.size,
+              platform: scenario.platform,
+              dark: dark,
+              locale: locale,
+            );
+            await t.enterText(_id('channel-settings-name'), 'draft');
+            await t.pump();
+            for (final left in [true, false]) {
+              await t.tapAt(const Offset(20, 20));
+              await t.pumpAndSettle();
+              final prompt = _id('channel-overflow-unsaved-prompt');
+              expect(prompt, findsOneWidget);
+              expect(
+                find.text(
+                  locale.languageCode == 'zh' ? '继续编辑' : 'Keep editing',
+                ),
+                findsOneWidget,
+              );
+              final keep = _id('channel-overflow-unsaved-keep');
+              final rect = t.getRect(keep);
+              await t.tapAt(
+                Offset(left ? rect.left + 2 : rect.right - 2, rect.center.dy),
+              );
+              await t.pumpAndSettle();
+              expect(prompt, findsNothing);
+              expect(_controller(t, 'channel-settings-name').text, 'draft');
+              expect(_writes(api), isEmpty);
+            }
+          },
+        );
+      }
+    }
+  }
 }

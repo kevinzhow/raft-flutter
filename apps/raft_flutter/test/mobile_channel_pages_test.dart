@@ -172,14 +172,18 @@ void main() {
         await t.binding.handlePopRoute();
         await t.pumpAndSettle();
         expect(find.byType(RaftUnsavedChangesPrompt), findsOneWidget);
-        await t.tap(find.text('Keep Editing'));
+        await t.tap(
+          find.byKey(const ValueKey('channel-overflow-unsaved-keep')),
+        );
         await t.pumpAndSettle();
         expect(find.byType(RaftUnsavedChangesPrompt), findsNothing);
         expect(w.location.channelPage?.kind, RaftChannelPage.settings);
         await t.tap(find.byKey(const ValueKey('channel-overflow-back')));
         await t.pumpAndSettle();
         expect(find.byType(RaftUnsavedChangesPrompt), findsOneWidget);
-        await t.tap(find.text('Discard Changes'));
+        await t.tap(
+          find.byKey(const ValueKey('channel-overflow-unsaved-discard')),
+        );
         await t.pumpAndSettle();
         expect(w.location.uri, base.uri);
         await t.tap(find.byTooltip('Channel Details and Settings'));

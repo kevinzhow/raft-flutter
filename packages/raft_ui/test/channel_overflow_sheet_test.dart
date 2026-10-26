@@ -236,15 +236,12 @@ void main() {
           ),
         ),
       );
-      // Press through the buttons: the unwrapped test-font row may overflow.
-      void press(String label) => t
-          .widget<RaftSettingsRecipeButton>(
-            find.widgetWithText(RaftSettingsRecipeButton, label),
-          )
+      void press(String key) => t
+          .widget<RaftSettingsRecipeButton>(find.byKey(ValueKey(key)))
           .onPressed!();
-      press('Keep Editing');
-      press('Discard Changes');
-      press('Save and Close');
+      press('channel-overflow-unsaved-keep');
+      press('channel-overflow-unsaved-discard');
+      press('channel-overflow-unsaved-save');
       expect(taps, ['keep', 'discard', 'save']);
       await t.pumpWidget(
         _host(
@@ -255,7 +252,10 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Save and Close'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('channel-overflow-unsaved-save')),
+        findsNothing,
+      );
     },
   );
 

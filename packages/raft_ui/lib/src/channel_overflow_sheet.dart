@@ -5,6 +5,7 @@
 // The app adapter (apps/raft_flutter ChannelSettings) owns data, permissions
 // and commands and passes plain values and callbacks in.
 import 'dart:math' as math;
+import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
 
@@ -12,14 +13,19 @@ import 'channel_header.dart' show raftCollapseWhitespace;
 import 'panel_edge.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
+import 'dialog_surface.dart';
 import 'icons.dart';
 import 'indicators.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
+import 'recipe_surface.dart' show RaftRecipeBinding;
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
 import 'tooltip.dart';
 import 'recipes/button_variants.g.dart';
+import 'recipes/recipe_router.dart' show usesLegacyRecipes;
+import 'raft/ui_tokens.dart';
 import 'settings_controls.dart' show RaftSettingsRecipeButton;
+import 'space.dart';
 import 'status_bar.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'page_tokens.dart';
@@ -857,11 +863,8 @@ class _DashedEdgePainter extends CustomPainter {
       old.color != color || old.width != width || old.radius != radius;
 }
 
-/// `channel-overflow-unsaved-prompt`: `Modal layer={1}` holding a
-/// `w-full max-w-sm card-brutal p-6` with the title (`mb-4 text-lg
-/// font-bold`), the message (`mb-5 text-sm text-black/70`) and three `sm`
-/// actions (`flex justify-end gap-3`): Keep editing / Discard changes /
-/// Save and close (the last only while the draft can be saved).
+/// The channel settings unsaved-changes modal. The Raft look follows Web's
+/// DialogSurface and wrapping action row; older looks retain their renderer.
 class RaftUnsavedChangesPrompt extends StatelessWidget {
   const RaftUnsavedChangesPrompt({
     super.key,
@@ -881,6 +884,81 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (!usesLegacyRecipes(t.recipeTokens)) {
+      return RaftModalBackdrop(
+        child: Semantics(
+          role: SemanticsRole.dialog,
+          scopesRoute: true,
+          namesRoute: true,
+          explicitChildNodes: true,
+          label: raftText(context, 'Unsaved changes'),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: RaftDialogSurface(
+              key: const ValueKey('channel-overflow-unsaved-prompt'),
+              child: Padding(
+                padding: const EdgeInsets.all(RaftSpace.x5),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        raftText(context, 'Unsaved changes'),
+                        style: t.scale(t.typeSlot('headline')),
+                      ),
+                    ),
+                    const SizedBox(height: RaftSpace.x1_5),
+                    Text(
+                      raftText(context, message),
+                      style: t.scale(
+                        t.typeSlot('subhead'),
+                        color: t.ui.foregroundMuted,
+                      ),
+                    ),
+                    const SizedBox(height: RaftSpace.x5),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: RaftSpace.x2,
+                      runSpacing: RaftSpace.x2,
+                      children: [
+                        RaftSettingsRecipeButton(
+                          key: const ValueKey('channel-overflow-unsaved-keep'),
+                          label: 'Keep editing',
+                          variant: RaftButtonRecipeVariant.ghost,
+                          size: RaftButtonRecipeSize.lg,
+                          onPressed: busy ? null : onKeepEditing,
+                        ),
+                        RaftSettingsRecipeButton(
+                          key: const ValueKey(
+                            'channel-overflow-unsaved-discard',
+                          ),
+                          label: 'Discard changes',
+                          variant: RaftButtonRecipeVariant.warning,
+                          size: RaftButtonRecipeSize.lg,
+                          onPressed: busy ? null : onDiscard,
+                        ),
+                        if (onSaveAndClose != null)
+                          RaftSettingsRecipeButton(
+                            key: const ValueKey(
+                              'channel-overflow-unsaved-save',
+                            ),
+                            label: busy ? 'Saving…' : 'Save and close',
+                            variant: RaftButtonRecipeVariant.accent,
+                            size: RaftButtonRecipeSize.lg,
+                            onPressed: busy ? null : onSaveAndClose,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return RaftModalBackdrop(
       child: _PromptCard(
         key: const ValueKey('channel-overflow-unsaved-prompt'),
@@ -921,6 +999,7 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
                 runSpacing: 12,
                 children: [
                   RaftSettingsRecipeButton(
+                    key: const ValueKey('channel-overflow-unsaved-keep'),
                     label: 'Keep Editing',
                     variant: RaftButtonRecipeVariant.outline,
                     size: RaftButtonRecipeSize.sm,
@@ -956,6 +1035,7 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       RaftSettingsRecipeButton(
+                        key: const ValueKey('channel-overflow-unsaved-keep'),
                         label: 'Keep Editing',
                         variant: RaftButtonRecipeVariant.outline,
                         size: RaftButtonRecipeSize.sm,
