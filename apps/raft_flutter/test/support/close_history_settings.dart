@@ -111,7 +111,10 @@ Future<SurfaceProbe> historySettingsConfirmation(
     },
     x: find.descendant(
       of: surface,
-      matching: find.byKey(const Key('confirm-dialog-close')),
+      matching: find.byWidgetPredicate(
+        (w) =>
+            w is RaftDialogClose || w.key == const Key('confirm-dialog-close'),
+      ),
     ),
     scrim: const Offset(6, 6),
   );

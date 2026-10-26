@@ -485,7 +485,9 @@ void registerFormWindowTests(TestPart part) {
               find
                   .descendant(
                     of: _window(),
-                    matching: find.byType(RaftCloseButton),
+                    matching: find.byWidgetPredicate(
+                      (w) => w is RaftDialogClose || w is RaftCloseButton,
+                    ),
                   )
                   .first,
             );
