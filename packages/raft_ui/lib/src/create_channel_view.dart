@@ -20,6 +20,7 @@ import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'separator.dart';
+import 'settings_layout.dart' show RaftSpace;
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'theme.dart';
 
@@ -150,28 +151,32 @@ class RaftCreateChannelDialogView extends StatelessWidget {
             ],
           ],
         ),
+        // Current Web: `flex flex-wrap justify-end gap-2 pt-1`, with two
+        // recipe-sized lg buttons. Frozen looks keep their original row.
         footer: !legacy
-            ? OverflowBar(
-                alignment: MainAxisAlignment.end,
-                overflowAlignment: OverflowBarAlignment.end,
-                spacing: 8,
-                overflowSpacing: 8,
-                children: [
-                  RaftButton(
-                    label: 'Cancel',
-                    uiVariant: RaftButtonVariant.ghost,
-                    uiSize: RaftButtonSize.lg,
-                    onPressed: submitting
-                        ? null
-                        : raftExplicitClose(context, onClose),
-                  ),
-                  RaftButton(
-                    label: submitting ? 'Creating…' : 'Create Channel',
-                    uiVariant: RaftButtonVariant.accent,
-                    uiSize: RaftButtonSize.lg,
-                    onPressed: submitting ? null : onSubmit,
-                  ),
-                ],
+            ? Padding(
+                padding: const EdgeInsets.only(top: RaftSpace.x1),
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: RaftSpace.x2,
+                  runSpacing: RaftSpace.x2,
+                  children: [
+                    RaftButton(
+                      label: 'Cancel',
+                      uiVariant: RaftButtonVariant.ghost,
+                      uiSize: RaftButtonSize.lg,
+                      onPressed: submitting
+                          ? null
+                          : raftExplicitClose(context, onClose),
+                    ),
+                    RaftButton(
+                      label: submitting ? 'Creating…' : 'Create Channel',
+                      uiVariant: RaftButtonVariant.accent,
+                      uiSize: RaftButtonSize.lg,
+                      onPressed: submitting ? null : onSubmit,
+                    ),
+                  ],
+                ),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.end,
