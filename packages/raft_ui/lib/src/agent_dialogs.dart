@@ -12,7 +12,7 @@ import 'overlays/dialog.dart' show showRaftDialog;
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/field.g.dart' as field_recipe;
-import 'recipes/radio_group.g.dart';
+import 'radio_group.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'agent_avatar_picker.dart' show RaftAvatarDiscardConfirmation;
@@ -21,40 +21,6 @@ import 'panel_layout.dart' show RaftCssText;
 import 'settings_controls.dart';
 import 'settings_layout.dart' show RaftSettingsText;
 import 'theme.dart';
-
-/// raft-ui `RadioGroupItem` (`radioGroup` recipe `item` + `dot`): a 14px
-/// (Brutal 16px with a 2px border) circle, filled when [checked] with a 6px dot.
-class RaftRadioMark extends StatelessWidget {
-  const RaftRadioMark({super.key, required this.checked});
-  final bool checked;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
-    final s = RaftRadioGroupRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
-      states: RaftRecipeStates({
-        if (checked) RaftRecipeStates.checked,
-        if (t.dark) RaftRecipeStates.dark,
-      }),
-      tokens: rt,
-    );
-    final item = s.item, dot = s.dot;
-    final size = item.width ?? (14.0);
-    return Container(
-      width: size,
-      height: item.height ?? size,
-      alignment: Alignment.center,
-      decoration: item.decoration(rt),
-      child: checked
-          ? Container(
-              width: dot.width ?? 6,
-              height: dot.height ?? 6,
-              decoration: dot.decoration(rt),
-            )
-          : null,
-    );
-  }
-}
 
 /// Web `ResetAgentDialog`: [ConfirmDialog] (`max-w-md`) holding a radio group
 /// of restart / reset-session / full-reset, a warning banner for the full reset
@@ -148,54 +114,48 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // `space-y-3` group, `gap-3` between the radio rows.
-          for (final (i, o) in choices.indexed) ...[
-            if (i > 0) const SizedBox(height: 12),
-            GestureDetector(
-              key: ValueKey('agent-reset-option-${o.$1}'),
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => mode = o.$1),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          RaftRadioGroup<String>(
+            value: mode,
+            onChanged: (next) => setState(() => mode = next),
+            spacing: 12,
+            children: [
+              for (final o in choices)
+                RaftRadioGroupItem<String>(
+                  key: ValueKey('agent-reset-option-${o.$1}'),
+                  value: o.$1,
                   // `mt-0.5 shrink-0`
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: RaftRadioMark(checked: mode == o.$1),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // `block text-sm font-bold`
-                        RaftCssText(
-                          raftText(context, o.$2),
-                          style: RaftTypography.body(
-                            t,
-                            size: 14,
-                            line: 20,
-                            weight: FontWeight.w700,
-                            color: strong,
-                          ),
+                  markInset: const EdgeInsets.only(top: 2),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // `block text-sm font-bold`
+                      RaftCssText(
+                        raftText(context, o.$2),
+                        style: RaftTypography.body(
+                          t,
+                          size: 14,
+                          line: 20,
+                          weight: FontWeight.w700,
+                          color: strong,
                         ),
-                        const SizedBox(height: 4),
-                        // `mt-1 block text-xs text-foreground-muted`
-                        RaftCssText(
-                          raftText(context, o.$3),
-                          style: RaftTypography.body(
-                            t,
-                            size: 12,
-                            line: 16,
-                            color: t.muted,
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      // `mt-1 block text-xs text-foreground-muted`
+                      RaftCssText(
+                        raftText(context, o.$3),
+                        style: RaftTypography.body(
+                          t,
+                          size: 12,
+                          line: 16,
+                          color: t.muted,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+            ],
+          ),
           if (mode == 'full') ...[
             const SizedBox(height: 12),
             RaftBanner(
@@ -381,35 +341,29 @@ class _RaftAgentProfileEditDialogState
           ],
         ],
       ),
-      'role' => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      'role' => RaftRadioGroup<String>(
+        value: role,
+        onChanged: (next) => setState(() => role = next),
+        spacing: 12,
         children: [
-          for (final (i, o) in widget.roleOptions.indexed) ...[
-            if (i > 0) const SizedBox(height: 12),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => role = o.$1),
+          for (final o in widget.roleOptions)
+            RaftRadioGroupItem<String>(
+              value: o.$1,
+              gap: 8,
               child: SizedBox(
                 height: 20,
-                child: Row(
-                  children: [
-                    RaftRadioMark(checked: role == o.$1),
-                    const SizedBox(width: 8),
-                    RaftCssText(
-                      raftText(context, o.$2),
-                      style: RaftTypography.body(
-                        t,
-                        size: 14,
-                        line: 20,
-                        weight: FontWeight.w500,
-                        color: t.ink,
-                      ),
-                    ),
-                  ],
+                child: RaftCssText(
+                  raftText(context, o.$2),
+                  style: RaftTypography.body(
+                    t,
+                    size: 14,
+                    line: 20,
+                    weight: FontWeight.w500,
+                    color: t.ink,
+                  ),
                 ),
               ),
             ),
-          ],
         ],
       ),
       _ => Column(

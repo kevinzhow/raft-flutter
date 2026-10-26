@@ -140,8 +140,13 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
     final t = RaftTokens.of(context);
     final choices = widget.lookup.choices;
     final several = choices.length > 1;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    Widget label(String text) => Text(
+      text,
+      style: _body(t, weight: FontWeight.w600, color: t.ink),
+    );
+    return RaftRadioGroup<String>(
+      value: widget.selectedId,
+      onChanged: widget.enabled && several ? widget.onSelect : null,
       spacing: RaftSpace.x1_5,
       children: [
         for (final choice in choices)
@@ -152,19 +157,13 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
                 ? () => widget.onSelect(choice.server.id)
                 : null,
             padding: const EdgeInsets.all(RaftSpace.x3),
-            child: Row(
-              spacing: RaftSpace.x2,
-              children: [
-                if (several)
-                  RaftRadioMark(checked: choice.server.id == widget.selectedId),
-                Expanded(
-                  child: Text(
-                    choice.server.label,
-                    style: _body(t, weight: FontWeight.w600, color: t.ink),
-                  ),
-                ),
-              ],
-            ),
+            child: several
+                ? RaftRadioGroupItem<String>(
+                    value: choice.server.id,
+                    gap: RaftSpace.x2,
+                    child: label(choice.server.label),
+                  )
+                : label(choice.server.label),
           ),
       ],
     );
