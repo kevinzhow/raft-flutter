@@ -1131,12 +1131,10 @@
   "packages/raft_ui/lib/src/raft/button_surface.dart": {
    "contract.legacy_recipe_theme": 1
   },
-  "packages/raft_ui/lib/src/raft/checkbox.dart": {
-   "contract.color_literal": 1,
-   "contract.stroke_width_literal": 1
-  },
   "packages/raft_ui/lib/src/raft/checkbox_frozen.dart": {
-   "contract.legacy_recipe_theme": 1
+   "contract.color_literal": 1,
+   "contract.legacy_recipe_theme": 1,
+   "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/raft/icon_tile.dart": {
    "contract.radius_literal": 1
@@ -1156,9 +1154,9 @@
   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart": {
    "contract.stroke_width_literal": 1
   },
-  "packages/raft_ui/lib/src/raft/switch.dart": {
+  "packages/raft_ui/lib/src/raft/switch_frozen.dart": {
    "contract.color_literal": 7,
-   "contract.radius_literal": 1,
+   "contract.radius_literal": 2,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/raft/tabs.dart": {
@@ -1355,9 +1353,6 @@
   "packages/raft_ui/lib/src/sos_dialog.dart": {
    "contract.font_size_literal": 1,
    "duplicate.dialog": 1
-  },
-  "packages/raft_ui/lib/src/switch_recipe.dart": {
-   "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/system_message.dart": {
    "contract.color_literal": 2
