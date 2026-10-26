@@ -51,6 +51,7 @@ class DesktopTitleBarState {
 
   /// The native host owns the shared frame even during a zero-height layout.
   final bool integrated;
+
   /// Capability flag: older runners retain their system decoration.
   final bool customControls, maximized, active;
   final String buttonLayout;
@@ -431,7 +432,8 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
           child: RaftWindowChromeScope(
             // ds-allow: native window-control bounds, independent of theme spacing.
             overlayInsets: EdgeInsets.only(
-              top: (macFrame || custom) && widget.integrated && !state.fullscreen
+              top:
+                  (macFrame || custom) && widget.integrated && !state.fullscreen
                   ? widget.integratedHeight
                   : 0,
             ),

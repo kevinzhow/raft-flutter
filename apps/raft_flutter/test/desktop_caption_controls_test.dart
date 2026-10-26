@@ -73,6 +73,70 @@ Widget _app(
 );
 
 void main() {
+  for (final platform in [TargetPlatform.linux, TargetPlatform.windows]) {
+    for (final page in [false, true]) {
+      testWidgets('$platform preview $page clears the caption region once', (
+        tester,
+      ) async {
+        final runner = _Runner(tester);
+        final controller = _controller(platform);
+        Widget app(bool integrated) => MaterialApp(
+          theme: raftTheme(),
+          builder: (_, child) => DesktopTitleBar(
+            controller: controller,
+            integrated: integrated,
+            child: child!,
+          ),
+          home: Builder(
+            builder: (context) => Center(
+              child: TextButton(
+                onPressed: () => Navigator.of(context).push<void>(
+                  page
+                      ? RaftPreviewPageRoute<void>(
+                          builder: (_) => const RaftWindowChromePadding(
+                            child: Align(
+                              alignment: Alignment.topLeft,
+                              child: Text('Preview heading'),
+                            ),
+                          ),
+                        )
+                      : RaftFullBleedDialogRoute<void>(
+                          context: context,
+                          builder: (_) => const RaftWindowChromePadding(
+                            child: Align(
+                              alignment: Alignment.topLeft,
+                              child: Text('Preview heading'),
+                            ),
+                          ),
+                        ),
+                ),
+                child: const Text('Open preview'),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(app(true));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Open preview'));
+        await tester.pumpAndSettle();
+        final heading = find.text('Preview heading');
+        expect(tester.getTopLeft(heading).dy, 48);
+        final routeContent = tester.element(heading);
+        await runner.push({'fullscreen': true});
+        expect(tester.getTopLeft(heading).dy, 0);
+        expect(find.byKey(const Key('desktop-caption-close')), findsNothing);
+        await runner.push({'fullscreen': false});
+        expect(tester.getTopLeft(heading).dy, 48);
+        await tester.pumpWidget(app(false));
+        await tester.pumpAndSettle();
+        expect(tester.element(heading), same(routeContent));
+        expect(tester.getTopLeft(heading).dy, 48);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
   testWidgets('Linux caption paint matches the shipped Web frame and glyph', (
     tester,
   ) async {
