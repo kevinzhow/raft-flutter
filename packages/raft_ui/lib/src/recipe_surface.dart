@@ -369,9 +369,9 @@ class RaftRecipeBox extends StatelessWidget {
         : null;
     BoxDecoration decoration = RaftRecipeDecoration(
       cssGeometry: cssGeometry,
-      color: overlay == null
-          ? background
-          : Color.alphaBlend(overlay, background ?? const Color(0x00000000)),
+      color: background == null || overlay == null
+          ? overlay ?? background
+          : Color.alphaBlend(overlay, background),
       border: style.border(tokens, currentColor: current),
       borderRadius: style.borderRadius,
       boxShadow: [
