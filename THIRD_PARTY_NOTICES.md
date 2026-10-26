@@ -6,7 +6,7 @@ Bundled Space Grotesk and Space Mono (the Raft Design System faces, raft-ui 0.7.
 
 The dependency versions are fixed in `pubspec.lock`. Flutter includes package license notices in its generated native assets; dependency source and licenses remain in the package cache. Native Mermaid rendering uses `mermaid_flutter` and its Dart dependencies; it does not bundle the Web Mermaid JavaScript runtime.
 
-The Windows host uses Microsoft.WindowsAppSDK 1.7.250310001 from official NuGet, pinned by SHA-256 in `windows/runner/windows_app_sdk.cmake`. Its bootstrap DLL is bundled; the full Windows App Runtime remains an external prerequisite. The package's unmodified [Microsoft license terms](docs/licenses/Microsoft-Windows-App-SDK-1.7-license.txt) and [third-party notices](docs/licenses/Microsoft-Windows-App-SDK-1.7-NOTICE.txt) are preserved here and copied to `data/licenses/windows-app-sdk/` in the Windows bundle.
+The Windows host uses the system's Windows.UI.Notifications Toast API. It does not bundle Microsoft.WindowsAppSDK or require Windows App Runtime.
 
 Exact icon geometry from the pinned Web dependency lucide-react 1.55.0 (also imported by raft-ui 0.5.52) carries its ISC and Feather MIT notices in `docs/licenses/lucide-1.55.0-ISC.txt` and `packages/raft_ui/LICENSE-LUCIDE`.
 

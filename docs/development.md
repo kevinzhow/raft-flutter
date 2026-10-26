@@ -41,17 +41,9 @@ python ../../tool/flutter build windows --release --no-pub
 Start-Process -FilePath "$PWD/build/windows/x64/runner/Release/raft_flutter.exe"
 ```
 
-CMake downloads Microsoft.WindowsAppSDK 1.7.250310001 from official NuGet and verifies its pinned SHA-256. The bundle includes the bootstrap DLL and Raft notification icons; it still requires Windows App Runtime 1.7 x64, including its notification singleton dependencies. This machine already had that runtime; fresh-machine installation has not been verified. See [Microsoft's deployment guide](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/tutorial-unpackaged-deployment).
+The complete bundle includes the MSVC runtime and Raft notification icons. Notifications use Windows.UI.Notifications from the operating system; Windows App SDK and Windows App Runtime are not required. The release dependency scan rejects reintroducing their runtime DLLs.
 
-If notification clicks offer to find an app for `raft-notification`, the explicit registration step below was verified on this machine. Run it from an **administrator PowerShell**, at the repository root, after building and verifying the complete bundle:
-
-```powershell
-$raftExe = (Resolve-Path 'apps/raft_flutter/build/windows/x64/runner/Release/raft_flutter.exe').Path
-$raftSha = (Get-FileHash -LiteralPath $raftExe -Algorithm SHA256).Hash
-./tool/windows-notification-register.ps1 -ExecutablePath $raftExe -ExpectedSha256 $raftSha
-```
-
-The script registers only Raft's machine protocol, validates the bundle/hash and refuses an existing key owned by another application. Repeat after moving the bundle. The app never triggers this administrator step automatically. Use Settings → Notifications → send a test notification to check display and return behavior; cold-click and full Windows acceptance remain pending ([evidence](windows-notifications.md)).
+Run Raft once from its final folder. It registers its fixed application identity and `raft-notification` protocol for the current user, without administrator privileges, a COM activation server or a Start Menu shortcut requirement. Moving a portable folder requires running the app again to refresh its executable and icon paths. The installer shortcut uses the same application identity. Use Settings → Notifications → send a test notification to verify actual display and return behavior; protocol/API checks alone do not prove a real notification click ([Windows notifications](windows-notifications.md)).
 
 ## Test and analyze
 

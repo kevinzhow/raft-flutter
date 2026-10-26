@@ -87,12 +87,21 @@ class WindowsDependencyTests(unittest.TestCase):
         self.write('dartjni.dll', pe(delayed=['jvm.dll']))
         self.assertEqual(set(dependencies.audit(self.bundle)), {'jvm.dll'})
 
-    def test_windows_app_runtime_is_allowed_only_through_its_bootstrapper(self):
+    def test_windows_app_runtime_is_not_a_system_dependency_even_for_bootstrap(self):
         self.write('Microsoft.WindowsAppRuntime.Bootstrap.dll', pe(['Microsoft.WindowsAppRuntime.dll']))
-        self.assertEqual(dependencies.audit(self.bundle), {})
+        self.assertEqual(dependencies.audit(self.bundle)['microsoft.windowsappruntime.dll'][1],
+                         {'Microsoft.WindowsAppRuntime.Bootstrap.dll'})
         self.write('raft_flutter.exe', pe(['Microsoft.WindowsAppRuntime.dll']))
         self.assertEqual(dependencies.audit(self.bundle)['microsoft.windowsappruntime.dll'][1],
-                         {'raft_flutter.exe'})
+                         {'Microsoft.WindowsAppRuntime.Bootstrap.dll', 'raft_flutter.exe'})
+
+    def test_bundling_the_old_runtime_does_not_hide_its_reintroduction(self):
+        self.write('Microsoft.WindowsAppRuntime.Bootstrap.dll', pe(['KERNEL32.dll']))
+        self.write('Microsoft.WindowsAppRuntime.dll', pe(['KERNEL32.dll']))
+        self.write('raft_flutter.exe', pe(['Microsoft.WindowsAppRuntime.Bootstrap.dll']))
+        problems = dependencies.audit(self.bundle)
+        self.assertIn('microsoft.windowsappruntime.bootstrap.dll', problems)
+        self.assertIn('microsoft.windowsappruntime.dll', problems)
 
     def test_command_line_exit_codes(self):
         self.write('raft_flutter.exe', pe(['KERNEL32.dll']))

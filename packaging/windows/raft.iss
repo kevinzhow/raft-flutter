@@ -41,7 +41,7 @@ WizardStyle=modern
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
-Name: "{autoprograms}\Raft"; Filename: "{app}\raft_flutter.exe"
+Name: "{autoprograms}\Raft"; Filename: "{app}\raft_flutter.exe"; AppUserModelID: "app.raft.raft_flutter"
 
 [Run]
 ; Runs after silent updates too (no skipifsilent), which relaunches the app that

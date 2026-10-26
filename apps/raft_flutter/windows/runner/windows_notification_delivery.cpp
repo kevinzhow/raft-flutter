@@ -1,11 +1,9 @@
 #include "windows_notifications.h"
-#include "MddBootstrap.h"
 #include <shobjidl.h>
 #include <shlobj.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.UI.Notifications.h>
-#include <winrt/Microsoft.Windows.AppNotifications.h>
-#include <winrt/Microsoft.Windows.AppLifecycle.h>
+#include <winrt/Windows.Data.Xml.Dom.h>
 #include <algorithm>
 
 namespace {
@@ -13,11 +11,10 @@ using flutter::EncodableValue;
 using flutter::EncodableMap;
 constexpr ULONG_PTR kNotificationActivation = 0x52414654;
 bool activation_ready = false;
-bool bootstrapped = false;
 std::string app_id;
 std::string notification_icon;
 std::vector<std::string> pending_activations;
-winrt::Microsoft::Windows::AppNotifications::AppNotificationManager manager{nullptr};
+winrt::Windows::UI::Notifications::ToastNotifier notifier{nullptr};
 
 std::wstring ExecutablePath() {
   std::vector<wchar_t> path(32768);
@@ -62,47 +59,34 @@ void WriteProtocolValue(const std::wstring& path, const wchar_t* name,
 }
 }  // namespace
 
-void InitializeWindowsNotificationSdk(const std::string& id, const std::string& icon) {
-  if (manager) return;
+void InitializeWindowsNotifications(const std::string& id, const std::string& icon) {
+  if (notifier) return;
   const auto scheme = id == "app.raft.raft_flutter.notificationlab"
       ? L"raft-notification-lab" : L"raft-notification";
   const auto path = std::wstring(L"Software\\Classes\\") + scheme;
   WriteProtocolValue(path, nullptr, L"URL:Raft notification");
   WriteProtocolValue(path, L"URL Protocol", L"");
+  WriteProtocolValue(path + L"\\Application", L"ApplicationName",
+      id == "app.raft.raft_flutter.notificationlab" ? L"Raft notification lab" : L"Raft");
+  WriteProtocolValue(path + L"\\Application", L"ApplicationIcon", std::wstring(winrt::to_hstring(icon)));
+  WriteProtocolValue(path + L"\\DefaultIcon", nullptr, std::wstring(winrt::to_hstring(icon)));
   WriteProtocolValue(path + L"\\shell\\open\\command", nullptr,
       L"\"" + ExecutablePath() + L"\" \"%1\"");
   SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
-  PACKAGE_VERSION minimum{};
-  winrt::check_hresult(MddBootstrapInitialize(0x00010007, nullptr, minimum));
-  bootstrapped = true;
-  try {
-    // Modern association launching also enumerates registered capabilities.
-    // SDK protocol launches prefix their argument with ----ms-protocol:.
-    winrt::Microsoft::Windows::AppLifecycle::ActivationRegistrationManager::
-        RegisterForProtocolActivation(scheme, winrt::to_hstring(icon),
-            id == "app.raft.raft_flutter.notificationlab" ? L"Raft notification lab" : L"Raft",
-            L"\"" + ExecutablePath() + L"\"");
-    manager = winrt::Microsoft::Windows::AppNotifications::AppNotificationManager::Default();
-    manager.Register(id == "app.raft.raft_flutter.notificationlab" ? L"Raft notification lab" : L"Raft",
-        winrt::Windows::Foundation::Uri(winrt::to_hstring(icon)));
-    app_id = id;
-    const auto directory = ExecutablePath().substr(0, ExecutablePath().find_last_of(L"\\/"));
-    notification_icon = winrt::to_string(
-        winrt::Windows::Foundation::Uri(directory + L"\\notification_icon.png").AbsoluteUri());
-  } catch (...) {
-    ShutdownWindowsNotificationSdk();
-    throw;
-  }
+  notifier = winrt::Windows::UI::Notifications::ToastNotificationManager::CreateToastNotifier(
+      winrt::to_hstring(id));
+  app_id = id;
+  const auto directory = ExecutablePath().substr(0, ExecutablePath().find_last_of(L"\\/"));
+  notification_icon = winrt::to_string(
+      winrt::Windows::Foundation::Uri(directory + L"\\notification_icon.png").AbsoluteUri());
 }
 
-void ShutdownWindowsNotificationSdk() {
-  if (manager) { try { manager.Unregister(); } catch (...) {} }
-  manager = nullptr;
-  if (bootstrapped) { MddBootstrapShutdown(); bootstrapped = false; }
+void ShutdownWindowsNotifications() {
+  notifier = nullptr;
 }
 
-void ShowWindowsSdkNotification(const EncodableValue* arguments) {
-  if (!manager) throw winrt::hresult_error(E_UNEXPECTED);
+void ShowWindowsNotification(const EncodableValue* arguments) {
+  if (!notifier) throw winrt::hresult_error(E_UNEXPECTED);
   const auto values = arguments ? std::get_if<EncodableMap>(arguments) : nullptr;
   if (!values) throw winrt::hresult_error(E_INVALIDARG);
   const auto title = std::get<std::string>(values->at(EncodableValue("title")));
@@ -110,17 +94,19 @@ void ShowWindowsSdkNotification(const EncodableValue* arguments) {
   const auto uri = std::get<std::string>(values->at(EncodableValue("uri")));
   const auto id = std::get<int32_t>(values->at(EncodableValue("id")));
   if (!IsNotificationUri(uri)) throw winrt::hresult_error(E_INVALIDARG);
-  winrt::Microsoft::Windows::AppNotifications::AppNotification notification(
+  winrt::Windows::Data::Xml::Dom::XmlDocument xml;
+  xml.LoadXml(
       L"<toast activationType='protocol' launch='" + XmlEscape(uri) +
       L"'><visual><binding template='ToastGeneric'><image placement='appLogoOverride' src='" +
       XmlEscape(notification_icon) + L"'/><text>" + XmlEscape(title) +
       L"</text><text>" + XmlEscape(body) + L"</text></binding></visual></toast>");
+  winrt::Windows::UI::Notifications::ToastNotification notification(xml);
   notification.Tag(winrt::to_hstring(std::to_string(id)));
   notification.Group(L"Raft");
-  manager.Show(notification);
+  notifier.Show(notification);
 }
 
-void ClearWindowsSdkNotifications() {
+void ClearWindowsNotifications() {
   if (!app_id.empty()) winrt::Windows::UI::Notifications::ToastNotificationManager::History().Clear(
       winrt::to_hstring(app_id));
 }

@@ -162,23 +162,17 @@ def windows_package(stage):
     source = APP / 'build/windows/x64/runner/Release'
     for name in ['raft_flutter.exe', 'flutter_windows.dll', 'data/icudtl.dat',
                  'data/app.so', 'data/flutter_assets', 'raft.ico', 'notification_icon.png',
-                 'Microsoft.WindowsAppRuntime.Bootstrap.dll',
                  'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll']:
         if not (source / name).exists():
             raise ValueError(f'Incomplete Windows bundle: {name}')
     shutil.copytree(source, stage)
     tool_module('windows_dependencies').check(stage)
     copy_docs(stage)
-    shutil.copy2(ROOT / 'tool/windows-notification-register.ps1', stage)
     (stage / 'RUN.txt').write_text(
         'Extract the entire archive, then run raft_flutter.exe. Keep DLLs and data together.\n'
-        'Requires Windows App Runtime 1.7 x64 (including singleton dependencies).\n'
         'This portable build has no Authenticode signature or installer.\n'
-        'For notification click registration, use administrator PowerShell in this folder:\n'
-        '$exe = (Resolve-Path ./raft_flutter.exe).Path\n'
-        '$sha = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash\n'
-        './windows-notification-register.ps1 -ExecutablePath $exe -ExpectedSha256 $sha\n'
-        'Repeat registration after moving the folder. Fresh-machine and cold-click acceptance is pending.\n',
+        'Notifications use Windows system services; no additional notification runtime is required.\n'
+        'Run the app once from its final folder to register notification clicks for the current user.\n',
         encoding='utf-8')
 
 

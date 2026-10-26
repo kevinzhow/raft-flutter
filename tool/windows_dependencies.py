@@ -2,7 +2,7 @@
 
 Every .exe/.dll in the staged bundle is read as a PE file. Each DLL it
 imports (normal and delay-loaded) must be shipped in the bundle, be part of
-Windows 10 1903 or later, or be a runtime the installer provides. Anything
+Windows 10 1903 or later. Anything
 else stops the release: v1.21.23+7 shipped without the MSVC runtime and did
 not start on machines without the Visual C++ Redistributable.
 
@@ -33,10 +33,7 @@ SYSTEM = {
     'winmm.dll', 'wintrust.dll', 'ws2_32.dll', 'wtsapi32.dll',
 }
 SYSTEM_PREFIXES = ('api-ms-win-', 'ext-ms-')
-
-# Not shipped as a file: the Windows App SDK bootstrapper loads this from the
-# Windows App Runtime framework package, which the installer provides.
-PACKAGED = {'microsoft.windowsappruntime.dll': 'Windows App Runtime 1.7'}
+UNSUPPORTED_RUNTIME_PREFIX = 'microsoft.windowsappruntime'
 
 # Debug CRTs exist only on machines with Visual Studio and may not be
 # redistributed, so a release must never depend on them.
@@ -92,16 +89,18 @@ def audit(bundle):
     for path in files:
         if path.suffix.lower() not in {'.exe', '.dll'}:
             continue
+        if path.name.lower().startswith(UNSUPPORTED_RUNTIME_PREFIX):
+            problems.setdefault(path.name.lower(), (
+                'Windows App Runtime must not be bundled; use system Toast', set()
+            ))[1].add(path.relative_to(bundle).as_posix())
         for name in pe_imports(path.read_bytes()) or ():
             key = name.lower()
             if key in DEBUG_RUNTIMES:
                 reason = 'debug runtime: never present on user machines'
+            elif key.startswith(UNSUPPORTED_RUNTIME_PREFIX):
+                reason = 'Windows App Runtime is not a supported dependency; use system Toast'
             elif key in shipped or key in SYSTEM or key.startswith(SYSTEM_PREFIXES):
                 continue
-            elif key in PACKAGED:
-                if path.name.lower() == 'microsoft.windowsappruntime.bootstrap.dll':
-                    continue
-                reason = f'provided only through {PACKAGED[key]}'
             else:
                 reason = 'not in the bundle and not part of Windows'
             problems.setdefault(key, (reason, set()))[1].add(path.relative_to(bundle).as_posix())

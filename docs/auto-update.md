@@ -243,8 +243,8 @@ addition is an **Inno Setup** per-user installer (`packaging/windows/raft.iss`):
 - Unsigned (no Authenticode certificate). Files WinSparkle downloads carry no
   Mark-of-the-Web, but a *manual* download of the setup exe can trigger
   SmartScreen. Authenticode is future work, as for the ZIP.
-- The installer does not install the Windows App Runtime 1.7 prerequisite; same
-  requirement as the ZIP.
+- Notifications use Windows' system Toast API; neither the installer nor the
+  ZIP needs Windows App Runtime. Both register the same current-user identity.
 
 Portable vs installed. In-app update requires the installed copy: Dart treats a
 Windows build as installed when `unins000.exe` (Inno's uninstaller) sits next to

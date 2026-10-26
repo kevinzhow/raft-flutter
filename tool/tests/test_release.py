@@ -108,6 +108,26 @@ class ReleaseTests(unittest.TestCase):
             release.build('windows')
         commands.assert_not_called()
 
+    def test_portable_windows_package_needs_no_notification_runtime_or_admin_registration(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            app = root / 'app'
+            source = app / 'build/windows/x64/runner/Release'
+            (source / 'data/flutter_assets').mkdir(parents=True)
+            for name in ['raft_flutter.exe', 'flutter_windows.dll', 'data/icudtl.dat',
+                         'data/app.so', 'raft.ico', 'notification_icon.png',
+                         'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll']:
+                (source / name).write_bytes(b'packaging fixture')
+            stage = root / 'portable'
+            with patch.object(release, 'APP', app), patch.object(release, 'copy_docs'):
+                release.windows_package(stage)
+            self.assertTrue((stage / 'raft_flutter.exe').exists())
+            self.assertFalse((stage / 'Microsoft.WindowsAppRuntime.Bootstrap.dll').exists())
+            self.assertFalse((stage / 'windows-notification-register.ps1').exists())
+            instructions = (stage / 'RUN.txt').read_text()
+            self.assertNotIn('Requires Windows App Runtime', instructions)
+            self.assertNotIn('administrator', instructions)
+
     def test_tag_suffix_is_kept_in_packaging_and_provenance(self):
         def package(stage):
             stage.mkdir()

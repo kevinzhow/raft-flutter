@@ -48,7 +48,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
-  ShutdownWindowsNotificationSdk();
+  ShutdownWindowsNotifications();
   ::CoUninitialize();
   return EXIT_SUCCESS;
 }

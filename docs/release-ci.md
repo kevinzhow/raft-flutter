@@ -139,7 +139,7 @@ requires adjusting the corresponding native build and packaging implementation.
 
 | Platform | Runner | Asset | Requirements / current limits |
 | --- | --- | --- | --- |
-| Windows x64 | `windows-2022` | Complete portable ZIP plus a per-user Inno Setup installer (`-setup.exe`, the WinSparkle update vehicle) | No Authenticode signature. Requires Windows App Runtime 1.7 x64. Keep all DLLs and `data/`; `RUN.txt` explains explicit notification registration. Fresh-machine and cold-click acceptance is still pending. |
+| Windows x64 | `windows-2022` | Complete portable ZIP plus a per-user Inno Setup installer (`-setup.exe`, the WinSparkle update vehicle) | No Authenticode signature. MSVC runtime included; system Toast needs no Windows App Runtime. Keep all DLLs and `data/`; first launch registers the current-user notification identity and protocol. Device acceptance is separate from hosted CI. |
 | Android ARM64 | `ubuntu-24.04` | Signed split APK | SDK 37 / build tools 37.0.0, Java 17. Requires all signing secrets below; missing secrets fail instead of producing a debug-signed release. No Play Store/AAB upload. |
 | Linux x64 | `ubuntu-26.04` | Relocatable `.tar.gz` | Uses existing pinned Ubuntu Resolute media preparation; package/hash drift fails. Bundles library notices/provenance and verifies ELF lookup. Ubuntu 26.04 glibc/GTK/drivers required; other distributions are unverified. Review media GPL terms and supply matching source before enabling distribution. |
 | Linux x64 AppImage | `ubuntu-24.04` | `.AppImage` | Bundled GTK/media/PDF tools; latest reviewed static AppImage runtime, glibc ≤ 2.39, direct and no-FUSE startup checks, plus Fedora KDE Wayland compatibility checks. |

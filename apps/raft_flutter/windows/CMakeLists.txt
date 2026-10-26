@@ -77,14 +77,6 @@ endif()
 
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../../docs/licenses/Microsoft-Windows-App-SDK-1.7-license.txt"
-  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/licenses/windows-app-sdk"
-  RENAME "license.txt" COMPONENT Runtime)
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../../docs/licenses/Microsoft-Windows-App-SDK-1.7-NOTICE.txt"
-  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/licenses/windows-app-sdk"
-  RENAME "NOTICE.txt" COMPONENT Runtime)
-install(FILES "${RAFT_WINDOWS_BOOTSTRAP_DLL}"
-  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime)
 install(FILES "runner/resources/app_icon.ico"
   DESTINATION "${CMAKE_INSTALL_PREFIX}" RENAME "raft.ico" COMPONENT Runtime)
 install(FILES "runner/resources/notification_icon.png"

@@ -164,7 +164,7 @@ NativeContentCoordinator 为 macOS 绑定 DesktopInboxNotifications，直接消�
 
 ### Windows 通知平台补充（2026-10-11）
 
-Windows 使用同一 DesktopInboxNotifications 权威与生命周期。WindowsNotifications／原生宿主提供稳定身份、官方 Windows App SDK 投递、ToastNotifier.Setting 及窗口恢复；业务授权与导航仍在 NativeContentCoordinator。系统权限在每次投递时重新读取，桌面不保存私有 opt-in。ETW 确认本机在显示前拒绝默认 foreground 激活（0x80070032），官方 SDK 的 protocol 对照已由用户确认在通知中心显示。因此产品使用 raft-notification 协议：暖点击转交同 exe 的现有窗口，冷点击经参数启动后等待回调初始化，仍保留全部账户／授权检查。主应用设置按钮发送已确认显示；本机另经用户授权登记机器级 Raft 协议后，用户确认品牌图标和暖点击返回正常。冷点击仍待实测，不以接口接受、历史、fixture 或旧 COM 探针代替。当前 x64 bundle 需要 Windows App Runtime 1.7。具体矩阵、独立身份和边界见 [Windows 通知](windows-notifications.md)。
+Windows 使用同一 DesktopInboxNotifications 权威与生命周期。WindowsNotifications／原生宿主直接调用系统 Windows.UI.Notifications，提供固定 AUMID、当前用户 DisplayName／IconUri 登记、ToastNotifier.Setting 及窗口恢复；不依赖 Windows App SDK／App Runtime、开始菜单快捷方式或 COM 激活器。业务授权与导航仍在 NativeContentCoordinator，系统权限每次投递时重新读取，桌面不保存私有 opt-in。通知使用 raft-notification 协议：暖点击转交同 exe 的现有窗口，冷点击经参数启动后等待回调初始化，仍保留全部账户／授权检查。接口接受、历史记录和协议探针不能替代通知气泡显示及真实点击验收。历史对照与独立身份边界见 [Windows 通知](windows-notifications.md)。
 
 ## 附件磁盘缓存的清理（2026-10-14）
 
