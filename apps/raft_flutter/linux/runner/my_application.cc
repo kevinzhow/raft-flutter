@@ -190,9 +190,16 @@ static void my_application_activate(GApplication* application) {
         } else if (g_strcmp0(method, "close") == 0) {
           fl_method_call_respond_success(call, nullptr, nullptr);
           bar->caption->Close();
-        } else if (g_strcmp0(method, "setStyle") == 0 ||
-                   g_strcmp0(method, "setCaptionButtonRects") == 0) {
-          // Flutter paints the whole row; GTK needs no colour or hit rectangles.
+        } else if (g_strcmp0(method, "setStyle") == 0) {
+          FlValue* args = fl_method_call_get_args(call);
+          FlValue* dark = args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP
+                              ? fl_value_lookup_string(args, "dark") : nullptr;
+          if (dark != nullptr && fl_value_get_type(dark) == FL_VALUE_TYPE_BOOL) {
+            bar->caption->SetDark(fl_value_get_bool(dark));
+          }
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "setCaptionButtonRects") == 0) {
+          // GTK's normal widget hit testing owns these controls.
           fl_method_call_respond_success(call, nullptr, nullptr);
         } else if (g_strcmp0(method, "setTitle") == 0) {
           // The window's name for the task switcher and window lists (the

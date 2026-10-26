@@ -32,6 +32,12 @@ class DesktopCaptionBar {
   bool fullscreen() const { return HasState(GDK_WINDOW_STATE_FULLSCREEN); }
   bool maximized() const { return HasState(GDK_WINDOW_STATE_MAXIMIZED); }
   bool active() const { return gtk_window_is_active(window_); }
+  // GtkSettings here belongs to this process/display; it does not write the
+  // desktop preference. Keep GTK's resize border/native dialogs in app mode.
+  void SetDark(bool dark) {
+    g_object_set(gtk_widget_get_settings(GTK_WIDGET(window_)),
+                 "gtk-application-prefer-dark-theme", dark, nullptr);
+  }
   void StartDragging() { actions_.StartDragging(); }
   void DoubleClick() { actions_.DoubleClick(); }
   void Minimize() { gtk_window_iconify(window_); }
