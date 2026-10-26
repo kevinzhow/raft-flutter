@@ -4,8 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/platform/desktop_title_bar.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'flutter_test_config.dart' show leakDebt;
-
 class _Runner {
   _Runner(this.tester, {this.layout = ':minimize,maximize,close'}) {
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
@@ -47,26 +45,35 @@ class _Runner {
   }
 }
 
-Widget _app(DesktopTitleBarController controller, {bool integrated = true}) =>
-    MaterialApp(
-      theme: raftTheme(),
-      home: DesktopTitleBar(
-        controller: controller,
-        integrated: integrated,
-        child: const SizedBox.expand(key: Key('body')),
-      ),
-    );
+DesktopTitleBarController _controller(TargetPlatform platform) {
+  final controller = DesktopTitleBarController(platform: platform, web: false);
+  addTearDown(() => controller.state.dispose());
+  return controller;
+}
+
+Widget _app(
+  DesktopTitleBarController controller, {
+  bool integrated = true,
+  bool rtl = false,
+}) => MaterialApp(
+  theme: raftTheme(),
+  builder: (context, child) => Directionality(
+    textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+    child: child!,
+  ),
+  home: DesktopTitleBar(
+    controller: controller,
+    integrated: integrated,
+    child: const SizedBox.expand(key: Key('body')),
+  ),
+);
 
 void main() {
-  leakDebt(const ['ValueNotifier<DesktopTitleBarState>']);
   testWidgets('Linux captions occupy one row and call runner commands', (
     tester,
   ) async {
     final runner = _Runner(tester);
-    final controller = DesktopTitleBarController(
-      platform: TargetPlatform.linux,
-      web: false,
-    );
+    final controller = _controller(TargetPlatform.linux);
     await tester.pumpWidget(_app(controller));
     await tester.pumpAndSettle();
     for (final action in ['minimize', 'maximize', 'close']) {
@@ -100,10 +107,7 @@ void main() {
     'configured left captions keep positions and maximize state updates',
     (tester) async {
       final runner = _Runner(tester, layout: 'close,minimize:maximize');
-      final controller = DesktopTitleBarController(
-        platform: TargetPlatform.linux,
-        web: false,
-      );
+      final controller = _controller(TargetPlatform.linux);
       await tester.pumpWidget(_app(controller));
       await tester.pumpAndSettle();
       final close = find.byKey(const Key('desktop-caption-close'));
@@ -125,10 +129,7 @@ void main() {
     tester,
   ) async {
     final runner = _Runner(tester);
-    final controller = DesktopTitleBarController(
-      platform: TargetPlatform.linux,
-      web: false,
-    );
+    final controller = _controller(TargetPlatform.linux);
     await tester.pumpWidget(_app(controller, integrated: false));
     await tester.pumpAndSettle();
     expect(tester.getTopLeft(find.byKey(const Key('body'))).dy, 48);
@@ -140,10 +141,7 @@ void main() {
     'Windows capability uses rectangular targets and reports hit bounds',
     (tester) async {
       final runner = _Runner(tester);
-      final controller = DesktopTitleBarController(
-        platform: TargetPlatform.windows,
-        web: false,
-      );
+      final controller = _controller(TargetPlatform.windows);
       await tester.pumpWidget(_app(controller));
       await tester.pumpAndSettle();
       final max = find.byKey(const Key('desktop-caption-maximize'));
@@ -160,10 +158,7 @@ void main() {
     'caption reservation keeps working agents and notifications usable at 768px',
     (tester) async {
       _Runner(tester);
-      final controller = DesktopTitleBarController(
-        platform: TargetPlatform.linux,
-        web: false,
-      );
+      final controller = _controller(TargetPlatform.linux);
       tester.view.physicalSize = const Size(768, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -233,4 +228,24 @@ void main() {
       await tester.pumpAndSettle();
     },
   );
+  testWidgets('caption configuration keeps its physical order in an RTL host', (
+    tester,
+  ) async {
+    _Runner(tester);
+    final controller = _controller(TargetPlatform.linux);
+    await tester.pumpWidget(_app(controller, rtl: true));
+    await tester.pumpAndSettle();
+    final min = tester.getRect(
+      find.byKey(const Key('desktop-caption-minimize')),
+    );
+    final max = tester.getRect(
+      find.byKey(const Key('desktop-caption-maximize')),
+    );
+    final close = tester.getRect(
+      find.byKey(const Key('desktop-caption-close')),
+    );
+    expect(min.left, lessThan(max.left));
+    expect(max.left, lessThan(close.left));
+    expect(close.right, 796);
+  });
 }
