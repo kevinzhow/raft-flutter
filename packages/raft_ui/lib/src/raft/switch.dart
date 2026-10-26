@@ -1,27 +1,27 @@
-// raft-ui 0.7.1 `Switch` (dist `switchRecipe`): a 50x30 round track with a 1.5px ink border and a 22px thumb that
-// carries its own 1.5px ring. Off is a `fill-muted` track; on is the `brand` sticker (ink border, `sticker-edge`
-// ring) with a `sticker-paper` thumb; disabled reads `fill-muted` / `foreground-disabled`. Keyboard focus swaps the
-// sticker ring for the `focus-ring`. The thumb slides 220ms on `ease-slide`, the track colours 150ms.
+// raft-ui `Switch` (dist `switchRecipe`), painted in the Raft look from the generated recipe (raft_theme
+// recipes/switch_recipe.g.dart): the root slot is the 50x30 round track (`border-[1.5px]`, `p-[2.5px]`, `fill-muted`
+// off, `brand` with the `sticker-edge` ring on, `foreground-disabled` ink when disabled, `shadow-focus` on keyboard
+// focus) and the thumb slot the 22px disc with its own `0 0 0 1.5px` ring that translates 20px when checked. Sizes,
+// colours, rings, translate and the transition durations and curves are read from the resolved slots; nothing here
+// restates them. The frozen Elegant and Brutal paint lives in switch_frozen.dart.
 import 'package:flutter/material.dart';
 
 import '../design_primitives.dart';
-import '../theme.dart';
-import '../switch_recipe.dart';
 import '../hover_region.dart';
 import '../primitive_tokens.dart';
-import '../tokens/tokens.dart';
+import '../recipe_surface.dart'
+    show RaftRecipeBinding, RaftSlotPaint, raftCssColorLerp;
+import '../recipes/recipe_runtime.dart' show RaftSlotStyle, RaftTokenResolver;
+import '../recipes/switch_recipe.g.dart';
+import '../theme.dart';
 import 'css_box.dart';
-import 'ui_tokens.dart';
 
-export '../switch_recipe.dart' show RaftSwitchRecipe, RaftSwitchSize;
+part 'switch_frozen.dart';
 
-/// The fixed geometry of the 0.7.1 switch (`h-[30px] w-[50px] p-[2.5px]`, `size-[22px]`, `translate-x-5`).
-abstract final class RaftSwitchMetrics {
-  static const double width = 50, height = 30, padding = 2.5;
-  static const double thumb = 22, travel = 20, ring = 1.5;
-}
+/// `size` of the legacy looks' switch; the Raft look has the one 50x30 switch and ignores it.
+enum RaftSwitchSize { sm, md }
 
-/// Controlled raft-ui 0.7.1 `Switch`, the one switch of the client. A null [onChanged] (or `enabled: false`) is `disabled` and never fires.
+/// Controlled raft-ui `Switch`, the one switch of the client. A null [onChanged] (or `enabled: false`) is `disabled` and never fires.
 class RaftSwitch extends StatefulWidget {
   const RaftSwitch({
     super.key,
@@ -43,21 +43,6 @@ class RaftSwitch extends StatefulWidget {
 
   /// Layout minimum around the 50x30 track (a larger tap target that does take space); null adds none.
   final double? minimumTargetSize;
-
-  /// The thumb's left offset inside the padding box. Blink lays out in CSS px under an emulated device scale
-  /// factor and paints the box snapped to whole CSS px (`19.5` paints at `20`); [RaftBorderSnap] mirrors that.
-  static double _thumbOffset(
-    double slide,
-    RaftSwitchRecipe recipe,
-    double paintedBorder,
-  ) {
-    final offset = recipe.travel * slide;
-    if (!RaftBorderSnap.emulatedDeviceScaleFactor) return offset;
-    final origin =
-        paintedBorder +
-        (recipe.thumbInset - recipe.borderWidth).clamp(0, double.infinity);
-    return (origin + offset).roundToDouble() - origin;
-  }
 
   @override
   State<RaftSwitch> createState() => _RaftSwitchState();
@@ -82,11 +67,9 @@ class _RaftSwitchState extends State<RaftSwitch> {
     final focusNode = widget.focusNode;
     final minimumTargetSize = widget.minimumTargetSize;
     final t = RaftTokens.of(context);
-    final ui = t.ui;
-    final recipe = RaftSwitchRecipe(tokens: t, size: size);
     final reduced = MediaQuery.disableAnimationsOf(context);
     final disabled = !_enabled;
-    // Touch density adds no layout (the 0.7.1 `after:` hit slop takes no space): [RaftInteractive] extends the 48px
+    // Touch density adds no layout (the `after:` hit slop takes no space): [RaftInteractive] extends the 48px
     // hit target and semantics rect around the 50x30 track.
     final min =
         minimumTargetSize ??
@@ -100,127 +83,27 @@ class _RaftSwitchState extends State<RaftSwitch> {
       focusNode: focusNode,
       semanticLabel: semanticLabel,
       builder: (context, st) {
-        // Ring edges need the source inset/shadow painter. Square edges also
-        // use that painter, retaining the two-pixel inward outline.
-        if (!recipe.inkBorder || recipe.square) {
-          final hovered = st.hovered && showHover && RaftHoverScope.of(context);
-          final control = TweenAnimationBuilder<double>(
-            tween: Tween<double>(end: value ? 1 : 0),
-            duration: reduced ? Duration.zero : recipe.colorDuration,
-            curve: RaftPrimitives.switchCurve,
-            builder: (context, colorProgress, _) =>
-                TweenAnimationBuilder<double>(
-                  tween: Tween<double>(end: value ? 1 : 0),
-                  duration: reduced ? Duration.zero : recipe.slideDuration,
-                  curve: RaftPrimitives.switchCurve,
-                  builder: (context, progress, _) => CustomPaint(
-                    size: recipe.visualSize,
-                    painter: _SwitchPainter(
-                      recipe,
-                      progress,
-                      value,
-                      disabled,
-                      hovered,
-                      !disabled && st.focusVisible,
-                      colorProgress,
-                    ),
-                  ),
-                ),
-          );
-          Widget result = Semantics(
-            toggled: value,
-            hint: semanticDescription,
-            child: ExcludeSemantics(
-              child: AnimatedScale(
-                scale:
-                    !disabled &&
-                        st.pressed &&
-                        t.option('press.effect', or: 'overlay') == 'scale' &&
-                        !reduced
-                    ? .96
-                    : 1,
-                duration: reduced ? Duration.zero : recipe.slideDuration,
-                curve: RaftPrimitives.switchCurve,
-                child: control,
-              ),
-            ),
-          );
-          if (min > 0)
-            result = ConstrainedBox(
-              constraints: BoxConstraints(minWidth: min, minHeight: min),
-              child: Center(widthFactor: 1, heightFactor: 1, child: result),
-            );
-          return result;
-        }
-        final borderWidth = raftControlBorderPx(context, recipe.borderWidth);
-        // [track]: the `transition-[background-color,box-shadow]` 150ms ease-out; the thumb slides on `ease-slide`
-        // while its colours follow the value at once (`transition-transform` only).
-        final control = TweenAnimationBuilder<double>(
-          tween: Tween<double>(end: value ? 1 : 0),
-          duration: reduced ? Duration.zero : recipe.colorDuration,
-          curve: Curves.easeOut,
-          builder: (context, on, _) => TweenAnimationBuilder<double>(
-            tween: Tween<double>(end: value ? 1 : 0),
-            duration: reduced ? Duration.zero : recipe.slideDuration,
-            curve: RaftEase.slide,
-            builder: (context, slide, _) {
-              final offFill = ui.fillMuted;
-              final trackFill = disabled
-                  ? ui.fillMuted
-                  : Color.lerp(offFill, ui.brand, on)!;
-              final disabledInk = raftChromeBlend(
-                ui.foregroundDisabled,
-                ui.fillMuted,
+        final Widget control = t.isRaftLook
+            ? _RecipeSwitch(
+                tokens: t,
+                value: value,
+                disabled: disabled,
+                focusVisible: st.focusVisible,
+                reduced: reduced,
+              )
+            : _frozenSwitchControl(
+                context,
+                t: t,
+                size: size,
+                value: value,
+                disabled: disabled,
+                showHover: showHover,
+                st: st,
+                reduced: reduced,
+                min: min,
+                semanticDescription: semanticDescription,
               );
-              final trackBorder = disabled
-                  ? disabledInk
-                  : Color.lerp(ui.lineStrong, ui.stickerInk, on)!;
-              final thumbFill = disabled
-                  ? ui.fillMuted
-                  : (value ? ui.stickerPaper : ui.layerCard);
-              final thumbRing = disabled
-                  ? disabledInk
-                  : (value ? ui.stickerInk : ui.lineStrong);
-              return RaftCssBox(
-                radius: recipe.visualSize.height / 2,
-                fill: trackFill,
-                borderWidth: borderWidth,
-                borderColor: trackBorder,
-                opaqueRings: true,
-                rings: [
-                  if (st.focusVisible)
-                    for (final layer in ui.focusRing.layers)
-                      RaftRing(layer.spread, layer.color)
-                  else if (value &&
-                      t.option('sticker.ring', or: 'dieCut') == 'dieCut')
-                    RaftRing(RaftSwitchMetrics.ring, ui.stickerEdge),
-                ],
-                width: recipe.visualSize.width,
-                height: recipe.visualSize.height,
-                padding: EdgeInsets.all(
-                  (recipe.thumbInset - recipe.borderWidth).clamp(
-                    0,
-                    double.infinity,
-                  ),
-                ),
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: RaftSwitch._thumbOffset(slide, recipe, borderWidth),
-                  ),
-                  child: RaftCssBox(
-                    radius: recipe.thumbSize / 2,
-                    fill: thumbFill,
-                    opaqueRings: true,
-                    rings: [RaftRing(RaftSwitchMetrics.ring, thumbRing)],
-                    width: recipe.thumbSize,
-                    height: recipe.thumbSize,
-                  ),
-                ),
-              );
-            },
-          ),
-        );
+        if (!t.isRaftLook) return control;
         Widget result = Semantics(
           toggled: value,
           hint: semanticDescription,
@@ -238,168 +121,165 @@ class _RaftSwitchState extends State<RaftSwitch> {
   }
 }
 
-class _SwitchPainter extends CustomPainter {
-  const _SwitchPainter(
-    this.recipe,
-    this.progress,
-    this.value,
-    this.disabled,
-    this.hovered,
-    this.focused,
-    this.colorProgress,
-  );
-  final RaftSwitchRecipe recipe;
-  final double progress, colorProgress;
-  final bool value, disabled, hovered, focused;
-  @override
-  void paint(Canvas canvas, Size size) {
-    final t = recipe.tokens!;
-    final rect = Offset.zero & size;
-    final outer = recipe.radius.toRRect(rect);
-    if (focused) {
-      canvas.drawRRect(
-        recipe.radius.toRRect(rect.inflate(3)),
-        Paint()
-          ..color = t.colors['line-strong']!
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
-      );
-    }
-    void outerShadow(Color color, double offset, double sigma, double spread) {
-      canvas.save();
-      canvas.clipPath(
-        Path.combine(
-          PathOperation.difference,
-          Path()..addRect(rect.inflate(8)),
-          Path()..addRRect(outer),
-        ),
-      );
-      canvas.drawRRect(
-        outer.inflate(spread).shift(Offset(0, offset)),
-        Paint()
-          ..color = color
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, sigma),
-      );
-      canvas.restore();
-    }
+/// One recipe slot read as the box [RaftCssBox] paints.
+@immutable
+class _SlotPaint {
+  const _SlotPaint({
+    required this.fill,
+    required this.border,
+    required this.borderColor,
+    required this.rings,
+    required this.translate,
+  });
 
-    if (!recipe.square && !disabled) {
-      if (t.dark && !value) {
-        outerShadow(t.components.switchShadowBottom, 1, 0, 0);
-      } else {
-        outerShadow(
-          Colors.black.withValues(
-            alpha: t.dark
-                ? .4
-                : value
-                ? .12
-                : .08,
-          ),
-          1,
-          .75,
-          -1,
-        );
-      }
-    }
-    canvas.drawRRect(
-      outer,
-      Paint()
-        ..color = Color.lerp(
-          recipe.semantics.track(
-            value: false,
-            disabled: disabled,
-            hovered: hovered,
-          ),
-          recipe.semantics.track(
-            value: true,
-            disabled: disabled,
-            hovered: hovered,
-          ),
-          colorProgress,
-        )!,
-    );
-    if (recipe.square) {
-      canvas.drawRRect(
-        outer.deflate(recipe.borderWidth / 2),
-        Paint()
-          ..color = t.colors[disabled ? 'line-hairline' : 'line-strong']!
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = recipe.borderWidth,
-      );
-    } else {
-      canvas.save();
-      canvas.clipRRect(outer);
-      void ring(Color color, double width) {
-        canvas.drawPath(
-          Path()
-            ..fillType = PathFillType.evenOdd
-            ..addRRect(outer)
-            ..addRRect(outer.deflate(width)),
-          Paint()..color = color,
-        );
-      }
-
-      void top(Color color, double sigma) {
-        canvas.drawPath(
-          Path()
-            ..fillType = PathFillType.evenOdd
-            ..addRect(rect.inflate(4))
-            ..addRRect(outer.shift(const Offset(0, 1))),
-          Paint()
-            ..color = color
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, sigma),
-        );
-      }
-
-      if (disabled) {
-        ring(
-          t.dark ? Colors.black.withValues(alpha: .5) : t.colors['line-muted']!,
-          1,
-        );
-      } else if (t.dark && !value) {
-        ring(Colors.black.withValues(alpha: .4), 1);
-        top(Colors.black.withValues(alpha: .35), 1);
-      } else {
-        top(Colors.white.withValues(alpha: value ? .12 : .05), .25);
-      }
-      canvas.restore();
-    }
-    final thumbRect = Rect.fromLTWH(
-      recipe.thumbInset + recipe.travel * progress,
-      (size.height - recipe.thumbSize) / 2,
-      recipe.thumbSize,
-      recipe.thumbSize,
-    );
-    final thumb = RRect.fromRectAndRadius(
-      thumbRect,
-      Radius.circular(recipe.square ? 0 : recipe.thumbSize / 2),
-    );
-    if (!recipe.square && !disabled) {
-      canvas.drawRRect(
-        thumb.inflate(.5),
-        Paint()..color = Colors.black.withValues(alpha: .04),
-      );
-      canvas.drawRRect(
-        thumb.deflate(.5).shift(const Offset(0, 1)),
-        Paint()
-          ..color = Colors.black.withValues(alpha: .18)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, .75),
-      );
-    }
-    canvas.drawRRect(
-      thumb,
-      Paint()..color = recipe.semantics.thumb(value: value, disabled: disabled),
+  factory _SlotPaint.of(
+    BuildContext context,
+    RaftSlotStyle slot,
+    RaftTokenResolver rt,
+  ) {
+    final width = slot.borderWidth.top;
+    return _SlotPaint(
+      fill: slot.backgroundColor?.resolve(rt),
+      border: width > 0 ? raftControlBorderPx(context, width) : 0,
+      borderColor: width > 0 ? slot.borderColor?.resolve(rt) : null,
+      // Every layer, as CSS interpolates `box-shadow` by position; zero-spread layers paint nothing.
+      rings: [
+        for (final layer in slot.cssShadows(rt))
+          if (!layer.inset) RaftRing(layer.spread, layer.color),
+      ],
+      translate: slot.translate?.dx ?? 0,
     );
   }
 
+  final Color? fill, borderColor;
+  final double border, translate;
+  final List<RaftRing> rings;
+
+  static _SlotPaint lerp(_SlotPaint a, _SlotPaint b, double t) {
+    final count = a.rings.length > b.rings.length
+        ? a.rings.length
+        : b.rings.length;
+    const none = RaftRing(0, Color(0x00000000));
+    RaftRing ring(int i) {
+      final x = i < a.rings.length ? a.rings[i] : none;
+      final y = i < b.rings.length ? b.rings[i] : none;
+      return RaftRing(
+        x.spread + (y.spread - x.spread) * t,
+        raftCssColorLerp(x.color, y.color, t)!,
+      );
+    }
+
+    return _SlotPaint(
+      fill: raftCssColorLerp(a.fill, b.fill, t),
+      border: a.border + (b.border - a.border) * t,
+      borderColor: raftCssColorLerp(a.borderColor, b.borderColor, t),
+      rings: [for (var i = 0; i < count; i++) ring(i)],
+      translate: a.translate + (b.translate - a.translate) * t,
+    );
+  }
+
+  List<RaftRing> get painted => [
+    for (final r in rings)
+      if (r.spread > 0) r,
+  ];
+
+  /// An opaque fill and opaque rings paint each ring as a whole rounded rect under the fill (no AA seam).
+  bool get opaque =>
+      (fill?.a ?? 1) == 1 &&
+      rings.every((r) => r.spread <= 0 || r.color.a == 1);
+}
+
+/// The Raft look's switch: the `switchRecipe` root and thumb slots for the off and on state, blended by the
+/// transition progress the slots themselves declare.
+class _RecipeSwitch extends StatelessWidget {
+  const _RecipeSwitch({
+    required this.tokens,
+    required this.value,
+    required this.disabled,
+    required this.focusVisible,
+    required this.reduced,
+  });
+
+  final RaftTokens tokens;
+  final bool value, disabled, focusVisible, reduced;
+
   @override
-  bool shouldRepaint(_SwitchPainter old) =>
-      old.recipe.tokens != recipe.tokens ||
-      old.recipe.size != recipe.size ||
-      old.progress != progress ||
-      old.colorProgress != colorProgress ||
-      old.value != value ||
-      old.disabled != disabled ||
-      old.hovered != hovered ||
-      old.focused != focused;
+  Widget build(BuildContext context) {
+    final rt = tokens.recipeTokens;
+    RaftSwitchRecipeStyle resolve(bool checked) => RaftSwitchRecipe.resolve(
+      theme: tokens.recipeTheme,
+      states: tokens.recipeStates(
+        focusVisible: focusVisible,
+        extra: [if (checked) 'data-checked', if (disabled) 'data-disabled'],
+      ),
+      tokens: rt,
+    );
+    final off = resolve(false);
+    final on = resolve(true);
+    final root = value ? on.root : off.root;
+    final thumb = value ? on.thumb : off.thumb;
+    final trackOff = _SlotPaint.of(context, off.root, rt);
+    final trackOn = _SlotPaint.of(context, on.root, rt);
+    final thumbOff = _SlotPaint.of(context, off.thumb, rt);
+    final thumbOn = _SlotPaint.of(context, on.thumb, rt);
+    final padding = root.padding;
+    final width = root.width!, height = root.height!;
+    final thumbWidth = thumb.width!, thumbHeight = thumb.height!;
+    final colorDuration = reduced
+        ? Duration.zero
+        : root.transitionDuration ?? Duration.zero;
+    final slideDuration = reduced
+        ? Duration.zero
+        : thumb.transitionDuration ?? Duration.zero;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: value ? 1 : 0),
+      duration: colorDuration,
+      curve: root.transitionCurve ?? Curves.linear,
+      builder: (context, colour, _) => TweenAnimationBuilder<double>(
+        tween: Tween<double>(end: value ? 1 : 0),
+        duration: slideDuration,
+        curve: thumb.transitionCurve ?? Curves.linear,
+        builder: (context, slide, _) {
+          final track = _SlotPaint.lerp(trackOff, trackOn, colour);
+          // The thumb's colours follow the value at once (`transition-transform` only); its translate slides.
+          final disc = value ? thumbOn : thumbOff;
+          final travel =
+              thumbOff.translate +
+              (thumbOn.translate - thumbOff.translate) * slide;
+          return RaftCssBox(
+            radius: height / 2,
+            fill: track.fill,
+            borderWidth: track.border,
+            borderColor: track.borderColor,
+            opaqueRings: track.opaque,
+            rings: track.painted,
+            width: width,
+            height: height,
+            padding: padding,
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: _snappedTravel(travel, track.border + padding.left),
+              ),
+              child: RaftCssBox(
+                radius: thumbHeight / 2,
+                fill: disc.fill,
+                opaqueRings: disc.opaque,
+                rings: disc.painted,
+                width: thumbWidth,
+                height: thumbHeight,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Blink lays out in CSS px under an emulated device scale factor and paints the box snapped to whole CSS px
+  /// (`19.5` paints at `20`); [RaftBorderSnap] mirrors that.
+  static double _snappedTravel(double travel, double origin) =>
+      RaftBorderSnap.emulatedDeviceScaleFactor
+      ? (origin + travel).roundToDouble() - origin
+      : travel;
 }

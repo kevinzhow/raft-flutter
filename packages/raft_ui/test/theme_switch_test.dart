@@ -51,43 +51,27 @@ void main() {
               ? const Size(28, 16)
               : const Size(36, 20);
           expect(t.getSize(find.byType(RaftSwitch)), expected, reason: '$size');
-          final recipe = RaftSwitchRecipe(
-            tokens: RaftTokens.theme(pack: packForThemeId(id), dark: dark),
-            size: size,
-          );
+          if (id == raftThemePackId) continue;
+          // The frozen looks read their switch geometry from the pack's tokens (the Raft look paints the generated
+          // recipe, see raft_switch_spec_test).
+          final tokens = RaftTokens.theme(pack: packForThemeId(id), dark: dark);
+          final name = size.name;
+          final thumb = tokens.size('size.switch.thumb.$name', fallback: -1);
+          final inset = tokens.size('space.switchInset', fallback: -1);
           final square = id == brutalThemePackId && !dark;
           expect(
-            recipe.thumbSize,
-            id == raftThemePackId
-                ? 22
-                : size == RaftSwitchSize.sm
-                ? (square ? 10 : 12)
-                : (square ? 14 : 16),
+            thumb,
+            size == RaftSwitchSize.sm ? (square ? 10 : 12) : (square ? 14 : 16),
           );
+          expect(inset, square ? 3 : 2);
           expect(
-            recipe.thumbInset,
-            id == raftThemePackId
-                ? 4
-                : square
-                ? 3
-                : 2,
+            tokens.size('size.switch.width.$name', fallback: -1) -
+                thumb -
+                2 * inset,
+            size == RaftSwitchSize.sm ? 12 : 16,
           );
-          expect(
-            recipe.travel,
-            id == raftThemePackId
-                ? 20
-                : size == RaftSwitchSize.sm
-                ? 12
-                : 16,
-          );
-          expect(
-            recipe.slideDuration,
-            Duration(milliseconds: id == raftThemePackId ? 220 : 180),
-          );
-          expect(
-            recipe.colorDuration,
-            Duration(milliseconds: id == raftThemePackId ? 150 : 180),
-          );
+          expect(tokens.size('motion.switchSlideMs', fallback: -1), 180);
+          expect(tokens.size('motion.switchColorMs', fallback: -1), 180);
         }
       });
       testWidgets(
@@ -164,64 +148,48 @@ void main() {
       );
     }
   }
-  testWidgets(
-    'user geometry reaches the mounted switch without a pack-id branch',
-    (t) async {
-      final pack = RaftThemePack.parse(
-        jsonEncode({
-          'format': raftThemePackFormat,
-          'id': 'user:switch',
-          'name': {'en': 'Custom'},
-          'version': '1',
-          'extends': 'raft',
-          'modes': {
-            'light': {
-              'geometry': {
-                'size.switch.width.sm': 64,
-                'size.switch.height.sm': 32,
-                'size.switch.thumb.sm': 20,
-                'space.switchInset': 6,
-                'motion.switchSlideMs': 0,
-                'motion.switchColorMs': 0,
-              },
-            },
-            'dark': {},
+  RaftThemePack userSwitchPack() => RaftThemePack.parse(
+    jsonEncode({
+      'format': raftThemePackFormat,
+      'id': 'user:switch',
+      'name': {'en': 'Custom'},
+      'version': '1',
+      'extends': 'raft',
+      'modes': {
+        'light': {
+          'geometry': {
+            'size.switch.width.sm': 64,
+            'size.switch.height.sm': 32,
+            'size.switch.thumb.sm': 20,
+            'space.switchInset': 6,
+            'motion.switchSlideMs': 0,
+            'motion.switchColorMs': 0,
           },
-        }),
-      );
-      final tokens = RaftTokens.theme(pack: pack);
-      final recipe = RaftSwitchRecipe(tokens: tokens, size: RaftSwitchSize.sm);
-      expect(recipe.travel, 32);
-      expect(recipe.thumbSize, 20);
-      expect(recipe.thumbInset, 6);
-      await t.pumpWidget(
-        MaterialApp(
-          themeAnimationDuration: Duration.zero,
-          theme: raftTheme(pack: pack),
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: RaftSwitch(value: false, onChanged: (_) {}),
-            ),
-          ),
-        ),
-      );
-      expect(t.getSize(find.byType(RaftSwitch)), const Size(64, 32));
+        },
+        'dark': {},
+      },
+    }),
+  );
+  Widget userSwitch(RaftThemePack pack, bool value) => MaterialApp(
+    themeAnimationDuration: Duration.zero,
+    theme: raftTheme(pack: pack),
+    home: Scaffold(
+      body: Align(
+        alignment: Alignment.topLeft,
+        child: RaftSwitch(value: value, onChanged: (_) {}),
+      ),
+    ),
+  );
+  testWidgets(
+    'a user pack on the Raft look keeps the generated recipe geometry',
+    (t) async {
+      final pack = userSwitchPack();
+      await t.pumpWidget(userSwitch(pack, false));
+      expect(t.getSize(find.byType(RaftSwitch)), const Size(50, 30));
       final off = t.getTopLeft(find.byType(RaftCssBox).last);
-      await t.pumpWidget(
-        MaterialApp(
-          themeAnimationDuration: Duration.zero,
-          theme: raftTheme(pack: pack),
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: RaftSwitch(value: true, onChanged: (_) {}),
-            ),
-          ),
-        ),
-      );
+      await t.pumpWidget(userSwitch(pack, true));
       await t.pumpAndSettle();
-      expect(t.getTopLeft(find.byType(RaftCssBox).last).dx - off.dx, 32);
+      expect(t.getTopLeft(find.byType(RaftCssBox).last).dx - off.dx, 20);
       await t.pumpWidget(const SizedBox.shrink());
     },
   );
