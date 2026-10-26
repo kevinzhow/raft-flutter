@@ -79,10 +79,13 @@ class RaftWorkspaceTopBar extends StatelessWidget {
                     child: const SizedBox.expand(),
                   ),
                 ),
-                Row(
-                  textDirection: TextDirection.ltr,
+                CustomMultiChildLayout(
+                  delegate: _WorkspaceTopBarLayout(
+                    (width * .32).clamp(360.0, math.min(520.0, width)),
+                  ),
                   children: [
-                    Expanded(
+                    LayoutId(
+                      id: _TopBarSlot.leading,
                       child: Padding(
                         padding: EdgeInsets.only(
                           left: 8 + leadingInset,
@@ -98,21 +101,22 @@ class RaftWorkspaceTopBar extends StatelessWidget {
                               ),
                       ),
                     ),
-                    SizedBox(
-                      width: (width * .32).clamp(360.0, math.min(520.0, width)),
+                    LayoutId(
+                      id: _TopBarSlot.search,
                       child: RaftWorkspaceSearchTrigger(
                         key: searchKey,
                         onPressed: onSearch,
                       ),
                     ),
-                    Expanded(
+                    LayoutId(
+                      id: _TopBarSlot.trailing,
                       child: Padding(
                         padding: EdgeInsets.only(
                           left: 8,
                           right: 8 + trailingInset,
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
                           spacing: 4,
                           children: trailing,
                         ),
@@ -127,6 +131,50 @@ class RaftWorkspaceTopBar extends StatelessWidget {
       ),
     );
   }
+}
+
+enum _TopBarSlot { leading, search, trailing }
+
+/// Keep search centred, allowing its width to shrink when window controls and
+/// working agents need more space. No fixed estimate of a translated label's width.
+class _WorkspaceTopBarLayout extends MultiChildLayoutDelegate {
+  _WorkspaceTopBarLayout(this.preferredSearchWidth);
+  final double preferredSearchWidth;
+  @override
+  void performLayout(Size size) {
+    final right = layoutChild(_TopBarSlot.trailing, BoxConstraints.loose(size));
+    final side = math
+        .max((size.width - preferredSearchWidth) / 2, right.width)
+        .clamp(0.0, size.width / 2);
+    final search = layoutChild(
+      _TopBarSlot.search,
+      BoxConstraints(
+        minWidth: size.width - 2 * side,
+        maxWidth: size.width - 2 * side,
+        maxHeight: size.height,
+      ),
+    );
+    final left = layoutChild(
+      _TopBarSlot.leading,
+      BoxConstraints(minWidth: side, maxWidth: side, maxHeight: size.height),
+    );
+    positionChild(
+      _TopBarSlot.leading,
+      Offset(0, (size.height - left.height) / 2),
+    );
+    positionChild(
+      _TopBarSlot.search,
+      Offset(side, (size.height - search.height) / 2),
+    );
+    positionChild(
+      _TopBarSlot.trailing,
+      Offset(size.width - right.width, (size.height - right.height) / 2),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_WorkspaceTopBarLayout old) =>
+      preferredSearchWidth != old.preferredSearchWidth;
 }
 
 /// SearchTrigger is a button drawn as a field; opening it uses the application's

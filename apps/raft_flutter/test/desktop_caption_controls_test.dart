@@ -81,6 +81,20 @@ void main() {
       containsAllInOrder(['minimize', 'toggleMaximize', 'close']),
     );
     expect(tester.getTopLeft(find.byKey(const Key('body'))).dy, 0);
+    final focus = tester.widget<FocusableActionDetector>(
+      find.descendant(
+        of: find.byKey(const Key('desktop-caption-minimize')),
+        matching: find.byType(FocusableActionDetector),
+      ),
+    );
+    focus.focusNode!.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(
+      runner.calls.where((call) => call.method == 'minimize'),
+      hasLength(2),
+    );
   });
   testWidgets(
     'configured left captions keep positions and maximize state updates',
@@ -140,6 +154,83 @@ void main() {
       );
       final rect = (calls.last.arguments as Map)['maximize'];
       expect(rect, {'x': 708.0, 'y': 0.0, 'width': 46.0, 'height': 48.0});
+    },
+  );
+  testWidgets(
+    'caption reservation keeps working agents and notifications usable at 768px',
+    (tester) async {
+      _Runner(tester);
+      final controller = DesktopTitleBarController(
+        platform: TargetPlatform.linux,
+        web: false,
+      );
+      tester.view.physicalSize = const Size(768, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var notifications = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: DesktopTitleBar(
+            controller: controller,
+            integrated: true,
+            child: Builder(
+              builder: (context) {
+                final scope = DesktopTitleBarScope.maybeOf(context)!;
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: RaftWorkspaceTopBar(
+                    workspace: const Text('Workspace'),
+                    onSearch: () {},
+                    leadingInset: scope.leadingInset,
+                    trailingInset: scope.trailingInset,
+                    trailing: [
+                      RaftWorkingSummary(
+                        onFrame: true,
+                        agents: [
+                          for (var i = 0; i < 3; i++)
+                            RaftWorkingAgent(
+                              id: '$i',
+                              name: 'Agent $i',
+                              text: 'Working',
+                              avatar: const SizedBox(),
+                            ),
+                        ],
+                      ),
+                      SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: GestureDetector(
+                          key: const Key('bell'),
+                          onTap: () => notifications++,
+                          child: const Text('Bell'),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getRect(find.byKey(const Key('bell'))).right,
+        lessThan(
+          tester
+              .getRect(find.byKey(const Key('desktop-caption-minimize')))
+              .left,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('bell')));
+      expect(notifications, 1);
+      final search = tester.getRect(find.byKey(const Key('topbar-search')));
+      expect(search.center.dx, closeTo(384, .01));
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
     },
   );
 }

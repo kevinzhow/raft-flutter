@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'desktop_windows_caption_surface.dart';
+
 /// GTK-style left:right ordering. Ignore unknown and repeated controls; an
 /// invalid value falls back to a usable close/minimize/maximize group.
 @immutable
@@ -91,6 +93,7 @@ class _DesktopCaptionControlsState extends State<DesktopCaptionControls> {
         mainAxisSize: MainAxisSize.min,
         children: [
           for (final name in names)
+            // ds-allow: native caption hit regions match the platform runner's 48px row.
             SizedBox(
               key: _keys[name],
               width: widget.windows ? 46 : 37,
@@ -125,7 +128,7 @@ class _DesktopCaptionControlsState extends State<DesktopCaptionControls> {
   );
 }
 
-class _CaptionButton extends StatefulWidget {
+class _CaptionButton extends StatelessWidget {
   const _CaptionButton({
     super.key,
     required this.name,
@@ -138,79 +141,54 @@ class _CaptionButton extends StatefulWidget {
   final bool windows, maximized, active;
   final VoidCallback onPressed;
   @override
-  State<_CaptionButton> createState() => _CaptionButtonState();
-}
-
-class _CaptionButtonState extends State<_CaptionButton> {
-  bool hovered = false, focused = false, pressed = false;
-  @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final foreground = RaftTitleBarRecipe(t).foreground;
-    final label = raftText(context, switch (widget.name) {
+    final foreground = RaftTitleBarRecipe(RaftTokens.of(context)).foreground;
+    final label = raftText(context, switch (name) {
       'minimize' => 'Minimize window',
-      'maximize' => widget.maximized ? 'Restore window' : 'Maximize window',
+      'maximize' => maximized ? 'Restore window' : 'Maximize window',
       _ => 'Close window',
     });
-    // Native caption geometry and hover treatment are platform constants;
-    // colours always come from the active theme, including custom packs.
-    final surface = foreground.withValues(
-      alpha: pressed
-          ? .25
-          : hovered || focused
-          ? .2
-          : .1,
-    );
-    return RaftTooltip(
-      message: label,
-      child: Semantics(
-        button: true,
-        label: label,
-        onTap: widget.onPressed,
-        excludeSemantics: true,
-        child: FocusableActionDetector(
-          mouseCursor: SystemMouseCursors.basic,
-          actions: {
-            ActivateIntent: CallbackAction<ActivateIntent>(
-              onInvoke: (_) {
-                widget.onPressed();
-                return null;
-              },
-            ),
-          },
-          onShowFocusHighlight: (value) => setState(() => focused = value),
-          onShowHoverHighlight: (value) => setState(() => hovered = value),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onPressed,
-            onTapDown: (_) => setState(() => pressed = true),
-            onTapUp: (_) => setState(() => pressed = false),
-            onTapCancel: () => setState(() => pressed = false),
+    return RaftInteractive(
+      onPressed: onPressed,
+      semanticLabel: label,
+      tooltip: label,
+      builder: (context, state) {
+        // Native caption geometry is fixed; all colours follow the theme.
+        final highlighted = state.hovered || state.focusVisible;
+        final surface = foreground.withValues(
+          alpha: state.pressed
+              ? .25
+              : highlighted
+              ? .2
+              : .1,
+        );
+        final glyph = foreground.withValues(alpha: active ? 1 : .55);
+        if (windows)
+          return DesktopWindowsCaptionSurface(
+            name: name,
+            maximized: maximized,
+            foreground: foreground,
+            glyph: glyph,
+            highlighted: highlighted,
+            pressed: state.pressed,
+          );
+        return Center(
+          child: Container(
+            // ds-allow: 24px Linux native caption circle measured from Desktop 1.21.33.
+            width: 24,
+            // ds-allow: 24px Linux native caption circle measured from Desktop 1.21.33.
+            height: 24,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: surface),
             child: Center(
-              child: Container(
-                width: widget.windows ? 46 : 24,
-                height: widget.windows ? 48 : 24,
-                decoration: BoxDecoration(
-                  shape: widget.windows ? BoxShape.rectangle : BoxShape.circle,
-                  color: widget.windows && !hovered && !focused && !pressed
-                      ? null
-                      : surface,
-                ),
-                child: Center(
-                  child: CustomPaint(
-                    size: const Size.square(10),
-                    painter: _CaptionGlyph(
-                      widget.name,
-                      widget.maximized,
-                      foreground.withValues(alpha: widget.active ? 1 : .55),
-                    ),
-                  ),
-                ),
+              child: CustomPaint(
+                // ds-allow: native caption glyph bounds are independent of component theme metrics.
+                size: const Size.square(10),
+                painter: _CaptionGlyph(name, maximized, glyph),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
