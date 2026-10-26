@@ -367,7 +367,7 @@ void main() {
       a.gate = Completer<void>();
       await t.pumpWidget(_host(SidebarPreferencesView(controller: w)));
       expect(_anySpinner, findsNothing);
-      final section = find.text(' Focus');
+      final section = find.text(' Focus', skipOffstage: false);
       expect(section, findsOneWidget);
       await _settleStable(
         t,
