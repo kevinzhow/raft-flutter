@@ -364,12 +364,17 @@ class ChannelSettingsFixtureContractTest(unittest.TestCase):
             )
             generated = json.loads((ext / 'fixtures/channelsettings.json').read_text())
         checked = json.loads((EXT / 'fixtures/channelsettings.json').read_text())
-        for fixture in (generated, checked):
+        derived = json.loads((EXT / 'fixtures/members-pages-channel.json').read_text())
+        task_routes = []
+        for fixture in (generated, checked, derived):
             routes = {key: value for key, value in fixture['routes'].items()
                       if key.startswith('GET /tasks/channel/')}
             self.assertTrue(routes)
             for key, value in routes.items():
                 self.assertEqual(value, {'tasks': []}, key)
+            task_routes.append(routes)
+        self.assertEqual(task_routes[0], task_routes[1])
+        self.assertEqual(task_routes[1], task_routes[2])
 
 
 class FeedbackFixtureScopeTest(unittest.TestCase):

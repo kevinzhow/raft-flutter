@@ -544,7 +544,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-owner": [],
+  "GET /tasks/channel/channel-cs-owner": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-owner/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -667,7 +669,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-prefs": [],
+  "GET /tasks/channel/channel-cs-prefs": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-prefs/notification-settings": {
    "activityMuted": true,
    "muteFromSeq": null,
@@ -790,7 +794,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-newline": [],
+  "GET /tasks/channel/channel-cs-newline": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-newline/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -913,7 +919,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-nodesc": [],
+  "GET /tasks/channel/channel-cs-nodesc": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-nodesc/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -1036,7 +1044,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-longdesc": [],
+  "GET /tasks/channel/channel-cs-longdesc": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-longdesc/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -1159,7 +1169,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-guest-access": [],
+  "GET /tasks/channel/channel-cs-guest-access": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-guest-access/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -1282,7 +1294,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-admin": [],
+  "GET /tasks/channel/channel-cs-admin": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-admin/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -1405,7 +1419,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-member": [],
+  "GET /tasks/channel/channel-cs-member": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-member/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -1528,7 +1544,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-guest-role": [],
+  "GET /tasks/channel/channel-cs-guest-role": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-guest-role/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -1651,7 +1669,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-private": [],
+  "GET /tasks/channel/channel-cs-private": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-private/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -1774,7 +1794,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-archived": [],
+  "GET /tasks/channel/channel-cs-archived": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-archived/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -1897,7 +1919,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-all": [],
+  "GET /tasks/channel/channel-cs-all": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-all/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -2020,7 +2044,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-not-joined": [],
+  "GET /tasks/channel/channel-cs-not-joined": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-many/members": {
    "agents": [
     {
@@ -2643,7 +2669,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-many": [],
+  "GET /tasks/channel/channel-cs-many": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-many/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -2766,7 +2794,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-loading": [],
+  "GET /tasks/channel/channel-cs-loading": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-loading/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -2889,7 +2919,9 @@
    ],
    "externalMembers": []
   },
-  "GET /tasks/channel/channel-cs-joint": [],
+  "GET /tasks/channel/channel-cs-joint": {
+   "tasks": []
+  },
   "GET /channels/channel-cs-joint/notification-settings": {
    "activityMuted": false,
    "muteFromSeq": null,
@@ -2905,7 +2937,9 @@
    "humans": [],
    "externalMembers": []
   },
-  "GET /tasks/channel/dm-cs-agent-cindy": [],
+  "GET /tasks/channel/dm-cs-agent-cindy": {
+   "tasks": []
+  },
   "GET /channels/dm-cs-agent-cindy/message-display-settings": {
    "collapseLongMessages": true,
    "prefsVersion": 0
@@ -2915,7 +2949,9 @@
    "humans": [],
    "externalMembers": []
   },
-  "GET /tasks/channel/dm-cs-human-designer": [],
+  "GET /tasks/channel/dm-cs-human-designer": {
+   "tasks": []
+  },
   "GET /channels/dm-cs-human-designer/message-display-settings": {
    "collapseLongMessages": true,
    "prefsVersion": 0
