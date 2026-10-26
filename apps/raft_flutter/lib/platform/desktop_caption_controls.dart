@@ -164,7 +164,7 @@ class _CaptionButton extends StatelessWidget {
               : .1,
         );
         final glyph = foreground.withValues(alpha: active ? 1 : .55);
-        if (windows)
+        if (windows) {
           return DesktopWindowsCaptionSurface(
             name: name,
             maximized: maximized,
@@ -173,6 +173,7 @@ class _CaptionButton extends StatelessWidget {
             highlighted: highlighted,
             pressed: state.pressed,
           );
+        }
         return Align(
           alignment: Alignment.centerRight,
           // Electron's Linux targets have a 36px visual allocation and a 1px
