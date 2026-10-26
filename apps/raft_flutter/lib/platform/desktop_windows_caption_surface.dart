@@ -33,6 +33,7 @@ class DesktopWindowsCaptionSurface extends StatelessWidget {
           painter: _WindowsGlyph(
             name,
             maximized,
+            // ds-allow: Windows native close hover requires a white glyph in every app theme.
             name == 'close' && (highlighted || pressed) ? Colors.white : glyph,
           ),
         ),
