@@ -222,13 +222,17 @@ class _CaptionGlyph extends CustomPainter {
     final rect = Rect.fromLTWH(1.5, 1.5, size.width - 3, size.height - 3);
     if (name == 'minimize') {
       canvas.drawLine(
-        Offset(1, size.height / 2 + .5),
-        Offset(size.width - 1, size.height / 2 + .5),
+        Offset(1, size.height / 2 + 2.5),
+        Offset(size.width - 1, size.height / 2 + 2.5),
         p,
       );
     } else if (name == 'close') {
-      canvas.drawLine(rect.topLeft, rect.bottomRight, p);
-      canvas.drawLine(rect.topRight, rect.bottomLeft, p);
+      // The reference GTK symbolic X is 1.25px wide with extended ends.
+      // ds-allow: native symbolic icon geometry measured from Desktop 1.21.33.
+      p.strokeWidth = 1.25;
+      final cross = rect.inflate(.15);
+      canvas.drawLine(cross.topLeft, cross.bottomRight, p);
+      canvas.drawLine(cross.topRight, cross.bottomLeft, p);
     } else if (maximized) {
       canvas.drawPath(
         Path()

@@ -60,6 +60,7 @@ Widget _app(
   bool integrated = true,
   bool rtl = false,
 }) => MaterialApp(
+  debugShowCheckedModeBanner: false,
   theme: raftTheme(),
   builder: (context, child) => Directionality(
     textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
@@ -184,8 +185,9 @@ void main() {
       // occupies one physical row; it is not a faded two-row stroke.
       final centre = image.width - 22 - 2 * 37;
       try {
-        expect(pixel(centre, 24), const Color(0xff141111));
-        expect(pixel(centre, 23), const Color(0xffe8c13b));
+        expect(pixel(centre, 26), const Color(0xff141111));
+        expect(pixel(image.width - 22 - 4, 20).r, lessThan(.4));
+        expect(pixel(centre, 25), const Color(0xffe8c13b));
         expect(pixel(centre, 16), const Color(0xffe8c13b));
       } finally {
         image.dispose();
