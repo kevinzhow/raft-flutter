@@ -73,8 +73,12 @@ Widget _app(
 );
 
 void main() {
-  for (final platform in [TargetPlatform.linux, TargetPlatform.windows]) {
-    for (final page in [false, true]) {
+  for (final platform in [
+    TargetPlatform.linux,
+    TargetPlatform.windows,
+    TargetPlatform.macOS,
+  ]) {
+    for (final page in ['dialog', 'page', 'media']) {
       testWidgets('$platform preview $page clears the caption region once', (
         tester,
       ) async {
@@ -91,7 +95,14 @@ void main() {
             builder: (context) => Center(
               child: TextButton(
                 onPressed: () => Navigator.of(context).push<void>(
-                  page
+                  page == 'media'
+                      ? RaftMediaBrowserRoute<void>(
+                          builder: (_) => const Align(
+                            alignment: Alignment.topLeft,
+                            child: Text('Preview heading'),
+                          ),
+                        )
+                      : page == 'page'
                       ? RaftPreviewPageRoute<void>(
                           builder: (_) => const RaftWindowChromePadding(
                             child: Align(

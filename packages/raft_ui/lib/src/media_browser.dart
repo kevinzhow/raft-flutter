@@ -15,6 +15,7 @@ import 'text_scaling.dart';
 import 'theme.dart';
 import 'tokens/media_motion.g.dart';
 import 'video_controls.dart' show raftMediaChromeFade;
+import 'window_chrome.dart';
 
 // Unified media browser visuals (phone immersive stage, strip, drag-to-dismiss,
 // Hero route). Pure presentation: the host owns items, loading, sessions and
@@ -179,7 +180,9 @@ class RaftMediaBrowserRoute<T> extends PageRoute<T>
     scopesRoute: true,
     explicitChildNodes: true,
     // Text outside a Material falls back to the debug underline style.
-    child: Material(type: MaterialType.transparency, child: builder(context)),
+    child: RaftWindowChromePadding(
+      child: Material(type: MaterialType.transparency, child: builder(context)),
+    ),
   );
 
   @override
