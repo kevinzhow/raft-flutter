@@ -21,7 +21,6 @@ const _steps = [
   RaftStep(title: 'Health'),
 ];
 
-
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     final mode = dark ? 'dark' : 'light';

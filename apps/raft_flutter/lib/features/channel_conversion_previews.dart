@@ -37,7 +37,7 @@ class _ConversionPreviewState extends State<_ConversionPreview> {
           RaftToggleGroup<String>(
             value: {status},
             onChanged: (next) {
-              if (next.isNotEmpty) setState(() => status = next.single);
+              if (next.isNotEmpty) setState(() => status = next.first);
             },
             items: [
               for (final choice in ['running', 'failed', 'done', 'canceled'])

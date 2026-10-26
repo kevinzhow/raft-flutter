@@ -350,17 +350,14 @@ class _RaftAgentProfileEditDialogState
             RaftRadioGroupItem<String>(
               value: o.$1,
               gap: 8,
-              child: SizedBox(
-                height: 20,
-                child: RaftCssText(
-                  raftText(context, o.$2),
-                  style: RaftTypography.body(
-                    t,
-                    size: 14,
-                    line: 20,
-                    weight: FontWeight.w500,
-                    color: t.ink,
-                  ),
+              child: RaftCssText(
+                raftText(context, o.$2),
+                style: RaftTypography.body(
+                  t,
+                  size: 14,
+                  line: 20,
+                  weight: FontWeight.w500,
+                  color: t.ink,
                 ),
               ),
             ),

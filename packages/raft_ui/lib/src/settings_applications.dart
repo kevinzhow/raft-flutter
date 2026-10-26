@@ -699,7 +699,7 @@ class _LayoutToggle extends StatelessWidget {
     value: {value},
     // The Web handler ignores the empty value of a pressed item pressed again.
     onChanged: (next) {
-      if (next.isNotEmpty) onChanged(next.single);
+      if (next.isNotEmpty) onChanged(next.first);
     },
     items: const [
       RaftToggleGroupItem(

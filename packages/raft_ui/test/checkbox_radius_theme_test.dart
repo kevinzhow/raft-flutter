@@ -13,11 +13,7 @@ Widget _host(String id, {RaftCheckboxShape shape = RaftCheckboxShape.square}) =>
     MaterialApp(
       theme: raftTheme(pack: packForThemeId(id)),
       home: Scaffold(
-        body: RaftCheckbox(
-          value: true,
-          onChanged: (_) {},
-          shape: shape,
-        ),
+        body: RaftCheckbox(value: true, onChanged: (_) {}, shape: shape),
       ),
     );
 

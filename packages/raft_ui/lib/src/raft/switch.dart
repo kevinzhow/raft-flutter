@@ -206,11 +206,7 @@ class _RaftSwitchState extends State<RaftSwitch> {
                 alignment: Alignment.centerLeft,
                 child: Padding(
                   padding: EdgeInsets.only(
-                    left: RaftSwitch._thumbOffset(
-                      slide,
-                      recipe,
-                      borderWidth,
-                    ),
+                    left: RaftSwitch._thumbOffset(slide, recipe, borderWidth),
                   ),
                   child: RaftCssBox(
                     radius: recipe.thumbSize / 2,
