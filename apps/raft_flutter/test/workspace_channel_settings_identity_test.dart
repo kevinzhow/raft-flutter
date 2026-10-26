@@ -185,7 +185,9 @@ void main() {
           find.byKey(const ValueKey('channel-overflow-unsaved-prompt')),
           findsOneWidget,
         );
-        await t.tap(find.text('Discard Changes'));
+        await t.tap(
+          find.byKey(const ValueKey('channel-overflow-unsaved-discard')),
+        );
         await t.pumpAndSettle();
         expect(find.byType(ChannelSettings), findsNothing);
         expect(find.byType(WorkspaceView), findsOneWidget);
