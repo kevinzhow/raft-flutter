@@ -20,14 +20,21 @@ class DesktopWindowsCaptionSurface extends StatelessWidget {
     child: DecoratedBox(
       decoration: BoxDecoration(
         color: highlighted || pressed
-            ? foreground.withValues(alpha: pressed ? .25 : .2)
+            ? name == 'close'
+                  // ds-allow: Windows native caption close hover, independent of app theme.
+                  ? const Color(0xffc42b1c)
+                  : foreground.withValues(alpha: pressed ? .25 : .2)
             : null,
       ),
       child: Center(
         child: CustomPaint(
           // ds-allow: native caption glyph bounds, separate from themed component metrics.
           size: const Size.square(10),
-          painter: _WindowsGlyph(name, maximized, glyph),
+          painter: _WindowsGlyph(
+            name,
+            maximized,
+            name == 'close' && (highlighted || pressed) ? Colors.white : glyph,
+          ),
         ),
       ),
     ),

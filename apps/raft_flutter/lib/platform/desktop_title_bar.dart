@@ -38,6 +38,7 @@ class DesktopTitleBarState {
     this.customControls = false,
     this.maximized = false,
     this.active = true,
+    this.maximizeHovered = false,
     this.buttonLayout = ':minimize,maximize,close',
   });
 
@@ -55,6 +56,7 @@ class DesktopTitleBarState {
 
   /// Capability flag: older runners retain their system decoration.
   final bool customControls, maximized, active;
+  final bool maximizeHovered;
   final String buttonLayout;
 
   @override
@@ -67,6 +69,7 @@ class DesktopTitleBarState {
       other.customControls == customControls &&
       other.maximized == maximized &&
       other.active == active &&
+      other.maximizeHovered == maximizeHovered &&
       other.buttonLayout == buttonLayout;
 
   @override
@@ -78,6 +81,7 @@ class DesktopTitleBarState {
     customControls,
     maximized,
     active,
+    maximizeHovered,
     buttonLayout,
   );
 }
@@ -319,6 +323,7 @@ class DesktopTitleBarController {
       customControls: value['customControls'] == true,
       maximized: value['maximized'] == true,
       active: value['active'] != false,
+      maximizeHovered: value['maximizeHovered'] == true,
       buttonLayout: value['buttonLayout'] is String
           ? value['buttonLayout'] as String
           : ':minimize,maximize,close',
@@ -595,6 +600,7 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
                         visible: showButtons,
                         maximized: state.maximized,
                         active: state.active,
+                        nativeMaximizeHovered: windows && state.maximizeHovered,
                         onAction: (action) =>
                             unawaited(controller.captionAction(action)),
                         onRects: (rects) =>

@@ -46,9 +46,11 @@ class DesktopCaptionControls extends StatefulWidget {
     required this.visible,
     required this.onAction,
     required this.onRects,
+    this.nativeMaximizeHovered = false,
   });
   final DesktopCaptionLayout layout;
   final bool windows, maximized, active, visible;
+  final bool nativeMaximizeHovered;
   final ValueChanged<String> onAction;
   final ValueChanged<Map<String, Object>> onRects;
   @override
@@ -105,6 +107,10 @@ class _DesktopCaptionControlsState extends State<DesktopCaptionControls> {
                 windows: widget.windows,
                 maximized: widget.maximized,
                 active: widget.active,
+                nativeHovered:
+                    widget.windows &&
+                    name == 'maximize' &&
+                    widget.nativeMaximizeHovered,
                 onPressed: () => widget.onAction(
                   name == 'maximize' ? 'toggleMaximize' : name,
                 ),
@@ -137,9 +143,11 @@ class _CaptionButton extends StatelessWidget {
     required this.maximized,
     required this.active,
     required this.onPressed,
+    this.nativeHovered = false,
   });
   final String name;
   final bool windows, maximized, active;
+  final bool nativeHovered;
   final VoidCallback onPressed;
   @override
   Widget build(BuildContext context) {
@@ -152,10 +160,11 @@ class _CaptionButton extends StatelessWidget {
     return RaftInteractive(
       onPressed: onPressed,
       semanticLabel: label,
-      tooltip: label,
+      tooltip: windows ? null : label,
       builder: (context, state) {
         // Native caption geometry is fixed; all colours follow the theme.
-        final highlighted = state.hovered || state.focusVisible;
+        final highlighted =
+            nativeHovered || state.hovered || state.focusVisible;
         final surface = foreground.withValues(
           alpha: state.pressed
               ? .25

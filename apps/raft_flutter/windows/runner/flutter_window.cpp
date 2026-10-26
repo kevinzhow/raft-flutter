@@ -41,6 +41,7 @@ flutter::EncodableValue FrameState(const WindowsFrame::State& state) {
       {flutter::EncodableValue("maximized"), flutter::EncodableValue(state.maximized)},
       {flutter::EncodableValue("fullscreen"), flutter::EncodableValue(state.fullscreen)},
       {flutter::EncodableValue("active"), flutter::EncodableValue(state.active)},
+      {flutter::EncodableValue("maximizeHovered"), flutter::EncodableValue(state.maximize_hovered)},
       {flutter::EncodableValue("buttonLayout"), flutter::EncodableValue(":minimize,maximize,close")}};
 }
 

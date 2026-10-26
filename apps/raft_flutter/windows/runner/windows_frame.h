@@ -16,6 +16,7 @@ class WindowsFrame {
     bool maximized = false;
     bool fullscreen = false;
     bool active = false;
+    bool maximize_hovered = false;
   };
   struct Rect { double x = 0, y = 0, width = 0, height = 0; };
   using CaptionRects = std::array<Rect, 3>;  // minimize, maximize, close.

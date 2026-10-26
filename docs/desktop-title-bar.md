@@ -178,15 +178,17 @@ Windows handlers are not compiled on the Linux machine that wrote them.
 caption with `WM_NCCALCSIZE`. The shared Flutter header and its three 46 x 48
 logical-pixel caption buttons occupy one row, both inside workspaces and on the
 standalone brand row. `app.raft/titlebar` advertises `customControls`, and reports
-`maximized`, `fullscreen` and `active` only when those values change. The runner
+`maximized`, `fullscreen`, `active` and `maximizeHovered` only when those values change. The runner
 accepts `setCaptionButtonRects` in logical coordinates plus `minimize`,
 `toggleMaximize`, `close`, `startDragging` and `doubleClick`.
 
 Windows retains its overlapped window style, system menu, edge/corner resizing
 and snap behavior. The maximize target returns `HTMAXBUTTON` for Windows 11's
 snap layout menu. A subclass of the Flutter child HWND passes resize/maximize
-hit tests through to the top-level window; maximize hover and presses reach the
-shared Flutter button. Content and the other buttons keep their normal Flutter
+hit tests through to the top-level window. Maximize hover updates the shared
+button through `maximizeHovered`, without forwarding a client `WM_MOUSEMOVE`:
+Flutter would register competing child-window leave tracking. Native maximize
+presses still reach the shared Flutter button. Content and the other buttons keep their normal Flutter
 input path. Caption positions from a different logical window width are ignored
 until the next Dart layout; unchanged positions survive height-only resize and
 DPI changes. Maximized content is constrained to the monitor work area, while
@@ -196,6 +198,11 @@ Close posts the ordinary `WM_CLOSE`, so the existing tray and orderly-exit owner
 decides whether to hide or quit. The frame never destroys the engine directly.
 The child subclass is removed before Flutter destroys its window. Full-window
 previews use the shared `RaftWindowChromeScope` caption reservation.
+Windows close hover uses the native red surface and white glyph. Windows caption
+buttons keep semantic labels but do not show an extra Flutter tooltip over the
+native controls or snap popup. There is currently no Windows system-fullscreen
+command or F11 binding; native fullscreen transition tests do not imply a public
+entry point exists.
 
 Set the process environment `RAFT_DESKTOP_TITLE_BAR=native` to retain the older
 system caption. Older runners that do not advertise `customControls` retain it

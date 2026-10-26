@@ -37,6 +37,7 @@ bool WindowsFrame::Enable(bool custom) {
   }
   const auto before = state_;
   state_.custom_controls = custom;
+  state_.maximize_hovered = false;
   rects_ = {};
   // Keep WS_OVERLAPPEDWINDOW: Windows still owns resizing, snap and system menu.
   MARGINS margins{0, 0, custom ? 1 : 0, 0};
@@ -69,7 +70,8 @@ bool WindowsFrame::IsFullscreen() const {
 void WindowsFrame::NotifyIfChanged(const State& before) {
   if (changed_ && (state_.custom_controls != before.custom_controls ||
       state_.active != before.active || state_.maximized != before.maximized ||
-      state_.fullscreen != before.fullscreen)) changed_();
+      state_.fullscreen != before.fullscreen ||
+      state_.maximize_hovered != before.maximize_hovered)) changed_();
 }
 
 LRESULT WindowsFrame::HitTest(POINT point) const {
@@ -139,18 +141,25 @@ std::optional<LRESULT> WindowsFrame::HandleMessage(UINT message, WPARAM wp, LPAR
     case WM_NCHITTEST: return HitTest(ScreenPoint(lp));
     case WM_NCMOUSEMOVE:
       if (wp == HTMAXBUTTON) {
+        const auto before = state_;
+        state_.maximize_hovered = true;
         if (!tracking_max_) {
           TRACKMOUSEEVENT tracking{sizeof(TRACKMOUSEEVENT), TME_NONCLIENT | TME_LEAVE, window_, 0};
           TrackMouseEvent(&tracking); tracking_max_ = true;
         }
-        ForwardPointer(WM_MOUSEMOVE, 0, lp);
+        // Forwarding WM_MOUSEMOVE to Flutter starts client TME_LEAVE tracking
+        // on its child HWND, competing with this nonclient track. Report only
+        // paint state; let DefWindowProc own the native snap-hover lifecycle.
+        NotifyIfChanged(before);
         // DefWindowProc still sees HTMAXBUTTON and can present Win11 snap layouts.
       }
       break;
     case WM_NCMOUSELEAVE:
       if (tracking_max_) {
+        const auto before = state_;
         tracking_max_ = false;
-        SendMessageW(child_, WM_MOUSELEAVE, 0, 0);
+        state_.maximize_hovered = false;
+        NotifyIfChanged(before);
       }
       break;
     case WM_NCLBUTTONDOWN:
@@ -166,18 +175,21 @@ std::optional<LRESULT> WindowsFrame::HandleMessage(UINT message, WPARAM wp, LPAR
       const auto before = state_;
       state_.maximized = wp == SIZE_MAXIMIZED;
       state_.fullscreen = IsFullscreen();
+      state_.maximize_hovered = false;
       NotifyIfChanged(before);
       break;
     }
     case WM_WINDOWPOSCHANGED: {
       const auto before = state_;
       state_.fullscreen = IsFullscreen();
+      if (state_.fullscreen) state_.maximize_hovered = false;
       NotifyIfChanged(before);
       break;
     }
     case WM_ACTIVATE: {
       const auto before = state_;
       state_.active = LOWORD(wp) != WA_INACTIVE;
+      if (!state_.active) state_.maximize_hovered = false;
       NotifyIfChanged(before);
       break;
     }

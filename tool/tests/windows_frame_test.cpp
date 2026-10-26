@@ -184,12 +184,26 @@ void StateAndFullscreen() {
 void ForwardMaxPointer() {
   Window w; Rects(w);
   SendMessageW(w.hwnd, WM_NCMOUSEMOVE, HTMAXBUTTON, w.Point(640,25));
-  Check(w.moves == 1, "native maximize hover must reach shared Flutter hover drawing");
+  Check(w.moves == 0 && w.frame->state().maximize_hovered,
+        "native maximize hover paints via state without competing child tracking");
   SendMessageW(w.hwnd, WM_NCLBUTTONDOWN, HTMAXBUTTON, w.Point(640,25));
   Check(w.downs == 1, "maximize press must use the same shared button action as keyboard");
   ReleaseCapture();
   SendMessageW(w.hwnd, WM_NCMOUSELEAVE, 0, 0);
-  Check(w.leaves == 1, "leaving native maximize clears Flutter hover");
+  Check(w.leaves == 0 && !w.frame->state().maximize_hovered,
+        "leaving native maximize clears shared hover without synthetic Flutter leave");
+}
+void NativeHoverDoesNotStartFlutterTracking() {
+  Window w; Rects(w);
+  const int changes = w.changes;
+  SendMessageW(w.hwnd, WM_NCMOUSEMOVE, HTMAXBUTTON, w.Point(640,25));
+  Check(w.moves == 0,
+        "native hover must not send WM_MOUSEMOVE that starts competing Flutter child tracking");
+  Check(w.changes == changes + 1, "native maximize hover must update shared paint state once");
+  SendMessageW(w.hwnd, WM_NCMOUSEMOVE, HTMAXBUTTON, w.Point(641,25));
+  Check(w.changes == changes + 1, "stationary native hover must not repeatedly notify Dart");
+  SendMessageW(w.hwnd, WM_NCMOUSELEAVE, 0, 0);
+  Check(w.changes == changes + 2, "native hover leave must clear shared paint state once");
 }
 void CloseOwnership() {
   Window w;
@@ -213,8 +227,9 @@ int main() {
     NoExtraCaption();
 #ifdef RAFT_FRAME_AVAILABLE
     HitTests(); InvalidAndStaleRects(); MaximumClientArea(); StateAndFullscreen();
+    NativeHoverDoesNotStartFlutterTracking();
     ForwardMaxPointer(); CloseOwnership(); FallbackAndLifetime();
-    std::cout << "PASS: 8 native frame scenarios (hidden windows; not visual/pointer acceptance)\n";
+    std::cout << "PASS: 9 native frame scenarios (hidden windows; not visual/pointer acceptance)\n";
 #endif
     return 0;
   } catch (const std::exception& e) { std::cerr << "FAIL: " << e.what() << '\n'; return 1; }
