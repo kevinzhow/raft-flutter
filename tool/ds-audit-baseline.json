@@ -11,7 +11,6 @@
  "about": "Ratchet for tool/ds-audit. Counts may only go down. Feature branches never edit this file; the integration owner runs `tool/ds-audit --update-baseline` after merges (separate small commit). `generated` is informational (const variables per generated recipe file) and is never checked.",
  "totals": {
   "bypass.button": 38,
-  "bypass.chip": 3,
   "bypass.dialog": 44,
   "bypass.divider": 1,
   "bypass.icon_button": 15,
@@ -19,9 +18,8 @@
   "bypass.menu": 19,
   "bypass.overlay": 24,
   "bypass.picker": 3,
-  "bypass.select": 27,
+  "bypass.select": 2,
   "bypass.text_field": 7,
-  "bypass.toggle": 7,
   "bypass.tooltip": 1,
   "contract.color_literal": 270,
   "contract.font_size_literal": 172,
@@ -33,9 +31,8 @@
   "duplicate.button": 271,
   "duplicate.dialog": 47,
   "duplicate.list_row": 5,
-  "duplicate.segmented": 10,
   "style.border_radius": 10,
-  "style.dimension": 33,
+  "style.dimension": 32,
   "style.duration": 2,
   "style.edge_insets": 46,
   "style.font_weight": 3,
@@ -45,17 +42,14 @@
   "style.sized_box": 41,
   "style.text_style": 2,
   "widget.button": 22,
-  "widget.chip": 3,
   "widget.dialog": 29,
   "widget.icon_button": 9,
   "widget.ink": 1,
-  "widget.list_tile": 2,
   "widget.menu": 15,
   "widget.other": 10,
   "widget.scaffold": 4,
-  "widget.select": 3,
   "widget.surface": 4,
-  "widget.text_field": 3
+  "widget.text_field": 2
  },
  "files": {
   "apps/raft_flutter/lib/features/account_auth_previews.dart": {
@@ -114,13 +108,11 @@
   },
   "apps/raft_flutter/lib/features/agent_scopes_view.dart": {
    "bypass.button": 1,
-   "bypass.toggle": 1,
    "style.dimension": 1,
    "style.edge_insets": 1,
    "style.material_theme": 1,
    "style.sized_box": 1,
    "widget.button": 1,
-   "widget.list_tile": 1,
    "widget.scaffold": 1
   },
   "apps/raft_flutter/lib/features/appearance_section.dart": {
@@ -150,13 +142,10 @@
   },
   "apps/raft_flutter/lib/features/channel_conversion_previews.dart": {
    "bypass.button": 2,
-   "bypass.chip": 1,
-   "style.dimension": 1,
    "style.edge_insets": 1,
    "style.material_theme": 1,
    "style.sized_box": 1,
-   "widget.button": 2,
-   "widget.chip": 1
+   "widget.button": 2
   },
   "apps/raft_flutter/lib/features/channel_conversion_progress.dart": {
    "style.edge_insets": 1
@@ -267,10 +256,8 @@
    "duplicate.list_row": 1
   },
   "apps/raft_flutter/lib/features/message_action_card.dart": {
-   "bypass.toggle": 1,
    "duplicate.button": 1,
-   "duplicate.dialog": 2,
-   "widget.list_tile": 1
+   "duplicate.dialog": 2
   },
   "apps/raft_flutter/lib/features/message_history_gaps.dart": {
    "duplicate.button": 1
@@ -332,11 +319,9 @@
   },
   "apps/raft_flutter/lib/features/resource_view.dart": {
    "bypass.button": 4,
-   "bypass.chip": 2,
    "bypass.dialog": 4,
    "bypass.icon_button": 2,
    "bypass.menu": 9,
-   "bypass.select": 1,
    "duplicate.dialog": 2,
    "style.dimension": 6,
    "style.edge_insets": 11,
@@ -344,11 +329,9 @@
    "style.material_theme": 2,
    "style.sized_box": 8,
    "widget.button": 4,
-   "widget.chip": 2,
    "widget.dialog": 4,
    "widget.icon_button": 2,
    "widget.menu": 9,
-   "widget.select": 1,
    "widget.surface": 2
   },
   "apps/raft_flutter/lib/features/search_continue_footer.dart": {
@@ -384,15 +367,12 @@
   },
   "apps/raft_flutter/lib/features/sidebar_preferences_view.dart": {
    "bypass.icon_button": 2,
-   "bypass.select": 2,
    "style.edge_insets": 2,
    "style.material_icons": 2,
    "style.material_theme": 4,
    "style.sized_box": 8,
    "widget.icon_button": 2,
-   "widget.other": 3,
-   "widget.select": 2,
-   "widget.text_field": 1
+   "widget.other": 3
   },
   "apps/raft_flutter/lib/features/sidebar_sort_menu.dart": {
    "style.duration": 1,
@@ -479,7 +459,6 @@
   },
   "packages/raft_ui/lib/basic_component_previews.dart": {
    "bypass.dialog": 1,
-   "bypass.select": 3,
    "duplicate.button": 7,
    "duplicate.dialog": 1
   },
@@ -499,15 +478,9 @@
   "packages/raft_ui/lib/document_previews.dart": {
    "contract.color_literal": 1
   },
-  "packages/raft_ui/lib/dropdown_viewport_previews.dart": {
-   "bypass.select": 1
-  },
   "packages/raft_ui/lib/media_browser_previews.dart": {
    "contract.color_literal": 3,
    "duplicate.button": 1
-  },
-  "packages/raft_ui/lib/message_row_previews.dart": {
-   "bypass.toggle": 2
   },
   "packages/raft_ui/lib/mobile_computer_previews.dart": {
    "bypass.button": 1
@@ -528,7 +501,6 @@
    "bypass.dialog": 3,
    "bypass.icon_button": 1,
    "bypass.list_tile": 2,
-   "bypass.toggle": 2,
    "contract.font_size_literal": 1,
    "duplicate.dialog": 1
   },
@@ -550,7 +522,6 @@
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/activity_scope.dart": {
-   "bypass.select": 1,
    "contract.font_size_literal": 1,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2
@@ -563,8 +534,7 @@
    "bypass.dialog": 1,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 5,
-   "duplicate.dialog": 1,
-   "duplicate.segmented": 1
+   "duplicate.dialog": 1
   },
   "packages/raft_ui/lib/src/add_members_dialog_view.dart": {
    "bypass.tooltip": 1,
@@ -589,7 +559,6 @@
   },
   "packages/raft_ui/lib/src/agent_create_form.dart": {
    "bypass.dialog": 1,
-   "bypass.select": 1,
    "contract.font_size_literal": 8,
    "contract.legacy_recipe_theme": 1,
    "contract.stroke_width_literal": 1,
@@ -623,8 +592,7 @@
   },
   "packages/raft_ui/lib/src/appearance_picker.dart": {
    "contract.color_literal": 1,
-   "contract.radius_literal": 6,
-   "duplicate.segmented": 2
+   "contract.radius_literal": 6
   },
   "packages/raft_ui/lib/src/attachment_card.dart": {
    "bypass.button": 2,
@@ -668,9 +636,7 @@
    "duplicate.button": 2
   },
   "packages/raft_ui/lib/src/auth_page.dart": {
-   "bypass.toggle": 1,
    "contract.font_size_literal": 3,
-   "contract.legacy_recipe_theme": 1,
    "contract.radius_literal": 2,
    "duplicate.button": 1
   },
@@ -707,9 +673,6 @@
   },
   "packages/raft_ui/lib/src/channel_settings_sheet.dart": {
    "duplicate.button": 6
-  },
-  "packages/raft_ui/lib/src/channel_slack_field.dart": {
-   "bypass.select": 1
   },
   "packages/raft_ui/lib/src/chat_composition.dart": {
    "contract.color_literal": 3,
@@ -759,8 +722,7 @@
   },
   "packages/raft_ui/lib/src/composer_expand.dart": {
    "duplicate.button": 4,
-   "duplicate.dialog": 1,
-   "duplicate.segmented": 1
+   "duplicate.dialog": 1
   },
   "packages/raft_ui/lib/src/composer_expansion_state.dart": {
    "bypass.overlay": 1
@@ -819,8 +781,7 @@
   },
   "packages/raft_ui/lib/src/create_channel_view.dart": {
    "duplicate.button": 4,
-   "duplicate.dialog": 1,
-   "duplicate.segmented": 1
+   "duplicate.dialog": 1
   },
   "packages/raft_ui/lib/src/create_task_view.dart": {
    "duplicate.button": 4,
@@ -831,13 +792,12 @@
    "contract.color_literal": 16,
    "contract.font_size_literal": 3,
    "contract.radius_literal": 10,
-   "contract.stroke_width_literal": 9,
-   "duplicate.segmented": 1
+   "contract.stroke_width_literal": 9
   },
   "packages/raft_ui/lib/src/dialog_card.dart": {
    "contract.color_literal": 5,
    "contract.legacy_recipe_theme": 1,
-   "contract.stroke_width_literal": 3
+   "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/document_preview.dart": {
    "contract.font_size_literal": 3,
@@ -864,8 +824,7 @@
    "contract.font_size_literal": 2,
    "contract.radius_literal": 2,
    "contract.stroke_width_literal": 3,
-   "duplicate.button": 2,
-   "duplicate.segmented": 1
+   "duplicate.button": 2
   },
   "packages/raft_ui/lib/src/external_identity_panel.dart": {
    "contract.font_size_literal": 4
@@ -950,11 +909,9 @@
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/invite_human_dialog.dart": {
-   "bypass.select": 3,
    "contract.font_size_literal": 5,
    "duplicate.button": 6,
-   "duplicate.dialog": 1,
-   "duplicate.segmented": 1
+   "duplicate.dialog": 1
   },
   "packages/raft_ui/lib/src/joint_channel_dialog_view.dart": {
    "duplicate.button": 4,
@@ -1178,6 +1135,9 @@
    "contract.color_literal": 1,
    "contract.stroke_width_literal": 1
   },
+  "packages/raft_ui/lib/src/raft/checkbox_frozen.dart": {
+   "contract.legacy_recipe_theme": 1
+  },
   "packages/raft_ui/lib/src/raft/icon_tile.dart": {
    "contract.radius_literal": 1
   },
@@ -1192,6 +1152,9 @@
   "packages/raft_ui/lib/src/raft/segmented_control.dart": {
    "contract.color_literal": 1,
    "contract.radius_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart": {
+   "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/raft/switch.dart": {
    "contract.color_literal": 7,
@@ -1223,7 +1186,6 @@
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/raftbench/raftbench_page_view.dart": {
-   "bypass.select": 2,
    "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/raftbench/raftbench_parts.dart": {
@@ -1281,7 +1243,9 @@
    "duplicate.button": 2
   },
   "packages/raft_ui/lib/src/select_field.dart": {
-   "bypass.overlay": 1,
+   "bypass.overlay": 1
+  },
+  "packages/raft_ui/lib/src/select_field_frozen.dart": {
    "contract.legacy_recipe_theme": 3,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2
@@ -1307,7 +1271,6 @@
   "packages/raft_ui/lib/src/settings_administration.dart": {
    "bypass.overlay": 1,
    "bypass.picker": 2,
-   "bypass.select": 5,
    "contract.color_literal": 1,
    "contract.font_size_literal": 2,
    "contract.radius_literal": 2,
@@ -1315,12 +1278,10 @@
    "duplicate.list_row": 1
   },
   "packages/raft_ui/lib/src/settings_app_editor.dart": {
-   "bypass.select": 2,
    "contract.stroke_width_literal": 12,
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/src/settings_applications.dart": {
-   "bypass.select": 1,
    "contract.color_literal": 1,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 8,
@@ -1334,10 +1295,6 @@
    "contract.color_literal": 2,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2
-  },
-  "packages/raft_ui/lib/src/settings_language.dart": {
-   "bypass.select": 1,
-   "duplicate.segmented": 1
   },
   "packages/raft_ui/lib/src/settings_layout.dart": {
    "contract.radius_literal": 1,
@@ -1386,7 +1343,6 @@
    "duplicate.button": 4
   },
   "packages/raft_ui/lib/src/slack_bridge_wizard.dart": {
-   "bypass.select": 1,
    "contract.color_literal": 2,
    "contract.font_size_literal": 1,
    "contract.radius_literal": 9,
@@ -1412,9 +1368,6 @@
    "contract.radius_literal": 2,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 1
-  },
-  "packages/raft_ui/lib/src/task_filter_control.dart": {
-   "duplicate.segmented": 1
   },
   "packages/raft_ui/lib/src/task_surface.dart": {
    "contract.color_literal": 1,
