@@ -131,7 +131,7 @@ class RaftToggleGroup<T> extends StatelessWidget {
           controlLabel: true,
           width: iconOnly ? style.height : null,
           padding: iconOnly ? EdgeInsets.zero : null,
-          alignment: Alignment.center,
+          alignment: iconOnly ? Alignment.center : null,
           child: Builder(
             builder: (context) => Row(
               mainAxisSize: MainAxisSize.min,

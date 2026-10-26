@@ -67,7 +67,6 @@ class RaftPickerTriggerButton extends StatelessWidget {
           style: style,
           tokens: rt,
           controlLabel: true,
-          alignment: Alignment.center,
           child: Builder(
             builder: (context) => Row(
               mainAxisSize: MainAxisSize.min,

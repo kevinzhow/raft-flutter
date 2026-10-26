@@ -458,29 +458,37 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
       ? null
       : () => widget.onChanged!(item.value);
 
+  RaftSegmentedTrack _track() => RaftSegmentedTrack(
+    shrinkFrame: widget.shrinkFrame,
+    children: [
+      for (final item in widget.items)
+        RaftSegmentedItem(
+          key: item.itemKey,
+          label: item.label,
+          glyph: item.glyph,
+          count: item.count,
+          labelSuffix: item.labelSuffix,
+          tooltip: item.tooltip,
+          checked: item.value == widget.value,
+          height: widget.visualHeight,
+          onPressed: _press(item),
+        ),
+    ],
+  );
+
   Widget _group(BuildContext context) {
-    final style = RaftTokens.of(context).isRaftLook
-        ? RaftSegmentedStyle.buttons
-        : widget.legacyStyle;
+    final raft = RaftTokens.of(context).isRaftLook;
+    final style = raft ? RaftSegmentedStyle.buttons : widget.legacyStyle;
     return switch (style) {
-      // raft-ui `SegmentedControl`: the fill-muted track with sticker items (a flat row in the frozen looks).
-      RaftSegmentedStyle.buttons => RaftSegmentedTrack(
-        shrinkFrame: widget.shrinkFrame,
-        children: [
-          for (final item in widget.items)
-            RaftSegmentedItem(
-              key: item.itemKey,
-              label: item.label,
-              glyph: item.glyph,
-              count: item.count,
-              labelSuffix: item.labelSuffix,
-              tooltip: item.tooltip,
-              checked: item.value == widget.value,
-              height: widget.visualHeight,
-              onPressed: _press(item),
-            ),
-        ],
+      // raft-ui `SegmentedControl` is `inline-flex w-fit`: the track hugs its items instead of stretching in a column.
+      // The frozen looks keep the plain row they always drew.
+      RaftSegmentedStyle.buttons when raft => Align(
+        alignment: AlignmentDirectional.centerStart,
+        widthFactor: 1,
+        heightFactor: 1,
+        child: _track(),
       ),
+      RaftSegmentedStyle.buttons => _track(),
       RaftSegmentedStyle.taskViews => _frozenTaskViews(context),
       RaftSegmentedStyle.tabs => _frozenTabs(context),
       RaftSegmentedStyle.recipe => _frozenRecipe(context),
