@@ -173,18 +173,31 @@ class _CaptionButton extends StatelessWidget {
             highlighted: highlighted,
             pressed: state.pressed,
           );
-        return Center(
-          child: Container(
-            // ds-allow: 24px Linux native caption circle measured from Desktop 1.21.33.
-            width: 24,
-            // ds-allow: 24px Linux native caption circle measured from Desktop 1.21.33.
-            height: 24,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: surface),
+        return Align(
+          alignment: Alignment.centerRight,
+          // Electron's Linux targets have a 36px visual allocation and a 1px
+          // leading gap. Keep the 37px hit region while snapping its circle
+          // and one-pixel symbols to the same physical grid at 1x.
+          // ds-allow: native caption visual allocation inside its 37px hit region.
+          child: SizedBox(
+            width: 36, // ds-allow: measured native caption visual allocation.
             child: Center(
-              child: CustomPaint(
-                // ds-allow: native caption glyph bounds are independent of component theme metrics.
-                size: const Size.square(10),
-                painter: _CaptionGlyph(name, maximized, glyph),
+              child: Container(
+                // ds-allow: 24px Linux native caption circle measured from Desktop 1.21.33.
+                width: 24,
+                // ds-allow: 24px Linux native caption circle measured from Desktop 1.21.33.
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: surface,
+                ),
+                child: Center(
+                  child: CustomPaint(
+                    // ds-allow: native caption glyph bounds are independent of component theme metrics.
+                    size: const Size.square(10),
+                    painter: _CaptionGlyph(name, maximized, glyph),
+                  ),
+                ),
               ),
             ),
           ),
@@ -205,11 +218,11 @@ class _CaptionGlyph extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1; // ds-allow: native caption glyph stroke, not a themed component border.
-    final rect = Rect.fromLTWH(1, 1, size.width - 2, size.height - 2);
+    final rect = Rect.fromLTWH(1.5, 1.5, size.width - 3, size.height - 3);
     if (name == 'minimize') {
       canvas.drawLine(
-        Offset(1, size.height / 2),
-        Offset(size.width - 1, size.height / 2),
+        Offset(1, size.height / 2 + .5),
+        Offset(size.width - 1, size.height / 2 + .5),
         p,
       );
     } else if (name == 'close') {
