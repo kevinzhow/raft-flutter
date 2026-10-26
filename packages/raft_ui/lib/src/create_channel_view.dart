@@ -5,6 +5,7 @@ import 'overlays/dialog.dart' show RaftDialog;
 // (optional) search + AGENTS/HUMANS picker and Cancel/Create Channel. The app
 // adapter owns loading, selection state and the create command.
 import 'card.dart' show RaftCard;
+import 'components.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
 import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
@@ -17,7 +18,9 @@ import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart';
+import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'separator.dart';
+import 'settings_layout.dart' show RaftSpace;
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'theme.dart';
 
@@ -147,31 +150,64 @@ class RaftCreateChannelDialogView extends StatelessWidget {
             ],
           ],
         ),
-        footer: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            RaftRecipeButton(
-              label: 'Cancel',
-              variant: RaftButtonRecipeVariant.outline,
-              size: RaftButtonRecipeSize.sm,
-              // px-4 py-2 text-sm
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              textStep: RaftTextSteps.sm,
-              disabled: submitting,
-              onPressed: raftExplicitClose(context, onClose),
-            ),
-            const SizedBox(width: 12), // gap-3
-            RaftRecipeButton(
-              label: submitting ? 'Creating…' : 'Create Channel',
-              variant: RaftButtonRecipeVariant.accent,
-              size: RaftButtonRecipeSize.sm,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              textStep: RaftTextSteps.sm,
-              disabled: submitting,
-              onPressed: onSubmit,
-            ),
-          ],
-        ),
+        // Current Web: `flex flex-wrap justify-end gap-2 pt-1`, with two
+        // recipe-sized lg buttons. Frozen looks keep their original row.
+        footer: !usesLegacyRecipes(RaftTokens.of(context).recipeTokens)
+            ? Padding(
+                padding: const EdgeInsets.only(top: RaftSpace.x1),
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: RaftSpace.x2,
+                  runSpacing: RaftSpace.x2,
+                  children: [
+                    RaftButton(
+                      label: 'Cancel',
+                      uiVariant: RaftButtonVariant.ghost,
+                      uiSize: RaftButtonSize.lg,
+                      onPressed: submitting
+                          ? null
+                          : raftExplicitClose(context, onClose),
+                    ),
+                    RaftButton(
+                      label: submitting ? 'Creating…' : 'Create Channel',
+                      uiVariant: RaftButtonVariant.accent,
+                      uiSize: RaftButtonSize.lg,
+                      onPressed: submitting ? null : onSubmit,
+                    ),
+                  ],
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  RaftRecipeButton(
+                    label: 'Cancel',
+                    variant: RaftButtonRecipeVariant.outline,
+                    size: RaftButtonRecipeSize.sm,
+                    // px-4 py-2 text-sm
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    textStep: RaftTextSteps.sm,
+                    disabled: submitting,
+                    onPressed: raftExplicitClose(context, onClose),
+                  ),
+                  const SizedBox(width: 12), // gap-3
+                  RaftRecipeButton(
+                    label: submitting ? 'Creating…' : 'Create Channel',
+                    variant: RaftButtonRecipeVariant.accent,
+                    size: RaftButtonRecipeSize.sm,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    textStep: RaftTextSteps.sm,
+                    disabled: submitting,
+                    onPressed: onSubmit,
+                  ),
+                ],
+              ),
       ),
     );
   }
