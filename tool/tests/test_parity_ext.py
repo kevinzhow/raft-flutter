@@ -3,6 +3,8 @@ import importlib.util
 import json
 import os
 import pathlib
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -344,6 +346,30 @@ class FrameFixtureContractTest(unittest.TestCase):
         screens = json.loads((EXT / 'fixtures/screens.json').read_text())
         channel = screens['scenes']['channel']['selected']
         self.assertEqual(frame['routeSets']['fr-channel'].get(f'GET /tasks/channel/{channel}'), {'tasks': []})
+
+
+class ChannelSettingsFixtureContractTest(unittest.TestCase):
+    def test_channel_task_responses_match_both_clients(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ext = pathlib.Path(tmp)
+            (ext / 'fixtures').mkdir()
+            for name in ('builders.py', 'build-channel-settings.py'):
+                shutil.copyfile(EXT / name, ext / name)
+            manifest = ext / 'manifest.json'
+            manifest.write_text('{"cases": []}')
+            subprocess.run(
+                [sys.executable, str(ext / 'build-channel-settings.py')],
+                env={**os.environ, 'PARITY_EXT_MANIFEST': str(manifest)},
+                check=True, capture_output=True, text=True,
+            )
+            generated = json.loads((ext / 'fixtures/channelsettings.json').read_text())
+        checked = json.loads((EXT / 'fixtures/channelsettings.json').read_text())
+        for fixture in (generated, checked):
+            routes = {key: value for key, value in fixture['routes'].items()
+                      if key.startswith('GET /tasks/channel/')}
+            self.assertTrue(routes)
+            for key, value in routes.items():
+                self.assertEqual(value, {'tasks': []}, key)
 
 
 class FeedbackFixtureScopeTest(unittest.TestCase):

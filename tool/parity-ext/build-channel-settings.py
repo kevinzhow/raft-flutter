@@ -146,7 +146,7 @@ def channel(cid, name='colvalley', description=SHORT, *, role='owner', ctype='ch
     row.update(extra)
     channels.append(row)
     routes[f'GET /channels/{cid}/members'] = members(role, many)
-    routes[f'GET /tasks/channel/{cid}'] = []
+    routes[f'GET /tasks/channel/{cid}'] = {'tasks': []}
     if joined:
         routes[f'GET /channels/{cid}/notification-settings'] = {
             'activityMuted': mute, 'muteFromSeq': None, 'activityMuteSupported': True, 'prefsVersion': 0}
@@ -163,7 +163,7 @@ def dm(cid, peer_type, peer_id, peer_name, peer_display, avatar):
                 'joined': True, 'peerType': peer_type, 'peerId': peer_id, 'peerName': peer_name,
                 'peerDisplayName': peer_display, 'peerAvatarUrl': avatar})
     routes[f'GET /channels/{cid}/members'] = {'agents': [], 'humans': [], 'externalMembers': []}
-    routes[f'GET /tasks/channel/{cid}'] = []
+    routes[f'GET /tasks/channel/{cid}'] = {'tasks': []}
     routes[f'GET /channels/{cid}/message-display-settings'] = {'collapseLongMessages': True, 'prefsVersion': 0}
     return cid
 
