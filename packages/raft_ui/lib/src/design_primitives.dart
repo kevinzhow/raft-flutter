@@ -2835,6 +2835,40 @@ class RaftPickerTriggerRecipe extends RaftControlRecipe {
   ];
 }
 
+/// The frozen Elegant and Brutal paint of `RaftPickerTriggerButton`: the pre-0.7.0 PickerTriggerButton recipe on a
+/// [RaftControl]. Delete with the legacy looks.
+Widget raftFrozenPickerTriggerButton(
+  BuildContext context, {
+  required String label,
+  required VoidCallback? onPressed,
+  required RaftGlyph? glyph,
+  required RaftGlyph? trailingGlyph,
+  required bool selected,
+  required String? tooltip,
+  required FocusNode? focusNode,
+}) => RaftControl(
+  onPressed: onPressed,
+  focusNode: focusNode,
+  tooltip: tooltip,
+  visualHeight: 28,
+  variant: RaftControlVariant.outline,
+  recipe: RaftPickerTriggerRecipe(RaftTokens.of(context), selected: selected),
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (glyph != null) ...[
+        RaftIcon(glyph, size: 14),
+        const SizedBox(width: 8),
+      ],
+      Text(raftText(context, label)),
+      if (trailingGlyph != null) ...[
+        const SizedBox(width: 8),
+        RaftIcon(trailingGlyph, size: 12),
+      ],
+    ],
+  ),
+);
+
 /// Interaction state fed to recipe-painted controls (CSS :hover, :active,
 /// :focus-visible, :disabled).
 @immutable

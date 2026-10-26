@@ -51,14 +51,12 @@
   },
   "segmented": {
    "canonical": [
-    "RaftSegmentedControl"
+    "RaftSegmentedControl",
+    "RaftSegmentedItem",
+    "RaftSegmentedTrack"
    ],
-   "uncertain": "The inventory names RaftSegmentedTrack + RaftSegmentedItem (raft/segmented_control.dart) as the Web-ported implementation and RaftSegmentedControl (design_primitives.dart) as a duplicate; RaftSegmentedControl is built on RaftSegmentedTrack today. Listed as requested; the surviving public API is not decided.",
-   "note": "Segmented control duplicates (inventory section 2).",
-   "deprecated": {
-    "RaftRecipeSegmentedControl": "packages/raft_ui/lib/src/dialog_card.dart",
-    "RaftSegmentedTrack": "packages/raft_ui/lib/src/raft/segmented_control.dart"
-   }
+   "note": "One RaftSegmentedControl (raft/segmented_control.dart, Web SegmentedControl). RaftSegmentedTrack and RaftSegmentedItem are its parts (the fill-muted track and the 32px sticker item), not rivals. RaftRecipeSegmentedControl was merged into it (P4); its frozen Elegant and Brutal paint is a private class in raft/segmented_control_frozen.dart (legacyStyle: recipe). The old style argument is now legacyStyle and steers only the frozen looks.",
+   "deprecated": {}
   },
   "spinner": {
    "canonical": [
@@ -93,6 +91,80 @@
     "RaftAvatarListRow": "packages/raft_ui/lib/src/list_items.dart",
     "RaftConversationListRow": "packages/raft_ui/lib/src/conversation_list_row.dart"
    }
+  },
+  "checkbox": {
+   "canonical": [
+    "RaftCheckbox",
+    "RaftCheckboxIndicator",
+    "RaftCheckboxRow"
+   ],
+   "note": "RaftCheckbox is the one control (raft/checkbox.dart, Web Checkbox) and RaftCheckboxIndicator its graphic (Web CheckboxIndicator) for rows that own the tap. RaftCheckMarker, RaftCheckboxControl and the argument-swallowing RaftCheckbox wrapper were merged into them (P4). The Material Checkbox and CheckboxListTile paint of the frozen looks lives in raft/checkbox_frozen.dart.",
+   "deprecated": {}
+  },
+  "select": {
+   "canonical": [
+    "RaftSelectField",
+    "RaftSelectItem",
+    "RaftLabeledSelect"
+   ],
+   "note": "RaftSelectField takes RaftSelectItem (no Material DropdownMenuItem). The open list still paints from the select recipe slots; it moves onto the shared menu panel and rows when P2's recipe-accepting backend lands. form_dialog.dart's DropdownButtonFormField belongs to P1 (dialogs).",
+   "deprecated": {}
+  },
+  "switch": {
+   "canonical": [
+    "RaftSwitch"
+   ],
+   "note": "RaftSwitch (raft/switch.dart, Web Switch); the forwarding RaftSwitch / RaftSwitchControl pair was merged (P4).",
+   "deprecated": {}
+  },
+  "radio_group": {
+   "canonical": [
+    "RaftRadioGroup",
+    "RaftRadioGroupItem",
+    "RaftRadioMark"
+   ],
+   "note": "RaftRadioGroup / RaftRadioGroupItem (radio_group.dart, Web RadioGroup); RaftRadioMark is the painted circle (Web RadioGroupIndicator), not a rival. The dialog-local RaftRadioMark rows were replaced (P4).",
+   "deprecated": {}
+  },
+  "toggle_group": {
+   "canonical": [
+    "RaftToggleGroup",
+    "RaftToggleGroupItem"
+   ],
+   "note": "RaftToggleGroup (toggle_group.dart, Web ToggleGroup). The connected-apps view toggle and the FilterChip / ChoiceChip toggles use it (P4). The sign-up survey chips are a Web hand-built radiogroup, not a ToggleGroup.",
+   "deprecated": {}
+  },
+  "tabs": {
+   "canonical": [
+    "RaftTabs",
+    "RaftTabsList",
+    "RaftTabButton"
+   ],
+   "note": "RaftTabs / RaftTabsList / RaftTabButton (raft/tabs.dart, Web Tabs). RaftPanelTabBar and RaftConversationTabs are product strips (scrolling, reorder, Web SortableTabsList) built on RaftTabButton; RaftSegmentedStyle.tabs (frozen looks only) uses it too.",
+   "deprecated": {}
+  },
+  "picker_trigger": {
+   "canonical": [
+    "RaftPickerTriggerButton"
+   ],
+   "note": "RaftPickerTriggerButton (picker_trigger_button.dart, Web PickerTriggerButton). RaftPickerTriggerRecipe (design_primitives.dart) is the pre-0.7.0 recipe of RaftDropdownMenu's picker trigger style and of the frozen looks; RaftDropdownMenu is P2's, so it is not registered as a duplicate here.",
+   "deprecated": {}
+  },
+  "combobox": {
+   "canonical": [
+    "RaftComboboxPanel",
+    "RaftComboboxItem",
+    "RaftAgentCombobox"
+   ],
+   "note": "RaftComboboxPanel paints the combobox recipe; RaftAgentCombobox is the agent form adapter over it, not a rival.",
+   "deprecated": {}
+  },
+  "steps": {
+   "canonical": [
+    "RaftSteps"
+   ],
+   "note": "RaftSteps (steps.dart, Web Steps), added in P4 for the Slack bridge setup.",
+   "deprecated": {}
   }
  }
 }

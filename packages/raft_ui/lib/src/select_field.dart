@@ -266,7 +266,6 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
       tokens: rt,
     );
     final chevron = sel.icon.target('& > svg');
-    final stroke = chevron?['stroke-width'];
     return RaftRecipeBox(
       style: raftMergeSlots(button, sel.trigger),
       tokens: rt,
@@ -290,7 +289,6 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
             child: RaftIcon(
               RaftGlyph.chevronDown,
               size: chevron?.width ?? 16,
-              strokeWidth: stroke is CssNum ? stroke.value.toDouble() : 2,
               color: sel.icon.color?.resolve(rt),
             ),
           ),

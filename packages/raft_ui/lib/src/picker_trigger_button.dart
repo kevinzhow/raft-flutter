@@ -102,27 +102,16 @@ class RaftPickerTriggerButton extends StatelessWidget {
         : RaftTooltip(message: raftText(context, tooltip!), child: button);
   }
 
-  /// The pre-theme paint: the original PickerTriggerButton recipe on a `RaftControl`.
-  Widget _frozen(BuildContext context, RaftTokens t) => RaftControl(
-    onPressed: enabled ? onPressed : null,
-    focusNode: focusNode,
-    tooltip: tooltip,
-    visualHeight: 28,
-    variant: RaftControlVariant.outline,
-    recipe: RaftPickerTriggerRecipe(t, selected: selected),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (glyph != null) ...[
-          RaftIcon(glyph!, size: 14),
-          const SizedBox(width: 8),
-        ],
-        Text(raftText(context, label)),
-        if (trailingGlyph != null) ...[
-          const SizedBox(width: 8),
-          RaftIcon(trailingGlyph!, size: 12),
-        ],
-      ],
-    ),
-  );
+  /// The pre-theme paint: the original PickerTriggerButton recipe on a `RaftControl` (design_primitives.dart).
+  Widget _frozen(BuildContext context, RaftTokens t) =>
+      raftFrozenPickerTriggerButton(
+        context,
+        label: label,
+        onPressed: enabled ? onPressed : null,
+        glyph: glyph,
+        trailingGlyph: trailingGlyph,
+        selected: selected,
+        tooltip: tooltip,
+        focusNode: focusNode,
+      );
 }

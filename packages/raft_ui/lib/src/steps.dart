@@ -167,13 +167,11 @@ class _Marker extends StatelessWidget {
           RaftStepStatus.finish => RaftIcon(
             RaftGlyph.check,
             size: 14,
-            strokeWidth: 2,
             color: look.mark,
           ),
           RaftStepStatus.error => RaftIcon(
             RaftGlyph.x,
             size: 14,
-            strokeWidth: 2,
             color: look.mark,
           ),
           _ => Text(

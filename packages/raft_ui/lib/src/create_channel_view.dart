@@ -7,6 +7,7 @@ import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
 import 'card.dart' show RaftCard;
 import 'raft/checkbox.dart' show RaftCheckboxIndicator;
+import 'raft/css_box.dart';
 import 'raft/ui_tokens.dart';
 import 'space.dart';
 import 'control_typography.dart';
@@ -356,24 +357,16 @@ class _RaftMemberRow extends StatelessWidget {
     return RaftInteractive(
       onPressed: onTap,
       selected: selected,
-      builder: (context, st) => Container(
-        constraints: const BoxConstraints(
-          minHeight: RaftSpace.x6 + RaftSpace.x3,
-        ),
+      builder: (context, st) => RaftCssBox(
+        radius: t.size('radius.control', fallback: 8),
+        fill: st.hovered || st.focusVisible ? ui['brand-soft'] : null,
+        rings: [
+          if (st.focusVisible)
+            for (final layer in ui.focusRing.layers)
+              RaftRing(layer.spread, layer.color),
+        ],
+        minHeight: RaftSpace.x6 + RaftSpace.x3,
         padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: st.hovered || st.focusVisible ? ui['brand-soft'] : null,
-          borderRadius: BorderRadius.circular(
-            t.size('radius.control', fallback: 8),
-          ),
-          border: st.focusVisible
-              ? Border.all(
-                  color: ui.foreground,
-                  width: 2,
-                  strokeAlign: BorderSide.strokeAlignInside,
-                )
-              : null,
-        ),
         child: Row(
           spacing: 10,
           children: [

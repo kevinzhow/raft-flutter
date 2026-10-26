@@ -44,7 +44,7 @@ void main() {
     ) async {
       await pump(t);
       final rest = box(t);
-      expect(rest.style.backgroundColor?.resolve(rest.tokens)!.a, 0);
+      expect(rest.style.backgroundColor?.resolve(rest.tokens).a, 0);
       await pump(t, selected: true);
       final b = box(t);
       expect(b.style.backgroundColor?.resolve(b.tokens), ui['info-soft']);
