@@ -76,6 +76,7 @@ export 'src/form_controls.dart';
 export 'src/list_items.dart';
 export 'src/list_page_parts.dart';
 export 'src/radio_group.dart';
+export 'src/toggle_group.dart';
 export 'src/select_field.dart';
 export 'src/overlays/dialog.dart';
 export 'src/recipes/button_variants.g.dart'
