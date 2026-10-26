@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'banner.dart';
 import 'raft/button.dart';
+import 'raft/ui_tokens.dart' show raftChromeBlend;
 
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'error_presentation.dart';
@@ -648,10 +649,24 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
     if (!widget.plainMessage &&
         widget.confirmVariant == RaftButtonRecipeVariant.danger &&
         t.option('confirm.explanation', or: 'plain') == 'dangerBanner') {
+      // The shared confirmation surface has a known fill. Precompose its
+      // translucent danger banner as Chromium does, while retaining live
+      // blending when a custom dialog surface is itself translucent.
+      final fill = t.colors['layer-banner-destructive'];
+      final dialogFill = t.themeOverrides?.colors['layer-dialog'] ?? t.popover;
+      final background =
+          !usesLegacyRecipes(t.recipeTokens) &&
+              t.option('banner.style', or: 'recipe') == 'raft' &&
+              fill != null &&
+              fill.a < 1 &&
+              dialogFill.a == 1
+          ? raftChromeBlend(fill, dialogFill)
+          : null;
       body = RaftBanner(
         status: RaftBannerRecipeStatus.destructive,
         glyph: RaftGlyph.octagonAlert,
         live: false,
+        backgroundColor: background,
         descriptionBuilder: (style) => DefaultTextStyle.merge(
           style: style,
           child: content ?? RaftCssText(raftText(context, message ?? '')),
