@@ -2,7 +2,7 @@
 
 Windows 复用 DesktopInboxNotifications，消费 WorkspaceController 已接受的 Activity/unread 窗口，与 macOS 使用相同的通知规则、后台条件、去重和账户／服务器／角色／权限 fence。不会另开连接或重复消费移动端 notification:push。首次恢复的历史窗口只建立基线，退出、切换账户和授权撤销清理该身份下的系统通知。系统设置拥有通知开关，应用不保存第二份桌面 opt-in。
 
-Windows 宿主通过系统 Windows.UI.Notifications.ToastNotificationManager／ToastNotifier 投递，使用 `<toast activationType='protocol'>` 和当前用户的 `raft-notification://open?payload=…` 协议。身份为 `app.raft.raft_flutter`，通过 SetCurrentProcessExplicitAppUserModelID 与 HKCU 的 AppUserModelId DisplayName／IconUri 登记，不借用其他应用身份，不创建 COM 激活器或开始菜单快捷方式。安装包的快捷方式使用同一 AUMID。完整 bundle 包含 `raft.ico` 和品牌 PNG `notification_icon.png`；通知通过 appLogoOverride 引用图标。每次运行刷新当前用户的协议命令及图标路径，不需要管理员或 Windows App Runtime。
+Windows 宿主通过系统 Windows.UI.Notifications.ToastNotificationManager／ToastNotifier 投递，使用 `<toast activationType='protocol'>` 和当前用户的 `raft-notification://open?payload=…` 协议。身份为 `app.raft.raft_flutter`，通过 SetCurrentProcessExplicitAppUserModelID 与 HKCU 的 AppUserModelId DisplayName／IconUri 登记，不借用其他应用身份，也不创建 COM 激活器。按微软的桌面 Toast 契约，初始化时确保当前用户开始菜单的 `Raft.lnk` 携带同一 AUMID，位置与安装包一致；匹配的快捷方式不重写，移动便携 bundle 后更新目标路径。隔离 lab 使用单独的 `Raft notification lab.lnk`。完整 bundle 包含 `raft.ico` 和品牌 PNG `notification_icon.png`；通知通过 appLogoOverride 引用图标。每次运行刷新当前用户的协议命令及图标路径，不需要管理员或 Windows App Runtime。
 
 Dart 的 NativeNotificationService／NativeContentCoordinator 继续拥有投递规则、权限、账户 fence 和点击授权。宿主只处理系统投递、设置查询和窗口恢复。暖点击按完整 exe 路径找到既有 Flutter 窗口，通过有界 WM_COPYDATA 转交 URI；冷点击经命令参数启动，初始化回调后再处理目标。宿主兼容 SDK 的 `----ms-protocol:` 参数前缀；Dart 与宿主均兼容 Windows 给空路径补 `/` 的格式。进入内容前仍重新检查 origin、principal、server membership 和消息可访问性。解析限制单个 payload、4096 字符目标和 16384 字符 URI，并拒绝额外路径、端口、用户信息和 fragment；原生早到点击暂存最多 8 条。协议注册不包含账号或消息正文，通知本身包含目标 payload。
 

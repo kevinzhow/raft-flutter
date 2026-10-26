@@ -2,6 +2,9 @@
 
 #include <flutter/standard_method_codec.h>
 #include <shobjidl.h>
+#include <shlobj.h>
+#include <propkey.h>
+#include <propvarutil.h>
 #include <winrt/Windows.UI.Notifications.h>
 #include <winrt/Windows.Data.Xml.Dom.h>
 #include <winrt/Windows.Foundation.h>
@@ -34,8 +37,8 @@ std::string AppId(const EncodableValue* argument) {
   return *id;
 }
 
-// Per-user display assets give the portable app an identity without creating
-// a Start Menu shortcut or a COM server. Clicks use protocol activation.
+// Display assets complement the AUMID-bearing Start Menu shortcut below.
+// Notification clicks use protocol activation, without a COM server.
 void RegisterIdentity(const std::string& id, const std::wstring& icon) {
   const auto path = L"Software\\Classes\\AppUserModelId\\" +
       std::wstring(winrt::to_hstring(id));
@@ -54,6 +57,50 @@ void RegisterIdentity(const std::string& id, const std::wstring& icon) {
   }
   RegCloseKey(key);
   winrt::check_win32(status);
+}
+
+// The desktop Toast contract requires a Start Menu shortcut carrying the AUMID.
+// Use the installer's per-user location so ZIP and installed builds share one
+// entry. Refresh a stale target when a portable bundle moves; leave a matching
+// shortcut untouched. The lab always has a separate entry.
+void RegisterShortcut(const std::wstring& executable, const std::string& id) {
+  PWSTR programs = nullptr;
+  winrt::check_hresult(SHGetKnownFolderPath(FOLDERID_Programs, KF_FLAG_CREATE,
+                                          nullptr, &programs));
+  const auto path = std::wstring(programs) +
+      (id == "app.raft.raft_flutter.notificationlab"
+          ? L"\\Raft notification lab.lnk" : L"\\Raft.lnk");
+  CoTaskMemFree(programs);
+  winrt::com_ptr<IShellLinkW> link;
+  winrt::check_hresult(CoCreateInstance(CLSID_ShellLink, nullptr,
+      CLSCTX_INPROC_SERVER, IID_PPV_ARGS(link.put())));
+  const auto file = link.as<IPersistFile>();
+  if (SUCCEEDED(file->Load(path.c_str(), STGM_READWRITE))) {
+    wchar_t target[32768] = {};
+    PROPVARIANT existing = {};
+    const auto status = link.as<IPropertyStore>()->GetValue(
+        PKEY_AppUserModel_ID, &existing);
+    const bool matches = SUCCEEDED(status) && existing.vt == VT_LPWSTR &&
+        existing.pwszVal != nullptr &&
+        winrt::to_hstring(id) == existing.pwszVal &&
+        SUCCEEDED(link->GetPath(target, 32768, nullptr, SLGP_RAWPATH)) &&
+        _wcsicmp(target, executable.c_str()) == 0;
+    PropVariantClear(&existing);
+    if (matches) return;
+  }
+  winrt::check_hresult(link->SetPath(executable.c_str()));
+  winrt::check_hresult(link->SetArguments(L""));
+  const auto directory = executable.substr(0, executable.find_last_of(L"\\/"));
+  winrt::check_hresult(link->SetWorkingDirectory(directory.c_str()));
+  winrt::check_hresult(link->SetIconLocation(executable.c_str(), 0));
+  const auto properties = link.as<IPropertyStore>();
+  PROPVARIANT value = {};
+  winrt::check_hresult(InitPropVariantFromString(winrt::to_hstring(id).c_str(), &value));
+  const auto status = properties->SetValue(PKEY_AppUserModel_ID, value);
+  PropVariantClear(&value);
+  winrt::check_hresult(status);
+  winrt::check_hresult(properties->Commit());
+  winrt::check_hresult(file->Save(path.c_str(), TRUE));
 }
 
 bool NotificationPermission(const std::string& id) {
@@ -95,6 +142,7 @@ std::string Configure(const EncodableValue* argument, HWND window) {
   const auto directory = executable.substr(0, executable.find_last_of(L"\\/"));
   const auto icon = directory + L"\\raft.ico";
   RegisterIdentity(id, icon);
+  RegisterShortcut(executable, id);
   return winrt::to_string(icon);
 }
 }  // namespace
