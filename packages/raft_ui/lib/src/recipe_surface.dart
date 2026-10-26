@@ -360,9 +360,18 @@ class RaftRecipeBox extends StatelessWidget {
     final current = textStyle.color;
     final layers = style.cssShadows(tokens, currentColor: current);
     final cssGeometry = tokens.recipeSet == RaftRecipeSet.raft;
+    final background = style.backgroundColor?.resolve(
+      tokens,
+      currentColor: current,
+    );
+    final overlay = cssGeometry
+        ? _uniformBackgroundImage(style['background-image'], tokens, current)
+        : null;
     BoxDecoration decoration = RaftRecipeDecoration(
       cssGeometry: cssGeometry,
-      color: style.backgroundColor?.resolve(tokens, currentColor: current),
+      color: overlay == null
+          ? background
+          : Color.alphaBlend(overlay, background ?? const Color(0x00000000)),
       border: style.border(tokens, currentColor: current),
       borderRadius: style.borderRadius,
       boxShadow: [
@@ -493,6 +502,30 @@ class RaftRecipeBox extends StatelessWidget {
     }
     return box;
   }
+}
+
+/// The published `press-overlay` utilities use a linear gradient whose two
+/// stops are the same token. Keep it above the resting background and below
+/// the border and content, as CSS does. Hover and active share this one image;
+/// the cascade decides its value before paint, so they never double the wash.
+/// Other gradient forms are not interpreted as uniform overlays.
+Color? _uniformBackgroundImage(
+  CssValue? image,
+  RaftTokenResolver tokens,
+  Color? currentColor,
+) {
+  if (image case CssFunction(name: 'linear-gradient', :final args)
+      when args.length == 2) {
+    final first = RaftColorRef.fromCss(args[0]);
+    final second = RaftColorRef.fromCss(args[1]);
+    if (first == null || second == null) return null;
+    final color = first.resolve(tokens, currentColor: currentColor);
+    if (color != second.resolve(tokens, currentColor: currentColor)) {
+      return null;
+    }
+    return color;
+  }
+  return null;
 }
 
 /// Vertical `linear-gradient(in oklab 180deg, oklab(L 0 0 / a%) p%, ...)`
