@@ -22,7 +22,7 @@ import 'panel_layout.dart' show RaftCssText;
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'settings_layout.dart';
-import 'switch.dart';
+import 'raft/switch.dart';
 import 'indicators.dart' show RaftSkeleton;
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;

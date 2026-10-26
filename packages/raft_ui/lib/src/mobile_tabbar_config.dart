@@ -6,7 +6,7 @@ import 'localization.dart';
 import 'mobile_navigation.dart';
 import 'settings_controls.dart';
 import 'settings_layout.dart';
-import 'switch.dart';
+import 'raft/switch.dart';
 import 'system_inset.dart';
 import 'theme.dart';
 

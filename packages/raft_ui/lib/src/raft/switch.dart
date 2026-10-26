@@ -13,15 +13,17 @@ import '../tokens/tokens.dart';
 import 'css_box.dart';
 import 'ui_tokens.dart';
 
+export '../switch_recipe.dart' show RaftSwitchRecipe, RaftSwitchSize;
+
 /// The fixed geometry of the 0.7.1 switch (`h-[30px] w-[50px] p-[2.5px]`, `size-[22px]`, `translate-x-5`).
 abstract final class RaftSwitchMetrics {
   static const double width = 50, height = 30, padding = 2.5;
   static const double thumb = 22, travel = 20, ring = 1.5;
 }
 
-/// Controlled raft-ui 0.7.1 `Switch`. A null [onChanged] (or `enabled: false`) is `disabled` and never fires.
-class RaftSwitchControl extends StatefulWidget {
-  const RaftSwitchControl({
+/// Controlled raft-ui 0.7.1 `Switch`, the one switch of the client. A null [onChanged] (or `enabled: false`) is `disabled` and never fires.
+class RaftSwitch extends StatefulWidget {
+  const RaftSwitch({
     super.key,
     required this.value,
     this.size = RaftSwitchSize.sm,
@@ -58,10 +60,10 @@ class RaftSwitchControl extends StatefulWidget {
   }
 
   @override
-  State<RaftSwitchControl> createState() => _RaftSwitchControlState();
+  State<RaftSwitch> createState() => _RaftSwitchState();
 }
 
-class _RaftSwitchControlState extends State<RaftSwitchControl> {
+class _RaftSwitchState extends State<RaftSwitch> {
   bool showHover = false;
 
   void hoverChanged(bool value) {
@@ -204,7 +206,7 @@ class _RaftSwitchControlState extends State<RaftSwitchControl> {
                 alignment: Alignment.centerLeft,
                 child: Padding(
                   padding: EdgeInsets.only(
-                    left: RaftSwitchControl._thumbOffset(
+                    left: RaftSwitch._thumbOffset(
                       slide,
                       recipe,
                       borderWidth,

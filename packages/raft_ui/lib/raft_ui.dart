@@ -112,7 +112,6 @@ export 'src/preview_route.dart';
 export 'src/attachment_preview_shell.dart';
 export 'src/attachment_transfer.dart';
 
-export 'src/switch.dart';
 
 export 'src/mobile_navigation.dart';
 export 'src/mobile_tabbar_config.dart';

@@ -14,7 +14,7 @@ import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftPanelHeaderBar;
 import 'recipes/button_variants.g.dart';
-import 'switch.dart';
+import 'raft/switch.dart';
 import 'page_tokens.dart';
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'theme.dart';

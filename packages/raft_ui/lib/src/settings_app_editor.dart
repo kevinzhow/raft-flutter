@@ -31,7 +31,7 @@ import 'settings_applications.dart' show RaftAppLogo, RaftAppLogoSize;
 import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
-import 'switch.dart';
+import 'raft/switch.dart';
 import 'tooltip.dart';
 import 'viewport_breakpoints.dart';
 
