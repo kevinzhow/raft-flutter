@@ -2835,53 +2835,6 @@ class RaftPickerTriggerRecipe extends RaftControlRecipe {
   ];
 }
 
-/// The same original PickerTriggerButton recipe for product-owned comboboxes.
-class RaftPickerTriggerButton extends StatelessWidget {
-  const RaftPickerTriggerButton({
-    super.key,
-    required this.label,
-    this.onPressed,
-    this.glyph,
-    this.trailingGlyph = RaftGlyph.chevronDown,
-    this.selected = false,
-    this.enabled = true,
-    this.tooltip,
-    this.focusNode,
-  });
-  final String label;
-  final VoidCallback? onPressed;
-  final RaftGlyph? glyph, trailingGlyph;
-  final bool selected, enabled;
-  final String? tooltip;
-  final FocusNode? focusNode;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return RaftControl(
-      onPressed: enabled ? onPressed : null,
-      focusNode: focusNode,
-      tooltip: tooltip,
-      visualHeight: 28,
-      variant: RaftControlVariant.outline,
-      recipe: RaftPickerTriggerRecipe(t, selected: selected),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (glyph != null) ...[
-            RaftIcon(glyph!, size: 14),
-            const SizedBox(width: 8),
-          ],
-          Text(raftText(context, label)),
-          if (trailingGlyph != null) ...[
-            const SizedBox(width: 8),
-            RaftIcon(trailingGlyph!, size: 12),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 /// Interaction state fed to recipe-painted controls (CSS :hover, :active,
 /// :focus-visible, :disabled).
 @immutable

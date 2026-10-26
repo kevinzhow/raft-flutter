@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_theme/raft_theme.dart' show builtInBrutalTheme;
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
@@ -52,46 +53,47 @@ void main() {
       },
     );
   }
-  testWidgets('picker press has no generic Brutal translation or shadow', (
-    tester,
-  ) async {
-    var picked = 0;
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: raftTheme(),
-        home: Scaffold(
-          body: RaftDensityScope(
-            density: RaftDensity.desktop,
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: RaftPickerTriggerButton(
-                label: 'Channel',
-                glyph: RaftGlyph.hash,
-                onPressed: () => picked++,
+  testWidgets(
+    'frozen Brutal picker press has no generic Brutal translation or shadow',
+    (tester) async {
+      var picked = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(pack: builtInBrutalTheme),
+          home: Scaffold(
+            body: RaftDensityScope(
+              density: RaftDensity.desktop,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: RaftPickerTriggerButton(
+                  label: 'Channel',
+                  glyph: RaftGlyph.hash,
+                  onPressed: () => picked++,
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.byType(RaftPickerTriggerButton)),
-    );
-    await tester.pump(const Duration(milliseconds: 110));
-    final surface = tester.widget<AnimatedContainer>(
-      find.byType(AnimatedContainer),
-    );
-    expect(surface.transform!.storage[12], 0);
-    expect(surface.transform!.storage[13], 0);
-    // Controls cast no drop shadow; the only layer is the 1px hairline ring
-    // that stands in for the outline border.
-    for (final shadow
-        in (surface.decoration! as BoxDecoration).boxShadow ?? const []) {
-      expect(shadow.offset, Offset.zero);
-      expect(shadow.blurRadius, 0);
-    }
-    await gesture.up();
-    expect(picked, 1);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
+      );
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(RaftPickerTriggerButton)),
+      );
+      await tester.pump(const Duration(milliseconds: 110));
+      final surface = tester.widget<AnimatedContainer>(
+        find.byType(AnimatedContainer),
+      );
+      expect(surface.transform!.storage[12], 0);
+      expect(surface.transform!.storage[13], 0);
+      // Controls cast no drop shadow; the only layer is the 1px hairline ring
+      // that stands in for the outline border.
+      for (final shadow
+          in (surface.decoration! as BoxDecoration).boxShadow ?? const []) {
+        expect(shadow.offset, Offset.zero);
+        expect(shadow.blurRadius, 0);
+      }
+      await gesture.up();
+      expect(picked, 1);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 }
