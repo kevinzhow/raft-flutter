@@ -169,6 +169,7 @@ RaftDialogSlots _slots(BuildContext context) {
 
 class _DialogPartScope extends InheritedWidget {
   const _DialogPartScope({
+    super.key,
     required this.first,
     required this.afterHeader,
     required super.child,
@@ -177,6 +178,12 @@ class _DialogPartScope extends InheritedWidget {
   @override
   bool updateShouldNotify(_DialogPartScope old) =>
       first != old.first || afterHeader != old.afterHeader;
+}
+
+// Keep a caller's keyed children associated with the same scope when the
+// children are reordered without reusing a GlobalKey on two widgets.
+class _DialogPartKey extends ValueKey<Key> {
+  const _DialogPartKey(super.value);
 }
 
 /// `DialogContent` / `AlertDialogContent`: the centered panel. Compose it
@@ -417,12 +424,14 @@ class RaftDialog extends StatelessWidget {
               );
           if (!usesLegacyRecipes(t.recipeTokens) && body is Column) {
             final column = body;
-            body = Column(
-              mainAxisSize: column.mainAxisSize,
-              crossAxisAlignment: column.crossAxisAlignment,
+            body = _copyDialogColumn(
+              column,
               children: [
                 for (var i = 0; i < column.children.length; i++)
                   _DialogPartScope(
+                    key: column.children[i].key == null
+                        ? null
+                        : _DialogPartKey(column.children[i].key!),
                     first: i == 0,
                     afterHeader:
                         i > 0 && column.children[i - 1] is RaftDialogHeader,
@@ -485,6 +494,22 @@ class RaftDialog extends StatelessWidget {
   }
 }
 
+Column _copyDialogColumn(
+  Column source, {
+  required List<Widget> children,
+  double? spacing,
+}) => Column(
+  key: source.key,
+  mainAxisAlignment: source.mainAxisAlignment,
+  mainAxisSize: source.mainAxisSize,
+  crossAxisAlignment: source.crossAxisAlignment,
+  textDirection: source.textDirection,
+  verticalDirection: source.verticalDirection,
+  textBaseline: source.textBaseline,
+  spacing: spacing ?? source.spacing,
+  children: children,
+);
+
 /// Inserts the content slot's flex/grid `gap` between direct part children.
 class _Gapped extends StatelessWidget {
   const _Gapped({required this.gap, required this.child});
@@ -494,16 +519,7 @@ class _Gapped extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = child;
     if (gap == 0 || c is! Column) return c;
-    return Column(
-      mainAxisSize: c.mainAxisSize,
-      crossAxisAlignment: c.crossAxisAlignment,
-      children: [
-        for (var i = 0; i < c.children.length; i++) ...[
-          if (i > 0) SizedBox(height: gap),
-          c.children[i],
-        ],
-      ],
-    );
+    return _copyDialogColumn(c, children: c.children, spacing: c.spacing + gap);
   }
 }
 
