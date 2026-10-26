@@ -465,21 +465,28 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
             fit: StackFit.expand,
             children: [
               body,
-              Positioned(
-                left: 0,
-                right: 0,
-                top: 0,
-                height: widget.integratedHeight,
-                child: DesktopCaptionControls(
-                  layout: layout,
-                  windows: windows,
-                  visible: showButtons,
-                  maximized: state.maximized,
-                  active: state.active,
-                  onAction: (action) =>
-                      unawaited(controller.captionAction(action)),
-                  onRects: (rects) =>
-                      unawaited(controller.setCaptionButtonRects(rects)),
+              Positioned.fill(
+                // The title bar sits above the Router, so its tooltips need
+                // their own full-window overlay. Only caption targets hit-test;
+                // empty space continues through to the toolbar and body.
+                child: Overlay.wrap(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(
+                      height: widget.integratedHeight,
+                      child: DesktopCaptionControls(
+                        layout: layout,
+                        windows: windows,
+                        visible: showButtons,
+                        maximized: state.maximized,
+                        active: state.active,
+                        onAction: (action) =>
+                            unawaited(controller.captionAction(action)),
+                        onRects: (rects) =>
+                            unawaited(controller.setCaptionButtonRects(rects)),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
