@@ -1,3 +1,4 @@
+import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
 // Web `member/RolePermissionHelpDialog.tsx`: a DialogCard titled "Human roles" /
 // "Agent roles" holding one `Card p-3` per role (name, summary, details).
 import 'card.dart' show RaftCard;
@@ -6,7 +7,6 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
-import 'agent_create_form.dart';
 import 'design_primitives.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
@@ -50,22 +50,25 @@ Future<void> showRaftRolePermissionHelp(
   required bool agent,
 }) {
   final t = RaftTokens.of(context);
-  return showGeneralDialog<void>(
+  return showRaftDialog<void>(
     context: context,
+    modal: true,
+    legacyModal: true,
     barrierDismissible: true,
     barrierLabel: 'Close',
-    barrierColor: raftAgentModalBarrier(t),
-    transitionDuration: const Duration(milliseconds: 150),
-    transitionBuilder: (context, animation, _, child) =>
-        FadeTransition(opacity: animation, child: child),
     // `Modal`: `backdrop-blur-[2px]` over the page (the Dialog layer has none).
-    pageBuilder: (context, _, _) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-      child: RaftRolePermissionHelpDialog(
+    builder: (context) {
+      final dialog = RaftRolePermissionHelpDialog(
         agent: agent,
         onClose: () => Navigator.of(context).pop(),
-      ),
-    ),
+      );
+      if (t.isRaftLook) return dialog;
+      final blur = t.size('blur.modalBackdrop', fallback: 2);
+      return BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: dialog,
+      );
+    },
   );
 }
 
@@ -84,7 +87,7 @@ class RaftRolePermissionHelpDialog extends StatelessWidget {
     final strong = t.strong;
     final summary = t.muted;
     final details = t.muted;
-    return RaftAgentDialogCard(
+    return RaftDialog.agent(
       surfaceKey: const ValueKey('role-help-dialog'),
       title: agent ? 'Agent roles' : 'Human roles',
       onClose: onClose,

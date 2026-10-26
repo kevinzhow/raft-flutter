@@ -1,3 +1,5 @@
+import 'overlays/dialog.dart' show RaftDialog;
+
 // Presentation of the Web EditProviderConnectionModal
 // (packages/web/src/components/settings/EditProviderConnectionModal.tsx):
 // DialogCard `Edit {name}` over a `space-y-4` form: Connection name, (gateway)
@@ -44,7 +46,7 @@ class RaftEditProviderDialogView extends StatelessWidget {
     final t = RaftTokens.of(context);
     const gap = SizedBox(height: 16); // `space-y-4`
     return RaftModalBackdrop(
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         key: const ValueKey('provider-connection-edit-dialog'),
         title: raftFormat(context, 'Edit {name}', {'name': connectionName}),
         onClose: onClose,

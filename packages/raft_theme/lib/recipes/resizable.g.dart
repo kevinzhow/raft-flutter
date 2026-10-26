@@ -81,20 +81,20 @@ abstract final class RaftResizableRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1764, 1465, 1481, 721],
+    [965, 1766, 1465, 1481, 721],
     [1465, 1481],
     [
-      1681,
-      1933,
+      1682,
+      1935,
       661,
-      1864,
-      1722,
-      1677,
+      1866,
+      1723,
+      1678,
       95,
       97,
       965,
-      1902,
-      1735,
+      1904,
+      1736,
       1318,
       1323,
       545,

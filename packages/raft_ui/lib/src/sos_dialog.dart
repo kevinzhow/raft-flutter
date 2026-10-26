@@ -1,3 +1,5 @@
+import 'overlays/dialog.dart' show RaftDialog;
+
 // Presentation of the Web channel SOS dialog
 // (packages/web/src/components/message/SOSDialog.tsx). The app adapter owns
 // the `stop-all-agents` / `resume-all-agents` commands and passes them in as
@@ -6,7 +8,6 @@ import 'package:flutter/material.dart';
 
 import 'banner.dart';
 import 'components.dart';
-import 'dialog_card.dart';
 import 'form_controls.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
@@ -127,7 +128,7 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
     // Raft dialog routes carry no Material; the guidance editor needs one.
     return Material(
       type: MaterialType.transparency,
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         title: phase == RaftSosPhase.confirm ? 'Stop Agents' : 'Agents Stopped',
         onClose: widget.onClose,
         maxWidth: 384, // max-w-sm

@@ -352,7 +352,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     dynamic data,
     bool destructive = false,
   }) async {
-    await showDialog(
+    await showRaftDialog(
+      legacyMaterial: true,
       context: context,
       barrierDismissible: false,
       builder: (_) => RaftFormDialog(
@@ -914,8 +915,9 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   Future<void> guardedTransition(VoidCallback transition) async {
     if (!dirty) return transition();
     var busy = false;
-    await showRaftModal<void>(
-      context,
+    await showRaftDialog<void>(
+      context: context,
+      modal: true,
       builder: (dialogContext) => StatefulBuilder(
         // Web `Modal onClose`: Escape does nothing while the save runs.
         builder: (dialogContext, setDialog) => PopScope(
@@ -1683,7 +1685,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   Future<void> stopAgents() => showChannelSos(context, w, channel);
 
   Future<void> deleteChannel() async {
-    final accepted = await showDialog<bool>(
+    final accepted = await showRaftDialog<bool>(
+      legacyMaterial: true,
       context: context,
       barrierDismissible: false,
       builder: (_) => RaftFormDialog(

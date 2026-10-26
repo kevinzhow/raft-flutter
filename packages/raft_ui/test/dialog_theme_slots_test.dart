@@ -34,7 +34,12 @@ void main() {
     expect(t.widget<Text>(find.text('Delete Server')).style!.fontSize, 17);
     expect(body.left - surface.left, 20);
     expect(body.top - title.bottom, 6);
-    final close = t.getRect(find.byKey(const Key('confirm-dialog-close')));
+    final close = t.getRect(
+      find.descendant(
+        of: find.byType(RaftDialogClose),
+        matching: find.byType(RaftButton),
+      ),
+    );
     expect(close.size, const Size.square(32));
     for (final offset in [
       const Offset(2, 2),

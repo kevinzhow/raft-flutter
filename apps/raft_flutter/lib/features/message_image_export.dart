@@ -301,7 +301,8 @@ Future<bool?> previewMessageImage(
     final filename = AttachmentFiles.safeFilename(
       'raft-${w.channel?.name ?? 'export'}-${DateTime.now().toIso8601String().substring(0, 10)}.png',
     );
-    return await showDialog<bool>(
+    return await showRaftDialog<bool>(
+      legacyMaterial: true,
       context: context,
       builder: (_) => MessageImageReview(
         controller: w,

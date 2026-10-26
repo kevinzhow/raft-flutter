@@ -81,22 +81,22 @@ abstract final class RaftInlineCodeRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1711, 1651, 1676, 1013, 1786, 1014, 1816, 1930, 581],
+    [1712, 1652, 1677, 1013, 1788, 1014, 1818, 1932, 581],
     [
       1013,
-      1786,
+      1788,
       1302,
       621,
-      1651,
+      1652,
       468,
       416,
       1342,
       1014,
-      1930,
-      1711,
+      1932,
+      1712,
       581,
-      1676,
-      1816,
+      1677,
+      1818,
     ],
   ];
 

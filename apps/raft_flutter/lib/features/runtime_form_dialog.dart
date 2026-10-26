@@ -1009,7 +1009,7 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
         listenable: form,
         builder: (context, _) {
           final loadError = form.error;
-          return RaftAgentDialogCard(
+          return RaftDialog.agent(
             title: editing ? 'Edit Runtime Configuration' : 'Create Agent',
             onClose: busy ? null : () => Navigator.pop(context),
             children: [

@@ -131,6 +131,7 @@ import 'search_trigger.g.dart';
 import 'web_selection_panel.g.dart';
 import 'web_menu_action.g.dart';
 import 'web_selection_row.g.dart';
+import 'web_dialog_card.g.dart';
 
 export 'recipe_utilities.g.dart';
 export 'spinner.g.dart';
@@ -260,6 +261,7 @@ export 'search_trigger.g.dart';
 export 'web_selection_panel.g.dart';
 export 'web_menu_action.g.dart';
 export 'web_selection_row.g.dart';
+export 'web_dialog_card.g.dart';
 
 typedef RaftRecipeResolver = Map<String, RaftSlotStyle> Function(
   Map<String, String?> props, {
@@ -400,4 +402,5 @@ const Map<String, RaftRecipeResolver> raftRecipes = {
   'webSelectionPanel': RaftWebSelectionPanelRecipe.resolveProps,
   'webMenuAction': RaftWebMenuActionRecipe.resolveProps,
   'webSelectionRow': RaftWebSelectionRowRecipe.resolveProps,
+  'webDialogCard': RaftWebDialogCardRecipe.resolveProps,
 };

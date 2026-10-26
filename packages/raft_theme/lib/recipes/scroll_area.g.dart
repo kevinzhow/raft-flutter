@@ -110,20 +110,20 @@ abstract final class RaftScrollAreaRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1677, 1465],
-    [1764, 1465, 1585, 1573, 420, 380],
+    [1678, 1465],
+    [1766, 1465, 1585, 1573, 420, 380],
     [1480],
     [
       1155,
-      1937,
+      1939,
       965,
-      1864,
-      1722,
+      1866,
+      1723,
       1589,
       1554,
-      1888,
+      1890,
       942,
-      1625,
+      1626,
       900,
       899,
       898,
@@ -133,7 +133,7 @@ abstract final class RaftScrollAreaRecipe {
       711,
       717,
     ],
-    [1677, 1059, 1058, 1699, 588, 1272],
+    [1678, 1059, 1058, 1700, 588, 1272],
     [615],
   ];
 

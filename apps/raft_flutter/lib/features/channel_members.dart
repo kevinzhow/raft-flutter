@@ -212,8 +212,9 @@ class ChannelMembers extends StatefulWidget {
       controller.notifyListeners();
       return;
     }
-    await showRaftModal<void>(
-      context,
+    await showRaftDialog<void>(
+      context: context,
+      modal: true,
       builder: (_) => ChannelMembers(
         controller: controller,
         channel: channel,

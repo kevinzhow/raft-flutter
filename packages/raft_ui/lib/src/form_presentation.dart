@@ -8,8 +8,7 @@ import 'overlays/dialog.dart' show showRaftDialog;
 
 import 'design_primitives.dart';
 import 'icons.dart';
-import 'dialog_card.dart'
-    show RaftCloseButton, RaftTextSteps, raftCssTextStyle, showRaftModal;
+import 'dialog_card.dart' show RaftCloseButton, RaftTextSteps, raftCssTextStyle;
 import 'presentation.dart';
 import 'settings_layout.dart' show RaftSpace;
 import 'sheet.dart';
@@ -316,8 +315,9 @@ Future<V?> showRaftWindow<V>(
 }) => form
     ? showRaftForm<V>(context, builder: builder)
     : modal
-    ? showRaftModal<V>(context, builder: builder)
-    : showDialog<V>(
+    ? showRaftDialog<V>(context: context, modal: true, builder: builder)
+    : showRaftDialog<V>(
+        legacyMaterial: true,
         context: context,
         // Web `DialogCard` / `ConfirmDialog`: no scrim close.
         barrierDismissible: false,

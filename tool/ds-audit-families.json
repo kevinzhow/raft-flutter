@@ -39,16 +39,17 @@
     "RaftAlertDialog",
     "showRaftAlertDialog",
     "RaftDialogSurface",
-    "RaftDialogBackdrop"
+    "RaftDialogBackdrop",
+    "RaftFormDialog",
+    "RaftDialogFrame"
    ],
-   "uncertain": "RaftFormDialog has many app callers and may be rebuilt on RaftDialog instead of removed; it is listed so no new callers appear.",
-   "note": "RaftDialogSurface and RaftDialogBackdrop are shared paint and scrim parts; title, body, footer and positioning stay with the dialog family. Frozen compositions keep their existing renderers.",
+   "note": "RaftDialog owns standard, alert and DialogCard compositions; RaftFormDialog supplies form state on that implementation. RaftDialogFrame places presented content without painting it. RaftDialogSurface and RaftDialogBackdrop are shared paint parts. Old public Card/Shell/Modal names are compatibility adapters; frozen looks retain their original rendering.",
    "deprecated": {
     "RaftDialogCard": "packages/raft_ui/lib/src/dialog_card.dart",
     "showRaftModal": "packages/raft_ui/lib/src/dialog_card.dart",
-    "RaftFormDialog": "packages/raft_ui/lib/src/form_dialog.dart",
     "RaftDialogShell": "packages/raft_ui/lib/src/settings_controls.dart",
-    "RaftDialogFrame": "packages/raft_ui/lib/src/presentation.dart"
+    "RaftAgentDialogCard": "packages/raft_ui/lib/src/agent_create_form.dart",
+    "showRaftAgentModal": "packages/raft_ui/lib/src/agent_create_form.dart"
    }
   },
   "segmented": {

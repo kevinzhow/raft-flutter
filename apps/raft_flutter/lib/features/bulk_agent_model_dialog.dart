@@ -536,7 +536,7 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
         raftFormat(context, value == 1 ? one : many, {'count': value});
     return PopScope(
       canPop: !busy,
-      child: RaftAgentDialogCard(
+      child: RaftDialog.agent(
         key: const ValueKey('bulk-change-model-dialog'),
         bare: true,
         plainCard: true,

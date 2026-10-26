@@ -131,7 +131,8 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     final sourceScope = authority;
     if (remove) {
       final accepted = await scopedDialog<bool>(
-        (context) => AlertDialog(
+        (context) => RaftAlertDialog(
+          legacy: RaftLegacyAlert.material,
           title: Text(raftText(context, 'Remove Profile Image')),
           content: Text(
             raftText(

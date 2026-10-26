@@ -1,3 +1,4 @@
+import 'overlays/dialog.dart' show RaftDialog;
 // Presentation of the Web CreateChannelDialog
 // (packages/web/src/components/channel/CreateChannelDialog.tsx): DialogCard
 // with Name, Description (optional), Visibility segmented control, Members
@@ -77,7 +78,7 @@ class RaftCreateChannelDialogView extends StatelessWidget {
     // space-y-4 between the form's direct children.
     const gap = SizedBox(height: 16);
     return RaftModalBackdrop(
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         title: 'Create Channel',
         onClose: onClose,
         child: Column(

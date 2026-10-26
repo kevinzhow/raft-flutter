@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'recipe_surface.dart';
+import 'dialog_slots.dart';
 import 'recipes/dialog.g.dart';
 import 'recipes/dialog_surface.g.dart';
 import 'recipes/recipe_runtime.dart';
@@ -19,12 +20,15 @@ class RaftDialogSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return RaftRecipeBox(
-      style:
-          surfaceStyle ??
-          RaftDialogSurfaceRecipe.resolve(
-            states: t.recipeStates(),
-            tokens: t.recipeTokens,
-          ).root,
+      style: raftDialogSlot(
+        t,
+        surfaceStyle ??
+            RaftDialogSurfaceRecipe.resolve(
+              states: t.recipeStates(),
+              tokens: t.recipeTokens,
+            ).root,
+        'content',
+      ),
       tokens: t.recipeTokens,
       clip: true,
       child: child,

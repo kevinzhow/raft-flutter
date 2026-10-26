@@ -1,3 +1,4 @@
+import 'overlays/dialog.dart' show RaftDialog;
 // Presentation of the Web CreateJointChannelDialog
 // (packages/web/src/components/channel/CreateJointChannelDialog.tsx): DialogCard
 // `max-w-lg` with a GitBranch title icon, the free-allowance info Banner,
@@ -121,7 +122,7 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
       ],
     );
     return RaftModalBackdrop(
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         title: 'Create Joint Channel',
         titleGlyph: RaftGlyph.gitBranch,
         maxWidth: 512, // max-w-lg

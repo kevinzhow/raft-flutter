@@ -1,3 +1,5 @@
+import 'package:raft_ui/raft_ui.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -93,7 +95,8 @@ Future<bool> forwardMessages(
   if (MediaQuery.sizeOf(context).width < 768) {
     return showForwardComposerPage(context, controller, messages);
   }
-  return await showDialog<bool>(
+  return await showRaftDialog<bool>(
+        legacyMaterial: true,
         context: context,
         builder: (_) => ForwardComposerPage(
           controller: controller,

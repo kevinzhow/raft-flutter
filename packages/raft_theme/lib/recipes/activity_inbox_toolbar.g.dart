@@ -89,11 +89,11 @@ abstract final class RaftActivityInboxToolbarRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1735, 969, 1318, 1022, 595, 1657, 1668],
+    [965, 1736, 969, 1318, 1022, 595, 1658, 1669],
     [
       965,
       1467,
-      1735,
+      1736,
       1318,
       1022,
       1379,
@@ -104,11 +104,11 @@ abstract final class RaftActivityInboxToolbarRecipe {
       623,
       633,
       595,
-      1657,
+      1658,
       0,
       204,
     ],
-    [1502, 1815, 1007, 1816],
+    [1502, 1817, 1007, 1818],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
