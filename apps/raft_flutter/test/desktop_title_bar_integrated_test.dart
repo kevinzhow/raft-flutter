@@ -34,6 +34,7 @@ class _Runner {
   Map<String, Object> get state => {
     'height': integrated ? 40.0 : 28.0,
     'fullscreen': false,
+    'integrated': integrated,
     'leadingInset': integrated ? 88.0 : 0.0,
   };
 
@@ -117,6 +118,38 @@ void main() {
     final call = runner.calls.singleWhere((c) => c.method == 'setIntegrated');
     expect(call.arguments, {'enabled': true, 'height': 48.0});
   });
+
+  testWidgets(
+    'Mac keeps its measured control gutter during a transient native layout',
+    (tester) async {
+      final runner = _Runner(tester);
+      final controller = DesktopTitleBarController(
+        platform: TargetPlatform.macOS,
+        web: false,
+      );
+      await tester.pumpWidget(_app(controller));
+      await tester.pumpAndSettle();
+      await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        runner.channel.name,
+        runner.channel.codec.encodeMethodCall(
+          const MethodCall('state', {
+            'height': 0.0,
+            'leadingInset': 0.0,
+            'integrated': true,
+            'fullscreen': false,
+          }),
+        ),
+        (_) {},
+      );
+      await tester.pump();
+      expect(
+        tester.getSize(find.byKey(const Key('native-controls'))).width,
+        88,
+      );
+      expect(find.byType(RaftDesktopTitleStrip), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('fullscreen releases native inset while keeping global actions', (
     tester,
@@ -219,4 +252,69 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  for (final page in [false, true]) {
+    testWidgets(
+      'Mac preview ${page ? 'page' : 'dialog'} clears native controls',
+      (tester) async {
+        final runner = _Runner(tester);
+        final controller = DesktopTitleBarController(
+          platform: TargetPlatform.macOS,
+          web: false,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(),
+            builder: (context, child) => DesktopTitleBar(
+              controller: controller,
+              integrated: true,
+              child: child!,
+            ),
+            home: Builder(
+              builder: (context) => Column(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push<void>(
+                      page
+                          ? RaftPreviewPageRoute<void>(
+                              builder: (_) => const ColoredBox(
+                                color: Colors.white,
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: Text('Preview title'),
+                                ),
+                              ),
+                            )
+                          : RaftFullBleedDialogRoute<void>(
+                              context: context,
+                              builder: (_) => const Align(
+                                alignment: Alignment.topLeft,
+                                child: Text('Preview title'),
+                              ),
+                            ),
+                    ),
+                    child: const Text('Open preview'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Open preview'));
+        await tester.pumpAndSettle();
+        expect(
+          tester.getTopLeft(find.text('Preview title')).dy,
+          greaterThanOrEqualTo(48),
+        );
+        await runner.fullscreen(true);
+        expect(tester.getTopLeft(find.text('Preview title')).dy, 0);
+        await runner.fullscreen(false);
+        expect(
+          tester.getTopLeft(find.text('Preview title')).dy,
+          greaterThanOrEqualTo(48),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }

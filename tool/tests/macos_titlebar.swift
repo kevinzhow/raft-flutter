@@ -33,7 +33,7 @@ private func closeRect(_ window: NSWindow) -> NSRect {
 }
 
 _ = NSApplication.shared.setActivationPolicy(.prohibited)
-let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 1000, height: 700),
+let window = MainFlutterWindow(contentRect: NSRect(x: 100, y: 100, width: 1000, height: 700),
   styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
 window.isReleasedWhenClosed = false
 private let messenger = Messenger()
@@ -77,6 +77,38 @@ _ = messenger.invoke("status")
 check(abs(content.bounds.height - closeRect(window).midY - 30) < 0.01,
   "native container offsets must not move the controls off the shared row's centre")
 buttonParent.setFrameOrigin(parentOrigin)
+
+// AppKit can lay out native buttons while changing title/appearance, before
+// didUpdate. Inspect those frames directly: status itself used to repair them
+// and concealed a one-frame jump from (16,17) back to (12,13).
+_ = messenger.invoke("setIntegrated", ["enabled": true, "height": 48])
+let controlsBefore = [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton].map {
+  window.standardWindowButton($0)!.convert(window.standardWindowButton($0)!.bounds, to: content)
+}
+var transitionFrames: [[String: Any]] = []
+for index in 0..<6 {
+  window.title = "Page \(index)"
+  window.appearance = NSAppearance(named: index % 2 == 0 ? .darkAqua : .aqua)
+  content.superview?.needsLayout = true
+  content.superview?.layoutSubtreeIfNeeded()
+  window.layoutIfNeeded()
+  for phase in ["layout", "display"] {
+    if phase == "display" { window.displayIfNeeded() }
+    let frame = closeRect(window)
+    let top = content.bounds.height - frame.maxY
+    transitionFrames.append(["page": index, "phase": phase, "left": frame.minX, "top": top])
+    for (offset, type) in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton].enumerated() {
+      let button = window.standardWindowButton(type)!
+      check(button.convert(button.bounds, to: content) == controlsBefore[offset],
+        "page \(index) \(phase) control \(offset) must retain native frame \(controlsBefore[offset]); actual \(button.convert(button.bounds, to: content))")
+      check(button.target != nil, "native controls must keep their AppKit actions")
+    }
+    check(abs(frame.minX - 16) < 0.01 && abs(top - 17) < 0.01,
+      "page \(index) \(phase) must not expose a displaced native control frame: \(frame.minX),\(top)")
+  }
+  NSApp.updateWindows()
+}
+print("Native transition frames:", String(data: try! JSONSerialization.data(withJSONObject: transitionFrames), encoding: .utf8)!)
 
 // A quick gesture can end before the asynchronous Dart channel reaches AppKit.
 // Dispatch real AppKit events first, then request the drag as Dart would.

@@ -308,3 +308,5 @@ export 'package:raft_theme/raft_theme.dart'
         RaftThemeException;
 
 export 'src/recipes/spinner.g.dart' show RaftSpinnerRecipeSize;
+
+export 'src/window_chrome.dart';

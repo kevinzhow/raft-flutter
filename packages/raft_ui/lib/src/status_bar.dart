@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+import 'window_chrome.dart';
+
 // STATUS BAR STANDARD (docs/status-bar.md). One rule for every layout:
 //
 //   For each vertical column under the status bar, the band over that column
@@ -150,7 +152,9 @@ class RaftFullBleedDialogRoute<T> extends DialogRoute<T> {
   }) : super(
          useSafeArea: false,
          builder: (context) => RaftStatusBarHost.overlay(
-           child: SafeArea(bottom: false, child: builder(context)),
+           child: RaftWindowChromePadding(
+             child: SafeArea(bottom: false, child: builder(context)),
+           ),
          ),
        );
 }

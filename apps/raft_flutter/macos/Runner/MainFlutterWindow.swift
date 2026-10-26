@@ -8,7 +8,7 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
   private var attachmentFilesChannel: AttachmentFilesChannel?
   private var interactionChannel: FlutterMethodChannel?
   private var memoryChannel: FlutterMethodChannel?
-  private var titleBar: RaftTitleBar?
+  fileprivate var titleBar: RaftTitleBar?
   private var proxyChannel: FlutterMethodChannel?
   private var windowChannel: FlutterMethodChannel?
   private var windowCommandsReady = false
@@ -17,6 +17,23 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
   private(set) var canCheckForUpdates = false
   private var videoFrameChannel: FlutterMethodChannel?
   private let videoFrame = RaftVideoFrame()
+
+  // AppKit resets standard-button frames during layout. Align them after that
+  // layout, before display; didUpdate arrives after a displaced frame can paint.
+  override func layoutIfNeeded() {
+    super.layoutIfNeeded()
+    titleBar?.positionButtons()
+  }
+
+  override func displayIfNeeded() {
+    layoutIfNeeded()
+    super.displayIfNeeded()
+  }
+
+  override func display() {
+    layoutIfNeeded()
+    super.display()
+  }
 
   static func isRepeatedCloseKey(_ event: NSEvent?) -> Bool {
     // AppKit can dispatch a menu action after Flutter's asynchronous key reply;
@@ -204,6 +221,7 @@ final class RaftTitleBar: NSObject {
   private var previousToolbar: NSToolbar?
   private var previousToolbarStyle: Int?
   private var previousButtonFrames: [NSWindow.ButtonType: NSRect] = [:]
+  private var positioningButtons = false
   private struct PointerGesture {
     let down: NSEvent
     let frame: NSRect
@@ -224,6 +242,7 @@ final class RaftTitleBar: NSObject {
     window.styleMask.insert(.fullSizeContentView)
     // Match the reference desktop frame before Flutter's first frame, including
     // sign-in, workspace selection and narrow layouts.
+    (window as? MainFlutterWindow)?.titleBar = self
     setIntegrated(true, height: 48)
     pointerMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp]) {
       [weak self] event in
@@ -311,6 +330,7 @@ final class RaftTitleBar: NSObject {
         window.toolbar = toolbar
       }
       integratedHeight = height
+      window.layoutIfNeeded()
       setIntegratedToolbarVisible(!window.styleMask.contains(.fullScreen))
       positionButtons()
     } else if integratedHeight != nil {
@@ -338,12 +358,13 @@ final class RaftTitleBar: NSObject {
     toolbar.isVisible = visible
   }
 
-  private func positionButtons() {
-    guard let window, let content = window.contentView, let height = integratedHeight,
-      !window.styleMask.contains(.fullScreen),
+  fileprivate func positionButtons() {
+    guard !positioningButtons, let window, let content = window.contentView,
+      let height = integratedHeight, !window.styleMask.contains(.fullScreen),
       let close = window.standardWindowButton(.closeButton), let parent = close.superview
     else { return }
-    parent.layoutSubtreeIfNeeded()
+    positioningButtons = true
+    defer { positioningButtons = false }
     let start = close.convert(close.bounds, to: content).minX
     let offsets = Self.buttons.compactMap { type -> (NSButton, CGFloat)? in
       guard let button = window.standardWindowButton(type), button.superview === parent else { return nil }

@@ -32,6 +32,7 @@ class DesktopTitleBarState {
     this.height = 0,
     this.fullscreen = false,
     this.leadingInset = 0,
+    this.integrated = false,
   });
 
   /// The title bar's height in logical pixels; zero when the window has none.
@@ -43,15 +44,19 @@ class DesktopTitleBarState {
   /// Space reserved for the native traffic lights in an integrated row.
   final double leadingInset;
 
+  /// The native host owns the shared frame even during a zero-height layout.
+  final bool integrated;
+
   @override
   bool operator ==(Object other) =>
       other is DesktopTitleBarState &&
       other.height == height &&
       other.fullscreen == fullscreen &&
-      other.leadingInset == leadingInset;
+      other.leadingInset == leadingInset &&
+      other.integrated == integrated;
 
   @override
-  int get hashCode => Object.hash(height, fullscreen, leadingInset);
+  int get hashCode => Object.hash(height, fullscreen, leadingInset, integrated);
 }
 
 /// The colours the title bar wears, from the rail recipe of the current theme.
@@ -140,6 +145,7 @@ class DesktopTitleBarController {
     DesktopTitleBarState(
       height: mode == DesktopTitleBarMode.strip ? macosDefaultHeight : 0,
       leadingInset: mode == DesktopTitleBarMode.strip ? macosControlsInset : 0,
+      integrated: mode == DesktopTitleBarMode.strip,
     ),
   );
   Future<void>? _starting;
@@ -168,14 +174,27 @@ class DesktopTitleBarController {
     final height = value['height'];
     final fullscreen = value['fullscreen'];
     final inset = value['leadingInset'];
+    final integrated = value['integrated'] == true;
+    final keepControls =
+        mode == DesktopTitleBarMode.strip && integrated && fullscreen != true;
+    final measuredInset = inset is num && inset.isFinite && inset >= 0
+        ? inset.toDouble()
+        : 0.0;
     state.value = DesktopTitleBarState(
-      height: mode == DesktopTitleBarMode.strip && height is num
+      height:
+          mode == DesktopTitleBarMode.strip &&
+              height is num &&
+              height.isFinite &&
+              height >= 0
           ? height.toDouble()
           : 0,
       fullscreen: fullscreen == true,
-      leadingInset: inset is num && inset.isFinite && inset >= 0
-          ? inset.toDouble()
-          : 0,
+      integrated: integrated,
+      leadingInset: keepControls && measuredInset == 0
+          ? (state.value.leadingInset > 0
+                ? state.value.leadingInset
+                : macosControlsInset)
+          : measuredInset,
     );
   }
 
@@ -336,7 +355,7 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
       builder: (context, state, child) {
         final macFrame =
             controller.mode == DesktopTitleBarMode.strip &&
-            (state.height > 0 || state.fullscreen);
+            (state.integrated || state.height > 0 || state.fullscreen);
         final draggable =
             widget.integrated &&
             (controller.mode == DesktopTitleBarMode.strip ||
@@ -351,9 +370,17 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
           onDoubleTap: draggable
               ? () => unawaited(controller.doubleClick())
               : null,
-          child: RaftAuthHeaderScope(
-            external: macFrame && !widget.integrated,
-            child: child!,
+          child: RaftWindowChromeScope(
+            // ds-allow: native window-control bounds, independent of theme spacing.
+            overlayInsets: EdgeInsets.only(
+              top: macFrame && widget.integrated && !state.fullscreen
+                  ? widget.integratedHeight
+                  : 0,
+            ),
+            child: RaftAuthHeaderScope(
+              external: macFrame && !widget.integrated,
+              child: child!,
+            ),
           ),
         );
         if (controller.mode == DesktopTitleBarMode.strip && !macFrame) {
