@@ -132,6 +132,9 @@ jobs:
         run: |
           python -m unittest discover -s tool/tests -p test_appcast.py -v
           python -m unittest discover -s tool/tests -p test_windows_installer.py -v
+      - name: Test native Windows frame dispatch
+        if: inputs.platform == 'windows'
+        run: python -m unittest discover -s tool/tests -p test_windows_frame.py -v
       - name: Ensure Inno Setup for the WinSparkle installer
         if: inputs.platform == 'windows'
         shell: pwsh
