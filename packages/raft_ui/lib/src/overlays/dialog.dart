@@ -243,6 +243,7 @@ class RaftDialog extends StatelessWidget {
        footer = null,
        cardActions = null,
        footerGap = null,
+       pinFooterAtLargeText = false,
        assert(child != null || title != null || content != null);
 
   /// Web's DialogCard product composition on the same dialog surface. Its
@@ -256,11 +257,13 @@ class RaftDialog extends StatelessWidget {
     this.titleGlyph,
     this.footer,
     this.footerGap,
+    this.pinFooterAtLargeText = false,
     Widget? actions,
     this.contentKey,
     this.closeEnabled = true,
     this.showClose = true,
-  }) : _card = true,
+  }) : assert(!pinFooterAtLargeText || actions == null),
+       _card = true,
        _shell = false,
        outlineClose = false,
        title = title,
@@ -300,13 +303,19 @@ class RaftDialog extends StatelessWidget {
        titleGlyph = null,
        footer = null,
        cardActions = null,
-       footerGap = null;
+       footerGap = null,
+       pinFooterAtLargeText = false;
 
   final bool _shell, outlineClose;
   final bool _card;
   final double? maxWidth, footerGap;
   final RaftGlyph? titleGlyph;
   final Widget? footer, cardActions;
+
+  /// Keep both the header and footer visible while the body scrolls at large
+  /// text sizes. This preserves the controls of a form migrated from an
+  /// AlertDialog; it cannot be combined with the separately pinned actions.
+  final bool pinFooterAtLargeText;
 
   /// Key of the content panel itself (the root fills the viewport).
   final Key? contentKey;

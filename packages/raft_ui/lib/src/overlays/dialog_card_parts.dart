@@ -82,7 +82,22 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
         ],
       ),
     );
-    Widget card({required bool pinned, required double maxWidth}) => Semantics(
+    Widget scrollingContent({
+      required bool includeHeading,
+      required bool includeFooter,
+    }) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (includeHeading) heading,
+        body,
+        if (includeFooter && footer != null) ...[
+          SizedBox(height: d.footerGap ?? header.margin.bottom),
+          footer,
+        ],
+      ],
+    );
+    Widget card({required bool scaled, required double maxWidth}) => Semantics(
       scopesRoute: true,
       namesRoute: true,
       explicitChildNodes: true,
@@ -102,23 +117,27 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (pinned)
+                    if (scaled) ...[
+                      if (actions == null) heading,
                       Flexible(
                         child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [heading, body],
+                          child: scrollingContent(
+                            includeHeading: actions != null,
+                            includeFooter: !d.pinFooterAtLargeText,
                           ),
                         ),
-                      )
-                    else ...[
+                      ),
+                      if (d.pinFooterAtLargeText && footer != null) ...[
+                        SizedBox(height: d.footerGap ?? header.margin.bottom),
+                        footer,
+                      ],
+                    ] else ...[
                       heading,
                       body,
-                    ],
-                    if (footer != null) ...[
-                      SizedBox(height: d.footerGap ?? header.margin.bottom),
-                      footer,
+                      if (footer != null) ...[
+                        SizedBox(height: d.footerGap ?? header.margin.bottom),
+                        footer,
+                      ],
                     ],
                     ?actions,
                   ],
@@ -131,8 +150,9 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
     );
     // Web Modal scrolls the entire natural-height card. An enclosing Modal or
     // form frame already supplies that scrollport; a bare dialog route needs
-    // one here. Above the default text size, keep actions visible while the
-    // heading and body scroll inside the capped surface.
+    // one here. Above the default text size, cap the surface and scroll its
+    // content: an explicit action row stays visible, otherwise the heading
+    // does. Forms can also pin their footer for keyboard and submit access.
     return LayoutBuilder(
       builder: (context, box) {
         final hasOuterPadding =
@@ -148,15 +168,14 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
           d.maxWidth ?? product.defaultWidth.maxWidth!,
           math.max(0.0, availableWidth),
         );
-        final pinActions =
-            RaftScaled.grows(context) && (footer != null || actions != null);
+        final scaled = RaftScaled.grows(context);
         final keyboard = media.viewInsets.bottom;
         if (!box.hasBoundedHeight) {
-          if (!pinActions) {
+          if (!scaled) {
             return Align(
               widthFactor: 1,
               heightFactor: 1,
-              child: card(pinned: false, maxWidth: maxWidth),
+              child: card(scaled: false, maxWidth: maxWidth),
             );
           }
           final available =
@@ -172,7 +191,7 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
               heightFactor: 1,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: available),
-                child: card(pinned: true, maxWidth: maxWidth),
+                child: card(scaled: true, maxWidth: maxWidth),
               ),
             ),
           );
@@ -193,10 +212,10 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
             heightFactor: 1,
             child: ConstrainedBox(
               constraints: BoxConstraints(maxHeight: available),
-              child: pinActions
-                  ? card(pinned: true, maxWidth: maxWidth)
+              child: scaled
+                  ? card(scaled: true, maxWidth: maxWidth)
                   : SingleChildScrollView(
-                      child: card(pinned: false, maxWidth: maxWidth),
+                      child: card(scaled: false, maxWidth: maxWidth),
                     ),
             ),
           ),

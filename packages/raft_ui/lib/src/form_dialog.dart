@@ -374,6 +374,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
               title: widget.title,
               onClose: () => Navigator.pop(context, false),
               closeEnabled: !busy,
+              pinFooterAtLargeText: true,
               footer: Wrap(
                 alignment: WrapAlignment.end,
                 spacing: RaftDialogSlots.of(context).footer.columnGap ?? 0,
