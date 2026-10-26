@@ -8,7 +8,6 @@
 //
 // Values come from the generated recipes (package:raft_ui/recipes.dart) and
 // tokens; Tailwind classes written in the Web JSX are resolved in comments.
-import 'card.dart' show RaftCard;
 import 'form_controls.dart'
     show
         RaftField,
@@ -24,6 +23,10 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 import 'form_presentation.dart';
+import 'card.dart';
+import 'recipes/card.g.dart';
+import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
+import 'dialog_surface.dart';
 import 'presentation.dart' show RaftSurfaceForm;
 import 'system_inset.dart';
 
@@ -36,7 +39,6 @@ import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
-import 'recipes/card.g.dart';
 import 'raft/button.dart' show RaftButton, RaftButtonMetrics;
 import 'tokens/tokens.dart' show RaftTypeStyle;
 import 'recipes/recipe_router.dart' show usesLegacyRecipes;
@@ -438,7 +440,7 @@ class _RaftModalBackdropState extends State<RaftModalBackdrop> {
       child: BackdropFilter(
         enabled: blur > 0,
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: ColoredBox(
+        child: _ModalPaint(
           color: scrim,
           child: LayoutBuilder(
             builder: (context, box) {
@@ -485,6 +487,18 @@ class _RaftModalBackdropState extends State<RaftModalBackdrop> {
       ),
     );
   }
+}
+
+class _ModalPaint extends StatelessWidget {
+  const _ModalPaint({required this.color, required this.child});
+  final Color color;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) =>
+      usesLegacyRecipes(RaftTokens.of(context).recipeTokens)
+      ? ColoredBox(color: color, child: child)
+      : RaftDialogBackdrop(child: child);
 }
 
 /// `m-auto` centring as Chromium paints it: layout keeps the half-pixel
@@ -538,15 +552,7 @@ class _RenderPixelCenter extends RenderShiftedBox {
 Future<T?> showRaftModal<T>(
   BuildContext context, {
   required WidgetBuilder builder,
-}) => showGeneralDialog<T>(
-  context: context,
-  barrierDismissible: false,
-  barrierColor: Colors.transparent,
-  transitionDuration: Duration.zero,
-  pageBuilder: (context, _, _) => RaftDismissScope(
-    child: Material(type: MaterialType.transparency, child: builder(context)),
-  ),
-);
+}) => showRaftDialog<T>(context: context, modal: true, builder: builder);
 
 /// The route [showRaftModal] pushes, for hosts that open and close a modal
 /// from state (no barrier; [builder] paints its own backdrop, no transition).
@@ -570,206 +576,35 @@ RawDialogRoute<T> raftModalRoute<T>({
 /// In a presented form window on a phone ([showRaftForm], below 768) the card
 /// is the sheet: the title and close button pin to the top, [child] scrolls
 /// and [actions] pin to the bottom, above the keyboard.
-class RaftDialogCard extends StatefulWidget {
+class RaftDialogCard extends StatelessWidget {
   const RaftDialogCard({
     super.key,
     required this.title,
     required this.onClose,
     required this.child,
-    this.maxWidth = 448, // max-w-md = 28rem
+    this.maxWidth = 448,
     this.titleGlyph,
     this.actions,
     this.footer,
     this.footerGap = 16,
   });
   final String title;
-
-  /// The submit row of a form. In a dialog it follows [child] after a 16px
-  /// gap, as part of the body; in a bottom sheet ([showRaftForm] below 768)
-  /// it pins to the bottom while [child] scrolls.
-  final Widget? footer;
-
-  /// The space between [child] and [footer] in a dialog.
-  final double footerGap;
-
-  /// The action row (buttons) under [child]. Above the default text size the
-  /// card is capped to the viewport and only [child] scrolls, so these stay on
-  /// screen; at the default size it simply follows [child].
-  final Widget? actions;
-
-  /// A leading `<Icon size={18} />` in the title (`flex min-w-0 items-center
-  /// gap-2` + `truncate` title span).
-  final RaftGlyph? titleGlyph;
   final VoidCallback onClose;
   final Widget child;
-  final double maxWidth;
-
+  final double maxWidth, footerGap;
+  final RaftGlyph? titleGlyph;
+  final Widget? actions, footer;
   @override
-  State<RaftDialogCard> createState() => _RaftDialogCardState();
-}
-
-class _RaftDialogCardState extends State<RaftDialogCard> {
-  final _body = GlobalKey(debugLabel: 'dialog card body');
-  final _actions = GlobalKey(debugLabel: 'dialog card actions');
-  final _footer = GlobalKey(debugLabel: 'dialog card footer');
-
-  @override
-  Widget build(BuildContext context) {
-    final title = widget.title,
-        onClose = widget.onClose,
-        maxWidth = widget.maxWidth,
-        titleGlyph = widget.titleGlyph;
-    final body = KeyedSubtree(key: _body, child: widget.child);
-    final footerRow = widget.footer;
-    final footer = footerRow == null
-        ? null
-        : KeyedSubtree(key: _footer, child: footerRow);
-    // A dialog keeps the form's own layout: the submit row ends the body.
-    final child = footer == null
-        ? body
-        : Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              body,
-              SizedBox(height: widget.footerGap),
-              footer,
-            ],
-          );
-    final actionRow = widget.actions;
-    final actions = actionRow == null
-        ? null
-        : KeyedSubtree(key: _actions, child: actionRow);
-    final t = RaftTokens.of(context);
-    final tokens = RaftRecipeTokens(t);
-    if (RaftFormFrame.sheetOf(context)) {
-      final root = RaftCardRecipe.resolve(
-        theme: raftRecipeThemeOf(t),
-        states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
-        tokens: tokens,
-      ).root;
-      return DefaultTextStyle(
-        style: root.text(tokens, base: DefaultTextStyle.of(context).style),
-        child: RaftFormSheet(
-          title: raftText(context, title),
-          onClose: onClose,
-          titleGlyph: titleGlyph,
-          body: body,
-          footer: footer ?? actions,
-        ),
-      );
-    }
-    final titleSlot = RaftCardRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
-      tokens: tokens,
-    ).title;
-    final titleStyle = raftCssTextStyle(
-      family: titleSlot.fontFamily ?? t.headingFont,
-      step: RaftTextSteps.lg,
-      weight: FontWeight.w700,
-      color: t.ink,
-    );
-    final grows = RaftScaled.grows(context);
-    final header = Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        // CardHeader `gap-4` between the title and the close button.
-        spacing: 16,
-        children: [
-          Expanded(
-            child: Semantics(
-              header: true,
-              child: titleGlyph == null
-                  ? Text(
-                      // CardTitle has no `truncate`: a long title wraps.
-                      raftText(context, title),
-                      style: titleStyle,
-                    )
-                  : Row(
-                      spacing: 8,
-                      children: [
-                        RaftIcon(titleGlyph, size: 18, color: t.ink),
-                        Expanded(
-                          child: Text(
-                            raftText(context, title),
-                            // The title wraps above the default text size.
-                            maxLines: grows ? null : 1,
-                            overflow: grows
-                                ? TextOverflow.clip
-                                : TextOverflow.ellipsis,
-                            style: titleStyle,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-          RaftCloseButton(onPressed: raftGuardedClose(context, onClose)),
-        ],
-      ),
-    );
-    if (grows) {
-      // Text above the default size: the dialog never outgrows the viewport
-      // (minus the system insets and the modal's 16px margin); the actions
-      // stay put and the body scrolls above them.
-      final media = MediaQuery.of(context);
-      final cap = math.max(
-        0.0,
-        media.size.height - 32 - media.padding.vertical,
-      );
-      return ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: cap),
-        child: RaftCard(
-          dialog: true,
-          maxWidth: maxWidth,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Without pinned actions the close button stays reachable;
-              // with them the header scrolls so a short viewport keeps room
-              // for the body.
-              if (actions == null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                  child: header,
-                ),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    24,
-                    actions == null ? 0 : 24,
-                    24,
-                    actions == null ? 24 : 0,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [if (actions != null) header, child],
-                  ),
-                ),
-              ),
-              if (actions != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: actions,
-                ),
-            ],
-          ),
-        ),
-      );
-    }
-    return RaftCard(
-      dialog: true,
-      maxWidth: maxWidth,
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [header, child, ?actions],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => RaftDialog.card(
+    title: title,
+    onClose: onClose,
+    maxWidth: maxWidth,
+    titleGlyph: titleGlyph,
+    actions: actions,
+    footer: footer,
+    footerGap: footerGap,
+    child: child,
+  );
 }
 
 /// Web `FormField` over raft-ui `Field`/`FieldLabel`/`LabelAsterisk`/`LabelOptional` in the dialogs:
@@ -1091,5 +926,228 @@ class RaftDialogTextInput extends StatelessWidget {
             textStep: mono ? RaftTextSteps.xs : null,
             legacy: RaftLegacyInput.dialog,
           );
+  }
+}
+
+// Frozen pre-P1 rendering stays in its original audit boundary. The public
+// adapter and current Raft dialogs never use this paint for the Raft look.
+Widget buildFrozenDialogCard({
+  required String title,
+  required VoidCallback onClose,
+  required Widget child,
+  required double maxWidth,
+  RaftGlyph? titleGlyph,
+  Widget? actions,
+  Widget? footer,
+  required double footerGap,
+}) => _FrozenRaftDialogCard(
+  title: title,
+  onClose: onClose,
+  maxWidth: maxWidth,
+  titleGlyph: titleGlyph,
+  actions: actions,
+  footer: footer,
+  footerGap: footerGap,
+  child: child,
+);
+
+class _FrozenRaftDialogCard extends StatefulWidget {
+  const _FrozenRaftDialogCard({
+    required this.title,
+    required this.onClose,
+    required this.child,
+    this.maxWidth = 448, // max-w-md = 28rem
+    this.titleGlyph,
+    this.actions,
+    this.footer,
+    this.footerGap = 16,
+  });
+  final String title;
+
+  /// The submit row of a form. In a dialog it follows [child] after a 16px
+  /// gap, as part of the body; in a bottom sheet ([showRaftForm] below 768)
+  /// it pins to the bottom while [child] scrolls.
+  final Widget? footer;
+
+  /// The space between [child] and [footer] in a dialog.
+  final double footerGap;
+
+  /// The action row (buttons) under [child]. Above the default text size the
+  /// card is capped to the viewport and only [child] scrolls, so these stay on
+  /// screen; at the default size it simply follows [child].
+  final Widget? actions;
+
+  /// A leading `<Icon size={18} />` in the title (`flex min-w-0 items-center
+  /// gap-2` + `truncate` title span).
+  final RaftGlyph? titleGlyph;
+  final VoidCallback onClose;
+  final Widget child;
+  final double maxWidth;
+
+  @override
+  State<_FrozenRaftDialogCard> createState() => __FrozenRaftDialogCardState();
+}
+
+class __FrozenRaftDialogCardState extends State<_FrozenRaftDialogCard> {
+  final _body = GlobalKey(debugLabel: 'dialog card body');
+  final _actions = GlobalKey(debugLabel: 'dialog card actions');
+  final _footer = GlobalKey(debugLabel: 'dialog card footer');
+
+  @override
+  Widget build(BuildContext context) {
+    final title = widget.title,
+        onClose = widget.onClose,
+        maxWidth = widget.maxWidth,
+        titleGlyph = widget.titleGlyph;
+    final body = KeyedSubtree(key: _body, child: widget.child);
+    final footerRow = widget.footer;
+    final footer = footerRow == null
+        ? null
+        : KeyedSubtree(key: _footer, child: footerRow);
+    // A dialog keeps the form's own layout: the submit row ends the body.
+    final child = footer == null
+        ? body
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              body,
+              SizedBox(height: widget.footerGap),
+              footer,
+            ],
+          );
+    final actionRow = widget.actions;
+    final actions = actionRow == null
+        ? null
+        : KeyedSubtree(key: _actions, child: actionRow);
+    final t = RaftTokens.of(context);
+    final tokens = RaftRecipeTokens(t);
+    if (RaftFormFrame.sheetOf(context)) {
+      final root = RaftCardRecipe.resolve(
+        theme: raftRecipeThemeOf(t),
+        states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
+        tokens: tokens,
+      ).root;
+      return DefaultTextStyle(
+        style: root.text(tokens, base: DefaultTextStyle.of(context).style),
+        child: RaftFormSheet(
+          title: raftText(context, title),
+          onClose: onClose,
+          titleGlyph: titleGlyph,
+          body: body,
+          footer: footer ?? actions,
+        ),
+      );
+    }
+    final titleSlot = RaftCardRecipe.resolve(
+      theme: raftRecipeThemeOf(t),
+      tokens: tokens,
+    ).title;
+    final titleStyle = raftCssTextStyle(
+      family: titleSlot.fontFamily ?? t.headingFont,
+      step: RaftTextSteps.lg,
+      weight: FontWeight.w700,
+      color: t.ink,
+    );
+    final grows = RaftScaled.grows(context);
+    final header = Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        // CardHeader `gap-4` between the title and the close button.
+        spacing: 16,
+        children: [
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: titleGlyph == null
+                  ? Text(
+                      // CardTitle has no `truncate`: a long title wraps.
+                      raftText(context, title),
+                      style: titleStyle,
+                    )
+                  : Row(
+                      spacing: 8,
+                      children: [
+                        RaftIcon(titleGlyph, size: 18, color: t.ink),
+                        Expanded(
+                          child: Text(
+                            raftText(context, title),
+                            // The title wraps above the default text size.
+                            maxLines: grows ? null : 1,
+                            overflow: grows
+                                ? TextOverflow.clip
+                                : TextOverflow.ellipsis,
+                            style: titleStyle,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          RaftCloseButton(onPressed: raftGuardedClose(context, onClose)),
+        ],
+      ),
+    );
+    if (grows) {
+      // Text above the default size: the dialog never outgrows the viewport
+      // (minus the system insets and the modal's 16px margin); the actions
+      // stay put and the body scrolls above them.
+      final media = MediaQuery.of(context);
+      final cap = math.max(
+        0.0,
+        media.size.height - 32 - media.padding.vertical,
+      );
+      return ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: cap),
+        child: RaftCard(
+          dialog: true,
+          maxWidth: maxWidth,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Without pinned actions the close button stays reachable;
+              // with them the header scrolls so a short viewport keeps room
+              // for the body.
+              if (actions == null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  child: header,
+                ),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    24,
+                    actions == null ? 0 : 24,
+                    24,
+                    actions == null ? 24 : 0,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [if (actions != null) header, child],
+                  ),
+                ),
+              ),
+              if (actions != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: actions,
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+    return RaftCard(
+      dialog: true,
+      maxWidth: maxWidth,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [header, child, ?actions],
+      ),
+    );
   }
 }

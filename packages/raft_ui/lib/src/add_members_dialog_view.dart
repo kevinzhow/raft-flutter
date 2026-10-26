@@ -1,3 +1,4 @@
+import 'overlays/dialog.dart' show RaftDialog;
 // Presentation of the Web AddMembersDialog
 // (packages/web/src/components/channel/AddMembersDialog.tsx), opened from a
 // `channel:add_member` action card: DialogCard with the target-channel strip,
@@ -72,7 +73,7 @@ class RaftAddMembersDialogView extends StatelessWidget {
     final t = RaftTokens.of(context);
     final canSubmit = !submitting && !nothingToAdd && selectedCount > 0;
     return RaftModalBackdrop(
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         title: 'Add Members',
         onClose: onClose,
         child: Column(

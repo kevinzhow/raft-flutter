@@ -67,7 +67,7 @@ abstract final class RaftTextareaGroupRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1922, 965, 967, 1319, 1021],
+    [1924, 965, 967, 1319, 1021],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

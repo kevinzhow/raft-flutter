@@ -75,7 +75,10 @@ void main() {
         await tester.pumpWidget(_app(form: formDialog));
         await _open(tester);
         expect(find.byType(RaftSheet), sheet ? findsOneWidget : findsNothing);
-        expect(find.byType(AlertDialog), sheet ? findsNothing : findsOneWidget);
+        expect(
+          find.byWidgetPredicate((w) => w is AlertDialog || w is RaftDialog),
+          sheet ? findsNothing : findsOneWidget,
+        );
         expect(find.text('Rename channel'), findsOneWidget);
         await tester.pumpWidget(const SizedBox());
       }

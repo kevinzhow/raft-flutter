@@ -195,7 +195,7 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
       // The code is being issued, or the app installed: closing now would
       // leave it half done.
       canPop: !busy,
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         key: const ValueKey('human-login-sheet'),
         title: 'Login with Raft',
         onClose: busy ? () {} : cancel,

@@ -1,3 +1,4 @@
+import 'overlays/dialog.dart' show RaftDialog;
 // Web `member/InviteHumanDialog.tsx`: the "Invite Human" DialogCard (`max-w-lg`)
 // with the By email / By link segmented control, one row per invitee (email
 // Input + optional role Select + remove), "Add Another", the join-link field
@@ -162,7 +163,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
     return RaftModalBackdrop(
       child: Material(
         type: MaterialType.transparency,
-        child: RaftDialogCard(
+        child: RaftDialog.card(
           key: const ValueKey('invite-dialog'),
           title: 'Invite Human',
           maxWidth: 512,

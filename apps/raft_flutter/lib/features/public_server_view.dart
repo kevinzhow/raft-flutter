@@ -720,8 +720,9 @@ class _PublicServerViewState extends State<PublicServerView> {
   /// dialog open with its error line.
   Future<void> showAgreement(Map<String, dynamic> first) async {
     var current = first;
-    await showRaftModal<void>(
-      context,
+    await showRaftDialog<void>(
+      context: context,
+      modal: true,
       builder: (modal) => StatefulBuilder(
         builder: (modal, update) => RaftCommunityAgreementDialog(
           title: '${current['title']}',

@@ -407,7 +407,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
         );
       }
       return await (raft
-          ? showRaftModal<V>(context, builder: scoped)
+          ? showRaftDialog<V>(context: context, modal: true, builder: scoped)
           : showRaftDialog<V>(
               context: context,
               // Web `DialogCard` / `ConfirmDialog`: no scrim close.
@@ -491,7 +491,8 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   }) async {
     if (!mounted) return;
     await scopedDialog<void>(
-      (context) => AlertDialog(
+      (context) => RaftAlertDialog(
+        legacy: RaftLegacyAlert.material,
         title: Text(raftText(context, label)),
         content: SizedBox(
           width: 480,

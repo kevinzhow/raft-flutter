@@ -166,7 +166,7 @@ class _ManagedAgentFormHostState extends State<_ManagedAgentFormHost> {
   Widget build(BuildContext context) {
     final list = machines;
     if (list != null) return widget.dialog(list);
-    return RaftAgentDialogCard(
+    return RaftDialog.agent(
       title: 'Create Agent',
       onClose: () => Navigator.of(context).maybePop(),
       children: [

@@ -3496,7 +3496,7 @@ class _ResourceViewState extends State<ResourceView> {
         }
 
         return Center(
-          child: RaftDialogCard(
+          child: RaftDialog.card(
             key: const ValueKey('activity-switcher-dialog'),
             title: 'Activity',
             onClose: () => Navigator.pop(dialogContext),
@@ -5651,7 +5651,8 @@ class _ResourceViewState extends State<ResourceView> {
     if (result == 'delete' && mounted) {
       final confirmed = await scopedDialog<bool>(
         scope,
-        (context) => AlertDialog(
+        (context) => RaftAlertDialog(
+          legacy: RaftLegacyAlert.material,
           title: Text(raftText(context, 'Delete Task')),
           content: Text('${task['title']}'),
           actions: [

@@ -91,8 +91,8 @@ abstract final class RaftMessageEmbedRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1049, 618, 1481, 1830, 1704, 620, 633, 596, 1573, 995],
-    [1481, 1655, 1666],
+    [1049, 618, 1481, 1832, 1705, 620, 633, 596, 1573, 995],
+    [1481, 1656, 1667],
     [1481],
   ];
 

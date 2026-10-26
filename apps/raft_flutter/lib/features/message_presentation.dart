@@ -477,7 +477,8 @@ class MessagePresentation extends StatelessWidget {
           }
           final initial = machine;
           if (!context.mounted) return;
-          await showDialog(
+          await showRaftDialog(
+            legacyMaterial: true,
             context: context,
             builder: (_) => FleetDetail(
               controller: w,
@@ -640,7 +641,8 @@ class MessagePresentation extends StatelessWidget {
           : 'task #$number · ${task['title'] ?? ''}';
       if (!context.mounted) return;
       final navigator = Navigator.of(context);
-      final shown = showDialog<void>(
+      final shown = showRaftDialog<void>(
+        legacyMaterial: true,
         context: context,
         builder: (ctx) => ValueListenableBuilder<Map<String, dynamic>?>(
           valueListenable: data,
@@ -699,7 +701,8 @@ class MessagePresentation extends StatelessWidget {
     bool loading = false,
   }) {
     final w = controller;
-    return AlertDialog(
+    return RaftAlertDialog(
+      legacy: RaftLegacyAlert.material,
       title: Text(title),
       content: SizedBox(
         width: 560,

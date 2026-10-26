@@ -638,7 +638,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
     if (!busy) Navigator.pop(context);
   }
 
-  Widget needsComputer(BuildContext context) => RaftAgentDialogCard(
+  Widget needsComputer(BuildContext context) => RaftDialog.agent(
     title: 'Create Agent',
     onClose: close,
     children: [
@@ -981,7 +981,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
     }
     return PopScope(
       canPop: !busy,
-      child: RaftAgentDialogCard(
+      child: RaftDialog.agent(
         title: 'Create Agent',
         onClose: close,
         footerGap: raftAgentFormGap,

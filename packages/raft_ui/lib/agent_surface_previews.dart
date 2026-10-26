@@ -29,7 +29,7 @@ class _AgentSurfacePreviewState extends State<AgentSurfacePreview> {
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
     final emphasized = caller && tokens.dark;
-    return RaftAgentDialogCard(
+    return RaftDialog.agent(
       title: 'Create Agent',
       onClose: () => setState(() => result = 'Closed'),
       children: [

@@ -12,12 +12,12 @@ Authoritative data: `build/recipes/recipes.json`; Dart: `packages/raft_theme/lib
 
 ## Coverage
 
-- Recipes: 127; variant combinations: 966
-- Distinct classes in recipe sources: 1942
+- Recipes: 128; variant combinations: 967
+- Distinct classes in recipe sources: 1944
   - descendant: 326
   - marker: 32
   - no-css: 4
-  - resolved: 1580
+  - resolved: 1582
 
 Classes for which Tailwind emits no CSS (inert on the Web as well):
 
@@ -155,6 +155,7 @@ Classes for which Tailwind emits no CSS (inert on the Web as well):
 - [webSelectionPanel](#webselectionpanel) → `RaftWebSelectionPanelRecipe`
 - [webMenuAction](#webmenuaction) → `RaftWebMenuActionRecipe`
 - [webSelectionRow](#webselectionrow) → `RaftWebSelectionRowRecipe`
+- [webDialogCard](#webdialogcard) → `RaftWebDialogCardRecipe`
 
 ## spinner
 
@@ -9728,4 +9729,32 @@ Dart: `RaftWebSelectionRowRecipe` · source: `Web src/components/ui/SelectionPop
 | checked=true | root | font-weight: 700 |
 | disabled=true | root | font-weight: —; color: token(foregroundDisabled); cursor: not-allowed; [focus-visible] (none); [hover] (none) |
 | italic=true | label | overflow-x: —; overflow-y: —; text-overflow: —; color: token(foregroundMuted) |
+
+## webDialogCard
+
+Dart: `RaftWebDialogCardRecipe` · source: `Web src/components/ui/DialogCard.tsx sha256:bfcbf1e265e4cc3971236e35b4a3734eed11875eb07c348760b7c592da2818a8` (index.mjs:1)
+· components: `DialogCard`
+
+### Default
+
+| slot | target | property | value |
+|---|---|---|---|
+| root | self | width | 100% |
+| root | self | padding | 20 |
+| header | self | display | flex |
+| header | self | margin | bottom:16 |
+| header | self | gap | 8 |
+| header | self | align-items | flex-start |
+| header | self | justify-content | space-between |
+| title | self | min-width | 0 |
+| title | self | font-family | token(sansFont, system-ui, sans-serif) |
+| title | self | font-size | 17 |
+| title | self | font-weight | 700 |
+| title | self | line-height | 22 |
+| title | self | color | token(foreground) |
+| close | self | margin | top:-6 right:-6 bottom:-6 |
+| close | self | flex-shrink | 0 |
+| defaultWidth | self | max-width | 448 |
+| glyph | self | width | 18 |
+| glyph | self | height | 18 |
 

@@ -565,6 +565,27 @@ final auditSurfaces = <AuditSurface>[
     representative: true,
   ),
   AuditSurface(
+    'productDialogCardPreview',
+    'Product dialog card',
+    productDialogCardPreview,
+    Size(390, 500),
+    representative: true,
+  ),
+  AuditSurface(
+    'wideBarDialogPreview',
+    'Wide dialog with bars',
+    wideBarDialogPreview,
+    Size(880, 680),
+    representative: true,
+  ),
+  AuditSurface(
+    'busyDialogCardPreview',
+    'Busy dialog card',
+    busyDialogCardPreview,
+    Size(390, 500),
+    representative: true,
+  ),
+  AuditSurface(
     'sosConfirmPreview',
     'SOS stop all agents',
     sosConfirmPreview,

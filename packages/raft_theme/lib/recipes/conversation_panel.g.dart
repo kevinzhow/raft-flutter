@@ -91,9 +91,9 @@ abstract final class RaftConversationPanelRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1197, 1465, 1481, 966, 967, 595, 1015, 1816],
+    [965, 1197, 1465, 1481, 966, 967, 595, 1015, 1818],
     [965, 1465, 1481, 966, 967, 595],
-    [1735, 623, 634, 595, 85, 84, 1371, 83],
+    [1736, 623, 634, 595, 85, 84, 1371, 83],
     [595],
   ];
 

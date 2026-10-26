@@ -103,9 +103,9 @@ abstract final class RaftMessageForwardedBundleGalleryRecipe {
     [1481],
     [1039, 1022],
     [241, 245, 243],
-    [1039, 1022, 1040, 506, 1766],
-    [1039, 1022, 1041, 506, 1766],
-    [1039, 1022, 1041, 505, 1765, 1444],
+    [1039, 1022, 1040, 506, 1768],
+    [1039, 1022, 1041, 506, 1768],
+    [1039, 1022, 1041, 505, 1767, 1444],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

@@ -1,3 +1,5 @@
+import 'overlays/dialog.dart' show RaftDialog;
+
 // Presentation of the Web CreateTaskDialog
 // (packages/web/src/components/task/CreateTaskDialog.tsx): DialogCard with one
 // title Input per row (a danger `p-1` trash button once there are several),
@@ -47,7 +49,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
     final batch = titles.length > 1;
     const padding = EdgeInsets.symmetric(horizontal: 16, vertical: 8);
     return RaftModalBackdrop(
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         key: const ValueKey('create-task-dialog'),
         title: batch ? 'Create Tasks' : 'Create Task',
         onClose: onClose,

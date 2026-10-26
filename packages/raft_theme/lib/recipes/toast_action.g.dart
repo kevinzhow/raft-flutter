@@ -86,24 +86,24 @@ abstract final class RaftToastActionRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      1677,
+      1678,
       1561,
       1304,
-      1735,
+      1736,
       1318,
       1323,
-      1926,
-      1722,
+      1928,
+      1723,
       621,
       615,
       1588,
       1015,
-      1807,
+      1809,
       1007,
-      1823,
-      1892,
-      915,
+      1825,
       1894,
+      915,
+      1896,
       442,
       435,
       441,
@@ -126,8 +126,8 @@ abstract final class RaftToastActionRecipe {
       55,
       263,
     ],
-    [1677, 1933, 1304, 1318, 1323, 1029, 702],
-    [1625, 422, 1306, 1933, 965, 1318, 1323],
+    [1678, 1935, 1304, 1318, 1323, 1029, 702],
+    [1626, 422, 1306, 1935, 965, 1318, 1323],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

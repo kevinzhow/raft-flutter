@@ -35,8 +35,10 @@ import 'select_field.dart';
 
 import 'components.dart';
 import 'design_primitives.dart';
-import 'dismiss_scope.dart';
 import 'form_presentation.dart';
+import 'dialog_card.dart' show RaftModalBackdrop;
+import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
+import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'icons.dart';
 import 'indicators.dart' show RaftCheckbox, RaftCheckboxRecipeSize;
 import 'localization.dart';
@@ -67,16 +69,12 @@ Future<T?> showRaftAgentModal<T>(
   BuildContext context, {
   required WidgetBuilder builder,
 }) {
-  final t = RaftTokens.of(context);
-  return showGeneralDialog<T>(
+  return showRaftDialog<T>(
     context: context,
+    builder: builder,
+    modal: true,
+    legacyModal: true,
     barrierDismissible: false,
-    barrierColor: raftAgentModalBarrier(t),
-    // dialog overlay recipe: transition-duration 150ms.
-    transitionDuration: const Duration(milliseconds: 150),
-    transitionBuilder: (context, animation, _, child) =>
-        FadeTransition(opacity: animation, child: child),
-    pageBuilder: (context, _, _) => RaftDismissScope(child: builder(context)),
   );
 }
 
@@ -94,19 +92,19 @@ class RaftAgentDialogCard extends StatefulWidget {
     required this.children,
     this.onClose,
     this.onBackdrop,
-    this.maxWidth = 448, // max-w-md = 28rem
+    this.maxWidth,
     this.surfaceKey,
     this.bare = false,
     this.plainCard = false,
     this.footer,
-    this.footerGap = 4 * _tw,
+    this.footerGap,
   });
 
   /// The submit row of a form. In a dialog it follows [children] after
   /// [footerGap]; in a bottom sheet it pins to the bottom while [children]
   /// scroll.
   final Widget? footer;
-  final double footerGap;
+  final double? footerGap;
 
   /// The `card-brutal` utility instead of the raft-ui Card (the agent runtime
   /// config modal): `border border-line-muted bg-layer-panel shadow-raft-md`,
@@ -126,7 +124,7 @@ class RaftAgentDialogCard extends StatefulWidget {
 
   /// `Modal closeOnBackdrop`: a press on the backdrop (outside the card).
   final VoidCallback? onBackdrop;
-  final double maxWidth;
+  final double? maxWidth;
 
   @override
   State<RaftAgentDialogCard> createState() => _RaftAgentDialogCardState();
@@ -141,7 +139,7 @@ class _RaftAgentDialogCardState extends State<RaftAgentDialogCard> {
     final title = widget.title,
         onClose = widget.onClose,
         onBackdrop = widget.onBackdrop,
-        maxWidth = widget.maxWidth;
+        maxWidth = widget.maxWidth ?? 448;
     final t = RaftTokens.of(context);
     final tokens = RaftRecipeTokens(t);
     final footerRow = widget.footer;
@@ -156,6 +154,21 @@ class _RaftAgentDialogCardState extends State<RaftAgentDialogCard> {
     final footer = footerRow == null
         ? null
         : KeyedSubtree(key: _footer, child: footerRow);
+    if (!usesLegacyRecipes(t.recipeTokens)) {
+      final card = RaftDialog.card(
+        title: title,
+        onClose: onClose ?? () {},
+        closeEnabled: onClose != null,
+        maxWidth: widget.maxWidth,
+        contentKey: widget.surfaceKey,
+        footer: footer,
+        footerGap: widget.footerGap,
+        child: body,
+      );
+      return widget.bare || RaftFormFrame.framedOf(context)
+          ? card
+          : RaftModalBackdrop(onBackdrop: onBackdrop, child: card);
+    }
     final card_ = RaftCardRecipe.resolve(
       theme: _theme(t),
       states: _states(t),
@@ -228,7 +241,7 @@ class _RaftAgentDialogCardState extends State<RaftAgentDialogCard> {
               const SizedBox(height: 4 * _tw), // mb-4
               body,
               if (footer != null) ...[
-                SizedBox(height: widget.footerGap),
+                SizedBox(height: widget.footerGap ?? 4 * _tw),
                 footer,
               ],
             ],
@@ -1180,3 +1193,31 @@ class _RaftAgentKeyValueRowsState extends State<RaftAgentKeyValueRows> {
     );
   }
 }
+
+// Internal bridge for the canonical Dialog namespace. Hidden from raft_ui.dart;
+// the old public widget remains a compatibility adapter, with one current paint.
+Widget buildAgentDialog({
+  Key? key,
+  required String title,
+  required List<Widget> children,
+  VoidCallback? onClose,
+  VoidCallback? onBackdrop,
+  double? maxWidth,
+  Key? surfaceKey,
+  bool bare = false,
+  bool plainCard = false,
+  Widget? footer,
+  double? footerGap,
+}) => RaftAgentDialogCard(
+  key: key,
+  title: title,
+  onClose: onClose,
+  onBackdrop: onBackdrop,
+  maxWidth: maxWidth,
+  surfaceKey: surfaceKey,
+  bare: bare,
+  plainCard: plainCard,
+  footer: footer,
+  footerGap: footerGap,
+  children: children,
+);

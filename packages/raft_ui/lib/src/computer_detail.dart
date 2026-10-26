@@ -716,9 +716,10 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
 
   Future<void> showResetOptions() async {
     final count = selected.length;
-    final mode = await showDialog<RaftComputerBulk>(
+    final mode = await showRaftDialog<RaftComputerBulk>(
+      legacyMaterial: true,
       context: context,
-      barrierColor: RaftTokens.of(context).colors['layer-backdrop'],
+      legacyBarrierColor: RaftTokens.of(context).colors['layer-backdrop'],
       // Web `DialogCard` without `closeOnBackdrop`: a stray press on the
       // scrim keeps the choice; Escape and Back still close it.
       barrierDismissible: false,
@@ -2501,7 +2502,7 @@ class _BulkResetDialogState extends State<_BulkResetDialog> {
         type: MaterialType.transparency,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: RaftDialogCard(
+          child: RaftDialog.card(
             key: const ValueKey('computer-dialog'),
             title: raftFormat(
               context,

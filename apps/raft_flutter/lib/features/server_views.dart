@@ -545,11 +545,13 @@ class _MembersViewState extends State<MembersView> {
               },
             ),
       );
-      await showDialog(
+      await showRaftDialog(
+        legacyMaterial: true,
         context: context,
         builder: (context) => ValueListenableBuilder<Map<String, dynamic>>(
           valueListenable: profile,
-          builder: (context, value, _) => AlertDialog(
+          builder: (context, value, _) => RaftAlertDialog(
+            legacy: RaftLegacyAlert.material,
             title: Text(humanDisplayName(value)),
             content: SelectableText(
               '${value['description'] ?? ''}\n\n${value['email'] ?? ''}',
@@ -572,7 +574,8 @@ class _MembersViewState extends State<MembersView> {
     final id = member['userId'] ?? member['id'],
         server = w.server!.id,
         name = humanDisplayName(member);
-    await showDialog(
+    await showRaftDialog(
+      legacyMaterial: true,
       context: context,
       barrierDismissible: false,
       builder: (_) => RaftFormDialog(

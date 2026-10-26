@@ -52,16 +52,13 @@ Future<void> showRaftComputerReleaseNotes(
   BuildContext context,
   RaftComputerReleaseNotes notes,
 ) {
-  final t = RaftTokens.of(context);
-  return showGeneralDialog<void>(
+  return showRaftDialog<void>(
     context: context,
+    modal: true,
+    legacyModal: true,
     barrierDismissible: true,
     barrierLabel: 'Close',
-    barrierColor: raftAgentModalBarrier(t),
-    transitionDuration: const Duration(milliseconds: 150),
-    transitionBuilder: (context, animation, _, child) =>
-        FadeTransition(opacity: animation, child: child),
-    pageBuilder: (context, _, _) => RaftDismissScope(
+    builder: (context) => RaftDismissScope(
       child: RaftComputerReleaseNotesDialog(
         notes: notes,
         onClose: () => Navigator.of(context).pop(),
@@ -80,7 +77,7 @@ class RaftComputerReleaseNotesDialog extends StatelessWidget {
   final VoidCallback onClose;
 
   @override
-  Widget build(BuildContext context) => RaftAgentDialogCard(
+  Widget build(BuildContext context) => RaftDialog.agent(
     surfaceKey: const ValueKey('computer-release-notes-dialog'),
     title: raftFormat(context, "What's new in v{version}", {
       'version': notes.version,
