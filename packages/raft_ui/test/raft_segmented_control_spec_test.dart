@@ -49,6 +49,44 @@ void main() {
     final ui = RaftUiColors.of(dark);
 
     testWidgets(
+      '$mode expand fills the row and the segments share it equally',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(dark: dark),
+            home: Scaffold(
+              body: SizedBox(
+                width: 400,
+                child: RaftSegmentedControl<String>(
+                  value: 'all',
+                  expand: true,
+                  items: const [
+                    RaftSegmentedOption(
+                      value: 'all',
+                      label: 'All',
+                      itemKey: ValueKey('all'),
+                    ),
+                    RaftSegmentedOption(
+                      value: 'unread',
+                      label: 'Unread',
+                      itemKey: ValueKey('unread'),
+                    ),
+                  ],
+                  onChanged: (_) {},
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(tester.getSize(find.byType(RaftSegmentedTrack)).width, 400);
+        expect(
+          tester.getSize(find.byKey(const ValueKey('all'))).width,
+          tester.getSize(find.byKey(const ValueKey('unread'))).width,
+        );
+      },
+    );
+
+    testWidgets(
       '$mode the track is 38px: 3px padding around 32px items, 2px apart',
       (tester) async {
         await tester.pumpWidget(

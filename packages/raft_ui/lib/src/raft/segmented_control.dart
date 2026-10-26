@@ -234,9 +234,13 @@ class RaftSegmentedTrack extends StatelessWidget {
     super.key,
     required this.children,
     this.shrinkFrame = false,
+    this.expand = false,
   });
   final List<Widget> children;
   final bool shrinkFrame;
+
+  /// `w-full *:flex-1`: the track fills its row and the items share it equally (Raft look only).
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
@@ -259,6 +263,25 @@ class RaftSegmentedTrack extends StatelessWidget {
         runSpacing: gap,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: children,
+      );
+    }
+
+    if (expand) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: ui.fillMuted,
+          borderRadius: BorderRadius.circular(
+            t.size('radius.control', fallback: 8) + 3,
+          ),
+        ),
+        child: Padding(
+          // ignore: raft_lints/off_grid_spacing -- the track's `p-[3px]` is an explicit arbitrary value in the raft-ui source.
+          padding: const EdgeInsets.all(3),
+          child: Row(
+            spacing: 2,
+            children: [for (final child in children) Expanded(child: child)],
+          ),
+        ),
       );
     }
 
@@ -381,7 +404,11 @@ class RaftSegmentedControl<T> extends StatefulWidget {
     this.minimumTargetSize,
     this.disabled = false,
     this.shrinkFrame = false,
+    this.expand = false,
   });
+
+  /// `className="w-full *:flex-1"`: the track fills its row, the segments share it equally. Raft look only.
+  final bool expand;
 
   /// `SegmentedControl disabled`: every item is inert and its ink greys; the sticker stays.
   final bool disabled;
@@ -460,6 +487,7 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
 
   RaftSegmentedTrack _track() => RaftSegmentedTrack(
     shrinkFrame: widget.shrinkFrame,
+    expand: widget.expand,
     children: [
       for (final item in widget.items)
         RaftSegmentedItem(
@@ -482,6 +510,7 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
     return switch (style) {
       // raft-ui `SegmentedControl` is `inline-flex w-fit`: the track hugs its items instead of stretching in a column.
       // The frozen looks keep the plain row they always drew.
+      RaftSegmentedStyle.buttons when raft && widget.expand => _track(),
       RaftSegmentedStyle.buttons when raft => Align(
         alignment: AlignmentDirectional.centerStart,
         widthFactor: 1,

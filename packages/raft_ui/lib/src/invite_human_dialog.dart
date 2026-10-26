@@ -204,6 +204,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
               const SizedBox(height: 16),
               RaftSegmentedControl<String>(
                 legacyStyle: RaftSegmentedStyle.recipe,
+                expand: true,
                 value: tab,
                 label: raftText(context, 'Invite method'),
                 items: const [
