@@ -174,7 +174,33 @@ on any other page and `Raft` outside a workspace. The runners set it with
 Windows handlers are not compiled on the Linux machine that wrote them.
 
 ### Windows
-`windows/runner/flutter_window.cpp`: `DwmSetWindowAttribute` with
+`windows/runner/windows_frame.cpp` extends the client area through the system
+caption with `WM_NCCALCSIZE`. The shared Flutter header and its three 46 x 48
+logical-pixel caption buttons occupy one row, both inside workspaces and on the
+standalone brand row. `app.raft/titlebar` advertises `customControls`, and reports
+`maximized`, `fullscreen` and `active` only when those values change. The runner
+accepts `setCaptionButtonRects` in logical coordinates plus `minimize`,
+`toggleMaximize`, `close`, `startDragging` and `doubleClick`.
+
+Windows retains its overlapped window style, system menu, edge/corner resizing
+and snap behavior. The maximize target returns `HTMAXBUTTON` for Windows 11's
+snap layout menu. A subclass of the Flutter child HWND passes resize/maximize
+hit tests through to the top-level window; maximize hover and presses reach the
+shared Flutter button. Content and the other buttons keep their normal Flutter
+input path. Caption positions from a different logical window width are ignored
+until the next Dart layout; unchanged positions survive height-only resize and
+DPI changes. Maximized content is constrained to the monitor work area, while
+borderless fullscreen uses the whole monitor and hides caption hit targets.
+
+Close posts the ordinary `WM_CLOSE`, so the existing tray and orderly-exit owner
+decides whether to hide or quit. The frame never destroys the engine directly.
+The child subclass is removed before Flutter destroys its window. Full-window
+previews use the shared `RaftWindowChromeScope` caption reservation.
+
+Set the process environment `RAFT_DESKTOP_TITLE_BAR=native` to retain the older
+system caption. Older runners that do not advertise `customControls` retain it
+as well. In this fallback, `windows/runner/flutter_window.cpp` uses
+`DwmSetWindowAttribute` with
 `DWMWA_CAPTION_COLOR` (35) and `DWMWA_TEXT_COLOR` (36, set to the caption colour
 so the bar shows no text) plus `DWMWA_USE_IMMERSIVE_DARK_MODE` (20) for the
 caption button glyphs. These need Windows 11 (build 22000+); on Windows 10 they
@@ -186,10 +212,7 @@ The same recipe supplies the colour and blends the translucent dark divider
 over the rail background. Content and its `MediaQuery` start below the rule;
 live theme changes update it. This rule has no drag or double-click handlers:
 the caption's height, buttons, dragging, double-click and resizing stay native.
-The Dart side also supports a runner opting into custom caption controls; that
-runner must first extend the client frame and implement the native actions and
-hit rectangles. Until then this existing DWM caption remains in use. Linux
-paints its rule with its shared or standalone Flutter row.
+Linux paints its rule with its shared or standalone Flutter row.
 
 ## What was reused from RemoteSurface
 

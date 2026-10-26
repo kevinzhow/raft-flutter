@@ -165,11 +165,15 @@ void StateAndFullscreen() {
         "activation updates once");
   MONITORINFO monitor{sizeof(MONITORINFO)};
   GetMonitorInfoW(MonitorFromWindow(w.hwnd, MONITOR_DEFAULTTONEAREST), &monitor);
-  SetWindowLongPtrW(w.hwnd, GWL_STYLE, original & ~WS_OVERLAPPEDWINDOW);
+  SetWindowLongPtrW(w.hwnd, GWL_STYLE, (original & ~WS_OVERLAPPEDWINDOW) | WS_MAXIMIZE);
   SetWindowPos(w.hwnd, nullptr, monitor.rcMonitor.left, monitor.rcMonitor.top,
       monitor.rcMonitor.right-monitor.rcMonitor.left,
       monitor.rcMonitor.bottom-monitor.rcMonitor.top, SWP_NOZORDER|SWP_NOACTIVATE|SWP_FRAMECHANGED);
   Check(w.frame->state().fullscreen, "real monitor-sized borderless window is fullscreen");
+  RECT full_client{}; GetClientRect(w.hwnd, &full_client);
+  Check(full_client.right == monitor.rcMonitor.right-monitor.rcMonitor.left &&
+        full_client.bottom == monitor.rcMonitor.bottom-monitor.rcMonitor.top,
+        "fullscreen from maximized must fill monitor, not previous work area");
   Rects(w);
   Check(SendMessageW(w.hwnd, WM_NCHITTEST, 0, w.Point(640,25)) == HTCLIENT,
         "fullscreen cannot leave hidden maximize/resize hit targets");

@@ -119,13 +119,17 @@ void WindowsFrame::ForwardPointer(UINT message, WPARAM wp, LPARAM screen) {
 }
 
 std::optional<LRESULT> WindowsFrame::HandleMessage(UINT message, WPARAM wp, LPARAM lp) {
-  if (!state_.custom_controls) return std::nullopt;
+  if (!state_.custom_controls && message != WM_SIZE &&
+      message != WM_WINDOWPOSCHANGED && message != WM_ACTIVATE) return std::nullopt;
   switch (message) {
     case WM_NCCALCSIZE: {
       // Remove the system caption in both restored and maximized windows.
       RECT* client = wp ? &reinterpret_cast<NCCALCSIZE_PARAMS*>(lp)->rgrc[0]
                         : reinterpret_cast<RECT*>(lp);
-      if (IsZoomed(window_) && !IsFullscreen()) {
+      // During NCCALCSIZE GetWindowRect can still report the previous bounds.
+      // A borderless fullscreen transition from maximized must not be clamped
+      // to the taskbar work area using that stale geometry.
+      if (IsZoomed(window_) && (GetWindowLongPtrW(window_, GWL_STYLE) & WS_CAPTION)) {
         MONITORINFO monitor{sizeof(MONITORINFO)};
         if (GetMonitorInfoW(MonitorFromWindow(window_, MONITOR_DEFAULTTONEAREST), &monitor))
           *client = monitor.rcWork;
