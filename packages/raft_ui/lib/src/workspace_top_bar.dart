@@ -34,6 +34,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
     this.trailing = const [],
     this.searchKey,
     this.leadingInset = 0,
+    this.trailingInset = 0,
     this.navigation,
     this.onDragStart,
     this.onDoubleTap,
@@ -41,7 +42,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
   final Widget workspace;
   final VoidCallback onSearch;
   final List<Widget> trailing;
-  final double leadingInset;
+  final double leadingInset, trailingInset;
   final Widget? navigation;
   final VoidCallback? onDragStart, onDoubleTap;
 
@@ -106,7 +107,10 @@ class RaftWorkspaceTopBar extends StatelessWidget {
                     ),
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        padding: EdgeInsets.only(
+                          left: 8,
+                          right: 8 + trailingInset,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           spacing: 4,

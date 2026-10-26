@@ -1,6 +1,10 @@
 // Chinese (zh) strings, see the catalog header in ../localization.dart.
 // English source text is the key. Part of `raftChinese` (merged by the generated zh_index.g.dart).
 const Map<String, String> zhCatalogNativeOnly = <String, String>{
+  "Minimize window": "最小化窗口",
+  "Maximize window": "最大化窗口",
+  "Restore window": "还原窗口",
+  "Close window": "关闭窗口",
   "Appearance mode": "明暗模式",
   "Open Raft": "打开 Raft",
   "Hide Window": "隐藏窗口",

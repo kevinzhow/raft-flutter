@@ -10,54 +10,44 @@
 
 #include "flutter/generated_plugin_registrant.h"
 #include "vsync_driver.h"
-#include "desktop_window_actions.h"
+#include "desktop_caption_bar.h"
 
 struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
 };
 
-// The header bar the title strip colours, and the CSS it is coloured with.
-// Null when the window manager draws the title bar (the app cannot colour
-// that); see docs/desktop-title-bar.md.
+// Channel state is owned by its handler. The window outlives its Flutter view.
 struct TitleBar {
   GtkWindow* window;
-  GtkWidget* header_bar;
-  GtkCssProvider* css;
-  DesktopWindowActions* actions;
+  DesktopCaptionBar* caption;
+  FlMethodChannel* channel;
+  gulong window_state_handler;
+  gulong active_handler;
 };
 
+static FlValue* title_bar_state(TitleBar* bar) {
+  FlValue* state = fl_value_new_map();
+  fl_value_set_string_take(state, "height", fl_value_new_float(bar->caption->custom() ? 48 : 0));
+  fl_value_set_string_take(state, "fullscreen", fl_value_new_bool(bar->caption->fullscreen()));
+  fl_value_set_string_take(state, "customControls", fl_value_new_bool(bar->caption->custom()));
+  fl_value_set_string_take(state, "maximized", fl_value_new_bool(bar->caption->maximized()));
+  fl_value_set_string_take(state, "active", fl_value_new_bool(bar->caption->active()));
+  fl_value_set_string_take(state, "buttonLayout", fl_value_new_string(bar->caption->layout().c_str()));
+  return state;
+}
+
+static void title_bar_report(TitleBar* bar) {
+  g_autoptr(FlValue) state = title_bar_state(bar);
+  fl_method_channel_invoke_method(bar->channel, "state", state, nullptr, nullptr, nullptr);
+}
+
 static void title_bar_free(gpointer data) {
-  TitleBar* bar = static_cast<TitleBar*>(data);
-  delete bar->actions;
-  g_clear_object(&bar->css);
+  auto* bar = static_cast<TitleBar*>(data);
+  g_signal_handler_disconnect(bar->window, bar->window_state_handler);
+  g_signal_handler_disconnect(bar->window, bar->active_handler);
+  delete bar->caption;
   g_free(bar);
-}
-
-static void format_rgb(char* out, size_t size, int64_t argb) {
-  g_snprintf(out, size, "#%06x", static_cast<unsigned>(argb & 0xFFFFFF));
-}
-
-// Paint the header bar in the nav rail's colours: no title, the rail's colour
-// in every window state, and the rail's divider as its bottom rule.
-static void title_bar_set_style(TitleBar* bar, int64_t background,
-                                int64_t foreground, int64_t rule,
-                                double rule_width) {
-  if (bar->header_bar == nullptr) return;
-  char bg[16], fg[16], line[16];
-  format_rgb(bg, sizeof(bg), background);
-  format_rgb(fg, sizeof(fg), foreground);
-  format_rgb(line, sizeof(line), rule);
-  g_autofree gchar* css = g_strdup_printf(
-      "headerbar.raft-titlebar, headerbar.raft-titlebar:backdrop {"
-      " background: %s; background-image: none; box-shadow: none;"
-      " border-bottom: %dpx solid %s; }"
-      "headerbar.raft-titlebar button, headerbar.raft-titlebar button:backdrop,"
-      " headerbar.raft-titlebar button image,"
-      " headerbar.raft-titlebar button:backdrop image {"
-      " color: %s; opacity: 1; text-shadow: none; -gtk-icon-shadow: none; }",
-      bg, static_cast<int>(rule_width + 0.5), line, fg);
-  gtk_css_provider_load_from_data(bar->css, css, -1, nullptr);
 }
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
@@ -78,56 +68,10 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
-  // Use a header bar when running in GNOME as this is the common style used
-  // by applications and is the setup most users will be using (e.g. Ubuntu
-  // desktop).
-  // If running on X and not using GNOME then just use a traditional title bar
-  // in case the window manager does more exotic layout, e.g. tiling.
-  // If running on Wayland assume the header bar will work (may need changing
-  // if future cases occur).
-  gboolean use_header_bar = TRUE;
-#ifdef GDK_WINDOWING_X11
-  GdkScreen* screen = gtk_window_get_screen(window);
-  if (GDK_IS_X11_SCREEN(screen)) {
-    const gchar* wm_name = gdk_x11_screen_get_window_manager_name(screen);
-    if (g_strcmp0(wm_name, "GNOME Shell") != 0) {
-      use_header_bar = FALSE;
-    }
-  }
-#endif
-  // RAFT_LINUX_HEADER_BAR=1 forces the header bar (a window manager that
-  // draws no title bar of its own, such as a bare Xvfb, would otherwise get
-  // none); RAFT_LINUX_HEADER_BAR=0 forces the window manager's.
-  const gchar* forced_header_bar = g_getenv("RAFT_LINUX_HEADER_BAR");
-  if (g_strcmp0(forced_header_bar, "1") == 0) use_header_bar = TRUE;
-  if (g_strcmp0(forced_header_bar, "0") == 0) use_header_bar = FALSE;
   TitleBar* title_bar = g_new0(TitleBar, 1);
   title_bar->window = window;
-  title_bar->actions = new DesktopWindowActions(window);
-  // The window's name stays for the task switcher; the bar shows no title.
+  title_bar->caption = new DesktopCaptionBar(window);
   gtk_window_set_title(window, "Raft");
-  if (use_header_bar) {
-    GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
-    gtk_widget_show(GTK_WIDGET(header_bar));
-    // An empty custom title keeps the bar free of text; only the window
-    // controls GTK draws remain.
-    GtkWidget* no_title = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_show(no_title);
-    gtk_header_bar_set_custom_title(header_bar, no_title);
-    gtk_header_bar_set_show_close_button(header_bar, TRUE);
-    gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
-    title_bar->header_bar = GTK_WIDGET(header_bar);
-    title_bar->css = gtk_css_provider_new();
-    GtkStyleContext* style = gtk_widget_get_style_context(title_bar->header_bar);
-    gtk_style_context_add_class(style, "raft-titlebar");
-    // Screen-wide, because a provider on the bar's own context would not reach
-    // the window buttons inside it; every rule is scoped to
-    // headerbar.raft-titlebar.
-    gtk_style_context_add_provider_for_screen(
-        gtk_widget_get_screen(title_bar->header_bar),
-        GTK_STYLE_PROVIDER(title_bar->css),
-        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-  }
 
   gtk_window_set_default_size(window, 1280, 720);
 
@@ -209,12 +153,19 @@ static void my_application_activate(GApplication* application) {
         }
       }, g_object_ref(window), g_object_unref);
 
-  // The app tells the runner the rail's colours (and again on every theme
-  // change); GTK owns the bar's height, dragging, double-click and
-  // fullscreen / maximised / tiled states, so there is no strip to report.
   g_autoptr(FlMethodChannel) title_bar_channel = fl_method_channel_new(
       fl_engine_get_binary_messenger(fl_view_get_engine(view)),
       "app.raft/titlebar", FL_METHOD_CODEC(codec));
+  title_bar->channel = title_bar_channel;
+  title_bar->window_state_handler = g_signal_connect(window, "window-state-event",
+      G_CALLBACK(+[](GtkWidget*, GdkEventWindowState*, gpointer data) -> gboolean {
+        title_bar_report(static_cast<TitleBar*>(data));
+        return FALSE;
+      }), title_bar);
+  title_bar->active_handler = g_signal_connect(window, "notify::is-active",
+      G_CALLBACK(+[](GObject*, GParamSpec*, gpointer data) {
+        title_bar_report(static_cast<TitleBar*>(data));
+      }), title_bar);
   fl_method_channel_set_method_call_handler(
       title_bar_channel,
       [](FlMethodChannel*, FlMethodCall* call, gpointer data) {
@@ -222,33 +173,26 @@ static void my_application_activate(GApplication* application) {
         const gchar* method = fl_method_call_get_name(call);
         if (g_strcmp0(method, "status") == 0 ||
             g_strcmp0(method, "setIntegrated") == 0) {
-          g_autoptr(FlValue) state = fl_value_new_map();
-          fl_value_set_string_take(state, "height", fl_value_new_float(0));
-          GdkWindow* native = gtk_widget_get_window(GTK_WIDGET(bar->window));
-          fl_value_set_string_take(state, "fullscreen", fl_value_new_bool(
-              native != nullptr &&
-              (gdk_window_get_state(native) & GDK_WINDOW_STATE_FULLSCREEN)));
+          g_autoptr(FlValue) state = title_bar_state(bar);
           fl_method_call_respond_success(call, state, nullptr);
         } else if (g_strcmp0(method, "startDragging") == 0) {
-          bar->actions->StartDragging();
+          bar->caption->StartDragging();
           fl_method_call_respond_success(call, nullptr, nullptr);
         } else if (g_strcmp0(method, "doubleClick") == 0) {
-          bar->actions->DoubleClick();
+          bar->caption->DoubleClick();
           fl_method_call_respond_success(call, nullptr, nullptr);
-        } else if (g_strcmp0(method, "setStyle") == 0) {
-          FlValue* args = fl_method_call_get_args(call);
-          auto integer = [args](const char* key) -> int64_t {
-            FlValue* value = fl_value_lookup_string(args, key);
-            return value != nullptr && fl_value_get_type(value) == FL_VALUE_TYPE_INT
-                       ? fl_value_get_int(value)
-                       : 0;
-          };
-          FlValue* width = fl_value_lookup_string(args, "ruleWidth");
-          title_bar_set_style(
-              bar, integer("background"), integer("foreground"), integer("rule"),
-              width != nullptr && fl_value_get_type(width) == FL_VALUE_TYPE_FLOAT
-                  ? fl_value_get_float(width)
-                  : 1);
+        } else if (g_strcmp0(method, "minimize") == 0) {
+          bar->caption->Minimize();
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "toggleMaximize") == 0) {
+          bar->caption->ToggleMaximize();
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "close") == 0) {
+          fl_method_call_respond_success(call, nullptr, nullptr);
+          bar->caption->Close();
+        } else if (g_strcmp0(method, "setStyle") == 0 ||
+                   g_strcmp0(method, "setCaptionButtonRects") == 0) {
+          // Flutter paints the whole row; GTK needs no colour or hit rectangles.
           fl_method_call_respond_success(call, nullptr, nullptr);
         } else if (g_strcmp0(method, "setTitle") == 0) {
           // The window's name for the task switcher and window lists (the
