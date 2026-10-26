@@ -33,6 +33,24 @@ COLORREF ToColorRef(int64_t argb) {
   return RGB((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF);
 }
 
+flutter::EncodableValue FrameState(const WindowsFrame::State& state) {
+  return flutter::EncodableMap{
+      {flutter::EncodableValue("height"), flutter::EncodableValue(0.0)},
+      {flutter::EncodableValue("leadingInset"), flutter::EncodableValue(0.0)},
+      {flutter::EncodableValue("customControls"), flutter::EncodableValue(state.custom_controls)},
+      {flutter::EncodableValue("maximized"), flutter::EncodableValue(state.maximized)},
+      {flutter::EncodableValue("fullscreen"), flutter::EncodableValue(state.fullscreen)},
+      {flutter::EncodableValue("active"), flutter::EncodableValue(state.active)},
+      {flutter::EncodableValue("buttonLayout"), flutter::EncodableValue(":minimize,maximize,close")}};
+}
+
+double DoubleArgument(const flutter::EncodableMap& arguments, const char* key) {
+  const auto found = arguments.find(flutter::EncodableValue(key));
+  if (found == arguments.end()) return 0;
+  if (const auto* value = std::get_if<double>(&found->second)) return *value;
+  return static_cast<double>(IntArgument(arguments, key));
+}
+
 }  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
@@ -102,27 +120,48 @@ bool FlutterWindow::OnCreate() {
       [this](int64_t id, const char* reason, WindowsExit::Reply reply) {
         tray_->PrepareExit(id, reason, std::move(reply));
       });
-  // The app tells the runner the nav rail's colours; the caption takes them
-  // (Windows 11) and its title text is drawn in the caption colour so the bar
-  // is empty. The caption's height, dragging and double-click stay the
-  // system's, so there is no strip for the app to draw or report.
+  // Dart owns the shared 48px bar and buttons; Windows retains resize/snap and
+  // system-menu behavior. Native caption mode remains an explicit fallback.
   titlebar_channel_ =
       std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
           flutter_controller_->engine()->messenger(), "app.raft/titlebar",
           &flutter::StandardMethodCodec::GetInstance());
   HWND window_handle = GetHandle();
   titlebar_channel_->SetMethodCallHandler(
-      [window_handle](
+      [this, window_handle](
           const flutter::MethodCall<flutter::EncodableValue>& call,
           std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
               result) {
         if (call.method_name() == "status") {
-          flutter::EncodableMap state;
-          state[flutter::EncodableValue("height")] =
-              flutter::EncodableValue(0.0);
-          state[flutter::EncodableValue("fullscreen")] =
-              flutter::EncodableValue(false);
-          result->Success(flutter::EncodableValue(state));
+          result->Success(FrameState(frame_ ? frame_->state() : WindowsFrame::State{}));
+        } else if (call.method_name() == "setIntegrated") {
+          // This selects workspace vs. standalone Dart header, not native mode.
+          result->Success(FrameState(frame_ ? frame_->state() : WindowsFrame::State{}));
+        } else if (call.method_name() == "setCaptionButtonRects") {
+          WindowsFrame::CaptionRects rects{};
+          const auto* arguments = std::get_if<flutter::EncodableMap>(call.arguments());
+          const char* names[] = {"minimize", "maximize", "close"};
+          if (arguments) {
+            for (size_t i = 0; i < rects.size(); ++i) {
+              const auto entry = arguments->find(flutter::EncodableValue(names[i]));
+              if (entry == arguments->end()) continue;
+              const auto* rect = std::get_if<flutter::EncodableMap>(&entry->second);
+              if (rect) rects[i] = {DoubleArgument(*rect, "x"), DoubleArgument(*rect, "y"),
+                                   DoubleArgument(*rect, "width"), DoubleArgument(*rect, "height")};
+            }
+          }
+          if (frame_ && !frame_->SetCaptionRects(rects)) {
+            result->Error("invalid_caption_rects", "Caption positions must be finite nonnegative logical coordinates.");
+          } else { result->Success(); }
+        } else if (call.method_name() == "minimize" && frame_) {
+          frame_->Minimize(); result->Success();
+        } else if ((call.method_name() == "toggleMaximize" || call.method_name() == "doubleClick") && frame_) {
+          frame_->ToggleMaximize(); result->Success();
+        } else if (call.method_name() == "close" && frame_) {
+          frame_->Close(); result->Success();
+        } else if (call.method_name() == "startDragging" && frame_) {
+          // Finish the channel reply before entering the OS's modal move loop.
+          result->Success(); frame_->StartDragging();
         } else if (call.method_name() == "setStyle") {
           const auto* arguments =
               std::get_if<flutter::EncodableMap>(call.arguments());
@@ -171,6 +210,14 @@ bool FlutterWindow::OnCreate() {
         }
       });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+  frame_ = std::make_unique<WindowsFrame>(GetHandle(),
+      flutter_controller_->view()->GetNativeWindow(), [this] {
+        if (titlebar_channel_ && frame_) titlebar_channel_->InvokeMethod(
+            "state", std::make_unique<flutter::EncodableValue>(FrameState(frame_->state())));
+      });
+  wchar_t titlebar_mode[16]{};
+  GetEnvironmentVariableW(L"RAFT_DESKTOP_TITLE_BAR", titlebar_mode, 16);
+  frame_->Enable(wcscmp(titlebar_mode, L"native") != 0);
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
@@ -185,6 +232,8 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  // Unhook the child HWND before Flutter destroys it.
+  frame_ = nullptr;
   exit_ = nullptr;
   tray_ = nullptr;
   notifications_channel_ = nullptr;
@@ -215,6 +264,10 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   }
   if (HandleWindowsNotificationActivation(message, lparam,
       notifications_channel_.get(), hwnd)) return TRUE;
+  if (frame_) {
+    const auto result = frame_->HandleMessage(message, wparam, lparam);
+    if (result) return *result;
+  }
   // Give Flutter, including plugins, an opportunity to handle window messages.
   if (flutter_controller_) {
     std::optional<LRESULT> result =
