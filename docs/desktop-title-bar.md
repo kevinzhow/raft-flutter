@@ -7,7 +7,9 @@ actions through `DesktopTitleBarScope`. The shared toolbar owns its controls,
 theme and empty drag regions. `DesktopTitleBar(integrated: true,
 integratedHeight: 48)` removes the former empty strip; fullscreen releases the
 traffic-light inset while retaining the shared toolbar. The shared composition
-must explicitly enable this mode while its toolbar is present.
+must explicitly enable this mode while its toolbar is present. Linux uses the
+same 48 px row with Flutter caption controls; GTK retains window management,
+resize borders and shadows. A capability flag keeps older runners compatible.
 
 On macOS, sign-in, workspace selection and narrow windows keep a 48 pt brand
 row, including in fullscreen. The native traffic lights start at x=16, y=17
@@ -41,11 +43,24 @@ so the strip can never drift from the rail and follows live theme changes.
   `DesktopTitleBar` wrapper installed in `MaterialApp.builder` (below the
   theme). Mode per platform: macOS `strip`, Linux `native`, Windows
   `nativeWithRule`, others none.
-- Channel `app.raft/titlebar`. Dart to native: `status` (`{height, fullscreen}`),
-  `setStyle` (`background`, `foreground`, `rule` as 0xAARRGGBB ints, `ruleWidth`,
-  `dark`), macOS/Linux `startDragging`, `doubleClick`. Native to Dart (macOS): `state`.
-  A bundle without the channel answers "not implemented": the app keeps the
-  system title bar and draws no strip.
+- Channel `app.raft/titlebar`: `status` reads window state and `setIntegrated`
+  reports whether a workspace row is present. `setStyle` carries `background`,
+  `foreground`, `rule`, `ruleWidth` and `dark`. `setTitle` changes the OS title;
+  `startDragging` and `doubleClick` forward empty-region gestures.
+- State includes `height`, `fullscreen`, `leadingInset`, and optional
+  `customControls`, `maximized`, `active`, `buttonLayout`. Runners push `state`
+  when their native window state changes. Without `customControls: true`, Dart
+  keeps the runner's original native caption behavior.
+- Custom captions use `minimize`, `toggleMaximize`, `close`. After layout, Dart
+  sends `setCaptionButtonRects` with `{minimize, maximize, close}` entries of
+  `{x, y, width, height}` in Flutter logical coordinates. Hidden controls send
+  an empty map. Windows can use these bounds for native caption hit testing;
+  Linux uses ordinary GTK/Flutter pointer dispatch.
+- `desktop_caption_controls.dart` owns ordering, geometry, semantics and shared
+  interaction through `RaftInteractive`. Linux circles and
+  `desktop_windows_caption_surface.dart` keep platform paint separate.
+  Native caption dimensions are fixed platform geometry; their colors come
+  from the active theme. Unknown older channel methods retain native controls.
 
 The macOS runner also accepts `setIntegrated` with `{enabled, height}` and
 returns its current state. State adds `integrated` and `leadingInset`; the
@@ -96,34 +111,56 @@ and thread destinations restore their existing message projections. At widths
 below 1000 px, Back and Forward move into the History menu to leave room for
 native window controls. The search remains centred on the full window.
 
-On Linux the native GTK/window-manager caption and its close/minimise/maximise
-controls remain. Shared-row empty space additionally supports native moving and
-the configured `gtk-titlebar-double-click` action. `DesktopWindowActions` captures
-the initiating button, root coordinates and timestamp before Flutter dispatch,
-then calls `gtk_window_begin_move_drag`. Before that handoff it delivers the
-matching release to the app view: Flutter 3.47 otherwise retains a pressed mouse
-button when the window manager consumes the real release, dropping the next
-click. This completes the Flutter gesture without releasing the physical mouse
-button used by the window manager. Controls handle their own pointer events;
-only the background forwards drag/double-click. No global desktop settings are
-changed. Fullscreen suppresses maximise/minimise double-click actions.
+On Linux, only empty areas forward moving and the configured
+`gtk-titlebar-double-click` action. `DesktopWindowActions` captures the initiating
+button, root coordinates and timestamp before Flutter dispatch, then calls
+`gtk_window_begin_move_drag`. Before that handoff it delivers the matching
+release to the app view: Flutter 3.47 otherwise retains a pressed button when
+the window manager consumes its real release. This completes the Flutter
+gesture without releasing the physical button used by the window manager.
+Fullscreen suppresses maximize/minimize double-click actions.
 
-### Linux (done, verified under Xvfb)
-Screenshots of the three themes switching live: `.local/desktop-title-bar/linux-*.png`
-(capture needs `xvfb-run -s "-screen 0 1920x1200x24 +extension GLX +render -noreset"`
-and `RAFT_LINUX_HEADER_BAR=1`; without GLX the window never maps).
-`linux/runner/my_application.cc`: the GTK `GtkHeaderBar` (used under GNOME, on
-Wayland, or when forced) is coloured through a CSS provider (`headerbar.raft-titlebar`,
-also `:backdrop`, so inactive, maximised and tiled states keep the colour), an
-empty custom title removes the text, `border-bottom` is the rule, and the window
-buttons take the rail foreground colour (the provider is screen-wide but every
-rule is scoped to `headerbar.raft-titlebar`; a translucent divider is blended over
-the strip first, since CSS gets one opaque colour). GTK keeps the bar's height, dragging,
-double-click and hides it in fullscreen. The window is named "Raft" for the task
-switcher, and after that by the open conversation (see below). Limit: where the window manager draws the title bar itself (KDE,
-Xfce, tiling WMs, non-GNOME X11) the app cannot paint it and the strip is not
-shown. `RAFT_LINUX_HEADER_BAR=1` forces the header bar (used for Xvfb
-captures); `=0` forces the window manager's bar.
+### Linux
+
+Every desktop environment uses one 48 px application row by default, following
+[Raft Desktop 1.21.33](https://github.com/botiverse/desktop/releases/tag/v1.21.33).
+`linux/runner/desktop_caption_bar.h` installs an empty zero-height GTK titlebar.
+This suppresses the extra caption while retaining GTK's client-side resize
+border and shadow. A non-composited desktop can draw its normal solid resize
+border around the Flutter viewport; it is separate from the 48 px row.
+
+Wide workspaces put global actions in that row. Login, workspace selection and
+narrow windows use a branded row and the same caption targets; `RaftAuthHeaderScope`
+omits duplicate page headers. `KeyedSubtree` keeps the Router and accepted
+workspace content when moving between these structures. Fullscreen keeps the
+shared actions or brand row, hides caption targets, and releases their insets.
+
+Linux controls are 24 px circles centred in 37 by 48 px targets, with a 4 px
+outer gutter. They use the current titlebar foreground and theme-derived fills,
+including inactive and hover states. `maximized` changes the restore glyph.
+The shared row measures its trailing actions before reserving symmetric side
+regions; at constrained widths search shrinks while retaining its window centre.
+The caption targets do not overlap workspace actions, working agents or notifications.
+
+Configuration is read when the window is created:
+
+| Variable | Behavior |
+|---|---|
+| `RAFT_LINUX_HEADER_BAR=0` | Restore the ordinary GTK/system caption. |
+| `RAFT_LINUX_HEADER_BAR=1` or unset | Use the single application row on every desktop. |
+| `RAFT_LINUX_CAPTION_LAYOUT` | `left:right` lists of `minimize`, `maximize`, `close`; default `:minimize,maximize,close`. |
+
+For example, `close,minimize:maximize` places close and minimize on the left.
+Unknown and repeated names are ignored; an invalid or empty layout uses the
+default so a usable caption remains. This is an application override, not a
+change to desktop button-layout preferences.
+
+The runner emits native fullscreen, maximized and active changes. Explicit
+caption actions call GTK minimize, maximize/unmaximize and normal close, keeping
+the usual window lifecycle. `setStyle.dark` updates this process's
+`gtk-application-prefer-dark-theme`, so GTK resize borders and native dialogs
+follow application appearance. It does not write system or desktop preferences.
+The runner preserves the separate Dart UI thread and existing rendering settings.
 
 ### Window title (all three)
 The strip shows no text, but the OS window has a name (task switcher, window
@@ -149,7 +186,10 @@ The same recipe supplies the colour and blends the translucent dark divider
 over the rail background. Content and its `MediaQuery` start below the rule;
 live theme changes update it. This rule has no drag or double-click handlers:
 the caption's height, buttons, dragging, double-click and resizing stay native.
-Linux already draws its rule in GTK and does not receive an additional one.
+The Dart side also supports a runner opting into custom caption controls; that
+runner must first extend the client frame and implement the native actions and
+hit rectangles. Until then this existing DWM caption remains in use. Linux
+paints its rule with its shared or standalone Flutter row.
 
 ## What was reused from RemoteSurface
 
@@ -159,8 +199,8 @@ method), the idea that a Linux GtkHeaderBar is coloured through a CSS provider,
 and the DWM-attribute approach for Windows. Not taken: `window_manager`
 (an added dependency for what a 100-line channel does; not needed since the
 channel already covers colours, drag and double-click), `multiview_desktop`,
-the NSToolbar 52 pt row, and merging window controls into the app's own row
-(the approved design has none).
+the NSToolbar 52 pt row. The current single-row design shares the Flutter
+caption structure while keeping each platform's window management native.
 
 ## Mac verification checklist (CodexMac)
 
