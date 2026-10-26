@@ -184,9 +184,17 @@ void main() {
           .first,
     );
     await frames(t, 6);
-    expect(find.byType(AlertDialog), findsOneWidget);
     expect(
-      find.descendant(of: find.byType(AlertDialog), matching: find.text('Bob')),
+      find.byWidgetPredicate((w) => w is AlertDialog || w is RaftAlertDialog),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byWidgetPredicate(
+          (w) => w is AlertDialog || w is RaftAlertDialog,
+        ),
+        matching: find.text('Bob'),
+      ),
       findsOneWidget,
     );
     api.hangAll = false;
@@ -338,7 +346,10 @@ void main() {
     api.hangAll = true;
     await t.tap(find.text('notes.md'));
     await frames(t, 6);
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) => w is AlertDialog || w is RaftAlertDialog),
+      findsOneWidget,
+    );
     api.hangAll = false;
   });
 
@@ -369,7 +380,10 @@ void main() {
     api.hangAll = true;
     await t.tap(event.first);
     await frames(t, 6);
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(
+      find.byWidgetPredicate((w) => w is AlertDialog || w is RaftAlertDialog),
+      findsNothing,
+    );
     expect(find.text('Refreshing…'), findsOneWidget);
     api.hangAll = false;
   });

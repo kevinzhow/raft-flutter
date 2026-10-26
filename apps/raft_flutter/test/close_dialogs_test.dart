@@ -116,7 +116,7 @@ Future<SurfaceProbe> confirmDialog(WidgetTester t, Size size) async {
   return SurfaceProbe(
     isOpen: () =>
         find.byKey(const ValueKey('probe-dialog')).evaluate().isNotEmpty,
-    x: find.byKey(const Key('confirm-dialog-close')),
+    x: find.descendant(of: find.byType(RaftConfirmDialog), matching: anyX),
     scrim: _corner,
   );
 }
@@ -783,7 +783,9 @@ void registerCloseDialogTests(TestPart part) {
       t,
       size,
       tap: find.text('Assigned Agents'),
-      surface: find.byType(AlertDialog),
+      surface: find.byWidgetPredicate(
+        (w) => w is AlertDialog || w is RaftAlertDialog,
+      ),
     ),
     'mention-link-dialog': (t, size) async {
       ignoreOverflow();
@@ -810,7 +812,10 @@ void registerCloseDialogTests(TestPart part) {
       );
       await frames(t, 30);
       return SurfaceProbe(
-        isOpen: () => find.byType(AlertDialog).evaluate().isNotEmpty,
+        isOpen: () => find
+            .byWidgetPredicate((w) => w is AlertDialog || w is RaftAlertDialog)
+            .evaluate()
+            .isNotEmpty,
         scrim: _corner,
       );
     },

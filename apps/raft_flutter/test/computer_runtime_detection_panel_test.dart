@@ -334,7 +334,7 @@ void main() {
           find.textContaining('Faster', findRichText: true),
           findsOneWidget,
         );
-        await t.tap(find.byType(RaftAgentCloseButton));
+        await t.tap(find.byType(RaftDialogClose));
         await t.pumpAndSettle();
         expect(dialog, findsNothing);
       },

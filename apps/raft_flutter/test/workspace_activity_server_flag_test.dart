@@ -273,7 +273,7 @@ void main() {
           find.byKey(const ValueKey('activity-switcher-group-c1')),
           findsOneWidget,
         );
-        await tester.tap(find.byType(RaftCloseButton));
+        await tester.tap(find.byType(RaftDialogClose));
         await tester.pumpAndSettle();
       },
       variant: const TargetPlatformVariant({TargetPlatform.linux}),

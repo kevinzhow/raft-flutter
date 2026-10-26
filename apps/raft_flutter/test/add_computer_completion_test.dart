@@ -521,7 +521,7 @@ void main() {
         find.byKey(const ValueKey('add-computer-confirm-match')),
         findsOneWidget,
       );
-      await t.tap(find.byType(RaftCloseButton));
+      await t.tap(find.byType(RaftDialogClose));
       await t.pumpAndSettle();
       expect(f.w.commands.where((c) => c.$1 == 'DELETE').map((c) => c.$2), [
         '/servers/s/machines/placeholder',

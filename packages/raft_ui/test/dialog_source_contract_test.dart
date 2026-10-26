@@ -100,10 +100,12 @@ void main() {
       ),
     );
     final title = find.text('Review settings');
-    final material = find
-        .ancestor(of: title, matching: find.byType(Material))
-        .first;
-    expect(t.getRect(title).left - t.getRect(material).left, 20);
+    final surface = find.ancestor(
+      of: title,
+      matching: find.byType(RaftDialogSurface),
+    );
+    expect(surface, findsOneWidget);
+    expect(t.getRect(title).left - t.getRect(surface).left, 20);
     expect(
       (t.widget<Text>(title).style ??
               DefaultTextStyle.of(t.element(title)).style)

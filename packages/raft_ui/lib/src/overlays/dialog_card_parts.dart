@@ -35,6 +35,12 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
       return RaftFormSheet(
         title: raftText(context, d.title! as String),
         onClose: d.closeEnabled ? d.onClose : null,
+        closeButton: d.showClose
+            ? RaftDialogClose._product(
+                onPressed: raftGuardedClose(context, d.onClose),
+                enabled: d.closeEnabled,
+              )
+            : const SizedBox.shrink(),
         titleGlyph: d.titleGlyph,
         body: body,
         footer: footer ?? actions,
@@ -48,13 +54,6 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
       properties: {...base.properties, ...root.properties},
     );
     final media = MediaQuery.of(context);
-    final maxWidth = math.min(
-      d.maxWidth ?? product.defaultWidth.maxWidth!,
-      math.max(
-        0.0,
-        media.size.width - RaftSpace.x4 * 2 - media.padding.horizontal,
-      ),
-    );
     Widget titleContent = Text(
       raftText(context, d.title! as String),
       style: title.text(tokens, base: DefaultTextStyle.of(context).style),
@@ -68,7 +67,22 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
         ],
       );
     }
-    final card = Semantics(
+    final heading = Padding(
+      padding: EdgeInsets.only(bottom: header.margin.bottom),
+      child: Row(
+        spacing: header.columnGap ?? 0,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Semantics(header: true, child: titleContent)),
+          if (d.showClose)
+            RaftDialogClose._product(
+              onPressed: raftGuardedClose(context, d.onClose),
+              enabled: d.closeEnabled,
+            ),
+        ],
+      ),
+    );
+    Widget card({required bool pinned, required double maxWidth}) => Semantics(
       scopesRoute: true,
       namesRoute: true,
       explicitChildNodes: true,
@@ -82,33 +96,33 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
             child: RaftDialogSurface(
               key: d.contentKey,
               surfaceStyle: combined,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(bottom: header.margin.bottom),
-                    child: Row(
-                      spacing: header.columnGap ?? 0,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Semantics(header: true, child: titleContent),
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (pinned)
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [heading, body],
+                          ),
                         ),
-                        RaftDialogClose._product(
-                          onPressed: raftGuardedClose(context, d.onClose),
-                          enabled: d.closeEnabled,
-                        ),
-                      ],
-                    ),
-                  ),
-                  body,
-                  if (footer != null) ...[
-                    SizedBox(height: d.footerGap ?? header.margin.bottom),
-                    footer,
+                      )
+                    else ...[
+                      heading,
+                      body,
+                    ],
+                    if (footer != null) ...[
+                      SizedBox(height: d.footerGap ?? header.margin.bottom),
+                      footer,
+                    ],
+                    ?actions,
                   ],
-                  ?actions,
-                ],
+                ),
               ),
             ),
           ),
@@ -117,25 +131,77 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
     );
     // Web Modal scrolls the entire natural-height card. An enclosing Modal or
     // form frame already supplies that scrollport; a bare dialog route needs
-    // one here. Only the mobile sheet above pins its header and action row.
+    // one here. Above the default text size, keep actions visible while the
+    // heading and body scroll inside the capped surface.
     return LayoutBuilder(
-      builder: (context, box) => Align(
-        widthFactor: 1,
-        heightFactor: 1,
-        child: box.hasBoundedHeight
-            ? ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight:
-                      (media.size.height -
-                              RaftSpace.x4 * 2 -
-                              media.padding.vertical -
-                              media.viewInsets.bottom)
-                          .clamp(0, double.infinity),
-                ),
-                child: SingleChildScrollView(child: card),
-              )
-            : card,
-      ),
+      builder: (context, box) {
+        final hasOuterPadding =
+            RaftFormFrame.framedOf(context) ||
+            context.findAncestorWidgetOfExactType<RaftModalBackdrop>() != null;
+        final horizontalMargin = hasOuterPadding
+            ? 0.0
+            : RaftSpace.x4 * 2 + media.padding.horizontal;
+        final availableWidth = box.hasBoundedWidth
+            ? box.maxWidth - horizontalMargin
+            : media.size.width - RaftSpace.x4 * 2 - media.padding.horizontal;
+        final maxWidth = math.min(
+          d.maxWidth ?? product.defaultWidth.maxWidth!,
+          math.max(0.0, availableWidth),
+        );
+        final pinActions =
+            RaftScaled.grows(context) && (footer != null || actions != null);
+        final keyboard = media.viewInsets.bottom;
+        if (!box.hasBoundedHeight) {
+          if (!pinActions) {
+            return Align(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: card(pinned: false, maxWidth: maxWidth),
+            );
+          }
+          final available =
+              (media.size.height -
+                      RaftSpace.x4 * 2 -
+                      media.padding.vertical -
+                      keyboard)
+                  .clamp(0.0, double.infinity);
+          return Padding(
+            padding: EdgeInsets.only(bottom: keyboard),
+            child: Align(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: available),
+                child: card(pinned: true, maxWidth: maxWidth),
+              ),
+            ),
+          );
+        }
+        // The presented form frame already supplies its outer safe-area and
+        // 16px margins. A bare card supplies those margins itself.
+        final margin = RaftFormFrame.framedOf(context)
+            ? 0.0
+            : RaftSpace.x4 * 2 + media.padding.vertical;
+        final available = (box.maxHeight - margin - keyboard).clamp(
+          0.0,
+          double.infinity,
+        );
+        return Padding(
+          padding: EdgeInsets.only(bottom: keyboard),
+          child: Align(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: available),
+              child: pinActions
+                  ? card(pinned: true, maxWidth: maxWidth)
+                  : SingleChildScrollView(
+                      child: card(pinned: false, maxWidth: maxWidth),
+                    ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

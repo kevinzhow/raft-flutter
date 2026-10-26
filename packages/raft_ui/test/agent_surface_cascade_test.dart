@@ -335,7 +335,7 @@ void main() {
         await tester.tap(find.text('Create'));
         await tester.pumpAndSettle();
         expect(find.text('Created'), findsOneWidget);
-        await tester.tap(find.byType(RaftAgentCloseButton));
+        await tester.tap(find.byType(RaftDialogClose));
         await tester.pump();
         expect(find.text('Closed'), findsOneWidget);
         expect(tester.takeException(), isNull);

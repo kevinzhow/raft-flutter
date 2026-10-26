@@ -476,7 +476,9 @@ class _RaftModalBackdropState extends State<RaftModalBackdrop> {
                 padding: EdgeInsets.only(bottom: inset),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minHeight: math.max(0, box.maxHeight - inset),
+                    minHeight: box.hasBoundedHeight
+                        ? math.max(0, box.maxHeight - inset)
+                        : 0,
                   ),
                   child: content,
                 ),
@@ -940,6 +942,7 @@ Widget buildFrozenDialogCard({
   Widget? actions,
   Widget? footer,
   required double footerGap,
+  bool showClose = true,
 }) => _FrozenRaftDialogCard(
   title: title,
   onClose: onClose,
@@ -948,6 +951,7 @@ Widget buildFrozenDialogCard({
   actions: actions,
   footer: footer,
   footerGap: footerGap,
+  showClose: showClose,
   child: child,
 );
 
@@ -961,6 +965,7 @@ class _FrozenRaftDialogCard extends StatefulWidget {
     this.actions,
     this.footer,
     this.footerGap = 16,
+    this.showClose = true,
   });
   final String title;
 
@@ -980,6 +985,7 @@ class _FrozenRaftDialogCard extends StatefulWidget {
   /// A leading `<Icon size={18} />` in the title (`flex min-w-0 items-center
   /// gap-2` + `truncate` title span).
   final RaftGlyph? titleGlyph;
+  final bool showClose;
   final VoidCallback onClose;
   final Widget child;
   final double maxWidth;
@@ -1033,6 +1039,7 @@ class __FrozenRaftDialogCardState extends State<_FrozenRaftDialogCard> {
         child: RaftFormSheet(
           title: raftText(context, title),
           onClose: onClose,
+          closeButton: widget.showClose ? null : const SizedBox.shrink(),
           titleGlyph: titleGlyph,
           body: body,
           footer: footer ?? actions,
@@ -1084,7 +1091,8 @@ class __FrozenRaftDialogCardState extends State<_FrozenRaftDialogCard> {
                     ),
             ),
           ),
-          RaftCloseButton(onPressed: raftGuardedClose(context, onClose)),
+          if (widget.showClose)
+            RaftCloseButton(onPressed: raftGuardedClose(context, onClose)),
         ],
       ),
     );

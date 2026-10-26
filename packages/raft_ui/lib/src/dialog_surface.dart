@@ -51,16 +51,22 @@ class RaftDialogBackdrop extends StatelessWidget {
       states: t.recipeStates(),
       tokens: t.recipeTokens,
     ).overlay;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Positioned.fill(
-          child: IgnorePointer(
-            child: RaftRecipeBox(style: style, tokens: t.recipeTokens),
+    // A backdrop can also be embedded in a vertically scrolling host. Avoid
+    // forcing an infinite height there while still filling bounded routes.
+    return LayoutBuilder(
+      builder: (context, constraints) => Stack(
+        fit: constraints.hasBoundedWidth && constraints.hasBoundedHeight
+            ? StackFit.expand
+            : StackFit.passthrough,
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: RaftRecipeBox(style: style, tokens: t.recipeTokens),
+            ),
           ),
-        ),
-        child,
-      ],
+          child,
+        ],
+      ),
     );
   }
 }

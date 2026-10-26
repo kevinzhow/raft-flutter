@@ -159,6 +159,7 @@ class _RaftAgentDialogCardState extends State<RaftAgentDialogCard> {
         title: title,
         onClose: onClose ?? () {},
         closeEnabled: onClose != null,
+        showClose: onClose != null,
         maxWidth: widget.maxWidth,
         contentKey: widget.surfaceKey,
         footer: footer,

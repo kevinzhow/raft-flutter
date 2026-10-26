@@ -14,9 +14,10 @@ import '../design_primitives.dart';
 import '../dialog_slots.dart';
 import '../dialog_surface.dart';
 import '../form_presentation.dart';
-import '../dialog_card.dart' show buildFrozenDialogCard;
+import '../dialog_card.dart' show RaftModalBackdrop, buildFrozenDialogCard;
 import '../settings_controls.dart' show buildFrozenDialogShell;
 import '../tap_slop.dart';
+import '../text_scaling.dart';
 import '../dismiss_scope.dart';
 import '../icons.dart';
 import '../localization.dart';
@@ -258,6 +259,7 @@ class RaftDialog extends StatelessWidget {
     Widget? actions,
     this.contentKey,
     this.closeEnabled = true,
+    this.showClose = true,
   }) : _card = true,
        _shell = false,
        outlineClose = false,
@@ -270,7 +272,6 @@ class RaftDialog extends StatelessWidget {
        size = RaftDialogSize.md,
        bar = false,
        kind = RaftDialogKind.dialog,
-       showClose = true,
        semanticLabel = title;
 
   /// The standard Dialog anatomy used by Web confirmations and editors.
@@ -323,7 +324,7 @@ class RaftDialog extends StatelessWidget {
   final bool bar;
   final RaftDialogKind kind;
 
-  /// Corner close in the shorthand header (Dialog only; AlertDialog never).
+  /// Corner close in the shorthand or card header; AlertDialog never has one.
   final bool showClose;
   final String? semanticLabel;
 
@@ -355,6 +356,7 @@ class RaftDialog extends StatelessWidget {
           actions: cardActions,
           footer: footer,
           footerGap: footerGap ?? 16,
+          showClose: showClose,
           child: child!,
         );
       }
@@ -475,12 +477,15 @@ class RaftDialog extends StatelessWidget {
                           : RaftDialogSurface(
                               key: contentKey,
                               surfaceStyle: s.content,
-                              child: height == null
-                                  ? _Gapped(gap: gap, child: body)
-                                  : SizedBox(
-                                      height: math.min(height, maxHeight),
-                                      child: _Gapped(gap: gap, child: body),
-                                    ),
+                              child: Material(
+                                type: MaterialType.transparency,
+                                child: height == null
+                                    ? _Gapped(gap: gap, child: body)
+                                    : SizedBox(
+                                        height: math.min(height, maxHeight),
+                                        child: _Gapped(gap: gap, child: body),
+                                      ),
+                              ),
                             ),
                     ),
                   ),
@@ -746,6 +751,7 @@ class RaftDialogClose extends StatelessWidget {
           label: '',
           glyph: RaftGlyph.x,
           semanticLabel: raftText(context, semanticLabel),
+          tooltip: raftText(context, semanticLabel),
           uiVariant:
               this.outlined ||
                   t.option('dialog.close', or: 'ghost') == 'outline'
