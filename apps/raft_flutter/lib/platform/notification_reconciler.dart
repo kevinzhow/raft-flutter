@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../data/activity_attention.dart';
-import '../data/account_activity_unread.dart';
+import 'account_activity_unread.dart';
 import '../data/resource_row_reconcile.dart' show activityScopeId;
 import '../data/source_activity_unread_store.dart';
 import '../data/workspace_controller.dart';

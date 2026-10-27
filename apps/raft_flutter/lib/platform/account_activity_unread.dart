@@ -4,9 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
-import 'activity_attention.dart';
-import 'source_activity_unread_store.dart';
-import 'workspace_controller.dart';
+import '../data/activity_attention.dart';
+import '../data/source_activity_unread_store.dart';
+import '../data/workspace_controller.dart';
 
 /// Account lifetime, independent of which workspace the root is displaying.
 /// Borrows a selected Activity projection; it never creates or starts one.

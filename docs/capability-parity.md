@@ -11,8 +11,8 @@ Total capabilities: 795 (362 endpoint/network keys, 433 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 693 |
-| ⚠️ partial | 22 |
+| ✅ covered | 692 |
+| ⚠️ partial | 23 |
 | ❌ missing | 7 |
 | ➖ na | 73 |
 
@@ -30,7 +30,7 @@ Total capabilities: 795 (362 endpoint/network keys, 433 client-side).
 | Tasks | 35 | 0 | 0 | 5 |
 | Files and attachments | 26 | 2 | 0 | 2 |
 | Search | 19 | 0 | 0 | 1 |
-| Notifications | 30 | 2 | 0 | 6 |
+| Notifications | 29 | 3 | 0 | 6 |
 | Account and profile | 42 | 0 | 0 | 8 |
 | Onboarding and auth | 35 | 1 | 0 | 6 |
 | Joint channels | 11 | 0 | 0 | 0 |
@@ -683,7 +683,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Mark a usage-limit attention incident as seen (clears the unseen count) | `POST /servers/:id/system-notifications-v2/:id/seen` | useUsageLimitAttention.markSeen[gate: flag usage_limit_attention_v0 on the current server] | system_notification_store.dart _receipt(... 'seen') |  |
 | ✅ | Double-click the Activity entry (mobile sidebar) or the Activity header title to jump to / focus the next unread item | `ui:channels.sidebar-activity-entry-jump-unread` | Sidebar.tsx Activity entry onDoubleClick -> focusFirstUnreadInboxItem; ThreadsInbox header title double-click -> focusNextUnread (tooltip 'Double-click to jump to the next unread item') | activity_first_unread.dart: the rail Activity item and the phone-sidebar Activity entry (mouse double-click) arm the first-unread mark; the Activity header double-click marks the next unread row; the second click of the double-click does not select again |  |
 | ✅ | Followed threads with new replies roll up onto their parent channel's sidebar badge (`5 · [thread] 1`) and its @ mark | `ui:channels.sidebar-thread-unread-badge` | Sidebar.tsx ChannelRow (useParentThreadUnread, ChannelUnreadSegments); utils/threadUnreadByParent.ts[gate: flag thread_unread_badge_v0] | workspace_view.dart channelItem -> SidebarThreadUnread.forChannel (features/sidebar_thread_unread.dart, data/thread_unread_by_parent.dart) -> RaftNavItem threadUnread -> RaftSidebarThreadUnreadCount |  |
-| ✅ | App/tab unread badge reflecting Activity unread total | `ui:channels.unread-badge-app-icon` | mobileAppBadge.ts (PWA badge) / LeftRail Activity badge | Native equivalents: macos_dock_unread.dart, background_inbox.dart, mobile tab activity badge |  |
+| ⚠️ | App/tab unread badge reflecting Activity unread total | `ui:channels.unread-badge-app-icon` | mobileAppBadge.ts (PWA badge) / LeftRail Activity badge | Account-owned native icon count (account_activity_unread.dart / macos_dock_unread.dart), background_inbox.dart, and the in-app Activity badge | Impact: Android users on the server chooser can retain stale numeric totals from existing conversation cards, or no icon badge when no allowed notification exists. Native icon counts use complete account membership and accepted Activity values; Android chooser counting remains conditional when retained conversation cards are stale or no quiet residual exists. OS icon presentation also requires platform support and permission. Size M |
 | ✅ | Dismissed Notification Center entries stay hidden until their fingerprint changes | `ui:global-ui.pref-notification-dismissals` | components/layout/dismissedNotificationStore.ts (slock:notification-center:dismissed:{server}) | data/system_notification_store.dart (raft:notification-center:dismissed:) |  |
 | ✅ | Composer-adjacent banner asking to enable browser/desktop notifications ('Enable', dismiss, Settings > Notifications) | `ui:messages.composer-notification-activation-banner` | NotificationActivationBanner[gate: Native macOS/iOS/Android first permission; eligible joined channel or DM composer] | features/notification_activation_banner.dart; explicit native opt-in | Native OS permission is requested only by the Enable action. Dismissal lasts for the app session with a three-second Settings confirmation. Refusal is persisted; foreground/focus reconciles system changes. Windows/Linux have no prompt and no banner. |
 | ✅ | Activity as a conversation list: one avatar row per conversation with preview and unread count, sidebar-pinned conversations first under Pinned / All conversations headings | `ui:notifications.activity-conversation-list` | components/thread/ThreadsInbox.tsx InboxRow layout="list"; inboxPinnedConversation.ts[gate: flag activity_conversation_list_v0] | resource_view.dart activityCard -> activity_card_row.dart ActivityCardRow -> activity_list_row.dart ActivityListRowView -> RaftConversationListRow; activityPinnedFirst orders the rows |  |

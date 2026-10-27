@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_flutter/data/account_activity_unread.dart';
+import 'package:raft_flutter/platform/account_activity_unread.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/platform/macos_dock_unread.dart';
 import 'package:raft_flutter/platform/content_coordinator.dart';

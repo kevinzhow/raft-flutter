@@ -5,7 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'content_target.dart';
-import '../data/account_activity_unread.dart';
+import 'account_activity_unread.dart';
 
 const backgroundInboxTask = 'app.raft.raft_flutter.inbox_refresh';
 const backgroundScopeKey = 'raft.background.inbox.scope';

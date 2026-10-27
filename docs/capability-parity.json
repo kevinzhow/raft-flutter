@@ -12644,19 +12644,27 @@
    "area": "notifications",
    "capability": "App/tab unread badge reflecting Activity unread total",
    "background": false,
-   "status": "covered",
+   "status": "partial",
    "webEntry": "mobileAppBadge.ts (PWA badge) / LeftRail Activity badge",
    "gate": "",
-   "flutterEntry": "Native equivalents: macos_dock_unread.dart, background_inbox.dart, mobile tab activity badge",
+   "flutterEntry": "Account-owned native icon count (account_activity_unread.dart / macos_dock_unread.dart), background_inbox.dart, and the in-app Activity badge",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/platform/macos_dock_unread.dart",
+     "file": "apps/raft_flutter/lib/platform/account_activity_unread.dart",
      "needle": "/channels/inbox/read-all"
+    },
+    {
+     "file": "apps/raft_flutter/lib/platform/macos_dock_unread.dart",
+     "needle": "Future<void> resync()"
+    },
+    {
+     "file": "apps/raft_flutter/lib/platform/background_inbox.dart",
+     "needle": "backgroundActivityBadge("
     }
    ],
-   "justification": "",
-   "impact": "",
-   "size": ""
+   "justification": "Native icon counts use complete account membership and accepted Activity values; Android chooser counting remains conditional when retained conversation cards are stale or no quiet residual exists. OS icon presentation also requires platform support and permission.",
+   "impact": "Android users on the server chooser can retain stale numeric totals from existing conversation cards, or no icon badge when no allowed notification exists.",
+   "size": "M"
   },
   {
    "kind": "ui",

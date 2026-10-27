@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:raft_client/raft_client.dart';
 
-import '../data/account_activity_unread.dart';
+import 'account_activity_unread.dart';
 import '../data/workspace_controller.dart';
 import 'windows_tray.dart';
 
