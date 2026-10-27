@@ -4,6 +4,68 @@ import CFNetwork
 import AVFoundation
 import ImageIO
 
+/// Temporary task262 diagnostics. Disabled unless the isolated test process opts in.
+/// Records only event geometry, window state and bounded native call stacks.
+private enum RaftTitleBarTrace {
+  static let enabled = ProcessInfo.processInfo.environment["RAFT_TITLEBAR_TRACE"] == "1"
+  private static var remaining = 320
+  private static var sequence = 0
+  private static var announcedPath = false
+
+  static func isMouse(_ event: NSEvent) -> Bool {
+    event.type == .leftMouseDown || event.type == .leftMouseUp || event.type == .leftMouseDragged
+  }
+
+  static func record(_ phase: String, window: NSWindow?, event: NSEvent? = nil,
+    fields: [String: Any] = [:], stack: Bool = false) {
+    guard enabled, remaining > 0 else { return }
+    remaining -= 1
+    sequence += 1
+    var row = fields
+    row["phase"] = phase
+    row["sequence"] = sequence
+    row["uptime"] = ProcessInfo.processInfo.systemUptime
+    if let window {
+      let frame = window.frame
+      row["frame"] = [Double(frame.minX), Double(frame.minY), Double(frame.width), Double(frame.height)]
+      row["movable"] = window.isMovable
+      row["visible"] = window.isVisible
+      row["zoomed"] = window.isZoomed
+      row["fullscreen"] = window.styleMask.contains(.fullScreen)
+    }
+    if let event {
+      row["eventType"] = Int(event.type.rawValue)
+      row["eventTimestamp"] = event.timestamp
+      if isMouse(event) {
+        row["pointInWindow"] = [Double(event.locationInWindow.x), Double(event.locationInWindow.y)]
+        if event.type == .leftMouseDown || event.type == .leftMouseUp {
+          row["clickCount"] = event.clickCount
+          row["eventNumber"] = event.eventNumber
+        }
+      }
+    }
+    if stack { row["stack"] = Array(Thread.callStackSymbols.prefix(18)) }
+    guard let data = try? JSONSerialization.data(withJSONObject: row, options: [.sortedKeys]) else { return }
+    let path = ProcessInfo.processInfo.environment["RAFT_TITLEBAR_TRACE_FILE"]
+      ?? (NSTemporaryDirectory() as NSString).appendingPathComponent("raft-titlebar-\(ProcessInfo.processInfo.processIdentifier).jsonl")
+    if !announcedPath {
+      announcedPath = true
+      FileHandle.standardError.write(Data("RAFT_TITLEBAR_TRACE_FILE=\(path)\n".utf8))
+    }
+    if !FileManager.default.fileExists(atPath: path) {
+      _ = FileManager.default.createFile(atPath: path, contents: nil)
+    }
+    guard let file = FileHandle(forWritingAtPath: path) else {
+      FileHandle.standardError.write(Data("RAFT_TITLEBAR_TRACE could not open its diagnostic file\n".utf8))
+      return
+    }
+    file.seekToEndOfFile()
+    file.write(data)
+    file.write(Data([10]))
+    file.closeFile()
+  }
+}
+
 class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftUpdatesWindow {
   private var attachmentFilesChannel: AttachmentFilesChannel?
   private var interactionChannel: FlutterMethodChannel?
@@ -36,7 +98,17 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
   }
 
   override func sendEvent(_ event: NSEvent) {
-    guard titleBar?.ownsFlutterHeaderMouseDown(event) == true else {
+    let ownsHeaderMouseDown = titleBar?.ownsFlutterHeaderMouseDown(event) == true
+    let tracing = RaftTitleBarTrace.enabled && RaftTitleBarTrace.isMouse(event)
+    if tracing {
+      var fields = titleBar?.traceGeometry(event) ?? [:]
+      fields["guardEligible"] = ownsHeaderMouseDown
+      RaftTitleBarTrace.record("sendEvent.begin", window: self, event: event, fields: fields)
+    }
+    defer {
+      if tracing { RaftTitleBarTrace.record("sendEvent.end", window: self, event: event) }
+    }
+    guard ownsHeaderMouseDown else {
       super.sendEvent(event)
       return
     }
@@ -46,7 +118,19 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     let wasMovable = isMovable
     isMovable = false
     defer { isMovable = wasMovable }
+    if tracing { RaftTitleBarTrace.record("sendEvent.guardApplied", window: self, event: event) }
     super.sendEvent(event)
+    if tracing { RaftTitleBarTrace.record("sendEvent.guardedDispatchReturned", window: self, event: event) }
+  }
+
+  override func zoom(_ sender: Any?) {
+    if RaftTitleBarTrace.enabled {
+      RaftTitleBarTrace.record("native.zoom.begin", window: self, event: NSApp.currentEvent, stack: true)
+    }
+    super.zoom(sender)
+    if RaftTitleBarTrace.enabled {
+      RaftTitleBarTrace.record("native.zoom.end", window: self, event: NSApp.currentEvent)
+    }
   }
 
   static func isRepeatedCloseKey(_ event: NSEvent?) -> Bool {
@@ -289,6 +373,9 @@ final class RaftTitleBar: NSObject {
           } else if name == NSWindow.didExitFullScreenNotification {
             self?.setIntegratedToolbarVisible(true)
           }
+          if RaftTitleBarTrace.enabled && name == NSWindow.didResizeNotification {
+            RaftTitleBarTrace.record("native.didResize", window: window, event: NSApp.currentEvent, stack: true)
+          }
           if name == NSWindow.didUpdateNotification {
             self?.positionButtons()
           } else {
@@ -400,12 +487,41 @@ final class RaftTitleBar: NSObject {
 
   private func recordPointer(_ event: NSEvent) {
     guard let window, event.window === window else { return }
+    if RaftTitleBarTrace.enabled {
+      RaftTitleBarTrace.record("localMonitor.pointer", window: window, event: event,
+        fields: traceGeometry(event))
+    }
     if event.type == .leftMouseDown {
       pointerGesture = PointerGesture(down: event, frame: window.frame,
         start: window.convertPoint(toScreen: event.locationInWindow))
     } else if event.type == .leftMouseUp, pointerGesture?.consumed == false {
       pointerGesture?.end = window.convertPoint(toScreen: event.locationInWindow)
     }
+  }
+
+  /// Geometry only, for a bounded task262 trace in an explicitly opted-in process.
+  fileprivate func traceGeometry(_ event: NSEvent) -> [String: Any] {
+    guard let window, let content = window.contentView else { return ["hasContent": false] }
+    let point = content.convert(event.locationInWindow, from: nil)
+    let fromTop = content.isFlipped
+      ? point.y - content.bounds.minY : content.bounds.maxY - point.y
+    var row: [String: Any] = [
+      "hasContent": true,
+      "sameWindow": event.window === window,
+      "contentPoint": [Double(point.x), Double(point.y)],
+      "fromTop": Double(fromTop),
+      "contentFlipped": content.isFlipped,
+      "contentBounds": [Double(content.bounds.minX), Double(content.bounds.minY),
+        Double(content.bounds.width), Double(content.bounds.height)],
+      "contentLayoutRect": [Double(window.contentLayoutRect.minX), Double(window.contentLayoutRect.minY),
+        Double(window.contentLayoutRect.width), Double(window.contentLayoutRect.height)],
+      "nativeButtonHit": Self.buttons.contains { type in
+        guard let button = window.standardWindowButton(type) else { return false }
+        return button.convert(button.bounds, to: content).contains(point)
+      },
+    ]
+    if let integratedHeight { row["integratedHeight"] = Double(integratedHeight) }
+    return row
   }
 
   /// The integrated Flutter row owns mouse gestures outside native controls.
@@ -488,6 +604,9 @@ final class RaftTitleBar: NSObject {
       }
       result(nil)
     case "startDragging":
+      if RaftTitleBarTrace.enabled {
+        RaftTitleBarTrace.record("channel.startDragging", window: window, event: NSApp.currentEvent)
+      }
       startDragging()
       result(nil)
     case "doubleClick":
@@ -497,6 +616,15 @@ final class RaftTitleBar: NSObject {
       let defaults = UserDefaults.standard
       let action = defaults.string(forKey: "AppleActionOnDoubleClick")
         ?? (defaults.bool(forKey: "AppleMiniaturizeOnDoubleClick") ? "Minimize" : "Maximize")
+      if RaftTitleBarTrace.enabled {
+        RaftTitleBarTrace.record("channel.doubleClick.begin", window: window, event: NSApp.currentEvent,
+          fields: ["action": action], stack: true)
+      }
+      defer {
+        if RaftTitleBarTrace.enabled {
+          RaftTitleBarTrace.record("channel.doubleClick.end", window: window, event: NSApp.currentEvent)
+        }
+      }
       switch action {
       case "Minimize": window?.miniaturize(nil)
       case "None": break
@@ -512,6 +640,14 @@ final class RaftTitleBar: NSObject {
   private var frameBeforeFill: NSRect?
 
   private func fill() {
+    if RaftTitleBarTrace.enabled {
+      RaftTitleBarTrace.record("channel.fill.begin", window: window, event: NSApp.currentEvent, stack: true)
+    }
+    defer {
+      if RaftTitleBarTrace.enabled {
+        RaftTitleBarTrace.record("channel.fill.end", window: window, event: NSApp.currentEvent)
+      }
+    }
     guard let window, let visible = window.screen?.visibleFrame else { return }
     if window.frame == visible, let previous = frameBeforeFill {
       frameBeforeFill = nil
