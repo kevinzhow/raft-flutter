@@ -898,7 +898,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       }
       sessionEvents?.cancel();
       shareSession.bind(null);
-      content.bindWorkspace(null);
+      content.retireAccount();
       oldWorkspace
         ?..removeListener(workspaceChanged)
         ..dispose();
@@ -1909,6 +1909,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   }
 
   void watchSession(RaftClient c) {
+    content.bindAccount(c);
     shareSession.bind(c);
     final principal = c.user!.id;
     sessionEvents?.cancel();
@@ -1964,7 +1965,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         final flushed = workspace?.retireCache() ?? Future<void>.value();
         flushed.then((_) => cache?.clearAccount(c.origin, principal));
         unawaited(purgeAccountCaches(c.origin, principal));
-        content.bindWorkspace(null);
+        content.retireAccount();
         workspace
           ?..removeListener(workspaceChanged)
           ..dispose();
@@ -1989,7 +1990,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     shareSession.bind(null);
     authAttempt++;
     rootRequest++;
-    content.bindWorkspace(null);
+    content.retireAccount();
     final c = client, oldWorkspace = workspace;
     final principal = previousPrincipal ?? c?.user?.id;
     retireShares();

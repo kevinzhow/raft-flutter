@@ -18,6 +18,8 @@ class _Client extends RaftClient {
     selectServer('s1');
   }
   @override
+  Future<dynamic> accountUnreadSummary() => get('/servers/unread-summary');
+  @override
   bool get signedIn => user != null;
   final ingress = StreamController<RaftEvent>.broadcast(sync: true);
   @override
@@ -28,6 +30,13 @@ class _Client extends RaftClient {
     await super.dispose();
   }
 
+  List<RaftRecord> Function()? memberRead;
+  @override
+  Future<List<RaftRecord>> accountServers() async =>
+      memberRead?.call() ??
+      [
+        RaftRecord({'id': 's1'}),
+      ];
   int? inboxTotal;
   FutureOr<dynamic> Function() summaryRead = () => [];
   @override
@@ -41,6 +50,7 @@ class _Client extends RaftClient {
   final client = _Client();
   final w = WorkspaceController(client)
     ..server = RaftRecord({'id': 's1', 'role': 'owner'});
+  client.memberRead = () => w.servers.isEmpty ? [w.server!] : w.servers;
   w.activityUnread;
   addTearDown(w.dispose);
   return (w, client);

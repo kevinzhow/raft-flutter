@@ -164,6 +164,10 @@ class RootCache implements WorkspaceCache {
 }
 
 class RootContent extends NativeContentCoordinator {
+  @override
+  void bindAccount(RaftClient? client) {}
+  @override
+  void retireAccount() => bindWorkspace(null);
   WorkspaceController? bound;
   final bindings = <WorkspaceController?>[];
   @override

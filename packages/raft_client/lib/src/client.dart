@@ -1866,6 +1866,11 @@ class RaftClient {
           .map((e) => RaftRecord(Map<String, dynamic>.from(e)))
           .toList();
 
+  /// Account-wide unread summary survives a selected-server switch while
+  /// retaining the account request's principal and authentication fences.
+  Future<dynamic> accountUnreadSummary() =>
+      _accountRequest('GET', '/servers/unread-summary');
+
   Future<List<RaftChannel>> channels({bool dm = false}) async => (await get(
     dm ? '/channels/dm' : '/channels',
     query: dm ? null : {'archived': 'include'},

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../data/activity_attention.dart';
+import '../data/account_activity_unread.dart';
 import '../data/resource_row_reconcile.dart' show activityScopeId;
 import '../data/source_activity_unread_store.dart';
 import '../data/workspace_controller.dart';
@@ -31,9 +32,17 @@ class NotificationReconciler {
   NotificationReconciler({
     required this.notifications,
     DateTime Function()? clock,
-  }) : _clock = clock ?? DateTime.now;
+    AccountActivityUnread? accountUnread,
+  }) : _clock = clock ?? DateTime.now,
+       _ownsAccountUnread = accountUnread == null,
+       accountUnread = accountUnread ?? AccountActivityUnread() {
+    this.accountUnread.addListener(_changed);
+    this.accountUnread.successfulRefresh.addListener(_accountRefreshed);
+  }
 
   final NativeNotificationService notifications;
+  final AccountActivityUnread accountUnread;
+  final bool _ownsAccountUnread;
   final DateTime Function() _clock;
   WorkspaceController? _workspace;
   SourceActivityUnreadStore? _store;
@@ -56,6 +65,10 @@ class NotificationReconciler {
     if (_closed || identical(next, _workspace)) return;
     _detach();
     _workspace = next;
+    if (_ownsAccountUnread) {
+      accountUnread.bindClient(next?.client, refreshNow: false);
+    }
+    accountUnread.bindWorkspace(next);
     _epoch++;
     _settings = null;
     if (next == null) return;
@@ -92,8 +105,12 @@ class NotificationReconciler {
   /// The notification service changed (initialized, enabled, disabled).
   void notificationsChanged() => _changed();
 
+  void _accountRefreshed() {
+    if (_workspace == null) _changed();
+  }
+
   void _changed() {
-    if (_closed || _workspace == null) return;
+    if (_closed) return;
     _dirty = true;
     _running ??= _drain().whenComplete(() => _running = null);
   }
@@ -112,7 +129,22 @@ class NotificationReconciler {
   @visibleForTesting
   Future<void> reconcile() async {
     final w = _workspace, store = _store, epoch = _epoch;
-    if (w == null || store == null || !notifications.initialized) return;
+    if (!notifications.initialized) return;
+    if (w == null) {
+      final account = accountUnread.notificationAccount,
+          total = accountUnread.total;
+      if (account != null && total != null) {
+        await notifications.maintainAccountUnread(
+          account: account,
+          total: total,
+          members: accountUnread.memberIds ?? const {},
+          residualKey: moreKey,
+          residualPayload: moreNotificationPayload,
+        );
+      }
+      return;
+    }
+    if (store == null) return;
     // Until a window is accepted nothing is known: never cancel on a guess.
     if (!store.hasAcceptedWindow) return;
     final total = store.totalUnreadCount!;
@@ -131,6 +163,7 @@ class NotificationReconciler {
     final read = <String>[];
     final moved = <String>[];
     for (final entry in live.entries) {
+      if (entry.key == moreKey) continue;
       if (total == 0) {
         read.add(entry.key);
         continue;
@@ -195,6 +228,9 @@ class NotificationReconciler {
       }
     }
 
+    if (stale()) return;
+    final appTotal = accountUnread.total;
+    if (appTotal == null) return;
     // The window is bounded (first page), the total is not: what the
     // conversation notifications do not account for is one more quiet
     // notification, so the launcher's sum is the Activity total.
@@ -204,7 +240,7 @@ class NotificationReconciler {
       if (entry.key == moreKey) continue;
       accounted += activityRowUnread(rows, entry.key) ?? entry.value;
     }
-    final residual = total - accounted > 0 ? total - accounted : 0;
+    final residual = appTotal - accounted > 0 ? appTotal - accounted : 0;
     final had = now[moreKey];
     if (residual == 0) {
       if (had != null) await notifications.cancelConversations([moreKey]);
@@ -248,9 +284,7 @@ class NotificationReconciler {
       value = await w.sharedQuery(
         '/servers/${w.client.serverId}/notification-settings',
       );
-      if (!_closed &&
-          identical(_workspace, w) &&
-          scope == currentScope()) {
+      if (!_closed && identical(_workspace, w) && scope == currentScope()) {
         _settings = (at: _clock(), value: value, scope: scope);
       }
     }
@@ -262,6 +296,9 @@ class NotificationReconciler {
   void dispose() {
     if (_closed) return;
     _closed = true;
+    accountUnread.removeListener(_changed);
+    accountUnread.successfulRefresh.removeListener(_accountRefreshed);
+    if (_ownsAccountUnread) accountUnread.dispose();
     _epoch++;
     _detach();
   }

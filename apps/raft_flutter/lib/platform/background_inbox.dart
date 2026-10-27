@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'content_target.dart';
+import '../data/account_activity_unread.dart';
 
 const backgroundInboxTask = 'app.raft.raft_flutter.inbox_refresh';
 const backgroundScopeKey = 'raft.background.inbox.scope';
@@ -219,9 +220,8 @@ class BackgroundInboxPoller {
   authorize;
   final bool Function(ContentTarget target)? suppress;
 
-  /// The server's Activity unread total from the page this wake read (null
-  /// unless that page is the whole unread Activity: mentions-only wakes read a
-  /// narrower page). A delivery sets the iOS icon badge to it.
+  /// The account's membership sum. A missing summary leaves the OS badge
+  /// unchanged; a selected-server subtotal cannot replace it.
   int? totalUnread;
   Future<bool> run() async {
     final scope = await store.scope();
@@ -262,9 +262,13 @@ class BackgroundInboxPoller {
     );
     if (!await current() || page is! Map || page['items'] is! List) return true;
     final total = page['totalUnreadCount'];
-    totalUnread = mode == 'all' && total is num && total >= 0
-        ? total.toInt()
-        : null;
+    totalUnread = await backgroundActivityBadge(
+      client,
+      selectedTotal: mode == 'all' && total is num && total >= 0
+          ? total.toInt()
+          : null,
+    );
+    if (!await current()) return true;
     var count = 0;
     for (final row in (page['items'] as List).whereType<Map>()) {
       final alert = BackgroundInboxAlert.fromRow(

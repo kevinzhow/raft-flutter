@@ -15,13 +15,13 @@ import 'resource_row_reconcile.dart' show activityScopeId;
 /// `/servers/unread-summary` `activityUnreadCount`. An unknown count is 0: a
 /// broader per-conversation count never stands in for it.
 int activityBadgeTotal({
-  required String currentServerId,
+  required String? currentServerId,
   required int? currentTotal,
   required Iterable<String> memberServerIds,
   required int? Function(String serverId) summaryCount,
 }) {
   var total = 0;
-  for (final id in {...memberServerIds, currentServerId}) {
+  for (final id in {...memberServerIds, ?currentServerId}) {
     total += id == currentServerId && currentTotal != null
         ? currentTotal
         : (summaryCount(id) ?? 0);
@@ -39,4 +39,46 @@ int? activityRowUnread(Iterable<Map> rows, String scopeId) {
     return count is num && count.isFinite && count > 0 ? count.toInt() : 0;
   }
   return null;
+}
+
+/// Accept only the Activity field of a complete summary response. Broader
+/// channel unread counts never stand in for an unknown Activity count.
+Map<String, int?>? activitySummaryCounts(dynamic value) {
+  if (value is! List) return null;
+  return {
+    for (final row in value.whereType<Map>())
+      if (row['serverId'] is String && (row['serverId'] as String).isNotEmpty)
+        row['serverId'] as String: switch (row['activityUnreadCount']) {
+          num count
+              when count.isFinite &&
+                  count >= 0 &&
+                  count % 1 == 0 &&
+                  count <= 9007199254740991 =>
+            count.toInt(),
+          _ => null,
+        },
+  };
+}
+
+/// OS badges must not turn an unavailable member count into a smaller total.
+int? knownActivityBadgeTotal({
+  required String? currentServerId,
+  required int? currentTotal,
+  required Iterable<String> memberServerIds,
+  required Map<String, int?> summary,
+}) {
+  final members = memberServerIds.toSet();
+  if (members.any(
+    (id) =>
+        (id == currentServerId ? currentTotal ?? summary[id] : summary[id]) ==
+        null,
+  )) {
+    return null;
+  }
+  return activityBadgeTotal(
+    currentServerId: members.contains(currentServerId) ? currentServerId : null,
+    currentTotal: currentTotal,
+    memberServerIds: members,
+    summaryCount: (id) => summary[id],
+  );
 }

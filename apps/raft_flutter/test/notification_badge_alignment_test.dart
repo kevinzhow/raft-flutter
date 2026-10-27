@@ -119,6 +119,8 @@ class FixtureClient extends RaftClient {
     selectServer('s1');
   }
   @override
+  Future<dynamic> accountUnreadSummary() => get('/servers/unread-summary');
+  @override
   bool get signedIn => user != null;
   final ingress = StreamController<RaftEvent>.broadcast(sync: true);
   @override
@@ -129,6 +131,13 @@ class FixtureClient extends RaftClient {
     await super.dispose();
   }
 
+  List<RaftRecord> Function()? memberRead;
+  @override
+  Future<List<RaftRecord>> accountServers() async =>
+      memberRead?.call() ??
+      [
+        RaftRecord({'id': 's1'}),
+      ];
   Object settings = {'serverPushMode': 'all', 'serverPushMuted': false};
   final requests = <String>[];
   List<Object> summary = [];
@@ -230,6 +239,7 @@ Future<BadgeRig> rig({TargetPlatform platform = TargetPlatform.android}) async {
   final client = FixtureClient();
   final w = WorkspaceController(client)
     ..server = RaftRecord({'id': 's1', 'role': 'owner'});
+  client.memberRead = () => w.servers.isEmpty ? [w.server!] : w.servers;
   final plugin = FixturePlugin();
   final service = NativeNotificationService(plugin: plugin, platform: platform);
   service.deliveryAllowed = () => !w.foreground;
@@ -250,6 +260,40 @@ Future<BadgeRig> rig({TargetPlatform platform = TargetPlatform.android}) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('Android allowed residual uses the account sum and follows other-server reads', () async {
+    final r = await rig();
+    r.w.servers = [
+      r.w.server!,
+      RaftRecord({'id': 's2', 'role': 'member'}),
+    ];
+    r.client.summary = [
+      {'serverId': 's1', 'activityUnreadCount': 2},
+      {'serverId': 's2', 'activityUnreadCount': 4},
+    ];
+    r.w.notifyListeners();
+    r.window([row('c1', 2)]);
+    await r.settle();
+    expect(r.plugin.launcherBadge, 6);
+    r.client.summary = [
+      {'serverId': 's1', 'activityUnreadCount': 2},
+      {'serverId': 's2', 'activityUnreadCount': 0},
+    ];
+    await r.reconciler.accountUnread.refresh();
+    await r.settle();
+    expect(r.plugin.launcherBadge, 2);
+    r.client.summary = [
+      {'serverId': 's1', 'activityUnreadCount': 2},
+      {'serverId': 's2', 'activityUnreadCount': 4},
+    ];
+    await r.reconciler.accountUnread.refresh();
+    await r.settle();
+    expect(r.plugin.launcherBadge, 6);
+    r.w.servers.removeWhere((s) => s.id == 's2');
+    r.w.notifyListeners();
+    await r.settle();
+    expect(r.plugin.launcherBadge, 2);
+  });
 
   group('the counting rule', () {
     test('sums member servers; the open server uses its live window', () {
@@ -453,20 +497,17 @@ void main() {
   });
 
   group('Android backlog: badge equals the Activity total', () {
-    test(
-      'unread conversations without a notification get a quiet one when backgrounded',
-      () async {
-        final r = await rig();
-        r.window([row('c1', 4), row('c2', 0), row('d1', 2, kind: 'dm')]);
-        await r.settle();
-        expect(r.service.liveUnread, {'c1': 4, 'd1': 2});
-        expect(r.plugin.launcherBadge, r.w.activityUnread.totalUnreadCount);
-        for (final n in r.plugin.children) {
-          expect(n.d!.android!.channelId, 'raft_unread_v1');
-          expect(n.d!.android!.importance, Importance.low, reason: 'no alert');
-        }
-      },
-    );
+    test('unread conversations without a notification get a quiet one when backgrounded', () async {
+      final r = await rig();
+      r.window([row('c1', 4), row('c2', 0), row('d1', 2, kind: 'dm')]);
+      await r.settle();
+      expect(r.service.liveUnread, {'c1': 4, 'd1': 2});
+      expect(r.plugin.launcherBadge, r.w.activityUnread.totalUnreadCount);
+      for (final n in r.plugin.children) {
+        expect(n.d!.android!.channelId, 'raft_unread_v1');
+        expect(n.d!.android!.importance, Importance.low, reason: 'no alert');
+      }
+    });
 
     test('nothing is posted while the app is in the foreground', () async {
       final r = await rig();
@@ -557,7 +598,10 @@ void main() {
     expect(store.hasAcceptedWindow, isFalse);
     reconciler.dispose();
     expect(w.activityUnreadIfBound, same(store));
-    store.acceptWindow({'items': [], 'totalUnreadCount': 3}, scope: store.scope);
+    store.acceptWindow({
+      'items': [],
+      'totalUnreadCount': 3,
+    }, scope: store.scope);
     expect(store.totalUnreadCount, 3);
     w.dispose();
     expect(w.activityUnreadIfBound, isNull);
@@ -584,12 +628,18 @@ void main() {
     try {
       await tester.pump(const Duration(seconds: 3));
       expect(w.activityUnreadIfBound, isNull);
-      expect(client.requests, isEmpty);
+      expect(
+        client.requests.every((path) => path == '/servers/unread-summary'),
+        isTrue,
+      );
       final store = w.activityUnread;
       w.notifyListeners();
       await tester.pump(const Duration(seconds: 3));
       expect(w.activityUnreadIfBound, same(store));
-      expect(client.requests.where((path) => path == '/channels/inbox'), isEmpty);
+      expect(
+        client.requests.where((path) => path == '/channels/inbox'),
+        isEmpty,
+      );
       expect(store.hasAcceptedWindow, isFalse);
     } finally {
       desktop.dispose();

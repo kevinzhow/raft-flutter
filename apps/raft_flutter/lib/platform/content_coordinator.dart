@@ -57,7 +57,10 @@ class NativeContentCoordinator with WidgetsBindingObserver {
 
   /// Keeps the shade equal to the Activity unread state (cancel on read,
   /// counts, Android backlog); see [NotificationReconciler].
-  late final reconciler = NotificationReconciler(notifications: notifications);
+  late final reconciler = NotificationReconciler(
+    notifications: notifications,
+    accountUnread: dockUnread.counts,
+  );
   final Stream<Uri>? links;
   void Function()? onIncomingShare;
   final background = BackgroundNotificationScheduler();
@@ -181,6 +184,20 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     }
   }
 
+  void bindAccount(RaftClient? client) {
+    final previous = dockUnread.counts.notificationAccount;
+    dockUnread.bindAccount(client);
+    if (previous != null && previous != dockUnread.counts.notificationAccount) {
+      unawaited(notifications.bindAuthenticatedWorkspace(null));
+    }
+  }
+
+  void retireAccount() {
+    bindWorkspace(null);
+    bindAccount(null);
+    unawaited(notifications.bindAuthenticatedWorkspace(null));
+  }
+
   void bindWorkspace(WorkspaceController? workspace) {
     _workspaceBindingResolved = true;
     if (identical(workspace, _workspace)) {
@@ -225,10 +242,15 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     _delivered.clear();
     _inFlight.clear();
     unawaited(background.bind(null, false).catchError((Object _) {}));
-    unawaited(notifications.bindAuthenticatedWorkspace(scope));
+    unawaited(
+      scope == null
+          ? notifications.detachWorkspace(dockUnread.counts.notificationAccount)
+          : notifications.bindAuthenticatedWorkspace(scope),
+    );
   }
 
   void _notificationSettingsChanged() {
+    unawaited(dockUnread.resync());
     reconciler.notificationsChanged();
     if (!_workspaceBindingResolved || _closed) return;
     unawaited(
@@ -717,7 +739,12 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   }
 
   void _setAppForeground(bool active) {
+    final resumed = active && _appForeground != true;
     _appForeground = active;
+    if (resumed) {
+      unawaited(dockUnread.resync());
+      unawaited(dockUnread.refresh());
+    }
     if (!active) _workspace?.setForeground(false);
     onForegroundChanged?.call();
     desktop?.sync();

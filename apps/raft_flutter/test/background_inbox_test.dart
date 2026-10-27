@@ -15,23 +15,37 @@ class _Client extends RaftClient {
     selectServer('s');
   }
   @override
+  Future<dynamic> accountUnreadSummary() async => summaryRead != null
+      ? await summaryRead!()
+      : summary ?? await get('/servers/unread-summary');
+  @override
   bool get signedIn => user != null;
   bool muted = false;
   String mode = 'all';
   Completer<dynamic>? page;
   List<Map<String, dynamic>> rows = [];
+  List<RaftRecord>? memberships, accountMemberships;
+  Object? summary;
+  Future<dynamic> Function()? summaryRead;
+  int? inboxTotal;
   final reads = <String>[];
   @override
-  Future<List<RaftRecord>> servers() async => [
-    RaftRecord({'id': 's', 'serverPushMuted': muted}),
-  ];
+  Future<List<RaftRecord>> accountServers() async =>
+      accountMemberships ?? await servers();
+  @override
+  Future<List<RaftRecord>> servers() async =>
+      memberships ??
+      [
+        RaftRecord({'id': 's', 'serverPushMuted': muted}),
+      ];
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
     reads.add(path);
     if (path.endsWith('/notification-settings')) {
       return {'serverPushMode': mode};
     }
-    return page?.future ?? {'items': rows};
+    return page?.future ??
+        {'items': rows, if (inboxTotal != null) 'totalUnreadCount': inboxTotal};
   }
 }
 
@@ -80,6 +94,124 @@ void main() {
     );
   });
   tearDown(() => client.dispose());
+  test(
+    'background badge sums memberships and keeps unknown on summary failure',
+    () async {
+      client.memberships = [
+        RaftRecord({'id': 's'}),
+        RaftRecord({'id': 'other'}),
+      ];
+      client.rows = [row('new', unread: 2)];
+      client.inboxTotal = 2;
+      client.summary = [
+        {'serverId': 's', 'activityUnreadCount': 8},
+        {'serverId': 'other', 'activityUnreadCount': 4},
+      ];
+      await poller.run();
+      expect(poller.totalUnread, 6);
+      client.summary = [
+        {'serverId': 's', 'activityUnreadCount': 8},
+        {'serverId': 'other', 'activityUnreadCount': 0},
+      ];
+      await poller.run();
+      expect(poller.totalUnread, 2);
+      client.summaryRead = () async => throw StateError('unavailable');
+      await poller.run();
+      expect(
+        poller.totalUnread,
+        isNull,
+        reason: 'The delivery leaves a known OS badge unchanged, never replacing it with 2.',
+      );
+    },
+  );
+
+  test('background badge does not replace a global badge with a partial member count', () async {
+    client.memberships = [
+      RaftRecord({'id': 's'}),
+      RaftRecord({'id': 'other'}),
+    ];
+    client.rows = [row('new', unread: 2)];
+    client.inboxTotal = 2;
+    for (final summary in [
+      [
+        {'serverId': 's', 'activityUnreadCount': 2},
+      ],
+      [
+        {'serverId': 's', 'activityUnreadCount': 2},
+        {'serverId': 'other'},
+      ],
+      [
+        {'serverId': 's', 'activityUnreadCount': 2},
+        {'serverId': 'other', 'activityUnreadCount': '4'},
+      ],
+      <Object>[],
+    ]) {
+      client.summary = summary;
+      await poller.run();
+      expect(poller.totalUnread, isNull);
+    }
+    client.memberships = [
+      RaftRecord({'id': 's'}),
+    ];
+    client.summary = [
+      {'serverId': 's', 'activityUnreadCount': 2},
+    ];
+    await poller.run();
+    expect(
+      poller.totalUnread,
+      2,
+      reason: 'Removed membership is not an unknown count.',
+    );
+  });
+
+  test('headless badge confirms current membership after the summary, not the pre-inbox snapshot', () async {
+    client.rows = [row('new', unread: 2)];
+    client.inboxTotal = 2;
+    client.memberships = [
+      RaftRecord({'id': 's'}),
+      RaftRecord({'id': 'other'}),
+    ];
+    client.accountMemberships = [
+      RaftRecord({'id': 's'}),
+    ];
+    client.summary = [
+      {'serverId': 's', 'activityUnreadCount': 2},
+      {'serverId': 'other', 'activityUnreadCount': 88},
+    ];
+    await poller.run();
+    expect(poller.totalUnread, 2);
+    client.memberships = [
+      RaftRecord({'id': 's'}),
+    ];
+    client.accountMemberships = [
+      RaftRecord({'id': 's'}),
+      RaftRecord({'id': 'other'}),
+    ];
+    client.summary = [
+      {'serverId': 's', 'activityUnreadCount': 2},
+      {'serverId': 'other', 'activityUnreadCount': 4},
+    ];
+    await poller.run();
+    expect(poller.totalUnread, 6);
+  });
+
+  test(
+    'a late background global summary cannot deliver after account retirement',
+    () async {
+      client.rows = [row('new')];
+      final delayed = Completer<dynamic>();
+      client.summaryRead = () => delayed.future;
+      final running = poller.run();
+      await Future<void>.delayed(Duration.zero);
+      client.user = null;
+      delayed.complete([
+        {'serverId': 's', 'activityUnreadCount': 88},
+      ]);
+      await running;
+      expect(sent, isEmpty);
+    },
+  );
+
   test('new unread activity delivers once across subsequent headless instances; old backlog and read rows do not', () async {
     client.rows = [
       row('old', at: '2026-10-07T00:00:00Z'),
@@ -92,7 +224,10 @@ void main() {
     expect(await BackgroundInboxStore().seen(scope, 'new'), true);
     expect(
       client.reads.every(
-        (p) => p == '/channels/inbox' || p.endsWith('/notification-settings'),
+        (p) =>
+            p == '/channels/inbox' ||
+            p == '/servers/unread-summary' ||
+            p.endsWith('/notification-settings'),
       ),
       true,
     );

@@ -78,7 +78,7 @@ class NativeNotificationService extends ChangeNotifier {
   bool activationAsked = false, activationDismissed = false;
   bool _activationHistoryReady = false;
   Future<void> _tail = Future.value();
-  String? _scope;
+  String? _scope, _detachedAccount;
   int _epoch = 0, _id = 0;
 
   /// The conversations that have a live system notification, by Activity
@@ -306,6 +306,7 @@ class NativeNotificationService extends ChangeNotifier {
   }
 
   Future<void> bind(String? scope) async {
+    _detachedAccount = null;
     if (_scope == scope) return;
     _scope = scope;
     _activationHistoryReady = false;
@@ -342,6 +343,90 @@ class NativeNotificationService extends ChangeNotifier {
     }
     _updateEnabled();
     notifyListeners();
+  }
+
+  bool _belongsToAccount(String account) {
+    final fields = _scope?.split('\n');
+    return fields?.length == 3 && fields!.take(2).join('\n') == account;
+  }
+
+  /// Hiding navigation retains only already-authorized Android notices. The
+  /// old delivery scope is a notice receipt, not a retained workspace owner.
+  Future<void> detachWorkspace(String? account) async {
+    if (_platform != TargetPlatform.android ||
+        account == null ||
+        !_belongsToAccount(account)) {
+      await bindAuthenticatedWorkspace(null);
+      return;
+    }
+    _detachedAccount = account;
+  }
+
+  /// Existing quiet residuals can follow a proven account total on the chooser.
+  /// Never invent a notice or discard a still-unread real conversation card.
+  Future<void> maintainAccountUnread({
+    required String account,
+    required int total,
+    required Set<String> members,
+    required String residualKey,
+    required String residualPayload,
+  }) async {
+    final epoch = _epoch, scope = _scope;
+    bool current() =>
+        epoch == _epoch &&
+        scope == _scope &&
+        _detachedAccount == account &&
+        _belongsToAccount(account);
+    _tail = _tail
+        .then((_) async {
+          if (!current()) return;
+          final server = _scope!.split('\n').last;
+          if (total == 0 || !members.contains(server)) {
+            await _cancelAll();
+            if (!current()) return;
+            return;
+          }
+          final residual = _live[residualKey];
+          if (residual == null) return;
+          final accounted = _live.entries
+              .where((entry) => entry.key != residualKey)
+              .fold<int>(0, (sum, entry) => sum + entry.value.unread);
+          final wanted = total > accounted ? total - accounted : 0;
+          if (wanted == residual.unread) return;
+          if (wanted == 0) {
+            await _cancel(residual.id);
+            if (!current()) return;
+            _live.remove(residualKey);
+          } else {
+            await refreshPermission();
+            if (!current() || !enabled || !permitted || !available) return;
+            final body = localize('{count} unread')
+                .replaceAll('{count}', '$wanted');
+            await _show(
+              id: residual.id,
+              title: residual.title,
+              body: body,
+              payload: residualPayload,
+              unread: wanted,
+              quiet: true,
+              update: true,
+            );
+            if (!current()) return;
+            _live[residualKey] = LiveNotice(
+              id: residual.id,
+              unread: wanted,
+              quiet: true,
+              title: residual.title,
+              body: body,
+            );
+          }
+          if (!current()) return;
+          await _syncSummary();
+        })
+        .catchError((Object _) {
+          // Optional maintenance retries on a later accepted account refresh.
+        });
+    await _tail;
   }
 
   /// Restores the device prompt history without requesting OS permission.
@@ -546,6 +631,7 @@ class NativeNotificationService extends ChangeNotifier {
       await refreshPermission();
       if (epoch != _epoch ||
           !enabled ||
+          _detachedAccount != null ||
           !permitted ||
           !available ||
           (!quiet && deliveryAllowed?.call() == false)) {
