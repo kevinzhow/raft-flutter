@@ -1,6 +1,9 @@
 // No-wait UI guard for the dialogs and pickers: with the data already local
 // the network goes dead and each surface must still be on screen (with its
-// content, not just its frame) within a few frames.
+// content, not just its frame) within a few frames. The runtime editor is the
+// exception: each opening must revalidate its protocol before showing fields.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -153,18 +156,18 @@ void main() {
     api.hangAll = false;
   });
 
-  testWidgets('the agent runtime editor repaints the last options and '
-      'models on a revisit', (t) async {
+  testWidgets('the agent runtime editor revalidates a revisit before '
+      'showing cached models', (t) async {
     final (w, api) = await mountWorkspace(t, desktop);
     // The test holds requests open on a fake clock; a revisit must start its
     // own reads instead of joining the held ones.
     w.client.singleFlightWindow = Duration.zero;
-    api.routes['GET /agents/a1/runtime-options'] = (_) => {
+    const options = {
       'options': [
         {'runtimeId': 'claude', 'canSelectInThisContext': true},
       ],
     };
-    api.routes['GET /servers/s1/machines/m1/runtime-models/claude'] = (_) => {
+    const models = {
       'kind': 'live',
       'value': {
         'models': [
@@ -172,6 +175,9 @@ void main() {
         ],
       },
     };
+    api.routes['GET /agents/a1/runtime-options'] = (_) => options;
+    api.routes['GET /servers/s1/machines/m1/runtime-models/claude'] = (_) =>
+        models;
     const agent = {
       'id': 'a1',
       'name': 'cindy',
@@ -200,12 +206,45 @@ void main() {
     expect(live, findsWidgets);
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await frames(t, 10);
-    api.hangAll = true;
+    final admissionRead = Completer<Map<String, dynamic>>();
+    final modelRead = Completer<Map<String, dynamic>>();
+    addTearDown(() {
+      if (!admissionRead.isCompleted) admissionRead.complete(options);
+      if (!modelRead.isCompleted) modelRead.complete(models);
+    });
+    api.routes['GET /agents/a1/runtime-options'] = (_) => admissionRead.future;
+    api.routes['GET /servers/s1/machines/m1/runtime-models/claude'] = (_) =>
+        modelRead.future;
+    void expectWaiting() {
+      expect(find.byType(AgentRuntimeEditor), findsOneWidget);
+      expect(find.text('Loading runtime configuration…'), findsOneWidget);
+      expect(live, findsNothing, reason: 'cached fields must not flash');
+      expect(
+        find.byKey(const ValueKey('runtime-editor-runtime')),
+        findsNothing,
+      );
+      expect(find.byKey(const ValueKey('runtime-editor-model')), findsNothing);
+      final save = find.descendant(
+        of: find.byKey(const ValueKey('runtime-editor-save')),
+        matching: find.byType(RaftButton),
+      );
+      expect(t.widget<RaftButton>(save).onPressed, isNull);
+    }
+
     open();
     await frames(t, 4);
-    expect(find.byType(AgentRuntimeEditor), findsOneWidget);
-    expect(live, findsWidgets, reason: 'the revisit paints the last models');
-    api.hangAll = false;
+    expectWaiting();
+    admissionRead.complete(options);
+    await frames(t, 4);
+    expectWaiting();
+    modelRead.complete(models);
+    await frames(t, 20);
+    expect(find.text('Loading runtime configuration…'), findsNothing);
+    expect(
+      live,
+      findsWidgets,
+      reason: 'the completed opening shows its models',
+    );
   });
 
   testWidgets('feedback shows the previous inbox page on a revisit', (t) async {
