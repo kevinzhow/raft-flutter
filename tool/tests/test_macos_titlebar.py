@@ -28,9 +28,19 @@ class MacOSTitlebarTests(unittest.TestCase):
             common = ['-F', str(framework), '-framework', 'FlutterMacOS', '-framework', 'Cocoa',
                       '-module-cache-path', str(directory / 'module-cache')]
             registry = directory / 'Registry.swift'
-            registry.write_text('import FlutterMacOS\nfunc RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {}\n')
+            registry.write_text(
+                'import FlutterMacOS\nimport desktop_drop\n'
+                'func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {\n'
+                '  DesktopDropPlugin.register(with: registry.registrar(forPlugin: "DesktopDropPlugin"))\n'
+                '}\n')
+            plugin_link = ['-I', str(directory), '-L', str(directory), '-ldesktop_drop']
             binary = directory / 'titlebar-tests'
             commands = [
+                ['xcrun', 'swiftc', '-parse-as-library', '-emit-library', '-emit-module',
+                 '-module-name', 'desktop_drop',
+                 str(ROOT / 'packages/desktop_drop/macos/desktop_drop/Sources/desktop_drop/DesktopDropPlugin.swift'),
+                 '-emit-module-path', str(directory / 'desktop_drop.swiftmodule'),
+                 *common, '-o', str(directory / 'libdesktop_drop.dylib')],
                 ['xcrun', 'swiftc', '-parse-as-library', '-emit-library', '-emit-module',
                  '-enable-testing', '-module-name', 'RaftMacTitleBar',
                  str(ROOT / 'apps/raft_flutter/macos/Runner/AppDelegate.swift'),
@@ -38,9 +48,9 @@ class MacOSTitlebarTests(unittest.TestCase):
                  str(ROOT / 'apps/raft_flutter/macos/Runner/AttachmentFilesChannel.swift'),
                  str(ROOT / 'apps/raft_flutter/macos/Runner/AttachmentFileWriter.swift'), str(registry),
                  '-emit-module-path', str(directory / 'RaftMacTitleBar.swiftmodule'),
-                 *common, '-o', str(directory / 'libRaftMacTitleBar.dylib')],
+                 *plugin_link, *common, '-o', str(directory / 'libRaftMacTitleBar.dylib')],
                 ['xcrun', 'swiftc', '-I', str(directory), '-L', str(directory), '-lRaftMacTitleBar',
-                 *common, str(ROOT / 'tool/tests/macos_titlebar.swift'), '-o', str(binary),
+                 *plugin_link, *common, str(ROOT / 'tool/tests/macos_titlebar.swift'), '-o', str(binary),
                  '-Xlinker', '-rpath', '-Xlinker', str(directory),
                  '-Xlinker', '-rpath', '-Xlinker', str(framework)],
                 [str(binary)],
@@ -53,7 +63,7 @@ class MacOSTitlebarTests(unittest.TestCase):
                         log.write(result.stdout + result.stderr)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 if command == [str(binary)]:
-                    self.assertIn('10 cases, 0 failed assertions', result.stdout)
+                    self.assertIn('11 cases, 0 failed assertions', result.stdout)
 
 
 if __name__ == '__main__':

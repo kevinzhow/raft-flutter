@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import desktop_drop
 @testable import RaftMacTitleBar
 
 // Only the channel transport is recorded. The production handler runs against
@@ -89,6 +90,7 @@ private func exerciseFlutterHeaderInput() {
   let initial = input.contentViewController as? FlutterViewController
   let recorder = RecordingFlutterViewController()
   input.contentViewController = recorder
+  DesktopDropPlugin.register(with: recorder.registrar(forPlugin: "DesktopDropPlugin"))
   defer {
     input.orderOut(nil)
     input.contentViewController = nil
@@ -124,18 +126,79 @@ private func exerciseFlutterHeaderInput() {
     "active:", NSApp.isActive, "key:", input.isKeyWindow)
   let baseline = input.frame
 
-  // First prove ordinary body dispatch reaches this real controller through
-  // AppKit. A missing all-events fixture must not masquerade as a header RED.
+  let content: NSView = recorder.view
+  let dropViews = content.subviews.filter { $0.registeredDraggedTypes.contains(.fileURL) }
+  guard dropViews.count == 1, let overlay = dropViews.first else {
+    check(false, "the real desktop_drop registration must install exactly one file-drop overlay")
+    return
+  }
+  check(NSStringFromClass(type(of: overlay)) == "desktop_drop.DropTarget",
+    "the fixture must load the actual plugin DropTarget, not a substitute NSView")
+  let originalChildren = content.subviews.map { ObjectIdentifier($0) }
+  let registeredTypes = Set(overlay.registeredDraggedTypes)
+  var expectedTypes = Set(NSFilePromiseReceiver.readableDraggedTypes.map { NSPasteboard.PasteboardType($0) })
+  expectedTypes.insert(.fileURL)
+  expectedTypes.insert(NSPasteboard.PasteboardType("NSFilenamesPboardType"))
+  check(registeredTypes.isSuperset(of: expectedTypes),
+    "the overlay must retain file URL, legacy filename and file-promise registrations")
+  check(overlay.superview === content && overlay.frame == content.bounds
+    && overlay.autoresizingMask.contains(.width) && overlay.autoresizingMask.contains(.height),
+    "the drop overlay must remain full-size and resize with the Flutter wrapper")
+  let overlayPoint = content.superview?.convert(
+    pointFromTop(renderView, x: 140, top: 24), from: nil)
+    ?? content.convert(pointFromTop(renderView, x: 140, top: 24), from: nil)
+  check(content.hitTest(overlayPoint) === overlay,
+    "ordinary AppKit hit testing must still select the registered drop overlay")
+  check(DesktopDropPlugin.mouseEventTarget(in: content, at: overlayPoint) === renderView,
+    "ordinary mouse routing must resolve through the overlay to the actual Flutter render view")
+  do {
+    let buttonPoint = pointFromTop(renderView, x: 260, top: 24)
+    let center = content.convert(buttonPoint, from: nil)
+    let button = NSButton(frame: NSRect(x: center.x - 32, y: center.y - 12, width: 64, height: 24))
+    button.title = "Native"
+    content.addSubview(button, positioned: .below, relativeTo: overlay)
+    defer { button.removeFromSuperview() }
+    let childrenWithButton = content.subviews.map { ObjectIdentifier($0) }
+    let hitPoint = content.superview?.convert(buttonPoint, from: nil)
+      ?? content.convert(buttonPoint, from: nil)
+    check(content.hitTest(hitPoint) === overlay,
+      "the lower native button must remain covered by the ordinary drop-overlay hit")
+    check(DesktopDropPlugin.mouseEventTarget(in: content, at: hitPoint) === button,
+      "overlay resolution must preserve the lower NSButton's native ownership instead of choosing Flutter")
+    // Resolving a target does not prove a covered native control receives its
+    // action through AppKit. This contract checks classification and structure.
+    check(content.subviews.map { ObjectIdentifier($0) } == childrenWithButton,
+      "resolving a lower native target must not reorder or remove views")
+  }
+  check(content.subviews.map { ObjectIdentifier($0) } == originalChildren
+    && overlay.superview === content && Set(overlay.registeredDraggedTypes) == registeredTypes,
+    "mouse target resolution must preserve the drop destination and original view hierarchy")
+  print("Native drop overlay:", NSStringFromClass(type(of: overlay)),
+    "resolved render:", NSStringFromClass(type(of: renderView)),
+    "registered types:", registeredTypes.count, "lower NSButton ownership checked")
+
+  // This fixture stays inactive/non-key. The real DropTarget declines first
+  // mouse, so ordinary body input must retain AppKit's negative behavior rather
+  // than being force-forwarded through the special header path.
+  guard !NSApp.isActive && !input.isKeyWindow else {
+    check(false, "background body fixture must be inactive/non-key; active \(NSApp.isActive), key \(input.isKeyWindow)")
+    return
+  }
   let body = pointFromTop(renderView, x: 450, top: 240)
   let bodyEvents = inputSequence(input, [(.leftMouseDown, body, 1),
     (.leftMouseUp, body, 1), (.leftMouseDown, body, 2), (.leftMouseUp, body, 2)], offset: 0)
   // Route through NSApplication so the production sendEvent runs with AppKit's
   // currentEvent context. These synthesized packets test routing only; this
   // background fixture does not reproduce the active app's native zoom.
+  check(!overlay.acceptsFirstMouse(for: bodyEvents[0]),
+    "the actual drop overlay must decline first mouse in this background body fixture")
   for event in bodyEvents { NSApp.sendEvent(event) }
-  checkSameEvents(recorder.received, bodyEvents, "body control")
-  check(input.frame == baseline, "ordinary body double-click must not resize the native window")
-  describeInput("body control", recorder, expected: bodyEvents, before: baseline, after: input.frame)
+  check(recorder.received.isEmpty,
+    "inactive body input must keep AppKit dispatch and must not be force-forwarded to Flutter")
+  check(input.frame == baseline, "inactive body input must not resize the native window")
+  print("Native inactive body negative: sent", bodyEvents.count, "mouse events; active app body input is not exercised")
+  describeInput("inactive body AppKit negative", recorder,
+    expected: [], before: baseline, after: input.frame)
 
   input.setFrame(baseline, display: false)
   recorder.received.removeAll()
@@ -315,6 +378,6 @@ otherWindow.orderOut(nil)
 otherWindow.close()
 window.close()
 for failure in failures { print("FAIL: \(failure)") }
-print("Native integrated titlebar: 10 cases, \(failures.count) failed assertions")
+print("Native integrated titlebar: 11 cases, \(failures.count) failed assertions")
 withExtendedLifetime(titlebar) {}
 exit(failures.isEmpty ? 0 : 1)
