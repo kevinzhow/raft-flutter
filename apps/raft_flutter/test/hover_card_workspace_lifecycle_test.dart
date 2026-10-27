@@ -129,6 +129,63 @@ void main() {
     }
   });
   testWidgets(
+    'actual root route uses its scope observer through push and pop',
+    (t) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      final f = fixture();
+      TestGesture? mouse;
+      try {
+        await f.mount(t, 'light', 1200);
+        await t.tap(find.byKey(const ValueKey('global-server-a')));
+        await f.flush(t);
+        final router = f.router(t);
+        final navigator = find.byKey(router.navigatorKey);
+        final controller = RaftHoverDismissScope.maybeOf(t.element(navigator))!;
+        final observers = t.widget<Navigator>(navigator).observers;
+        expect(observers.whereType<RaftHoverDismissController>(), [controller]);
+        expect(observers, containsAll(router.observers));
+        expect(observers.toSet().length, observers.length);
+        expect(
+          find.ancestor(of: navigator, matching: find.byType(DesktopTitleBar)),
+          findsOneWidget,
+        );
+        expect(
+          RaftHoverDismissScope.maybeOf(
+            t.element(find.byType(DesktopTitleBar)),
+          ),
+          same(controller),
+        );
+        mouse = await hoverAvatar(t);
+        router.navigatorKey.currentState!.push<void>(
+          MaterialPageRoute(
+            builder: (_) =>
+                const Scaffold(body: Center(child: Text('Root route detail'))),
+          ),
+        );
+        await f.flush(t);
+        expect(find.text('Root route detail'), findsOneWidget);
+        expect(find.byType(ProfilePreviewContent), findsNothing);
+        router.navigatorKey.currentState!.pop();
+        await f.flush(t);
+        await t.pump(const Duration(seconds: 1));
+        expect(avatar, findsOneWidget);
+        expect(find.byType(ProfilePreviewContent), findsNothing);
+        expect(
+          RaftHoverDismissScope.maybeOf(t.element(navigator)),
+          same(controller),
+        );
+        await mouse.moveBy(const Offset(1, 0));
+        await t.pump(const Duration(milliseconds: 210));
+        await t.pump(const Duration(milliseconds: 300));
+        expect(find.byType(ProfilePreviewContent), findsOneWidget);
+      } finally {
+        await mouse?.removePointer();
+        await f.close(t);
+        debugDefaultTargetPlatformOverride = null;
+      }
+    },
+  );
+  testWidgets(
     'pending avatar preview stays closed through page selection and return',
     (t) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.macOS;

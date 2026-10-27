@@ -9,15 +9,21 @@ import 'pointer_intent.dart';
 class RaftHoverDismissController extends NavigatorObserver
     implements Listenable {
   final Set<VoidCallback> _listeners = {};
+  bool _disposed = false;
 
   @override
-  void addListener(VoidCallback listener) => _listeners.add(listener);
+  void addListener(VoidCallback listener) {
+    assert(!_disposed);
+    _listeners.add(listener);
+  }
+
   @override
   void removeListener(VoidCallback listener) => _listeners.remove(listener);
 
   /// Closes hover overlays, including pending opens, and requires fresh
   /// pointer movement before a retained or newly exposed trigger can open.
   void dismiss() {
+    if (_disposed) return;
     RaftPointerIntent.requireMovement();
     for (final listener in List.of(_listeners)) {
       listener();
@@ -35,6 +41,12 @@ class RaftHoverDismissController extends NavigatorObserver
     Route<dynamic> route,
     Route<dynamic>? previousRoute,
   ) => dismiss();
+
+  /// Releases a controller owned by a scope or by an explicit caller.
+  void dispose() {
+    _disposed = true;
+    _listeners.clear();
+  }
 }
 
 /// Shares hover dismissal across route pushes/pops and a router's logical
@@ -44,12 +56,15 @@ class RaftHoverDismissController extends NavigatorObserver
 class RaftHoverDismissScope extends StatefulWidget {
   const RaftHoverDismissScope({
     super.key,
-    required this.controller,
+    this.controller,
     required this.navigation,
     required this.location,
     required this.child,
   });
-  final RaftHoverDismissController controller;
+
+  /// An explicit controller remains owned by the caller. Otherwise this scope
+  /// owns one for its lifetime; attach [maybeOf] below the scope to a Navigator.
+  final RaftHoverDismissController? controller;
   final Listenable navigation;
   final Object? Function() location;
   final Widget child;
@@ -63,6 +78,9 @@ class RaftHoverDismissScope extends StatefulWidget {
 }
 
 class _RaftHoverDismissScopeState extends State<RaftHoverDismissScope> {
+  RaftHoverDismissController? _ownedController;
+  RaftHoverDismissController get controller =>
+      widget.controller ?? (_ownedController ??= RaftHoverDismissController());
   Object? location;
   @override
   void initState() {
@@ -75,7 +93,7 @@ class _RaftHoverDismissScopeState extends State<RaftHoverDismissScope> {
     final next = widget.location();
     if (location == next) return;
     location = next;
-    widget.controller.dismiss();
+    controller.dismiss();
   }
 
   @override
@@ -91,12 +109,13 @@ class _RaftHoverDismissScopeState extends State<RaftHoverDismissScope> {
   @override
   void dispose() {
     widget.navigation.removeListener(changed);
+    _ownedController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) =>
-      _HoverDismissScope(controller: widget.controller, child: widget.child);
+      _HoverDismissScope(controller: controller, child: widget.child);
 }
 
 class _HoverDismissScope extends InheritedWidget {

@@ -174,7 +174,6 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   bool sharePickerOpen = false, shareDrainScheduled = false;
   int shareEpoch = 0;
   late final RaftAppRouter appRouter;
-  final hoverDismiss = RaftHoverDismissController();
   late final PlatformRouteInformationProvider routeInformation;
   Uri requestedLocation = Uri(path: '/');
   Uri? chooserReturn;
@@ -280,12 +279,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           : sessionHome(),
       onLocation: receiveAppLocation,
       onRootBack: returnFromSelector,
-      observers: [privateRoutes, hoverDismiss],
+      observers: [privateRoutes],
     );
-    routeInformation = RaftAppRouteInformationProvider(
-      initialRouteInformation: RouteInformation(uri: requestedLocation),
-      consumeReplacement: appRouter.consumeReplacement,
-    );
+    routeInformation = appRouter.informationProvider(requestedLocation);
     sessionPersistence = SessionPersistence(
       widget.sessionStore ?? SecureSessionStore(),
     );
@@ -2164,11 +2160,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       locale: locale,
       supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      builder: (context, child) => RaftHoverDismissScope(
-        controller: hoverDismiss,
-        navigation: appRouter,
-        location: () => appRouter.currentConfiguration,
-        child: RaftHoverScope.forPlatform(
+      builder: (context, child) => appRouter.withHoverDismiss(
+        RaftHoverScope.forPlatform(
           child: AppWindowCommands(
             navigatorKey: appRouter.navigatorKey,
             openSection: workspace?.setSection,
