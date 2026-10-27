@@ -140,16 +140,12 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
   late final RuntimeDraft draft = base.copy();
   late final String agentRuntime = base.runtime;
 
-  // The last accepted admission options and live model catalog (this
-  // session, in memory) paint at the first frame; the reads below revalidate
-  // them in place.
-  String get _admissionsKey => 'agent-runtime-editor:$agentId:admissions';
+  // Admission chooses the editor protocol. Wait for this opening's read so
+  // a default or cached legacy form cannot flash before the v2 form loads.
   String _modelsKey(String machine, String runtime) =>
       'agent-runtime-editor:$machine:$runtime:models';
-  late List<Map<String, dynamic>>? admissions = () {
-    final cached = readPageSnapshot(w, _admissionsKey)?['options'];
-    return cached is List<Map<String, dynamic>> ? cached : null;
-  }();
+  List<Map<String, dynamic>>? admissions;
+  bool initialModelsLoading = true;
   RuntimeModelSource source = const RuntimeModelIdle();
   int sourceTicket = 0;
   bool moreOpen = false, saving = false;
@@ -170,14 +166,14 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
     super.initState();
     w.addListener(authorityChanged);
     unawaited(loadAdmissions());
-    loadModels();
+    loadModels(initial: true);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Cached admissions build the form at once; its first read carries the
-    // display language, which is not available in initState.
+    // A form's first read carries the display language, which is not
+    // available in initState.
     if (admissions != null) createForm();
   }
 
@@ -197,8 +193,6 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
   /// `useExistingAgentRuntimeOptions`: fails closed to an empty list.
   Future<void> loadAdmissions() async {
     List<Map<String, dynamic>> options = const [];
-    final identity = pageIdentity(w);
-    var accepted = false;
     try {
       final data = await readRuntimeOptions(
         () => w.client.get('/agents/$agentId/runtime-options'),
@@ -208,13 +202,9 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
           for (final o in data['options'] as List)
             if (o is Map) Map<String, dynamic>.from(o),
         ];
-        accepted = true;
       }
     } catch (_) {}
     if (!current) return;
-    if (accepted) {
-      writePageSnapshot(w, _admissionsKey, identity, {'options': options});
-    }
     setState(() => admissions = options);
     syncForm();
   }
@@ -253,11 +243,12 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
   }
 
   /// `useRuntimeModels(agent.machineId, draftRuntime)`.
-  void loadModels() {
+  void loadModels({bool initial = false}) {
     final id = machineId;
     final runtime = draft.runtime;
     if (id == null || runtime.isEmpty || w.server == null) {
       source = const RuntimeModelIdle();
+      if (initial) initialModelsLoading = false;
       return;
     }
     final ticket = ++sourceTicket;
@@ -281,7 +272,10 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
       if (next is RuntimeModelLive) {
         writePageSnapshot(w, key, identity, {'source': next});
       }
-      setState(() => source = next);
+      setState(() {
+        source = next;
+        if (initial) initialModelsLoading = false;
+      });
     }());
   }
 
@@ -672,8 +666,15 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
     final f = form;
+    final initialLoading =
+        admissions == null ||
+        (v2Active
+            ? f == null || f.loading && f.definition == null
+            : initialModelsLoading);
     final Widget fields;
-    if (v2Active) {
+    if (initialLoading) {
+      fields = const RaftAgentFieldNote('Loading runtime configuration…');
+    } else if (v2Active) {
       fields = f == null
           ? const RaftAgentFieldNote('Loading runtime configuration…')
           : RuntimeFormFields(
@@ -719,7 +720,9 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
           label: tr('Save Runtime Config'),
           primary: true,
           size: RaftButtonRecipeSize.md,
-          onPressed: disabled && !(v2Active && !v2Ready) ? null : submit,
+          onPressed: initialLoading || disabled && !(v2Active && !v2Ready)
+              ? null
+              : submit,
         ),
       ],
     );
