@@ -20,6 +20,24 @@ BYPASS_FIXTURES = 'apps/raft_flutter/test/fixtures/ds_audit_bypass'
 FAMILY_FIXTURES = 'apps/raft_flutter/test/fixtures/ds_audit_family'
 
 
+def check_report(files, baseline, **extra):
+    """Run the real CLI policy against a fake report, without keeping scratch files."""
+    report = {'scannedFiles': 1, 'scopes': ds_audit.SCOPES, 'totals': {}, 'allowedTotals': {},
+              'allowed': {}, 'files': files, 'malformedAllows': [], 'generated': {},
+              'generatedTotal': 0, **extra}
+    output = io.StringIO()
+    with tempfile.TemporaryDirectory() as temporary:
+        root = pathlib.Path(temporary)
+        with mock.patch.object(ds_audit, 'run_scanner', return_value={}), \
+                mock.patch.object(ds_audit, 'aggregate', return_value=report), \
+                mock.patch.object(ds_audit, 'load_baseline', return_value=baseline), \
+                mock.patch.object(ds_audit, 'ROOT', root), \
+                mock.patch.object(ds_audit, 'REPORT', root / '.local/ds-audit.json'), \
+                contextlib.redirect_stdout(output):
+            code = ds_audit.main(['--check'])
+    return code, output.getvalue()
+
+
 class CompareTest(unittest.TestCase):
     def test_engine_directories_and_exact_helper_files_keep_their_audit_scope(self):
         for scope in ds_audit.ENGINE_SCOPES:
@@ -50,20 +68,10 @@ class CompareTest(unittest.TestCase):
 
     def test_check_passes_when_counts_went_down_and_fails_when_they_grew(self):
         baseline = {'files': {'a.dart': {'widget.list_tile': 2}, 'b.dart': {'widget.dialog': 1}}}
-        report = lambda files, **extra: {'scannedFiles': 1, 'scopes': ds_audit.SCOPES, 'totals': {}, 'allowedTotals': {},
-                                         'allowed': {}, 'files': files, 'malformedAllows': [], 'generated': {},
-                                         'generatedTotal': 0, **extra}
-        tmp = pathlib.Path(tempfile.mkdtemp())
         for files, expected in (({'a.dart': {'widget.list_tile': 1}}, 0),  # decreases only
                                 ({'a.dart': {'widget.list_tile': 2}, 'b.dart': {'widget.dialog': 1}}, 0),
                                 ({'a.dart': {'widget.list_tile': 3}}, 1)):
-            with mock.patch.object(ds_audit, 'run_scanner', return_value={}), \
-                    mock.patch.object(ds_audit, 'aggregate', return_value=report(files)), \
-                    mock.patch.object(ds_audit, 'load_baseline', return_value=baseline), \
-                    mock.patch.object(ds_audit, 'ROOT', tmp), \
-                    mock.patch.object(ds_audit, 'REPORT', tmp / '.local/ds-audit.json'), \
-                    contextlib.redirect_stdout(io.StringIO()):
-                self.assertEqual(ds_audit.main(['--check']), expected, files)
+            self.assertEqual(check_report(files, baseline)[0], expected, files)
 
     def test_moving_a_violation_between_categories_still_fails(self):
         regressions, _ = ds_audit.compare({'a.dart': {'widget.button': 1}},
@@ -78,6 +86,31 @@ class CompareTest(unittest.TestCase):
         self.assertEqual(report['files'], {'a.dart': {'widget.tooltip': 2}})
         self.assertEqual(report['allowed'], {'a.dart': {'widget.tooltip': 1}})
         self.assertEqual(len(report['malformedAllows']), 1)
+
+
+class FakeReportHelperTest(unittest.TestCase):
+    def test_scratch_and_mocks_are_restored_when_the_cli_raises(self):
+        original_root, original_report = ds_audit.ROOT, ds_audit.REPORT
+        original_scanner = ds_audit.run_scanner
+        temporary_roots = []
+
+        def fail_after_writing_report(arguments):
+            self.assertEqual(arguments, ['--check'])
+            root = ds_audit.ROOT
+            temporary_roots.append(root)
+            self.assertTrue(root.is_dir())
+            ds_audit.REPORT.parent.mkdir()
+            ds_audit.REPORT.write_text('partial report before failure')
+            raise RuntimeError('fixture CLI failure')
+
+        with mock.patch.object(ds_audit, 'main', side_effect=fail_after_writing_report):
+            with self.assertRaisesRegex(RuntimeError, 'fixture CLI failure'):
+                check_report({}, {'files': {}})
+        self.assertEqual(len(temporary_roots), 1)
+        self.assertFalse(temporary_roots[0].exists())
+        self.assertEqual(ds_audit.ROOT, original_root)
+        self.assertEqual(ds_audit.REPORT, original_report)
+        self.assertIs(ds_audit.run_scanner, original_scanner)
 
 
 class ScannerFixtureTest(unittest.TestCase):
@@ -107,17 +140,7 @@ class ContractRatchetTest(unittest.TestCase):
     }}
 
     def check(self, files, baseline=None, **extra):
-        report = {'scannedFiles': 1, 'scopes': ds_audit.SCOPES, 'totals': {}, 'allowedTotals': {}, 'allowed': {},
-                  'files': files, 'malformedAllows': [], 'generated': {}, 'generatedTotal': 0, **extra}
-        tmp = pathlib.Path(tempfile.mkdtemp())
-        out = io.StringIO()
-        with mock.patch.object(ds_audit, 'run_scanner', return_value={}), \
-                mock.patch.object(ds_audit, 'aggregate', return_value=report), \
-                mock.patch.object(ds_audit, 'load_baseline', return_value=baseline or self.BASELINE), \
-                mock.patch.object(ds_audit, 'ROOT', tmp), \
-                mock.patch.object(ds_audit, 'REPORT', tmp / '.local/ds-audit.json'), \
-                contextlib.redirect_stdout(out):
-            return ds_audit.main(['--check']), out.getvalue()
+        return check_report(files, baseline or self.BASELINE, **extra)
 
     def test_every_category_growing_in_raft_ui_fails(self):
         a = 'packages/raft_ui/lib/src/a.dart'

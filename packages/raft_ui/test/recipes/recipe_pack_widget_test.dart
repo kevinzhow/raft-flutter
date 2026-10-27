@@ -28,6 +28,12 @@ void main() {
       final focus = FocusNode();
       addTearDown(controller.dispose);
       addTearDown(focus.dispose);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+      const retainedText = 'Retained text';
+      const retainedSelection = TextSelection(baseOffset: 0, extentOffset: 8);
+      var hasEdited = false;
       for (final dark in [false, true]) {
         for (final radius in [39.0, 23.0]) {
           await tester.pumpWidget(
@@ -48,9 +54,16 @@ void main() {
           );
           await tester.pumpAndSettle();
           final field = find.byType(TextField);
-          await tester.tap(field);
-          await tester.enterText(field, 'Retained text');
-          await tester.pumpAndSettle();
+          if (!hasEdited) {
+            await tester.tap(field);
+            await tester.enterText(field, retainedText);
+            controller.selection = retainedSelection;
+            await tester.pumpAndSettle();
+            hasEdited = true;
+          }
+          // A later theme rebuild must retain state before any new input.
+          expect(controller.text, retainedText);
+          expect(controller.selection, retainedSelection);
           expect(focus.hasFocus, isTrue);
           final decorations = tester
               .widgetList<Container>(
@@ -67,11 +80,9 @@ void main() {
             ),
             isTrue,
           );
-          expect(controller.text, 'Retained text');
           expect(tester.takeException(), isNull);
         }
       }
-      await tester.pumpWidget(const SizedBox.shrink());
     },
   );
 }
