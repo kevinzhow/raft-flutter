@@ -9,7 +9,7 @@ import sys
 from android_app import SafetyError, flutter_guard
 import gen_l10n_index
 import parity_case_map
-from flutter_launcher import windows_sdk_command
+from flutter_launcher import sdk_probe_report, windows_sdk_command
 
 try:
     flutter_guard(sys.argv[1:])
@@ -39,7 +39,10 @@ if result.returncode:
     sys.exit(result.returncode)
 try:
     actual = json.loads(result.stdout)['frameworkVersion']
-except (ValueError, KeyError):
+    if not isinstance(actual, str):
+        raise ValueError('The SDK machine version is not a string')
+except (ValueError, KeyError, TypeError):
+    sys.stderr.write(f'Flutter SDK probe: {sdk_probe_report(result)}\n')
     sys.exit('Cannot verify the selected Flutter SDK.')
 if actual != version:
     sys.exit(f'This repository requires Flutter {version}; selected SDK is {actual}.')

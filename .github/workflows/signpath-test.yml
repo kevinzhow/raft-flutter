@@ -63,6 +63,19 @@ jobs:
           cache: true
       - name: Select the repository SDK wrapper
         run: python tool/release.py sdk
+      - name: Initialize the selected SDK before strict version verification
+        shell: python
+        run: |
+          import os
+          import subprocess
+          import sys
+          sys.path.insert(0, 'tool')
+          from flutter_launcher import sdk_probe_report
+          probe = subprocess.run(
+              [os.environ['RAFT_FLUTTER_BIN'], '--version', '--machine'],
+              capture_output=True, text=True)
+          print(sdk_probe_report(probe))
+          sys.exit(probe.returncode)
       - name: Resolve only the locked dependencies
         run: python tool/flutter pub get --enforce-lockfile
       - name: Build the isolated signing sample without release packaging
