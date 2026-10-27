@@ -1873,13 +1873,13 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                 : null,
                             // Nothing is attached above the tab bar. With the
                             // side rail there is no bottom navigation at all.
+                            // A retained page can lay out during a push/pop;
+                            // keep its selection on the captured page location.
                             mobileNavigation: railNavigation
                                 ? null
-                                : w.navigation.mobileRootTabOf(location) ==
-                                          null ||
-                                      w.server == null
+                                : rootTab == null || w.server == null
                                 ? null
-                                : mobileNavigation(),
+                                : mobileNavigation(rootTab),
                             content: Column(
                               children: [
                                 // The Computers root header sits in the
@@ -3183,11 +3183,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
     }
   }
 
-  Widget mobileNavigation() {
+  Widget mobileNavigation(String selectedId) {
     final scope = mobileAuthority;
     return WorkspaceMobileTabBar(
       controller: w,
-      selectedId: w.navigation.mobileRootTabOf(w.location) ?? 'chat',
+      selectedId: selectedId,
       tabs: mobileTabIds,
       activityUnread: activityUnread,
       appUpdate: appUpdate,
