@@ -765,6 +765,7 @@ class WorkspaceController extends ChangeNotifier
     _editor.removeUpload(draft, thread: thread);
   }
 
+  @override
   ConversationReadRepository get conversationReads => _channels.reads;
   ReadStateLedger get _readState => _channels.localReadState;
   @override
