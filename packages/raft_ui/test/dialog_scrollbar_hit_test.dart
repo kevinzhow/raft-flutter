@@ -15,7 +15,14 @@ void main() {
   });
   for (final width in [390.0, 1280.0]) {
     for (final direction in [TextDirection.ltr, TextDirection.rtl]) {
-      for (final style in ['default', 'thick', 'hover']) {
+      for (final style in [
+        'default',
+        'thick',
+        'hover',
+        'inset',
+        'thick-inset',
+        'hover-inset',
+      ]) {
         testWidgets(
           'scrollbar leaves $direction action edge clickable at width $width, style=$style',
           (t) async {
@@ -31,11 +38,11 @@ void main() {
                 theme: raftTheme(platform: TargetPlatform.linux).copyWith(
                   platform: TargetPlatform.linux,
                   scrollbarTheme: switch (style) {
-                    'thick' => const ScrollbarThemeData(
+                    'thick' || 'thick-inset' => const ScrollbarThemeData(
                       thickness: WidgetStatePropertyAll(28),
                       crossAxisMargin: 4,
                     ),
-                    'hover' => ScrollbarThemeData(
+                    'hover' || 'hover-inset' => ScrollbarThemeData(
                       thickness: WidgetStateProperty.resolveWith<double?>(
                         (states) =>
                             states.contains(WidgetState.hovered) ? 28 : 8,
@@ -45,10 +52,17 @@ void main() {
                     _ => null,
                   },
                 ),
-                builder: (context, child) => RaftTextScaling(
-                  child: Directionality(
-                    textDirection: direction,
-                    child: child!,
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    padding: style.endsWith('inset')
+                        ? const EdgeInsets.only(left: 17, right: 24)
+                        : MediaQuery.paddingOf(context),
+                  ),
+                  child: RaftTextScaling(
+                    child: Directionality(
+                      textDirection: direction,
+                      child: child!,
+                    ),
                   ),
                 ),
                 home: Scaffold(
@@ -78,6 +92,7 @@ void main() {
             final action = find.byKey(const ValueKey('edge-action'));
             await t.ensureVisible(action);
             await t.pumpAndSettle();
+            expect(Directionality.of(t.element(action)), direction);
             final rect = t.getRect(action);
             final leading = direction == TextDirection.ltr
                 ? rect.left + 2
@@ -95,6 +110,18 @@ void main() {
               2,
               reason: 'the visible action edge must receive the tap',
             );
+            if (style.endsWith('inset')) {
+              final inside = direction == TextDirection.ltr
+                  ? rect.right - 18
+                  : rect.left + 8;
+              await t.tapAt(Offset(inside, rect.center.dy));
+              await t.pump();
+              expect(
+                hits,
+                3,
+                reason: 'the inset scrollbar must not steal action taps',
+              );
+            }
             final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
             await mouse.addPointer(location: rect.center);
             await mouse.moveTo(Offset(trailing, rect.center.dy));
@@ -105,7 +132,7 @@ void main() {
             await t.pump();
             expect(
               hits,
-              3,
+              style.endsWith('inset') ? 4 : 3,
               reason: 'hovering near the scrollbar must not steal the action',
             );
             await mouse.removePointer();

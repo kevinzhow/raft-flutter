@@ -63,6 +63,9 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
     };
     final scrollbarTheme = ScrollbarTheme.of(context);
     final thickness = scrollbarTheme.thickness;
+    final scrollbarInset = Directionality.of(context) == TextDirection.ltr
+        ? media.padding.right
+        : media.padding.left;
     final scrollbarGutter =
         [
           thickness?.resolve(<WidgetState>{}),
@@ -70,7 +73,8 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
           thickness?.resolve({WidgetState.dragged}),
           thickness?.resolve({WidgetState.hovered, WidgetState.dragged}),
         ].whereType<double>().fold(12.0, math.max) +
-        2 * math.max(0.0, scrollbarTheme.crossAxisMargin ?? 2);
+        2 * math.max(0.0, scrollbarTheme.crossAxisMargin ?? 2) +
+        scrollbarInset;
     Widget titleContent = Text(
       raftText(context, d.title! as String),
       style: title.text(tokens, base: DefaultTextStyle.of(context).style),
@@ -139,8 +143,8 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
                       Flexible(
                         child: SingleChildScrollView(
                           // Desktop scrollbars overlay the content. Leave room
-                          // for their track so the edges of scaled actions
-                          // remain clickable while scrolling.
+                          // for their track (including safe-area inset) so
+                          // scaled actions remain clickable while scrolling.
                           padding: desktopScrollbar
                               ? EdgeInsetsDirectional.only(end: scrollbarGutter)
                               : null,
