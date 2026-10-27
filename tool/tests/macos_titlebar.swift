@@ -32,6 +32,16 @@ private func closeRect(_ window: NSWindow) -> NSRect {
   return button.convert(button.bounds, to: window.contentView)
 }
 
+private final class HeaderControlView: NSView {
+  var movableDuringPress: [Bool] = []
+  override var isOpaque: Bool { true }
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+  override func mouseDown(with event: NSEvent) {
+    movableDuringPress.append(window?.isMovable ?? true)
+  }
+  override func mouseUp(with event: NSEvent) {}
+}
+
 _ = NSApplication.shared.setActivationPolicy(.prohibited)
 let window = MainFlutterWindow(contentRect: NSRect(x: 100, y: 100, width: 1000, height: 700),
   styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
@@ -110,6 +120,30 @@ for index in 0..<6 {
 }
 print("Native transition frames:", String(data: try! JSONSerialization.data(withJSONObject: transitionFrames), encoding: .utf8)!)
 
+// A Flutter control receives its native mouse press before Dart resolves its
+// gestures. The transparent native titlebar must not also move/zoom that press.
+let clickFrame = window.frame
+let clickStamp = ProcessInfo.processInfo.systemUptime
+for (index, x) in [120.0, 347.0, 500.0, 800.0].enumerated() {
+  let target = HeaderControlView(frame: NSRect(
+    x: x - 18, y: content.bounds.height - 42, width: 36, height: 36))
+  content.addSubview(target)
+  let point = NSPoint(x: x, y: content.bounds.height - 24)
+  for click in 1...2 {
+    for (type, offset) in [(NSEvent.EventType.leftMouseDown, 0.0), (.leftMouseUp, 0.01)] {
+      NSApp.sendEvent(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+        timestamp: clickStamp + Double(index) + Double(click) * 0.08 + offset,
+        windowNumber: window.windowNumber, context: nil, eventNumber: 10 + click,
+        clickCount: click, pressure: type == .leftMouseDown ? 1 : 0)!)
+    }
+  }
+  check(target.movableDuringPress == [false, false],
+    "control x=\(x) must receive both clicks with native titlebar handling disabled; got \(target.movableDuringPress)")
+  check(window.frame == clickFrame, "control x=\(x) must not move or zoom the window")
+  check(window.isMovable, "control dispatch must restore the original movable state")
+  target.removeFromSuperview()
+}
+
 // A quick gesture can end before the asynchronous Dart channel reaches AppKit.
 // Dispatch real AppKit events first, then request the drag as Dart would.
 let beforeDrag = window.frame.origin
@@ -178,6 +212,6 @@ check(window.toolbar == nil, "leaving the workspace must remove the integration 
 check(abs(window.contentView!.bounds.height - closeRect(window).midY - standardCenter) < 0.01, "the original native button position must be restored")
 
 for failure in failures { print("FAIL: \(failure)") }
-print("Native integrated titlebar: 8 cases, \(failures.count) failed assertions")
+print("Native integrated titlebar: 9 cases, \(failures.count) failed assertions")
 withExtendedLifetime(titlebar) {}
 exit(failures.isEmpty ? 0 : 1)

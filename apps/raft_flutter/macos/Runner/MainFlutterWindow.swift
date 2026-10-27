@@ -35,6 +35,20 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     super.display()
   }
 
+  override func sendEvent(_ event: NSEvent) {
+    guard titleBar?.ownsFlutterHeaderMouseDown(event) == true else {
+      super.sendEvent(event)
+      return
+    }
+    // A transparent AppKit titlebar can move or zoom the window before Flutter
+    // resolves the control under the pointer. Flutter already owns the shared
+    // row's empty drag/double-click regions; let it dispatch this press first.
+    let wasMovable = isMovable
+    isMovable = false
+    defer { isMovable = wasMovable }
+    super.sendEvent(event)
+  }
+
   static func isRepeatedCloseKey(_ event: NSEvent?) -> Bool {
     // AppKit can dispatch a menu action after Flutter's asynchronous key reply;
     // currentEvent may then be a mouse or application event. Its isARepeat
@@ -391,6 +405,24 @@ final class RaftTitleBar: NSObject {
         start: window.convertPoint(toScreen: event.locationInWindow))
     } else if event.type == .leftMouseUp, pointerGesture?.consumed == false {
       pointerGesture?.end = window.convertPoint(toScreen: event.locationInWindow)
+    }
+  }
+
+  /// The integrated Flutter row owns mouse gestures outside native controls.
+  /// AppKit's controls and nonintegrated titlebars keep their native handling.
+  fileprivate func ownsFlutterHeaderMouseDown(_ event: NSEvent) -> Bool {
+    guard event.type == .leftMouseDown, let window, event.window === window,
+      let height = integratedHeight, !window.styleMask.contains(.fullScreen),
+      let content = window.contentView
+    else { return false }
+    let point = content.convert(event.locationInWindow, from: nil)
+    guard content.bounds.contains(point) else { return false }
+    let fromTop = content.isFlipped
+      ? point.y - content.bounds.minY : content.bounds.maxY - point.y
+    guard fromTop >= 0, fromTop < height else { return false }
+    return !Self.buttons.contains { type in
+      guard let button = window.standardWindowButton(type) else { return false }
+      return button.convert(button.bounds, to: content).contains(point)
     }
   }
 

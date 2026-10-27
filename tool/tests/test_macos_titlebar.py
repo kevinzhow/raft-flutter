@@ -48,7 +48,7 @@ class MacOSTitlebarTests(unittest.TestCase):
                 result = subprocess.run(command, capture_output=True, text=True, timeout=120)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 if command == [str(binary)]:
-                    self.assertIn('8 cases, 0 failed assertions', result.stdout)
+                    self.assertIn('9 cases, 0 failed assertions', result.stdout)
 
 
 if __name__ == '__main__':
