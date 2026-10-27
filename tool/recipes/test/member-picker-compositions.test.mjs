@@ -9,7 +9,7 @@ import { extractMemberPickerCompositions } from '../lib/member-picker-compositio
 const row = '<button className={PICKER_ROW_CLASS}><CheckboxIndicator checked={selected} /><AvatarSlot /><span className="min-w-0 flex-1 truncate">Name</span></button>';
 const product = `<Card className="max-h-48 overflow-y-auto p-1.5"><SectionEyebrow className={PICKER_GROUP_LABEL_CLASS}>Agents</SectionEyebrow>${row}<SectionEyebrow className={PICKER_GROUP_LABEL_CLASS}>Humans</SectionEyebrow>${row}<div className="px-2.5 py-2 text-callout text-foreground-hint">No matches</div></Card>`;
 const constants = 'export const PICKER_GROUP_LABEL_CLASS="px-2.5 pt-2 pb-1"; export const PICKER_ROW_CLASS="flex min-h-9 gap-2.5 px-2.5";';
-const eyebrow = 'const BASE_CLASS="text-footnote font-bold"; const TONE_CLASS={hint:"text-foreground-hint"} as const; function SectionEyebrow({tone="hint"}){}';
+const eyebrow = 'const BASE_CLASS="text-footnote font-bold"; const TONE_CLASS={hint:"text-foreground-hint"} as const; function SectionEyebrow({tone="hint",className="",...props}){ const cls = `${BASE_CLASS} ${TONE_CLASS[tone]} ${className}`.trim(); return <div {...props} className={cls}/>; }';
 function fixture(t, change = {}) {
   const root=mkdtempSync(join(tmpdir(),'member-picker-compositions-'));
   for (const [path,text] of Object.entries({
@@ -37,4 +37,13 @@ test('unknown source expressions and checkbox structure changes fail closed', t=
   assert.throws(()=>extractMemberPickerCompositions(fixture(t,{product:product.replace('className={PICKER_ROW_CLASS}','className={other}')}),ts),/must bind/);
   assert.throws(()=>extractMemberPickerCompositions(fixture(t,{product:product.replace('<CheckboxIndicator checked={selected} />','<CheckboxIndicator checked={selected} size={16} />')}),ts),/attribute needs/);
   assert.throws(()=>extractMemberPickerCompositions(fixture(t,{product:product.replace('<Card className=', '<Card style={{padding: 10}} className=')}),ts),/attribute needs/);
+});
+test('an AvatarSlot inline style requires an explicit binding', t=>{
+  assert.throws(()=>extractMemberPickerCompositions(fixture(t,{product:product.replace('<AvatarSlot />','<AvatarSlot style={{width: 32}} />')}),ts),/attribute needs/);
+});
+test('an empty-state inline style requires an explicit binding', t=>{
+  assert.throws(()=>extractMemberPickerCompositions(fixture(t,{product:product.replace('<div className=', '<div style={{padding: 40}} className=')}),ts),/attribute needs/);
+});
+test('extra canonical eyebrow classes cannot disappear from extraction', t=>{
+  assert.throws(()=>extractMemberPickerCompositions(fixture(t,{eyebrow:eyebrow.replace('${className}`.trim()', '${className} py-10`.trim()')}),ts),/eyebrow class composition/);
 });

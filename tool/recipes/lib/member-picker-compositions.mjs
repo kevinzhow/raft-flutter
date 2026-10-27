@@ -69,6 +69,7 @@ export function extractMemberPickerCompositions(web, ts) {
       throw Error('Member picker leading checkbox/avatar/label structure changed');
     }
     knownAttributes(children[0], ['checked']);
+    knownAttributes(children[1], ['context', 'type', 'agentAvatarUrl', 'humanPlaceholder']);
     knownAttributes(children[2], ['className']);
     const current = literal(attr(children[2], 'className'), 'label className');
     if (label !== undefined && label !== current) throw Error('Member picker label variants need an explicit axis');
@@ -80,6 +81,24 @@ export function extractMemberPickerCompositions(web, ts) {
     if (attr(group, 'tone')) throw Error('Member picker eyebrow tone override needs a binding');
   }
   const toneDefault = only(nodes(eyebrow.ast, n => ts.isBindingElement(n) && n.name.getText() === 'tone' && n.initializer), 'eyebrow tone default');
+  // Bind the class composition the primitive actually renders, not only the
+  // constants beside it. An extra class in `cls` must never silently vanish.
+  const cls = declaration(eyebrow, 'cls');
+  const trimmed = cls && ts.isCallExpression(cls) && cls.arguments.length === 0 &&
+    ts.isPropertyAccessExpression(cls.expression) && cls.expression.name.text === 'trim';
+  const template = trimmed ? cls.expression.expression : null;
+  const ident = (n, name) => n && ts.isIdentifier(n) && n.text === name;
+  const spans = template && ts.isTemplateExpression(template) ? template.templateSpans : [];
+  const toneExpression = spans[1]?.expression;
+  if (!template || !ts.isTemplateExpression(template) || template.head.text.trim() || spans.length !== 3 ||
+      !ident(spans[0].expression, 'BASE_CLASS') ||
+      !toneExpression || !ts.isElementAccessExpression(toneExpression) ||
+      !ident(toneExpression.expression, 'TONE_CLASS') || !ident(toneExpression.argumentExpression, 'tone') ||
+      !ident(spans[2].expression, 'className') ||
+      !spans.slice(0, 2).every(s => /^\s+$/.test(s.literal.text)) || spans[2].literal.text.trim()) {
+    throw Error('Member picker eyebrow class composition needs an explicit binding');
+  }
+  identifierClass(only(elements(eyebrow.ast, 'div'), 'eyebrow div'), 'cls');
   const tone = literal(toneDefault.initializer, 'eyebrow tone');
   let tones = declaration(eyebrow, 'TONE_CLASS');
   if (tones && ts.isAsExpression(tones)) tones = tones.expression;
@@ -89,7 +108,9 @@ export function extractMemberPickerCompositions(web, ts) {
     literal(toneValue.initializer, 'eyebrow tone class'),
     literal(declaration(constants, 'PICKER_GROUP_LABEL_CLASS'), 'group class')].join(' ');
   const row = literal(declaration(constants, 'PICKER_ROW_CLASS'), 'row class');
-  const empty = literal(attr(only(elements(card, 'div'), 'empty label'), 'className'), 'empty className');
+  const emptyNode = only(elements(card, 'div'), 'empty label');
+  knownAttributes(emptyNode, ['className']);
+  const empty = literal(attr(emptyNode, 'className'), 'empty className');
   const region = [product, constants, eyebrow].map(s =>
     `${s.path} sha256:${createHash('sha256').update(s.text).digest('hex')}`).join('; ');
   return [{name: 'webMemberPicker', line: 1, region: `Web ${region}`,
