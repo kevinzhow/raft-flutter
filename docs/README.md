@@ -44,6 +44,7 @@ Every file or directory under `docs/` is listed here (path — what it is — wh
 - `android-installation.md` — the only allowed way to update the installed Android App — before installing on a device.
 - `local-test-stack.md` — local Web/Flutter comparison environment — when you need a Web reference to run against.
 - `auto-update.md`, `deployment.md`, `release-ci.md`, `release-evidence.md`, `macos-evidence.md` — updater, deployment, release CI and released-artifact records — when releasing or changing packaging.
+- `signpath-test-signing.md` — SignPath Foundation setup and the isolated TEST-certificate workflow proposal — before configuring Windows Authenticode signing.
 - `macos-self-hosted-runner.md` — dedicated data-volume macOS toolchains, release routing and original-source backfill — before operating or changing that runner.
 - `release-notes/` — per-release notes read by `tool/release_notes.py` — when cutting a release.
 
