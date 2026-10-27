@@ -74,8 +74,30 @@ void main() {
       expect(content.workspace?.server?.id, 's1');
       expect(find.byType(MobileWorkspacePages), findsOneWidget);
       expect(api.misses, isEmpty);
+      final accountUnread = content.dockUnread.counts;
+      expect(
+        accountUnread.notificationAccount,
+        '${client.origin}\nalice',
+        reason: 'The lab keeps the real account observer during the replay.',
+      );
+      expect(ChangeNotifier.debugAssertNotDisposed(accountUnread), isTrue);
+      expect(
+        ChangeNotifier.debugAssertNotDisposed(accountUnread.successfulRefresh),
+        isTrue,
+      );
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
+      expect(
+        () => ChangeNotifier.debugAssertNotDisposed(accountUnread),
+        throwsFlutterError,
+        reason: 'Unmounting the root retires the lab-owned account observer.',
+      );
+      expect(
+        () => ChangeNotifier.debugAssertNotDisposed(
+          accountUnread.successfulRefresh,
+        ),
+        throwsFlutterError,
+      );
     },
   );
 

@@ -14,7 +14,10 @@ class LabNavigationContent extends NativeContentCoordinator {
   @override
   void bindWorkspace(WorkspaceController? value) => workspace = value;
   @override
-  Future<void> dispose() async => notifications.dispose();
+  Future<void> dispose() async {
+    await super.dispose();
+    notifications.dispose();
+  }
 }
 
 /// A fresh named database per theme/run. Uses production background SQLite,
