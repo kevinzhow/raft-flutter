@@ -36,6 +36,7 @@ Escape hatch for genuinely platform-only code (reviewed, counted separately):
 """
 import argparse
 import collections
+import importlib.util
 import json
 import os
 import pathlib
@@ -100,6 +101,9 @@ BASELINE = ROOT / 'tool/ds-audit-baseline.json'
 FAMILIES = ROOT / 'tool/ds-audit-families.json'
 REPORT = ROOT / '.local/ds-audit.json'
 UPDATE_HINT = 'tool/ds-audit --update-baseline'
+_coverage_spec = importlib.util.spec_from_file_location('ds_coverage', ROOT / 'tool/ds_coverage.py')
+coverage = importlib.util.module_from_spec(_coverage_spec)
+_coverage_spec.loader.exec_module(coverage)
 
 
 class AuditError(RuntimeError):
@@ -135,7 +139,7 @@ def duplicate_index(families):
     return index
 
 
-def run_scanner(paths, contract=None, bypass=None, bypass_allow=None, families=None):
+def run_scanner(paths, contract=None, bypass=None, bypass_allow=None, families=None, inventory=False, inventory_paths=None):
     """Return the raw scanner document ({scanned, errors, findings, generated}).
 
     `contract` lists the directories (relative to the repo) scanned with the
@@ -149,6 +153,17 @@ def run_scanner(paths, contract=None, bypass=None, bypass_allow=None, families=N
     bypass = BYPASS_SCOPES if bypass is None else bypass
     bypass_allow = BYPASS_ALLOWLIST if bypass_allow is None else bypass_allow
     duplicates = duplicate_index(load_families() if families is None else families)
+    inventory_args = []
+    if inventory:
+        _, roots = coverage.runtime_sources(ROOT)
+        if inventory_paths is not None:
+            roots = inventory_paths  # explicit resolved-fixture API; --check never supplies an override
+        inventory_args = [arg for prefix in roots for arg in ('--inventory', prefix)]
+        canonical = {name: binding['declarationId'].split('#', 1)[0]
+                     for entry in load_families().values()
+                     for name, binding in entry.get('canonicalBindings', {}).items()
+                     if '#function:' in binding['declarationId']}
+        inventory_args += ['--canonical-functions', json.dumps(canonical)]
     package_config = ROOT / '.dart_tool/package_config.json'
     if not package_config.is_file() or '"ds_audit"' not in package_config.read_text():
         raise AuditError('workspace is not resolved; run `tool/flutter pub get` at the repository root')
@@ -157,13 +172,16 @@ def run_scanner(paths, contract=None, bypass=None, bypass_allow=None, families=N
          str(ROOT / 'tool/ds_audit/bin/ds_audit.dart'), '--root', str(ROOT),
          *[arg for prefix in contract for arg in ('--contract', prefix)],
          *[arg for prefix in bypass for arg in ('--bypass', prefix)],
-         '--bypass-allow', json.dumps(bypass_allow), '--families', json.dumps(duplicates), *paths],
+         '--bypass-allow', json.dumps(bypass_allow), '--families', json.dumps(duplicates),
+         *inventory_args, *paths],
         cwd=ROOT, capture_output=True, text=True)
     if out.returncode != 0:
         raise AuditError(f'ds_audit scanner failed (exit {out.returncode}):\n{out.stderr.strip()}')
     document = json.loads(out.stdout)
     if not document['scanned']:
         raise AuditError(f'ds_audit scanned no Dart files under {paths}')
+    if inventory and 'ownership' not in document:
+        raise AuditError('scanner omitted the required resolved ownership inventory')
     return document
 
 
@@ -181,7 +199,7 @@ def aggregate(document):
     as_dict = lambda table: {name: dict(sorted(c.items())) for name, c in sorted(table.items()) if c}
     files, allowed = as_dict(files), as_dict(allowed)
     generated = dict(sorted(document.get('generated', {}).items()))
-    return {
+    report = {
         'version': 2,
         'scopes': SCOPES,
         'scannedFiles': len(document['scanned']),
@@ -194,6 +212,9 @@ def aggregate(document):
         'malformedAllows': malformed,
         'findings': document['findings'],
     }
+    if 'ownership' in document:
+        report['ownership'] = document['ownership']
+    return report
 
 
 def totals(files):
@@ -316,17 +337,34 @@ def main(argv=None):
     if custom and (args.check or args.update_baseline):
         parser.error('--check/--update-baseline always scan the full scope; do not pass paths')
     try:
-        report = aggregate(run_scanner(args.paths or SCOPES, [*CONTRACT_SCOPES, *args.contract]))
-    except AuditError as error:
+        document = run_scanner(args.paths or SCOPES, [*CONTRACT_SCOPES, *args.contract], inventory=not custom)
+        report = aggregate(document)
+        # Production run_scanner enforces this field when requested. Unit
+        # fixtures that mock the old count-only document remain count tests.
+        if not custom and 'ownership' in document:
+            report['coverage'] = coverage.check(ROOT, document['ownership'])
+    except (AuditError, OSError, ValueError) as error:
         print(f'ds-audit: {error}', file=sys.stderr)
         return 2
+    ownership_errors = report.get('coverage', {}).get('errors', [])
     if args.json:
         print(json.dumps(report, indent=1))
+        if args.check:
+            regressions, _ = compare(load_baseline().get('files', {}), report['files'])
+            return int(bool(regressions or report['malformedAllows'] or ownership_errors))
         return 0
     if not custom:
         REPORT.parent.mkdir(exist_ok=True)
         REPORT.write_text(json.dumps(report, indent=1) + '\n')
     print(format_summary(report, args.top))
+    if 'coverage' in report:
+        checked = report['coverage']
+        print(f"ownership: {checked.get('registeredRecipes', 0)} recipes; "
+              f"{checked.get('resolvedDeclarations', 0)} resolved declarations; "
+              f"{checked.get('unresolvedMappings', 0)} unresolved mappings; "
+              f"{checked.get('visualPasses', 0)} current visual passes")
+        for problem in ownership_errors:
+            print(f'ownership: {problem}')
     if custom:
         return 0
     print(f'full report: {REPORT.relative_to(ROOT)}')
@@ -335,6 +373,9 @@ def main(argv=None):
     for problem in report['malformedAllows']:
         print(f'malformed allow: {problem}')
     if args.update_baseline:
+        if ownership_errors:
+            print('refusing to update the style baseline while ownership registration is invalid', file=sys.stderr)
+            return 1
         if regressions and not args.accept_increase:
             print('refusing to raise the baseline; fix the regressions or pass --accept-increase',
                   file=sys.stderr)
@@ -342,7 +383,7 @@ def main(argv=None):
         BASELINE.write_text(json.dumps(baseline_document(report), indent=1) + '\n')
         print(f'wrote {BASELINE.relative_to(ROOT)}')
         return 0
-    if args.check and (regressions or report['malformedAllows']):
+    if args.check and (regressions or report['malformedAllows'] or ownership_errors):
         return 1
     return 0
 

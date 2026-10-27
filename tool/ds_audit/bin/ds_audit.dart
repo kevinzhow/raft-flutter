@@ -30,14 +30,17 @@ import 'package:ds_audit/bypass_audit.dart';
 import 'package:ds_audit/contract_audit.dart';
 import 'package:ds_audit/ds_audit.dart';
 import 'package:ds_audit/family_audit.dart';
+import 'package:ds_audit/ownership_inventory.dart';
 
 Future<void> main(List<String> argv) async {
   var root = Directory.current.path;
   final targets = <String>[];
   final contractPrefixes = <String>[];
   final bypassPrefixes = <String>[];
+  final inventoryPrefixes = <String>[];
   var bypassAllow = <String, Map<String, String>>{};
   var families = <String, Map<String, String>>{};
+  var canonicalFunctions = <String, String>{};
   for (var i = 0; i < argv.length; i++) {
     if (argv[i] == '--root') {
       root = argv[++i];
@@ -45,6 +48,11 @@ Future<void> main(List<String> argv) async {
       contractPrefixes.add(argv[++i]);
     } else if (argv[i] == '--bypass') {
       bypassPrefixes.add(argv[++i]);
+    } else if (argv[i] == '--inventory') {
+      inventoryPrefixes.add(argv[++i]);
+    } else if (argv[i] == '--canonical-functions') {
+      canonicalFunctions = (jsonDecode(argv[++i]) as Map<String, Object?>)
+          .cast<String, String>();
     } else if (argv[i] == '--bypass-allow') {
       bypassAllow = {
         for (final e in (jsonDecode(argv[++i]) as Map<String, Object?>).entries)
@@ -66,8 +74,17 @@ Future<void> main(List<String> argv) async {
   final included = [
     for (final t in targets) context.normalize(context.join(root, t)),
   ];
+  final inventoryRoots = [
+    for (final p in inventoryPrefixes) context.normalize(context.join(root, p)),
+  ];
+  final ownership = OwnershipInventory((file) {
+    final path = context.normalize(context.absolute(file));
+    return context.isWithin(root, path)
+        ? context.relative(path, from: root).replaceAll('\\', '/')
+        : null;
+  }, canonicalFunctions: canonicalFunctions);
   final collection = AnalysisContextCollection(
-    includedPaths: included,
+    includedPaths: {...included, ...inventoryRoots}.toList(),
     resourceProvider: provider,
   );
   final contractRoots = [
@@ -92,22 +109,56 @@ Future<void> main(List<String> argv) async {
       (f) => f.endsWith('.dart'),
     );
     for (final file in files.toList()..sort()) {
-      if (!included.any((p) => file == p || context.isWithin(p, file))) {
+      final isStyle = included.any(
+        (p) => file == p || context.isWithin(p, file),
+      );
+      final isInventory = inventoryRoots.any(
+        (p) => file == p || context.isWithin(p, file),
+      );
+      if (!isStyle && !isInventory) {
         continue;
       }
       final isContract = contractRoots.any(
         (p) => file == p || context.isWithin(p, file),
       );
       final relative = context.relative(file, from: root).replaceAll('\\', '/');
-      if (isContract && isGeneratedFile(relative)) {
+      if ((isContract || isInventory && !isStyle) &&
+          isGeneratedFile(relative)) {
         // Generated code is not audited for literals; recipe files only get
         // their constants counted (informational).
-        scanned.add(relative);
+        if (isStyle) scanned.add(relative);
+        if (isInventory) ownership.files.add(relative);
         final parsed = analysis.currentSession.getParsedUnit(file);
         if (parsed is! ParsedUnitResult) {
           errors.add('$file: not parseable');
         } else if (isGeneratedRecipeFile(relative)) {
-          generated[relative] = countGeneratedRecipeConstants(parsed.unit);
+          if (isStyle) {
+            generated[relative] = countGeneratedRecipeConstants(parsed.unit);
+          }
+        }
+        if (isInventory) {
+          // Implicit constructor calls become precise after resolution. This
+          // also inventories generated Widget code instead of letting a .g.dart
+          // suffix hide a new component; literal style scopes stay unchanged.
+          final resolved = await analysis.currentSession.getResolvedUnit(file);
+          if (resolved is! ResolvedUnitResult) {
+            errors.add('$relative: generated runtime input is not resolvable');
+          } else {
+            for (final d in resolved.diagnostics) {
+              if (d.severity == Severity.error) {
+                errors.add('$relative: ${d.message}');
+              }
+            }
+            resolved.unit.accept(
+              OwnershipVisitor(ownership, resolved, relative),
+            );
+            if (relative.startsWith('packages/raft_theme/lib/recipes/') &&
+                !relative.startsWith(
+                  'packages/raft_theme/lib/recipes/legacy/',
+                )) {
+              resolved.unit.accept(RecipeMetadataVisitor(ownership, relative));
+            }
+          }
         }
         continue;
       }
@@ -116,18 +167,24 @@ Future<void> main(List<String> argv) async {
         errors.add('$file: not resolvable');
         continue;
       }
-      scanned.add(relative);
+      if (isStyle) scanned.add(relative);
+      if (isInventory) {
+        ownership.files.add(relative);
+        result.unit.accept(OwnershipVisitor(ownership, result, relative));
+      }
       for (final d in result.diagnostics) {
         if (d.severity == Severity.error) {
           final loc = result.lineInfo.getLocation(d.offset);
           errors.add('$relative:${loc.lineNumber}: ${d.message}');
         }
       }
-      final AuditVisitorBase visitor = isContract
-          ? ContractAuditVisitor(relative, result)
-          : DsAuditVisitor(relative, result);
-      result.unit.accept(visitor);
-      findings.addAll(visitor.findings);
+      if (isStyle) {
+        final AuditVisitorBase visitor = isContract
+            ? ContractAuditVisitor(relative, result)
+            : DsAuditVisitor(relative, result);
+        result.unit.accept(visitor);
+        findings.addAll(visitor.findings);
+      }
       if (bypassRoots.any((p) => file == p || context.isWithin(p, file))) {
         final bypass = BypassAuditVisitor(
           relative,
@@ -157,6 +214,7 @@ Future<void> main(List<String> argv) async {
       'errors': errors,
       'findings': [for (final f in findings) f.toJson()],
       'generated': {for (final e in generated.entries) e.key: e.value},
+      if (inventoryPrefixes.isNotEmpty) 'ownership': ownership.toJson(),
     }),
   );
   if (errors.isNotEmpty) {

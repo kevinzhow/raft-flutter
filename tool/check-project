@@ -1041,6 +1041,24 @@ def run_gate(check_env, emit, started):
         return {'ok': False, 'failures': [], 'stop': None, 'changed': False,
                 'failed_checks': ['structure-audit.txt']}
 
+    # The DS command shares one analyzer pass for existing style ratchets and
+    # resolved ownership. A direct full-check caller must not depend on an old
+    # preflight or run an analyzer separately inside each Dart guard test.
+    results['ds-audit.txt'] = run_logged(
+        [*tool_command('ds-audit'), '--check'], root,
+        local / 'ds-audit.txt', check_env) == 0
+    if not results['ds-audit.txt']:
+        message = 'Design-system ownership/style audit failed; no Dart tests started. See .local/ds-audit.txt.\n'
+        (local / 'check-summary.txt').write_text(message, encoding='utf-8')
+        (local / 'engineering-run.json').write_text(json.dumps({
+            'sourceHash': source_hash, 'completed': False, 'checks': results,
+            'stoppedEarly': {'reason': 'ds-audit', 'message': message},
+            'shards': [], 'failedTests': [],
+        }), encoding='utf-8')
+        sys.stderr.write(message)
+        return {'ok': False, 'failures': [], 'stop': None, 'changed': False,
+                'failed_checks': ['ds-audit.txt']}
+
     clear_unit_test_assets(root)
     # Rebuild the test assets (shaders, asset bundle) once before the shards
     # start so no shard has to. This does not stop the native_assets.json race:
@@ -1148,7 +1166,7 @@ def run_gate(check_env, emit, started):
     results['test-budget.txt'] = not budget['violations']  # after the retry decision: a budget failure is not a reason to skip retries
     tests_passed = all(s['passed'] for s in shards) and bool(shards)
     results['all-project-tests.txt'] = tests_passed
-    ordered = {key: results[key] for key in ['workspace-pub-get.txt', 'structure-audit.txt', 'host-collector-tests.txt', 'bindings-generator-pub-get.txt', 'raft-lints-pub-get.txt', 'all-project-tests.txt', 'analyze-all.txt', 'raft-lints.txt', 'test-budget.txt']}
+    ordered = {key: results[key] for key in ['workspace-pub-get.txt', 'structure-audit.txt', 'ds-audit.txt', 'host-collector-tests.txt', 'bindings-generator-pub-get.txt', 'raft-lints-pub-get.txt', 'all-project-tests.txt', 'analyze-all.txt', 'raft-lints.txt', 'test-budget.txt']}
     ordered.update({key: value for key, value in results.items() if key.startswith('test-shard-')})
     results = ordered
 

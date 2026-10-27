@@ -146,6 +146,63 @@ void main() {
       Map<String, dynamic>.from(s as Map),
   ];
 
+  test(
+    'design-system coverage registers ownership without inventing passes',
+    () {
+      final coverage = decoded['designSystemCoverage'] as Map<String, dynamic>;
+      expect(coverage['schemaVersion'], 1);
+      expect(coverage['canonicalRegistry'], 'tool/ds-audit-families.json');
+      final declarations = coverage['declarations'] as Map<String, dynamic>;
+      final entries = coverage['entries'] as Map<String, dynamic>;
+      expect(declarations, isNotEmpty);
+      expect(entries, isNotEmpty);
+      const roles = {
+        'canonical_component',
+        'internal_wrapper',
+        'internal_part',
+        'entry_composition',
+        'frozen_legacy',
+        'preview_fixture',
+        'proven_unused',
+        'unresolved',
+      };
+      for (final item in declarations.entries) {
+        final row = item.value as Map<String, dynamic>;
+        expect(roles, contains(row['role']), reason: item.key);
+        expect(row['owner'], isNotEmpty, reason: item.key);
+        expect(row['pass'], isNot(true), reason: item.key);
+        if (row['role'] == 'unresolved') {
+          expect(row['reason'], isNotEmpty, reason: item.key);
+        }
+      }
+      final mappedScreens = {
+        for (final row in entries.values.cast<Map<String, dynamic>>())
+          if (row['lifecycleScreenId'] != null) row['lifecycleScreenId'],
+      };
+      for (final screen in screens) {
+        expect(mappedScreens, contains(screen['id']), reason: _s(screen, 'id'));
+      }
+      for (final raw in (coverage['requirements'] as Map).values) {
+        final row = raw as Map<String, dynamic>;
+        expect(const {
+          'required',
+          'not_applicable',
+          'unknown',
+        }, contains(row['applicability']));
+        expect(entries.containsKey(row['entryId']), isTrue);
+        if (row['applicability'] != 'required') {
+          expect(row['owner'], isNotEmpty);
+          expect(row['reason'], isNotEmpty);
+        }
+        if (row['applicability'] == 'not_applicable') {
+          expect(row['sourceBindings'], isNotEmpty);
+        }
+      }
+      // Resolved completeness and evidence hashes are checked by ds-audit once,
+      // not by launching an analyzer from each standalone Dart guard test.
+    },
+  );
+
   test('every screen and state is well formed and carries its reasons', () {
     final problems = <String>[];
     if (decoded['version'] != 1) problems.add('version must be 1');
@@ -223,9 +280,9 @@ void main() {
     final manifestPath = Platform.environment['RAFT_PARITY_MANIFEST'];
     List<String>? manifestIds;
     if (manifestPath != null && manifestPath.isNotEmpty) {
-      final manifest =
-          jsonDecode(File(manifestPath).readAsStringSync())
-              as Map<String, dynamic>;
+      final manifest = jsonDecode(
+        File(manifestPath).readAsStringSync(),
+      ) as Map<String, dynamic>;
       manifestIds = [
         for (final c in manifest['cases'] as List<dynamic>)
           (c as Map)['id'] as String,

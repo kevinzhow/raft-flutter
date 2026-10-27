@@ -2,6 +2,84 @@
 
 `tool/ds-audit` also guards `packages/raft_ui/lib` and the independent recipe engine in `packages/raft_theme/lib/recipes` plus its CSS decoration, outer-shadow painter and cache helpers against the theme contract; see "Contract rules" below. The numbers in this document describe the app scope only.
 
+## Ownership and applicable-state registration
+
+`tool/ds-audit-families.json` is the canonical family authority. Its existing
+`canonical` and `deprecated` decisions remain authoritative;
+`canonicalBindings` adds exact declaring element identities and part roles.
+`recipes` registers every generated recipe key and its axes. Several recipes
+may belong to one family. An unresolved owner is recorded explicitly instead
+of inventing a second public component. Preserve pending/uncertain decisions;
+in particular, `RaftSegmentedControl` remains the public segmented API.
+
+`docs/state-parity.json.designSystemCoverage` extends the existing lifecycle
+ledger. Its own schemaVersion is1; the surrounding lifecycle version1 is
+unchanged. It records declarations, entry compositions, applicable requirements,
+known recipe-state atoms/uses and evidence. New resolved widgets, private render
+owners, builders, surface factories, generated axes and known state uses must
+be registered. Local named builders use their resolved lexical fragment chain
+and real source offsets, so equal names in nested or sibling scopes remain
+distinct. These source-scoped identities change when their positions change;
+new identities require an explicit UNKNOWN or reviewed registration.
+An internal wrapper/part names its exact canonical owner and must have a
+resolved constructor or function call to it. Type annotations and identifier
+mentions remain indexed references and do not prove delegation.
+Frozen-only and unused classifications need
+source-bound review; no direct recipe hit is not unused-code proof.
+
+The analyzer emits these identities in its existing pass, including tracked
+runtime path dependencies. This inventory does not enlarge the existing
+literal/bypass/duplicate style scopes or allowlists. Static references are not
+mounted-entry proof. Dynamic delegation, unresolved ownership, pending states
+and historical screenshots never count as current visual acceptance. Private
+widgets/State painters and Future-returning surface factories remain in scope.
+
+Requirements use the real source contract: theme/look, light/dark, layout,
+platform/input, variant and action/state as applicable. Static text does not
+automatically need hover/press/selected/disabled. A touch long press may open a
+menu or viewer; register that action and the resulting state. `unknown` records
+pending work. `not_applicable` needs a reason and exact source bindings. Existing
+loading/empty/error/partial checks and their case-id typo guard retain their
+documented limits.
+
+`evidence` retains immutable historical receipts. Only explicit `currentClaims`
+can claim acceptance; they require exact case/entry/state/mount bindings and
+the capture runner's `.local/design-system-execution.json`, original frames and
+metadata. Input and reference digests must be computed from exact bound files,
+not copied arbitrary strings. The captured Git commit/tree and source bytes
+must agree. Current claims also provide a bundled `referenceGitProof`: public
+raw commit/tree object bodies and the reference runner's source bytes, encoded
+as base64. The checker verifies the Git object chain from the exact commit in
+`docs/source-reference.json` to every `webSourceFiles` blob, including the real
+Web package manifest. A matching HEAD label cannot excuse different working
+files. The proof is offline and needs no private path, clone or network. It is
+not required for UNKNOWN/FAIL history or unrelated functional changes; no visual
+claims are seeded by this ledger. Keep raw capture/proof payloads with the
+verification artifacts; registration data is not permission to commit private
+screenshots or user data.
+
+This first structural slice conservatively binds all runtime Dart
+inputs, render assets, dependency manifests and SDK selection; smaller closures
+require a reviewed dependency boundary. A later commit may reuse evidence when
+all responsible bytes and inputs remain identical. General prose and transient
+reports stay outside `tool/source-hash`; the DS reducer, registry and state
+ledger are verification inputs, and the hash algorithm binds itself.
+
+Keep earlier evidence historical when its scope is no longer current. Stale
+history and the registered UNKNOWN backlog do not reject an unrelated
+functional fix; a mismatched explicit current claim fails. Style/component
+changes still require affected real Web/Flutter comparisons under AGENTS.md.
+Metadata validation is not screenshot or native acceptance, and this ledger
+does not certify a family merely because all its names are listed.
+
+`tool/preflight` keeps its existing DS step. Direct `tool/check-project` calls
+also run one DS check after workspace resolution and before Dart tests. Offline
+state guard tests check schema/navigation relationships without launching
+another analyzer. Feature branches never change the style ratchet baseline.
+
+The snapshot below is historical and is not the ownership or visual-coverage
+count of the current source.
+
 Snapshot: branch `cindy/ds-guard` on top of `3f3c72f`, measured with `tool/ds-audit`.
 The snapshot covers 125 Dart files. It found **1118 enforced violations in 65 files**
 (widget 492, style 626) and **0 allowlisted**. The ratchet baseline is
