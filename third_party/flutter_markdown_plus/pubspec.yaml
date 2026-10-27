@@ -30,13 +30,5 @@ topics:
   - markdown
   - widgets
 
-screenshots:
-  - description: Rich text, emphasis, blockquotes and lists rendered from Markdown.
-    path: screenshots/formatting.png
-  - description: GitHub Flavored Markdown tables and task-list checkboxes.
-    path: screenshots/tables.png
-  - description: Fenced and inline code blocks with monospace styling.
-    path: screenshots/code.png
-
 formatter:
   page_width: 120

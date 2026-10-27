@@ -71,6 +71,7 @@
   "scope": "Runtime library and package metadata only; upstream examples, tests, screenshots and scripts are not vendored.",
   "localChanges": [
     "lib/src/builder.dart: optional scrollbar decorator hook; null keeps upstream Scrollbar",
-    "lib/src/widget.dart: expose and forward decorator hook; rebuild if callback changes"
+    "lib/src/widget.dart: expose and forward decorator hook; rebuild if callback changes",
+    "pubspec.yaml: remove publishing-only screenshots metadata because the referenced images are omitted from this runtime subset; dependency versions and SDK constraints are unchanged"
   ]
 }
