@@ -227,7 +227,7 @@ shutil.copytree(root / 'docs/licenses', staging / 'docs/licenses')
 with tarfile.open(output / 'raft-flutter-linux-x64.tar.gz', 'w:gz') as archive:
     archive.add(staging, arcname=staging.name)
 shutil.copy2(app / 'build/app/outputs/flutter-apk/app-release.apk', output / 'raft-flutter-android.apk')
-metadata = {'sourceHash': source_hash, 'flutter': '3.47.6', 'dart': '3.13.5',
+metadata = {'sourceHash': source_hash, 'flutter': '3.47.8', 'dart': '3.13.7',
             'productCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
             'reference': '26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6',
             'androidSigning': 'local debug keystore; acceptance only',

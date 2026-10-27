@@ -13,8 +13,8 @@
       "scope": "Test fixtures only: member joins precede backdated history; primary all greeting. No server read/permission code changes."
     }
   ],
-  "flutterVersion": "3.47.6",
-  "dartVersion": "3.13.5",
+  "flutterVersion": "3.47.8",
+  "dartVersion": "3.13.7",
   "visualBaselineRepairs": [
     {
       "id": "markdown-task-status-v1",

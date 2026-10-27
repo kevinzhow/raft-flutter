@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Flutter **3.47.6** / Dart 3.13.5, pinned in `.fvmrc`. Always call Flutter through `tool/flutter`: it looks for `.fvm/flutter_sdk` or `~/flutter-sdks/versions/3.47.6`, honours `RAFT_FLUTTER_BIN`, and refuses any other SDK version. Install with `fvm install && fvm use 3.47.6`.
+- Flutter **3.47.8** / Dart 3.13.7, pinned in `.fvmrc`. Always call Flutter through `tool/flutter`: it looks for `.fvm/flutter_sdk` or `~/flutter-sdks/versions/3.47.8`, honours `RAFT_FLUTTER_BIN`, and refuses any other SDK version. Install with `fvm install && fvm use 3.47.8`.
 - Python 3.11+ for the full engineering checks (some tooling uses `hashlib.file_digest`); use UTF-8 mode on Windows (`PYTHONUTF8=1`). Node 24 / pnpm only for the parity and generator tools that read a raft-source checkout.
 - Per platform: Android SDK (+ NDK only to regenerate ADPF bindings), the Flutter Linux desktop toolchain, Xcode and CocoaPods for macOS and iOS, or Visual Studio C++ desktop build tools and the Windows SDK for Windows x64.
 
@@ -32,7 +32,7 @@ Never use `flutter run/drive/test/install` on a device that holds the real (form
 
 ### Windows
 
-Use PowerShell and Python 3. The wrapper also finds FVM's pinned SDK under `%USERPROFILE%\fvm\versions\3.47.6`; `RAFT_FLUTTER_BIN` may point to its `flutter.bat`.
+Use PowerShell and Python 3. The wrapper also finds FVM's pinned SDK under `%USERPROFILE%\fvm\versions\3.47.8`; `RAFT_FLUTTER_BIN` may point to its `flutter.bat`.
 
 ```powershell
 python tool/flutter pub get --enforce-lockfile

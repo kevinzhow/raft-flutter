@@ -35,7 +35,7 @@ Future<void> loadFonts(WidgetTester t) => t.runAsync(() async {
   }
   // Material's back arrow (RaftMobileBackButton) is an icon-font glyph.
   final icons = File(
-    '${Platform.environment['FLUTTER_ROOT'] ?? '/home/kevinzhow/flutter-sdks/versions/3.47.6'}'
+    '${Platform.environment['FLUTTER_ROOT'] ?? '/home/kevinzhow/flutter-sdks/versions/3.47.8'}'
     '/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
   );
   if (icons.existsSync()) {

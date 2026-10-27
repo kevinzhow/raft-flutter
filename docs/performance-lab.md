@@ -453,7 +453,7 @@ The macOS run is kept brief because the current gate is Linux 60 Hz.
 
 ### Requirements
 
-- The pinned Flutter SDK (`tool/flutter`, 3.47.6), Xcode with command-line tools, and CocoaPods.
+- The pinned Flutter SDK (`tool/flutter`, selected by `.fvmrc`), Xcode with command-line tools, and CocoaPods.
 - An Apple-silicon Mac with a ProMotion display: a built-in MacBook Pro panel, or an external 120 Hz display. Build arm64; under Rosetta, x64 may be capped at 60 Hz.
 
 ### Command

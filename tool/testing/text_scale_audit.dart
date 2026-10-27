@@ -111,7 +111,7 @@ Future<void> loadAuditFonts(WidgetTester t, AuditFonts fonts) => _fontsLoaded
         }
         final sdk =
             Platform.environment['FLUTTER_ROOT'] ??
-            '/home/kevinzhow/flutter-sdks/versions/3.47.6';
+            '/home/kevinzhow/flutter-sdks/versions/3.47.8';
         final icons = File(
           '$sdk/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
         );
