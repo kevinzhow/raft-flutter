@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -100,6 +101,37 @@ Widget _app(
 void main() {
   // Same process-wide notifier ownership as DesktopTitleBarController.platform.
   leakDebt(const ['ValueNotifier<DesktopTitleBarState>']);
+
+  testWidgets('header pointer: integrated drag carries its mouse down stamp', (
+    tester,
+  ) async {
+    final runner = _Runner(tester);
+    final controller = DesktopTitleBarController(
+      platform: TargetPlatform.macOS,
+      web: false,
+    );
+    await tester.pumpWidget(_app(controller));
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.down(
+      tester.getCenter(find.byKey(const Key('blank'))),
+      timeStamp: const Duration(microseconds: 600606),
+    );
+    try {
+      await mouse.moveBy(
+        const Offset(60, 0),
+        timeStamp: const Duration(microseconds: 650606),
+      );
+      expect(
+        runner.calls.singleWhere((c) => c.method == 'startDragging').arguments,
+        {'downTimestampMicros': 600606},
+      );
+    } finally {
+      await mouse.up();
+      await mouse.removePointer();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+  });
 
   testWidgets('Mac global row replaces the empty strip and reserves controls', (
     tester,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -126,11 +127,17 @@ class DesktopTitleBarStyle {
   int get hashCode => Object.hash(background, foreground, rule, ruleWidth);
 }
 
+class _HeaderPointerCancellation {
+  final completion = Completer<bool>();
+  PointerRoute? route;
+}
+
 /// The Dart side of the runner's `app.raft/titlebar` channel.
 ///
 /// Dart to native: `status` (reads the state), `setStyle` (colours), and on
 /// macOS `startDragging` / `doubleClick`. Native to Dart: `state`, whenever the
-/// title bar's height or the window's fullscreen state changes.
+/// title bar's height or the window's fullscreen state changes, and
+/// `cancelHeaderPointer`, before the runner retires an interrupted mouse stream.
 class DesktopTitleBarController {
   DesktopTitleBarController({
     MethodChannel? channel,
@@ -172,6 +179,94 @@ class DesktopTitleBarController {
   );
   Future<void>? _starting;
   DesktopTitleBarStyle? _sent;
+  ({int pointer, int downTimestampMicros})? _primaryMouseDown;
+  int? _latestPrimaryDownStamp;
+  int _pointerListeners = 0;
+  final _pointerCancellations = <int, _HeaderPointerCancellation>{};
+
+  void _attachPointerListener() => _pointerListeners++;
+
+  void _detachPointerListener() {
+    assert(_pointerListeners > 0);
+    if (--_pointerListeners == 0) {
+      for (final stamp in _pointerCancellations.keys.toList()) {
+        _completePointerCancellation(stamp, false);
+      }
+    }
+  }
+
+  void _observeMouseDown(PointerDownEvent event) {
+    if (event.kind == PointerDeviceKind.mouse &&
+        event.buttons & kPrimaryMouseButton != 0) {
+      _primaryMouseDown = (
+        pointer: event.pointer,
+        downTimestampMicros: event.timeStamp.inMicroseconds,
+      );
+      _latestPrimaryDownStamp = event.timeStamp.inMicroseconds;
+      for (final stamp in _pointerCancellations.keys.toList()) {
+        if (stamp == event.timeStamp.inMicroseconds) {
+          _cancelObservedPointer(stamp, event.pointer);
+        } else if (stamp < event.timeStamp.inMicroseconds &&
+            _pointerCancellations[stamp]?.route == null) {
+          _completePointerCancellation(stamp, true);
+        }
+      }
+    }
+  }
+
+  void _finishMousePointer(PointerEvent event) {
+    if (_primaryMouseDown?.pointer == event.pointer) _primaryMouseDown = null;
+  }
+
+  Future<bool> _cancelHeaderPointer(Object? arguments) {
+    final stamp = arguments is Map ? arguments['downTimestampMicros'] : null;
+    if (stamp is! int || _pointerListeners == 0) return Future.value(false);
+    final existing = _pointerCancellations[stamp];
+    if (existing != null) return existing.completion.future;
+    final down = _primaryMouseDown;
+    if (down?.downTimestampMicros != stamp &&
+        _latestPrimaryDownStamp != null &&
+        _latestPrimaryDownStamp! >= stamp) {
+      return Future.value(true);
+    }
+    final pending = _HeaderPointerCancellation();
+    _pointerCancellations[stamp] = pending;
+    if (down?.downTimestampMicros == stamp) {
+      _cancelObservedPointer(stamp, down!.pointer);
+    }
+    // A platform message can reach Dart before its pointer packet. Keep the
+    // request until this Listener observes that down, rather than acknowledging
+    // a pointer that has not entered the gesture binding yet.
+    return pending.completion.future;
+  }
+
+  void _cancelObservedPointer(int stamp, int pointer) {
+    final pending = _pointerCancellations[stamp];
+    if (pending == null || pending.route != null) return;
+    void observed(PointerEvent event) {
+      if (event is PointerCancelEvent && event.pointer == pointer) {
+        _completePointerCancellation(stamp, true);
+      }
+    }
+
+    pending.route = observed;
+    GestureBinding.instance.pointerRouter.addGlobalRoute(observed);
+    if (_primaryMouseDown?.pointer == pointer) _primaryMouseDown = null;
+    // A queued cancel can remain pending while the binding locks input. The
+    // global route runs after this pointer's recognizers and acknowledges its
+    // actual cancellation, rather than merely waiting one microtask.
+    GestureBinding.instance.cancelPointer(pointer);
+  }
+
+  void _completePointerCancellation(int stamp, bool cancelled) {
+    final pending = _pointerCancellations.remove(stamp);
+    if (pending == null) return;
+    final route = pending.route;
+    if (route != null) {
+      GestureBinding.instance.pointerRouter.removeGlobalRoute(route);
+    }
+    pending.completion.complete(cancelled);
+  }
 
   /// Listen for the runner's reports and read the first one. Safe to call
   /// again; an older bundle without the channel keeps the defaults.
@@ -180,7 +275,11 @@ class DesktopTitleBarController {
   Future<void> _start() async {
     if (mode == DesktopTitleBarMode.none) return;
     _channel.setMethodCallHandler((call) async {
+      if (call.method == 'cancelHeaderPointer') {
+        return _cancelHeaderPointer(call.arguments);
+      }
       if (call.method == 'state') _receive(call.arguments);
+      return null;
     });
     try {
       _receive(await _channel.invokeMethod<Object?>('status'));
@@ -273,7 +372,13 @@ class DesktopTitleBarController {
     }
   }
 
-  Future<void> startDragging() => _fire('startDragging');
+  Future<void> startDragging() {
+    final stamp = _primaryMouseDown?.downTimestampMicros;
+    return _fire(
+      'startDragging',
+      stamp == null ? null : {'downTimestampMicros': stamp},
+    );
+  }
 
   Future<void> doubleClick() => _fire('doubleClick');
 
@@ -296,9 +401,9 @@ class DesktopTitleBarController {
     }
   }
 
-  Future<void> _fire(String method) async {
+  Future<void> _fire(String method, [Object? arguments]) async {
     try {
-      await _channel.invokeMethod<void>(method);
+      await _channel.invokeMethod<void>(method, arguments);
     } on MissingPluginException {
       // An older bundle: the traffic lights still move the window.
     }
@@ -345,6 +450,7 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
   @override
   void initState() {
     super.initState();
+    _controller._attachPointerListener();
     unawaited(_controller.start());
     _syncLayout();
     widget.workspace?.addListener(_syncTitle);
@@ -354,6 +460,12 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
   @override
   void didUpdateWidget(DesktopTitleBar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final oldController =
+        oldWidget.controller ?? DesktopTitleBarController.platform;
+    if (!identical(oldController, _controller)) {
+      oldController._detachPointerListener();
+      _controller._attachPointerListener();
+    }
     if (!identical(oldWidget.workspace, widget.workspace)) {
       oldWidget.workspace?.removeListener(_syncTitle);
       widget.workspace?.addListener(_syncTitle);
@@ -364,6 +476,7 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
 
   @override
   void dispose() {
+    _controller._detachPointerListener();
     widget.workspace?.removeListener(_syncTitle);
     super.dispose();
   }
@@ -394,7 +507,7 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
     final controller = _controller;
     if (controller.mode == DesktopTitleBarMode.none) return widget.child;
     final nativeCaption = controller.mode == DesktopTitleBarMode.nativeWithRule;
-    return ValueListenableBuilder<DesktopTitleBarState>(
+    final titleBar = ValueListenableBuilder<DesktopTitleBarState>(
       valueListenable: controller.state,
       child: KeyedSubtree(key: _contentKey, child: widget.child),
       builder: (context, state, child) {
@@ -530,6 +643,12 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
           child: content,
         );
       },
+    );
+    return Listener(
+      onPointerDown: controller._observeMouseDown,
+      onPointerUp: controller._finishMousePointer,
+      onPointerCancel: controller._finishMousePointer,
+      child: titleBar,
     );
   }
 }

@@ -1,4 +1,4 @@
-"""Exercise the production titlebar channel against real offscreen AppKit windows."""
+"""Exercise the production titlebar channel and real Flutter/AppKit input routing."""
 import json
 import os
 from pathlib import Path
@@ -23,9 +23,10 @@ class MacOSTitlebarTests(unittest.TestCase):
             self.skipTest('Install the pinned Flutter SDK')
         framework = executable.parent.parent / 'bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework/macos-arm64_x86_64'
         self.assertTrue((framework / 'FlutterMacOS.framework').is_dir())
-        common = ['-F', str(framework), '-framework', 'FlutterMacOS', '-framework', 'Cocoa']
         with tempfile.TemporaryDirectory(prefix='raft-titlebar-') as temporary:
             directory = Path(temporary)
+            common = ['-F', str(framework), '-framework', 'FlutterMacOS', '-framework', 'Cocoa',
+                      '-module-cache-path', str(directory / 'module-cache')]
             registry = directory / 'Registry.swift'
             registry.write_text('import FlutterMacOS\nfunc RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {}\n')
             binary = directory / 'titlebar-tests'
@@ -46,9 +47,13 @@ class MacOSTitlebarTests(unittest.TestCase):
             ]
             for command in commands:
                 result = subprocess.run(command, capture_output=True, text=True, timeout=120)
+                if command == [str(binary)] and os.environ.get('RAFT_MACOS_TITLEBAR_LOG'):
+                    with Path(os.environ['RAFT_MACOS_TITLEBAR_LOG']).open('x') as log:
+                        log.write(f'Native runtime exit: {result.returncode}\n')
+                        log.write(result.stdout + result.stderr)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 if command == [str(binary)]:
-                    self.assertIn('8 cases, 0 failed assertions', result.stdout)
+                    self.assertIn('10 cases, 0 failed assertions', result.stdout)
 
 
 if __name__ == '__main__':

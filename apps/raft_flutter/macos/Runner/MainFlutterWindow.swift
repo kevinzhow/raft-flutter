@@ -19,10 +19,14 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
   private let videoFrame = RaftVideoFrame()
   private struct HeaderMouseSequence {
     let controller: FlutterViewController
+    let down: NSEvent
     var lastEvent: NSEvent
   }
   private var headerMouseSequence: HeaderMouseSequence?
   private var headerDragHandedOff = false
+  private var pendingHeaderMouseEvents: [NSEvent]?
+  private var headerCancellationInFlight = false
+  private var appKitMouseSequence = false
 
   // AppKit resets standard-button frames during layout. Align them after that
   // layout, before display; didUpdate arrives after a displaced frame can paint.
@@ -42,10 +46,42 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
   }
 
   override func sendEvent(_ event: NSEvent) {
+    if event.window === self {
+      if event.type == .leftMouseDown {
+        appKitMouseSequence = titleBar?.isStandardButtonMouseDown(event) == true
+          || mouseDownHitsNativeView(event)
+      }
+      if appKitMouseSequence,
+        [.leftMouseDown, .leftMouseDragged, .leftMouseUp].contains(event.type) {
+        // NSButton may synchronously track through mouseUp. Never queue its
+        // down while retaining that release in a separate Flutter replay loop.
+        if event.type == .leftMouseUp { appKitMouseSequence = false }
+        super.sendEvent(event)
+        return
+      }
+    }
+    dispatchFlutterHeaderEvent(event)
+  }
+
+  private func dispatchFlutterHeaderEvent(_ event: NSEvent) {
+    let primary = event.window === self
+      && [.leftMouseDown, .leftMouseDragged, .leftMouseUp].contains(event.type)
+    if primary, pendingHeaderMouseEvents != nil {
+      pendingHeaderMouseEvents?.append(event)
+      if event.type == .leftMouseDown { cancelPendingHeaderSequence() }
+      return
+    }
     if event.type == .leftMouseDown, event.window === self {
+      if headerMouseSequence != nil {
+        // A cancelled/interrupted native sequence can omit mouseUp. Cancel its
+        // Dart recognizers before closing the engine's pressed state, then
+        // replay the new Flutter input in order.
+        pendingHeaderMouseEvents = [event]
+        cancelPendingHeaderSequence()
+        return
+      }
       // performDrag may consume mouseUp. A fresh press starts a new sequence.
       headerDragHandedOff = false
-      headerMouseSequence = nil
     }
     if headerDragHandedOff, event.window === self {
       if event.type == .leftMouseUp {
@@ -98,7 +134,7 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     if renderView.acceptsFirstResponder, firstResponder !== renderView {
       _ = makeFirstResponder(renderView)
     }
-    headerMouseSequence = HeaderMouseSequence(controller: controller, lastEvent: event)
+    headerMouseSequence = HeaderMouseSequence(controller: controller, down: event, lastEvent: event)
     // NSWindow's titlebar recognizer acts on mouseUp independently of Dart's
     // gesture arena. Forward the complete client sequence exactly once, before
     // that native recognizer can acquire it; blank Flutter gestures explicitly
@@ -106,14 +142,57 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     controller.mouseDown(with: event)
   }
 
-  fileprivate func prepareForHeaderWindowDrag() -> Bool {
-    guard let sequence = headerMouseSequence else { return true }
+  private func mouseDownHitsNativeView(_ event: NSEvent) -> Bool {
+    guard let controller = contentViewController as? FlutterViewController,
+      let content = contentView,
+      let renderView = controller.registrar(forPlugin: "RaftHeaderMouseDispatch").view
+    else { return false }
+    let point = content.superview?.convert(event.locationInWindow, from: nil)
+      ?? content.convert(event.locationInWindow, from: nil)
+    guard let hit = content.hitTest(point) else { return false }
+    return hit !== renderView
+  }
+
+  private func cancelPendingHeaderSequence() {
+    guard !headerCancellationInFlight, let previous = headerMouseSequence,
+      pendingHeaderMouseEvents != nil, let titleBar else { return }
+    headerCancellationInFlight = true
+    titleBar.cancelHeaderPointer(downTimestampMicros: Self.micros(previous.down)) {
+      [weak self] cancelled in
+      guard let self else { return }
+      self.headerCancellationInFlight = false
+      // Without a cancellation acknowledgement, an invented up could tap the
+      // old control. Keep Flutter's queue until a later press retries the same
+      // cancellation. Native buttons remain on their own AppKit path.
+      guard cancelled, let up = self.closingUp(for: previous) else { return }
+      let events = self.pendingHeaderMouseEvents ?? []
+      self.pendingHeaderMouseEvents = nil
+      self.headerMouseSequence = nil
+      previous.controller.mouseUp(with: up)
+      for queued in events { self.dispatchFlutterHeaderEvent(queued) }
+    }
+  }
+
+  private static func micros(_ event: NSEvent) -> Int64 {
+    Int64(event.timestamp * 1_000_000)
+  }
+
+  private func closingUp(for sequence: HeaderMouseSequence) -> NSEvent? {
     let source = sequence.lastEvent
-    guard let up = NSEvent.mouseEvent(with: .leftMouseUp,
+    // Keep the original event clock: input already queued behind a platform
+    // message must not acquire a timestamp older than this closing packet.
+    return NSEvent.mouseEvent(with: .leftMouseUp,
       location: source.locationInWindow, modifierFlags: source.modifierFlags,
-      timestamp: max(source.timestamp, ProcessInfo.processInfo.systemUptime),
-      windowNumber: windowNumber, context: nil, eventNumber: 0,
-      clickCount: 1, pressure: 0)
+      timestamp: source.timestamp, windowNumber: windowNumber, context: nil,
+      eventNumber: 0, clickCount: 1, pressure: 0)
+  }
+
+  fileprivate func prepareForHeaderWindowDrag(downTimestampMicros: Int64?) -> Bool {
+    guard let sequence = headerMouseSequence else { return true }
+    guard pendingHeaderMouseEvents == nil,
+      downTimestampMicros == Self.micros(sequence.down),
+      sequence.lastEvent.type == .leftMouseDragged,
+      let up = closingUp(for: sequence)
     else { return false }
     headerMouseSequence = nil
     headerDragHandedOff = true
@@ -493,15 +572,33 @@ final class RaftTitleBar: NSObject {
     let fromTop = content.isFlipped
       ? point.y - content.bounds.minY : content.bounds.maxY - point.y
     guard fromTop >= 0, fromTop < height else { return false }
-    return !Self.buttons.contains { type in
-      guard let button = window.standardWindowButton(type) else { return false }
+    return !isStandardButtonMouseDown(event)
+  }
+
+  fileprivate func isStandardButtonMouseDown(_ event: NSEvent) -> Bool {
+    guard event.type == .leftMouseDown, let window, event.window === window,
+      let content = window.contentView else { return false }
+    let point = content.convert(event.locationInWindow, from: nil)
+    return Self.buttons.contains { type in
+      guard let button = window.standardWindowButton(type), !button.isHidden else { return false }
       return button.convert(button.bounds, to: content).contains(point)
     }
   }
 
-  private func startDragging() {
+  fileprivate func cancelHeaderPointer(downTimestampMicros: Int64,
+    completion: @escaping (Bool) -> Void) {
+    channel.invokeMethod("cancelHeaderPointer",
+      arguments: ["downTimestampMicros": downTimestampMicros]) { response in
+      completion((response as? Bool) == true)
+    }
+  }
+
+  private func startDragging(downTimestampMicros: Int64?) {
     guard let window, !window.styleMask.contains(.fullScreen) else { return }
     if var gesture = pointerGesture {
+      if let stamp = downTimestampMicros {
+        guard stamp == Int64(gesture.down.timestamp * 1_000_000) else { return }
+      }
       guard !gesture.consumed else { return }
       gesture.consumed = true
       pointerGesture = gesture
@@ -514,12 +611,14 @@ final class RaftTitleBar: NSObject {
         window.setFrameOrigin(NSPoint(x: gesture.frame.origin.x + end.x - gesture.start.x,
           y: gesture.frame.origin.y + end.y - gesture.start.y))
       } else {
-        guard (window as? MainFlutterWindow)?.prepareForHeaderWindowDrag() != false else { return }
+        guard (window as? MainFlutterWindow)?.prepareForHeaderWindowDrag(
+          downTimestampMicros: downTimestampMicros) != false else { return }
         window.performDrag(with: gesture.down)
       }
     } else if let event = NSApp.currentEvent,
       event.type == .leftMouseDown || event.type == .leftMouseDragged {
-      guard (window as? MainFlutterWindow)?.prepareForHeaderWindowDrag() != false else { return }
+      guard (window as? MainFlutterWindow)?.prepareForHeaderWindowDrag(
+        downTimestampMicros: downTimestampMicros) != false else { return }
       window.performDrag(with: event)
     }
   }
@@ -563,7 +662,9 @@ final class RaftTitleBar: NSObject {
       }
       result(nil)
     case "startDragging":
-      startDragging()
+      let args = call.arguments as? [String: Any]
+      let stamp = (args?["downTimestampMicros"] as? NSNumber)?.int64Value
+      startDragging(downTimestampMicros: stamp)
       result(nil)
     case "doubleClick":
       // The user's System Settings choice for a title bar double-click.

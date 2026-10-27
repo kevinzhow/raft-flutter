@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -41,6 +43,21 @@ class _Runner {
       if (call.method == method) call,
   ];
 
+  Future<Object?> cancelPointer(int stamp, {VoidCallback? onReply}) async {
+    Object? reply;
+    await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+      channel.name,
+      channel.codec.encodeMethodCall(
+        MethodCall('cancelHeaderPointer', {'downTimestampMicros': stamp}),
+      ),
+      (message) {
+        reply = channel.codec.decodeEnvelope(message!);
+        onReply?.call();
+      },
+    );
+    return reply;
+  }
+
   Future<void> push({double? height, bool? fullscreen}) async {
     await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
       channel.name,
@@ -71,6 +88,366 @@ Widget _app(
 void main() {
   // Leak debt (other): see docs/development.md, Leak tracking.
   leakDebt(const ['ValueNotifier<DesktopTitleBarState>']);
+  testWidgets('header cancellation: waits for its not-yet-delivered down', (
+    tester,
+  ) async {
+    final runner = _Runner(tester);
+    final controller = DesktopTitleBarController(
+      platform: TargetPlatform.macOS,
+      web: false,
+    );
+    final events = <String>[];
+    var taps = 0;
+    await tester.pumpWidget(
+      _app(
+        controller,
+        child: Listener(
+          onPointerCancel: (_) => events.add('cancel'),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => taps++,
+            child: const SizedBox.expand(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final pending = runner.cancelPointer(
+      700707,
+      onReply: () => events.add('ack'),
+    );
+    final repeated = runner.cancelPointer(
+      700707,
+      onReply: () => events.add('repeated ack'),
+    );
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    var pressed = false;
+    try {
+      await tester.idle();
+      expect(events, isEmpty);
+      await mouse.down(
+        const Offset(400, 100),
+        timeStamp: const Duration(microseconds: 700707),
+      );
+      pressed = true;
+      expect(await Future.wait([pending, repeated]), [true, true]);
+      expect(events.first, 'cancel');
+      expect(events.where((event) => event == 'cancel'), hasLength(1));
+      expect(events, hasLength(3));
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await Future.wait([pending, repeated]);
+      if (pressed) await mouse.up();
+      await mouse.removePointer();
+    }
+    expect(taps, 0);
+  });
+
+  testWidgets('header cancellation: ack waits for unlocked pointer dispatch', (
+    tester,
+  ) async {
+    final runner = _Runner(tester);
+    final controller = DesktopTitleBarController(
+      platform: TargetPlatform.macOS,
+      web: false,
+    );
+    final events = <String>[];
+    await tester.pumpWidget(
+      _app(
+        controller,
+        child: Listener(
+          onPointerCancel: (_) => events.add('cancel'),
+          child: const ColoredBox(color: Colors.white),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.down(
+      const Offset(400, 100),
+      timeStamp: const Duration(microseconds: 800808),
+    );
+    final routes = GestureBinding.instance.pointerRouter.debugGlobalRouteCount;
+    final unlock = Completer<void>();
+    // ignore: invalid_use_of_protected_member -- Exercise the binding's real input lock.
+    final held = tester.binding.lockEvents(() => unlock.future);
+    final pending = runner.cancelPointer(
+      800808,
+      onReply: () => events.add('ack'),
+    );
+    try {
+      try {
+        await tester.idle();
+        expect(events, isEmpty);
+        expect(
+          GestureBinding.instance.pointerRouter.debugGlobalRouteCount,
+          routes + 1,
+        );
+      } finally {
+        unlock.complete();
+        await held;
+      }
+      expect(await pending, isTrue);
+      expect(events, ['cancel', 'ack']);
+      expect(
+        GestureBinding.instance.pointerRouter.debugGlobalRouteCount,
+        routes,
+      );
+    } finally {
+      await mouse.up();
+      await mouse.removePointer();
+    }
+  });
+
+  testWidgets(
+    'header cancellation: unmount rejects pending ack and removes route',
+    (tester) async {
+      final runner = _Runner(tester);
+      final controller = DesktopTitleBarController(
+        platform: TargetPlatform.macOS,
+        web: false,
+      );
+      await tester.pumpWidget(
+        _app(controller, child: const ColoredBox(color: Colors.white)),
+      );
+      await tester.pumpAndSettle();
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.down(
+        const Offset(400, 100),
+        timeStamp: const Duration(microseconds: 900909),
+      );
+      final routes =
+          GestureBinding.instance.pointerRouter.debugGlobalRouteCount;
+      final unlock = Completer<void>();
+      // ignore: invalid_use_of_protected_member -- Keep cancellation pending through unmount.
+      final held = tester.binding.lockEvents(() => unlock.future);
+      final pending = runner.cancelPointer(900909);
+      try {
+        await tester.idle();
+        expect(
+          GestureBinding.instance.pointerRouter.debugGlobalRouteCount,
+          routes + 1,
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+        expect(await pending, isFalse);
+        expect(
+          GestureBinding.instance.pointerRouter.debugGlobalRouteCount,
+          routes,
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        unlock.complete();
+        await held;
+        await pending;
+        await mouse.up();
+        await mouse.removePointer();
+      }
+    },
+  );
+
+  testWidgets('header pointer: standalone drag snapshots the mouse down', (
+    tester,
+  ) async {
+    final runner = _Runner(tester);
+    final controller = DesktopTitleBarController(
+      platform: TargetPlatform.macOS,
+      web: false,
+    );
+    await tester.pumpWidget(_app(controller));
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.down(
+      const Offset(400, 10),
+      timeStamp: const Duration(microseconds: 100101),
+    );
+    var pressed = true;
+    try {
+      await mouse.moveBy(
+        const Offset(60, 0),
+        timeStamp: const Duration(microseconds: 150101),
+      );
+      expect(runner.named('startDragging').single.arguments, {
+        'downTimestampMicros': 100101,
+      });
+      final pending = controller.startDragging();
+      await mouse.up();
+      pressed = false;
+      await pending;
+      expect(runner.named('startDragging').last.arguments, {
+        'downTimestampMicros': 100101,
+      });
+      await controller.startDragging();
+      expect(runner.named('startDragging').last.arguments, isNull);
+    } finally {
+      // A failed expectation may leave the gesture pressed.
+      if (pressed) await mouse.cancel();
+      await mouse.removePointer();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+  });
+
+  testWidgets('header pointer: native cancel precedes its ack and blocks tap', (
+    tester,
+  ) async {
+    final runner = _Runner(tester);
+    final controller = DesktopTitleBarController(
+      platform: TargetPlatform.macOS,
+      web: false,
+    );
+    final events = <String>[];
+    var taps = 0;
+    await tester.pumpWidget(
+      _app(
+        controller,
+        child: Listener(
+          onPointerCancel: (_) => events.add('cancel'),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => taps++,
+            child: const SizedBox.expand(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.down(
+      const Offset(400, 100),
+      timeStamp: const Duration(microseconds: 200202),
+    );
+    try {
+      final ack = await runner.cancelPointer(
+        200202,
+        onReply: () => events.add('ack'),
+      );
+      expect(events, ['cancel', 'ack']);
+      expect(ack, isTrue);
+      await controller.startDragging();
+      expect(runner.named('startDragging').last.arguments, isNull);
+    } finally {
+      await mouse.up();
+      await mouse.removePointer();
+    }
+    expect(taps, 0);
+  });
+
+  testWidgets('header pointer: stale cancel preserves the next real tap', (
+    tester,
+  ) async {
+    final runner = _Runner(tester);
+    final controller = DesktopTitleBarController(
+      platform: TargetPlatform.macOS,
+      web: false,
+    );
+    var taps = 0;
+    var cancels = 0;
+    await tester.pumpWidget(
+      _app(
+        controller,
+        child: Listener(
+          onPointerCancel: (_) => cancels++,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => taps++,
+            child: const SizedBox.expand(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final old = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await old.down(
+      const Offset(400, 100),
+      timeStamp: const Duration(microseconds: 300303),
+    );
+    await old.up();
+    await old.removePointer();
+    expect(taps, 1);
+    final current = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await current.down(
+      const Offset(400, 100),
+      timeStamp: const Duration(microseconds: 400404),
+    );
+    try {
+      expect(await runner.cancelPointer(300303), isTrue);
+      expect(cancels, 0);
+      await controller.startDragging();
+      expect(runner.named('startDragging').last.arguments, {
+        'downTimestampMicros': 400404,
+      });
+    } finally {
+      await current.up();
+      await current.removePointer();
+    }
+    expect(taps, 2);
+  });
+
+  testWidgets('header pointer: unrelated release keeps the mouse record', (
+    tester,
+  ) async {
+    final runner = _Runner(tester);
+    final controller = DesktopTitleBarController(
+      platform: TargetPlatform.macOS,
+      web: false,
+    );
+    await tester.pumpWidget(
+      _app(controller, child: const ColoredBox(color: Colors.white)),
+    );
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    final touch = await tester.createGesture(kind: PointerDeviceKind.touch);
+    await mouse.down(
+      const Offset(400, 100),
+      timeStamp: const Duration(microseconds: 500505),
+    );
+    var pressed = true;
+    try {
+      await touch.down(const Offset(450, 100));
+      await touch.up();
+      await controller.startDragging();
+      expect(runner.named('startDragging').last.arguments, {
+        'downTimestampMicros': 500505,
+      });
+      await mouse.cancel();
+      pressed = false;
+      await controller.startDragging();
+      expect(runner.named('startDragging').last.arguments, isNull);
+    } finally {
+      if (pressed) await mouse.up();
+      await mouse.removePointer();
+    }
+  });
+
+  testWidgets('header pointer: touch and secondary mouse retain legacy args', (
+    tester,
+  ) async {
+    final runner = _Runner(tester);
+    final controller = DesktopTitleBarController(
+      platform: TargetPlatform.macOS,
+      web: false,
+    );
+    await tester.pumpWidget(
+      _app(controller, child: const ColoredBox(color: Colors.white)),
+    );
+    await tester.pumpAndSettle();
+    for (final kind in [PointerDeviceKind.touch, PointerDeviceKind.mouse]) {
+      final gesture = await tester.createGesture(
+        kind: kind,
+        buttons: kind == PointerDeviceKind.mouse
+            ? kSecondaryMouseButton
+            : kPrimaryButton,
+      );
+      await gesture.down(const Offset(400, 100));
+      try {
+        await controller.startDragging();
+        expect(runner.named('startDragging').last.arguments, isNull);
+      } finally {
+        await gesture.up();
+        if (kind == PointerDeviceKind.mouse) await gesture.removePointer();
+      }
+    }
+  });
+
   testWidgets('macOS: the standalone brand row stays 48px', (tester) async {
     final runner = _Runner(tester, height: 32);
     final controller = DesktopTitleBarController(

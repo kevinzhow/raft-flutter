@@ -32,6 +32,138 @@ private func closeRect(_ window: NSWindow) -> NSRect {
   return button.convert(button.bounds, to: window.contentView)
 }
 
+// A real engine, Flutter view, wrapper and registrar are constructed by the
+// pinned framework. Only the controller's Dart startup and final mouse receiver
+// are replaced: this tests MainFlutterWindow.sendEvent, not Dart recognition or
+// a synthetic NSView whose mouseDownCanMoveWindow differs from Flutter's view.
+private final class RecordingFlutterViewController: FlutterViewController {
+  var received: [NSEvent] = []
+  override func viewWillAppear() {}
+  override func mouseDown(with event: NSEvent) { received.append(event) }
+  override func mouseUp(with event: NSEvent) { received.append(event) }
+  override func mouseDragged(with event: NSEvent) { received.append(event) }
+}
+
+private func pointFromTop(_ view: NSView, x: CGFloat, top: CGFloat) -> NSPoint {
+  let y = view.isFlipped ? view.bounds.minY + top : view.bounds.maxY - top
+  return view.convert(NSPoint(x: view.bounds.minX + x, y: y), to: nil)
+}
+
+private func inputSequence(_ window: NSWindow,
+  _ items: [(NSEvent.EventType, NSPoint, Int)], offset: TimeInterval) -> [NSEvent] {
+  let stamp = ProcessInfo.processInfo.systemUptime + offset
+  return items.enumerated().map { index, item in
+    NSEvent.mouseEvent(with: item.0, location: item.1, modifierFlags: [],
+      timestamp: stamp + Double(index) * 0.075, windowNumber: window.windowNumber,
+      context: nil, eventNumber: index + 20, clickCount: item.2,
+      pressure: item.0 == .leftMouseUp ? 0 : 1)!
+  }
+}
+
+private func describeInput(_ label: String, _ controller: RecordingFlutterViewController,
+  expected: [NSEvent], before: NSRect, after: NSRect) {
+  let rows = controller.received.map { event -> [String: Any] in
+    ["type": event.type.rawValue,
+      "clickCount": event.type == .leftMouseDragged ? 0 : event.clickCount,
+      "x": event.locationInWindow.x, "y": event.locationInWindow.y]
+  }
+  let data: [String: Any] = ["target": label, "expectedEvents": expected.count,
+    "received": rows, "frameBefore": NSStringFromRect(before),
+    "frameAfter": NSStringFromRect(after)]
+  print("Native header input:", String(data: try! JSONSerialization.data(withJSONObject: data), encoding: .utf8)!)
+}
+
+private func checkSameEvents(_ actual: [NSEvent], _ expected: [NSEvent], _ label: String) {
+  check(actual.count == expected.count && zip(actual, expected).allSatisfy { $0.0 === $0.1 },
+    "\(label) must deliver every original down/up/drag to the same Flutter controller; actual \(actual.map { $0.type.rawValue })")
+}
+
+private func exerciseFlutterHeaderInput() {
+  let input = MainFlutterWindow(contentRect: NSRect(x: 40, y: 40, width: 900, height: 600),
+    styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+  input.isReleasedWhenClosed = false
+  input.title = "Raft native header input test"
+  // Initialize the production private titlebar before replacing the initial
+  // controller. Its view is never shown, so it does not start a Dart isolate.
+  input.awakeFromNib()
+  let initial = input.contentViewController as? FlutterViewController
+  let recorder = RecordingFlutterViewController()
+  input.contentViewController = recorder
+  defer {
+    input.orderOut(nil)
+    input.contentViewController = nil
+    input.close()
+    recorder.engine.shutDownEngine()
+    initial?.engine.shutDownEngine()
+    _ = NSApp.setActivationPolicy(.prohibited)
+  }
+  let registrar = recorder.registrar(forPlugin: "NativeHeaderInputFixture")
+  guard let renderView = registrar.view else {
+    check(false, "fixture must expose the pinned engine's real registrar.view")
+    return
+  }
+  check(recorder.engine.viewController === recorder,
+    "fixture must retain its actual Flutter engine/controller association")
+  check(renderView !== recorder.view && renderView.isDescendant(of: recorder.view),
+    "fixture must use the real render view inside Flutter's wrapper")
+  NSApp.finishLaunching()
+  input.orderBack(nil)
+  RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.05))
+  // Assigning a fresh controller adopts its initial 1x1 wrapper size. Restore
+  // the test viewport after installation, before deriving any input locations.
+  input.setFrame(NSRect(x: 40, y: 40, width: 900, height: 600), display: false)
+  input.layoutIfNeeded()
+  input.contentView?.layoutSubtreeIfNeeded()
+  guard input.isVisible &&
+    renderView.bounds.width >= 800 && renderView.bounds.height >= 500 else {
+    check(false, "fixture must be laid out in a real window before input; frame \(input.frame), render \(renderView.bounds)")
+    return
+  }
+  print("Native header fixture:", NSStringFromClass(type(of: renderView)),
+    "wrapper:", NSStringFromClass(type(of: recorder.view)),
+    "active:", NSApp.isActive, "key:", input.isKeyWindow)
+  let baseline = input.frame
+
+  // First prove ordinary body dispatch reaches this real controller through
+  // AppKit. A missing all-events fixture must not masquerade as a header RED.
+  let body = pointFromTop(renderView, x: 450, top: 240)
+  let bodyEvents = inputSequence(input, [(.leftMouseDown, body, 1),
+    (.leftMouseUp, body, 1), (.leftMouseDown, body, 2), (.leftMouseUp, body, 2)], offset: 0)
+  // Route through NSApplication so the production sendEvent runs with AppKit's
+  // currentEvent context. These synthesized packets test routing only; this
+  // background fixture does not reproduce the active app's native zoom.
+  for event in bodyEvents { NSApp.sendEvent(event) }
+  checkSameEvents(recorder.received, bodyEvents, "body control")
+  check(input.frame == baseline, "ordinary body double-click must not resize the native window")
+  describeInput("body control", recorder, expected: bodyEvents, before: baseline, after: input.frame)
+
+  input.setFrame(baseline, display: false)
+  recorder.received.removeAll()
+  let header = pointFromTop(renderView, x: 140, top: 24)
+  let headerEvents = inputSequence(input, [(.leftMouseDown, header, 1),
+    (.leftMouseUp, header, 1), (.leftMouseDown, header, 2), (.leftMouseUp, header, 2)], offset: 1)
+  for event in headerEvents { NSApp.sendEvent(event) }
+  checkSameEvents(recorder.received, headerEvents, "integrated header double-click")
+  check(input.frame == baseline,
+    "an integrated Flutter control's complete double-click must leave the native frame unchanged")
+  describeInput("integrated header double-click", recorder,
+    expected: headerEvents, before: baseline, after: input.frame)
+
+  // Releases and drags remain part of the press that began in Flutter's header,
+  // even after the pointer crosses into the body. Reclassifying each event by
+  // its current Y would drop the tail of a gesture.
+  input.setFrame(baseline, display: false)
+  recorder.received.removeAll()
+  let outsideHeader = pointFromTop(renderView, x: 180, top: 120)
+  let crossEvents = inputSequence(input, [(.leftMouseDown, header, 1),
+    (.leftMouseDragged, outsideHeader, 1), (.leftMouseUp, outsideHeader, 1)], offset: 2)
+  for event in crossEvents { NSApp.sendEvent(event) }
+  checkSameEvents(recorder.received, crossEvents, "header press leaving header")
+  check(input.frame == baseline, "Flutter header input must not start an unrelated native drag")
+  describeInput("header press leaving header", recorder,
+    expected: crossEvents, before: baseline, after: input.frame)
+}
+
 _ = NSApplication.shared.setActivationPolicy(.prohibited)
 let window = MainFlutterWindow(contentRect: NSRect(x: 100, y: 100, width: 1000, height: 700),
   styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
@@ -177,7 +309,12 @@ check(restored?["leadingInset"] as? Double == 0, "the standalone strip must not 
 check(window.toolbar == nil, "leaving the workspace must remove the integration toolbar")
 check(abs(window.contentView!.bounds.height - closeRect(window).midY - standardCenter) < 0.01, "the original native button position must be restored")
 
+exerciseFlutterHeaderInput()
+window.orderOut(nil)
+otherWindow.orderOut(nil)
+otherWindow.close()
+window.close()
 for failure in failures { print("FAIL: \(failure)") }
-print("Native integrated titlebar: 8 cases, \(failures.count) failed assertions")
+print("Native integrated titlebar: 10 cases, \(failures.count) failed assertions")
 withExtendedLifetime(titlebar) {}
 exit(failures.isEmpty ? 0 : 1)
