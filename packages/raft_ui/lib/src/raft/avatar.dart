@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import '../icons.dart' show RaftIconViewport;
 import '../tokens/tokens.dart';
 import '../tooltip.dart';
 import 'css_box.dart';
@@ -125,8 +126,8 @@ class RaftAvatarPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: SizedBox.square(
-      dimension: size.icon,
+    child: RaftIconViewport(
+      size: size.icon,
       child: CustomPaint(
         painter: _PlaceholderPainter(
           color ?? RaftTokens.of(context).ui.stickerInk,

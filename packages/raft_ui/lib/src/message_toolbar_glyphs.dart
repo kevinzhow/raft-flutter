@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'icons.dart' show RaftIconViewport;
+
 /// Exact pinned raft-ui ThreadIcon (18-unit viewport; mixed stroke/fill).
 class RaftMessageThreadGlyph extends StatelessWidget {
   const RaftMessageThreadGlyph({super.key, this.size = 13, this.color});
@@ -7,8 +9,8 @@ class RaftMessageThreadGlyph extends StatelessWidget {
   final Color? color;
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-    child: SizedBox.square(
-      dimension: size,
+    child: RaftIconViewport(
+      size: size,
       child: CustomPaint(
         painter: _ThreadPainter(
           color ??
@@ -75,8 +77,8 @@ class RaftMessageAddReactionGlyph extends StatelessWidget {
   final Color? color;
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-    child: SizedBox.square(
-      dimension: size,
+    child: RaftIconViewport(
+      size: size,
       child: CustomPaint(
         painter: _ReactionPainter(
           color ??

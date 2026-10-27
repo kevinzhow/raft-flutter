@@ -23,8 +23,8 @@ class ChannelFileGlyph extends StatelessWidget {
     };
     return shared != null
         ? RaftIcon(shared, size: size, color: ink)
-        : SizedBox.square(
-            dimension: size,
+        : RaftIconViewport(
+            size: size,
             child: CustomPaint(painter: _FileGlyphPainter(glyph, ink)),
           );
   }

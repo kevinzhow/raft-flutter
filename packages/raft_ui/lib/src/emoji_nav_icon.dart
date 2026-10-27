@@ -15,8 +15,8 @@ class RaftEmojiNavIcon extends StatelessWidget {
   final double size;
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-    child: SizedBox.square(
-      dimension: size,
+    child: RaftIconViewport(
+      size: size,
       child: CustomPaint(painter: _EmojiNavPainter(category, state)),
     ),
   );

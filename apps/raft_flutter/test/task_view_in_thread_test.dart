@@ -74,6 +74,15 @@ void main() {
         expect(find.byType(SourceTaskSurface), findsOneWidget);
         expect(find.byKey(viewInThread), findsOneWidget);
         expect(find.byTooltip('View in thread'), findsOneWidget);
+        final icon = find.descendant(
+          of: find.byKey(viewInThread),
+          matching: find.byType(RaftThreadIcon),
+        );
+        final artwork = find.descendant(
+          of: icon,
+          matching: find.byType(CustomPaint),
+        );
+        expect(t.getSize(artwork), const Size.square(14));
         await t.tap(find.byKey(viewInThread));
         await flush(t);
         await t.pump(const Duration(milliseconds: 500));

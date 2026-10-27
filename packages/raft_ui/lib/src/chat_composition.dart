@@ -691,8 +691,8 @@ class _ConversationTaskGlyph extends StatelessWidget {
   final double size, stroke;
   final Color color;
   @override
-  Widget build(BuildContext context) => SizedBox.square(
-    dimension: size,
+  Widget build(BuildContext context) => RaftIconViewport(
+    size: size,
     child: CustomPaint(painter: _ListTodoPainter(color, stroke)),
   );
 }

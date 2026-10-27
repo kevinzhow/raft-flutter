@@ -11,8 +11,8 @@ class RaftReactionGlyph extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: _reactionPaths.containsKey(reaction)
-        ? SizedBox.square(
-            dimension: size,
+        ? RaftIconViewport(
+            size: size,
             child: CustomPaint(painter: _ReactionSpritePainter(reaction)),
           )
         // Web: an inline-block glyph at the sprite size with the emoji's own
