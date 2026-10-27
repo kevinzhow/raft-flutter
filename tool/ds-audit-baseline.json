@@ -10,11 +10,9 @@
  ],
  "about": "Ratchet for tool/ds-audit. Counts may only go down. Feature branches never edit this file; the integration owner runs `tool/ds-audit --update-baseline` after merges (separate small commit). `generated` is informational (const variables per generated recipe file) and is never checked.",
  "totals": {
-  "bypass.button": 38,
   "bypass.chip": 3,
   "bypass.dialog": 44,
   "bypass.divider": 1,
-  "bypass.icon_button": 15,
   "bypass.list_tile": 4,
   "bypass.menu": 19,
   "bypass.overlay": 24,
@@ -44,11 +42,9 @@
   "style.material_theme": 18,
   "style.sized_box": 41,
   "style.text_style": 2,
-  "widget.button": 22,
+  "widget.button": 1,
   "widget.chip": 3,
   "widget.dialog": 29,
-  "widget.icon_button": 9,
-  "widget.ink": 1,
   "widget.list_tile": 2,
   "widget.menu": 15,
   "widget.other": 10,
@@ -65,13 +61,10 @@
    "duplicate.button": 3
   },
   "apps/raft_flutter/lib/features/account_settings.dart": {
-   "bypass.button": 1,
    "bypass.dialog": 1,
    "duplicate.dialog": 3,
    "style.dimension": 1,
-   "widget.button": 1,
    "widget.dialog": 1,
-   "widget.ink": 1,
    "widget.other": 2
   },
   "apps/raft_flutter/lib/features/account_sign_in_recipe.dart": {
@@ -113,13 +106,11 @@
    "duplicate.button": 1
   },
   "apps/raft_flutter/lib/features/agent_scopes_view.dart": {
-   "bypass.button": 1,
    "bypass.toggle": 1,
    "style.dimension": 1,
    "style.edge_insets": 1,
    "style.material_theme": 1,
    "style.sized_box": 1,
-   "widget.button": 1,
    "widget.list_tile": 1,
    "widget.scaffold": 1
   },
@@ -140,22 +131,18 @@
    "duplicate.button": 1
   },
   "apps/raft_flutter/lib/features/attachment_view.dart": {
-   "bypass.button": 1,
    "bypass.dialog": 1,
-   "widget.button": 1,
    "widget.dialog": 1
   },
   "apps/raft_flutter/lib/features/auth_view.dart": {
    "duplicate.dialog": 1
   },
   "apps/raft_flutter/lib/features/channel_conversion_previews.dart": {
-   "bypass.button": 2,
    "bypass.chip": 1,
    "style.dimension": 1,
    "style.edge_insets": 1,
    "style.material_theme": 1,
    "style.sized_box": 1,
-   "widget.button": 2,
    "widget.chip": 1
   },
   "apps/raft_flutter/lib/features/channel_conversion_progress.dart": {
@@ -202,17 +189,13 @@
    "duplicate.button": 1
   },
   "apps/raft_flutter/lib/features/fleet_views.dart": {
-   "bypass.button": 3,
    "bypass.dialog": 3,
-   "bypass.icon_button": 2,
    "duplicate.dialog": 3,
    "style.edge_insets": 4,
    "style.material_icons": 1,
    "style.material_theme": 1,
    "style.sized_box": 3,
-   "widget.button": 3,
    "widget.dialog": 3,
-   "widget.icon_button": 2,
    "widget.other": 1,
    "widget.scaffold": 1
   },
@@ -233,18 +216,14 @@
    "duplicate.dialog": 2
   },
   "apps/raft_flutter/lib/features/management_support.dart": {
-   "bypass.button": 2,
    "bypass.dialog": 1,
-   "bypass.icon_button": 1,
    "duplicate.dialog": 2,
    "style.dimension": 2,
    "style.edge_insets": 4,
    "style.material_icons": 2,
    "style.material_theme": 2,
    "style.sized_box": 1,
-   "widget.button": 2,
-   "widget.dialog": 1,
-   "widget.icon_button": 1
+   "widget.dialog": 1
   },
   "apps/raft_flutter/lib/features/mcp_server_editor.dart": {
    "duplicate.button": 1,
@@ -284,10 +263,8 @@
    "widget.dialog": 2
   },
   "apps/raft_flutter/lib/features/message_presentation.dart": {
-   "bypass.button": 1,
    "bypass.dialog": 3,
    "style.sized_box": 1,
-   "widget.button": 1,
    "widget.dialog": 3
   },
   "apps/raft_flutter/lib/features/notification_activation_banner.dart": {
@@ -304,16 +281,12 @@
    "duplicate.banner": 5
   },
   "apps/raft_flutter/lib/features/provider_views.dart": {
-   "bypass.button": 3,
    "bypass.dialog": 3,
-   "bypass.icon_button": 1,
    "duplicate.dialog": 2,
    "style.edge_insets": 1,
    "style.material_theme": 1,
    "style.sized_box": 2,
-   "widget.button": 3,
    "widget.dialog": 3,
-   "widget.icon_button": 1,
    "widget.other": 2
   },
   "apps/raft_flutter/lib/features/public_attachments.dart": {
@@ -331,10 +304,8 @@
    "style.text_style": 1
   },
   "apps/raft_flutter/lib/features/resource_view.dart": {
-   "bypass.button": 4,
    "bypass.chip": 2,
    "bypass.dialog": 4,
-   "bypass.icon_button": 2,
    "bypass.menu": 9,
    "bypass.select": 1,
    "duplicate.dialog": 2,
@@ -343,10 +314,8 @@
    "style.material_colors": 2,
    "style.material_theme": 2,
    "style.sized_box": 8,
-   "widget.button": 4,
    "widget.chip": 2,
    "widget.dialog": 4,
-   "widget.icon_button": 2,
    "widget.menu": 9,
    "widget.select": 1,
    "widget.surface": 2
@@ -367,29 +336,23 @@
    "style.edge_insets": 1
   },
   "apps/raft_flutter/lib/features/server_views.dart": {
-   "bypass.button": 1,
    "bypass.dialog": 3,
-   "bypass.icon_button": 1,
    "bypass.menu": 3,
    "duplicate.button": 1,
    "duplicate.dialog": 4,
    "style.edge_insets": 1,
    "style.material_icons": 1,
    "style.material_theme": 1,
-   "widget.button": 1,
    "widget.dialog": 3,
-   "widget.icon_button": 1,
    "widget.menu": 3,
    "widget.other": 1
   },
   "apps/raft_flutter/lib/features/sidebar_preferences_view.dart": {
-   "bypass.icon_button": 2,
    "bypass.select": 2,
    "style.edge_insets": 2,
    "style.material_icons": 2,
    "style.material_theme": 4,
    "style.sized_box": 8,
-   "widget.icon_button": 2,
    "widget.other": 3,
    "widget.select": 2,
    "widget.text_field": 1
@@ -439,11 +402,9 @@
    "widget.text_field": 2
   },
   "apps/raft_flutter/lib/features/thread_actions.dart": {
-   "bypass.button": 2,
    "bypass.overlay": 1,
    "style.edge_insets": 1,
-   "style.material_theme": 1,
-   "widget.button": 2
+   "style.material_theme": 1
   },
   "apps/raft_flutter/lib/features/workspace_history_controls.dart": {
    "duplicate.button": 3
@@ -473,9 +434,6 @@
   "packages/raft_ui/lib/activity_selected_previews.dart": {
    "contract.font_size_literal": 1,
    "duplicate.button": 1
-  },
-  "packages/raft_ui/lib/attachment_comments_previews.dart": {
-   "bypass.button": 1
   },
   "packages/raft_ui/lib/basic_component_previews.dart": {
    "bypass.dialog": 1,
@@ -509,24 +467,14 @@
   "packages/raft_ui/lib/message_row_previews.dart": {
    "bypass.toggle": 2
   },
-  "packages/raft_ui/lib/mobile_computer_previews.dart": {
-   "bypass.button": 1
-  },
   "packages/raft_ui/lib/mobile_detail_previews.dart": {
    "duplicate.button": 1
-  },
-  "packages/raft_ui/lib/mobile_page_header_previews.dart": {
-   "bypass.icon_button": 1
-  },
-  "packages/raft_ui/lib/mounted_avatar_previews.dart": {
-   "bypass.button": 3
   },
   "packages/raft_ui/lib/notification_previews.dart": {
    "duplicate.button": 1
   },
   "packages/raft_ui/lib/previews.dart": {
    "bypass.dialog": 3,
-   "bypass.icon_button": 1,
    "bypass.list_tile": 2,
    "bypass.toggle": 2,
    "contract.font_size_literal": 1,
@@ -534,9 +482,6 @@
   },
   "packages/raft_ui/lib/pull_to_refresh_previews.dart": {
    "bypass.list_tile": 1
-  },
-  "packages/raft_ui/lib/quick_reaction_picker_previews.dart": {
-   "bypass.button": 1
   },
   "packages/raft_ui/lib/rich_surface_visual_previews.dart": {
    "contract.color_literal": 5,
@@ -556,7 +501,6 @@
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/adaptive_workspace.dart": {
-   "bypass.icon_button": 2,
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/add_computer_dialog.dart": {
@@ -627,7 +571,6 @@
    "duplicate.segmented": 2
   },
   "packages/raft_ui/lib/src/attachment_card.dart": {
-   "bypass.button": 2,
    "contract.font_size_literal": 1,
    "contract.stroke_width_literal": 1,
    "duplicate.button": 2
@@ -736,7 +679,6 @@
    "duplicate.button": 3
   },
   "packages/raft_ui/lib/src/components.dart": {
-   "bypass.button": 2,
    "bypass.overlay": 1,
    "bypass.text_field": 1,
    "contract.font_size_literal": 5,
@@ -914,7 +856,6 @@
    "bypass.overlay": 1
   },
   "packages/raft_ui/lib/src/html_preview.dart": {
-   "bypass.button": 2,
    "contract.font_size_literal": 1
   },
   "packages/raft_ui/lib/src/icons.dart": {
@@ -1014,9 +955,6 @@
   "packages/raft_ui/lib/src/message_context_menu.dart": {
    "duplicate.button": 1
   },
-  "packages/raft_ui/lib/src/message_export.dart": {
-   "bypass.icon_button": 1
-  },
   "packages/raft_ui/lib/src/message_list_marker.dart": {
    "contract.color_literal": 1
   },
@@ -1058,7 +996,6 @@
    "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/mobile_page_header.dart": {
-   "bypass.icon_button": 1,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/mobile_tabbar_config.dart": {
@@ -1425,9 +1362,6 @@
   "packages/raft_ui/lib/src/task_timeline.dart": {
    "contract.stroke_width_literal": 1
   },
-  "packages/raft_ui/lib/src/text_selection_toolbar.dart": {
-   "bypass.button": 1
-  },
   "packages/raft_ui/lib/src/theme.dart": {
    "contract.color_literal": 6,
    "contract.radius_literal": 2,
@@ -1448,7 +1382,6 @@
    "duplicate.button": 3
   },
   "packages/raft_ui/lib/src/thread_replies.dart": {
-   "bypass.button": 3,
    "contract.font_size_literal": 4,
    "contract.legacy_recipe_theme": 1
   },
@@ -1497,12 +1430,9 @@
   },
   "packages/raft_ui/lib/task_surface_previews.dart": {
    "duplicate.button": 1
-  },
-  "packages/raft_ui/lib/timeline_composition_previews.dart": {
-   "bypass.button": 1
   }
  },
- "generatedTotal": 3501,
+ "generatedTotal": 3517,
  "generated": {
   "packages/raft_theme/lib/recipes/activity_inbox_shell.g.dart": 5,
   "packages/raft_theme/lib/recipes/activity_inbox_sidebar.g.dart": 5,
@@ -1712,7 +1642,7 @@
   "packages/raft_theme/lib/recipes/profile_panel.g.dart": 5,
   "packages/raft_theme/lib/recipes/progress.g.dart": 5,
   "packages/raft_theme/lib/recipes/radio_group.g.dart": 5,
-  "packages/raft_theme/lib/recipes/recipe_utilities.g.dart": 559,
+  "packages/raft_theme/lib/recipes/recipe_utilities.g.dart": 560,
   "packages/raft_theme/lib/recipes/recipes.g.dart": 1,
   "packages/raft_theme/lib/recipes/resizable.g.dart": 5,
   "packages/raft_theme/lib/recipes/sans.g.dart": 5,
@@ -1753,6 +1683,9 @@
   "packages/raft_theme/lib/recipes/toast_styles.g.dart": 5,
   "packages/raft_theme/lib/recipes/toggle_group.g.dart": 5,
   "packages/raft_theme/lib/recipes/tooltip.g.dart": 5,
+  "packages/raft_theme/lib/recipes/web_menu_action.g.dart": 5,
+  "packages/raft_theme/lib/recipes/web_selection_panel.g.dart": 5,
+  "packages/raft_theme/lib/recipes/web_selection_row.g.dart": 5,
   "packages/raft_ui/lib/src/recipes/activity_inbox_shell.g.dart": 3,
   "packages/raft_ui/lib/src/recipes/activity_inbox_sidebar.g.dart": 3,
   "packages/raft_ui/lib/src/recipes/activity_inbox_toolbar.g.dart": 3,
@@ -1881,6 +1814,9 @@
   "packages/raft_ui/lib/src/recipes/toast_action.g.dart": 3,
   "packages/raft_ui/lib/src/recipes/toast_styles.g.dart": 3,
   "packages/raft_ui/lib/src/recipes/toggle_group.g.dart": 3,
-  "packages/raft_ui/lib/src/recipes/tooltip.g.dart": 3
+  "packages/raft_ui/lib/src/recipes/tooltip.g.dart": 3,
+  "packages/raft_ui/lib/src/recipes/web_menu_action.g.dart": 0,
+  "packages/raft_ui/lib/src/recipes/web_selection_panel.g.dart": 0,
+  "packages/raft_ui/lib/src/recipes/web_selection_row.g.dart": 0
  }
 }
