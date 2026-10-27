@@ -193,7 +193,9 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('overlay above an input keeps the expanded action', (t) async {
+  testWidgets('interactive overlay wins over neighbouring expansion', (
+    t,
+  ) async {
     final node = FocusNode();
     var action = 0;
     var overlay = 0;
@@ -242,8 +244,14 @@ void main() {
     final button = t.getRect(find.byKey(const ValueKey('overlay-action')));
     await t.tapAt(Offset(button.left - 2, button.center.dy));
     await t.pumpAndSettle();
+    // The full-area overlay handles taps here, so this is not an empty gap.
+    expect(action, 0);
+    expect(overlay, 1);
+    expect(node.hasFocus, isFalse);
+    await t.tapAt(button.center);
+    await t.pumpAndSettle();
     expect(action, 1);
-    expect(overlay, 0);
+    expect(overlay, 1);
     expect(node.hasFocus, isFalse);
     expect(t.takeException(), isNull);
   });

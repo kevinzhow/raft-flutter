@@ -3434,15 +3434,9 @@ class _RenderTouchTarget extends RenderProxyBox {
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
     if (!_target.contains(position)) return false;
     if (!size.contains(position)) {
-      // An expanded target must yield to the visible bounds of a guarded
-      // input in any enclosing slop host; direct hits on this control remain.
-      RenderObject? ancestor = parent;
-      while (ancestor != null) {
-        if (ancestor is RenderTapSlopHost && ancestor.protectingDirectHit) {
-          return false;
-        }
-        ancestor = ancestor.parent;
-      }
+      // Preserve the visual hit path while an enclosing host probes or
+      // protects a direct control. The control's own visible box still hits.
+      if (raftTapSlopVisualBoundsOnly(this)) return false;
     }
     // Nearest point inside the box (Size.contains excludes the far edge).
     final inside = Offset(
