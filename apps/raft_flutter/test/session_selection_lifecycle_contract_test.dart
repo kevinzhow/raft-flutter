@@ -110,9 +110,8 @@ class _Translations extends MessageTranslationStore {
 }
 
 class _Activity extends SourceActivityUnreadStore {
-  _Activity(WorkspaceController workspace, this.trace)
+  _Activity(WorkspaceController super.workspace, this.trace)
     : super(
-        workspace,
         projectReadState: workspace.conversationReads.projectActivityReadState,
       );
   final List<String> trace;
