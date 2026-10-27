@@ -12,7 +12,9 @@ import 'dialog_card.dart' show RaftCloseButton, RaftTextSteps, raftCssTextStyle;
 import 'presentation.dart';
 import 'settings_layout.dart' show RaftSpace;
 import 'sheet.dart';
+import 'tap_slop.dart';
 import 'theme.dart';
+import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 
 // A form is a window with inputs and a submit button (create a channel, edit a
 // profile, rename). It is shown with `RaftPresentationPolicy.form`: a bottom
@@ -425,7 +427,9 @@ class RaftFormSheet extends StatelessWidget {
             RaftSpace.x4,
             RaftSpace.x4,
           ),
-          body: body,
+          body: t.recipeSet == RaftRecipeSet.raft
+              ? RaftTapSlopHost(child: body)
+              : body,
           footer: footer == null
               ? null
               : Padding(

@@ -42,6 +42,17 @@ class RenderTapSlopAnchor extends RenderProxyBox {
   }
 }
 
+/// Gives the whole visible control priority over a neighbour's expanded tap
+/// target, including padding that is outside its inner editable render box.
+class RaftTapSlopGuard extends SingleChildRenderObjectWidget {
+  const RaftTapSlopGuard({super.key, super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => RenderTapSlopGuard();
+}
+
+class RenderTapSlopGuard extends RenderProxyBox {}
+
 /// Routes a pointer that lands within an anchor's [RaftTapSlopAnchor.minSize]
 /// box (but not on the anchor itself) to the nearest anchor, so adjacent
 /// anchors split the gap between them instead of overlapping.
@@ -56,19 +67,61 @@ class RaftTapSlopHost extends SingleChildRenderObjectWidget {
 }
 
 class RenderTapSlopHost extends RenderProxyBox {
+  bool _protectingDirectHit = false;
+
+  /// True only during a hit test inside a guarded control's visible bounds.
+  bool get protectingDirectHit => _protectingDirectHit;
+
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
     if (!size.contains(position)) return false;
     final anchors = <RenderTapSlopAnchor>[];
+    var guardAtPosition = false;
+    final globalPosition = localToGlobal(position);
     void collect(RenderObject node) {
       if (node is RenderTapSlopAnchor && node.attached && node.hasSize) {
         anchors.add(node);
+      }
+      if (node is RenderTapSlopGuard &&
+          node.attached &&
+          node.hasSize &&
+          (Offset.zero & node.size).contains(
+            node.globalToLocal(globalPosition),
+          )) {
+        guardAtPosition = true;
       }
       node.visitChildren(collect);
     }
 
     visitChildren(collect);
+    final previous = _protectingDirectHit;
+    try {
+      // Probe normal visual bounds first with expansion disabled. This keeps
+      // a hidden input behind an overlay from taking priority over it.
+      var protected = false;
+      if (guardAtPosition) {
+        _protectingDirectHit = true;
+        final direct = BoxHitTestResult();
+        super.hitTest(direct, position: position);
+        protected = direct.path.any(
+          (entry) => entry.target is RenderTapSlopGuard,
+        );
+      }
+      _protectingDirectHit = protected;
+      // The direct hit test retains normal child and scrollable gestures; the
+      // host must not redirect this point to a neighbour's expanded target.
+      if (protected) return super.hitTest(result, position: position);
+      return _hitTestSlop(result, position, anchors);
+    } finally {
+      _protectingDirectHit = previous;
+    }
+  }
 
+  bool _hitTestSlop(
+    BoxHitTestResult result,
+    Offset position,
+    List<RenderTapSlopAnchor> anchors,
+  ) {
     RenderTapSlopAnchor? best;
     Rect? bestVisual;
     var bestDistance = double.infinity;
