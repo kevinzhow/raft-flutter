@@ -110,12 +110,12 @@ abstract final class RaftWebDialogCardRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1924, 1594],
-    [1431, 965, 1320, 1322, 1022],
-    [1481, 1015, 1829, 1818],
-    [100, 97, 1736],
-    [1424],
-    [1757],
+    [1926, 1596],
+    [1433, 965, 1321, 1323, 1023],
+    [1483, 1016, 1831, 1820],
+    [100, 97, 1738],
+    [1426],
+    [1759],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

@@ -12,12 +12,12 @@ Authoritative data: `build/recipes/recipes.json`; Dart: `packages/raft_theme/lib
 
 ## Coverage
 
-- Recipes: 128; variant combinations: 967
-- Distinct classes in recipe sources: 1944
+- Recipes: 129; variant combinations: 968
+- Distinct classes in recipe sources: 1946
   - descendant: 326
   - marker: 32
   - no-css: 4
-  - resolved: 1582
+  - resolved: 1584
 
 Classes for which Tailwind emits no CSS (inert on the Web as well):
 
@@ -156,6 +156,7 @@ Classes for which Tailwind emits no CSS (inert on the Web as well):
 - [webMenuAction](#webmenuaction) → `RaftWebMenuActionRecipe`
 - [webSelectionRow](#webselectionrow) → `RaftWebSelectionRowRecipe`
 - [webDialogCard](#webdialogcard) → `RaftWebDialogCardRecipe`
+- [webMemberPicker](#webmemberpicker) → `RaftWebMemberPickerRecipe`
 
 ## spinner
 
@@ -9757,4 +9758,47 @@ Dart: `RaftWebDialogCardRecipe` · source: `Web src/components/ui/DialogCard.tsx
 | defaultWidth | self | max-width | 448 |
 | glyph | self | width | 18 |
 | glyph | self | height | 18 |
+
+## webMemberPicker
+
+Dart: `RaftWebMemberPickerRecipe` · source: `Web src/components/channel/CreateChannelDialog.tsx sha256:63ca5d6eb0050347255f9d637df2e0ce49cb5636279a254e4a9c52f79287348d; src/components/channel/memberPickerClasses.ts sha256:bd095e7c89107c9ce5dde28aceae30bb96c0eb12d1dc6dad80f9702198d848b1; src/components/ui/SectionEyebrow.tsx sha256:842e6ec0e8cfcd3948d384ef8a9cde6fd2b41be4db8dfd8ccd0321c12c4555b0` (index.mjs:1)
+· components: `CreateChannelDialogMemberPicker`
+
+### Default
+
+| slot | target | property | value |
+|---|---|---|---|
+| root | self | max-height | 192 |
+| root | self | padding | 6 |
+| root | self | overflow-y | auto |
+| group | self | padding | top:8 right:10 bottom:4 left:10 |
+| group | self | font-size | 13 |
+| group | self | font-weight | 700 |
+| group | self | line-height | 18 |
+| group | self | color | token(foregroundHint) |
+| row | self | display | flex |
+| row | self | width | 100% |
+| row | self | min-height | 36 |
+| row | self | padding | right:10 left:10 |
+| row | self | gap | 10 |
+| row | self | font-size | 14 |
+| row | self | font-weight | 500 |
+| row | self | line-height | 20 |
+| row | self | color | token(foreground) |
+| row | self | border-radius | 8 |
+| row | self | outline-style | none |
+| row | self | align-items | center |
+| row | self | text-align | left |
+| row | self | **focus-visible** | background-color: token(brandSoft); box-shadow: inset 0 0 0 2 token(foreground) |
+| row | self | **hover** | background-color: token(brandSoft) |
+| label | self | min-width | 0 |
+| label | self | overflow-x | hidden |
+| label | self | overflow-y | hidden |
+| label | self | flex | 1 |
+| label | self | text-overflow | ellipsis |
+| label | self | white-space | nowrap |
+| empty | self | padding | top:8 right:10 bottom:8 left:10 |
+| empty | self | font-size | 14 |
+| empty | self | line-height | 20 |
+| empty | self | color | token(foregroundHint) |
 

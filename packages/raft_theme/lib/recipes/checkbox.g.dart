@@ -74,23 +74,23 @@ abstract final class RaftCheckboxRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      1678,
-      1304,
-      1750,
-      1736,
-      1865,
-      1318,
-      1323,
-      1573,
-      1712,
-      995,
+      1680,
+      1305,
+      1752,
+      1738,
+      1867,
+      1319,
+      1324,
+      1575,
+      1714,
+      996,
       831,
       442,
       437,
       440,
       450,
     ],
-    [1626],
+    [1628],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

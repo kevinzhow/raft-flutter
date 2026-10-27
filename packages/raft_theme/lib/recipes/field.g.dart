@@ -117,12 +117,12 @@ abstract final class RaftFieldRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1142, 965, 967, 1021],
-    [1143, 965, 1320, 1022, 69],
-    [618, 1113, 1015, 1823, 1810, 1016],
-    [1113, 1810, 1820],
-    [1113, 1810, 1016, 1815],
-    [618, 1113, 1015, 1823, 1817, 1016],
+    [1143, 965, 967, 1022],
+    [1144, 965, 1321, 1023, 69],
+    [618, 1114, 1016, 1825, 1812, 1017],
+    [1114, 1812, 1822],
+    [1114, 1812, 1017, 1817],
+    [618, 1114, 1016, 1825, 1819, 1017],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

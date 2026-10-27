@@ -66,6 +66,7 @@ void main() {
         'webMenuAction',
         'webSelectionRow',
         'webDialogCard',
+        'webMemberPicker',
       };
       expect(raftRecipes.keys.toSet().intersection(products), products);
       expect(raftRecipes.keys.toSet().difference(products), hasLength(124));

@@ -833,6 +833,16 @@ class _RecipeSegmentState extends State<_RecipeSegment> {
           child: Opacity(
             opacity: item.opacity ?? 1,
             child: Container(
+              // CSS h-8 is a border-box minimum here so scaled text can grow.
+              // Frozen recipe geometry remains on its historical path.
+              constraints: usesLegacyRecipes(tokens)
+                  ? null
+                  : BoxConstraints(
+                      minHeight: math.max(
+                        item.height ?? 0,
+                        item.minHeight ?? 0,
+                      ),
+                    ),
               padding: item.padding,
               decoration: item.decoration(tokens),
               child: Row(

@@ -67,7 +67,7 @@ abstract final class RaftComposerRootRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1678, 965, 1924, 967, 1022],
+    [1680, 965, 1926, 967, 1023],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

@@ -16,7 +16,9 @@ import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'raft/button.dart';
+import 'raft/checkbox.dart' show RaftCheckboxIndicator;
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
+import 'recipes/web_member_picker.g.dart';
 import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'separator.dart';
@@ -285,6 +287,15 @@ class _MemberPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.recipeSet != RaftRecipeSet.legacy) {
+      return _RecipeMemberPicker(
+        agents: agents,
+        humans: humans,
+        selected: selected,
+        onToggle: onToggle,
+        query: query,
+      );
+    }
     final eyebrowFill = t.colors['fill-muted'];
     Widget eyebrow(String text) => RaftDialogSectionEyebrow(
       text,
@@ -336,6 +347,158 @@ class _MemberPicker extends StatelessWidget {
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Current Web member-picker composition, extracted from its product source.
+/// The frozen picker above retains the old theme recipes and selection mark.
+class _RecipeMemberPicker extends StatelessWidget {
+  const _RecipeMemberPicker({
+    required this.agents,
+    required this.humans,
+    required this.selected,
+    required this.onToggle,
+    required this.query,
+  });
+
+  final List<RaftPickerItem> agents, humans;
+  final bool Function(String key) selected;
+  final ValueChanged<String>? onToggle;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final recipe = RaftWebMemberPickerRecipe.resolve(
+      states: t.recipeStates(),
+      tokens: tokens,
+    );
+    Widget group(String label) => RaftRecipeBox(
+      style: recipe.group,
+      tokens: tokens,
+      applyText: false,
+      child: Text(
+        raftText(context, label),
+        style: recipe.group.text(
+          tokens,
+          base: TextStyle(fontFamily: t.headingFont),
+        ),
+      ),
+    );
+    Widget row(RaftPickerItem candidate) => _RecipeMemberRow(
+      candidate: candidate,
+      selected: selected(candidate.key),
+      onTap: onToggle == null ? null : () => onToggle!(candidate.key),
+    );
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: recipe.root.maxHeight ?? double.infinity,
+      ),
+      child: RaftCard(
+        padding: recipe.root.padding,
+        clip: true,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (agents.isNotEmpty) ...[
+                group('Agents'),
+                for (final candidate in agents) row(candidate),
+              ],
+              if (humans.isNotEmpty) ...[
+                group('Humans'),
+                for (final candidate in humans) row(candidate),
+              ],
+              if (agents.isEmpty && humans.isEmpty)
+                RaftRecipeBox(
+                  style: recipe.empty,
+                  tokens: tokens,
+                  applyText: false,
+                  child: Text(
+                    raftFormat(context, 'No matches for "{query}"', {
+                      'query': query.trim(),
+                    }),
+                    style: recipe.empty.text(
+                      tokens,
+                      base: TextStyle(fontFamily: t.headingFont),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecipeMemberRow extends StatefulWidget {
+  const _RecipeMemberRow({
+    required this.candidate,
+    required this.selected,
+    required this.onTap,
+  });
+  final RaftPickerItem candidate;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  State<_RecipeMemberRow> createState() => _RecipeMemberRowState();
+}
+
+class _RecipeMemberRowState extends State<_RecipeMemberRow> {
+  bool hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final recipe = RaftWebMemberPickerRecipe.resolve(
+      states: t.recipeStates(hovered: hovered && widget.onTap != null),
+      tokens: tokens,
+    );
+    final text = recipe.row.text(
+      tokens,
+      base: TextStyle(fontFamily: t.headingFont),
+    );
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      child: RaftHoverRegion(
+        cursor: widget.onTap == null
+            ? MouseCursor.defer
+            : SystemMouseCursors.click,
+        onEnter: (_) => setState(() => hovered = true),
+        onExit: (_) => setState(() => hovered = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: RaftRecipeBox(
+            style: recipe.row,
+            tokens: tokens,
+            applyText: false,
+            child: Row(
+              children: [
+                RaftCheckboxIndicator(checked: widget.selected),
+                SizedBox(width: recipe.row.columnGap ?? 0),
+                widget.candidate.avatar,
+                SizedBox(width: recipe.row.columnGap ?? 0),
+                Expanded(
+                  child: Text(
+                    widget.candidate.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: recipe.label.text(tokens, base: text),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
