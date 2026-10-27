@@ -45,7 +45,7 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ inputs.platform == 'macos' && 'raft-macos-arm64-data' || 'raft-linux-x64-data' }}
+    runs-on: ${{ inputs.platform == 'macos' && 'macos-15' || 'ubuntu-24.04' }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -59,6 +59,35 @@ jobs:
           path: source
           fetch-depth: 0
           persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: source/.fvmrc
+          architecture: ${{ runner.arch }}
+          channel: stable
+          cache: true
+      - name: Initialize the downloaded Flutter SDK
+        shell: bash
+        run: flutter --version --machine
+      - name: Select Ruby for the original macOS package
+        if: inputs.platform == 'macos'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - name: Install the locked original macOS packaging gems
+        if: inputs.platform == 'macos'
+        run: |
+          gem install cocoapods --version 1.16.2 --no-document
+          gem install json --version 2.18.0 --no-document
+          xcodebuild -version
+          command -v codesign
+      - name: Install Ubuntu 24.04 build and AppImage tools
+        if: inputs.platform == 'appimage'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev patchelf poppler-utils zsync libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
       - name: Build the exact original source and build number
         env:
           GH_TOKEN: ${{ github.token }}
@@ -71,9 +100,6 @@ jobs:
           path: source/build/release/*
           if-no-files-found: error
           retention-days: 14
-      - name: Record Linux delivery status for post-job cleanup
-        if: always() && inputs.platform == 'appimage'
-        run: '"$RAFT_LINUX_RUNNER_FINISH_HOOK" "${{ job.status }}"'
 
   appimage-startup:
     needs: build

@@ -1,5 +1,6 @@
 """Release-gate regression checks against the actual backfill workflow."""
 import itertools
+import json
 from pathlib import Path
 import re
 import unittest
@@ -51,14 +52,40 @@ class BackfillWorkflowTests(unittest.TestCase):
         self.assertNotIn('/dev/fuse', compatibility)
         self.assertIn('if: always()', compatibility)
 
-    def test_cleanup_status_is_recorded_after_upload_and_keeps_failed_jobs(self):
+    def test_hosted_build_installs_tools_for_the_original_checkout_without_service_hooks(self):
         text = WORKFLOW.read_text()
         build = text.split('\n  build:\n', 1)[1].split('\n  appimage-startup:\n', 1)[0]
-        upload = build.index('uses: actions/upload-artifact@v4')
-        marker = build.index('name: Record Linux delivery status')
-        self.assertLess(upload, marker)
-        self.assertIn("if: always() && inputs.platform == 'appimage'", build[marker:])
-        self.assertIn('"$RAFT_LINUX_RUNNER_FINISH_HOOK" "${{ job.status }}"', build[marker:])
+        self.assertIn("inputs.platform == 'macos' && 'macos-15' || 'ubuntu-24.04'", build)
+        self.assertIn('flutter-version-file: source/.fvmrc', build)
+        self.assertIn('architecture: ${{ runner.arch }}', build)
+        for tool in ('actions/setup-python@v5', 'ruby/setup-ruby@v1', 'sudo apt-get install'):
+            self.assertIn(tool, build)
+        warmup = build.index('name: Initialize the downloaded Flutter SDK')
+        verify_and_build = build.index('name: Build the exact original source and build number')
+        self.assertLess(build.index('flutter-version-file:'), warmup)
+        self.assertLess(warmup, verify_and_build)
+        self.assertIn('shell: bash', build[warmup:verify_and_build])
+        self.assertIn('run: flutter --version --machine', build[warmup:verify_and_build])
+        self.assertNotIn('||', build[warmup:verify_and_build])
+        self.assertNotIn('RAFT_LINUX_RUNNER_FINISH_HOOK', text)
+        self.assertNotIn('raft-macos-arm64-data', text)
+        self.assertNotIn('raft-linux-x64-data', text)
+
+    def test_active_release_matrix_and_packaging_setup_use_native_hosted_runners(self):
+        root = WORKFLOW.parents[2]
+        config = json.loads((root / 'tool/release-platforms.json').read_text())
+        self.assertEqual(config['macos']['runner'], 'macos-15')
+        self.assertEqual(config['appimage']['runner'], 'ubuntu-24.04')
+        self.assertFalse(config['linux']['enabled'])
+        self.assertEqual(config['linux']['runner'], 'ubuntu-26.04')
+        normal = (WORKFLOW.parent / 'release-platform.yml').read_text()
+        self.assertNotIn('raft-macos-arm64-data', normal)
+        self.assertNotIn('tool/macos_runner.py', normal)
+        self.assertIn('test "$RUNNER_ENVIRONMENT" = github-hosted', normal)
+        self.assertIn('test "$RUNNER_ARCH" = ARM64', normal)
+        self.assertIn('test "$RUNNER_ARCH" = X64', normal)
+        self.assertIn('test "$VERSION_ID" = 24.04', normal)
+        self.assertIn('architecture: ${{ runner.arch }}', normal)
 
 
 if __name__ == '__main__':

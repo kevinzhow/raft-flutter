@@ -6,6 +6,24 @@ by default. Builds use `lib/main.dart` and produce no private test fixtures or
 test feature defines. This pipeline is separate from the local native-acceptance
 packager `tool/build-deliverables`; compilation does not imply full-app acceptance.
 
+## Hosted release runners
+
+Active macOS builds use the standard `macos-15` ARM64 runner; AppImage builds
+use `ubuntu-24.04` x64. The jobs install Python 3.12, the exact `.fvmrc` Flutter
+SDK and, on macOS, Ruby 3.3 with CocoaPods 1.16.2 and JSON 2.18.0. Native host
+architecture and the Ubuntu 24.04 ABI baseline are checked before packaging.
+The disabled `linux` tarball entry keeps its Ubuntu 26.04 media contract; this
+routing change does not enable it or migrate its package dependencies.
+
+The manual **Backfill an existing platform release** workflow uses these hosted
+runners too. It installs tooling from the original tag checkout's `.fvmrc`,
+then verifies the original tag, full source SHA and stored build number before
+building. The default remains build-only. Explicit publication rechecks that
+same provenance, keeps the existing update signatures and no-overwrite checks,
+and still requires Ubuntu startup and Fedora compatibility success for
+AppImage. The retired runners' storage variables and cleanup hooks are no
+longer prerequisites; their historical provisioning notes remain preserved.
+
 ## App version follows the Raft server version
 
 Owner decision (Kevin, 2026-10-23): the app version is the Raft server version the client is aligned to, which is the

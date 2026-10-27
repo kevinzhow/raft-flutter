@@ -1,4 +1,10 @@
-# Dedicated macOS release runner
+# Retired dedicated macOS release runner (historical)
+
+The dedicated repository runner was retired on 2026-10-27. Active releases and
+original-source backfills now use GitHub-hosted `macos-15` ARM64 and
+`ubuntu-24.04` x64 runners; see [release CI](release-ci.md). The provisioning,
+storage and removal notes below describe the retired setup and are retained
+for historical operations. They are not instructions to register a new runner.
 
 The `raft-macos-arm64-data` label selects a repository runner with its work,
 temporary files, toolchains and caches on a mounted data volume. Register it

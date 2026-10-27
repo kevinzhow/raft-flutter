@@ -3,7 +3,9 @@ import argparse
 import json
 import os
 from pathlib import Path
+import platform as host_platform
 import re
+import shutil
 import subprocess
 import sys
 from urllib.parse import quote
@@ -50,6 +52,43 @@ def existing_release(tag):
         return json.load(response)
 
 
+def verify_hosted_runner(source, selected_platform):
+    """Check native hosted tools without requiring the retired runners' storage."""
+    if os.environ.get('RUNNER_ENVIRONMENT') != 'github-hosted':
+        raise ValueError('Release backfills require a GitHub-hosted runner')
+    if selected_platform == 'macos':
+        if host_platform.system() != 'Darwin' or host_platform.machine() != 'arm64':
+            raise ValueError('macOS backfills require native arm64')
+        required = ('flutter', 'ruby', 'pod', 'xcodebuild', 'codesign')
+    else:
+        import linux_runner
+        linux_runner.check_os(host_platform.system(), host_platform.machine(),
+                              host_platform.freedesktop_os_release())
+        required = linux_runner.TOOLS
+    tools = {name: shutil.which(name) for name in required}
+    if missing := [name for name, path in tools.items() if path is None]:
+        raise ValueError('Missing hosted release tools: ' + ', '.join(missing))
+    if not host_platform.python_version().startswith('3.12.'):
+        raise ValueError('Hosted release backfills require Python 3.12')
+
+    def output(command):
+        return subprocess.check_output(command, text=True).strip()
+
+    expected = json.loads((Path(source) / '.fvmrc').read_text())['flutter']
+    flutter = json.loads(output([tools['flutter'], '--version', '--machine']))['frameworkVersion']
+    if flutter != expected:
+        raise ValueError('Hosted Flutter differs from the original release SDK pin')
+    if selected_platform == 'macos':
+        if (not re.match(r'ruby 3\.3\.', output([tools['ruby'], '--version'])) or
+                output([tools['pod'], '--version']) != '1.16.2' or
+                output([tools['ruby'], '-rjson', '-e', 'puts JSON::VERSION']) != '2.18.0'):
+            raise ValueError('Hosted macOS packaging gems differ from release pins')
+    else:
+        subprocess.run([tools['pkg-config'], '--exists', 'gtk+-3.0', 'libsecret-1',
+                        'jsoncpp', 'mpv'], check=True)
+    os.environ['RAFT_FLUTTER_BIN'] = tools['flutter']
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['build', 'publish'])
@@ -67,12 +106,7 @@ def main():
     # inputs are the original, clean tag checkout, never the runner wiring branch.
     output = source / 'build/release'
     if args.action == 'build':
-        if platform == 'macos':
-            import macos_runner
-            macos_runner.verify(source)
-        else:
-            import linux_runner
-            linux_runner.verify(source)
+        verify_hosted_runner(source, platform)
         env = dict(os.environ, GITHUB_REF=f'refs/tags/{tag}', GITHUB_RUN_NUMBER=number, GITHUB_SHA=commit,
                    GITHUB_EVENT_NAME='workflow_dispatch', RELEASE_VERSION=identity['version'],
                    RELEASE_BUILD_NUMBER=number)

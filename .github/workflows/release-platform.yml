@@ -56,20 +56,35 @@ jobs:
       # Public feedback export worker origin. Empty hides the Report Issue entry.
       RAFT_FEEDBACK_EXPORT_URL: ${{ vars.RAFT_FEEDBACK_EXPORT_URL }}
     steps:
+      - name: Verify the hosted native release architecture
+        if: inputs.platform == 'macos' || inputs.platform == 'appimage'
+        shell: bash
+        env:
+          RELEASE_PLATFORM: ${{ inputs.platform }}
+        run: |
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          if [ "$RELEASE_PLATFORM" = macos ]; then
+            test "$RUNNER_OS" = macOS
+            test "$RUNNER_ARCH" = ARM64
+            test "$(uname -m)" = arm64
+          else
+            test "$RUNNER_OS" = Linux
+            test "$RUNNER_ARCH" = X64
+            test "$(uname -m)" = x86_64
+            . /etc/os-release
+            test "$ID" = ubuntu
+            test "$VERSION_ID" = 24.04
+          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        if: inputs.runner != 'raft-macos-arm64-data'
         with:
           python-version: '3.12'
       - uses: subosito/flutter-action@v2
-        if: inputs.runner != 'raft-macos-arm64-data'
         with:
           flutter-version-file: .fvmrc
+          architecture: ${{ runner.arch }}
           channel: stable
           cache: true
-      - name: Verify the dedicated data-volume macOS toolchain
-        if: inputs.runner == 'raft-macos-arm64-data'
-        run: python tool/macos_runner.py
       - name: Select the pinned SDK wrapper
         run: python tool/release.py sdk
       - name: Initialize the downloaded Flutter SDK
@@ -92,12 +107,12 @@ jobs:
         shell: bash
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
       - name: Select Ruby for the pinned CocoaPods
-        if: inputs.platform == 'macos' && inputs.runner != 'raft-macos-arm64-data'
+        if: inputs.platform == 'macos'
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
       - name: Install the locked macOS CocoaPods version
-        if: inputs.platform == 'macos' && inputs.runner != 'raft-macos-arm64-data'
+        if: inputs.platform == 'macos'
         run: |
           gem install cocoapods --version 1.16.2 --no-document
           gem install json --version 2.18.0 --no-document

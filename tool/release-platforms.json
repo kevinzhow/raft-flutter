@@ -3,5 +3,5 @@
   "android": {"enabled": true, "runner": "ubuntu-24.04", "arch": "arm64"},
   "linux": {"enabled": false, "runner": "ubuntu-26.04", "arch": "x64"},
   "appimage": {"enabled": true, "runner": "ubuntu-24.04", "arch": "x64"},
-  "macos": {"enabled": true, "runner": "raft-macos-arm64-data", "arch": "arm64"}
+  "macos": {"enabled": true, "runner": "macos-15", "arch": "arm64"}
 }

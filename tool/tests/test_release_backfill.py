@@ -1,9 +1,11 @@
+import contextlib
 import importlib.util
 import json
 from pathlib import Path
 import sys
+import tempfile
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 
 TOOL = Path(__file__).resolve().parents[1]
@@ -64,10 +66,11 @@ class ReleaseBackfillTests(unittest.TestCase):
                     patch.object(backfill.os, 'chdir'), \
                     patch.object(backfill, 'checked_source'), \
                     patch.object(backfill, 'existing_release', return_value=remote), \
-                    patch.dict(sys.modules, {'macos_runner': Mock(), 'linux_runner': Mock()}), \
+                    patch.object(backfill, 'verify_hosted_runner') as verify_runner, \
                     patch.object(backfill.release, 'verify_artifacts'), \
                     patch.object(backfill.subprocess, 'run') as run:
                 backfill.main()
+                verify_runner.assert_called_once_with(Path('/source'), platform)
                 self.assertEqual(run.call_count, 4 if platform == 'appimage' else 3)
                 if platform == 'appimage':
                     self.assertEqual(Path(run.call_args_list[1].args[0][1]).name, 'prepare-media-appimage')
@@ -77,6 +80,62 @@ class ReleaseBackfillTests(unittest.TestCase):
                     defines = backfill.release.release_defines('1.21.23', '87', env, self.tag)
                     self.assertEqual(defines['RAFT_COMMIT_SHA'], self.commit)
                     self.assertEqual(env['GITHUB_RUN_NUMBER'], '87')
+
+
+class HostedBackfillRunnerTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.source = Path(self.temp.name)
+        (self.source / '.fvmrc').write_text(json.dumps({'flutter': '3.47.6'}))
+
+    @contextlib.contextmanager
+    def hosted_tools(self, selected='macos', *, environment='github-hosted',
+                     machine=None, distribution='24.04', flutter='3.47.6',
+                     ruby='ruby 3.3.8', pod='1.16.2', json_gem='2.18.0', missing=None):
+        system = 'Darwin' if selected == 'macos' else 'Linux'
+        machine = machine or ('arm64' if selected == 'macos' else 'x86_64')
+
+        def output(command, **_):
+            if '--machine' in command:
+                return json.dumps({'frameworkVersion': flutter})
+            if '-rjson' in command:
+                return json_gem
+            return pod if Path(command[0]).name == 'pod' else ruby
+
+        with patch.dict(backfill.os.environ, {'RUNNER_ENVIRONMENT': environment}, clear=True), \
+                patch.object(backfill.host_platform, 'system', return_value=system), \
+                patch.object(backfill.host_platform, 'machine', return_value=machine), \
+                patch.object(backfill.host_platform, 'python_version', return_value='3.12.3'), \
+                patch.object(backfill.host_platform, 'freedesktop_os_release',
+                             return_value={'ID': 'ubuntu', 'VERSION_ID': distribution}), \
+                patch.object(backfill.shutil, 'which',
+                             side_effect=lambda name: None if name == missing else '/hosted/bin/' + name), \
+                patch.object(backfill.subprocess, 'check_output', side_effect=output), \
+                patch.object(backfill.subprocess, 'run'):
+            yield
+
+    def test_hosted_native_tools_bind_the_original_sdk_without_private_cache_roots(self):
+        for selected in ('macos', 'appimage'):
+            with self.subTest(platform=selected), self.hosted_tools(selected):
+                backfill.verify_hosted_runner(self.source, selected)
+                self.assertEqual(backfill.os.environ['RAFT_FLUTTER_BIN'], '/hosted/bin/flutter')
+
+    def test_self_hosted_wrong_architecture_or_newer_linux_abi_is_rejected(self):
+        cases = [('macos', {'environment': 'self-hosted'}),
+                 ('macos', {'machine': 'x86_64'}),
+                 ('appimage', {'machine': 'aarch64'}),
+                 ('appimage', {'distribution': '26.04'})]
+        for selected, options in cases:
+            with self.subTest(platform=selected, options=options), self.hosted_tools(selected, **options), \
+                    self.assertRaises(ValueError):
+                backfill.verify_hosted_runner(self.source, selected)
+
+    def test_missing_tools_or_original_sdk_and_gem_drift_stop_before_build(self):
+        for options in ({'missing': 'codesign'}, {'flutter': '3.44.0'},
+                        {'ruby': 'ruby 3.4.0'}, {'pod': '1.17.0'}, {'json_gem': '2.19.0'}):
+            with self.subTest(options=options), self.hosted_tools(**options), self.assertRaises(ValueError):
+                backfill.verify_hosted_runner(self.source, 'macos')
 
 
 if __name__ == '__main__':
