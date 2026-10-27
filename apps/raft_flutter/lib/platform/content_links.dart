@@ -32,6 +32,22 @@ class ContentLinks {
     return web == null ? null : Uri.parse(web);
   }
 
+  /// Web origins that may hand Login with Raft to this app's session.
+  ///
+  /// Production artifacts still redirect through the legacy Web host before
+  /// its redirect to the current one. Both belong to the official production
+  /// service. A self-hosted coordinator or an explicitly different frontend
+  /// keeps its own exact origin; official aliases do not inherit its session.
+  static List<Uri> loginWebOriginsFor(String coordinator, Uri frontend) {
+    final paired = officialWebOrigins[coordinator];
+    if (paired == null ||
+        frontend.userInfo.isNotEmpty ||
+        frontend.origin != paired) {
+      return [frontend];
+    }
+    return [for (final origin in officialWebOrigins.values) Uri.parse(origin)];
+  }
+
   static Uri originFor(String coordinator, {String? frontend, String? api}) {
     final origin = Uri.parse(coordinator);
     final compiled =

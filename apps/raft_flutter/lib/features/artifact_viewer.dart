@@ -170,8 +170,27 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
 
   bool isTakeover(Uri uri) {
     final api = widget.api;
-    return api != null && isHumanLoginSetupUri(uri, api.webOrigin);
+    if (api == null ||
+        !api.loginWebOrigins.any(
+          (origin) => isHumanLoginSetupUri(uri, origin),
+        )) {
+      return false;
+    }
+    try {
+      final callback = Uri.tryParse(
+        HumanLoginRequest.fromSetupUri(uri).returnUrl,
+      );
+      return callback != null && isArtifactCallback(callback);
+    } on FormatException {
+      // Query parameters are untrusted navigation input. Invalid UTF-8 must
+      // stay outside native consent and the WebView delegate's error path.
+      return false;
+    }
   }
+
+  bool isArtifactCallback(Uri uri) =>
+      isSafeOAuthReturnUrl(uri.toString()) &&
+      ArtifactLinks.matches(uri, origins: [widget.uri]);
 
   bool trustedOrigin(Uri uri) {
     final scheme = uri.scheme.toLowerCase();
@@ -243,8 +262,14 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
       if (!mounted) return;
       if (location == null) {
         await returnToSignIn();
+      } else if (!isArtifactCallback(location)) {
+        // A malformed authorization response must not send its code to a
+        // different site. Retry returns to the original artifact page.
+        setState(() => loadError = 'The sign-in callback could not be loaded.');
+        await returnToSignIn();
       } else {
-        // The person approved this callback: it may stay in the WebView.
+        // The person approved this artifact callback: it may stay in the
+        // WebView, including an extra origin from a local test stack.
         trusted.add(Uri.parse(location.origin));
         setState(() => loadError = null);
         await controller.loadRequest(location);

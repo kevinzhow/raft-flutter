@@ -27,6 +27,8 @@ class FakeHumanLoginApi implements HumanLoginApi {
   @override
   final Uri webOrigin;
   @override
+  List<Uri> get loginWebOrigins => [webOrigin];
+  @override
   final String? signedInAs;
 
   /// Lookup answer per server id; a missing server answers 404.

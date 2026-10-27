@@ -7,6 +7,7 @@ import 'package:webview_flutter_platform_interface/webview_flutter_platform_inte
 class FakeWebView extends WebViewPlatform {
   /// Every `loadRequest`, in order.
   static final loads = <String>[];
+  static final loadHeaders = <Map<String, String>>[];
 
   /// The URL the fake page shows (what `currentUrl()` answers).
   static String? shown;
@@ -22,6 +23,7 @@ class FakeWebView extends WebViewPlatform {
 
   static void reset() {
     loads.clear();
+    loadHeaders.clear();
     shown = null;
     javaScriptMode = null;
     cleared.clear();
@@ -92,6 +94,7 @@ class _Controller extends PlatformWebViewController {
   @override
   Future<void> loadRequest(LoadRequestParams params) async {
     FakeWebView.loads.add(params.uri.toString());
+    FakeWebView.loadHeaders.add(Map.of(params.headers));
     FakeWebView.shown = params.uri.toString();
   }
 

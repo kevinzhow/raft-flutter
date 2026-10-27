@@ -23,6 +23,7 @@ const humanLoginSetupPaths = {
 /// True when [uri] is the Login with Raft setup page of the Raft Web app at
 /// [webOrigin] (same scheme, host and port; query and hash do not matter).
 bool isHumanLoginSetupUri(Uri uri, Uri webOrigin) {
+  if (uri.userInfo.isNotEmpty || webOrigin.userInfo.isNotEmpty) return false;
   if (!_sameOrigin(uri, webOrigin)) return false;
   final path = uri.path.length > 1 && uri.path.endsWith('/')
       ? uri.path.substring(0, uri.path.length - 1)
@@ -431,6 +432,10 @@ abstract interface class HumanLoginApi {
   /// The Raft Web app origin (`<web>/login-with-raft/setup`).
   Uri get webOrigin;
 
+  /// The Web origins bound to this session's coordinator, including reviewed
+  /// official production aliases. Other servers keep their exact frontend.
+  List<Uri> get loginWebOrigins;
+
   /// "Signed in as ...", or null.
   String? get signedInAs;
 
@@ -459,6 +464,10 @@ class ClientHumanLoginApi implements HumanLoginApi {
   @override
   final Uri webOrigin;
   final Iterable<RaftRecord> Function() directory;
+
+  @override
+  List<Uri> get loginWebOrigins =>
+      ContentLinks.loginWebOriginsFor(client.origin, webOrigin);
 
   @override
   List<HumanLoginServer> get servers => [
