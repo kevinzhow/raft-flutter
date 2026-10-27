@@ -2,9 +2,9 @@ import 'overlays/dialog.dart' show RaftDialog;
 
 // Presentation of the Web CreateTaskDialog
 // (packages/web/src/components/task/CreateTaskDialog.tsx): DialogCard with one
-// title Input per row (a danger `p-1` trash button once there are several),
-// an outline "Add Another" button and Cancel / Create Task(s). The app adapter
-// owns the rows' controllers and the create command.
+// title Input per row (a ghost icon button once there are several), an outline
+// "Add Another" button and Cancel / Create Task(s). The app adapter owns the
+// rows' controllers and the create command.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -15,7 +15,10 @@ import 'dialog_card.dart';
 import 'icons.dart';
 import 'error_presentation.dart';
 import 'localization.dart';
+import 'raft/button.dart';
 import 'recipes/button_variants.g.dart';
+import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
+import 'theme.dart';
 
 class RaftCreateTaskDialogView extends StatelessWidget {
   const RaftCreateTaskDialogView({
@@ -47,6 +50,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
   Widget build(BuildContext context) {
     const gap = SizedBox(height: 16); // form `space-y-4`
     final batch = titles.length > 1;
+    final legacy = RaftTokens.of(context).recipeSet == RaftRecipeSet.legacy;
     const padding = EdgeInsets.symmetric(horizontal: 16, vertical: 8);
     return RaftModalBackdrop(
       child: RaftDialog.card(
@@ -64,10 +68,10 @@ class RaftCreateTaskDialogView extends StatelessWidget {
               children: [
                 for (var i = 0; i < titles.length; i++)
                   Padding(
-                    // mb-1; the last row's margin collapses into the `flex mt-3`
-                    // Add Another button below (block-level, margins collapse).
+                    // The final row's margin and Add Another's margin combine
+                    // into the 12px gap below; earlier Web rows use mb-2.
                     padding: EdgeInsets.only(
-                      bottom: i == titles.length - 1 ? 0 : 4,
+                      bottom: i == titles.length - 1 ? 0 : (legacy ? 4 : 8),
                     ),
                     child: Row(
                       spacing: 4, // gap-1
@@ -83,7 +87,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                             enabled: !submitting,
                           ),
                         ),
-                        if (batch)
+                        if (batch && legacy)
                           RaftRecipeButton(
                             key: ValueKey('create-task-remove-$i'),
                             variant: RaftButtonRecipeVariant.danger,
@@ -93,28 +97,48 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                             tooltip: 'Remove',
                             onPressed: () => onRemoveRow(i),
                           ),
+                        if (batch && !legacy)
+                          RaftButton(
+                            key: ValueKey('create-task-remove-$i'),
+                            uiVariant: RaftButtonVariant.ghost,
+                            uiSize: RaftButtonSize.iconSm,
+                            glyph: RaftGlyph.trash2,
+                            glyphSize: 16,
+                            semanticLabel: 'Remove',
+                            onPressed: () => onRemoveRow(i),
+                          ),
                       ],
                     ),
                   ),
                 const SizedBox(height: 12), // mt-3
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: RaftRecipeButton(
-                    key: const ValueKey('create-task-add-row'),
-                    label: 'Add Another',
-                    glyph: RaftGlyph.plus,
-                    variant: RaftButtonRecipeVariant.outline,
-                    size: RaftButtonRecipeSize.sm,
-                    // px-2 py-1 text-xs font-bold gap-1
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    textStep: RaftTextSteps.xs,
-                    fontWeight: FontWeight.w700,
-                    gap: 4,
-                    onPressed: onAddRow,
-                  ),
+                  child: legacy
+                      ? RaftRecipeButton(
+                          key: const ValueKey('create-task-add-row'),
+                          label: 'Add Another',
+                          glyph: RaftGlyph.plus,
+                          variant: RaftButtonRecipeVariant.outline,
+                          size: RaftButtonRecipeSize.sm,
+                          // px-2 py-1 text-xs font-bold gap-1
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          textStep: RaftTextSteps.xs,
+                          fontWeight: FontWeight.w700,
+                          gap: 4,
+                          onPressed: onAddRow,
+                        )
+                      : RaftButton(
+                          key: const ValueKey('create-task-add-row'),
+                          label: 'Add Another',
+                          glyph: RaftGlyph.plus,
+                          glyphSize: 16,
+                          uiVariant: RaftButtonVariant.outline,
+                          uiSize: RaftButtonSize.sm,
+                          onPressed: onAddRow,
+                        ),
                 ),
               ],
             ),
@@ -125,16 +149,18 @@ class RaftCreateTaskDialogView extends StatelessWidget {
         footer: Wrap(
           alignment: WrapAlignment.end,
           crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
+          spacing: legacy ? 12 : 8,
+          runSpacing: legacy ? 12 : 8,
           children: [
             RaftRecipeButton(
               key: const ValueKey('create-task-cancel'),
               label: 'Cancel',
-              variant: RaftButtonRecipeVariant.outline,
-              size: RaftButtonRecipeSize.sm,
-              padding: padding, // px-4 py-2 text-sm
-              textStep: RaftTextSteps.sm,
+              variant: legacy
+                  ? RaftButtonRecipeVariant.outline
+                  : RaftButtonRecipeVariant.ghost,
+              size: legacy ? RaftButtonRecipeSize.sm : RaftButtonRecipeSize.lg,
+              padding: legacy ? padding : null,
+              textStep: legacy ? RaftTextSteps.sm : null,
               onPressed: raftExplicitClose(context, onClose),
             ),
             RaftRecipeButton(
@@ -147,9 +173,9 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                       'count': filledCount,
                     }),
               variant: RaftButtonRecipeVariant.accent,
-              size: RaftButtonRecipeSize.sm,
-              padding: padding,
-              textStep: RaftTextSteps.sm,
+              size: legacy ? RaftButtonRecipeSize.sm : RaftButtonRecipeSize.lg,
+              padding: legacy ? padding : null,
+              textStep: legacy ? RaftTextSteps.sm : null,
               disabled: submitting,
               onPressed: onSubmit,
             ),
