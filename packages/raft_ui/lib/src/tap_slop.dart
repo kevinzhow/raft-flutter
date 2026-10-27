@@ -53,6 +53,26 @@ class RaftTapSlopGuard extends SingleChildRenderObjectWidget {
 
 class RenderTapSlopGuard extends RenderProxyBox {}
 
+/// A background gesture layer that yields to nearby controls' touch targets.
+/// Wrap the background [GestureDetector] directly. Only its own listener yields;
+/// visible interactive descendants retain priority. Normal blank-space gestures
+/// are unchanged.
+class RaftTapSlopBackground extends SingleChildRenderObjectWidget {
+  const RaftTapSlopBackground({super.key, required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      RenderTapSlopBackground();
+}
+
+class RenderTapSlopBackground extends RenderProxyBox {
+  bool ownsPointerReceiver(RenderPointerListener target) {
+    RenderObject? receiver = child;
+    if (receiver is RenderSemanticsGestureHandler) receiver = receiver.child;
+    return identical(receiver, target);
+  }
+}
+
 /// Routes a pointer that lands within an anchor's [RaftTapSlopAnchor.minSize]
 /// box (but not on the anchor itself) to the nearest anchor, so adjacent
 /// anchors split the gap between them instead of overlapping.
@@ -109,6 +129,7 @@ class RenderTapSlopHost extends RenderProxyBox {
           target is RenderEditable ||
           (target is RenderPointerListener &&
               _handlesContact(target) &&
+              !_isBackgroundReceiver(target) &&
               !_wrapsViewport(target))) {
         return true;
       }
@@ -129,6 +150,18 @@ class RenderTapSlopHost extends RenderProxyBox {
             position: first.localPosition,
           ) &&
           childHit.path.isEmpty;
+    }
+    return false;
+  }
+
+  bool _isBackgroundReceiver(RenderPointerListener target) {
+    RenderObject? ancestor = target.parent;
+    while (ancestor != null && ancestor != this) {
+      if (ancestor is RenderTapSlopBackground &&
+          ancestor.ownsPointerReceiver(target)) {
+        return true;
+      }
+      ancestor = ancestor.parent;
     }
     return false;
   }
