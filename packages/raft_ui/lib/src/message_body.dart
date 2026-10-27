@@ -3,6 +3,7 @@ import 'idle_work.dart';
 import 'hover_region.dart';
 import 'mermaid_toolbar_recipe.dart';
 import 'message_markdown.dart';
+import 'markdown_scrollbar.dart';
 import 'message_tokens.dart';
 import 'message_reference_chip.dart';
 import 'message_row_recipe.dart' show RaftMessageSizeTier;
@@ -1043,6 +1044,7 @@ class _RaftMarkdownState extends State<MarkdownWidget>
           delegate: this,
           selectable: false,
           styleSheet: markdown.resolvedStyleSheet,
+          scrollbarBuilder: buildMarkdownScrollbar,
           imageDirectory: null,
           imageBuilder: _markdownImage,
           checkboxBuilder: null,
@@ -2038,12 +2040,13 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
     super.dispose();
   }
 
-  // The highlighted text box depends only on the code, language and theme.
+  // The highlighted text box depends on the code, language, theme and input.
   // Hover, focus and copy feedback rebuild the copy control, never re-run
   // tokenization or replace the selectable text widget.
   Widget? codeBox;
   Object? codeBoxKey;
   Widget buildCodeBox(RaftTokens t) {
+    final touch = RaftInteraction.of(context).touch;
     final recipe = RaftCodeRecipe(t);
     final textStyle = recipe.textStyle.copyWith(
       fontSize: widget.fontSize,
@@ -2055,6 +2058,7 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
       textStyle,
       t,
       widget.joinsSelection,
+      touch,
     );
     if (codeBox != null && key == codeBoxKey) return codeBox!;
     codeBoxKey = key;
@@ -2063,6 +2067,17 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
       widget.language,
       textStyle,
       dark: t.dark,
+    );
+    final text = widget.joinsSelection || touch
+        ? Text.rich(span, style: textStyle, textAlign: TextAlign.left)
+        : SelectableText.rich(
+            span,
+            style: textStyle,
+            textAlign: TextAlign.left,
+          );
+    final scroll = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: text,
     );
     return codeBox = Container(
       key: const ValueKey('code-container'),
@@ -2073,16 +2088,12 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
         borderRadius: recipe.radius,
       ),
       padding: const EdgeInsets.fromLTRB(12, 12, 48, 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: widget.joinsSelection
-            ? Text.rich(span, style: textStyle, textAlign: TextAlign.left)
-            : SelectableText.rich(
-                span,
-                style: textStyle,
-                textAlign: TextAlign.left,
-              ),
-      ),
+      // Android SelectableText eagerly wins a horizontal finger drag even
+      // when its read-only EditableText does nothing with the drag. A touch
+      // selection region keeps long-press/copy and lets the viewport pan.
+      child: touch && !widget.joinsSelection
+          ? RaftSelectionArea(child: scroll)
+          : scroll,
     );
   }
 

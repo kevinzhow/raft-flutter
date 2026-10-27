@@ -19,6 +19,7 @@ import 'composer_expand.dart';
 import 'presentation.dart';
 import 'markdown_editing.dart';
 import 'markdown_autolink.dart';
+import 'markdown_scrollbar.dart';
 import 'message_semantics.dart';
 import 'selected_text_quote.dart';
 import 'message_body.dart' show raftBodyEndsInCode;
@@ -1811,6 +1812,7 @@ class RaftMessageTile extends StatelessWidget {
               RaftSelectionArea(
                 child: MarkdownBody(
                   data: content,
+                  scrollbarBuilder: buildMarkdownScrollbar,
                   inlineSyntaxes: [RaftBareUrlSyntax()],
                   onTapLink: (_, href, _) {
                     if (href != null) onLink?.call(href);

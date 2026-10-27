@@ -5,8 +5,15 @@ root=pathlib.Path(__file__).resolve().parent.parent
 paths=subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z'],cwd=root).decode().split('\0')
 h=hashlib.sha256()
 for name in sorted(set(paths)):
-    if not name or not (name.startswith(('apps/','packages/','tool/tests/','tool/performance/','tool/ds_audit/','tool/parity','tool/reference-patches/')) or name in {'.fvmrc','pubspec.yaml','pubspec.lock','tool/flutter','tool/android-install','tool/android_app.py','tool/prepare-media-linux','tool/source-hash','tool/native-linux','tool/native-test','tool/check-project','tool/ds-audit','tool/ds-audit-baseline.json','tool/structure-audit','tool/structure-audit-baseline.json'}):
+    if not name or not (name.startswith(('apps/','packages/','third_party/','tool/tests/','tool/performance/','tool/ds_audit/','tool/parity','tool/reference-patches/')) or name in {'.fvmrc','pubspec.yaml','pubspec.lock','tool/flutter','tool/android-install','tool/android_app.py','tool/prepare-media-linux','tool/source-hash','tool/native-linux','tool/native-test','tool/check-project','tool/ds-audit','tool/ds-audit-baseline.json','tool/structure-audit','tool/structure-audit-baseline.json'}):
         continue
+    if name.startswith('third_party/'):
+        # Bind vendored Dart inputs, excluding receipts, archives and caches.
+        vendor_parts = pathlib.PurePosixPath(name).parts[2:]
+        if not vendor_parts or vendor_parts[0] in {'build', '.dart_tool', 'cache', '.cache', '.local', '.pub-cache'}:
+            continue
+        if not (name.endswith('.dart') or (len(vendor_parts) == 1 and vendor_parts[0] in {'pubspec.yaml', 'pubspec.lock', 'analysis_options.yaml'})):
+            continue
     if PathName := pathlib.Path(name).name:
         if PathName.startswith('generated_plugin_registrant.') or PathName == 'generated_plugins.cmake':
             continue

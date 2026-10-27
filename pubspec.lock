@@ -403,10 +403,9 @@ packages:
   flutter_markdown_plus:
     dependency: transitive
     description:
-      name: flutter_markdown_plus
-      sha256: fce641d6c2106cc495de1cd603f97a4f9d615a97a64011928ded380dbdade935
-      url: "https://pub.dev"
-    source: hosted
+      path: "third_party/flutter_markdown_plus"
+      relative: true
+    source: path
     version: "1.0.12"
   flutter_plugin_android_lifecycle:
     dependency: transitive

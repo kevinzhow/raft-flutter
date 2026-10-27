@@ -1,0 +1,7 @@
+# Raft local patch to flutter_markdown_plus 1.0.12
+
+The published archive is pinned by the existing pubspec.lock SHA256. UPSTREAM.json records the verified archive and the exact size/SHA256 of every included original file. Only lib/src/builder.dart and lib/src/widget.dart contain source changes; every other included upstream file is copied byte for byte. The original BSD license and AUTHORS remain included. The Dart files were extracted from that archive rather than copied from a mutable shared package cache. Examples, upstream tests, screenshots and maintenance scripts are omitted from this runtime subset.
+
+The optional MarkdownScrollbarBuilder decorates the existing embedded table/pre scroll view. The dependency retains its original Stateful controller ownership/disposal, SingleChildScrollView, padding, stock table/cells, width algorithm and clipping. A null callback follows the original Scrollbar branch. MarkdownBody and Markdown expose and forward the hook, and changing it rebuilds the parsed widgets. Raft uses the hook to scope away window safe padding and make the touch thumb an indicator; pointer dragging remains available.
+
+When updating upstream, compare against the published archive and reapply this small hook. Do not replace the table renderer or widget-tree traversal. The focused raft_ui markdown scrollbar contract tests cover null-hook defaults, table/code callback wiring, controller ownership and actual touch/pointer interactions.

@@ -1,0 +1,42 @@
+name: flutter_markdown_plus
+description: A Markdown renderer for Flutter. Create rich text output,
+  including text styles, tables, links, and more, from plain text data
+  formatted with simple Markdown tags.
+repository: https://github.com/foresightmobile/flutter_markdown_plus
+issue_tracker: https://github.com/foresightmobile/flutter_markdown_plus/issues
+documentation: https://pub.dev/documentation/flutter_markdown_plus/latest/
+version: 1.0.12
+
+environment:
+  sdk: ^3.4.0
+  flutter: ">=3.27.1"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  markdown: ^7.3.1
+  meta: ^1.16.0
+  path: ^1.9.1
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  leak_tracker_flutter_testing: ^3.0.10
+  mockito: ^5.7.0
+  standard_message_codec: ^0.0.1+4
+
+topics:
+  - markdown
+  - widgets
+
+screenshots:
+  - description: Rich text, emphasis, blockquotes and lists rendered from Markdown.
+    path: screenshots/formatting.png
+  - description: GitHub Flavored Markdown tables and task-list checkboxes.
+    path: screenshots/tables.png
+  - description: Fenced and inline code blocks with monospace styling.
+    path: screenshots/code.png
+
+formatter:
+  page_width: 120

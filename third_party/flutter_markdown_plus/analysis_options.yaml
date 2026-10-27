@@ -1,0 +1,39 @@
+# Analysis options for flutter_markdown_plus.
+#
+# Builds on the standard package:flutter_lints rule set (the convention for
+# published Flutter packages), layered with a few stricter settings this package
+# relies on: type-strict analysis and required public API documentation.
+
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # Allow deprecated members: otherwise every usage would need annotating each
+    # time the Dart SDK or Flutter deprecates something we still support.
+    # https://github.com/flutter/flutter/issues/143312
+    deprecated_member_use: ignore
+    deprecated_member_use_from_same_package: ignore
+  exclude:
+    # Generated files.
+    - '**/*.g.dart'
+    - '**/*.mocks.dart' # Mockito @GenerateMocks
+    # Locally symlinked sibling package (flutter_markdown_plus_latex) used for
+    # cross-package development; not part of this package.
+    - 'flutter_markdown_plus_latex/**'
+
+formatter:
+  page_width: 120
+
+linter:
+  rules:
+    # The public API of a published package must be documented.
+    - public_member_api_docs
+    # Missing awaits have caused production issues in plugins.
+    - unawaited_futures
+    - prefer_relative_imports
+    - prefer_single_quotes
+    - sort_pub_dependencies

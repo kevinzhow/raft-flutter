@@ -9,7 +9,8 @@ dependencies:
     sdk: flutter
   raft_theme:
     path: ../raft_theme
-  flutter_markdown_plus: ^1.0.12
+  flutter_markdown_plus:
+    path: ../../third_party/flutter_markdown_plus
   markdown: ^7.3.0
   mermaid_flutter: ^0.3.0
   mermaid_core: ^0.3.0
