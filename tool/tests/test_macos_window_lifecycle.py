@@ -25,16 +25,27 @@ class MacOSWindowLifecycleTests(unittest.TestCase):
         engine = executable.parent.parent / 'bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework'
         framework = engine / 'macos-arm64_x86_64'
         self.assertTrue((framework / 'FlutterMacOS.framework').exists(), 'Build macOS once to fetch its engine')
-        common = ['-F', str(framework), '-framework', 'FlutterMacOS', '-framework', 'Cocoa']
         with tempfile.TemporaryDirectory(prefix='raft-window-lifecycle-') as temporary:
             directory = Path(temporary)
+            common = ['-F', str(framework), '-framework', 'FlutterMacOS', '-framework', 'Cocoa',
+                      '-module-cache-path', str(directory / 'module-cache')]
+            plugin_link = ['-I', str(directory), '-L', str(directory), '-ldesktop_drop']
             library = directory / 'libRaftMacAppDelegate.dylib'
             binary = directory / 'window-tests'
-            # MainFlutterWindow's real event guard is compiled too. These
-            # offscreen contract tests never initialize the plugin registry.
+            # MainFlutterWindow imports the real desktop_drop helper. Keep the
+            # same native module and registration available in this contract.
             registry = directory / 'GeneratedPluginRegistry.swift'
-            registry.write_text('import FlutterMacOS\nfunc RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {}\n')
+            registry.write_text(
+                'import FlutterMacOS\nimport desktop_drop\n'
+                'func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {\n'
+                '  DesktopDropPlugin.register(with: registry.registrar(forPlugin: "DesktopDropPlugin"))\n'
+                '}\n')
             commands = [
+                ['xcrun', 'swiftc', '-parse-as-library', '-emit-library', '-emit-module',
+                 '-module-name', 'desktop_drop',
+                 str(ROOT / 'packages/desktop_drop/macos/desktop_drop/Sources/desktop_drop/DesktopDropPlugin.swift'),
+                 '-emit-module-path', str(directory / 'desktop_drop.swiftmodule'),
+                 *common, '-o', str(directory / 'libdesktop_drop.dylib')],
                 ['xcrun', 'swiftc', '-parse-as-library', '-emit-library', '-emit-module',
                  '-enable-testing', '-module-name', 'RaftMacAppDelegate',
                  str(ROOT / 'apps/raft_flutter/macos/Runner/AppDelegate.swift'),
@@ -43,9 +54,9 @@ class MacOSWindowLifecycleTests(unittest.TestCase):
                  str(ROOT / 'apps/raft_flutter/macos/Runner/AttachmentFileWriter.swift'),
                  str(registry),
                  '-emit-module-path', str(directory / 'RaftMacAppDelegate.swiftmodule'),
-                 *common, '-o', str(library)],
+                 *plugin_link, *common, '-o', str(library)],
                 ['xcrun', 'swiftc', '-I', str(directory), '-L', str(directory), '-lRaftMacAppDelegate',
-                 *common,
+                 *plugin_link, *common,
                  str(ROOT / 'tool/tests/macos_window_lifecycle.swift'), '-o', str(binary),
                  '-Xlinker', '-rpath', '-Xlinker', str(directory),
                  '-Xlinker', '-rpath', '-Xlinker', str(framework),

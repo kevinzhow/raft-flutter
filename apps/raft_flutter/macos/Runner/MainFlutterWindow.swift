@@ -201,6 +201,13 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     // returns immediately and may eat mouseUp, so close Flutter's pressed state
     // now and keep the remaining native drag events out of Flutter.
     sequence.controller.mouseUp(with: up)
+    // Dart recognizes the pan asynchronously. Apply the motion already seen
+    // before WindowServer takes over; a quick drag may have no later motion
+    // left for performDrag. The original local down stays the native anchor.
+    let down = sequence.down.locationInWindow
+    let latest = sequence.lastEvent.locationInWindow
+    setFrameOrigin(NSPoint(x: frame.origin.x + latest.x - down.x,
+      y: frame.origin.y + latest.y - down.y))
     return true
   }
 
