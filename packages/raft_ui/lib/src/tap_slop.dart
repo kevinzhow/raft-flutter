@@ -87,7 +87,7 @@ class RenderTapSlopHost extends RenderProxyBox {
       _protectingDirectHit = true;
       final direct = BoxHitTestResult();
       super.hitTest(direct, position: position);
-      final protected = _hasDirectControl(direct, position);
+      final protected = _hasDirectControl(direct);
       _protectingDirectHit = protected;
       // The direct hit test retains normal child and scrollable gestures; the
       // host must not redirect this point to a neighbour's expanded target.
@@ -98,7 +98,7 @@ class RenderTapSlopHost extends RenderProxyBox {
     }
   }
 
-  bool _hasDirectControl(BoxHitTestResult direct, Offset position) {
+  bool _hasDirectControl(BoxHitTestResult direct) {
     for (final entry in direct.path) {
       final target = entry.target;
       // Scrollable's gesture listeners surround the viewport and own all
@@ -107,24 +107,40 @@ class RenderTapSlopHost extends RenderProxyBox {
       if (target is RenderAbstractViewport) break;
       if (target is RenderTapSlopGuard ||
           target is RenderEditable ||
-          (target is RenderPointerListener && !_wrapsViewport(target)) ||
-          target is RenderAbsorbPointer) {
+          (target is RenderPointerListener &&
+              _handlesContact(target) &&
+              !_wrapsViewport(target))) {
         return true;
       }
     }
     // AbsorbPointer consumes a hit without adding an entry for itself. The
     // deepest recorded ancestor still reports that consumed child hit; an
     // opaque background with no child hit does not. Keep such shields intact.
-    if (direct.path.firstOrNull?.target case final RenderBox box) {
+    final first = direct.path.firstOrNull;
+    // A sliver recorded without a deeper box already owns this hit (including
+    // a directly consumed box child). Keep its axis-specific path untouched.
+    if (first is SliverHitTestEntry) return true;
+    if (first is BoxHitTestEntry) {
       final childHit = BoxHitTestResult();
-      return box.hitTestChildren(
+      return first.target.hitTestChildren(
             childHit,
-            position: box.globalToLocal(localToGlobal(position)),
+            // Use the recorded hit coordinate: a Transform may deliberately
+            // apply its paint transform without transforming hit tests.
+            position: first.localPosition,
           ) &&
           childHit.path.isEmpty;
     }
     return false;
   }
+
+  bool _handlesContact(RenderPointerListener target) =>
+      target.onPointerDown != null ||
+      target.onPointerMove != null ||
+      target.onPointerUp != null ||
+      target.onPointerCancel != null ||
+      target.onPointerPanZoomStart != null ||
+      target.onPointerPanZoomUpdate != null ||
+      target.onPointerPanZoomEnd != null;
 
   bool _wrapsViewport(RenderObject target) {
     // A viewport can reject a blank content hit, leaving only Scrollable's
