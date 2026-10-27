@@ -120,8 +120,13 @@ class RaftCreateTaskDialogView extends StatelessWidget {
             ),
           ],
         ),
-        footer: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        // Preserve the usual gap while allowing large labels to flow onto
+        // another line when the available width is too small.
+        footer: Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
           children: [
             RaftRecipeButton(
               key: const ValueKey('create-task-cancel'),
@@ -132,7 +137,6 @@ class RaftCreateTaskDialogView extends StatelessWidget {
               textStep: RaftTextSteps.sm,
               onPressed: raftExplicitClose(context, onClose),
             ),
-            const SizedBox(width: 12), // gap-3
             RaftRecipeButton(
               key: const ValueKey('create-task-submit'),
               label: submitting

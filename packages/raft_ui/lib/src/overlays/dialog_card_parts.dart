@@ -54,6 +54,23 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
       properties: {...base.properties, ...root.properties},
     );
     final media = MediaQuery.of(context);
+    final scrollPlatform = ScrollConfiguration.of(context).getPlatform(context);
+    final desktopScrollbar = switch (scrollPlatform) {
+      TargetPlatform.linux ||
+      TargetPlatform.macOS ||
+      TargetPlatform.windows => true,
+      _ => false,
+    };
+    final scrollbarTheme = ScrollbarTheme.of(context);
+    final thickness = scrollbarTheme.thickness;
+    final scrollbarGutter =
+        [
+          thickness?.resolve(<WidgetState>{}),
+          thickness?.resolve({WidgetState.hovered}),
+          thickness?.resolve({WidgetState.dragged}),
+          thickness?.resolve({WidgetState.hovered, WidgetState.dragged}),
+        ].whereType<double>().fold(12.0, math.max) +
+        2 * math.max(0.0, scrollbarTheme.crossAxisMargin ?? 2);
     Widget titleContent = Text(
       raftText(context, d.title! as String),
       style: title.text(tokens, base: DefaultTextStyle.of(context).style),
@@ -121,6 +138,12 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
                       if (actions == null) heading,
                       Flexible(
                         child: SingleChildScrollView(
+                          // Desktop scrollbars overlay the content. Leave room
+                          // for their track so the edges of scaled actions
+                          // remain clickable while scrolling.
+                          padding: desktopScrollbar
+                              ? EdgeInsetsDirectional.only(end: scrollbarGutter)
+                              : null,
                           child: scrollingContent(
                             includeHeading: actions != null,
                             includeFooter: !d.pinFooterAtLargeText,
