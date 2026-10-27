@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import desktop_drop
 import CFNetwork
 import AVFoundation
 import ImageIO
@@ -119,7 +120,7 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     }
     let point = content.superview?.convert(event.locationInWindow, from: nil)
       ?? content.convert(event.locationInWindow, from: nil)
-    guard content.hitTest(point) === renderView else {
+    guard DesktopDropPlugin.mouseEventTarget(in: content, at: point) === renderView else {
       super.sendEvent(event)
       return
     }
@@ -149,7 +150,7 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     else { return false }
     let point = content.superview?.convert(event.locationInWindow, from: nil)
       ?? content.convert(event.locationInWindow, from: nil)
-    guard let hit = content.hitTest(point) else { return false }
+    guard let hit = DesktopDropPlugin.mouseEventTarget(in: content, at: point) else { return false }
     return hit !== renderView
   }
 

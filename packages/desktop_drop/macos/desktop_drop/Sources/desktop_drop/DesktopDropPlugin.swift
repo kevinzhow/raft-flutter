@@ -18,6 +18,20 @@ private func findFlutterViewController(_ viewController: NSViewController?) -> F
 }
 
 public class DesktopDropPlugin: NSObject, FlutterPlugin {
+  /// Resolve ordinary mouse input below this plugin's drag-only overlay.
+  /// Keep the overlay installed and registered as the native file-drop target.
+  public static func mouseEventTarget(in view: NSView, at point: NSPoint) -> NSView? {
+    guard let hit = view.hitTest(point), let overlay = hit as? DropTarget,
+      let parent = overlay.superview,
+      let index = parent.subviews.firstIndex(where: { $0 === overlay })
+    else { return view.hitTest(point) }
+    let parentPoint = parent.convert(point, from: view.superview)
+    for sibling in parent.subviews[..<index].reversed() {
+      if let target = sibling.hitTest(parentPoint) { return target }
+    }
+    return hit
+  }
+
   public static func register(with registrar: FlutterPluginRegistrar) {
     guard let flutterView = registrar.view else { return }
     guard let flutterWindow = flutterView.window else { return }
