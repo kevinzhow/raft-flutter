@@ -678,8 +678,13 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           body,
-          // ConfirmDialog: `<Banner intent="warning" className="mt-4">`.
-          const SizedBox(height: 16),
+          // Web ConfirmDialog.tsx: the error Banner uses `mt-3`.
+          // Frozen looks retain their original `mt-4` spacing.
+          SizedBox(
+            height: usesLegacyRecipes(t.recipeTokens)
+                ? RaftSpace.x4
+                : RaftSpace.x3,
+          ),
           RaftErrorBanner(error),
         ],
       );
