@@ -6,7 +6,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_theme/raft_theme.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/raft/ui_tokens.dart' show raftChromeBlend;
 
 RaftThemePack customPack({required String dialog}) => RaftThemePack.parse(
   jsonEncode({
@@ -38,6 +37,11 @@ void main() {
           final background =
               tokens.themeOverrides?.colors['layer-dialog'] ?? tokens.popover;
           final fill = tokens.colors['layer-banner-destructive']!;
+          if (custom) {
+            expect(pack!.warnings, isEmpty);
+            expect(background, const Color(0xff34445a));
+            expect(fill.a, closeTo(0.18, 0.005));
+          }
           final expected = fill.a < 1
               ? raftChromeBlend(fill, background)
               : fill;
@@ -88,6 +92,13 @@ void main() {
     t,
   ) async {
     final pack = customPack(dialog: 'rgba(52 68 90 / 0.65)');
+    expect(pack.warnings, isEmpty);
+    final tokens = RaftTokens.theme(pack: pack, dark: true);
+    expect(
+      tokens.themeOverrides!.colors['layer-dialog']!.a,
+      closeTo(0.65, 0.005),
+    );
+    expect(tokens.colors['layer-banner-destructive']!.a, closeTo(0.18, 0.005));
     addTearDown(() => t.pumpWidget(const SizedBox()));
     await t.pumpWidget(
       MaterialApp(
