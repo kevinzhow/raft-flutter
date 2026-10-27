@@ -22483,16 +22483,26 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/composer_tool_button.dart#class:RaftComposerToolButton": {
-    "role": "unresolved",
-    "familyRefs": [],
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "button"
+    ],
     "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "The composer compatibility adapter returns RaftButton directly at composer_tool_button.dart:99; its old recipe is supplied only through legacyBuilder, selected by the canonical Button frozen-look branch at raft/button.dart:534. Real composer_expand.dart callers are resolved at :92/:163/:280. Existing deprecated-button reference rules remain unchanged."
    },
    "packages/raft_ui/lib/src/composer_tool_button.dart#method:RaftComposerToolButton.build": {
-    "role": "unresolved",
-    "familyRefs": [],
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "button"
+    ],
     "owner": "design-system alignment",
-    "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "This exact builder delegates to the canonical RaftButton constructor at composer_tool_button.dart:99 and owns no independent paint node in the resolved inventory. It remains a deprecated compatibility entry; no current visual or state PASS follows."
    },
    "packages/raft_ui/lib/src/computer_detail.dart#class:RaftComputerDetailView": {
     "role": "unresolved",
@@ -30957,16 +30967,26 @@
     "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
    },
    "packages/raft_ui/lib/src/raft/button.dart#method:RaftButton._paintRecipeContent": {
-    "role": "unresolved",
-    "familyRefs": [],
+    "role": "internal_part",
+    "familyRefs": [
+     "button"
+    ],
     "owner": "design-system alignment",
-    "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "The canonical RaftButton recipe builder calls this exact content painter in its colour-transition callback at raft/button.dart:699. It does not define a second public Button API; visual/state compliance is not asserted."
    },
    "packages/raft_ui/lib/src/raft/button.dart#method:RaftButton._recipeSurface": {
-    "role": "unresolved",
-    "familyRefs": [],
+    "role": "internal_part",
+    "familyRefs": [
+     "button"
+    ],
     "owner": "design-system alignment",
-    "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "RaftButton.build calls this exact private builder at raft/button.dart:542. It resolves the buttonVariants recipe at :580 and composes the Button colour/content parts. This is ownership only; mounted states and visual acceptance remain unknown."
    },
    "packages/raft_ui/lib/src/raft/button.dart#method:RaftButton.build": {
     "role": "unresolved",
