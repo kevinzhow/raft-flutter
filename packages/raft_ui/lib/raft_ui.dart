@@ -179,6 +179,7 @@ export 'src/message_translation.dart';
 export 'src/message_semantics.dart';
 export 'src/tooltip.dart';
 export 'src/hover_card.dart';
+export 'src/hover_dismiss_scope.dart';
 export 'src/profile_preview_card.dart';
 export 'src/runtime_usage_card.dart';
 

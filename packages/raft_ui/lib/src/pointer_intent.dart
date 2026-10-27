@@ -42,7 +42,11 @@ abstract final class RaftPointerIntent {
   static void unlistenScroll(VoidCallback signal) => _signals.remove(signal);
 
   /// A scrollable under the pointer moved its content.
-  static void scrolled() => _scrolledAtMove = _moves;
+  static void scrolled() => requireMovement();
+
+  /// Navigation can expose a retained trigger without moving the pointer,
+  /// just as scrolling can expose a new row underneath it.
+  static void requireMovement() => _scrolledAtMove = _moves;
 
   /// Whether the pointer moved since the last [scrolled].
   static bool get movedSinceScroll => _moves != _scrolledAtMove;

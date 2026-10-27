@@ -1,4 +1,5 @@
 import 'hover_region.dart';
+import 'focus_visible.dart';
 import 'interaction.dart';
 import 'raft_underline.dart';
 import 'anchored_popup.dart';
@@ -1057,43 +1058,6 @@ RaftSlotStyle _raftControlButtonStyle(
   );
 }
 
-/// CSS focus-visible is keyboard modality, not Flutter's mouse/traditional
-/// focus mode. This process-local tracker stores no account or product state.
-class _RaftFocusVisible extends ChangeNotifier {
-  static final shared = _RaftFocusVisible();
-  bool keyboard = true;
-  int users = 0;
-  void acquire() {
-    if (users++ == 0) {
-      HardwareKeyboard.instance.addHandler(key);
-      GestureBinding.instance.pointerRouter.addGlobalRoute(pointer);
-    }
-  }
-
-  void release() {
-    if (--users == 0) {
-      HardwareKeyboard.instance.removeHandler(key);
-      GestureBinding.instance.pointerRouter.removeGlobalRoute(pointer);
-      keyboard = true;
-    }
-  }
-
-  void update(bool value) {
-    if (keyboard == value) return;
-    keyboard = value;
-    notifyListeners();
-  }
-
-  bool key(KeyEvent event) {
-    if (event is KeyDownEvent) update(true);
-    return false;
-  }
-
-  void pointer(PointerEvent event) {
-    if (event is PointerDownEvent) update(false);
-  }
-}
-
 /// Frozen control paint. The enclosing Button / Interactive owns all input.
 class _RaftLegacyControlSurface extends StatelessWidget {
   const _RaftLegacyControlSurface(this.control, this.state);
@@ -2111,9 +2075,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
       return;
     }
     focusPopup =
-        !widget.openOnHover ||
-        _RaftFocusVisible.shared.keyboard ||
-        edge != null;
+        !widget.openOnHover || RaftFocusVisible.shared.keyboard || edge != null;
     controller.open();
     if (edge != null) {
       final captured = ticket;
@@ -3226,14 +3188,14 @@ class _RaftInteractiveState extends State<RaftInteractive>
   @override
   void initState() {
     super.initState();
-    _RaftFocusVisible.shared.acquire();
-    _RaftFocusVisible.shared.addListener(modeChanged);
+    RaftFocusVisible.shared.acquire();
+    RaftFocusVisible.shared.addListener(modeChanged);
   }
 
   @override
   void dispose() {
-    _RaftFocusVisible.shared.removeListener(modeChanged);
-    _RaftFocusVisible.shared.release();
+    RaftFocusVisible.shared.removeListener(modeChanged);
+    RaftFocusVisible.shared.release();
     ownedFocus.dispose();
     super.dispose();
   }
@@ -3248,7 +3210,7 @@ class _RaftInteractiveState extends State<RaftInteractive>
   }
 
   void modeChanged() {
-    final next = enabled && node.hasFocus && _RaftFocusVisible.shared.keyboard;
+    final next = enabled && node.hasFocus && RaftFocusVisible.shared.keyboard;
     if (mounted && next != focused) {
       setState(() {
         focused = next;
@@ -3260,7 +3222,7 @@ class _RaftInteractiveState extends State<RaftInteractive>
   void focusChanged(bool hasFocus) {
     if (!mounted) return;
     setState(() {
-      focused = enabled && hasFocus && _RaftFocusVisible.shared.keyboard;
+      focused = enabled && hasFocus && RaftFocusVisible.shared.keyboard;
       tooltipKeyboardFocused = focused;
     });
   }

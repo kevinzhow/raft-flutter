@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 
 import 'design_primitives.dart' show RaftTouchTarget;
 import 'pointer_intent.dart';
+import 'focus_visible.dart';
+import 'hover_dismiss_scope.dart';
 import 'theme.dart';
 
 /// RUI tooltip1392 and foundation361/489; product timing is provider-owned.
@@ -198,6 +200,11 @@ class _RaftTooltipState extends State<RaftTooltip>
   /// for a real pointer move.
   bool awaitingMove = false;
   int epoch = 0;
+  int? dismissedFocusEpoch;
+  RaftHoverDismissController? dismissController;
+  bool listeningDismiss = false;
+  bool get keyboardAllowed =>
+      dismissedFocusEpoch != RaftFocusVisible.shared.keyEpoch;
   bool get allowed => widget.enabled && widget.message.isNotEmpty;
   bool get reduced => MediaQuery.disableAnimationsOf(context);
   @override
@@ -209,6 +216,7 @@ class _RaftTooltipState extends State<RaftTooltip>
     );
     HardwareKeyboard.instance.addHandler(_key);
     RaftPointerIntent.install();
+    RaftFocusVisible.shared.acquire();
   }
 
   @override
@@ -222,7 +230,16 @@ class _RaftTooltipState extends State<RaftTooltip>
     }
     scope = nextScope;
     watch.sync(context);
-    if (widget.keyboardFocused && allowed && !focusBlocked) {
+    final nextDismiss = RaftHoverDismissScope.maybeOf(context);
+    if (dismissController != nextDismiss) {
+      if (listeningDismiss) {
+        dismissController?.removeListener(_navigationChanged);
+      }
+      listeningDismiss = false;
+      dismissController = nextDismiss;
+      _syncDismiss();
+    }
+    if (widget.keyboardFocused && allowed && !focusBlocked && keyboardAllowed) {
       _deferKeyboard();
     }
   }
@@ -240,7 +257,8 @@ class _RaftTooltipState extends State<RaftTooltip>
     if (widget.keyboardFocused &&
         allowed &&
         !old.keyboardFocused &&
-        !focusBlocked) {
+        !focusBlocked &&
+        keyboardAllowed) {
       _deferKeyboard();
     } else if (!widget.keyboardFocused && old.keyboardFocused && !hovered) {
       _hide();
@@ -248,13 +266,15 @@ class _RaftTooltipState extends State<RaftTooltip>
   }
 
   void _deferKeyboard() {
+    _syncDismiss();
     final ticket = ++epoch;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted &&
           ticket == epoch &&
           widget.keyboardFocused &&
           allowed &&
-          !focusBlocked) {
+          !focusBlocked &&
+          keyboardAllowed) {
         _show(immediate: true);
       }
     });
@@ -278,6 +298,7 @@ class _RaftTooltipState extends State<RaftTooltip>
 
   /// Holds the wheel/trackpad subscription only while hovered or open.
   void _syncSignal() {
+    _syncDismiss();
     final want = hovered || portal.isShowing;
     if (want == listeningSignal) return;
     listeningSignal = want;
@@ -286,6 +307,26 @@ class _RaftTooltipState extends State<RaftTooltip>
     } else {
       RaftPointerIntent.unlistenScroll(_wheel);
     }
+  }
+
+  void _syncDismiss() {
+    final want =
+        dismissController != null &&
+        (hovered || portal.isShowing || widget.keyboardFocused);
+    if (want == listeningDismiss) return;
+    listeningDismiss = want;
+    if (want) {
+      dismissController!.addListener(_navigationChanged);
+    } else {
+      dismissController?.removeListener(_navigationChanged);
+    }
+  }
+
+  void _navigationChanged() {
+    dismissedFocusEpoch = RaftFocusVisible.shared.keyEpoch;
+    awaitingMove = hovered;
+    _hide(immediate: true);
+    scope?.group.settle();
   }
 
   /// A wheel or trackpad scroll signal: any open tooltip closes at once and
@@ -328,11 +369,9 @@ class _RaftTooltipState extends State<RaftTooltip>
   void _hover(PointerHoverEvent event) {
     final previous = pointer;
     pointer = event.position;
-    if (!allowed ||
-        !hovered ||
-        hoverBlocked ||
-        portal.isShowing ||
-        widget.keyboardFocused) {
+    // Retained keyboard focus can coexist with fresh pointer intent after
+    // dismissal. An already open popup needs no hover timer.
+    if (!allowed || !hovered || hoverBlocked || portal.isShowing) {
       return;
     }
     if (awaitingMove) {
@@ -388,7 +427,7 @@ class _RaftTooltipState extends State<RaftTooltip>
   }
 
   void _show({bool immediate = false}) {
-    if (!mounted || !allowed) {
+    if (!mounted || !allowed || ModalRoute.isCurrentOf(context) == false) {
       return;
     }
     openTimer?.cancel();
@@ -414,6 +453,7 @@ class _RaftTooltipState extends State<RaftTooltip>
     final ticket = ++epoch;
     scope?.group.release(this, scope!.hysteresis);
     if (!portal.isShowing) {
+      _syncDismiss();
       return;
     }
     closing = true;
@@ -469,6 +509,8 @@ class _RaftTooltipState extends State<RaftTooltip>
     openTimer?.cancel();
     closeTimer?.cancel();
     watch.dispose();
+    RaftFocusVisible.shared.release();
+    if (listeningDismiss) dismissController?.removeListener(_navigationChanged);
     if (listeningSignal) RaftPointerIntent.unlistenScroll(_wheel);
     HardwareKeyboard.instance.removeHandler(_key);
     scope?.group.release(this, scope!.hysteresis);

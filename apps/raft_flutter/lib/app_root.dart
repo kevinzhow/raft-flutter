@@ -174,6 +174,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   bool sharePickerOpen = false, shareDrainScheduled = false;
   int shareEpoch = 0;
   late final RaftAppRouter appRouter;
+  final hoverDismiss = RaftHoverDismissController();
   late final PlatformRouteInformationProvider routeInformation;
   Uri requestedLocation = Uri(path: '/');
   Uri? chooserReturn;
@@ -279,7 +280,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           : sessionHome(),
       onLocation: receiveAppLocation,
       onRootBack: returnFromSelector,
-      observers: [privateRoutes],
+      observers: [privateRoutes, hoverDismiss],
     );
     routeInformation = RaftAppRouteInformationProvider(
       initialRouteInformation: RouteInformation(uri: requestedLocation),
@@ -2163,35 +2164,40 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       locale: locale,
       supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      builder: (context, child) => RaftHoverScope.forPlatform(
-        child: AppWindowCommands(
-          navigatorKey: appRouter.navigatorKey,
-          openSection: workspace?.setSection,
-          child: AppServicesHost(
-            services: widget.services,
-            ownsAppUpdate: widget.ownsAppUpdate,
-            session: (client, workspace),
-            child: RaftTextScaling(
-              child: RepaintBoundary(
-                key: raftScreenshotKey,
-                child: DesktopTitleBar(
-                  integrated:
-                      workspace?.server != null &&
-                      !showServerSelector &&
-                      WorkspaceHostScope.showsTopBar(context),
-                  workspace: workspace,
-                  child: RaftTooltipProvider(
-                    delay: const Duration(milliseconds: 600),
-                    child: RaftViewportBreakpointScope(
-                      // Resolves the theme's font combinations once the app is idle.
-                      child: RaftFontWarmUpScope(
-                        child: RaftSystemBars(
-                          child: RaftErrorScope(
-                            format: raftAppErrorFormatter,
-                            child: RaftToastHost(
-                              child: KeyboardInsetGuard(
-                                imeVisible: platformImeVisibility,
-                                child: child!,
+      builder: (context, child) => RaftHoverDismissScope(
+        controller: hoverDismiss,
+        navigation: appRouter,
+        location: () => appRouter.currentConfiguration,
+        child: RaftHoverScope.forPlatform(
+          child: AppWindowCommands(
+            navigatorKey: appRouter.navigatorKey,
+            openSection: workspace?.setSection,
+            child: AppServicesHost(
+              services: widget.services,
+              ownsAppUpdate: widget.ownsAppUpdate,
+              session: (client, workspace),
+              child: RaftTextScaling(
+                child: RepaintBoundary(
+                  key: raftScreenshotKey,
+                  child: DesktopTitleBar(
+                    integrated:
+                        workspace?.server != null &&
+                        !showServerSelector &&
+                        WorkspaceHostScope.showsTopBar(context),
+                    workspace: workspace,
+                    child: RaftTooltipProvider(
+                      delay: const Duration(milliseconds: 600),
+                      child: RaftViewportBreakpointScope(
+                        // Resolves the theme's font combinations once the app is idle.
+                        child: RaftFontWarmUpScope(
+                          child: RaftSystemBars(
+                            child: RaftErrorScope(
+                              format: raftAppErrorFormatter,
+                              child: RaftToastHost(
+                                child: KeyboardInsetGuard(
+                                  imeVisible: platformImeVisibility,
+                                  child: child!,
+                                ),
                               ),
                             ),
                           ),

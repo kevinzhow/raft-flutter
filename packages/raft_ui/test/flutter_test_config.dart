@@ -150,8 +150,8 @@ void _enableLeakTracking() {
   LeakTesting.settings = LeakTesting.settings.withIgnored(
     allNotGCed: true,
     classes: const [
-      // Process-wide singleton (`_RaftFocusVisible.shared`): never disposed.
-      '_RaftFocusVisible',
+      // Process-wide singleton (`RaftFocusVisible.shared`): never disposed.
+      'RaftFocusVisible',
     ],
   );
 }
