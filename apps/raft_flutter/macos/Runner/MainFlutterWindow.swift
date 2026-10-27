@@ -21,13 +21,28 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
   private struct HeaderMouseSequence {
     let controller: FlutterViewController
     let down: NSEvent
+    let frame: NSRect
+    let globalDown: CGPoint?
     var lastEvent: NSEvent
+  }
+  private struct HeaderDragHandoff {
+    let originalFrame: NSRect
+    let compensatedFrame: NSRect
+    let globalDown: CGPoint?
+    var lastTimestamp: TimeInterval
+    var nativeFrameChanged = false
   }
   private var headerMouseSequence: HeaderMouseSequence?
   private var headerDragHandedOff = false
+  private var headerDragHandoff: HeaderDragHandoff?
+  private var headerDragFrameObservers: [NSObjectProtocol] = []
   private var pendingHeaderMouseEvents: [NSEvent]?
   private var headerCancellationInFlight = false
   private var appKitMouseSequence = false
+
+  deinit {
+    for observer in headerDragFrameObservers { NotificationCenter.default.removeObserver(observer) }
+  }
 
   // AppKit resets standard-button frames during layout. Align them after that
   // layout, before display; didUpdate arrives after a displaced frame can paint.
@@ -49,6 +64,8 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
   override func sendEvent(_ event: NSEvent) {
     if event.window === self {
       if event.type == .leftMouseDown {
+        clearHeaderDragHandoff()
+        headerDragHandedOff = false
         appKitMouseSequence = titleBar?.isStandardButtonMouseDown(event) == true
           || mouseDownHitsNativeView(event)
       }
@@ -86,10 +103,16 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     }
     if headerDragHandedOff, event.window === self {
       if event.type == .leftMouseUp {
+        guard finishHeaderDragHandoff(event) else { return }
         headerDragHandedOff = false
         return
       }
-      if event.type == .leftMouseDragged { return }
+      if event.type == .leftMouseDragged {
+        if let previous = headerDragHandoff?.lastTimestamp, event.timestamp >= previous {
+          headerDragHandoff?.lastTimestamp = event.timestamp
+        }
+        return
+      }
     }
     if var sequence = headerMouseSequence, event.window === self {
       if event.type == .leftMouseUp {
@@ -135,7 +158,8 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     if renderView.acceptsFirstResponder, firstResponder !== renderView {
       _ = makeFirstResponder(renderView)
     }
-    headerMouseSequence = HeaderMouseSequence(controller: controller, down: event, lastEvent: event)
+    headerMouseSequence = HeaderMouseSequence(controller: controller, down: event,
+      frame: frame, globalDown: event.cgEvent?.location, lastEvent: event)
     // NSWindow's titlebar recognizer acts on mouseUp independently of Dart's
     // gesture arena. Forward the complete client sequence exactly once, before
     // that native recognizer can acquire it; blank Flutter gestures explicitly
@@ -208,6 +232,42 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     let latest = sequence.lastEvent.locationInWindow
     setFrameOrigin(NSPoint(x: frame.origin.x + latest.x - down.x,
       y: frame.origin.y + latest.y - down.y))
+    headerDragHandoff = HeaderDragHandoff(originalFrame: sequence.frame,
+      compensatedFrame: frame, globalDown: sequence.globalDown,
+      lastTimestamp: sequence.lastEvent.timestamp)
+    for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {
+      headerDragFrameObservers.append(NotificationCenter.default.addObserver(
+        forName: name, object: self, queue: .main
+      ) { [weak self] _ in
+        guard let self, let handoff = self.headerDragHandoff,
+          self.frame != handoff.compensatedFrame else { return }
+        self.headerDragHandoff?.nativeFrameChanged = true
+      })
+    }
+    return true
+  }
+
+  private func clearHeaderDragHandoff() {
+    headerDragHandoff = nil
+    for observer in headerDragFrameObservers { NotificationCenter.default.removeObserver(observer) }
+    headerDragFrameObservers.removeAll()
+  }
+
+  private func finishHeaderDragHandoff(_ event: NSEvent) -> Bool {
+    guard let handoff = headerDragHandoff else { return true }
+    guard event.timestamp >= handoff.lastTimestamp else { return false }
+    defer { clearHeaderDragHandoff() }
+    // performDrag can return without consuming the last drag/up. Only repair
+    // that stationary handoff; native movement (even away and back), snapping
+    // or resizing owns the result. Never infer the endpoint from today's
+    // cursor location or from window-local coordinates after the frame moved.
+    guard !handoff.nativeFrameChanged, frame == handoff.compensatedFrame,
+      let down = handoff.globalDown, let up = event.cgEvent?.location,
+      down.x.isFinite, down.y.isFinite, up.x.isFinite, up.y.isFinite
+    else { return true }
+    // CG event coordinates have a top-left origin; NSWindow's Y grows upward.
+    setFrameOrigin(NSPoint(x: handoff.originalFrame.minX + up.x - down.x,
+      y: handoff.originalFrame.minY - (up.y - down.y)))
     return true
   }
 

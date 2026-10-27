@@ -63,7 +63,7 @@ class MacOSTitlebarTests(unittest.TestCase):
                         log.write(result.stdout + result.stderr)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 if command == [str(binary)]:
-                    self.assertIn('11 cases, 0 failed assertions', result.stdout)
+                    self.assertIn('12 cases, 0 failed assertions', result.stdout)
 
 
 if __name__ == '__main__':

@@ -45,6 +45,24 @@ private final class RecordingFlutterViewController: FlutterViewController {
   override func mouseDragged(with event: NSEvent) { received.append(event) }
 }
 
+// Stop at the public WindowServer handoff. Tests can then model a native drag
+// that did move, or one whose remaining packets came back to sendEvent instead.
+private final class RecordingDragWindow: MainFlutterWindow {
+  var dragRequests: [NSEvent] = []
+  override func performDrag(with event: NSEvent) { dragRequests.append(event) }
+}
+
+private final class MouseEventWithoutCG: NSEvent {
+  let source: NSEvent
+  init(_ source: NSEvent) { self.source = source; super.init() }
+  required init?(coder: NSCoder) { fatalError("Not used by the fixture") }
+  override var type: NSEvent.EventType { source.type }
+  override var window: NSWindow? { source.window }
+  override var windowNumber: Int { source.windowNumber }
+  override var timestamp: TimeInterval { source.timestamp }
+  override var cgEvent: CGEvent? { nil }
+}
+
 private func pointFromTop(_ view: NSView, x: CGFloat, top: CGFloat) -> NSPoint {
   let y = view.isFlipped ? view.bounds.minY + top : view.bounds.maxY - top
   return view.convert(NSPoint(x: view.bounds.minX + x, y: y), to: nil)
@@ -80,7 +98,7 @@ private func checkSameEvents(_ actual: [NSEvent], _ expected: [NSEvent], _ label
 }
 
 private func exerciseFlutterHeaderInput() {
-  let input = MainFlutterWindow(contentRect: NSRect(x: 40, y: 40, width: 900, height: 600),
+  let input = RecordingDragWindow(contentRect: NSRect(x: 40, y: 40, width: 900, height: 600),
     styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
   input.isReleasedWhenClosed = false
   input.title = "Raft native header input test"
@@ -225,6 +243,114 @@ private func exerciseFlutterHeaderInput() {
   check(input.frame == baseline, "Flutter header input must not start an unrelated native drag")
   describeInput("header press leaving header", recorder,
     expected: crossEvents, before: baseline, after: input.frame)
+
+  let dragMessenger = Messenger()
+  let dragTitlebar = RaftTitleBar(window: input, messenger: dragMessenger)
+  let foreign = NSWindow(contentRect: NSRect(x: 20, y: 20, width: 200, height: 100),
+    styleMask: [.borderless], backing: .buffered, defer: true)
+  foreign.isReleasedWhenClosed = false
+  defer { foreign.close() }
+  let partialFrame = NSRect(x: baseline.minX + 52, y: baseline.minY - 21,
+    width: baseline.width, height: baseline.height)
+  let finalFrame = NSRect(x: baseline.minX + 104, y: baseline.minY - 42,
+    width: baseline.width, height: baseline.height)
+
+  func beginHandoff(_ offset: TimeInterval) -> (NSEvent, NSPoint) {
+    input.setFrame(baseline, display: false)
+    input.layoutIfNeeded()
+    recorder.received.removeAll()
+    input.dragRequests.removeAll()
+    let start = pointFromTop(renderView, x: 375, top: 25)
+    let endpoint = input.convertPoint(toScreen: NSPoint(x: start.x + 104, y: start.y - 42))
+    let events = inputSequence(input, [(.leftMouseDown, start, 1),
+      (.leftMouseDragged, NSPoint(x: start.x + 52, y: start.y - 21), 1)], offset: offset)
+    for event in events { NSApp.sendEvent(event) }
+    let stamp = Int64(events[0].timestamp * 1_000_000)
+    _ = dragMessenger.invoke("startDragging", ["downTimestampMicros": stamp])
+    check(input.dragRequests.count == 1 && input.dragRequests[0] === events[0],
+      "a recognized header pan must hand the original down to native dragging exactly once")
+    check(input.frame == partialFrame,
+      "the asynchronous handoff must first apply only the motion already delivered to Flutter")
+    check(recorder.received.count == 3 && recorder.received.last?.type == .leftMouseUp,
+      "handoff must close Flutter after its down and first drag, before any native tail")
+    return (events[0], endpoint)
+  }
+  func tail(_ type: NSEvent.EventType, _ down: NSEvent, _ endpoint: NSPoint,
+    time: TimeInterval = 0.15, target: NSWindow? = nil) -> NSEvent {
+    let window = target ?? input
+    return NSEvent.mouseEvent(with: type, location: window.convertPoint(fromScreen: endpoint),
+      modifierFlags: [], timestamp: down.timestamp + time, windowNumber: window.windowNumber,
+      context: nil, eventNumber: 55, clickCount: 1, pressure: type == .leftMouseUp ? 0 : 1)!
+  }
+
+  do {
+    let (down, endpoint) = beginHandoff(3)
+    let dragged = tail(.leftMouseDragged, down, endpoint, time: 0.12)
+    input.sendEvent(dragged)
+    check(input.frame == partialFrame, "a native tail drag must not be replayed into a second drag loop")
+    input.sendEvent(tail(.leftMouseUp, down, endpoint))
+    check(input.frame == finalFrame,
+      "a stalled native handoff must finish at the real release's full global displacement")
+    check(recorder.received.count == 3,
+      "the native tail and actual release must not be delivered to Flutter after its closing up")
+    describeInput("native handoff release fills missing tail", recorder,
+      expected: [], before: baseline, after: input.frame)
+  }
+  do {
+    let (down, endpoint) = beginHandoff(4)
+    let nativeFrame = NSRect(x: baseline.minX + 130, y: baseline.minY - 50,
+      width: baseline.width, height: baseline.height)
+    input.setFrame(nativeFrame, display: false)
+    input.sendEvent(tail(.leftMouseUp, down, endpoint))
+    check(input.frame == nativeFrame,
+      "a native drag that already moved must retain its own endpoint without double-applying motion")
+  }
+  do {
+    let (down, endpoint) = beginHandoff(5)
+    var snapped = partialFrame
+    snapped.size.width += 80
+    input.setFrame(snapped, display: false)
+    input.sendEvent(tail(.leftMouseUp, down, endpoint))
+    check(input.frame == snapped, "release fallback must not replace native resize or snap geometry")
+  }
+  do {
+    let (down, endpoint) = beginHandoff(6)
+    input.setFrameOrigin(NSPoint(x: partialFrame.minX + 30, y: partialFrame.minY))
+    RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+    input.setFrame(partialFrame, display: false)
+    input.sendEvent(tail(.leftMouseUp, down, endpoint))
+    check(input.frame == partialFrame,
+      "native movement away and back must invalidate fallback even when the final frame equals compensation")
+  }
+  do {
+    _ = beginHandoff(7)
+    recorder.received.removeAll()
+    let next = pointFromTop(renderView, x: 140, top: 24)
+    let events = inputSequence(input, [(.leftMouseDown, next, 1), (.leftMouseUp, next, 1)], offset: 8)
+    for event in events { NSApp.sendEvent(event) }
+    checkSameEvents(recorder.received, events, "fresh input following consumed native release")
+    check(input.frame == partialFrame, "a fresh press must clear the previous drag's release fallback")
+  }
+  do {
+    let (down, endpoint) = beginHandoff(9)
+    input.sendEvent(tail(.leftMouseUp, down, endpoint, time: 0.02))
+    check(input.frame == partialFrame, "a release older than the handed-off drag must not move the window")
+    input.sendEvent(tail(.leftMouseUp, down, endpoint))
+    check(input.frame == finalFrame, "a stale release must not consume the current drag's later valid release")
+  }
+  do {
+    let (down, endpoint) = beginHandoff(10)
+    input.sendEvent(MouseEventWithoutCG(tail(.leftMouseUp, down, endpoint)))
+    check(input.frame == partialFrame, "an event without a CG global endpoint must not guess a release delta")
+  }
+  do {
+    let (down, endpoint) = beginHandoff(11)
+    input.sendEvent(tail(.leftMouseUp, down, endpoint, target: foreign))
+    check(input.frame == partialFrame, "another window's release must not finish this window's drag")
+    input.sendEvent(tail(.leftMouseUp, down, endpoint))
+    check(input.frame == finalFrame, "another window's event must not consume the current window's valid tail")
+  }
+  withExtendedLifetime(dragTitlebar) {}
 }
 
 _ = NSApplication.shared.setActivationPolicy(.prohibited)
@@ -378,6 +504,6 @@ otherWindow.orderOut(nil)
 otherWindow.close()
 window.close()
 for failure in failures { print("FAIL: \(failure)") }
-print("Native integrated titlebar: 11 cases, \(failures.count) failed assertions")
+print("Native integrated titlebar: 12 cases, \(failures.count) failed assertions")
 withExtendedLifetime(titlebar) {}
 exit(failures.isEmpty ? 0 : 1)
