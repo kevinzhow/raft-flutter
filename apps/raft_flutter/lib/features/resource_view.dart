@@ -576,7 +576,8 @@ class _ResourceViewState extends State<ResourceView> {
 
   /// Source inboxStore inboxLocalReadSuppressedMarkers: rows this principal
   /// just opened present read against any response that predates the read.
-  final activityReadMarkers = <String, ({BigInt frontier, DateTime until})>{};
+  final activityReadMarkers =
+      <String, ({BigInt frontier, DateTime until, int? versionAtRead})>{};
 
   /// Activity and Saved keep their accepted list in the workspace across
   /// navigation, including where the list was scrolled.
@@ -1563,7 +1564,21 @@ class _ResourceViewState extends State<ResourceView> {
         payload['latestReply'] is Map) {
       advanceActivity(payload['latestReply'] as Map);
     } else if (event.name.startsWith('read_state:')) {
-      patchKnownActivityReads(facts: activityReadFacts(payload));
+      final server = w.client.serverId, user = w.client.user?.id;
+      patchKnownActivityReads(
+        facts: activityReadFacts(
+          payload,
+          knownVersions: {
+            if (server != null && user != null)
+              for (final row in rows)
+                if (activityScopeId(row) case final String scope)
+                  if (w.readState.state(server, user, scope) case {
+                    'readStateVersion': final int version,
+                  })
+                    scope: version,
+          },
+        ),
+      );
     }
   }
 
@@ -1647,30 +1662,65 @@ class _ResourceViewState extends State<ResourceView> {
     }
     var cleared = 0, removed = 0, changed = false;
     final next = <Map<String, dynamic>>[];
+    final retained = activityRowsByReadVersion([
+      ...acceptedActivityItems,
+      ...rows,
+    ]);
     final now = widget.clock?.call() ?? DateTime.now();
     activityReadMarkers.removeWhere((_, marker) => now.isAfter(marker.until));
     for (final row in source) {
       final scope = activityScopeId(row);
-      final marker = activityReadMarkers[rowKey(row)]?.frontier;
+      final key = rowKey(row);
+      final intent = activityReadMarkers[key];
+      var marker = intent?.frontier;
+      final intentVersion = intent?.versionAtRead;
       final state = scope == null
           ? null
           : w.readState.state(server, user, scope);
+      final stateVersion = state?['readStateVersion'];
       final ledger = state?['maxReadSeq'], frame = facts[scope];
       final read = [
         if (ledger is int) ledger,
         ?frame,
       ].fold<int?>(null, (a, b) => a == null || b > a ? b : a);
       final readSeq = read == null ? null : BigInt.from(read);
+      final held = scope == null
+          ? null
+          : w.conversationReads.queue.receipt(scope);
+      // A cursor already known when Read was pressed cannot prove that this
+      // write persisted. Only a newer version/ACK can retire that local intent.
+      if (marker != null &&
+          (intentVersion != null &&
+                  stateVersion is int &&
+                  stateVersion > intentVersion ||
+              intentVersion == null && readSeq != null && readSeq >= marker ||
+              held != null &&
+                  held.unreadCount > 0 &&
+                  (state == null ||
+                      state['readStateVersion'] <= held.version) &&
+                  (intentVersion == null || held.version > intentVersion))) {
+        activityReadMarkers.remove(key);
+        marker = null;
+      }
       final projected = projectFullyRead(
-        row,
+        w.conversationReads.projectActivityReadState(
+          row,
+          retained: retained[scope],
+        ),
         marker != null && (readSeq == null || marker > readSeq)
             ? marker
             : readSeq,
+        readStateVersion: marker != null
+            ? null
+            : state?['readStateVersion'] as int?,
       );
       if (!identical(projected, row)) {
         changed = true;
-        cleared += (row['unreadCount'] as num? ?? 0).toInt();
-        if (filter == 'unread') {
+        cleared +=
+            (row['unreadCount'] as num? ?? 0).toInt() -
+            (projected['unreadCount'] as num? ?? 0).toInt();
+        if (filter == 'unread' &&
+            (projected['unreadCount'] as num? ?? 0) == 0) {
           removed++;
           continue;
         }
@@ -2226,6 +2276,11 @@ class _ResourceViewState extends State<ResourceView> {
                 ((value['totalUnreadCount'] as num).toInt() + unreadDelta)
                     .clamp(0, 1 << 53),
           };
+        }
+        if (activityWindow && value is Map) {
+          // Publish the projected rows with their projected total. Sending
+          // raw rows with the adjusted total would apply the same ACK twice.
+          value = {...value, 'items': nextRows};
         }
         setState(() {
           rows = nextRows;
@@ -3837,8 +3892,20 @@ class _ResourceViewState extends State<ResourceView> {
     if (scopeId == null || unread <= 0) return;
     final frontier = activityFrontier(current);
     if (frontier != null) {
+      final serverId = w.client.serverId, principal = w.client.user?.id;
+      final known = serverId == null || principal == null
+          ? null
+          : w.readState.state(serverId, principal, scopeId);
+      var versionAtRead = known?['readStateVersion'] as int?;
+      final rowState = current['readState'];
+      final rowVersion = rowState is Map ? rowState['readStateVersion'] : null;
+      if (rowVersion is int &&
+          (versionAtRead == null || rowVersion > versionAtRead)) {
+        versionAtRead = rowVersion;
+      }
       activityReadMarkers[key] = (
         frontier: frontier,
+        versionAtRead: versionAtRead,
         until: (widget.clock?.call() ?? DateTime.now()).add(
           const Duration(seconds: 3),
         ),
@@ -4165,8 +4232,8 @@ class _ResourceViewState extends State<ResourceView> {
     }, rowKey: rowKey(row));
   }
 
-  /// Menu "Mark as Read" reads the row's scope; "Mark as Unread" POSTs
-  /// `/channels/:id/unread` (errors ignored) and both refresh the inbox.
+  /// Menu "Mark as Read" reads the row's scope. A complete unread ACK projects
+  /// through the shared owner; only an unprojectable reply needs an inbox read.
   Future<void> toggleActivityRead(
     Map<String, dynamic> row,
     String scope,
@@ -4181,11 +4248,14 @@ class _ResourceViewState extends State<ResourceView> {
         : row['channelId'];
     if (id is! String) return;
     final controller = w;
+    var projected = false;
     try {
-      await controller.conversationReads.markUnread(id);
+      projected = await controller.conversationReads.markUnreadWithProjection(
+        id,
+      );
     } catch (_) {}
     if (!mounted || !accepts(scope)) return;
-    await load(keep: true, quietErrors: true);
+    if (!projected) await load(keep: true, quietErrors: true);
   }
 
   /// The conversation list (`activity_conversation_list_v0`) fills the page

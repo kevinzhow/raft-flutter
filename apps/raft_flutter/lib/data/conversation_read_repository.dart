@@ -4,6 +4,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
 import 'read_write_queue.dart';
+import 'resource_row_reconcile.dart';
 import 'source_read_all_transport.dart';
 import 'user_activity.dart';
 
@@ -105,11 +106,17 @@ class ConversationReadRepository {
   /// The open conversation is remembered so its next open does not read it
   /// again. The injected refresh preserves source dispatch and overrides.
   Future<void> markUnread(String id) async {
+    await markUnreadWithProjection(id);
+  }
+
+  /// True when a versioned server acknowledgement can immediately project
+  /// the row, without waiting for the asynchronously updated inbox snapshot.
+  Future<bool> markUnreadWithProjection(String id) async {
     final identity = SourceReadAllIdentity.capture(client);
     if (_isDisposed() ||
         _revokedChannels().contains(id) ||
         !identity.current(client)) {
-      return;
+      return false;
     }
     bool current() =>
         !_isDisposed() &&
@@ -126,16 +133,16 @@ class ConversationReadRepository {
     }
     try {
       if (inFlight != null) await inFlight.catchError((_) {});
-      if (!current()) return;
+      if (!current()) return false;
       final answer = await client.post('/channels/$id/unread');
-      if (!current()) return;
-      _holdUnreadAnswer(id, answer, identity);
+      if (!current()) return false;
+      return _holdUnreadAnswer(id, answer, identity);
     } finally {
       if (current()) await reconcileUnread();
     }
   }
 
-  void _holdUnreadAnswer(
+  bool _holdUnreadAnswer(
     String id,
     dynamic answer,
     SourceReadAllIdentity identity,
@@ -145,15 +152,18 @@ class ConversationReadRepository {
     final maxRead = answer is Map
         ? canonicalWireSeq(answer['maxReadSeq'])
         : null;
-    queue.dropReceipt(id);
-    if (count is! num || count < 0) return;
+    if (count is! num || count < 0) return false;
+    var projected = false;
     if (version is int && version > 0 && maxRead != null) {
       final accepted = _readState().state(
         identity.serverId!,
         identity.principalId!,
         id,
       );
-      if (accepted != null && accepted['readStateVersion'] > version) return;
+      if (accepted != null && accepted['readStateVersion'] > version) {
+        return false;
+      }
+      queue.dropReceipt(id);
       _readState().consumeUpdate(
         {
           'serverId': identity.serverId,
@@ -172,6 +182,9 @@ class ConversationReadRepository {
           maxReadSeq: maxRead,
         ),
       );
+      projected = true;
+    } else {
+      queue.dropReceipt(id);
     }
     if (id == _channelId() && count > 0) {
       queue.rememberManualUnread(id);
@@ -182,6 +195,96 @@ class ConversationReadRepository {
     persistReadState();
     persistUnread();
     _changed();
+    return projected;
+  }
+
+  /// Projects an accepted unread acknowledgement into an Activity row while
+  /// its canonical inbox snapshot still carries an older read-state version.
+  /// The conversation summary and Activity inbox converge independently. A
+  /// retained Activity row keeps its accepted unread count when an older inbox
+  /// version arrives after the conversation receipt has already retired.
+  /// No count is guessed from the read cursor or another projection's total.
+  Map<String, dynamic> projectActivityReadState(
+    Map<String, dynamic> row, {
+    Map<String, dynamic>? retained,
+  }) {
+    final id = activityScopeId(row);
+    final serverId = client.serverId, principal = client.user?.id;
+    if (id == null || serverId == null || principal == null) return row;
+    final accepted = _readState().state(serverId, principal, id);
+    final held = queue.receipt(id);
+    final frontier = row['readState'];
+    final servedVersion = frontier is Map ? frontier['readStateVersion'] : null;
+    var projected = row;
+    if (held != null &&
+        (accepted == null || accepted['readStateVersion'] <= held.version) &&
+        (servedVersion is! int || servedVersion < held.version)) {
+      projected = {
+        ...row,
+        'unreadCount': held.unreadCount,
+        if (held.unreadCount == 0) ...{
+          'firstUnreadMessageId': null,
+          'firstMentionMessageId': null,
+          'hasMention': false,
+        },
+        'readState': {
+          if (frontier is Map) ...frontier,
+          'kind': 'present',
+          'maxReadSeq': held.maxReadSeq.toString(),
+          'readStateVersion': held.version,
+        },
+      };
+    }
+    final prior = retained?['readState'];
+    final priorVersion = prior is Map ? prior['readStateVersion'] : null;
+    final priorCursor = prior is Map
+        ? canonicalWireSeq(prior['maxReadSeq'])
+        : null;
+    final priorCount = retained?['unreadCount'];
+    final current = projected['readState'];
+    final currentVersion = current is Map ? current['readStateVersion'] : null;
+    // An optimistic local "read" also paints zero without advancing its cursor
+    // version; that zero cannot serve as an accepted unread acknowledgement.
+    if (retained != null &&
+        activityScopeId(retained) == id &&
+        prior is Map &&
+        prior['kind'] == 'present' &&
+        priorVersion is int &&
+        priorVersion > 0 &&
+        priorCursor != null &&
+        priorCount is int &&
+        priorCount > 0 &&
+        (accepted == null || accepted['readStateVersion'] <= priorVersion) &&
+        (currentVersion is! int || currentVersion < priorVersion)) {
+      final priorActivity = prior['latestActivity'];
+      final currentActivity = current is Map ? current['latestActivity'] : null;
+      final priorLatest = priorActivity is Map
+          ? canonicalUint64(priorActivity['seq'])
+          : null;
+      final currentLatest = currentActivity is Map
+          ? canonicalUint64(currentActivity['seq'])
+          : null;
+      projected = {
+        ...projected,
+        'unreadCount': priorCount,
+        for (final key in const [
+          'firstUnreadMessageId',
+          'firstMentionMessageId',
+          'hasMention',
+        ])
+          if (retained.containsKey(key)) key: retained[key],
+        'readState': {
+          if (current is Map) ...current,
+          'kind': 'present',
+          'maxReadSeq': priorCursor.toString(),
+          'readStateVersion': priorVersion,
+          if (priorLatest != null &&
+              (currentLatest == null || priorLatest > currentLatest))
+            'latestActivity': priorActivity,
+        },
+      };
+    }
+    return projected;
   }
 
   /// Read-write bookkeeping of this receiver (Web messageStore module state).
@@ -566,6 +669,13 @@ class ConversationReadRepository {
       principalId: principalId,
     );
     if (outcome == 'corrupt') return false;
+    final accepted = _readState().state(serverId, principalId, scopeId);
+    if (outcome == 'stale' &&
+        accepted != null &&
+        receipt['readStateVersion'] is int &&
+        accepted['readStateVersion'] > receipt['readStateVersion']) {
+      return false;
+    }
     // Source markRead (read-all): remember the 30 s floor from the answer's
     // seq, drop the queued cursor and the manual-unread skip, clear locally.
     queue

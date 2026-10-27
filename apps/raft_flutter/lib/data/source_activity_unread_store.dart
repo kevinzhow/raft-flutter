@@ -8,6 +8,7 @@ import 'package:raft_sync/raft_sync.dart' show canonicalUint64, ReadStateLedger;
 
 import 'inbox_convergence.dart';
 import 'raft_api_gateway.dart';
+import 'resource_row_reconcile.dart';
 import 'source_read_all_transport.dart';
 
 /// Accepted session facts and notifications consumed by the inbox projection.
@@ -34,7 +35,7 @@ abstract interface class ActivityUnreadAuthority implements Listenable {
 /// ([InboxConvergence]) and the store reads again at 0.7 s, 1.5 s and 3 s until
 /// it does.
 class SourceActivityUnreadStore extends ChangeNotifier {
-  SourceActivityUnreadStore(this.workspace) {
+  SourceActivityUnreadStore(this.workspace, {required this._projectReadState}) {
     workspace.addListener(_workspaceChanged);
     _subscription = workspace.client.events.listen(_event);
     _readObserver = InterceptorsWrapper(
@@ -72,6 +73,11 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   }
 
   final ActivityUnreadAuthority workspace;
+  final Map<String, dynamic> Function(
+    Map<String, dynamic>, {
+    Map<String, dynamic>? retained,
+  })
+  _projectReadState;
   late final StreamSubscription<RaftEvent> _subscription;
   final _pageEvents = StreamController<RaftEvent>.broadcast(sync: true);
   late final Interceptor _readObserver;
@@ -237,7 +243,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     if (_disposed) return;
     final previous = _scope;
     _bind();
-    final changed = _projectFullyReadRows();
+    final changed = _projectReadStateRows();
     if (previous != _scope || changed) notifyListeners();
   }
 
@@ -447,9 +453,10 @@ class SourceActivityUnreadStore extends ChangeNotifier {
         : _validCount(supplied);
     if (count == null) return;
     _revision++;
+    final retained = _rows;
     _rows = rows;
     _total = count;
-    _projectFullyReadRows();
+    _projectReadStateRows(retainedRows: retained);
     if (firstPage) {
       _window = RaftApiGateway.copyDecoded({
         ...window,
@@ -471,38 +478,83 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   static int _count(dynamic value) => _validCount(value) ?? 0;
 
   // A present authority frontier, not a thread's display/parent sequence, can
-  // prove a row fully read. Partial/missing frontiers retain the accepted count
-  // until canonical reconciliation; they never invent an unread projection.
-  bool _projectFullyReadRows() {
+  // prove a row fully read. A complete unread ACK supplies its exact count.
+  // Every consumer, including the retained first page, sees that projection.
+  bool _projectReadStateRows({List<Map<String, dynamic>>? retainedRows}) {
     if (!hasAcceptedWindow) return false;
-    var delta = 0;
+    final retained = activityRowsByReadVersion([
+      if (_window?['items'] case final List items)
+        ...items.whereType<Map>().map(Map<String, dynamic>.from),
+      ...retainedRows ?? _rows,
+    ]);
+    var delta = 0, changed = false;
+    final next = <Map<String, dynamic>>[];
     for (final row in _rows) {
-      if (row['kind'] == 'mention_action') continue;
-      final id = row['kind'] == 'thread'
-          ? row['threadChannelId']
-          : row['channelId'];
-      final frontier = row['readState'];
-      if (id is! String || frontier is! Map || frontier['kind'] != 'present') {
-        continue;
-      }
-      final activity = frontier['latestActivity'];
-      final latest = activity is Map ? canonicalUint64(activity['seq']) : null;
-      final read = workspace.readState.state(
-        workspace.client.serverId!,
-        workspace.client.user!.id,
-        id,
+      final projected = _projectWindowRow(
+        row,
+        retained: retained[activityScopeId(row)],
       );
-      if (latest == null ||
-          read == null ||
-          BigInt.from(read['maxReadSeq']) < latest) {
-        continue;
-      }
-      delta += _count(row['unreadCount']);
-      row['unreadCount'] = 0;
+      next.add(projected);
+      if (identical(projected, row)) continue;
+      changed = true;
+      delta += _count(projected['unreadCount']) - _count(row['unreadCount']);
     }
-    if (delta == 0) return false;
-    _total = (_total! - delta).clamp(0, _total!);
+    if (!changed) return false;
+    _rows = next;
+    _total = (_total! + delta).clamp(0, 1 << 53);
+    final window = _window;
+    if (window != null) {
+      _window = {
+        ...window,
+        'items': [
+          for (final row in (window['items'] as List).whereType<Map>())
+            _projectWindowRow(
+              Map<String, dynamic>.from(row),
+              retained: retained[activityScopeId(row)],
+            ),
+        ],
+        'totalUnreadCount': _total,
+      };
+      _windowSerial = ++_serials;
+    }
     return true;
+  }
+
+  Map<String, dynamic> _projectWindowRow(
+    Map<String, dynamic> row, {
+    Map<String, dynamic>? retained,
+  }) {
+    if (row['kind'] == 'mention_action') return row;
+    final projected = _projectReadState(row, retained: retained);
+    final id = row['kind'] == 'thread'
+        ? row['threadChannelId']
+        : row['channelId'];
+    final frontier = projected['readState'];
+    if (id is! String || frontier is! Map || frontier['kind'] != 'present') {
+      return projected;
+    }
+    final activity = frontier['latestActivity'];
+    final latest = activity is Map ? canonicalUint64(activity['seq']) : null;
+    final read = workspace.readState.state(
+      workspace.client.serverId!,
+      workspace.client.user!.id,
+      id,
+    );
+    if (read != null &&
+        activityUnreadCountOwnsCursor(
+          projected,
+          BigInt.from(read['maxReadSeq']),
+          read['readStateVersion'] as int?,
+        )) {
+      return projected;
+    }
+    if (latest != null &&
+        read != null &&
+        BigInt.from(read['maxReadSeq']) >= latest &&
+        _count(projected['unreadCount']) > 0) {
+      return {...projected, 'unreadCount': 0};
+    }
+    return projected;
   }
 
   void deny({required String? scope, int? authorityEpoch}) {

@@ -1,6 +1,7 @@
 import 'package:raft_client/raft_client.dart';
 
 import 'announcement_store.dart';
+import 'conversation_read_repository.dart';
 import 'followed_threads_store.dart';
 import 'message_translation_store.dart';
 import 'panel_caches.dart';
@@ -22,6 +23,7 @@ abstract interface class WorkspaceServiceAuthority
         ActivityUnreadAuthority {
   Future<dynamic> query(String path, {Map<String, dynamic>? query});
   Future<dynamic> command(String method, String path, {dynamic data});
+  ConversationReadRepository get conversationReads;
   MessageTranslationStore get translations;
   ThreadSearch get threadSearch;
   ThreadAgentFollowers get threadFollowers;
@@ -196,7 +198,11 @@ class WorkspaceServices {
   SourceActivityUnreadStore get activityUnread => isDisposed()
       ? throw StateError('Workspace session is disposed.')
       : source?.activityUnread ??
-            (_activityUnread ??= SourceActivityUnreadStore(authority));
+            (_activityUnread ??= SourceActivityUnreadStore(
+              authority,
+              projectReadState:
+                  authority.conversationReads.projectActivityReadState,
+            ));
   SourceActivityUnreadStore? _activityUnread;
 
   SourceActivityUnreadStore? get activityUnreadIfBound =>
