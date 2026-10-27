@@ -135,6 +135,9 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                           label: 'Add Another',
                           glyph: RaftGlyph.plus,
                           glyphSize: 16,
+                          // Web passes a plain Lucide Plus, without the
+                          // data-icon=inline-start selector marker.
+                          iconInlineStart: false,
                           uiVariant: RaftButtonVariant.outline,
                           uiSize: RaftButtonSize.sm,
                           onPressed: onAddRow,
