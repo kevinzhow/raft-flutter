@@ -694,9 +694,7 @@ class _FleetDetailState extends State<FleetDetail> {
     // An HTTP/socket completion can arrive while this route has already popped
     // but its State is still mounted for the transition. Remove only our route.
     if (route?.isActive != true || route!.isFirst) return;
-    final navigator = route.navigator;
-    navigator?.popUntil((r) => identical(r, route) || r.isFirst);
-    if (route.isActive) navigator?.removeRoute(route);
+    route.navigator?.removeRoute(route);
   }
 
   WorkspaceEntityKind get kind => widget.computers
@@ -1600,7 +1598,9 @@ class _FleetDetailState extends State<FleetDetail> {
       : ComputerDetailPanel(
           controller: w,
           machine: row,
-          onClose: widget.onClose,
+          // A directory removal and the DELETE completion can both close the
+          // detail. They must share the same once-only lifecycle owner.
+          onClose: closeProfile,
           onOpenAgent: widget.onOpenAgent,
           onCreateAgent: () async {
             if (!allowed('createAgents')) return;

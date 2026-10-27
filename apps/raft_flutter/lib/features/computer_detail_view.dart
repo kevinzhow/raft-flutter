@@ -851,10 +851,24 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     }
   }
 
-  Future<void> _delete() async {
-    await w.command('DELETE', '/servers/$serverId/machines/$id');
-    await _refreshComputers();
-    widget.onClose?.call();
+  Future<void> Function() _deleteAction() {
+    final controller = w, authority = pageIdentity(w);
+    final machineId = id, server = serverId;
+    bool current() =>
+        mounted &&
+        identical(w, controller) &&
+        pageIdentity(controller) == authority &&
+        id == machineId;
+    return () async {
+      if (!current()) throw const RaftApiException('Fleet access changed.');
+      await controller.command(
+        'DELETE',
+        '/servers/$server/machines/$machineId',
+      );
+      if (!current()) return;
+      await _refreshComputers();
+      if (current()) widget.onClose?.call();
+    };
   }
 
   Future<int> _bulk(RaftComputerBulk mode, List<String> ids) async {
@@ -903,7 +917,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       ),
       restart: _restart,
       upgrade: _upgrade,
-      deleteComputer: _delete,
+      deleteComputer: _deleteAction(),
       bulk: _bulk,
       openAgent: widget.onOpenAgent,
       createAgent: widget.onCreateAgent,

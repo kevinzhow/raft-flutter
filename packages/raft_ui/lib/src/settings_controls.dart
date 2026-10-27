@@ -611,9 +611,19 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
       loading = true;
       error = null;
     });
+    final route = ModalRoute.of(context);
     try {
       await run();
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted && route?.isActive == true) {
+        final navigator = route!.navigator;
+        if (route.isCurrent) {
+          navigator?.pop(true);
+        } else {
+          // An async action can finish after another destination opened.
+          // Complete only this confirmation, never that newer route.
+          navigator?.removeRoute(route, true);
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() {

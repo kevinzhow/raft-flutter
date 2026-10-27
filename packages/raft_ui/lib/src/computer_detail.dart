@@ -453,11 +453,24 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
   /// computerOperationProgress: restart in flight / done / error.
   ({bool done, String? error})? operation;
   Timer? operationTimer;
+  RaftDialogRoute<bool>? confirmationRoute;
+
+  void closeConfirmation() {
+    final route = confirmationRoute;
+    confirmationRoute = null;
+    if (route?.isActive != true) return;
+    // The owner can disappear while its Navigator is building. Remove this
+    // exact modal after the frame; never pop whichever page is now on top.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (route!.isActive) route.navigator?.removeRoute(route);
+    });
+  }
 
   @override
   void didUpdateWidget(RaftComputerDetailView old) {
     super.didUpdateWidget(old);
     if (old.data.id != d.id) {
+      closeConfirmation();
       editingName = editingDescription = selectionMode = false;
       // Errors and the in-flight bulk action belong to the previous computer.
       nameError = descriptionError = bulkError = '';
@@ -474,6 +487,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
 
   @override
   void dispose() {
+    closeConfirmation();
     operationTimer?.cancel();
     nameField.dispose();
     descriptionField.dispose();
@@ -628,15 +642,18 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       );
       return;
     }
-    final ok = await _confirm(
+    final computerId = d.id;
+    final action = widget.actions.deleteComputer;
+    await _confirm(
       title: 'Delete Computer',
       message:
           'Delete "${d.name}"? Its connection to this server is removed and its agents can no longer use it.',
       confirmLabel: 'Delete Computer',
       cancelLabel: 'Keep Computer',
+      onConfirm: () async {
+        if (mounted && d.id == computerId) await action();
+      },
     );
-    if (ok != true) return;
-    await widget.actions.deleteComputer();
   }
 
   Future<bool?> _confirm({
@@ -646,18 +663,34 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     String cancelLabel = 'Cancel',
     RaftButtonRecipeVariant variant = RaftButtonRecipeVariant.danger,
     bool showCancel = true,
-  }) => RaftConfirmDialog.show(
-    context,
-    RaftConfirmDialog(
-      surfaceKey: const ValueKey('computer-dialog'),
-      title: title,
-      message: message,
-      confirmLabel: confirmLabel,
-      cancelLabel: cancelLabel,
-      confirmVariant: variant,
-      showCancel: showCancel,
-    ),
-  );
+    Future<void> Function()? onConfirm,
+  }) async {
+    if (confirmationRoute?.isActive == true) return null;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final route = RaftDialogRoute<bool>(
+      dismissible: false,
+      capturedThemes: InheritedTheme.capture(
+        from: context,
+        to: navigator.context,
+      ),
+      builder: (_) => RaftConfirmDialog(
+        surfaceKey: const ValueKey('computer-dialog'),
+        title: title,
+        message: message,
+        confirmLabel: confirmLabel,
+        cancelLabel: cancelLabel,
+        confirmVariant: variant,
+        showCancel: showCancel,
+        onConfirm: onConfirm,
+      ),
+    );
+    confirmationRoute = route;
+    try {
+      return await navigator.push(route);
+    } finally {
+      if (identical(confirmationRoute, route)) confirmationRoute = null;
+    }
+  }
 
   Future<void> runBulk(RaftComputerBulk action) async {
     final chosen = d.agents.where((a) => selected.contains(a.id)).toList();
