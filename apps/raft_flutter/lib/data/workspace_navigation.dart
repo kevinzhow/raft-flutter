@@ -193,7 +193,10 @@ class WorkspaceNavigation {
   /// location is the only navigation state; identities that exist in one
   /// layout only are rewritten to their equivalent in the other, so Back and
   /// the visible page stay coherent without a second history. Returns null
-  /// when nothing needed translating.
+  /// when nothing needed translating. A layout projection keeps the same
+  /// conversation visit: its already loaded thread and pending replies must
+  /// remain current. Location and task revision still reconcile the page stack;
+  /// actual navigation continues to retire the message-request revision.
   ///
   /// * phone: a master/detail content slot (`activity|search ?open=`) becomes
   ///   the conversation page above its list (the list is the Back entry).
@@ -211,7 +214,6 @@ class WorkspaceNavigation {
       _entries.add(to);
       _index = _entries.length - 1;
       _location = to;
-      ++_revision;
       ++_taskRevision;
       return LayoutTranslation(from, to);
     }
@@ -224,7 +226,6 @@ class WorkspaceNavigation {
       _entries[_index] = to;
     }
     _location = _entries[_index];
-    ++_revision;
     ++_taskRevision;
     return LayoutTranslation(from, to);
   }
