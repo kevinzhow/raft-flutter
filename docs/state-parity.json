@@ -5800,16 +5800,21 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "apps/raft_flutter/lib/features/artifact_viewer.dart#function:openArtifactLink": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+    "role": "entry_composition",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "Artifact viewer",
+    "reason": "Source-reviewed root Navigator entry: compact windows use RaftPreviewPageRoute and wide windows use RaftFullBleedDialogRoute, both constructing the same ArtifactViewer. Actual paired visual and native acceptance remain pending."
    },
-   "apps/raft_flutter/lib/features/artifact_viewer.dart#local-function:FUNCTION:openArtifactLink@764/FUNCTION:viewer@1024": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+   "apps/raft_flutter/lib/features/artifact_viewer.dart#local-function:FUNCTION:openArtifactLink@935/FUNCTION:viewer@1195": {
+    "role": "entry_composition",
+    "familyRefs": [
+     "button",
+     "banner"
+    ],
+    "owner": "Artifact viewer",
+    "reason": "The local viewer builder instantiates ArtifactViewer for the compact page or wide dialog route. Its downstream viewer composes canonical RaftButton and RaftBanner actions; this source mapping does not establish visual or native-device acceptance."
    },
    "apps/raft_flutter/lib/features/artifact_viewer.dart#method:ArtifactViewer.createState": {
     "role": "unresolved",
@@ -5818,10 +5823,13 @@
     "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
    },
    "apps/raft_flutter/lib/features/artifact_viewer.dart#method:_ArtifactViewerState.build": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+    "role": "entry_composition",
+    "familyRefs": [
+     "button",
+     "banner"
+    ],
+    "owner": "Artifact viewer",
+    "reason": "Composes the native WebView with canonical RaftButton actions, RaftBanner transfer/error notices and the existing RaftTransferBar. Functional widget and transport checks are separate from pending paired visuals and Android provider acceptance."
    },
    "apps/raft_flutter/lib/features/attachment_comment_ref.dart#function:withAttachmentCommentRef": {
     "role": "unresolved",
@@ -40866,13 +40874,14 @@
     "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
    },
    "surface:apps/raft_flutter/lib/features/artifact_viewer.dart#function:openArtifactLink": {
-    "owner": "design-system alignment",
+    "owner": "Artifact viewer",
     "kind": "surface_factory_candidate",
     "declarationRefs": [
-     "apps/raft_flutter/lib/features/artifact_viewer.dart#function:openArtifactLink"
+     "apps/raft_flutter/lib/features/artifact_viewer.dart#function:openArtifactLink",
+     "apps/raft_flutter/lib/features/artifact_viewer.dart#local-function:FUNCTION:openArtifactLink@935/FUNCTION:viewer@1195"
     ],
-    "mountStatus": "unresolved",
-    "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+    "mountStatus": "source_reviewed",
+    "reason": "The root Navigator mounts the same ArtifactViewer through the compact preview page or wide full-bleed dialog route. Source review records the real factory and builder; it is not a current visual claim or Android device pass."
    },
    "surface:apps/raft_flutter/lib/features/attachment_transfers.dart#method:AttachmentTransfers.download": {
     "owner": "design-system alignment",

@@ -11182,7 +11182,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/platform/attachment_files.dart",
-     "needle": "Future<void> _writeSaved"
+     "needle": "Future<({bool committed, bool discarded})> _writeSaved"
     },
     {
      "file": "apps/raft_flutter/macos/Runner/AttachmentFileWriter.swift",

@@ -72,6 +72,10 @@ void main() {
         });
         final saved = File('${root.path}/selected.csv');
         final lastPicked = Completer<String?>();
+        final cleanupGate = Completer<void>();
+        addTearDown(() {
+          if (!cleanupGate.isCompleted) cleanupGate.complete();
+        });
         Map<dynamic, dynamic>? binding;
         final messenger = t.binding.defaultBinaryMessenger;
         messenger.setMockMethodCallHandler(ArtifactDownloadBridge.channel, (
@@ -146,6 +150,7 @@ void main() {
                               discardIncompleteDestination: true,
                               discardDestination: (path) async {
                                 discarded++;
+                                if (discarded == 1) await cleanupGate.future;
                                 final file = File(path);
                                 if (await file.exists()) await file.delete();
                               },
@@ -191,6 +196,23 @@ void main() {
           reason: 'failed response must clean its selected document',
         );
         await t.pump();
+        // Discard entry is not completion: the saver still owns cleanup and
+        // has not published the final failed status while this gate is held.
+        expect(saved.existsSync(), isTrue);
+        expect(find.text('Saving…'), findsOneWidget);
+        expect(find.text('Retry'), findsNothing);
+        cleanupGate.complete();
+        await _wait(
+          t,
+          () =>
+              requests == 1 &&
+              discarded == 1 &&
+              !saved.existsSync() &&
+              find.text('Download failed. Try again.').evaluate().length == 1 &&
+              find.text('Retry').hitTestable().evaluate().length == 1,
+          reason:
+              'cleanup must finish and publish a visible, retryable failure',
+        );
         expect(find.text('Download failed. Try again.'), findsOneWidget);
         fail = false;
         await t.tap(find.text('Retry'), kind: input);
@@ -234,7 +256,13 @@ void main() {
           await abandoned.create();
           lastPicked.complete(abandoned.path);
         });
-        await _wait(t, () => discarded == 2);
+        await _wait(
+          t,
+          () =>
+              discarded == 2 &&
+              !File('${root.path}/abandoned.csv').existsSync(),
+          reason: 'closing must finish deleting the late picker destination',
+        );
         expect(File('${root.path}/abandoned.csv').existsSync(), isFalse);
         await t.runAsync(event);
         expect(requests, 2);
