@@ -25,4 +25,8 @@ const Map<String, String> zhCatalogArtifactLogin = <String, String>{
   // Native-only: the in-app browser for artifact links.
   "Open in browser": "在浏览器中打开",
   "This page could not be loaded.": "无法加载此页面。",
+  "Download cancelled.": "下载已取消。",
+  "Cancelling…": "正在取消…",
+  "This download is not available in the app. Open it in your browser.":
+      "此下载暂不支持在 App 内保存，请在浏览器中打开。",
 };

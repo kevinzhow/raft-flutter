@@ -3,6 +3,50 @@
  "_doc": "State parity inventory (loading / empty / error / partial) per screen and panel. Read by apps/raft_flutter/test/state_parity_guard_test.dart. screens[].states[]: state = loading|empty|error|partial; variant = optional short text; web = yes|no (does the Web component render a DISTINCT such state); flutter = yes|partial|missing; parityCase = case ids or globs without the theme suffix (e.g. components.list-pages.saved.phone-*); status = covered (needs >=1 parityCase that resolves) | gap (needs justification and size S|M|L) | intentional / na (need justification) | fixing (being fixed in the current branch: needs justification and parityCase; resolution is skipped until it is flipped to covered). Optional: gapKind = case-missing (Flutter has it, no case) | impl-diff (Flutter differs from Web) | invalid-case (case exists but the Web capture does not show the state); caseValidity = react-checked (the cached React capture was inspected and shows the state) | invalid | unchecked. navigationCoverage maps every NavigationRegistry section id and settings tab id to the screen ids that cover it (or a justification string). Add a screen entry (and its states) whenever a screen or panel is added; a registry id that is not mapped fails the guard.",
  "screens": [
   {
+   "id": "artifact.native-download",
+   "title": "Artifact Android download and save",
+   "webEntry": "Android WebView DownloadListener and system DocumentsUI; native-only orchestration (Artifact service source is not public)",
+   "flutterEntry": "apps/raft_flutter/lib/features/artifact_viewer.dart",
+   "states": [
+    {
+     "state": "loading",
+     "variant": "destination picker / transfer / complete destination write",
+     "web": "no",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "A native Android download response opens one system save picker, then a scoped transfer progress banner. Canonical Banner/Button/TransferBar components are reused. Local HTTP and file readback tests cover orchestration; Android device validation is still separate."
+    },
+    {
+     "state": "empty",
+     "variant": "idle / reopened report",
+     "web": "no",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "No download notice or pending transfer survives closing and reopening the viewer. The report remains visible after dismissing a completed save; artifact_download_viewer_test covers actual actions at narrow mouse and expanded touch sizes."
+    },
+    {
+     "state": "error",
+     "variant": "network failure / refused foreign origin or redirect",
+     "web": "no",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "Retry reopens the picker and removes the error after full file write. Foreign origins are refused without carrying Artifact cookies; local tests verify zero requests to the foreign server. This native banner is not a replica of an unpublished Artifact-service screen."
+    },
+    {
+     "state": "partial",
+     "variant": "cancelled / complete file awaiting notice dismissal",
+     "web": "no",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "A cancelled picker fetches nothing; cancelling or closing before native commit removes private partial bytes and the new Android document. A late cancel after native commit preserves the complete file and reports Saved. Widgets prove report return and fresh reopen; provider behavior requires Android acceptance."
+    }
+   ]
+  },
+  {
    "id": "computers.bulk-model",
    "title": "Computer bulk model chooser and receipt",
    "webEntry": "packages/web/src/components/machine/BulkChangeModelDialog.tsx (v1.21.12-source.1)",
@@ -39763,6 +39807,16 @@
    }
   },
   "entries": {
+   "screen:artifact.native-download": {
+    "owner": "Artifact download",
+    "kind": "route_or_panel_candidate",
+    "lifecycleScreenId": "artifact.native-download",
+    "declarationRefs": [
+     "apps/raft_flutter/lib/features/artifact_viewer.dart#method:_ArtifactViewerState.build"
+    ],
+    "mountStatus": "unresolved",
+    "reason": "The native status panel uses canonical Banner, Button and TransferBar. Widget actions and local file bytes are checked; Android provider behavior and paired visual acceptance remain separate, so this entry grants no visual pass."
+   },
    "screen:computers.bulk-model": {
     "owner": "design-system alignment",
     "kind": "route_or_panel_candidate",
@@ -42010,6 +42064,12 @@
    }
   },
   "requirements": {
+   "screen:artifact.native-download:applicability": {
+    "entryId": "screen:artifact.native-download",
+    "applicability": "unknown",
+    "owner": "Artifact download",
+    "reason": "Native Android save orchestration has no published Artifact-service render oracle. Canonical component usage is recorded; native device behavior and full visual acceptance remain pending."
+   },
    "screen:computers.bulk-model:applicability": {
     "entryId": "screen:computers.bulk-model",
     "applicability": "unknown",

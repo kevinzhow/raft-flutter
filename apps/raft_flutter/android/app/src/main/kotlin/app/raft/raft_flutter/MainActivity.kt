@@ -82,7 +82,10 @@ class MainActivity : FlutterActivity() {
     }
     private var systemFonts: NativeSystemFontsBridge? = null
     private var systemProxy: NativeProxyBridge? = null
+    private var artifactDownloads: ArtifactDownloadBridge? = null
     private var saveResult: MethodChannel.Result? = null
+    private var trackedSave = false
+    private val artifactSaveTargets = ArtifactSaveTargets()
     private val saveRequest = 45071
     private val localNetworkRequest = 45072
     private val galleryPermissionRequest = 45073
@@ -118,6 +121,7 @@ class MainActivity : FlutterActivity() {
         LaunchTheme.register(this, flutterEngine)
         NativePdfPreviewBridge(this, flutterEngine)
         NativeVideoFrameBridge(flutterEngine)
+        artifactDownloads = ArtifactDownloadBridge(flutterEngine)
         // Uploaded HTML previews run in an Android WebView. Its documents are
         // hostile input, so the process-wide cookie jar and web storage belong
         // to the preview while it is open: never send or keep cookies, drop
@@ -211,6 +215,7 @@ class MainActivity : FlutterActivity() {
                             result.error("busy", "A document picker is already open.", null)
                         } else {
                             saveResult = result
+                            trackedSave = call.argument<Boolean>("trackIncomplete") == true
                             val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                                 addCategory(Intent.CATEGORY_OPENABLE)
                                 type = call.argument<String>("mimeType") ?: "application/octet-stream"
@@ -219,26 +224,86 @@ class MainActivity : FlutterActivity() {
                             try { startActivityForResult(intent, saveRequest) }
                             catch (_: Exception) {
                                 saveResult = null
+                                trackedSave = false
                                 result.error("unavailable", "No document picker is available.", null)
                             }
+                        }
+                    }
+                    "cancelSave", "acknowledgeSave" -> {
+                        val uri = call.argument<String>("uri")
+                        val token = call.argument<String>("saveToken")
+                        if (uri == null || token == null) result.error("invalid", "Invalid save destination.", null)
+                        else if (call.method == "cancelSave") result.success(artifactSaveTargets.cancel(token, uri))
+                        else { artifactSaveTargets.acknowledge(token, uri); result.success(null) }
+                    }
+                    "discardSave" -> {
+                        val uri = try { call.argument<String>("uri")?.let(Uri::parse) }
+                        catch (_: Exception) { null }
+                        val token = call.argument<String>("saveToken")
+                        if (uri == null || uri.scheme != "content" || uri.authority.isNullOrBlank() ||
+                            token == null || !artifactSaveTargets.claimDiscard(token, uri.toString())) {
+                            result.error("invalid", "Invalid save destination.", null)
+                        } else {
+                            // Opt-in cleanup for an incomplete document created
+                            // by ACTION_CREATE_DOCUMENT; no raw filesystem path.
+                            Thread {
+                                try {
+                                    check(contentResolver.delete(uri, null, null) > 0)
+                                    runOnUiThread { result.success(null) }
+                                } catch (_: Exception) {
+                                    runOnUiThread { result.error("discard_failed", "The incomplete document could not be removed.", null) }
+                                }
+                            }.start()
                         }
                     }
                     "writeSaved" -> {
                         val uri = call.argument<String>("uri")
                         val path = call.argument<String>("path")
+                        val token = call.argument<String>("saveToken")
                         if (uri == null || path == null ||
-                            !File(path).canonicalPath.startsWith(cacheDir.canonicalPath + File.separator)) {
+                            !File(path).canonicalPath.startsWith(cacheDir.canonicalPath + File.separator) ||
+                            (token == null && artifactSaveTargets.owns(uri)) ||
+                            (token != null && !artifactSaveTargets.beginWrite(token, uri))) {
                             result.error("invalid", "Invalid temporary attachment file.", null)
                         } else {
                             Thread {
                                 try {
                                     contentResolver.openOutputStream(Uri.parse(uri), "wt").use { output ->
                                         requireNotNull(output)
-                                        File(path).inputStream().use { input -> input.copyTo(output) }
+                                        File(path).inputStream().use { input ->
+                                            if (token == null) input.copyTo(output)
+                                            else {
+                                                val bytes = ByteArray(65536)
+                                                while (true) {
+                                                    if (artifactSaveTargets.isCancelled(token, uri)) {
+                                                        throw java.util.concurrent.CancellationException()
+                                                    }
+                                                    val count = input.read(bytes)
+                                                    if (count < 0) break
+                                                    output.write(bytes, 0, count)
+                                                }
+                                            }
+                                        }
                                     }
-                                    runOnUiThread { result.success(null) }
+                                    val committed = token == null || artifactSaveTargets.finishWrite(token, uri, true)
+                                    if (!committed && token != null) {
+                                        if (!artifactSaveTargets.claimDiscard(token, uri)) throw IllegalStateException()
+                                        check(contentResolver.delete(Uri.parse(uri), null, null) > 0)
+                                    }
+                                    runOnUiThread { result.success(if (token == null) null else mapOf("committed" to committed, "discarded" to !committed)) }
                                 } catch (_: Exception) {
-                                    runOnUiThread { result.error("save_failed", "The attachment could not be saved.", null) }
+                                    if (token != null) {
+                                        artifactSaveTargets.finishWrite(token, uri, false)
+                                        if (artifactSaveTargets.isCancelled(token, uri)) {
+                                            try {
+                                                if (!artifactSaveTargets.claimDiscard(token, uri)) throw IllegalStateException()
+                                                check(contentResolver.delete(Uri.parse(uri), null, null) > 0)
+                                                runOnUiThread { result.success(mapOf("committed" to false, "discarded" to true)) }
+                                            } catch (_: Exception) {
+                                                runOnUiThread { result.error("discard_failed", "The incomplete document could not be removed.", null) }
+                                            }
+                                        } else runOnUiThread { result.error("save_failed", "The attachment could not be saved.", null) }
+                                    } else runOnUiThread { result.error("save_failed", "The attachment could not be saved.", null) }
                                 }
                             }.start()
                         }
@@ -420,6 +485,12 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        artifactDownloads?.dispose()
+        artifactDownloads = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
     override fun onDestroy() {
         earlyShares.clear()
         sharing?.dispose()
@@ -435,7 +506,18 @@ class MainActivity : FlutterActivity() {
         if (requestCode == saveRequest) {
             val pending = saveResult
             saveResult = null
-            pending?.success(if (resultCode == Activity.RESULT_OK) data?.data?.toString() else null)
+            val tracked = trackedSave
+            trackedSave = false
+            val uri = if (resultCode == Activity.RESULT_OK) data?.data else null
+            if (pending == null) return
+            if (tracked && uri != null) {
+                try {
+                    val token = artifactSaveTargets.selected(uri.toString())
+                    pending.success(mapOf("uri" to uri.toString(), "saveToken" to token))
+                } catch (_: Exception) {
+                    pending.error("invalid", "Invalid save destination.", null)
+                }
+            } else pending.success(uri?.toString())
         } else { super.onActivityResult(requestCode, resultCode, data) }
     }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -18,12 +19,24 @@ class AttachmentFiles {
     Future<Directory> Function()? stagingDirectory,
     bool? gallerySupported,
     this.writeToGallery,
+    this.discardIncompleteDestination = false,
+    this.discardDestination,
+    bool? androidSave,
   }) : gallerySupported =
            gallerySupported ?? (Platform.isAndroid || Platform.isIOS),
+       _androidSave = androidSave ?? Platform.isAndroid,
        _dio = dio ?? AttachmentHttp.shared,
        _stagingDirectory = stagingDirectory ?? cacheStagingDirectory;
   final Dio _dio;
+  // Test hosts can exercise the Android MethodChannel save protocol.
+  final bool _androidSave;
   final Future<String?> Function(String, String)? pickDestination;
+
+  /// Artifact downloads create a new Android document before transferring.
+  /// Remove that empty/partial document when the transfer does not complete.
+  /// Ordinary attachment destinations retain their existing default behavior.
+  final bool discardIncompleteDestination;
+  final Future<void> Function(String destination)? discardDestination;
 
   /// Whether this device has a photo library to save an image into (the
   /// Android gallery through MediaStore, iOS Photos). Phone layouts offer it
@@ -87,25 +100,63 @@ class AttachmentFiles {
   }) async {
     final name = safeFilename(filename);
     final String? destination;
+    String? saveToken;
     if (pickDestination != null) {
       destination = await pickDestination!(name, mimeType);
-    } else if (Platform.isAndroid) {
-      destination = await channel.invokeMethod<String>('chooseSave', {
+    } else if (_androidSave) {
+      final selected = await channel.invokeMethod<Object?>('chooseSave', {
         'filename': name,
         'mimeType': mimeType,
+        'trackIncomplete': discardIncompleteDestination,
       });
+      if (selected == null) {
+        destination = null;
+      } else if (discardIncompleteDestination) {
+        if (selected is! Map ||
+            selected['uri'] is! String ||
+            selected['saveToken'] is! String) {
+          throw const FileSystemException(
+            'A secure save destination is unavailable.',
+          );
+        }
+        destination = selected['uri'] as String;
+        saveToken = selected['saveToken'] as String;
+      } else {
+        destination = selected as String;
+      }
     } else {
       destination = (await getSaveLocation(suggestedName: name))?.path;
     }
-    if (destination == null || cancel.isCancelled || !authorized()) return null;
-    final folder = await Directory(
-      p.join(
-        (await _stagingDirectory()).path,
-        'raft-attachment-${DateTime.now().microsecondsSinceEpoch}',
-      ),
-    ).create(recursive: true);
-    final temporary = File(p.join(folder.path, name));
+    if (destination == null) return null;
+    final trackedToken = saveToken;
+    if (trackedToken != null) {
+      unawaited(
+        cancel.whenCancel.then((_) async {
+          try {
+            await channel.invokeMethod<String>('cancelSave', {
+              'uri': destination,
+              'saveToken': trackedToken,
+            });
+          } on PlatformException {
+            // A committed/acknowledged operation no longer admits cancellation.
+          } on MissingPluginException {
+            // Engine teardown cancels the viewer too.
+          }
+        }),
+      );
+    }
+    Directory? folder;
+    var completed = false;
+    var discarded = false;
     try {
+      if (cancel.isCancelled || !authorized()) return null;
+      folder = await Directory(
+        p.join(
+          (await _stagingDirectory()).path,
+          'raft-attachment-${DateTime.now().microsecondsSinceEpoch}',
+        ),
+      ).create(recursive: true);
+      final temporary = File(p.join(folder.path, name));
       if (Platform.isLinux) {
         final result = await Process.run('chmod', ['700', folder.path]);
         if (result.exitCode != 0) {
@@ -121,10 +172,31 @@ class AttachmentFiles {
         onReceiveProgress: onProgress,
       );
       if (cancel.isCancelled || !authorized()) return null;
-      await _writeSaved(temporary, destination);
+      final result = await _writeSaved(
+        temporary,
+        destination,
+        saveToken: saveToken,
+      );
+      discarded = result.discarded;
+      if (!result.committed) return null;
+      // A native commit won the cancellation race: preserve the complete file
+      // and return success even if Cancel arrived while its reply was in flight.
+      completed = true;
       return destination;
     } finally {
-      if (await folder.exists()) await folder.delete(recursive: true);
+      if (folder != null && await folder.exists()) {
+        await folder.delete(recursive: true);
+      }
+      if (!completed && !discarded && discardIncompleteDestination) {
+        if (discardDestination != null) {
+          await discardDestination!(destination);
+        } else if (_androidSave) {
+          await channel.invokeMethod<void>('discardSave', {
+            'uri': destination,
+            'saveToken': saveToken,
+          });
+        }
+      }
     }
   }
 
@@ -242,17 +314,47 @@ class AttachmentFiles {
     }
   }
 
-  Future<void> _writeSaved(File source, String destination) async {
-    if (Platform.isAndroid || Platform.isMacOS) {
+  Future<({bool committed, bool discarded})> _writeSaved(
+    File source,
+    String destination, {
+    String? saveToken,
+  }) async {
+    if (_androidSave || Platform.isMacOS) {
       // macOS publishes bytes atomically into the user-selected destination.
       // File.copy would carry private cache quarantine metadata into it.
-      await channel.invokeMethod<void>('writeSaved', {
+      final result = await channel.invokeMethod<Object?>('writeSaved', {
         'uri': destination,
         'path': source.path,
+        'saveToken': ?saveToken,
       });
+      if (saveToken != null) {
+        if (result is! Map ||
+            result['committed'] is! bool ||
+            result['discarded'] is! bool ||
+            (result['committed'] == true && result['discarded'] == true)) {
+          throw const FileSystemException(
+            'The save result could not be verified.',
+          );
+        }
+        if (result['committed'] == true) {
+          try {
+            await channel.invokeMethod<void>('acknowledgeSave', {
+              'uri': destination,
+              'saveToken': saveToken,
+            });
+          } on PlatformException {
+            // Commit is authoritative; acknowledgement only releases its receipt.
+          }
+        }
+        return (
+          committed: result['committed'] as bool,
+          discarded: result['discarded'] as bool,
+        );
+      }
     } else {
       await XFile(source.path).saveTo(destination);
     }
+    return (committed: true, discarded: false);
   }
 
   Future<void> open(String location, String mimeType) async {

@@ -1,10 +1,14 @@
 import 'package:flutter/widgets.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 /// A WebView platform that loads nothing: it records what the app asks the
 /// WebView to do and lets a test play the page (navigation requests, finished
 /// loads, URL changes) through the app's own navigation delegate.
 class FakeWebView extends WebViewPlatform {
+  FakeWebView({this.android = false});
+  final bool android;
+
   /// Every `loadRequest`, in order.
   static final loads = <String>[];
   static final loadHeaders = <Map<String, String>>[];
@@ -76,7 +80,7 @@ class FakeWebView extends WebViewPlatform {
   @override
   PlatformWebViewController createPlatformWebViewController(
     PlatformWebViewControllerCreationParams params,
-  ) => _Controller(params);
+  ) => android ? _AndroidController(params) : _Controller(params);
   @override
   PlatformNavigationDelegate createPlatformNavigationDelegate(
     PlatformNavigationDelegateCreationParams params,
@@ -89,6 +93,17 @@ class FakeWebView extends WebViewPlatform {
   PlatformWebViewWidget createPlatformWebViewWidget(
     PlatformWebViewWidgetCreationParams params,
   ) => _Widget(params);
+}
+
+/// Only the public native identifier differs. Navigation is still the same
+/// held local platform fixture; no real Android WebView is claimed here.
+class _AndroidController extends _Controller
+    implements AndroidWebViewController {
+  _AndroidController(super.params);
+  @override
+  int get webViewIdentifier => 42;
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _Controller extends PlatformWebViewController {

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../platform/system_bars.dart';
+import '../platform/artifact_download_bridge.dart';
+import '../platform/attachment_files.dart';
+import 'artifact_download_controller.dart';
 import 'artifact_link.dart';
 import 'human_login.dart';
 import 'human_login_scope.dart';
@@ -80,6 +84,8 @@ class ArtifactViewer extends StatefulWidget {
     this.webViewBuilder,
     this.openExternal,
     this.configure,
+    this.bindDownloads,
+    this.downloadFiles,
   });
   final Uri uri;
 
@@ -95,6 +101,8 @@ class ArtifactViewer extends StatefulWidget {
 
   /// Test seam: receives the controller before the first load.
   final void Function(WebViewController controller)? configure;
+  final ArtifactDownloadBinder? bindDownloads;
+  final AttachmentFiles Function(Dio)? downloadFiles;
 
   @override
   State<ArtifactViewer> createState() => _ArtifactViewerState();
@@ -102,6 +110,8 @@ class ArtifactViewer extends StatefulWidget {
 
 class _ArtifactViewerState extends State<ArtifactViewer> {
   late final WebViewController controller;
+  late final ArtifactDownloadController downloads;
+  ArtifactDownloadBinding? downloadBinding;
   late Uri current = widget.uri;
 
   /// The last page that finished loading: where cancel returns to.
@@ -121,9 +131,14 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
   @override
   void initState() {
     super.initState();
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
+    downloads = ArtifactDownloadController(
+      origin: widget.uri,
+      files: widget.downloadFiles,
+    )..addListener(downloadChanged);
+    controller = WebViewController();
+    final navigationReady = Future.wait([
+      controller.setJavaScriptMode(JavaScriptMode.unrestricted),
+      controller.setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: onNavigationRequest,
           onUrlChange: (change) {
@@ -151,12 +166,20 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
             }
           },
         ),
-      );
+      ),
+    ]);
     widget.configure?.call(controller);
-    unawaited(start());
+    unawaited(start(navigationReady));
   }
 
-  Future<void> start() async {
+  void downloadChanged() {
+    if (mounted && !closed) setState(() {});
+  }
+
+  Future<void> start(Future<void> navigationReady) async {
+    // The plugin installs its own DownloadListener with the delegate. Bind
+    // ours afterwards so a real download response reaches the native saver.
+    await navigationReady;
     // The HTML preview switches the process-wide cookie jar off (its documents
     // run isolated). A signed-in artifact needs its session cookie.
     if (defaultTargetPlatform == TargetPlatform.android) {
@@ -168,7 +191,32 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
         // Cookies stay as they are; the page may ask for sign-in again.
       }
     }
-    if (mounted) await controller.loadRequest(widget.uri);
+    if (!mounted || closed) return;
+    try {
+      final binding =
+          await (widget.bindDownloads ?? ArtifactDownloadBridge.connect)(
+            controller,
+            widget.uri,
+            downloads.receive,
+          );
+      if (!mounted || closed) {
+        await binding?.dispose();
+        return;
+      }
+      downloadBinding = binding;
+    } on MissingPluginException {
+      // Non-Android hosts do not provide this Android-only download bridge.
+    } on PlatformException {
+      downloads.receive(
+        const ArtifactDownloadRequest(
+          url: '',
+          filename: '',
+          mimeType: '',
+          rejected: true,
+        ),
+      );
+    }
+    if (mounted && !closed) await controller.loadRequest(widget.uri);
   }
 
   bool isTakeover(Uri uri) {
@@ -333,11 +381,19 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
         await controller.goBack();
         await refreshHistory();
       } else if (mounted && !closed) {
-        widget.onClose();
+        close();
       }
     } finally {
       goingBack = false;
     }
+  }
+
+  void close() {
+    if (closed) return;
+    closed = true;
+    downloads.retire();
+    unawaited(downloadBinding?.dispose());
+    widget.onClose();
   }
 
   @override
@@ -374,7 +430,7 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
         : RaftLightboxHeader(
             title: title,
             borderWidth: 1,
-            onClose: widget.onClose,
+            onClose: close,
             closeLabel: 'Close',
             actions: actions,
           );
@@ -442,13 +498,67 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
     final content = Column(
       children: [
         header,
+        if (downloads.status != ArtifactDownloadStatus.idle)
+          RaftBanner(
+            key: const ValueKey('artifact-download-status'),
+            title: downloads.filename.isEmpty ? null : downloads.filename,
+            status: downloads.status == ArtifactDownloadStatus.failed
+                ? RaftBannerRecipeStatus.destructive
+                : RaftBannerRecipeStatus.info,
+            description: tr(switch (downloads.status) {
+              ArtifactDownloadStatus.saving => 'Saving…',
+              ArtifactDownloadStatus.cancelling => 'Cancelling…',
+              ArtifactDownloadStatus.saved => 'Saved.',
+              ArtifactDownloadStatus.cancelled => 'Download cancelled.',
+              _ when downloads.unsupportedOrigin => 'This download is not available in the app. Open it in your browser.',
+              _ => 'Download failed. Try again.',
+            }),
+            footer: downloads.status == ArtifactDownloadStatus.saving
+                ? RaftTransferBar(value: downloads.progress.fraction)
+                : null,
+            action: Wrap(
+              spacing: RaftSpace.x2,
+              children: [
+                if (downloads.busy)
+                  RaftButton(
+                    label: tr('Cancel'),
+                    tone: RaftButtonRecipeVariant.ghost,
+                    size: RaftButtonRecipeSize.sm,
+                    onPressed:
+                        downloads.status == ArtifactDownloadStatus.cancelling
+                        ? null
+                        : downloads.cancel,
+                  )
+                else ...[
+                  if (downloads.retryable)
+                    RaftButton(
+                      label: tr('Retry'),
+                      tone: RaftButtonRecipeVariant.outline,
+                      size: RaftButtonRecipeSize.sm,
+                      onPressed: downloads.retry,
+                    ),
+                  if (downloads.unsupportedOrigin)
+                    RaftButton(
+                      label: tr('Open in browser'),
+                      tone: RaftButtonRecipeVariant.outline,
+                      size: RaftButtonRecipeSize.sm,
+                      onPressed: openInBrowser,
+                    ),
+                  RaftButton(
+                    label: tr('Close'),
+                    tone: RaftButtonRecipeVariant.ghost,
+                    size: RaftButtonRecipeSize.sm,
+                    onPressed: downloads.dismiss,
+                  ),
+                ],
+              ],
+            ),
+          ),
         Expanded(child: body),
       ],
     );
     final scoped = CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): widget.onClose,
-      },
+      bindings: {const SingleActivator(LogicalKeyboardKey.escape): close},
       child: Focus(
         autofocus: true,
         child: ColoredBox(
@@ -479,6 +589,9 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
   void dispose() {
     // Unload the page so its scripts and network stop with the viewer.
     closed = true;
+    downloads.removeListener(downloadChanged);
+    downloads.dispose();
+    unawaited(downloadBinding?.dispose());
     unawaited(
       controller
           .loadRequest(Uri.parse('about:blank'))
