@@ -302,6 +302,99 @@ void main() {
   });
 
   group('what stays in the WebView', () {
+    testWidgets('phone Back returns from a nested page before closing', (
+      t,
+    ) async {
+      await mount(t, api: FakeHumanLoginApi());
+      FakeWebView.finish(artifact);
+      const nested = 'https://raft-artifacts.com/p/acme/report/details.html';
+      expect(await FakeWebView.navigate(nested), isTrue);
+      FakeWebView.finish(nested);
+      await frames(t);
+      await t.tap(find.byKey(const ValueKey('artifact-viewer-close')));
+      await frames(t, 25);
+      expect(viewer, findsOneWidget);
+      expect(FakeWebView.shown, artifact);
+      expect(FakeWebView.backCalls, 1);
+      expect(launched, isEmpty);
+      await t.tap(find.byKey(const ValueKey('artifact-viewer-close')));
+      await frames(t, 25);
+      expect(viewer, findsNothing);
+    });
+
+    testWidgets('phone system Back returns to the report before leaving', (
+      t,
+    ) async {
+      await mount(t, api: FakeHumanLoginApi());
+      FakeWebView.finish(artifact);
+      const nested = 'https://raft-artifacts.com/p/acme/report/details.html';
+      expect(await FakeWebView.navigate(nested), isTrue);
+      FakeWebView.finish(nested);
+      await frames(t);
+      await t.binding.handlePopRoute();
+      await frames(t, 25);
+      expect(viewer, findsOneWidget);
+      expect(FakeWebView.shown, artifact);
+      expect(FakeWebView.backCalls, 1);
+    });
+
+    testWidgets('desktop offers report history without replacing Close', (
+      t,
+    ) async {
+      await mount(t, api: FakeHumanLoginApi(), size: desktop);
+      FakeWebView.finish(artifact);
+      const nested = 'https://raft-artifacts.com/p/acme/report/details.html';
+      expect(await FakeWebView.navigate(nested), isTrue);
+      FakeWebView.finish(nested);
+      await frames(t);
+      await t.tap(find.byKey(const ValueKey('artifact-viewer-back')));
+      await frames(t);
+      expect(viewer, findsOneWidget);
+      expect(FakeWebView.shown, artifact);
+      expect(find.byKey(const ValueKey('artifact-viewer-back')), findsNothing);
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await frames(t, 25);
+      expect(viewer, findsNothing);
+    });
+
+    testWidgets('system Back also returns while a child page is loading', (
+      t,
+    ) async {
+      await mount(t, api: FakeHumanLoginApi());
+      FakeWebView.finish(artifact);
+      expect(
+        await FakeWebView.navigate(
+          'https://raft-artifacts.com/p/acme/report/slow.html',
+        ),
+        isTrue,
+      );
+      // No onPageFinished: the report's child page is still in flight.
+      await t.binding.handlePopRoute();
+      await frames(t, 25);
+      expect(viewer, findsOneWidget);
+      expect(FakeWebView.shown, artifact);
+      expect(FakeWebView.backCalls, 1);
+      await t.binding.handlePopRoute();
+      await frames(t, 25);
+      expect(viewer, findsNothing);
+    });
+
+    testWidgets('Back at the entry never revisits a sign-in callback', (
+      t,
+    ) async {
+      await mount(t, api: FakeHumanLoginApi());
+      FakeWebView.finish(artifact);
+      expect(await FakeWebView.navigate(callback), isTrue);
+      FakeWebView.finish(callback);
+      expect(await FakeWebView.navigate(artifact), isTrue);
+      FakeWebView.finish(artifact);
+      await frames(t);
+      await t.tap(find.byKey(const ValueKey('artifact-viewer-close')));
+      await frames(t, 25);
+      expect(viewer, findsNothing);
+      expect(FakeWebView.backCalls, 0);
+    });
+
     testWidgets('artifact pages stay; other sites open in the browser', (
       t,
     ) async {

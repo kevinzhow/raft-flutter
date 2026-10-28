@@ -31,7 +31,7 @@ Future<void> openArtifactLink(
     page: page,
     webViewBuilder: webViewBuilder,
     openExternal: openExternal,
-    onClose: () => Navigator.of(context).maybePop(),
+    onClose: () => Navigator.of(context).pop(),
   );
   final navigator = Navigator.of(context, rootNavigator: true);
   return navigator.push<void>(
@@ -110,6 +110,8 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared by Retry and by the next page that loads.
   String? loadError;
   bool takingOver = false, closed = false;
+  bool canGoBack = false, goingBack = false;
+  int historyRevision = 0;
 
   /// Origins the WebView may show: the artifact hosts, plus the callback of a
   /// Login with Raft the person confirmed.
@@ -141,6 +143,7 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
               loadError = null;
               progress = 100;
             });
+            unawaited(refreshHistory());
           },
           onWebResourceError: (error) {
             if (mounted && (error.isForMainFrame ?? false)) {
@@ -304,11 +307,51 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
     await controller.loadRequest(lastPage ?? widget.uri);
   }
 
+  Future<void> refreshHistory() async {
+    final revision = ++historyRevision;
+    final bool available;
+    try {
+      available = current != widget.uri && await controller.canGoBack();
+    } on PlatformException {
+      // The platform may have already detached while a load finishes.
+      return;
+    }
+    if (!mounted || closed || revision != historyRevision) return;
+    if (canGoBack != available) setState(() => canGoBack = available);
+  }
+
+  /// A report's child page is still inside this viewer. Back follows its
+  /// browser history before returning to the conversation that opened it.
+  Future<void> back() async {
+    if (closed || goingBack) return;
+    goingBack = true;
+    try {
+      final shown =
+          Uri.tryParse(await controller.currentUrl() ?? '') ?? current;
+      if (shown != widget.uri && await controller.canGoBack()) {
+        if (!mounted || closed) return;
+        await controller.goBack();
+        await refreshHistory();
+      } else if (mounted && !closed) {
+        widget.onClose();
+      }
+    } finally {
+      goingBack = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     String tr(String s) => raftText(context, s);
     final t = RaftTokens.of(context);
     final actions = [
+      if (!widget.page && canGoBack)
+        RaftLightboxIconAction(
+          key: const ValueKey('artifact-viewer-back'),
+          glyph: RaftGlyph.chevronLeft,
+          label: tr('Back'),
+          onPressed: back,
+        ),
       RaftLightboxIconAction(
         key: const ValueKey('artifact-viewer-open-browser'),
         glyph: RaftGlyph.externalLink,
@@ -320,7 +363,7 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
     final header = widget.page
         ? RaftPanelHeaderBar(
             title: title,
-            onBack: widget.onClose,
+            onBack: back,
             backKey: const ValueKey('artifact-viewer-close'),
             backTooltip: 'Close',
             actions: actions,
@@ -415,7 +458,16 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
     // The header sits below the status bar; the page runs to the screen bottom.
     final safe = SafeArea(bottom: false, child: scoped);
     return widget.page
-        ? safe
+        ? PopScope(
+            // Query native history even while a child page is still loading.
+            // Closing explicitly pops the route above; maybePop would re-enter
+            // this guard instead of completing the person's Back action.
+            canPop: false,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop) unawaited(back());
+            },
+            child: safe,
+          )
         // ds-allow: full-bleed viewer shell, the same Dialog.fullscreen the attachment preview shell uses (raft_ui)
         : Dialog.fullscreen(backgroundColor: t.panel, child: safe);
   }

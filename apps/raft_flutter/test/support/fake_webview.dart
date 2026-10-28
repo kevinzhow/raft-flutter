@@ -11,6 +11,13 @@ class FakeWebView extends WebViewPlatform {
 
   /// The URL the fake page shows (what `currentUrl()` answers).
   static String? shown;
+  static final _history = <String>[];
+  static int backCalls = 0;
+
+  static void _show(String url) {
+    if (_history.isEmpty || _history.last != url) _history.add(url);
+    shown = url;
+  }
 
   static NavigationRequestCallback? _onNavigationRequest;
   static PageEventCallback? _onPageFinished;
@@ -25,6 +32,8 @@ class FakeWebView extends WebViewPlatform {
     loads.clear();
     loadHeaders.clear();
     shown = null;
+    _history.clear();
+    backCalls = 0;
     javaScriptMode = null;
     cleared.clear();
     _onNavigationRequest = null;
@@ -39,7 +48,7 @@ class FakeWebView extends WebViewPlatform {
     final decision = await _onNavigationRequest!(
       NavigationRequest(url: url, isMainFrame: mainFrame),
     );
-    if (decision == NavigationDecision.navigate && mainFrame) shown = url;
+    if (decision == NavigationDecision.navigate && mainFrame) _show(url);
     return decision == NavigationDecision.navigate;
   }
 
@@ -95,7 +104,17 @@ class _Controller extends PlatformWebViewController {
   Future<void> loadRequest(LoadRequestParams params) async {
     FakeWebView.loads.add(params.uri.toString());
     FakeWebView.loadHeaders.add(Map.of(params.headers));
-    FakeWebView.shown = params.uri.toString();
+    FakeWebView._show(params.uri.toString());
+  }
+
+  @override
+  Future<bool> canGoBack() async => FakeWebView._history.length > 1;
+  @override
+  Future<void> goBack() async {
+    FakeWebView.backCalls++;
+    if (FakeWebView._history.length < 2) return;
+    FakeWebView._history.removeLast();
+    FakeWebView.finish(FakeWebView._history.last);
   }
 
   @override
