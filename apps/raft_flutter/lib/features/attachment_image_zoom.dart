@@ -259,7 +259,7 @@ class ImageZoomSurfaceState extends State<ImageZoomSurface>
   Offset _gestureFocal = Offset.zero;
   Offset? _lastTap;
   Timer? _lastTapExpiry;
-  double _panZoomScale = 1;
+  double _panZoomStartScale = 1;
   Offset _panZoomPan = Offset.zero;
   (Size, Size)? _laidOut;
 
@@ -474,16 +474,26 @@ class ImageZoomSurfaceState extends State<ImageZoomSurface>
   // zoomed (at fit scale it is left to the page view).
   void _panZoomStart(PointerPanZoomStartEvent event) {
     _stopAnimation();
-    _panZoomScale = 1;
+    _panZoomStartScale = imageZoomStateOf(widget.controller.value).scale;
     _panZoomPan = Offset.zero;
   }
 
   void _panZoomUpdate(PointerPanZoomUpdateEvent event) {
-    final factor = event.scale / _panZoomScale;
+    // PointerPanZoomUpdateEvent.scale is cumulative from the gesture start.
+    // Dividing by the previous event loses any movement clipped at fit/max:
+    // a pinch 1 -> .5 -> .8 would incorrectly enlarge a fitted image to 1.6.
+    // Anchor the requested scale before clamping, while keeping pan deltas
+    // incremental so scrolling at fit is not replayed when a pinch begins.
+    final currentScale = imageZoomStateOf(widget.controller.value).scale;
+    final targetScale = (_panZoomStartScale * event.scale).clamp(
+      imageMinScale,
+      _maxScale,
+    );
     final pan = event.pan - _panZoomPan;
-    _panZoomScale = event.scale;
     _panZoomPan = event.pan;
-    if ((factor - 1).abs() > 1e-6) _zoomBy(factor, event.localPosition);
+    if ((targetScale - currentScale).abs() > 1e-6) {
+      _zoomBy(targetScale / currentScale, event.localPosition);
+    }
     if (zoomed && pan != Offset.zero) _panBy(pan);
   }
 

@@ -380,6 +380,88 @@ void main() {
       expect(rig.scale, closeTo(1.5, 1e-6));
     });
 
+    for (final start in [1.0, 2.0]) {
+      testWidgets('trackpad inward pinch stays cumulative after fit ($start)', (
+        tester,
+      ) async {
+        final rig = await _mount(tester);
+        rig.controller.value = imageZoomMatrix((scale: start, tx: 0, ty: 0));
+        final pad = await tester.createGesture(
+          kind: PointerDeviceKind.trackpad,
+        );
+        await pad.panZoomStart(at);
+        await pad.panZoomUpdate(at, scale: 0.25);
+        expect(rig.scale, 1);
+        await pad.panZoomUpdate(at, scale: 0.4);
+        expect(rig.scale, 1);
+        await pad.panZoomUpdate(at, scale: 0.75);
+        expect(rig.scale, closeTo((start * 0.75).clamp(1, 4), 1e-6));
+        await pad.panZoomEnd();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(rig.scale, closeTo((start * 0.75).clamp(1, 4), 1e-6));
+      });
+      testWidgets(
+        'trackpad outward pinch stays cumulative after max ($start)',
+        (tester) async {
+          final rig = await _mount(tester);
+          rig.controller.value = imageZoomMatrix((scale: start, tx: 0, ty: 0));
+          final pad = await tester.createGesture(
+            kind: PointerDeviceKind.trackpad,
+          );
+          await pad.panZoomStart(at);
+          await pad.panZoomUpdate(at, scale: 8);
+          expect(rig.scale, 4);
+          await pad.panZoomUpdate(at, scale: 6);
+          expect(rig.scale, 4);
+          await pad.panZoomUpdate(at, scale: 1.5);
+          expect(rig.scale, closeTo(start * 1.5, 1e-6));
+          await pad.panZoomEnd();
+          await tester.pump(const Duration(milliseconds: 500));
+          expect(rig.scale, closeTo(start * 1.5, 1e-6));
+        },
+      );
+    }
+
+    testWidgets('a new trackpad pinch anchors to the settled scale', (
+      tester,
+    ) async {
+      final rig = await _mount(tester);
+      final pad = await tester.createGesture(kind: PointerDeviceKind.trackpad);
+      await pad.panZoomStart(at);
+      await pad.panZoomUpdate(at, scale: 0.5);
+      await pad.panZoomUpdate(at, scale: 0.75);
+      await pad.panZoomEnd();
+      expect(rig.scale, 1);
+      await pad.panZoomStart(at);
+      await pad.panZoomUpdate(at, scale: 2);
+      await pad.panZoomEnd();
+      expect(rig.scale, 2);
+      await pad.panZoomStart(at);
+      await pad.panZoomUpdate(at, scale: 0.75);
+      await pad.panZoomEnd();
+      expect(rig.scale, 1.5);
+    });
+
+    testWidgets(
+      'pinch interrupts double-click animation without a later jump',
+      (tester) async {
+        final rig = await _mount(tester);
+        await _doubleTap(tester, at);
+        await tester.pump(const Duration(milliseconds: 60));
+        final start = rig.scale;
+        expect(start, inExclusiveRange(1, 2));
+        final pad = await tester.createGesture(
+          kind: PointerDeviceKind.trackpad,
+        );
+        await pad.panZoomStart(at);
+        await pad.panZoomUpdate(at, scale: 0.25);
+        await pad.panZoomUpdate(at, scale: 0.5);
+        await pad.panZoomEnd();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(rig.scale, 1);
+      },
+    );
+
     testWidgets('trackpad pinch zooms, two-finger scroll pans only zoomed', (
       tester,
     ) async {

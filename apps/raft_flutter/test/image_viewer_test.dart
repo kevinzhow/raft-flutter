@@ -3698,4 +3698,44 @@ void registerImageViewerTests(TestPart part) {
       expect(find.byType(MediaBrowser), findsOneWidget);
     });
   });
+  part.group('cumulative trackpad preview', () {
+    for (final (name, size) in [('desktop', _wide), ('phone', _phone)]) {
+      testWidgets('$name clamp recovery keeps the same image and settles', (
+        tester,
+      ) async {
+        await _mount(tester, size: size, bitmap: const Size(800, 600));
+        await _open(tester, 1);
+        final viewer = _viewer(tester);
+        final controller = viewer.zoomFor(1);
+        controller.value = imageZoomMatrix((scale: 3, tx: 0, ty: 0));
+        await tester.pump();
+        final at = tester.getCenter(find.byType(ImageZoomSurface));
+        final pad = await tester.createGesture(
+          kind: PointerDeviceKind.trackpad,
+        );
+        await pad.panZoomStart(at);
+        await pad.panZoomUpdate(at, scale: 0.25);
+        expect(controller.value.getMaxScaleOnAxis(), 1);
+        await pad.panZoomUpdate(at, scale: 0.4);
+        expect(controller.value.getMaxScaleOnAxis(), closeTo(1.2, 1e-6));
+        await pad.panZoomUpdate(at, scale: 0.75);
+        await pad.panZoomEnd();
+        await _settle(tester, 8);
+        expect(controller.value.getMaxScaleOnAxis(), closeTo(2.25, 1e-6));
+        expect(_counter(tester), '2 / 3');
+        expect(viewer.pages.page, 1);
+        // A later gesture starts from the settled image, and returning to fit
+        // does not dismiss the preview or switch the active attachment.
+        await pad.panZoomStart(at);
+        await pad.panZoomUpdate(at, scale: 0.25);
+        await pad.panZoomEnd();
+        await _settle(tester, 8);
+        expect(controller.value, Matrix4.identity());
+        expect(_counter(tester), '2 / 3');
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await _settle(tester, 8);
+        expect(find.byType(ImageZoomSurface), findsNothing);
+      });
+    }
+  });
 }
