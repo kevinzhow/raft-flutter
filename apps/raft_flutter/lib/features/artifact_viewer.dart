@@ -346,10 +346,13 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
     final t = RaftTokens.of(context);
     final actions = [
       if (!widget.page && canGoBack)
-        RaftLightboxIconAction(
+        RaftButton(
           key: const ValueKey('artifact-viewer-back'),
           glyph: RaftGlyph.chevronLeft,
-          label: tr('Back'),
+          tooltip: tr('Back'),
+          semanticLabel: tr('Back'),
+          tone: RaftButtonRecipeVariant.ghost,
+          size: RaftButtonRecipeSize.iconLg,
           onPressed: back,
         ),
       RaftLightboxIconAction(
