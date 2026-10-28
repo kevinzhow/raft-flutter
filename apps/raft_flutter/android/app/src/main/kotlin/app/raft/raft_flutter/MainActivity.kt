@@ -16,6 +16,7 @@ import java.util.ArrayDeque
 import android.os.Build
 import android.content.Intent
 import android.net.Uri
+import android.provider.DocumentsContract
 import java.io.File
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat
@@ -86,6 +87,11 @@ class MainActivity : FlutterActivity() {
     private var saveResult: MethodChannel.Result? = null
     private var trackedSave = false
     private val artifactSaveTargets = ArtifactSaveTargets()
+    private val artifactDocumentCleanup = ArtifactDocumentCleanup(artifactSaveTargets) { uri ->
+        // ACTION_CREATE_DOCUMENT returns a DocumentsProvider URI. Its generic
+        // ContentResolver.delete is unsupported; use the document contract.
+        DocumentsContract.deleteDocument(contentResolver, Uri.parse(uri))
+    }
     private val saveRequest = 45071
     private val localNetworkRequest = 45072
     private val galleryPermissionRequest = 45073
@@ -241,15 +247,18 @@ class MainActivity : FlutterActivity() {
                         catch (_: Exception) { null }
                         val token = call.argument<String>("saveToken")
                         if (uri == null || uri.scheme != "content" || uri.authority.isNullOrBlank() ||
-                            token == null || !artifactSaveTargets.claimDiscard(token, uri.toString())) {
+                            token == null) {
                             result.error("invalid", "Invalid save destination.", null)
                         } else {
                             // Opt-in cleanup for an incomplete document created
                             // by ACTION_CREATE_DOCUMENT; no raw filesystem path.
                             Thread {
                                 try {
-                                    check(contentResolver.delete(uri, null, null) > 0)
-                                    runOnUiThread { result.success(null) }
+                                    val discarded = artifactDocumentCleanup.discard(token, uri.toString())
+                                    runOnUiThread {
+                                        if (discarded) result.success(null)
+                                        else result.error("invalid", "Invalid save destination.", null)
+                                    }
                                 } catch (_: Exception) {
                                     runOnUiThread { result.error("discard_failed", "The incomplete document could not be removed.", null) }
                                 }
@@ -287,8 +296,7 @@ class MainActivity : FlutterActivity() {
                                     }
                                     val committed = token == null || artifactSaveTargets.finishWrite(token, uri, true)
                                     if (!committed && token != null) {
-                                        if (!artifactSaveTargets.claimDiscard(token, uri)) throw IllegalStateException()
-                                        check(contentResolver.delete(Uri.parse(uri), null, null) > 0)
+                                        check(artifactDocumentCleanup.discard(token, uri))
                                     }
                                     runOnUiThread { result.success(if (token == null) null else mapOf("committed" to committed, "discarded" to !committed)) }
                                 } catch (_: Exception) {
@@ -296,8 +304,7 @@ class MainActivity : FlutterActivity() {
                                         artifactSaveTargets.finishWrite(token, uri, false)
                                         if (artifactSaveTargets.isCancelled(token, uri)) {
                                             try {
-                                                if (!artifactSaveTargets.claimDiscard(token, uri)) throw IllegalStateException()
-                                                check(contentResolver.delete(Uri.parse(uri), null, null) > 0)
+                                                check(artifactDocumentCleanup.discard(token, uri))
                                                 runOnUiThread { result.success(mapOf("committed" to false, "discarded" to true)) }
                                             } catch (_: Exception) {
                                                 runOnUiThread { result.error("discard_failed", "The incomplete document could not be removed.", null) }
