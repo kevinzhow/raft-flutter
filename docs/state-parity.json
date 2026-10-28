@@ -23899,10 +23899,15 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/dialog_card.dart#method:RaftRecipeButton.build": {
-    "role": "unresolved",
-    "familyRefs": [],
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "button"
+    ],
     "owner": "design-system alignment",
-    "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "This exact expression builder returns the canonical RaftButton constructor at dialog_card.dart:161 for every invocation and forwards the old painter only as legacyBuilder (:186). The containing RaftRecipeButton class and its independent legacy painter remain unresolved; this method-level delegation grants no current visual or mounted-state PASS."
    },
    "packages/raft_ui/lib/src/dialog_card.dart#method:RaftRecipeSegmentedControl.build": {
     "role": "unresolved",
@@ -29523,10 +29528,15 @@
     "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
    },
    "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftGlyphButton": {
-    "role": "unresolved",
-    "familyRefs": [],
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "button"
+    ],
     "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "This deprecated compatibility widget has one build entry, which returns the canonical RaftButton directly at overlays/dialog.dart:468. Its old recipe painter is supplied only as legacyBuilder (:476), selected by the canonical frozen-look branch at raft/button.dart:534-542. The resolved incoming construction is RaftDialogClose.build at overlays/dialog.dart:422. This records Button delegation only; mounted entries, applicable states and visual acceptance remain unverified."
    },
    "packages/raft_ui/lib/src/overlays/dialog.dart#class:_DialogScope": {
     "role": "unresolved",
@@ -29641,10 +29651,15 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/overlays/dialog.dart#method:RaftGlyphButton.build": {
-    "role": "unresolved",
-    "familyRefs": [],
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "button"
+    ],
     "owner": "design-system alignment",
-    "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "This exact expression builder returns the canonical RaftButton constructor at overlays/dialog.dart:468, with no independent paint use in its resolved scope. The legacy painter is only forwarded as the canonical Button legacyBuilder (:476). Existing deprecated-reference rules and all visual/state unknowns remain unchanged."
    },
    "packages/raft_ui/lib/src/overlays/dialog.dart#method:_DialogScope.of": {
     "role": "unresolved",
@@ -29899,10 +29914,15 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelIconButton._button": {
-    "role": "unresolved",
-    "familyRefs": [],
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "button"
+    ],
     "owner": "design-system alignment",
-    "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "This exact builder returns the canonical RaftButton constructor at panel_layout.dart:1132; its surfaceBuilder only wraps the supplied canonical surface with snapping/anchor placement (:1146-1156). The resolved caller is RaftPanelIconButton.build at :1118. The containing class and its separate legacy painter remain unresolved; ownership of this constructor adapter alone grants no entry/state or visual acceptance."
    },
    "packages/raft_ui/lib/src/panel_layout.dart#method:RaftPanelIconButton._paintLegacy": {
     "role": "unresolved",
