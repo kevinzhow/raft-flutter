@@ -16,13 +16,14 @@ class _Picker extends FileSelectorPlatform {
   _Picker(this.destination);
   final File destination;
   var calls = 0;
+  final suggestedNames = <String?>[];
   @override
   Future<FileSaveLocation?> getSaveLocation({
     List<XTypeGroup>? acceptedTypeGroups,
     SaveDialogOptions options = const SaveDialogOptions(),
   }) async {
     calls++;
-    expect(options.suggestedName, 'report.csv');
+    suggestedNames.add(options.suggestedName);
     return FileSaveLocation(destination.path);
   }
 }
@@ -43,14 +44,14 @@ void main() {
       ))!;
       final report = Uri.parse('http://127.0.0.1:${server.port}/report');
       final bytes = utf8.encode('name,value\n中文,42\n');
-      var requests = 0;
+      final requests = <({String? cookie, String? authorization})>[];
       server.listen((request) async {
-        requests++;
-        expect(
-          request.headers.value(HttpHeaders.cookieHeader),
-          'artifact_fixture=private',
-        );
-        expect(request.headers.value(HttpHeaders.authorizationHeader), isNull);
+        // Real HTTP callbacks may arrive while WidgetTester.pump is guarded.
+        // Capture observations here and assert them in the awaited test flow.
+        requests.add((
+          cookie: request.headers.value(HttpHeaders.cookieHeader),
+          authorization: request.headers.value(HttpHeaders.authorizationHeader),
+        ));
         request.response.add(bytes);
         await request.response.close();
       });
@@ -132,6 +133,7 @@ void main() {
         reason:
             'a native download response must offer a system save destination',
       );
+      expect(picker.suggestedNames, ['report.csv']);
       final end = DateTime.now().add(const Duration(seconds: 10));
       while (find.text('Saved.').evaluate().isEmpty &&
           DateTime.now().isBefore(end)) {
@@ -141,7 +143,9 @@ void main() {
         await t.pump(const Duration(milliseconds: 16));
       }
       expect(find.text('Saved.'), findsOneWidget);
-      expect(requests, 1);
+      expect(requests, hasLength(1));
+      expect(requests.single.cookie, 'artifact_fixture=private');
+      expect(requests.single.authorization, isNull);
       expect(await t.runAsync(file.readAsBytes), bytes);
       expect(
         await t.runAsync(
