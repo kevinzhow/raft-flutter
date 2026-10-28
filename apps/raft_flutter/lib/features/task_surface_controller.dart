@@ -54,6 +54,7 @@ class TaskSurfaceController extends ChangeNotifier {
         unawaited(refresh());
       }
     });
+    parent.addListener(_parentChanged);
   }
   final WorkspaceController parent;
   final bool Function() valid;
@@ -91,6 +92,15 @@ class TaskSurfaceController extends ChangeNotifier {
   late final StreamSubscription<RaftEvent> events;
   final presentationOwner = Object();
   bool get current => !closed && valid();
+
+  void _parentChanged() {
+    if (current) return;
+    // Retire queued editor callbacks as soon as their task visit loses its
+    // authority, before the host's next frame removes the old widget tree.
+    discussion?.dispose();
+    discussion = null;
+  }
+
   bool get legacy => task['isLegacy'] == true;
   bool get hydrated => task['id'] is String;
   bool get joined =>
@@ -280,6 +290,9 @@ class TaskSurfaceController extends ChangeNotifier {
       ownsClient: false,
       entityDirectory: parent.services.entityDirectory,
       followedThreads: parent.services.followedThreads,
+      // Task surfaces remount when a side panel becomes a phone page. Their
+      // thread draft belongs to the session through each layout projection.
+      composer: parent.composer,
     );
     c.server = parent.server;
     c.servers = [...parent.servers];
@@ -459,6 +472,7 @@ class TaskSurfaceController extends ChangeNotifier {
   @override
   void dispose() {
     closed = true;
+    parent.removeListener(_parentChanged);
     revision++;
     historyRevision++;
     parentRevision++;
