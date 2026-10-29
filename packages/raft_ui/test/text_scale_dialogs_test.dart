@@ -42,7 +42,16 @@ void main() {
     testWidgets('keeps its height at the default text size', (t) async {
       await _pump(t, 1.0, sos(), view: const Size(390, 500));
       expect(t.takeException(), isNull);
-      expect(find.byType(SingleChildScrollView), findsNothing);
+      final scroll = find.descendant(
+        of: find.byType(RaftSosDialog),
+        matching: find.byType(Scrollable),
+      );
+      expect(scroll, findsOneWidget);
+      expect(t.state<ScrollableState>(scroll).position.maxScrollExtent, 0);
+      expect(
+        find.byKey(const ValueKey('sos-stop')).hitTestable(),
+        findsOneWidget,
+      );
     });
 
     testWidgets('large text caps the card, scrolls the body, pins actions', (
@@ -50,7 +59,7 @@ void main() {
     ) async {
       await _pump(t, 3.1, sos(), view: const Size(390, 500));
       expect(t.takeException(), isNull);
-      final card = t.getRect(find.byType(RaftCard));
+      final card = t.getRect(find.byType(RaftDialogSurface));
       expect(card.height, lessThanOrEqualTo(500 - 32));
       final scroll = find.descendant(
         of: find.byType(RaftSosDialog),
@@ -136,6 +145,7 @@ void main() {
     testWidgets('large text keeps actions reachable and does not overflow', (
       t,
     ) async {
+      var submitted = false;
       await _pump(
         t,
         3.1,
@@ -153,7 +163,9 @@ void main() {
                     RaftFormField('topic', 'Topic', multiline: true),
                   ],
                   submitLabel: 'Save',
-                  onSubmit: (_) async {},
+                  onSubmit: (_) async {
+                    submitted = true;
+                  },
                 ),
               ),
             ),
@@ -164,11 +176,11 @@ void main() {
       await t.tap(find.text('Open'));
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
-      final dialog = t.getRect(find.byType(AlertDialog));
+      final dialog = t.getRect(find.byType(RaftDialogSurface));
       expect(dialog.bottom, lessThanOrEqualTo(600));
       expect(
         find.descendant(
-          of: find.byType(AlertDialog),
+          of: find.byType(RaftDialogSurface),
           matching: find.byType(SingleChildScrollView),
         ),
         findsOneWidget,
@@ -177,6 +189,10 @@ void main() {
         t.getRect(find.byType(RaftButton).last).bottom,
         lessThanOrEqualTo(600),
       );
+      expect(find.text('Save').hitTestable(), findsOneWidget);
+      await t.tap(find.text('Save'));
+      await t.pumpAndSettle();
+      expect(submitted, isTrue);
     });
   });
 

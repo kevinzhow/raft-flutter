@@ -390,7 +390,7 @@ class _McpServerEditorState extends State<McpServerEditor> {
   Widget build(BuildContext context) => PopScope(
     canPop: !saving,
     child: RaftDismissScope(
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         key: const ValueKey('mcp-server-editor'),
         title: creating
             ? 'Add MCP server'

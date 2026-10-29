@@ -317,11 +317,13 @@ const webCss = process.env.RAFT_WEB_CSS;
 let productRecipeCount = 0;
 if (webCss) {
   const web = dirname(dirname(resolve(webCss)));
-  const products = JSON.parse(execFileSync(process.execPath, [
-    join(here, 'menu-compositions.mjs'), '--web', web, '--raw',
-  ], { encoding: 'utf8' }));
-  recipes.push(...products);
-  productRecipeCount = products.length;
+  for (const family of ['menu', 'dialog', 'member-picker']) {
+    const products = JSON.parse(execFileSync(process.execPath, [
+      join(here, `${family}-compositions.mjs`), '--web', web, '--raw',
+    ], { encoding: 'utf8' }));
+    recipes.push(...products);
+    productRecipeCount += products.length;
+  }
 }
 
 // Sanity: count raw `tv$1(` occurrences so the test can assert full coverage.

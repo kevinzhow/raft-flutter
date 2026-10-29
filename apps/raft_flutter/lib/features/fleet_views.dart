@@ -119,7 +119,8 @@ Future<void> showCredential(
   if (!context.mounted) return;
   bool valid() => context.mounted && (authorized?.call() ?? true);
   if (!valid()) return;
-  Widget builder(BuildContext dialog) => AlertDialog(
+  Widget builder(BuildContext dialog) => RaftAlertDialog(
+    legacy: RaftLegacyAlert.material,
     title: Text(raftText(context, 'Save this credential')),
     content: SizedBox(
       width: 480,
@@ -152,7 +153,11 @@ Future<void> showCredential(
   if (controller != null) {
     await _fleetDialog<void>(context, controller, valid, builder);
   } else {
-    await showDialog<void>(context: context, builder: builder);
+    await showRaftDialog<void>(
+      legacyMaterial: true,
+      context: context,
+      builder: builder,
+    );
   }
 }
 
@@ -1785,7 +1790,8 @@ class _FleetInspectionState extends State<FleetInspection> {
       context,
       w,
       () => current && ticket == fileRequest,
-      (dialog) => AlertDialog(
+      (dialog) => RaftAlertDialog(
+        legacy: RaftLegacyAlert.material,
         title: Text('${row['name']}'),
         content: SizedBox(
           width: 600,

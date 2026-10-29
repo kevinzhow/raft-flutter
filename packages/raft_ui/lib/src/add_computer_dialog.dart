@@ -64,10 +64,11 @@ class RaftAddComputerDialog extends StatefulWidget {
   /// dismissed by the backdrop.
   static Future<void> show(BuildContext context, WidgetBuilder builder) {
     final t = RaftTokens.of(context);
-    return showDialog<void>(
+    return showRaftDialog<void>(
+      legacyMaterial: true,
       context: context,
       barrierDismissible: false,
-      barrierColor: t.colors['layer-backdrop'],
+      legacyBarrierColor: t.colors['layer-backdrop'],
       builder: builder,
     );
   }
@@ -75,6 +76,9 @@ class RaftAddComputerDialog extends StatefulWidget {
   /// The same backdrop painted inline (fixture captures of the open modal).
   static Widget backdrop(BuildContext context, Widget dialog) {
     final t = RaftTokens.of(context);
+    if (t.recipeSet != RaftRecipeSet.legacy) {
+      return RaftDialogBackdrop(child: dialog);
+    }
     return Stack(
       children: [
         Positioned.fill(child: ColoredBox(color: t.colors['layer-backdrop']!)),
@@ -231,7 +235,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
             type: MaterialType.transparency,
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: RaftDialogCard(
+              child: RaftDialog.card(
                 key: const ValueKey('computer-dialog'),
                 title: title,
                 // Card `max-w-lg p-6`.

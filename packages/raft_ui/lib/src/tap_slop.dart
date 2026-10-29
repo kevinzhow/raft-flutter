@@ -42,6 +42,37 @@ class RenderTapSlopAnchor extends RenderProxyBox {
   }
 }
 
+/// Gives the whole visible control priority over a neighbour's expanded tap
+/// target, including padding that is outside its inner editable render box.
+class RaftTapSlopGuard extends SingleChildRenderObjectWidget {
+  const RaftTapSlopGuard({super.key, super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => RenderTapSlopGuard();
+}
+
+class RenderTapSlopGuard extends RenderProxyBox {}
+
+/// A background gesture layer that yields to nearby controls' touch targets.
+/// Wrap the background [GestureDetector] directly. Only its own listener yields;
+/// visible interactive descendants retain priority. Normal blank-space gestures
+/// are unchanged.
+class RaftTapSlopBackground extends SingleChildRenderObjectWidget {
+  const RaftTapSlopBackground({super.key, required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      RenderTapSlopBackground();
+}
+
+class RenderTapSlopBackground extends RenderProxyBox {
+  bool ownsPointerReceiver(RenderPointerListener target) {
+    RenderObject? receiver = child;
+    if (receiver is RenderSemanticsGestureHandler) receiver = receiver.child;
+    return identical(receiver, target);
+  }
+}
+
 /// Routes a pointer that lands within an anchor's [RaftTapSlopAnchor.minSize]
 /// box (but not on the anchor itself) to the nearest anchor, so adjacent
 /// anchors split the gap between them instead of overlapping.
@@ -56,9 +87,106 @@ class RaftTapSlopHost extends SingleChildRenderObjectWidget {
 }
 
 class RenderTapSlopHost extends RenderProxyBox {
+  bool _protectingDirectHit = false;
+
+  /// Tests visual bounds while probing or preserving a direct control hit.
+  bool get protectingDirectHit => _protectingDirectHit;
+
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
     if (!size.contains(position)) return false;
+    // An outer host is probing the visual hit path. A nested host must not
+    // introduce an expanded target into that path.
+    if (raftTapSlopVisualBoundsOnly(this)) {
+      return super.hitTest(result, position: position);
+    }
+    final previous = _protectingDirectHit;
+    try {
+      // Probe every direct hit with expansion disabled. A visible neighbouring
+      // control has priority even when it is not an input or a slop anchor.
+      _protectingDirectHit = true;
+      final direct = BoxHitTestResult();
+      super.hitTest(direct, position: position);
+      final protected = _hasDirectControl(direct);
+      _protectingDirectHit = protected;
+      // The direct hit test retains normal child and scrollable gestures; the
+      // host must not redirect this point to a neighbour's expanded target.
+      if (protected) return super.hitTest(result, position: position);
+      return _hitTestSlop(result, position);
+    } finally {
+      _protectingDirectHit = previous;
+    }
+  }
+
+  bool _hasDirectControl(BoxHitTestResult direct) {
+    for (final entry in direct.path) {
+      final target = entry.target;
+      // Scrollable's gesture listeners surround the viewport and own all
+      // blank space too. Keep gap expansion inside its content while retaining
+      // its normal drag recognizers in the final hit path.
+      if (target is RenderAbstractViewport) break;
+      if (target is RenderTapSlopGuard ||
+          target is RenderEditable ||
+          (target is RenderPointerListener &&
+              _handlesContact(target) &&
+              !_isBackgroundReceiver(target) &&
+              !_wrapsViewport(target))) {
+        return true;
+      }
+    }
+    // AbsorbPointer consumes a hit without adding an entry for itself. The
+    // deepest recorded ancestor still reports that consumed child hit; an
+    // opaque background with no child hit does not. Keep such shields intact.
+    final first = direct.path.firstOrNull;
+    // A sliver recorded without a deeper box already owns this hit (including
+    // a directly consumed box child). Keep its axis-specific path untouched.
+    if (first is SliverHitTestEntry) return true;
+    if (first is BoxHitTestEntry) {
+      final childHit = BoxHitTestResult();
+      return first.target.hitTestChildren(
+            childHit,
+            // Use the recorded hit coordinate: a Transform may deliberately
+            // apply its paint transform without transforming hit tests.
+            position: first.localPosition,
+          ) &&
+          childHit.path.isEmpty;
+    }
+    return false;
+  }
+
+  bool _isBackgroundReceiver(RenderPointerListener target) {
+    RenderObject? ancestor = target.parent;
+    while (ancestor != null && ancestor != this) {
+      if (ancestor is RenderTapSlopBackground &&
+          ancestor.ownsPointerReceiver(target)) {
+        return true;
+      }
+      ancestor = ancestor.parent;
+    }
+    return false;
+  }
+
+  bool _handlesContact(RenderPointerListener target) =>
+      target.onPointerDown != null ||
+      target.onPointerMove != null ||
+      target.onPointerUp != null ||
+      target.onPointerCancel != null ||
+      target.onPointerPanZoomStart != null ||
+      target.onPointerPanZoomUpdate != null ||
+      target.onPointerPanZoomEnd != null;
+
+  bool _wrapsViewport(RenderObject target) {
+    // A viewport can reject a blank content hit, leaving only Scrollable's
+    // opaque listener in the path. Its single-child wrapper chain still
+    // identifies that listener as belonging to the scrolling container.
+    RenderObject? child = target;
+    while (child is RenderProxyBox) {
+      child = child.child;
+    }
+    return child is RenderAbstractViewport;
+  }
+
+  bool _hitTestSlop(BoxHitTestResult result, Offset position) {
     final anchors = <RenderTapSlopAnchor>[];
     void collect(RenderObject node) {
       if (node is RenderTapSlopAnchor && node.attached && node.hasSize) {
@@ -68,7 +196,6 @@ class RenderTapSlopHost extends RenderProxyBox {
     }
 
     visitChildren(collect);
-
     RenderTapSlopAnchor? best;
     Rect? bestVisual;
     var bestDistance = double.infinity;
@@ -101,13 +228,6 @@ class RenderTapSlopHost extends RenderProxyBox {
       }
     }
     if (best != null && bestVisual != null) {
-      // A neighboring target must not take a pointer from editable input.
-      // Probe at the actual position before routing blank-space touches.
-      final direct = BoxHitTestResult();
-      if (super.hitTest(direct, position: position) &&
-          direct.path.any((entry) => entry.target is RenderEditable)) {
-        return super.hitTest(result, position: position);
-      }
       // Inset both closed and open edges: a fractional ancestor transform
       // can round the exact near edge just below zero during the inverse
       // hit-test transform. The routing point must be strictly inside.
@@ -121,4 +241,16 @@ class RenderTapSlopHost extends RenderProxyBox {
     }
     return super.hitTest(result, position: position);
   }
+}
+
+/// Whether an enclosing host is resolving the actual visual hit path.
+bool raftTapSlopVisualBoundsOnly(RenderObject target) {
+  RenderObject? ancestor = target.parent;
+  while (ancestor != null) {
+    if (ancestor is RenderTapSlopHost && ancestor.protectingDirectHit) {
+      return true;
+    }
+    ancestor = ancestor.parent;
+  }
+  return false;
 }

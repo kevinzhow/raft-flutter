@@ -96,10 +96,10 @@ abstract final class RaftProfilePanelRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1197, 1465, 1481, 966, 967, 340, 1677, 595, 1015, 1816],
+    [965, 1198, 1467, 1483, 966, 967, 340, 1680, 595, 1016, 1820],
     [],
-    [1321, 1018],
-    [633, 1658, 1670],
+    [1322, 1019],
+    [633, 1661, 1673],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

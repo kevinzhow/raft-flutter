@@ -55,6 +55,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Updating…": "更新中…",
   "Upgrade": "升级",
   "Upgrade for More": "升级以获得更多",
+  "Upgrade for more": "升级以获取更多",
   "Upgrade for more channels": "升级以获得更多频道",
   "After upgrading, you can migrate an agent and its workspace to another computer.":
       "升级后，可以把 Agent 连同工作区迁移到另一台计算机。",

@@ -8,6 +8,7 @@ import 'dismiss_scope.dart';
 import 'overlays/dialog.dart' show RaftDialogBarrier;
 import 'sheet.dart';
 import 'settings_layout.dart' show RaftSpace;
+import 'text_scaling.dart';
 import 'theme.dart';
 
 // One place decides which form a floating window takes. A window states what
@@ -157,6 +158,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     double dialogMaxWidth = 560,
     double? dialogMaxHeight,
     bool dialogFillsHeight = false,
+    bool scrollDialogSurface = false,
     bool sheetFillsHeight = false,
     double sheetInitialSize = RaftSheetMetrics.largeDetent,
     double sideWidth = 420,
@@ -174,6 +176,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
          dialogMaxWidth: dialogMaxWidth,
          dialogMaxHeight: dialogMaxHeight,
          dialogFillsHeight: dialogFillsHeight,
+         scrollDialogSurface: scrollDialogSurface,
          sheetFillsHeight: sheetFillsHeight,
          sheetInitialSize: sheetInitialSize,
          sideWidth: sideWidth,
@@ -193,6 +196,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     required this.dialogMaxWidth,
     required this.dialogMaxHeight,
     required this.dialogFillsHeight,
+    required this.scrollDialogSurface,
     required this.sheetFillsHeight,
     required this.sheetInitialSize,
     required this.sideWidth,
@@ -237,6 +241,10 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
 
   /// The dialog takes all the height there is (up to [dialogMaxHeight]).
   final bool dialogFillsHeight;
+
+  /// A form's ordinary dialog scrolls its entire padded surface as Web Modal
+  /// does, instead of clipping an inner scrollport at the window inset.
+  final bool scrollDialogSurface;
 
   /// The sheet is always [RaftSheetMetrics.largeDetent] tall (an editor whose
   /// content scrolls itself). Otherwise the sheet is a scrolling [RaftSheet]
@@ -534,6 +542,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
   double dialogMaxWidth = 560,
   double? dialogMaxHeight,
   bool dialogFillsHeight = false,
+  bool scrollDialogSurface = false,
   bool sheetFillsHeight = false,
   double sheetInitialSize = RaftSheetMetrics.largeDetent,
 }) {
@@ -555,6 +564,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
     dialogMaxWidth: dialogMaxWidth,
     dialogMaxHeight: dialogMaxHeight,
     dialogFillsHeight: dialogFillsHeight,
+    scrollDialogSurface: scrollDialogSurface,
     sheetFillsHeight: sheetFillsHeight,
     sheetInitialSize: sheetInitialSize,
   );
@@ -584,6 +594,7 @@ class _PresentedFrame extends StatelessWidget {
           maxWidth: route.dialogMaxWidth,
           maxHeight: route.dialogMaxHeight,
           fillsHeight: route.dialogFillsHeight,
+          scrollSurface: route.scrollDialogSurface,
           child: content,
         );
     }
@@ -598,11 +609,16 @@ class RaftDialogFrame extends StatelessWidget {
     required this.maxWidth,
     this.maxHeight,
     this.fillsHeight = false,
+    this.scrollSurface = false,
   });
   final Widget child;
   final double maxWidth;
   final double? maxHeight;
   final bool fillsHeight;
+
+  /// Scroll the padded surface in the whole available viewport at normal
+  /// text size. Large text retains the bounded, pinned-control form layout.
+  final bool scrollSurface;
 
   /// Space between the window edge and the dialog.
   static const inset = RaftSpace.x4;
@@ -610,6 +626,40 @@ class RaftDialogFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    if (scrollSurface &&
+        RaftTokens.of(context).isRaftLook &&
+        !RaftScaled.grows(context) &&
+        !fillsHeight &&
+        maxHeight == null) {
+      return SafeArea(
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+            final available = math.max(0.0, box.maxHeight - keyboard);
+            return Padding(
+              padding: EdgeInsets.only(bottom: keyboard),
+              child: SingleChildScrollView(
+                // Let a tap outside the card reach the route's dismissible
+                // barrier; dragging can still scroll the full backdrop.
+                hitTestBehavior: HitTestBehavior.translucent,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: available),
+                  child: Padding(
+                    padding: const EdgeInsets.all(inset),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxWidth),
+                        child: child,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
     final fixed = fillsHeight
         ? SizedBox(height: size.height - inset * 2, child: child)
         : child;

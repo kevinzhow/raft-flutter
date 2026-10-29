@@ -69,8 +69,8 @@ BYPASS_ALLOWLIST = {
         'select': 'the frozen Elegant and Brutal labelled Material dropdown (part of select_field.dart; delete with the legacy looks)'},
     _UI + 'raft/checkbox_frozen.dart': {
         'toggle': 'the frozen Elegant and Brutal Material checkbox and checkbox list tile (part of raft/checkbox.dart; delete with the legacy looks)'},
-    _UI + 'dialog_card.dart': {
-        'dialog': 'showRaftModal is the Raft dialog route host'},
+    _UI + 'overlays/dialog.dart': {
+        'dialog': 'the canonical dialog host preserves Material rendering and routing only for frozen-look compatibility'},
     _UI + 'tooltip.dart': {
         'tooltip': 'RaftTooltip extends Tooltip',
         'overlay': 'RaftTooltip renders its own popup'},

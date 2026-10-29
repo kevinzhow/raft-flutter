@@ -56,7 +56,8 @@ DialogRoute<void> attachmentDownloadProgressRoute({
 }) => DialogRoute<void>(
   context: context,
   barrierDismissible: false,
-  builder: (context) => AlertDialog(
+  builder: (context) => RaftAlertDialog(
+    legacy: RaftLegacyAlert.material,
     title: Text('Downloading $name'),
     content: ValueListenableBuilder<double?>(
       valueListenable: progress,

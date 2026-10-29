@@ -110,12 +110,12 @@ abstract final class RaftLiveAgentActivityBarRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1735, 1704, 620, 633, 596, 1655, 1666, 1733],
-    [965, 1476, 1318, 1022, 125],
-    [1735, 1579, 1756],
-    [965, 1481, 966, 1318, 1021],
+    [1738, 1707, 620, 633, 596, 1658, 1669, 1736],
+    [965, 1478, 1319, 1023, 125],
+    [1738, 1581, 1760],
+    [965, 1483, 966, 1319, 1022],
     [472, 369],
-    [1481, 1891, 1015, 1815, 1016, 1816],
+    [1483, 1895, 1016, 1819, 1017, 1820],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

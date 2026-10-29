@@ -8,12 +8,13 @@ import 'overlays/dialog.dart' show showRaftDialog;
 
 import 'design_primitives.dart';
 import 'icons.dart';
-import 'dialog_card.dart'
-    show RaftCloseButton, RaftTextSteps, raftCssTextStyle, showRaftModal;
+import 'dialog_card.dart' show RaftCloseButton, RaftTextSteps, raftCssTextStyle;
 import 'presentation.dart';
 import 'settings_layout.dart' show RaftSpace;
 import 'sheet.dart';
+import 'tap_slop.dart';
 import 'theme.dart';
+import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 
 // A form is a window with inputs and a submit button (create a channel, edit a
 // profile, rename). It is shown with `RaftPresentationPolicy.form`: a bottom
@@ -84,6 +85,7 @@ RaftPresentedRoute<T> raftFormRoute<T>(
   dismissible: dismissible,
   label: label,
   dialogMaxWidth: dialogMaxWidth,
+  scrollDialogSurface: true,
   sheetInitialSize: sheetInitialSize,
 );
 
@@ -316,8 +318,9 @@ Future<V?> showRaftWindow<V>(
 }) => form
     ? showRaftForm<V>(context, builder: builder)
     : modal
-    ? showRaftModal<V>(context, builder: builder)
-    : showDialog<V>(
+    ? showRaftDialog<V>(context: context, modal: true, builder: builder)
+    : showRaftDialog<V>(
+        legacyMaterial: true,
         context: context,
         // Web `DialogCard` / `ConfirmDialog`: no scrim close.
         barrierDismissible: false,
@@ -424,7 +427,9 @@ class RaftFormSheet extends StatelessWidget {
             RaftSpace.x4,
             RaftSpace.x4,
           ),
-          body: body,
+          body: t.recipeSet == RaftRecipeSet.raft
+              ? RaftTapSlopHost(child: body)
+              : body,
           footer: footer == null
               ? null
               : Padding(

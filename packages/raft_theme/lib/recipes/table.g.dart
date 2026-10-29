@@ -131,13 +131,13 @@ abstract final class RaftTableRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1922, 624, 652, 1015, 1807, 1816],
+    [1926, 624, 652, 1016, 1811, 1820],
     [],
     [196, 197, 195],
     [501, 502, 739, 744],
-    [1830, 1926, 623, 633, 1655, 1666, 1815, 1007, 1525, 1867, 1818],
-    [470, 1930, 623, 633, 1655, 1666],
-    [1640, 1808, 1818],
+    [1834, 1930, 623, 633, 1658, 1669, 1819, 1008, 1527, 1871, 1822],
+    [470, 1934, 623, 633, 1658, 1669],
+    [1643, 1812, 1822],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

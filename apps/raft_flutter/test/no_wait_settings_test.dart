@@ -243,7 +243,7 @@ void main() {
         await t.tap(
           find.text('Close').evaluate().isNotEmpty
               ? find.text('Close')
-              : find.byType(RaftCloseButton),
+              : find.byType(RaftDialogClose),
         );
         await frames(t, 20);
         expect(find.text(title), findsNWidgets(action == title ? 1 : 0));

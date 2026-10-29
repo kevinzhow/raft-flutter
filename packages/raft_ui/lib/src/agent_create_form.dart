@@ -35,10 +35,13 @@ import 'select_field.dart';
 
 import 'components.dart';
 import 'design_primitives.dart';
-import 'dismiss_scope.dart';
 import 'form_presentation.dart';
+import 'dialog_card.dart' show RaftModalBackdrop;
+import 'overlays/dialog.dart' show RaftDialog, RaftDialogSlots, showRaftDialog;
+import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'icons.dart';
 import 'raft/checkbox.dart' show RaftCheckbox;
+import 'list_items.dart' show RaftSectionEyebrow;
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'panel_layout.dart' show RaftCssText;
@@ -67,16 +70,12 @@ Future<T?> showRaftAgentModal<T>(
   BuildContext context, {
   required WidgetBuilder builder,
 }) {
-  final t = RaftTokens.of(context);
-  return showGeneralDialog<T>(
+  return showRaftDialog<T>(
     context: context,
+    builder: builder,
+    modal: true,
+    legacyModal: true,
     barrierDismissible: false,
-    barrierColor: raftAgentModalBarrier(t),
-    // dialog overlay recipe: transition-duration 150ms.
-    transitionDuration: const Duration(milliseconds: 150),
-    transitionBuilder: (context, animation, _, child) =>
-        FadeTransition(opacity: animation, child: child),
-    pageBuilder: (context, _, _) => RaftDismissScope(child: builder(context)),
   );
 }
 
@@ -94,19 +93,19 @@ class RaftAgentDialogCard extends StatefulWidget {
     required this.children,
     this.onClose,
     this.onBackdrop,
-    this.maxWidth = 448, // max-w-md = 28rem
+    this.maxWidth,
     this.surfaceKey,
     this.bare = false,
     this.plainCard = false,
     this.footer,
-    this.footerGap = 4 * _tw,
+    this.footerGap,
   });
 
   /// The submit row of a form. In a dialog it follows [children] after
   /// [footerGap]; in a bottom sheet it pins to the bottom while [children]
   /// scroll.
   final Widget? footer;
-  final double footerGap;
+  final double? footerGap;
 
   /// The `card-brutal` utility instead of the raft-ui Card (the agent runtime
   /// config modal): `border border-line-muted bg-layer-panel shadow-raft-md`,
@@ -126,7 +125,7 @@ class RaftAgentDialogCard extends StatefulWidget {
 
   /// `Modal closeOnBackdrop`: a press on the backdrop (outside the card).
   final VoidCallback? onBackdrop;
-  final double maxWidth;
+  final double? maxWidth;
 
   @override
   State<RaftAgentDialogCard> createState() => _RaftAgentDialogCardState();
@@ -141,7 +140,7 @@ class _RaftAgentDialogCardState extends State<RaftAgentDialogCard> {
     final title = widget.title,
         onClose = widget.onClose,
         onBackdrop = widget.onBackdrop,
-        maxWidth = widget.maxWidth;
+        maxWidth = widget.maxWidth ?? 448;
     final t = RaftTokens.of(context);
     final tokens = RaftRecipeTokens(t);
     final footerRow = widget.footer;
@@ -156,6 +155,22 @@ class _RaftAgentDialogCardState extends State<RaftAgentDialogCard> {
     final footer = footerRow == null
         ? null
         : KeyedSubtree(key: _footer, child: footerRow);
+    if (!usesLegacyRecipes(t.recipeTokens)) {
+      final card = RaftDialog.card(
+        title: title,
+        onClose: onClose ?? () {},
+        closeEnabled: onClose != null,
+        showClose: onClose != null,
+        maxWidth: widget.maxWidth,
+        contentKey: widget.surfaceKey,
+        footer: footer,
+        footerGap: widget.footerGap,
+        child: body,
+      );
+      return widget.bare || RaftFormFrame.framedOf(context)
+          ? card
+          : RaftModalBackdrop(onBackdrop: onBackdrop, child: card);
+    }
     final card_ = RaftCardRecipe.resolve(
       theme: _theme(t),
       states: _states(t),
@@ -228,7 +243,7 @@ class _RaftAgentDialogCardState extends State<RaftAgentDialogCard> {
               const SizedBox(height: 4 * _tw), // mb-4
               body,
               if (footer != null) ...[
-                SizedBox(height: widget.footerGap),
+                SizedBox(height: widget.footerGap ?? 4 * _tw),
                 footer,
               ],
             ],
@@ -586,6 +601,7 @@ class RaftAgentBanner extends StatelessWidget {
     this.title,
     this.action,
     this.onAction,
+    this.actionSeparator = ' ',
     this.backgroundColor,
     this.foregroundColor,
     this.actionForeground,
@@ -596,7 +612,7 @@ class RaftAgentBanner extends StatelessWidget {
   /// dark:bg-warning-soft and dark:!text-warning-strong). Null keeps the recipe.
   final Color? backgroundColor, foregroundColor, actionForeground;
   final String? title, action;
-  final String description;
+  final String description, actionSeparator;
   final VoidCallback? onAction;
   @override
   Widget build(BuildContext context) => RaftBanner(
@@ -612,6 +628,7 @@ class RaftAgentBanner extends StatelessWidget {
     // The frozen looks never put a gap under these titles.
     titleGap: RaftTokens.of(context).recipeSet == RaftRecipeSet.raft ? null : 0,
     linkAction: (label: action, onPressed: onAction),
+    linkSeparator: actionSeparator,
     backgroundColor: backgroundColor,
     foregroundColor: foregroundColor,
     actionForeground: actionForeground,
@@ -627,10 +644,11 @@ class RaftAgentInlineText extends StatefulWidget {
     super.key,
     this.action,
     this.onAction,
+    this.actionSeparator = ' ',
     this.style,
     this.actionForeground,
   });
-  final String text;
+  final String text, actionSeparator;
   final String? action;
   final VoidCallback? onAction;
   final TextStyle? style;
@@ -670,7 +688,7 @@ class _RaftAgentInlineTextState extends State<RaftAgentInlineText> {
         text: raftText(context, widget.text),
         children: [
           if (widget.action != null) ...[
-            const TextSpan(text: ' '),
+            TextSpan(text: widget.actionSeparator),
             TextSpan(
               text: raftText(context, widget.action!),
               recognizer: widget.onAction == null ? null : tap,
@@ -798,9 +816,8 @@ class RaftAgentHintNote extends StatelessWidget {
   }
 }
 
-/// RuntimeConfigFields "More" toggle: `flex items-center gap-1 text-sm
-/// font-bold text-foreground-muted` with a 16px
-/// chevron; open content sits `mt-3 space-y-3` below.
+/// RuntimeConfigFields "More" toggle: SectionEyebrow with a 14px chevron
+/// and 8px gap; open content sits `mt-3 space-y-3` below.
 class RaftAgentMoreDisclosure extends StatelessWidget {
   const RaftAgentMoreDisclosure({
     super.key,
@@ -816,40 +833,65 @@ class RaftAgentMoreDisclosure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final isRaft = t.isRaftLook;
+    Widget row({bool hovered = false}) {
+      final color = isRaft
+          ? t.colors[hovered ? 'foreground' : 'foreground-hint']
+          : t.muted;
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RaftIcon(
+            open ? RaftGlyph.chevronDown : RaftGlyph.chevronRight,
+            size: isRaft ? 14 : 16,
+            color: color,
+          ),
+          SizedBox(width: isRaft ? _tw * 2 : _tw),
+          if (isRaft)
+            RaftSectionEyebrow(raftText(context, label), color: color)
+          else
+            Text(
+              raftText(context, label),
+              style: TextStyle(
+                fontSize: 14,
+                height: 20 / 14,
+                fontWeight: FontWeight.w700,
+                color: t.muted,
+              ),
+            ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         Align(
           alignment: Alignment.centerLeft,
-          child: Semantics(
-            button: true,
-            expanded: open,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onToggle,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RaftIcon(
-                    open ? RaftGlyph.chevronDown : RaftGlyph.chevronRight,
-                    size: 16,
-                    color: t.muted,
-                  ),
-                  const SizedBox(width: _tw), // gap-1
-                  Text(
-                    raftText(context, label),
-                    style: TextStyle(
-                      fontSize: 14, // text-sm
-                      height: 20 / 14,
-                      fontWeight: FontWeight.w700,
-                      color: t.muted,
+          child: isRaft
+              ? RaftInteractive(
+                  onPressed: onToggle,
+                  builder: (context, state) => Semantics(
+                    expanded: open,
+                    child: RaftCssOuterShadow(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(t.radius),
+                        boxShadow: state.focusVisible ? t.focusShadows : null,
+                      ),
+                      child: row(hovered: state.hovered),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                )
+              : Semantics(
+                  button: true,
+                  expanded: open,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onToggle,
+                    child: row(),
+                  ),
+                ),
         ),
         if (open)
           for (final child in children) ...[
@@ -861,7 +903,8 @@ class RaftAgentMoreDisclosure extends StatelessWidget {
   }
 }
 
-/// Footer: `flex justify-end gap-3` with outline + accent `size="lg"` buttons.
+/// Agent DialogCard actions use the shared Dialog footer's `gap-2`.
+/// Frozen looks retain their original `gap-3` spacing.
 class RaftAgentDialogFooter extends StatelessWidget {
   const RaftAgentDialogFooter({
     super.key,
@@ -871,14 +914,19 @@ class RaftAgentDialogFooter extends StatelessWidget {
   final List<Widget> children;
   final MainAxisAlignment alignment;
   @override
-  Widget build(BuildContext context) => Wrap(
-    alignment: alignment == MainAxisAlignment.end
-        ? WrapAlignment.end
-        : WrapAlignment.start,
-    spacing: 3 * _tw, // gap-3
-    runSpacing: 3 * _tw,
-    children: children,
-  );
+  Widget build(BuildContext context) {
+    final legacy = usesLegacyRecipes(RaftTokens.of(context).recipeTokens);
+    final footer = legacy ? null : RaftDialogSlots.of(context).footer;
+    final gap = footer?.columnGap ?? 3 * _tw;
+    return Wrap(
+      alignment: alignment == MainAxisAlignment.end
+          ? WrapAlignment.end
+          : WrapAlignment.start,
+      spacing: gap,
+      runSpacing: footer?.rowGap ?? gap,
+      children: children,
+    );
+  }
 }
 
 /// Height of a `size="lg"` button from the button recipe.
@@ -1179,3 +1227,31 @@ class _RaftAgentKeyValueRowsState extends State<RaftAgentKeyValueRows> {
     );
   }
 }
+
+// Internal bridge for the canonical Dialog namespace. Hidden from raft_ui.dart;
+// the old public widget remains a compatibility adapter, with one current paint.
+Widget buildAgentDialog({
+  Key? key,
+  required String title,
+  required List<Widget> children,
+  VoidCallback? onClose,
+  VoidCallback? onBackdrop,
+  double? maxWidth,
+  Key? surfaceKey,
+  bool bare = false,
+  bool plainCard = false,
+  Widget? footer,
+  double? footerGap,
+}) => RaftAgentDialogCard(
+  key: key,
+  title: title,
+  onClose: onClose,
+  onBackdrop: onBackdrop,
+  maxWidth: maxWidth,
+  surfaceKey: surfaceKey,
+  bare: bare,
+  plainCard: plainCard,
+  footer: footer,
+  footerGap: footerGap,
+  children: children,
+);

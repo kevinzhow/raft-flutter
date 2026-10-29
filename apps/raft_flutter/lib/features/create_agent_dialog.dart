@@ -638,7 +638,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
     if (!busy) Navigator.pop(context);
   }
 
-  Widget needsComputer(BuildContext context) => RaftAgentDialogCard(
+  Widget needsComputer(BuildContext context) => RaftDialog.agent(
     title: 'Create Agent',
     onClose: close,
     children: [
@@ -746,6 +746,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
     final cloud = hosted.active;
     final capacity = capacityReached;
     final tokens = RaftTokens.of(context);
+    final legacyDarkWarning = tokens.dark && !tokens.isRaftLook;
     final nameError = validationAttempted
         ? createAgentNameError(context, name.text)
         : null;
@@ -763,11 +764,15 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       if (capacity != null)
         RaftAgentBanner(
           status: RaftAgentBannerStatus.warning,
-          // Actual capacity caller: dark:bg-warning-soft, dark:!text-warning-strong
-          // on both BannerDescription and its inline Upgrade button.
-          backgroundColor: tokens.dark ? tokens.colors['warning-soft'] : null,
-          foregroundColor: tokens.dark ? tokens.colors['warning-strong'] : null,
-          actionForeground: tokens.dark
+          // Web uses the warning Banner recipe without caller overrides.
+          // Retain the prior colours in the frozen legacy looks.
+          backgroundColor: legacyDarkWarning
+              ? tokens.colors['warning-soft']
+              : null,
+          foregroundColor: legacyDarkWarning
+              ? tokens.colors['warning-strong']
+              : null,
+          actionForeground: legacyDarkWarning
               ? tokens.colors['warning-strong']
               : null,
           description: raftFormat(
@@ -780,7 +785,12 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
               'planName': '${billing?['displayName'] ?? 'Free'}',
             },
           ),
-          action: 'Upgrade for More',
+          action: tokens.isRaftLook ? 'Upgrade for more' : 'Upgrade for More',
+          actionSeparator:
+              tokens.isRaftLook &&
+                  Localizations.maybeLocaleOf(context)?.languageCode == 'zh'
+              ? ''
+              : ' ',
           // Web: onClose(); nav.toSettings("billing").
           onAction: () {
             if (busy) return;
@@ -981,7 +991,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
     }
     return PopScope(
       canPop: !busy,
-      child: RaftAgentDialogCard(
+      child: RaftDialog.agent(
         title: 'Create Agent',
         onClose: close,
         footerGap: raftAgentFormGap,

@@ -59,7 +59,17 @@ void main() {
   test(
     'each generated slot retains source identity independently of raft_ui',
     () {
-      expect(raftRecipes, hasLength(127));
+      // 124 published 0.7.0 recipes plus named Web product compositions.
+      // Product additions do not change the published-package coverage.
+      const products = {
+        'webSelectionPanel',
+        'webMenuAction',
+        'webSelectionRow',
+        'webDialogCard',
+        'webMemberPicker',
+      };
+      expect(raftRecipes.keys.toSet().intersection(products), products);
+      expect(raftRecipes.keys.toSet().difference(products), hasLength(124));
       for (final recipe in raftRecipes.entries) {
         final slots = recipe.value(const {});
         expect(slots, isNotEmpty, reason: recipe.key);

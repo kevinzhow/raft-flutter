@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'text_selection_toolbar.dart';
 import 'hover_region.dart';
+import 'tap_slop.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -188,7 +189,13 @@ class RaftField extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: messageText ?? const Text(' ')),
+            Expanded(
+              child:
+                  messageText ??
+                  ExcludeSemantics(
+                    child: Text(' ', style: f.description.text(rt, base: base)),
+                  ),
+            ),
             if (counterText != null) ...[
               const SizedBox(width: _tw * 2),
               counterText,
@@ -212,8 +219,7 @@ class RaftField extends StatelessWidget {
           Row(
             spacing: _tw * 2,
             children: [
-              Flexible(child: labelText),
-              const Spacer(),
+              Expanded(child: labelText),
               SizedBox(
                 height:
                     (_tw * 8 -
@@ -536,7 +542,24 @@ class _RaftTextInputState extends State<RaftTextInput>
         child: SizedBox(width: double.infinity, child: field),
       ),
     );
-    return Semantics(label: widget.semanticLabel, child: hoverRegion(box));
+    return Semantics(
+      label: widget.semanticLabel,
+      child: hoverRegion(
+        RaftTapSlopGuard(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
+            onTap: widget.enabled
+                ? () {
+                    focus.requestFocus();
+                    widget.onTap?.call();
+                  }
+                : null,
+            child: box,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _editable(TextStyle textStyle, Color placeholder) => TextField(

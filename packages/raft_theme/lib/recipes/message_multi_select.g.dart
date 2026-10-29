@@ -85,9 +85,9 @@ abstract final class RaftMessageMultiSelectRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1465, 1481, 966, 967],
-    [1726, 820, 866, 1278, 1279, 1509, 1711],
-    [965, 1318, 1022, 1704, 1654, 1666, 602, 1689, 1693, 1732],
+    [965, 1467, 1483, 966, 967],
+    [1729, 820, 866, 1279, 1280, 1511, 1714],
+    [965, 1319, 1023, 1707, 1657, 1669, 602, 1692, 1696, 1735],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

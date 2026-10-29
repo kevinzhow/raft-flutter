@@ -261,7 +261,8 @@ class _InteractivePreviewState extends State<_InteractivePreview> {
           ),
           RaftButton(
             label: 'Open Form',
-            onPressed: () => showDialog(
+            onPressed: () => showRaftDialog(
+              legacyMaterial: true,
               context: context,
               builder: (_) => RaftFormDialog(
                 title: 'Create Task',

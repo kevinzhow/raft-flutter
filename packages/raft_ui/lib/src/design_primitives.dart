@@ -3197,6 +3197,11 @@ class _RenderTouchTarget extends RenderProxyBox {
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
     if (!_target.contains(position)) return false;
+    if (!size.contains(position)) {
+      // Preserve the visual hit path while an enclosing host probes or
+      // protects a direct control. The control's own visible box still hits.
+      if (raftTapSlopVisualBoundsOnly(this)) return false;
+    }
     // Nearest point inside the box (Size.contains excludes the far edge).
     final inside = Offset(
       position.dx.clamp(0, math.max(0, size.width - 1e-3)),

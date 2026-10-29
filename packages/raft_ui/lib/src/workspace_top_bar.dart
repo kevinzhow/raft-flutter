@@ -72,14 +72,16 @@ class RaftWorkspaceTopBar extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 Positioned.fill(
-                  child: GestureDetector(
-                    key: const Key('workspace-topbar-drag'),
-                    behavior: HitTestBehavior.opaque,
-                    onPanStart: onDragStart == null
-                        ? null
-                        : (_) => onDragStart!(),
-                    onDoubleTap: onDoubleTap,
-                    child: const SizedBox.expand(),
+                  child: RaftTapSlopBackground(
+                    child: GestureDetector(
+                      key: const Key('workspace-topbar-drag'),
+                      behavior: HitTestBehavior.opaque,
+                      onPanStart: onDragStart == null
+                          ? null
+                          : (_) => onDragStart!(),
+                      onDoubleTap: onDoubleTap,
+                      child: const SizedBox.expand(),
+                    ),
                   ),
                 ),
                 CustomMultiChildLayout(

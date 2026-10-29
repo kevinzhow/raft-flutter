@@ -3195,93 +3195,95 @@ class _RaftComposerState extends State<RaftComposer> {
                       // toolbar buttons) opens the keyboard. Buttons and the
                       // text field keep their own taps: they join the gesture
                       // arena first and win it.
-                      child: GestureDetector(
-                        key: const ValueKey('composer-tap-area'),
-                        behavior: HitTestBehavior.opaque,
-                        excludeFromSemantics: true,
-                        onTap: widget.enabled ? focusEditor : null,
-                        child: Container(
-                          key: const ValueKey('composer-shell-slot'),
-                          decoration: recipe.shellDecoration(
-                            focused: composerFocused,
-                          ),
-                          // CSS's first-action negative margin must also be
-                          // in the parent's hit bounds; a paint translation
-                          // alone hides the leftmost five pixels from taps.
-                          padding: recipe.shellInset.copyWith(
-                            left: recipe.shellInset.left + firstActionOffset,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              ConstrainedBox(
-                                key: const ValueKey('composer-editor-slot'),
-                                constraints: BoxConstraints(
-                                  minHeight: recipe.editorMinimum,
-                                  // Default Web viewport: 128px. Above 1x,
-                                  // leave room for six complete scaled lines
-                                  // plus the editor's unscaled inset.
-                                  maxHeight:
-                                      RaftScaled.extent(
-                                        context,
-                                        // Keep complete editable lines at large
-                                        // accessibility sizes. The default Web
-                                        // viewport remains capped at 128px.
-                                        RaftScaled.grows(context)
-                                            ? (6 *
-                                                      (recipe
-                                                              .editorText
-                                                              .fontSize ??
-                                                          14) *
-                                                      (recipe
-                                                              .editorText
-                                                              .height ??
-                                                          1))
-                                                  .clamp(
-                                                    recipe.editorMaximum,
-                                                    double.infinity,
-                                                  )
-                                                  .toDouble()
-                                            : recipe.editorMaximum,
-                                        fontSize:
-                                            recipe.editorText.fontSize ?? 14,
-                                      ) +
-                                      (RaftScaled.grows(context)
-                                          ? recipe.editorInset.vertical
-                                          : 0),
+                      child: RaftTapSlopBackground(
+                        child: GestureDetector(
+                          key: const ValueKey('composer-tap-area'),
+                          behavior: HitTestBehavior.opaque,
+                          excludeFromSemantics: true,
+                          onTap: widget.enabled ? focusEditor : null,
+                          child: Container(
+                            key: const ValueKey('composer-shell-slot'),
+                            decoration: recipe.shellDecoration(
+                              focused: composerFocused,
+                            ),
+                            // CSS's first-action negative margin must also be
+                            // in the parent's hit bounds; a paint translation
+                            // alone hides the leftmost five pixels from taps.
+                            padding: recipe.shellInset.copyWith(
+                              left: recipe.shellInset.left + firstActionOffset,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ConstrainedBox(
+                                  key: const ValueKey('composer-editor-slot'),
+                                  constraints: BoxConstraints(
+                                    minHeight: recipe.editorMinimum,
+                                    // Default Web viewport: 128px. Above 1x,
+                                    // leave room for six complete scaled lines
+                                    // plus the editor's unscaled inset.
+                                    maxHeight:
+                                        RaftScaled.extent(
+                                          context,
+                                          // Keep complete editable lines at large
+                                          // accessibility sizes. The default Web
+                                          // viewport remains capped at 128px.
+                                          RaftScaled.grows(context)
+                                              ? (6 *
+                                                        (recipe
+                                                                .editorText
+                                                                .fontSize ??
+                                                            14) *
+                                                        (recipe
+                                                                .editorText
+                                                                .height ??
+                                                            1))
+                                                    .clamp(
+                                                      recipe.editorMaximum,
+                                                      double.infinity,
+                                                    )
+                                                    .toDouble()
+                                              : recipe.editorMaximum,
+                                          fontSize:
+                                              recipe.editorText.fontSize ?? 14,
+                                        ) +
+                                        (RaftScaled.grows(context)
+                                            ? recipe.editorInset.vertical
+                                            : 0),
+                                  ),
+                                  child: RaftComposerExpandable(
+                                    text: controller.text,
+                                    recipe: recipe,
+                                    editorInset: recipe.editorInset.copyWith(
+                                      left:
+                                          recipe.editorInset.left -
+                                          firstActionOffset,
+                                    ),
+                                    onExpand: widget.enabled && !busy
+                                        ? openExpanded
+                                        : null,
+                                    builder: (inset) => Padding(
+                                      padding: inset,
+                                      child: buildEditorField(context, recipe),
+                                    ),
+                                  ),
                                 ),
-                                child: RaftComposerExpandable(
-                                  text: controller.text,
+                                SizedBox(height: recipe.shellGap),
+                                RaftComposerActionRow(
                                   recipe: recipe,
-                                  editorInset: recipe.editorInset.copyWith(
-                                    left:
-                                        recipe.editorInset.left -
-                                        firstActionOffset,
-                                  ),
-                                  onExpand: widget.enabled && !busy
-                                      ? openExpanded
-                                      : null,
-                                  builder: (inset) => Padding(
-                                    padding: inset,
-                                    child: buildEditorField(context, recipe),
-                                  ),
+                                  enabled: widget.enabled,
+                                  busy: busy,
+                                  onImagePick: widget.onImagePick,
+                                  onAttach: widget.onAttach,
+                                  taskAction: widget.taskAction,
+                                  submitTooltip: widget.submitTooltip,
+                                  spinner: widget.submitSpinner,
+                                  submitEnabled: submitEnabled,
+                                  onSend: send,
                                 ),
-                              ),
-                              SizedBox(height: recipe.shellGap),
-                              RaftComposerActionRow(
-                                recipe: recipe,
-                                enabled: widget.enabled,
-                                busy: busy,
-                                onImagePick: widget.onImagePick,
-                                onAttach: widget.onAttach,
-                                taskAction: widget.taskAction,
-                                submitTooltip: widget.submitTooltip,
-                                spinner: widget.submitSpinner,
-                                submitEnabled: submitEnabled,
-                                onSend: send,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),

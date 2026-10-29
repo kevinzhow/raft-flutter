@@ -393,8 +393,9 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     final source = authority;
     // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the install retry starts; the local variable dies with the app detail modal.
     String? modalError;
-    await showRaftModal<void>(
-      context,
+    await showRaftDialog<void>(
+      context: context,
+      modal: true,
       builder: (modal) => StatefulBuilder(
         builder: (modal, setModal) {
           String tr(String s) => raftText(modal, s);
@@ -605,8 +606,9 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
 
   Future<void> openInstalled(_InstalledApp app) async {
     final source = authority;
-    await showRaftModal<void>(
-      context,
+    await showRaftDialog<void>(
+      context: context,
+      modal: true,
       builder: (modal) {
         void close() => Navigator.of(modal).pop();
         if (source != authority) {

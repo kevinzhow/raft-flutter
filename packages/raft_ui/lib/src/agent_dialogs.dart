@@ -8,7 +8,7 @@ import 'design_primitives.dart';
 import 'error_presentation.dart' show RaftErrorScope;
 import 'dialog_card.dart' show raftRecipeThemeOf;
 import 'icons.dart';
-import 'overlays/dialog.dart' show showRaftDialog;
+import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/field.g.dart' as field_recipe;
@@ -384,7 +384,7 @@ class _RaftAgentProfileEditDialogState
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) requestClose();
       },
-      child: RaftDialogShell(
+      child: RaftDialog.shell(
         surfaceKey: const ValueKey('agent-dialog'),
         title: title,
         maxWidth: 512,

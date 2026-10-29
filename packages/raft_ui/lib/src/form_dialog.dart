@@ -8,6 +8,7 @@ import 'components.dart';
 import 'dialog_card.dart' show RaftCloseButton;
 import 'dismiss_scope.dart';
 import 'form_presentation.dart';
+import 'overlays/dialog.dart';
 import 'settings_layout.dart' show RaftSpace;
 import 'error_presentation.dart';
 import 'theme.dart';
@@ -41,9 +42,10 @@ class RaftFormField {
 ///
 /// Opened with [showRaftForm] it is a bottom sheet below 768 (the title and
 /// close button pinned above, the fields scrolling, Cancel / submit pinned
-/// below the fields, above the keyboard) and an `AlertDialog` from 768, in the
+/// below the fields, above the keyboard) and a dialog card from 768, in the
 /// same route: crossing the breakpoint keeps the typed text, the focus and the
-/// caret. Opened with a plain `showDialog` it is the dialog.
+/// caret. [showRaftDialog] presents the card at every width. Frozen looks keep
+/// their existing Material dialog renderer.
 class RaftFormDialog extends StatefulWidget {
   const RaftFormDialog({
     super.key,
@@ -366,6 +368,20 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
                 overflowSpacing: RaftSpace.x2,
                 children: _actions(),
               ),
+            )
+          : RaftTokens.of(context).recipeSet != RaftRecipeSet.legacy
+          ? RaftDialog.card(
+              title: widget.title,
+              onClose: () => Navigator.pop(context, false),
+              closeEnabled: !busy,
+              pinFooterAtLargeText: true,
+              footer: Wrap(
+                alignment: WrapAlignment.end,
+                spacing: RaftDialogSlots.of(context).footer.columnGap ?? 0,
+                runSpacing: RaftDialogSlots.of(context).footer.columnGap ?? 0,
+                children: _actions(),
+              ),
+              child: _form(),
             )
           : AlertDialog(
               title: Row(

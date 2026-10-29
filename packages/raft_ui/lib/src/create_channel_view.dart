@@ -1,3 +1,4 @@
+import 'overlays/dialog.dart' show RaftDialog;
 // Presentation of the Web CreateChannelDialog
 // (packages/web/src/components/channel/CreateChannelDialog.tsx): DialogCard
 // with Name, Description (optional), Visibility segmented control, Members
@@ -6,12 +7,6 @@
 import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
 import 'card.dart' show RaftCard;
-import 'raft/checkbox.dart' show RaftCheckboxIndicator;
-import 'raft/css_box.dart';
-import 'raft/ui_tokens.dart';
-import 'space.dart';
-import 'control_typography.dart';
-import 'tokens/tokens.dart' show RaftTypeScale;
 import 'design_primitives.dart' show RaftInteractive;
 import 'hover_region.dart';
 
@@ -24,10 +19,13 @@ import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'raft/button.dart';
+import 'raft/checkbox.dart' show RaftCheckboxIndicator;
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
+import 'recipes/web_member_picker.g.dart';
 import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'separator.dart';
+import 'settings_layout.dart' show RaftSpace;
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'theme.dart';
 
@@ -89,7 +87,7 @@ class RaftCreateChannelDialogView extends StatelessWidget {
     // space-y-4 between the form's direct children.
     const gap = SizedBox(height: 16);
     return RaftModalBackdrop(
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         title: 'Create Channel',
         onClose: onClose,
         child: Column(
@@ -167,28 +165,32 @@ class RaftCreateChannelDialogView extends StatelessWidget {
             ],
           ],
         ),
+        // Current Web: `flex flex-wrap justify-end gap-2 pt-1`, with two
+        // recipe-sized lg buttons. Frozen looks keep their original row.
         footer: !legacy
-            ? OverflowBar(
-                alignment: MainAxisAlignment.end,
-                overflowAlignment: OverflowBarAlignment.end,
-                spacing: 8,
-                overflowSpacing: 8,
-                children: [
-                  RaftButton(
-                    label: 'Cancel',
-                    uiVariant: RaftButtonVariant.ghost,
-                    uiSize: RaftButtonSize.lg,
-                    onPressed: submitting
-                        ? null
-                        : raftExplicitClose(context, onClose),
-                  ),
-                  RaftButton(
-                    label: submitting ? 'Creating…' : 'Create Channel',
-                    uiVariant: RaftButtonVariant.accent,
-                    uiSize: RaftButtonSize.lg,
-                    onPressed: submitting ? null : onSubmit,
-                  ),
-                ],
+            ? Padding(
+                padding: const EdgeInsets.only(top: RaftSpace.x1),
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: RaftSpace.x2,
+                  runSpacing: RaftSpace.x2,
+                  children: [
+                    RaftButton(
+                      label: 'Cancel',
+                      uiVariant: RaftButtonVariant.ghost,
+                      uiSize: RaftButtonSize.lg,
+                      onPressed: submitting
+                          ? null
+                          : raftExplicitClose(context, onClose),
+                    ),
+                    RaftButton(
+                      label: submitting ? 'Creating…' : 'Create Channel',
+                      uiVariant: RaftButtonVariant.accent,
+                      uiSize: RaftButtonSize.lg,
+                      onPressed: submitting ? null : onSubmit,
+                    ),
+                  ],
+                ),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -297,32 +299,22 @@ class _MemberPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final raft = t.isRaftLook;
+    if (t.recipeSet != RaftRecipeSet.legacy) {
+      return _RecipeMemberPicker(
+        agents: agents,
+        humans: humans,
+        selected: selected,
+        onToggle: onToggle,
+        query: query,
+      );
+    }
     final eyebrowFill = t.colors['fill-muted'];
-    // Raft look (`PICKER_GROUP_LABEL_CLASS` px-2.5 pt-2 pb-1): a plain group label; the frozen looks band it.
-    Widget eyebrow(String text) => raft
-        ? RaftDialogSectionEyebrow(
-            text,
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-          )
-        : RaftDialogSectionEyebrow(
-            text,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            background: eyebrowFill,
-          );
-    Widget row(RaftPickerItem c) => raft
-        ? _RaftMemberRow(
-            candidate: c,
-            selected: selected(c.key),
-            onTap: onToggle == null ? null : () => onToggle!(c.key),
-          )
-        : _MemberRow(
-            candidate: c,
-            selected: selected(c.key),
-            onTap: onToggle == null ? null : () => onToggle!(c.key),
-          );
+    Widget eyebrow(String text) => RaftDialogSectionEyebrow(
+      text,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      background: eyebrowFill,
+    );
     return RaftCard(
-      padding: raft ? const EdgeInsets.all(RaftSpace.x1_5) : null,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 192 - 4),
         child: SingleChildScrollView(
@@ -332,11 +324,21 @@ class _MemberPicker extends StatelessWidget {
             children: [
               if (agents.isNotEmpty) ...[
                 eyebrow('Agents'),
-                for (final c in agents) row(c),
+                for (final c in agents)
+                  _MemberRow(
+                    candidate: c,
+                    selected: selected(c.key),
+                    onTap: onToggle == null ? null : () => onToggle!(c.key),
+                  ),
               ],
               if (humans.isNotEmpty) ...[
                 eyebrow('Humans'),
-                for (final c in humans) row(c),
+                for (final c in humans)
+                  _MemberRow(
+                    candidate: c,
+                    selected: selected(c.key),
+                    onTap: onToggle == null ? null : () => onToggle!(c.key),
+                  ),
               ],
               if (agents.isEmpty && humans.isEmpty)
                 Padding(
@@ -348,17 +350,12 @@ class _MemberPicker extends StatelessWidget {
                     raftFormat(context, 'No matches for "{query}"', {
                       'query': query.trim(),
                     }),
-                    textAlign: raft ? TextAlign.start : TextAlign.center,
-                    style: raft
-                        ? t.scale(
-                            RaftTypeScale.callout,
-                            color: t.ui.foregroundHint,
-                          )
-                        : raftCssTextStyle(
-                            family: t.monoFont,
-                            step: RaftTextSteps.sm,
-                            color: t.colors['foreground-muted'],
-                          ),
+                    textAlign: TextAlign.center,
+                    style: raftCssTextStyle(
+                      family: t.monoFont,
+                      step: RaftTextSteps.sm,
+                      color: t.colors['foreground-muted'],
+                    ),
                   ),
                 ),
             ],
@@ -369,11 +366,92 @@ class _MemberPicker extends StatelessWidget {
   }
 }
 
-/// `PICKER_ROW_CLASS`: a multi-select option row (`flex min-h-9 w-full items-center gap-2.5 rounded-control px-2.5
-/// text-callout font-medium`, `hover:bg-brand-soft`, a focus-ring inset `2px` ink) that carries its choice in a
-/// `CheckboxIndicator` before the avatar and the name.
-class _RaftMemberRow extends StatelessWidget {
-  const _RaftMemberRow({
+/// Current Web member-picker composition, extracted from its product source.
+/// The frozen picker above retains the old theme recipes and selection mark.
+class _RecipeMemberPicker extends StatelessWidget {
+  const _RecipeMemberPicker({
+    required this.agents,
+    required this.humans,
+    required this.selected,
+    required this.onToggle,
+    required this.query,
+  });
+
+  final List<RaftPickerItem> agents, humans;
+  final bool Function(String key) selected;
+  final ValueChanged<String>? onToggle;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final recipe = RaftWebMemberPickerRecipe.resolve(
+      states: t.recipeStates(),
+      tokens: tokens,
+    );
+    Widget group(String label) => RaftRecipeBox(
+      style: recipe.group,
+      tokens: tokens,
+      applyText: false,
+      child: Text(
+        raftText(context, label),
+        style: recipe.group.text(
+          tokens,
+          base: TextStyle(fontFamily: t.headingFont),
+        ),
+      ),
+    );
+    Widget row(RaftPickerItem candidate) => _RecipeMemberRow(
+      candidate: candidate,
+      selected: selected(candidate.key),
+      onTap: onToggle == null ? null : () => onToggle!(candidate.key),
+    );
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: recipe.root.maxHeight ?? double.infinity,
+      ),
+      child: RaftCard(
+        padding: recipe.root.padding,
+        clip: true,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (agents.isNotEmpty) ...[
+                group('Agents'),
+                for (final candidate in agents) row(candidate),
+              ],
+              if (humans.isNotEmpty) ...[
+                group('Humans'),
+                for (final candidate in humans) row(candidate),
+              ],
+              if (agents.isEmpty && humans.isEmpty)
+                RaftRecipeBox(
+                  style: recipe.empty,
+                  tokens: tokens,
+                  applyText: false,
+                  child: Text(
+                    raftFormat(context, 'No matches for "{query}"', {
+                      'query': query.trim(),
+                    }),
+                    style: recipe.empty.text(
+                      tokens,
+                      base: TextStyle(fontFamily: t.headingFont),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecipeMemberRow extends StatelessWidget {
+  const _RecipeMemberRow({
     required this.candidate,
     required this.selected,
     required this.onTap,
@@ -385,43 +463,44 @@ class _RaftMemberRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final ui = t.ui;
+    final tokens = t.recipeTokens;
     return RaftInteractive(
       onPressed: onTap,
       selected: selected,
-      builder: (context, st) => RaftCssBox(
-        radius: t.size('radius.control', fallback: 8),
-        fill: st.hovered || st.focusVisible ? ui['brand-soft'] : null,
-        rings: [
-          if (st.focusVisible)
-            for (final layer in ui.focusRing.layers)
-              RaftRing(layer.spread, layer.color),
-        ],
-        minHeight: RaftSpace.x6 + RaftSpace.x3,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Row(
-          spacing: 10,
-          children: [
-            RaftCheckboxIndicator(checked: selected),
-            candidate.avatar,
-            Expanded(
-              child: Text(
-                candidate.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: RaftControlTypography.of(
-                  context,
-                  t.scale(
-                    RaftTypeScale.callout,
-                    weight: FontWeight.w500,
-                    color: ui.foreground,
-                  ),
+      builder: (context, state) {
+        final recipe = RaftWebMemberPickerRecipe.resolve(
+          states: t.recipeStates(
+            hovered: state.hovered,
+            focusVisible: state.focusVisible,
+          ),
+          tokens: tokens,
+        );
+        final text = recipe.row.text(
+          tokens,
+          base: TextStyle(fontFamily: t.headingFont),
+        );
+        return RaftRecipeBox(
+          style: recipe.row,
+          tokens: tokens,
+          applyText: false,
+          child: Row(
+            children: [
+              RaftCheckboxIndicator(checked: selected),
+              SizedBox(width: recipe.row.columnGap ?? 0),
+              candidate.avatar,
+              SizedBox(width: recipe.row.columnGap ?? 0),
+              Expanded(
+                child: Text(
+                  candidate.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: recipe.label.text(tokens, base: text),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

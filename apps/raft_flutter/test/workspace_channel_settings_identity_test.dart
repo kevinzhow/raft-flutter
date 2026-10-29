@@ -185,7 +185,9 @@ void main() {
           find.byKey(const ValueKey('channel-overflow-unsaved-prompt')),
           findsOneWidget,
         );
-        await t.tap(find.text('Discard Changes'));
+        await t.tap(
+          find.byKey(const ValueKey('channel-overflow-unsaved-discard')),
+        );
         await t.pumpAndSettle();
         expect(find.byType(ChannelSettings), findsNothing);
         expect(find.byType(WorkspaceView), findsOneWidget);
@@ -256,7 +258,7 @@ void main() {
         };
         await mountSettingsWorkspace(t, w, dark, PrivateRouteGuard());
         await tapSheetAction(t, 'Delete Channel');
-        await submitConfirmation(t, 'Delete Channel');
+        await submitConfirmation(t, 'Delete');
         expect(w.channel?.id, 'c1');
         expect(find.byType(RaftConfirmDialog), findsOneWidget);
         await t.runAsync(() async {

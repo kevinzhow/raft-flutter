@@ -726,7 +726,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
         ),
       ],
     );
-    return RaftAgentDialogCard(
+    return RaftDialog.agent(
       key: const ValueKey('agent-runtime-editor'),
       surfaceKey: const ValueKey('agent-runtime-editor-surface'),
       bare: true,

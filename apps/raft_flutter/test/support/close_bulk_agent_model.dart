@@ -82,7 +82,12 @@ Future<BulkModelCloseHarness> openBulkModelClose(
       isOpen: () => dialog.evaluate().isNotEmpty,
       x: find.descendant(
         of: dialog,
-        matching: find.byType(RaftAgentCloseButton),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is RaftAgentCloseButton ||
+              w is RaftCloseButton ||
+              w is RaftDialogClose,
+        ),
       ),
       scrim: const Offset(6, 6),
       dragHandle: find.byKey(const ValueKey('raft-sheet-handle')),

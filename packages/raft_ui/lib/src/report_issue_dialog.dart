@@ -1,3 +1,5 @@
+import 'overlays/dialog.dart' show RaftDialog;
+
 // Presentation of the Web agent Report Issue dialog
 // (packages/web/src/components/agent/ReportIssueDialog.tsx): a `DialogCard`
 // (`max-w-sm`) with the agent card, the description field, the `Include`
@@ -289,7 +291,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
     final muted12 = _text(t, size: 12, line: 16, color: _muted(t));
-    return RaftDialogCard(
+    return RaftDialog.card(
       key: const ValueKey('report-issue-dialog'),
       title: 'Report Issue',
       footerGap: 0,
@@ -568,7 +570,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
     String tr(String s) => raftText(context, s);
     final muted12 = _text(t, size: 12, line: 16, color: _muted(t));
     final ticket = r.ticketId;
-    return RaftDialogCard(
+    return RaftDialog.card(
       key: const ValueKey('report-issue-submitted'),
       title: 'Report Submitted',
       maxWidth: 384,
