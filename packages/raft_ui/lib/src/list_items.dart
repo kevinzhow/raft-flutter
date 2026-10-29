@@ -2,6 +2,8 @@
 // SurfaceListItem (raft-ui Card + product overrides), AvatarListRow,
 // SectionEyebrow and SectionHeader. Class lists are cited per widget.
 
+import 'dart:math' as math;
+
 import 'card.dart' show RaftCard;
 
 import 'package:flutter/material.dart';
@@ -9,11 +11,17 @@ import 'package:flutter/rendering.dart';
 
 import 'design_primitives.dart';
 import 'form_controls.dart';
+import 'menu_action_row.dart';
+import 'popover_surface.dart';
+import 'raft_underline.dart';
+import 'recipes/web_selection_panel.g.dart';
+import 'recipes/web_selection_row.g.dart';
 import 'icons.dart';
 import 'recipes/button_variants.g.dart';
 
 import 'recipe_surface.dart';
 import 'recipes/card.g.dart';
+import 'recipes/popover.g.dart';
 import 'recipes/recipe_router.dart'
     show raftPopoverSurfaceClasses, resolveRecipeClasses;
 import 'recipes/recipe_runtime.dart';
@@ -21,8 +29,6 @@ import 'panel_layout.dart';
 import 'text_measure.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'localization.dart' show raftText;
-import 'raft/css_box.dart' show raftControlBorderPx;
-import 'raft/ui_tokens.dart';
 import 'raft/list_row.dart';
 import 'page_tokens.dart';
 import 'theme.dart';
@@ -553,83 +559,30 @@ class RaftMenuButtonItem extends StatelessWidget {
   /// Callsite `border-t border-black/10` separator.
   final bool topDivider;
 
-  /// Product `ui/MenuItem` over the Raft tokens (`[@media(max-height:600px)]`
-  /// takes the compact `min-h-8 py-1`).
-  Widget _buildRaft(BuildContext context, RaftTokens t) {
-    final ui = t.ui;
-    final enabled = onPressed != null;
-    final compact = MediaQuery.sizeOf(context).height <= 600;
-    final radius = t.size('radius.control', fallback: 8);
-    return Semantics(
-      role: SemanticsRole.menuItem,
-      child: RaftInteractive(
-        onPressed: onPressed,
-        button: false,
-        builder: (context, st) {
-          final hot = enabled && (st.hovered || st.focusVisible);
-          final color = enabled ? ui.foreground : ui.foregroundDisabled;
-          return CustomPaint(
-            foregroundPainter: topDivider
-                ? _RoundedTopRule(
-                    color: ui.lineHairline,
-                    width: raftControlBorderPx(context, 1),
-                    radius: radius,
-                  )
-                : null,
-            child: Container(
-              width: double.infinity,
-              constraints: BoxConstraints(minHeight: compact ? 32 : 36),
-              // `min-h-9` is the border box: a `border-t` takes a pixel of it.
-              padding: EdgeInsets.fromLTRB(
-                10,
-                (compact ? 4 : 6) + (topDivider ? 1 : 0),
-                10,
-                compact ? 4 : 6,
-              ),
-              alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(
-                color: hot ? ui['brand-soft'] : null,
-                borderRadius: BorderRadius.circular(radius),
-              ),
-              child: IconTheme.merge(
-                data: IconThemeData(
-                  color: enabled ? ui.foregroundMuted : ui.foregroundDisabled,
-                ),
-                child: Row(
-                  children: [
-                    if (icon != null) ...[icon!, const SizedBox(width: 10)],
-                    Expanded(
-                      child: Text(
-                        raftText(context, label),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
-                        style: t.scale(
-                          RaftTypeScale.callout,
-                          weight: FontWeight.w500,
-                          color: color,
-                        ),
-                      ),
-                    ),
-                    if (trailing != null) ...[
-                      const SizedBox(width: 10),
-                      trailing!,
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
+  /// The action row is shared with dropdown menus; this adapter retains its
+  /// own activation, focus, semantics and accessible touch-target ownership.
+  Widget _buildRaft(BuildContext context) => Semantics(
+    role: SemanticsRole.menuItem,
+    child: RaftInteractive(
+      onPressed: onPressed,
+      button: false,
+      builder: (context, st) => RaftMenuActionRow(
+        label: raftText(context, label),
+        leading: icon,
+        trailing: trailing,
+        enabled: st.enabled,
+        hovered: st.hovered,
+        focusVisible: st.focusVisible,
+        topDivider: topDivider,
       ),
-    );
-  }
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     if (t.option('menuItem.style', or: 'recipe') == 'raft') {
-      return _buildRaft(context, t);
+      return _buildRaft(context);
     }
     final rt = t.recipeTokens;
     final enabled = onPressed != null;
@@ -798,41 +751,76 @@ class RaftSelectionPopover extends StatelessWidget {
   /// v1.21.23 `SelectionPopoverSections` inside the caller's surface
   /// (`rounded-container border border-line-seam bg-layer-popover shadow-float`).
   Widget _buildRaft(BuildContext context, RaftTokens t) {
-    final ui = t.ui;
-    final hint = t.scale(
-      RaftTypeScale.caption,
-      weight: FontWeight.w700,
-      color: ui.foregroundHint,
+    final rt = t.recipeTokens;
+    final slots = RaftWebSelectionPanelRecipe.resolve(
+      states: t.recipeStates(),
+      tokens: rt,
     );
-    final radius = t.size('radius.container', fallback: 10);
-    final inner = radius - raftControlBorderPx(context, 1);
+    final surface = surfaceStyle ?? slots.root;
+    // SelectionPopoverSections brings no minimum of its own. The positioned
+    // source inherits PopoverContent's generated minimum unless its caller
+    // supplies another surface (for example SidebarSortMenu's smaller one).
+    final minimumWidth =
+        surface.minWidth ??
+        RaftPopoverRecipe.resolve(
+          theme: t.recipeTheme,
+          states: t.recipeStates(),
+          tokens: rt,
+        ).content.minWidth ??
+        0;
     final body = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (showHeader)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          RaftRecipeBox(
+            style: slots.header,
+            tokens: rt,
+            applyText: false,
             child: Row(
+              spacing: slots.header.columnGap ?? 0,
               children: [
-                Expanded(child: Text(title, style: hint)),
+                Expanded(
+                  child: RaftRecipeBox(
+                    style: slots.title,
+                    tokens: rt,
+                    child: Text(title),
+                  ),
+                ),
                 if (onClear != null)
                   RaftInteractive(
                     onPressed: onClear,
-                    builder: (context, state) => Text(
-                      clearLabel,
-                      style: t
-                          .scale(
-                            RaftTypeScale.caption,
-                            weight: FontWeight.w600,
-                            color: ui.foreground,
-                          )
-                          .copyWith(
-                            decoration: TextDecoration.underline,
-                            decorationThickness: 1.5,
-                            decorationColor: ui.foreground,
-                          ),
-                    ),
+                    builder: (context, state) {
+                      final clear = RaftWebSelectionPanelRecipe.resolve(
+                        states: t.recipeStates(
+                          hovered: state.hovered,
+                          pressed: state.pressed,
+                          focusVisible: state.focusVisible,
+                        ),
+                        tokens: rt,
+                      ).clear;
+                      return RaftRecipeBox(
+                        style: clear,
+                        tokens: rt,
+                        child: RaftUnderlinedText(
+                          clearLabel,
+                          underline: switch (clear['text-decoration-line']) {
+                            CssKeyword(value: 'underline') => true,
+                            _ => false,
+                          },
+                          underlineThickness:
+                              switch (clear['text-decoration-thickness']) {
+                                CssNum(:final value) => value,
+                                _ => null,
+                              },
+                          underlineOffset:
+                              switch (clear['text-underline-offset']) {
+                                CssNum(:final value) => value,
+                                _ => null,
+                              },
+                        ),
+                      );
+                    },
                   ),
               ],
             ),
@@ -844,56 +832,35 @@ class RaftSelectionPopover extends StatelessWidget {
             placeholder: searchPlaceholder,
             onChanged: onSearchChanged,
           ),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 256),
-          child: options.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      emptyLabel,
-                      style: t.scale(
-                        RaftTypeScale.callout,
-                        color: ui.foregroundHint,
-                      ),
-                    ),
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(6),
-                  child: Column(
+        RaftRecipeBox(
+          style: slots.list,
+          tokens: rt,
+          applyText: false,
+          child: SingleChildScrollView(
+            primary: false,
+            child: options.isEmpty
+                ? RaftRecipeBox(
+                    style: slots.empty,
+                    tokens: rt,
+                    child: Text(emptyLabel),
+                  )
+                : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       for (final option in options)
                         _RaftSelectionRow(key: option.rowKey, option: option),
                     ],
                   ),
-                ),
+          ),
         ),
       ],
     );
     return _SelectionFocusScope(
-      child: Container(
-        width: width,
-        decoration: BoxDecoration(
-          color: t.popover,
-          borderRadius: BorderRadius.circular(radius),
-          border: Border.all(
-            color: ui.lineSeam,
-            width: raftControlBorderPx(context, 1),
-          ),
-          boxShadow: [
-            for (final layer in t.shadowLayers('shadow.float'))
-              if (!layer.inset) layer.toBoxShadow(),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(inner),
-          child: body,
+      child: SizedBox(
+        width: width == null ? null : math.max(width!, minimumWidth),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: minimumWidth),
+          child: RaftPopoverSurface(surfaceStyle: surface, child: body),
         ),
       ),
     );
@@ -1388,36 +1355,45 @@ class _RaftSearchRowState extends State<_RaftSearchRow> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final ui = t.ui;
-    final style = t.scale(RaftTypeScale.callout, color: ui.foreground);
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      foregroundDecoration: focused
-          ? BoxDecoration(border: Border.all(color: ui.foreground, width: 2))
-          : null,
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: ui.lineHairline,
-            width: raftControlBorderPx(context, 1),
-          ),
-        ),
+    final rt = t.recipeTokens;
+    final slots = RaftWebSelectionPanelRecipe.resolve(
+      states: t.recipeStates(
+        extra: [if (focused) RaftRecipeStates.focusWithin],
       ),
+      tokens: rt,
+    );
+    final input = slots.input.text(
+      rt,
+      base: DefaultTextStyle.of(context).style,
+    );
+    final hint = slots.search.foreground(rt);
+    return RaftRecipeBox(
+      style: slots.search,
+      tokens: rt,
+      applyText: false,
+      growWithText: true,
       child: Row(
+        spacing: slots.search.columnGap ?? 0,
         children: [
-          RaftIcon(RaftGlyph.search, size: 16, color: ui.foregroundHint),
-          const SizedBox(width: 8),
+          RaftRecipeBox(
+            style: slots.searchIcon,
+            tokens: rt,
+            child: RaftIcon(
+              RaftGlyph.search,
+              size: slots.searchIcon.width!,
+              color: hint,
+            ),
+          ),
           Expanded(
             child: RaftBareInput(
               controller: widget.controller,
               focusNode: node,
               autofocus: true,
               onChanged: widget.onChanged,
-              style: style,
-              cursorColor: ui.foreground,
+              style: input,
+              cursorColor: input.color,
               hintText: widget.placeholder,
-              hintStyle: style.copyWith(color: ui.foregroundHint),
+              hintStyle: input.copyWith(color: hint),
             ),
           ),
         ],
@@ -1435,86 +1411,42 @@ class _RaftSelectionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final ui = t.ui;
+    final rt = t.recipeTokens;
     final o = option;
     return RaftInteractive(
       onPressed: o.disabled ? null : o.onTap,
       checked: o.checked,
       builder: (context, state) {
-        final hovered = !o.disabled && (state.hovered || state.focusVisible);
-        final color = o.disabled ? ui.foregroundDisabled : ui.foreground;
-        final label = Text(
-          o.label,
-          maxLines: 1,
-          softWrap: false,
-          overflow: o.italic ? TextOverflow.visible : TextOverflow.ellipsis,
-          style: t.scale(
-            RaftTypeScale.callout,
-            weight: o.checked ? FontWeight.w700 : FontWeight.w500,
-            color: o.italic && !o.disabled ? ui.foregroundMuted : color,
+        final slots = RaftWebSelectionRowRecipe.resolve(
+          checked: o.checked,
+          disabled: o.disabled,
+          italic: o.italic,
+          states: t.recipeStates(
+            hovered: !o.disabled && state.hovered,
+            focusVisible: !o.disabled && state.focusVisible,
+            disabled: o.disabled,
           ),
+          tokens: rt,
         );
-        return Container(
-          height: 36,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: hovered ? ui['brand-soft'] : null,
-            borderRadius: BorderRadius.circular(
-              t.size('radius.control', fallback: 8),
-            ),
+        return RaftMenuSlotRow(
+          label: o.label,
+          labelChild: Text(
+            o.label,
+            overflow: o.italic ? TextOverflow.visible : TextOverflow.ellipsis,
           ),
-          child: Row(
-            children: [
-              if (o.reserveLeadingSlot || o.leading != null) ...[
-                SizedBox.square(dimension: 20, child: Center(child: o.leading)),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: Align(alignment: Alignment.centerLeft, child: label),
-              ),
-              if (o.checked) ...[
-                const SizedBox(width: 8),
-                RaftIcon(RaftGlyph.check, size: 16, color: ui.foreground),
-              ],
-            ],
-          ),
+          root: slots.root,
+          tokens: rt,
+          itemLeading: slots.leading,
+          itemText: slots.label,
+          itemIndicator: slots.indicator,
+          leading: o.reserveLeadingSlot || o.leading != null
+              ? o.leading ?? const SizedBox.shrink()
+              : null,
+          indicator: o.checked
+              ? RaftIcon(RaftGlyph.check, size: slots.indicator.width!)
+              : null,
         );
       },
     );
   }
-}
-
-/// `border-t` of a rounded box: only the top edge, following the corner arcs.
-class _RoundedTopRule extends CustomPainter {
-  const _RoundedTopRule({
-    required this.color,
-    required this.width,
-    required this.radius,
-  });
-  final Color color;
-  final double width, radius;
-  @override
-  void paint(Canvas canvas, Size size) {
-    final r = radius.clamp(0.0, size.height / 2);
-    final y = width / 2;
-    final path = Path()
-      ..moveTo(0, r)
-      ..arcToPoint(Offset(r, 0), radius: Radius.circular(r))
-      ..lineTo(size.width - r, 0)
-      ..arcToPoint(Offset(size.width, r), radius: Radius.circular(r));
-    canvas.save();
-    canvas.translate(0, y);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width,
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_RoundedTopRule old) =>
-      old.color != color || old.width != width || old.radius != radius;
 }

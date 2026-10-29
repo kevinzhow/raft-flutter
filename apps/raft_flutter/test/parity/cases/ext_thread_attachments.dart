@@ -15,6 +15,8 @@
 // them for the React page.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -24,9 +26,16 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/attachment_comments_view.dart';
 import 'package:raft_flutter/features/attachment_html_preview.dart';
 import 'package:raft_flutter/features/media_image_page.dart';
+import 'package:raft_flutter/features/media_browser.dart';
+import 'package:raft_flutter/features/media_items.dart';
+import 'package:raft_flutter/platform/attachment_files.dart';
+import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_flutter/features/attachment_preview_dialog.dart';
 import 'package:raft_flutter/platform/attachment_html.dart';
-import 'package:raft_ui/raft_ui.dart' show RaftGlyph, RaftLightboxIconAction;
+import 'package:raft_ui/raft_ui.dart'
+    show RaftGlyph, RaftLightboxIconAction, RaftSpinner;
+
+import 'package:raft_ui/src/raft/pixel_spinner.dart' show RaftPixelSpinner;
 
 import '../parity_harness.dart';
 import 'thread_composer/fake_workspace.dart';
@@ -117,9 +126,13 @@ Map<String, dynamic> _routes(ParityContext ctx) {
   return routes;
 }
 
-WorkspaceController _workspace(ParityContext ctx) {
+WorkspaceController _workspace(
+  ParityContext ctx, {
+  _AttachmentClient? override,
+}) {
   final base = ParityThreadFixture(ctx.fixtureData);
-  final client = _AttachmentClient(user: base.authUser, routes: _routes(ctx));
+  final client =
+      override ?? _AttachmentClient(user: base.authUser, routes: _routes(ctx));
   final w = WorkspaceController(client)
     ..server = RaftRecord(base.serverRecord)
     ..channels = [
@@ -133,6 +146,133 @@ WorkspaceController _workspace(ParityContext ctx) {
     ];
   w.channel = w.channels.first;
   return w;
+}
+
+// Only the new source-state case owns these pending queries. Other cases
+// keep their existing routes. The production loader's GET/coalesced POST
+// shape is retained; this fixture never returns an original image URL.
+class _PendingAddressClient extends _AttachmentClient {
+  _PendingAddressClient({
+    required super.user,
+    required super.routes,
+    required this.id,
+  });
+  final String id;
+  final pending = <Completer<dynamic>>{};
+  bool closed = false;
+  Future<void>? _disposal;
+  int started = 0, cancelled = 0;
+
+  Future<dynamic> _wait(String request) {
+    if (closed) {
+      return Future.error(RaftApiException('fixture closed', status: 499));
+    }
+    requests.add(request);
+    started++;
+    final query = Completer<dynamic>();
+    pending.add(query);
+    return query.future;
+  }
+
+  @override
+  Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
+      path == '/attachments/$id/url'
+      ? _wait('GET $path')
+      : super.get(path, query: query);
+
+  @override
+  Future<dynamic> post(String path, {dynamic data}) {
+    if (path == '/attachments/urls') {
+      final ids = (data as Map)['attachmentIds'] as List;
+      if (ids.length != 1 || ids.single != id) {
+        throw StateError('Unexpected fixture IDs');
+      }
+      return _wait('POST $path');
+    }
+    return super.post(path, data: data);
+  }
+
+  @override
+  Future<void> dispose() {
+    if (_disposal != null) return _disposal!;
+    closed = true;
+    for (final query in pending) {
+      if (!query.isCompleted) {
+        cancelled++;
+        query.completeError(RaftApiException('fixture closed', status: 499));
+      }
+    }
+    pending.clear();
+    return _disposal = super.dispose();
+  }
+}
+
+class _NoImageBytes extends AttachmentFiles {
+  _NoImageBytes() : super(gallerySupported: false);
+  int calls = 0;
+  @override
+  Future<Uint8List> image(
+    String url, {
+    required CancelToken cancel,
+    void Function(int, int)? onProgress,
+  }) {
+    calls++;
+    throw StateError(
+      'Address is still pending: no image byte request is allowed',
+    );
+  }
+}
+
+class _SpinnerQualificationCanvas extends Fake implements ui.Canvas {
+  final pixels = <ui.Rect>[];
+  @override
+  void drawRRect(ui.RRect rect, ui.Paint paint) => pixels.add(rect.outerRect);
+}
+
+final _pendingAddress = Expando<_PendingAddressClient>();
+final _pendingFiles = Expando<_NoImageBytes>();
+Widget _pendingAddressSurface(ParityContext ctx) {
+  final input = _map(_fx(ctx)['pendingSpinner']);
+  final image = _map(input['image']);
+  final base = ParityThreadFixture(ctx.fixtureData);
+  final client = _PendingAddressClient(
+    user: base.authUser,
+    routes: _routes(ctx),
+    id: image['id'] as String,
+  );
+  final w = _workspace(ctx, override: client);
+  final files = _NoImageBytes();
+  final sharing = NativeSharing(supported: false);
+  _pendingAddress[ctx] = client;
+  _pendingFiles[ctx] = files;
+  ctx.onDispose(() {
+    // The harness unmounts/pumps first, so the real page releases its image
+    // lease before we end its noncancellable address-query fixture.
+    w.dispose();
+    client.dispose();
+    unawaited(sharing.dispose());
+    _pendingAddress[ctx] = null;
+    _pendingFiles[ctx] = null;
+    expect(client.pending, isEmpty);
+    expect(client.cancelled, client.started);
+    expect(files.calls, 0);
+    debugPrint(
+      'pending-address-cleanup: ${jsonEncode({'started': client.started, 'cancelled': client.cancelled, 'pending': client.pending.length, 'imageRequests': files.calls})}',
+    );
+  });
+  return _viewport(
+    ctx,
+    MediaBrowser(
+      controller: w,
+      files: files,
+      sharing: sharing,
+      items: [MediaItem.image(image)],
+      initialIndex: 0,
+      messageId: null,
+      authorized: () => true,
+      onClose: () {},
+    ),
+  );
 }
 
 Map<String, dynamic> _doc(ParityContext ctx) =>
@@ -189,6 +329,7 @@ class _NeverHtmlLoader extends AttachmentHtmlLoader {
 }
 
 Widget _surface(ParityContext ctx) {
+  if (ctx.props['pendingSpinner'] == '1') return _pendingAddressSurface(ctx);
   final host = ctx.props['host'] as String;
   final fx = _fx(ctx);
   final headerOnly = (ctx.caseJson['capture'] as Map)['crop'] == 'element';
@@ -297,6 +438,51 @@ final ParityCase _case = ParityCase(
   interact: (t, ctx) async {
     final fx = _fx(ctx);
     if (ctx.props['host'] != 'image') return;
+    if (ctx.props['pendingSpinner'] == '1') {
+      // Real page -> image lease -> production loader -> pending address
+      // query. No source flag or image provider is injected to fake loading.
+      await t.pump(const Duration(milliseconds: 50));
+      final client = _pendingAddress[ctx]!;
+      expect(client.started, 1);
+      expect(client.pending.length, 1);
+      expect(_pendingFiles[ctx]!.calls, 0);
+      final state = t.state<AttachmentLightboxImageState>(
+        find.byType(AttachmentLightboxImage),
+      );
+      expect(state.lease?.lease.active, isTrue);
+      expect(state.full, isNull);
+      expect(state.widget.placeholder, isNull);
+      expect(state.failure, isNull);
+      final spinner = find.byType(RaftSpinner);
+      expect(spinner, findsOneWidget);
+      final grid = find.byType(RaftPixelSpinner);
+      expect(grid, findsOneWidget);
+      final actualSize = t.getSize(spinner);
+      expect(actualSize, const Size.square(19));
+      final paint = find.descendant(
+        of: grid,
+        matching: find.byType(CustomPaint),
+      );
+      expect(paint, findsOneWidget);
+      final canvas = _SpinnerQualificationCanvas();
+      t.widget<CustomPaint>(paint).painter!.paint(canvas, t.getSize(paint));
+      expect(canvas.pixels, hasLength(4));
+      expect(state.lease!.lease.waitingForAddress, isTrue);
+      ctx.captureEvidence['pendingAddress'] = {
+        'stage': 'waiting-for-download-address-no-preview',
+        'actualSpinnerCount': spinner.evaluate().length,
+        'pixelPainterRRectCount': canvas.pixels.length,
+        'gridWidth': actualSize.width,
+        'gridHeight': actualSize.height,
+        'addressQueries': client.started,
+        'pending': client.pending.length,
+        'imageRequests': _pendingFiles[ctx]!.calls,
+        'leaseWaitingForAddress': state.lease!.lease.waitingForAddress,
+        'disableAnimations': MediaQuery.disableAnimationsOf(t.element(grid)),
+      };
+      debugPrint('pending-address-state: ${jsonEncode(ctx.captureEvidence)}');
+      return;
+    }
     final routeSet = ctx.props['routeSet'] as String?;
     if (routeSet != null && routeSet.isNotEmpty) return;
     final context = t.element(find.byType(AttachmentLightboxImage).first);
@@ -314,6 +500,7 @@ const _desktop = [
   'image.gallery-first',
   'image.header',
   'image.loading',
+  'image.pending-address-no-preview',
   'image.error',
   'doc.text',
   'doc.csv',

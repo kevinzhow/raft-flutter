@@ -830,7 +830,10 @@ void registerCloseDialogTests(TestPart part) {
       unawaited(state.showWorkspaceSwitcher() as Future<void>);
       await frames(t, 25);
       return SurfaceProbe(
-        isOpen: () => find.byType(SimpleDialog).evaluate().isNotEmpty,
+        isOpen: () => find
+            .byKey(ValueKey('switch-server-choice-${w.server!.id}'))
+            .evaluate()
+            .isNotEmpty,
         scrim: _corner,
       );
     },

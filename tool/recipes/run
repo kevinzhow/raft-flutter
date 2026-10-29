@@ -66,6 +66,8 @@ node "$here/extract.mjs" --source "$RAFT_UI_SOURCE"
 node "$here/resolve.mjs" --source "$RAFT_UI_SOURCE" "${resolve_args[@]}"
 node "$here/gen_dart.mjs"
 node "$here/gen_router.mjs"
+# Steps is published CSS, independent of the tv utility/index registry.
+node "$here/steps-css.mjs" --source "$RAFT_UI_SOURCE" "${resolve_args[@]}" --write
 
 if [[ $run_tests == 1 ]]; then
   node --test "$here"/test/*.test.mjs

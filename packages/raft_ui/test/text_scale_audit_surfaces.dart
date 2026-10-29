@@ -56,6 +56,9 @@ import 'package:raft_ui/notification_settings_previews.dart';
 import 'package:raft_ui/popover_surface_previews.dart';
 import 'package:raft_ui/popup_collision_previews.dart';
 import 'package:raft_ui/workspace_top_bar_previews.dart';
+import 'package:raft_ui/choice_dialog_previews.dart';
+import 'package:raft_ui/dropdown_menu_role_previews.dart';
+import 'package:raft_ui/menu_popup_backend_previews.dart';
 import 'package:raft_ui/previews.dart';
 import 'package:raft_ui/pull_to_refresh_previews.dart';
 import 'package:raft_ui/quick_reaction_picker_previews.dart';
@@ -98,6 +101,34 @@ class AuditSurface {
 }
 
 final auditSurfaces = <AuditSurface>[
+  AuditSurface(
+    'choiceDialogPreview',
+    'Native chooser · typed selection',
+    choiceDialogPreview,
+    Size(390, 600),
+    representative: true,
+  ),
+  AuditSurface(
+    'largeChoiceDialogPreview',
+    'Native chooser · large text',
+    largeChoiceDialogPreview,
+    Size(390, 700),
+    representative: true,
+  ),
+  AuditSurface(
+    'menuPopupBackendPreview',
+    'Menu · action and typed choice',
+    menuPopupBackendPreview,
+    Size(480, 520),
+    representative: true,
+  ),
+  AuditSurface(
+    'dropdownMenuRolePreview',
+    'Published dropdown menu role',
+    dropdownMenuRolePreview,
+    Size(390, 600),
+    representative: true,
+  ),
   AuditSurface(
     'dialogSurfacePreview',
     'Dialog surface and backdrop',

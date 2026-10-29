@@ -392,8 +392,37 @@ class FamilyRegistryTest(unittest.TestCase):
         cls.families = ds_audit.load_families()
         cls.sources = {p: p.read_text() for p in (ROOT / 'packages/raft_ui/lib').rglob('*.dart')}
 
-    def declared(self, name, text):
+    @classmethod
+    def model_declarations(cls, texts):
+        """Use the pinned Dart AST for model kinds, never a typedef regex."""
+        import hashlib
+        import subprocess
+        cache = getattr(cls, '_model_declarations', {})
+        keyed = {hashlib.sha256(text.encode()).hexdigest(): text for text in texts}
+        missing = {key: text for key, text in keyed.items() if key not in cache}
+        if missing:
+            command = [str(ds_audit.dart_executable()),
+                       f'--packages={ROOT / ".dart_tool/package_config.json"}',
+                       str(ROOT / 'tool/tests/dart_model_declarations.dart')]
+            completed = subprocess.run(command, input=json.dumps(missing), text=True,
+                                       capture_output=True, cwd=ROOT, timeout=60)
+            if completed.returncode:
+                raise AssertionError(f'model declaration parser failed: {completed.stderr.strip()}')
+            parsed = json.loads(completed.stdout)
+            if set(parsed) != set(missing) or not all(isinstance(rows, list) for rows in parsed.values()):
+                raise AssertionError('model declaration parser returned incomplete inputs')
+            cache.update(parsed)
+            cls._model_declarations = cache
+        return [cache[hashlib.sha256(text.encode()).hexdigest()] for text in texts]
+
+    def declared(self, name, text, model_kind=None):
         import re
+        if model_kind is not None:
+            rows = [row for row in self.model_declarations([text])[0] if row['name'] == name]
+            return len(rows) == 1 and rows[0]['kind'] == model_kind
+        # Component checks keep their syntax matcher; the ownership contract
+        # separately requires an actually resolved Widget/surface factory.
+        name = re.escape(name)
         return re.search(rf'^(?:abstract |final |base |sealed |interface )*(?:class|mixin|enum) {name}\b'
                          rf'|^[A-Za-z<>?, ]+ {name}[<(]', text, re.M) is not None
 
@@ -442,6 +471,28 @@ class FamilyRegistryTest(unittest.TestCase):
         ledger = json.loads((ROOT / 'docs/state-parity.json').read_text())['designSystemCoverage']
         families, recipes = registry['families'], registry['recipes']
         canonical_names, canonical_ids = set(), set()
+        all_canonical_names = {name for entry in families.values() for name in entry['canonical']}
+        ui_namespace = {row['name'] for row in actual.values()
+                        if row['kind'] in {'widget', 'paint_owner'} or
+                        row['kind'] == 'surface_factory' and row.get('owner') is None}
+        model_sources = {}
+        for family, entry in families.items():
+            for name, model in entry.get('nonWidgetModels', {}).items():
+                self.assertNotIn(name, all_canonical_names, f'{family}: data model is not a Widget')
+                self.assertIn(model['kind'], {'value_object', 'callback_typedef'},
+                              f'{family}.{name}: unsupported model kind')
+                self.assertEqual(model['declarationName'], name,
+                                 f'{family}.{name}: model declaration name mismatch')
+                self.assertIsInstance(model['sourceFile'], str)
+                source = pathlib.PurePosixPath(model['sourceFile'])
+                self.assertTrue(not source.is_absolute() and '..' not in source.parts and
+                                source.parts[:3] == ('packages', 'raft_ui', 'lib') and
+                                source.suffix == '.dart', f'{family}.{name}: model outside raft_ui namespace')
+                self.assertEqual(ds_audit.coverage.binding_errors(ROOT, model['sourceBindings']), [],
+                                 f'{family}.{name}: model source binding changed')
+                self.assertIn(model['sourceFile'], [row['file'] for row in model['sourceBindings']])
+                model_sources[(family, name)] = (ROOT / model['sourceFile']).read_text()
+        self.model_declarations(list(set(model_sources.values())))
         for family, entry in families.items():
             names, bindings = entry['canonical'], entry['canonicalBindings']
             self.assertEqual(len(names), len(set(names)), family)
@@ -474,13 +525,11 @@ class FamilyRegistryTest(unittest.TestCase):
                 self.assertEqual(ledger['declarations'][identity]['familyRefs'], [family],
                                  f'{family}.{name}: canonical owner differs')
             for name, model in entry.get('nonWidgetModels', {}).items():
-                self.assertNotIn(name, names, f'{family}: data model is not a Widget')
-                self.assertEqual(model['kind'], 'value_object')
-                self.assertEqual(model['declarationName'], name)
-                self.assertTrue(self.declared(name, (ROOT / model['sourceFile']).read_text()))
-                self.assertEqual(ds_audit.coverage.binding_errors(ROOT, model['sourceBindings']), [],
-                                 f'{family}.{name}: model source binding changed')
-                self.assertIn(model['sourceFile'], [row['file'] for row in model['sourceBindings']])
+                text = model_sources[(family, name)]
+                self.assertTrue(self.declared(name, text, model_kind=model['kind']),
+                                f'{family}.{name}: model kind/declaration mismatch')
+                self.assertNotIn(name, ui_namespace,
+                                 f'{family}.{name}: non-widget model resolves to a UI owner')
         self.assertEqual(set(recipes), set(inventory['recipes']))
         for name, row in recipes.items():
             self.assertIn(row['decision'], {'existing', 'pending', 'uncertain', 'unresolved'}, name)
@@ -532,6 +581,54 @@ class FamilyRegistryTest(unittest.TestCase):
             with self.subTest(mutation=index), self.assertRaisesRegex(AssertionError, reason):
                 self.assert_registry_ownership(document)
 
+
+    def test_callback_typedef_ast_rejects_non_function_and_text_lookalikes(self):
+        samples = [
+            'typedef Callback = int Function(String value);',
+            'typedef Callback<T> = T Function(T value);',
+            'typedef int Callback(String value);',
+            'typedef Callback = int;',
+            'class Callback {}',
+            'int Callback(String value) => 0;',
+            '// typedef Callback = int Function(String value);\nconst x = 1;',
+            "const x = 'typedef Callback = int Function(String value);';",
+            'typedef Callback = int Function(); class Callback {}',
+        ]
+        parsed = self.model_declarations(samples)
+        for index, rows in enumerate(parsed):
+            matching = [row for row in rows if row['name'] == 'Callback']
+            is_callback = len(matching) == 1 and matching[0]['kind'] == 'callback_typedef'
+            self.assertEqual(is_callback, index < 3, f'AST sample {index}')
+
+    def test_non_widget_model_kind_declaration_namespace_and_binding_are_strict(self):
+        registry = json.loads(ds_audit.FAMILIES.read_text())
+        name = 'RaftMenuPopupSlotResolver'
+        broken = []
+        for kind in ('temporary_alias', 'value_object'):
+            document = copy.deepcopy(registry)
+            document['families']['menu']['nonWidgetModels'][name]['kind'] = kind
+            broken.append((document, 'unsupported model kind' if kind == 'temporary_alias'
+                           else 'model kind/declaration mismatch'))
+        wrong_name = copy.deepcopy(registry)
+        wrong_name['families']['menu']['nonWidgetModels'][name]['declarationName'] = 'RaftMenuPopupSlots'
+        broken.append((wrong_name, 'model declaration name mismatch'))
+        wrong_declaration = copy.deepcopy(registry)
+        other = registry['families']['select']['nonWidgetModels']['RaftSelectItem']
+        wrong_declaration['families']['menu']['nonWidgetModels'][name].update(
+            sourceFile=other['sourceFile'], sourceBindings=copy.deepcopy(other['sourceBindings']))
+        broken.append((wrong_declaration, 'model kind/declaration mismatch'))
+        wrong_binding = copy.deepcopy(registry)
+        wrong_binding['families']['menu']['nonWidgetModels'][name]['sourceBindings'][0]['sha256'] = '0' * 64
+        broken.append((wrong_binding, 'model source binding changed'))
+        widget_model = copy.deepcopy(registry)
+        state = '_RaftMenuPopupBackendState'
+        model = widget_model['families']['menu']['nonWidgetModels'].pop(name)
+        model.update(kind='value_object', declarationName=state)
+        widget_model['families']['menu']['nonWidgetModels'][state] = model
+        broken.append((widget_model, 'non-widget model resolves to a UI owner'))
+        for index, (document, reason) in enumerate(broken):
+            with self.subTest(mutation=index), self.assertRaisesRegex(AssertionError, reason):
+                self.assert_registry_ownership(document)
 
 class FamilyRatchetTest(unittest.TestCase):
     """duplicate.<family>: growth fails and names the canonical component, decreases pass."""

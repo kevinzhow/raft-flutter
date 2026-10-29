@@ -323,10 +323,15 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Filter tasks by creator'));
       await tester.pumpAndSettle();
-      expect(find.text('Created by Me'), findsOneWidget);
+      final popup = find.byKey(
+        const ValueKey('task-selection-creator-popover'),
+      );
+      expect(popup, findsOneWidget);
+      expect(find.text('Created by me'), findsOneWidget);
       _role(w, 'guest');
       await tester.pumpAndSettle();
-      expect(find.text('Created by Me'), findsNothing);
+      expect(popup, findsNothing);
+      expect(find.text('Created by me'), findsNothing);
       a.routes['GET /channels/inbox'] = (_) => {
         'items': <dynamic>[],
         'hasMore': false,

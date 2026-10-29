@@ -1,7 +1,7 @@
-// raft-ui 0.7.1 `Tabs`: a row of tabs with a panel below. The default variant marks the selected tab with the yellow
+// Published raft-ui 0.7.0 `Tabs`: a row of tabs with a panel below. The default variant marks the selected tab with the yellow
 // sticker (brand fill, ink border, die-cut `sticker-edge` ring); the underline variant is bare text with a 2px
 // foreground bar under the selected tab. Tabs are `h-8` (sticker) / `h-11` (underline) with `font-callout font-semibold`,
-// hover lays the `fill-pressed` wash over a resting tab, keyboard focus draws the 0.7.1 focus ring.
+// hover lays the `fill-pressed` wash over a resting tab, keyboard focus draws the generated focus ring.
 import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
@@ -11,6 +11,8 @@ import '../control_typography.dart';
 import '../design_primitives.dart';
 import '../icons.dart';
 import '../localization.dart';
+import '../recipe_surface.dart';
+import '../recipes/tabs.g.dart';
 import '../text_scaling.dart' show RaftScaled;
 import '../theme.dart';
 import '../tokens/tokens.dart';
@@ -161,6 +163,7 @@ class RaftTabButton extends StatelessWidget {
       semanticRole: SemanticsRole.tab,
       semanticLabel: semanticLabel ?? text,
       builder: (context, st) {
+        if (t.isRaftLook) return _recipeSurface(context, st);
         final disabled = onPressed == null;
         final colors = RaftTabColors.resolve(
           ui,
@@ -250,6 +253,66 @@ class RaftTabButton extends StatelessWidget {
       },
     );
   }
+
+  Widget _recipeSurface(BuildContext context, RaftInteractionState state) {
+    final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final recipe = RaftTabsRecipe.resolve(
+      theme: t.recipeTheme,
+      variant: variant == RaftTabsVariant.underline
+          ? RaftTabsRecipeVariant.underline
+          : RaftTabsRecipeVariant.default_,
+      states: t.recipeStates(
+        hovered: state.hovered,
+        pressed: state.pressed,
+        focusVisible: state.focusVisible,
+        extra: [
+          if (selected) 'data-active',
+          if (!state.enabled) 'data-disabled',
+        ],
+      ),
+      tokens: tokens,
+    );
+    final tab = recipe.tab;
+    final textStyle = RaftControlTypography.of(
+      context,
+      recipe.label
+          .text(tokens, base: tab.text(tokens))
+          .copyWith(fontFamilyFallback: t.fontFallback, locale: t.textLocale),
+    );
+    final ink = textStyle.color ?? t.ink;
+    final svg = tab.target("& svg:not([class*='size-'])");
+    final text = raftText(context, label);
+    final leading = icon != null
+        ? icon!(iconSize, ink, 2)
+        : glyph == null
+        ? null
+        : RaftIcon(glyph!, size: iconSize, color: ink);
+    return RaftRecipeBox(
+      style: tab,
+      tokens: tokens,
+      height: height,
+      padding: padding?.resolve(Directionality.of(context)),
+      alignment: Alignment.center,
+      growWithText: growsWithText ?? RaftScaled.grows(context),
+      overflowCenter: true,
+      applyText: false,
+      decorationOverride: (decoration) => raftSnapBorder(context, decoration),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: tab.columnGap ?? 0,
+        children: [
+          if (leading != null)
+            IconTheme.merge(
+              data: IconThemeData(size: svg?.width, color: ink),
+              child: leading,
+            ),
+          if (text.isNotEmpty)
+            Text(text, maxLines: 1, softWrap: false, style: textStyle),
+        ],
+      ),
+    );
+  }
 }
 
 /// `TabsList`: the row of tabs, keyboard navigation (arrows, Home, End move focus and select), and a horizontal
@@ -332,13 +395,24 @@ class _RaftTabsListState<T> extends State<RaftTabsList<T>> {
   @override
   Widget build(BuildContext context) {
     final underline = widget.variant == RaftTabsVariant.underline;
+    final tokens = RaftTokens.of(context);
+    final list = tokens.isRaftLook
+        ? RaftTabsRecipe.resolve(
+            theme: tokens.recipeTheme,
+            variant: underline
+                ? RaftTabsRecipeVariant.underline
+                : RaftTabsRecipeVariant.default_,
+            tokens: tokens.recipeTokens,
+          ).list
+        : null;
+    final gap = list?.columnGap ?? (underline ? 20.0 : 2.0);
     final row = Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         for (var i = 0; i < widget.tabs.length; i++) ...[
           // `gap-0.5` (sticker) / `gap-5` (underline).
-          if (i > 0) SizedBox(width: underline ? 20 : 2),
+          if (i > 0) SizedBox(width: gap),
           _tab(widget.tabs[i]),
         ],
       ],

@@ -19,15 +19,16 @@ class _RadioScope<T> extends InheritedWidget {
   const _RadioScope({
     required this.group,
     required this.value,
+    required this.enabled,
     required super.child,
   });
   final _RaftRadioGroupState<T> group;
   final T? value;
+  final bool enabled;
 
   @override
   bool updateShouldNotify(_RadioScope<T> old) =>
-      old.value != value ||
-      old.group.widget.onChanged != group.widget.onChanged;
+      old.value != value || old.enabled != enabled;
 }
 
 /// raft-ui `RadioGroup`: [value] is the chosen item, [onChanged] receives the next one. A null [onChanged] disables
@@ -38,7 +39,7 @@ class RaftRadioGroup<T> extends StatefulWidget {
     required this.value,
     required this.onChanged,
     required this.children,
-    this.spacing = RaftSpace.x2,
+    this.spacing,
     this.semanticLabel,
   });
 
@@ -49,7 +50,7 @@ class RaftRadioGroup<T> extends StatefulWidget {
   final List<Widget> children;
 
   /// The row gap (`gap-2`).
-  final double spacing;
+  final double? spacing;
   final String? semanticLabel;
 
   @override
@@ -89,28 +90,45 @@ class _RaftRadioGroupState<T> extends State<RaftRadioGroup<T>> {
   }
 
   @override
-  Widget build(BuildContext context) => _RadioScope<T>(
-    group: this,
-    value: widget.value,
-    child: CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.arrowRight): () => move(1),
-        const SingleActivator(LogicalKeyboardKey.arrowDown): () => move(1),
-        const SingleActivator(LogicalKeyboardKey.arrowLeft): () => move(-1),
-        const SingleActivator(LogicalKeyboardKey.arrowUp): () => move(-1),
-      },
-      child: Semantics(
-        role: SemanticsRole.radioGroup,
-        label: widget.semanticLabel,
-        container: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: widget.spacing,
-          children: widget.children,
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final root = t.isRaftLook
+        ? RaftRadioGroupRecipe.resolve(
+            theme: t.recipeTheme,
+            states: t.recipeStates(
+              extra: [if (widget.onChanged == null) 'data-disabled'],
+            ),
+            tokens: t.recipeTokens,
+          ).root
+        : null;
+    Widget rows = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: widget.spacing ?? root?.rowGap ?? RaftSpace.x2,
+      children: widget.children,
+    );
+    if (root != null) {
+      rows = RaftRecipeBox(style: root, tokens: t.recipeTokens, child: rows);
+    }
+    return _RadioScope<T>(
+      group: this,
+      value: widget.value,
+      enabled: widget.onChanged != null,
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.arrowRight): () => move(1),
+          const SingleActivator(LogicalKeyboardKey.arrowDown): () => move(1),
+          const SingleActivator(LogicalKeyboardKey.arrowLeft): () => move(-1),
+          const SingleActivator(LogicalKeyboardKey.arrowUp): () => move(-1),
+        },
+        child: Semantics(
+          role: SemanticsRole.radioGroup,
+          label: widget.semanticLabel,
+          container: true,
+          child: rows,
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// raft-ui `RadioGroupItem` with its `RadioGroupIndicator`, inside the `<label>` row Web wraps it in. [child] is the
@@ -172,6 +190,24 @@ class _RaftRadioGroupItemState<T> extends State<RaftRadioGroupItem<T>> {
         checked: chosen,
         semanticLabel: widget.semanticLabel,
         builder: (context, st) {
+          final t = RaftTokens.of(context);
+          Widget? label = widget.child;
+          if (label != null && t.isRaftLook) {
+            final recipe = RaftRadioGroupRecipe.resolve(
+              theme: t.recipeTheme,
+              states: t.recipeStates(extra: [if (!enabled) 'data-disabled']),
+              tokens: t.recipeTokens,
+            );
+            final style = recipe.root.target('& > label')?.text(t.recipeTokens);
+            label = DefaultTextStyle.merge(
+              style: (style ?? const TextStyle()).copyWith(
+                color: !enabled
+                    ? recipe.item.color?.resolve(t.recipeTokens)
+                    : null,
+              ),
+              child: label,
+            );
+          }
           final mark = Padding(
             padding: widget.markInset,
             child: RaftRadioMark(
@@ -190,7 +226,7 @@ class _RaftRadioGroupItemState<T> extends State<RaftRadioGroupItem<T>> {
                 spacing: widget.gap,
                 children: [
                   mark,
-                  Expanded(child: widget.child!),
+                  Expanded(child: label!),
                 ],
               ),
             ),

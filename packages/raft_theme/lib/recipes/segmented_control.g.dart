@@ -91,28 +91,28 @@ abstract final class RaftSegmentedControlRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1305, 1424, 1319, 1925, 969, 1020, 1700, 581, 1598],
+    [1305, 1424, 1319, 1928, 969, 1020, 1702, 581, 1600],
     [
       1305,
-      1483,
-      1738,
+      1484,
+      1740,
       1319,
       1022,
-      1575,
+      1577,
       935,
       275,
       277,
       1188,
       1324,
-      1708,
+      1710,
       622,
       641,
       615,
-      1658,
+      1660,
       1016,
-      1811,
+      1813,
       1017,
-      1825,
+      1827,
       265,
       1272,
       810,
@@ -129,8 +129,8 @@ abstract final class RaftSegmentedControlRecipe {
       836,
       832,
     ],
-    [1895],
-    [1014, 1837, 1015],
+    [1897],
+    [1014, 1839, 1015],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

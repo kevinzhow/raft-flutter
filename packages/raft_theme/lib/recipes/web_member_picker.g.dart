@@ -103,27 +103,27 @@ abstract final class RaftWebMemberPickerRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1361, 1585, 1592],
-    [1819, 1008, 1822, 1657, 1643, 1602],
+    [1361, 1587, 1594],
+    [1821, 1008, 1824, 1659, 1645, 1604],
     [
       965,
-      1479,
-      1926,
+      1480,
+      1929,
       1319,
       1024,
-      1708,
-      1657,
-      1834,
-      1811,
+      1710,
+      1659,
+      1836,
+      1813,
       1013,
-      1820,
-      1575,
+      1822,
+      1577,
       1270,
       978,
       995,
     ],
-    [1483, 966, 1895],
-    [1657, 1669, 1811, 1822],
+    [1484, 966, 1897],
+    [1659, 1671, 1813, 1824],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

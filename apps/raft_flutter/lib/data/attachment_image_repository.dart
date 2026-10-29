@@ -475,6 +475,10 @@ class AttachmentImageLease {
   /// (list preview and lightbox) see the same numbers from one download.
   ValueListenable<AttachmentTransferProgress?> get progress => _entry.transfer;
 
+  /// True only while the loader explicitly waits for the original's address.
+  /// Uses the same progress notifier; zero received bytes do not imply this.
+  bool get waitingForAddress => active && _entry.transfer.waitingForAddress;
+
   void release() {
     if (_released) return;
     _released = true;
@@ -502,6 +506,16 @@ class AttachmentImageLease {
 class _EntryProgress extends ValueNotifier<AttachmentTransferProgress?> {
   _EntryProgress() : super(null);
   bool _gone = false;
+  bool waitingForAddress = false;
+
+  void updatePhase(AttachmentFetchPhase phase) {
+    if (_gone) return;
+    final next = phase == AttachmentFetchPhase.waitingForAddress;
+    if (next == waitingForAddress) return;
+    waitingForAddress = next;
+    // Keep value (including null) and byte throttling exactly as they were.
+    notifyListeners();
+  }
 
   @override
   void addListener(VoidCallback listener) {
@@ -538,6 +552,11 @@ class _ImageEntry {
   void report(AttachmentTransferProgress? progress) {
     if (!retired) transfer.value = progress;
   }
+
+  void reportPhase(AttachmentFetchPhase phase) {
+    if (!retired) transfer.updatePhase(phase);
+  }
+
   DecodedAttachmentImage? value;
   _SourceFetch? fetch;
 
@@ -562,7 +581,16 @@ class _ImageEntry {
 class _SourceFetch {
   _SourceFetch(this.key) {
     // One throttled sink per download, fanned out to every waiting entry.
-    cancel = AttachmentFetchToken(transfer.report);
+    cancel = AttachmentFetchToken(
+      transfer.report,
+      reportPhase: (next) {
+        if (_disposed || next == phase) return;
+        phase = next;
+        for (final waiter in waiters.toList()) {
+          waiter.reportPhase(next);
+        }
+      },
+    );
     transfer.addListener(() {
       for (final waiter in waiters) {
         waiter.report(transfer.value);
@@ -571,6 +599,7 @@ class _SourceFetch {
   }
   final AttachmentImageKey key;
   final AttachmentTransfer transfer = AttachmentTransfer();
+  AttachmentFetchPhase phase = AttachmentFetchPhase.transfer;
   late final AttachmentFetchToken cancel;
   final Set<_ImageEntry> waiters = {};
   late final Future<Uint8List> bytes;
@@ -800,9 +829,7 @@ class AttachmentImageRepository {
     while (_entries.length + entries > maxEntries ||
         _encoded + encoded > maxEncodedBytes ||
         _decoded + decoded > maxDecodedBytes) {
-      final idle = _entries.values.where(
-        (e) => e.leases.isEmpty && e.value != null,
-      );
+      final idle = _entries.values.where((e) => e.leases.isEmpty && e.value != null);
       if (idle.isEmpty) {
         // In-use bitmaps can temporarily exceed the idle cache target. Their
         // leases, not an LRU eviction, decide when they leave the screen.
@@ -1034,6 +1061,7 @@ class AttachmentImageRepository {
       unawaited(next.bytes.then<void>((_) {}, onError: (Object _) {}));
     }
     fetch.waiters.add(e);
+    e.reportPhase(fetch.phase);
     e.report(fetch.transfer.value ?? AttachmentTransferProgress.connecting);
     e.fetch = fetch;
     e.fetchCancel = fetch.cancel;

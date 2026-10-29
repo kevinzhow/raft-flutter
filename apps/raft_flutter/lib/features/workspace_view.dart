@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,6 +29,7 @@ import '../data/source_server_unread.dart';
 import 'sidebar_read_all.dart';
 import 'sidebar_thread_unread.dart';
 import 'workspace_menu_invite.dart';
+import 'workspace_switcher_dialog.dart';
 import '../data/personal_presentation.dart';
 import '../data/device_preferences.dart';
 import '../data/mobile_tabbar_preferences.dart';
@@ -3049,54 +3049,41 @@ class _WorkspaceViewState extends State<WorkspaceView>
       return;
     }
     final scope = mobileAuthority;
-    final choice = await showDialog<String>(
+    final workspaceContext = context;
+    void openInBrowser(BuildContext dialogContext, RaftRecord server) {
+      if (!mounted ||
+          scope != mobileAuthority ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent == false) {
+        return;
+      }
+      Navigator.pop(dialogContext);
+      // Membership is revalidated after awaiting its response. Keep that
+      // validation bound to the workspace, rather than this closing route.
+      unawaited(openWorkspaceInBrowser(workspaceContext, w, server));
+    }
+
+    final choice = await showRaftDialog<String>(
       context: context,
-      builder: (context) => SimpleDialog(
-        title: Text(tr('Switch Server')),
-        children: [
-          for (final server in w.servers)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, server.id),
-              child: Listener(
-                onPointerDown:
-                    defaultTargetPlatform == TargetPlatform.linux &&
-                        workspaceBrowserOrigin(w.client.origin) != null
-                    ? (event) {
-                        if (event.buttons == kMiddleMouseButton) {
-                          Navigator.pop(context);
-                          unawaited(openWorkspaceInBrowser(context, w, server));
-                        }
-                      }
-                    : null,
-                child: Row(
-                  children: [
-                    Expanded(child: Text(server.name)),
-                    if (defaultTargetPlatform == TargetPlatform.linux &&
-                        workspaceBrowserOrigin(w.client.origin) != null)
-                      RaftIconButton(
-                        key: ValueKey('workspace-browser-${server.id}'),
-                        tooltip: tr('Open Server in Browser'),
-                        glyph: RaftGlyph.arrowUpRight,
-                        onPressed: () {
-                          Navigator.pop(context);
-                          unawaited(openWorkspaceInBrowser(context, w, server));
-                        },
-                      ),
-                    if (server.id == w.server?.id)
-                      const RaftIcon(RaftGlyph.check, size: 14),
-                  ],
-                ),
-              ),
-            ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'create'),
-            child: Text(tr('Create Server')),
-          ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'join'),
-            child: Text(tr('Join Server')),
-          ),
-        ],
+      legacyMaterial: true,
+      builder: (context) => workspaceSwitcherDialog(
+        context: context,
+        servers: w.servers,
+        selectedServerId: w.server?.id,
+        translate: tr,
+        browserAction: (server) => RaftIconButton(
+          key: ValueKey('workspace-browser-${server.id}'),
+          tooltip: tr('Open Server in Browser'),
+          glyph: RaftGlyph.arrowUpRight,
+          onPressed: () => openInBrowser(context, server),
+        ),
+        onSelected: (value) => Navigator.pop(context, value),
+        onClose: () => Navigator.pop(context),
+        onOpenInBrowser:
+            defaultTargetPlatform == TargetPlatform.linux &&
+                workspaceBrowserOrigin(w.client.origin) != null
+            ? (server) => openInBrowser(context, server)
+            : null,
       ),
     );
     if (choice == null || !mounted || scope != mobileAuthority) return;

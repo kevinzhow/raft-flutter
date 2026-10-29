@@ -11,6 +11,7 @@ import 'list_items.dart';
 import 'icons.dart';
 import 'quick_reaction_picker.dart';
 import 'recipe_surface.dart';
+import 'popover_surface.dart';
 import 'recipes/context_menu.g.dart';
 import 'recipes/token_binding.dart';
 import 'theme.dart';
@@ -123,11 +124,9 @@ class RaftMessageContextMenu extends StatelessWidget {
               ),
             ),
             child: IntrinsicWidth(
-              child: RaftRecipeBox(
+              child: RaftPopoverSurface(
                 key: const ValueKey('raft-message-context-menu'),
-                style: content,
-                tokens: resolver,
-                clip: true,
+                surfaceStyle: content,
                 // `maxHeight: calc(100dvh - 16px); overflowY: auto`.
                 child: SingleChildScrollView(
                   child: Column(

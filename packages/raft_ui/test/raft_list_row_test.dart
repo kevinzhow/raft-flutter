@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// raft-ui 0.7.1 `ListRow`: variants default / plain / entry, unread tone, selected, interactive false, parts.
+// Published raft-ui 0.7.0 `ListRow`: variants default / plain / entry, unread tone, selected, interactive false, parts.
 Widget _app(bool dark, Widget child) => MaterialApp(
   theme: raftTheme(dark: dark),
   home: Scaffold(
@@ -47,7 +47,14 @@ Color? _fill(WidgetTester tester, Finder row) {
   final box = find
       .descendant(of: row, matching: find.byType(DecoratedBox))
       .first;
-  return (tester.widget<DecoratedBox>(box).decoration as BoxDecoration).color;
+  final decoration = tester.widget<DecoratedBox>(box).decoration;
+  return switch (decoration) {
+    RaftLayeredDecoration(:final base) => base.color,
+    BoxDecoration(:final color) => color,
+    _ => throw StateError(
+      'Unexpected row decoration ${decoration.runtimeType}',
+    ),
+  };
 }
 
 TextStyle _style(WidgetTester tester, String text) =>

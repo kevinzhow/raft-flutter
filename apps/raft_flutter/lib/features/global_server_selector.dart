@@ -251,21 +251,35 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
             )
           else ...[
             if (widget.servers.isNotEmpty) ...[
-              Column(
-                key: const ValueKey('server-selector-list'),
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (i, server) in widget.servers.indexed) ...[
-                    if (i > 0) const SizedBox(height: RaftSpace.x2),
-                    _ServerOption(
-                      server: server,
-                      onPressed: widget.loading
-                          ? null
-                          : () => widget.onSelect(server),
-                    ),
+              if (RaftTokens.of(context).isRaftLook)
+                RaftListRowGroup(
+                  key: const ValueKey('server-selector-list'),
+                  children: [
+                    for (final server in widget.servers)
+                      _serverListRow(
+                        server: server,
+                        onPressed: widget.loading
+                            ? null
+                            : () => widget.onSelect(server),
+                      ),
                   ],
-                ],
-              ),
+                )
+              else
+                Column(
+                  key: const ValueKey('server-selector-list'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final (i, server) in widget.servers.indexed) ...[
+                      if (i > 0) const SizedBox(height: RaftSpace.x2),
+                      _ServerOption(
+                        server: server,
+                        onPressed: widget.loading
+                            ? null
+                            : () => widget.onSelect(server),
+                      ),
+                    ],
+                  ],
+                ),
               const SizedBox(height: RaftSpace.x6), // mb-6
             ],
             if (widget.error != null) ...[
@@ -294,6 +308,40 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
     );
   }
 }
+
+// Current ServerOptionCard.tsx is a navigation ListRow, not an option card.
+// Direct children let its canonical group own the inset surface and rules.
+RaftListRow _serverListRow({
+  required RaftRecord server,
+  required VoidCallback? onPressed,
+}) => RaftListRow(
+  key: ValueKey('global-server-${server.id}'),
+  onPressed: onPressed,
+  disabled: onPressed == null,
+  semanticLabel: server.string('name'),
+  children: [
+    ExcludeSemantics(
+      child: RaftAvatarSlot(
+        name: server.string('name'),
+        slot: RaftAvatarSlotContext.surfaceList,
+        agent: false,
+        server: true,
+        content: RaftAvatarContent(
+          name: server.string('name'),
+          kind: RaftAvatarContentKind.server,
+          uploadedUrl: server.json['avatarUrl'] as String?,
+        ),
+      ),
+    ),
+    RaftListRowBody(
+      children: [
+        RaftListRowTitle(server.string('name')),
+        RaftListRowMeta('/${server.string('slug')}'),
+      ],
+    ),
+    const RaftListRowChevron(),
+  ],
+);
 
 /// ServerSelector option: `Card variant="option" gap-0 p-3` with the server
 /// name (`font-bold text-foreground-strong`) over `/slug` (`text-sm

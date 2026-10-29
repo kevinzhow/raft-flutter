@@ -56,6 +56,7 @@ import 'page_layout.dart';
 import 'resource_cards.dart';
 import 'search_filter_bar.dart';
 import 'task_selection_filter.dart';
+import 'task_assignment_dialog.dart';
 import 'sender_avatar_projection.dart';
 import 'message_reference_directory.dart';
 import 'private_route_guard.dart';
@@ -5109,12 +5110,20 @@ class _ResourceViewState extends State<ResourceView> {
                         : <String, String>{
                             // IdentityFilterChip: "me" first, then Unassigned.
                             if (self != null)
-                              'user:${self.id}': raftText(
-                                context,
-                                field == 'Creator'
-                                    ? 'Created by Me'
-                                    : 'Assigned to Me',
-                              ),
+                              'user:${self.id}': t.isRaftLook
+                                  ? raftTextZh(
+                                      context,
+                                      field == 'Creator'
+                                          ? 'Created by me'
+                                          : 'Assigned to me',
+                                      field == 'Creator' ? '我创建的' : '分配给我的',
+                                    )
+                                  : raftText(
+                                      context,
+                                      field == 'Creator'
+                                          ? 'Created by Me'
+                                          : 'Assigned to Me',
+                                    ),
                             if (field == 'Assignee')
                               'unassigned': raftTextZh(
                                 context,
@@ -5129,6 +5138,18 @@ class _ResourceViewState extends State<ResourceView> {
                       key: ValueKey('$scope:$field'),
                       field: field,
                       options: options,
+                      selfIdentity: self == null
+                          ? null
+                          : ResourceSender(self.id, 'user', self.name),
+                      identityAvatars: t.isRaftLook && field != 'Channel'
+                          ? projectTaskFilterAvatars(
+                              origin: w.client.origin,
+                              identityKeys: names.keys,
+                              agents: rowAgents,
+                              members: rowPeople,
+                              currentUser: self?.json,
+                            )
+                          : const {},
                       selection: selection,
                       beforeOpen: (active) {
                         for (final menu in filterMenus) {
@@ -5629,22 +5650,13 @@ class _ResourceViewState extends State<ResourceView> {
       ];
       final selected = await scopedDialog<Map<String, dynamic>>(
         scope,
-        (context) => SimpleDialog(
-          title: Text(raftText(context, 'Assign task')),
-          children: [
-            SimpleDialogOption(
-              onPressed: () =>
-                  closeOwnedDialog(context, scope, <String, dynamic>{}),
-              child: Text(raftText(context, 'Unassign')),
-            ),
-            for (final person in choices)
-              SimpleDialogOption(
-                onPressed: () => closeOwnedDialog(context, scope, person),
-                child: Text(
-                  '${person['displayName'] ?? person['name']} · ${person['actorType'] ?? person['type']}',
-                ),
-              ),
-          ],
+        (context) => taskAssignmentDialog(
+          context: context,
+          choices: choices,
+          claimedById: task['claimedById'],
+          claimedByType: task['claimedByType'],
+          onSelected: (value) => closeOwnedDialog(context, scope, value),
+          onClose: () => closeOwnedDialog(context, scope),
         ),
       );
       if (selected != null && accepts(scope)) {

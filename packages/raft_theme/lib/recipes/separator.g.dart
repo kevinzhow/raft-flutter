@@ -96,10 +96,10 @@ abstract final class RaftSeparatorRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1738, 720, 724, 604, 716, 726],
-    [1040, 1045, 1319, 1025, 1671],
-    [1926, 1738, 1199, 604],
-    [1483, 1016, 1819, 1017, 1822],
+    [1740, 720, 724, 604, 716, 726],
+    [1040, 1045, 1319, 1025, 1673],
+    [1929, 1740, 1199, 604],
+    [1484, 1016, 1821, 1017, 1824],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

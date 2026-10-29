@@ -89,10 +89,10 @@ abstract final class RaftActivityInboxSidebarRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1738, 1383, 1439, 1909, 636, 634, 595],
+    [1740, 1383, 1440, 1911, 636, 634, 595],
     [595],
     [
-      1594,
+      1596,
       233,
       232,
       31,

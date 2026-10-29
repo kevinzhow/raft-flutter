@@ -6,9 +6,12 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'list_items.dart';
+import 'menu_action_row.dart';
 import 'recipe_surface.dart';
 import 'rail_attention.dart';
 import 'recipes/app_rail.g.dart';
+import 'recipes/recipe_router.dart' show usesLegacyRecipes;
+import 'recipes/web_help_menu.g.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 import 'panel_layout.dart' show RaftCssFocusOutline;
@@ -320,27 +323,42 @@ class _RaftWorkspaceHelpMenuState extends State<RaftWorkspaceHelpMenu> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final composition = usesLegacyRecipes(tokens)
+        ? null
+        : RaftWebHelpMenuRecipe.resolve(
+            tokens: tokens,
+            states: t.recipeStates(),
+          );
     return RaftDropdownMenu(
       label: widget.label,
-      width: 320,
+      surfaceKey: const ValueKey('workspace-help-popup'),
+      width: composition?.root.width ?? 320,
       side: RaftDropdownSide.right,
       align: RaftDropdownAlign.end,
       sideOffset: 8,
       controller: controller,
       entries: widget.entries,
-      panelInset: EdgeInsets.zero,
+      panelInset: composition?.root.padding ?? EdgeInsets.zero,
       openOnHover: true,
       closeDelay: const Duration(milliseconds: 120),
-      header: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: t.panel,
-          border: Border(
-            bottom: BorderSide(color: t.colors['line-muted']!, width: 1),
-          ),
-        ),
-        child: RaftSectionEyebrow(widget.heading),
-      ),
+      header: composition == null
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: t.panel,
+                border: Border(
+                  bottom: BorderSide(color: t.colors['line-muted']!, width: 1),
+                ),
+              ),
+              child: RaftSectionEyebrow(widget.heading),
+            )
+          : RaftMenuItemSurface(
+              style: composition.header,
+              tokens: tokens,
+              applyText: false,
+              child: RaftSectionEyebrow(widget.heading),
+            ),
       triggerBuilder: (context, focus, action) => RaftWorkspaceRailAction(
         label: widget.label,
         glyph: RaftGlyph.circleHelp,

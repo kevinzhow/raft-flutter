@@ -4,6 +4,7 @@
 // trigger.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart' show SemanticsRole;
 
 import 'design_primitives.dart';
 import 'hover_region.dart';
@@ -11,6 +12,7 @@ import 'anchored_popup.dart';
 import 'dismiss_scope.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'menu_popup_backend.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
@@ -169,6 +171,22 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
   }
 
   @override
+  void didUpdateWidget(RaftSelectField<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The owner can revoke a choice while its menu is open. A disabled
+    // trigger must not leave an independently interactive list behind.
+    if (open && (widget.onChanged == null || widget.items.isEmpty)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            open &&
+            (widget.onChanged == null || widget.items.isEmpty)) {
+          setState(portal.hide);
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
     triggerFocus.dispose();
     super.dispose();
@@ -299,7 +317,104 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
     );
   }
 
+  Widget _raftPopup(BuildContext context, RaftTokens t) {
+    final rt = t.recipeTokens;
+    final base = RaftSelectRecipe.resolve(
+      theme: t.recipeTheme,
+      chrome: widget.chrome,
+      states: t.recipeStates(),
+      tokens: rt,
+    );
+    final preferred = widget.items.indexWhere(
+      (item) => item.enabled && item.value == widget.value,
+    );
+    return Positioned.fill(
+      child: TapRegion(
+        onTapOutside: (_) => close(),
+        child: RaftDismissScope(
+          onDismiss: close,
+          takeFocus: true,
+          child: Stack(
+            children: [
+              RaftAnchoredPopup(
+                anchorKey: anchorKey,
+                movement: Scrollable.maybeOf(this.context)?.position,
+                child: RaftMenuPopupBackend(
+                  key: const ValueKey('raft-select-popup'),
+                  anchorWidth: triggerSize.width,
+                  triggerFocus: triggerFocus,
+                  preferredIndex: preferred < 0 ? null : preferred,
+                  semanticRole: SemanticsRole.list,
+                  itemSemanticRole: SemanticsRole.listItem,
+                  selectionSemantics: true,
+                  entries: [
+                    for (final item in widget.items)
+                      RaftMenuPopupEntry(
+                        key: ValueKey(item.value),
+                        label: item.label,
+                        labelChild: item.child,
+                        enabled: item.enabled,
+                        selected: item.value == widget.value,
+                        indicator: RaftIcon(
+                          RaftGlyph.check,
+                          size: base.itemIndicator.target('& > svg')!.width!,
+                        ),
+                      ),
+                  ],
+                  resolveSlots: (state) {
+                    // The backend resolves its surface/list with index -1.
+                    // Row state is already a complete recipe input, so no
+                    // option lookup (including a sentinel lookup) is needed.
+                    final sel = RaftSelectRecipe.resolve(
+                      theme: t.recipeTheme,
+                      chrome: widget.chrome,
+                      states: t.recipeStates(
+                        hovered: !state.disabled && state.hovered,
+                        focusVisible: !state.disabled && state.focusVisible,
+                        extra: [
+                          if (state.disabled) 'data-disabled',
+                          if (state.selected) 'data-selected',
+                          if (!state.disabled && state.highlighted)
+                            'data-highlighted',
+                          if (state.lastChild) 'last-child',
+                        ],
+                      ),
+                      tokens: rt,
+                    );
+                    return RaftMenuPopupSlots(
+                      content: sel.content,
+                      list: sel.list,
+                      item: sel.item,
+                      itemIndicator: sel.itemIndicator,
+                      itemLeading: sel.itemLeading,
+                      itemText: sel.itemText,
+                    );
+                  },
+                  onActivate: (index) {
+                    // Typed values and current activation authority remain
+                    // with Select; the backend only returns an index.
+                    if (index < 0 || index >= widget.items.length) return;
+                    final item = widget.items[index];
+                    if (!item.enabled || widget.onChanged == null) return;
+                    widget.onChanged!(item.value);
+                    close();
+                  },
+                  onDismiss: close,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _popup(BuildContext context, RaftTokens t) {
+    // Revoke interaction in the current frame; the portal controller is hidden
+    // after build, since OverlayPortal forbids hide during persistent callbacks.
+    if (widget.onChanged == null || widget.items.isEmpty)
+      return const SizedBox.shrink();
+    if (t.isRaftLook) return _raftPopup(context, t);
     final rt = t.recipeTokens;
     final sel = RaftSelectRecipe.resolve(
       theme: t.recipeTheme,

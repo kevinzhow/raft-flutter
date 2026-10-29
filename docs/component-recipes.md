@@ -12,12 +12,12 @@ Authoritative data: `build/recipes/recipes.json`; Dart: `packages/raft_theme/lib
 
 ## Coverage
 
-- Recipes: 129; variant combinations: 968
-- Distinct classes in recipe sources: 1946
+- Recipes: 133; variant combinations: 972
+- Distinct classes in recipe sources: 1949
   - descendant: 326
   - marker: 32
   - no-css: 4
-  - resolved: 1584
+  - resolved: 1587
 
 Classes for which Tailwind emits no CSS (inert on the Web as well):
 
@@ -155,8 +155,12 @@ Classes for which Tailwind emits no CSS (inert on the Web as well):
 - [webSelectionPanel](#webselectionpanel) → `RaftWebSelectionPanelRecipe`
 - [webMenuAction](#webmenuaction) → `RaftWebMenuActionRecipe`
 - [webSelectionRow](#webselectionrow) → `RaftWebSelectionRowRecipe`
+- [webSidebarSortMenu](#websidebarsortmenu) → `RaftWebSidebarSortMenuRecipe`
+- [webHelpMenu](#webhelpmenu) → `RaftWebHelpMenuRecipe`
 - [webDialogCard](#webdialogcard) → `RaftWebDialogCardRecipe`
 - [webMemberPicker](#webmemberpicker) → `RaftWebMemberPickerRecipe`
+- [webAgentResetOptions](#webagentresetoptions) → `RaftWebAgentResetOptionsRecipe`
+- [webXlsxTabsLayout](#webxlsxtabslayout) → `RaftWebXlsxTabsLayoutRecipe`
 
 ## spinner
 
@@ -9731,6 +9735,43 @@ Dart: `RaftWebSelectionRowRecipe` · source: `Web src/components/ui/SelectionPop
 | disabled=true | root | font-weight: —; color: token(foregroundDisabled); cursor: not-allowed; [focus-visible] (none); [hover] (none) |
 | italic=true | label | overflow-x: —; overflow-y: —; text-overflow: —; color: token(foregroundMuted) |
 
+## webSidebarSortMenu
+
+Dart: `RaftWebSidebarSortMenuRecipe` · source: `Web src/components/layout/SidebarSortMenu.tsx sha256:bcfb7812cc5f638dbee4a65e7f0d2a1c9c9900803a99d3c152e3c2001bfcc6cd` (index.mjs:1)
+· components: `SidebarSortMenu`
+
+### Default
+
+| slot | target | property | value |
+|---|---|---|---|
+| root | self | min-width | 160 |
+| root | self | padding | top:6 bottom:6 |
+| root | self | color | token(foreground) |
+| root | self | background-color | token(layerPopover) |
+| root | self | border-radius | 10 |
+| root | self | box-shadow | 0 0 0 1 token(lineSeam), token(elevationFloat) |
+| root | self | ring | width:1 color:token(lineSeam) offsetWidth:— offsetColor:— |
+
+## webHelpMenu
+
+Dart: `RaftWebHelpMenuRecipe` · source: `Web src/components/layout/LeftRail.tsx sha256:8f07356a3b551527195df117f28d0681c9edf514d381045209996896e0adbde2` (index.mjs:1)
+· components: `HelpMenu`
+
+### Default
+
+| slot | target | property | value |
+|---|---|---|---|
+| root | self | width | 320 |
+| root | self | padding | 0 |
+| root | self | overflow-x | hidden |
+| root | self | overflow-y | hidden |
+| header | self | display | flex |
+| header | self | padding | top:8 right:12 bottom:8 left:12 |
+| header | self | border-width | bottom:1 |
+| header | self | border-style | bottom:solid |
+| header | self | border-color | token(lineHairline) |
+| header | self | align-items | center |
+
 ## webDialogCard
 
 Dart: `RaftWebDialogCardRecipe` · source: `Web src/components/ui/DialogCard.tsx sha256:bfcbf1e265e4cc3971236e35b4a3734eed11875eb07c348760b7c592da2818a8` (index.mjs:1)
@@ -9801,4 +9842,47 @@ Dart: `RaftWebMemberPickerRecipe` · source: `Web src/components/channel/CreateC
 | empty | self | font-size | 14 |
 | empty | self | line-height | 20 |
 | empty | self | color | token(foregroundHint) |
+
+## webAgentResetOptions
+
+Dart: `RaftWebAgentResetOptionsRecipe` · source: `Web src/components/agent/ResetAgentDialog.tsx sha256:f8f8401169f240e2d89e833127f40ab633801f6229278ebebf0579c3523e9dcd` (index.mjs:1)
+· components: `ResetAgentDialogRadioOptions`
+
+### Default
+
+| slot | target | property | value |
+|---|---|---|---|
+| root | self | gap | 0 |
+| row | self | display | flex |
+| row | self | min-height | 44 |
+| row | self | padding | top:12 bottom:12 |
+| row | self | gap | 12 |
+| row | self | align-items | flex-start |
+| indicator | self | flex-shrink | 0 |
+| content | self | display | flex |
+| content | self | min-width | 0 |
+| content | self | gap | 2 |
+| content | self | flex-direction | column |
+| title | self | font-size | 15 |
+| title | self | font-weight | 600 |
+| title | self | line-height | 20 |
+| title | self | color | token(foreground) |
+| description | self | font-size | 13 |
+| description | self | font-weight | 400 |
+| description | self | line-height | 18 |
+| description | self | color | token(foregroundMuted) |
+
+## webXlsxTabsLayout
+
+Dart: `RaftWebXlsxTabsLayoutRecipe` · source: `Web src/components/message/attachmentPreviewSurfaces.tsx sha256:da9ca670a5fe4fa63894a48b76b3f4f897be868a55769d33837b25cb3e469e7d` (index.mjs:1)
+· components: `XlsxPreviewPaneTabs`
+
+### Default
+
+| slot | target | property | value |
+|---|---|---|---|
+| root | self | max-width | 100% |
+| root | self | padding | bottom:4 |
+| root | self | margin | bottom:12 |
+| root | self | overflow-x | auto |
 

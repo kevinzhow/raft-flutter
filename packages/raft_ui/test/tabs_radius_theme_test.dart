@@ -31,6 +31,15 @@ Widget _host(String id) => MaterialApp(
 Future<double> _painted(WidgetTester tester, String id) async {
   await tester.pumpWidget(_host(id));
   await tester.pump();
+  if (id == raftThemePackId) {
+    return tester
+        .widgetList<RaftRecipeBox>(find.byType(RaftRecipeBox))
+        .first
+        .style
+        .borderRadius!
+        .topLeft
+        .x;
+  }
   return tester.widgetList<RaftCssBox>(find.byType(RaftCssBox)).first.radius;
 }
 

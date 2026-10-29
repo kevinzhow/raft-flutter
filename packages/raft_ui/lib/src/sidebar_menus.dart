@@ -10,6 +10,7 @@ import 'design_primitives.dart' show RaftTypography;
 import 'icons.dart';
 import 'list_items.dart';
 import 'recipe_surface.dart';
+import 'popover_surface.dart';
 import 'recipes/context_menu.g.dart';
 import 'recipes/token_binding.dart';
 import 'theme.dart';
@@ -290,10 +291,8 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
           label: label,
           child: SizedBox(
             width: usedWidth,
-            child: RaftRecipeBox(
-              style: content,
-              tokens: resolver,
-              clip: true,
+            child: RaftPopoverSurface(
+              surfaceStyle: content,
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

@@ -44,8 +44,9 @@ class RaftPickerTriggerButton extends StatelessWidget {
     final t = RaftTokens.of(context);
     if (!t.isRaftLook) return _frozen(context, t);
     final rt = t.recipeTokens;
+    final canActivate = enabled && onPressed != null;
     final button = RaftInteractive(
-      onPressed: enabled ? onPressed : null,
+      onPressed: canActivate ? onPressed : null,
       focusNode: focusNode,
       semanticLabel: raftText(context, label),
       builder: (context, st) {
@@ -55,7 +56,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
             hovered: st.hovered,
             pressed: st.pressed,
             focusVisible: st.focusVisible,
-            disabled: !enabled,
+            disabled: !canActivate,
             extra: [
               if (selected) 'data-has-value',
               if (invalid) 'data-invalid',
@@ -75,7 +76,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
                 if (glyph != null)
                   RaftIcon(
                     glyph!,
-                    size: 14,
+                    size: style.target("& svg:not([class*='size-'])")!.width!,
                     color: DefaultTextStyle.of(context).style.color,
                   ),
                 Text(raftText(context, label), maxLines: 1),

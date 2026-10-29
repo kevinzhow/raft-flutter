@@ -1,1997 +1,2188 @@
 {
- "about": "One implementation per design-system family (tool/ds-audit, category duplicate.<family>). `canonical` is the component new code uses; `deprecated` maps each duplicate widget or function to the file that declares it. Every reference to a deprecated name outside its own file is counted and ratcheted down in tool/ds-audit-baseline.json. A family with an empty `deprecated` map counts nothing; it records the canonical component only. `pending` marks a family whose canonical choice belongs to an open work package (no canonical, no deprecated names until it lands); `uncertain` records a canonical choice that still needs a decision (JSON has no comments, so these are fields); `note` explains the entry. Do not add a name to two families.",
- "families": {
-  "button": {
-   "canonical": [
-    "RaftButton"
-   ],
-   "note": "One RaftButton (raft/button.dart, Web Button + icon-* sizes). Every other button-like widget retires onto it.",
-   "deprecated": {
-    "RaftControl": "packages/raft_ui/lib/src/design_primitives.dart",
-    "RaftRecipeButton": "packages/raft_ui/lib/src/dialog_card.dart",
-    "RaftTextButton": "packages/raft_ui/lib/src/design_primitives.dart",
-    "RaftIconButton": "packages/raft_ui/lib/src/design_primitives.dart",
-    "RaftCloseButton": "packages/raft_ui/lib/src/dialog_card.dart",
-    "RaftGlyphButton": "packages/raft_ui/lib/src/overlays/dialog.dart",
-    "RaftPanelIconButton": "packages/raft_ui/lib/src/panel_layout.dart",
-    "RaftComposerToolButton": "packages/raft_ui/lib/src/composer_tool_button.dart",
-    "RaftLightboxIconAction": "packages/raft_ui/lib/src/attachment_lightbox.dart"
-   },
-   "canonicalBindings": {
-    "RaftButton": {
-     "declarationId": "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton",
-     "role": "public_api"
-    }
-   }
-  },
-  "menu": {
-   "canonical": [],
-   "pending": "P2 (menus and popovers) decides the single menu implementation (RaftDropdownMenu, RaftMenuPanel, RaftContextMenuContent, RaftSidebarContextMenu, RaftSelectionPopover and RaftMenuButtonItem are the candidates). Nothing is canonical or deprecated until it lands.",
-   "note": "Registered so the family is visible; it counts nothing yet.",
-   "deprecated": {},
-   "canonicalBindings": {}
-  },
-  "popover": {
-   "canonical": [
-    "RaftPopoverSurface",
-    "RaftAnchoredPopup"
-   ],
-   "note": "RaftAnchoredPopup places a popup (viewport collision, flip) and RaftPopoverSurface paints it: layers of one popover, not rivals, so neither is deprecated. Private OverlayPortal/OverlayEntry panels are covered by bypass.overlay.",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftPopoverSurface": {
-     "declarationId": "packages/raft_ui/lib/src/popover_surface.dart#class:RaftPopoverSurface",
-     "role": "paint_part"
-    },
-    "RaftAnchoredPopup": {
-     "declarationId": "packages/raft_ui/lib/src/anchored_popup.dart#class:RaftAnchoredPopup",
-     "role": "placement_part"
-    }
-   }
-  },
-  "dialog": {
-   "canonical": [
-    "RaftDialog",
-    "showRaftDialog",
-    "RaftAlertDialog",
-    "showRaftAlertDialog",
-    "RaftDialogSurface",
-    "RaftDialogBackdrop",
-    "RaftFormDialog",
-    "RaftDialogFrame"
-   ],
-   "note": "RaftDialog owns standard, alert and DialogCard compositions; RaftFormDialog supplies form state on that implementation. RaftDialogFrame places presented content without painting it. RaftDialogSurface and RaftDialogBackdrop are shared paint parts. Old public Card/Shell/Modal names are compatibility adapters; frozen looks retain their original rendering.",
-   "deprecated": {
-    "RaftDialogCard": "packages/raft_ui/lib/src/dialog_card.dart",
-    "showRaftModal": "packages/raft_ui/lib/src/dialog_card.dart",
-    "RaftDialogShell": "packages/raft_ui/lib/src/settings_controls.dart",
-    "RaftAgentDialogCard": "packages/raft_ui/lib/src/agent_create_form.dart",
-    "showRaftAgentModal": "packages/raft_ui/lib/src/agent_create_form.dart"
-   },
-   "canonicalBindings": {
-    "RaftDialog": {
-     "declarationId": "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog",
-     "role": "public_api"
-    },
-    "showRaftDialog": {
-     "declarationId": "packages/raft_ui/lib/src/overlays/dialog.dart#function:showRaftDialog",
-     "role": "public_api"
-    },
-    "RaftAlertDialog": {
-     "declarationId": "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftAlertDialog",
-     "role": "public_api"
-    },
-    "showRaftAlertDialog": {
-     "declarationId": "packages/raft_ui/lib/src/overlays/dialog.dart#function:showRaftAlertDialog",
-     "role": "public_api"
-    },
-    "RaftDialogSurface": {
-     "declarationId": "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogSurface",
-     "role": "paint_part"
-    },
-    "RaftDialogBackdrop": {
-     "declarationId": "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogBackdrop",
-     "role": "paint_part"
-    },
-    "RaftFormDialog": {
-     "declarationId": "packages/raft_ui/lib/src/form_dialog.dart#class:RaftFormDialog",
-     "role": "public_api"
-    },
-    "RaftDialogFrame": {
-     "declarationId": "packages/raft_ui/lib/src/presentation.dart#class:RaftDialogFrame",
-     "role": "placement_part"
-    }
-   }
-  },
-  "segmented": {
-   "canonical": [
-    "RaftSegmentedControl",
-    "RaftSegmentedItem",
-    "RaftSegmentedTrack"
-   ],
-   "note": "One RaftSegmentedControl (raft/segmented_control.dart, Web SegmentedControl). RaftSegmentedTrack and RaftSegmentedItem are its parts (the fill-muted track and the 32px sticker item), not rivals. RaftRecipeSegmentedControl was merged into it (P4); its frozen Elegant and Brutal paint is a private class in raft/segmented_control_frozen.dart (legacyStyle: recipe). The old style argument is now legacyStyle and steers only the frozen looks.",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftSegmentedControl": {
-     "declarationId": "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedControl",
-     "role": "public_api"
-    },
-    "RaftSegmentedItem": {
-     "declarationId": "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedItem",
-     "role": "paint_part"
-    },
-    "RaftSegmentedTrack": {
-     "declarationId": "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedTrack",
-     "role": "placement_part"
-    }
-   }
-  },
-  "spinner": {
-   "canonical": [
-    "RaftSpinner"
-   ],
-   "note": "RaftSpinner is the single public spinner (P6). RaftPixelSpinner (raft/pixel_spinner.dart) is its internal painter for the pixel look, not a duplicate.",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftSpinner": {
-     "declarationId": "packages/raft_ui/lib/src/design_primitives.dart#class:RaftSpinner",
-     "role": "public_api"
-    }
-   }
-  },
-  "card": {
-   "canonical": [
-    "RaftCard"
-   ],
-   "note": "RaftRecipeCard, RaftSurfaceListItem and RaftChoiceCard were merged into RaftCard (P6) and no longer exist.",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftCard": {
-     "declarationId": "packages/raft_ui/lib/src/card.dart#class:RaftCard",
-     "role": "public_api"
-    }
-   }
-  },
-  "banner": {
-   "canonical": [
-    "RaftBanner"
-   ],
-   "note": "RaftWarningBanner was removed (P6). RaftAgentBanner is a thin adapter over RaftBanner (maps status and passes colour overrides, styles nothing itself), so it is not a duplicate. RaftArchivedNameBanner was deferred by P6 on purpose: it builds its own box from the banner recipe. RaftBillingNotice and RaftPreviewNotice are not banners and are not listed.",
-   "deprecated": {
-    "RaftComposerNotice": "packages/raft_ui/lib/src/composer_pending_mentions.dart",
-    "RaftArchivedNameBanner": "packages/raft_ui/lib/src/create_channel_view.dart"
-   },
-   "canonicalBindings": {
-    "RaftBanner": {
-     "declarationId": "packages/raft_ui/lib/src/banner.dart#class:RaftBanner",
-     "role": "public_api"
-    }
-   }
-  },
-  "list_row": {
-   "canonical": [
-    "RaftListRow"
-   ],
-   "note": "List row duplicates; RaftListRow (raft/list_row.dart) is the Web ListRow port. RaftSurfaceListItem was merged into RaftCard (P6) and no longer exists.",
-   "deprecated": {
-    "RaftAvatarListRow": "packages/raft_ui/lib/src/list_items.dart",
-    "RaftConversationListRow": "packages/raft_ui/lib/src/conversation_list_row.dart"
-   },
-   "canonicalBindings": {
-    "RaftListRow": {
-     "declarationId": "packages/raft_ui/lib/src/raft/list_row.dart#class:RaftListRow",
-     "role": "public_api"
-    }
-   }
-  },
-  "checkbox": {
-   "canonical": [
-    "RaftCheckbox",
-    "RaftCheckboxIndicator",
-    "RaftCheckboxRow"
-   ],
-   "note": "RaftCheckbox is the one control (raft/checkbox.dart, Web Checkbox) and RaftCheckboxIndicator its graphic (Web CheckboxIndicator) for rows that own the tap. RaftCheckMarker, RaftCheckboxControl and the argument-swallowing RaftCheckbox wrapper were merged into them (P4). The Material Checkbox and CheckboxListTile paint of the frozen looks lives in raft/checkbox_frozen.dart.",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftCheckbox": {
-     "declarationId": "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckbox",
-     "role": "public_api"
-    },
-    "RaftCheckboxIndicator": {
-     "declarationId": "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator",
-     "role": "paint_part"
-    },
-    "RaftCheckboxRow": {
-     "declarationId": "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxRow",
-     "role": "public_api"
-    }
-   }
-  },
-  "combobox": {
-   "canonical": [
-    "RaftComboboxPanel",
-    "RaftAgentCombobox"
-   ],
-   "note": "RaftComboboxPanel paints the combobox recipe; RaftAgentCombobox is the agent form adapter over it, not a rival.",
-   "deprecated": {},
-   "nonWidgetModels": {
-    "RaftComboboxItem": {
-     "kind": "value_object",
-     "sourceFile": "packages/raft_ui/lib/src/combobox_panel.dart",
-     "declarationName": "RaftComboboxItem",
-     "sourceBindings": [
-      {
-       "file": "packages/raft_ui/lib/src/combobox_panel.dart",
-       "bytes": 19139,
-       "sha256": "4c4fbe608d4627fdf9804ca47deef2be16a5b396c7252f57c63b96b63afd249a"
+  "about": "One implementation per design-system family (tool/ds-audit, category duplicate.<family>). `canonical` is the component new code uses; `deprecated` maps each duplicate widget or function to the file that declares it. Every reference to a deprecated name outside its own file is counted and ratcheted down in tool/ds-audit-baseline.json. A family with an empty `deprecated` map counts nothing; it records the canonical component only. `pending` marks a family whose canonical choice belongs to an open work package (no canonical, no deprecated names until it lands); `uncertain` records a canonical choice that still needs a decision (JSON has no comments, so these are fields); `note` explains the entry. Do not add a name to two families.",
+  "families": {
+    "button": {
+      "canonical": [
+        "RaftButton"
+      ],
+      "note": "One RaftButton (raft/button.dart, Web Button + icon-* sizes). Every other button-like widget retires onto it.",
+      "deprecated": {
+        "RaftControl": "packages/raft_ui/lib/src/design_primitives.dart",
+        "RaftRecipeButton": "packages/raft_ui/lib/src/dialog_card.dart",
+        "RaftTextButton": "packages/raft_ui/lib/src/design_primitives.dart",
+        "RaftIconButton": "packages/raft_ui/lib/src/design_primitives.dart",
+        "RaftCloseButton": "packages/raft_ui/lib/src/dialog_card.dart",
+        "RaftGlyphButton": "packages/raft_ui/lib/src/overlays/dialog.dart",
+        "RaftPanelIconButton": "packages/raft_ui/lib/src/panel_layout.dart",
+        "RaftComposerToolButton": "packages/raft_ui/lib/src/composer_tool_button.dart",
+        "RaftLightboxIconAction": "packages/raft_ui/lib/src/attachment_lightbox.dart"
+      },
+      "canonicalBindings": {
+        "RaftButton": {
+          "declarationId": "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton",
+          "role": "public_api"
+        }
       }
-     ],
-     "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
-    }
-   },
-   "canonicalBindings": {
-    "RaftComboboxPanel": {
-     "declarationId": "packages/raft_ui/lib/src/combobox_panel.dart#class:RaftComboboxPanel",
-     "role": "public_api"
     },
-    "RaftAgentCombobox": {
-     "declarationId": "packages/raft_ui/lib/src/agent_combobox.dart#class:RaftAgentCombobox",
-     "role": "public_api"
-    }
-   }
-  },
-  "picker_trigger": {
-   "canonical": [
-    "RaftPickerTriggerButton"
-   ],
-   "note": "RaftPickerTriggerButton (picker_trigger_button.dart, Web PickerTriggerButton). RaftPickerTriggerRecipe (design_primitives.dart) is the pre-0.7.0 recipe of RaftDropdownMenu's picker trigger style and of the frozen looks; RaftDropdownMenu is P2's, so it is not registered as a duplicate here.",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftPickerTriggerButton": {
-     "declarationId": "packages/raft_ui/lib/src/picker_trigger_button.dart#class:RaftPickerTriggerButton",
-     "role": "public_api"
-    }
-   }
-  },
-  "radio_group": {
-   "canonical": [
-    "RaftRadioGroup",
-    "RaftRadioGroupItem",
-    "RaftRadioMark"
-   ],
-   "note": "RaftRadioGroup / RaftRadioGroupItem (radio_group.dart, Web RadioGroup); RaftRadioMark is the painted circle (Web RadioGroupIndicator), not a rival. The dialog-local RaftRadioMark rows were replaced (P4).",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftRadioGroup": {
-     "declarationId": "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioGroup",
-     "role": "public_api"
-    },
-    "RaftRadioGroupItem": {
-     "declarationId": "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioGroupItem",
-     "role": "public_api"
-    },
-    "RaftRadioMark": {
-     "declarationId": "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioMark",
-     "role": "paint_part"
-    }
-   }
-  },
-  "select": {
-   "canonical": [
-    "RaftSelectField",
-    "RaftLabeledSelect"
-   ],
-   "note": "RaftSelectField takes RaftSelectItem (no Material DropdownMenuItem). The open list still paints from the select recipe slots; it moves onto the shared menu panel and rows when P2's recipe-accepting backend lands. form_dialog.dart's DropdownButtonFormField belongs to P1 (dialogs).",
-   "deprecated": {},
-   "nonWidgetModels": {
-    "RaftSelectItem": {
-     "kind": "value_object",
-     "sourceFile": "packages/raft_ui/lib/src/select_field.dart",
-     "declarationName": "RaftSelectItem",
-     "sourceBindings": [
-      {
-       "file": "packages/raft_ui/lib/src/select_field.dart",
-       "bytes": 14896,
-       "sha256": "5f9ed56b017d1a2f0c529920da62af934b8da521803499766a238ac7731fd17e"
+    "menu": {
+      "canonical": [
+        "RaftMenuItemSurface",
+        "RaftMenuSlotRow",
+        "RaftMenuPopupBackend",
+        "RaftDropdownMenu",
+        "RaftMenuPanel",
+        "RaftMenuItem",
+        "RaftContextMenuContent",
+        "RaftSelectionPopover"
+      ],
+      "note": "RaftMenuItemSurface paints the shared item surface and RaftMenuSlotRow lays out generated slots. PopupBackend owns common list/focus behavior; Dropdown/Panel/Item, ContextMenu and SelectionPopover retain their distinct source roles. Public typed values and callbacks remain with their adapters; Frozen rendering is preserved. Historical planning note (acceptance remains unverified): Source ownership proposed from exact 189+9 preparation inputs; final full/capture/visual acceptance remains pending.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftMenuItemSurface": {
+          "declarationId": "packages/raft_ui/lib/src/menu_action_row.dart#class:RaftMenuItemSurface",
+          "role": "paint_part"
+        },
+        "RaftMenuSlotRow": {
+          "declarationId": "packages/raft_ui/lib/src/menu_action_row.dart#class:RaftMenuSlotRow",
+          "role": "paint_part"
+        },
+        "RaftMenuPopupBackend": {
+          "declarationId": "packages/raft_ui/lib/src/menu_popup_backend.dart#class:RaftMenuPopupBackend",
+          "role": "public_api"
+        },
+        "RaftDropdownMenu": {
+          "declarationId": "packages/raft_ui/lib/src/design_primitives.dart#class:RaftDropdownMenu",
+          "role": "public_api"
+        },
+        "RaftMenuPanel": {
+          "declarationId": "packages/raft_ui/lib/src/design_primitives.dart#class:RaftMenuPanel",
+          "role": "public_api"
+        },
+        "RaftMenuItem": {
+          "declarationId": "packages/raft_ui/lib/src/design_primitives.dart#class:RaftMenuItem",
+          "role": "public_api"
+        },
+        "RaftContextMenuContent": {
+          "declarationId": "packages/raft_ui/lib/src/context_menu_content.dart#class:RaftContextMenuContent",
+          "role": "public_api"
+        },
+        "RaftSelectionPopover": {
+          "declarationId": "packages/raft_ui/lib/src/list_items.dart#class:RaftSelectionPopover",
+          "role": "public_api"
+        }
+      },
+      "nonWidgetModels": {
+        "RaftMenuPopupEntry": {
+          "kind": "value_object",
+          "sourceFile": "packages/raft_ui/lib/src/menu_popup_backend.dart",
+          "declarationName": "RaftMenuPopupEntry",
+          "sourceBindings": [
+            {
+              "file": "packages/raft_ui/lib/src/menu_popup_backend.dart",
+              "bytes": 19672,
+              "sha256": "9d02f6c24a1e54f9cab37715c5dde4bc0dfe0c4e03ff120e6d95a8191447e83c"
+            }
+          ],
+          "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
+        },
+        "RaftMenuPopupRowState": {
+          "kind": "value_object",
+          "sourceFile": "packages/raft_ui/lib/src/menu_popup_backend.dart",
+          "declarationName": "RaftMenuPopupRowState",
+          "sourceBindings": [
+            {
+              "file": "packages/raft_ui/lib/src/menu_popup_backend.dart",
+              "bytes": 19672,
+              "sha256": "9d02f6c24a1e54f9cab37715c5dde4bc0dfe0c4e03ff120e6d95a8191447e83c"
+            }
+          ],
+          "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
+        },
+        "RaftMenuPopupSlots": {
+          "kind": "value_object",
+          "sourceFile": "packages/raft_ui/lib/src/menu_popup_backend.dart",
+          "declarationName": "RaftMenuPopupSlots",
+          "sourceBindings": [
+            {
+              "file": "packages/raft_ui/lib/src/menu_popup_backend.dart",
+              "bytes": 19672,
+              "sha256": "9d02f6c24a1e54f9cab37715c5dde4bc0dfe0c4e03ff120e6d95a8191447e83c"
+            }
+          ],
+          "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
+        },
+        "RaftMenuPopupSlotResolver": {
+          "kind": "callback_typedef",
+          "sourceFile": "packages/raft_ui/lib/src/menu_popup_backend.dart",
+          "declarationName": "RaftMenuPopupSlotResolver",
+          "sourceBindings": [
+            {
+              "file": "packages/raft_ui/lib/src/menu_popup_backend.dart",
+              "bytes": 19672,
+              "sha256": "9d02f6c24a1e54f9cab37715c5dde4bc0dfe0c4e03ff120e6d95a8191447e83c"
+            }
+          ],
+          "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
+        }
       }
-     ],
-     "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
-    }
-   },
-   "canonicalBindings": {
-    "RaftSelectField": {
-     "declarationId": "packages/raft_ui/lib/src/select_field.dart#class:RaftSelectField",
-     "role": "public_api"
     },
-    "RaftLabeledSelect": {
-     "declarationId": "packages/raft_ui/lib/src/select_field.dart#class:RaftLabeledSelect",
-     "role": "public_api"
-    }
-   }
-  },
-  "steps": {
-   "canonical": [
-    "RaftSteps"
-   ],
-   "note": "RaftSteps (steps.dart, Web Steps), added in P4 for the Slack bridge setup.",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftSteps": {
-     "declarationId": "packages/raft_ui/lib/src/steps.dart#class:RaftSteps",
-     "role": "public_api"
-    }
-   }
-  },
-  "switch": {
-   "canonical": [
-    "RaftSwitch"
-   ],
-   "note": "RaftSwitch (raft/switch.dart, Web Switch); the forwarding RaftSwitch / RaftSwitchControl pair was merged (P4).",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftSwitch": {
-     "declarationId": "packages/raft_ui/lib/src/raft/switch.dart#class:RaftSwitch",
-     "role": "public_api"
-    }
-   }
-  },
-  "tabs": {
-   "canonical": [
-    "RaftTabs",
-    "RaftTabsList",
-    "RaftTabButton"
-   ],
-   "note": "RaftTabs / RaftTabsList / RaftTabButton (raft/tabs.dart, Web Tabs). RaftPanelTabBar and RaftConversationTabs are product strips (scrolling, reorder, Web SortableTabsList) built on RaftTabButton; RaftSegmentedStyle.tabs (frozen looks only) uses it too.",
-   "deprecated": {},
-   "canonicalBindings": {
-    "RaftTabs": {
-     "declarationId": "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabs",
-     "role": "public_api"
-    },
-    "RaftTabsList": {
-     "declarationId": "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabsList",
-     "role": "placement_part"
-    },
-    "RaftTabButton": {
-     "declarationId": "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabButton",
-     "role": "public_api"
-    }
-   }
-  },
-  "toggle_group": {
-   "canonical": [
-    "RaftToggleGroup"
-   ],
-   "note": "RaftToggleGroup (toggle_group.dart, Web ToggleGroup). The connected-apps view toggle and the FilterChip / ChoiceChip toggles use it (P4). The sign-up survey chips are a Web hand-built radiogroup, not a ToggleGroup.",
-   "deprecated": {},
-   "nonWidgetModels": {
-    "RaftToggleGroupItem": {
-     "kind": "value_object",
-     "sourceFile": "packages/raft_ui/lib/src/toggle_group.dart",
-     "declarationName": "RaftToggleGroupItem",
-     "sourceBindings": [
-      {
-       "file": "packages/raft_ui/lib/src/toggle_group.dart",
-       "bytes": 5151,
-       "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+    "popover": {
+      "canonical": [
+        "RaftPopoverSurface",
+        "RaftAnchoredPopup",
+        "RaftPopoverAnchor"
+      ],
+      "note": "RaftAnchoredPopup places a popup (viewport collision, flip) and RaftPopoverSurface paints it: layers of one popover, not rivals, so neither is deprecated. Private OverlayPortal/OverlayEntry panels are covered by bypass.overlay. RaftPopoverAnchor adapts caller-owned RawMenuAnchor lifetime/focus to this same RaftAnchoredPopup placement; it adds no independent surface or menu renderer.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftPopoverSurface": {
+          "declarationId": "packages/raft_ui/lib/src/popover_surface.dart#class:RaftPopoverSurface",
+          "role": "paint_part"
+        },
+        "RaftAnchoredPopup": {
+          "declarationId": "packages/raft_ui/lib/src/anchored_popup.dart#class:RaftAnchoredPopup",
+          "role": "placement_part"
+        },
+        "RaftPopoverAnchor": {
+          "declarationId": "packages/raft_ui/lib/src/popover_anchor.dart#class:RaftPopoverAnchor",
+          "role": "placement_part"
+        }
       }
-     ],
-     "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
+    },
+    "dialog": {
+      "canonical": [
+        "RaftDialog",
+        "showRaftDialog",
+        "RaftAlertDialog",
+        "showRaftAlertDialog",
+        "RaftDialogSurface",
+        "RaftDialogBackdrop",
+        "RaftFormDialog",
+        "RaftDialogFrame"
+      ],
+      "note": "RaftDialog owns standard, alert and DialogCard compositions; RaftFormDialog supplies form state on that implementation. RaftDialogFrame places presented content without painting it. RaftDialogSurface and RaftDialogBackdrop are shared paint parts. Old public Card/Shell/Modal names are compatibility adapters; frozen looks retain their original rendering. buildFrozenChoiceDialog is preserved legacy drawing, recorded as frozen_legacy in designSystemCoverage; it is not a current canonical paint part.",
+      "deprecated": {
+        "RaftDialogCard": "packages/raft_ui/lib/src/dialog_card.dart",
+        "showRaftModal": "packages/raft_ui/lib/src/dialog_card.dart",
+        "RaftDialogShell": "packages/raft_ui/lib/src/settings_controls.dart",
+        "RaftAgentDialogCard": "packages/raft_ui/lib/src/agent_create_form.dart",
+        "showRaftAgentModal": "packages/raft_ui/lib/src/agent_create_form.dart"
+      },
+      "canonicalBindings": {
+        "RaftDialog": {
+          "declarationId": "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog",
+          "role": "public_api"
+        },
+        "showRaftDialog": {
+          "declarationId": "packages/raft_ui/lib/src/overlays/dialog.dart#function:showRaftDialog",
+          "role": "public_api"
+        },
+        "RaftAlertDialog": {
+          "declarationId": "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftAlertDialog",
+          "role": "public_api"
+        },
+        "showRaftAlertDialog": {
+          "declarationId": "packages/raft_ui/lib/src/overlays/dialog.dart#function:showRaftAlertDialog",
+          "role": "public_api"
+        },
+        "RaftDialogSurface": {
+          "declarationId": "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogSurface",
+          "role": "paint_part"
+        },
+        "RaftDialogBackdrop": {
+          "declarationId": "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogBackdrop",
+          "role": "paint_part"
+        },
+        "RaftFormDialog": {
+          "declarationId": "packages/raft_ui/lib/src/form_dialog.dart#class:RaftFormDialog",
+          "role": "public_api"
+        },
+        "RaftDialogFrame": {
+          "declarationId": "packages/raft_ui/lib/src/presentation.dart#class:RaftDialogFrame",
+          "role": "placement_part"
+        }
+      },
+      "nonWidgetModels": {
+        "RaftChoiceDialogOption": {
+          "kind": "value_object",
+          "sourceFile": "packages/raft_ui/lib/src/choice_dialog.dart",
+          "declarationName": "RaftChoiceDialogOption",
+          "sourceBindings": [
+            {
+              "file": "packages/raft_ui/lib/src/choice_dialog.dart",
+              "bytes": 9615,
+              "sha256": "4d97844b83b0849ca66a30b6ac7d5602ca139140c0e304939ed3ac3a3df8d22e"
+            }
+          ],
+          "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
+        },
+        "RaftFrozenChoiceDialogOption": {
+          "kind": "value_object",
+          "sourceFile": "packages/raft_ui/lib/src/overlays/dialog.dart",
+          "declarationName": "RaftFrozenChoiceDialogOption",
+          "sourceBindings": [
+            {
+              "file": "packages/raft_ui/lib/src/overlays/dialog.dart",
+              "bytes": 36898,
+              "sha256": "0c757edd96cdb29bf4d934adca6ba3890471e545c2d0b27cb1acd3dde5fce3d3"
+            }
+          ],
+          "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
+        }
+      }
+    },
+    "segmented": {
+      "canonical": [
+        "RaftSegmentedControl",
+        "RaftSegmentedItem",
+        "RaftSegmentedTrack"
+      ],
+      "note": "One RaftSegmentedControl (raft/segmented_control.dart, Web SegmentedControl). RaftSegmentedTrack and RaftSegmentedItem are its parts (the fill-muted track and the 32px sticker item), not rivals. RaftRecipeSegmentedControl was merged into it (P4); its frozen Elegant and Brutal paint is a private class in raft/segmented_control_frozen.dart (legacyStyle: recipe). The old style argument is now legacyStyle and steers only the frozen looks.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftSegmentedControl": {
+          "declarationId": "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedControl",
+          "role": "public_api"
+        },
+        "RaftSegmentedItem": {
+          "declarationId": "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedItem",
+          "role": "paint_part"
+        },
+        "RaftSegmentedTrack": {
+          "declarationId": "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedTrack",
+          "role": "placement_part"
+        }
+      }
+    },
+    "spinner": {
+      "canonical": [
+        "RaftSpinner"
+      ],
+      "note": "RaftSpinner is the single public spinner (P6). RaftPixelSpinner (raft/pixel_spinner.dart) is its internal painter for the pixel look, not a duplicate.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftSpinner": {
+          "declarationId": "packages/raft_ui/lib/src/design_primitives.dart#class:RaftSpinner",
+          "role": "public_api"
+        }
+      }
+    },
+    "card": {
+      "canonical": [
+        "RaftCard"
+      ],
+      "note": "RaftRecipeCard, RaftSurfaceListItem and RaftChoiceCard were merged into RaftCard (P6) and no longer exist.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftCard": {
+          "declarationId": "packages/raft_ui/lib/src/card.dart#class:RaftCard",
+          "role": "public_api"
+        }
+      }
+    },
+    "banner": {
+      "canonical": [
+        "RaftBanner"
+      ],
+      "note": "RaftWarningBanner was removed (P6). RaftAgentBanner is a thin adapter over RaftBanner (maps status and passes colour overrides, styles nothing itself), so it is not a duplicate. RaftArchivedNameBanner was deferred by P6 on purpose: it builds its own box from the banner recipe. RaftBillingNotice and RaftPreviewNotice are not banners and are not listed.",
+      "deprecated": {
+        "RaftComposerNotice": "packages/raft_ui/lib/src/composer_pending_mentions.dart",
+        "RaftArchivedNameBanner": "packages/raft_ui/lib/src/create_channel_view.dart"
+      },
+      "canonicalBindings": {
+        "RaftBanner": {
+          "declarationId": "packages/raft_ui/lib/src/banner.dart#class:RaftBanner",
+          "role": "public_api"
+        }
+      }
+    },
+    "list_row": {
+      "canonical": [
+        "RaftListRow"
+      ],
+      "note": "List row duplicates; RaftListRow (raft/list_row.dart) is the Web ListRow port. RaftSurfaceListItem was merged into RaftCard (P6) and no longer exists.",
+      "deprecated": {
+        "RaftAvatarListRow": "packages/raft_ui/lib/src/list_items.dart",
+        "RaftConversationListRow": "packages/raft_ui/lib/src/conversation_list_row.dart"
+      },
+      "canonicalBindings": {
+        "RaftListRow": {
+          "declarationId": "packages/raft_ui/lib/src/raft/list_row.dart#class:RaftListRow",
+          "role": "public_api"
+        }
+      }
+    },
+    "checkbox": {
+      "canonical": [
+        "RaftCheckbox",
+        "RaftCheckboxIndicator",
+        "RaftCheckboxRow"
+      ],
+      "note": "RaftCheckbox is the one control (raft/checkbox.dart, Web Checkbox) and RaftCheckboxIndicator its graphic (Web CheckboxIndicator) for rows that own the tap. RaftCheckMarker, RaftCheckboxControl and the argument-swallowing RaftCheckbox wrapper were merged into them (P4). The Material Checkbox and CheckboxListTile paint of the frozen looks lives in raft/checkbox_frozen.dart.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftCheckbox": {
+          "declarationId": "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckbox",
+          "role": "public_api"
+        },
+        "RaftCheckboxIndicator": {
+          "declarationId": "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator",
+          "role": "paint_part"
+        },
+        "RaftCheckboxRow": {
+          "declarationId": "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxRow",
+          "role": "public_api"
+        }
+      }
+    },
+    "combobox": {
+      "canonical": [
+        "RaftComboboxPanel",
+        "RaftAgentCombobox"
+      ],
+      "note": "RaftComboboxPanel paints the combobox recipe; RaftAgentCombobox is the agent form adapter over it, not a rival.",
+      "deprecated": {},
+      "nonWidgetModels": {
+        "RaftComboboxItem": {
+          "kind": "value_object",
+          "sourceFile": "packages/raft_ui/lib/src/combobox_panel.dart",
+          "declarationName": "RaftComboboxItem",
+          "sourceBindings": [
+            {
+              "file": "packages/raft_ui/lib/src/combobox_panel.dart",
+              "bytes": 20810,
+              "sha256": "77c44a6f61ce8ee5799f01d3cff7cabc5839ce6a16015141826a9eb26fddbe2a"
+            }
+          ],
+          "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
+        }
+      },
+      "canonicalBindings": {
+        "RaftComboboxPanel": {
+          "declarationId": "packages/raft_ui/lib/src/combobox_panel.dart#class:RaftComboboxPanel",
+          "role": "public_api"
+        },
+        "RaftAgentCombobox": {
+          "declarationId": "packages/raft_ui/lib/src/agent_combobox.dart#class:RaftAgentCombobox",
+          "role": "public_api"
+        }
+      }
+    },
+    "picker_trigger": {
+      "canonical": [
+        "RaftPickerTriggerButton"
+      ],
+      "note": "RaftPickerTriggerButton (picker_trigger_button.dart, Web PickerTriggerButton). RaftPickerTriggerRecipe (design_primitives.dart) is the pre-0.7.0 recipe of RaftDropdownMenu's picker trigger style and of the frozen looks; RaftDropdownMenu is P2's, so it is not registered as a duplicate here.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftPickerTriggerButton": {
+          "declarationId": "packages/raft_ui/lib/src/picker_trigger_button.dart#class:RaftPickerTriggerButton",
+          "role": "public_api"
+        }
+      }
+    },
+    "radio_group": {
+      "canonical": [
+        "RaftRadioGroup",
+        "RaftRadioGroupItem",
+        "RaftRadioMark"
+      ],
+      "note": "RaftRadioGroup / RaftRadioGroupItem (radio_group.dart, Web RadioGroup); RaftRadioMark is the painted circle (Web RadioGroupIndicator), not a rival. The dialog-local RaftRadioMark rows were replaced (P4).",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftRadioGroup": {
+          "declarationId": "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioGroup",
+          "role": "public_api"
+        },
+        "RaftRadioGroupItem": {
+          "declarationId": "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioGroupItem",
+          "role": "public_api"
+        },
+        "RaftRadioMark": {
+          "declarationId": "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioMark",
+          "role": "paint_part"
+        }
+      }
+    },
+    "select": {
+      "canonical": [
+        "RaftSelectField",
+        "RaftLabeledSelect"
+      ],
+      "note": "RaftSelectField retains typed values and overlay ownership; its Raft popup consumes the shared RaftMenuPopupBackend with generated Select slots. Frozen Elegant/Brutal retain their original popup.",
+      "deprecated": {},
+      "nonWidgetModels": {
+        "RaftSelectItem": {
+          "kind": "value_object",
+          "sourceFile": "packages/raft_ui/lib/src/select_field.dart",
+          "declarationName": "RaftSelectItem",
+          "sourceBindings": [
+            {
+              "file": "packages/raft_ui/lib/src/select_field.dart",
+              "bytes": 19658,
+              "sha256": "db103cb53a1514e0f6c44f75a93964b7098522a26382c1b6d213aefd880040d0"
+            }
+          ],
+          "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
+        }
+      },
+      "canonicalBindings": {
+        "RaftSelectField": {
+          "declarationId": "packages/raft_ui/lib/src/select_field.dart#class:RaftSelectField",
+          "role": "public_api"
+        },
+        "RaftLabeledSelect": {
+          "declarationId": "packages/raft_ui/lib/src/select_field.dart#class:RaftLabeledSelect",
+          "role": "public_api"
+        }
+      }
+    },
+    "steps": {
+      "canonical": [
+        "RaftSteps"
+      ],
+      "note": "RaftSteps consumes the mechanically extracted published Steps CSS model (stepsCss). Slack bridge mounts the horizontal read-only three-stage subset. Library-only CSS dimensions remain unmounted and are not accepted states.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftSteps": {
+          "declarationId": "packages/raft_ui/lib/src/steps.dart#class:RaftSteps",
+          "role": "public_api"
+        }
+      }
+    },
+    "switch": {
+      "canonical": [
+        "RaftSwitch"
+      ],
+      "note": "RaftSwitch (raft/switch.dart, Web Switch); the forwarding RaftSwitch / RaftSwitchControl pair was merged (P4).",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftSwitch": {
+          "declarationId": "packages/raft_ui/lib/src/raft/switch.dart#class:RaftSwitch",
+          "role": "public_api"
+        }
+      }
+    },
+    "tabs": {
+      "canonical": [
+        "RaftTabs",
+        "RaftTabsList",
+        "RaftTabButton"
+      ],
+      "note": "RaftTabs / RaftTabsList / RaftTabButton (raft/tabs.dart, Web Tabs). RaftPanelTabBar and RaftConversationTabs are product strips (scrolling, reorder, Web SortableTabsList) built on RaftTabButton; RaftSegmentedStyle.tabs (frozen looks only) uses it too.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftTabs": {
+          "declarationId": "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabs",
+          "role": "public_api"
+        },
+        "RaftTabsList": {
+          "declarationId": "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabsList",
+          "role": "placement_part"
+        },
+        "RaftTabButton": {
+          "declarationId": "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabButton",
+          "role": "public_api"
+        }
+      }
+    },
+    "toggle_group": {
+      "canonical": [
+        "RaftToggleGroup"
+      ],
+      "note": "RaftToggleGroup (toggle_group.dart, Web ToggleGroup). The connected-apps view toggle and the FilterChip / ChoiceChip toggles use it (P4). The sign-up survey chips are a Web hand-built radiogroup, not a ToggleGroup.",
+      "deprecated": {},
+      "nonWidgetModels": {
+        "RaftToggleGroupItem": {
+          "kind": "value_object",
+          "sourceFile": "packages/raft_ui/lib/src/toggle_group.dart",
+          "declarationName": "RaftToggleGroupItem",
+          "sourceBindings": [
+            {
+              "file": "packages/raft_ui/lib/src/toggle_group.dart",
+              "bytes": 5151,
+              "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+            }
+          ],
+          "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
+        }
+      },
+      "canonicalBindings": {
+        "RaftToggleGroup": {
+          "declarationId": "packages/raft_ui/lib/src/toggle_group.dart#class:RaftToggleGroup",
+          "role": "public_api"
+        }
+      }
     }
-   },
-   "canonicalBindings": {
-    "RaftToggleGroup": {
-     "declarationId": "packages/raft_ui/lib/src/toggle_group.dart#class:RaftToggleGroup",
-     "role": "public_api"
+  },
+  "recipes": {
+    "spinner": {
+      "family": "spinner",
+      "decision": "existing",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/spinner.g.dart",
+      "axes": {
+        "size": [
+          "xs",
+          "sm",
+          "md",
+          "lg"
+        ],
+        "variant": [
+          "default",
+          "inverse"
+        ]
+      }
+    },
+    "buttonVariants": {
+      "family": "button",
+      "decision": "existing",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/button_variants.g.dart",
+      "axes": {
+        "variant": [
+          "primary",
+          "accent",
+          "warning",
+          "danger",
+          "default",
+          "outline",
+          "information",
+          "muted",
+          "success",
+          "danger-secondary",
+          "danger-outline",
+          "ghost",
+          "on-frame",
+          "link"
+        ],
+        "size": [
+          "xs",
+          "sm",
+          "md",
+          "lg",
+          "xl",
+          "inline",
+          "icon-xs",
+          "icon-sm",
+          "icon-md",
+          "icon-lg"
+        ]
+      }
+    },
+    "dialog": {
+      "family": "dialog",
+      "decision": "uncertain",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/dialog.g.dart",
+      "axes": {
+        "size": [
+          "sm",
+          "md",
+          "lg",
+          "wide"
+        ],
+        "bar": [
+          "false",
+          "true"
+        ],
+        "layer": [
+          "0",
+          "1"
+        ]
+      }
+    },
+    "dialogSurface": {
+      "family": "dialog",
+      "decision": "uncertain",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/dialog_surface.g.dart",
+      "axes": {}
+    },
+    "dialogNav": {
+      "family": "dialog",
+      "decision": "uncertain",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/dialog_nav.g.dart",
+      "axes": {}
+    },
+    "alertDialog": {
+      "family": "dialog",
+      "decision": "uncertain",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/alert_dialog.g.dart",
+      "axes": {}
+    },
+    "panelHeader": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel_header.g.dart",
+      "axes": {
+        "size": [
+          "sm",
+          "md"
+        ]
+      }
+    },
+    "drawerMotion": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/drawer_motion.g.dart",
+      "axes": {
+        "side": [
+          "down",
+          "up",
+          "left",
+          "right"
+        ],
+        "axis": [
+          "x",
+          "y"
+        ],
+        "snapPoints": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "drawer": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/drawer.g.dart",
+      "axes": {
+        "side": [
+          "down",
+          "up",
+          "left",
+          "right"
+        ],
+        "axis": [
+          "x",
+          "y"
+        ],
+        "snapPoints": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "badge": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/badge.g.dart",
+      "axes": {
+        "appearance": [
+          "solid",
+          "soft",
+          "outline"
+        ],
+        "variant": [
+          "default",
+          "primary",
+          "information",
+          "muted",
+          "accent",
+          "success",
+          "warning",
+          "danger"
+        ]
+      }
+    },
+    "formSection": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/form_section.g.dart",
+      "axes": {}
+    },
+    "tooltip": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/tooltip.g.dart",
+      "axes": {
+        "hasLeadingIcon": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "card": {
+      "family": "card",
+      "decision": "existing",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/card.g.dart",
+      "axes": {
+        "variant": [
+          "default",
+          "option",
+          "inset"
+        ]
+      }
+    },
+    "listRow": {
+      "family": "list_row",
+      "decision": "existing",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/list_row.g.dart",
+      "axes": {
+        "variant": [
+          "default",
+          "plain",
+          "entry"
+        ],
+        "interactive": [
+          "true",
+          "false"
+        ],
+        "wrap": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "status": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/status.g.dart",
+      "axes": {
+        "variant": [
+          "default",
+          "primary",
+          "information",
+          "muted",
+          "accent",
+          "success",
+          "warning",
+          "danger"
+        ],
+        "size": [
+          "xs",
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    },
+    "appRail": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/app_rail.g.dart",
+      "axes": {}
+    },
+    "copyableCode": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/copyable_code.g.dart",
+      "axes": {
+        "size": [
+          "sm",
+          "md"
+        ]
+      }
+    },
+    "checkboxIndicator": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/checkbox_indicator.g.dart",
+      "axes": {
+        "shape": [
+          "square",
+          "circle"
+        ],
+        "checked": [
+          "true",
+          "false"
+        ],
+        "disabled": [
+          "true",
+          "false"
+        ],
+        "previewOnHover": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "checkbox": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/checkbox.g.dart",
+      "axes": {}
+    },
+    "scrollArea": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/scroll_area.g.dart",
+      "axes": {}
+    },
+    "sidebarRecipe": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/sidebar_recipe.g.dart",
+      "axes": {}
+    },
+    "sidebarMenuRecipe": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/sidebar_menu_recipe.g.dart",
+      "axes": {}
+    },
+    "sidebarItemRecipe": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/sidebar_item_recipe.g.dart",
+      "axes": {
+        "interactive": [
+          "true",
+          "false"
+        ],
+        "wrap": [
+          "false",
+          "true"
+        ],
+        "stacked": [
+          "false",
+          "true"
+        ]
+      }
+    },
+    "sidebarSectionRecipe": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/sidebar_section_recipe.g.dart",
+      "axes": {}
+    },
+    "panel": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel.g.dart",
+      "axes": {
+        "edge": [
+          "inset",
+          "attached"
+        ]
+      }
+    },
+    "conversationPanel": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/conversation_panel.g.dart",
+      "axes": {}
+    },
+    "conversationPanelEmptyState": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/conversation_panel_empty_state.g.dart",
+      "axes": {}
+    },
+    "kbd": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/kbd.g.dart",
+      "axes": {}
+    },
+    "contextMenu": {
+      "family": "menu",
+      "decision": "existing",
+      "owner": "task289 menu source ownership",
+      "reason": "Exact generated source/semantic role is assigned to the shared menu parts and role adapter; this is source registration, not a visual pass.",
+      "generatedFile": "packages/raft_theme/lib/recipes/context_menu.g.dart",
+      "axes": {}
+    },
+    "dropdownMenu": {
+      "family": "menu",
+      "decision": "existing",
+      "owner": "task289 menu source ownership",
+      "reason": "Exact generated source/semantic role is assigned to the shared menu parts and role adapter; this is source registration, not a visual pass.",
+      "generatedFile": "packages/raft_theme/lib/recipes/dropdown_menu.g.dart",
+      "axes": {}
+    },
+    "lightbox": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/lightbox.g.dart",
+      "axes": {}
+    },
+    "mobileNav": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/mobile_nav.g.dart",
+      "axes": {}
+    },
+    "popover": {
+      "family": "popover",
+      "decision": "existing",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/popover.g.dart",
+      "axes": {}
+    },
+    "previewCard": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/preview_card.g.dart",
+      "axes": {}
+    },
+    "label": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/label.g.dart",
+      "axes": {
+        "size": [
+          "sm",
+          "md"
+        ]
+      }
+    },
+    "input": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/input.g.dart",
+      "axes": {}
+    },
+    "field": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/field.g.dart",
+      "axes": {
+        "size": [
+          "sm",
+          "md"
+        ]
+      }
+    },
+    "inputGroup": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/input_group.g.dart",
+      "axes": {
+        "align": [
+          "inline-start",
+          "inline-end"
+        ],
+        "variant": [
+          "default",
+          "container"
+        ]
+      }
+    },
+    "combobox": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/combobox.g.dart",
+      "axes": {
+        "inputOwner": [
+          "group",
+          "control"
+        ]
+      }
+    },
+    "pickerTriggerButton": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/picker_trigger_button.g.dart",
+      "axes": {}
+    },
+    "select": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/select.g.dart",
+      "axes": {
+        "chrome": [
+          "default",
+          "field"
+        ]
+      }
+    },
+    "radioGroup": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/radio_group.g.dart",
+      "axes": {}
+    },
+    "switchRecipe": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/switch_recipe.g.dart",
+      "axes": {}
+    },
+    "segmentedControl": {
+      "family": "segmented",
+      "decision": "uncertain",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/segmented_control.g.dart",
+      "axes": {}
+    },
+    "toggleGroup": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/toggle_group.g.dart",
+      "axes": {}
+    },
+    "textarea": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/textarea.g.dart",
+      "axes": {}
+    },
+    "textareaGroup": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/textarea_group.g.dart",
+      "axes": {}
+    },
+    "textareaCounter": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/textarea_counter.g.dart",
+      "axes": {
+        "overLimit": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "descriptionList": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/description_list.g.dart",
+      "axes": {
+        "direction": [
+          "vertical",
+          "horizontal"
+        ]
+      }
+    },
+    "avatar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/avatar.g.dart",
+      "axes": {
+        "type": [
+          "agent",
+          "human"
+        ],
+        "size": [
+          "xl",
+          "lg",
+          "md",
+          "sm",
+          "xs",
+          "2xs",
+          "3xs"
+        ]
+      }
+    },
+    "codeBlock": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/code_block.g.dart",
+      "axes": {}
+    },
+    "inlineCode": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/inline_code.g.dart",
+      "axes": {
+        "appearance": [
+          "default",
+          "message"
+        ]
+      }
+    },
+    "markdown": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/markdown.g.dart",
+      "axes": {
+        "level": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "ordered": [
+          "false",
+          "true"
+        ]
+      }
+    },
+    "messageItem": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_item.g.dart",
+      "axes": {
+        "compact": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "messageFooter": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_footer.g.dart",
+      "axes": {
+        "badgeStatus": [
+          "read",
+          "unread"
+        ],
+        "iconOnly": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "messageReaction": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_reaction.g.dart",
+      "axes": {}
+    },
+    "messageReference": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_reference.g.dart",
+      "axes": {
+        "variant": [
+          "primary",
+          "secondary",
+          "accent",
+          "muted",
+          "info",
+          "link",
+          "pending",
+          "unavailable"
+        ]
+      }
+    },
+    "messageMultiSelect": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_multi_select.g.dart",
+      "axes": {}
+    },
+    "messageTextSelectionToolbar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_text_selection_toolbar.g.dart",
+      "axes": {}
+    },
+    "messageSystem": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_system.g.dart",
+      "axes": {}
+    },
+    "messageEmbed": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_embed.g.dart",
+      "axes": {}
+    },
+    "messageQuotedPreview": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_quoted_preview.g.dart",
+      "axes": {}
+    },
+    "messageReplies": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_replies.g.dart",
+      "axes": {}
+    },
+    "messageActionCard": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_action_card.g.dart",
+      "axes": {
+        "tone": [
+          "neutral",
+          "primary",
+          "information",
+          "accent",
+          "success",
+          "warning",
+          "danger"
+        ]
+      }
+    },
+    "messageActionCardContent": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_action_card_content.g.dart",
+      "axes": {}
+    },
+    "messageAttachment": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_attachment.g.dart",
+      "axes": {}
+    },
+    "messageImageGallery": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_image_gallery.g.dart",
+      "axes": {
+        "count": [
+          "1",
+          "2",
+          "3"
+        ],
+        "single": [
+          "true",
+          "false"
+        ],
+        "laidOut": [
+          "true",
+          "false"
+        ],
+        "fit": [
+          "cover",
+          "contain"
+        ]
+      }
+    },
+    "messageVideoPreview": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_video_preview.g.dart",
+      "axes": {}
+    },
+    "messageForwardedBundle": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_forwarded_bundle.g.dart",
+      "axes": {
+        "fullWidth": [
+          "true",
+          "false"
+        ],
+        "collapsed": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "messageForwardedBundleItem": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_forwarded_bundle_item.g.dart",
+      "axes": {
+        "action": [
+          "static",
+          "interactive"
+        ]
+      }
+    },
+    "messageForwardedBundleGallery": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_forwarded_bundle_gallery.g.dart",
+      "axes": {
+        "count": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    },
+    "progress": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/progress.g.dart",
+      "axes": {
+        "variant": [
+          "primary",
+          "information",
+          "accent",
+          "success",
+          "warning",
+          "danger"
+        ],
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    },
+    "messageTranslation": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_translation.g.dart",
+      "axes": {}
+    },
+    "messageList": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_list.g.dart",
+      "axes": {
+        "tone": [
+          "faint",
+          "muted"
+        ]
+      }
+    },
+    "iconTile": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/icon_tile.g.dart",
+      "axes": {
+        "variant": [
+          "default",
+          "warning",
+          "information"
+        ],
+        "size": [
+          "xs",
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    },
+    "heading": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/heading.g.dart",
+      "axes": {
+        "level": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "variant": [
+          "default",
+          "primary",
+          "information",
+          "muted",
+          "placeholder",
+          "accent",
+          "success",
+          "warning",
+          "danger"
+        ]
+      }
+    },
+    "sans": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/sans.g.dart",
+      "axes": {
+        "size": [
+          "large",
+          "body",
+          "small",
+          "caption"
+        ],
+        "variant": [
+          "default",
+          "primary",
+          "information",
+          "muted",
+          "placeholder",
+          "accent",
+          "success",
+          "warning",
+          "danger"
+        ]
+      }
+    },
+    "mono": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/mono.g.dart",
+      "axes": {
+        "size": [
+          "code",
+          "meta",
+          "eyebrow",
+          "tabular"
+        ],
+        "variant": [
+          "default",
+          "primary",
+          "information",
+          "muted",
+          "placeholder",
+          "accent",
+          "success",
+          "warning",
+          "danger"
+        ]
+      }
+    },
+    "table": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/table.g.dart",
+      "axes": {}
+    },
+    "filePreview": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/file_preview.g.dart",
+      "axes": {
+        "placement": [
+          "corner",
+          "inline"
+        ]
+      }
+    },
+    "files": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/files.g.dart",
+      "axes": {}
+    },
+    "composer": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/composer.g.dart",
+      "axes": {}
+    },
+    "composerAttachment": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/composer_attachment.g.dart",
+      "axes": {
+        "side": [
+          "prev",
+          "next"
+        ]
+      }
+    },
+    "composerDropOverlay": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/composer_drop_overlay.g.dart",
+      "axes": {}
+    },
+    "composerSuggestionList": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/composer_suggestion_list.g.dart",
+      "axes": {
+        "separated": [
+          "true",
+          "false"
+        ],
+        "iconVariant": [
+          "avatar",
+          "framed",
+          "auxiliary",
+          "inline"
+        ],
+        "metaVariant": [
+          "text",
+          "code"
+        ]
+      }
+    },
+    "composerRoot": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/composer_root.g.dart",
+      "axes": {}
+    },
+    "composerToolbarLabel": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/composer_toolbar_label.g.dart",
+      "axes": {}
+    },
+    "skeleton": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/skeleton.g.dart",
+      "axes": {
+        "variant": [
+          "line",
+          "block",
+          "circle"
+        ]
+      }
+    },
+    "banner": {
+      "family": "banner",
+      "decision": "existing",
+      "owner": "design-system alignment",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
+      "generatedFile": "packages/raft_theme/lib/recipes/banner.g.dart",
+      "axes": {
+        "status": [
+          "default",
+          "destructive",
+          "warning",
+          "info",
+          "success"
+        ],
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    },
+    "emptyState": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/empty_state.g.dart",
+      "axes": {}
+    },
+    "notificationCenter": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/notification_center.g.dart",
+      "axes": {
+        "viewport": [
+          "desktop",
+          "mobile"
+        ],
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "read": [
+          "true",
+          "false"
+        ],
+        "status": [
+          "error",
+          "warning",
+          "info",
+          "success"
+        ]
+      }
+    },
+    "toastStyles": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/toast_styles.g.dart",
+      "axes": {
+        "placement": [
+          "bottom-center",
+          "bottom-right",
+          "top-center",
+          "top-right",
+          "none"
+        ],
+        "strategy": [
+          "fixed",
+          "absolute"
+        ],
+        "layout": [
+          "stacked",
+          "inline"
+        ]
+      }
+    },
+    "toastAction": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/toast_action.g.dart",
+      "axes": {}
+    },
+    "tabs": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/tabs.g.dart",
+      "axes": {
+        "variant": [
+          "default",
+          "underline"
+        ],
+        "placement": [
+          "top",
+          "bottom",
+          "left",
+          "right"
+        ]
+      }
+    },
+    "separator": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/separator.g.dart",
+      "axes": {}
+    },
+    "panelActionBase": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel_action_base.g.dart",
+      "axes": {}
+    },
+    "panelAction": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel_action.g.dart",
+      "axes": {}
+    },
+    "panelToggleAction": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel_toggle_action.g.dart",
+      "axes": {}
+    },
+    "appShell": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/app_shell.g.dart",
+      "axes": {
+        "overlay": [
+          "false",
+          "true"
+        ]
+      }
+    },
+    "resizable": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/resizable.g.dart",
+      "axes": {}
+    },
+    "panelNotice": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel_notice.g.dart",
+      "axes": {
+        "status": [
+          "default",
+          "warning",
+          "destructive",
+          "info",
+          "success"
+        ]
+      }
+    },
+    "profilePanel": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/profile_panel.g.dart",
+      "axes": {}
+    },
+    "threadPanel": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/thread_panel.g.dart",
+      "axes": {}
+    },
+    "liveAgentActivityBar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/live_agent_activity_bar.g.dart",
+      "axes": {}
+    },
+    "taskBoardColumn": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_board_column.g.dart",
+      "axes": {}
+    },
+    "taskStatusSoft": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_status_soft.g.dart",
+      "axes": {
+        "status": [
+          "todo",
+          "in-progress",
+          "in-review",
+          "done",
+          "closed"
+        ]
+      }
+    },
+    "taskStatusStrong": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_status_strong.g.dart",
+      "axes": {
+        "status": [
+          "todo",
+          "in-progress",
+          "in-review",
+          "done",
+          "closed"
+        ]
+      }
+    },
+    "taskCardStatus": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_card_status.g.dart",
+      "axes": {}
+    },
+    "taskCard": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_card.g.dart",
+      "axes": {}
+    },
+    "taskDnd": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_dnd.g.dart",
+      "axes": {}
+    },
+    "taskListSection": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_list_section.g.dart",
+      "axes": {}
+    },
+    "tasksPanel": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/tasks_panel.g.dart",
+      "axes": {}
+    },
+    "taskLoading": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_loading.g.dart",
+      "axes": {}
+    },
+    "taskChip": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_chip.g.dart",
+      "axes": {
+        "status": [
+          "todo",
+          "in-progress",
+          "in-review",
+          "done",
+          "closed"
+        ],
+        "variant": [
+          "default",
+          "inline"
+        ],
+        "size": [
+          "default",
+          "sm"
+        ]
+      }
+    },
+    "legacyTaskPanel": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/legacy_task_panel.g.dart",
+      "axes": {
+        "framed": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "activityInboxShell": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/activity_inbox_shell.g.dart",
+      "axes": {}
+    },
+    "activityInboxSidebar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/activity_inbox_sidebar.g.dart",
+      "axes": {}
+    },
+    "activityInboxToolbar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/activity_inbox_toolbar.g.dart",
+      "axes": {}
+    },
+    "inboxItem": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/inbox_item.g.dart",
+      "axes": {}
+    },
+    "search": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/search.g.dart",
+      "axes": {}
+    },
+    "searchEntity": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/search_entity.g.dart",
+      "axes": {}
+    },
+    "searchMessage": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/search_message.g.dart",
+      "axes": {}
+    },
+    "searchThread": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/search_thread.g.dart",
+      "axes": {}
+    },
+    "searchTrigger": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "design-system alignment",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "generatedFile": "packages/raft_theme/lib/recipes/search_trigger.g.dart",
+      "axes": {}
+    },
+    "webSelectionPanel": {
+      "family": "menu",
+      "decision": "existing",
+      "owner": "task289 menu source ownership",
+      "reason": "Exact generated source/semantic role is assigned to the shared menu parts and role adapter; this is source registration, not a visual pass.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_selection_panel.g.dart",
+      "axes": {}
+    },
+    "webMenuAction": {
+      "family": "menu",
+      "decision": "existing",
+      "owner": "task289 menu source ownership",
+      "reason": "Exact generated source/semantic role is assigned to the shared menu parts and role adapter; this is source registration, not a visual pass.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_menu_action.g.dart",
+      "axes": {}
+    },
+    "webSelectionRow": {
+      "family": "menu",
+      "decision": "existing",
+      "owner": "task289 menu source ownership",
+      "reason": "SelectionPopover/typed chooser row recipe: checked/disabled/italic axes are preserved exactly; not RadioGroup state semantics and not visual completion.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_selection_row.g.dart",
+      "axes": {
+        "checked": [
+          "true",
+          "false"
+        ],
+        "disabled": [
+          "true",
+          "false"
+        ],
+        "italic": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "webDialogCard": {
+      "family": "dialog",
+      "decision": "pending",
+      "owner": "P1 dialog alignment (task256)",
+      "reason": "Pinned Web DialogCard product recipe consumed by the canonical Dialog card composition; current visual acceptance remains pending.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_dialog_card.g.dart",
+      "axes": {}
+    },
+    "webMemberPicker": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "P1 member picker alignment (task256)",
+      "reason": "Pinned Web member-picker product composition is registered; canonical family ownership and current visual acceptance remain pending.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_member_picker.g.dart",
+      "axes": {}
+    },
+    "webAgentResetOptions": {
+      "family": "radio_group",
+      "decision": "existing",
+      "owner": "design-system alignment",
+      "reason": "Mechanically extracted from the pinned real Web composition. Source ownership only; current real-screen visual acceptance remains pending.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_agent_reset_options.g.dart",
+      "axes": {}
+    },
+    "webXlsxTabsLayout": {
+      "family": "tabs",
+      "decision": "existing",
+      "owner": "design-system alignment",
+      "reason": "Mechanically extracted from the pinned real Web composition. Source ownership only; current real-screen visual acceptance remains pending.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_xlsx_tabs_layout.g.dart",
+      "axes": {}
+    },
+    "stepsCss": {
+      "family": "steps",
+      "decision": "existing",
+      "owner": "design-system alignment",
+      "reason": "Mechanically extracted published CSS DOM model at the pinned UI version, not a tailwind-variants recipe. Actual mounted API is the horizontal read-only subset; no visual acceptance inferred.",
+      "generatedFile": "packages/raft_theme/lib/recipes/steps_css.g.dart",
+      "axes": {
+        "orientation": [
+          "horizontal",
+          "vertical"
+        ],
+        "status": [
+          "wait",
+          "process",
+          "finish",
+          "error"
+        ],
+        "last": [
+          "false",
+          "true"
+        ],
+        "clickable": [
+          "false",
+          "true"
+        ],
+        "disabled": [
+          "false",
+          "true"
+        ]
+      }
+    },
+    "webHelpMenu": {
+      "family": "menu",
+      "decision": "existing",
+      "owner": "task289 menu source ownership",
+      "reason": "Exact generated source/semantic role is assigned to the shared menu parts and role adapter; this is source registration, not a visual pass.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_help_menu.g.dart",
+      "axes": {}
+    },
+    "webSidebarSortMenu": {
+      "family": "menu",
+      "decision": "existing",
+      "owner": "task289 menu source ownership",
+      "reason": "Exact generated source/semantic role is assigned to the shared menu parts and role adapter; this is source registration, not a visual pass.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_sidebar_sort_menu.g.dart",
+      "axes": {}
     }
-   }
   }
- },
- "recipes": {
-  "spinner": {
-   "family": "spinner",
-   "decision": "existing",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/spinner.g.dart",
-   "axes": {
-    "size": [
-     "xs",
-     "sm",
-     "md",
-     "lg"
-    ],
-    "variant": [
-     "default",
-     "inverse"
-    ]
-   }
-  },
-  "buttonVariants": {
-   "family": "button",
-   "decision": "existing",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/button_variants.g.dart",
-   "axes": {
-    "variant": [
-     "primary",
-     "accent",
-     "warning",
-     "danger",
-     "default",
-     "outline",
-     "information",
-     "muted",
-     "success",
-     "danger-secondary",
-     "danger-outline",
-     "ghost",
-     "on-frame",
-     "link"
-    ],
-    "size": [
-     "xs",
-     "sm",
-     "md",
-     "lg",
-     "xl",
-     "inline",
-     "icon-xs",
-     "icon-sm",
-     "icon-md",
-     "icon-lg"
-    ]
-   }
-  },
-  "dialog": {
-   "family": "dialog",
-   "decision": "uncertain",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/dialog.g.dart",
-   "axes": {
-    "size": [
-     "sm",
-     "md",
-     "lg",
-     "wide"
-    ],
-    "bar": [
-     "false",
-     "true"
-    ],
-    "layer": [
-     "0",
-     "1"
-    ]
-   }
-  },
-  "dialogSurface": {
-   "family": "dialog",
-   "decision": "uncertain",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/dialog_surface.g.dart",
-   "axes": {}
-  },
-  "dialogNav": {
-   "family": "dialog",
-   "decision": "uncertain",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/dialog_nav.g.dart",
-   "axes": {}
-  },
-  "alertDialog": {
-   "family": "dialog",
-   "decision": "uncertain",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/alert_dialog.g.dart",
-   "axes": {}
-  },
-  "panelHeader": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/panel_header.g.dart",
-   "axes": {
-    "size": [
-     "sm",
-     "md"
-    ]
-   }
-  },
-  "drawerMotion": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/drawer_motion.g.dart",
-   "axes": {
-    "side": [
-     "down",
-     "up",
-     "left",
-     "right"
-    ],
-    "axis": [
-     "x",
-     "y"
-    ],
-    "snapPoints": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "drawer": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/drawer.g.dart",
-   "axes": {
-    "side": [
-     "down",
-     "up",
-     "left",
-     "right"
-    ],
-    "axis": [
-     "x",
-     "y"
-    ],
-    "snapPoints": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "badge": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/badge.g.dart",
-   "axes": {
-    "appearance": [
-     "solid",
-     "soft",
-     "outline"
-    ],
-    "variant": [
-     "default",
-     "primary",
-     "information",
-     "muted",
-     "accent",
-     "success",
-     "warning",
-     "danger"
-    ]
-   }
-  },
-  "formSection": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/form_section.g.dart",
-   "axes": {}
-  },
-  "tooltip": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/tooltip.g.dart",
-   "axes": {
-    "hasLeadingIcon": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "card": {
-   "family": "card",
-   "decision": "existing",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/card.g.dart",
-   "axes": {
-    "variant": [
-     "default",
-     "option",
-     "inset"
-    ]
-   }
-  },
-  "listRow": {
-   "family": "list_row",
-   "decision": "existing",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/list_row.g.dart",
-   "axes": {
-    "variant": [
-     "default",
-     "plain",
-     "entry"
-    ],
-    "interactive": [
-     "true",
-     "false"
-    ],
-    "wrap": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "status": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/status.g.dart",
-   "axes": {
-    "variant": [
-     "default",
-     "primary",
-     "information",
-     "muted",
-     "accent",
-     "success",
-     "warning",
-     "danger"
-    ],
-    "size": [
-     "xs",
-     "sm",
-     "md",
-     "lg"
-    ]
-   }
-  },
-  "appRail": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/app_rail.g.dart",
-   "axes": {}
-  },
-  "copyableCode": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/copyable_code.g.dart",
-   "axes": {
-    "size": [
-     "sm",
-     "md"
-    ]
-   }
-  },
-  "checkboxIndicator": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/checkbox_indicator.g.dart",
-   "axes": {
-    "shape": [
-     "square",
-     "circle"
-    ],
-    "checked": [
-     "true",
-     "false"
-    ],
-    "disabled": [
-     "true",
-     "false"
-    ],
-    "previewOnHover": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "checkbox": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/checkbox.g.dart",
-   "axes": {}
-  },
-  "scrollArea": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/scroll_area.g.dart",
-   "axes": {}
-  },
-  "sidebarRecipe": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/sidebar_recipe.g.dart",
-   "axes": {}
-  },
-  "sidebarMenuRecipe": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/sidebar_menu_recipe.g.dart",
-   "axes": {}
-  },
-  "sidebarItemRecipe": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/sidebar_item_recipe.g.dart",
-   "axes": {
-    "interactive": [
-     "true",
-     "false"
-    ],
-    "wrap": [
-     "false",
-     "true"
-    ],
-    "stacked": [
-     "false",
-     "true"
-    ]
-   }
-  },
-  "sidebarSectionRecipe": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/sidebar_section_recipe.g.dart",
-   "axes": {}
-  },
-  "panel": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/panel.g.dart",
-   "axes": {
-    "edge": [
-     "inset",
-     "attached"
-    ]
-   }
-  },
-  "conversationPanel": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/conversation_panel.g.dart",
-   "axes": {}
-  },
-  "conversationPanelEmptyState": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/conversation_panel_empty_state.g.dart",
-   "axes": {}
-  },
-  "kbd": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/kbd.g.dart",
-   "axes": {}
-  },
-  "contextMenu": {
-   "family": "menu",
-   "decision": "pending",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/context_menu.g.dart",
-   "axes": {}
-  },
-  "dropdownMenu": {
-   "family": "menu",
-   "decision": "pending",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/dropdown_menu.g.dart",
-   "axes": {}
-  },
-  "lightbox": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/lightbox.g.dart",
-   "axes": {}
-  },
-  "mobileNav": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/mobile_nav.g.dart",
-   "axes": {}
-  },
-  "popover": {
-   "family": "popover",
-   "decision": "existing",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/popover.g.dart",
-   "axes": {}
-  },
-  "previewCard": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/preview_card.g.dart",
-   "axes": {}
-  },
-  "label": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/label.g.dart",
-   "axes": {
-    "size": [
-     "sm",
-     "md"
-    ]
-   }
-  },
-  "input": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/input.g.dart",
-   "axes": {}
-  },
-  "field": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/field.g.dart",
-   "axes": {
-    "size": [
-     "sm",
-     "md"
-    ]
-   }
-  },
-  "inputGroup": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/input_group.g.dart",
-   "axes": {
-    "align": [
-     "inline-start",
-     "inline-end"
-    ],
-    "variant": [
-     "default",
-     "container"
-    ]
-   }
-  },
-  "combobox": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/combobox.g.dart",
-   "axes": {
-    "inputOwner": [
-     "group",
-     "control"
-    ]
-   }
-  },
-  "pickerTriggerButton": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/picker_trigger_button.g.dart",
-   "axes": {}
-  },
-  "select": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/select.g.dart",
-   "axes": {
-    "chrome": [
-     "default",
-     "field"
-    ]
-   }
-  },
-  "radioGroup": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/radio_group.g.dart",
-   "axes": {}
-  },
-  "switchRecipe": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/switch_recipe.g.dart",
-   "axes": {}
-  },
-  "segmentedControl": {
-   "family": "segmented",
-   "decision": "uncertain",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/segmented_control.g.dart",
-   "axes": {}
-  },
-  "toggleGroup": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/toggle_group.g.dart",
-   "axes": {}
-  },
-  "textarea": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/textarea.g.dart",
-   "axes": {}
-  },
-  "textareaGroup": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/textarea_group.g.dart",
-   "axes": {}
-  },
-  "textareaCounter": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/textarea_counter.g.dart",
-   "axes": {
-    "overLimit": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "descriptionList": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/description_list.g.dart",
-   "axes": {
-    "direction": [
-     "vertical",
-     "horizontal"
-    ]
-   }
-  },
-  "avatar": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/avatar.g.dart",
-   "axes": {
-    "type": [
-     "agent",
-     "human"
-    ],
-    "size": [
-     "xl",
-     "lg",
-     "md",
-     "sm",
-     "xs",
-     "2xs",
-     "3xs"
-    ]
-   }
-  },
-  "codeBlock": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/code_block.g.dart",
-   "axes": {}
-  },
-  "inlineCode": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/inline_code.g.dart",
-   "axes": {
-    "appearance": [
-     "default",
-     "message"
-    ]
-   }
-  },
-  "markdown": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/markdown.g.dart",
-   "axes": {
-    "level": [
-     "1",
-     "2",
-     "3",
-     "4",
-     "5",
-     "6"
-    ],
-    "ordered": [
-     "false",
-     "true"
-    ]
-   }
-  },
-  "messageItem": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_item.g.dart",
-   "axes": {
-    "compact": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "messageFooter": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_footer.g.dart",
-   "axes": {
-    "badgeStatus": [
-     "read",
-     "unread"
-    ],
-    "iconOnly": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "messageReaction": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_reaction.g.dart",
-   "axes": {}
-  },
-  "messageReference": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_reference.g.dart",
-   "axes": {
-    "variant": [
-     "primary",
-     "secondary",
-     "accent",
-     "muted",
-     "info",
-     "link",
-     "pending",
-     "unavailable"
-    ]
-   }
-  },
-  "messageMultiSelect": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_multi_select.g.dart",
-   "axes": {}
-  },
-  "messageTextSelectionToolbar": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_text_selection_toolbar.g.dart",
-   "axes": {}
-  },
-  "messageSystem": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_system.g.dart",
-   "axes": {}
-  },
-  "messageEmbed": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_embed.g.dart",
-   "axes": {}
-  },
-  "messageQuotedPreview": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_quoted_preview.g.dart",
-   "axes": {}
-  },
-  "messageReplies": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_replies.g.dart",
-   "axes": {}
-  },
-  "messageActionCard": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_action_card.g.dart",
-   "axes": {
-    "tone": [
-     "neutral",
-     "primary",
-     "information",
-     "accent",
-     "success",
-     "warning",
-     "danger"
-    ]
-   }
-  },
-  "messageActionCardContent": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_action_card_content.g.dart",
-   "axes": {}
-  },
-  "messageAttachment": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_attachment.g.dart",
-   "axes": {}
-  },
-  "messageImageGallery": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_image_gallery.g.dart",
-   "axes": {
-    "count": [
-     "1",
-     "2",
-     "3"
-    ],
-    "single": [
-     "true",
-     "false"
-    ],
-    "laidOut": [
-     "true",
-     "false"
-    ],
-    "fit": [
-     "cover",
-     "contain"
-    ]
-   }
-  },
-  "messageVideoPreview": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_video_preview.g.dart",
-   "axes": {}
-  },
-  "messageForwardedBundle": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_forwarded_bundle.g.dart",
-   "axes": {
-    "fullWidth": [
-     "true",
-     "false"
-    ],
-    "collapsed": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "messageForwardedBundleItem": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_forwarded_bundle_item.g.dart",
-   "axes": {
-    "action": [
-     "static",
-     "interactive"
-    ]
-   }
-  },
-  "messageForwardedBundleGallery": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_forwarded_bundle_gallery.g.dart",
-   "axes": {
-    "count": [
-     "1",
-     "2",
-     "3"
-    ]
-   }
-  },
-  "progress": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/progress.g.dart",
-   "axes": {
-    "variant": [
-     "primary",
-     "information",
-     "accent",
-     "success",
-     "warning",
-     "danger"
-    ],
-    "size": [
-     "sm",
-     "md",
-     "lg"
-    ]
-   }
-  },
-  "messageTranslation": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_translation.g.dart",
-   "axes": {}
-  },
-  "messageList": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/message_list.g.dart",
-   "axes": {
-    "tone": [
-     "faint",
-     "muted"
-    ]
-   }
-  },
-  "iconTile": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/icon_tile.g.dart",
-   "axes": {
-    "variant": [
-     "default",
-     "warning",
-     "information"
-    ],
-    "size": [
-     "xs",
-     "sm",
-     "md",
-     "lg"
-    ]
-   }
-  },
-  "heading": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/heading.g.dart",
-   "axes": {
-    "level": [
-     "1",
-     "2",
-     "3",
-     "4",
-     "5",
-     "6"
-    ],
-    "variant": [
-     "default",
-     "primary",
-     "information",
-     "muted",
-     "placeholder",
-     "accent",
-     "success",
-     "warning",
-     "danger"
-    ]
-   }
-  },
-  "sans": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/sans.g.dart",
-   "axes": {
-    "size": [
-     "large",
-     "body",
-     "small",
-     "caption"
-    ],
-    "variant": [
-     "default",
-     "primary",
-     "information",
-     "muted",
-     "placeholder",
-     "accent",
-     "success",
-     "warning",
-     "danger"
-    ]
-   }
-  },
-  "mono": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/mono.g.dart",
-   "axes": {
-    "size": [
-     "code",
-     "meta",
-     "eyebrow",
-     "tabular"
-    ],
-    "variant": [
-     "default",
-     "primary",
-     "information",
-     "muted",
-     "placeholder",
-     "accent",
-     "success",
-     "warning",
-     "danger"
-    ]
-   }
-  },
-  "table": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/table.g.dart",
-   "axes": {}
-  },
-  "filePreview": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/file_preview.g.dart",
-   "axes": {
-    "placement": [
-     "corner",
-     "inline"
-    ]
-   }
-  },
-  "files": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/files.g.dart",
-   "axes": {}
-  },
-  "composer": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/composer.g.dart",
-   "axes": {}
-  },
-  "composerAttachment": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/composer_attachment.g.dart",
-   "axes": {
-    "side": [
-     "prev",
-     "next"
-    ]
-   }
-  },
-  "composerDropOverlay": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/composer_drop_overlay.g.dart",
-   "axes": {}
-  },
-  "composerSuggestionList": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/composer_suggestion_list.g.dart",
-   "axes": {
-    "separated": [
-     "true",
-     "false"
-    ],
-    "iconVariant": [
-     "avatar",
-     "framed",
-     "auxiliary",
-     "inline"
-    ],
-    "metaVariant": [
-     "text",
-     "code"
-    ]
-   }
-  },
-  "composerRoot": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/composer_root.g.dart",
-   "axes": {}
-  },
-  "composerToolbarLabel": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/composer_toolbar_label.g.dart",
-   "axes": {}
-  },
-  "skeleton": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/skeleton.g.dart",
-   "axes": {
-    "variant": [
-     "line",
-     "block",
-     "circle"
-    ]
-   }
-  },
-  "banner": {
-   "family": "banner",
-   "decision": "existing",
-   "owner": "design-system alignment",
-   "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
-   "generatedFile": "packages/raft_theme/lib/recipes/banner.g.dart",
-   "axes": {
-    "status": [
-     "default",
-     "destructive",
-     "warning",
-     "info",
-     "success"
-    ],
-    "size": [
-     "sm",
-     "md",
-     "lg"
-    ]
-   }
-  },
-  "emptyState": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/empty_state.g.dart",
-   "axes": {}
-  },
-  "notificationCenter": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/notification_center.g.dart",
-   "axes": {
-    "viewport": [
-     "desktop",
-     "mobile"
-    ],
-    "size": [
-     "sm",
-     "md",
-     "lg"
-    ],
-    "read": [
-     "true",
-     "false"
-    ],
-    "status": [
-     "error",
-     "warning",
-     "info",
-     "success"
-    ]
-   }
-  },
-  "toastStyles": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/toast_styles.g.dart",
-   "axes": {
-    "placement": [
-     "bottom-center",
-     "bottom-right",
-     "top-center",
-     "top-right",
-     "none"
-    ],
-    "strategy": [
-     "fixed",
-     "absolute"
-    ],
-    "layout": [
-     "stacked",
-     "inline"
-    ]
-   }
-  },
-  "toastAction": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/toast_action.g.dart",
-   "axes": {}
-  },
-  "tabs": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/tabs.g.dart",
-   "axes": {
-    "variant": [
-     "default",
-     "underline"
-    ],
-    "placement": [
-     "top",
-     "bottom",
-     "left",
-     "right"
-    ]
-   }
-  },
-  "separator": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/separator.g.dart",
-   "axes": {}
-  },
-  "panelActionBase": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/panel_action_base.g.dart",
-   "axes": {}
-  },
-  "panelAction": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/panel_action.g.dart",
-   "axes": {}
-  },
-  "panelToggleAction": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/panel_toggle_action.g.dart",
-   "axes": {}
-  },
-  "appShell": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/app_shell.g.dart",
-   "axes": {
-    "overlay": [
-     "false",
-     "true"
-    ]
-   }
-  },
-  "resizable": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/resizable.g.dart",
-   "axes": {}
-  },
-  "panelNotice": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/panel_notice.g.dart",
-   "axes": {
-    "status": [
-     "default",
-     "warning",
-     "destructive",
-     "info",
-     "success"
-    ]
-   }
-  },
-  "profilePanel": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/profile_panel.g.dart",
-   "axes": {}
-  },
-  "threadPanel": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/thread_panel.g.dart",
-   "axes": {}
-  },
-  "liveAgentActivityBar": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/live_agent_activity_bar.g.dart",
-   "axes": {}
-  },
-  "taskBoardColumn": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/task_board_column.g.dart",
-   "axes": {}
-  },
-  "taskStatusSoft": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/task_status_soft.g.dart",
-   "axes": {
-    "status": [
-     "todo",
-     "in-progress",
-     "in-review",
-     "done",
-     "closed"
-    ]
-   }
-  },
-  "taskStatusStrong": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/task_status_strong.g.dart",
-   "axes": {
-    "status": [
-     "todo",
-     "in-progress",
-     "in-review",
-     "done",
-     "closed"
-    ]
-   }
-  },
-  "taskCardStatus": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/task_card_status.g.dart",
-   "axes": {}
-  },
-  "taskCard": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/task_card.g.dart",
-   "axes": {}
-  },
-  "taskDnd": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/task_dnd.g.dart",
-   "axes": {}
-  },
-  "taskListSection": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/task_list_section.g.dart",
-   "axes": {}
-  },
-  "tasksPanel": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/tasks_panel.g.dart",
-   "axes": {}
-  },
-  "taskLoading": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/task_loading.g.dart",
-   "axes": {}
-  },
-  "taskChip": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/task_chip.g.dart",
-   "axes": {
-    "status": [
-     "todo",
-     "in-progress",
-     "in-review",
-     "done",
-     "closed"
-    ],
-    "variant": [
-     "default",
-     "inline"
-    ],
-    "size": [
-     "default",
-     "sm"
-    ]
-   }
-  },
-  "legacyTaskPanel": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/legacy_task_panel.g.dart",
-   "axes": {
-    "framed": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "activityInboxShell": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/activity_inbox_shell.g.dart",
-   "axes": {}
-  },
-  "activityInboxSidebar": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/activity_inbox_sidebar.g.dart",
-   "axes": {}
-  },
-  "activityInboxToolbar": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/activity_inbox_toolbar.g.dart",
-   "axes": {}
-  },
-  "inboxItem": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/inbox_item.g.dart",
-   "axes": {}
-  },
-  "search": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/search.g.dart",
-   "axes": {}
-  },
-  "searchEntity": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/search_entity.g.dart",
-   "axes": {}
-  },
-  "searchMessage": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/search_message.g.dart",
-   "axes": {}
-  },
-  "searchThread": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/search_thread.g.dart",
-   "axes": {}
-  },
-  "searchTrigger": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/search_trigger.g.dart",
-   "axes": {}
-  },
-  "webSelectionPanel": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/web_selection_panel.g.dart",
-   "axes": {}
-  },
-  "webMenuAction": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/web_menu_action.g.dart",
-   "axes": {}
-  },
-  "webSelectionRow": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "design-system alignment",
-   "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-   "generatedFile": "packages/raft_theme/lib/recipes/web_selection_row.g.dart",
-   "axes": {
-    "checked": [
-     "true",
-     "false"
-    ],
-    "disabled": [
-     "true",
-     "false"
-    ],
-    "italic": [
-     "true",
-     "false"
-    ]
-   }
-  },
-  "webDialogCard": {
-   "family": "dialog",
-   "decision": "pending",
-   "owner": "P1 dialog alignment (task256)",
-   "reason": "Pinned Web DialogCard product recipe consumed by the canonical Dialog card composition; current visual acceptance remains pending.",
-   "generatedFile": "packages/raft_theme/lib/recipes/web_dialog_card.g.dart",
-   "axes": {}
-  },
-  "webMemberPicker": {
-   "family": null,
-   "decision": "unresolved",
-   "owner": "P1 member picker alignment (task256)",
-   "reason": "Pinned Web member-picker product composition is registered; canonical family ownership and current visual acceptance remain pending.",
-   "generatedFile": "packages/raft_theme/lib/recipes/web_member_picker.g.dart",
-   "axes": {}
-  }
- }
 }

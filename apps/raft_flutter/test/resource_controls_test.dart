@@ -12,6 +12,14 @@ import 'package:raft_flutter/features/task_selection_filter.dart';
 
 import 'flutter_test_config.dart' show leakDebt;
 
+Finder _taskPopover(String field) =>
+    find.byKey(ValueKey('task-selection-${field.toLowerCase()}-popover'));
+
+Finder _taskOption(String field, String value) => find.descendant(
+  of: _taskPopover(field),
+  matching: find.byKey(ValueKey('task-filter-$field-$value')),
+);
+
 class _Client extends RaftClient {
   _Client()
     : super(origin: 'https://fixture.test', sessionStore: MemorySessionStore());
@@ -166,19 +174,20 @@ void main() {
       await mount(t, 'tasks');
       await t.tap(find.byTooltip('Filter tasks by assignee'));
       await t.pumpAndSettle();
-      final dialog = find.byType(RaftMenuPanel);
+      final dialog = _taskPopover('Assignee');
       final search = find.descendant(
         of: dialog,
-        matching: find.byType(TextField),
+        matching: find.byType(EditableText),
       );
       await t.enterText(search, 'Assigned to Me');
       await t.pumpAndSettle();
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Assigned to Me'));
+      expect(find.text('Assigned to me'), findsOneWidget);
+      await t.tap(_taskOption('Assignee', 'user:alice'));
       await t.pumpAndSettle();
       await t.enterText(search, 'Unassigned');
       await t.pumpAndSettle();
-      expect(find.widgetWithText(RaftMenuItem, 'Unassigned'), findsOneWidget);
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Unassigned'));
+      expect(_taskOption('Assignee', 'unassigned'), findsOneWidget);
+      await t.tap(_taskOption('Assignee', 'unassigned'));
       await t.pumpAndSettle();
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
@@ -189,6 +198,7 @@ void main() {
 
   testWidgets('disposing the resource closes its owned task picker', (t) async {
     final view = ValueNotifier(true);
+    addTearDown(view.dispose);
     await t.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -208,12 +218,11 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.byTooltip('Filter tasks by assignee'));
     await t.pumpAndSettle();
-    expect(find.byType(RaftMenuPanel), findsOneWidget);
+    expect(_taskPopover('Assignee'), findsOneWidget);
     view.value = false;
     await t.pumpAndSettle();
-    expect(find.byType(RaftMenuPanel), findsNothing);
+    expect(find.byType(RaftSelectionPopover), findsNothing);
     expect(find.text('Home'), findsOneWidget);
-    view.dispose();
   });
 
   Future<void> menu(WidgetTester t, String title, String value) async {
@@ -237,7 +246,14 @@ void main() {
     expect(w.calls.last.query!.containsKey('senderType'), false);
     await t.tap(find.byTooltip('Search Scope'));
     await t.pumpAndSettle();
-    await t.tap(find.widgetWithText(RaftMenuItem, 'Mentions Me'));
+    expect(
+      find.descendant(
+        of: _taskPopover('Scope'),
+        matching: find.text('Mentions Me'),
+      ),
+      findsOneWidget,
+    );
+    await t.tap(_taskOption('Scope', 'mentioned'));
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await t.pumpAndSettle();
     expect(w.calls.last.query!['mentionTarget'], 'self');
@@ -526,18 +542,24 @@ void main() {
       await mount(t, 'tasks');
       await t.tap(find.byTooltip('Filter tasks by creator'));
       await t.pumpAndSettle();
-      await t.enterText(find.byType(TextField), 'bob');
+      await t.enterText(
+        find.descendant(
+          of: _taskPopover('Creator'),
+          matching: find.byType(EditableText),
+        ),
+        'bob',
+      );
       await t.pumpAndSettle();
-      expect(find.widgetWithText(RaftMenuItem, 'Writer'), findsNothing);
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Bob'));
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Robot Bob'));
+      expect(_taskOption('Creator', 'agent:agent'), findsNothing);
+      await t.tap(_taskOption('Creator', 'user:bob'));
+      await t.tap(_taskOption('Creator', 'agent:bob'));
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
       expect(find.text('Human unassigned'), findsOneWidget);
       expect(find.text('Agent same ID'), findsOneWidget);
       await t.tap(find.byTooltip('Filter tasks by assignee'));
       await t.pumpAndSettle();
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Unassigned'));
+      await t.tap(_taskOption('Assignee', 'unassigned'));
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
       expect(find.text('Human unassigned'), findsOneWidget);
@@ -610,7 +632,12 @@ void main() {
       await t.tap(find.byTooltip('Filter tasks by creator'));
       await t.pumpAndSettle();
       final select = t
-          .widget<RaftMenuItem>(find.widgetWithText(RaftMenuItem, 'Bob'))
+          .widget<RaftInteractive>(
+            find.descendant(
+              of: _taskOption('Creator', 'user:bob'),
+              matching: find.byType(RaftInteractive),
+            ),
+          )
           .onPressed!;
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
@@ -619,7 +646,7 @@ void main() {
       final dynamic state = t.state(find.byType(ResourceView));
       expect(state.taskAdvanced.creators, isEmpty);
       expect(find.byType(ResourceView), findsOneWidget);
-      expect(find.byType(RaftMenuPanel), findsNothing);
+      expect(find.byType(RaftSelectionPopover), findsNothing);
       expect(t.takeException(), isNull);
     },
   );

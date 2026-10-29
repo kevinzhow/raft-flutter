@@ -42,6 +42,9 @@ import 'thread_composer/fake_workspace.dart';
 import '../../support/app_services_fixture.dart';
 
 final Map<String, ParityCase> threadComposerCases = {
+  for (final state in const ['default', 'hover', 'focus'])
+    for (final theme in const ['raft', 'raft-dark'])
+      'components.files-popup.$state.$theme': _filesPopupCase,
   'components.thread.composer.empty': _composer(draft: ''),
   'components.thread.composer.states': _composer(
     draft: _seed,
@@ -321,6 +324,55 @@ final ParityCase _files = ParityCase(
     );
   },
   settle: const Duration(milliseconds: 600),
+);
+
+// Real SourceChannelFilesView entry; the original official list case stays intact.
+final ParityCase _filesPopupCase = ParityCase(
+  widgets: const [
+    'raft_flutter:SourceChannelFilesView',
+    'raft_flutter:SourceChannelFileRow',
+    'raft_ui:RaftDropdownMenu',
+    'raft_ui:RaftMenuPanel',
+  ],
+  notes:
+      'Extension suite (not official). Actual Files list first-row overflow. '
+      'Shared official files fixture; complete popup bounds only. '
+      'No download, jump, preview or native platform claim.',
+  build: (ctx) => _files.build(ctx),
+  settle: const Duration(milliseconds: 600),
+  interact: (tester, ctx) async {
+    expect(find.byType(SourceChannelFilesView), findsOneWidget);
+    final popup = find.byKey(
+      const ValueKey('channel-file-overflow-menu-visual-file-image'),
+    );
+    expect(popup, findsOneWidget);
+    expect(tester.widget<RaftMenuPanel>(popup).kind, RaftMenuKind.dropdownMenu);
+    for (final label in const ['Jump to original message', 'Download file']) {
+      expect(
+        find.descendant(of: popup, matching: find.text(label)).hitTestable(),
+        findsOneWidget,
+      );
+    }
+    if (ctx.props['menuPopupState'] != 'focus') return;
+    final row = find.descendant(
+      of: popup,
+      matching: find.widgetWithText(RaftMenuItem, 'Jump to original message'),
+    );
+    expect(row, findsOneWidget);
+    expect(
+      find
+          .descendant(
+            of: row,
+            matching: find.byType(FocusableActionDetector),
+            matchRoot: true,
+          )
+          .evaluate()
+          .map((element) => element.widget as FocusableActionDetector)
+          .any((detector) => detector.focusNode?.hasPrimaryFocus ?? false),
+      isTrue,
+      reason: 'The actual jump action must own keyboard focus.',
+    );
+  },
 );
 
 class _FilesHost extends StatefulWidget {

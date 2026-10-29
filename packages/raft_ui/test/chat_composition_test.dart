@@ -345,8 +345,17 @@ void main() {
             final control = find.byKey(const ValueKey('panel-tab-chat'));
             final face = find.descendant(
               of: control,
-              matching: find.byType(RaftCssBox),
+              matching: tokens.isRaftLook
+                  ? find.byWidgetPredicate(
+                      (widget) =>
+                          widget is RaftRecipeBox &&
+                          widget.style.context?.recipe == 'tabs' &&
+                          widget.style.context?.slot == 'tab',
+                    )
+                  : find.byType(RaftCssBox),
             );
+            expect(control, findsOneWidget);
+            expect(face, findsOneWidget);
             expect(tester.getSize(face).height, recipe.sourceTabHeight);
             expect(tester.getSize(control).height, recipe.targetHeight);
             expect(

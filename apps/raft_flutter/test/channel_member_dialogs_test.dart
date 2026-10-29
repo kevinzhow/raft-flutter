@@ -329,7 +329,7 @@ void main() {
       await t.tap(find.byKey(const ValueKey('joint-create-submit')));
       await t.pumpAndSettle();
       expect(find.text('Unarchive'), findsOneWidget);
-      expect(find.text('Change Name'), findsOneWidget);
+      expect(find.text('Change name'), findsOneWidget);
       await t.tap(find.text('Unarchive'));
       await t.pumpAndSettle();
       expect(unarchived, 'old');

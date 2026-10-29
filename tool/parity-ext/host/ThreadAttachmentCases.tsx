@@ -31,6 +31,7 @@ type ParityExtAttProps = {
   index: number;
   doc: string;
   hideArrows: boolean;
+  pendingSpinner: boolean;
 };
 
 const PARITY_EXT_ATT_HTML_URL = "data:text/html;charset=utf-8,%3C!doctype%20html%3E%3Cbody%3E%3C!--";
@@ -47,6 +48,7 @@ function parityExtAttProps(): ParityExtAttProps | null {
     index: Number(params.get("index") ?? 0),
     doc: params.get("doc") ?? "text",
     hideArrows: params.get("hideArrows") === "1",
+    pendingSpinner: params.get("pendingSpinner") === "1",
   };
 }
 
@@ -55,6 +57,11 @@ function parityExtAttPrime(p: ParityExtAttProps) {
   const fx = parityExtAttFixture as any;
   const commentContext = { parentMessage: fx.parent };
   if (p.host === "image") {
+    if (p.pendingSpinner) {
+      // Use the real opener; never write loading/error or a prepared image URL.
+      parityExtAttImageStore.getState().open([{ ...fx.pendingSpinner.image }], 0, {});
+      return;
+    }
     const images = (fx.images as any[]).slice(0, p.images).map((image) => ({
       id: image.id,
       filename: image.filename,

@@ -5,8 +5,8 @@ import { join } from 'node:path';
 const hash = (text) => createHash('sha256').update(text).digest('hex');
 
 export function extractMenuCompositions(web, ts) {
-  function source(name) {
-    const path = `src/components/ui/${name}.tsx`;
+  function source(name, section = 'ui') {
+    const path = `src/components/${section}/${name}.tsx`;
     const text = readFileSync(join(web, path), 'utf8');
     const ast = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
     if (ast.parseDiagnostics.length) throw new Error(`Cannot parse ${path}`);
@@ -105,6 +105,24 @@ export function extractMenuCompositions(web, ts) {
     exported: [], directUsers: [], exportedComponents: components,
     options, nonLiteral: [], resolvedIdentifiers: [],
   });
+  const help = source('LeftRail', 'layout');
+  const helpFunctions = nodes(help.ast, (node) => ts.isFunctionDeclaration(node) && node.name?.text === 'HelpMenu');
+  if (helpFunctions.length !== 1) throw new Error('Expected one HelpMenu');
+  const helpPopovers = nodes(helpFunctions[0].body, (node) =>
+    ts.isJsxElement(node) && node.openingElement.tagName.getText() === 'PopoverContent');
+  if (helpPopovers.length !== 1) throw new Error('Help popup structure changed');
+  const helpHeaders = nodes(helpPopovers[0], (node) =>
+    ts.isJsxElement(node) && node.openingElement.tagName.getText() === 'div');
+  if (helpHeaders.length !== 1 || nodes(helpHeaders[0], (node) =>
+    ts.isJsxElement(node) && node.openingElement.tagName.getText() === 'SectionEyebrow').length !== 1) {
+    throw new Error('Help header structure changed');
+  }
+  const sort = source('SidebarSortMenu', 'layout');
+  const sortFunctions = nodes(sort.ast, (node) => ts.isFunctionDeclaration(node) && node.name?.text === 'SidebarSortMenu');
+  if (sortFunctions.length !== 1) throw new Error('Expected one SidebarSortMenu');
+  const sortSelections = nodes(sortFunctions[0].body, (node) =>
+    ts.isJsxSelfClosingElement(node) && node.tagName.getText() === 'SelectionPopover');
+  if (sortSelections.length !== 1) throw new Error('Sidebar sort selection structure changed');
   const recipes = [
     metadata('webSelectionPanel', selection, ['SelectionPopoverSections'], { slots: sectionSlots }),
     metadata('webMenuAction', action, ['MenuItem'], { slots: { root: actionClasses } }),
@@ -116,6 +134,13 @@ export function extractMenuCompositions(web, ts) {
         checked, disabled, italic, class: { root, leading, label },
       })),
     }),
+    metadata('webSidebarSortMenu', sort, ['SidebarSortMenu'], { slots: {
+      root: `${sectionSlots.root} ${className(sortSelections[0], new Map())}`,
+    } }),
+    metadata('webHelpMenu', help, ['HelpMenu'], { slots: {
+      root: className(helpPopovers[0], new Map()),
+      header: className(helpHeaders[0], new Map()),
+    } }),
   ];
   return recipes;
 

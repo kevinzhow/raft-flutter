@@ -117,12 +117,12 @@ abstract final class RaftCopyableCodeRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1141, 965, 1926, 1483, 1319, 1023],
-    [1483, 966, 1014, 1708, 620, 633, 599, 1836, 1820, 1658, 1338, 1676],
-    [618, 1926, 1483, 1424, 651],
-    [1738, 8, 7, 221],
+    [1141, 965, 1929, 1484, 1319, 1023],
+    [1484, 966, 1014, 1710, 620, 633, 599, 1838, 1822, 1660, 1338, 1678],
+    [618, 1929, 1484, 1424, 651],
+    [1740, 8, 7, 221],
     [
-      1680,
+      1682,
       1306,
       12,
       16,
@@ -131,7 +131,7 @@ abstract final class RaftCopyableCodeRecipe {
       13,
       14,
       20,
-      1498,
+      1500,
       783,
       782,
       784,
@@ -144,11 +144,11 @@ abstract final class RaftCopyableCodeRecipe {
       777,
       776,
       775,
-      1751,
+      1753,
       17,
       18,
     ],
-    [1483, 966, 1014, 1708, 620, 633, 599, 1836, 1820, 1658, 1338, 1468, 1678],
+    [1484, 966, 1014, 1710, 620, 633, 599, 1838, 1822, 1660, 1338, 1469, 1680],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

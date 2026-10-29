@@ -1725,5 +1725,17 @@
     "$status": 500
    }
   }
+ },
+ "pendingSpinner": {
+  "image": {
+   "id": "att-spinner-address-289",
+   "filename": "waiting-address.png",
+   "mimeType": "image/png",
+   "sizeBytes": 48211,
+   "commentCount": 0,
+   "width": 640,
+   "height": 400
+  },
+  "queryPath": "/attachments/att-spinner-address-289/url"
  }
 }

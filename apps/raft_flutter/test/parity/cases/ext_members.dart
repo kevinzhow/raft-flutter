@@ -46,7 +46,9 @@ Object? _answer(
   Map<String, dynamic>? query,
 ) {
   final answer = _routes(ctx)['$method $path'];
-  if (answer == null) return ScreenWire(ctx.fixtureData).common(method, path, query);
+  if (answer == null) {
+    return ScreenWire(ctx.fixtureData).common(method, path, query);
+  }
   if (answer is Map && answer['\$pending'] == true) {
     return ScreenFixtureClient.pending;
   }
@@ -135,7 +137,10 @@ class _ResourceWorkspace extends WorkspaceController {
       return Completer<dynamic>().future;
     }
     if (answer is Map && answer['\$status'] != null) {
-      throw RaftApiException('fixture error', status: answer['\$status'] as int);
+      throw RaftApiException(
+        'fixture error',
+        status: answer['\$status'] as int,
+      );
     }
     return answer ?? super.query(path, query: query);
   }
@@ -248,8 +253,15 @@ Widget _list(ParityContext ctx) => ScreenWorkspaceHost(
 
 ParityCase _case(String kind) => ParityCase(
   widgets: switch (kind) {
-    'list' => const ['raft_flutter:DesktopDirectoryView', 'raft_ui:RaftNavItem'],
-    'main' => const ['raft_flutter:WorkspaceView', 'raft_flutter:MemberProfileView', 'raft_ui:RaftPanelHeaderBar'],
+    'list' => const [
+      'raft_flutter:DesktopDirectoryView',
+      'raft_ui:RaftNavItem',
+    ],
+    'main' => const [
+      'raft_flutter:WorkspaceView',
+      'raft_flutter:MemberProfileView',
+      'raft_ui:RaftPanelHeaderBar',
+    ],
     _ => const ['raft_flutter:WorkspaceView'],
   },
   notes: 'Extension suite (not official).',
@@ -268,4 +280,12 @@ final Map<String, ParityCase> extMemberCases = {
   for (final MapEntry(key: key, value: kind) in extMemberCaseKinds.entries)
     for (final theme in const ['brutal', 'elegant', 'elegant-dark'])
       'components.members-ext.$key.$theme': _case(kind),
+  // Current Reset evidence follows the same real directory/profile journey.
+  for (final key in const [
+    'agent.reset-restart',
+    'agent.reset-session',
+    'agent.reset-full',
+  ])
+    for (final theme in const ['raft', 'raft-dark'])
+      'components.members-ext.$key.$theme': _case('main'),
 };

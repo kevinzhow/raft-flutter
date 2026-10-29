@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'attachment_tokens.dart';
 import 'design_primitives.dart' show RaftLightboxRecipe, RaftSpinner;
+import 'recipes/spinner.g.dart' show RaftSpinnerRecipeSize;
 import 'indicators.dart';
 import 'panel_layout.dart' show RaftPanelHeaderBar;
 import 'dialog_card.dart';
@@ -616,10 +617,17 @@ class RaftLightboxCounter extends StatelessWidget {
 class RaftLightboxLoading extends StatelessWidget {
   const RaftLightboxLoading({super.key});
   @override
-  Widget build(BuildContext context) => const Center(
+  Widget build(BuildContext context) => Center(
     child: SizedBox.square(
       dimension: 256,
-      child: Center(child: RaftSpinner(inverse: true, size: 32)),
+      child: Center(
+        child: RaftTokens.of(context).isRaftLook
+            ? const RaftSpinner(
+                inverse: true,
+                recipeSize: RaftSpinnerRecipeSize.lg,
+              )
+            : const RaftSpinner(inverse: true, size: 32),
+      ),
     ),
   );
 }

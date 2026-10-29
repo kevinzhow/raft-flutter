@@ -12,7 +12,7 @@ import 'recipe_runtime.dart';
 const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility(
     '**:data-[activity-inbox-action=sort]:text-foreground-muted',
-    1389,
+    1392,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-activity-inbox-action="sort"]', [], 2000, [
@@ -22,7 +22,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=\'button-content\']:font-field',
-    1488,
+    1491,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot=\'button-content\']', [], 2000, [
@@ -33,7 +33,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=\'button-content\']:justify-between',
-    1487,
+    1490,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot=\'button-content\']', [], 2000, [
@@ -43,7 +43,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=\'button-content\']:w-full',
-    1486,
+    1489,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot=\'button-content\']', [], 2000, [
@@ -53,7 +53,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=\'combobox-clear\']:shrink-0',
-    1489,
+    1492,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot=\'combobox-clear\']', [], 2000, [
@@ -63,7 +63,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=\'select-item-text\']:font-field',
-    1490,
+    1493,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot=\'select-item-text\']', [], 2000, [
@@ -74,7 +74,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=\'select-value\']:font-field',
-    1492,
+    1495,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot=\'select-value\']', [], 2000, [
@@ -85,7 +85,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=button]:duration-150',
-    1500,
+    1503,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="button"]', [], 2000, [
@@ -96,7 +96,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=button]:transition-[color,background-color,box-shadow]',
-    1499,
+    1502,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="button"]', [], 2000, [
@@ -108,7 +108,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=button]:w-auto',
-    1497,
+    1500,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="button"]', [], 2000, [
@@ -118,7 +118,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=button]:w-full',
-    1498,
+    1501,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="button"]', [], 2000, [
@@ -128,7 +128,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=composer-attachment]:shrink-0',
-    1502,
+    1505,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="composer-attachment"]', [], 2000, [
@@ -138,7 +138,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=copyable-code-icon]:col-start-1',
-    1503,
+    1506,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="copyable-code-icon"]', [], 2000, [
@@ -148,7 +148,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=copyable-code-icon]:duration-170',
-    1509,
+    1512,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="copyable-code-icon"]', [], 2000, [
@@ -159,7 +159,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=copyable-code-icon]:ease-[cubic-bezier(0.16,1,0.3,1)]',
-    1510,
+    1513,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="copyable-code-icon"]', [], 2000, [
@@ -170,7 +170,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=copyable-code-icon]:origin-center',
-    1506,
+    1509,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="copyable-code-icon"]', [], 2000, [
@@ -180,7 +180,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=copyable-code-icon]:row-start-1',
-    1504,
+    1507,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="copyable-code-icon"]', [], 2000, [
@@ -190,7 +190,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=copyable-code-icon]:size-4',
-    1505,
+    1508,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="copyable-code-icon"]', [], 2000, [
@@ -201,7 +201,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=copyable-code-icon]:stroke-2',
-    1507,
+    1510,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="copyable-code-icon"]', [], 2000, [
@@ -211,7 +211,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=copyable-code-icon]:transition-[opacity,filter,scale]',
-    1508,
+    1511,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="copyable-code-icon"]', [], 2000, [
@@ -223,7 +223,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=copyable-code-icon]:will-change-[opacity,filter,scale]',
-    1511,
+    1514,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="copyable-code-icon"]', [], 2000, [
@@ -233,7 +233,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=file-preview-media]:bg-transparent',
-    1516,
+    1519,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="file-preview-media"]', [], 2000, [
@@ -243,7 +243,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=file-preview-media]:border-0',
-    1515,
+    1518,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="file-preview-media"]', [], 2000, [
@@ -260,7 +260,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=file-preview-media]:ring-0',
-    1518,
+    1521,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="file-preview-media"]', [], 2000, [
@@ -271,7 +271,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=file-preview-media]:shadow-none',
-    1517,
+    1520,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="file-preview-media"]', [], 2000, [
@@ -282,7 +282,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=file-preview-media]:size-full',
-    1514,
+    1517,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="file-preview-media"]', [], 2000, [
@@ -293,7 +293,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=file-preview]:size-full',
-    1513,
+    1516,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="file-preview"]', [], 2000, [
@@ -304,7 +304,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=kbd]:leading-4',
-    1523,
+    1526,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="kbd"]', [], 2000, [
@@ -315,7 +315,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=kbd]:relative',
-    1520,
+    1523,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="kbd"]', [], 2000, [
@@ -325,7 +325,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=kbd]:text-[12px]',
-    1522,
+    1525,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="kbd"]', [], 2000, [
@@ -333,14 +333,14 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('**:data-[slot=kbd]:z-10', 1521, RaftUtilityStatus.descendant, [
+  RaftUtility('**:data-[slot=kbd]:z-10', 1524, RaftUtilityStatus.descendant, [
     RaftLayer(':is(& *)[data-slot="kbd"]', [], 2000, [
       RaftDecl('z-index', CssNum(10)),
     ]),
   ]),
   RaftUtility(
     '**:data-[slot=sidebar-group-label]:flex',
-    1532,
+    1535,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-group-label"]', [], 2000, [
@@ -350,7 +350,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-group-label]:font-sans',
-    1534,
+    1537,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-group-label"]', [], 2000, [
@@ -360,7 +360,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-group-label]:items-center',
-    1533,
+    1536,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-group-label"]', [], 2000, [
@@ -370,7 +370,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-group-label]:normal-case',
-    1537,
+    1540,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-group-label"]', [], 2000, [
@@ -380,7 +380,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-group-label]:text-footnote',
-    1535,
+    1538,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-group-label"]', [], 2000, [
@@ -391,7 +391,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-group-label]:text-foreground-hint',
-    1536,
+    1539,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-group-label"]', [], 2000, [
@@ -401,7 +401,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-item-channel-icon]:h-lh',
-    1538,
+    1541,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-item-channel-icon"]', [], 2000, [
@@ -411,7 +411,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-item-icon]:h-lh',
-    1540,
+    1543,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-item-icon"]', [], 2000, [
@@ -421,7 +421,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-item-meta-icon]:h-lh',
-    1541,
+    1544,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-item-meta-icon"]', [], 2000, [
@@ -431,7 +431,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-section-chevron]:size-3.5',
-    1542,
+    1545,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-section-chevron"]', [], 2000, [
@@ -442,7 +442,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-section-chevron]:stroke-2',
-    1543,
+    1546,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-section-chevron"]', [], 2000, [
@@ -452,7 +452,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=sidebar-section-chevron]:transition-transform',
-    1544,
+    1547,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="sidebar-section-chevron"]', [], 2000, [
@@ -464,7 +464,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=task-card-status-label]:inline-flex',
-    1555,
+    1558,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="task-card-status-label"]', [], 2000, [
@@ -474,7 +474,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=task-card-status-label]:items-center',
-    1556,
+    1559,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="task-card-status-label"]', [], 2000, [
@@ -484,7 +484,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=task-card]:shadow-float',
-    1554,
+    1557,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="task-card"]', [], 2000, [
@@ -495,7 +495,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-[slot=toast-content]:opacity-100',
-    1557,
+    1560,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-slot="toast-content"]', [], 2000, [
@@ -505,7 +505,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-activity-inbox-show-all:decoration-[1.5px]',
-    1271,
+    1274,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-activity-inbox-show-all]', [], 2000, [
@@ -515,7 +515,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-activity-inbox-show-all:font-sans',
-    1265,
+    1268,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-activity-inbox-show-all]', [], 2000, [
@@ -525,7 +525,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-activity-inbox-show-all:normal-case',
-    1269,
+    1272,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-activity-inbox-show-all]', [], 2000, [
@@ -535,7 +535,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-activity-inbox-show-all:text-footnote',
-    1266,
+    1269,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-activity-inbox-show-all]', [], 2000, [
@@ -546,7 +546,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-activity-inbox-show-all:text-foreground',
-    1268,
+    1271,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-activity-inbox-show-all]', [], 2000, [
@@ -556,7 +556,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-activity-inbox-show-all:underline',
-    1270,
+    1273,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-activity-inbox-show-all]', [], 2000, [
@@ -566,7 +566,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-activity-inbox-show-all:underline-offset-[3px]',
-    1272,
+    1275,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-activity-inbox-show-all]', [], 2000, [
@@ -576,7 +576,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-activity-inbox-show-all:whitespace-nowrap',
-    1267,
+    1270,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-activity-inbox-show-all]', [], 2000, [
@@ -584,7 +584,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('**:data-icon:size-[1em]', 1322, RaftUtilityStatus.descendant, [
+  RaftUtility('**:data-icon:size-[1em]', 1325, RaftUtilityStatus.descendant, [
     RaftLayer(':is(& *)[data-icon]', [], 2000, [
       RaftDecl('width', CssNum(1, 'em')),
       RaftDecl('height', CssNum(1, 'em')),
@@ -592,7 +592,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '**:data-lightbox-close:inset-auto',
-    1343,
+    1346,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-lightbox-close]', [], 2000, [
@@ -605,7 +605,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-lightbox-close:right-auto',
-    1345,
+    1348,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-lightbox-close]', [], 2000, [
@@ -615,7 +615,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-lightbox-close:static',
-    1342,
+    1345,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-lightbox-close]', [], 2000, [
@@ -625,7 +625,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-lightbox-close:top-auto',
-    1344,
+    1347,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-lightbox-close]', [], 2000, [
@@ -635,7 +635,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-message-item:bg-transparent',
-    1347,
+    1350,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-message-item]', [], 2000, [
@@ -645,7 +645,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-picker-trigger-indicator:opacity-100',
-    1353,
+    1356,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-picker-trigger-indicator]', [], 2000, [
@@ -655,7 +655,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '**:data-picker-trigger-indicator:text-foreground-hint',
-    1352,
+    1355,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& *)[data-picker-trigger-indicator]', [], 2000, [
@@ -663,7 +663,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('**:select-text', 868, RaftUtilityStatus.descendant, [
+  RaftUtility('**:select-text', 871, RaftUtilityStatus.descendant, [
     RaftLayer(':is(& *)', [], 1000, [
       RaftDecl('-webkit-user-select', CssKeyword('text')),
       RaftDecl('user-select', CssKeyword('text')),
@@ -671,7 +671,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '*:[[role=menuitem]]:justify-center',
-    1760,
+    1763,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *):is([role=menuitem])', [], 2000, [
@@ -681,7 +681,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=avatar-group-count]:shadow-[0_0_0_1.5px_var(--sticker-edge),0_0_0_3px_var(--layer-canvas)]',
-    1495,
+    1498,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="avatar-group-count"]', [], 2000, [
@@ -692,7 +692,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=avatar]:mt-[calc((1lh-19px)/2)]',
-    1493,
+    1496,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="avatar"]', [], 2000, [
@@ -702,7 +702,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=avatar]:shadow-[0_0_0_1.5px_var(--sticker-edge),0_0_0_3px_var(--layer-canvas)]',
-    1494,
+    1497,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="avatar"]', [], 2000, [
@@ -713,7 +713,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=button]:ml-[-5px]',
-    1496,
+    1499,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="button"]', [], 2000, [
@@ -723,7 +723,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=checkbox]:mt-px',
-    1501,
+    1504,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="checkbox"]', [], 2000, [
@@ -733,7 +733,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=description-item]:contents',
-    1512,
+    1515,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="description-item"]', [], 2000, [
@@ -743,7 +743,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=input-group]:flex-1',
-    1519,
+    1522,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="input-group"]', [], 2000, [
@@ -753,7 +753,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=panel-action]:h-8',
-    1528,
+    1531,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="panel-action"]', [], 2000, [
@@ -763,7 +763,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=panel-action]:min-w-8',
-    1529,
+    1532,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="panel-action"]', [], 2000, [
@@ -773,7 +773,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=panel-toggle-action]:h-8',
-    1530,
+    1533,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="panel-toggle-action"]', [], 2000, [
@@ -783,7 +783,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=panel-toggle-action]:min-w-8',
-    1531,
+    1534,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="panel-toggle-action"]', [], 2000, [
@@ -793,7 +793,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=status]:col-start-1',
-    1545,
+    1548,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="status"]', [], 2000, [
@@ -803,7 +803,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=status]:justify-self-center',
-    1551,
+    1554,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="status"]', [], 2000, [
@@ -813,7 +813,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=status]:mt-[4.5px]',
-    1547,
+    1550,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="status"]', [], 2000, [
@@ -823,7 +823,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=status]:mt-[5.5px]',
-    1548,
+    1551,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="status"]', [], 2000, [
@@ -833,7 +833,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=status]:row-start-1',
-    1546,
+    1549,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="status"]', [], 2000, [
@@ -843,7 +843,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=status]:self-start',
-    1550,
+    1553,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="status"]', [], 2000, [
@@ -853,7 +853,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=status]:size-full',
-    1549,
+    1552,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="status"]', [], 2000, [
@@ -864,7 +864,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=tabs-list]:data-[variant=default]:py-2',
-    1583,
+    1586,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -880,7 +880,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=tabs-list]:px-5',
-    1553,
+    1556,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="tabs-list"]', [], 2000, [
@@ -891,7 +891,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-[slot=tabs-list]:w-full',
-    1552,
+    1555,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-slot="tabs-list"]', [], 2000, [
@@ -901,7 +901,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-lightbox-close:absolute',
-    1338,
+    1341,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-lightbox-close]', [], 2000, [
@@ -911,7 +911,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-lightbox-close:pointer-events-auto',
-    1337,
+    1340,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-lightbox-close]', [], 2000, [
@@ -921,7 +921,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-lightbox-close:right-[calc(16px+env(safe-area-inset-right,0px))]',
-    1340,
+    1343,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-lightbox-close]', [], 2000, [
@@ -931,7 +931,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-lightbox-close:top-[calc(16px+env(safe-area-inset-top,0px))]',
-    1339,
+    1342,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-lightbox-close]', [], 2000, [
@@ -941,7 +941,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '*:data-lightbox-close:z-20',
-    1341,
+    1344,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(':is(& > *)[data-lightbox-close]', [], 2000, [
@@ -949,21 +949,21 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('*:relative', 866, RaftUtilityStatus.descendant, [
+  RaftUtility('*:relative', 869, RaftUtilityStatus.descendant, [
     RaftLayer(':is(& > *)', [], 1000, [
       RaftDecl('position', CssKeyword('relative')),
     ]),
   ]),
-  RaftUtility('*:z-10', 867, RaftUtilityStatus.descendant, [
+  RaftUtility('*:z-10', 870, RaftUtilityStatus.descendant, [
     RaftLayer(':is(& > *)', [], 1000, [RaftDecl('z-index', CssNum(10))]),
   ]),
   RaftUtility('-bottom-1', 33, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('bottom', CssNum(-4, 'px'))]),
   ]),
-  RaftUtility('-ml-1', 108, RaftUtilityStatus.resolved, [
+  RaftUtility('-ml-1', 109, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('margin-left', CssNum(-4, 'px'))]),
   ]),
-  RaftUtility('-ml-1.5', 109, RaftUtilityStatus.resolved, [
+  RaftUtility('-ml-1.5', 110, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('margin-left', CssNum(-6, 'px'))]),
   ]),
   RaftUtility('-mr-1', 97, RaftUtilityStatus.resolved, [
@@ -999,7 +999,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('-right-1.5', 24, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('right', CssNum(-6, 'px'))]),
   ]),
-  RaftUtility('-rotate-90', 304, RaftUtilityStatus.resolved, [
+  RaftUtility('-rotate-90', 307, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('rotate', CssNum(-90, 'deg'))]),
   ]),
   RaftUtility('-top-1', 13, RaftUtilityStatus.resolved, [
@@ -1008,26 +1008,26 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('-top-1.5', 14, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('top', CssNum(-6, 'px'))]),
   ]),
-  RaftUtility('-translate-1/2', 300, RaftUtilityStatus.resolved, [
+  RaftUtility('-translate-1/2', 303, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-translate-x', CssNum(-50, '%')),
       RaftDecl('--tw-translate-y', CssNum(-50, '%')),
       RaftDecl('translate', CssSeq([_v49, _v50])),
     ]),
   ]),
-  RaftUtility('-translate-x-1/2', 301, RaftUtilityStatus.resolved, [
+  RaftUtility('-translate-x-1/2', 304, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-translate-x', CssNum(-50, '%')),
       RaftDecl('translate', CssSeq([_v49, _v50])),
     ]),
   ]),
-  RaftUtility('-translate-y-0.5', 302, RaftUtilityStatus.resolved, [
+  RaftUtility('-translate-y-0.5', 305, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-translate-y', CssNum(-2, 'px')),
       RaftDecl('translate', CssSeq([_v49, _v50])),
     ]),
   ]),
-  RaftUtility('-translate-y-1/2', 303, RaftUtilityStatus.resolved, [
+  RaftUtility('-translate-y-1/2', 306, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-translate-y', CssNum(-50, '%')),
       RaftDecl('translate', CssSeq([_v49, _v50])),
@@ -1039,14 +1039,14 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('@container', 0, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('container-type', _v51)]),
   ]),
-  RaftUtility('[&+&]:pt-2', 1757, RaftUtilityStatus.descendant, [
+  RaftUtility('[&+&]:pt-2', 1760, RaftUtilityStatus.descendant, [
     RaftLayer('& + .\\[\\&\\+\\&\\]\\:pt-2', [], 2000, [
       RaftDecl('padding-top', CssNum(8, 'px')),
     ]),
   ]),
   RaftUtility(
     '[&::-webkit-scrollbar]:hidden',
-    1758,
+    1761,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('::-webkit-scrollbar', [], 1001, [
@@ -1054,7 +1054,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&:has(svg)]:px-0', 1759, RaftUtilityStatus.resolved, [
+  RaftUtility('[&:has(svg)]:px-0', 1762, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['has:svg'],
@@ -1067,7 +1067,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[&:not(:has([data-slot=task-card-status-label]))]:hidden',
-    1764,
+    1767,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -1080,7 +1080,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&:not([data-has-description])>[data-slot=toast-body]:only-child]:justify-self-center',
-    1765,
+    1768,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1093,7 +1093,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&:not([data-has-description])>[data-slot=toast-body]:only-child]:text-center',
-    1766,
+    1769,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1106,7 +1106,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&:not([data-has-icon]):not([data-has-actions]):not([data-has-description])]:min-h-(--toast-title-only-min-h,2.25rem)',
-    1767,
+    1770,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -1123,7 +1123,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&:not([data-has-icon]):not([data-has-actions]):not([data-has-description])]:min-w-(--toast-title-only-min-w,7rem)',
-    1768,
+    1771,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -1140,7 +1140,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&:not([data-has-icon]):not([data-has-actions]):not([data-has-description])]:px-(--toast-title-only-px,0.75rem)',
-    1769,
+    1772,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -1157,7 +1157,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&:not([data-has-icon]):not([data-has-actions]):not([data-has-description])]:py-(--toast-title-only-py,0.5rem)',
-    1770,
+    1773,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -1174,7 +1174,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>*:first-child]:border-t-0',
-    1771,
+    1774,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > *:first-child', [], 2000, [
@@ -1183,14 +1183,14 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&>:not(svg)]:min-w-0', 1772, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>:not(svg)]:min-w-0', 1775, RaftUtilityStatus.descendant, [
     RaftLayer('& > :not(svg)', [], 1001, [
       RaftDecl('min-width', CssNum(0, 'px')),
     ]),
   ]),
   RaftUtility(
     '[&>[data-slot=avatar]+[data-slot=avatar]]:ml-[-5px]',
-    1773,
+    1776,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=avatar] + [data-slot=avatar]', [], 3000, [
@@ -1200,7 +1200,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=button]:last-child]:mr-2',
-    1774,
+    1777,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=button]:last-child', [], 3000, [
@@ -1210,7 +1210,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=description-item]>[data-slot=description-details]]:min-h-8',
-    1776,
+    1779,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1223,7 +1223,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=description-item]>[data-slot=description-details]]:min-w-0',
-    1777,
+    1780,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1236,7 +1236,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=description-item]>[data-slot=description-details]]:wrap-break-word',
-    1778,
+    1781,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1249,7 +1249,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=description-item]>[data-slot=description-term]]:max-w-40',
-    1780,
+    1783,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1262,7 +1262,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=description-item]>[data-slot=description-term]]:mb-0',
-    1779,
+    1782,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1275,7 +1275,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=description-item]>[data-slot=description-term]]:min-w-0',
-    1781,
+    1784,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1288,7 +1288,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=description-item]>[data-slot=description-term]]:wrap-break-word',
-    1782,
+    1785,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1301,7 +1301,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=dialog-close]]:my-0',
-    1783,
+    1786,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=dialog-close]', [], 2000, [
@@ -1312,7 +1312,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=empty-state-icon]]:mb-0',
-    1784,
+    1787,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=empty-state-icon]', [], 2000, [
@@ -1322,7 +1322,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=empty-state-title]]:mb-0',
-    1785,
+    1788,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=empty-state-title]', [], 2000, [
@@ -1332,7 +1332,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=input-group]]:min-w-0',
-    1786,
+    1789,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=input-group]', [], 2000, [
@@ -1342,7 +1342,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=panel-action]>svg]:size-[18px]',
-    1788,
+    1791,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=panel-action] > svg', [], 2001, [
@@ -1353,7 +1353,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=panel-toggle-action]>svg]:size-[18px]',
-    1790,
+    1793,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=panel-toggle-action] > svg', [], 2001, [
@@ -1364,7 +1364,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=panel-toggle-action][data-pressed]:hover]:bg-fill-pressed',
-    1794,
+    1797,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1377,7 +1377,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=panel-toggle-action][data-pressed]]:bg-transparent',
-    1792,
+    1795,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=panel-toggle-action][data-pressed]', [], 3000, [
@@ -1387,7 +1387,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=panel-toggle-action][data-pressed]]:border-transparent',
-    1791,
+    1794,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=panel-toggle-action][data-pressed]', [], 3000, [
@@ -1400,7 +1400,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>[data-slot=panel-toggle-action][data-pressed]]:text-foreground',
-    1793,
+    1796,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [data-slot=panel-toggle-action][data-pressed]', [], 3000, [
@@ -1408,7 +1408,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&>[role=menuitem]]:p-0', 1796, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>[role=menuitem]]:p-0', 1799, RaftUtilityStatus.descendant, [
     RaftLayer('& > [role=menuitem]', [], 2000, [
       RaftDecl('padding-top', CssNum(0, 'px')),
       RaftDecl('padding-right', CssNum(0, 'px')),
@@ -1418,7 +1418,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[&>[role=menuitem]]:size-9',
-    1795,
+    1798,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > [role=menuitem]', [], 2000, [
@@ -1429,23 +1429,23 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>a:hover]:text-foreground',
-    1799,
+    1802,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > a:hover', [], 2001, [RaftDecl('color', _v33)]),
     ],
   ),
-  RaftUtility('[&>a]:underline', 1797, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>a]:underline', 1800, RaftUtilityStatus.descendant, [
     RaftLayer('& > a', [], 1001, [
       RaftDecl('text-decoration-line', CssKeyword('underline')),
     ]),
   ]),
-  RaftUtility('[&>a]:underline-offset-4', 1798, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>a]:underline-offset-4', 1801, RaftUtilityStatus.descendant, [
     RaftLayer('& > a', [], 1001, [
       RaftDecl('text-underline-offset', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('[&>label]:font-semibold', 1800, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>label]:font-semibold', 1803, RaftUtilityStatus.descendant, [
     RaftLayer('& > label', [], 1001, [
       RaftDecl('--tw-font-weight', CssNum(600)),
       RaftDecl('font-weight', CssNum(600)),
@@ -1453,7 +1453,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[&>span[data-slot=\'combobox-trigger-content\']>svg:not([class*=\'size-\'])]:size-3.5',
-    1807,
+    1810,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1469,7 +1469,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>span[data-slot=\'combobox-trigger-content\']>svg:not([class*=\'stroke-\'])]:stroke-2',
-    1808,
+    1811,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1482,7 +1482,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>span[data-slot=\'combobox-trigger-content\']>svg]:shrink-0',
-    1806,
+    1809,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1495,7 +1495,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>span[data-slot=\'combobox-trigger-content\']]:flex-1',
-    1805,
+    1808,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > span[data-slot=\'combobox-trigger-content\']', [], 2001, [
@@ -1505,7 +1505,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>span[data-slot=\'combobox-trigger-content\']]:min-w-0',
-    1804,
+    1807,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > span[data-slot=\'combobox-trigger-content\']', [], 2001, [
@@ -1515,7 +1515,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>span[data-slot=\'select-trigger-content\']]:flex-1',
-    1810,
+    1813,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > span[data-slot=\'select-trigger-content\']', [], 2001, [
@@ -1525,7 +1525,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>span[data-slot=\'select-trigger-content\']]:min-w-0',
-    1809,
+    1812,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > span[data-slot=\'select-trigger-content\']', [], 2001, [
@@ -1535,13 +1535,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>svg:first-child]:text-foreground-muted',
-    1858,
+    1861,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg:first-child', [], 2001, [RaftDecl('color', _v0)]),
     ],
   ),
-  RaftUtility('[&>svg:last-child]:size-3', 1860, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg:last-child]:size-3', 1863, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg:last-child', [], 2001, [
       RaftDecl('width', CssNum(12, 'px')),
       RaftDecl('height', CssNum(12, 'px')),
@@ -1549,7 +1549,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[&>svg:not([class*=\'size-\'])]:size-4',
-    1861,
+    1864,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg:not([class*=\'size-\'])', [], 2001, [
@@ -1560,7 +1560,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>svg:not([class*=\'size-\'])]:size-4.5',
-    1862,
+    1865,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg:not([class*=\'size-\'])', [], 2001, [
@@ -1571,7 +1571,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>svg:not([class*=\'size-\'])]:size-[18px]',
-    1863,
+    1866,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg:not([class*=\'size-\'])', [], 2001, [
@@ -1582,7 +1582,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>svg:not([class*=\'stroke-\'])]:stroke-2',
-    1864,
+    1867,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg:not([class*=\'stroke-\'])', [], 2001, [
@@ -1592,7 +1592,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>svg:not([data-slot=task-status-icon])]:-mx-0.5',
-    1865,
+    1868,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg:not([data-slot=task-status-icon])', [], 2001, [
@@ -1603,7 +1603,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>svg[data-slot=task-status-icon]]:size-[9px]',
-    1866,
+    1869,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg[data-slot=task-status-icon]', [], 2001, [
@@ -1612,38 +1612,38 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&>svg]:absolute', 1812, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:absolute', 1815, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('position', CssKeyword('absolute')),
     ]),
   ]),
-  RaftUtility('[&>svg]:block', 1821, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:block', 1824, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('display', CssKeyword('block'))]),
   ]),
-  RaftUtility('[&>svg]:col-start-1', 1817, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:col-start-1', 1820, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('grid-column-start', CssNum(1))]),
   ]),
-  RaftUtility('[&>svg]:duration-200', 1839, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:duration-200', 1842, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('--tw-duration', CssNum(200, 'ms')),
       RaftDecl('transition-duration', CssNum(200, 'ms')),
     ]),
   ]),
-  RaftUtility('[&>svg]:hidden', 1822, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:hidden', 1825, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('display', CssKeyword('none'))]),
   ]),
-  RaftUtility('[&>svg]:left-0', 1815, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:left-0', 1818, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('left', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('[&>svg]:mt-0.5', 1819, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:mt-0.5', 1822, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('margin-top', CssNum(2, 'px'))]),
   ]),
-  RaftUtility('[&>svg]:mt-px', 1820, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:mt-px', 1823, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('margin-top', CssNum(1, 'px'))]),
   ]),
   RaftUtility(
     '[&>svg]:pointer-events-none',
-    1811,
+    1814,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg', [], 1001, [
@@ -1651,79 +1651,79 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&>svg]:relative', 1813, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:relative', 1816, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('position', CssKeyword('relative')),
     ]),
   ]),
-  RaftUtility('[&>svg]:row-start-1', 1818, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:row-start-1', 1821, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('grid-row-start', CssNum(1))]),
   ]),
-  RaftUtility('[&>svg]:self-center', 1833, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:self-center', 1836, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('align-self', CssKeyword('center')),
     ]),
   ]),
-  RaftUtility('[&>svg]:shrink-0', 1831, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:shrink-0', 1834, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('flex-shrink', CssNum(0))]),
   ]),
-  RaftUtility('[&>svg]:size-3', 1823, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:size-3', 1826, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('width', CssNum(12, 'px')),
       RaftDecl('height', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('[&>svg]:size-3.5', 1824, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:size-3.5', 1827, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('width', CssNum(14, 'px')),
       RaftDecl('height', CssNum(14, 'px')),
     ]),
   ]),
-  RaftUtility('[&>svg]:size-4', 1825, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:size-4', 1828, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('width', CssNum(16, 'px')),
       RaftDecl('height', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('[&>svg]:size-5', 1826, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:size-5', 1829, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('width', CssNum(20, 'px')),
       RaftDecl('height', CssNum(20, 'px')),
     ]),
   ]),
-  RaftUtility('[&>svg]:size-9', 1827, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:size-9', 1830, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('width', CssNum(36, 'px')),
       RaftDecl('height', CssNum(36, 'px')),
     ]),
   ]),
-  RaftUtility('[&>svg]:size-[0.857em]', 1828, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:size-[0.857em]', 1831, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('width', CssNum(0.857, 'em')),
       RaftDecl('height', CssNum(0.857, 'em')),
     ]),
   ]),
-  RaftUtility('[&>svg]:size-[13px]', 1829, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:size-[13px]', 1832, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('width', CssNum(13, 'px')),
       RaftDecl('height', CssNum(13, 'px')),
     ]),
   ]),
-  RaftUtility('[&>svg]:size-[22px]', 1830, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:size-[22px]', 1833, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('width', CssNum(22, 'px')),
       RaftDecl('height', CssNum(22, 'px')),
     ]),
   ]),
-  RaftUtility('[&>svg]:stroke-2', 1834, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:stroke-2', 1837, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('stroke-width', CssNum(2))]),
   ]),
-  RaftUtility('[&>svg]:text-foreground', 1835, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:text-foreground', 1838, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('color', _v33)]),
   ]),
   RaftUtility(
     '[&>svg]:text-foreground-hint',
-    1836,
+    1839,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg', [], 1001, [RaftDecl('color', _v29)]),
@@ -1731,18 +1731,18 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>svg]:text-foreground-muted',
-    1837,
+    1840,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg', [], 1001, [RaftDecl('color', _v0)]),
     ],
   ),
-  RaftUtility('[&>svg]:top-[3px]', 1814, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:top-[3px]', 1817, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('top', CssNum(3, 'px'))]),
   ]),
   RaftUtility(
     '[&>svg]:transition-transform',
-    1838,
+    1841,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg', [], 1001, [
@@ -1752,21 +1752,21 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&>svg]:translate-y-0', 1832, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:translate-y-0', 1835, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [
       RaftDecl('--tw-translate-y', CssNum(0, 'px')),
       RaftDecl('translate', CssSeq([_v49, _v50])),
     ]),
   ]),
-  RaftUtility('[&>svg]:z-10', 1816, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg]:z-10', 1819, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg', [], 1001, [RaftDecl('z-index', CssNum(10))]),
   ]),
-  RaftUtility('[&>svg_*]:stroke-2', 1857, RaftUtilityStatus.descendant, [
+  RaftUtility('[&>svg_*]:stroke-2', 1860, RaftUtilityStatus.descendant, [
     RaftLayer('& > svg *', [], 1001, [RaftDecl('stroke-width', CssNum(2))]),
   ]),
   RaftUtility(
     '[&>tr:hover]:bg-fill-pressed',
-    1868,
+    1871,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > tr:hover', [], 2001, [RaftDecl('background-color', _v57)]),
@@ -1774,7 +1774,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>tr:last-child>td]:border-b-0',
-    1869,
+    1872,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > tr:last-child > td', [], 2002, [
@@ -1785,7 +1785,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&>tr:last-child>th]:border-b-0',
-    1870,
+    1873,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > tr:last-child > th', [], 2002, [
@@ -1796,7 +1796,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&[data-ending-style]:not([data-swipe-direction])]:transform-[translateY(120%)_scale(0.98)]',
-    1871,
+    1874,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -1811,7 +1811,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&[data-has-description]_[data-slot=toast-body]]:self-start',
-    1872,
+    1875,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1824,7 +1824,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&[data-has-description]_[data-slot=toast-icon]]:self-start',
-    1873,
+    1876,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1837,7 +1837,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&[data-has-icon][data-has-actions]]:grid-cols-[auto_minmax(0,1fr)_auto]',
-    1874,
+    1877,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -1850,7 +1850,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&[data-panel-open]_[data-slot=sidebar-section-chevron]]:rotate-90',
-    1875,
+    1878,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1863,7 +1863,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&[data-panel-open]_[data-slot=system-message-group-chevron]]:-rotate-90',
-    1876,
+    1879,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1876,7 +1876,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-activity-inbox-action=sort]:hover]:text-foreground',
-    1659,
+    1662,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-activity-inbox-action=sort]:hover', [], 3000, [
@@ -1886,7 +1886,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-activity-inbox-show-all]]:font-semibold',
-    1660,
+    1663,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-activity-inbox-show-all]', [], 2000, [
@@ -1897,7 +1897,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-activity-inbox-show-all]]:tracking-normal',
-    1661,
+    1664,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-activity-inbox-show-all]', [], 2000, [
@@ -1908,7 +1908,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-picker-trigger-indicator]>svg]:size-3.5',
-    1662,
+    1665,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-picker-trigger-indicator] > svg', [], 2001, [
@@ -1919,7 +1919,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-picker-trigger-indicator]>svg]:stroke-2',
-    1663,
+    1666,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-picker-trigger-indicator] > svg', [], 2001, [
@@ -1929,7 +1929,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-picker-trigger-indicator]>svg_*]:stroke-2',
-    1664,
+    1667,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-picker-trigger-indicator] > svg *', [], 2001, [
@@ -1939,7 +1939,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'combobox-clear\']]:min-w-5',
-    1666,
+    1669,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=\'combobox-clear\']', [], 2000, [
@@ -1949,7 +1949,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'combobox-clear\']]:size-5',
-    1665,
+    1668,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=\'combobox-clear\']', [], 2000, [
@@ -1960,7 +1960,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'combobox-trigger-indicator\']>svg]:shrink-0',
-    1669,
+    1672,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1973,7 +1973,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'combobox-trigger-indicator\']>svg]:size-4',
-    1668,
+    1671,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -1989,7 +1989,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'combobox-trigger-indicator\']]:size-4',
-    1667,
+    1670,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=\'combobox-trigger-indicator\']', [], 2000, [
@@ -2000,7 +2000,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'select-trigger-content\']_svg:not([class*=\'size-\'])]:size-4',
-    1671,
+    1674,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -2016,7 +2016,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'select-trigger-content\']_svg:not([class*=\'stroke-\'])]:stroke-2',
-    1672,
+    1675,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -2029,7 +2029,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'select-trigger-content\']_svg]:shrink-0',
-    1670,
+    1673,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=\'select-trigger-content\'] svg', [], 2001, [
@@ -2039,7 +2039,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'spinner\']]:size-3',
-    1673,
+    1676,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=\'spinner\']', [], 2000, [
@@ -2050,7 +2050,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=\'spinner\']]:text-xs',
-    1674,
+    1677,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=\'spinner\']', [], 2000, [
@@ -2061,7 +2061,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=avatar][data-size=md]]:size-(--mi-avatar,35px)',
-    1675,
+    1678,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=avatar][data-size=md]', [], 3000, [
@@ -2072,7 +2072,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=button]]:ease-out',
-    1676,
+    1679,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=button]', [], 2000, [
@@ -2083,7 +2083,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=kbd]]:font-normal',
-    1682,
+    1685,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=kbd]', [], 2000, [
@@ -2092,14 +2092,14 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&_[data-slot=kbd]]:h-4', 1678, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_[data-slot=kbd]]:h-4', 1681, RaftUtilityStatus.descendant, [
     RaftLayer('& [data-slot=kbd]', [], 2000, [
       RaftDecl('height', CssNum(16, 'px')),
     ]),
   ]),
   RaftUtility(
     '[&_[data-slot=kbd]]:min-w-4',
-    1679,
+    1682,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=kbd]', [], 2000, [
@@ -2109,7 +2109,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=kbd]]:ml-1.5',
-    1677,
+    1680,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=kbd]', [], 2000, [
@@ -2117,13 +2117,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&_[data-slot=kbd]]:px-1', 1680, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_[data-slot=kbd]]:px-1', 1683, RaftUtilityStatus.descendant, [
     RaftLayer('& [data-slot=kbd]', [], 2000, [
       RaftDecl('padding-left', CssNum(4, 'px')),
       RaftDecl('padding-right', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('[&_[data-slot=kbd]]:py-0', 1681, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_[data-slot=kbd]]:py-0', 1684, RaftUtilityStatus.descendant, [
     RaftLayer('& [data-slot=kbd]', [], 2000, [
       RaftDecl('padding-top', CssNum(0, 'px')),
       RaftDecl('padding-bottom', CssNum(0, 'px')),
@@ -2131,7 +2131,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[&_[data-slot=message-attachment-action]_svg]:size-4',
-    1683,
+    1686,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=message-attachment-action] svg', [], 2001, [
@@ -2142,7 +2142,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=message-reaction-glyph]>svg]:size-4',
-    1684,
+    1687,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=message-reaction-glyph] > svg', [], 2001, [
@@ -2153,7 +2153,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=sidebar-group-label]]:font-bold',
-    1690,
+    1693,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=sidebar-group-label]', [], 2000, [
@@ -2164,7 +2164,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=sidebar-group-label]]:gap-2',
-    1687,
+    1690,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=sidebar-group-label]', [], 2000, [
@@ -2175,7 +2175,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=sidebar-group-label]]:mb-1',
-    1686,
+    1689,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=sidebar-group-label]', [], 2000, [
@@ -2185,7 +2185,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=sidebar-group-label]]:mt-5',
-    1685,
+    1688,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=sidebar-group-label]', [], 2000, [
@@ -2195,7 +2195,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=sidebar-group-label]]:px-2',
-    1688,
+    1691,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=sidebar-group-label]', [], 2000, [
@@ -2206,7 +2206,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=sidebar-group-label]]:py-0',
-    1689,
+    1692,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=sidebar-group-label]', [], 2000, [
@@ -2217,7 +2217,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=sidebar-group-label]]:tracking-normal',
-    1691,
+    1694,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=sidebar-group-label]', [], 2000, [
@@ -2228,7 +2228,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=task-card-status-label]]:gap-1.5',
-    1692,
+    1695,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=task-card-status-label]', [], 2000, [
@@ -2239,7 +2239,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=toast-content][data-behind]]:opacity-0',
-    1693,
+    1696,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=toast-content][data-behind]', [], 3000, [
@@ -2249,7 +2249,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_[data-slot=toast-content][data-expanded]]:opacity-100',
-    1694,
+    1697,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& [data-slot=toast-content][data-expanded]', [], 3000, [
@@ -2257,23 +2257,23 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&_img]:bg-transparent', 1698, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_img]:bg-transparent', 1701, RaftUtilityStatus.descendant, [
     RaftLayer('& img', [], 1001, [RaftDecl('background-color', _v11)]),
   ]),
-  RaftUtility('[&_img]:block', 1696, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_img]:block', 1699, RaftUtilityStatus.descendant, [
     RaftLayer('& img', [], 1001, [RaftDecl('display', CssKeyword('block'))]),
   ]),
-  RaftUtility('[&_img]:object-contain', 1699, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_img]:object-contain', 1702, RaftUtilityStatus.descendant, [
     RaftLayer('& img', [], 1001, [
       RaftDecl('object-fit', CssKeyword('contain')),
     ]),
   ]),
-  RaftUtility('[&_img]:object-cover', 1700, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_img]:object-cover', 1703, RaftUtilityStatus.descendant, [
     RaftLayer('& img', [], 1001, [RaftDecl('object-fit', CssKeyword('cover'))]),
   ]),
   RaftUtility(
     '[&_img]:pointer-events-none',
-    1695,
+    1698,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& img', [], 1001, [
@@ -2281,7 +2281,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&_img]:size-full', 1697, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_img]:size-full', 1700, RaftUtilityStatus.descendant, [
     RaftLayer('& img', [], 1001, [
       RaftDecl('width', CssNum(100, '%')),
       RaftDecl('height', CssNum(100, '%')),
@@ -2289,33 +2289,33 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[&_pre_span]:text-(--shiki-light,currentColor)',
-    1701,
+    1704,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& pre span', [], 1002, [RaftDecl('color', _v66)]),
     ],
   ),
-  RaftUtility('[&_strong]:bg-attention', 1709, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:bg-attention', 1712, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [RaftDecl('background-color', _v67)]),
   ]),
-  RaftUtility('[&_strong]:font-bold', 1713, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:font-bold', 1716, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [
       RaftDecl('--tw-font-weight', CssNum(700)),
       RaftDecl('font-weight', CssNum(700)),
     ]),
   ]),
-  RaftUtility('[&_strong]:font-mono', 1711, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:font-mono', 1714, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [RaftDecl('font-family', _v70)]),
   ]),
-  RaftUtility('[&_strong]:h-5', 1704, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:h-5', 1707, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [RaftDecl('height', CssNum(20, 'px'))]),
   ]),
-  RaftUtility('[&_strong]:inline-flex', 1703, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:inline-flex', 1706, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [RaftDecl('display', _v31)]),
   ]),
   RaftUtility(
     '[&_strong]:inset-ring-[1.5px]',
-    1716,
+    1719,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& strong', [], 1001, [
@@ -2326,7 +2326,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_strong]:inset-ring-sticker-ink',
-    1718,
+    1721,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& strong', [], 1001, [
@@ -2334,26 +2334,26 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&_strong]:items-center', 1706, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:items-center', 1709, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [
       RaftDecl('align-items', CssKeyword('center')),
     ]),
   ]),
-  RaftUtility('[&_strong]:justify-center', 1707, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:justify-center', 1710, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [
       RaftDecl('justify-content', CssKeyword('center')),
     ]),
   ]),
-  RaftUtility('[&_strong]:min-w-5', 1705, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:min-w-5', 1708, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [RaftDecl('min-width', CssNum(20, 'px'))]),
   ]),
-  RaftUtility('[&_strong]:px-1.5', 1710, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:px-1.5', 1713, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [
       RaftDecl('padding-left', CssNum(6, 'px')),
       RaftDecl('padding-right', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('[&_strong]:ring-[1.5px]', 1715, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:ring-[1.5px]', 1718, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [
       RaftDecl('--tw-ring-shadow', _v75),
       RaftDecl('box-shadow', _v23),
@@ -2361,7 +2361,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[&_strong]:ring-sticker-edge',
-    1717,
+    1720,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& strong', [], 1001, [RaftDecl('--tw-ring-color', _v34)]),
@@ -2369,7 +2369,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_strong]:rounded-sticker',
-    1708,
+    1711,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& strong', [], 1001, [
@@ -2380,7 +2380,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&_strong]:text-mono-meta', 1712, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_strong]:text-mono-meta', 1715, RaftUtilityStatus.descendant, [
     RaftLayer('& strong', [], 1001, [
       RaftDecl('font-size', CssNum(12, 'px')),
       RaftDecl('line-height', _v76),
@@ -2388,7 +2388,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[&_strong]:text-sticker-ink',
-    1714,
+    1717,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& strong', [], 1001, [RaftDecl('color', _v73)]),
@@ -2396,7 +2396,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_svg:not([class*=\'size-\'])]:size-3',
-    1746,
+    1749,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
@@ -2407,7 +2407,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_svg:not([class*=\'size-\'])]:size-3.5',
-    1747,
+    1750,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
@@ -2418,7 +2418,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_svg:not([class*=\'size-\'])]:size-4',
-    1748,
+    1751,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
@@ -2429,39 +2429,6 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_svg:not([class*=\'size-\'])]:size-4.5',
-    1749,
-    RaftUtilityStatus.descendant,
-    [
-      RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
-        RaftDecl('width', CssNum(18, 'px')),
-        RaftDecl('height', CssNum(18, 'px')),
-      ]),
-    ],
-  ),
-  RaftUtility(
-    '[&_svg:not([class*=\'size-\'])]:size-5',
-    1750,
-    RaftUtilityStatus.descendant,
-    [
-      RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
-        RaftDecl('width', CssNum(20, 'px')),
-        RaftDecl('height', CssNum(20, 'px')),
-      ]),
-    ],
-  ),
-  RaftUtility(
-    '[&_svg:not([class*=\'size-\'])]:size-[11px]',
-    1751,
-    RaftUtilityStatus.descendant,
-    [
-      RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
-        RaftDecl('width', CssNum(11, 'px')),
-        RaftDecl('height', CssNum(11, 'px')),
-      ]),
-    ],
-  ),
-  RaftUtility(
-    '[&_svg:not([class*=\'size-\'])]:size-[18px]',
     1752,
     RaftUtilityStatus.descendant,
     [
@@ -2472,8 +2439,41 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
     ],
   ),
   RaftUtility(
-    '[&_svg:not([class*=\'size-\'])]:size-[22px]',
+    '[&_svg:not([class*=\'size-\'])]:size-5',
     1753,
+    RaftUtilityStatus.descendant,
+    [
+      RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
+        RaftDecl('width', CssNum(20, 'px')),
+        RaftDecl('height', CssNum(20, 'px')),
+      ]),
+    ],
+  ),
+  RaftUtility(
+    '[&_svg:not([class*=\'size-\'])]:size-[11px]',
+    1754,
+    RaftUtilityStatus.descendant,
+    [
+      RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
+        RaftDecl('width', CssNum(11, 'px')),
+        RaftDecl('height', CssNum(11, 'px')),
+      ]),
+    ],
+  ),
+  RaftUtility(
+    '[&_svg:not([class*=\'size-\'])]:size-[18px]',
+    1755,
+    RaftUtilityStatus.descendant,
+    [
+      RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
+        RaftDecl('width', CssNum(18, 'px')),
+        RaftDecl('height', CssNum(18, 'px')),
+      ]),
+    ],
+  ),
+  RaftUtility(
+    '[&_svg:not([class*=\'size-\'])]:size-[22px]',
+    1756,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg:not([class*=\'size-\'])', [], 2001, [
@@ -2484,7 +2484,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_svg:not([class*=\'stroke-\'])]:stroke-2',
-    1754,
+    1757,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg:not([class*=\'stroke-\'])', [], 2001, [
@@ -2494,7 +2494,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_svg:not([data-slot=task-status-icon])]:-mx-0.5',
-    1755,
+    1758,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg:not([data-slot=task-status-icon])', [], 2001, [
@@ -2505,7 +2505,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_svg[data-slot=task-status-icon]]:size-[9px]',
-    1756,
+    1759,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg[data-slot=task-status-icon]', [], 2001, [
@@ -2516,7 +2516,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_svg]:[vector-effect:non-scaling-stroke]',
-    1740,
+    1743,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg', [], 1001, [RaftDecl('vector-effect', _v77)]),
@@ -2524,7 +2524,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[&_svg]:pointer-events-none',
-    1719,
+    1722,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg', [], 1001, [
@@ -2532,113 +2532,113 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[&_svg]:self-center', 1736, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:self-center', 1739, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('align-self', CssKeyword('center')),
     ]),
   ]),
-  RaftUtility('[&_svg]:shrink-0', 1734, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:shrink-0', 1737, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [RaftDecl('flex-shrink', CssNum(0))]),
   ]),
-  RaftUtility('[&_svg]:size-3', 1720, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-3', 1723, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(12, 'px')),
       RaftDecl('height', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-3.5', 1721, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-3.5', 1724, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(14, 'px')),
       RaftDecl('height', CssNum(14, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-4', 1722, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-4', 1725, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(16, 'px')),
       RaftDecl('height', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-4.5', 1723, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-4.5', 1726, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(18, 'px')),
       RaftDecl('height', CssNum(18, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-5', 1724, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-5', 1727, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(20, 'px')),
       RaftDecl('height', CssNum(20, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-5.5', 1725, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-5.5', 1728, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(22, 'px')),
       RaftDecl('height', CssNum(22, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-6', 1726, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-6', 1729, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(24, 'px')),
       RaftDecl('height', CssNum(24, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-9', 1727, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-9', 1730, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(36, 'px')),
       RaftDecl('height', CssNum(36, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-[0.857em]', 1728, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-[0.857em]', 1731, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(0.857, 'em')),
       RaftDecl('height', CssNum(0.857, 'em')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-[10px]', 1729, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-[10px]', 1732, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(10, 'px')),
       RaftDecl('height', CssNum(10, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-[11px]', 1730, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-[11px]', 1733, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(11, 'px')),
       RaftDecl('height', CssNum(11, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-[13px]', 1731, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-[13px]', 1734, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(13, 'px')),
       RaftDecl('height', CssNum(13, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-[18px]', 1732, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-[18px]', 1735, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(18, 'px')),
       RaftDecl('height', CssNum(18, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:size-[22px]', 1733, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:size-[22px]', 1736, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('width', CssNum(22, 'px')),
       RaftDecl('height', CssNum(22, 'px')),
     ]),
   ]),
-  RaftUtility('[&_svg]:stroke-2', 1737, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:stroke-2', 1740, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [RaftDecl('stroke-width', CssNum(2))]),
   ]),
-  RaftUtility('[&_svg]:text-foreground', 1738, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:text-foreground', 1741, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [RaftDecl('color', _v33)]),
   ]),
   RaftUtility(
     '[&_svg]:text-foreground-muted',
-    1739,
+    1742,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg', [], 1001, [RaftDecl('color', _v0)]),
     ],
   ),
-  RaftUtility('[&_svg]:translate-y-0', 1735, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg]:translate-y-0', 1738, RaftUtilityStatus.descendant, [
     RaftLayer('& svg', [], 1001, [
       RaftDecl('--tw-translate-y', CssNum(0, 'px')),
       RaftDecl('translate', CssSeq([_v49, _v50])),
@@ -2646,18 +2646,18 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[&_svg_*]:[vector-effect:non-scaling-stroke]',
-    1745,
+    1748,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& svg *', [], 1001, [RaftDecl('vector-effect', _v77)]),
     ],
   ),
-  RaftUtility('[&_svg_*]:stroke-2', 1744, RaftUtilityStatus.descendant, [
+  RaftUtility('[&_svg_*]:stroke-2', 1747, RaftUtilityStatus.descendant, [
     RaftLayer('& svg *', [], 1001, [RaftDecl('stroke-width', CssNum(2))]),
   ]),
   RaftUtility(
     '[&~[data-slot=input-group-control]]:pl-0',
-    1877,
+    1880,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& ~ [data-slot=input-group-control]', [], 2000, [
@@ -2665,14 +2665,14 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[--ca-overlay-border:1px]', 781, RaftUtilityStatus.resolved, [
+  RaftUtility('[--ca-overlay-border:1px]', 784, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--ca-overlay-border', CssNum(1, 'px')),
     ]),
   ]),
   RaftUtility(
     '[--closed-transform:translate3d(var(--drawer-exit-x,0px),var(--drawer-exit-y,0px),0)]',
-    782,
+    785,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--closed-transform', _v80)]),
@@ -2680,7 +2680,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--code-block-header-height:--spacing(10)]',
-    783,
+    786,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2688,12 +2688,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[--drawer-blur:2px]', 784, RaftUtilityStatus.resolved, [
+  RaftUtility('[--drawer-blur:2px]', 787, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--drawer-blur', CssNum(2, 'px'))]),
   ]),
   RaftUtility(
     '[--drawer-content-height:100dvh]',
-    785,
+    788,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2703,7 +2703,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-content-height:var(--drawer-height,auto)]',
-    786,
+    789,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-content-height', _v81)]),
@@ -2711,7 +2711,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-ease:var(--ease-slide)]',
-    787,
+    790,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-ease', _v82)]),
@@ -2719,7 +2719,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-exit-x:calc(-100%-var(--drawer-inset)-2px)]',
-    788,
+    791,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-exit-x', CssCalc(_v85))]),
@@ -2727,7 +2727,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-exit-x:calc(100%+var(--drawer-inset)+2px)]',
-    789,
+    792,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-exit-x', CssCalc(_v87))]),
@@ -2735,7 +2735,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-exit-y:calc(-100%-var(--drawer-inset)-2px)]',
-    790,
+    793,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-exit-y', CssCalc(_v85))]),
@@ -2743,21 +2743,21 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-exit-y:calc(100%+var(--drawer-inset)+2px)]',
-    791,
+    794,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-exit-y', CssCalc(_v87))]),
     ],
   ),
-  RaftUtility('[--drawer-inset:0px]', 792, RaftUtilityStatus.resolved, [
+  RaftUtility('[--drawer-inset:0px]', 795, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--drawer-inset', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('[--drawer-inset:12px]', 793, RaftUtilityStatus.resolved, [
+  RaftUtility('[--drawer-inset:12px]', 796, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--drawer-inset', CssNum(12, 'px'))]),
   ]),
   RaftUtility(
     '[--drawer-overlay-min-opacity:0.5]',
-    794,
+    797,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2767,20 +2767,20 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-stack-offset:max(0px,calc((var(--nested-drawers)-var(--drawer-stack-progress))*var(--drawer-stack-peek)))]',
-    795,
+    798,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-stack-offset', _v92)]),
     ],
   ),
-  RaftUtility('[--drawer-stack-peek:16px]', 796, RaftUtilityStatus.resolved, [
+  RaftUtility('[--drawer-stack-peek:16px]', 799, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--drawer-stack-peek', CssNum(16, 'px')),
     ]),
   ]),
   RaftUtility(
     '[--drawer-stack-progress:clamp(0,var(--drawer-swipe-progress),1)]',
-    797,
+    800,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-stack-progress', _v94)]),
@@ -2788,7 +2788,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-stack-scale-base:calc(max(0,1-(var(--nested-drawers)*var(--drawer-stack-step))))]',
-    798,
+    801,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2798,7 +2798,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-stack-scale:clamp(0,calc(var(--drawer-stack-scale-base)+(var(--drawer-stack-step)*var(--drawer-stack-progress))),1)]',
-    799,
+    802,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-stack-scale', _v100)]),
@@ -2806,7 +2806,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-stack-shrink-offset:calc(var(--drawer-stack-shrink)*var(--drawer-stack-size))]',
-    800,
+    803,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2816,7 +2816,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-stack-shrink:calc(1-var(--drawer-stack-scale))]',
-    801,
+    804,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2824,27 +2824,27 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[--drawer-stack-size:100%]', 802, RaftUtilityStatus.resolved, [
+  RaftUtility('[--drawer-stack-size:100%]', 805, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--drawer-stack-size', CssNum(100, '%')),
     ]),
   ]),
   RaftUtility(
     '[--drawer-stack-size:max(0px,var(--drawer-frontmost-height,var(--drawer-height)))]',
-    803,
+    806,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-stack-size', _v108)]),
     ],
   ),
-  RaftUtility('[--drawer-stack-step:0.05]', 804, RaftUtilityStatus.resolved, [
+  RaftUtility('[--drawer-stack-step:0.05]', 807, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--drawer-stack-step', CssNum(0.05)),
     ]),
   ]),
   RaftUtility(
     '[--drawer-stack-x:calc(0px-var(--drawer-stack-offset)-var(--drawer-stack-shrink-offset))]',
-    805,
+    808,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2854,7 +2854,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-stack-x:calc(var(--drawer-stack-offset)+var(--drawer-stack-shrink-offset))]',
-    806,
+    809,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2864,7 +2864,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-stack-y:calc(0px-var(--drawer-stack-offset)-var(--drawer-stack-shrink-offset))]',
-    807,
+    810,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2874,7 +2874,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-stack-y:calc(var(--drawer-stack-offset)+var(--drawer-stack-shrink-offset))]',
-    808,
+    811,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2884,7 +2884,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-swipe-x:var(--drawer-swipe-movement-x)]',
-    809,
+    812,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--drawer-swipe-x', _v114)]),
@@ -2892,7 +2892,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-swipe-y:calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y))]',
-    810,
+    813,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2902,7 +2902,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-transform-origin:0%_50%]',
-    811,
+    814,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2912,7 +2912,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-transform-origin:100%_50%]',
-    814,
+    817,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2922,7 +2922,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-transform-origin:50%_0%]',
-    812,
+    815,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2932,7 +2932,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--drawer-transform-origin:50%_100%]',
-    813,
+    816,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -2942,7 +2942,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--ig-addon-fg-default:var(--foreground-hint)]',
-    815,
+    818,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--ig-addon-fg-default', _v29)]),
@@ -2950,7 +2950,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--ig-text-fg-default:var(--foreground-hint)]',
-    816,
+    819,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--ig-text-fg-default', _v29)]),
@@ -2958,7 +2958,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--list-row-ink-2:var(--foreground-muted)]',
-    817,
+    820,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--list-row-ink-2', _v0)]),
@@ -2966,7 +2966,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--list-row-ink-3:var(--foreground-hint)]',
-    818,
+    821,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--list-row-ink-3', _v29)]),
@@ -2974,25 +2974,25 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--list-row-ink:var(--foreground)]',
-    819,
+    822,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--list-row-ink', _v33)]),
     ],
   ),
-  RaftUtility('[--list-row-rule-start:16px]', 820, RaftUtilityStatus.resolved, [
+  RaftUtility('[--list-row-rule-start:16px]', 823, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--list-row-rule-start', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('[--list-row-rule-start:63px]', 821, RaftUtilityStatus.resolved, [
+  RaftUtility('[--list-row-rule-start:63px]', 824, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--list-row-rule-start', CssNum(63, 'px')),
     ]),
   ]),
   RaftUtility(
     '[--panel-footer-clearance:0rem]',
-    822,
+    825,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -3002,7 +3002,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--panel-footer-clearance:10rem]',
-    823,
+    826,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -3012,7 +3012,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-color:var(--color-danger)]',
-    824,
+    827,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-color', _v122)]),
@@ -3020,7 +3020,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-color:var(--color-info)]',
-    825,
+    828,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-color', _v123)]),
@@ -3028,7 +3028,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-color:var(--color-success)]',
-    826,
+    829,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-color', _v124)]),
@@ -3036,7 +3036,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-color:var(--color-warning)]',
-    827,
+    830,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-color', _v125)]),
@@ -3044,7 +3044,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-color:var(--foreground)]',
-    828,
+    831,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-color', _v33)]),
@@ -3052,7 +3052,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-indicator:var(--progress-color)]',
-    829,
+    832,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-indicator', _v126)]),
@@ -3060,7 +3060,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-light:var(--color-danger-muted)]',
-    830,
+    833,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-light', _v127)]),
@@ -3068,7 +3068,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-light:var(--color-info-muted)]',
-    831,
+    834,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-light', _v128)]),
@@ -3076,7 +3076,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-light:var(--color-success-muted)]',
-    832,
+    835,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-light', _v129)]),
@@ -3084,7 +3084,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-light:var(--color-warning-muted)]',
-    833,
+    836,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-light', _v130)]),
@@ -3092,7 +3092,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-light:var(--fill-muted)]',
-    834,
+    837,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-light', _v131)]),
@@ -3100,41 +3100,41 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--progress-track:var(--fill-muted)]',
-    835,
+    838,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--progress-track', _v131)]),
     ],
   ),
-  RaftUtility('[--shell-header-height:56px]', 836, RaftUtilityStatus.resolved, [
+  RaftUtility('[--shell-header-height:56px]', 839, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--shell-header-height', CssNum(56, 'px')),
     ]),
   ]),
-  RaftUtility('[--spinner-gap:1.5px]', 837, RaftUtilityStatus.resolved, [
+  RaftUtility('[--spinner-gap:1.5px]', 840, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--spinner-gap', CssNum(1.5, 'px'))]),
   ]),
-  RaftUtility('[--spinner-gap:2px]', 838, RaftUtilityStatus.resolved, [
+  RaftUtility('[--spinner-gap:2px]', 841, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--spinner-gap', CssNum(2, 'px'))]),
   ]),
-  RaftUtility('[--spinner-gap:3px]', 839, RaftUtilityStatus.resolved, [
+  RaftUtility('[--spinner-gap:3px]', 842, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--spinner-gap', CssNum(3, 'px'))]),
   ]),
-  RaftUtility('[--spinner-pixel:4px]', 840, RaftUtilityStatus.resolved, [
+  RaftUtility('[--spinner-pixel:4px]', 843, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--spinner-pixel', CssNum(4, 'px'))]),
   ]),
-  RaftUtility('[--spinner-pixel:5px]', 841, RaftUtilityStatus.resolved, [
+  RaftUtility('[--spinner-pixel:5px]', 844, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--spinner-pixel', CssNum(5, 'px'))]),
   ]),
-  RaftUtility('[--spinner-pixel:6px]', 842, RaftUtilityStatus.resolved, [
+  RaftUtility('[--spinner-pixel:6px]', 845, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--spinner-pixel', CssNum(6, 'px'))]),
   ]),
-  RaftUtility('[--spinner-pixel:8px]', 843, RaftUtilityStatus.resolved, [
+  RaftUtility('[--spinner-pixel:8px]', 846, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--spinner-pixel', CssNum(8, 'px'))]),
   ]),
   RaftUtility(
     '[--status-color:var(--color-accent-400)]',
-    844,
+    847,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--status-color', _v67)]),
@@ -3142,7 +3142,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--status-color:var(--color-danger)]',
-    845,
+    848,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--status-color', _v122)]),
@@ -3150,7 +3150,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--status-color:var(--color-info)]',
-    846,
+    849,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--status-color', _v123)]),
@@ -3158,7 +3158,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--status-color:var(--color-primary-400)]',
-    847,
+    850,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--status-color', _v132)]),
@@ -3166,7 +3166,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--status-color:var(--color-secondary-400)]',
-    848,
+    851,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--status-color', _v133)]),
@@ -3174,7 +3174,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--status-color:var(--color-success)]',
-    849,
+    852,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--status-color', _v124)]),
@@ -3182,7 +3182,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--status-color:var(--color-warning)]',
-    850,
+    853,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--status-color', _v125)]),
@@ -3190,7 +3190,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--status-color:var(--presence-busy)]',
-    851,
+    854,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--status-color', _v134)]),
@@ -3198,24 +3198,24 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--status-color:var(--presence-offline)]',
-    852,
+    855,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--status-color', _v135)]),
     ],
   ),
-  RaftUtility('[--toast-gap:0.5rem]', 853, RaftUtilityStatus.resolved, [
+  RaftUtility('[--toast-gap:0.5rem]', 856, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--toast-gap', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('[--toast-peek-dir:-1]', 854, RaftUtilityStatus.resolved, [
+  RaftUtility('[--toast-peek-dir:-1]', 857, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--toast-peek-dir', CssNum(-1))]),
   ]),
-  RaftUtility('[--toast-peek:0.5rem]', 855, RaftUtilityStatus.resolved, [
+  RaftUtility('[--toast-peek:0.5rem]', 858, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--toast-peek', CssNum(8, 'px'))]),
   ]),
   RaftUtility(
     '[--toast-scale:calc(max(0.84,1-(var(--toast-index)*0.04)))]',
-    856,
+    859,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--toast-scale', CssCalc(_v138))]),
@@ -3223,7 +3223,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--toast-stack-height:var(--toast-frontmost-height,var(--toast-height))]',
-    857,
+    860,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--toast-stack-height', _v140)]),
@@ -3231,7 +3231,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--toast-title-only-min-h:2.75rem]',
-    858,
+    861,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -3239,14 +3239,14 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[--toast-title-only-px:1rem]', 859, RaftUtilityStatus.resolved, [
+  RaftUtility('[--toast-title-only-px:1rem]', 862, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--toast-title-only-px', CssNum(16, 'px')),
     ]),
   ]),
   RaftUtility(
     '[--toast-title-only-py:0.75rem]',
-    860,
+    863,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -3256,7 +3256,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[--toast-y:calc((var(--toast-offset-y)*-1)-(var(--toast-index)*var(--toast-gap))+var(--toast-swipe-movement-y))]',
-    861,
+    864,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('--toast-y', CssCalc(_v146))]),
@@ -3264,7 +3264,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[-webkit-overflow-scrolling:touch]',
-    862,
+    865,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -3274,7 +3274,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(hover:none)]:opacity-100',
-    1879,
+    1882,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3285,7 +3285,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('[@media(hover:none)]:size-5', 1878, RaftUtilityStatus.resolved, [
+  RaftUtility('[@media(hover:none)]:size-5', 1881, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['hover-none'],
@@ -3298,7 +3298,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[@media(max-height:600px)]:[--shell-header-height:48px]',
-    1889,
+    1892,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3311,7 +3311,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:first:pt-1.5',
-    1890,
+    1893,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3324,7 +3324,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:h-12',
-    1881,
+    1884,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3337,7 +3337,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:min-h-8',
-    1882,
+    1885,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3350,7 +3350,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:pb-1.5',
-    1888,
+    1891,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3363,7 +3363,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:pt-1.5',
-    1887,
+    1890,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3376,7 +3376,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:py-0',
-    1884,
+    1887,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3392,7 +3392,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:py-1',
-    1885,
+    1888,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3408,7 +3408,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:py-[6.5px]',
-    1886,
+    1889,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3424,7 +3424,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:size-9',
-    1880,
+    1883,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3440,7 +3440,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[@media(max-height:600px)]:w-[49px]',
-    1883,
+    1886,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3453,7 +3453,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=alert-dialog-header]+&]:pt-5',
-    1891,
+    1894,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3466,7 +3466,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=code-block-body]>&]:absolute',
-    1892,
+    1895,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3479,7 +3479,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=code-block-body]>&]:right-2',
-    1894,
+    1897,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3492,7 +3492,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=code-block-body]>&]:top-2',
-    1893,
+    1896,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3505,7 +3505,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=code-block-body]>&]:z-10',
-    1895,
+    1898,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3518,7 +3518,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=composer-actions]:first-child>&:first-child]:ml-[-5px]',
-    1896,
+    1899,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3531,7 +3531,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=dialog-header]+&]:pt-3',
-    1897,
+    1900,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3544,7 +3544,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=dialog-header]+&]:pt-5',
-    1898,
+    1901,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3557,7 +3557,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=form-section]+&]:border-line-hairline',
-    1900,
+    1903,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3575,7 +3575,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=form-section]+&]:border-t',
-    1899,
+    1902,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3591,7 +3591,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=inbox-item]+&]:before:block',
-    1901,
+    1904,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3607,7 +3607,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=list-row]+&]:before:block',
-    1902,
+    1905,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3623,7 +3623,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-slot=message-action-card-hint-label]+&]:-mt-1',
-    1903,
+    1906,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3636,7 +3636,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-toast-placement^=top]_&[data-ending-style]:not([data-swipe-direction])]:transform-[translateY(-120%)_scale(0.98)]',
-    1904,
+    1907,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3655,7 +3655,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[[data-toast-placement^=top]_&[data-starting-style]]:transform-[translateY(-120%)_scale(0.98)]',
-    1905,
+    1908,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3670,7 +3670,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[a,button]:active:press-overlay',
-    1763,
+    1766,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3681,7 +3681,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('[a,button]:cursor-pointer', 1761, RaftUtilityStatus.resolved, [
+  RaftUtility('[a,button]:cursor-pointer', 1764, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['is(a,button)'],
@@ -3691,7 +3691,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[a,button]:hover:press-overlay',
-    1762,
+    1765,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3704,7 +3704,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[border-width:var(--ca-overlay-border,2px)]',
-    422,
+    425,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -3715,7 +3715,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('[button&]:cursor-pointer', 1906, RaftUtilityStatus.resolved, [
+  RaftUtility('[button&]:cursor-pointer', 1909, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['button'],
@@ -3725,7 +3725,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     '[button&]:enabled:active:press-overlay',
-    1908,
+    1911,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3738,7 +3738,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     '[button&]:enabled:hover:press-overlay',
-    1907,
+    1910,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3749,16 +3749,16 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('[font-size:0.875em]', 614, RaftUtilityStatus.resolved, [
+  RaftUtility('[font-size:0.875em]', 617, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(0.875, 'em'))]),
   ]),
-  RaftUtility('[font-size:inherit]', 615, RaftUtilityStatus.resolved, [
+  RaftUtility('[font-size:inherit]', 618, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssKeyword('inherit'))]),
   ]),
-  RaftUtility('[font:inherit]', 863, RaftUtilityStatus.resolved, [
+  RaftUtility('[font:inherit]', 866, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font', CssKeyword('inherit'))]),
   ]),
-  RaftUtility('[li+li>&]:before:block', 1909, RaftUtilityStatus.resolved, [
+  RaftUtility('[li+li>&]:before:block', 1912, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::before',
       ['ancestor:li'],
@@ -3769,7 +3769,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('[overflow-anchor:auto]', 864, RaftUtilityStatus.resolved, [
+  RaftUtility('[overflow-anchor:auto]', 867, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overflow-anchor', CssKeyword('auto')),
     ]),
@@ -3787,7 +3787,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'active:after:bg-foreground-on-hud/15',
-    1117,
+    1120,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3809,7 +3809,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'active:before:bg-fill-pressed',
-    1116,
+    1119,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3823,12 +3823,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('active:bg-brand-soft', 1109, RaftUtilityStatus.resolved, [
+  RaftUtility('active:bg-brand-soft', 1112, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['active'], 2000, [RaftDecl('background-color', _v156)]),
   ]),
   RaftUtility(
     'active:bg-fill-frame-pressed',
-    1110,
+    1113,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3839,10 +3839,10 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('active:bg-fill-pressed', 1111, RaftUtilityStatus.resolved, [
+  RaftUtility('active:bg-fill-pressed', 1114, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['active'], 2000, [RaftDecl('background-color', _v57)]),
   ]),
-  RaftUtility('active:cursor-grabbing', 1108, RaftUtilityStatus.resolved, [
+  RaftUtility('active:cursor-grabbing', 1111, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['active'],
@@ -3850,12 +3850,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('cursor', CssKeyword('grabbing'))],
     ),
   ]),
-  RaftUtility('active:press-overlay', 1112, RaftUtilityStatus.resolved, [
+  RaftUtility('active:press-overlay', 1115, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['active'], 2000, [RaftDecl('background-image', _v149)]),
   ]),
   RaftUtility(
     'active:press-overlay-sticker',
-    1113,
+    1116,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -3866,10 +3866,10 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('active:text-foreground', 1114, RaftUtilityStatus.resolved, [
+  RaftUtility('active:text-foreground', 1117, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['active'], 2000, [RaftDecl('color', _v33)]),
   ]),
-  RaftUtility('after:-inset-1', 1007, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-1', 1010, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(-4, 'px')),
@@ -3878,7 +3878,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('left', CssNum(-4, 'px')),
     ]),
   ]),
-  RaftUtility('after:-inset-1.5', 1008, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-1.5', 1011, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(-6, 'px')),
@@ -3887,7 +3887,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('left', CssNum(-6, 'px')),
     ]),
   ]),
-  RaftUtility('after:-inset-3', 1009, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-3', 1012, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(-12, 'px')),
@@ -3896,68 +3896,68 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('left', CssNum(-12, 'px')),
     ]),
   ]),
-  RaftUtility('after:-inset-x-2', 1010, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-x-2', 1013, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('left', CssNum(-8, 'px')),
       RaftDecl('right', CssNum(-8, 'px')),
     ]),
   ]),
-  RaftUtility('after:-inset-x-2.5', 1011, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-x-2.5', 1014, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('left', CssNum(-10, 'px')),
       RaftDecl('right', CssNum(-10, 'px')),
     ]),
   ]),
-  RaftUtility('after:-inset-x-3', 1012, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-x-3', 1015, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('left', CssNum(-12, 'px')),
       RaftDecl('right', CssNum(-12, 'px')),
     ]),
   ]),
-  RaftUtility('after:-inset-y-1', 1014, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-y-1', 1017, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(-4, 'px')),
       RaftDecl('bottom', CssNum(-4, 'px')),
     ]),
   ]),
-  RaftUtility('after:-inset-y-1.5', 1015, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-y-1.5', 1018, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(-6, 'px')),
       RaftDecl('bottom', CssNum(-6, 'px')),
     ]),
   ]),
-  RaftUtility('after:-inset-y-2', 1016, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-y-2', 1019, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(-8, 'px')),
       RaftDecl('bottom', CssNum(-8, 'px')),
     ]),
   ]),
-  RaftUtility('after:-inset-y-3', 1017, RaftUtilityStatus.resolved, [
+  RaftUtility('after:-inset-y-3', 1020, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(-12, 'px')),
       RaftDecl('bottom', CssNum(-12, 'px')),
     ]),
   ]),
-  RaftUtility('after:absolute', 1006, RaftUtilityStatus.resolved, [
+  RaftUtility('after:absolute', 1009, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('position', CssKeyword('absolute')),
     ]),
   ]),
-  RaftUtility('after:bg-attention-400', 1034, RaftUtilityStatus.resolved, [
+  RaftUtility('after:bg-attention-400', 1037, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v67),
     ]),
   ]),
-  RaftUtility('after:bg-linear-to-t', 1035, RaftUtilityStatus.resolved, [
+  RaftUtility('after:bg-linear-to-t', 1038, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('--tw-gradient-position', _v160),
@@ -3965,7 +3965,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
     ]),
     RaftLayer('::after', [], 1001, [RaftDecl('--tw-gradient-position', _v163)]),
   ]),
-  RaftUtility('after:border-[1.5px]', 1030, RaftUtilityStatus.resolved, [
+  RaftUtility('after:border-[1.5px]', 1033, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-style', _v12),
@@ -3978,7 +3978,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-width', CssNum(1.5, 'px')),
     ]),
   ]),
-  RaftUtility('after:border-line-hairline', 1032, RaftUtilityStatus.resolved, [
+  RaftUtility('after:border-line-hairline', 1035, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-color', _v147),
@@ -3987,7 +3987,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v147),
     ]),
   ]),
-  RaftUtility('after:border-sticker-ink', 1033, RaftUtilityStatus.resolved, [
+  RaftUtility('after:border-sticker-ink', 1036, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-color', _v73),
@@ -3996,83 +3996,83 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v73),
     ]),
   ]),
-  RaftUtility('after:border-t', 1031, RaftUtilityStatus.resolved, [
+  RaftUtility('after:border-t', 1034, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-style', _v12),
       RaftDecl('border-top-width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('after:bottom-0', 1021, RaftUtilityStatus.resolved, [
+  RaftUtility('after:bottom-0', 1024, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('bottom', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('after:content-[\'\']', 1039, RaftUtilityStatus.resolved, [
+  RaftUtility('after:content-[\'\']', 1042, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('--tw-content', CssString('')),
       RaftDecl('content', CssVar('--tw-content')),
     ]),
   ]),
-  RaftUtility('after:flex-1', 1026, RaftUtilityStatus.resolved, [
+  RaftUtility('after:flex-1', 1029, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('flex', CssNum(1)),
     ]),
   ]),
-  RaftUtility('after:from-layer-card', 1036, RaftUtilityStatus.resolved, [
+  RaftUtility('after:from-layer-card', 1039, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('--tw-gradient-from', _v164),
       RaftDecl('--tw-gradient-stops', _v171),
     ]),
   ]),
-  RaftUtility('after:h-10', 1024, RaftUtilityStatus.resolved, [
+  RaftUtility('after:h-10', 1027, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('height', CssNum(40, 'px')),
     ]),
   ]),
-  RaftUtility('after:hidden', 1022, RaftUtilityStatus.resolved, [
+  RaftUtility('after:hidden', 1025, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('display', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('after:inset-x-0', 1013, RaftUtilityStatus.resolved, [
+  RaftUtility('after:inset-x-0', 1016, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('left', CssNum(0, 'px')),
       RaftDecl('right', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('after:inset-y-0', 1018, RaftUtilityStatus.resolved, [
+  RaftUtility('after:inset-y-0', 1021, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(0, 'px')),
       RaftDecl('bottom', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('after:min-w-3', 1025, RaftUtilityStatus.resolved, [
+  RaftUtility('after:min-w-3', 1028, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('min-width', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('after:pointer-events-none', 1005, RaftUtilityStatus.resolved, [
+  RaftUtility('after:pointer-events-none', 1008, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('pointer-events', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('after:right-4', 1020, RaftUtilityStatus.resolved, [
+  RaftUtility('after:right-4', 1023, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('right', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('after:rounded-[2px]', 1028, RaftUtilityStatus.resolved, [
+  RaftUtility('after:rounded-[2px]', 1031, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-left-radius', CssNum(2, 'px')),
@@ -4081,7 +4081,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('after:rounded-control', 1029, RaftUtilityStatus.resolved, [
+  RaftUtility('after:rounded-control', 1032, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-left-radius', CssNum(8, 'px')),
@@ -4090,20 +4090,20 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(8, 'px')),
     ]),
   ]),
-  RaftUtility('after:shrink-0', 1027, RaftUtilityStatus.resolved, [
+  RaftUtility('after:shrink-0', 1030, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('flex-shrink', CssNum(0)),
     ]),
   ]),
-  RaftUtility('after:size-[9px]', 1023, RaftUtilityStatus.resolved, [
+  RaftUtility('after:size-[9px]', 1026, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('width', CssNum(9, 'px')),
       RaftDecl('height', CssNum(9, 'px')),
     ]),
   ]),
-  RaftUtility('after:to-layer-card/0', 1038, RaftUtilityStatus.resolved, [
+  RaftUtility('after:to-layer-card/0', 1041, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('--tw-gradient-to', _v164),
@@ -4111,13 +4111,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
     ]),
     RaftLayer('::after', [], 1001, [RaftDecl('--tw-gradient-to', _v173)]),
   ]),
-  RaftUtility('after:top-[17.5px]', 1019, RaftUtilityStatus.resolved, [
+  RaftUtility('after:top-[17.5px]', 1022, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(17.5, 'px')),
     ]),
   ]),
-  RaftUtility('after:via-layer-card/80', 1037, RaftUtilityStatus.resolved, [
+  RaftUtility('after:via-layer-card/80', 1040, RaftUtilityStatus.resolved, [
     RaftLayer('::after', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('--tw-gradient-via', _v164),
@@ -4126,41 +4126,41 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
     ]),
     RaftLayer('::after', [], 1001, [RaftDecl('--tw-gradient-via', _v179)]),
   ]),
-  RaftUtility('align-[1px]', 587, RaftUtilityStatus.resolved, [
+  RaftUtility('align-[1px]', 590, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('vertical-align', CssNum(1, 'px'))]),
   ]),
-  RaftUtility('align-baseline', 588, RaftUtilityStatus.resolved, [
+  RaftUtility('align-baseline', 591, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('vertical-align', CssKeyword('baseline')),
     ]),
   ]),
-  RaftUtility('align-middle', 589, RaftUtilityStatus.resolved, [
+  RaftUtility('align-middle', 592, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('vertical-align', CssKeyword('middle')),
     ]),
   ]),
-  RaftUtility('align-top', 590, RaftUtilityStatus.resolved, [
+  RaftUtility('align-top', 593, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('vertical-align', CssKeyword('top')),
     ]),
   ]),
   RaftUtility(
     'animate-[raft-toast-timeout-progress_var(--toast-progress-duration)_linear_forwards]',
-    310,
+    313,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('animation', _v182)]),
     ],
   ),
-  RaftUtility('animate-none', 311, RaftUtilityStatus.resolved, [
+  RaftUtility('animate-none', 314, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('animation', CssKeyword('none'))]),
   ]),
-  RaftUtility('animate-pulse', 312, RaftUtilityStatus.resolved, [
+  RaftUtility('animate-pulse', 315, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('animation', _v184)]),
   ]),
   RaftUtility(
     'aria-[current=page]:text-foreground',
-    1251,
+    1254,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['aria-current=page'], 2000, [RaftDecl('color', _v33)]),
@@ -4168,7 +4168,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:[--list-row-ink-2:var(--foreground-disabled)]',
-    1235,
+    1238,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4181,7 +4181,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:[--list-row-ink-3:var(--foreground-disabled)]',
-    1236,
+    1239,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4194,7 +4194,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:[--list-row-ink:var(--foreground-disabled)]',
-    1237,
+    1240,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4207,7 +4207,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:active:scale-none',
-    1241,
+    1244,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4220,7 +4220,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:active:translate-none',
-    1240,
+    1243,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4231,7 +4231,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('aria-disabled:bg-fill-muted', 1227, RaftUtilityStatus.resolved, [
+  RaftUtility('aria-disabled:bg-fill-muted', 1230, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['aria-disabled=true'],
@@ -4239,7 +4239,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('background-color', _v131)],
     ),
   ]),
-  RaftUtility('aria-disabled:bg-none', 1229, RaftUtilityStatus.resolved, [
+  RaftUtility('aria-disabled:bg-none', 1232, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['aria-disabled=true'],
@@ -4249,7 +4249,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'aria-disabled:bg-transparent',
-    1228,
+    1231,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4262,7 +4262,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:border-line-hairline',
-    1225,
+    1228,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4280,7 +4280,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:border-transparent',
-    1226,
+    1229,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4298,7 +4298,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:cursor-not-allowed',
-    1224,
+    1227,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4311,7 +4311,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:hover:no-underline',
-    1239,
+    1242,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4324,7 +4324,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:hover:translate-none',
-    1238,
+    1241,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4335,7 +4335,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('aria-disabled:inset-ring-0', 1234, RaftUtilityStatus.resolved, [
+  RaftUtility('aria-disabled:inset-ring-0', 1237, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['aria-disabled=true'],
@@ -4343,7 +4343,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('--tw-inset-ring-shadow', _v187), RaftDecl('box-shadow', _v23)],
     ),
   ]),
-  RaftUtility('aria-disabled:opacity-100', 1232, RaftUtilityStatus.resolved, [
+  RaftUtility('aria-disabled:opacity-100', 1235, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['aria-disabled=true'],
@@ -4351,7 +4351,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('opacity', CssNum(100, '%'))],
     ),
   ]),
-  RaftUtility('aria-disabled:opacity-40', 1231, RaftUtilityStatus.resolved, [
+  RaftUtility('aria-disabled:opacity-40', 1234, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['aria-disabled=true'],
@@ -4359,7 +4359,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('opacity', CssNum(40, '%'))],
     ),
   ]),
-  RaftUtility('aria-disabled:ring-0', 1233, RaftUtilityStatus.resolved, [
+  RaftUtility('aria-disabled:ring-0', 1236, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['aria-disabled=true'],
@@ -4369,7 +4369,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'aria-disabled:text-foreground-disabled',
-    1230,
+    1233,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4382,7 +4382,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-disabled:transform-none',
-    1223,
+    1226,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4395,7 +4395,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-expanded:bg-fill-frame-pressed',
-    1242,
+    1245,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4408,7 +4408,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-pressed:active:press-overlay-sticker',
-    1248,
+    1251,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4419,7 +4419,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('aria-pressed:bg-brand', 1244, RaftUtilityStatus.resolved, [
+  RaftUtility('aria-pressed:bg-brand', 1247, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['aria-pressed=true'],
@@ -4429,7 +4429,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'aria-pressed:border-sticker-ink',
-    1243,
+    1246,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4445,7 +4445,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('aria-pressed:ring-[1.5px]', 1246, RaftUtilityStatus.resolved, [
+  RaftUtility('aria-pressed:ring-[1.5px]', 1249, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['aria-pressed=true'],
@@ -4455,7 +4455,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'aria-pressed:ring-sticker-edge',
-    1247,
+    1250,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4468,13 +4468,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'aria-pressed:text-sticker-ink',
-    1245,
+    1248,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['aria-pressed=true'], 2000, [RaftDecl('color', _v73)]),
     ],
   ),
-  RaftUtility('aria-selected:bg-info-soft', 1249, RaftUtilityStatus.resolved, [
+  RaftUtility('aria-selected:bg-info-soft', 1252, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['aria-selected=true'],
@@ -4484,7 +4484,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'aria-selected:hover:bg-info-soft',
-    1250,
+    1253,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -4495,32 +4495,32 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('aspect-video', 124, RaftUtilityStatus.resolved, [
+  RaftUtility('aspect-video', 125, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('aspect-ratio', _v189)]),
   ]),
-  RaftUtility('auto-cols-fr', 328, RaftUtilityStatus.resolved, [
+  RaftUtility('auto-cols-fr', 331, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('grid-auto-columns', _v60)]),
   ]),
-  RaftUtility('auto-rows-[7rem]', 330, RaftUtilityStatus.resolved, [
+  RaftUtility('auto-rows-[7rem]', 333, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('grid-auto-rows', CssNum(112, 'px')),
     ]),
   ]),
-  RaftUtility('auto-rows-[8rem]', 331, RaftUtilityStatus.resolved, [
+  RaftUtility('auto-rows-[8rem]', 334, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('grid-auto-rows', CssNum(128, 'px')),
     ]),
   ]),
-  RaftUtility('auto-rows-min', 332, RaftUtilityStatus.resolved, [
+  RaftUtility('auto-rows-min', 335, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('grid-auto-rows', _v190)]),
   ]),
-  RaftUtility('basis-0', 291, RaftUtilityStatus.resolved, [
+  RaftUtility('basis-0', 294, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex-basis', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('basis-40', 292, RaftUtilityStatus.resolved, [
+  RaftUtility('basis-40', 295, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex-basis', CssNum(160, 'px'))]),
   ]),
-  RaftUtility('before:-inset-1', 944, RaftUtilityStatus.resolved, [
+  RaftUtility('before:-inset-1', 947, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(-4, 'px')),
@@ -4529,81 +4529,81 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('left', CssNum(-4, 'px')),
     ]),
   ]),
-  RaftUtility('before:-translate-x-1/2', 974, RaftUtilityStatus.resolved, [
+  RaftUtility('before:-translate-x-1/2', 977, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('--tw-translate-x', CssNum(-50, '%')),
       RaftDecl('translate', CssSeq([_v49, _v50])),
     ]),
   ]),
-  RaftUtility('before:-translate-y-1/2', 975, RaftUtilityStatus.resolved, [
+  RaftUtility('before:-translate-y-1/2', 978, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('--tw-translate-y', CssNum(-50, '%')),
       RaftDecl('translate', CssSeq([_v49, _v50])),
     ]),
   ]),
-  RaftUtility('before:absolute', 943, RaftUtilityStatus.resolved, [
+  RaftUtility('before:absolute', 946, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('position', CssKeyword('absolute')),
     ]),
   ]),
-  RaftUtility('before:bg-attention', 986, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bg-attention', 989, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v67),
     ]),
   ]),
-  RaftUtility('before:bg-brand', 987, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bg-brand', 990, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v132),
     ]),
   ]),
-  RaftUtility('before:bg-danger', 988, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bg-danger', 991, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v122),
     ]),
   ]),
-  RaftUtility('before:bg-inactive', 989, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bg-inactive', 992, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v191),
     ]),
   ]),
-  RaftUtility('before:bg-info', 990, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bg-info', 993, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v123),
     ]),
   ]),
-  RaftUtility('before:bg-line-seam', 991, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bg-line-seam', 994, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v192),
     ]),
   ]),
-  RaftUtility('before:bg-success', 992, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bg-success', 995, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v124),
     ]),
   ]),
-  RaftUtility('before:bg-transparent', 993, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bg-transparent', 996, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v11),
     ]),
   ]),
-  RaftUtility('before:bg-warning', 994, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bg-warning', 997, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('background-color', _v125),
     ]),
   ]),
-  RaftUtility('before:border-[1.5px]', 981, RaftUtilityStatus.resolved, [
+  RaftUtility('before:border-[1.5px]', 984, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-style', _v12),
@@ -4616,7 +4616,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-width', CssNum(1.5, 'px')),
     ]),
   ]),
-  RaftUtility('before:border-line-hairline', 983, RaftUtilityStatus.resolved, [
+  RaftUtility('before:border-line-hairline', 986, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-color', _v147),
@@ -4625,7 +4625,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v147),
     ]),
   ]),
-  RaftUtility('before:border-sticker-ink', 984, RaftUtilityStatus.resolved, [
+  RaftUtility('before:border-sticker-ink', 987, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-color', _v73),
@@ -4634,14 +4634,14 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v73),
     ]),
   ]),
-  RaftUtility('before:border-t', 982, RaftUtilityStatus.resolved, [
+  RaftUtility('before:border-t', 985, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-style', _v12),
       RaftDecl('border-top-width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('before:border-transparent', 985, RaftUtilityStatus.resolved, [
+  RaftUtility('before:border-transparent', 988, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-color', _v11),
@@ -4650,37 +4650,37 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v11),
     ]),
   ]),
-  RaftUtility('before:bottom-3', 953, RaftUtilityStatus.resolved, [
+  RaftUtility('before:bottom-3', 956, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('bottom', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('before:content-[\'\']', 996, RaftUtilityStatus.resolved, [
+  RaftUtility('before:content-[\'\']', 999, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('--tw-content', CssString('')),
       RaftDecl('content', CssVar('--tw-content')),
     ]),
   ]),
-  RaftUtility('before:flex-1', 972, RaftUtilityStatus.resolved, [
+  RaftUtility('before:flex-1', 975, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('flex', CssNum(1)),
     ]),
   ]),
-  RaftUtility('before:h-1', 962, RaftUtilityStatus.resolved, [
+  RaftUtility('before:h-1', 965, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('height', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('before:h-9', 963, RaftUtilityStatus.resolved, [
+  RaftUtility('before:h-9', 966, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('height', CssNum(36, 'px')),
     ]),
   ]),
-  RaftUtility('before:h-[30px]', 964, RaftUtilityStatus.resolved, [
+  RaftUtility('before:h-[30px]', 967, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('height', CssNum(30, 'px')),
@@ -4688,7 +4688,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'before:h-[calc(var(--toast-gap)+3px)]',
-    965,
+    968,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('::before', [], 1001, [
@@ -4697,19 +4697,19 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('before:h-full', 966, RaftUtilityStatus.resolved, [
+  RaftUtility('before:h-full', 969, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('height', CssNum(100, '%')),
     ]),
   ]),
-  RaftUtility('before:hidden', 960, RaftUtilityStatus.resolved, [
+  RaftUtility('before:hidden', 963, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('display', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('before:inset-x-0', 945, RaftUtilityStatus.resolved, [
+  RaftUtility('before:inset-x-0', 948, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('left', CssNum(0, 'px')),
@@ -4718,7 +4718,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'before:left-(--list-row-rule-start)',
-    954,
+    957,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('::before', [], 1001, [
@@ -4727,61 +4727,61 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('before:left-1/2', 955, RaftUtilityStatus.resolved, [
+  RaftUtility('before:left-1/2', 958, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('left', CssNum(50, '%')),
     ]),
   ]),
-  RaftUtility('before:left-3', 956, RaftUtilityStatus.resolved, [
+  RaftUtility('before:left-3', 959, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('left', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('before:left-4', 957, RaftUtilityStatus.resolved, [
+  RaftUtility('before:left-4', 960, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('left', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('before:left-[5px]', 958, RaftUtilityStatus.resolved, [
+  RaftUtility('before:left-[5px]', 961, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('left', CssNum(5, 'px')),
     ]),
   ]),
-  RaftUtility('before:min-w-3', 971, RaftUtilityStatus.resolved, [
+  RaftUtility('before:min-w-3', 974, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('min-width', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('before:pointer-events-auto', 941, RaftUtilityStatus.resolved, [
+  RaftUtility('before:pointer-events-auto', 944, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('pointer-events', CssKeyword('auto')),
     ]),
   ]),
-  RaftUtility('before:pointer-events-none', 942, RaftUtilityStatus.resolved, [
+  RaftUtility('before:pointer-events-none', 945, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('pointer-events', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('before:right-0', 951, RaftUtilityStatus.resolved, [
+  RaftUtility('before:right-0', 954, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('right', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('before:right-3', 952, RaftUtilityStatus.resolved, [
+  RaftUtility('before:right-3', 955, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('right', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('before:rounded-[1px]', 977, RaftUtilityStatus.resolved, [
+  RaftUtility('before:rounded-[1px]', 980, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-left-radius', CssNum(1, 'px')),
@@ -4790,7 +4790,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('before:rounded-[2px]', 978, RaftUtilityStatus.resolved, [
+  RaftUtility('before:rounded-[2px]', 981, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-left-radius', CssNum(2, 'px')),
@@ -4799,7 +4799,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('before:rounded-control', 979, RaftUtilityStatus.resolved, [
+  RaftUtility('before:rounded-control', 982, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-left-radius', CssNum(8, 'px')),
@@ -4808,7 +4808,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(8, 'px')),
     ]),
   ]),
-  RaftUtility('before:rounded-none', 980, RaftUtilityStatus.resolved, [
+  RaftUtility('before:rounded-none', 983, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('border-top-left-radius', CssNum(0)),
@@ -4817,50 +4817,50 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(0)),
     ]),
   ]),
-  RaftUtility('before:shrink-0', 973, RaftUtilityStatus.resolved, [
+  RaftUtility('before:shrink-0', 976, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('flex-shrink', CssNum(0)),
     ]),
   ]),
-  RaftUtility('before:size-[9px]', 961, RaftUtilityStatus.resolved, [
+  RaftUtility('before:size-[9px]', 964, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('width', CssNum(9, 'px')),
       RaftDecl('height', CssNum(9, 'px')),
     ]),
   ]),
-  RaftUtility('before:top-0', 946, RaftUtilityStatus.resolved, [
+  RaftUtility('before:top-0', 949, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('before:top-1.5', 947, RaftUtilityStatus.resolved, [
+  RaftUtility('before:top-1.5', 950, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('before:top-1/2', 948, RaftUtilityStatus.resolved, [
+  RaftUtility('before:top-1/2', 951, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(50, '%')),
     ]),
   ]),
-  RaftUtility('before:top-3', 949, RaftUtilityStatus.resolved, [
+  RaftUtility('before:top-3', 952, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('before:top-full', 950, RaftUtilityStatus.resolved, [
+  RaftUtility('before:top-full', 953, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('top', CssNum(100, '%')),
     ]),
   ]),
-  RaftUtility('before:transition-colors', 995, RaftUtilityStatus.resolved, [
+  RaftUtility('before:transition-colors', 998, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('transition-property', _v201),
@@ -4868,197 +4868,197 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('transition-duration', _v8),
     ]),
   ]),
-  RaftUtility('before:translate-none', 976, RaftUtilityStatus.resolved, [
+  RaftUtility('before:translate-none', 979, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('translate', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('before:w-1', 967, RaftUtilityStatus.resolved, [
+  RaftUtility('before:w-1', 970, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('width', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('before:w-14', 969, RaftUtilityStatus.resolved, [
+  RaftUtility('before:w-14', 972, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('width', CssNum(56, 'px')),
     ]),
   ]),
-  RaftUtility('before:w-9', 968, RaftUtilityStatus.resolved, [
+  RaftUtility('before:w-9', 971, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('width', CssNum(36, 'px')),
     ]),
   ]),
-  RaftUtility('before:w-px', 970, RaftUtilityStatus.resolved, [
+  RaftUtility('before:w-px', 973, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('before:z-0', 959, RaftUtilityStatus.resolved, [
+  RaftUtility('before:z-0', 962, RaftUtilityStatus.resolved, [
     RaftLayer('::before', [], 1001, [
       RaftDecl('content', CssVar('--tw-content')),
       RaftDecl('z-index', CssNum(0)),
     ]),
   ]),
-  RaftUtility('bg-(--progress-indicator)', 442, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-(--progress-indicator)', 445, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v202)]),
   ]),
-  RaftUtility('bg-(--progress-track)', 443, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-(--progress-track)', 446, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v203)]),
   ]),
-  RaftUtility('bg-(--status-color)', 444, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-(--status-color)', 447, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v204)]),
   ]),
   RaftUtility(
     'bg-[linear-gradient(var(--info-soft),var(--info-soft))]',
-    492,
+    495,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('background-image', _v205)]),
     ],
   ),
-  RaftUtility('bg-attention', 445, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-attention', 448, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v67)]),
   ]),
-  RaftUtility('bg-attention-400', 446, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-attention-400', 449, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v67)]),
   ]),
-  RaftUtility('bg-attention-soft', 447, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-attention-soft', 450, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v206)]),
   ]),
-  RaftUtility('bg-black', 448, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-black', 451, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v207)]),
   ]),
-  RaftUtility('bg-black/45', 449, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-black/45', 452, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v210)]),
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v211)]),
   ]),
-  RaftUtility('bg-brand', 450, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-brand', 453, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v132)]),
   ]),
-  RaftUtility('bg-brand-soft', 451, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-brand-soft', 454, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v156)]),
   ]),
-  RaftUtility('bg-clip-padding', 494, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-clip-padding', 497, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-clip', _v212)]),
   ]),
-  RaftUtility('bg-current', 452, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-current', 455, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v16)]),
   ]),
-  RaftUtility('bg-danger', 453, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-danger', 456, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v122)]),
   ]),
-  RaftUtility('bg-danger-soft', 454, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-danger-soft', 457, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v213)]),
   ]),
-  RaftUtility('bg-fill-muted', 455, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-fill-muted', 458, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v131)]),
   ]),
-  RaftUtility('bg-foreground', 456, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-foreground', 459, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v33)]),
   ]),
-  RaftUtility('bg-foreground-disabled', 457, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-foreground-disabled', 460, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v185)]),
   ]),
-  RaftUtility('bg-foreground-on-hud/40', 458, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-foreground-on-hud/40', 461, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v152)]),
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v215)]),
   ]),
-  RaftUtility('bg-foreground/10', 459, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-foreground/10', 462, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v33)]),
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v217)]),
   ]),
-  RaftUtility('bg-foreground/15', 460, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-foreground/15', 463, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v33)]),
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v219)]),
   ]),
-  RaftUtility('bg-foreground/25', 461, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-foreground/25', 464, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v33)]),
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v221)]),
   ]),
-  RaftUtility('bg-foreground/30', 462, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-foreground/30', 465, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v33)]),
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v223)]),
   ]),
-  RaftUtility('bg-foreground/40', 463, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-foreground/40', 466, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v33)]),
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v225)]),
   ]),
-  RaftUtility('bg-inactive', 464, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-inactive', 467, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v191)]),
   ]),
-  RaftUtility('bg-inactive-soft', 465, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-inactive-soft', 468, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v226)]),
   ]),
-  RaftUtility('bg-info', 466, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-info', 469, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v123)]),
   ]),
-  RaftUtility('bg-info-soft', 467, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-info-soft', 470, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v188)]),
   ]),
-  RaftUtility('bg-layer-backdrop', 468, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-backdrop', 471, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v227)]),
   ]),
-  RaftUtility('bg-layer-canvas', 469, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-canvas', 472, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v37)]),
   ]),
-  RaftUtility('bg-layer-card', 470, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-card', 473, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v164)]),
   ]),
-  RaftUtility('bg-layer-card/80', 471, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-card/80', 474, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v164)]),
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v179)]),
   ]),
-  RaftUtility('bg-layer-card/90', 472, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-card/90', 475, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v164)]),
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v229)]),
   ]),
-  RaftUtility('bg-layer-code', 473, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-code', 476, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v230)]),
   ]),
-  RaftUtility('bg-layer-frame', 474, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-frame', 477, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v231)]),
   ]),
-  RaftUtility('bg-layer-hud', 475, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-hud', 478, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v232)]),
   ]),
-  RaftUtility('bg-layer-popover', 476, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-popover', 479, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v233)]),
   ]),
-  RaftUtility('bg-layer-sidebar', 477, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-layer-sidebar', 480, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v234)]),
   ]),
-  RaftUtility('bg-line-hairline', 478, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-line-hairline', 481, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v147)]),
   ]),
-  RaftUtility('bg-palette-lavender', 479, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-palette-lavender', 482, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v235)]),
   ]),
-  RaftUtility('bg-presence-online', 480, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-presence-online', 483, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v236)]),
   ]),
-  RaftUtility('bg-sticker-paper', 481, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-sticker-paper', 484, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v237)]),
   ]),
-  RaftUtility('bg-success', 482, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-success', 485, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v124)]),
   ]),
-  RaftUtility('bg-success-soft', 483, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-success-soft', 486, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v238)]),
   ]),
-  RaftUtility('bg-task-status-closed-soft', 484, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-task-status-closed-soft', 487, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v239)]),
   ]),
-  RaftUtility('bg-task-status-done-soft', 485, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-task-status-done-soft', 488, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v240)]),
   ]),
   RaftUtility(
     'bg-task-status-in-progress-soft',
-    486,
+    489,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('background-color', _v241)]),
@@ -5066,29 +5066,29 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'bg-task-status-in-review-soft',
-    487,
+    490,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('background-color', _v242)]),
     ],
   ),
-  RaftUtility('bg-task-status-todo-soft', 488, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-task-status-todo-soft', 491, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v243)]),
   ]),
-  RaftUtility('bg-transparent', 489, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-transparent', 492, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v11)]),
   ]),
-  RaftUtility('bg-warning', 490, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-warning', 493, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v125)]),
   ]),
-  RaftUtility('bg-warning-soft', 491, RaftUtilityStatus.resolved, [
+  RaftUtility('bg-warning-soft', 494, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('background-color', _v244)]),
   ]),
-  RaftUtility('block', 114, RaftUtilityStatus.resolved, [
+  RaftUtility('block', 115, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('display', CssKeyword('block'))]),
   ]),
   RaftUtility('blur-0', -1, RaftUtilityStatus.noCss, []),
-  RaftUtility('border', 419, RaftUtilityStatus.resolved, [
+  RaftUtility('border', 422, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-style', _v12),
       RaftDecl('border-right-style', _v12),
@@ -5100,7 +5100,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('border-0', 420, RaftUtilityStatus.resolved, [
+  RaftUtility('border-0', 423, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-style', _v12),
       RaftDecl('border-right-style', _v12),
@@ -5112,7 +5112,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-width', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('border-[1.5px]', 421, RaftUtilityStatus.resolved, [
+  RaftUtility('border-[1.5px]', 424, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-style', _v12),
       RaftDecl('border-right-style', _v12),
@@ -5124,18 +5124,18 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-width', CssNum(1.5, 'px')),
     ]),
   ]),
-  RaftUtility('border-b', 426, RaftUtilityStatus.resolved, [
+  RaftUtility('border-b', 429, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-bottom-style', _v12),
       RaftDecl('border-bottom-width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('border-collapse', 294, RaftUtilityStatus.resolved, [
+  RaftUtility('border-collapse', 297, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-collapse', CssKeyword('collapse')),
     ]),
   ]),
-  RaftUtility('border-danger-strong', 430, RaftUtilityStatus.resolved, [
+  RaftUtility('border-danger-strong', 433, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v245),
       RaftDecl('border-right-color', _v245),
@@ -5143,7 +5143,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v245),
     ]),
   ]),
-  RaftUtility('border-dashed', 429, RaftUtilityStatus.resolved, [
+  RaftUtility('border-dashed', 432, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-border-style', CssKeyword('dashed')),
       RaftDecl('border-top-style', CssKeyword('dashed')),
@@ -5152,7 +5152,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-style', CssKeyword('dashed')),
     ]),
   ]),
-  RaftUtility('border-foreground', 431, RaftUtilityStatus.resolved, [
+  RaftUtility('border-foreground', 434, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v33),
       RaftDecl('border-right-color', _v33),
@@ -5160,7 +5160,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v33),
     ]),
   ]),
-  RaftUtility('border-foreground-disabled', 432, RaftUtilityStatus.resolved, [
+  RaftUtility('border-foreground-disabled', 435, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v185),
       RaftDecl('border-right-color', _v185),
@@ -5168,7 +5168,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v185),
     ]),
   ]),
-  RaftUtility('border-foreground/40', 433, RaftUtilityStatus.resolved, [
+  RaftUtility('border-foreground/40', 436, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v33),
       RaftDecl('border-right-color', _v33),
@@ -5182,19 +5182,19 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v225),
     ]),
   ]),
-  RaftUtility('border-l', 427, RaftUtilityStatus.resolved, [
+  RaftUtility('border-l', 430, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-left-style', _v12),
       RaftDecl('border-left-width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('border-l-2', 428, RaftUtilityStatus.resolved, [
+  RaftUtility('border-l-2', 431, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-left-style', _v12),
       RaftDecl('border-left-width', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('border-line-field', 434, RaftUtilityStatus.resolved, [
+  RaftUtility('border-line-field', 437, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v246),
       RaftDecl('border-right-color', _v246),
@@ -5202,7 +5202,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v246),
     ]),
   ]),
-  RaftUtility('border-line-hairline', 435, RaftUtilityStatus.resolved, [
+  RaftUtility('border-line-hairline', 438, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v147),
       RaftDecl('border-right-color', _v147),
@@ -5210,7 +5210,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v147),
     ]),
   ]),
-  RaftUtility('border-line-seam', 436, RaftUtilityStatus.resolved, [
+  RaftUtility('border-line-seam', 439, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v192),
       RaftDecl('border-right-color', _v192),
@@ -5218,7 +5218,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v192),
     ]),
   ]),
-  RaftUtility('border-line-strong', 437, RaftUtilityStatus.resolved, [
+  RaftUtility('border-line-strong', 440, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v247),
       RaftDecl('border-right-color', _v247),
@@ -5226,13 +5226,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v247),
     ]),
   ]),
-  RaftUtility('border-r', 425, RaftUtilityStatus.resolved, [
+  RaftUtility('border-r', 428, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-right-style', _v12),
       RaftDecl('border-right-width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('border-sticker-ink', 438, RaftUtilityStatus.resolved, [
+  RaftUtility('border-sticker-ink', 441, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v73),
       RaftDecl('border-right-color', _v73),
@@ -5240,7 +5240,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v73),
     ]),
   ]),
-  RaftUtility('border-sticker-paper/40', 439, RaftUtilityStatus.resolved, [
+  RaftUtility('border-sticker-paper/40', 442, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v237),
       RaftDecl('border-right-color', _v237),
@@ -5254,19 +5254,19 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-left-color', _v249),
     ]),
   ]),
-  RaftUtility('border-t', 423, RaftUtilityStatus.resolved, [
+  RaftUtility('border-t', 426, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-style', _v12),
       RaftDecl('border-top-width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('border-t-0', 424, RaftUtilityStatus.resolved, [
+  RaftUtility('border-t-0', 427, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-style', _v12),
       RaftDecl('border-top-width', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('border-transparent', 440, RaftUtilityStatus.resolved, [
+  RaftUtility('border-transparent', 443, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-color', _v11),
       RaftDecl('border-right-color', _v11),
@@ -5298,18 +5298,18 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('bottom-full', 41, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('bottom', CssNum(100, '%'))]),
   ]),
-  RaftUtility('box-decoration-clone', 493, RaftUtilityStatus.resolved, [
+  RaftUtility('box-decoration-clone', 496, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('-webkit-box-decoration-break', CssKeyword('clone')),
       RaftDecl('box-decoration-break', CssKeyword('clone')),
     ]),
   ]),
-  RaftUtility('break-all', 661, RaftUtilityStatus.resolved, [
+  RaftUtility('break-all', 664, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('word-break', CssKeyword('break-all')),
     ]),
   ]),
-  RaftUtility('caption-bottom', 293, RaftUtilityStatus.resolved, [
+  RaftUtility('caption-bottom', 296, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('caption-side', CssKeyword('bottom')),
     ]),
@@ -5342,30 +5342,30 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('col-start-2', 69, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('grid-column-start', CssNum(2))]),
   ]),
-  RaftUtility('contents', 115, RaftUtilityStatus.resolved, [
+  RaftUtility('contents', 116, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('display', CssKeyword('contents'))]),
   ]),
-  RaftUtility('cursor-default', 313, RaftUtilityStatus.resolved, [
+  RaftUtility('cursor-default', 316, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('cursor', CssKeyword('default'))]),
   ]),
-  RaftUtility('cursor-ew-resize', 314, RaftUtilityStatus.resolved, [
+  RaftUtility('cursor-ew-resize', 317, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('cursor', CssKeyword('ew-resize'))]),
   ]),
-  RaftUtility('cursor-grab', 315, RaftUtilityStatus.resolved, [
+  RaftUtility('cursor-grab', 318, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('cursor', CssKeyword('grab'))]),
   ]),
-  RaftUtility('cursor-not-allowed', 316, RaftUtilityStatus.resolved, [
+  RaftUtility('cursor-not-allowed', 319, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('cursor', _v186)]),
   ]),
-  RaftUtility('cursor-pointer', 317, RaftUtilityStatus.resolved, [
+  RaftUtility('cursor-pointer', 320, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('cursor', CssKeyword('pointer'))]),
   ]),
-  RaftUtility('cursor-wait', 318, RaftUtilityStatus.resolved, [
+  RaftUtility('cursor-wait', 321, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('cursor', CssKeyword('wait'))]),
   ]),
   RaftUtility(
     'dark:[&_pre_span]:text-(--shiki-dark,currentColor)',
-    1702,
+    1705,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& pre span', ['dark'], 1002, [RaftDecl('color', _v254)]),
@@ -5373,7 +5373,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[active=true]:bg-info-soft',
-    1387,
+    1390,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5386,7 +5386,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[active=true]:hover:bg-info-soft',
-    1388,
+    1391,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5399,7 +5399,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[busy=true]:cursor-wait',
-    1391,
+    1394,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5412,7 +5412,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[busy=true]:disabled:opacity-100',
-    1393,
+    1396,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5423,7 +5423,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-[busy=true]:opacity-60', 1392, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[busy=true]:opacity-60', 1395, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-busy=true'],
@@ -5433,7 +5433,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-[busy=true]:pointer-events-none',
-    1390,
+    1393,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5446,7 +5446,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[checked]:translate-x-5',
-    1394,
+    1397,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5462,7 +5462,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[direction=down]:bottom-0',
-    1395,
+    1398,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5473,7 +5473,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-[direction=up]:top-0', 1396, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[direction=up]:top-0', 1399, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-direction=up'],
@@ -5483,7 +5483,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-[disabled=true]:bg-fill-muted',
-    1401,
+    1404,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5496,7 +5496,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[disabled=true]:cursor-default',
-    1399,
+    1402,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5509,7 +5509,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[disabled=true]:hover:bg-transparent',
-    1404,
+    1407,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5522,7 +5522,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[disabled=true]:opacity-100',
-    1403,
+    1406,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5535,7 +5535,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[disabled=true]:pointer-events-none',
-    1397,
+    1400,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5548,7 +5548,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[disabled=true]:text-foreground-disabled',
-    1402,
+    1405,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5561,7 +5561,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[disabled=true]:touch-auto',
-    1400,
+    1403,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5574,7 +5574,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[disabled=true]:transform-none',
-    1398,
+    1401,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5587,7 +5587,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[dragging-source=true]:cursor-grabbing',
-    1405,
+    1408,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5600,7 +5600,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[dragging=true]:will-change-transform',
-    1407,
+    1410,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5611,7 +5611,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-[dragging=true]:z-20', 1406, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[dragging=true]:z-20', 1409, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-dragging=true'],
@@ -5621,7 +5621,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-[drop-collapsed=true]:data-[drop-state=allowed]:[outline:1.5px_dashed_var(--line-strong)]',
-    1409,
+    1412,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5638,7 +5638,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[drop-collapsed=true]:data-[drop-state=allowed]:outline-offset-4',
-    1410,
+    1413,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5651,7 +5651,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[drop-state=allowed]:block',
-    1408,
+    1411,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5664,7 +5664,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[emphasis=strong]:font-bold',
-    1411,
+    1414,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5680,7 +5680,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[fit=contain]:object-contain',
-    1412,
+    1415,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5693,7 +5693,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[fit=cover]:object-cover',
-    1413,
+    1416,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5706,7 +5706,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[highlighted=true]:bg-brand-soft',
-    1414,
+    1417,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5719,7 +5719,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[icon-kind=avatar]:bg-transparent',
-    1417,
+    1420,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5732,7 +5732,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[icon-kind=avatar]:border-transparent',
-    1416,
+    1419,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5750,7 +5750,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[icon-kind=avatar]:size-auto',
-    1415,
+    1418,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5766,7 +5766,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[indeterminate]:inset-y-0',
-    1418,
+    1421,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5779,7 +5779,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[interactive=true]:active:press-overlay',
-    1421,
+    1424,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5792,7 +5792,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[interactive=true]:cursor-pointer',
-    1419,
+    1422,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5805,7 +5805,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[interactive=true]:hover:press-overlay',
-    1420,
+    1423,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5818,7 +5818,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[loading=true]:cursor-wait',
-    1423,
+    1426,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5831,7 +5831,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[loading=true]:invisible',
-    1422,
+    1425,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5844,7 +5844,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[loading=true]:opacity-100',
-    1424,
+    1427,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5857,7 +5857,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:-mb-1.5',
-    1427,
+    1430,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5870,7 +5870,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:-mt-1.5',
-    1425,
+    1428,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5883,7 +5883,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:before:h-px',
-    1439,
+    1442,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5899,7 +5899,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:before:left-0',
-    1438,
+    1441,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5915,7 +5915,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:before:top-[5px]',
-    1437,
+    1440,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5931,7 +5931,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:before:w-full',
-    1440,
+    1443,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5947,7 +5947,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:cursor-ns-resize',
-    1432,
+    1435,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5960,7 +5960,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:flex-col',
-    1433,
+    1436,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5973,7 +5973,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:flex-row',
-    1434,
+    1437,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5986,7 +5986,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:flex-wrap',
-    1435,
+    1438,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -5999,7 +5999,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:focus-visible:before:h-0.5',
-    1441,
+    1444,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6015,7 +6015,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:h-3',
-    1429,
+    1432,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6028,7 +6028,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:h-px',
-    1430,
+    1433,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6041,7 +6041,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:justify-center',
-    1436,
+    1439,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6054,7 +6054,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:ml-0',
-    1428,
+    1431,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6067,7 +6067,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:mr-0',
-    1426,
+    1429,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6080,7 +6080,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=horizontal]:w-full',
-    1431,
+    1434,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6093,7 +6093,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=vertical]:flex-col',
-    1444,
+    1447,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6106,7 +6106,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=vertical]:items-stretch',
-    1445,
+    1448,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6119,7 +6119,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=vertical]:justify-center',
-    1446,
+    1449,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6132,7 +6132,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=vertical]:self-stretch',
-    1447,
+    1450,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6145,7 +6145,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=vertical]:w-3',
-    1442,
+    1445,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6158,7 +6158,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[orientation=vertical]:w-px',
-    1443,
+    1446,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6171,7 +6171,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[overflow=both]:mask-[linear-gradient(to_right,transparent,black_32px,black_calc(100%-32px),transparent)]',
-    1448,
+    1451,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6184,7 +6184,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[overflow=end]:mask-[linear-gradient(to_right,black_calc(100%-32px),transparent)]',
-    1449,
+    1452,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6197,7 +6197,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[overflow=start]:mask-[linear-gradient(to_right,transparent,black_32px)]',
-    1450,
+    1453,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6208,7 +6208,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-[panel-open]:mb-2', 1451, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[panel-open]:mb-2', 1454, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-panel-open'],
@@ -6218,7 +6218,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-[reorderable=true]:cursor-pointer',
-    1452,
+    1455,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6231,7 +6231,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:[&_svg]:text-sticker-ink',
-    1743,
+    1746,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6244,7 +6244,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:active:before:press-overlay-sticker',
-    1469,
+    1472,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6260,7 +6260,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:before:bg-brand',
-    1464,
+    1467,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6276,7 +6276,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:before:border-sticker-ink',
-    1463,
+    1466,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6295,7 +6295,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:before:ring-[1.5px]',
-    1465,
+    1468,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6312,7 +6312,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:before:ring-sticker-edge',
-    1466,
+    1469,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6328,7 +6328,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:bg-brand-soft',
-    1455,
+    1458,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6341,7 +6341,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:bg-info-soft',
-    1456,
+    1459,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6354,7 +6354,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:bg-layer-frame-active',
-    1457,
+    1460,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6367,7 +6367,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:border-line-frame-active',
-    1454,
+    1457,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6385,7 +6385,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:font-bold',
-    1458,
+    1461,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6401,7 +6401,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:hover:bg-brand-soft',
-    1467,
+    1470,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6414,7 +6414,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:hover:bg-info-soft',
-    1468,
+    1471,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6427,7 +6427,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:ring-[1.5px]',
-    1461,
+    1464,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6440,7 +6440,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:ring-sticker-edge',
-    1462,
+    1465,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6453,7 +6453,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:text-foreground',
-    1459,
+    1462,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6466,7 +6466,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[selected=true]:text-foreground-on-frame-active',
-    1460,
+    1463,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6477,7 +6477,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-[selected]:font-bold', 1453, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[selected]:font-bold', 1456, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-selected'],
@@ -6490,7 +6490,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-[separator=active]:before:bg-foreground-muted',
-    1470,
+    1473,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6506,7 +6506,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=bottom]:rotate-180',
-    1472,
+    1475,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6519,7 +6519,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=bottom]:top-[-5px]',
-    1471,
+    1474,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6532,7 +6532,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=inline-end]:left-[-7px]',
-    1473,
+    1476,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6545,7 +6545,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=inline-end]:left-[-8px]',
-    1474,
+    1477,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6558,7 +6558,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=inline-end]:rotate-90',
-    1475,
+    1478,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6571,7 +6571,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=inline-start]:-rotate-90',
-    1478,
+    1481,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6584,7 +6584,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=inline-start]:right-[-7px]',
-    1476,
+    1479,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6597,7 +6597,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=inline-start]:right-[-8px]',
-    1477,
+    1480,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6608,7 +6608,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-[side=left]:-rotate-90', 1481, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[side=left]:-rotate-90', 1484, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-side=left'],
@@ -6618,7 +6618,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-[side=left]:right-[-7px]',
-    1479,
+    1482,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6631,7 +6631,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=left]:right-[-8px]',
-    1480,
+    1483,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6644,7 +6644,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=right]:left-[-7px]',
-    1482,
+    1485,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6657,7 +6657,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[side=right]:left-[-8px]',
-    1483,
+    1486,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6668,7 +6668,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-[side=right]:rotate-90', 1484, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[side=right]:rotate-90', 1487, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-side=right'],
@@ -6678,7 +6678,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-[side=top]:bottom-[-5px]',
-    1485,
+    1488,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6691,7 +6691,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[slot=message-item-sender-button]:cursor-pointer',
-    1524,
+    1527,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6704,7 +6704,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[slot=message-item-sender-button]:hover:decoration-[1.5px]',
-    1526,
+    1529,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6717,7 +6717,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[slot=message-item-sender-button]:hover:underline',
-    1525,
+    1528,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6730,7 +6730,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[slot=message-item-sender-button]:hover:underline-offset-[3px]',
-    1527,
+    1530,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6743,7 +6743,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[slot=sidebar-item-count]:px-1.5',
-    1539,
+    1542,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6759,7 +6759,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[sorting=true]:overflow-x-hidden',
-    1558,
+    1561,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6772,7 +6772,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[sorting=true]:overflow-y-hidden',
-    1559,
+    1562,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6785,7 +6785,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=copied]:**:data-[icon=check]:opacity-100',
-    1561,
+    1564,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6798,7 +6798,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=copied]:**:data-[icon=check]:scale-100',
-    1560,
+    1563,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6816,7 +6816,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=copied]:**:data-[icon=copy]:blur-[1px]',
-    1564,
+    1567,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6829,7 +6829,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=copied]:**:data-[icon=copy]:opacity-0',
-    1563,
+    1566,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6842,7 +6842,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=copied]:**:data-[icon=copy]:scale-[0.72]',
-    1562,
+    1565,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6861,7 +6861,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=idle]:**:data-[icon=check]:blur-[1px]',
-    1567,
+    1570,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6874,7 +6874,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=idle]:**:data-[icon=check]:opacity-0',
-    1566,
+    1569,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6887,7 +6887,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=idle]:**:data-[icon=check]:scale-[0.72]',
-    1565,
+    1568,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6900,7 +6900,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=idle]:**:data-[icon=copy]:opacity-100',
-    1569,
+    1572,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6913,7 +6913,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[state=idle]:**:data-[icon=copy]:scale-100',
-    1568,
+    1571,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -6935,7 +6935,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
     RaftUtilityStatus.noCss,
     [],
   ),
-  RaftUtility('data-[tight-fold]:after:h-5', 1574, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[tight-fold]:after:h-5', 1577, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::after',
       ['data-tight-fold'],
@@ -6948,7 +6948,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-[variant=block]:bg-fill-muted',
-    1582,
+    1585,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6961,7 +6961,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[variant=block]:rounded-sticker',
-    1581,
+    1584,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6979,7 +6979,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[variant=line]:bg-fill-muted',
-    1585,
+    1588,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -6992,7 +6992,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-[variant=line]:rounded-sticker',
-    1584,
+    1587,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7008,7 +7008,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-[x=left]:left-0', 1586, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[x=left]:left-0', 1589, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-x=left'],
@@ -7016,7 +7016,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('left', CssNum(0, 'px'))],
     ),
   ]),
-  RaftUtility('data-[x=right]:right-0', 1587, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[x=right]:right-0', 1590, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-x=right'],
@@ -7024,7 +7024,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('right', CssNum(0, 'px'))],
     ),
   ]),
-  RaftUtility('data-[y=bottom]:bottom-0', 1588, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[y=bottom]:bottom-0', 1591, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-y=bottom'],
@@ -7032,12 +7032,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('bottom', CssNum(0, 'px'))],
     ),
   ]),
-  RaftUtility('data-[y=top]:top-0', 1589, RaftUtilityStatus.resolved, [
+  RaftUtility('data-[y=top]:top-0', 1592, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['data-y=top'], 2000, [RaftDecl('top', CssNum(0, 'px'))]),
   ]),
   RaftUtility(
     'data-active:active:press-overlay-sticker',
-    1264,
+    1267,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7048,7 +7048,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-active:bg-brand', 1254, RaftUtilityStatus.resolved, [
+  RaftUtility('data-active:bg-brand', 1257, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-active'],
@@ -7058,7 +7058,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-active:border-sticker-ink',
-    1252,
+    1255,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7076,7 +7076,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-active:border-sticker-paper',
-    1253,
+    1256,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7092,7 +7092,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-active:font-bold', 1255, RaftUtilityStatus.resolved, [
+  RaftUtility('data-active:font-bold', 1258, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-active'],
@@ -7103,7 +7103,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('data-active:ring-[1.5px]', 1262, RaftUtilityStatus.resolved, [
+  RaftUtility('data-active:ring-[1.5px]', 1265, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-active'],
@@ -7113,7 +7113,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-active:ring-sticker-edge',
-    1263,
+    1266,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7126,7 +7126,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-active:shadow-[inset_-2px_0_0_var(--foreground)]',
-    1258,
+    1261,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7139,7 +7139,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-active:shadow-[inset_0_-2px_0_var(--foreground)]',
-    1259,
+    1262,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7152,7 +7152,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-active:shadow-[inset_0_2px_0_var(--foreground)]',
-    1260,
+    1263,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7165,7 +7165,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-active:shadow-[inset_2px_0_0_var(--foreground)]',
-    1261,
+    1264,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7176,12 +7176,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-active:text-foreground', 1256, RaftUtilityStatus.resolved, [
+  RaftUtility('data-active:text-foreground', 1259, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['data-active'], 2000, [RaftDecl('color', _v33)]),
   ]),
   RaftUtility(
     'data-active:text-sticker-ink',
-    1257,
+    1260,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['data-active'], 2000, [RaftDecl('color', _v73)]),
@@ -7189,7 +7189,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-checked:active:press-overlay-sticker',
-    1285,
+    1288,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7200,7 +7200,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-checked:bg-brand', 1274, RaftUtilityStatus.resolved, [
+  RaftUtility('data-checked:bg-brand', 1277, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-checked'],
@@ -7210,7 +7210,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-checked:bg-sticker-paper',
-    1275,
+    1278,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7223,7 +7223,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-checked:border-sticker-ink',
-    1273,
+    1276,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7241,7 +7241,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-checked:data-disabled:bg-fill-muted',
-    1299,
+    1302,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7254,7 +7254,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-checked:data-disabled:border-foreground-disabled',
-    1298,
+    1301,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7272,7 +7272,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-checked:data-disabled:shadow-[0_0_0_1.5px_var(--foreground-disabled)]',
-    1300,
+    1303,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7283,7 +7283,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-checked:font-bold', 1276, RaftUtilityStatus.resolved, [
+  RaftUtility('data-checked:font-bold', 1279, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-checked'],
@@ -7294,7 +7294,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('data-checked:hover:bg-brand', 1282, RaftUtilityStatus.resolved, [
+  RaftUtility('data-checked:hover:bg-brand', 1285, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-checked', 'hover'],
@@ -7304,7 +7304,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-checked:hover:press-overlay-sticker',
-    1283,
+    1286,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7315,7 +7315,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-checked:ring-[1.5px]', 1280, RaftUtilityStatus.resolved, [
+  RaftUtility('data-checked:ring-[1.5px]', 1283, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-checked'],
@@ -7325,7 +7325,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-checked:ring-sticker-edge',
-    1281,
+    1284,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7338,7 +7338,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-checked:shadow-[0_0_0_1.5px_var(--sticker-ink)]',
-    1278,
+    1281,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7349,7 +7349,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-checked:shadow-none', 1279, RaftUtilityStatus.resolved, [
+  RaftUtility('data-checked:shadow-none', 1282, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-checked'],
@@ -7359,13 +7359,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-checked:text-sticker-ink',
-    1277,
+    1280,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['data-checked'], 2000, [RaftDecl('color', _v73)]),
     ],
   ),
-  RaftUtility('data-closed:hidden', 1286, RaftUtilityStatus.resolved, [
+  RaftUtility('data-closed:hidden', 1289, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-closed'],
@@ -7375,7 +7375,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-complete:[--progress-indicator:var(--color-success)]',
-    1287,
+    1290,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7388,7 +7388,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:[&>label]:cursor-not-allowed',
-    1801,
+    1804,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -7401,7 +7401,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:[&>label]:text-foreground-disabled',
-    1802,
+    1805,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -7414,7 +7414,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:[&>label_*]:text-foreground-disabled',
-    1803,
+    1806,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -7427,13 +7427,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:[&>svg]:text-foreground-disabled',
-    1853,
+    1856,
     RaftUtilityStatus.descendant,
     [
       RaftLayer('& > svg', ['data-disabled'], 2001, [RaftDecl('color', _v185)]),
     ],
   ),
-  RaftUtility('data-disabled:bg-fill-muted', 1292, RaftUtilityStatus.resolved, [
+  RaftUtility('data-disabled:bg-fill-muted', 1295, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-disabled'],
@@ -7443,7 +7443,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-disabled:bg-transparent',
-    1293,
+    1296,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7456,7 +7456,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:border-foreground-disabled',
-    1291,
+    1294,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7474,7 +7474,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:cursor-not-allowed',
-    1290,
+    1293,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['data-disabled'], 2000, [RaftDecl('cursor', _v186)]),
@@ -7482,7 +7482,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:hover:bg-transparent',
-    1297,
+    1300,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7493,7 +7493,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-disabled:opacity-100', 1295, RaftUtilityStatus.resolved, [
+  RaftUtility('data-disabled:opacity-100', 1298, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-disabled'],
@@ -7503,7 +7503,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-disabled:pointer-events-none',
-    1288,
+    1291,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7516,7 +7516,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:shadow-[0_0_0_1.5px_var(--foreground-disabled)]',
-    1296,
+    1299,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7529,7 +7529,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:text-foreground-disabled',
-    1294,
+    1297,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['data-disabled'], 2000, [RaftDecl('color', _v185)]),
@@ -7537,7 +7537,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-disabled:transform-none',
-    1289,
+    1292,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7550,7 +7550,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:blur-(--drawer-blur)',
-    1308,
+    1311,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7563,7 +7563,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(var(--toast-swipe-movement-y)+120%))]',
-    1570,
+    1573,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7576,7 +7576,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:data-[swipe-direction=left]:transform-[translateX(calc(var(--toast-swipe-movement-x)-120%))_translateY(var(--toast-y))]',
-    1571,
+    1574,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7591,7 +7591,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:data-[swipe-direction=right]:transform-[translateX(calc(var(--toast-swipe-movement-x)+120%))_translateY(var(--toast-y))]',
-    1572,
+    1575,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7606,7 +7606,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:data-[swipe-direction=up]:transform-[translateY(calc(var(--toast-swipe-movement-y)-120%))]',
-    1573,
+    1576,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7619,7 +7619,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:duration-150',
-    1309,
+    1312,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7635,7 +7635,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*180ms)]',
-    1310,
+    1313,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7649,7 +7649,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-ending-style:h-0', 1303, RaftUtilityStatus.resolved, [
+  RaftUtility('data-ending-style:h-0', 1306, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-ending-style'],
@@ -7657,7 +7657,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('height', CssNum(0, 'px'))],
     ),
   ]),
-  RaftUtility('data-ending-style:hidden', 1302, RaftUtilityStatus.resolved, [
+  RaftUtility('data-ending-style:hidden', 1305, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-ending-style'],
@@ -7665,7 +7665,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('display', CssKeyword('none'))],
     ),
   ]),
-  RaftUtility('data-ending-style:opacity-0', 1307, RaftUtilityStatus.resolved, [
+  RaftUtility('data-ending-style:opacity-0', 1310, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-ending-style'],
@@ -7675,7 +7675,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-ending-style:pointer-events-none',
-    1301,
+    1304,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7688,7 +7688,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:scale-[0.99]',
-    1304,
+    1307,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7701,7 +7701,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:transform-(--closed-transform)',
-    1305,
+    1308,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7714,7 +7714,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-ending-style:transform-[scale(0.99)]',
-    1306,
+    1309,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7727,7 +7727,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-expanded:h-(--toast-height)',
-    1311,
+    1314,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['data-expanded'], 2000, [RaftDecl('height', _v139)]),
@@ -7735,7 +7735,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-expanded:transform-[translateX(var(--toast-swipe-movement-x))_translateY(var(--toast-y))_scale(1)]',
-    1312,
+    1315,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7748,7 +7748,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-has-actions:grid-cols-[minmax(0,1fr)_auto]',
-    1313,
+    1316,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7761,7 +7761,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-has-icon:grid-cols-[auto_minmax(0,1fr)]',
-    1314,
+    1317,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7774,7 +7774,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-has-value:active:press-overlay',
-    1320,
+    1323,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7785,7 +7785,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-has-value:bg-info-soft', 1315, RaftUtilityStatus.resolved, [
+  RaftUtility('data-has-value:bg-info-soft', 1318, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-has-value'],
@@ -7795,7 +7795,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-has-value:hover:bg-info-soft',
-    1318,
+    1321,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7808,7 +7808,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-has-value:hover:press-overlay',
-    1319,
+    1322,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7819,7 +7819,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-has-value:inset-ring-0', 1317, RaftUtilityStatus.resolved, [
+  RaftUtility('data-has-value:inset-ring-0', 1320, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-has-value'],
@@ -7829,7 +7829,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-has-value:text-foreground',
-    1316,
+    1319,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['data-has-value'], 2000, [RaftDecl('color', _v33)]),
@@ -7837,7 +7837,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-highlighted:bg-brand-soft',
-    1321,
+    1324,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7848,7 +7848,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-indeterminate:absolute', 1323, RaftUtilityStatus.resolved, [
+  RaftUtility('data-indeterminate:absolute', 1326, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-indeterminate'],
@@ -7858,7 +7858,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-indeterminate:animate-[raft-progress-indeterminate_1.4s_ease-in-out_infinite]',
-    1326,
+    1329,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7871,7 +7871,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-indeterminate:origin-left',
-    1325,
+    1328,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7884,7 +7884,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-indeterminate:shadow-none',
-    1327,
+    1330,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7895,7 +7895,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-indeterminate:w-1/2', 1324, RaftUtilityStatus.resolved, [
+  RaftUtility('data-indeterminate:w-1/2', 1327, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-indeterminate'],
@@ -7905,7 +7905,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-instant:transition-none',
-    1329,
+    1332,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7918,7 +7918,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-invalid:border-danger-strong',
-    1330,
+    1333,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7936,7 +7936,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-invalid:focus-visible:border-danger-strong',
-    1334,
+    1337,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7954,7 +7954,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-invalid:focus-visible:ring-0',
-    1335,
+    1338,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7967,7 +7967,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-invalid:focus-visible:ring-[color-mix(in_oklch,var(--danger)_60%,transparent)]',
-    1336,
+    1339,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -7986,7 +7986,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-invalid:hover:border-danger-strong',
-    1333,
+    1336,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8002,7 +8002,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-invalid:inset-ring', 1331, RaftUtilityStatus.resolved, [
+  RaftUtility('data-invalid:inset-ring', 1334, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-invalid'],
@@ -8012,7 +8012,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-invalid:inset-ring-danger-strong',
-    1332,
+    1335,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8023,7 +8023,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-limited:opacity-0', 1346, RaftUtilityStatus.resolved, [
+  RaftUtility('data-limited:opacity-0', 1349, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-limited'],
@@ -8033,7 +8033,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-muted:text-foreground-hint',
-    1348,
+    1351,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['data-muted'], 2000, [RaftDecl('color', _v29)]),
@@ -8041,7 +8041,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-nested-drawer-open:h-(--drawer-frontmost-height)',
-    1349,
+    1352,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8054,7 +8054,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-nested-drawer-open:overflow-hidden',
-    1350,
+    1353,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8070,7 +8070,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-nested-drawer-swiping:duration-0',
-    1351,
+    1354,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8086,7 +8086,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-panel-open:[&>svg]:rotate-180',
-    1854,
+    1857,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -8097,7 +8097,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-placeholder:font-field', 1354, RaftUtilityStatus.resolved, [
+  RaftUtility('data-placeholder:font-field', 1357, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-placeholder'],
@@ -8107,7 +8107,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-placeholder:font-medium',
-    1355,
+    1358,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8123,7 +8123,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-placeholder:text-foreground-hint',
-    1356,
+    1359,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['data-placeholder'], 2000, [RaftDecl('color', _v29)]),
@@ -8131,7 +8131,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-popup-open:bg-brand-soft',
-    1357,
+    1360,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8144,7 +8144,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-popup-open:bg-fill-frame-pressed',
-    1358,
+    1361,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8157,7 +8157,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-popup-open:bg-fill-pressed',
-    1359,
+    1362,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8170,7 +8170,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-pressed:active:press-overlay-sticker',
-    1371,
+    1374,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8183,7 +8183,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-pressed:bg-attention-soft',
-    1363,
+    1366,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8194,7 +8194,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-pressed:bg-brand', 1364, RaftUtilityStatus.resolved, [
+  RaftUtility('data-pressed:bg-brand', 1367, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-pressed'],
@@ -8204,7 +8204,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-pressed:border-sticker-ink',
-    1362,
+    1365,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8220,7 +8220,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-pressed:font-bold', 1365, RaftUtilityStatus.resolved, [
+  RaftUtility('data-pressed:font-bold', 1368, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-pressed'],
@@ -8231,7 +8231,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('data-pressed:hover:bg-brand', 1369, RaftUtilityStatus.resolved, [
+  RaftUtility('data-pressed:hover:bg-brand', 1372, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-pressed', 'hover'],
@@ -8241,7 +8241,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-pressed:hover:press-overlay-sticker',
-    1370,
+    1373,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8252,7 +8252,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-pressed:ring-[1.5px]', 1367, RaftUtilityStatus.resolved, [
+  RaftUtility('data-pressed:ring-[1.5px]', 1370, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-pressed'],
@@ -8262,7 +8262,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-pressed:ring-sticker-edge',
-    1368,
+    1371,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8275,13 +8275,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-pressed:text-sticker-ink',
-    1366,
+    1369,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['data-pressed'], 2000, [RaftDecl('color', _v73)]),
     ],
   ),
-  RaftUtility('data-scrolling:duration-0', 1374, RaftUtilityStatus.resolved, [
+  RaftUtility('data-scrolling:duration-0', 1377, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-scrolling'],
@@ -8292,7 +8292,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('data-scrolling:opacity-100', 1373, RaftUtilityStatus.resolved, [
+  RaftUtility('data-scrolling:opacity-100', 1376, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-scrolling'],
@@ -8302,7 +8302,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-scrolling:pointer-events-auto',
-    1372,
+    1375,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8315,7 +8315,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-selected:**:data-[slot=\'select-item-text\']:font-bold',
-    1491,
+    1494,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -8329,7 +8329,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-selected:bg-info-soft', 1375, RaftUtilityStatus.resolved, [
+  RaftUtility('data-selected:bg-info-soft', 1378, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-selected'],
@@ -8337,7 +8337,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('background-color', _v188)],
     ),
   ]),
-  RaftUtility('data-selected:font-bold', 1376, RaftUtilityStatus.resolved, [
+  RaftUtility('data-selected:font-bold', 1379, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-selected'],
@@ -8350,7 +8350,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-starting-style:blur-(--drawer-blur)',
-    1383,
+    1386,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8361,7 +8361,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-starting-style:h-0', 1377, RaftUtilityStatus.resolved, [
+  RaftUtility('data-starting-style:h-0', 1380, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-starting-style'],
@@ -8371,7 +8371,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-starting-style:opacity-0',
-    1382,
+    1385,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8384,7 +8384,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-starting-style:scale-[0.97]',
-    1378,
+    1381,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8397,7 +8397,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-starting-style:transform-(--closed-transform)',
-    1379,
+    1382,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8410,7 +8410,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-starting-style:transform-[scale(0.97)]',
-    1380,
+    1383,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8423,7 +8423,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'data-starting-style:transform-[translateY(120%)_scale(0.98)]',
-    1381,
+    1384,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8436,7 +8436,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('data-swiping:duration-0', 1384, RaftUtilityStatus.resolved, [
+  RaftUtility('data-swiping:duration-0', 1387, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-swiping'],
@@ -8447,7 +8447,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('data-visible:opacity-100', 1386, RaftUtilityStatus.resolved, [
+  RaftUtility('data-visible:opacity-100', 1389, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['data-visible'],
@@ -8457,7 +8457,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'data-visible:pointer-events-auto',
-    1385,
+    1388,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8468,22 +8468,22 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('decoration-2', 711, RaftUtilityStatus.resolved, [
+  RaftUtility('decoration-2', 714, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('text-decoration-thickness', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('decoration-[1.5px]', 712, RaftUtilityStatus.resolved, [
+  RaftUtility('decoration-[1.5px]', 715, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('text-decoration-thickness', CssNum(1.5, 'px')),
     ]),
   ]),
-  RaftUtility('decoration-foreground-hint', 710, RaftUtilityStatus.resolved, [
+  RaftUtility('decoration-foreground-hint', 713, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('text-decoration-color', _v29)]),
   ]),
   RaftUtility(
     'disabled:[&>svg:first-child]:text-foreground-disabled',
-    1859,
+    1862,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -8496,7 +8496,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'disabled:[--list-row-ink-2:var(--foreground-disabled)]',
-    1139,
+    1142,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8509,7 +8509,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'disabled:[--list-row-ink-3:var(--foreground-disabled)]',
-    1140,
+    1143,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8522,7 +8522,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'disabled:[--list-row-ink:var(--foreground-disabled)]',
-    1141,
+    1144,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8535,7 +8535,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'disabled:active:bg-transparent',
-    1144,
+    1147,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8546,7 +8546,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('disabled:bg-fill-muted', 1130, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:bg-fill-muted', 1133, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8554,7 +8554,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('background-color', _v131)],
     ),
   ]),
-  RaftUtility('disabled:bg-none', 1132, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:bg-none', 1135, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8562,12 +8562,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('background-image', CssKeyword('none'))],
     ),
   ]),
-  RaftUtility('disabled:bg-transparent', 1131, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:bg-transparent', 1134, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['disabled'], 2000, [RaftDecl('background-color', _v11)]),
   ]),
   RaftUtility(
     'disabled:border-line-hairline',
-    1128,
+    1131,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8583,7 +8583,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('disabled:border-transparent', 1129, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:border-transparent', 1132, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8596,7 +8596,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('disabled:cursor-default', 1125, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:cursor-default', 1128, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8604,12 +8604,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('cursor', CssKeyword('default'))],
     ),
   ]),
-  RaftUtility('disabled:cursor-not-allowed', 1126, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:cursor-not-allowed', 1129, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['disabled'], 2000, [RaftDecl('cursor', _v186)]),
   ]),
   RaftUtility(
     'disabled:hover:bg-transparent',
-    1143,
+    1146,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8620,7 +8620,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('disabled:inset-ring-0', 1138, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:inset-ring-0', 1141, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8628,7 +8628,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('--tw-inset-ring-shadow', _v187), RaftDecl('box-shadow', _v23)],
     ),
   ]),
-  RaftUtility('disabled:opacity-100', 1136, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:opacity-100', 1139, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8636,7 +8636,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('opacity', CssNum(100, '%'))],
     ),
   ]),
-  RaftUtility('disabled:opacity-40', 1134, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:opacity-40', 1137, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8644,7 +8644,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('opacity', CssNum(40, '%'))],
     ),
   ]),
-  RaftUtility('disabled:opacity-45', 1135, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:opacity-45', 1138, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8654,7 +8654,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'disabled:placeholder:text-foreground-disabled',
-    1142,
+    1145,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8667,7 +8667,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'disabled:pointer-events-none',
-    1123,
+    1126,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8678,7 +8678,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('disabled:resize-none', 1127, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:resize-none', 1130, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8686,7 +8686,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('resize', CssKeyword('none'))],
     ),
   ]),
-  RaftUtility('disabled:ring-0', 1137, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:ring-0', 1140, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8696,13 +8696,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'disabled:text-foreground-disabled',
-    1133,
+    1136,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['disabled'], 2000, [RaftDecl('color', _v185)]),
     ],
   ),
-  RaftUtility('disabled:transform-none', 1124, RaftUtilityStatus.resolved, [
+  RaftUtility('disabled:transform-none', 1127, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['disabled'],
@@ -8710,7 +8710,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('transform', CssKeyword('none'))],
     ),
   ]),
-  RaftUtility('divide-y-0', 384, RaftUtilityStatus.descendant, [
+  RaftUtility('divide-y-0', 387, RaftUtilityStatus.descendant, [
     RaftLayer(':where(& > :not(:last-child))', [], 0, [
       RaftDecl('--tw-divide-y-reverse', CssNum(0)),
       RaftDecl('border-bottom-style', _v12),
@@ -8719,49 +8719,49 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-width', CssCalc(_v319)),
     ]),
   ]),
-  RaftUtility('duration-100', 765, RaftUtilityStatus.resolved, [
+  RaftUtility('duration-100', 768, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-duration', CssNum(100, 'ms')),
       RaftDecl('transition-duration', CssNum(100, 'ms')),
     ]),
   ]),
-  RaftUtility('duration-150', 766, RaftUtilityStatus.resolved, [
+  RaftUtility('duration-150', 769, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-duration', CssNum(150, 'ms')),
       RaftDecl('transition-duration', CssNum(150, 'ms')),
     ]),
   ]),
-  RaftUtility('duration-200', 767, RaftUtilityStatus.resolved, [
+  RaftUtility('duration-200', 770, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-duration', CssNum(200, 'ms')),
       RaftDecl('transition-duration', CssNum(200, 'ms')),
     ]),
   ]),
-  RaftUtility('duration-220', 768, RaftUtilityStatus.resolved, [
+  RaftUtility('duration-220', 771, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-duration', CssNum(220, 'ms')),
       RaftDecl('transition-duration', CssNum(220, 'ms')),
     ]),
   ]),
-  RaftUtility('duration-240', 769, RaftUtilityStatus.resolved, [
+  RaftUtility('duration-240', 772, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-duration', CssNum(240, 'ms')),
       RaftDecl('transition-duration', CssNum(240, 'ms')),
     ]),
   ]),
-  RaftUtility('duration-250', 770, RaftUtilityStatus.resolved, [
+  RaftUtility('duration-250', 773, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-duration', CssNum(250, 'ms')),
       RaftDecl('transition-duration', CssNum(250, 'ms')),
     ]),
   ]),
-  RaftUtility('duration-90', 764, RaftUtilityStatus.resolved, [
+  RaftUtility('duration-90', 767, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-duration', CssNum(90, 'ms')),
       RaftDecl('transition-duration', CssNum(90, 'ms')),
     ]),
   ]),
-  RaftUtility('ease-(--drawer-ease)', 771, RaftUtilityStatus.resolved, [
+  RaftUtility('ease-(--drawer-ease)', 774, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-ease', CssVar('--drawer-ease')),
       RaftDecl('transition-timing-function', CssVar('--drawer-ease')),
@@ -8769,7 +8769,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'ease-[cubic-bezier(0.22,1,0.36,1)]',
-    772,
+    775,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -8778,13 +8778,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('ease-out', 773, RaftUtilityStatus.resolved, [
+  RaftUtility('ease-out', 776, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-ease', _v65),
       RaftDecl('transition-timing-function', _v65),
     ]),
   ]),
-  RaftUtility('ease-slide', 774, RaftUtilityStatus.resolved, [
+  RaftUtility('ease-slide', 777, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-ease', _v82),
       RaftDecl('transition-timing-function', _v82),
@@ -8792,7 +8792,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'enabled:focus-visible:bg-brand-soft',
-    1122,
+    1125,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8803,7 +8803,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('enabled:hover:bg-brand-soft', 1118, RaftUtilityStatus.resolved, [
+  RaftUtility('enabled:hover:bg-brand-soft', 1121, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['enabled', 'hover'],
@@ -8813,7 +8813,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'enabled:hover:bg-fill-pressed',
-    1119,
+    1122,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8824,7 +8824,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('enabled:hover:press-overlay', 1120, RaftUtilityStatus.resolved, [
+  RaftUtility('enabled:hover:press-overlay', 1123, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['enabled', 'hover'],
@@ -8834,7 +8834,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'enabled:hover:press-overlay-sticker',
-    1121,
+    1124,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8845,12 +8845,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('field-sizing-content', 123, RaftUtilityStatus.resolved, [
+  RaftUtility('field-sizing-content', 124, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('field-sizing', CssKeyword('content')),
     ]),
   ]),
-  RaftUtility('first:border-t-0', 1042, RaftUtilityStatus.resolved, [
+  RaftUtility('first:border-t-0', 1045, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['first-child'],
@@ -8861,7 +8861,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('first:pt-0', 1043, RaftUtilityStatus.resolved, [
+  RaftUtility('first:pt-0', 1046, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['first-child'],
@@ -8869,7 +8869,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('padding-top', CssNum(0, 'px'))],
     ),
   ]),
-  RaftUtility('first:pt-2', 1044, RaftUtilityStatus.resolved, [
+  RaftUtility('first:pt-2', 1047, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['first-child'],
@@ -8877,7 +8877,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('padding-top', CssNum(8, 'px'))],
     ),
   ]),
-  RaftUtility('first:pt-3', 1045, RaftUtilityStatus.resolved, [
+  RaftUtility('first:pt-3', 1048, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['first-child'],
@@ -8885,7 +8885,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('padding-top', CssNum(12, 'px'))],
     ),
   ]),
-  RaftUtility('first:pt-5', 1046, RaftUtilityStatus.resolved, [
+  RaftUtility('first:pt-5', 1049, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['first-child'],
@@ -8893,7 +8893,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('padding-top', CssNum(20, 'px'))],
     ),
   ]),
-  RaftUtility('first:rounded-t-container', 1041, RaftUtilityStatus.resolved, [
+  RaftUtility('first:rounded-t-container', 1044, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['first-child'],
@@ -8907,34 +8907,34 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('fixed', 6, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('position', CssKeyword('fixed'))]),
   ]),
-  RaftUtility('flex', 116, RaftUtilityStatus.resolved, [
+  RaftUtility('flex', 117, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('display', CssKeyword('flex'))]),
   ]),
-  RaftUtility('flex-1', 285, RaftUtilityStatus.resolved, [
+  RaftUtility('flex-1', 288, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex', CssNum(1))]),
   ]),
-  RaftUtility('flex-col', 341, RaftUtilityStatus.resolved, [
+  RaftUtility('flex-col', 344, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('flex-direction', CssKeyword('column')),
     ]),
   ]),
-  RaftUtility('flex-none', 286, RaftUtilityStatus.resolved, [
+  RaftUtility('flex-none', 289, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex', CssKeyword('none'))]),
   ]),
-  RaftUtility('flex-nowrap', 343, RaftUtilityStatus.resolved, [
+  RaftUtility('flex-nowrap', 346, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex-wrap', CssKeyword('nowrap'))]),
   ]),
-  RaftUtility('flex-row', 342, RaftUtilityStatus.resolved, [
+  RaftUtility('flex-row', 345, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('flex-direction', CssKeyword('row')),
     ]),
   ]),
-  RaftUtility('flex-wrap', 344, RaftUtilityStatus.resolved, [
+  RaftUtility('flex-wrap', 347, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex-wrap', CssKeyword('wrap'))]),
   ]),
   RaftUtility(
     'focus-visible:before:bg-foreground',
-    1103,
+    1106,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8950,7 +8950,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-visible:before:outline-2',
-    1104,
+    1107,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8967,7 +8967,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-visible:before:outline-foreground',
-    1106,
+    1109,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -8983,7 +8983,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-visible:before:outline-none',
-    1107,
+    1110,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9000,7 +9000,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-visible:before:outline-offset-2',
-    1105,
+    1108,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9014,7 +9014,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('focus-visible:before:w-0.5', 1102, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:before:w-0.5', 1105, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::before',
       ['focus-visible'],
@@ -9025,7 +9025,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('focus-visible:bg-brand-soft', 1083, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:bg-brand-soft', 1086, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-visible'],
@@ -9033,7 +9033,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('background-color', _v156)],
     ),
   ]),
-  RaftUtility('focus-visible:inset-ring-2', 1087, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:inset-ring-2', 1090, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-visible'],
@@ -9043,7 +9043,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'focus-visible:inset-ring-foreground',
-    1089,
+    1092,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9054,7 +9054,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('focus-visible:outline-1', 1092, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:outline-1', 1095, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-visible'],
@@ -9065,7 +9065,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('focus-visible:outline-2', 1093, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:outline-2', 1096, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-visible'],
@@ -9078,7 +9078,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'focus-visible:outline-foreground',
-    1096,
+    1099,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9091,7 +9091,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-visible:outline-foreground-on-hud',
-    1097,
+    1100,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9104,7 +9104,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-visible:outline-line-strong',
-    1098,
+    1101,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9115,7 +9115,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('focus-visible:outline-none', 1101, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:outline-none', 1104, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-visible'],
@@ -9128,7 +9128,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'focus-visible:outline-offset-1',
-    1094,
+    1097,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9141,7 +9141,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-visible:outline-offset-2',
-    1095,
+    1098,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9154,7 +9154,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-visible:outline-transparent',
-    1099,
+    1102,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9165,7 +9165,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('focus-visible:outline-white', 1100, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:outline-white', 1103, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-visible'],
@@ -9173,7 +9173,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('outline-color', _v323)],
     ),
   ]),
-  RaftUtility('focus-visible:ring-0', 1086, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:ring-0', 1089, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-visible'],
@@ -9183,7 +9183,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'focus-visible:ring-line-strong',
-    1088,
+    1091,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9194,7 +9194,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('focus-visible:ring-offset-0', 1090, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:ring-offset-0', 1093, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-visible'],
@@ -9207,7 +9207,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'focus-visible:ring-offset-layer-sidebar',
-    1091,
+    1094,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9220,7 +9220,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-visible:shadow-[inset_0_0_0_2px_var(--foreground)]',
-    1084,
+    1087,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9231,7 +9231,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('focus-visible:shadow-focus', 1085, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-visible:shadow-focus', 1088, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-visible'],
@@ -9241,7 +9241,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'focus-within:[--mi-toolbar-opacity:1]',
-    1055,
+    1058,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9254,7 +9254,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-within:[--mi-toolbar-pe:auto]',
-    1056,
+    1059,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9265,7 +9265,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('focus-within:inset-ring-2', 1053, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-within:inset-ring-2', 1056, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-within'],
@@ -9275,7 +9275,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'focus-within:inset-ring-foreground',
-    1054,
+    1057,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9288,7 +9288,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'focus-within:shadow-[inset_0_0_0_2px_var(--foreground)]',
-    1051,
+    1054,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9299,7 +9299,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('focus-within:shadow-focus', 1052, RaftUtilityStatus.resolved, [
+  RaftUtility('focus-within:shadow-focus', 1055, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-within'],
@@ -9307,7 +9307,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('--tw-shadow', _v327), RaftDecl('box-shadow', _v23)],
     ),
   ]),
-  RaftUtility('focus:border-transparent', 1080, RaftUtilityStatus.resolved, [
+  RaftUtility('focus:border-transparent', 1083, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus'],
@@ -9320,7 +9320,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('focus:flex', 1079, RaftUtilityStatus.resolved, [
+  RaftUtility('focus:flex', 1082, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus'],
@@ -9328,7 +9328,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('display', CssKeyword('flex'))],
     ),
   ]),
-  RaftUtility('focus:ring-0', 1082, RaftUtilityStatus.resolved, [
+  RaftUtility('focus:ring-0', 1085, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus'],
@@ -9336,7 +9336,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('--tw-ring-shadow', _v18), RaftDecl('box-shadow', _v23)],
     ),
   ]),
-  RaftUtility('focus:shadow-focus', 1081, RaftUtilityStatus.resolved, [
+  RaftUtility('focus:shadow-focus', 1084, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus'],
@@ -9344,183 +9344,183 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('--tw-shadow', _v327), RaftDecl('box-shadow', _v23)],
     ),
   ]),
-  RaftUtility('font-[450]', 645, RaftUtilityStatus.resolved, [
+  RaftUtility('font-[450]', 648, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-font-weight', CssNum(450)),
       RaftDecl('font-weight', CssNum(450)),
     ]),
   ]),
-  RaftUtility('font-bold', 646, RaftUtilityStatus.resolved, [
+  RaftUtility('font-bold', 649, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-font-weight', CssNum(700)),
       RaftDecl('font-weight', CssNum(700)),
     ]),
   ]),
-  RaftUtility('font-bold!', 647, RaftUtilityStatus.resolved, [
+  RaftUtility('font-bold!', 650, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-font-weight', CssNum(700), true),
       RaftDecl('font-weight', CssNum(700), true),
     ]),
   ]),
-  RaftUtility('font-card-title', 648, RaftUtilityStatus.resolved, [
+  RaftUtility('font-card-title', 651, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-font-weight', _v328),
       RaftDecl('font-weight', _v328),
     ]),
   ]),
-  RaftUtility('font-field', 649, RaftUtilityStatus.resolved, [
+  RaftUtility('font-field', 652, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-font-weight', _v1),
       RaftDecl('font-weight', _v1),
     ]),
   ]),
-  RaftUtility('font-heading', 591, RaftUtilityStatus.resolved, [
+  RaftUtility('font-heading', 594, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-family', _v329)]),
   ]),
-  RaftUtility('font-medium', 650, RaftUtilityStatus.resolved, [
+  RaftUtility('font-medium', 653, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-font-weight', CssNum(500)),
       RaftDecl('font-weight', CssNum(500)),
     ]),
   ]),
-  RaftUtility('font-mono', 592, RaftUtilityStatus.resolved, [
+  RaftUtility('font-mono', 595, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-family', _v70)]),
   ]),
-  RaftUtility('font-normal', 651, RaftUtilityStatus.resolved, [
+  RaftUtility('font-normal', 654, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-font-weight', CssNum(400)),
       RaftDecl('font-weight', CssNum(400)),
     ]),
   ]),
-  RaftUtility('font-sans', 593, RaftUtilityStatus.resolved, [
+  RaftUtility('font-sans', 596, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-family', _v27)]),
   ]),
-  RaftUtility('font-semibold', 652, RaftUtilityStatus.resolved, [
+  RaftUtility('font-semibold', 655, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-font-weight', CssNum(600)),
       RaftDecl('font-weight', CssNum(600)),
     ]),
   ]),
-  RaftUtility('gap-(--spinner-gap)', 354, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-(--spinner-gap)', 357, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssVar('--spinner-gap')),
       RaftDecl('column-gap', CssVar('--spinner-gap')),
     ]),
   ]),
-  RaftUtility('gap-0', 355, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-0', 358, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(0, 'px')),
       RaftDecl('column-gap', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('gap-0.5', 356, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-0.5', 359, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(2, 'px')),
       RaftDecl('column-gap', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('gap-1', 357, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-1', 360, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(4, 'px')),
       RaftDecl('column-gap', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('gap-1.5', 358, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-1.5', 361, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(6, 'px')),
       RaftDecl('column-gap', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('gap-2', 359, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-2', 362, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(8, 'px')),
       RaftDecl('column-gap', CssNum(8, 'px')),
     ]),
   ]),
-  RaftUtility('gap-2.5', 360, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-2.5', 363, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(10, 'px')),
       RaftDecl('column-gap', CssNum(10, 'px')),
     ]),
   ]),
-  RaftUtility('gap-3', 361, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-3', 364, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(12, 'px')),
       RaftDecl('column-gap', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('gap-4', 362, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-4', 365, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(16, 'px')),
       RaftDecl('column-gap', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('gap-5', 363, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-5', 366, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(20, 'px')),
       RaftDecl('column-gap', CssNum(20, 'px')),
     ]),
   ]),
-  RaftUtility('gap-[2.5px]', 364, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-[2.5px]', 367, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(2.5, 'px')),
       RaftDecl('column-gap', CssNum(2.5, 'px')),
     ]),
   ]),
-  RaftUtility('gap-[7px]', 365, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-[7px]', 368, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssNum(7, 'px')),
       RaftDecl('column-gap', CssNum(7, 'px')),
     ]),
   ]),
-  RaftUtility('gap-[inherit]', 366, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-[inherit]', 369, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('row-gap', CssKeyword('inherit')),
       RaftDecl('column-gap', CssKeyword('inherit')),
     ]),
   ]),
-  RaftUtility('gap-x-1.5', 374, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-x-1.5', 377, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('column-gap', CssNum(6, 'px'))]),
   ]),
-  RaftUtility('gap-x-2', 375, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-x-2', 378, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('column-gap', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('gap-x-2.5', 376, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-x-2.5', 379, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('column-gap', CssNum(10, 'px'))]),
   ]),
-  RaftUtility('gap-x-3', 377, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-x-3', 380, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('column-gap', CssNum(12, 'px'))]),
   ]),
-  RaftUtility('gap-x-4', 378, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-x-4', 381, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('column-gap', CssNum(16, 'px'))]),
   ]),
-  RaftUtility('gap-y-0', 380, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-y-0', 383, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('row-gap', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('gap-y-0.5', 381, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-y-0.5', 384, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('row-gap', CssNum(2, 'px'))]),
   ]),
-  RaftUtility('gap-y-1', 382, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-y-1', 385, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('row-gap', CssNum(4, 'px'))]),
   ]),
-  RaftUtility('gap-y-2', 383, RaftUtilityStatus.resolved, [
+  RaftUtility('gap-y-2', 386, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('row-gap', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('grid', 117, RaftUtilityStatus.resolved, [
+  RaftUtility('grid', 118, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('display', CssKeyword('grid'))]),
   ]),
-  RaftUtility('grid-cols-1', 333, RaftUtilityStatus.resolved, [
+  RaftUtility('grid-cols-1', 336, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('grid-template-columns', _v330)]),
   ]),
-  RaftUtility('grid-cols-2', 334, RaftUtilityStatus.resolved, [
+  RaftUtility('grid-cols-2', 337, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('grid-template-columns', _v331)]),
   ]),
-  RaftUtility('grid-cols-[minmax(0,1fr)]', 335, RaftUtilityStatus.resolved, [
+  RaftUtility('grid-cols-[minmax(0,1fr)]', 338, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('grid-template-columns', _v60)]),
   ]),
   RaftUtility(
     'grid-cols-[minmax(0,1fr)_auto]',
-    336,
+    339,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('grid-template-columns', _v305)]),
@@ -9528,7 +9528,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]',
-    337,
+    340,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('grid-template-columns', _v332)]),
@@ -9536,7 +9536,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'grid-cols-[minmax(0,1fr)_max-content]',
-    338,
+    341,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -9546,7 +9546,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'grid-cols-[minmax(88px,max-content)_minmax(0,1fr)]',
-    339,
+    342,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -9556,13 +9556,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'grid-cols-[repeat(2,var(--spinner-pixel))]',
-    340,
+    343,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('grid-template-columns', _v336)]),
     ],
   ),
-  RaftUtility('grid-flow-col', 329, RaftUtilityStatus.resolved, [
+  RaftUtility('grid-flow-col', 332, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('grid-auto-flow', CssKeyword('column')),
     ]),
@@ -9570,7 +9570,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('group', -1, RaftUtilityStatus.marker, []),
   RaftUtility(
     'group-data-[dragging=true]/task-draggable:shadow-float',
-    894,
+    897,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9583,7 +9583,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[dragging=true]/task-draggable:transform-none',
-    893,
+    896,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9596,7 +9596,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[drop-state=allowed]:block',
-    895,
+    898,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9609,7 +9609,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[drop-state=allowed]:hidden',
-    896,
+    899,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9622,7 +9622,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[drop-state=blocked]:block',
-    897,
+    900,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9635,7 +9635,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[drop-state=blocked]:hidden',
-    898,
+    901,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9648,7 +9648,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[drop-state=blocked]:text-foreground-muted',
-    899,
+    902,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9661,7 +9661,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[invalid]/field:font-bold',
-    900,
+    903,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9677,7 +9677,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[orientation=horizontal]/scroll-area-scrollbar:h-1.5',
-    901,
+    904,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9690,7 +9690,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[orientation=vertical]/scroll-area-scrollbar:w-1.5',
-    902,
+    905,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9703,7 +9703,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=2xs]/avatar:[&>svg]:size-3',
-    1840,
+    1843,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -9719,7 +9719,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=2xs]/avatar:bottom-[-3px]',
-    904,
+    907,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9732,7 +9732,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=2xs]/avatar:outline',
-    907,
+    910,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9748,7 +9748,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=2xs]/avatar:right-[-3px]',
-    903,
+    906,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9761,7 +9761,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=2xs]/avatar:size-[9px]',
-    905,
+    908,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9777,7 +9777,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=2xs]/avatar:text-[11px]',
-    906,
+    909,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9790,7 +9790,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=3xs]/avatar:-bottom-0.5',
-    909,
+    912,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9803,7 +9803,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=3xs]/avatar:-right-0.5',
-    908,
+    911,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9816,7 +9816,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=3xs]/avatar:[&>svg]:size-2',
-    1841,
+    1844,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -9832,7 +9832,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=3xs]/avatar:border',
-    911,
+    914,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9854,7 +9854,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=3xs]/avatar:outline',
-    913,
+    916,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9870,7 +9870,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=3xs]/avatar:size-1.5',
-    910,
+    913,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9886,7 +9886,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=3xs]/avatar:text-[8px]',
-    912,
+    915,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9899,7 +9899,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=lg]/avatar:[&>svg]:block',
-    1842,
+    1845,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -9912,7 +9912,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=lg]/avatar:[&>svg]:size-2',
-    1843,
+    1846,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -9928,7 +9928,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=lg]/avatar:[&>svg]:size-6',
-    1844,
+    1847,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -9944,7 +9944,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=lg]/avatar:bottom-[-5px]',
-    915,
+    918,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9957,7 +9957,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=lg]/avatar:right-[-5px]',
-    914,
+    917,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9970,7 +9970,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=lg]/avatar:size-3.5',
-    916,
+    919,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9986,7 +9986,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=lg]/avatar:text-[22px]',
-    917,
+    920,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -9999,7 +9999,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=lg]/progress:h-2.5',
-    918,
+    921,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10012,7 +10012,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=md]/avatar:[&>svg]:block',
-    1845,
+    1848,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -10025,7 +10025,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=md]/avatar:[&>svg]:size-1.5',
-    1846,
+    1849,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -10041,7 +10041,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=md]/avatar:[&>svg]:size-4.5',
-    1847,
+    1850,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -10057,7 +10057,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=md]/avatar:size-[11px]',
-    919,
+    922,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10073,7 +10073,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=sm]/avatar:[&>svg]:size-3.5',
-    1848,
+    1851,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -10089,7 +10089,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=sm]/avatar:bottom-[-3px]',
-    921,
+    924,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10102,7 +10102,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=sm]/avatar:right-[-3px]',
-    920,
+    923,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10115,7 +10115,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=sm]/avatar:size-[9px]',
-    922,
+    925,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10131,7 +10131,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=sm]/avatar:text-[13px]',
-    923,
+    926,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10144,7 +10144,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=sm]/progress:h-1.5',
-    924,
+    927,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10157,7 +10157,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xl]/avatar:-bottom-2',
-    926,
+    929,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10170,7 +10170,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xl]/avatar:-right-2',
-    925,
+    928,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10183,7 +10183,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xl]/avatar:[&>svg]:block',
-    1849,
+    1852,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -10196,7 +10196,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xl]/avatar:[&>svg]:size-12',
-    1851,
+    1854,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -10212,7 +10212,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xl]/avatar:[&>svg]:size-2',
-    1850,
+    1853,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -10228,7 +10228,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xl]/avatar:border-2',
-    928,
+    931,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10250,7 +10250,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xl]/avatar:size-5',
-    927,
+    930,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10266,7 +10266,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xl]/avatar:text-[40px]',
-    929,
+    932,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10279,7 +10279,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xs]/avatar:[&>svg]:size-3',
-    1852,
+    1855,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -10295,7 +10295,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xs]/avatar:bottom-[-3px]',
-    931,
+    934,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10308,7 +10308,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xs]/avatar:outline',
-    934,
+    937,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10324,7 +10324,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xs]/avatar:right-[-3px]',
-    930,
+    933,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10337,7 +10337,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xs]/avatar:size-[9px]',
-    932,
+    935,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10353,7 +10353,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[size=xs]/avatar:text-[11px]',
-    933,
+    936,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10366,7 +10366,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[tone=unread]/list-row:font-bold',
-    935,
+    938,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10382,7 +10382,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[tone=unread]/sidebar-item:font-bold',
-    936,
+    939,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10398,7 +10398,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[unread=true]/inbox-item:after:block',
-    1040,
+    1043,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10414,7 +10414,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[unread=true]/inbox-item:font-bold',
-    937,
+    940,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10430,7 +10430,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-[unread=true]/inbox-item:text-foreground',
-    938,
+    941,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10443,7 +10443,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-active/lightbox-thumb:bg-transparent',
-    879,
+    882,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10456,7 +10456,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-active/sidebar-item:text-sticker-ink',
-    880,
+    883,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10469,7 +10469,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-closed/action-card:pb-3',
-    881,
+    884,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10482,7 +10482,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-disabled/field:text-foreground-disabled',
-    882,
+    885,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10495,7 +10495,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-disabled/label:text-foreground-disabled',
-    883,
+    886,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10508,7 +10508,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-invalid/field:text-danger-strong',
-    884,
+    887,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10521,7 +10521,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-nested-drawer-open/drawer-popup:opacity-0',
-    885,
+    888,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10534,7 +10534,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-nested-drawer-swiping/drawer-popup:opacity-100',
-    886,
+    889,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10547,7 +10547,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-open/section:hidden',
-    887,
+    890,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10560,7 +10560,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-panel-open:rotate-0',
-    888,
+    891,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10573,7 +10573,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-popup-open/section-header:hidden',
-    889,
+    892,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10586,7 +10586,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-read/notification-center-item:font-semibold',
-    890,
+    893,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10602,7 +10602,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-read/notification-center-item:text-foreground-muted',
-    891,
+    894,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10615,7 +10615,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-data-swiping/drawer-popup:select-none',
-    892,
+    895,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10631,7 +10631,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-focus-within/toast:[animation-play-state:paused]',
-    871,
+    874,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10644,7 +10644,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-hover/composer-attachment:opacity-100',
-    874,
+    877,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10655,7 +10655,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('group-hover/img:flex', 875, RaftUtilityStatus.resolved, [
+  RaftUtility('group-hover/img:flex', 878, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['group/img:hover'],
@@ -10665,7 +10665,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'group-hover/lightbox-thumb:bg-black/28',
-    876,
+    879,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10684,7 +10684,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-hover/section-header:hidden',
-    877,
+    880,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10697,7 +10697,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'group-hover/toast:[animation-play-state:paused]',
-    878,
+    881,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10708,12 +10708,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('group-hover:text-foreground', 872, RaftUtilityStatus.resolved, [
+  RaftUtility('group-hover:text-foreground', 875, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['group:hover'], 2000, [RaftDecl('color', _v33)]),
   ]),
   RaftUtility(
     'group-hover:text-foreground/20',
-    873,
+    876,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['group:hover'], 2000, [RaftDecl('color', _v33)]),
@@ -10756,12 +10756,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('group/task-draggable', -1, RaftUtilityStatus.marker, []),
   RaftUtility('group/toast', -1, RaftUtilityStatus.marker, []),
   RaftUtility('group/video', -1, RaftUtilityStatus.marker, []),
-  RaftUtility('grow', 290, RaftUtilityStatus.resolved, [
+  RaftUtility('grow', 293, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex-grow', CssNum(1))]),
   ]),
   RaftUtility(
     'h-(--code-block-header-height)',
-    154,
+    155,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('height', _v342)]),
@@ -10769,18 +10769,18 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'h-(--collapsible-panel-height)',
-    155,
+    156,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('height', _v343)]),
     ],
   ),
-  RaftUtility('h-(--drawer-content-height)', 156, RaftUtilityStatus.resolved, [
+  RaftUtility('h-(--drawer-content-height)', 157, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', _v344)]),
   ]),
   RaftUtility(
     'h-(--shell-header-height,56px)',
-    157,
+    158,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('height', _v345)]),
@@ -10788,87 +10788,87 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'h-(--task-dnd-placeholder-height,72px)',
-    158,
+    159,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('height', _v346)]),
     ],
   ),
-  RaftUtility('h-(--toast-stack-height)', 159, RaftUtilityStatus.resolved, [
+  RaftUtility('h-(--toast-stack-height)', 160, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', _v347)]),
   ]),
-  RaftUtility('h-0.5', 160, RaftUtilityStatus.resolved, [
+  RaftUtility('h-0.5', 161, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(2, 'px'))]),
   ]),
-  RaftUtility('h-1', 161, RaftUtilityStatus.resolved, [
+  RaftUtility('h-1', 162, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(4, 'px'))]),
   ]),
-  RaftUtility('h-10', 171, RaftUtilityStatus.resolved, [
+  RaftUtility('h-10', 172, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(40, 'px'))]),
   ]),
-  RaftUtility('h-11', 172, RaftUtilityStatus.resolved, [
+  RaftUtility('h-11', 173, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(44, 'px'))]),
   ]),
-  RaftUtility('h-13', 173, RaftUtilityStatus.resolved, [
+  RaftUtility('h-13', 174, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(52, 'px'))]),
   ]),
-  RaftUtility('h-14', 174, RaftUtilityStatus.resolved, [
+  RaftUtility('h-14', 175, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(56, 'px'))]),
   ]),
-  RaftUtility('h-16', 175, RaftUtilityStatus.resolved, [
+  RaftUtility('h-16', 176, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(64, 'px'))]),
   ]),
-  RaftUtility('h-2', 162, RaftUtilityStatus.resolved, [
+  RaftUtility('h-2', 163, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('h-20', 176, RaftUtilityStatus.resolved, [
+  RaftUtility('h-20', 177, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(80, 'px'))]),
   ]),
-  RaftUtility('h-3', 163, RaftUtilityStatus.resolved, [
+  RaftUtility('h-3', 164, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(12, 'px'))]),
   ]),
-  RaftUtility('h-3.5', 164, RaftUtilityStatus.resolved, [
+  RaftUtility('h-3.5', 165, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(14, 'px'))]),
   ]),
-  RaftUtility('h-4', 165, RaftUtilityStatus.resolved, [
+  RaftUtility('h-4', 166, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(16, 'px'))]),
   ]),
-  RaftUtility('h-5', 166, RaftUtilityStatus.resolved, [
+  RaftUtility('h-5', 167, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(20, 'px'))]),
   ]),
-  RaftUtility('h-56', 177, RaftUtilityStatus.resolved, [
+  RaftUtility('h-56', 178, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(224, 'px'))]),
   ]),
-  RaftUtility('h-6', 167, RaftUtilityStatus.resolved, [
+  RaftUtility('h-6', 168, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(24, 'px'))]),
   ]),
-  RaftUtility('h-7', 168, RaftUtilityStatus.resolved, [
+  RaftUtility('h-7', 169, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(28, 'px'))]),
   ]),
-  RaftUtility('h-72', 178, RaftUtilityStatus.resolved, [
+  RaftUtility('h-72', 179, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(288, 'px'))]),
   ]),
-  RaftUtility('h-8', 169, RaftUtilityStatus.resolved, [
+  RaftUtility('h-8', 170, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(32, 'px'))]),
   ]),
-  RaftUtility('h-9', 170, RaftUtilityStatus.resolved, [
+  RaftUtility('h-9', 171, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(36, 'px'))]),
   ]),
-  RaftUtility('h-96', 179, RaftUtilityStatus.resolved, [
+  RaftUtility('h-96', 180, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(384, 'px'))]),
   ]),
-  RaftUtility('h-[22px]', 181, RaftUtilityStatus.resolved, [
+  RaftUtility('h-[22px]', 182, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(22, 'px'))]),
   ]),
-  RaftUtility('h-[30px]', 182, RaftUtilityStatus.resolved, [
+  RaftUtility('h-[30px]', 183, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(30, 'px'))]),
   ]),
-  RaftUtility('h-[3px]', 180, RaftUtilityStatus.resolved, [
+  RaftUtility('h-[3px]', 181, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(3, 'px'))]),
   ]),
   RaftUtility(
     'h-[calc(56px+env(safe-area-inset-top,0px))]',
-    183,
+    184,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('height', CssCalc(_v348))]),
@@ -10876,27 +10876,27 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'h-[min(760px,calc(100dvh-2rem))]',
-    184,
+    185,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('height', _v350)]),
     ],
   ),
-  RaftUtility('h-auto', 185, RaftUtilityStatus.resolved, [
+  RaftUtility('h-auto', 186, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssKeyword('auto'))]),
   ]),
-  RaftUtility('h-fit', 186, RaftUtilityStatus.resolved, [
+  RaftUtility('h-fit', 187, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', _v351)]),
   ]),
-  RaftUtility('h-full', 187, RaftUtilityStatus.resolved, [
+  RaftUtility('h-full', 188, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(100, '%'))]),
   ]),
-  RaftUtility('h-px', 188, RaftUtilityStatus.resolved, [
+  RaftUtility('h-px', 189, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('height', CssNum(1, 'px'))]),
   ]),
   RaftUtility(
     'has-[+[data-slot=card-content]]:pb-0',
-    1203,
+    1206,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10909,7 +10909,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=banner-title]]:[--banner-desc-row:2]',
-    1204,
+    1207,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10922,7 +10922,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=card-leading]]:[--card-text-col:2]',
-    1206,
+    1209,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10935,7 +10935,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=card-leading]]:[--card-trailing-col:3]',
-    1207,
+    1210,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10948,7 +10948,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=card-leading]]:grid-cols-[auto_minmax(0,1fr)]',
-    1205,
+    1208,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10961,7 +10961,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=card-leading]]:has-[>[data-slot=card-trailing]]:grid-cols-[auto_minmax(0,1fr)_auto]',
-    1209,
+    1212,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10974,7 +10974,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=card-trailing]]:grid-cols-[minmax(0,1fr)_auto]',
-    1208,
+    1211,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -10987,7 +10987,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=message-reference-indicator]]:inline-block',
-    1212,
+    1215,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11000,7 +11000,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=message-reference-indicator]]:mr-2',
-    1211,
+    1214,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11013,7 +11013,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=message-reference-indicator]]:overflow-visible',
-    1213,
+    1216,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11029,7 +11029,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=message-reference-indicator]]:relative',
-    1210,
+    1213,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11042,7 +11042,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=sidebar-item-meta-icon]]:items-center',
-    1214,
+    1217,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11055,7 +11055,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=sidebar-live-activity]_[data-slot=live-agent-activity-bar]]:overflow-clip',
-    1215,
+    1218,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11073,7 +11073,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=status]]:[--banner-text-col:2]',
-    1218,
+    1221,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11086,7 +11086,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=status]]:grid-cols-[16px_minmax(0,1fr)]',
-    1216,
+    1219,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11099,7 +11099,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>[data-slot=status]]:grid-cols-[20px_minmax(0,1fr)]',
-    1217,
+    1220,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11112,7 +11112,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>svg]:[--banner-text-col:2]',
-    1222,
+    1225,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11125,7 +11125,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>svg]:grid-cols-[16px_minmax(0,1fr)]',
-    1219,
+    1222,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11138,7 +11138,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[>svg]:grid-cols-[20px_minmax(0,1fr)]',
-    1220,
+    1223,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11149,7 +11149,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('has-[>svg]:pl-[3px]', 1221, RaftUtilityStatus.resolved, [
+  RaftUtility('has-[>svg]:pl-[3px]', 1224, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['has:>svg'],
@@ -11159,7 +11159,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'has-[[data-slot=composer-attachments-scroll-area]]:min-w-0',
-    1182,
+    1185,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11172,7 +11172,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=composer-attachments-scroll-area]]:p-0',
-    1183,
+    1186,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11190,7 +11190,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=file-preview]]:size-9',
-    1184,
+    1187,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11206,7 +11206,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=file-row-open]:active]:press-overlay',
-    1185,
+    1188,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11219,7 +11219,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=file-row-open]:focus-visible]:shadow-focus',
-    1186,
+    1189,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11232,7 +11232,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=file-row-open]:hover]:press-overlay',
-    1187,
+    1190,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11245,7 +11245,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=inbox-item-open]:focus-visible]:inset-ring-2',
-    1188,
+    1191,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11261,7 +11261,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=inbox-item-open]:focus-visible]:inset-ring-foreground',
-    1189,
+    1192,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11274,7 +11274,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=input-group-control]:disabled]:[--ig-addon-fg:var(--foreground-disabled)]',
-    1193,
+    1196,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11287,7 +11287,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=input-group-control]:disabled]:[--ig-text-fg:var(--foreground-disabled)]',
-    1194,
+    1197,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11300,7 +11300,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=input-group-control]:disabled]:bg-fill-muted',
-    1192,
+    1195,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11313,7 +11313,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=input-group-control]:disabled]:border-line-hairline',
-    1191,
+    1194,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11331,7 +11331,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=input-group-control]:disabled]:cursor-not-allowed',
-    1190,
+    1193,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11344,7 +11344,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=input-group-control][data-invalid]]:border-danger-strong',
-    1195,
+    1198,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11362,7 +11362,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=kbd]]:pr-2.5',
-    1197,
+    1200,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11373,7 +11373,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('has-[[data-slot=kbd]]:py-1', 1196, RaftUtilityStatus.resolved, [
+  RaftUtility('has-[[data-slot=kbd]]:py-1', 1199, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['has:data-slot=kbd'],
@@ -11386,7 +11386,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'has-[[data-slot=message-multi-select-checkbox][data-checked]]:bg-info-soft',
-    1198,
+    1201,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11399,7 +11399,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=message-multi-select-checkbox][data-checked]]:hover:bg-info-soft',
-    1199,
+    1202,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11412,7 +11412,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=sortable-composer-attachments-list]]:min-w-0',
-    1200,
+    1203,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11425,7 +11425,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[[data-slot=sortable-composer-attachments-list]]:pt-0',
-    1201,
+    1204,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11438,7 +11438,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-[strong]:text-foreground',
-    1202,
+    1205,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['has:strong'], 1001, [RaftDecl('color', _v33)]),
@@ -11446,7 +11446,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[icon=inline-end]:pr-2.5',
-    1164,
+    1167,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11459,7 +11459,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[icon=inline-end]:pr-3.5',
-    1165,
+    1168,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11472,7 +11472,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[icon=inline-start]:pl-2.5',
-    1166,
+    1169,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11485,7 +11485,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[icon=inline-start]:pl-3.5',
-    1167,
+    1170,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11498,7 +11498,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[input-group-trim=inline-end]:[--ig-control-pr:0]',
-    1168,
+    1171,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11511,7 +11511,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=composer-attachments-scroll-area]:block',
-    1170,
+    1173,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11524,7 +11524,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=composer-attachments-scroll-area]:relative',
-    1169,
+    1172,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11537,7 +11537,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=file-preview]:bg-transparent',
-    1173,
+    1176,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11550,7 +11550,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=file-preview]:border-0',
-    1172,
+    1175,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11572,7 +11572,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=file-preview]:overflow-visible',
-    1171,
+    1174,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11588,7 +11588,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=inbox-item-selection]:before:left-11',
-    1175,
+    1178,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11604,7 +11604,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=inbox-item-selection]:grid-cols-[auto_minmax(0,1fr)_auto]',
-    1174,
+    1177,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11617,7 +11617,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=message-image-gallery-overlay]:opacity-70',
-    1176,
+    1179,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11630,7 +11630,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=message-item-search-match]:bg-info-soft',
-    1177,
+    1180,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11643,7 +11643,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=message-item-search-match]:hover:bg-info-soft',
-    1178,
+    1181,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11656,7 +11656,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=message-reaction-error-indicator]:bg-warning-soft',
-    1179,
+    1182,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11669,7 +11669,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=notification-center-item-icon]:before:left-[63px]',
-    1180,
+    1183,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11685,7 +11685,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-[slot=sortable-composer-attachments-list]:block',
-    1181,
+    1184,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11698,7 +11698,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-disabled:cursor-not-allowed',
-    1158,
+    1161,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11711,7 +11711,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-disabled:text-foreground-disabled',
-    1159,
+    1162,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11724,7 +11724,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-popup-open:[--mi-ct-color:var(--foreground-hint)]',
-    1161,
+    1164,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11737,7 +11737,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-popup-open:[--mi-toolbar-opacity:1]',
-    1162,
+    1165,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11750,7 +11750,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-popup-open:[--mi-toolbar-pe:auto]',
-    1163,
+    1166,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11763,7 +11763,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'has-data-popup-open:bg-fill-pressed',
-    1160,
+    1163,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11774,12 +11774,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('hidden', 118, RaftUtilityStatus.resolved, [
+  RaftUtility('hidden', 119, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('display', CssKeyword('none'))]),
   ]),
   RaftUtility(
     'hover:[--mi-ct-color:var(--foreground-hint)]',
-    1074,
+    1077,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['hover'], 2000, [RaftDecl('--mi-ct-color', _v29)]),
@@ -11787,7 +11787,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'hover:[--mi-toolbar-opacity:1]',
-    1075,
+    1078,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11800,7 +11800,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'hover:[--mi-toolbar-pe:auto]',
-    1076,
+    1079,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11813,7 +11813,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'hover:before:bg-foreground-muted',
-    1078,
+    1081,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11827,26 +11827,26 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('hover:bg-brand-soft', 1059, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:bg-brand-soft', 1062, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('background-color', _v156)]),
   ]),
-  RaftUtility('hover:bg-fill-frame-pressed', 1060, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:bg-fill-frame-pressed', 1063, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('background-color', _v157)]),
   ]),
-  RaftUtility('hover:bg-fill-pressed', 1061, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:bg-fill-pressed', 1064, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('background-color', _v57)]),
   ]),
-  RaftUtility('hover:bg-foreground/45', 1062, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:bg-foreground/45', 1065, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('background-color', _v33)]),
     RaftLayer('self', ['hover'], 2000, [RaftDecl('background-color', _v356)]),
   ]),
-  RaftUtility('hover:bg-layer-card', 1063, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:bg-layer-card', 1066, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('background-color', _v164)]),
   ]),
-  RaftUtility('hover:bg-transparent', 1064, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:bg-transparent', 1067, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('background-color', _v11)]),
   ]),
-  RaftUtility('hover:border-line-strong', 1057, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:border-line-strong', 1060, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['hover'],
@@ -11861,7 +11861,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'hover:border-sticker-paper/80',
-    1058,
+    1061,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11888,7 +11888,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('hover:brightness-100', 1073, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:brightness-100', 1076, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['hover'],
@@ -11898,7 +11898,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'hover:data-checked:shadow-none',
-    1284,
+    1287,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11911,7 +11911,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'hover:data-indeterminate:shadow-none',
-    1328,
+    1331,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11924,7 +11924,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'hover:decoration-attention-500',
-    1071,
+    1074,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11935,7 +11935,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('hover:decoration-foreground', 1072, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:decoration-foreground', 1075, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['hover'],
@@ -11943,22 +11943,22 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('text-decoration-color', _v33)],
     ),
   ]),
-  RaftUtility('hover:press-overlay', 1065, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:press-overlay', 1068, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('background-image', _v149)]),
   ]),
-  RaftUtility('hover:press-overlay-sticker', 1066, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:press-overlay-sticker', 1069, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('background-image', _v159)]),
   ]),
-  RaftUtility('hover:text-foreground', 1067, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:text-foreground', 1070, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('color', _v33)]),
   ]),
-  RaftUtility('hover:text-foreground-hint', 1068, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:text-foreground-hint', 1071, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('color', _v29)]),
   ]),
-  RaftUtility('hover:text-white', 1069, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:text-white', 1072, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['hover'], 2000, [RaftDecl('color', _v323)]),
   ]),
-  RaftUtility('hover:underline', 1070, RaftUtilityStatus.resolved, [
+  RaftUtility('hover:underline', 1073, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['hover'],
@@ -11966,7 +11966,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('text-decoration-line', CssKeyword('underline'))],
     ),
   ]),
-  RaftUtility('image-transparency-bg', 441, RaftUtilityStatus.resolved, [
+  RaftUtility('image-transparency-bg', 444, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--checker-cell', _v363),
       RaftDecl('background-color', _v365),
@@ -11977,7 +11977,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'in-data-[disabled=true]:text-foreground-disabled',
-    1145,
+    1148,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -11990,7 +11990,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[slot=system-message-group-panel]:py-1.5',
-    1146,
+    1149,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12006,7 +12006,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[slot=tooltip-content]:shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--foreground-on-hud)_70%,transparent)]',
-    1148,
+    1151,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12025,7 +12025,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[slot=tooltip-content]:text-foreground-on-hud/70',
-    1147,
+    1150,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12044,7 +12044,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[toast-placement\$=right]:left-auto',
-    1149,
+    1152,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12057,7 +12057,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[toast-placement\$=right]:mx-0',
-    1150,
+    1153,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12073,7 +12073,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[toast-placement^=top]:[--toast-peek-dir:1]',
-    1154,
+    1157,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12086,7 +12086,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[toast-placement^=top]:[--toast-y:calc(var(--toast-offset-y)+(var(--toast-index)*var(--toast-gap))+var(--toast-swipe-movement-y))]',
-    1155,
+    1158,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12099,7 +12099,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[toast-placement^=top]:before:bottom-full',
-    1157,
+    1160,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12115,7 +12115,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[toast-placement^=top]:before:top-auto',
-    1156,
+    1159,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12131,7 +12131,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[toast-placement^=top]:bottom-auto',
-    1152,
+    1155,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12144,7 +12144,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[toast-placement^=top]:origin-top',
-    1153,
+    1156,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12157,7 +12157,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'in-data-[toast-placement^=top]:top-0',
-    1151,
+    1154,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12168,16 +12168,16 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('inline', 119, RaftUtilityStatus.resolved, [
+  RaftUtility('inline', 120, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('display', CssKeyword('inline'))]),
   ]),
-  RaftUtility('inline-block', 120, RaftUtilityStatus.resolved, [
+  RaftUtility('inline-block', 121, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('display', _v352)]),
   ]),
-  RaftUtility('inline-flex', 121, RaftUtilityStatus.resolved, [
+  RaftUtility('inline-flex', 122, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('display', _v31)]),
   ]),
-  RaftUtility('inline-grid', 122, RaftUtilityStatus.resolved, [
+  RaftUtility('inline-grid', 123, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('display', _v391)]),
   ]),
   RaftUtility('inset-0', 8, RaftUtilityStatus.resolved, [
@@ -12196,25 +12196,25 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('left', CssKeyword('auto')),
     ]),
   ]),
-  RaftUtility('inset-ring', 731, RaftUtilityStatus.resolved, [
+  RaftUtility('inset-ring', 734, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-inset-ring-shadow', _v313),
       RaftDecl('box-shadow', _v23),
     ]),
   ]),
-  RaftUtility('inset-ring-[1.5px]', 732, RaftUtilityStatus.resolved, [
+  RaftUtility('inset-ring-[1.5px]', 735, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-inset-ring-shadow', _v72),
       RaftDecl('box-shadow', _v23),
     ]),
   ]),
-  RaftUtility('inset-ring-line-hairline', 736, RaftUtilityStatus.resolved, [
+  RaftUtility('inset-ring-line-hairline', 739, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--tw-inset-ring-color', _v147)]),
   ]),
-  RaftUtility('inset-ring-line-seam', 737, RaftUtilityStatus.resolved, [
+  RaftUtility('inset-ring-line-seam', 740, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--tw-inset-ring-color', _v192)]),
   ]),
-  RaftUtility('inset-ring-sticker-ink', 738, RaftUtilityStatus.resolved, [
+  RaftUtility('inset-ring-sticker-ink', 741, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--tw-inset-ring-color', _v73)]),
   ]),
   RaftUtility('inset-x-0', 10, RaftUtilityStatus.resolved, [
@@ -12238,54 +12238,54 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('isolate', 47, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('isolation', CssKeyword('isolate'))]),
   ]),
-  RaftUtility('items-baseline', 345, RaftUtilityStatus.resolved, [
+  RaftUtility('items-baseline', 348, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('align-items', CssKeyword('baseline')),
     ]),
   ]),
-  RaftUtility('items-center', 346, RaftUtilityStatus.resolved, [
+  RaftUtility('items-center', 349, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('align-items', CssKeyword('center')),
     ]),
   ]),
-  RaftUtility('items-end', 347, RaftUtilityStatus.resolved, [
+  RaftUtility('items-end', 350, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('align-items', CssKeyword('flex-end')),
     ]),
   ]),
-  RaftUtility('items-start', 348, RaftUtilityStatus.resolved, [
+  RaftUtility('items-start', 351, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('align-items', _v42)]),
   ]),
-  RaftUtility('items-stretch', 349, RaftUtilityStatus.resolved, [
+  RaftUtility('items-stretch', 352, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('align-items', CssKeyword('stretch')),
     ]),
   ]),
-  RaftUtility('justify-between', 350, RaftUtilityStatus.resolved, [
+  RaftUtility('justify-between', 353, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('justify-content', _v2)]),
   ]),
-  RaftUtility('justify-center', 351, RaftUtilityStatus.resolved, [
+  RaftUtility('justify-center', 354, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('justify-content', CssKeyword('center')),
     ]),
   ]),
-  RaftUtility('justify-end', 352, RaftUtilityStatus.resolved, [
+  RaftUtility('justify-end', 355, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('justify-content', CssKeyword('flex-end')),
     ]),
   ]),
-  RaftUtility('justify-self-end', 388, RaftUtilityStatus.resolved, [
+  RaftUtility('justify-self-end', 391, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('justify-self', CssKeyword('flex-end')),
     ]),
   ]),
-  RaftUtility('justify-self-start', 389, RaftUtilityStatus.resolved, [
+  RaftUtility('justify-self-start', 392, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('justify-self', _v42)]),
   ]),
-  RaftUtility('justify-start', 353, RaftUtilityStatus.resolved, [
+  RaftUtility('justify-start', 356, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('justify-content', _v42)]),
   ]),
-  RaftUtility('last:[&>td]:border-b-0', 1867, RaftUtilityStatus.descendant, [
+  RaftUtility('last:[&>td]:border-b-0', 1870, RaftUtilityStatus.descendant, [
     RaftLayer(
       '& > td',
       ['last-child'],
@@ -12296,7 +12296,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('last:mb-0', 1047, RaftUtilityStatus.resolved, [
+  RaftUtility('last:mb-0', 1050, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['last-child'],
@@ -12304,7 +12304,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('margin-bottom', CssNum(0, 'px'))],
     ),
   ]),
-  RaftUtility('last:pb-4', 1048, RaftUtilityStatus.resolved, [
+  RaftUtility('last:pb-4', 1051, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['last-child'],
@@ -12312,97 +12312,97 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('padding-bottom', CssNum(16, 'px'))],
     ),
   ]),
-  RaftUtility('leading-10', 635, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-10', 638, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(40, 'px')),
       RaftDecl('line-height', CssNum(40, 'px')),
     ]),
   ]),
-  RaftUtility('leading-12', 636, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-12', 639, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(48, 'px')),
       RaftDecl('line-height', CssNum(48, 'px')),
     ]),
   ]),
-  RaftUtility('leading-14', 637, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-14', 640, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(56, 'px')),
       RaftDecl('line-height', CssNum(56, 'px')),
     ]),
   ]),
-  RaftUtility('leading-16', 638, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-16', 641, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(64, 'px')),
       RaftDecl('line-height', CssNum(64, 'px')),
     ]),
   ]),
-  RaftUtility('leading-4', 629, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-4', 632, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(16, 'px')),
       RaftDecl('line-height', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('leading-4.5', 630, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-4.5', 633, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(18, 'px')),
       RaftDecl('line-height', CssNum(18, 'px')),
     ]),
   ]),
-  RaftUtility('leading-5', 631, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-5', 634, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(20, 'px')),
       RaftDecl('line-height', CssNum(20, 'px')),
     ]),
   ]),
-  RaftUtility('leading-6', 632, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-6', 635, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(24, 'px')),
       RaftDecl('line-height', CssNum(24, 'px')),
     ]),
   ]),
-  RaftUtility('leading-7', 633, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-7', 636, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(28, 'px')),
       RaftDecl('line-height', CssNum(28, 'px')),
     ]),
   ]),
-  RaftUtility('leading-8', 634, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-8', 637, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(32, 'px')),
       RaftDecl('line-height', CssNum(32, 'px')),
     ]),
   ]),
-  RaftUtility('leading-[1.2em]', 639, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-[1.2em]', 642, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(1.2, 'em')),
       RaftDecl('line-height', CssNum(1.2, 'em')),
     ]),
   ]),
-  RaftUtility('leading-[1.3em]', 640, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-[1.3em]', 643, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(1.3, 'em')),
       RaftDecl('line-height', CssNum(1.3, 'em')),
     ]),
   ]),
-  RaftUtility('leading-[1.4]', 641, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-[1.4]', 644, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(1.4)),
       RaftDecl('line-height', CssNum(1.4)),
     ]),
   ]),
-  RaftUtility('leading-[inherit]', 642, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-[inherit]', 645, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssKeyword('inherit')),
       RaftDecl('line-height', CssKeyword('inherit')),
     ]),
   ]),
-  RaftUtility('leading-none', 643, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-none', 646, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(1)),
       RaftDecl('line-height', CssNum(1)),
     ]),
   ]),
-  RaftUtility('leading-tight', 644, RaftUtilityStatus.resolved, [
+  RaftUtility('leading-tight', 647, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-leading', CssNum(1.25)),
       RaftDecl('line-height', CssNum(1.25)),
@@ -12423,7 +12423,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('left-6', 46, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('left', CssNum(24, 'px'))]),
   ]),
-  RaftUtility('line-clamp-2', 112, RaftUtilityStatus.resolved, [
+  RaftUtility('line-clamp-2', 113, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overflow-x', CssKeyword('hidden')),
       RaftDecl('overflow-y', CssKeyword('hidden')),
@@ -12432,7 +12432,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('-webkit-line-clamp', CssNum(2)),
     ]),
   ]),
-  RaftUtility('line-clamp-3', 113, RaftUtilityStatus.resolved, [
+  RaftUtility('line-clamp-3', 114, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overflow-x', CssKeyword('hidden')),
       RaftDecl('overflow-y', CssKeyword('hidden')),
@@ -12441,12 +12441,12 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('-webkit-line-clamp', CssNum(3)),
     ]),
   ]),
-  RaftUtility('list-decimal', 326, RaftUtilityStatus.resolved, [
+  RaftUtility('list-decimal', 329, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('list-style-type', CssKeyword('decimal')),
     ]),
   ]),
-  RaftUtility('list-disc', 327, RaftUtilityStatus.resolved, [
+  RaftUtility('list-disc', 330, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('list-style-type', CssKeyword('disc')),
     ]),
@@ -12459,39 +12459,39 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('margin-left', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('max-h-(--available-height)', 189, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-(--available-height)', 190, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', _v393)]),
   ]),
-  RaftUtility('max-h-32', 190, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-32', 191, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', CssNum(128, 'px'))]),
   ]),
-  RaftUtility('max-h-40', 191, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-40', 192, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', CssNum(160, 'px'))]),
   ]),
-  RaftUtility('max-h-48', 192, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-48', 193, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', CssNum(192, 'px'))]),
   ]),
-  RaftUtility('max-h-60', 193, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-60', 194, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', CssNum(240, 'px'))]),
   ]),
-  RaftUtility('max-h-64', 194, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-64', 195, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', CssNum(256, 'px'))]),
   ]),
-  RaftUtility('max-h-[164px]', 197, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-[164px]', 198, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', CssNum(164, 'px'))]),
   ]),
-  RaftUtility('max-h-[80vh]', 195, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-[80vh]', 196, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', CssNum(80, 'vh'))]),
   ]),
-  RaftUtility('max-h-[82vh]', 196, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-[82vh]', 197, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', CssNum(82, 'vh'))]),
   ]),
-  RaftUtility('max-h-[calc(100dvh-2rem)]', 198, RaftUtilityStatus.resolved, [
+  RaftUtility('max-h-[calc(100dvh-2rem)]', 199, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-height', CssCalc(_v349))]),
   ]),
   RaftUtility(
     'max-md:**:data-[slot=panel-action]:active:bg-fill-frame-pressed',
-    1621,
+    1624,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -12504,7 +12504,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'max-md:**:data-[slot=panel-action]:hover:bg-fill-frame-pressed',
-    1620,
+    1623,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -12517,7 +12517,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'max-md:**:data-[slot=panel-action]:text-foreground-on-frame',
-    1619,
+    1622,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -12530,7 +12530,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'max-md:**:data-[slot=panel-meta]:text-foreground-on-frame-muted',
-    1622,
+    1625,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -12543,7 +12543,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'max-md:**:data-[slot=panel-title]:text-foreground-on-frame',
-    1623,
+    1626,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -12556,7 +12556,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'max-md:*:data-[slot=tabs-list]:px-4',
-    1624,
+    1627,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -12572,7 +12572,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'max-md:[&>[data-slot=button]:last-child]:mr-2.5',
-    1775,
+    1778,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -12585,7 +12585,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'max-md:[&>[data-slot=panel-action]:first-child]:-ml-[13px]',
-    1787,
+    1790,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -12598,7 +12598,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'max-md:[&>[data-slot=panel-header-icon]]:hidden',
-    1789,
+    1792,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -12609,7 +12609,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('max-md:bg-layer-canvas', 1609, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:bg-layer-canvas', 1612, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12617,7 +12617,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('background-color', _v37)],
     ),
   ]),
-  RaftUtility('max-md:bg-layer-frame', 1610, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:bg-layer-frame', 1613, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12625,7 +12625,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('background-color', _v231)],
     ),
   ]),
-  RaftUtility('max-md:border-l-0', 1608, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:border-l-0', 1611, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12636,7 +12636,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('max-md:flex-col', 1604, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:flex-col', 1607, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12644,7 +12644,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('flex-direction', CssKeyword('column'))],
     ),
   ]),
-  RaftUtility('max-md:flex-wrap', 1605, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:flex-wrap', 1608, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12652,7 +12652,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('flex-wrap', CssKeyword('wrap'))],
     ),
   ]),
-  RaftUtility('max-md:gap-2', 1607, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:gap-2', 1610, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12663,7 +12663,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('max-md:hidden', 1601, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:hidden', 1604, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12671,7 +12671,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('display', CssKeyword('none'))],
     ),
   ]),
-  RaftUtility('max-md:items-end', 1606, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:items-end', 1609, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12679,7 +12679,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('align-items', CssKeyword('flex-end'))],
     ),
   ]),
-  RaftUtility('max-md:min-h-16', 1602, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:min-h-16', 1605, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12687,7 +12687,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('min-height', CssNum(64, 'px'))],
     ),
   ]),
-  RaftUtility('max-md:opacity-100', 1618, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:opacity-100', 1621, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12697,7 +12697,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'max-md:pb-[calc(env(safe-area-inset-bottom)+0.5rem)]',
-    1615,
+    1618,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -12708,7 +12708,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('max-md:pl-4', 1616, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:pl-4', 1619, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12716,7 +12716,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('padding-left', CssNum(16, 'px'))],
     ),
   ]),
-  RaftUtility('max-md:pointer-events-auto', 1596, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:pointer-events-auto', 1599, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12724,7 +12724,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('pointer-events', CssKeyword('auto'))],
     ),
   ]),
-  RaftUtility('max-md:pr-1.5', 1614, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:pr-1.5', 1617, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12734,13 +12734,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'max-md:pt-[env(safe-area-inset-top,0px)]',
-    1613,
+    1616,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['width<768'], 1000, [RaftDecl('padding-top', _v47)]),
     ],
   ),
-  RaftUtility('max-md:px-4', 1611, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:px-4', 1614, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12751,7 +12751,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('max-md:py-2', 1612, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:py-2', 1615, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12762,7 +12762,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('max-md:static', 1597, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:static', 1600, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12770,7 +12770,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('position', CssKeyword('static'))],
     ),
   ]),
-  RaftUtility('max-md:sticky', 1598, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:sticky', 1601, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12780,16 +12780,16 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'max-md:text-foreground-on-frame',
-    1617,
+    1620,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', ['width<768'], 1000, [RaftDecl('color', _v394)]),
     ],
   ),
-  RaftUtility('max-md:top-0', 1599, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:top-0', 1602, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['width<768'], 1000, [RaftDecl('top', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('max-md:translate-y-0', 1603, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:translate-y-0', 1606, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<768'],
@@ -12800,10 +12800,10 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('max-md:z-30', 1600, RaftUtilityStatus.resolved, [
+  RaftUtility('max-md:z-30', 1603, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['width<768'], 1000, [RaftDecl('z-index', CssNum(30))]),
   ]),
-  RaftUtility('max-sm:gap-y-0.5', 1626, RaftUtilityStatus.resolved, [
+  RaftUtility('max-sm:gap-y-0.5', 1629, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<640'],
@@ -12811,7 +12811,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('row-gap', CssNum(2, 'px'))],
     ),
   ]),
-  RaftUtility('max-sm:grid-cols-1', 1625, RaftUtilityStatus.resolved, [
+  RaftUtility('max-sm:grid-cols-1', 1628, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width<640'],
@@ -12819,63 +12819,63 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('grid-template-columns', _v330)],
     ),
   ]),
-  RaftUtility('max-w-28', 246, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-28', 248, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(112, 'px'))]),
   ]),
-  RaftUtility('max-w-40', 247, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-40', 249, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(160, 'px'))]),
   ]),
-  RaftUtility('max-w-44', 248, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-44', 250, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(176, 'px'))]),
   ]),
-  RaftUtility('max-w-4xl', 245, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-4xl', 247, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(896, 'px'))]),
   ]),
-  RaftUtility('max-w-60', 249, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-60', 251, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(240, 'px'))]),
   ]),
-  RaftUtility('max-w-[256px]', 254, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[256px]', 256, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(256, 'px'))]),
   ]),
-  RaftUtility('max-w-[26rem]', 250, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[26rem]', 252, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(416, 'px'))]),
   ]),
-  RaftUtility('max-w-[280px]', 255, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[280px]', 257, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(280, 'px'))]),
   ]),
-  RaftUtility('max-w-[300px]', 256, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[300px]', 258, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(300, 'px'))]),
   ]),
-  RaftUtility('max-w-[33%]', 251, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[33%]', 253, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(33, '%'))]),
   ]),
-  RaftUtility('max-w-[360px]', 257, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[360px]', 259, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(360, 'px'))]),
   ]),
-  RaftUtility('max-w-[400px]', 258, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[400px]', 260, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(400, 'px'))]),
   ]),
-  RaftUtility('max-w-[420px]', 259, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[420px]', 261, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(420, 'px'))]),
   ]),
-  RaftUtility('max-w-[440px]', 260, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[440px]', 262, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(440, 'px'))]),
   ]),
-  RaftUtility('max-w-[45%]', 252, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[45%]', 254, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(45, '%'))]),
   ]),
-  RaftUtility('max-w-[480px]', 261, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[480px]', 263, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(480, 'px'))]),
   ]),
-  RaftUtility('max-w-[86vw]', 253, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[86vw]', 255, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(86, 'vw'))]),
   ]),
-  RaftUtility('max-w-[calc(100vw-48px)]', 262, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[calc(100vw-48px)]', 264, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssCalc(_v399))]),
   ]),
   RaftUtility(
     'max-w-[min(20rem,var(--available-width,20rem))]',
-    263,
+    265,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('max-width', _v401)]),
@@ -12883,36 +12883,36 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'max-w-[min(24rem,var(--available-width,calc(100vw-2rem)))]',
-    264,
+    266,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('max-width', _v404)]),
     ],
   ),
-  RaftUtility('max-w-[min(34rem,100%)]', 265, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-[min(34rem,100%)]', 267, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', _v405)]),
   ]),
   RaftUtility(
     'max-w-[min(360px,calc(100vw-112px))]',
-    266,
+    268,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('max-width', _v407)]),
     ],
   ),
-  RaftUtility('max-w-full', 267, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-full', 269, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(100, '%'))]),
   ]),
-  RaftUtility('max-w-lg', 268, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-lg', 270, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(512, 'px'))]),
   ]),
-  RaftUtility('max-w-md', 269, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-md', 271, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(448, 'px'))]),
   ]),
-  RaftUtility('max-w-none', 270, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-none', 272, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssKeyword('none'))]),
   ]),
-  RaftUtility('max-w-sm', 271, RaftUtilityStatus.resolved, [
+  RaftUtility('max-w-sm', 273, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('max-width', CssNum(384, 'px'))]),
   ]),
   RaftUtility('mb-0', 102, RaftUtilityStatus.resolved, [
@@ -12927,13 +12927,16 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('mb-2', 105, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('margin-bottom', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('mb-4', 106, RaftUtilityStatus.resolved, [
+  RaftUtility('mb-3', 106, RaftUtilityStatus.resolved, [
+    RaftLayer('self', [], 1000, [RaftDecl('margin-bottom', CssNum(12, 'px'))]),
+  ]),
+  RaftUtility('mb-4', 107, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('margin-bottom', CssNum(16, 'px'))]),
   ]),
-  RaftUtility('mb-px', 107, RaftUtilityStatus.resolved, [
+  RaftUtility('mb-px', 108, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('margin-bottom', CssNum(1, 'px'))]),
   ]),
-  RaftUtility('md:[&>svg]:size-[18px]', 1856, RaftUtilityStatus.descendant, [
+  RaftUtility('md:[&>svg]:size-[18px]', 1859, RaftUtilityStatus.descendant, [
     RaftLayer(
       '& > svg',
       ['width>=768'],
@@ -12944,7 +12947,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('md:after:-inset-1.5', 1653, RaftUtilityStatus.resolved, [
+  RaftUtility('md:after:-inset-1.5', 1656, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::after',
       ['width>=768'],
@@ -12958,7 +12961,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('md:after:absolute', 1652, RaftUtilityStatus.resolved, [
+  RaftUtility('md:after:absolute', 1655, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::after',
       ['width>=768'],
@@ -12969,7 +12972,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('md:border-r', 1645, RaftUtilityStatus.resolved, [
+  RaftUtility('md:border-r', 1648, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -12980,7 +12983,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('md:flex', 1631, RaftUtilityStatus.resolved, [
+  RaftUtility('md:flex', 1634, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -12988,7 +12991,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('display', CssKeyword('flex'))],
     ),
   ]),
-  RaftUtility('md:flex-nowrap', 1639, RaftUtilityStatus.resolved, [
+  RaftUtility('md:flex-nowrap', 1642, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -12996,7 +12999,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('flex-wrap', CssKeyword('nowrap'))],
     ),
   ]),
-  RaftUtility('md:flex-wrap', 1640, RaftUtilityStatus.resolved, [
+  RaftUtility('md:flex-wrap', 1643, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13004,7 +13007,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('flex-wrap', CssKeyword('wrap'))],
     ),
   ]),
-  RaftUtility('md:focus-within:opacity-100', 1655, RaftUtilityStatus.resolved, [
+  RaftUtility('md:focus-within:opacity-100', 1658, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['focus-within', 'width>=768'],
@@ -13014,7 +13017,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'md:focus-within:pointer-events-auto',
-    1654,
+    1657,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13025,7 +13028,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('md:gap-1', 1643, RaftUtilityStatus.resolved, [
+  RaftUtility('md:gap-1', 1646, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13036,7 +13039,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('md:grid-cols-2', 1637, RaftUtilityStatus.resolved, [
+  RaftUtility('md:grid-cols-2', 1640, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13044,7 +13047,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('grid-template-columns', _v331)],
     ),
   ]),
-  RaftUtility('md:grid-cols-3', 1638, RaftUtilityStatus.resolved, [
+  RaftUtility('md:grid-cols-3', 1641, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13054,7 +13057,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'md:group-hover/section-header:opacity-100',
-    1651,
+    1654,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13067,7 +13070,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'md:group-hover/section-header:pointer-events-auto',
-    1650,
+    1653,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13078,7 +13081,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('md:h-11', 1633, RaftUtilityStatus.resolved, [
+  RaftUtility('md:h-11', 1636, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13086,7 +13089,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('height', CssNum(44, 'px'))],
     ),
   ]),
-  RaftUtility('md:h-8', 1632, RaftUtilityStatus.resolved, [
+  RaftUtility('md:h-8', 1635, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13096,7 +13099,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'md:has-[>[data-slot=sidebar-live-activity]_[data-slot=live-agent-activity-bar]]:[--sidebar-content-bottom:52px]',
-    1658,
+    1661,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13112,7 +13115,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'md:has-[[data-popup-open]]:opacity-100',
-    1657,
+    1660,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13125,7 +13128,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'md:has-[[data-popup-open]]:pointer-events-auto',
-    1656,
+    1659,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13136,7 +13139,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('md:items-center', 1641, RaftUtilityStatus.resolved, [
+  RaftUtility('md:items-center', 1644, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13144,10 +13147,10 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('align-items', CssKeyword('center'))],
     ),
   ]),
-  RaftUtility('md:justify-between', 1642, RaftUtilityStatus.resolved, [
+  RaftUtility('md:justify-between', 1645, RaftUtilityStatus.resolved, [
     RaftLayer('self', ['width>=768'], 1000, [RaftDecl('justify-content', _v2)]),
   ]),
-  RaftUtility('md:max-w-[360px]', 1634, RaftUtilityStatus.resolved, [
+  RaftUtility('md:max-w-[360px]', 1637, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13155,7 +13158,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('max-width', CssNum(360, 'px'))],
     ),
   ]),
-  RaftUtility('md:max-w-md', 1635, RaftUtilityStatus.resolved, [
+  RaftUtility('md:max-w-md', 1638, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13163,7 +13166,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('max-width', CssNum(448, 'px'))],
     ),
   ]),
-  RaftUtility('md:min-w-8', 1636, RaftUtilityStatus.resolved, [
+  RaftUtility('md:min-w-8', 1639, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13171,7 +13174,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('min-width', CssNum(32, 'px'))],
     ),
   ]),
-  RaftUtility('md:mr-auto', 1629, RaftUtilityStatus.resolved, [
+  RaftUtility('md:mr-auto', 1632, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13179,7 +13182,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('margin-right', CssKeyword('auto'))],
     ),
   ]),
-  RaftUtility('md:mr-px', 1630, RaftUtilityStatus.resolved, [
+  RaftUtility('md:mr-px', 1633, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13187,7 +13190,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('margin-right', CssNum(1, 'px'))],
     ),
   ]),
-  RaftUtility('md:overflow-clip', 1644, RaftUtilityStatus.resolved, [
+  RaftUtility('md:overflow-clip', 1647, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13198,7 +13201,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('md:px-[5px]', 1646, RaftUtilityStatus.resolved, [
+  RaftUtility('md:px-[5px]', 1649, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13209,7 +13212,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('md:py-0', 1647, RaftUtilityStatus.resolved, [
+  RaftUtility('md:py-0', 1650, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13220,7 +13223,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('md:py-[6.5px]', 1648, RaftUtilityStatus.resolved, [
+  RaftUtility('md:py-[6.5px]', 1651, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13231,7 +13234,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('md:text-body', 1649, RaftUtilityStatus.resolved, [
+  RaftUtility('md:text-body', 1652, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=768'],
@@ -13241,113 +13244,116 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'min-h-(--card-title-line-height)',
-    199,
+    200,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('min-height', _v410)]),
     ],
   ),
-  RaftUtility('min-h-0', 200, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-0', 201, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('min-h-10', 206, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-10', 207, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(40, 'px'))]),
   ]),
-  RaftUtility('min-h-11', 207, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-11', 208, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(44, 'px'))]),
   ]),
-  RaftUtility('min-h-13', 208, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-13', 209, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(52, 'px'))]),
   ]),
-  RaftUtility('min-h-14', 209, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-14', 210, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(56, 'px'))]),
   ]),
-  RaftUtility('min-h-16', 210, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-16', 211, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(64, 'px'))]),
   ]),
-  RaftUtility('min-h-24', 211, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-24', 212, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(96, 'px'))]),
   ]),
-  RaftUtility('min-h-5', 201, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-5', 202, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(20, 'px'))]),
   ]),
-  RaftUtility('min-h-6', 202, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-6', 203, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(24, 'px'))]),
   ]),
-  RaftUtility('min-h-64', 212, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-64', 213, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(256, 'px'))]),
   ]),
-  RaftUtility('min-h-7', 203, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-7', 204, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(28, 'px'))]),
   ]),
-  RaftUtility('min-h-8', 204, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-8', 205, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(32, 'px'))]),
   ]),
-  RaftUtility('min-h-9', 205, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-9', 206, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(36, 'px'))]),
   ]),
-  RaftUtility('min-h-[512px]', 213, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-[512px]', 214, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(512, 'px'))]),
   ]),
-  RaftUtility('min-h-dvh', 214, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-dvh', 215, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(100, 'dvh'))]),
   ]),
-  RaftUtility('min-h-full', 215, RaftUtilityStatus.resolved, [
+  RaftUtility('min-h-full', 216, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-height', CssNum(100, '%'))]),
   ]),
-  RaftUtility('min-w-0', 272, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-0', 274, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('min-w-11', 279, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-11', 281, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(44, 'px'))]),
   ]),
-  RaftUtility('min-w-3', 273, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-3', 275, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(12, 'px'))]),
   ]),
-  RaftUtility('min-w-36', 280, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-36', 282, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(144, 'px'))]),
   ]),
-  RaftUtility('min-w-4', 274, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-4', 276, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(16, 'px'))]),
   ]),
-  RaftUtility('min-w-4.5', 275, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-4.5', 277, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(18, 'px'))]),
   ]),
-  RaftUtility('min-w-44', 281, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-44', 283, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(176, 'px'))]),
   ]),
-  RaftUtility('min-w-5', 276, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-5', 278, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(20, 'px'))]),
   ]),
-  RaftUtility('min-w-60', 282, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-60', 284, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(240, 'px'))]),
   ]),
-  RaftUtility('min-w-7', 277, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-7', 279, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(28, 'px'))]),
   ]),
-  RaftUtility('min-w-8', 278, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-8', 280, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(32, 'px'))]),
   ]),
-  RaftUtility('min-w-[220px]', 283, RaftUtilityStatus.resolved, [
+  RaftUtility('min-w-[160px]', 285, RaftUtilityStatus.resolved, [
+    RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(160, 'px'))]),
+  ]),
+  RaftUtility('min-w-[220px]', 286, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('min-width', CssNum(220, 'px'))]),
   ]),
   RaftUtility(
     'min-w-[max(var(--anchor-width),220px)]',
-    284,
+    287,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('min-width', _v412)]),
     ],
   ),
-  RaftUtility('ml-0', 110, RaftUtilityStatus.resolved, [
+  RaftUtility('ml-0', 111, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('margin-left', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('ml-auto', 111, RaftUtilityStatus.resolved, [
+  RaftUtility('ml-auto', 112, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('margin-left', CssKeyword('auto'))]),
   ]),
   RaftUtility(
     'motion-reduce:**:data-[slot=copyable-code-icon]:transition-none',
-    1595,
+    1598,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -13360,7 +13366,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'motion-reduce:[&>svg]:transition-none',
-    1855,
+    1858,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -13371,7 +13377,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('motion-reduce:animate-none', 1593, RaftUtilityStatus.resolved, [
+  RaftUtility('motion-reduce:animate-none', 1596, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['motion-reduce'],
@@ -13379,7 +13385,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('animation', CssKeyword('none'))],
     ),
   ]),
-  RaftUtility('motion-reduce:scale-x-100', 1591, RaftUtilityStatus.resolved, [
+  RaftUtility('motion-reduce:scale-x-100', 1594, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['motion-reduce'],
@@ -13389,7 +13395,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'motion-reduce:transform-none',
-    1592,
+    1595,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13402,7 +13408,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'motion-reduce:transition-none',
-    1594,
+    1597,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13506,19 +13512,19 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('margin-bottom', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('no-underline', 708, RaftUtilityStatus.resolved, [
+  RaftUtility('no-underline', 711, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('text-decoration-line', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('normal-case', 704, RaftUtilityStatus.resolved, [
+  RaftUtility('normal-case', 707, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('text-transform', CssKeyword('none')),
     ]),
   ]),
   RaftUtility(
     'not-data-[icon-kind=avatar]:[&_svg]:size-3.5',
-    1741,
+    1744,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -13534,7 +13540,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-data-[icon-kind=avatar]:[&_svg]:stroke-2',
-    1742,
+    1745,
     RaftUtilityStatus.descendant,
     [
       RaftLayer(
@@ -13547,7 +13553,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-data-active:data-[tone=away]:text-foreground-hint',
-    1577,
+    1580,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13560,7 +13566,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-data-active:data-[tone=muted]:text-foreground-muted',
-    1579,
+    1582,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13573,7 +13579,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-data-active:data-popup-open:bg-fill-pressed',
-    1360,
+    1363,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13586,7 +13592,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-data-disabled:cursor-pointer',
-    870,
+    873,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13599,7 +13605,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-data-selected:data-popup-open:press-overlay',
-    1361,
+    1364,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13612,7 +13618,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-disabled:not-aria-disabled:data-[tone=away]:[--list-row-ink-2:var(--foreground-hint)]',
-    1575,
+    1578,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13625,7 +13631,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-disabled:not-aria-disabled:data-[tone=away]:[--list-row-ink:var(--foreground-hint)]',
-    1576,
+    1579,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13638,7 +13644,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-disabled:not-aria-disabled:data-[tone=muted]:[--list-row-ink:var(--foreground-muted)]',
-    1578,
+    1581,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13651,7 +13657,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-disabled:not-aria-disabled:data-[tone=unread]:[--list-row-ink-2:var(--foreground)]',
-    1580,
+    1583,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13664,7 +13670,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-disabled:not-aria-disabled:not-data-selected:active:press-overlay',
-    1115,
+    1118,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13682,7 +13688,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'not-disabled:not-aria-disabled:not-data-selected:hover:press-overlay',
-    1077,
+    1080,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13698,7 +13704,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('not-first:before:absolute', 997, RaftUtilityStatus.resolved, [
+  RaftUtility('not-first:before:absolute', 1000, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::before',
       ['not:first-child'],
@@ -13709,7 +13715,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('not-first:before:block', 1002, RaftUtilityStatus.resolved, [
+  RaftUtility('not-first:before:block', 1005, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::before',
       ['not:first-child'],
@@ -13722,7 +13728,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'not-first:before:border-line-hairline',
-    1004,
+    1007,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13739,7 +13745,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('not-first:before:border-t', 1003, RaftUtilityStatus.resolved, [
+  RaftUtility('not-first:before:border-t', 1006, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::before',
       ['not:first-child'],
@@ -13751,7 +13757,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('not-first:before:left-4', 1000, RaftUtilityStatus.resolved, [
+  RaftUtility('not-first:before:left-4', 1003, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::before',
       ['not:first-child'],
@@ -13764,7 +13770,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'not-first:before:left-[55px]',
-    1001,
+    1004,
     RaftUtilityStatus.resolved,
     [
       RaftLayer(
@@ -13778,7 +13784,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ),
     ],
   ),
-  RaftUtility('not-first:before:right-0', 999, RaftUtilityStatus.resolved, [
+  RaftUtility('not-first:before:right-0', 1002, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::before',
       ['not:first-child'],
@@ -13789,7 +13795,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('not-first:before:top-0', 998, RaftUtilityStatus.resolved, [
+  RaftUtility('not-first:before:top-0', 1001, RaftUtilityStatus.resolved, [
     RaftLayer(
       '::before',
       ['not:first-child'],
@@ -13800,10 +13806,10 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('not-italic', 706, RaftUtilityStatus.resolved, [
+  RaftUtility('not-italic', 709, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-style', CssKeyword('normal'))]),
   ]),
-  RaftUtility('not-last:border-r', 869, RaftUtilityStatus.resolved, [
+  RaftUtility('not-last:border-r', 872, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['not:last-child'],
@@ -13814,15 +13820,15 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ],
     ),
   ]),
-  RaftUtility('object-contain', 495, RaftUtilityStatus.resolved, [
+  RaftUtility('object-contain', 498, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('object-fit', CssKeyword('contain')),
     ]),
   ]),
-  RaftUtility('object-cover', 496, RaftUtilityStatus.resolved, [
+  RaftUtility('object-cover', 499, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('object-fit', CssKeyword('cover'))]),
   ]),
-  RaftUtility('only:col-auto', 1049, RaftUtilityStatus.resolved, [
+  RaftUtility('only:col-auto', 1052, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['only-child'],
@@ -13830,7 +13836,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('grid-column', CssKeyword('auto'))],
     ),
   ]),
-  RaftUtility('only:row-auto', 1050, RaftUtilityStatus.resolved, [
+  RaftUtility('only:row-auto', 1053, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['only-child'],
@@ -13840,27 +13846,27 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'opacity-(--mi-toolbar-opacity,0)',
-    715,
+    718,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('opacity', _v413)]),
     ],
   ),
-  RaftUtility('opacity-0', 716, RaftUtilityStatus.resolved, [
+  RaftUtility('opacity-0', 719, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('opacity', CssNum(0, '%'))]),
   ]),
-  RaftUtility('opacity-100', 719, RaftUtilityStatus.resolved, [
+  RaftUtility('opacity-100', 722, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('opacity', CssNum(100, '%'))]),
   ]),
-  RaftUtility('opacity-20', 717, RaftUtilityStatus.resolved, [
+  RaftUtility('opacity-20', 720, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('opacity', CssNum(20, '%'))]),
   ]),
-  RaftUtility('opacity-60', 718, RaftUtilityStatus.resolved, [
+  RaftUtility('opacity-60', 721, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('opacity', CssNum(60, '%'))]),
   ]),
   RaftUtility(
     'opacity-[calc(1-var(--mi-toolbar-opacity,0))]',
-    720,
+    723,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('opacity', CssCalc(_v414))]),
@@ -13868,7 +13874,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'opacity-[max(var(--drawer-overlay-min-opacity,0),calc(1-var(--drawer-swipe-progress)))]',
-    721,
+    724,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('opacity', _v417)]),
@@ -13888,119 +13894,119 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'origin-(--drawer-transform-origin)',
-    295,
+    298,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('transform-origin', _v418)]),
     ],
   ),
-  RaftUtility('origin-(--transform-origin)', 296, RaftUtilityStatus.resolved, [
+  RaftUtility('origin-(--transform-origin)', 299, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('transform-origin', _v419)]),
   ]),
-  RaftUtility('origin-bottom', 297, RaftUtilityStatus.resolved, [
+  RaftUtility('origin-bottom', 300, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('transform-origin', CssKeyword('bottom')),
     ]),
   ]),
-  RaftUtility('origin-center', 298, RaftUtilityStatus.resolved, [
+  RaftUtility('origin-center', 301, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('transform-origin', CssKeyword('center')),
     ]),
   ]),
-  RaftUtility('origin-left', 299, RaftUtilityStatus.resolved, [
+  RaftUtility('origin-left', 302, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('transform-origin', CssNum(0))]),
   ]),
-  RaftUtility('outline-1', 739, RaftUtilityStatus.resolved, [
+  RaftUtility('outline-1', 742, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('outline-style', _v321),
       RaftDecl('outline-width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('outline-2', 740, RaftUtilityStatus.resolved, [
+  RaftUtility('outline-2', 743, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('outline-style', _v321),
       RaftDecl('outline-width', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('outline-[1px]', 741, RaftUtilityStatus.resolved, [
+  RaftUtility('outline-[1px]', 744, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('outline-style', _v321),
       RaftDecl('outline-width', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('outline-layer-canvas', 743, RaftUtilityStatus.resolved, [
+  RaftUtility('outline-layer-canvas', 746, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('outline-color', _v37)]),
   ]),
-  RaftUtility('outline-none', 777, RaftUtilityStatus.resolved, [
+  RaftUtility('outline-none', 780, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-outline-style', CssKeyword('none')),
       RaftDecl('outline-style', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('outline-offset-2', 742, RaftUtilityStatus.resolved, [
+  RaftUtility('outline-offset-2', 745, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('outline-offset', CssNum(2, 'px'))]),
   ]),
-  RaftUtility('outline-solid', 778, RaftUtilityStatus.resolved, [
+  RaftUtility('outline-solid', 781, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-outline-style', CssKeyword('solid')),
       RaftDecl('outline-style', CssKeyword('solid')),
     ]),
   ]),
-  RaftUtility('outline-transparent', 744, RaftUtilityStatus.resolved, [
+  RaftUtility('outline-transparent', 747, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('outline-color', _v11)]),
   ]),
-  RaftUtility('overflow-auto', 391, RaftUtilityStatus.resolved, [
+  RaftUtility('overflow-auto', 394, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overflow-x', CssKeyword('auto')),
       RaftDecl('overflow-y', CssKeyword('auto')),
     ]),
   ]),
-  RaftUtility('overflow-clip', 392, RaftUtilityStatus.resolved, [
+  RaftUtility('overflow-clip', 395, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overflow-x', CssKeyword('clip')),
       RaftDecl('overflow-y', CssKeyword('clip')),
     ]),
   ]),
-  RaftUtility('overflow-hidden', 393, RaftUtilityStatus.resolved, [
+  RaftUtility('overflow-hidden', 396, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overflow-x', CssKeyword('hidden')),
       RaftDecl('overflow-y', CssKeyword('hidden')),
     ]),
   ]),
-  RaftUtility('overflow-visible', 394, RaftUtilityStatus.resolved, [
+  RaftUtility('overflow-visible', 397, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overflow-x', CssKeyword('visible')),
       RaftDecl('overflow-y', CssKeyword('visible')),
     ]),
   ]),
-  RaftUtility('overflow-x-auto', 395, RaftUtilityStatus.resolved, [
+  RaftUtility('overflow-x-auto', 398, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('overflow-x', CssKeyword('auto'))]),
   ]),
-  RaftUtility('overflow-x-hidden', 396, RaftUtilityStatus.resolved, [
+  RaftUtility('overflow-x-hidden', 399, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('overflow-x', CssKeyword('hidden'))]),
   ]),
-  RaftUtility('overflow-y-auto', 397, RaftUtilityStatus.resolved, [
+  RaftUtility('overflow-y-auto', 400, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('overflow-y', CssKeyword('auto'))]),
   ]),
-  RaftUtility('overflow-y-hidden', 398, RaftUtilityStatus.resolved, [
+  RaftUtility('overflow-y-hidden', 401, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('overflow-y', CssKeyword('hidden'))]),
   ]),
-  RaftUtility('overscroll-contain', 399, RaftUtilityStatus.resolved, [
+  RaftUtility('overscroll-contain', 402, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overscroll-behavior', CssKeyword('contain')),
     ]),
   ]),
-  RaftUtility('overscroll-none', 400, RaftUtilityStatus.resolved, [
+  RaftUtility('overscroll-none', 403, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overscroll-behavior', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('overscroll-x-contain', 401, RaftUtilityStatus.resolved, [
+  RaftUtility('overscroll-x-contain', 404, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overscroll-behavior-x', CssKeyword('contain')),
     ]),
   ]),
-  RaftUtility('p-0', 497, RaftUtilityStatus.resolved, [
+  RaftUtility('p-0', 500, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(0, 'px')),
       RaftDecl('padding-right', CssNum(0, 'px')),
@@ -14008,7 +14014,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('padding-left', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('p-1', 498, RaftUtilityStatus.resolved, [
+  RaftUtility('p-1', 501, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(4, 'px')),
       RaftDecl('padding-right', CssNum(4, 'px')),
@@ -14016,7 +14022,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('padding-left', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('p-1.5', 499, RaftUtilityStatus.resolved, [
+  RaftUtility('p-1.5', 502, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(6, 'px')),
       RaftDecl('padding-right', CssNum(6, 'px')),
@@ -14024,7 +14030,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('padding-left', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('p-2', 500, RaftUtilityStatus.resolved, [
+  RaftUtility('p-2', 503, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(8, 'px')),
       RaftDecl('padding-right', CssNum(8, 'px')),
@@ -14032,7 +14038,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('padding-left', CssNum(8, 'px')),
     ]),
   ]),
-  RaftUtility('p-3', 501, RaftUtilityStatus.resolved, [
+  RaftUtility('p-3', 504, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(12, 'px')),
       RaftDecl('padding-right', CssNum(12, 'px')),
@@ -14040,7 +14046,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('padding-left', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('p-4', 502, RaftUtilityStatus.resolved, [
+  RaftUtility('p-4', 505, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(16, 'px')),
       RaftDecl('padding-right', CssNum(16, 'px')),
@@ -14048,7 +14054,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('padding-left', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('p-5', 503, RaftUtilityStatus.resolved, [
+  RaftUtility('p-5', 506, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(20, 'px')),
       RaftDecl('padding-right', CssNum(20, 'px')),
@@ -14056,7 +14062,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('padding-left', CssNum(20, 'px')),
     ]),
   ]),
-  RaftUtility('p-[2.5px]', 504, RaftUtilityStatus.resolved, [
+  RaftUtility('p-[2.5px]', 507, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(2.5, 'px')),
       RaftDecl('padding-right', CssNum(2.5, 'px')),
@@ -14064,7 +14070,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('padding-left', CssNum(2.5, 'px')),
     ]),
   ]),
-  RaftUtility('p-[3px]', 505, RaftUtilityStatus.resolved, [
+  RaftUtility('p-[3px]', 508, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(3, 'px')),
       RaftDecl('padding-right', CssNum(3, 'px')),
@@ -14074,39 +14080,39 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'pb-(--sidebar-content-bottom,8px)',
-    558,
+    561,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', _v420)]),
     ],
   ),
-  RaftUtility('pb-0', 559, RaftUtilityStatus.resolved, [
+  RaftUtility('pb-0', 562, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('pb-0.5', 560, RaftUtilityStatus.resolved, [
+  RaftUtility('pb-0.5', 563, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssNum(2, 'px'))]),
   ]),
-  RaftUtility('pb-1', 561, RaftUtilityStatus.resolved, [
+  RaftUtility('pb-1', 564, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssNum(4, 'px'))]),
   ]),
-  RaftUtility('pb-1.5', 562, RaftUtilityStatus.resolved, [
+  RaftUtility('pb-1.5', 565, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssNum(6, 'px'))]),
   ]),
-  RaftUtility('pb-2', 563, RaftUtilityStatus.resolved, [
+  RaftUtility('pb-2', 566, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('pb-3', 564, RaftUtilityStatus.resolved, [
+  RaftUtility('pb-3', 567, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssNum(12, 'px'))]),
   ]),
-  RaftUtility('pb-4', 565, RaftUtilityStatus.resolved, [
+  RaftUtility('pb-4', 568, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssNum(16, 'px'))]),
   ]),
-  RaftUtility('pb-5', 566, RaftUtilityStatus.resolved, [
+  RaftUtility('pb-5', 569, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssNum(20, 'px'))]),
   ]),
   RaftUtility(
     'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]',
-    567,
+    570,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssCalc(_v422))]),
@@ -14114,7 +14120,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'pb-[calc(env(safe-area-inset-bottom)+1rem)]',
-    568,
+    571,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', CssCalc(_v423))]),
@@ -14122,7 +14128,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'pb-[env(safe-area-inset-bottom,0px)]',
-    569,
+    572,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', _v421)]),
@@ -14130,51 +14136,51 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'pb-[max(8px,min(env(safe-area-inset-bottom,0px),34px))]',
-    570,
+    573,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-bottom', _v425)]),
     ],
   ),
-  RaftUtility('pe-1.5', 534, RaftUtilityStatus.resolved, [
+  RaftUtility('pe-1.5', 537, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssNum(6, 'px'))]),
   ]),
-  RaftUtility('pl-0.5', 571, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-0.5', 574, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(2, 'px'))]),
   ]),
-  RaftUtility('pl-1', 572, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-1', 575, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(4, 'px'))]),
   ]),
-  RaftUtility('pl-1.5', 573, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-1.5', 576, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(6, 'px'))]),
   ]),
-  RaftUtility('pl-2', 574, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-2', 577, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('pl-2.5', 575, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-2.5', 578, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(10, 'px'))]),
   ]),
-  RaftUtility('pl-3', 576, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-3', 579, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(12, 'px'))]),
   ]),
-  RaftUtility('pl-3.5', 577, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-3.5', 580, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(14, 'px'))]),
   ]),
-  RaftUtility('pl-4', 578, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-4', 581, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(16, 'px'))]),
   ]),
-  RaftUtility('pl-5', 579, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-5', 582, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(20, 'px'))]),
   ]),
-  RaftUtility('pl-[18px]', 581, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-[18px]', 584, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(18, 'px'))]),
   ]),
-  RaftUtility('pl-[3px]', 580, RaftUtilityStatus.resolved, [
+  RaftUtility('pl-[3px]', 583, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssNum(3, 'px'))]),
   ]),
   RaftUtility(
     'pl-[calc(16px+env(safe-area-inset-left,0px))]',
-    582,
+    585,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssCalc(_v428))]),
@@ -14182,7 +14188,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'pl-[calc(env(safe-area-inset-left,0px)+--spacing(4))]',
-    583,
+    586,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-left', CssCalc(_v429))]),
@@ -14190,7 +14196,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'placeholder:text-foreground-hint',
-    940,
+    943,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('::placeholder', [], 1001, [RaftDecl('color', _v29)]),
@@ -14206,36 +14212,36 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('pointer-events', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('pr-(--ig-control-pr,0.75rem)', 547, RaftUtilityStatus.resolved, [
+  RaftUtility('pr-(--ig-control-pr,0.75rem)', 550, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', _v430)]),
   ]),
-  RaftUtility('pr-(--ta-pr,0.75rem)', 548, RaftUtilityStatus.resolved, [
+  RaftUtility('pr-(--ta-pr,0.75rem)', 551, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', _v431)]),
   ]),
-  RaftUtility('pr-0.5', 549, RaftUtilityStatus.resolved, [
+  RaftUtility('pr-0.5', 552, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssNum(2, 'px'))]),
   ]),
-  RaftUtility('pr-1', 550, RaftUtilityStatus.resolved, [
+  RaftUtility('pr-1', 553, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssNum(4, 'px'))]),
   ]),
-  RaftUtility('pr-1.5', 551, RaftUtilityStatus.resolved, [
+  RaftUtility('pr-1.5', 554, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssNum(6, 'px'))]),
   ]),
-  RaftUtility('pr-2', 552, RaftUtilityStatus.resolved, [
+  RaftUtility('pr-2', 555, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('pr-2.5', 553, RaftUtilityStatus.resolved, [
+  RaftUtility('pr-2.5', 556, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssNum(10, 'px'))]),
   ]),
-  RaftUtility('pr-3', 554, RaftUtilityStatus.resolved, [
+  RaftUtility('pr-3', 557, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssNum(12, 'px'))]),
   ]),
-  RaftUtility('pr-[37px]', 555, RaftUtilityStatus.resolved, [
+  RaftUtility('pr-[37px]', 558, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssNum(37, 'px'))]),
   ]),
   RaftUtility(
     'pr-[calc(16px+env(safe-area-inset-right,0px))]',
-    556,
+    559,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssCalc(_v45))]),
@@ -14243,42 +14249,42 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'pr-[calc(env(safe-area-inset-right,0px)+--spacing(4))]',
-    557,
+    560,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-right', CssCalc(_v432))]),
     ],
   ),
-  RaftUtility('pt-0', 535, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-0', 538, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(0, 'px'))]),
   ]),
-  RaftUtility('pt-1', 536, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-1', 539, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(4, 'px'))]),
   ]),
-  RaftUtility('pt-1.5', 537, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-1.5', 540, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(6, 'px'))]),
   ]),
-  RaftUtility('pt-2', 538, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-2', 541, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('pt-2.5', 539, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-2.5', 542, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(10, 'px'))]),
   ]),
-  RaftUtility('pt-3', 540, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-3', 543, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(12, 'px'))]),
   ]),
-  RaftUtility('pt-4', 541, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-4', 544, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(16, 'px'))]),
   ]),
-  RaftUtility('pt-5', 542, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-5', 545, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(20, 'px'))]),
   ]),
-  RaftUtility('pt-[3.5px]', 543, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-[3.5px]', 546, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(3.5, 'px'))]),
   ]),
   RaftUtility(
     'pt-[calc(env(safe-area-inset-top,0px)+--spacing(3))]',
-    544,
+    547,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssCalc(_v433))]),
@@ -14286,178 +14292,178 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'pt-[env(safe-area-inset-top,0px)]',
-    545,
+    548,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('padding-top', _v47)]),
     ],
   ),
-  RaftUtility('pt-px', 546, RaftUtilityStatus.resolved, [
+  RaftUtility('pt-px', 549, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('padding-top', CssNum(1, 'px'))]),
   ]),
-  RaftUtility('px-0', 506, RaftUtilityStatus.resolved, [
+  RaftUtility('px-0', 509, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(0, 'px')),
       RaftDecl('padding-right', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('px-0.5', 507, RaftUtilityStatus.resolved, [
+  RaftUtility('px-0.5', 510, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(2, 'px')),
       RaftDecl('padding-right', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('px-1', 508, RaftUtilityStatus.resolved, [
+  RaftUtility('px-1', 511, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(4, 'px')),
       RaftDecl('padding-right', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('px-1.5', 509, RaftUtilityStatus.resolved, [
+  RaftUtility('px-1.5', 512, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(6, 'px')),
       RaftDecl('padding-right', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('px-2', 510, RaftUtilityStatus.resolved, [
+  RaftUtility('px-2', 513, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(8, 'px')),
       RaftDecl('padding-right', CssNum(8, 'px')),
     ]),
   ]),
-  RaftUtility('px-2.5', 511, RaftUtilityStatus.resolved, [
+  RaftUtility('px-2.5', 514, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(10, 'px')),
       RaftDecl('padding-right', CssNum(10, 'px')),
     ]),
   ]),
-  RaftUtility('px-3', 512, RaftUtilityStatus.resolved, [
+  RaftUtility('px-3', 515, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(12, 'px')),
       RaftDecl('padding-right', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('px-3.5', 513, RaftUtilityStatus.resolved, [
+  RaftUtility('px-3.5', 516, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(14, 'px')),
       RaftDecl('padding-right', CssNum(14, 'px')),
     ]),
   ]),
-  RaftUtility('px-4', 514, RaftUtilityStatus.resolved, [
+  RaftUtility('px-4', 517, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(16, 'px')),
       RaftDecl('padding-right', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('px-5', 515, RaftUtilityStatus.resolved, [
+  RaftUtility('px-5', 518, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(20, 'px')),
       RaftDecl('padding-right', CssNum(20, 'px')),
     ]),
   ]),
-  RaftUtility('px-6', 516, RaftUtilityStatus.resolved, [
+  RaftUtility('px-6', 519, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(24, 'px')),
       RaftDecl('padding-right', CssNum(24, 'px')),
     ]),
   ]),
-  RaftUtility('px-[3px]', 517, RaftUtilityStatus.resolved, [
+  RaftUtility('px-[3px]', 520, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-left', CssNum(3, 'px')),
       RaftDecl('padding-right', CssNum(3, 'px')),
     ]),
   ]),
-  RaftUtility('py-0', 518, RaftUtilityStatus.resolved, [
+  RaftUtility('py-0', 521, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(0, 'px')),
       RaftDecl('padding-bottom', CssNum(0, 'px')),
     ]),
   ]),
-  RaftUtility('py-0.5', 519, RaftUtilityStatus.resolved, [
+  RaftUtility('py-0.5', 522, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(2, 'px')),
       RaftDecl('padding-bottom', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('py-1', 520, RaftUtilityStatus.resolved, [
+  RaftUtility('py-1', 523, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(4, 'px')),
       RaftDecl('padding-bottom', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('py-1.5', 521, RaftUtilityStatus.resolved, [
+  RaftUtility('py-1.5', 524, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(6, 'px')),
       RaftDecl('padding-bottom', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('py-12', 529, RaftUtilityStatus.resolved, [
+  RaftUtility('py-12', 532, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(48, 'px')),
       RaftDecl('padding-bottom', CssNum(48, 'px')),
     ]),
   ]),
-  RaftUtility('py-2', 522, RaftUtilityStatus.resolved, [
+  RaftUtility('py-2', 525, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(8, 'px')),
       RaftDecl('padding-bottom', CssNum(8, 'px')),
     ]),
   ]),
-  RaftUtility('py-2.5', 523, RaftUtilityStatus.resolved, [
+  RaftUtility('py-2.5', 526, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(10, 'px')),
       RaftDecl('padding-bottom', CssNum(10, 'px')),
     ]),
   ]),
-  RaftUtility('py-3', 524, RaftUtilityStatus.resolved, [
+  RaftUtility('py-3', 527, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(12, 'px')),
       RaftDecl('padding-bottom', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('py-3.5', 525, RaftUtilityStatus.resolved, [
+  RaftUtility('py-3.5', 528, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(14, 'px')),
       RaftDecl('padding-bottom', CssNum(14, 'px')),
     ]),
   ]),
-  RaftUtility('py-4', 526, RaftUtilityStatus.resolved, [
+  RaftUtility('py-4', 529, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(16, 'px')),
       RaftDecl('padding-bottom', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('py-5', 527, RaftUtilityStatus.resolved, [
+  RaftUtility('py-5', 530, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(20, 'px')),
       RaftDecl('padding-bottom', CssNum(20, 'px')),
     ]),
   ]),
-  RaftUtility('py-6', 528, RaftUtilityStatus.resolved, [
+  RaftUtility('py-6', 531, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(24, 'px')),
       RaftDecl('padding-bottom', CssNum(24, 'px')),
     ]),
   ]),
-  RaftUtility('py-[5px]', 530, RaftUtilityStatus.resolved, [
+  RaftUtility('py-[5px]', 533, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(5, 'px')),
       RaftDecl('padding-bottom', CssNum(5, 'px')),
     ]),
   ]),
-  RaftUtility('py-[6.5px]', 531, RaftUtilityStatus.resolved, [
+  RaftUtility('py-[6.5px]', 534, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(6.5, 'px')),
       RaftDecl('padding-bottom', CssNum(6.5, 'px')),
     ]),
   ]),
-  RaftUtility('py-[9px]', 532, RaftUtilityStatus.resolved, [
+  RaftUtility('py-[9px]', 535, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(9, 'px')),
       RaftDecl('padding-bottom', CssNum(9, 'px')),
     ]),
   ]),
-  RaftUtility('py-px', 533, RaftUtilityStatus.resolved, [
+  RaftUtility('py-px', 536, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('padding-top', CssNum(1, 'px')),
       RaftDecl('padding-bottom', CssNum(1, 'px')),
@@ -14466,10 +14472,10 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('relative', 7, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('position', CssKeyword('relative'))]),
   ]),
-  RaftUtility('resize-none', 321, RaftUtilityStatus.resolved, [
+  RaftUtility('resize-none', 324, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('resize', CssKeyword('none'))]),
   ]),
-  RaftUtility('resize-y', 322, RaftUtilityStatus.resolved, [
+  RaftUtility('resize-y', 325, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('resize', CssKeyword('vertical'))]),
   ]),
   RaftUtility('right-(--drawer-inset)', 25, RaftUtilityStatus.resolved, [
@@ -14496,45 +14502,45 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('right-[-3px]', 32, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('right', CssNum(-3, 'px'))]),
   ]),
-  RaftUtility('ring-0', 728, RaftUtilityStatus.resolved, [
+  RaftUtility('ring-0', 731, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-ring-shadow', _v18),
       RaftDecl('box-shadow', _v23),
     ]),
   ]),
-  RaftUtility('ring-1', 729, RaftUtilityStatus.resolved, [
+  RaftUtility('ring-1', 732, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-ring-shadow', _v435),
       RaftDecl('box-shadow', _v23),
     ]),
   ]),
-  RaftUtility('ring-[1.5px]', 730, RaftUtilityStatus.resolved, [
+  RaftUtility('ring-[1.5px]', 733, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-ring-shadow', _v75),
       RaftDecl('box-shadow', _v23),
     ]),
   ]),
-  RaftUtility('ring-inset', 865, RaftUtilityStatus.resolved, [
+  RaftUtility('ring-inset', 868, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-ring-inset', CssKeyword('inset')),
     ]),
   ]),
-  RaftUtility('ring-line-hairline', 733, RaftUtilityStatus.resolved, [
+  RaftUtility('ring-line-hairline', 736, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--tw-ring-color', _v147)]),
   ]),
-  RaftUtility('ring-line-seam', 734, RaftUtilityStatus.resolved, [
+  RaftUtility('ring-line-seam', 737, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--tw-ring-color', _v192)]),
   ]),
-  RaftUtility('ring-sticker-edge', 735, RaftUtilityStatus.resolved, [
+  RaftUtility('ring-sticker-edge', 738, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('--tw-ring-color', _v34)]),
   ]),
-  RaftUtility('rotate-45', 305, RaftUtilityStatus.resolved, [
+  RaftUtility('rotate-45', 308, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('rotate', CssNum(45, 'deg'))]),
   ]),
-  RaftUtility('rotate-90', 306, RaftUtilityStatus.resolved, [
+  RaftUtility('rotate-90', 309, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('rotate', CssNum(90, 'deg'))]),
   ]),
-  RaftUtility('rounded-[11px]', 405, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-[11px]', 408, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(11, 'px')),
       RaftDecl('border-top-right-radius', CssNum(11, 'px')),
@@ -14542,7 +14548,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(11, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-[1px]', 402, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-[1px]', 405, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(1, 'px')),
       RaftDecl('border-top-right-radius', CssNum(1, 'px')),
@@ -14550,7 +14556,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(1, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-[2px]', 403, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-[2px]', 406, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(2, 'px')),
       RaftDecl('border-top-right-radius', CssNum(2, 'px')),
@@ -14558,7 +14564,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-[3px]', 404, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-[3px]', 407, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(3, 'px')),
       RaftDecl('border-top-right-radius', CssNum(3, 'px')),
@@ -14566,7 +14572,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(3, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-[inherit]', 406, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-[inherit]', 409, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssKeyword('inherit')),
       RaftDecl('border-top-right-radius', CssKeyword('inherit')),
@@ -14574,13 +14580,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssKeyword('inherit')),
     ]),
   ]),
-  RaftUtility('rounded-b-dialog', 418, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-b-dialog', 421, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-bottom-right-radius', CssNum(16, 'px')),
       RaftDecl('border-bottom-left-radius', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-chip', 407, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-chip', 410, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(6, 'px')),
       RaftDecl('border-top-right-radius', CssNum(6, 'px')),
@@ -14588,7 +14594,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-container', 408, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-container', 411, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(10, 'px')),
       RaftDecl('border-top-right-radius', CssNum(10, 'px')),
@@ -14596,7 +14602,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(10, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-control', 409, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-control', 412, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(8, 'px')),
       RaftDecl('border-top-right-radius', CssNum(8, 'px')),
@@ -14604,7 +14610,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(8, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-dialog', 410, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-dialog', 413, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(16, 'px')),
       RaftDecl('border-top-right-radius', CssNum(16, 'px')),
@@ -14612,7 +14618,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-full', 411, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-full', 414, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', _v436),
       RaftDecl('border-top-right-radius', _v436),
@@ -14620,7 +14626,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', _v436),
     ]),
   ]),
-  RaftUtility('rounded-md', 412, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-md', 415, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(6, 'px')),
       RaftDecl('border-top-right-radius', CssNum(6, 'px')),
@@ -14628,7 +14634,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-none', 413, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-none', 416, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(0)),
       RaftDecl('border-top-right-radius', CssNum(0)),
@@ -14636,7 +14642,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(0)),
     ]),
   ]),
-  RaftUtility('rounded-sm', 414, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-sm', 417, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(4, 'px')),
       RaftDecl('border-top-right-radius', CssNum(4, 'px')),
@@ -14644,7 +14650,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-sticker', 415, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-sticker', 418, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(4, 'px')),
       RaftDecl('border-top-right-radius', CssNum(4, 'px')),
@@ -14652,13 +14658,13 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('border-bottom-left-radius', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-t-dialog', 416, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-t-dialog', 419, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-left-radius', CssNum(16, 'px')),
       RaftDecl('border-top-right-radius', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('rounded-tr-[15%]', 417, RaftUtilityStatus.resolved, [
+  RaftUtility('rounded-tr-[15%]', 420, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('border-top-right-radius', CssNum(15, '%')),
     ]),
@@ -14680,54 +14686,54 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('row-start-2', 73, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('grid-row-start', CssNum(2))]),
   ]),
-  RaftUtility('scroll-pb-(--ta-scroll-pb,0)', 325, RaftUtilityStatus.resolved, [
+  RaftUtility('scroll-pb-(--ta-scroll-pb,0)', 328, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('scroll-padding-bottom', _v438)]),
   ]),
-  RaftUtility('scroll-py-1.5', 323, RaftUtilityStatus.resolved, [
+  RaftUtility('scroll-py-1.5', 326, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('scroll-padding-top', CssNum(6, 'px')),
       RaftDecl('scroll-padding-bottom', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('scroll-py-6', 324, RaftUtilityStatus.resolved, [
+  RaftUtility('scroll-py-6', 327, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('scroll-padding-top', CssNum(24, 'px')),
       RaftDecl('scroll-padding-bottom', CssNum(24, 'px')),
     ]),
   ]),
   RaftUtility('scrollbar-none', -1, RaftUtilityStatus.noCss, []),
-  RaftUtility('select-none', 779, RaftUtilityStatus.resolved, [
+  RaftUtility('select-none', 782, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('-webkit-user-select', CssKeyword('none')),
       RaftDecl('user-select', CssKeyword('none')),
     ]),
   ]),
-  RaftUtility('select-text', 780, RaftUtilityStatus.resolved, [
+  RaftUtility('select-text', 783, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('-webkit-user-select', CssKeyword('text')),
       RaftDecl('user-select', CssKeyword('text')),
     ]),
   ]),
-  RaftUtility('selection:bg-brand-soft', 939, RaftUtilityStatus.resolved, [
+  RaftUtility('selection:bg-brand-soft', 942, RaftUtilityStatus.resolved, [
     RaftLayer('& *::selection', [], 1001, [
       RaftDecl('background-color', _v156),
     ]),
     RaftLayer('::selection', [], 1001, [RaftDecl('background-color', _v156)]),
   ]),
-  RaftUtility('self-center', 385, RaftUtilityStatus.resolved, [
+  RaftUtility('self-center', 388, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('align-self', CssKeyword('center'))]),
   ]),
-  RaftUtility('self-start', 386, RaftUtilityStatus.resolved, [
+  RaftUtility('self-start', 389, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('align-self', _v42)]),
   ]),
-  RaftUtility('self-stretch', 387, RaftUtilityStatus.resolved, [
+  RaftUtility('self-stretch', 390, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('align-self', CssKeyword('stretch')),
     ]),
   ]),
   RaftUtility(
     'shadow-[0_0_0_1.5px_var(--line-strong)]',
-    722,
+    725,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -14738,7 +14744,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'shadow-[0_0_0_1.5px_var(--sticker-edge),var(--elevation-sticker)]',
-    723,
+    726,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -14749,7 +14755,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'shadow-[0_0_0_1.5px_var(--sticker-edge)]',
-    724,
+    727,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -14760,7 +14766,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'shadow-[0_0_0_2px_var(--layer-canvas)]',
-    725,
+    728,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -14769,202 +14775,202 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('shadow-float', 726, RaftUtilityStatus.resolved, [
+  RaftUtility('shadow-float', 729, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-shadow', _v32),
       RaftDecl('box-shadow', _v23),
     ]),
   ]),
-  RaftUtility('shadow-none', 727, RaftUtilityStatus.resolved, [
+  RaftUtility('shadow-none', 730, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-shadow', _v24),
       RaftDecl('box-shadow', _v23),
     ]),
   ]),
-  RaftUtility('shrink', 287, RaftUtilityStatus.resolved, [
+  RaftUtility('shrink', 290, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex-shrink', CssNum(1))]),
   ]),
-  RaftUtility('shrink-0', 288, RaftUtilityStatus.resolved, [
+  RaftUtility('shrink-0', 291, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex-shrink', CssNum(0))]),
   ]),
-  RaftUtility('shrink-1000', 289, RaftUtilityStatus.resolved, [
+  RaftUtility('shrink-1000', 292, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('flex-shrink', CssNum(1000))]),
   ]),
-  RaftUtility('size-(--spinner-pixel)', 125, RaftUtilityStatus.resolved, [
+  RaftUtility('size-(--spinner-pixel)', 126, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', _v335),
       RaftDecl('height', _v335),
     ]),
   ]),
-  RaftUtility('size-0.5', 126, RaftUtilityStatus.resolved, [
+  RaftUtility('size-0.5', 127, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(2, 'px')),
       RaftDecl('height', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('size-1', 127, RaftUtilityStatus.resolved, [
+  RaftUtility('size-1', 128, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(4, 'px')),
       RaftDecl('height', CssNum(4, 'px')),
     ]),
   ]),
-  RaftUtility('size-1.5', 128, RaftUtilityStatus.resolved, [
+  RaftUtility('size-1.5', 129, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(6, 'px')),
       RaftDecl('height', CssNum(6, 'px')),
     ]),
   ]),
-  RaftUtility('size-10', 138, RaftUtilityStatus.resolved, [
+  RaftUtility('size-10', 139, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(40, 'px')),
       RaftDecl('height', CssNum(40, 'px')),
     ]),
   ]),
-  RaftUtility('size-11', 139, RaftUtilityStatus.resolved, [
+  RaftUtility('size-11', 140, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(44, 'px')),
       RaftDecl('height', CssNum(44, 'px')),
     ]),
   ]),
-  RaftUtility('size-12', 140, RaftUtilityStatus.resolved, [
+  RaftUtility('size-12', 141, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(48, 'px')),
       RaftDecl('height', CssNum(48, 'px')),
     ]),
   ]),
-  RaftUtility('size-16', 141, RaftUtilityStatus.resolved, [
+  RaftUtility('size-16', 142, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(64, 'px')),
       RaftDecl('height', CssNum(64, 'px')),
     ]),
   ]),
-  RaftUtility('size-2', 129, RaftUtilityStatus.resolved, [
+  RaftUtility('size-2', 130, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(8, 'px')),
       RaftDecl('height', CssNum(8, 'px')),
     ]),
   ]),
-  RaftUtility('size-3', 130, RaftUtilityStatus.resolved, [
+  RaftUtility('size-3', 131, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(12, 'px')),
       RaftDecl('height', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('size-3.5', 131, RaftUtilityStatus.resolved, [
+  RaftUtility('size-3.5', 132, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(14, 'px')),
       RaftDecl('height', CssNum(14, 'px')),
     ]),
   ]),
-  RaftUtility('size-4', 132, RaftUtilityStatus.resolved, [
+  RaftUtility('size-4', 133, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(16, 'px')),
       RaftDecl('height', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('size-5', 133, RaftUtilityStatus.resolved, [
+  RaftUtility('size-5', 134, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(20, 'px')),
       RaftDecl('height', CssNum(20, 'px')),
     ]),
   ]),
-  RaftUtility('size-5.5', 134, RaftUtilityStatus.resolved, [
+  RaftUtility('size-5.5', 135, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(22, 'px')),
       RaftDecl('height', CssNum(22, 'px')),
     ]),
   ]),
-  RaftUtility('size-6', 135, RaftUtilityStatus.resolved, [
+  RaftUtility('size-6', 136, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(24, 'px')),
       RaftDecl('height', CssNum(24, 'px')),
     ]),
   ]),
-  RaftUtility('size-8', 136, RaftUtilityStatus.resolved, [
+  RaftUtility('size-8', 137, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(32, 'px')),
       RaftDecl('height', CssNum(32, 'px')),
     ]),
   ]),
-  RaftUtility('size-9', 137, RaftUtilityStatus.resolved, [
+  RaftUtility('size-9', 138, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(36, 'px')),
       RaftDecl('height', CssNum(36, 'px')),
     ]),
   ]),
-  RaftUtility('size-[11px]', 143, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[11px]', 144, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(11, 'px')),
       RaftDecl('height', CssNum(11, 'px')),
     ]),
   ]),
-  RaftUtility('size-[16px]', 144, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[16px]', 145, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(16, 'px')),
       RaftDecl('height', CssNum(16, 'px')),
     ]),
   ]),
-  RaftUtility('size-[18px]', 145, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[18px]', 146, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(18, 'px')),
       RaftDecl('height', CssNum(18, 'px')),
     ]),
   ]),
-  RaftUtility('size-[19px]', 146, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[19px]', 147, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(19, 'px')),
       RaftDecl('height', CssNum(19, 'px')),
     ]),
   ]),
-  RaftUtility('size-[22px]', 147, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[22px]', 148, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(22, 'px')),
       RaftDecl('height', CssNum(22, 'px')),
     ]),
   ]),
-  RaftUtility('size-[27px]', 148, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[27px]', 149, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(27, 'px')),
       RaftDecl('height', CssNum(27, 'px')),
     ]),
   ]),
-  RaftUtility('size-[35px]', 149, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[35px]', 150, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(35, 'px')),
       RaftDecl('height', CssNum(35, 'px')),
     ]),
   ]),
-  RaftUtility('size-[51px]', 150, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[51px]', 151, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(51, 'px')),
       RaftDecl('height', CssNum(51, 'px')),
     ]),
   ]),
-  RaftUtility('size-[99px]', 151, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[99px]', 152, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(99, 'px')),
       RaftDecl('height', CssNum(99, 'px')),
     ]),
   ]),
-  RaftUtility('size-[9px]', 142, RaftUtilityStatus.resolved, [
+  RaftUtility('size-[9px]', 143, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(9, 'px')),
       RaftDecl('height', CssNum(9, 'px')),
     ]),
   ]),
-  RaftUtility('size-auto', 152, RaftUtilityStatus.resolved, [
+  RaftUtility('size-auto', 153, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssKeyword('auto')),
       RaftDecl('height', CssKeyword('auto')),
     ]),
   ]),
-  RaftUtility('size-full', 153, RaftUtilityStatus.resolved, [
+  RaftUtility('size-full', 154, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('width', CssNum(100, '%')),
       RaftDecl('height', CssNum(100, '%')),
     ]),
   ]),
-  RaftUtility('sm:auto-rows-[8rem]', 1627, RaftUtilityStatus.resolved, [
+  RaftUtility('sm:auto-rows-[8rem]', 1630, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=640'],
@@ -14972,7 +14978,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('grid-auto-rows', CssNum(128, 'px'))],
     ),
   ]),
-  RaftUtility('sm:auto-rows-[9rem]', 1628, RaftUtilityStatus.resolved, [
+  RaftUtility('sm:auto-rows-[9rem]', 1631, RaftUtilityStatus.resolved, [
     RaftLayer(
       'self',
       ['width>=640'],
@@ -14980,56 +14986,56 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       [RaftDecl('grid-auto-rows', CssNum(144, 'px'))],
     ),
   ]),
-  RaftUtility('space-x-[-5px]', 379, RaftUtilityStatus.descendant, [
+  RaftUtility('space-x-[-5px]', 382, RaftUtilityStatus.descendant, [
     RaftLayer(':where(& > :not(:last-child))', [], 0, [
       RaftDecl('--tw-space-x-reverse', CssNum(0)),
       RaftDecl('margin-left', CssCalc(_v444)),
       RaftDecl('margin-right', CssCalc(_v446)),
     ]),
   ]),
-  RaftUtility('space-y-0', 367, RaftUtilityStatus.descendant, [
+  RaftUtility('space-y-0', 370, RaftUtilityStatus.descendant, [
     RaftLayer(':where(& > :not(:last-child))', [], 0, [
       RaftDecl('--tw-space-y-reverse', CssNum(0)),
       RaftDecl('margin-top', CssCalc(_v448)),
       RaftDecl('margin-bottom', CssCalc(_v450)),
     ]),
   ]),
-  RaftUtility('space-y-1', 368, RaftUtilityStatus.descendant, [
+  RaftUtility('space-y-1', 371, RaftUtilityStatus.descendant, [
     RaftLayer(':where(& > :not(:last-child))', [], 0, [
       RaftDecl('--tw-space-y-reverse', CssNum(0)),
       RaftDecl('margin-top', CssCalc(_v451)),
       RaftDecl('margin-bottom', CssCalc(_v452)),
     ]),
   ]),
-  RaftUtility('space-y-1.5', 369, RaftUtilityStatus.descendant, [
+  RaftUtility('space-y-1.5', 372, RaftUtilityStatus.descendant, [
     RaftLayer(':where(& > :not(:last-child))', [], 0, [
       RaftDecl('--tw-space-y-reverse', CssNum(0)),
       RaftDecl('margin-top', CssCalc(_v453)),
       RaftDecl('margin-bottom', CssCalc(_v454)),
     ]),
   ]),
-  RaftUtility('space-y-2', 370, RaftUtilityStatus.descendant, [
+  RaftUtility('space-y-2', 373, RaftUtilityStatus.descendant, [
     RaftLayer(':where(& > :not(:last-child))', [], 0, [
       RaftDecl('--tw-space-y-reverse', CssNum(0)),
       RaftDecl('margin-top', CssCalc(_v455)),
       RaftDecl('margin-bottom', CssCalc(_v456)),
     ]),
   ]),
-  RaftUtility('space-y-3', 371, RaftUtilityStatus.descendant, [
+  RaftUtility('space-y-3', 374, RaftUtilityStatus.descendant, [
     RaftLayer(':where(& > :not(:last-child))', [], 0, [
       RaftDecl('--tw-space-y-reverse', CssNum(0)),
       RaftDecl('margin-top', CssCalc(_v457)),
       RaftDecl('margin-bottom', CssCalc(_v458)),
     ]),
   ]),
-  RaftUtility('space-y-4', 372, RaftUtilityStatus.descendant, [
+  RaftUtility('space-y-4', 375, RaftUtilityStatus.descendant, [
     RaftLayer(':where(& > :not(:last-child))', [], 0, [
       RaftDecl('--tw-space-y-reverse', CssNum(0)),
       RaftDecl('margin-top', CssCalc(_v459)),
       RaftDecl('margin-bottom', CssCalc(_v460)),
     ]),
   ]),
-  RaftUtility('space-y-px', 373, RaftUtilityStatus.descendant, [
+  RaftUtility('space-y-px', 376, RaftUtilityStatus.descendant, [
     RaftLayer(':where(& > :not(:last-child))', [], 0, [
       RaftDecl('--tw-space-y-reverse', CssNum(0)),
       RaftDecl('margin-top', CssCalc(_v461)),
@@ -15061,7 +15067,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'supports-[-webkit-touch-callout:none]:absolute',
-    1590,
+    1593,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15069,7 +15075,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('tabular-nums', 707, RaftUtilityStatus.resolved, [
+  RaftUtility('tabular-nums', 710, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-numeric-spacing', _v464),
       RaftDecl('font-variant-numeric', _v470),
@@ -15077,7 +15083,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'text-(--ig-addon-fg,var(--ig-addon-fg-default,var(--foreground-hint)))',
-    665,
+    668,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('color', _v472)]),
@@ -15085,273 +15091,273 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'text-(--ig-text-fg,var(--ig-text-fg-default,var(--foreground-hint)))',
-    666,
+    669,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('color', _v474)]),
     ],
   ),
-  RaftUtility('text-(--list-row-ink)', 667, RaftUtilityStatus.resolved, [
+  RaftUtility('text-(--list-row-ink)', 670, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v475)]),
   ]),
-  RaftUtility('text-(--list-row-ink-2)', 668, RaftUtilityStatus.resolved, [
+  RaftUtility('text-(--list-row-ink-2)', 671, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v476)]),
   ]),
-  RaftUtility('text-(--list-row-ink-3)', 669, RaftUtilityStatus.resolved, [
+  RaftUtility('text-(--list-row-ink-3)', 672, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v477)]),
   ]),
   RaftUtility(
     'text-(--mi-ct-color,transparent)',
-    670,
+    673,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('color', _v478)]),
     ],
   ),
-  RaftUtility('text-2xl', 597, RaftUtilityStatus.resolved, [
+  RaftUtility('text-2xl', 600, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(24, 'px')),
       RaftDecl('line-height', _v63),
     ]),
   ]),
-  RaftUtility('text-5xl', 598, RaftUtilityStatus.resolved, [
+  RaftUtility('text-5xl', 601, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(48, 'px')),
       RaftDecl('line-height', _v479),
     ]),
   ]),
-  RaftUtility('text-[0.875em]', 616, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[0.875em]', 619, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(0.875, 'em'))]),
   ]),
-  RaftUtility('text-[1.071em]', 617, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[1.071em]', 620, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(1.071, 'em'))]),
   ]),
-  RaftUtility('text-[1.143em]', 618, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[1.143em]', 621, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(1.143, 'em'))]),
   ]),
-  RaftUtility('text-[1.286em]', 619, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[1.286em]', 622, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(1.286, 'em'))]),
   ]),
-  RaftUtility('text-[10px]', 622, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[10px]', 625, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(10, 'px'))]),
   ]),
-  RaftUtility('text-[10px]/3', 599, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[10px]/3', 602, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(10, 'px')),
       RaftDecl('line-height', CssNum(12, 'px')),
     ]),
   ]),
-  RaftUtility('text-[12px]', 623, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[12px]', 626, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(12, 'px'))]),
   ]),
-  RaftUtility('text-[13px]', 624, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[13px]', 627, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(13, 'px'))]),
   ]),
-  RaftUtility('text-[15px]', 625, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[15px]', 628, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(15, 'px'))]),
   ]),
-  RaftUtility('text-[1em]', 620, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[1em]', 623, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(1, 'em'))]),
   ]),
-  RaftUtility('text-[32px]', 626, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[32px]', 629, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(32, 'px'))]),
   ]),
-  RaftUtility('text-[40px]', 627, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[40px]', 630, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(40, 'px'))]),
   ]),
-  RaftUtility('text-[4px]', 621, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[4px]', 624, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(4, 'px'))]),
   ]),
-  RaftUtility('text-[56px]', 628, RaftUtilityStatus.resolved, [
+  RaftUtility('text-[56px]', 631, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('font-size', CssNum(56, 'px'))]),
   ]),
-  RaftUtility('text-attention-700', 671, RaftUtilityStatus.resolved, [
+  RaftUtility('text-attention-700', 674, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v480)]),
   ]),
-  RaftUtility('text-attention-strong', 672, RaftUtilityStatus.resolved, [
+  RaftUtility('text-attention-strong', 675, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v481)]),
   ]),
-  RaftUtility('text-balance', 657, RaftUtilityStatus.resolved, [
+  RaftUtility('text-balance', 660, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('text-wrap', CssKeyword('balance'))]),
   ]),
-  RaftUtility('text-base', 600, RaftUtilityStatus.resolved, [
+  RaftUtility('text-base', 603, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(16, 'px')),
       RaftDecl('line-height', _v482),
     ]),
   ]),
-  RaftUtility('text-body', 601, RaftUtilityStatus.resolved, [
+  RaftUtility('text-body', 604, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(16, 'px')),
       RaftDecl('line-height', _v409),
     ]),
   ]),
-  RaftUtility('text-brand-700', 673, RaftUtilityStatus.resolved, [
+  RaftUtility('text-brand-700', 676, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v483)]),
   ]),
-  RaftUtility('text-brand-strong', 674, RaftUtilityStatus.resolved, [
+  RaftUtility('text-brand-strong', 677, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v484)]),
   ]),
-  RaftUtility('text-callout', 602, RaftUtilityStatus.resolved, [
+  RaftUtility('text-callout', 605, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(14, 'px')),
       RaftDecl('line-height', _v485),
     ]),
   ]),
-  RaftUtility('text-caption', 595, RaftUtilityStatus.resolved, [
+  RaftUtility('text-caption', 598, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(12, 'px')),
       RaftDecl('line-height', _v76),
       RaftDecl('font-weight', _v486),
     ]),
   ]),
-  RaftUtility('text-card-title', 603, RaftUtilityStatus.resolved, [
+  RaftUtility('text-card-title', 606, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', _v487),
       RaftDecl('line-height', _v488),
     ]),
   ]),
-  RaftUtility('text-center', 584, RaftUtilityStatus.resolved, [
+  RaftUtility('text-center', 587, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('text-align', CssKeyword('center'))]),
   ]),
-  RaftUtility('text-current', 675, RaftUtilityStatus.resolved, [
+  RaftUtility('text-current', 678, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v16)]),
   ]),
-  RaftUtility('text-danger', 676, RaftUtilityStatus.resolved, [
+  RaftUtility('text-danger', 679, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v122)]),
   ]),
-  RaftUtility('text-danger-strong', 677, RaftUtilityStatus.resolved, [
+  RaftUtility('text-danger-strong', 680, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v245)]),
   ]),
-  RaftUtility('text-field', 604, RaftUtilityStatus.resolved, [
+  RaftUtility('text-field', 607, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', _v489),
       RaftDecl('line-height', _v491),
     ]),
   ]),
-  RaftUtility('text-footnote', 605, RaftUtilityStatus.resolved, [
+  RaftUtility('text-footnote', 608, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(13, 'px')),
       RaftDecl('line-height', _v28),
     ]),
   ]),
-  RaftUtility('text-foreground', 678, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground', 681, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v33)]),
   ]),
-  RaftUtility('text-foreground-disabled', 679, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground-disabled', 682, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v185)]),
   ]),
-  RaftUtility('text-foreground-hint', 680, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground-hint', 683, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v29)]),
   ]),
-  RaftUtility('text-foreground-inverse', 681, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground-inverse', 684, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v492)]),
   ]),
-  RaftUtility('text-foreground-link', 682, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground-link', 685, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v493)]),
   ]),
-  RaftUtility('text-foreground-muted', 683, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground-muted', 686, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v0)]),
   ]),
-  RaftUtility('text-foreground-on-frame', 684, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground-on-frame', 687, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v394)]),
   ]),
-  RaftUtility('text-foreground-on-hud', 685, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground-on-hud', 688, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v152)]),
   ]),
-  RaftUtility('text-foreground-on-hud/70', 686, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground-on-hud/70', 689, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v152)]),
     RaftLayer('self', [], 1000, [RaftDecl('color', _v388)]),
   ]),
-  RaftUtility('text-foreground/30', 687, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground/30', 690, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v33)]),
     RaftLayer('self', [], 1000, [RaftDecl('color', _v223)]),
   ]),
-  RaftUtility('text-foreground/45', 688, RaftUtilityStatus.resolved, [
+  RaftUtility('text-foreground/45', 691, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v33)]),
     RaftLayer('self', [], 1000, [RaftDecl('color', _v356)]),
   ]),
-  RaftUtility('text-headline', 596, RaftUtilityStatus.resolved, [
+  RaftUtility('text-headline', 599, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(17, 'px')),
       RaftDecl('line-height', _v494),
       RaftDecl('font-weight', _v495),
     ]),
   ]),
-  RaftUtility('text-info-strong', 689, RaftUtilityStatus.resolved, [
+  RaftUtility('text-info-strong', 692, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v496)]),
   ]),
-  RaftUtility('text-layer-card', 690, RaftUtilityStatus.resolved, [
+  RaftUtility('text-layer-card', 693, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v164)]),
   ]),
-  RaftUtility('text-left', 585, RaftUtilityStatus.resolved, [
+  RaftUtility('text-left', 588, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('text-align', CssKeyword('left'))]),
   ]),
-  RaftUtility('text-lg', 606, RaftUtilityStatus.resolved, [
+  RaftUtility('text-lg', 609, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(18, 'px')),
       RaftDecl('line-height', _v498),
     ]),
   ]),
-  RaftUtility('text-mono-code', 607, RaftUtilityStatus.resolved, [
+  RaftUtility('text-mono-code', 610, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(13, 'px')),
       RaftDecl('line-height', _v485),
     ]),
   ]),
-  RaftUtility('text-mono-meta', 608, RaftUtilityStatus.resolved, [
+  RaftUtility('text-mono-meta', 611, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(12, 'px')),
       RaftDecl('line-height', _v76),
     ]),
   ]),
-  RaftUtility('text-pretty', 658, RaftUtilityStatus.resolved, [
+  RaftUtility('text-pretty', 661, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('text-wrap', CssKeyword('pretty'))]),
   ]),
-  RaftUtility('text-right', 586, RaftUtilityStatus.resolved, [
+  RaftUtility('text-right', 589, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('text-align', CssKeyword('right'))]),
   ]),
-  RaftUtility('text-sm', 609, RaftUtilityStatus.resolved, [
+  RaftUtility('text-sm', 612, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(14, 'px')),
       RaftDecl('line-height', _v500),
     ]),
   ]),
-  RaftUtility('text-sm/5', 610, RaftUtilityStatus.resolved, [
+  RaftUtility('text-sm/5', 613, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(14, 'px')),
       RaftDecl('line-height', CssNum(20, 'px')),
     ]),
   ]),
-  RaftUtility('text-sticker-ink', 691, RaftUtilityStatus.resolved, [
+  RaftUtility('text-sticker-ink', 694, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v73)]),
   ]),
-  RaftUtility('text-subhead', 611, RaftUtilityStatus.resolved, [
+  RaftUtility('text-subhead', 614, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(15, 'px')),
       RaftDecl('line-height', _v485),
     ]),
   ]),
-  RaftUtility('text-success', 692, RaftUtilityStatus.resolved, [
+  RaftUtility('text-success', 695, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v124)]),
   ]),
-  RaftUtility('text-success-strong', 693, RaftUtilityStatus.resolved, [
+  RaftUtility('text-success-strong', 696, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v501)]),
   ]),
   RaftUtility(
     'text-task-status-closed-strong',
-    694,
+    697,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('color', _v502)]),
     ],
   ),
-  RaftUtility('text-task-status-done-strong', 695, RaftUtilityStatus.resolved, [
+  RaftUtility('text-task-status-done-strong', 698, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v503)]),
   ]),
   RaftUtility(
     'text-task-status-in-progress-strong',
-    696,
+    699,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('color', _v504)]),
@@ -15359,16 +15365,16 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'text-task-status-in-review-strong',
-    697,
+    700,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('color', _v505)]),
     ],
   ),
-  RaftUtility('text-task-status-todo-strong', 698, RaftUtilityStatus.resolved, [
+  RaftUtility('text-task-status-todo-strong', 701, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v506)]),
   ]),
-  RaftUtility('text-title', 594, RaftUtilityStatus.resolved, [
+  RaftUtility('text-title', 597, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(22, 'px')),
       RaftDecl('line-height', _v507),
@@ -15376,29 +15382,29 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('font-weight', _v495),
     ]),
   ]),
-  RaftUtility('text-transparent', 699, RaftUtilityStatus.resolved, [
+  RaftUtility('text-transparent', 702, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v11)]),
   ]),
-  RaftUtility('text-warning', 700, RaftUtilityStatus.resolved, [
+  RaftUtility('text-warning', 703, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v125)]),
   ]),
-  RaftUtility('text-warning-strong', 701, RaftUtilityStatus.resolved, [
+  RaftUtility('text-warning-strong', 704, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v509)]),
   ]),
-  RaftUtility('text-white', 702, RaftUtilityStatus.resolved, [
+  RaftUtility('text-white', 705, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v323)]),
   ]),
-  RaftUtility('text-white/75', 703, RaftUtilityStatus.resolved, [
+  RaftUtility('text-white/75', 706, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('color', _v511)]),
     RaftLayer('self', [], 1000, [RaftDecl('color', _v512)]),
   ]),
-  RaftUtility('text-xl', 612, RaftUtilityStatus.resolved, [
+  RaftUtility('text-xl', 615, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(20, 'px')),
       RaftDecl('line-height', _v513),
     ]),
   ]),
-  RaftUtility('text-xs', 613, RaftUtilityStatus.resolved, [
+  RaftUtility('text-xs', 616, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('font-size', CssNum(12, 'px')),
       RaftDecl('line-height', _v63),
@@ -15428,31 +15434,31 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   RaftUtility('top-[-18px]', 22, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('top', CssNum(-18, 'px'))]),
   ]),
-  RaftUtility('touch-manipulation', 319, RaftUtilityStatus.resolved, [
+  RaftUtility('touch-manipulation', 322, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('touch-action', _v514)]),
   ]),
-  RaftUtility('touch-none', 320, RaftUtilityStatus.resolved, [
+  RaftUtility('touch-none', 323, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('touch-action', CssKeyword('none'))]),
   ]),
-  RaftUtility('tracking-[-0.005em]', 654, RaftUtilityStatus.resolved, [
+  RaftUtility('tracking-[-0.005em]', 657, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-tracking', CssNum(-0.005, 'em')),
       RaftDecl('letter-spacing', CssNum(-0.005, 'em')),
     ]),
   ]),
-  RaftUtility('tracking-[-0.01em]', 653, RaftUtilityStatus.resolved, [
+  RaftUtility('tracking-[-0.01em]', 656, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-tracking', CssNum(-0.01, 'em')),
       RaftDecl('letter-spacing', CssNum(-0.01, 'em')),
     ]),
   ]),
-  RaftUtility('tracking-normal', 655, RaftUtilityStatus.resolved, [
+  RaftUtility('tracking-normal', 658, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-tracking', CssNum(0, 'em')),
       RaftDecl('letter-spacing', CssNum(0, 'em')),
     ]),
   ]),
-  RaftUtility('tracking-wide', 656, RaftUtilityStatus.resolved, [
+  RaftUtility('tracking-wide', 659, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('--tw-tracking', CssNum(0.025, 'em')),
       RaftDecl('letter-spacing', CssNum(0.025, 'em')),
@@ -15460,7 +15466,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'transform-[translate3d(calc(var(--drawer-swipe-x,0px)+var(--drawer-stack-x,0px)),calc(var(--drawer-swipe-y,0px)+var(--drawer-stack-y,0px)),0)_scale(var(--drawer-stack-scale))]',
-    307,
+    310,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15470,18 +15476,18 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transform-[translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)+(var(--toast-index)*var(--toast-peek)*var(--toast-peek-dir))))_scale(var(--toast-scale))]',
-    308,
+    311,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('transform', _v529)]),
     ],
   ),
-  RaftUtility('transform-gpu', 309, RaftUtilityStatus.resolved, [
+  RaftUtility('transform-gpu', 312, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('transform', _v536)]),
   ]),
   RaftUtility(
     'transition-[background-color,box-shadow,color]',
-    745,
+    748,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15493,7 +15499,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[background-color,box-shadow,transform]',
-    746,
+    749,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15505,7 +15511,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[background-color,color,border-color,box-shadow,transform]',
-    747,
+    750,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15517,7 +15523,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[background-color,color,box-shadow,transform]',
-    748,
+    751,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15529,7 +15535,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[background-color,color,opacity,box-shadow,transform]',
-    749,
+    752,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15541,7 +15547,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[background-color,color]',
-    750,
+    753,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15553,7 +15559,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[border-color,opacity,box-shadow]',
-    751,
+    754,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15565,7 +15571,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[color,background-color,opacity]',
-    752,
+    755,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15575,14 +15581,14 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('transition-[filter,opacity]', 753, RaftUtilityStatus.resolved, [
+  RaftUtility('transition-[filter,opacity]', 756, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('transition-property', _v545),
       RaftDecl('transition-timing-function', _v7),
       RaftDecl('transition-duration', _v8),
     ]),
   ]),
-  RaftUtility('transition-[height]', 754, RaftUtilityStatus.resolved, [
+  RaftUtility('transition-[height]', 757, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('transition-property', CssKeyword('height')),
       RaftDecl('transition-timing-function', _v7),
@@ -15591,7 +15597,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ]),
   RaftUtility(
     'transition-[opacity,transform]',
-    755,
+    758,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15603,7 +15609,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[transform,height,opacity,filter]',
-    756,
+    759,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15615,7 +15621,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[transform,opacity,height]',
-    757,
+    760,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15627,7 +15633,7 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
   ),
   RaftUtility(
     'transition-[width,background-color]',
-    758,
+    761,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [
@@ -15637,42 +15643,42 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       ]),
     ],
   ),
-  RaftUtility('transition-all', 759, RaftUtilityStatus.resolved, [
+  RaftUtility('transition-all', 762, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('transition-property', CssKeyword('all')),
       RaftDecl('transition-timing-function', _v7),
       RaftDecl('transition-duration', _v8),
     ]),
   ]),
-  RaftUtility('transition-colors', 760, RaftUtilityStatus.resolved, [
+  RaftUtility('transition-colors', 763, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('transition-property', _v201),
       RaftDecl('transition-timing-function', _v7),
       RaftDecl('transition-duration', _v8),
     ]),
   ]),
-  RaftUtility('transition-opacity', 761, RaftUtilityStatus.resolved, [
+  RaftUtility('transition-opacity', 764, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('transition-property', CssKeyword('opacity')),
       RaftDecl('transition-timing-function', _v7),
       RaftDecl('transition-duration', _v8),
     ]),
   ]),
-  RaftUtility('transition-shadow', 762, RaftUtilityStatus.resolved, [
+  RaftUtility('transition-shadow', 765, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('transition-property', _v4),
       RaftDecl('transition-timing-function', _v7),
       RaftDecl('transition-duration', _v8),
     ]),
   ]),
-  RaftUtility('transition-transform', 763, RaftUtilityStatus.resolved, [
+  RaftUtility('transition-transform', 766, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('transition-property', _v30),
       RaftDecl('transition-timing-function', _v7),
       RaftDecl('transition-duration', _v8),
     ]),
   ]),
-  RaftUtility('truncate', 390, RaftUtilityStatus.resolved, [
+  RaftUtility('truncate', 393, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overflow-x', CssKeyword('hidden')),
       RaftDecl('overflow-y', CssKeyword('hidden')),
@@ -15680,157 +15686,160 @@ const List<RaftUtility> raftRecipeUtilities = <RaftUtility>[
       RaftDecl('white-space', CssKeyword('nowrap')),
     ]),
   ]),
-  RaftUtility('underline', 709, RaftUtilityStatus.resolved, [
+  RaftUtility('underline', 712, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('text-decoration-line', CssKeyword('underline')),
     ]),
   ]),
-  RaftUtility('underline-offset-2', 713, RaftUtilityStatus.resolved, [
+  RaftUtility('underline-offset-2', 716, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('text-underline-offset', CssNum(2, 'px')),
     ]),
   ]),
-  RaftUtility('underline-offset-[3px]', 714, RaftUtilityStatus.resolved, [
+  RaftUtility('underline-offset-[3px]', 717, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('text-underline-offset', CssNum(3, 'px')),
     ]),
   ]),
-  RaftUtility('uppercase', 705, RaftUtilityStatus.resolved, [
+  RaftUtility('uppercase', 708, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('text-transform', CssKeyword('uppercase')),
     ]),
   ]),
-  RaftUtility('w-10', 222, RaftUtilityStatus.resolved, [
+  RaftUtility('w-10', 223, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(40, 'px'))]),
   ]),
-  RaftUtility('w-11', 223, RaftUtilityStatus.resolved, [
+  RaftUtility('w-11', 224, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(44, 'px'))]),
   ]),
-  RaftUtility('w-16', 224, RaftUtilityStatus.resolved, [
+  RaftUtility('w-16', 225, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(64, 'px'))]),
   ]),
-  RaftUtility('w-2', 216, RaftUtilityStatus.resolved, [
+  RaftUtility('w-2', 217, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(8, 'px'))]),
   ]),
-  RaftUtility('w-2.5', 217, RaftUtilityStatus.resolved, [
+  RaftUtility('w-2.5', 218, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(10, 'px'))]),
   ]),
-  RaftUtility('w-22', 225, RaftUtilityStatus.resolved, [
+  RaftUtility('w-22', 226, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(88, 'px'))]),
   ]),
-  RaftUtility('w-3', 218, RaftUtilityStatus.resolved, [
+  RaftUtility('w-3', 219, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(12, 'px'))]),
   ]),
-  RaftUtility('w-44', 226, RaftUtilityStatus.resolved, [
+  RaftUtility('w-44', 227, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(176, 'px'))]),
   ]),
-  RaftUtility('w-52', 227, RaftUtilityStatus.resolved, [
+  RaftUtility('w-52', 228, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(208, 'px'))]),
   ]),
-  RaftUtility('w-56', 228, RaftUtilityStatus.resolved, [
+  RaftUtility('w-56', 229, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(224, 'px'))]),
   ]),
-  RaftUtility('w-6', 219, RaftUtilityStatus.resolved, [
+  RaftUtility('w-6', 220, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(24, 'px'))]),
   ]),
-  RaftUtility('w-7', 220, RaftUtilityStatus.resolved, [
+  RaftUtility('w-7', 221, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(28, 'px'))]),
   ]),
-  RaftUtility('w-8', 221, RaftUtilityStatus.resolved, [
+  RaftUtility('w-8', 222, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(32, 'px'))]),
   ]),
-  RaftUtility('w-[232px]', 231, RaftUtilityStatus.resolved, [
+  RaftUtility('w-80', 230, RaftUtilityStatus.resolved, [
+    RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(320, 'px'))]),
+  ]),
+  RaftUtility('w-[232px]', 233, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(232, 'px'))]),
   ]),
-  RaftUtility('w-[300px]', 232, RaftUtilityStatus.resolved, [
+  RaftUtility('w-[300px]', 234, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(300, 'px'))]),
   ]),
-  RaftUtility('w-[35px]', 229, RaftUtilityStatus.resolved, [
+  RaftUtility('w-[35px]', 231, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(35, 'px'))]),
   ]),
-  RaftUtility('w-[380px]', 233, RaftUtilityStatus.resolved, [
+  RaftUtility('w-[380px]', 235, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(380, 'px'))]),
   ]),
-  RaftUtility('w-[50px]', 230, RaftUtilityStatus.resolved, [
+  RaftUtility('w-[50px]', 232, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(50, 'px'))]),
   ]),
-  RaftUtility('w-[calc(100%-2rem)]', 234, RaftUtilityStatus.resolved, [
+  RaftUtility('w-[calc(100%-2rem)]', 236, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssCalc(_v258))]),
   ]),
   RaftUtility(
     'w-[calc(var(--shell-header-height,56px)+1px)]',
-    235,
+    237,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('width', CssCalc(_v550))]),
     ],
   ),
-  RaftUtility('w-[clamp(144px,20vw,224px)]', 236, RaftUtilityStatus.resolved, [
+  RaftUtility('w-[clamp(144px,20vw,224px)]', 238, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', _v551)]),
   ]),
-  RaftUtility('w-[clamp(360px,32vw,520px)]', 237, RaftUtilityStatus.resolved, [
+  RaftUtility('w-[clamp(360px,32vw,520px)]', 239, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', _v552)]),
   ]),
   RaftUtility(
     'w-[min(24rem,calc(100vw-2rem))]',
-    238,
+    240,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('width', _v553)]),
     ],
   ),
-  RaftUtility('w-[min(92vw,360px)]', 239, RaftUtilityStatus.resolved, [
+  RaftUtility('w-[min(92vw,360px)]', 241, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', _v554)]),
   ]),
-  RaftUtility('w-auto', 240, RaftUtilityStatus.resolved, [
+  RaftUtility('w-auto', 242, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssKeyword('auto'))]),
   ]),
-  RaftUtility('w-fit', 241, RaftUtilityStatus.resolved, [
+  RaftUtility('w-fit', 243, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', _v351)]),
   ]),
-  RaftUtility('w-full', 242, RaftUtilityStatus.resolved, [
+  RaftUtility('w-full', 244, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(100, '%'))]),
   ]),
-  RaftUtility('w-max', 243, RaftUtilityStatus.resolved, [
+  RaftUtility('w-max', 245, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', _v333)]),
   ]),
-  RaftUtility('w-px', 244, RaftUtilityStatus.resolved, [
+  RaftUtility('w-px', 246, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('width', CssNum(1, 'px'))]),
   ]),
-  RaftUtility('whitespace-normal', 662, RaftUtilityStatus.resolved, [
+  RaftUtility('whitespace-normal', 665, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('white-space', CssKeyword('normal')),
     ]),
   ]),
-  RaftUtility('whitespace-nowrap', 663, RaftUtilityStatus.resolved, [
+  RaftUtility('whitespace-nowrap', 666, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('white-space', CssKeyword('nowrap')),
     ]),
   ]),
-  RaftUtility('whitespace-pre-wrap', 664, RaftUtilityStatus.resolved, [
+  RaftUtility('whitespace-pre-wrap', 667, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('white-space', CssKeyword('pre-wrap')),
     ]),
   ]),
   RaftUtility(
     'will-change-[transform,opacity]',
-    775,
+    778,
     RaftUtilityStatus.resolved,
     [
       RaftLayer('self', [], 1000, [RaftDecl('will-change', _v555)]),
     ],
   ),
-  RaftUtility('will-change-transform', 776, RaftUtilityStatus.resolved, [
+  RaftUtility('will-change-transform', 779, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('will-change', CssKeyword('transform')),
     ]),
   ]),
-  RaftUtility('wrap-anywhere', 659, RaftUtilityStatus.resolved, [
+  RaftUtility('wrap-anywhere', 662, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [
       RaftDecl('overflow-wrap', CssKeyword('anywhere')),
     ]),
   ]),
-  RaftUtility('wrap-break-word', 660, RaftUtilityStatus.resolved, [
+  RaftUtility('wrap-break-word', 663, RaftUtilityStatus.resolved, [
     RaftLayer('self', [], 1000, [RaftDecl('overflow-wrap', _v56)]),
   ]),
   RaftUtility('z-0', 49, RaftUtilityStatus.resolved, [

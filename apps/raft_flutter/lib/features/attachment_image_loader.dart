@@ -75,12 +75,14 @@ AttachmentImageLoader attachmentImageLoader({
         if (cancel.isCancelled || (status != 401 && status != 403)) rethrow;
       }
     }
+    cancel.reportAttachmentPhase(AttachmentFetchPhase.waitingForAddress);
     final url = await controller.attachmentMedia.url(
       '$id',
       channelId: channelId,
       coalesce: true,
     );
     if (cancel.isCancelled) throw const StaleAttachmentImage();
+    cancel.reportAttachmentPhase(AttachmentFetchPhase.transfer);
     try {
       return await files.image(
         url,
@@ -94,8 +96,13 @@ AttachmentImageLoader attachmentImageLoader({
       final status = error.response?.statusCode;
       if (cancel.isCancelled || (status != 401 && status != 403)) rethrow;
       controller.attachmentMedia.invalidateUrl('$id');
-      final fresh = await controller.attachmentMedia.url('$id', channelId: channelId);
+      cancel.reportAttachmentPhase(AttachmentFetchPhase.waitingForAddress);
+      final fresh = await controller.attachmentMedia.url(
+        '$id',
+        channelId: channelId,
+      );
       if (cancel.isCancelled) throw const StaleAttachmentImage();
+      cancel.reportAttachmentPhase(AttachmentFetchPhase.transfer);
       return files.image(
         fresh,
         cancel: cancel,

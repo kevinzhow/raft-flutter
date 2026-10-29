@@ -1,0 +1,21 @@
+{
+  "about": "Pinned current Web oracle for modern Raft comparisons. Frozen references remain separate. Paths are supplied by PARITY_RAFT_SOURCE, never embedded here. Updating upstream requires reviewing this explicit contract and the generated recipes together.",
+  "webCommit": "db5e399f017d584e49597e3a28757645d6807893",
+  "webVersion": "1.21.23",
+  "raftUIVersion": "0.7.0",
+  "raftUIFiles": {
+    "dist/cn.mjs": "ac193437c4262d7c60921645f82a590566102e68b81d0e06a4b35a64785044e0",
+    "dist/components/combobox-select/combobox-select.css": "166b02a868977a823c25ff6311be70043b4a1634931c8db8b34d12a7218f835c",
+    "dist/components/float-button/float-button.css": "e949963e103cd5778a7c752ccc05b0bc96b572a192bcf10d34755f581008ac2f",
+    "dist/components/steps/otter-indicator.css": "e42582f87e0944a0dc169add52f5c41440367fd6c184088ef522fa83bd984a25",
+    "dist/components/steps/steps.css": "5034e781cfb704dddb0d11abdf22b673dfdca9c2d7c9e699e14c87630ba56ffa",
+    "dist/components/timeline/timeline.css": "e529bea467cc12a729121ee3620525b496d437828450f49133c4163c38fb3164",
+    "dist/dialog-CY6S-Xqf.mjs": "af5ee0b0cf6eac4e873f5c7a546e9370ca2c949871b3e6de61c744ea9034bdbf",
+    "dist/fonts.css": "f2821f88e699ba7bac1b4cd355d1efb45a7930d6df123bde232e6bddfec80a9a",
+    "dist/foundation.css": "d7cd5f6b6c265169630742f50c81406ad2943ef96dbe3ec8c2eb0426fb7bf6c2",
+    "dist/index.mjs": "3cc2da40c9266c04c49f16bdafdc84a28799fca4ea249fa12d74c47aaa48a8a9",
+    "dist/style.css": "b221758bfd49b00844f9d53dcf171b262a9c2748a0a8777c87bf916a3a69c66d",
+    "dist/styles.css": "47bb95d00f10c045afd910b60e3241fa06d12bbb4e892e630b119761835bbc6b",
+    "dist/wip.mjs": "37c6132041a0f2a87c26b47254884272e193cc627eee0791e76687ae99d4b86b"
+  }
+}

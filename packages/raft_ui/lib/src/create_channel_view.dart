@@ -7,6 +7,7 @@ import 'overlays/dialog.dart' show RaftDialog;
 import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
 import 'card.dart' show RaftCard;
+import 'banner.dart' show RaftBanner;
 import 'design_primitives.dart' show RaftInteractive;
 import 'hover_region.dart';
 
@@ -599,6 +600,47 @@ class RaftArchivedNameBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.recipeSet == RaftRecipeSet.raft) {
+      return RaftBanner(
+        titleBuilder: (style) => Text.rich(
+          TextSpan(
+            children: raftRichText(
+              context,
+              'The name <mono>#{name}</mono> is held by an archived channel.',
+              {
+                'mono': (text) => TextSpan(
+                  text: text,
+                  style: TextStyle(fontFamily: t.monoFont),
+                ),
+              },
+              values: {'name': name},
+            ),
+          ),
+          style: style,
+        ),
+        description: showHint
+            ? canUnarchive
+                  ? 'Unarchive it to keep its history, or choose a different name.'
+                  : 'Pick a different name, or ask an admin to unarchive it.'
+            : '',
+        actions: [
+          if (canUnarchive)
+            RaftButton(
+              label: busy && showHint ? 'Unarchiving…' : 'Unarchive',
+              uiVariant: RaftButtonVariant.outline,
+              uiSize: RaftButtonSize.sm,
+              disabled: busy,
+              onPressed: onUnarchive,
+            ),
+          RaftButton(
+            label: 'Change name',
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.sm,
+            onPressed: onChangeName,
+          ),
+        ],
+      );
+    }
     final bold = raftCssTextStyle(
       family: t.headingFont,
       step: RaftTextSteps.sm,

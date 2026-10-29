@@ -2,6 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+/// Retains the caller's typography and local themes across a popover route.
+/// Capture before pushing the route, then wrap content built below its themes.
+CapturedThemes captureRaftPopoverThemes(
+  BuildContext context, {
+  required NavigatorState navigator,
+}) => InheritedTheme.capture(from: context, to: navigator.context);
+
 /// Viewport collision placement shared by authored dropdown consumers.
 /// InlineBadgeEditor.tsx measures the natural popup, clamps x to an 8px gutter,
 /// and flips below→above when its bottom would overflow; scrolling remeasures.
@@ -11,6 +18,7 @@ class RaftAnchoredPopup extends StatefulWidget {
     super.key,
     required this.anchorKey,
     required this.child,
+    this.anchorRect,
     this.movement,
     this.above = false,
     this.alignRight = false,
@@ -21,6 +29,11 @@ class RaftAnchoredPopup extends StatefulWidget {
   });
   final GlobalKey anchorKey;
   final Widget child;
+
+  /// A portal's current anchor bounds in its overlay coordinate space.
+  /// When supplied, placement uses the same delegate without re-measuring a
+  /// different subtree or retaining the previous frame's bounds.
+  final Rect? anchorRect;
   final Listenable? movement;
   final bool above, alignRight, toRight;
   final double gap, collisionPadding;
@@ -71,6 +84,7 @@ class _RaftAnchoredPopupState extends State<RaftAnchoredPopup>
   }
 
   Rect? readAnchor() {
+    if (widget.anchorRect != null) return widget.anchorRect;
     final box = widget.anchorKey.currentContext?.findRenderObject();
     final overlay = Overlay.of(context).context.findRenderObject();
     if (box is! RenderBox ||
@@ -100,7 +114,7 @@ class _RaftAnchoredPopupState extends State<RaftAnchoredPopup>
 
   @override
   Widget build(BuildContext context) {
-    final rect = anchor ?? readAnchor();
+    final rect = widget.anchorRect ?? anchor ?? readAnchor();
     if (rect == null) return const SizedBox.shrink();
     // OverlayPortal inherits the trigger's already-consumed SafeArea/IME
     // metrics. Placement belongs to the overlay viewport, not the trigger.
@@ -163,18 +177,26 @@ class _PopupLayout extends SingleChildLayoutDelegate {
     final bottomEdge = size.height - insets.bottom - gutter;
     final maxX = math.max(minX, rightEdge - childSize.width);
     final maxY = math.max(minY, bottomEdge - childSize.height);
+    Offset position(double x, double y) {
+      final left = x.clamp(minX, maxX);
+      final top = y.clamp(minY, maxY);
+      return snap
+          ? Offset(
+              left.roundToDouble().clamp(minX, maxX),
+              top.roundToDouble().clamp(minY, maxY),
+            )
+          : Offset(left, top);
+    }
+
     if (toRight) {
       // LeftRail HelpMenu: PopoverContent side=right, align=end, offset8.
       final proposedLeft = anchor.right + gap;
       final left = proposedLeft + childSize.width <= rightEdge
           ? proposedLeft
           : anchor.left - gap - childSize.width;
-      return Offset(
-        left.clamp(minX, maxX),
-        (alignRight ? anchor.bottom - childSize.height : anchor.top).clamp(
-          minY,
-          maxY,
-        ),
+      return position(
+        left,
+        alignRight ? anchor.bottom - childSize.height : anchor.top,
       );
     }
     final double left =
@@ -189,13 +211,7 @@ class _PopupLayout extends SingleChildLayoutDelegate {
     final top = above
         ? (upperFits || !bottomFits ? upper : below)
         : (bottomFits ? below : upper);
-    final double y = top.clamp(minY, maxY);
-    return snap
-        ? Offset(
-            left.roundToDouble().clamp(minX, maxX),
-            y.roundToDouble().clamp(minY, maxY),
-          )
-        : Offset(left, y);
+    return position(left, top);
   }
 
   @override

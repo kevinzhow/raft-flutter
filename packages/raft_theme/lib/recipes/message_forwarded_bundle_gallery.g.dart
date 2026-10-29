@@ -100,12 +100,12 @@ abstract final class RaftMessageForwardedBundleGalleryRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1483],
+    [1484],
     [1040, 1023],
     [241, 245, 243],
-    [1040, 1023, 1041, 506, 1770],
-    [1040, 1023, 1042, 506, 1770],
-    [1040, 1023, 1042, 505, 1769, 1446],
+    [1040, 1023, 1041, 506, 1772],
+    [1040, 1023, 1042, 506, 1772],
+    [1040, 1023, 1042, 505, 1771, 1447],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
