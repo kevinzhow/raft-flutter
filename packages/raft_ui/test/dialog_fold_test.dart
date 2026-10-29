@@ -94,6 +94,56 @@ void main() {
     await open(tester);
     expect(tester.getCenter(find.byKey(contentKey)), size.center(Offset.zero));
   });
+  // Forms (showRaftForm) open RaftPresentedRoute: its dialog form must
+  // avoid the fold as RaftDialogRoute does.
+  for (final fold in [vertical, horizontal]) {
+    testWidgets('presented dialog form avoids $fold', (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(dark: false),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              displayFeatures: [
+                DisplayFeature(
+                  bounds: fold,
+                  type: DisplayFeatureType.fold,
+                  state: DisplayFeatureState.postureHalfOpened,
+                ),
+              ],
+            ),
+            child: child!,
+          ),
+          home: Builder(
+            builder: (context) => GestureDetector(
+              onTap: () => Navigator.of(context).push(
+                raftPresentedRoute<void>(
+                  context,
+                  policy: RaftPresentationPolicy.form,
+                  content: (_, form) {
+                    expect(form, RaftSurfaceForm.dialog);
+                    return const SizedBox(
+                      key: contentKey,
+                      width: 100,
+                      height: 100,
+                    );
+                  },
+                ),
+              ),
+              child: const SizedBox.expand(child: Text('Open')),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      final bounds = tester.getRect(find.byKey(contentKey));
+      expect(bounds.overlaps(fold), isFalse);
+    });
+  }
   testWidgets('modal composition retains full viewport across a fold', (
     tester,
   ) async {

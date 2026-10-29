@@ -301,11 +301,21 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     Animation<double> secondaryAnimation,
   ) {
     final form = formOf(context);
-    // Esc closes whichever form it is.
+    final frame = capturedThemes!.wrap(
+      _PresentedFrame(route: this, form: form),
+    );
+    // Esc closes whichever form it is. The sheet's framework route already
+    // keeps it on one side of a separating fold; a dialog does the same.
     return RaftDismissScope(
-      child: form == RaftSurfaceForm.sheet
-          ? super.buildPage(context, animation, secondaryAnimation)
-          : capturedThemes!.wrap(_PresentedFrame(route: this, form: form)),
+      child: switch (form) {
+        RaftSurfaceForm.sheet => super.buildPage(
+          context,
+          animation,
+          secondaryAnimation,
+        ),
+        RaftSurfaceForm.dialog => DisplayFeatureSubScreen(child: frame),
+        _ => frame,
+      },
     );
   }
 
