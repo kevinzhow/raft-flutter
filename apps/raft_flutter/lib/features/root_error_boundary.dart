@@ -10,6 +10,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/device_preferences.dart';
+import '../platform/display_folds.dart';
 import '../data/user_error.dart' show redactErrorText;
 
 /// What the root fallback shows (Web RootErrorFallback: `error.message`,
@@ -268,7 +269,8 @@ class _RootErrorApp extends StatelessWidget {
       theme: raftTheme(),
       darkTheme: raftTheme(dark: true),
       themeMode: appearance.mode,
-      builder: (context, child) => RaftTextScaling(child: child!),
+      builder: (context, child) =>
+          RaftNativeDisplayFeatures(child: RaftTextScaling(child: child!)),
       // Web prints `error.message` on the page; a native exception message is
       // a developer string, so the page shows only the title and the reload
       // action. The text and stacks stay one tap away in the closed

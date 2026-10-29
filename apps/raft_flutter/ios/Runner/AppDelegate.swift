@@ -44,6 +44,9 @@ import workmanager_apple
           }
         }
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "RaftFoldBridge") {
+      RaftFoldBridge.register(with: registrar)
+    }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "RaftSharingBridge") {
       RaftSharingBridge.register(with: registrar)
     }

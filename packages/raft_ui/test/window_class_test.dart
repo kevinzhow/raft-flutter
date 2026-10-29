@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -81,6 +80,32 @@ void main() {
         feature(const Rect.fromLTRB(0, 400, 760, 410)),
       ]),
       RaftNavigationPlacement.rail,
+    );
+  });
+
+  test('horizontal folds preserve phone and desktop navigation', () {
+    final fold = DisplayFeature(
+      bounds: const Rect.fromLTWH(0, 315, 951, 40),
+      type: DisplayFeatureType.fold,
+      state: DisplayFeatureState.postureHalfOpened,
+    );
+    expect(
+      RaftWindowClass.phoneNavigationFor(
+        const Size(951, 669),
+        displayFeatures: [fold],
+      ),
+      RaftWindowClass.phoneNavigationFor(const Size(951, 669)),
+    );
+    expect(
+      RaftWindowClass.desktopNavigationOnRight(
+        const Size(951, 669),
+        followsSide: true,
+        railSide: RaftRailSide.end,
+        textDirection: TextDirection.ltr,
+        columnWidth: 312,
+        displayFeatures: () => [fold],
+      ),
+      isTrue,
     );
   });
 
