@@ -1,4 +1,7 @@
-// raft-ui 0.7.1 `SegmentedControl`: a radio group on a `fill-muted` track (`rounded-[11px]`, 3px padding, 2px gap) whose
+import 'dart:async';
+
+import 'package:flutter/gestures.dart';
+// raft-ui 0.7.0 `SegmentedControl`: a radio group on a `fill-muted` track (`rounded-[11px]`, 3px padding, 2px gap) whose
 // items are 32px buttons. The checked item is the yellow sticker (brand fill, ink border, die-cut `sticker-edge` ring,
 // bold); the others are `foreground-muted` text that takes the `fill-pressed` wash on hover. An item holds an optional
 // 16px icon, a label and a mono count. A disabled group keeps the sticker and greys the ink.
@@ -110,6 +113,7 @@ class RaftSegmentedItem extends StatelessWidget {
       tooltip: tooltip,
       semanticLabel: text,
       builder: (context, st) {
+        if (t.isRaftLook) return _recipeSurface(context, st);
         final disabled = onPressed == null;
         final colors = RaftSegmentColors.resolve(
           ui,
@@ -225,18 +229,123 @@ class RaftSegmentedItem extends StatelessWidget {
       },
     );
   }
+
+  Widget _recipeSurface(BuildContext context, RaftInteractionState state) {
+    final t = RaftTokens.of(context);
+    final tokens = t.recipeTokens;
+    final recipe = RaftSegmentedControlRecipe.resolve(
+      theme: t.recipeTheme,
+      tokens: tokens,
+      states: t.recipeStates(
+        hovered: state.enabled && state.hovered,
+        pressed: state.enabled && state.pressed,
+        focusVisible: state.focusVisible,
+        disabled: !state.enabled,
+        extra: [
+          checked ? 'data-checked' : 'data-unchecked',
+          if (checked) 'group/segmented-control-item:data-checked',
+          if (!state.enabled) 'data-disabled',
+        ],
+      ),
+    );
+    final item = recipe.item;
+    final framed = t.option('segmented.frame', or: 'framed') == 'framed';
+    final textStyle = RaftControlTypography.of(
+      context,
+      item
+          .text(tokens)
+          .copyWith(fontFamilyFallback: t.fontFallback, locale: t.textLocale),
+    );
+    final ink = textStyle.color ?? t.ink;
+    final gap = item.columnGap ?? 0;
+    final svg = item.target("& svg:not([class*='size-'])");
+    // Resolve the pack's structural radius before constructing its decoration,
+    // just as the generated track resolves its concentric radius below.
+    final radius = t.size(
+      framed ? 'radius.control' : 'radius.chip',
+      fallback: framed ? item.borderRadius?.topLeft.x ?? 0 : 4,
+    );
+    return RaftRecipeBox(
+      style: item,
+      tokens: tokens,
+      decorationOverride: (decoration) =>
+          raftSnapBorder(context, decoration).copyWith(
+            // Custom packs retain their structural option and radius binding;
+            // the item, label and count still consume the generated recipe.
+            borderRadius: BorderRadius.circular(radius),
+          ),
+      height: height,
+      // A separate item's bounded Wrap still hugs its content. Container's
+      // alignment would otherwise expand it to the whole available width.
+      alignment: framed ? Alignment.center : null,
+      applyText: false,
+      growWithText: true,
+      overflowCenter: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: gap,
+        children: [
+          if (glyph != null) RaftIcon(glyph!, size: svg!.width!, color: ink),
+          Flexible(
+            child: Text(
+              raftText(context, label),
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: RaftControlTypography.of(
+                context,
+                recipe.label.text(tokens, base: textStyle),
+              ),
+            ),
+          ),
+          // Billing's product-owned note is preserved; the shared control's
+          // own item, label and count styles come from its generated slots.
+          if (labelSuffix != null)
+            Text(
+              raftText(context, labelSuffix!),
+              maxLines: 1,
+              softWrap: false,
+              style: RaftControlTypography.of(
+                context,
+                t.scale(
+                  RaftTypeScale.monoMeta,
+                  mono: true,
+                  weight: FontWeight.w700,
+                  color: ink.withValues(alpha: ink.a * .6),
+                ),
+              ),
+            ),
+          if (count != null)
+            Text(
+              count!,
+              maxLines: 1,
+              softWrap: false,
+              style: RaftControlTypography.of(
+                context,
+                recipe.count.text(tokens, base: textStyle),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 /// The `SegmentedControl` track: `bg-fill-muted rounded-[11px] p-[3px] gap-0.5`, as wide as its items. The web
-/// control is `flex-nowrap`; a track narrower than its items wraps them onto further lines instead of overflowing.
+/// control is `flex-nowrap`; native large-text layouts wrap the items to retain access.
 class RaftSegmentedTrack extends StatelessWidget {
   const RaftSegmentedTrack({
     super.key,
     required this.children,
     this.shrinkFrame = false,
     this.expand = false,
+    this.scrollController,
   });
   final List<Widget> children;
+
+  /// Optional owner for the native narrow-track viewport. The controlled
+  /// group uses it to reveal keyboard-focused items in either direction.
+  final ScrollController? scrollController;
   final bool shrinkFrame;
 
   /// `w-full *:flex-1`: the track fills its row and the items share it equally (Raft look only).
@@ -246,23 +355,86 @@ class RaftSegmentedTrack extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final ui = t.ui;
-
-    // Two structures, chosen by the theme: raft-ui 0.7.1 wraps the segments in a
-    // rounded, padded track; the pre-theme app drew a flat row of separate
-    // segments with a gap. Replicating Elegant and Brutal means matching the
-    // latter exactly, so the frame is a structural option rather than always on.
     final framed = t.option('segmented.frame', or: 'framed') == 'framed';
 
+    // Custom packs can choose the same separate structure as the frozen looks.
+    // Keep that explicit option ahead of the current generated track surface.
     if (!framed) {
-      // a57b9dab separates the segments with `gap-1` (Brutal, 4px) or `gap-1.5`
-      // (Elegant, 6px) -- Tailwind `--spacing` is 0.25rem, so 1 and 1.5 steps.
-      // The family packs carry their own `itemGap` so neither is hardcoded here.
       final gap = t.size('space.segmentGap', fallback: 4);
       return Wrap(
         spacing: gap,
         runSpacing: gap,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: children,
+      );
+    }
+
+    if (t.isRaftLook) {
+      final tokens = t.recipeTokens;
+      final recipe = RaftSegmentedControlRecipe.resolve(
+        theme: t.recipeTheme,
+        tokens: tokens,
+        states: t.recipeStates(),
+      );
+      final root = recipe.root;
+      final sourceItemRadius = recipe.item.borderRadius?.topLeft.x ?? 0;
+      final trackRadius =
+          (root.borderRadius?.topLeft.x ?? 0) +
+          t.size('radius.control', fallback: sourceItemRadius) -
+          sourceItemRadius;
+      final gap = root.columnGap ?? 0;
+      final scrolls = !expand && !RaftScaled.grows(context);
+      final Widget content;
+      if (expand) {
+        content = Row(
+          spacing: gap,
+          children: [for (final child in children) Expanded(child: child)],
+        );
+      } else if (RaftScaled.grows(context)) {
+        content = Wrap(
+          spacing: gap,
+          runSpacing: root.rowGap ?? 0,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: children,
+        );
+      } else {
+        // Keep the generated one-row geometry, but make overflow reachable
+        // on native screens. Painting outside a smaller hit-test box leaves
+        // apparently visible options inert. The viewport clips only overflow;
+        // its source padding keeps edge rings inside the scrollable bounds.
+        final behavior = ScrollConfiguration.of(context);
+        content = ScrollConfiguration(
+          behavior: behavior.copyWith(
+            scrollbars: false,
+            dragDevices: {...behavior.dragDevices, PointerDeviceKind.mouse},
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            scrollDirection: Axis.horizontal,
+            child: Padding(
+              padding: root.padding,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: gap,
+                children: children,
+              ),
+            ),
+          ),
+        );
+      }
+      return RaftRecipeBox(
+        style: root,
+        tokens: tokens,
+        // The one-row viewport owns this same generated padding so a selected
+        // item's ring does not get clipped at the inner content edge.
+        padding: scrolls ? EdgeInsets.zero : null,
+        applyText: false,
+        decorationOverride: (decoration) => decoration.copyWith(
+          // Preserve the recipe's concentric track/item radius difference
+          // when a custom pack changes the control radius.
+          borderRadius: BorderRadius.circular(trackRadius),
+        ),
+        child: content,
       );
     }
 
@@ -414,8 +586,8 @@ class RaftSegmentedControl<T> extends StatefulWidget {
   /// A flex-shrinking CSS track may be narrower than its non-shrinking items.
   final bool shrinkFrame;
 
-  /// How the frozen Elegant and Brutal looks draw this control. The Raft look always draws the `SegmentedControl`
-  /// track with its sticker item, whatever this says.
+  /// How the frozen Elegant and Brutal looks draw this control. The Raft family
+  /// always uses canonical segment items; its pack may choose a separate row.
   final RaftSegmentedStyle legacyStyle;
   final T value;
   final List<RaftSegmentedOption<T>> items;
@@ -432,18 +604,22 @@ class RaftSegmentedControl<T> extends StatefulWidget {
 }
 
 class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
+  final _scrollController = ScrollController();
   final scope = FocusScopeNode(
     traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
   );
   @override
   void dispose() {
+    _scrollController.dispose();
     scope.dispose();
     super.dispose();
   }
 
   void move(int delta) {
-    if (widget.onChanged == null || widget.items.isEmpty) return;
-    final current = widget.items.indexWhere((e) => e.value == widget.value);
+    if (widget.onChanged == null || widget.disabled) return;
+    final enabled = widget.items.where((item) => item.enabled).toList();
+    if (enabled.isEmpty) return;
+    final current = enabled.indexWhere((e) => e.value == widget.value);
     final next =
         ((current < 0
                 ? delta > 0
@@ -451,13 +627,23 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
                       : 0
                 : current) +
             delta) %
-        widget.items.length;
-    widget.onChanged!(widget.items[next].value);
+        enabled.length;
+    widget.onChanged!(enabled[next].value);
     if (delta > 0) {
       scope.nextFocus();
     } else {
       scope.previousFocus();
     }
+    // Selection changes can resize the bold item. Reveal the final focused
+    // box after layout, on this track only (never scroll an outer form).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final target = scope.focusedChild?.context?.findRenderObject();
+      if (target == null || !target.attached) return;
+      unawaited(
+        _scrollController.position.ensureVisible(target, alignment: .5),
+      );
+    });
   }
 
   @override
@@ -484,6 +670,7 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
       : () => widget.onChanged!(item.value);
 
   RaftSegmentedTrack _track() => RaftSegmentedTrack(
+    scrollController: _scrollController,
     shrinkFrame: widget.shrinkFrame,
     expand: widget.expand,
     children: [

@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// raft-ui 0.7.1 `SegmentedControl`: fill-muted track (r11, p3, gap 2), 32px items, yellow sticker checked item.
+// Pinned raft-ui 0.7.0 `SegmentedControl`: fill-muted track (r11, p3,
+// gap 2), 32px items, yellow sticker checked item, flex-nowrap.
 Widget _app(bool dark, Widget child) => MaterialApp(
   theme: raftTheme(dark: dark),
   home: Scaffold(
@@ -144,6 +145,34 @@ void main() {
       },
     );
 
+    testWidgets('$mode a narrow track keeps the source items on one row', (
+      tester,
+    ) async {
+      // ThreadsInbox mounts the published `flex-nowrap` radio group. Its
+      // non-shrinking items keep their boxes when the track is constrained.
+      await tester.pumpWidget(
+        _app(
+          dark,
+          SizedBox(
+            width: 80,
+            child: RaftSegmentedControl<String>(
+              value: 'all',
+              items: _items,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      final all = tester.getRect(find.byKey(const ValueKey('all')));
+      final unread = tester.getRect(find.byKey(const ValueKey('unread')));
+      final off = tester.getRect(find.byKey(const ValueKey('off')));
+      expect(unread.top, all.top);
+      expect(off.top, all.top);
+      expect(unread.left - all.right, 2);
+      expect(tester.getSize(find.byType(RaftSegmentedTrack)).height, 38);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('$mode tapping selects; a disabled item does not', (
       tester,
     ) async {
@@ -229,6 +258,44 @@ void main() {
       taps.clear();
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       expect(taps, ['unread']);
+    });
+
+    testWidgets('$mode icon, count and billing note keep keyboard activation', (
+      tester,
+    ) async {
+      final focus = FocusNode();
+      addTearDown(focus.dispose);
+      var activations = 0;
+      Widget item({bool enabled = true}) => _app(
+        dark,
+        RaftSegmentedTrack(
+          children: [
+            RaftSegmentedItem(
+              label: 'Monthly',
+              glyph: RaftGlyph.inbox,
+              count: '12',
+              labelSuffix: 'Save 12%',
+              tooltip: 'Billing interval',
+              checked: true,
+              focusNode: focus,
+              onPressed: enabled ? () => activations++ : null,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpWidget(item());
+      expect(tester.widget<RaftIcon>(find.byType(RaftIcon)).size, 16);
+      expect(find.text('12'), findsOneWidget);
+      expect(find.text('Save 12%'), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(focus.hasFocus, isTrue);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      expect(activations, 1);
+      await tester.pumpWidget(item(enabled: false));
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      expect(activations, 1);
+      expect(tester.takeException(), isNull);
     });
   }
 }

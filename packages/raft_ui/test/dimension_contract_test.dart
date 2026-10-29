@@ -117,13 +117,21 @@ void main() {
       }
     },
   );
-  testWidgets('constrained segmented options wrap and retain keyboard order', (
+  testWidgets('large-text segmented options wrap and retain keyboard order', (
     tester,
   ) async {
+    addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
     var value = 'small';
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme(),
+        // At 1x the generated Web recipe is flex-nowrap (covered by the
+        // segmented spec); enlarged native text must retain wrapping access.
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: const TextScaler.linear(1.3)),
+          child: RaftTextScaling(child: child!),
+        ),
         home: Scaffold(
           body: RaftDensityScope(
             density: RaftDensity.desktop,

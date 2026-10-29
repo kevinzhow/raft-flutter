@@ -1,8 +1,10 @@
 """Design-system drift ratchet (tool/ds-audit) and scanner semantics."""
 import contextlib
+import copy
 import importlib.machinery
 import importlib.util
 import io
+import json
 import pathlib
 import tempfile
 import unittest
@@ -287,14 +289,46 @@ class BypassRatchetTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn('new.dart: bypass.tooltip 0 -> 1', output)
 
-    def test_the_wrapper_allowlist_is_explicit_small_and_points_at_real_files(self):
-        self.assertLessEqual(len(ds_audit.BYPASS_ALLOWLIST), 8)
-        for name, families in ds_audit.BYPASS_ALLOWLIST.items():
+    def assert_wrapper_allowlist(self, allowlist):
+        # A count limit accepts an unknown replacement file or an extra family in
+        # a known host. Name the reviewed wrapper/family pairs instead.
+        ui = 'packages/raft_ui/lib/src/'
+        expected = {
+            ui + 'form_controls.dart': {'text_field'},
+            ui + 'form_controls_frozen.dart': {'text_field'},
+            ui + 'select_field_frozen.dart': {'select'},
+            ui + 'raft/checkbox_frozen.dart': {'toggle'},
+            ui + 'overlays/dialog.dart': {'dialog'},
+            ui + 'tooltip.dart': {'tooltip', 'overlay'},
+            ui + 'toast.dart': {'overlay'},
+            ui + 'pull_to_refresh.dart': {'refresh'},
+            ui + 'raft/legacy_material_button_surface.dart': {'button'},
+        }
+        self.assertEqual({name: set(families) for name, families in allowlist.items()}, expected)
+        for name, families in allowlist.items():
             self.assertTrue((ROOT / name).is_file(), name)
-            self.assertTrue(name.startswith('packages/raft_ui/lib/'), name)  # wrappers only, never the app
             for family, reason in families.items():
                 self.assertIn(f'bypass.{family}', ds_audit.BYPASS_USE, f'{name}: {family}')
-                self.assertGreater(len(reason), 10, f'{name}: {family} needs a reason')
+                self.assertIsInstance(reason, str)
+                self.assertGreater(len(reason.strip()), 10, f'{name}: {family} needs a reason')
+        dialog_reason = allowlist[ui + 'overlays/dialog.dart']['dialog']
+        self.assertIn('frozen', dialog_reason)
+        self.assertIn('compatibility', dialog_reason)
+
+    def test_the_wrapper_allowlist_is_explicit_small_and_points_at_real_files(self):
+        self.assert_wrapper_allowlist(ds_audit.BYPASS_ALLOWLIST)
+
+    def test_an_unknown_host_or_extra_family_cannot_hide_in_the_same_allowlist_size(self):
+        unknown = copy.deepcopy(ds_audit.BYPASS_ALLOWLIST)
+        unknown['packages/raft_ui/lib/src/unreviewed.dart'] = unknown.pop(
+            'packages/raft_ui/lib/src/overlays/dialog.dart')
+        extra_family = copy.deepcopy(ds_audit.BYPASS_ALLOWLIST)
+        extra_family['packages/raft_ui/lib/src/overlays/dialog.dart']['overlay'] = 'unreviewed popup host'
+        no_reason = copy.deepcopy(ds_audit.BYPASS_ALLOWLIST)
+        no_reason['packages/raft_ui/lib/src/overlays/dialog.dart']['dialog'] = ''
+        for allowlist in (unknown, extra_family, no_reason):
+            with self.subTest(allowlist=allowlist), self.assertRaises(AssertionError):
+                self.assert_wrapper_allowlist(allowlist)
 
     def test_scanner_scopes_cover_app_and_raft_ui(self):
         self.assertEqual(ds_audit.BYPASS_SCOPES, ['apps/raft_flutter/lib', 'packages/raft_ui/lib'])
@@ -391,22 +425,112 @@ class FamilyRegistryTest(unittest.TestCase):
         with self.assertRaises(ds_audit.AuditError):
             ds_audit.duplicate_index(families)
 
+    @classmethod
+    def resolved_contract(cls):
+        if not hasattr(cls, '_resolved_contract'):
+            roots = ['packages/raft_ui/lib', 'packages/raft_theme/lib/recipes']
+            document = ds_audit.run_scanner(
+                roots, contract=['packages/raft_theme/lib/recipes'],
+                bypass=[], bypass_allow={}, families={},
+                inventory=True, inventory_paths=roots)
+            cls._resolved_contract = document['ownership']
+        return cls._resolved_contract
+
+    def assert_registry_ownership(self, registry):
+        inventory = self.resolved_contract()
+        actual = {row['id']: row for row in inventory['declarations']}
+        ledger = json.loads((ROOT / 'docs/state-parity.json').read_text())['designSystemCoverage']
+        families, recipes = registry['families'], registry['recipes']
+        canonical_names, canonical_ids = set(), set()
+        for family, entry in families.items():
+            names, bindings = entry['canonical'], entry['canonicalBindings']
+            self.assertEqual(len(names), len(set(names)), family)
+            self.assertEqual(set(bindings), set(names), family)
+            if 'pending' in entry:
+                self.assertEqual((names, entry['deprecated']), ([], {}), family)
+                self.assertGreater(len(entry['pending'].strip()), 40, family)
+                self.assertTrue(any(row['family'] == family and row['decision'] == 'pending'
+                                    for row in recipes.values()), family)
+            else:
+                self.assertTrue(names, family)
+            if 'uncertain' in entry:
+                self.assertTrue(entry['uncertain'].strip(), family)
+                self.assertTrue(any(row['family'] == family and row['decision'] == 'uncertain'
+                                    for row in recipes.values()), family)
+            for name, binding in bindings.items():
+                identity = binding['declarationId']
+                self.assertNotIn(name, canonical_names, f'{family}: {name} has two owners')
+                self.assertNotIn(identity, canonical_ids, f'{family}: {identity} has two owners')
+                canonical_names.add(name)
+                canonical_ids.add(identity)
+                self.assertIn(identity, actual, f'{family}.{name}: not resolved')
+                self.assertEqual(actual[identity]['name'], name)
+                self.assertIn(actual[identity]['kind'], {'widget', 'surface_factory'})
+                self.assertEqual([row['id'] for row in actual.values()
+                                  if row['name'] == name and row['kind'] in {'widget', 'surface_factory'}],
+                                 [identity], f'{family}.{name}: canonical API is ambiguous')
+                self.assertIn(binding['role'], {'public_api', 'placement_part', 'paint_part', 'internal_part'})
+                self.assertEqual(ledger['declarations'][identity]['role'], 'canonical_component')
+                self.assertEqual(ledger['declarations'][identity]['familyRefs'], [family],
+                                 f'{family}.{name}: canonical owner differs')
+            for name, model in entry.get('nonWidgetModels', {}).items():
+                self.assertNotIn(name, names, f'{family}: data model is not a Widget')
+                self.assertEqual(model['kind'], 'value_object')
+                self.assertEqual(model['declarationName'], name)
+                self.assertTrue(self.declared(name, (ROOT / model['sourceFile']).read_text()))
+                self.assertEqual(ds_audit.coverage.binding_errors(ROOT, model['sourceBindings']), [],
+                                 f'{family}.{name}: model source binding changed')
+                self.assertIn(model['sourceFile'], [row['file'] for row in model['sourceBindings']])
+        self.assertEqual(set(recipes), set(inventory['recipes']))
+        for name, row in recipes.items():
+            self.assertIn(row['decision'], {'existing', 'pending', 'uncertain', 'unresolved'}, name)
+            # A source ownership record can stay uncertain without forcing an
+            # already chosen component family back to an undecided API.
+            self.assertIsInstance(row['owner'], str)
+            self.assertTrue(row['owner'].strip(), f'{name}: missing recipe owner')
+            self.assertIsInstance(row['reason'], str)
+            self.assertTrue(row['reason'].strip(), f'{name}: missing recipe reason')
+            if row['family'] is None:
+                self.assertEqual(row['decision'], 'unresolved', name)
+            else:
+                self.assertIn(row['family'], families, name)
+            self.assertEqual(row['generatedFile'], inventory['recipes'][name]['file'],
+                             f'{name}: generated source changed')
+            self.assertEqual(row['axes'], inventory['recipes'][name]['axes'], name)
+
     def test_the_requested_families_are_registered_and_uncertain_choices_say_why(self):
         self.assertEqual(set(self.families), {'button', 'menu', 'popover', 'dialog', 'segmented', 'spinner',
                                                'card', 'banner', 'list_row', 'checkbox', 'select', 'switch',
                                                'radio_group', 'toggle_group', 'tabs', 'picker_trigger', 'combobox',
                                                'steps'})
-        self.assertGreater(len(self.families['menu']['pending']), 40)  # P2 decides; nothing counted yet
-        for family in ('dialog',):
-            self.assertGreater(len(self.families[family].get('uncertain', '')), 40, family)
-        for family in ('segmented', 'checkbox', 'select', 'switch', 'radio_group', 'toggle_group', 'tabs',
-                       'picker_trigger', 'combobox', 'steps'):  # decided by P4: canonical only, nothing uncertain
-            self.assertNotIn('uncertain', self.families[family], family)
-            self.assertTrue(self.families[family]['canonical'], family)
-        for family in ('spinner', 'card', 'popover'):  # decided by P6: canonical only, no duplicate left
-            self.assertEqual(self.families[family]['deprecated'], {}, family)
+        self.assert_registry_ownership(json.loads(ds_audit.FAMILIES.read_text()))
         self.assertIn('RaftArchivedNameBanner', self.families['banner']['deprecated'])
         self.assertNotIn('RaftAgentBanner', self.families['banner']['deprecated'])  # thin adapter over RaftBanner
+
+    def test_missing_ambiguous_or_unbound_ownership_is_rejected(self):
+        registry = json.loads(ds_audit.FAMILIES.read_text())
+        broken = []
+        missing = copy.deepcopy(registry)
+        missing['families']['dialog']['canonicalBindings']['RaftDialog']['declarationId'] = 'missing.dart#class:RaftDialog'
+        broken.append((missing, 'not resolved'))
+        duplicate = copy.deepcopy(registry)
+        duplicate['families']['button']['canonical'].append('RaftDialog')
+        duplicate['families']['button']['canonicalBindings']['RaftDialog'] = copy.deepcopy(
+            registry['families']['dialog']['canonicalBindings']['RaftDialog'])
+        broken.append((duplicate, 'two owners|canonical owner differs'))
+        for field in ('owner', 'reason'):
+            undecided = copy.deepcopy(registry)
+            undecided['recipes']['dialog'][field] = ''
+            broken.append((undecided, f'missing recipe {field}'))
+        wrong_source = copy.deepcopy(registry)
+        wrong_source['recipes']['dialog']['generatedFile'] = 'packages/raft_theme/lib/recipes/card.g.dart'
+        broken.append((wrong_source, 'generated source changed'))
+        unbound_model = copy.deepcopy(registry)
+        unbound_model['families']['select']['nonWidgetModels']['RaftSelectItem']['sourceBindings'][0]['sha256'] = '0' * 64
+        broken.append((unbound_model, 'model source binding changed'))
+        for index, (document, reason) in enumerate(broken):
+            with self.subTest(mutation=index), self.assertRaisesRegex(AssertionError, reason):
+                self.assert_registry_ownership(document)
 
 
 class FamilyRatchetTest(unittest.TestCase):

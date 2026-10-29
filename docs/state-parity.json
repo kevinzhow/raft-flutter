@@ -18348,10 +18348,12 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/agent_combobox.dart#class:RaftAgentCombobox": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "combobox"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/agent_combobox.dart#class:_RaftAgentComboboxState": {
     "role": "unresolved",
@@ -19389,8 +19391,8 @@
     "familyRefs": [
      "popover"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/anchored_popup.dart#class:_RaftAnchoredPopupState": {
     "role": "unresolved",
@@ -20609,8 +20611,8 @@
     "familyRefs": [
      "banner"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/banner.dart#class:RaftHistoryLimitBanner": {
     "role": "unresolved",
@@ -20719,8 +20721,8 @@
     "familyRefs": [
      "card"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/card.dart#class:_RaftCardState": {
     "role": "unresolved",
@@ -21743,10 +21745,12 @@
     "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
    },
    "packages/raft_ui/lib/src/combobox_panel.dart#class:RaftComboboxPanel": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "combobox"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/combobox_panel.dart#class:_RaftComboboxPanelState": {
     "role": "unresolved",
@@ -23445,20 +23449,18 @@
     "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
    },
    "packages/raft_ui/lib/src/design_primitives.dart#class:RaftSegmentedControl": {
-    "role": "canonical_component",
-    "familyRefs": [
-     "segmented"
-    ],
+    "role": "unresolved",
+    "familyRefs": [],
     "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "reason": "Historical census identity no longer selects the canonical API in this source. Current canonical ownership is bound to the resolved registry location; this retained candidate grants no exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/design_primitives.dart#class:RaftSpinner": {
     "role": "canonical_component",
     "familyRefs": [
      "spinner"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/design_primitives.dart#class:RaftTextButton": {
     "role": "unresolved",
@@ -23986,16 +23988,16 @@
     "familyRefs": [
      "dialog"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogSurface": {
     "role": "canonical_component",
     "familyRefs": [
      "dialog"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/dialog_surface.dart#method:RaftDialogBackdrop.build": {
     "role": "unresolved",
@@ -25366,10 +25368,12 @@
     "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
    },
    "packages/raft_ui/lib/src/form_dialog.dart#class:RaftFormDialog": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/form_dialog.dart#class:_RaftFormDialogState": {
     "role": "unresolved",
@@ -29498,16 +29502,16 @@
     "familyRefs": [
      "dialog"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog": {
     "role": "canonical_component",
     "familyRefs": [
      "dialog"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialogBarrier": {
     "role": "unresolved",
@@ -29585,16 +29589,16 @@
     "familyRefs": [
      "dialog"
     ],
-    "owner": "design-system alignment",
-    "reason": "Existing canonical surface function; actual mounted-entry state evidence remains unresolved."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/overlays/dialog.dart#function:showRaftDialog": {
     "role": "canonical_component",
     "familyRefs": [
      "dialog"
     ],
-    "owner": "design-system alignment",
-    "reason": "Existing canonical surface function; actual mounted-entry state evidence remains unresolved."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/overlays/dialog.dart#method:RaftAlertDialog.build": {
     "role": "unresolved",
@@ -30037,8 +30041,8 @@
     "familyRefs": [
      "popover"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/popover_surface.dart#class:_PopoverInset": {
     "role": "unresolved",
@@ -30059,10 +30063,12 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/presentation.dart#class:RaftDialogFrame": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/presentation.dart#class:RaftPageFrame": {
     "role": "unresolved",
@@ -31053,8 +31059,8 @@
     "familyRefs": [
      "button"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/button.dart#local-function:CLASS:RaftButtonMetrics@3896/METHOD:of@5517/FUNCTION:resolve@5707": {
     "role": "unresolved",
@@ -31127,10 +31133,12 @@
     "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
    },
    "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/checkbox.dart#method:RaftCheckboxControl.build": {
     "role": "unresolved",
@@ -31269,8 +31277,8 @@
     "familyRefs": [
      "list_row"
     ],
-    "owner": "design-system alignment",
-    "reason": "Exact declaration locator is named by the existing canonical registry; implementation compliance and mounted states remain unverified."
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/list_row.dart#class:RaftListRowBody": {
     "role": "unresolved",
@@ -31506,16 +31514,20 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedItem": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "segmented"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedTrack": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "segmented"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/segmented_control.dart#class:_RenderShrinkingFrame": {
     "role": "unresolved",
@@ -31626,22 +31638,28 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabButton": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "tabs"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabs": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "tabs"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabsList": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "tabs"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/raft/tabs.dart#class:RaftTabsPanelText": {
     "role": "unresolved",
@@ -34332,10 +34350,12 @@
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
    "packages/raft_ui/lib/src/select_field.dart#class:RaftSelectField": {
-    "role": "unresolved",
-    "familyRefs": [],
-    "owner": "design-system alignment",
-    "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+    "role": "canonical_component",
+    "familyRefs": [
+     "select"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
    },
    "packages/raft_ui/lib/src/select_field.dart#class:_RaftSelectFieldState": {
     "role": "unresolved",
@@ -39856,6 +39876,1640 @@
     "familyRefs": [],
     "owner": "design-system alignment",
     "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+   },
+   "apps/raft_flutter/lib/features/attachment_view.dart#local-function:CLASS:_AttachmentViewState@3953/METHOD:previewImage@37239/FUNCTION:image@37472": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7842/METHOD:build@21345/FUNCTION:externalRow@21675": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7842/METHOD:build@21345/FUNCTION:item@27440": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7842/METHOD:build@21345/FUNCTION:row@22608": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@2899/METHOD:membersStrip@42797/FUNCTION:tile@42905": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4432/METHOD:buildTimeline@116805/FUNCTION:timelineFor@120228": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/create_agent_dialog.dart#local-function:CLASS:_CreateAgentDialogState@4825/METHOD:build@24564/FUNCTION:fields@32776": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/human_login_servers.dart#local-function:CLASS:_HumanLoginServerFieldState@2734/METHOD:_marketplace@5180/FUNCTION:rowWidgets@5634": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/human_login_servers.dart#local-function:CLASS:_HumanLoginServerFieldState@2734/METHOD:_plain@4040/FUNCTION:label@4203": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@6707/METHOD:build@27876/FUNCTION:page@27917": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@2118/METHOD:_body@23380/FUNCTION:field@23421": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@2118/METHOD:_body@23380/FUNCTION:maybe@23524": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "apps/raft_flutter/lib/features/public_server_view.dart#local-function:CLASS:_PublicServerViewState@7879/METHOD:row@30976/FUNCTION:text@32214": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/dialog_previews.dart#function:busyDialogCardPreview": {
+    "role": "preview_fixture",
+    "familyRefs": [
+     "button",
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved SDK preview builder; it is a fixture and does not prove a mounted product entry or current visual pass."
+   },
+   "packages/raft_ui/lib/dialog_previews.dart#function:productDialogCardPreview": {
+    "role": "preview_fixture",
+    "familyRefs": [
+     "button",
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved SDK preview builder; it is a fixture and does not prove a mounted product entry or current visual pass."
+   },
+   "packages/raft_ui/lib/dialog_previews.dart#function:wideBarDialogPreview": {
+    "role": "preview_fixture",
+    "familyRefs": [
+     "button",
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved SDK preview builder; it is a fixture and does not prove a mounted product entry or current visual pass."
+   },
+   "packages/raft_ui/lib/src/activity_scope.dart#local-function:CLASS:_RenderActivityToolbarControls@6528/METHOD:_layout@7082/FUNCTION:place@8411": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/add_members_dialog_view.dart#local-function:CLASS:_MemberListShell@8598/METHOD:build@8915/FUNCTION:header@8994": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/agent_create_form.dart#function:buildAgentDialog": {
+    "role": "internal_part",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/agent_create_form.dart#local-function:CLASS:RaftAgentMoreDisclosure@26220/METHOD:build@26554/FUNCTION:row@26666": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@72197/METHOD:build@73548/FUNCTION:message@77120": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/appearance_picker.dart#local-function:CLASS:RaftAppearanceModeCards@3702/METHOD:build@3971/FUNCTION:card@4070": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/appearance_picker.dart#local-function:CLASS:_ModeCard@5168/METHOD:build@5518/FUNCTION:preview@5704": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/appearance_picker.dart#local-function:CLASS:_PreviewSurface@9353/METHOD:build@9493/FUNCTION:bar@9619": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 3 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/auth_page.dart#local-function:CLASS:RaftAuthPrompt@27845/METHOD:build@28080/FUNCTION:run@28622": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/composer_expand.dart#local-function:CLASS:RaftComposerFormatToolbar@4631/METHOD:build@5264/FUNCTION:b@5585": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/composer_expand.dart#local-function:CLASS:RaftComposerFormatToolbar@4631/METHOD:build@5264/FUNCTION:sep@5358": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/composer_expand.dart#local-function:CLASS:_RaftComposerExpandedViewState@12376/METHOD:build@12977/FUNCTION:switcher@18177": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@13618/METHOD:_agentsSection@55895/FUNCTION:row@57964": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@13618/METHOD:_infoSection@39460/FUNCTION:versionValue@39597": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@13618/METHOD:_recoveryGuide@77657/FUNCTION:step@77952": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/create_channel_view.dart#class:_RecipeMemberPicker": {
+    "role": "entry_composition",
+    "familyRefs": [
+     "card"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved widget composes the current render/state/input path; it owns 2 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/create_channel_view.dart#class:_RecipeMemberRow": {
+    "role": "entry_composition",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved widget composes the current render/state/input path; it owns 1 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/create_channel_view.dart#local-function:CLASS:_MemberPicker@9791/METHOD:build@10166/FUNCTION:eyebrow@10515": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/create_channel_view.dart#local-function:CLASS:_RecipeMemberPicker@12598/METHOD:build@12987/FUNCTION:group@13216": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/create_channel_view.dart#local-function:CLASS:_RecipeMemberPicker@12598/METHOD:build@12987/FUNCTION:row@13524": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberPicker.build": {
+    "role": "entry_composition",
+    "familyRefs": [
+     "card"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 2 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberRow.build": {
+    "role": "entry_composition",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/design_primitives.dart#function:raftFrozenPickerTriggerButton": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/design_primitives.dart",
+      "bytes": 108901,
+      "sha256": "44d1b1bb4e7ca5bc46a8517b54d3f6b86a6f6cd581d4b94789ad0334e0253399"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66470/METHOD:build@71981/FUNCTION:toggle@72166": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved surface_factory composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/dialog_card.dart#class:_FrozenRaftDialogCard": {
+    "role": "frozen_legacy",
+    "familyRefs": [
+     "card"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/dialog_card.dart",
+      "bytes": 32870,
+      "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/dialog_card.dart#class:_ModalPaint": {
+    "role": "entry_composition",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved widget composes the current render/state/input path; it owns 1 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/dialog_card.dart#class:__FrozenRaftDialogCardState": {
+    "role": "frozen_legacy",
+    "familyRefs": [
+     "card"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/dialog_card.dart",
+      "bytes": 32870,
+      "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/dialog_card.dart#function:buildFrozenDialogCard": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/dialog_card.dart",
+      "bytes": 32870,
+      "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/dialog_card.dart#method:RaftDialogCard.build": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/dialog_card.dart#method:_FrozenRaftDialogCard.createState": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/dialog_card.dart",
+      "bytes": 32870,
+      "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/dialog_card.dart#method:_ModalPaint.build": {
+    "role": "entry_composition",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/dialog_card.dart#method:__FrozenRaftDialogCardState.build": {
+    "role": "frozen_legacy",
+    "familyRefs": [
+     "card"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/dialog_card.dart",
+      "bytes": 32870,
+      "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:addon@36488": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:box@36178": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/form_presentation.dart#local-function:CLASS:RaftUnsavedGuardState@6281/METHOD:_scan@7364/FUNCTION:visit@7453": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@35197/METHOD:build@35571/FUNCTION:bar@36680": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@35197/METHOD:build@35571/FUNCTION:text@36850": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@25496/METHOD:build@25674/FUNCTION:bar@26609": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@25496/METHOD:build@25674/FUNCTION:line@25872": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/indicators.dart#local-function:CLASS:RaftProgressBar@2352/METHOD:build@6277/FUNCTION:inheritRoot@7412": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/invite_human_dialog.dart#local-function:CLASS:_RaftInviteHumanDialogState@2478/METHOD:_link@12572/FUNCTION:labelText@13022": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/joint_channel_dialog_view.dart#local-function:CLASS:RaftCreateJointChannelDialogView@1231/METHOD:build@2844/FUNCTION:actionButtons@3348": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/mobile_tabbar_config.dart#local-function:CLASS:RaftMobileTabbarConfigView@2467/METHOD:build@3141/FUNCTION:row@3413": {
+    "role": "entry_composition",
+    "familyRefs": [
+     "switch"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 4 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog.dart#class:_DialogPartScope": {
+    "role": "internal_part",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog.dart#function:_copyDialogColumn": {
+    "role": "internal_part",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog.dart#method:RaftDialog.agent": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog.dart#method:_DialogPartScope.updateShouldNotify": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#class:_CardDialogParts": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogSurface"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#class:_CardDialogPartsState": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogSurface"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@4170": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogSurface"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@3730": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#method:_CardDialogParts.createState": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#method:_CardDialogPartsState.build": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogSurface"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_shell_parts.dart#class:_ShellDialogParts": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_shell_parts.dart#class:_ShellDialogPartsState": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_shell_parts.dart#method:_ShellDialogParts.createState": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/overlays/dialog_shell_parts.dart#method:_ShellDialogPartsState.build": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/picker_trigger_button.dart#class:RaftPickerTriggerButton": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "picker_trigger"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/picker_trigger_button.dart#method:RaftPickerTriggerButton._frozen": {
+    "role": "internal_part",
+    "familyRefs": [
+     "picker_trigger"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/picker_trigger_button.dart#class:RaftPickerTriggerButton"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/picker_trigger_button.dart#method:RaftPickerTriggerButton.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioGroup": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "radio_group"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioGroupItem": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "radio_group"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioMark": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "radio_group"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#class:_RadioScope": {
+    "role": "internal_part",
+    "familyRefs": [
+     "radio_group"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioGroup"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#class:_RaftRadioGroupItemState": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "radio_group"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioMark"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#class:_RaftRadioGroupState": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved paint_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#function:_frozenRadioMark": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/radio_group.dart",
+      "bytes": 8300,
+      "sha256": "cc714f8791330c9735e1e409f547ca6baebf55f792d9429017ba2ae1bd08efad"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#local-function:CLASS:_RaftRadioGroupState@1959/METHOD:move@2025/FUNCTION:visit@2374": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:RaftRadioGroup.createState": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:RaftRadioGroupItem.createState": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:RaftRadioMark.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:_RadioScope.updateShouldNotify": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:_RaftRadioGroupItemState.build": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "radio_group"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/radio_group.dart#class:RaftRadioMark"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:_RaftRadioGroupState.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckbox": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxRow": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/raft/checkbox.dart#method:RaftCheckbox.build": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/raft/checkbox.dart#method:RaftCheckboxRow.build": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/raft/checkbox_frozen.dart#function:_frozenCheckbox": {
+    "role": "frozen_legacy",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/checkbox_frozen.dart",
+      "bytes": 4905,
+      "sha256": "917c1707fe968fbc16b59c13eadb7354de2022623ebf39e575ad57613feeeef4"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/checkbox_frozen.dart#function:_frozenCheckboxRow": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/checkbox_frozen.dart",
+      "bytes": 4905,
+      "sha256": "917c1707fe968fbc16b59c13eadb7354de2022623ebf39e575ad57613feeeef4"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/checkbox_frozen.dart#function:_frozenIndicator": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/checkbox_frozen.dart",
+      "bytes": 4905,
+      "sha256": "917c1707fe968fbc16b59c13eadb7354de2022623ebf39e575ad57613feeeef4"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/checkbox_frozen.dart#function:_frozenMaterialCheckbox": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/checkbox_frozen.dart",
+      "bytes": 4905,
+      "sha256": "917c1707fe968fbc16b59c13eadb7354de2022623ebf39e575ad57613feeeef4"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedControl": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "segmented"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#class:_RaftSegmentedControlState": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "segmented"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedItem",
+     "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedTrack"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#local-function:CLASS:RaftSegmentedItem@2549/METHOD:build@3186/FUNCTION:<anonymous>@3617/FUNCTION:row@6072": {
+    "role": "unresolved",
+    "familyRefs": [
+     "segmented"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedItem"
+    ],
+    "reason": "Retained historical lexical source identity; the same scoped builder is now registered at packages/raft_ui/lib/src/raft/segmented_control.dart#local-function:CLASS:RaftSegmentedItem@2611/METHOD:build@3248/FUNCTION:<anonymous>@3679/FUNCTION:row@6134. Its former internal-part mapping is historical and grants no current style exemption or visual acceptance."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedControl.createState": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface": {
+    "role": "internal_part",
+    "familyRefs": [
+     "segmented"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedItem"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:_RaftSegmentedControlState._group": {
+    "role": "internal_part",
+    "familyRefs": [
+     "segmented"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedControl"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:_RaftSegmentedControlState._track": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "segmented"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedItem",
+     "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedTrack"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:_RaftSegmentedControlState.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#class:_FillWhenWrapped": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#class:_FrozenRecipeSegmentedControl": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#class:_RecipeSegment": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#class:_RecipeSegmentState": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#class:_RenderFillWhenWrapped": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_FrozenRecipeSegmentedControl.build": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_FrozenSegmented._frozenRecipe": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_FrozenSegmented._frozenTabs": {
+    "role": "frozen_legacy",
+    "familyRefs": [
+     "tabs"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_FrozenSegmented._frozenTaskViews": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_RecipeSegment.createState": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_RecipeSegmentState.build": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#class:RaftSwitch": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "switch"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#class:_RaftSwitchState": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved paint_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#class:_RecipeSwitch": {
+    "role": "internal_part",
+    "familyRefs": [
+     "switch"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/switch.dart#class:RaftSwitch"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#local-function:CLASS:_RecipeSwitch@7793/METHOD:build@8157/FUNCTION:resolve@8259": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#method:RaftSwitch.createState": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#method:_RaftSwitchState.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#method:_RecipeSwitch.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/raft/switch_frozen.dart#class:_SwitchPainter": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/switch_frozen.dart",
+      "bytes": 9583,
+      "sha256": "d7db8b520b9c0db11287a950fd2e245eb35f5f6fc4cf99e8a2253593554aebc3"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/raft/switch_frozen.dart#function:_frozenSwitchControl": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/switch_frozen.dart",
+      "bytes": 9583,
+      "sha256": "d7db8b520b9c0db11287a950fd2e245eb35f5f6fc4cf99e8a2253593554aebc3"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/report_issue_dialog.dart#local-function:CLASS:_RaftReportIssueDialogState@3963/METHOD:_reference@26156/FUNCTION:term@26308": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/select_field.dart#class:RaftLabeledSelect": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "select"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:RaftLabeledSelect.build": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "select"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/select_field.dart#class:RaftSelectField"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:RaftSelectItem.child": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftTrigger": {
+    "role": "internal_part",
+    "familyRefs": [
+     "select"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/select_field.dart#class:RaftSelectField"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/select_field_frozen.dart#function:_frozenLabeledSelect": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field_frozen.dart",
+      "bytes": 8484,
+      "sha256": "cd15d119dfc93ced416f1c4a0c0e7d71a767ddd11500b0f77436bee5ed06ba4b"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/select_field_frozen.dart#method:_FrozenSelectTrigger._frozenTrigger": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field_frozen.dart",
+      "bytes": 8484,
+      "sha256": "cd15d119dfc93ced416f1c4a0c0e7d71a767ddd11500b0f77436bee5ed06ba4b"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftAdminOnboardingCard@46615/METHOD:build@47512/FUNCTION:row@47650": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftAgreementBody@36946/METHOD:build@38552/FUNCTION:item@38883": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@62839/METHOD:build@63946/FUNCTION:secondLevel@65381": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 4 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@62839/METHOD:build@63946/FUNCTION:switchRow@64164": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "switch"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/switch.dart#class:RaftSwitch"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:_JoinLinkRow@29695/METHOD:build@29831/FUNCTION:<anonymous>@30535/FUNCTION:top@30766": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftAppPermissionsTable@36499/METHOD:build@36824/FUNCTION:head@37120": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@31486/METHOD:build@32190/FUNCTION:chip@32505": {
+    "role": "entry_composition",
+    "familyRefs": [
+     "checkbox"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 3 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:RaftDeclaredScopesPicker@31486/METHOD:build@32190/FUNCTION:group@33466": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 3 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_app_editor.dart#local-function:CLASS:_RaftConnectedAppEditorCardState@5174/METHOD:build@7752/FUNCTION:railItem@10832": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppLogo@23849/METHOD:build@24113/FUNCTION:content@24591": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppLogo@23849/METHOD:build@24113/FUNCTION:fallback@24380": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@47435/METHOD:build@47917/FUNCTION:column@48698": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 7 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftConnectedAppsSection@4691/METHOD:build@6523/FUNCTION:gap@15146": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@42542/METHOD:build@42651/FUNCTION:chip@42956": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 3 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_billing.dart#local-function:CLASS:RaftPlanBillingLoading@9300/METHOD:build@9415/FUNCTION:block@9918": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_billing.dart#local-function:CLASS:RaftPlanBillingLoading@9300/METHOD:build@9415/FUNCTION:line@9677": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_billing.dart#local-function:CLASS:_PlanCard@23281/METHOD:build@23422/FUNCTION:features@23645": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_billing.dart#local-function:CLASS:_PlanCard@23281/METHOD:build@23422/FUNCTION:stat@25893": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_billing.dart#local-function:CLASS:_SeatUsage@32297/METHOD:build@32423/FUNCTION:legend@33361": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_billing.dart#local-function:CLASS:_SeatUsage@32297/METHOD:build@32423/FUNCTION:segment@33136": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_controls.dart#class:_FrozenRaftDialogShell": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/settings_controls.dart",
+      "bytes": 42496,
+      "sha256": "f4781747f42a600d2d422de0c20b8c05ea20c4eaf4e066a38f1d6eb9d493c786"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/settings_controls.dart#class:__FrozenRaftDialogShellState": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/settings_controls.dart",
+      "bytes": 42496,
+      "sha256": "f4781747f42a600d2d422de0c20b8c05ea20c4eaf4e066a38f1d6eb9d493c786"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/settings_controls.dart#function:buildFrozenDialogShell": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/settings_controls.dart",
+      "bytes": 42496,
+      "sha256": "f4781747f42a600d2d422de0c20b8c05ea20c4eaf4e066a38f1d6eb9d493c786"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/settings_controls.dart#local-function:CLASS:RaftServerProfileTile@30248/METHOD:_tile@32298/FUNCTION:image@32377": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_controls.dart#local-function:CLASS:_RaftSettingsRecipeButtonState@3400/METHOD:build@4028/FUNCTION:draw@4368": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "button"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/settings_controls.dart#method:RaftDialogShell.build": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "dialog"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialog"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/settings_controls.dart#method:_FrozenRaftDialogShell.createState": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/settings_controls.dart",
+      "bytes": 42496,
+      "sha256": "f4781747f42a600d2d422de0c20b8c05ea20c4eaf4e066a38f1d6eb9d493c786"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/settings_controls.dart#method:__FrozenRaftDialogShellState.build": {
+    "role": "frozen_legacy",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/settings_controls.dart",
+      "bytes": 42496,
+      "sha256": "f4781747f42a600d2d422de0c20b8c05ea20c4eaf4e066a38f1d6eb9d493c786"
+     }
+    ],
+    "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
+    "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
+   },
+   "packages/raft_ui/lib/src/settings_workspace.dart#local-function:CLASS:RaftServerLabsSection@2192/METHOD:build@2682/FUNCTION:warning@3193": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_workspace.dart#local-function:CLASS:_McpServerCard@25741/METHOD:build@26031/FUNCTION:badge@26243": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 3 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_workspace.dart#local-function:CLASS:_McpUsageGrid@35505/METHOD:build@35646/FUNCTION:cell@36081": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/settings_workspace.dart#local-function:CLASS:_RaftMcpServersSectionState@20127/METHOD:build@20247/FUNCTION:addButton@21007": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "button"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/settings_workspace.dart#local-function:CLASS:_RaftMcpServersSectionState@20127/METHOD:build@20247/FUNCTION:header@20482": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/setup_steps.dart#local-function:CLASS:_RaftSetupComputerCardState@22920/METHOD:_runtimeBox@28700/FUNCTION:row@28978": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/setup_steps.dart#local-function:CLASS:_RecoveryCard@47882/METHOD:build@48351/FUNCTION:block@48624": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/setup_steps.dart#method:_Chip._raftChip": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/slack_bridge_wizard.dart#local-function:CLASS:RaftSlackWizardView@1258/METHOD:_channelsCard@17854/FUNCTION:pairGrid@19948": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/slack_bridge_wizard.dart#local-function:CLASS:RaftSlackWizardView@1258/METHOD:_channelsCard@17854/FUNCTION:select@17971": {
+    "role": "internal_wrapper",
+    "familyRefs": [
+     "select"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/select_field.dart#class:RaftSelectField"
+    ],
+    "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+   },
+   "packages/raft_ui/lib/src/slack_bridge_wizard.dart#local-function:CLASS:RaftSlackWizardView@1258/METHOD:_health@27088/FUNCTION:cell@27883": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/slack_bridge_wizard.dart#local-function:CLASS:RaftSlackWizardView@1258/METHOD:_stepRail@10180/FUNCTION:step@10756": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 3 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/sos_dialog.dart#local-function:CLASS:_RaftSosDialogState@2226/METHOD:build@3670/FUNCTION:actions@3919": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/steps.dart#class:RaftSteps": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "steps"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/steps.dart#class:_Marker": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved widget composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/steps.dart#class:_NarrowStep": {
+    "role": "internal_part",
+    "familyRefs": [
+     "steps"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/steps.dart#class:RaftSteps"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/steps.dart#class:_WideStep": {
+    "role": "internal_part",
+    "familyRefs": [
+     "steps"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/steps.dart#class:RaftSteps"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/steps.dart#function:_semantic": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/steps.dart#method:RaftSteps.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/steps.dart#method:_Marker.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/steps.dart#method:_NarrowStep.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/steps.dart#method:_WideStep.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/tap_slop.dart#class:RaftTapSlopBackground": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved widget composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/tap_slop.dart#class:RaftTapSlopGuard": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved widget composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/tap_slop.dart#class:RenderTapSlopBackground": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved paint_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/tap_slop.dart#class:RenderTapSlopGuard": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved paint_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#class:RaftToggleGroup": {
+    "role": "canonical_component",
+    "familyRefs": [
+     "toggle_group"
+    ],
+    "owner": "design-system canonical registry",
+    "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup._item": {
+    "role": "internal_part",
+    "familyRefs": [
+     "toggle_group"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/toggle_group.dart#class:RaftToggleGroup"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup.build": {
+    "role": "entry_composition",
+    "familyRefs": [],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#local-function:CLASS:RaftSegmentedItem@2611/METHOD:build@3248/FUNCTION:<anonymous>@3679/FUNCTION:row@6134": {
+    "role": "internal_part",
+    "familyRefs": [
+     "segmented"
+    ],
+    "owner": "P1 dialogs / canonical Choice integration",
+    "delegatesTo": [
+     "packages/raft_ui/lib/src/raft/segmented_control.dart#class:RaftSegmentedItem"
+    ],
+    "reason": "The canonical owner resolves a direct constructor/function reference to this rendering part; its paint remains owned by that family. No visual acceptance is inferred."
    }
   },
   "entries": {
@@ -42106,11 +43760,11 @@
     "mountStatus": "unresolved",
     "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
    },
-   "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66688/METHOD:build@72199/FUNCTION:toggle@72384": {
+   "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66470/METHOD:build@71981/FUNCTION:toggle@72166": {
     "owner": "design-system alignment",
     "kind": "surface_factory_candidate",
     "declarationRefs": [
-     "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66688/METHOD:build@72199/FUNCTION:toggle@72384"
+     "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66470/METHOD:build@71981/FUNCTION:toggle@72166"
     ],
     "mountStatus": "unresolved",
     "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
@@ -43672,7 +45326,7 @@
     "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
    },
    "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66688/METHOD:build@72199/FUNCTION:toggle@72384:applicability": {
-    "entryId": "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66688/METHOD:build@72199/FUNCTION:toggle@72384",
+    "entryId": "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66470/METHOD:build@71981/FUNCTION:toggle@72166",
     "applicability": "unknown",
     "owner": "design-system alignment",
     "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
@@ -45109,6 +46763,762 @@
     "applicability": "unknown",
     "owner": "design-system alignment",
     "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+   },
+   "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberRow.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/create_channel_view.dart",
+      "bytes": 22702,
+      "sha256": "6f043ace8aa6090af954df8b528290b6b488f4f482c57567abcc50b01a233309"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberRow.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/create_channel_view.dart",
+      "bytes": 22702,
+      "sha256": "6f043ace8aa6090af954df8b528290b6b488f4f482c57567abcc50b01a233309"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/dialog_card.dart#method:__FrozenRaftDialogCardState.build|state:dark": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use dark; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/dialog_card.dart",
+      "bytes": 32870,
+      "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/form_controls.dart",
+      "bytes": 46974,
+      "sha256": "8c9977101478b2c0a9624231523bc96f05262a78817de339787e73b03219db04"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/form_controls.dart",
+      "bytes": 46974,
+      "sha256": "8c9977101478b2c0a9624231523bc96f05262a78817de339787e73b03219db04"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:focus-within": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use focus-within; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/form_controls.dart",
+      "bytes": 46974,
+      "sha256": "8c9977101478b2c0a9624231523bc96f05262a78817de339787e73b03219db04"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:has:data-slot=input-group-control+data-invalid": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use has:data-slot=input-group-control+data-invalid; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/form_controls.dart",
+      "bytes": 46974,
+      "sha256": "8c9977101478b2c0a9624231523bc96f05262a78817de339787e73b03219db04"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:has:data-slot=input-group-control+disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use has:data-slot=input-group-control+disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/form_controls.dart",
+      "bytes": 46974,
+      "sha256": "8c9977101478b2c0a9624231523bc96f05262a78817de339787e73b03219db04"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/indicators.dart#local-function:CLASS:RaftProgressBar@2352/METHOD:build@6277/FUNCTION:inheritRoot@7412|state:group/progress:data-complete": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use group/progress:data-complete; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/indicators.dart",
+      "bytes": 19013,
+      "sha256": "773dbd6c33f36feec84f0eb21efa3c7d88cd8defcac4c9ba129e9c24a0101d39"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialogSlots|state:ancestor:data-slot=alert-dialog-header": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use ancestor:data-slot=alert-dialog-header; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/overlays/dialog.dart",
+      "bytes": 36183,
+      "sha256": "fc849958bbb2ace9504d6b64f56b30bcda64896649d54219d4f5200e3f6fcd55"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialogSlots|state:ancestor:data-slot=dialog-header": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use ancestor:data-slot=dialog-header; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/overlays/dialog.dart",
+      "bytes": 36183,
+      "sha256": "fc849958bbb2ace9504d6b64f56b30bcda64896649d54219d4f5200e3f6fcd55"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialogSlots|state:first-child": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use first-child; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/overlays/dialog.dart",
+      "bytes": 36183,
+      "sha256": "fc849958bbb2ace9504d6b64f56b30bcda64896649d54219d4f5200e3f6fcd55"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/picker_trigger_button.dart#method:RaftPickerTriggerButton.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/picker_trigger_button.dart",
+      "bytes": 3872,
+      "sha256": "14fcc459537f6323c405844b1e9e77ebf289b8be3f1fbdbeec6bd2ed506c90b1"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/picker_trigger_button.dart#method:RaftPickerTriggerButton.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/picker_trigger_button.dart",
+      "bytes": 3872,
+      "sha256": "14fcc459537f6323c405844b1e9e77ebf289b8be3f1fbdbeec6bd2ed506c90b1"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/picker_trigger_button.dart#method:RaftPickerTriggerButton.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/picker_trigger_button.dart",
+      "bytes": 3872,
+      "sha256": "14fcc459537f6323c405844b1e9e77ebf289b8be3f1fbdbeec6bd2ed506c90b1"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/picker_trigger_button.dart#method:RaftPickerTriggerButton.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/picker_trigger_button.dart",
+      "bytes": 3872,
+      "sha256": "14fcc459537f6323c405844b1e9e77ebf289b8be3f1fbdbeec6bd2ed506c90b1"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/picker_trigger_button.dart#method:RaftPickerTriggerButton.build|state:data-has-value": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-has-value; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/picker_trigger_button.dart",
+      "bytes": 3872,
+      "sha256": "14fcc459537f6323c405844b1e9e77ebf289b8be3f1fbdbeec6bd2ed506c90b1"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/picker_trigger_button.dart#method:RaftPickerTriggerButton.build|state:data-invalid": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-invalid; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/picker_trigger_button.dart",
+      "bytes": 3872,
+      "sha256": "14fcc459537f6323c405844b1e9e77ebf289b8be3f1fbdbeec6bd2ed506c90b1"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:RaftRadioMark.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:checked": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:checked; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/radio_group.dart",
+      "bytes": 8300,
+      "sha256": "cc714f8791330c9735e1e409f547ca6baebf55f792d9429017ba2ae1bd08efad"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:RaftRadioMark.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/radio_group.dart",
+      "bytes": 8300,
+      "sha256": "cc714f8791330c9735e1e409f547ca6baebf55f792d9429017ba2ae1bd08efad"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:RaftRadioMark.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/radio_group.dart",
+      "bytes": 8300,
+      "sha256": "cc714f8791330c9735e1e409f547ca6baebf55f792d9429017ba2ae1bd08efad"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/radio_group.dart#method:RaftRadioMark.build|state:data-disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/radio_group.dart",
+      "bytes": 8300,
+      "sha256": "cc714f8791330c9735e1e409f547ca6baebf55f792d9429017ba2ae1bd08efad"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/checkbox.dart#method:RaftCheckbox.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/checkbox.dart",
+      "bytes": 10040,
+      "sha256": "c27f00d7286f070e22f2c2835885f93856c327955c8a1238ed2725ea14cc7336"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/checkbox.dart#method:RaftCheckbox.build|state:data-disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/checkbox.dart",
+      "bytes": 10040,
+      "sha256": "c27f00d7286f070e22f2c2835885f93856c327955c8a1238ed2725ea14cc7336"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/checkbox.dart#method:RaftCheckboxIndicator.build|state:group:hover": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use group:hover; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/checkbox.dart",
+      "bytes": 10040,
+      "sha256": "c27f00d7286f070e22f2c2835885f93856c327955c8a1238ed2725ea14cc7336"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control.dart",
+      "bytes": 24864,
+      "sha256": "a42cdae774830bd97bdcf3b2ffc35828e5bb2c28552a69ccd1c222a05dd12045"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control.dart",
+      "bytes": 24864,
+      "sha256": "a42cdae774830bd97bdcf3b2ffc35828e5bb2c28552a69ccd1c222a05dd12045"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control.dart",
+      "bytes": 24864,
+      "sha256": "a42cdae774830bd97bdcf3b2ffc35828e5bb2c28552a69ccd1c222a05dd12045"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control.dart",
+      "bytes": 24864,
+      "sha256": "a42cdae774830bd97bdcf3b2ffc35828e5bb2c28552a69ccd1c222a05dd12045"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface|state:data-checked": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-checked; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control.dart",
+      "bytes": 24864,
+      "sha256": "a42cdae774830bd97bdcf3b2ffc35828e5bb2c28552a69ccd1c222a05dd12045"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface|state:data-disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control.dart",
+      "bytes": 24864,
+      "sha256": "a42cdae774830bd97bdcf3b2ffc35828e5bb2c28552a69ccd1c222a05dd12045"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface|state:data-unchecked": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-unchecked; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control.dart",
+      "bytes": 24864,
+      "sha256": "a42cdae774830bd97bdcf3b2ffc35828e5bb2c28552a69ccd1c222a05dd12045"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface|state:group/segmented-control-item:data-checked": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use group/segmented-control-item:data-checked; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control.dart",
+      "bytes": 24864,
+      "sha256": "a42cdae774830bd97bdcf3b2ffc35828e5bb2c28552a69ccd1c222a05dd12045"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_RecipeSegmentState.build|state:dark": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use dark; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_RecipeSegmentState.build|state:data-checked": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-checked; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_RecipeSegmentState.build|state:data-unchecked": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-unchecked; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_RecipeSegmentState.build|state:group/segmented-control-item:data-checked": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use group/segmented-control-item:data-checked; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_RecipeSegmentState.build|state:has:data-slot=segmented-control-count": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use has:data-slot=segmented-control-count; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart#method:_RecipeSegmentState.build|state:hover": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use hover; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart",
+      "bytes": 8509,
+      "sha256": "396108a8c1664557476c965ad401b711d21aa0b511e7fb4aeff9769e5e7d3203"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#local-function:CLASS:_RecipeSwitch@7793/METHOD:build@8157/FUNCTION:resolve@8259|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/switch.dart",
+      "bytes": 12665,
+      "sha256": "6486cd57681d004650870dab3b989bed4e4d36594f1ebf025effd5fa230e5c07"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#local-function:CLASS:_RecipeSwitch@7793/METHOD:build@8157/FUNCTION:resolve@8259|state:data-checked": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-checked; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/switch.dart",
+      "bytes": 12665,
+      "sha256": "6486cd57681d004650870dab3b989bed4e4d36594f1ebf025effd5fa230e5c07"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/raft/switch.dart#local-function:CLASS:_RecipeSwitch@7793/METHOD:build@8157/FUNCTION:resolve@8259|state:data-disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/raft/switch.dart",
+      "bytes": 12665,
+      "sha256": "6486cd57681d004650870dab3b989bed4e4d36594f1ebf025effd5fa230e5c07"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field.dart",
+      "bytes": 14896,
+      "sha256": "5f9ed56b017d1a2f0c529920da62af934b8da521803499766a238ac7731fd17e"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field.dart",
+      "bytes": 14896,
+      "sha256": "5f9ed56b017d1a2f0c529920da62af934b8da521803499766a238ac7731fd17e"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field.dart",
+      "bytes": 14896,
+      "sha256": "5f9ed56b017d1a2f0c529920da62af934b8da521803499766a238ac7731fd17e"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field.dart",
+      "bytes": 14896,
+      "sha256": "5f9ed56b017d1a2f0c529920da62af934b8da521803499766a238ac7731fd17e"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftTrigger|state:data-invalid": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-invalid; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field.dart",
+      "bytes": 14896,
+      "sha256": "5f9ed56b017d1a2f0c529920da62af934b8da521803499766a238ac7731fd17e"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftTrigger|state:data-placeholder": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-placeholder; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field.dart",
+      "bytes": 14896,
+      "sha256": "5f9ed56b017d1a2f0c529920da62af934b8da521803499766a238ac7731fd17e"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftTrigger|state:data-popup-open": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-popup-open; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field.dart",
+      "bytes": 14896,
+      "sha256": "5f9ed56b017d1a2f0c529920da62af934b8da521803499766a238ac7731fd17e"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field_frozen.dart#method:_FrozenSelectTrigger._frozenTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field_frozen.dart",
+      "bytes": 8484,
+      "sha256": "cd15d119dfc93ced416f1c4a0c0e7d71a767ddd11500b0f77436bee5ed06ba4b"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field_frozen.dart#method:_FrozenSelectTrigger._frozenTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field_frozen.dart",
+      "bytes": 8484,
+      "sha256": "cd15d119dfc93ced416f1c4a0c0e7d71a767ddd11500b0f77436bee5ed06ba4b"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field_frozen.dart#method:_FrozenSelectTrigger._frozenTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field_frozen.dart",
+      "bytes": 8484,
+      "sha256": "cd15d119dfc93ced416f1c4a0c0e7d71a767ddd11500b0f77436bee5ed06ba4b"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field_frozen.dart#method:_FrozenSelectTrigger._frozenTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field_frozen.dart",
+      "bytes": 8484,
+      "sha256": "cd15d119dfc93ced416f1c4a0c0e7d71a767ddd11500b0f77436bee5ed06ba4b"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field_frozen.dart#method:_FrozenSelectTrigger._frozenTrigger|state:data-invalid": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-invalid; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field_frozen.dart",
+      "bytes": 8484,
+      "sha256": "cd15d119dfc93ced416f1c4a0c0e7d71a767ddd11500b0f77436bee5ed06ba4b"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/select_field_frozen.dart#method:_FrozenSelectTrigger._frozenTrigger|state:data-popup-open": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-popup-open; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/select_field_frozen.dart",
+      "bytes": 8484,
+      "sha256": "cd15d119dfc93ced416f1c4a0c0e7d71a767ddd11500b0f77436bee5ed06ba4b"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/settings_controls.dart#method:__FrozenRaftDialogShellState.build|state:dark": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use dark; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/settings_controls.dart",
+      "bytes": 42496,
+      "sha256": "f4781747f42a600d2d422de0c20b8c05ea20c4eaf4e066a38f1d6eb9d493c786"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup._item|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/toggle_group.dart",
+      "bytes": 5151,
+      "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup._item|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/toggle_group.dart",
+      "bytes": 5151,
+      "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup._item|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/toggle_group.dart",
+      "bytes": 5151,
+      "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup._item|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/toggle_group.dart",
+      "bytes": 5151,
+      "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup._item|state:data-disabled": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/toggle_group.dart",
+      "bytes": 5151,
+      "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup._item|state:data-pressed": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use data-pressed; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/toggle_group.dart",
+      "bytes": 5151,
+      "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+     }
+    ]
+   },
+   "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup._item|state:not-data-pressed": {
+    "applicability": "unknown",
+    "owner": "P1 dialogs / canonical Choice integration",
+    "reason": "Actual resolved state use not-data-pressed; its real-entry/input/look applicability and visual acceptance remain pending.",
+    "sourceBindings": [
+     {
+      "file": "packages/raft_ui/lib/src/toggle_group.dart",
+      "bytes": 5151,
+      "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+     }
+    ]
    }
   },
   "evidence": {},

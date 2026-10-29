@@ -5,7 +5,7 @@ import 'package:raft_ui/test_themes.dart';
 
 /// The segmented control's two structures, chosen by the theme.
 ///
-/// raft-ui 0.7.1 wraps the segments in a rounded, padded track. The pre-theme app
+/// raft-ui 0.7.0 wraps the segments in a rounded, padded track. The pre-theme app
 /// (`a57b9dab`) drew a flat row of separate segments with a gap and no container
 /// at all -- measured by resolving `RaftSegmentedControlRecipe` there: the root
 /// carried no `rounded`, no padding and no background in either family, while the
@@ -44,8 +44,20 @@ int _roundedBoxes(WidgetTester tester) => tester
     .where((decoration) => decoration.borderRadius != null)
     .length;
 
-double _segmentRadius(WidgetTester tester) =>
-    tester.widgetList<RaftCssBox>(find.byType(RaftCssBox)).first.radius;
+double _segmentRadius(WidgetTester tester) {
+  final box = tester.widget<DecoratedBox>(
+    find
+        .descendant(
+          of: find.byType(RaftSegmentedItem).first,
+          matching: find.byType(DecoratedBox),
+        )
+        .first,
+  );
+  return (box.decoration as BoxDecoration).borderRadius!
+      .resolve(TextDirection.ltr)
+      .topLeft
+      .x;
+}
 
 double _gap(WidgetTester tester) =>
     tester.widgetList<Wrap>(find.byType(Wrap)).first.spacing;

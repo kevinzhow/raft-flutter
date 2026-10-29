@@ -147,7 +147,7 @@ _ListWorkspace _workspace(ParityContext ctx, String section) {
     origin: parityOrigin,
   );
   final channels = fx['channels'] as Map;
-  return _ListWorkspace(client, ctx)
+  final workspace = _ListWorkspace(client, ctx)
     ..server = RaftRecord(wire.server())
     ..channels = [
       for (final key in ['design', 'androidArtifacts'])
@@ -167,6 +167,8 @@ _ListWorkspace _workspace(ParityContext ctx, String section) {
         }),
     ]
     ..section = section;
+  ctx.onDispose(workspace.dispose);
+  return workspace;
 }
 
 /// Search memory preloaded with the case's history tags (`searchHistory`,

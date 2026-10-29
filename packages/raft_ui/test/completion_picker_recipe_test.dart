@@ -76,25 +76,25 @@ void main() {
             ),
           ),
         ),
-      ),
-    );
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.byType(RaftPickerTriggerButton)),
-    );
-    await tester.pump(const Duration(milliseconds: 110));
-    final control = find.byType(RaftPickerTriggerButton);
-    final transform = controlTransform(tester, control);
-    expect(transform.storage[12], 0);
-    expect(transform.storage[13], 0);
-    // Controls cast no drop shadow; the only layer is the 1px hairline ring
-    // that stands in for the outline border.
-    for (final shadow
-        in controlDecoration(tester, control).boxShadow ?? const []) {
-      expect(shadow.offset, Offset.zero);
-      expect(shadow.blurRadius, 0);
-    }
-    await gesture.up();
-    expect(picked, 1);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
+      );
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(RaftPickerTriggerButton)),
+      );
+      await tester.pump(const Duration(milliseconds: 110));
+      final control = find.byType(RaftPickerTriggerButton);
+      final transform = controlTransform(tester, control);
+      expect(transform.storage[12], 0);
+      expect(transform.storage[13], 0);
+      // Controls cast no drop shadow; the only layer is the 1px hairline ring
+      // that stands in for the outline border.
+      for (final shadow
+          in controlDecoration(tester, control).boxShadow ?? const []) {
+        expect(shadow.offset, Offset.zero);
+        expect(shadow.blurRadius, 0);
+      }
+      await gesture.up();
+      expect(picked, 1);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 }

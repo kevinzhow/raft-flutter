@@ -613,7 +613,6 @@
   "packages/raft_ui/lib/src/auth_page.dart": {
    "bypass.toggle": 1,
    "contract.font_size_literal": 3,
-   "contract.legacy_recipe_theme": 1,
    "contract.radius_literal": 2,
    "duplicate.button": 1
   },
@@ -779,7 +778,7 @@
   "packages/raft_ui/lib/src/dialog_card.dart": {
    "contract.color_literal": 5,
    "contract.legacy_recipe_theme": 1,
-   "contract.stroke_width_literal": 3
+   "contract.stroke_width_literal": 2
   },
   "packages/raft_ui/lib/src/document_preview.dart": {
    "contract.font_size_literal": 3,
@@ -1111,8 +1110,9 @@
   "packages/raft_ui/lib/src/raft/button_surface.dart": {
    "contract.legacy_recipe_theme": 1
   },
-  "packages/raft_ui/lib/src/raft/checkbox.dart": {
+  "packages/raft_ui/lib/src/raft/checkbox_frozen.dart": {
    "contract.color_literal": 1,
+   "contract.legacy_recipe_theme": 1,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/raft/icon_tile.dart": {
@@ -1130,9 +1130,12 @@
    "contract.color_literal": 1,
    "contract.radius_literal": 1
   },
-  "packages/raft_ui/lib/src/raft/switch.dart": {
+  "packages/raft_ui/lib/src/raft/segmented_control_frozen.dart": {
+   "contract.stroke_width_literal": 1
+  },
+  "packages/raft_ui/lib/src/raft/switch_frozen.dart": {
    "contract.color_literal": 7,
-   "contract.radius_literal": 1,
+   "contract.radius_literal": 2,
    "contract.stroke_width_literal": 1
   },
   "packages/raft_ui/lib/src/raft/tabs.dart": {
@@ -1218,7 +1221,9 @@
    "duplicate.button": 2
   },
   "packages/raft_ui/lib/src/select_field.dart": {
-   "bypass.overlay": 1,
+   "bypass.overlay": 1
+  },
+  "packages/raft_ui/lib/src/select_field_frozen.dart": {
    "contract.legacy_recipe_theme": 3,
    "contract.radius_literal": 1,
    "contract.stroke_width_literal": 2
@@ -1336,9 +1341,6 @@
   "packages/raft_ui/lib/src/sos_dialog.dart": {
    "contract.font_size_literal": 1,
    "duplicate.dialog": 1
-  },
-  "packages/raft_ui/lib/src/switch_recipe.dart": {
-   "contract.radius_literal": 1
   },
   "packages/raft_ui/lib/src/system_message.dart": {
    "contract.color_literal": 2

@@ -19,6 +19,7 @@ import 'recipes/select.g.dart';
 import 'form_controls.dart' show RaftField;
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftCssShadow;
+import 'raft/css_box.dart' show raftSnapBorder;
 
 part 'select_field_frozen.dart';
 
@@ -269,6 +270,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
     return RaftRecipeBox(
       style: raftMergeSlots(button, sel.trigger),
       tokens: rt,
+      decorationOverride: (decoration) => raftSnapBorder(context, decoration),
       width: double.infinity,
       height: widget.height,
       child: Row(
