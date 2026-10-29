@@ -65,8 +65,12 @@ void main() {
         'webSelectionPanel',
         'webMenuAction',
         'webSelectionRow',
+        'webSidebarSortMenu',
+        'webHelpMenu',
         'webDialogCard',
         'webMemberPicker',
+        'webAgentResetOptions',
+        'webXlsxTabsLayout',
       };
       expect(raftRecipes.keys.toSet().intersection(products), products);
       expect(raftRecipes.keys.toSet().difference(products), hasLength(124));

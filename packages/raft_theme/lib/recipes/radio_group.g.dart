@@ -91,33 +91,33 @@ abstract final class RaftRadioGroupRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1040, 1926, 1023, 824, 825, 826, 1016, 149],
+    [1040, 1929, 1023, 824, 825, 826, 1016, 149],
     [
-      1680,
+      1682,
       1305,
-      1738,
-      1867,
+      1740,
+      1869,
       1319,
       1324,
-      1710,
-      1575,
+      1712,
+      1577,
       831,
       442,
       437,
       440,
       450,
-      1752,
+      1754,
       622,
       635,
       596,
-      1820,
+      1822,
       996,
       830,
       828,
       836,
     ],
-    [1628, 965, 1768, 1319, 1324],
-    [618, 1710, 578, 1748],
+    [1630, 965, 1770, 1319, 1324],
+    [618, 1712, 578, 1750],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'tokens/tokens.dart';
 import 'theme.dart';
+import 'recipe_surface.dart';
+import 'recipe_background_scope.dart';
+import 'recipes/recipe_runtime.dart';
+import 'surface_background_scope.dart';
 
 /// CSS shadow atom. Blur is a CSS blur diameter, not Flutter blurRadius.
 @immutable
@@ -49,18 +53,54 @@ class RaftPopoverSurfaceRecipe {
 /// layout/hit-test space. Brutal's real 2px border does reserve source space.
 /// Clipping applies to children/inset chrome, never the outside shadow.
 class RaftPopoverSurface extends StatelessWidget {
-  const RaftPopoverSurface({super.key, required this.child, this.recipe});
+  const RaftPopoverSurface({
+    super.key,
+    required this.child,
+    this.recipe,
+    this.surfaceStyle,
+    this.padding,
+  }) : assert(recipe == null || surfaceStyle == null);
   final Widget child;
   final RaftPopoverSurfaceRecipe? recipe;
+
+  /// Already resolved source slots retain caller variants and paint-only rings.
+  final RaftSlotStyle? surfaceStyle;
+
+  /// Explicit product inset override for a resolved source surface.
+  final EdgeInsets? padding;
   @override
   Widget build(BuildContext context) {
-    final r = recipe ?? RaftPopoverSurfaceRecipe(RaftTokens.of(context));
+    final tokens = RaftTokens.of(context);
+    if (surfaceStyle case final style?) {
+      final rt = style.tokens ?? tokens.recipeTokens;
+      return RaftRecipeBox(
+        style: style,
+        tokens: rt,
+        clip: true,
+        padding: padding,
+        child: RaftRecipeBackgroundScope(
+          style: style,
+          tokens: rt,
+          child: child,
+        ),
+      );
+    }
+    final r = recipe ?? RaftPopoverSurfaceRecipe(tokens);
     return CustomPaint(
       painter: _PopoverOutside(r),
       foregroundPainter: _PopoverInset(r),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(r.radius),
-        child: Padding(padding: EdgeInsets.all(r.borderWidth), child: child),
+        child: Padding(
+          padding: EdgeInsets.all(r.borderWidth),
+          child: RaftSurfaceBackgroundScope(
+            color:
+                r.background.a == 1 && r.innerRing == null && r.topInset == null
+                ? r.background
+                : null,
+            child: child,
+          ),
+        ),
       ),
     );
   }
@@ -105,7 +145,7 @@ class _PopoverOutside extends CustomPainter {
 
   @override
   bool shouldRepaint(_PopoverOutside oldDelegate) =>
-      oldDelegate.recipe.tokens != recipe.tokens;
+      oldDelegate.recipe != recipe;
 }
 
 class _PopoverInset extends CustomPainter {
@@ -140,6 +180,5 @@ class _PopoverInset extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PopoverInset oldDelegate) =>
-      oldDelegate.recipe.tokens != recipe.tokens;
+  bool shouldRepaint(_PopoverInset oldDelegate) => oldDelegate.recipe != recipe;
 }

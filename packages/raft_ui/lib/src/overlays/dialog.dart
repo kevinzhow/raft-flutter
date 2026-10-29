@@ -59,6 +59,31 @@ enum RaftDialogKind { dialog, alert }
 /// uses the same source AlertDialog slots, including migrated Material calls.
 enum RaftLegacyAlert { source, material }
 
+/// One unchanged child and action from a frozen Material choice dialog.
+@immutable
+class RaftFrozenChoiceDialogOption {
+  const RaftFrozenChoiceDialogOption({
+    required this.child,
+    required this.onPressed,
+  });
+
+  final Widget child;
+  final VoidCallback onPressed;
+}
+
+/// Preserves the existing SimpleDialog tree for Elegant and Brutal adapters.
+/// The caller chooses the frozen branch and retains route/result ownership.
+Widget buildFrozenChoiceDialog({
+  required Widget title,
+  required List<RaftFrozenChoiceDialogOption> options,
+}) => SimpleDialog(
+  title: title,
+  children: [
+    for (final option in options)
+      SimpleDialogOption(onPressed: option.onPressed, child: option.child),
+  ],
+);
+
 /// Resolved slots shared by Dialog and AlertDialog parts.
 class RaftDialogSlots {
   RaftDialogSlots._(

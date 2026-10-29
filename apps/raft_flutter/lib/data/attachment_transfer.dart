@@ -78,17 +78,30 @@ class AttachmentTransfer extends ValueNotifier<AttachmentTransferProgress?> {
   }
 }
 
+/// An image fetch's explicitly reported stage. `transfer` preserves existing
+/// byte-progress behavior; it does not assert that any bytes have arrived.
+enum AttachmentFetchPhase { transfer, waitingForAddress }
+
 /// A [CancelToken] that also carries the progress sink of the fetch it
 /// cancels, so loaders written against `(CancelToken) => bytes` can report
 /// progress without a signature change.
 class AttachmentFetchToken extends CancelToken {
-  AttachmentFetchToken(this.report);
+  AttachmentFetchToken(this.report, {this.reportPhase});
 
   /// dio `onReceiveProgress` shape.
   final void Function(int received, int total) report;
+
+  /// No address or credential is retained in a phase notification.
+  final void Function(AttachmentFetchPhase)? reportPhase;
 }
 
 extension AttachmentProgressSink on CancelToken {
+  void reportAttachmentPhase(AttachmentFetchPhase phase) {
+    if (this case AttachmentFetchToken(:final reportPhase)) {
+      reportPhase?.call(phase);
+    }
+  }
+
   /// The progress sink of an [AttachmentFetchToken]; null for plain tokens.
   void Function(int received, int total)? get progressSink {
     final token = this;

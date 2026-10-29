@@ -26,6 +26,22 @@ import 'text_scale_audit_surfaces.dart';
 
 /// Interactions that open a surface's interesting state.
 final _actions = <String, Future<void> Function(WidgetTester)>{
+  'choiceDialogPreview': (t) async {
+    await t.tap(find.text('Choose workspace'));
+    await t.pumpAndSettle();
+  },
+  'largeChoiceDialogPreview': (t) async {
+    await t.tap(find.text('Choose workspace'));
+    await t.pumpAndSettle();
+  },
+  'menuPopupBackendPreview': (t) async {
+    await t.tap(find.text('Choose a language'));
+    await t.pumpAndSettle();
+  },
+  'dropdownMenuRolePreview': (t) async {
+    await t.tap(find.text('Open published menu'));
+    await t.pumpAndSettle();
+  },
   'dropdownViewportPreview': (t) async {
     await t.tap(find.byType(RaftAgentSelect<String>));
     await t.pumpAndSettle();

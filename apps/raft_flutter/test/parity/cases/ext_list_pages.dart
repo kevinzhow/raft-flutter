@@ -53,6 +53,7 @@ Map<String, dynamic> _routes(ParityContext ctx) => {
 /// The official fixture workspace answering the listpages routes first.
 class _ListWorkspace extends ParityFixtureWorkspace {
   _ListWorkspace(super.client, super.ctx);
+  int archivedCreateReplies = 0;
 
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
@@ -113,6 +114,13 @@ class _ListWorkspace extends ParityFixtureWorkspace {
     }
     if (answer is Map && answer['\$status'] != null) {
       final body = answer['\$body'];
+      if (method == 'POST' &&
+          path == '/channels' &&
+          answer['\$status'] == 409 &&
+          body is Map &&
+          body['code'] == 'archived_name_collision') {
+        archivedCreateReplies++;
+      }
       throw RaftApiException.response(
         body is Map && body['error'] != null
             ? '${body['error']}'
@@ -679,7 +687,16 @@ Future<void> _interact(WidgetTester t, ParityContext ctx) async {
     case 'notification.desktop-center':
       await _tap(t, find.byType(RaftMobileNotificationButton), 500);
     case final k when k.startsWith('create-channel.'):
-      await _tap(t, find.text('Create Channel'), 600);
+      final submit = find.widgetWithText(RaftButton, 'Create Channel');
+      expect(submit, findsOneWidget);
+      await _tap(t, submit, 600);
+      if (k.endsWith('-archived-name')) {
+        final dialog = t.widget<CreateChannelDialog>(
+          find.byType(CreateChannelDialog),
+        );
+        expect((dialog.controller as _ListWorkspace).archivedCreateReplies, 1);
+        expect(find.byType(RaftArchivedNameBanner), findsOneWidget);
+      }
   }
   await t.pump(const Duration(milliseconds: 600));
 }
@@ -704,8 +721,67 @@ ParityCase _case() => ParityCase(
   interact: _interact,
 );
 
+// Actual ResourceView Tasks filter, cropped to its complete real popup.
+final ParityCase _tasksSelectionPopupCase = ParityCase(
+  widgets: const [
+    'raft_flutter:ResourceView',
+    'raft_flutter:TaskSelectionFilter',
+    'raft_ui:RaftSelectionPopover',
+  ],
+  notes:
+      'Extension suite (not official). Actual Tasks Assignee filter. '
+      'Default state preserves focused search; hover/focus target Cindy. '
+      'Historical whole Tasks-page captures remain separate.',
+  build: (ctx) => _case().build(ctx),
+  settle: const Duration(milliseconds: 600),
+  interact: (tester, ctx) async {
+    expect(find.byType(ResourceView), findsOneWidget);
+    final popup = find.byKey(const ValueKey('task-selection-assignee-popover'));
+    expect(popup, findsOneWidget);
+    final selection = tester.widget<RaftSelectionPopover>(popup);
+    expect(selection.title, 'Assignee');
+    expect(selection.showHeader, isTrue);
+    expect(selection.searchController, isNotNull);
+    expect(selection.options.any((option) => option.label == 'Cindy'), isTrue);
+    expect(selection.options.where((option) => option.checked), isEmpty);
+    final search = find.descendant(
+      of: popup,
+      matching: find.byType(EditableText),
+    );
+    expect(search, findsOneWidget);
+    if (ctx.props['menuPopupState'] == 'default') {
+      expect(
+        tester.widget<EditableText>(search).focusNode.hasPrimaryFocus,
+        isTrue,
+      );
+    }
+    if (ctx.props['menuPopupState'] != 'focus') return;
+    final row = find.byKey(
+      const ValueKey('task-filter-Assignee-agent:agent-cindy'),
+    );
+    expect(row, findsOneWidget);
+    expect(
+      find
+          .descendant(
+            of: row,
+            matching: find.byType(FocusableActionDetector),
+            matchRoot: true,
+          )
+          .evaluate()
+          .map((element) => element.widget as FocusableActionDetector)
+          .any((detector) => detector.focusNode?.hasPrimaryFocus ?? false),
+      isTrue,
+      reason: 'The actual Cindy option must own keyboard focus.',
+    );
+  },
+);
+
 /// Every extension list-pages case, keyed by id (3 themes each).
 final Map<String, ParityCase> extListPageCases = {
+  for (final state in const ['default', 'hover', 'focus'])
+    for (final theme in const ['raft', 'raft-dark'])
+      'components.list-pages.tasks.desktop-filter-assignee-popup.$state.$theme':
+          _tasksSelectionPopupCase,
   for (final key in extListPageKeys)
     for (final theme in const ['brutal', 'elegant', 'elegant-dark'])
       'components.list-pages.$key.$theme': _case(),

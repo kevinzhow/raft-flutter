@@ -97,6 +97,9 @@ class ParityContext {
   final Map<String, dynamic> fixtures;
   final bool dark;
 
+  /// Observed input/state for a case that opts into capture qualification.
+  final captureEvidence = <String, dynamic>{};
+
   /// The capture target. Builders wrap the element that corresponds to the
   /// React `capture.selector` with [target]; when they do not, the whole
   /// viewport is captured (correct for `body` selectors).
@@ -519,12 +522,9 @@ Future<Map<String, dynamic>> captureParityCase(
         'selected': selectedFonts,
         'registered': _loadedFontFamilies.toList()..sort(),
       },
-      'typography': _typographyProbes(
-        ctx.targetUsed ? ctx.targetKey.currentContext : rootKey.currentContext,
-      ),
-      'styleTokens': _styleTokenProbes(
-        ctx.targetUsed ? ctx.targetKey.currentContext : rootKey.currentContext,
-      ),
+      'typography': _typographyProbes(targetContext ?? rootKey.currentContext),
+      'styleTokens': _styleTokenProbes(targetContext ?? rootKey.currentContext),
+      if (ctx.captureEvidence.isNotEmpty) 'fixtureState': ctx.captureEvidence,
       'capturedAt': DateTime.now().toUtc().toIso8601String(),
     };
     await t.runAsync(() async {
@@ -893,6 +893,11 @@ List<Map<String, dynamic>> _typographyProbes(BuildContext? context) {
           ),
           'fontSize': fontSize,
           'fontWeight': (style.fontWeight ?? FontWeight.w400).value,
+          'fontVariations': [
+            for (final variation
+                in style.fontVariations ?? const <FontVariation>[])
+              {'axis': variation.axis, 'value': variation.value},
+          ],
           'lineHeight': style.height == null
               ? null
               : double.parse((style.height! * fontSize).toStringAsFixed(2)),

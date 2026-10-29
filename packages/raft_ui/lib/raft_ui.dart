@@ -1,5 +1,9 @@
 library;
 
+export 'src/anchored_popup.dart'
+    show RaftAnchoredPopup, captureRaftPopoverThemes;
+export 'src/popover_anchor.dart' show RaftPopoverAnchor;
+
 export 'src/theme.dart';
 export 'src/text_scaling.dart';
 export 'src/large_content_viewer.dart';
@@ -67,6 +71,9 @@ export 'src/channel_footer.dart';
 export 'src/attachment_comments.dart';
 
 export 'src/design_primitives.dart';
+export 'src/menu_action_row.dart';
+export 'src/menu_popup_backend.dart';
+export 'src/choice_dialog.dart';
 export 'src/raft/raft.dart';
 export 'src/recipe_surface.dart';
 export 'src/dialog_surface.dart';

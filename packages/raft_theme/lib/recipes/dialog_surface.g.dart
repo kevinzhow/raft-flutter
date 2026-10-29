@@ -67,7 +67,7 @@ abstract final class RaftDialogSurfaceRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1483, 967, 1575, 1580, 1709, 602, 1820, 1735, 1692, 1696],
+    [965, 1484, 967, 1577, 1582, 1711, 602, 1822, 1737, 1694, 1698],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

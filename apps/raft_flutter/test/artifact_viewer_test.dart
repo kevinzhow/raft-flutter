@@ -745,6 +745,8 @@ void main() {
       await mount(t, api: api);
       await openSetup(t, setupUrl(server: ''));
       expect(api.lookups, hasLength(2));
+      await t.tap(find.byKey(const ValueKey('human-login-server-select')));
+      await frames(t);
       await t.tap(find.byKey(const ValueKey('human-login-server-srv-2')));
       await frames(t);
       await t.tap(loginButton);

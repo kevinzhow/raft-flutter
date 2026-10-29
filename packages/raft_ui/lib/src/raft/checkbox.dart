@@ -258,7 +258,19 @@ class RaftCheckboxRow extends StatelessWidget {
           spacing: RaftSpace.x3,
           children: [
             // The 20px box centres on the first 20px title line.
-            RaftCheckboxIndicator(checked: value, disabled: disabled),
+            RaftRecipeBox(
+              style: RaftCheckboxRecipe.resolve(
+                theme: t.recipeTheme,
+                states: t.recipeStates(
+                  focusVisible: st.focusVisible,
+                  extra: [if (disabled) 'data-disabled'],
+                ),
+                tokens: t.recipeTokens,
+              ).root,
+              tokens: t.recipeTokens,
+              applyText: false,
+              child: RaftCheckboxIndicator(checked: value, disabled: disabled),
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../raft_ui.dart';
-import 'anchored_popup.dart';
 import 'recipes/input.g.dart' show RaftInputRecipe;
 
 /// `text-foreground-muted theme-brutal:text-black/40`.

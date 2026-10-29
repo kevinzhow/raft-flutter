@@ -178,11 +178,12 @@ SIDEBAR_REGION = 'shell-sidebar'
 
 
 def spec(platform, surface, *, preset='default', region, interactions=None, android=None, title,
-         viewport=None, props=None, hint='packages/web/src/components/layout/Sidebar.tsx'):
+         viewport=None, props=None, themes=None,
+         hint='packages/web/src/components/layout/Sidebar.tsx'):
     return {'platform': platform, 'surface': surface, 'preset': preset, 'region': region,
             'interactions': interactions or [], 'android': android or [], 'title': title,
             'viewport': viewport or (DESKTOP if platform == 'desktop' else MOBILE),
-            'props': props or {}, 'hint': hint}
+            'props': props or {}, 'themes': themes, 'hint': hint}
 
 
 def click(selector):
@@ -231,11 +232,15 @@ def hover_key(key):
 RAIL = 'shell-rail-sidebar'
 DIALOG_CARD = '[data-slot="modal-backdrop"] [data-slot="dialog-card"]'
 DIALOG_CONTENT = '[data-slot="dialog-content"]'
+HELP_POPUP = '[data-slot="popover-content"]'
+HELP_FIRST_ITEM = HELP_POPUP + ' [data-slot="menu-item"]'
+HELP_POPUP_THEMES = {'raft': 'raft-light', 'raft-dark': 'raft-dark'}
 EXTRA = {'extra': 280}
 SECTION_TOGGLE = 'sidebar-section-toggle-'
 ANDROID_KEYS = {
     DIALOG_CARD: 'sidebar-section-dialog',
     DIALOG_CONTENT: 'shell-dialog',
+    HELP_POPUP: 'workspace-help-popup',
     tid('shell-banners'): 'shell-banners',
     tid('shell-empty'): 'shell-empty',
     tid('shell-bottom-sheet'): 'shell-bottom-sheet',
@@ -310,6 +315,56 @@ SPECS = [
          android=[tap('rail-workspace')], hint='packages/web/src/components/ui/ServerSwitcherMenu.tsx'),
 ]
 
+# New component-bounds contracts open the real LeftRail/WorkspaceView Help
+# entry. The historical rail.help-menu whole-shell cases above stay unchanged:
+# a popup-only result does not replace their frame/placement conclusions.
+for compact in (False, True):
+    for state in ('default', 'hover', 'focus'):
+        interactions = [click(tid('left-rail-help'))]
+        android = [tap('rail-help')]
+        if state == 'hover':
+            interactions.append(hover(HELP_FIRST_ITEM))
+            android.append({'type': 'hover', 'finder': {
+                'text': 'Raft Documentation', 'in': 'workspace-help-popup'}})
+        elif state == 'focus':
+            # Establish keyboard modality before focusing the real first row.
+            # The Flutter focus interaction also sends Tab before requesting
+            # that row's existing interactive node; neither provider fakes it.
+            interactions += [{'type': 'tab', 'count': 1},
+                             {'type': 'focus', 'target': HELP_FIRST_ITEM}]
+            android.append({'type': 'focus', 'finder': {
+                'text': 'Raft Documentation', 'in': 'workspace-help-popup'}})
+        name = f'compact-{state}' if compact else state
+        SPECS.append(spec(
+            'desktop', f'rail.help-popup.{name}', region=HELP_POPUP,
+            title=f'Actual Help popup bounds, {name}',
+            viewport={**DESKTOP, 'height': 560} if compact else DESKTOP,
+            props={'helpPopupState': state}, themes=HELP_POPUP_THEMES,
+            hint='packages/web/src/components/layout/LeftRail.tsx (HelpPopover)',
+            interactions=interactions, android=android))
+
+# New current-Raft popup-bounds cases; historical rail/sidebar cases stay intact.
+SORT_POPUP = '[data-slot="popover-content"]:has(button)'
+ANDROID_KEYS[SORT_POPUP] = 'sidebar-sort-popover'
+for sort_state in ('default', 'hover', 'focus'):
+    sort_steps = [click('[data-sort-section="channels"]')]
+    sort_android = [tap('sidebar-sort-system:channels')]
+    if sort_state == 'hover':
+        sort_steps.append(hover(SORT_POPUP + ' button:has-text("Recent")'))
+        sort_android.append(hover_key('sidebar-sort-recent'))
+    elif sort_state == 'focus':
+        sort_steps.extend([
+            {'type': 'tab', 'count': 1},
+            {'type': 'focus', 'target': SORT_POPUP + ' button:has-text("Recent")'},
+        ])
+        sort_android.append({'type': 'focus', 'key': 'sidebar-sort-recent'})
+    SPECS.append(spec(
+        'desktop', f'sidebar.sort-popup.{sort_state}', region=SORT_POPUP,
+        title=f'Actual Sidebar sort popup bounds, {sort_state}',
+        props={'sortPopupState': sort_state, 'lang': 'en'}, themes=HELP_POPUP_THEMES,
+        hint='packages/web/src/components/layout/SidebarSortMenu.tsx',
+        interactions=sort_steps, android=sort_android))
+
 MOBILE_HOME = 'shell-mobile-home'
 SPECS += [
     spec('mobile', 'sidebar.default', preset='mobile', region=MOBILE_HOME, title='Mobile home sidebar, default state'),
@@ -352,7 +407,7 @@ for platform in ('desktop', 'mobile'):
 def build_cases():
     cases = []
     for s in SPECS:
-        for suffix, theme in THEMES.items():
+        for suffix, theme in (s['themes'] or THEMES).items():
             cid = f'components.shell.{s["platform"]}.{s["surface"]}.{suffix}'
             props = {'extCase': f'{s["platform"]}.{s["surface"]}', 'extKind': 'shell', 'parityTheme': theme,
                      'platform': s['platform'], 'surface': s['surface'], 'preset': s['preset'], **s['props']}

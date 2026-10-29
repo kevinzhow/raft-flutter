@@ -77,7 +77,14 @@ void main() {
         expect((previews, jumps, downloads), (1, 0, 0));
         await tester.tap(find.byKey(const ValueKey('channel-file-overflow-a')));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Jump to Original Message'));
+        final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
+        await tester.tap(
+          find.text(
+            tokens.isRaftLook
+                ? 'Jump to original message'
+                : 'Jump to Original Message',
+          ),
+        );
         await tester.pumpAndSettle();
         expect((previews, jumps, downloads), (1, 1, 0));
         final stale = tester.widget<SourceChannelFileRow>(

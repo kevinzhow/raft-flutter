@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 
 import 'design_primitives.dart' show RaftInteractive;
 import 'icons.dart';
+import 'menu_action_row.dart';
+import 'popover_surface.dart';
 import 'recipe_surface.dart';
 import 'recipes/context_menu.g.dart';
 import 'recipes/token_binding.dart';
@@ -80,24 +82,29 @@ class RaftContextMenuContent extends StatelessWidget {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: content.minWidth ?? 192),
               child: IntrinsicWidth(
-                child: RaftRecipeBox(
-                  style: content,
-                  tokens: resolver,
-                  clip: true,
-                  applyText: false,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (var i = 0; i < children.length; i++) ...[
-                          if (i > 0 && gap > 0) SizedBox(height: gap),
-                          children[i],
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
+                child: t.isRaftLook
+                    ? RaftPopoverSurface(
+                        surfaceStyle: content,
+                        child: _ContentList(children: children, gap: gap),
+                      )
+                    : RaftRecipeBox(
+                        style: content,
+                        tokens: resolver,
+                        clip: true,
+                        applyText: false,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (var i = 0; i < children.length; i++) ...[
+                                if (i > 0 && gap > 0) SizedBox(height: gap),
+                                children[i],
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
               ),
             ),
           ),
@@ -105,6 +112,27 @@ class RaftContextMenuContent extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ContentList extends StatelessWidget {
+  const _ContentList({required this.children, required this.gap});
+  final List<Widget> children;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    primary: false,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0 && gap > 0) SizedBox(height: gap),
+          children[i],
+        ],
+      ],
+    ),
+  );
 }
 
 class _Separator extends StatelessWidget {
@@ -145,10 +173,25 @@ class _Item extends StatelessWidget {
               pressed: st.pressed,
               focusVisible: st.focusVisible,
               disabled: !enabled,
+              extra: [
+                if (t.isRaftLook && !enabled) 'data-disabled',
+                if (t.isRaftLook && enabled && (st.hovered || st.focusVisible))
+                  'data-highlighted',
+              ],
             ),
             tokens: resolver,
           );
           final style = slot.item;
+          if (t.isRaftLook) {
+            return RaftMenuSlotRow(
+              label: item.label,
+              root: style,
+              tokens: resolver,
+              leading: item.glyph == null
+                  ? null
+                  : RaftIcon(item.glyph!, size: 14),
+            );
+          }
           final color =
               style.textStyle(resolver).color ??
               DefaultTextStyle.of(context).style.color;

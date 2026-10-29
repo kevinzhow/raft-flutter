@@ -35,6 +35,21 @@ function fixture(t, text = selection) {
       </>;
     }
   `);
+  const layout = join(root, 'src/components/layout');
+  mkdirSync(layout, { recursive: true });
+  writeFileSync(join(layout, 'LeftRail.tsx'), `
+    export function HelpMenu() {
+      return <PopoverContent className="help-surface-from-source">
+        <div className="help-header-from-source"><SectionEyebrow>Help</SectionEyebrow></div>
+        <MenuItem>Documentation</MenuItem>
+      </PopoverContent>;
+    }
+  `);
+  writeFileSync(join(layout, 'SidebarSortMenu.tsx'), `
+    export default function SidebarSortMenu() {
+      return <SelectionPopover showHeader={false} className="sort-caller-from-source" />;
+    }
+  `);
   t.after(() => rmSync(root, { recursive: true, force: true }));
   return root;
 }
@@ -66,4 +81,29 @@ test('an unsupported new upstream class helper stops extraction', (t) => {
 test('an upstream DOM structural change stops extraction', (t) => {
   const root = fixture(t, selection.replace('<span className="leading-from-source">{leading}</span>', ''));
   assert.throws(() => extractMenuCompositions(root, ts), /leading\/label structure changed/);
+});
+test('Help composition reads the real product surface and header, with provenance', (t) => {
+  const help = extractMenuCompositions(fixture(t), ts).find((recipe) => recipe.name === 'webHelpMenu');
+  assert.equal(help.options.slots.root, 'help-surface-from-source');
+  assert.equal(help.options.slots.header, 'help-header-from-source');
+  assert.match(help.region, /layout\/LeftRail\.tsx sha256:[a-f0-9]{64}$/);
+});
+test('a missing Help header stops generation instead of retaining stale styles', (t) => {
+  const root = fixture(t);
+  writeFileSync(join(root, 'src/components/layout/LeftRail.tsx'),
+    'export function HelpMenu() { return <PopoverContent className="surface"><MenuItem>Doc</MenuItem></PopoverContent>; }');
+  assert.throws(() => extractMenuCompositions(root, ts), /Help header structure changed/);
+});
+
+test('Sidebar sort composes its actual source surface and caller variant', (t) => {
+  const sort = extractMenuCompositions(fixture(t), ts).find((recipe) => recipe.name === 'webSidebarSortMenu');
+  assert.ok(sort, 'Sidebar sort must not borrow a numerically similar menu recipe');
+  assert.equal(sort.options.slots.root, 'surface-from-source sort-caller-from-source');
+  assert.match(sort.region, /layout\/SidebarSortMenu\.tsx sha256:[a-f0-9]{64}$/);
+});
+test('an unsupported Sidebar sort caller expression stops extraction', (t) => {
+  const root = fixture(t);
+  writeFileSync(join(root, 'src/components/layout/SidebarSortMenu.tsx'),
+    'function SidebarSortMenu() { return <SelectionPopover className={unknownSortStyle()} />; }');
+  assert.throws(() => extractMenuCompositions(root, ts), /Unsupported menu class expression/);
 });

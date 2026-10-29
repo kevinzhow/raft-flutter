@@ -71,7 +71,7 @@ Text _boldText(
 /// The Raft Server field. A Marketplace app lists every server the account can
 /// use, with a search over more than five and each server's state (Web
 /// `MarketplaceServerRow`); any other app lists the servers that have it, as
-/// one card for a single server and a choice for several.
+/// a canonical Select in Raft and the original choice cards in Frozen.
 class HumanLoginServerField extends StatefulWidget {
   const HumanLoginServerField({
     super.key,
@@ -135,10 +135,33 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
     );
   }
 
-  /// Servers that have the app: Web's Select, drawn as the app's choice cards.
+  /// Servers that have the app: canonical Select; Frozen keeps its choice cards.
   Widget _plain(BuildContext context) {
     final t = RaftTokens.of(context);
     final choices = widget.lookup.choices;
+    if (t.isRaftLook) {
+      return RaftSelectField<String>(
+        key: const ValueKey('human-login-server-select'),
+        label: raftText(context, 'Raft Server'),
+        placeholder: raftText(context, 'Raft Server'),
+        value: widget.selectedId.isEmpty ? null : widget.selectedId,
+        items: [
+          for (final choice in choices)
+            RaftSelectItem(
+              value: choice.server.id,
+              label: choice.server.label,
+              labelKey: ValueKey('human-login-server-${choice.server.id}'),
+            ),
+        ],
+        onChanged: widget.enabled
+            ? (value) {
+                if (value != null) {
+                  widget.onSelect(value);
+                }
+              }
+            : null,
+      );
+    }
     final several = choices.length > 1;
     Widget label(String text) => Text(
       text,

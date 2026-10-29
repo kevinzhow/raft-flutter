@@ -414,7 +414,7 @@ class AttachmentLightboxImageState extends State<AttachmentLightboxImage> {
           fillAspect: aspect,
         );
         final picture = provider == null
-            ? const RaftTransferPlaceholder(onDark: true)
+            ? _addressPlaceholder(context)
             : hero(
                 // ignore: raft_lints/avoid_raw_image_decode -- Lightbox stage images are leases decoded at screen size x zoom cap by the repository; the viewer keeps that bounded path.
                 Image(
@@ -460,13 +460,56 @@ class AttachmentLightboxImageState extends State<AttachmentLightboxImage> {
                   child: _transferOverlay(context, thumbnail),
                 ),
               ),
+            if (full == null && RaftTokens.of(context).isRaftLook)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: _withAddressPhase(
+                    context,
+                    () => _waitingForAddress
+                        ? const RaftLightboxLoading()
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              ),
           ],
         );
       },
     );
   }
 
+  bool get _waitingForAddress =>
+      full == null &&
+      !failed &&
+      widget.placeholder == null &&
+      (lease?.lease.waitingForAddress ?? false);
+
+  Widget _withAddressPhase(BuildContext context, Widget Function() builder) {
+    final progress = lease?.lease.progress;
+    if (!RaftTokens.of(context).isRaftLook || progress == null) {
+      return builder();
+    }
+    return ValueListenableBuilder<AttachmentTransferProgress?>(
+      valueListenable: progress,
+      builder: (context, _, child) => builder(),
+    );
+  }
+
+  Widget _addressPlaceholder(BuildContext context) => _withAddressPhase(
+    context,
+    () => RaftTokens.of(context).isRaftLook && _waitingForAddress
+        ? const SizedBox.shrink()
+        : const RaftTransferPlaceholder(onDark: true),
+  );
+
   Widget _transferOverlay(BuildContext context, ImageProvider? thumbnail) =>
+      _withAddressPhase(
+        context,
+        () => RaftTokens.of(context).isRaftLook && _waitingForAddress
+            ? const SizedBox.shrink()
+            : _transferOverlayBody(context, thumbnail),
+      );
+
+  Widget _transferOverlayBody(BuildContext context, ImageProvider? thumbnail) =>
       Stack(
         fit: StackFit.expand,
         children: [

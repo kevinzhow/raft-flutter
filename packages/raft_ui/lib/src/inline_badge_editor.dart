@@ -7,6 +7,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
+import 'menu_action_row.dart';
+import 'popover_surface.dart';
 import 'mounted_task_chip.dart';
 import 'task_status_badge.dart';
 import 'design_primitives.dart';
@@ -509,6 +511,55 @@ class _RaftInlineBadgeMenuState extends State<RaftInlineBadgeMenu> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
+    if (t.isRaftLook) {
+      final content = RaftDropdownMenuRecipe.resolve(
+        theme: t.recipeTheme,
+        states: t.recipeStates(),
+        tokens: rt,
+      ).content;
+      // InlineBadgeEditor supplies its own dropdownMinWidth. This is a source
+      // width composition, not a second surface or row treatment.
+      final surface = RaftSlotStyle(
+        {...content.properties, 'min-width': CssNum(widget.minWidth, 'px')},
+        content.targets,
+        content.classes,
+        rt,
+      );
+      return FocusScope(
+        onKeyEvent: keyEvent,
+        child: Semantics(
+          role: SemanticsRole.menu,
+          child: RaftPopoverSurface(
+            surfaceStyle: surface,
+            child: IntrinsicWidth(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final option in widget.options)
+                    _InlineBadgeMenuRow(
+                      key: ValueKey(option.id),
+                      option: option,
+                      selected: option.id == widget.selectedId,
+                      // ignore: raft_lints/avoid_render_index_assertion -- updateNodes() synchronizes every live option before build.
+                      focusNode: nodes[option.id]!,
+                      onPressed: () {
+                        if (!mounted ||
+                            !widget.options.any(
+                              (o) => o.id == option.id && !o.disabled,
+                            )) {
+                          return;
+                        }
+                        widget.onSelect(option.id);
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
     final content = RaftDropdownMenuRecipe.resolve(
       theme: RaftRecipeTheme.elegant,
@@ -618,6 +669,27 @@ class _InlineBadgeMenuRowState extends State<_InlineBadgeMenuRow> {
       button: false,
       onPressed: widget.option.disabled ? null : widget.onPressed,
       builder: (context, state) {
+        if (t.isRaftLook) {
+          return Semantics(
+            role: SemanticsRole.menuItem,
+            selected: widget.selected,
+            label: widget.option.label,
+            enabled: !widget.option.disabled,
+            focusable: !widget.option.disabled,
+            focused: widget.option.disabled ? null : widget.focusNode.hasFocus,
+            excludeSemantics: true,
+            child: RaftMenuActionRow(
+              label: widget.option.label,
+              enabled: !widget.option.disabled,
+              hovered: state.hovered,
+              focusVisible: state.focusVisible,
+              trailing: Opacity(
+                opacity: widget.selected ? 1 : 0,
+                child: const RaftIcon(RaftGlyph.check, size: 14),
+              ),
+            ),
+          );
+        }
         final button = RaftButtonRecipe.resolve(
           theme: RaftRecipeTheme.elegant,
           variant: RaftButtonRecipeVariant.ghost,

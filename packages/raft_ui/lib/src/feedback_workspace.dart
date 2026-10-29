@@ -30,6 +30,8 @@ import 'icons.dart';
 import 'localization.dart';
 import 'overlays/dialog.dart';
 import 'recipe_surface.dart';
+import 'menu_action_row.dart';
+import 'popover_surface.dart';
 import 'recipes/avatar.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/dropdown_menu.g.dart';
@@ -1433,11 +1435,9 @@ class RaftFeedbackCloseMenu extends StatelessWidget {
           autofocus: true,
           child: Semantics(
             role: SemanticsRole.menu,
-            child: RaftRecipeBox(
+            child: RaftPopoverSurface(
               key: const ValueKey('feedback-close-menu'),
-              style: content,
-              tokens: rt,
-              clip: true,
+              surfaceStyle: content,
               child: _PixelSnappedIntrinsicWidth(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -1530,7 +1530,7 @@ class _CloseMenuItem extends StatelessWidget {
           fontWeight: FontWeight.w400,
           color: t.colors['foreground-muted'],
         );
-        return RaftRecipeBox(
+        return RaftMenuItemSurface(
           style: item,
           tokens: rt,
           applyText: false,

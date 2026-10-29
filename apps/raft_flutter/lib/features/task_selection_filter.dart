@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'resource_filters.dart';
+import 'sender_avatar_projection.dart';
+
 /// Product anchoring for source SelectionPopover. Shared recipes own its paint;
 /// the resource page owns the authority fence and immediate selection updates.
 class TaskSelectionFilter extends StatefulWidget {
@@ -16,6 +19,8 @@ class TaskSelectionFilter extends StatefulWidget {
     required this.onClear,
     required this.onController,
     this.aliases = const {},
+    this.selfIdentity,
+    this.identityAvatars = const {},
     this.beforeOpen,
     this.tooltip,
     this.label,
@@ -36,6 +41,13 @@ class TaskSelectionFilter extends StatefulWidget {
   final RaftGlyph? glyph;
   final bool closeOnSelect;
   final Map<String, String> options, aliases;
+
+  /// Authorized current-user identity, never inferred from a localized label.
+  /// Only its key marks the current SelectionPopover's "me" sentinel.
+  final ResourceSender? selfIdentity;
+
+  /// Authorized product projection; the shared Avatar owns all image paint.
+  final Map<String, SenderAvatarProjection> identityAvatars;
   final Set<String> selection;
   final bool Function() valid;
   final void Function(String) onToggle;
@@ -68,6 +80,70 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
   }
 
   bool get acceptsInteraction => mounted && menu.isOpen && widget.valid();
+
+  bool _sentinel(String key) =>
+      key == 'unassigned' || key == widget.selfIdentity?.key;
+
+  Widget _identityAvatar(String key, String name) {
+    final projection = widget.identityAvatars[key];
+    if (projection == null) {
+      return RaftSelectionPopoverAvatarSlot(
+        name: name,
+        agent: key.startsWith('agent:'),
+      );
+    }
+    final agent = projection.kind == 'agent';
+    return RaftAvatar(
+      name: name,
+      kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
+      mountedContext: RaftMountedAvatarContext.compactList,
+      content: RaftAvatarContent(
+        name: name,
+        kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
+        uploadedUrl: projection.uploadedUrl,
+        gravatarUrl: projection.gravatarUrl,
+        pixelKey: projection.pixelKey,
+      ),
+    );
+  }
+
+  Widget _anchor({
+    required MenuController controller,
+    required FocusNode childFocusNode,
+    required bool consumeOutsideTap,
+    required Clip clipBehavior,
+    required Offset alignmentOffset,
+    required VoidCallback onOpen,
+    required MenuStyle style,
+    required List<Widget> menuChildren,
+    required MenuAnchorChildBuilder builder,
+  }) {
+    if (RaftTokens.of(context).isRaftLook && !widget.combobox) {
+      return RaftPopoverAnchor(
+        controller: controller,
+        anchorKey: triggerKey,
+        childFocusNode: childFocusNode,
+        onOpen: onOpen,
+        // Web db5e399f SelectionPopover: sideOffset8/collisionPadding8.
+        gap: 8,
+        collisionPadding: 8,
+        builder: builder,
+        popup: menuChildren.firstOrNull ?? const SizedBox.shrink(),
+      );
+    }
+    return MenuAnchor(
+      controller: controller,
+      childFocusNode: childFocusNode,
+      consumeOutsideTap: consumeOutsideTap,
+      clipBehavior: clipBehavior,
+      alignmentOffset: alignmentOffset,
+      onOpen: onOpen,
+      style: style,
+      menuChildren: menuChildren,
+      builder: builder,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -80,7 +156,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
               widget.aliases[entry.key]?.toLowerCase().contains(needle) == true,
         )
         .toList();
-    return MenuAnchor(
+    return _anchor(
       controller: menu,
       childFocusNode: anchorFocus,
       consumeOutsideTap: false,
@@ -123,6 +199,47 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
                 menu.close();
               },
             ),
+          )
+        else if (t.isRaftLook)
+          RaftSelectionPopover(
+            key: ValueKey(
+              'task-selection-${widget.field.toLowerCase()}-popover',
+            ),
+            width: width,
+            title: raftText(context, widget.field),
+            searchController: search,
+            searchPlaceholder: raftText(context, 'Search…'),
+            onSearchChanged: (value) {
+              if (acceptsInteraction) {
+                setState(() => needle = value.trim().toLowerCase());
+              }
+            },
+            emptyLabel: raftText(context, 'No results'),
+            onClear: widget.selection.isEmpty
+                ? null
+                : () {
+                    if (acceptsInteraction) widget.onClear();
+                  },
+            options: [
+              for (final option in entries)
+                RaftSelectionOption(
+                  rowKey: ValueKey('task-filter-${widget.field}-${option.key}'),
+                  label: option.value,
+                  checked: widget.selection.contains(option.key),
+                  disabled: !widget.valid(),
+                  italic: _sentinel(option.key),
+                  reserveLeadingSlot: widget.field != 'Channel',
+                  leading: widget.field == 'Channel' || _sentinel(option.key)
+                      ? null
+                      : _identityAvatar(option.key, option.value),
+                  onTap: () {
+                    if (acceptsInteraction) {
+                      widget.onToggle(option.key);
+                      if (widget.closeOnSelect) menu.close();
+                    }
+                  },
+                ),
+            ],
           )
         else
           RaftMenuPanel(
@@ -226,7 +343,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
         ),
         child: Focus(
           key: triggerKey,
-          focusNode: anchorFocus,
+          focusNode: t.isRaftLook && !widget.combobox ? null : anchorFocus,
           // TasksPanel filter chip: Button sm outline `h-8 gap-2` with the
           // field icon (14), label, optional count and ChevronDown 12. Layout
           // follows the 32px Web box; the touch target stays 48px.
@@ -235,6 +352,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
               ? RaftTouchTargetExpander(
                   minSize: const Size.square(RaftMetrics.touchTarget),
                   child: RaftPickerTriggerButton(
+                    focusNode: widget.combobox ? null : anchorFocus,
                     label:
                         widget.label ??
                         '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',

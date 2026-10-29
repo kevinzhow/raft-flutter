@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// raft-ui 0.7.1 `Tabs`: h-8 sticker tabs / h-11 underline tabs, yellow sticker selection, callbacks, keyboard.
+// raft-ui 0.7.0 `Tabs`: h-8 sticker tabs / h-11 underline tabs, yellow sticker selection, callbacks, keyboard.
 Widget _app(bool dark, Widget child) => MaterialApp(
   theme: raftTheme(dark: dark),
   home: Scaffold(
@@ -84,7 +84,7 @@ void main() {
         expect((selected.border! as Border).top.color, ui.stickerInk);
         expect(selected.borderRadius, BorderRadius.circular(8));
         final other = _decoration(tester, 'tab-b');
-        expect(other.color, const Color(0x00000000));
+        expect(other.color ?? Colors.transparent, Colors.transparent);
         expect(other.border != null, isTrue);
       },
     );
@@ -103,22 +103,31 @@ void main() {
           ),
         ),
       );
-      final bar = find.descendant(
-        of: find.byKey(const ValueKey('tab-a')),
-        matching: find.byWidgetPredicate(
-          (w) => w is ColoredBox && w.color == ui.foreground,
-        ),
+      // Web draws this as an inset shadow, not a second positioned box.
+      RaftRecipeBox tab(String key) => tester.widget<RaftRecipeBox>(
+        find
+            .descendant(
+              of: find.byKey(ValueKey(key)),
+              matching: find.byType(RaftRecipeBox),
+            )
+            .first,
       );
-      expect(bar, findsOneWidget);
-      expect(tester.getSize(bar).height, 2);
+      final selected = tab('tab-a');
+      final bars = selected.style
+          .cssShadows(selected.tokens)
+          .where((shadow) => shadow.inset)
+          .toList();
+      expect(bars, hasLength(1));
+      expect(bars.single.offset, const Offset(0, -2));
+      expect(bars.single.blur, 0);
+      expect(bars.single.spread, 0);
+      expect(bars.single.color, ui.foreground);
+      final resting = tab('tab-b');
       expect(
-        find.descendant(
-          of: find.byKey(const ValueKey('tab-b')),
-          matching: find.byWidgetPredicate(
-            (w) => w is ColoredBox && w.color == ui.foreground,
-          ),
-        ),
-        findsNothing,
+        resting.style
+            .cssShadows(resting.tokens)
+            .where((shadow) => shadow.inset),
+        isEmpty,
       );
     });
 

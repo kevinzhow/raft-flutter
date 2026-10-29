@@ -1,18 +1,38 @@
-// raft-ui 0.7.1 `Spinner`: four square pixels in a 2x2 grid that light up clockwise (top-left, top-right,
+// raft-ui 0.7.0 `Spinner`: four square pixels in a 2x2 grid that light up clockwise (top-left, top-right,
 // bottom-right, bottom-left), 1s per turn, `steps(1)`. With reduced motion only the first pixel is lit.
 import 'package:flutter/material.dart';
+import 'package:raft_theme/recipes/spinner.g.dart' as source;
+
+import '../recipes/recipe_runtime.dart' show RaftTokenResolver;
 
 import '../theme.dart';
+import '../recipe_surface.dart' show RaftRecipeBinding;
 
-/// `size` axis of the `spinner` recipe: pixel edge and gap in px.
+/// `size` axis of the published `spinner` recipe.
 enum RaftPixelSpinnerSize {
-  xs(4, 1.5),
-  sm(5, 2),
-  md(6, 2),
-  lg(8, 3);
+  xs,
+  sm,
+  md,
+  lg;
 
-  const RaftPixelSpinnerSize(this.pixel, this.gap);
-  final double pixel, gap;
+  /// Resolve the modern-only painter from the existing generated source.
+  /// The frozen ring renderer never enters this path. Its legacy-shaped
+  /// router cannot represent the published `pixel` slot.
+  source.RaftSpinnerRecipeStyle resolve(
+    RaftTokenResolver? tokens, {
+    bool inverse = false,
+  }) => source.RaftSpinnerRecipe.resolve(
+    size: source.RaftSpinnerRecipeSize.values.byName(name),
+    variant: inverse
+        ? source.RaftSpinnerRecipeVariant.inverse
+        : source.RaftSpinnerRecipeVariant.default_,
+    tokens: tokens,
+  );
+
+  // The grid inherits these custom properties from its root. Keep the
+  // existing size API, but read its values from that generated declaration.
+  double get pixel => resolve(null).root.length('--spinner-pixel')!;
+  double get gap => resolve(null).root.length('--spinner-gap')!;
 
   /// Edge of the whole grid.
   double get extent => pixel * 2 + gap;
@@ -75,8 +95,14 @@ class _RaftPixelSpinnerState extends State<RaftPixelSpinner>
         widget.color ??
         DefaultTextStyle.of(context).style.color ??
         Colors.black;
-    final extent = widget.size.extent;
-    final painter = (double? phase) => _PixelPainter(widget.size, color, phase);
+    final recipe = widget.size.resolve(RaftTokens.of(context).recipeTokens);
+    final pixel = recipe.root.length('--spinner-pixel')!;
+    final gap = recipe.root.length('--spinner-gap')!;
+    final radius = recipe.pixel.borderRadius!;
+    final dimOpacity = recipe.pixel.opacity!;
+    final extent = pixel * 2 + gap;
+    final painter = (double? phase) =>
+        _PixelPainter(pixel, gap, radius, dimOpacity, color, phase);
     return Semantics(
       label: widget.semanticLabel,
       liveRegion: true,
@@ -95,8 +121,16 @@ class _RaftPixelSpinnerState extends State<RaftPixelSpinner>
 }
 
 class _PixelPainter extends CustomPainter {
-  _PixelPainter(this.size, this.color, this.phase);
-  final RaftPixelSpinnerSize size;
+  _PixelPainter(
+    this.pixel,
+    this.gap,
+    this.radius,
+    this.dimOpacity,
+    this.color,
+    this.phase,
+  );
+  final double pixel, gap, dimOpacity;
+  final BorderRadius radius;
   final Color color;
 
   /// 0..1 through the turn; null when motion is reduced.
@@ -111,21 +145,25 @@ class _PixelPainter extends CustomPainter {
     for (var i = 0; i < 4; i++) {
       final (col, row) = _cells[i];
       final rect = Rect.fromLTWH(
-        col * (size.pixel + size.gap),
-        row * (size.pixel + size.gap),
-        size.pixel,
-        size.pixel,
+        col * (pixel + gap),
+        row * (pixel + gap),
+        pixel,
+        pixel,
       );
       final paint = Paint()
-        ..color = color.withValues(alpha: color.a * (i == lit ? 1 : .2));
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(1)),
-        paint,
-      );
+        ..color = color.withValues(
+          alpha: color.a * (i == lit ? 1 : dimOpacity),
+        );
+      canvas.drawRRect(radius.toRRect(rect), paint);
     }
   }
 
   @override
   bool shouldRepaint(_PixelPainter old) =>
-      old.size != size || old.color != color || old.phase != phase;
+      old.pixel != pixel ||
+      old.gap != gap ||
+      old.radius != radius ||
+      old.dimOpacity != dimOpacity ||
+      old.color != color ||
+      old.phase != phase;
 }

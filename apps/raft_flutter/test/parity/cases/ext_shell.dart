@@ -10,6 +10,8 @@
 // capture region is a keyed overlay over the same rectangle the React host
 // crops (`capture.androidKey`).
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart'
+    show expect, find, findsOneWidget, isFalse, isTrue;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -318,6 +320,94 @@ final ParityCase _desktopCase = ParityCase(
   build: _desktop,
 );
 
+// Open the product Help menu through rail-help, then crop its own keyed
+// surface. Do not apply the historical shell fixture's blank main-panel mask
+// or substitute a component board for this real WorkspaceView entry.
+final ParityCase _helpPopupCase = ParityCase(
+  widgets: const [
+    'raft_flutter:WorkspaceView',
+    'raft_ui:RaftWorkspaceHelpMenu',
+    'raft_ui:RaftDropdownMenu',
+    'raft_ui:RaftMenuPanel',
+    'raft_ui:RaftMenuItem',
+  ],
+  notes:
+      'Extension suite (not official). Real WorkspaceView Help popup bounds; '
+      'historical whole-shell cases retain their own results.',
+  settle: const Duration(milliseconds: 900),
+  build: shellWorkspaceView,
+  interact: (tester, ctx) async {
+    final popup = find.byKey(const ValueKey('workspace-help-popup'));
+    expect(popup, findsOneWidget);
+    final documentation = find.descendant(
+      of: popup,
+      matching: find.widgetWithText(RaftMenuItem, 'Raft Documentation'),
+    );
+    expect(documentation, findsOneWidget);
+    if (ctx.props['helpPopupState'] != 'focus') return;
+    final detectors = find
+        .descendant(
+          of: documentation,
+          matching: find.byType(FocusableActionDetector),
+          matchRoot: true,
+        )
+        .evaluate()
+        .map((element) => element.widget as FocusableActionDetector);
+    expect(
+      detectors.any((detector) => detector.focusNode?.hasPrimaryFocus ?? false),
+      isTrue,
+      reason: 'The actual Help documentation row must own keyboard focus.',
+    );
+  },
+);
+
+// Current Raft: the actual WorkspaceView sort action, complete popup bounds.
+final ParityCase _sidebarSortPopupCase = ParityCase(
+  widgets: const [
+    'raft_flutter:WorkspaceView',
+    'raft_flutter:showSidebarSortMenu',
+    'raft_ui:RaftSelectionPopover',
+  ],
+  notes:
+      'Extension suite (not official). Real WorkspaceView Channels sort popup. '
+      'Historical whole-sidebar cases and their results remain separate.',
+  settle: const Duration(milliseconds: 900),
+  build: shellWorkspaceView,
+  interact: (tester, ctx) async {
+    final popup = find.byKey(const ValueKey('sidebar-sort-popover'));
+    expect(popup, findsOneWidget);
+    final selection = tester.widget<RaftSelectionPopover>(popup);
+    expect(selection.showHeader, isFalse);
+    expect(selection.options.map((option) => option.label), [
+      'Manual',
+      'Recent',
+      'A-Z',
+    ]);
+    expect(
+      selection.options
+          .where((option) => option.checked)
+          .map((option) => option.label),
+      ['Manual'],
+    );
+    if (ctx.props['sortPopupState'] != 'focus') return;
+    final focusedRow = find.byKey(const ValueKey('sidebar-sort-recent'));
+    expect(focusedRow, findsOneWidget);
+    expect(
+      find
+          .descendant(
+            of: focusedRow,
+            matching: find.byType(FocusableActionDetector),
+            matchRoot: true,
+          )
+          .evaluate()
+          .map((element) => element.widget as FocusableActionDetector)
+          .any((detector) => detector.focusNode?.hasPrimaryFocus ?? false),
+      isTrue,
+      reason: 'The actual Recent option must own keyboard focus.',
+    );
+  },
+);
+
 const _desktopSurfaces = [
   'sidebar.default',
   'sidebar.empty',
@@ -557,8 +647,18 @@ ParityCase _primitive(Widget Function(ParityContext) build, String widget) =>
       ),
     );
 
-/// Every extension shell case, keyed by id (3 themes each).
+/// Historical shell cases keep 3 themes; Help popup bounds add current Raft
+/// light/dark without changing those historical entries.
 final Map<String, ParityCase> extShellCases = {
+  for (final state in const ['default', 'hover', 'focus'])
+    for (final theme in const ['raft', 'raft-dark'])
+      'components.shell.desktop.sidebar.sort-popup.$state.$theme':
+          _sidebarSortPopupCase,
+  for (final state in const ['default', 'hover', 'focus'])
+    for (final density in const ['', 'compact-'])
+      for (final theme in const ['raft', 'raft-dark'])
+        'components.shell.desktop.rail.help-popup.$density$state.$theme':
+            _helpPopupCase,
   for (final surface in [..._desktopSurfaces, 'activity.frame'])
     for (final theme in const ['brutal', 'elegant', 'elegant-dark'])
       'components.shell.desktop.$surface.$theme': _desktopCase,

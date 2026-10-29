@@ -12,6 +12,9 @@ import 'design_primitives.dart';
 import 'message_content_tokens.dart';
 import 'text_measure.dart';
 import 'theme.dart';
+import 'raft/tabs.dart';
+import 'recipe_surface.dart';
+import 'recipes/web_xlsx_tabs_layout.g.dart';
 
 /// Markdown longer than this many characters is laid out as a lazy list of
 /// blocks (only the blocks near the viewport are built, parsed off the UI
@@ -93,6 +96,28 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
     if (paragraph != null) {
       raftScrollToParagraph(markdownScroll.position, paragraph);
     }
+  }
+
+  /// Product Tabs root layout extracted from the real XLSX preview.
+  Widget _xlsxTabs(List<Map> sheets) {
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    final root = RaftWebXlsxTabsLayoutRecipe.resolve(tokens: rt).root;
+    return Padding(
+      padding: root.margin,
+      child: RaftRecipeBox(
+        style: root,
+        tokens: rt,
+        child: RaftTabsList<int>(
+          tabs: [
+            for (var i = 0; i < sheets.length; i++)
+              RaftTabItem(value: i, label: '${sheets[i]['name'] ?? ''}'),
+          ],
+          value: sheet,
+          onChanged: (next) => setState(() => sheet = next),
+        ),
+      ),
+    );
   }
 
   /// Web `MarkdownPreviewPane` at `xl`: the outline column beside the document.
@@ -730,25 +755,28 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                 ),
               ),
               if (isXlsx && sheets.length > 1)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Wrap(
-                    children: [
-                      for (var i = 0; i < sheets.length; i++)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: RaftControl(
-                            kind: RaftControlKind.tab,
-                            selected: sheet == i,
-                            shadow: false,
-                            semanticLabel: '${sheets[i]['name'] ?? ''}',
-                            onPressed: () => setState(() => sheet = i),
-                            child: Text('${sheets[i]['name'] ?? ''}'),
+                if (t.isRaftLook)
+                  _xlsxTabs(sheets)
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Wrap(
+                      children: [
+                        for (var i = 0; i < sheets.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: RaftControl(
+                              kind: RaftControlKind.tab,
+                              selected: sheet == i,
+                              shadow: false,
+                              semanticLabel: '${sheets[i]['name'] ?? ''}',
+                              onPressed: () => setState(() => sheet = i),
+                              child: Text('${sheets[i]['name'] ?? ''}'),
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
               if (empty)
                 _PaneBox(
                   clipBehavior: recipe.raft ? Clip.antiAlias : Clip.none,

@@ -730,6 +730,9 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
                   ? widget.loadingLabel ?? 'Working…'
                   : widget.confirmLabel,
               glyph: loading ? null : widget.confirmGlyph,
+              // ConfirmDialog passes an ordinary SVG/Spinner, without the
+              // Button recipe's explicit data-icon="inline-start" marker.
+              iconInlineStart: usesLegacyRecipes(t.recipeTokens),
               leading: loading
                   ? const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.xs)
                   : null,
