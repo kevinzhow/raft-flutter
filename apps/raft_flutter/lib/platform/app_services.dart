@@ -12,6 +12,7 @@ import '../features/human_login.dart' show humanLoginFor;
 import '../features/human_login_scope.dart';
 
 import 'app_update.dart';
+import 'display_folds.dart';
 import 'local_network_access.dart';
 import 'desktop_windows.dart';
 
@@ -192,7 +193,12 @@ class _AppServicesHostState extends State<AppServicesHost>
         ignoring: _closing,
         child: ExcludeFocus(
           excluding: _closing,
-          child: RaftLinkScope(open: openMessageLink, child: widget.child),
+          child: RaftLinkScope(
+            open: openMessageLink,
+            // Directly above the app's RaftTextScaling: iOS folds until the
+            // engine reports them (see display_folds.dart).
+            child: RaftNativeDisplayFeatures(child: widget.child),
+          ),
         ),
       ),
     ),

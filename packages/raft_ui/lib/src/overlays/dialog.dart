@@ -973,7 +973,9 @@ class RaftDialogRoute<T> extends PopupRoute<T> {
               type: MaterialType.transparency,
               child: Builder(builder: builder),
             )
-          : SafeArea(child: Builder(builder: builder)),
+          : DisplayFeatureSubScreen(
+              child: SafeArea(child: Builder(builder: builder)),
+            ),
     ),
   );
 

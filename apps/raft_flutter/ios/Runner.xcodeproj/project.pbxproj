@@ -37,6 +37,9 @@
 		CD734DE5242A69B3322EA466 /* ActionExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 22732F454B7BCCE179873502 /* ActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E97CF0AF0B8896E02EAF5545 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A793CBF095381BBCCD7A1CF4 /* Foundation.framework */; };
 		F153C23F81B8D7B89D5C3508 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE84A4B49A699E3A7A6B5765 /* ShareViewController.swift */; };
+		86535EE1407C42DA9B21991B /* RaftFoldMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 008DC5ED930E4CBEB2DFEDFA /* RaftFoldMonitor.m */; };
+		17C3DA8A54634298A1535C18 /* RaftFlutterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7EFF7BDC954E47B5E1C9CD /* RaftFlutterViewController.swift */; };
+		4963D4CEAAF74C83B6E3AABA /* RaftFoldBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9947920AD3A343FC90ED26BA /* RaftFoldBridge.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -127,6 +130,10 @@
 		D9A1B51D3DD6E921E7316F11 /* en */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		E695A254F590E3C35F63A03F /* en */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		EDF23F70F2B5491B2B0A7BC5 /* RaftSharePage.js */ = {isa = PBXFileReference; includeInIndex = 1; path = RaftSharePage.js; sourceTree = "<group>"; };
+		9A5E12D591374CF0B6777D90 /* RaftFoldMonitor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RaftFoldMonitor.h; sourceTree = "<group>"; };
+		008DC5ED930E4CBEB2DFEDFA /* RaftFoldMonitor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RaftFoldMonitor.m; sourceTree = "<group>"; };
+		EE7EFF7BDC954E47B5E1C9CD /* RaftFlutterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaftFlutterViewController.swift; sourceTree = "<group>"; };
+		9947920AD3A343FC90ED26BA /* RaftFoldBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaftFoldBridge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -261,6 +268,10 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				9A5E12D591374CF0B6777D90 /* RaftFoldMonitor.h */,
+				008DC5ED930E4CBEB2DFEDFA /* RaftFoldMonitor.m */,
+				EE7EFF7BDC954E47B5E1C9CD /* RaftFlutterViewController.swift */,
+				9947920AD3A343FC90ED26BA /* RaftFoldBridge.swift */,
 				59EDA797808B364A493C3DB6 /* RaftSharingBridge.swift */,
 				AD8CD26BA1389379F8C359CF /* Runner.entitlements */,
 			);
@@ -507,6 +518,9 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
 				758E42FA7DC8E2BD4AF09372 /* ShareInboxWriter.swift in Sources */,
+				86535EE1407C42DA9B21991B /* RaftFoldMonitor.m in Sources */,
+				17C3DA8A54634298A1535C18 /* RaftFlutterViewController.swift in Sources */,
+				4963D4CEAAF74C83B6E3AABA /* RaftFoldBridge.swift in Sources */,
 				5C86A3822534783059B75850 /* RaftSharingBridge.swift in Sources */,
 				3181791F831671B1B4B4E58E /* ShareSessionVault.swift in Sources */,
 			);
