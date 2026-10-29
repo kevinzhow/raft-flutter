@@ -4204,7 +4204,8 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
 
-  /// ThreadsInbox `activity-context-menu` (`ContextMenuPopup`, w-184): Mark as
+  /// ThreadsInbox `activity-context-menu` (`ContextMenuPopup`, inline width 184
+  /// bounded by the current recipe's 240 minimum): Mark as
   /// Read / Mark as Unread (not for an unfollowed thread), Done and, for
   /// threads, Unfollow (BellOff 14) / Follow (Bell 14).
   Future<void> activityMenu(

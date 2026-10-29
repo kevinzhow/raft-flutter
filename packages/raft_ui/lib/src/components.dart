@@ -511,8 +511,8 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
   final double? borderWidth;
   final bool pointerPressed;
 
-  /// Sidebar.tsx `menuOpen`: the row whose context menu is open keeps
-  /// `bg-fill-muted` (unless it is the selected row).
+  /// Sidebar.tsx `menuOpen`: an unselected Raft row keeps `bg-fill-pressed`
+  /// while its context menu is open. Frozen looks retain their original layer.
   final bool menuOpen;
   @override
   bool get transformsOnInteraction => false;
@@ -547,7 +547,9 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
   @override
   Color get background => !selected
       ? (menuOpen
-            ? tokens.colors['layer-sidebar-item-active']!
+            ? tokens.colors[tokens.isRaftLook
+                  ? 'fill-pressed'
+                  : 'layer-sidebar-item-active']!
             : Colors.transparent)
       : tokens.colors['layer-sidebar-item-active']!;
   @override

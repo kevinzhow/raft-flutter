@@ -52,44 +52,50 @@ void main() {
     return at;
   }
 
-  testWidgets('[BP-READ-036] Activity menu opens at the pointer with Mark as Read and Done', (
-    tester,
-  ) async {
-    final dynamic state = await mount(tester, 'activity');
-    // Row 3 is the unread one.
-    final at = await rightClick(
-      tester,
-      find.byKey(const ValueKey('activity-channel-ch3')),
-    );
-    expect(find.byType(Dialog), findsNothing);
-    final menu = find.byType(RaftSidebarContextMenu);
-    expect(menu, findsOneWidget);
-    expect(tester.getTopLeft(menu), at);
-    expect(tester.getSize(menu).width, 184);
-    expect(find.text('Mark as Read'), findsOneWidget);
-    expect(find.text('Done'), findsOneWidget);
-    // A channel row has no follow control.
-    expect(find.text('Unfollow'), findsNothing);
-    await tester.tap(find.text('Mark as Read'));
-    await tester.pumpAndSettle();
-    expect(menu, findsNothing);
-    final row = (state.rows as List).firstWhere((r) => r['channelId'] == 'ch3');
-    expect(row['unreadCount'], 0);
-  });
+  testWidgets(
+    '[BP-READ-036] Activity menu opens at the pointer with Mark as Read and Done',
+    (tester) async {
+      final dynamic state = await mount(tester, 'activity');
+      // Row 3 is the unread one.
+      final at = await rightClick(
+        tester,
+        find.byKey(const ValueKey('activity-channel-ch3')),
+      );
+      expect(find.byType(Dialog), findsNothing);
+      final menu = find.byType(RaftSidebarContextMenu);
+      expect(menu, findsOneWidget);
+      expect(tester.getTopLeft(menu), at);
+      // Web db5e InboxContextMenu sets width: 184 without a minWidth override.
+      // raft-ui 0.7.0 ContextMenuPopup's min-w-60 therefore wins (240px).
+      expect(tester.getSize(menu).width, 240);
+      expect(find.text('Mark as Read'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
+      // A channel row has no follow control.
+      expect(find.text('Unfollow'), findsNothing);
+      await tester.tap(find.text('Mark as Read'));
+      await tester.pumpAndSettle();
+      expect(menu, findsNothing);
+      final row = (state.rows as List).firstWhere(
+        (r) => r['channelId'] == 'ch3',
+      );
+      expect(row['unreadCount'], 0);
+    },
+  );
 
-  testWidgets('[BP-READ-036] a read Activity row offers Mark as Unread (POST /unread)', (
-    tester,
-  ) async {
-    await mount(tester, 'activity');
-    await rightClick(
-      tester,
-      find.byKey(const ValueKey('activity-channel-ch0')),
-    );
-    expect(find.text('Mark as Read'), findsNothing);
-    await tester.tap(find.text('Mark as Unread'));
-    await tester.pumpAndSettle();
-    expect(client.posts, contains('POST /channels/ch0/unread'));
-  });
+  testWidgets(
+    '[BP-READ-036] a read Activity row offers Mark as Unread (POST /unread)',
+    (tester) async {
+      await mount(tester, 'activity');
+      await rightClick(
+        tester,
+        find.byKey(const ValueKey('activity-channel-ch0')),
+      );
+      expect(find.text('Mark as Read'), findsNothing);
+      await tester.tap(find.text('Mark as Unread'));
+      await tester.pumpAndSettle();
+      expect(client.posts, contains('POST /channels/ch0/unread'));
+    },
+  );
 
   testWidgets('Activity Done from the menu marks the conversation done', (
     tester,

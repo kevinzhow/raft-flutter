@@ -58,7 +58,8 @@ class RaftSidebarMenuDivider extends RaftSidebarMenuEntry {
 
 /// Sidebar.tsx row / section / surface context menu and the "Move to section"
 /// submenu: raft-ui `ContextMenuPopup` (the message menu recipe) at a fixed
-/// width (`w-48` rows, `w-64` sections, `w-56` submenu).
+/// width. The Raft recipe's `min-w-60` also bounds caller-supplied widths;
+/// frozen looks retain their original `w-48` / `w-64` / `w-56` widths.
 class RaftSidebarContextMenu extends StatefulWidget {
   const RaftSidebarContextMenu({
     super.key,
@@ -69,9 +70,29 @@ class RaftSidebarContextMenu extends StatefulWidget {
     this.submenuEntries,
     this.submenuWidth = 224,
     this.submenuLabel,
-  });
+  }) : _sidebarSourceWidth = false;
+
+  /// Sidebar.tsx mounts row, section, surface and submenu popups at `w-60`.
+  /// That matches the generated current recipe's `min-w-60`; its declared
+  /// width/minimum is used for Raft, while [legacyWidth] and
+  /// [legacySubmenuWidth] keep the frozen mounts' dimensions. Use the default
+  /// constructor when a caller intentionally requests a custom current width.
+  const RaftSidebarContextMenu.sidebar({
+    super.key,
+    required this.entries,
+    double legacyWidth = 192,
+    this.onDismiss,
+    this.label,
+    this.submenuEntries,
+    double legacySubmenuWidth = 224,
+    this.submenuLabel,
+  }) : width = legacyWidth,
+       submenuWidth = legacySubmenuWidth,
+       _sidebarSourceWidth = true;
+
   final List<RaftSidebarMenuEntry> entries;
   final double width;
+  final bool _sidebarSourceWidth;
   final VoidCallback? onDismiss;
   final String? label;
 
@@ -118,7 +139,7 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
     );
   }
 
-  /// Sidebar.tsx `placeSidebarContextSubmenu`: a second popup (`w-56`, z 51)
+  /// Sidebar.tsx `placeSidebarContextSubmenu`: a second popup (z 51)
   /// level with the trigger row, 4px right of the main menu, else 4px left of
   /// it, never closer than 8px to the viewport edge - on a phone it therefore
   /// covers the main menu.
@@ -177,6 +198,15 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
     );
     final content = s.content;
     final separator = s.separator;
+    // The real Sidebar.tsx w-60 mounts match the current recipe's min-w-60;
+    // frozen caller widths are not current source overrides. Other users of
+    // this component keep their explicit width, bounded by CSS min-width.
+    final requestedWidth = t.isRaftLook && widget._sidebarSourceWidth
+        ? content.width ?? content.minWidth ?? width
+        : width;
+    final usedWidth = t.isRaftLook
+        ? math.max(requestedWidth, content.minWidth ?? 0)
+        : width;
     Widget divider() {
       final w = separator.borderWidth.top;
       final m = separator.margin;
@@ -198,18 +228,25 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
       for (final entry in entries)
         switch (entry) {
           RaftSidebarMenuDivider() => divider(),
-          RaftSidebarMenuHeading(:final label) => Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-            child: Text(
-              label,
-              style: RaftTypography.heading(
-                t,
-                size: 10,
-                line: 15,
-                weight: FontWeight.w700,
-              ).copyWith(color: t.colors['foreground-muted']),
-            ),
-          ),
+          RaftSidebarMenuHeading(:final label) =>
+            t.isRaftLook
+                ? RaftRecipeBox(
+                    style: s.label,
+                    tokens: resolver,
+                    child: Text(label),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                    child: Text(
+                      label,
+                      style: RaftTypography.heading(
+                        t,
+                        size: 10,
+                        line: 15,
+                        weight: FontWeight.w700,
+                      ).copyWith(color: t.colors['foreground-muted']),
+                    ),
+                  ),
           RaftSidebarMenuItem() => RaftHoverRegion(
             onEnter: (_) {
               if (primary) setOpen(entry.submenu);
@@ -252,7 +289,7 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
           role: SemanticsRole.menu,
           label: label,
           child: SizedBox(
-            width: width,
+            width: usedWidth,
             child: RaftRecipeBox(
               style: content,
               tokens: resolver,

@@ -21928,6 +21928,30 @@
     "owner": "design-system alignment",
     "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
    },
+   "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27585/METHOD:_build@34061/FUNCTION:row@40906": {
+    "role": "unresolved",
+    "familyRefs": [],
+    "owner": "design-system alignment",
+    "reason": "Resolved builder observed at the current source position; real-entry/family/state mapping remains unreviewed."
+   },
+   "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27585/METHOD:_build@34061/FUNCTION:titleContent@37095": {
+    "role": "unresolved",
+    "familyRefs": [],
+    "owner": "design-system alignment",
+    "reason": "Resolved builder observed at the current source position; real-entry/family/state mapping remains unreviewed."
+   },
+   "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27585/METHOD:_build@34061/FUNCTION:titleWithIndicators@40136": {
+    "role": "unresolved",
+    "familyRefs": [],
+    "owner": "design-system alignment",
+    "reason": "Resolved builder observed at the current source position; real-entry/family/state mapping remains unreviewed."
+   },
+   "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27585/METHOD:_build@34061/FUNCTION:wrappedTitle@36025": {
+    "role": "unresolved",
+    "familyRefs": [],
+    "owner": "design-system alignment",
+    "reason": "Resolved builder observed at the current source position; real-entry/family/state mapping remains unreviewed."
+   },
    "packages/raft_ui/lib/src/components.dart#method:RaftActorTypeBadge._resolved": {
     "role": "unresolved",
     "familyRefs": [],
@@ -37031,7 +37055,7 @@
     "owner": "design-system alignment",
     "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
    },
-   "packages/raft_ui/lib/src/sidebar_menus.dart#local-function:CLASS:_RaftSidebarContextMenuState@2487/METHOD:_menu@4788/FUNCTION:divider@5226": {
+   "packages/raft_ui/lib/src/sidebar_menus.dart#local-function:CLASS:_RaftSidebarContextMenuState@3354/METHOD:_menu@5647/FUNCTION:divider@6564": {
     "role": "unresolved",
     "familyRefs": [],
     "owner": "design-system alignment",

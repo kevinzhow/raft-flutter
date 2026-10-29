@@ -15,14 +15,20 @@ import 'support/app_services_fixture.dart';
 /// (PATCH /servers/:id/sidebar-order, POST /channels/:id/read-all|unread).
 void main() {
   Future<(WorkspaceController, MessageAdapter, List<Object?>)> setup(
-    WidgetTester tester,
-  ) async {
+    WidgetTester tester, {
+    Size size = const Size(1440, 900),
+    bool dark = false,
+  }) async {
     SharedPreferences.setMockInitialValues({});
-    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
     addTearDown(w.dispose);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
     w.loading = false;
     w.messageDomain.ledger.switchServer('s1');
     w.channels = [
@@ -59,7 +65,7 @@ void main() {
     };
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(dark: dark),
         home: withAppServices(
           WorkspaceView(
             controller: w,
@@ -146,6 +152,11 @@ void main() {
       tester,
       find.byKey(const ValueKey('sidebar-section-system:channels')),
     );
+    // Fixed Sidebar.tsx:4608 mounts the section popup with w-60.
+    expect(
+      tester.getSize(find.byType(RaftSidebarContextMenu)),
+      const Size(240, 359),
+    );
     for (final label in [
       'Create Channel',
       'Sort',
@@ -177,6 +188,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('New Section…'), findsOneWidget);
+    // Fixed Sidebar.tsx:4717 uses the same w-60 for the empty surface.
+    expect(tester.getSize(find.byType(RaftSidebarContextMenu)).width, 240);
     await tester.tap(find.text('New Section…'));
     await tester.pumpAndSettle();
     expect(find.text('New Section'), findsOneWidget);
@@ -189,4 +202,32 @@ void main() {
     expect((sections.single as Map)['sortMode'], 'manual');
     expect(find.text('New Section'), findsNothing);
   });
+
+  for (final section in [true, false]) {
+    testWidgets('narrow dark sidebar ${section ? 'section' : 'surface'} '
+        'menu keeps the source fixed width', (tester) async {
+      await setup(tester, size: const Size(900, 900), dark: true);
+      if (section) {
+        await rightClick(
+          tester,
+          find.byKey(const ValueKey('sidebar-section-system:channels')),
+        );
+        expect(find.text('Sort'), findsOneWidget);
+      } else {
+        final list = find.byKey(const Key('workspace-sidebar'));
+        await tester.tapAt(
+          tester.getBottomLeft(list) + const Offset(60, -40),
+          kind: PointerDeviceKind.mouse,
+          buttons: kSecondaryMouseButton,
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('New Section…'), findsOneWidget);
+      }
+      final menu = tester.getRect(find.byType(RaftSidebarContextMenu));
+      expect(menu.width, 240);
+      if (section) expect(menu.height, 359);
+      expect(menu.left, greaterThanOrEqualTo(8));
+      expect(menu.right, lessThanOrEqualTo(900 - 8));
+    });
+  }
 }

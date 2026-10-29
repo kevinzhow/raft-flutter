@@ -192,9 +192,9 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     anchor: at,
     builder: (menuContext) {
       void close() => Navigator.of(menuContext).pop();
-      return RaftSidebarContextMenu(
+      return RaftSidebarContextMenu.sidebar(
         entries: entries(close),
-        width: width,
+        legacyWidth: width,
         label: label,
         submenuEntries: submenu?.call(close),
         onDismiss: close,

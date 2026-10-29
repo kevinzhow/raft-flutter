@@ -43,6 +43,10 @@ void main() {
     w = made.$1;
     api = made.$2;
     addTearDown(w.dispose);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
     w.loading = false;
     w.messageDomain.ledger.switchServer('s1');
     w.channels =
@@ -186,7 +190,7 @@ void main() {
     final ys = [for (final l in labels) top(tester, find.text(l))];
     expect(ys, [...ys]..sort());
     final menu = tester.getRect(find.byType(RaftSidebarContextMenu));
-    expect(menu.width, 192);
+    expect(menu.width, 240, reason: 'Sidebar.tsx w-60, not the frozen w-48');
     expect(menu.left, greaterThanOrEqualTo(8));
     expect(menu.right, lessThanOrEqualTo(390 - 8));
     expect(menu.bottom, lessThanOrEqualTo(844 - 8));
@@ -757,6 +761,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Hide Empty Sections'), findsOneWidget);
       expect(find.text('Show Joined Channels Only'), findsOneWidget);
+      final menu = tester.getRect(find.byType(RaftSidebarContextMenu));
+      expect(menu.width, 240, reason: 'Sidebar.tsx section popup w-60');
+      expect(menu.height, 359, reason: 'generated label line boxes are 16px');
+      expect(menu.left, greaterThanOrEqualTo(8));
+      expect(menu.right, lessThanOrEqualTo(390 - 8));
     });
 
     testWidgets('a right click on a section header opens its menu', (
@@ -780,6 +789,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('New Section…'), findsOneWidget);
+      final menu = tester.getRect(find.byType(RaftSidebarContextMenu));
+      expect(menu.width, 240, reason: 'Sidebar.tsx surface popup w-60');
+      expect(menu.left, greaterThanOrEqualTo(8));
+      expect(menu.right, lessThanOrEqualTo(390 - 8));
     });
 
     testWidgets('a right click on the list surface opens the surface menu', (
