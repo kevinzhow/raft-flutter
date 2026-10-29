@@ -3,6 +3,8 @@
 // Input + optional role Select + remove), "Add Another", the join-link field
 // with its limits, and Cancel / Send invites. Presentation only: the app owns
 // requests, billing gates and navigation.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
 import 'label.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 
@@ -200,12 +202,14 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              RaftRecipeSegmentedControl<String>(
+              RaftSegmentedControl<String>(
+                legacyStyle: RaftSegmentedStyle.recipe,
+                expand: true,
                 value: tab,
                 label: raftText(context, 'Invite method'),
                 items: const [
-                  ('email', null, 'By Email'),
-                  ('link', null, 'By Link'),
+                  RaftSegmentedOption(value: 'email', label: 'By Email'),
+                  RaftSegmentedOption(value: 'link', label: 'By Link'),
                 ],
                 onChanged: (v) => setState(() => tab = v),
               ),
@@ -306,13 +310,13 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                       height: 36, // chrome="field": the Input's box
                       label: raftText(context, 'Role'),
                       items: [
-                        DropdownMenuItem(
+                        RaftSelectItem(
                           value: 'member',
-                          child: Text(raftText(context, 'Member')),
+                          label: raftText(context, 'Member'),
                         ),
-                        DropdownMenuItem(
+                        RaftSelectItem(
                           value: 'guest',
-                          child: Text(raftText(context, 'Guest')),
+                          label: raftText(context, 'Guest'),
                         ),
                       ],
                       onChanged: (v) =>
@@ -360,8 +364,8 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
         ? raftText(context, 'Preparing invite link…')
         : link.url ?? raftText(context, 'Invite link unavailable');
     _linkController.text = urlText;
-    DropdownMenuItem<String> item(String v, String label) =>
-        DropdownMenuItem(value: v, child: Text(raftText(context, label)));
+    RaftSelectItem<String> item(String v, String label) =>
+        RaftSelectItem(value: v, label: raftText(context, label));
     final muted = t.colors['foreground-muted'];
     Widget labelText(String text) => Text(
       raftText(context, text),

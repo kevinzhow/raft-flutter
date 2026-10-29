@@ -214,9 +214,9 @@ class _DesignFieldsState extends State<_DesignFields> {
           label: 'Channel',
           value: value,
           items: const [
-            DropdownMenuItem(value: 'all', child: Text('All channels')),
-            DropdownMenuItem(value: 'design', child: Text('#design')),
-            DropdownMenuItem(value: 'general', child: Text('#general')),
+            RaftSelectItem(value: 'all', label: 'All channels'),
+            RaftSelectItem(value: 'design', label: '#design'),
+            RaftSelectItem(value: 'general', label: '#general'),
           ],
           onChanged: (next) => setState(() => value = next!),
         ),

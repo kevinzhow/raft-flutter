@@ -3,6 +3,7 @@
 // Your Computer / Cloud Computer), then "Connect Computer" (install + setup
 // commands per platform while waiting), then "Computer Connected" (name it).
 // The app performs the requests through the callbacks.
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -575,12 +576,13 @@ class _RaftComputerCommandGuideState extends State<RaftComputerCommandGuide> {
           children: [
             if (narrow) heading else Expanded(child: heading),
             SizedBox(width: narrow ? 0 : 12, height: narrow ? 8 : 0),
-            RaftRecipeSegmentedControl<String>(
+            RaftSegmentedControl<String>(
+              legacyStyle: RaftSegmentedStyle.recipe,
               value: platform,
               onChanged: widget.onPlatform,
               items: const [
-                ('mac-linux', null, 'macOS / Linux'),
-                ('windows', null, 'Windows x64'),
+                RaftSegmentedOption(value: 'mac-linux', label: 'macOS / Linux'),
+                RaftSegmentedOption(value: 'windows', label: 'Windows x64'),
               ],
             ),
           ],

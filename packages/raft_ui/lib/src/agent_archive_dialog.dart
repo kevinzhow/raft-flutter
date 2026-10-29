@@ -2,7 +2,7 @@
 // former delete). Presentation only: the app owns the request and its errors.
 import 'package:flutter/material.dart';
 
-import 'agent_dialogs.dart' show RaftRadioMark;
+import 'radio_group.dart';
 import 'banner.dart';
 import 'design_primitives.dart' show RaftTypography;
 import 'icons.dart';
@@ -104,61 +104,46 @@ class _RaftAgentArchiveDialogState extends State<RaftAgentArchiveDialog> {
             Semantics(
               container: true,
               label: raftText(context, 'What should happen to its workspace?'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: RaftRadioGroup<bool>(
+                value: deleteWorkspace,
+                onChanged: (next) => setState(() => deleteWorkspace = next),
+                spacing: 0,
                 children: [
                   for (final (remove, id, label, description) in options)
                     // DS Radio row: min 44 tall, the whole row clicks.
-                    GestureDetector(
+                    RaftRadioGroupItem<bool>(
                       key: ValueKey('agent-archive-option-$id'),
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => setState(() => deleteWorkspace = remove),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 44),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: RaftRadioMark(
-                                  checked: deleteWorkspace == remove,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // `text-subhead font-semibold`: 15 / 20.
-                                    RaftCssText(
-                                      label,
-                                      style: RaftTypography.body(
-                                        t,
-                                        size: 15,
-                                        line: 20,
-                                        weight: FontWeight.w600,
-                                        color: t.strong,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    // `text-footnote font-normal` 13 / 18, muted.
-                                    RaftCssText(
-                                      description,
-                                      style: RaftTypography.body(
-                                        t,
-                                        size: 13,
-                                        line: 18,
-                                        color: t.muted,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                      value: remove,
+                      minHeight: 44,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      markInset: const EdgeInsets.only(top: 2),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // `text-subhead font-semibold`: 15 / 20.
+                          RaftCssText(
+                            label,
+                            style: RaftTypography.body(
+                              t,
+                              size: 15,
+                              line: 20,
+                              weight: FontWeight.w600,
+                              color: t.strong,
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 2),
+                          // `text-footnote font-normal` 13 / 18, muted.
+                          RaftCssText(
+                            description,
+                            style: RaftTypography.body(
+                              t,
+                              size: 13,
+                              line: 18,
+                              color: t.muted,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],

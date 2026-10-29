@@ -8,6 +8,8 @@
 // to the scrolling sections (Profile, Login with Raft, App permissions,
 // Webhook, Distribution, Danger zone). The app owns the state and the API; the
 // geometry, colours and copy live here.
+import 'raft/checkbox.dart' show RaftCheckbox;
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -16,7 +18,7 @@ import 'design_primitives.dart' show RaftInteractive, RaftTypography;
 import 'dialog_card.dart' show RaftCloseButton;
 import 'form_controls.dart' show RaftField;
 import 'icons.dart';
-import 'indicators.dart' show RaftCheckbox;
+
 import 'list_items.dart' show RaftSectionEyebrow;
 import 'localization.dart';
 import 'recipe_surface.dart';
@@ -24,14 +26,13 @@ import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipe, RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'recipes/card.g.dart';
-import 'recipes/checkbox.g.dart' show RaftCheckboxRecipeSize;
 import 'recipes/table.g.dart';
 import 'select_field.dart';
 import 'settings_applications.dart' show RaftAppLogo, RaftAppLogoSize;
 import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
-import 'switch.dart';
+import 'raft/switch.dart';
 import 'tooltip.dart';
 import 'viewport_breakpoints.dart';
 
@@ -1060,7 +1061,6 @@ class RaftDeclaredScopesPicker extends StatelessWidget {
                 children: [
                   RaftCheckbox(
                     value: selected,
-                    size: RaftCheckboxRecipeSize.sm,
                     semanticLabel: scope,
                     onChanged: (_) => onChanged(scope),
                   ),
@@ -1265,15 +1265,10 @@ class RaftAppPermissionsTable extends StatelessWidget {
                               }
                             : null,
                         items: [
-                          DropdownMenuItem(
-                            value: false,
-                            child: Text(tr('No access')),
-                          ),
-                          DropdownMenuItem(
+                          RaftSelectItem(value: false, label: tr('No access')),
+                          RaftSelectItem(
                             value: true,
-                            child: Text(
-                              tr(row.writeAccess ? 'Write' : 'Read-only'),
-                            ),
+                            label: tr(row.writeAccess ? 'Write' : 'Read-only'),
                           ),
                         ],
                       ),

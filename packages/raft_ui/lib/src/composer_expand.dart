@@ -1,11 +1,14 @@
 import 'card.dart' show RaftCard;
 
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+
 import 'package:flutter/material.dart';
 
 import 'composer_recipe.dart';
 import 'composer_tool_button.dart';
 import 'design_primitives.dart';
-import 'dialog_card.dart' show RaftRecipeButton, RaftRecipeSegmentedControl;
+import 'dialog_card.dart' show RaftRecipeButton;
 import 'icons.dart';
 import 'localization.dart';
 import 'markdown_editing.dart';
@@ -560,11 +563,19 @@ class _RaftComposerExpandedViewState extends State<RaftComposerExpandedView> {
               child: switcher(
                 collapse: collapse,
                 title: title,
-                segmented: RaftRecipeSegmentedControl<bool>(
+                segmented: RaftSegmentedControl<bool>(
+                  legacyStyle: RaftSegmentedStyle.recipe,
                   value: pagePreview,
                   items: [
-                    (false, null, raftTextZh(context, 'Write', '编辑')),
-                    (true, RaftGlyph.eye, 'Preview'),
+                    RaftSegmentedOption(
+                      value: false,
+                      label: raftTextZh(context, 'Write', '编辑'),
+                    ),
+                    const RaftSegmentedOption(
+                      value: true,
+                      glyph: RaftGlyph.eye,
+                      label: 'Preview',
+                    ),
                   ],
                   onChanged: (v) => setState(() => pagePreview = v),
                 ),

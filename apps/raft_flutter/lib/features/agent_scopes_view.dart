@@ -196,10 +196,10 @@ class _AgentScopesViewState extends State<AgentScopesView> {
                 ),
               ),
               for (final scope in {...names.keys, ...scopes})
-                CheckboxListTile(
+                RaftCheckboxRow(
                   key: ValueKey('scope-$scope'),
-                  title: Text(raftText(context, names[scope] ?? scope)),
-                  subtitle: Text(scope),
+                  title: raftText(context, names[scope] ?? scope),
+                  description: scope,
                   value: scopes.contains(scope),
                   onChanged: busy
                       ? null

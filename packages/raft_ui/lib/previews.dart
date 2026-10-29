@@ -189,10 +189,16 @@ class _InteractivePreviewState extends State<_InteractivePreview> {
       ),
       'Composer' => Column(
         children: [
-          SwitchListTile(
-            title: const Text('Fail next delivery'),
-            value: failDelivery,
-            onChanged: (value) => setState(() => failDelivery = value),
+          Row(
+            spacing: 12,
+            children: [
+              RaftSwitch(
+                value: failDelivery,
+                onChanged: (value) => setState(() => failDelivery = value),
+                semanticLabel: 'Fail next delivery',
+              ),
+              Flexible(child: Text('Fail next delivery')),
+            ],
           ),
           RaftComposer(
             onSend: (text) async {
@@ -242,10 +248,16 @@ class _InteractivePreviewState extends State<_InteractivePreview> {
       ),
       'Form' => Column(
         children: [
-          SwitchListTile(
-            title: const Text('Fail next submission'),
-            value: failDelivery,
-            onChanged: (value) => setState(() => failDelivery = value),
+          Row(
+            spacing: 12,
+            children: [
+              RaftSwitch(
+                value: failDelivery,
+                onChanged: (value) => setState(() => failDelivery = value),
+                semanticLabel: 'Fail next submission',
+              ),
+              Flexible(child: Text('Fail next submission')),
+            ],
           ),
           RaftButton(
             label: 'Open Form',

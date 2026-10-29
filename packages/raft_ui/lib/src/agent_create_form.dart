@@ -38,7 +38,7 @@ import 'design_primitives.dart';
 import 'dismiss_scope.dart';
 import 'form_presentation.dart';
 import 'icons.dart';
-import 'indicators.dart' show RaftCheckbox, RaftCheckboxRecipeSize;
+import 'raft/checkbox.dart' show RaftCheckbox;
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'panel_layout.dart' show RaftCssText;
@@ -555,10 +555,10 @@ class RaftAgentSelect<T> extends StatelessWidget {
     height: RaftTokens.of(context).size('size.fieldSelect', fallback: 36),
     items: [
       for (final option in options)
-        DropdownMenuItem<T>(
+        RaftSelectItem<T>(
           value: option.value,
           enabled: option.enabled,
-          child: Text(option.label),
+          label: option.label,
         ),
     ],
     onChanged: onChanged == null
@@ -994,7 +994,6 @@ class RaftAgentOptionCard extends StatelessWidget {
           children: [
             RaftCheckbox(
               value: checked,
-              size: RaftCheckboxRecipeSize.md,
               onChanged: onChanged,
               semanticLabel: raftText(context, title),
             ),

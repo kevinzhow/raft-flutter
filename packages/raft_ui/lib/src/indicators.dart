@@ -4,11 +4,9 @@
 
 import 'package:flutter/material.dart';
 
-import 'raft/checkbox.dart';
 import 'raft/css_box.dart' show raftControlBorderPx;
 import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
-import 'recipes/checkbox.g.dart';
 import 'recipes/progress.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/recipe_router.dart' show resolveRecipeClasses;
@@ -21,7 +19,6 @@ export 'raft/status.dart'
     show RaftActivityTone, RaftAttentionDot, RaftStatusDot, RaftStatusDotSize;
 export 'recipes/badge.g.dart'
     show RaftBadgeRecipeAppearance, RaftBadgeRecipeVariant;
-export 'recipes/checkbox.g.dart' show RaftCheckboxRecipeSize;
 export 'recipes/progress.g.dart'
     show RaftProgressRecipeVariant, RaftProgressRecipeSize;
 
@@ -42,94 +39,6 @@ abstract final class RaftWebPalette {
 
   /// `text-neutral-500` = oklch(55.6% 0 0).
   static const neutral500 = Color(0xFF737373);
-}
-
-enum RaftCheckMarkerSize {
-  /// `size-3.5`
-  sm(14, 10, 4),
-
-  /// `size-4`
-  md(16, 12, 4),
-
-  /// `size-5`, the raft-ui 0.7.1 `CheckboxIndicator` size
-  lg(20, 13, 3);
-
-  const RaftCheckMarkerSize(this.box, this.icon, this.stroke);
-  final double box, icon, stroke;
-}
-
-/// Web `CheckMarker`: the raft-ui 0.7.1 `CheckboxIndicator` graphic (a 20px ink-bordered sticker square or circle
-/// with a check). [yellow] is accepted for call sites; 0.7.1 has no yellow checkbox.
-class RaftCheckMarker extends StatelessWidget {
-  const RaftCheckMarker({
-    super.key,
-    required this.checked,
-    this.circle = false,
-    this.size = RaftCheckMarkerSize.sm,
-    this.yellow = false,
-    this.disabled = false,
-    this.previewOnHover = false,
-    this.hovered = false,
-    this.mark = RaftCheckboxMark.check,
-  });
-
-  final bool checked, circle, yellow, disabled, previewOnHover;
-
-  /// `mark="minus"` of `CheckboxIndicator`.
-  final RaftCheckboxMark mark;
-
-  /// Parent `group` hover (for [previewOnHover]).
-  final bool hovered;
-  final RaftCheckMarkerSize size;
-
-  @override
-  Widget build(BuildContext context) => ExcludeSemantics(
-    child: RaftCheckboxIndicator(
-      checked: checked,
-      mark: mark,
-      shape: circle ? RaftCheckboxShape.circle : RaftCheckboxShape.square,
-      disabled: disabled,
-      previewOnHover: previewOnHover,
-      hovered: hovered,
-      size: size.box,
-    ),
-  );
-}
-
-/// raft-ui 0.7.1 `Checkbox`: the 20px sticker square (or [circle]) over [RaftCheckboxControl]. [size], [primary]
-/// and [flatWhenChecked] are accepted for call sites; 0.7.1 has the single size, no yellow variant and no shadow.
-class RaftCheckbox extends StatelessWidget {
-  const RaftCheckbox({
-    super.key,
-    required this.value,
-    this.onChanged,
-    this.size = RaftCheckboxRecipeSize.sm,
-    this.primary = false,
-    this.circle = false,
-    this.flatWhenChecked = false,
-    this.indeterminate = false,
-    this.semanticLabel,
-  });
-
-  final bool value;
-  final ValueChanged<bool>? onChanged;
-  final RaftCheckboxRecipeSize size;
-  final bool flatWhenChecked;
-  final bool primary;
-  final bool circle;
-
-  /// `indeterminate`: the minus mark and `aria-checked="mixed"`.
-  final bool indeterminate;
-  final String? semanticLabel;
-
-  @override
-  Widget build(BuildContext context) => RaftCheckboxControl(
-    value: value,
-    onChanged: onChanged,
-    indeterminate: indeterminate,
-    shape: circle ? RaftCheckboxShape.circle : RaftCheckboxShape.square,
-    semanticLabel: semanticLabel,
-  );
 }
 
 /// Web `ProgressBar` (product labels over raft-ui `Progress`): optional

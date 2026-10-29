@@ -5,6 +5,7 @@ import 'src/avatar_content.dart';
 import 'src/components.dart';
 import 'src/icons.dart';
 import 'src/message_row_recipe.dart';
+import 'src/raft/switch.dart' show RaftSwitch;
 
 @RaftPreviews('Mounted message row: grouping and pointer actions')
 Widget messageRowPreview() => const _Rows();
@@ -22,15 +23,27 @@ class _RowsState extends State<_Rows> {
   Widget build(BuildContext context) => SingleChildScrollView(
     child: Column(
       children: [
-        SwitchListTile(
-          title: const Text('Coarse pointer'),
-          value: coarse,
-          onChanged: (value) => setState(() => coarse = value),
+        Row(
+          spacing: 12,
+          children: [
+            RaftSwitch(
+              value: coarse,
+              onChanged: (value) => setState(() => coarse = value),
+              semanticLabel: 'Coarse pointer',
+            ),
+            Flexible(child: Text('Coarse pointer')),
+          ],
         ),
-        SwitchListTile(
-          title: const Text('Thread content context'),
-          value: thread,
-          onChanged: (value) => setState(() => thread = value),
+        Row(
+          spacing: 12,
+          children: [
+            RaftSwitch(
+              value: thread,
+              onChanged: (value) => setState(() => thread = value),
+              semanticLabel: 'Thread content context',
+            ),
+            Flexible(child: Text('Thread content context')),
+          ],
         ),
         RaftMessageRow(
           rowContext: thread

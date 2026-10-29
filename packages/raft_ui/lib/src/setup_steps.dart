@@ -19,7 +19,10 @@ import 'icons.dart';
 import 'keyboard_reveal.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
+import 'raft/css_box.dart';
+import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart' show RaftCssBoxDecoration;
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'text_measure.dart';
 import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'theme.dart';
@@ -339,9 +342,54 @@ class _Chip extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
 
+  /// Raft look (`OptionGrid`): `h-8 rounded-control border-[1.5px] px-3 text-footnote font-bold`; the chosen one is
+  /// the yellow sticker (brand fill, ink border and type), the others sit on the card with the strong line. Hover
+  /// lays the press overlay on the resting fill.
+  Widget _raftChip(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    return RaftInteractive(
+      onPressed: onTap,
+      semanticLabel: label,
+      selected: selected,
+      builder: (context, state) {
+        final active = state.enabled && (state.hovered || state.pressed);
+        final base = selected ? ui.brand : ui.layerCard;
+        final fill = active
+            ? Color.alphaBlend(
+                selected ? ui.stickerPressed : ui.fillPressed,
+                base,
+              )
+            : base;
+        return RaftCssBox(
+          radius: t.size('radius.control', fallback: 8),
+          fill: fill,
+          borderWidth: raftControlBorderPx(context, 1.5),
+          borderColor: selected ? ui.stickerInk : ui.lineStrong,
+          rings: [
+            if (state.focusVisible)
+              for (final layer in ui.focusRing.layers)
+                RaftRing(layer.spread, layer.color),
+          ],
+          height: 32,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: t.scale(
+              RaftTypeScale.footnote,
+              weight: FontWeight.w700,
+              color: selected ? ui.stickerInk : ui.foreground,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.isRaftLook) return _raftChip(context, t);
     final border = 1.0;
     final fill = (selected ? t.colors['primary-soft']! : t.panel);
     final shadows = selected ? t.themeShadows.xs.outer : const <BoxShadow>[];

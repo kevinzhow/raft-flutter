@@ -5,6 +5,9 @@
 // setup steps. The app owns the status read, the credential requests and the
 // commands; values and callbacks come in here.
 // Tailwind classes written in the JSX are resolved in comments.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+
 import 'package:flutter/material.dart';
 
 import 'agent_profile.dart';
@@ -485,13 +488,23 @@ class RaftExternalSetupSection extends StatelessWidget {
                   hosted!
                 else ...[
                   ?tokenManager,
-                  RaftRecipeSegmentedControl<RaftExternalSetupTab>(
+                  RaftSegmentedControl<RaftExternalSetupTab>(
+                    legacyStyle: RaftSegmentedStyle.recipe,
                     value: tab,
                     label: tr('External agent setup path'),
                     items: const [
-                      (RaftExternalSetupTab.hermes, null, 'Hermes'),
-                      (RaftExternalSetupTab.claudeCode, null, 'Claude Code'),
-                      (RaftExternalSetupTab.otherAgents, null, 'Other Agents'),
+                      RaftSegmentedOption(
+                        value: RaftExternalSetupTab.hermes,
+                        label: 'Hermes',
+                      ),
+                      RaftSegmentedOption(
+                        value: RaftExternalSetupTab.claudeCode,
+                        label: 'Claude Code',
+                      ),
+                      RaftSegmentedOption(
+                        value: RaftExternalSetupTab.otherAgents,
+                        label: 'Other Agents',
+                      ),
                     ],
                     onChanged: onTab,
                   ),

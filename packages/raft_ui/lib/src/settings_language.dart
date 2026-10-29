@@ -4,9 +4,11 @@
 // mode, translation target, default view, Save) and a Date & Time card
 // (timezone, time format, Save). The app page owns the draft state, loading
 // and saving.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+
 import 'package:flutter/material.dart';
 
-import 'dialog_card.dart';
 import 'error_presentation.dart';
 import 'icons.dart';
 import 'localization.dart';
@@ -100,7 +102,7 @@ class RaftLanguageRegionView extends StatelessWidget {
         value: options.any((o) => o.$1 == value) ? value : null,
         items: [
           for (final (v, text) in options)
-            DropdownMenuItem(value: v, child: Text(raftText(context, text))),
+            RaftSelectItem(value: v, label: raftText(context, text)),
         ],
         onChanged: disabled
             ? null
@@ -120,15 +122,19 @@ class RaftLanguageRegionView extends StatelessWidget {
     Key? key,
   }) => Align(
     alignment: Alignment.centerLeft,
-    child: RaftRecipeSegmentedControl<String>(
+    child: RaftSegmentedControl<String>(
       key: key,
+      legacyStyle: RaftSegmentedStyle.recipe,
       label: raftText(context, label),
       value: value,
       // settings.language.modeOff is 关闭; the plain `Off` catalog entry is
       // 已关闭 (a state), which other Web keys use.
       items: [
         for (final (v, text) in options)
-          (v, null, text == 'Off' ? raftTextZh(context, 'Off', '关闭') : text),
+          RaftSegmentedOption(
+            value: v,
+            label: text == 'Off' ? raftTextZh(context, 'Off', '关闭') : text,
+          ),
       ],
       onChanged: disabled ? null : onChanged,
     ),

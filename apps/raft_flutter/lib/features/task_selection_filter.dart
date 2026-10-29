@@ -230,7 +230,31 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
           // TasksPanel filter chip: Button sm outline `h-8 gap-2` with the
           // field icon (14), label, optional count and ChevronDown 12. Layout
           // follows the 32px Web box; the touch target stays 48px.
-          child: widget.picker
+          child: t.isRaftLook
+              // raft-ui `PickerTriggerButton`: the filter trigger of the tasks toolbar and the search filters.
+              ? RaftTouchTargetExpander(
+                  minSize: const Size.square(RaftMetrics.touchTarget),
+                  child: RaftPickerTriggerButton(
+                    label:
+                        widget.label ??
+                        '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',
+                    glyph:
+                        widget.glyph ??
+                        switch (widget.field) {
+                          'Channel' => RaftGlyph.hash,
+                          'Creator' || 'From' => RaftGlyph.userCircle2,
+                          _ => RaftGlyph.user,
+                        },
+                    selected: widget.selection.isNotEmpty,
+                    onPressed: () {
+                      if (!widget.valid()) return;
+                      controller.isOpen
+                          ? controller.close()
+                          : controller.open();
+                    },
+                  ),
+                )
+              : widget.picker
               ? RaftTouchTargetExpander(
                   minSize: const Size.square(RaftMetrics.touchTarget),
                   child: RaftControl(

@@ -2551,7 +2551,7 @@ class _ResourceViewState extends State<ResourceView> {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: RaftSegmentedControl<String>(
-                        style: RaftSegmentedStyle.tabs,
+                        legacyStyle: RaftSegmentedStyle.tabs,
                         value: ['all', 'unread', 'mentions'].contains(filter)
                             ? filter
                             : '',
@@ -2591,15 +2591,11 @@ class _ResourceViewState extends State<ResourceView> {
                                 'closed',
                               ]
                               .map(
-                                (s) => DropdownMenuItem(
+                                (s) => RaftSelectItem(
                                   value: s,
-                                  child: Text(
-                                    raftText(
-                                      context,
-                                      s == 'all'
-                                          ? 'All'
-                                          : raftTaskStatusLabel(s),
-                                    ),
+                                  label: raftText(
+                                    context,
+                                    s == 'all' ? 'All' : raftTaskStatusLabel(s),
                                   ),
                                 ),
                               )
@@ -3675,7 +3671,7 @@ class _ResourceViewState extends State<ResourceView> {
                 shrinkFrame: t.option('resource.rows', or: 'cards') == 'flat',
                 // ThreadsInbox uses the raft-ui SegmentedControl recipe,
                 // rather than the older 11px tab-button presentation.
-                style: RaftSegmentedStyle.buttons,
+                legacyStyle: RaftSegmentedStyle.buttons,
                 value: ['all', 'unread', 'mentions'].contains(filter)
                     ? filter
                     : '',
@@ -4649,20 +4645,28 @@ class _ResourceViewState extends State<ResourceView> {
               },
               labelIsContent: advanced.sender != null,
             ),
-            for (final entry in const {
-              'mentioned': 'Mentions Me',
-              'humans': 'Humans',
-              'agents': 'Agents',
-            }.entries)
-              FilterChip(
-                label: Text(raftText(context, entry.value)),
-                selected: advanced.scopes.contains(entry.key),
-                onSelected: (_) {
-                  if (!accepts(scope)) return;
-                  advanced.toggleScope(entry.key);
-                  load();
-                },
-              ),
+            RaftToggleGroup<String>(
+              multiple: true,
+              semanticLabel: 'Search scope',
+              value: {...advanced.scopes},
+              onChanged: (next) {
+                if (!accepts(scope)) return;
+                for (final key in const ['mentioned', 'humans', 'agents']) {
+                  if (next.contains(key) != advanced.scopes.contains(key)) {
+                    advanced.toggleScope(key);
+                  }
+                }
+                load();
+              },
+              items: [
+                for (final entry in const {
+                  'mentioned': 'Mentions Me',
+                  'humans': 'Humans',
+                  'agents': 'Agents',
+                }.entries)
+                  RaftToggleGroupItem(value: entry.key, label: entry.value),
+              ],
+            ),
             filterMenu(
               'Search Date Range',
               // ignore: raft_lints/avoid_render_index_assertion -- timeRange is validated against the four known values when restored (search_memory.dart) and only set from the dropdown.
@@ -4703,14 +4707,16 @@ class _ResourceViewState extends State<ResourceView> {
               },
             ),
             if (widget.section == 'activity')
-              FilterChip(
-                label: Text(raftText(context, 'Group by Channel')),
-                selected: advanced.groupByChannel,
-                onSelected: (value) {
+              RaftToggleGroup<bool>(
+                value: {if (advanced.groupByChannel) true},
+                onChanged: (next) {
                   if (accepts(scope)) {
-                    setState(() => advanced.groupByChannel = value);
+                    setState(() => advanced.groupByChannel = next.isNotEmpty);
                   }
                 },
+                items: const [
+                  RaftToggleGroupItem(value: true, label: 'Group by Channel'),
+                ],
               ),
           ],
           RaftTouchTargetExpander(
@@ -5163,7 +5169,7 @@ class _ResourceViewState extends State<ResourceView> {
                   onPressed: () => createTask(sourceScope: scope),
                 ),
               RaftSegmentedControl<String>(
-                style: RaftSegmentedStyle.taskViews,
+                legacyStyle: RaftSegmentedStyle.taskViews,
                 value: taskLayout,
                 visualHeight: RaftMetrics.buttonMd,
                 minimumTargetSize: RaftMetrics.buttonMd,

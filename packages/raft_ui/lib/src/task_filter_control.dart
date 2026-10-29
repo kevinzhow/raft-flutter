@@ -3,9 +3,11 @@
 // raft-ui SegmentedControl with the All + five status tabs, each carrying a
 // `SegmentedControlCount` when the count is above zero. The Web component has
 // no mounted caller today; this is the matching Flutter presentation.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+
 import 'package:flutter/material.dart';
 
-import 'dialog_card.dart';
 import 'localization.dart';
 import 'task.dart';
 
@@ -34,17 +36,18 @@ class RaftTaskFilterControl extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => RaftRecipeSegmentedControl<String>(
+  Widget build(BuildContext context) => RaftSegmentedControl<String>(
+    legacyStyle: RaftSegmentedStyle.recipe,
     label: raftText(context, 'Filter tasks'),
     value: value,
     onChanged: onChanged,
     items: [
       for (final tab in tabs)
-        (tab, null, tab == 'all' ? 'All' : raftTaskStatusLabel(tab)),
+        RaftSegmentedOption(
+          value: tab,
+          label: tab == 'all' ? 'All' : raftTaskStatusLabel(tab),
+          count: (counts[tab] ?? 0) > 0 ? '${counts[tab]}' : null,
+        ),
     ],
-    counts: {
-      for (final tab in tabs)
-        if ((counts[tab] ?? 0) > 0) tab: '${counts[tab]}',
-    },
   );
 }

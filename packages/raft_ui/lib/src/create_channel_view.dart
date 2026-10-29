@@ -3,7 +3,16 @@
 // with Name, Description (optional), Visibility segmented control, Members
 // (optional) search + AGENTS/HUMANS picker and Cancel/Create Channel. The app
 // adapter owns loading, selection state and the create command.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
 import 'card.dart' show RaftCard;
+import 'raft/checkbox.dart' show RaftCheckboxIndicator;
+import 'raft/css_box.dart';
+import 'raft/ui_tokens.dart';
+import 'space.dart';
+import 'control_typography.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
+import 'design_primitives.dart' show RaftInteractive;
 import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
@@ -114,12 +123,21 @@ class RaftCreateChannelDialogView extends StatelessWidget {
               label: 'Visibility',
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: RaftRecipeSegmentedControl<String>(
+                child: RaftSegmentedControl<String>(
+                  legacyStyle: RaftSegmentedStyle.recipe,
                   label: raftText(context, 'Channel visibility'),
                   value: visibility,
                   items: const [
-                    ('public', RaftGlyph.hash, 'Public'),
-                    ('private', RaftGlyph.lock, 'Private'),
+                    RaftSegmentedOption(
+                      value: 'public',
+                      glyph: RaftGlyph.hash,
+                      label: 'Public',
+                    ),
+                    RaftSegmentedOption(
+                      value: 'private',
+                      glyph: RaftGlyph.lock,
+                      label: 'Private',
+                    ),
                   ],
                   onChanged: submitting ? null : onVisibilityChanged,
                 ),
@@ -279,13 +297,32 @@ class _MemberPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final raft = t.isRaftLook;
     final eyebrowFill = t.colors['fill-muted'];
-    Widget eyebrow(String text) => RaftDialogSectionEyebrow(
-      text,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      background: eyebrowFill,
-    );
+    // Raft look (`PICKER_GROUP_LABEL_CLASS` px-2.5 pt-2 pb-1): a plain group label; the frozen looks band it.
+    Widget eyebrow(String text) => raft
+        ? RaftDialogSectionEyebrow(
+            text,
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+          )
+        : RaftDialogSectionEyebrow(
+            text,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            background: eyebrowFill,
+          );
+    Widget row(RaftPickerItem c) => raft
+        ? _RaftMemberRow(
+            candidate: c,
+            selected: selected(c.key),
+            onTap: onToggle == null ? null : () => onToggle!(c.key),
+          )
+        : _MemberRow(
+            candidate: c,
+            selected: selected(c.key),
+            onTap: onToggle == null ? null : () => onToggle!(c.key),
+          );
     return RaftCard(
+      padding: raft ? const EdgeInsets.all(RaftSpace.x1_5) : null,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 192 - 4),
         child: SingleChildScrollView(
@@ -295,21 +332,11 @@ class _MemberPicker extends StatelessWidget {
             children: [
               if (agents.isNotEmpty) ...[
                 eyebrow('Agents'),
-                for (final c in agents)
-                  _MemberRow(
-                    candidate: c,
-                    selected: selected(c.key),
-                    onTap: onToggle == null ? null : () => onToggle!(c.key),
-                  ),
+                for (final c in agents) row(c),
               ],
               if (humans.isNotEmpty) ...[
                 eyebrow('Humans'),
-                for (final c in humans)
-                  _MemberRow(
-                    candidate: c,
-                    selected: selected(c.key),
-                    onTap: onToggle == null ? null : () => onToggle!(c.key),
-                  ),
+                for (final c in humans) row(c),
               ],
               if (agents.isEmpty && humans.isEmpty)
                 Padding(
@@ -321,16 +348,78 @@ class _MemberPicker extends StatelessWidget {
                     raftFormat(context, 'No matches for "{query}"', {
                       'query': query.trim(),
                     }),
-                    textAlign: TextAlign.center,
-                    style: raftCssTextStyle(
-                      family: t.monoFont,
-                      step: RaftTextSteps.sm,
-                      color: t.colors['foreground-muted'],
-                    ),
+                    textAlign: raft ? TextAlign.start : TextAlign.center,
+                    style: raft
+                        ? t.scale(
+                            RaftTypeScale.callout,
+                            color: t.ui.foregroundHint,
+                          )
+                        : raftCssTextStyle(
+                            family: t.monoFont,
+                            step: RaftTextSteps.sm,
+                            color: t.colors['foreground-muted'],
+                          ),
                   ),
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// `PICKER_ROW_CLASS`: a multi-select option row (`flex min-h-9 w-full items-center gap-2.5 rounded-control px-2.5
+/// text-callout font-medium`, `hover:bg-brand-soft`, a focus-ring inset `2px` ink) that carries its choice in a
+/// `CheckboxIndicator` before the avatar and the name.
+class _RaftMemberRow extends StatelessWidget {
+  const _RaftMemberRow({
+    required this.candidate,
+    required this.selected,
+    required this.onTap,
+  });
+  final RaftPickerItem candidate;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final ui = t.ui;
+    return RaftInteractive(
+      onPressed: onTap,
+      selected: selected,
+      builder: (context, st) => RaftCssBox(
+        radius: t.size('radius.control', fallback: 8),
+        fill: st.hovered || st.focusVisible ? ui['brand-soft'] : null,
+        rings: [
+          if (st.focusVisible)
+            for (final layer in ui.focusRing.layers)
+              RaftRing(layer.spread, layer.color),
+        ],
+        minHeight: RaftSpace.x6 + RaftSpace.x3,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Row(
+          spacing: 10,
+          children: [
+            RaftCheckboxIndicator(checked: selected),
+            candidate.avatar,
+            Expanded(
+              child: Text(
+                candidate.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: RaftControlTypography.of(
+                  context,
+                  t.scale(
+                    RaftTypeScale.callout,
+                    weight: FontWeight.w500,
+                    color: ui.foreground,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

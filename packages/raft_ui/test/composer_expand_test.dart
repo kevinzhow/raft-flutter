@@ -888,7 +888,7 @@ void main() {
           find.byKey(const ValueKey('composer-preview-toggle')),
           findsNothing,
         );
-        expect(find.byType(RaftRecipeSegmentedControl<bool>), findsOneWidget);
+        expect(find.byType(RaftSegmentedControl<bool>), findsOneWidget);
         // Write mode: the field, the toolbar and the action row sit above the keyboard.
         final above = _phone.height - 300;
         expect(
@@ -907,8 +907,8 @@ void main() {
         );
         expect(tester.takeException(), isNull);
         // Switch to Preview: the page shows the rendered message, no toolbar.
-        final switcher = tester.widget<RaftRecipeSegmentedControl<bool>>(
-          find.byType(RaftRecipeSegmentedControl<bool>),
+        final switcher = tester.widget<RaftSegmentedControl<bool>>(
+          find.byType(RaftSegmentedControl<bool>),
         );
         switcher.onChanged!(true);
         await tester.pump();

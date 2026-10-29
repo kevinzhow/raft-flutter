@@ -4,8 +4,19 @@
 // 16px icon, a label and a mono count. A disabled group keeps the sticker and greys the ink.
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import '../control_typography.dart';
+import '../dialog_card.dart' show raftRecipeThemeOf;
+import '../hover_region.dart';
+import '../inline_badge_editor.dart' show RaftTouchTargetExpander;
+import '../recipe_surface.dart';
+import '../recipes/recipe_router.dart' show usesLegacyRecipes;
+import '../recipes/recipe_runtime.dart';
+import '../recipes/segmented_control.g.dart';
+import '../recipes/token_binding.dart';
+import '../search_result_surface.dart' show RaftTaskFilterButton;
+import 'tabs.dart' show RaftTabButton;
 import '../design_primitives.dart';
 import '../icons.dart';
 import '../localization.dart';
@@ -14,6 +25,8 @@ import '../theme.dart';
 import '../tokens/tokens.dart';
 import 'css_box.dart';
 import 'ui_tokens.dart';
+
+part 'segmented_control_frozen.dart';
 
 /// Colours of one segment in one state.
 class RaftSegmentColors {
@@ -221,9 +234,13 @@ class RaftSegmentedTrack extends StatelessWidget {
     super.key,
     required this.children,
     this.shrinkFrame = false,
+    this.expand = false,
   });
   final List<Widget> children;
   final bool shrinkFrame;
+
+  /// `w-full *:flex-1`: the track fills its row and the items share it equally (Raft look only).
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
@@ -254,12 +271,29 @@ class RaftSegmentedTrack extends StatelessWidget {
     // so the two corners stay concentric.
     final inset = 3.0;
     final trackRadius = t.size('radius.control', fallback: 8) + inset;
+    final trackCorners = BorderRadius.circular(
+      trackRadius >= 999 ? 999 : trackRadius,
+    );
+    if (expand) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: ui.fillMuted,
+          borderRadius: trackCorners,
+        ),
+        child: Padding(
+          // ignore: raft_lints/off_grid_spacing -- the track's `p-[3px]` is an explicit arbitrary value in the raft-ui source (3px ink-to-sticker inset), not a spacing step.
+          padding: EdgeInsets.all(inset),
+          child: Row(
+            spacing: 2,
+            children: [for (final child in children) Expanded(child: child)],
+          ),
+        ),
+      );
+    }
     return DecoratedBox(
       decoration: BoxDecoration(
         color: ui.fillMuted,
-        borderRadius: BorderRadius.circular(
-          trackRadius >= 999 ? 999 : trackRadius,
-        ),
+        borderRadius: trackCorners,
       ),
       child: shrinkFrame
           ? _ShrinkingFrame(
@@ -318,4 +352,173 @@ class _RenderShrinkingFrame extends RenderProxyBox {
   @override
   Size computeDryLayout(BoxConstraints constraints) =>
       constraints.constrain(child!.getDryLayout(looseWidth(constraints)));
+}
+
+/// How the frozen Elegant and Brutal looks draw a [RaftSegmentedControl]: the plain track row, loose tab buttons,
+/// task filter buttons, or the row painted from the frozen `segmentedControl` recipe.
+enum RaftSegmentedStyle { tabs, buttons, taskViews, recipe }
+
+@immutable
+class RaftSegmentedOption<T> {
+  const RaftSegmentedOption({
+    required this.value,
+    required this.label,
+    this.glyph,
+    this.tooltip,
+    this.count,
+    this.enabled = true,
+    this.labelSuffix,
+    this.itemKey,
+  });
+  final T value;
+  final String label;
+
+  /// Key of the segment (tests, parity interactions).
+  final Key? itemKey;
+
+  /// A `font-mono text-[10px] font-bold text-black/60` note inside
+  /// the label (`gap-1.5`), e.g. BillingIntervalSegmentedControl's "Save 12%".
+  final String? labelSuffix;
+  final RaftGlyph? glyph;
+  final String? tooltip;
+
+  /// `SegmentedControlCount` (buttons style).
+  final String? count;
+  final bool enabled;
+}
+
+/// raft-ui `SegmentedControl`, the one segmented control of the client: 2 to 4 segments in a gray track that switch
+/// how the same content is shown, the selected one a yellow sticker. One radio group: arrow keys select and move
+/// focus within it.
+class RaftSegmentedControl<T> extends StatefulWidget {
+  const RaftSegmentedControl({
+    super.key,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.label,
+    this.visualHeight = 32,
+    this.legacyStyle = RaftSegmentedStyle.buttons,
+    this.minimumTargetSize,
+    this.disabled = false,
+    this.shrinkFrame = false,
+    this.expand = false,
+  });
+
+  /// `className="w-full *:flex-1"`: the track fills its row, the segments share it equally. Raft look only.
+  final bool expand;
+
+  /// `SegmentedControl disabled`: every item is inert and its ink greys; the sticker stays.
+  final bool disabled;
+
+  /// A flex-shrinking CSS track may be narrower than its non-shrinking items.
+  final bool shrinkFrame;
+
+  /// How the frozen Elegant and Brutal looks draw this control. The Raft look always draws the `SegmentedControl`
+  /// track with its sticker item, whatever this says.
+  final RaftSegmentedStyle legacyStyle;
+  final T value;
+  final List<RaftSegmentedOption<T>> items;
+  final ValueChanged<T>? onChanged;
+  final String? label;
+  final double visualHeight;
+
+  /// Passed to each segment's [RaftControl] (layout follows the Web box when
+  /// set to [visualHeight]).
+  final double? minimumTargetSize;
+  @override
+  State<RaftSegmentedControl<T>> createState() =>
+      _RaftSegmentedControlState<T>();
+}
+
+class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
+  final scope = FocusScopeNode(
+    traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
+  );
+  @override
+  void dispose() {
+    scope.dispose();
+    super.dispose();
+  }
+
+  void move(int delta) {
+    if (widget.onChanged == null || widget.items.isEmpty) return;
+    final current = widget.items.indexWhere((e) => e.value == widget.value);
+    final next =
+        ((current < 0
+                ? delta > 0
+                      ? -1
+                      : 0
+                : current) +
+            delta) %
+        widget.items.length;
+    widget.onChanged!(widget.items[next].value);
+    if (delta > 0) {
+      scope.nextFocus();
+    } else {
+      scope.previousFocus();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FocusScope(
+    node: scope,
+    child: CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.arrowRight): () => move(1),
+        const SingleActivator(LogicalKeyboardKey.arrowDown): () => move(1),
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): () => move(-1),
+        const SingleActivator(LogicalKeyboardKey.arrowUp): () => move(-1),
+      },
+      child: Semantics(
+        label: widget.label,
+        container: true,
+        child: _group(context),
+      ),
+    ),
+  );
+
+  VoidCallback? _press(RaftSegmentedOption<T> item) =>
+      widget.onChanged == null || widget.disabled || !item.enabled
+      ? null
+      : () => widget.onChanged!(item.value);
+
+  RaftSegmentedTrack _track() => RaftSegmentedTrack(
+    shrinkFrame: widget.shrinkFrame,
+    expand: widget.expand,
+    children: [
+      for (final item in widget.items)
+        RaftSegmentedItem(
+          key: item.itemKey,
+          label: item.label,
+          glyph: item.glyph,
+          count: item.count,
+          labelSuffix: item.labelSuffix,
+          tooltip: item.tooltip,
+          checked: item.value == widget.value,
+          height: widget.visualHeight,
+          onPressed: _press(item),
+        ),
+    ],
+  );
+
+  Widget _group(BuildContext context) {
+    final raft = RaftTokens.of(context).isRaftLook;
+    final style = raft ? RaftSegmentedStyle.buttons : widget.legacyStyle;
+    return switch (style) {
+      // raft-ui `SegmentedControl` is `inline-flex w-fit`: the track hugs its items instead of stretching in a column.
+      // The frozen looks keep the plain row they always drew.
+      RaftSegmentedStyle.buttons when raft && widget.expand => _track(),
+      RaftSegmentedStyle.buttons when raft => Align(
+        alignment: AlignmentDirectional.centerStart,
+        widthFactor: 1,
+        heightFactor: 1,
+        child: _track(),
+      ),
+      RaftSegmentedStyle.buttons => _track(),
+      RaftSegmentedStyle.taskViews => _frozenTaskViews(context),
+      RaftSegmentedStyle.tabs => _frozenTabs(context),
+      RaftSegmentedStyle.recipe => _frozenRecipe(context),
+    };
+  }
 }

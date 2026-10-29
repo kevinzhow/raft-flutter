@@ -6,30 +6,26 @@
 // My apps tabs, the search / category / layout filters, the three app
 // collections (grid or list), and the listing / installed-app detail cards.
 // The app supplies the projected rows and callbacks; class lists live here.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption;
 import 'card.dart' show RaftCard;
 
 import 'package:flutter/material.dart';
 
 import 'raft_underline.dart';
 import 'system_inset.dart';
-import 'design_primitives.dart'
-    show
-        RaftInteractive,
-        RaftSegmentedControl,
-        RaftSegmentedOption,
-        RaftTypography;
+import 'design_primitives.dart' show RaftInteractive, RaftTypography;
 import 'dialog_card.dart' show RaftCloseButton;
 import 'error_presentation.dart';
 import 'icons.dart';
 import 'list_items.dart' show RaftSectionEyebrow;
 import 'localization.dart';
 import 'recipe_min_height.dart' show RaftMinHeightBox;
-import 'recipe_surface.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
-import 'recipes/toggle_group.g.dart';
+import 'toggle_group.dart';
 import 'select_field.dart';
 import 'settings_controls.dart';
 import 'settings_layout.dart';
@@ -310,7 +306,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
       height: 40,
       items: [
         for (final (value, label) in categories)
-          DropdownMenuItem(value: value, child: Text(label)),
+          RaftSelectItem(value: value, label: label),
       ],
       onChanged: (value) {
         if (value != null) onCategory(value);
@@ -690,89 +686,37 @@ class _SliverCollection extends StatelessWidget {
   }
 }
 
-/// ConnectedAppsViewToggle: raft-ui ToggleGroup with two `h-8 w-8 p-0`
-/// icon items (LayoutGrid 16 / List 17).
+/// ConnectedAppsViewToggle: raft-ui ToggleGroup with two `h-8 w-8 p-0` icon items (LayoutGrid 16 / List 17).
 class _LayoutToggle extends StatelessWidget {
   const _LayoutToggle({required this.value, required this.onChanged});
   final RaftConnectedAppsLayout value;
   final ValueChanged<RaftConnectedAppsLayout> onChanged;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final root = RaftToggleGroupRecipe.resolve(
-      theme: t.recipeTheme,
-      states: t.recipeStates(),
-      tokens: t.recipeTokens,
-    ).root;
-    final items = [
-      for (final (layout, glyph, size, label, key) in [
-        (
-          RaftConnectedAppsLayout.grid,
-          RaftGlyph.layoutGrid,
-          16.0,
-          'Grid view',
-          'grid',
-        ),
-        (
-          RaftConnectedAppsLayout.list,
-          RaftGlyph.list,
-          17.0,
-          'List view',
-          'list',
-        ),
-      ])
-        RaftTooltip(
-          message: raftText(context, label),
-          child: RaftInteractive(
-            key: ValueKey('connected-apps-view-$key'),
-            semanticLabel: raftText(context, label),
-            selected: value == layout,
-            onPressed: () => onChanged(layout),
-            builder: (context, st) {
-              final s = RaftToggleGroupRecipe.resolve(
-                theme: t.recipeTheme,
-                states: t.recipeStates(
-                  hovered: st.hovered,
-                  pressed: st.pressed,
-                  focusVisible: st.focusVisible,
-                  extra: [
-                    value == layout ? 'data-pressed' : 'not-data-pressed',
-                  ],
-                ),
-                tokens: t.recipeTokens,
-              ).item;
-              return RaftRecipeBox(
-                style: s,
-                tokens: t.recipeTokens,
-                width: 32,
-                height: 32,
-                padding: EdgeInsets.zero,
-                alignment: Alignment.center,
-                child: Builder(
-                  builder: (context) => RaftIcon(
-                    glyph,
-                    size: size,
-                    color: DefaultTextStyle.of(context).style.color,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-    ];
-    return Semantics(
-      label: raftText(context, 'App layout'),
-      container: true,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          items[0],
-          SizedBox(width: root.columnGap ?? 4),
-          items[1],
-        ],
+  Widget build(
+    BuildContext context,
+  ) => RaftToggleGroup<RaftConnectedAppsLayout>(
+    semanticLabel: 'App layout',
+    value: {value},
+    // The Web handler ignores the empty value of a pressed item pressed again.
+    onChanged: (next) {
+      if (next.isNotEmpty) onChanged(next.first);
+    },
+    items: const [
+      RaftToggleGroupItem(
+        value: RaftConnectedAppsLayout.grid,
+        glyph: RaftGlyph.layoutGrid,
+        tooltip: 'Grid view',
+        itemKey: ValueKey('connected-apps-view-grid'),
       ),
-    );
-  }
+      RaftToggleGroupItem(
+        value: RaftConnectedAppsLayout.list,
+        glyph: RaftGlyph.list,
+        glyphSize: 17,
+        tooltip: 'List view',
+        itemKey: ValueKey('connected-apps-view-list'),
+      ),
+    ],
+  );
 }
 
 /// ConnectedAppLogo (AvatarSlot `type="app"` + `shadow-raft-sm

@@ -393,10 +393,16 @@ class FamilyRegistryTest(unittest.TestCase):
 
     def test_the_requested_families_are_registered_and_uncertain_choices_say_why(self):
         self.assertEqual(set(self.families), {'button', 'menu', 'popover', 'dialog', 'segmented', 'spinner',
-                                               'card', 'banner', 'list_row'})
+                                               'card', 'banner', 'list_row', 'checkbox', 'select', 'switch',
+                                               'radio_group', 'toggle_group', 'tabs', 'picker_trigger', 'combobox',
+                                               'steps'})
         self.assertGreater(len(self.families['menu']['pending']), 40)  # P2 decides; nothing counted yet
-        for family in ('segmented',):
+        for family in ('dialog',):
             self.assertGreater(len(self.families[family].get('uncertain', '')), 40, family)
+        for family in ('segmented', 'checkbox', 'select', 'switch', 'radio_group', 'toggle_group', 'tabs',
+                       'picker_trigger', 'combobox', 'steps'):  # decided by P4: canonical only, nothing uncertain
+            self.assertNotIn('uncertain', self.families[family], family)
+            self.assertTrue(self.families[family]['canonical'], family)
         for family in ('spinner', 'card', 'popover'):  # decided by P6: canonical only, no duplicate left
             self.assertEqual(self.families[family]['deprecated'], {}, family)
         self.assertIn('RaftArchivedNameBanner', self.families['banner']['deprecated'])

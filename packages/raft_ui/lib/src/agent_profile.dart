@@ -4,6 +4,8 @@
 // components/member/HumanDetailPanel.tsx). Data loading stays in the app; the
 // widgets here take plain view data and callbacks. Values cite the Tailwind
 // classes / raft-ui recipes they come from.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption;
 import 'card.dart' show RaftCard;
 import 'hover_region.dart';
 import 'css_pixel_snap.dart';

@@ -1,6 +1,7 @@
 // Presentational pieces of Web ForwardComposerMobile
 // (packages/web/src/components/message/ForwardComposerMobile.tsx,
 // ForwardComposerTargetList.tsx). The app owns targets, search and sending.
+import 'raft/checkbox.dart' show RaftCheckbox;
 import 'text_selection_toolbar.dart';
 import 'hover_region.dart';
 
@@ -16,7 +17,7 @@ import 'design_primitives.dart';
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'form_controls.dart' show RaftTextInput, RaftLegacyInput;
 import 'icons.dart';
-import 'indicators.dart' show RaftCheckbox;
+
 import 'localization.dart';
 import 'message_body.dart';
 import 'mounted_avatar_recipe.dart';

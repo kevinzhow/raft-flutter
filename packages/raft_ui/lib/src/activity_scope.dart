@@ -133,13 +133,9 @@ class RaftActivityScopeToolbar extends StatelessWidget {
                             'desc': 'Newest',
                             'asc': 'Oldest',
                           }.entries)
-                            DropdownMenuItem(
+                            RaftSelectItem(
                               value: entry.key,
-                              child: Text(
-                                raftText(context, entry.value),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              label: raftText(context, entry.value),
                             ),
                         ],
                         onChanged: (value) {

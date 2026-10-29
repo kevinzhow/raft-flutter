@@ -64,7 +64,7 @@ void main() {
               builder: (context, update) => RaftSegmentedControl<String>(
                 label: 'Task view',
                 value: value,
-                style: RaftSegmentedStyle.taskViews,
+                legacyStyle: RaftSegmentedStyle.taskViews,
                 items: const [
                   RaftSegmentedOption(
                     value: 'board',

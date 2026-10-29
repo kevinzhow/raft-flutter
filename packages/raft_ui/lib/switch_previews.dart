@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'previews.dart';
 import 'src/design_primitives.dart';
-import 'src/switch.dart';
+import 'src/raft/switch.dart';
 
 @RaftPreviews('Source switches', size: Size(640, 440))
 Widget sourceSwitchesPreview() => const _Switches();

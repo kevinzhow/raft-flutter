@@ -197,7 +197,7 @@ From `packages/raft_ui/lib/raft_ui.dart`:
   - `RaftLayoutMetrics`: `panelInset 20`, `panelGap 12`, `toolbarInset`, breakpoints.
   - `RaftPrimitives`: `controlDuration 100ms`, `switchDuration 180ms`, `radii [0,2,4,6,8]`, and `spacing [0,2,4,…,64]`. **The spacing scale is an unnamed list.**
 - **Controls:** `RaftButton`, `RaftTextButton`, `RaftTextLink`, `RaftIconButton`, `RaftBackButton`, `RaftSavedActionButton`, `RaftControl` (+ `RaftControlRecipe`, `RaftControlVariant surface/primary/accent/outline/ghost/danger`), `RaftSegmentedControl<T>`, `RaftPickerTriggerButton`, `RaftSwitch`.
-- **Menus and select:** `RaftDropdownMenu`, `RaftMenuPanel`, `RaftMenuItem`, `RaftMenuEntry` (incl. `.separator()`), `RaftMenuController`, `RaftSelectField<T>`. `RaftSelectField` still takes Material `DropdownMenuItem<T>` items.
+- **Menus and select:** `RaftDropdownMenu`, `RaftMenuPanel`, `RaftMenuItem`, `RaftMenuEntry` (incl. `.separator()`), `RaftMenuController`, `RaftSelectField<T>` with `RaftSelectItem<T>` items (and `RaftLabeledSelect<T>` for a select under a label).
 - **Fields and forms:** `RaftFieldSurface`, `RaftFieldRecipe`, `RaftFieldBorder`, `RaftFormDialog` + `RaftFormField`, `RaftSecretView`.
 - **Feedback:** `RaftSpinner`, `RaftTooltip` + `RaftTooltipProvider`, `RaftEmptyState`, `RaftNotificationCenter`, `RaftSystemMessage`.
 - **Surfaces and layout:**
@@ -379,7 +379,7 @@ those.
 ### 3.18 Selects — 14 (C4: API change)
 
 - **Counts:** `DropdownMenuItem` 10, `DropdownButtonFormField` 4.
-- **Existing:** `RaftSelectField<T>`, but it takes Material `DropdownMenuItem<T>`, so the `DropdownMenuItem` constructions survive a migration.
+- **Existing:** `RaftSelectField<T>` takes `RaftSelectItem<T>` (value, label, enabled), so a migrated site carries no Material item type.
 - **C4 change:** give it a `RaftSelectOption<T>` item type. This mirrors raft-ui `SelectItem`/`SelectItemText`; Web `components/agent/StableField.tsx` (`FieldSelectTrigger`).
 
 ### 3.19 Dividers — 12 (C4)

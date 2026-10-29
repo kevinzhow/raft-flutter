@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'indicators.dart';
+import 'raft/checkbox.dart' show RaftCheckbox;
 import 'localization.dart';
 import 'theme.dart';
 

@@ -373,9 +373,12 @@ void main() {
       await tester.pumpWidget(
         _host(
           theme,
-          RaftRecipeSegmentedControl<String>(
+          RaftSegmentedControl<String>(
             value: 'a',
-            items: const [('a', null, 'One'), ('b', null, 'Two')],
+            items: const [
+              RaftSegmentedOption(value: 'a', label: 'One'),
+              RaftSegmentedOption(value: 'b', label: 'Two'),
+            ],
             onChanged: (_) {},
           ),
         ),

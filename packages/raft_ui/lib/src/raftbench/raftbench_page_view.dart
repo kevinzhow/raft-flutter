@@ -282,15 +282,12 @@ class _RaftbenchAdminViewState extends State<RaftbenchAdminView> {
                       height: 40,
                       placeholder: 'Select a channel',
                       items: [
-                        DropdownMenuItem(
+                        RaftSelectItem(
                           value: raftbenchWorkspaceScope,
-                          child: Text(tr('Workspace overview')),
+                          label: tr('Workspace overview'),
                         ),
                         for (final o in widget.options)
-                          DropdownMenuItem(
-                            value: o.value,
-                            child: Text(o.label),
-                          ),
+                          RaftSelectItem(value: o.value, label: o.label),
                       ],
                       onChanged: (value) =>
                           widget.onScope(value ?? raftbenchWorkspaceScope),

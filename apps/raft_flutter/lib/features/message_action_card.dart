@@ -486,15 +486,13 @@ class _MessageActionCardState extends State<MessageActionCard> {
             builder: (context, setLocal) => Column(
               children: [
                 for (final p in candidates)
-                  CheckboxListTile(
+                  RaftCheckboxRow(
                     key: ValueKey('action-member-${p['actorType']}-${p['id']}'),
                     dense: true,
-                    title: Text('${p['displayName'] ?? p['name'] ?? p['id']}'),
-                    subtitle: Text(
-                      raftText(
-                        context,
-                        p['actorType'] == 'agent' ? 'Agent' : 'Member',
-                      ),
+                    title: '${p['displayName'] ?? p['name'] ?? p['id']}',
+                    description: raftText(
+                      context,
+                      p['actorType'] == 'agent' ? 'Agent' : 'Member',
                     ),
                     value: (p['actorType'] == 'agent' ? agents : users)
                         .contains(p['id']),

@@ -3,11 +3,13 @@
 // PlanSection, PlanBillingLoadingSection, DowngradeWarningCard and the
 // BillingTabContent permission card. The app computes every label, value and
 // gate (billing projection); this file resolves only the class lists.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption;
+
 import 'package:flutter/material.dart';
 
 import 'flex_shrink_row.dart';
-import 'design_primitives.dart'
-    show RaftSegmentedControl, RaftSegmentedOption, RaftTypography;
+import 'design_primitives.dart' show RaftTypography;
 import 'icons.dart';
 import 'indicators.dart' show RaftWebPalette;
 import 'localization.dart';
