@@ -6,18 +6,15 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'task_typography_test.dart' show loadTaskFonts;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final scale in [1.0, 2.0]) {
       testWidgets(
-        'mixed-font composing underline has one vertical position $family/$dark/$scale',
+        'mixed-font composing underline has one vertical position ${dark ? 'dark' : 'light'}/$scale',
         (t) async {
           await loadImeFonts(t);
           t.view.physicalSize = const Size(1170, 2532);
@@ -26,14 +23,11 @@ void main() {
           final boundaryKey = GlobalKey();
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(
-                family,
-                dark: dark,
-              ).copyWith(platform: TargetPlatform.android),
+              theme: raftTheme(dark: dark)
+                  .copyWith(platform: TargetPlatform.android),
               builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: TextScaler.linear(scale)),
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(scale)),
                 child: child!,
               ),
               home: Scaffold(
@@ -110,7 +104,9 @@ void main() {
               final png = await picture.toByteData(
                 format: ui.ImageByteFormat.png,
               );
-              final file = File('$evidence/${family.name}-$dark-$scale.png');
+              final file = File(
+                '$evidence/${dark ? 'dark' : 'light'}-$scale.png',
+              );
               await file.parent.create(recursive: true);
               await file.writeAsBytes(png!.buffer.asUint8List());
             }

@@ -6,6 +6,7 @@ import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/app_services_fixture.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -55,7 +56,7 @@ class _Workspace extends WorkspaceController {
 }
 
 void main() {
-  for (final revoke in ['channel', 'principal']) {
+  for (final revoke in ['channel', 'principal', 'server']) {
     testWidgets(
       'real channel header seeds a fresh search; $revoke revocation cannot open global search',
       (t) async {
@@ -90,19 +91,21 @@ void main() {
         });
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(RaftFamily.elegant),
-            home: WorkspaceView(
-              controller: w,
-              appearance: const RaftAppearance(),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: const RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
         await t.pumpAndSettle();
         await t.tap(find.byKey(const ValueKey('sidebar-channel-c')));
         await t.pumpAndSettle();
-        await t.tap(find.bySemanticsLabel('Search this channel'));
+        await t.tap(find.bySemanticsLabel('Search This Channel'));
         await t.pumpAndSettle();
         final entry = t.widget<ResourceView>(find.byType(ResourceView));
         expect(w.location.query('channelId'), 'c');
@@ -121,10 +124,19 @@ void main() {
         expect(w.searches, ['c']);
         if (revoke == 'channel') {
           w.channels = [];
-        } else {
+        } else if (revoke == 'principal') {
           client.user = RaftRecord({
             'id': 'other',
             'name': 'Other public human',
+          });
+        } else {
+          // Keep the navigation slug so the search page stays mounted while
+          // the server id changes.
+          w.server = RaftRecord({
+            'id': 'other',
+            'slug': 's',
+            'role': 'owner',
+            'name': 'Other server',
           });
         }
         w.notifyListeners();

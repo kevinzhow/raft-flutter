@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_flutter/data/source_activity_unread_store.dart';
 import 'package:raft_flutter/data/source_read_all_transport.dart';
 
 import 'message_presentation_test.dart' show fixture;
 
 Future<void> _dispatch() async {
-  for (var i = 0; i < 8; i++) {
+  for (var i = 0; i < 40; i++) {
     await Future<void>.delayed(Duration.zero);
   }
 }
@@ -152,7 +151,7 @@ void main() {
 
   test('Source Done suppression is local to the owned write; an ordinary same-path persisted read still reconciles Activity', () async {
     final (w, api) = await fixture('owner');
-    final attention = SourceActivityUnreadStore(w);
+    final attention = w.activityUnread..start();
     addTearDown(() {
       attention.dispose();
       w.dispose();

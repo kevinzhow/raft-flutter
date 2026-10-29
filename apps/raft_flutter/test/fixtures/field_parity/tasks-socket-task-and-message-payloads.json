@@ -1,0 +1,37 @@
+{
+  "task:updated": {
+    "channelId": "a1b2c3d4-0000-4000-8000-000000000001",
+    "task": {
+      "id": "2f6b7c1e-3a4d-4e51-9a0b-111111111111",
+      "messageId": "5c0d9e22-7a31-4b6f-8d44-222222222222",
+      "channelId": "a1b2c3d4-0000-4000-8000-000000000001",
+      "channelName": "design",
+      "channelType": "channel",
+      "taskNumber": 12,
+      "title": "Ship the onboarding checklist",
+      "status": "done",
+      "claimedByType": "agent",
+      "claimedById": "ag-0000-4000-8000-000000000002",
+      "claimedByName": "cindy",
+      "completedAt": "2026-10-12T08:00:00.000Z",
+      "revision": 6,
+      "updatedAt": "2026-10-12T08:00:00.000Z",
+      "isLegacy": false
+    }
+  },
+  "task:deleted": {"channelId": "a1b2c3d4-0000-4000-8000-000000000001", "taskId": "2f6b7c1e-3a4d-4e51-9a0b-111111111111"},
+  "message:new.taskFields": {
+    "id": "5c0d9e22-7a31-4b6f-8d44-222222222222",
+    "channelId": "a1b2c3d4-0000-4000-8000-000000000001",
+    "taskStatus": "in_review",
+    "taskNumber": 12,
+    "taskAssigneeType": "agent",
+    "taskAssigneeId": "ag-0000-4000-8000-000000000002",
+    "taskAssigneeName": "cindy",
+    "taskClaimedAt": "2026-10-10T08:15:00.000Z",
+    "taskCompletedAt": null
+  },
+  "read_state:updated": {"serverId": "s-0000-4000-8000-000000000001", "scopeId": "d1000000-0000-4000-8000-0000000000d1", "maxReadSeq": 42, "readStateVersion": 4},
+  "read_state:updated_bulk": {"serverId": "s-0000-4000-8000-000000000001", "scopes": [{"scopeId": "d1000000-0000-4000-8000-0000000000d1", "maxReadSeq": 42, "readStateVersion": 4}]},
+  "scope_read:updated": {"scopeId": "a1b2c3d4-0000-4000-8000-000000000001", "peerKind": "agent", "peerId": "ag-0000-4000-8000-000000000002", "maxReadSeq": 77}
+}

@@ -1,0 +1,12 @@
+# Plain `test()` cases get 60s; testWidgets are bounded by test/flutter_test_config.dart
+# (flutter_test passes an explicit timeout that overrides this file).
+timeout: 60s
+
+# `@Tags(['slow'])` marks a long scenario file. The gate (tool/check-project) runs it only when the
+# diff reaches it (tool/affected_tests.py) or RAFT_TEST_TIER=full; the nightly runs everything.
+# `@Tags(['look-elegant'])` / `@Tags(['look-brutal'])` mark a file that is about a legacy look. The Raft checks
+# (tool/check-project, tool/preflight) do not run it; tool/theme-suite does (tool/theme_looks.py).
+tags:
+  slow: {}
+  look-elegant: {}
+  look-brutal: {}

@@ -1,0 +1,13 @@
+{
+  "appId": "app.raft.raft_flutter",
+  "sourceCommit": "7877abc7d7acba6e87fecd325ef953f0548dd999",
+  "GDK_SCALE": 2,
+  "GDK_DPI_SCALE": 1,
+  "width": 2560,
+  "height": 1440,
+  "colors": 739,
+  "file": "raft-linux-flatpak-hidpi-2026-10-12.png",
+  "scope": "production entry point, fresh sandbox, first screen; no login or messaging acceptance",
+  "sha256": "d2ba5b9268855683042f701874f75593e77d6fff2ffc4b31420ad977409191ed",
+  "workflowRun": "https://github.com/kevinzhow/raft-flutter/actions/runs/38237992017"
+}

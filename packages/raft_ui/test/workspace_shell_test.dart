@@ -6,13 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     Future<void> mount(
       WidgetTester tester,
       Widget child, {
@@ -23,38 +20,36 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(dark: dark),
           home: Scaffold(body: child),
         ),
       );
       await tester.pump();
     }
 
-    testWidgets('$family/$dark Source heading owns its border-box height', (
-      tester,
-    ) async {
-      await mount(
-        tester,
-        const Align(
-          alignment: Alignment.topLeft,
-          child: SizedBox(
-            width: 280,
-            child: RaftChatSidebarHeading(label: 'Chat'),
+    testWidgets(
+      '${dark ? 'dark' : 'light'} Source heading owns its border-box height',
+      (tester) async {
+        await mount(
+          tester,
+          const Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 280,
+              child: RaftChatSidebarHeading(label: 'Chat'),
+            ),
           ),
-        ),
-      );
-      expect(
-        tester.getSize(find.byType(RaftChatSidebarHeading)).height,
-        family == RaftFamily.brutal ? 62 : 56,
-      );
-      final text = tester.widget<Text>(find.text('Chat'));
-      expect(text.style!.fontWeight, FontWeight.w700);
-      expect(text.style!.fontSize, 18);
-      expect(find.byType(RaftDropdownMenu), findsNothing);
-    });
+        );
+        expect(tester.getSize(find.byType(RaftChatSidebarHeading)).height, 56);
+        final text = tester.widget<Text>(find.text('Chat'));
+        expect(text.style!.fontWeight, FontWeight.w700);
+        expect(text.style!.fontSize, 17);
+        expect(find.byType(RaftDropdownMenu), findsNothing);
+      },
+    );
 
     testWidgets(
-      '$family/$dark Source rail slots, short size and depressed semantics',
+      '${dark ? 'dark' : 'light'} Source rail slots, short size semantics',
       (tester) async {
         var clicks = 0;
         Widget footer() => Align(
@@ -67,7 +62,6 @@ void main() {
                   label: 'Workspace',
                   glyph: RaftGlyph.squareSplitHorizontal,
                   selected: true,
-                  depressed: true,
                   onPressed: () => clicks++,
                 ),
                 RaftWorkspaceRailAction(
@@ -80,10 +74,7 @@ void main() {
           ),
         );
         await mount(tester, footer());
-        expect(
-          tester.getSize(find.byType(RaftWorkspaceRailFooter)).height,
-          102,
-        );
+        expect(tester.getSize(find.byType(RaftWorkspaceRailFooter)).height, 94);
         final action = find.bySemanticsLabel('Workspace');
         final semantics = tester.ensureSemantics();
         expect(
@@ -106,7 +97,7 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark actual editor tabs expose selected state on their tab role',
+      '${dark ? 'dark' : 'light'} actual editor tabs expose selected state on their tab role',
       (tester) async {
         final semantics = tester.ensureSemantics();
         var selected = 'one';
@@ -171,7 +162,7 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark Help right/end placement, hover grace and keyboard action',
+      '${dark ? 'dark' : 'light'} Help right/end placement, hover grace and keyboard action',
       (tester) async {
         final controller = RaftMenuController(), editorFocus = FocusNode();
         addTearDown(controller.dispose);

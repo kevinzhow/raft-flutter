@@ -81,6 +81,7 @@ class _Client extends RaftClient {
     },
   });
   final w = WorkspaceController(client);
+  addTearDown(w.dispose);
   final server = RaftRecord({
     'id': 's1',
     'name': 'Fixture',
@@ -99,7 +100,7 @@ Future<void> _pump(WidgetTester t, WorkspaceController w) async {
   addTearDown(t.view.reset);
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(RaftFamily.elegant),
+      theme: raftTheme(),
       home: Scaffold(
         body: SingleChildScrollView(
           child: PublicVisibilitySection(
@@ -136,7 +137,8 @@ void main() {
     expect(find.byKey(section), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('public-visibility-switch')));
     await t.pumpAndSettle();
-    expect(find.text('MAKE THIS SERVER PUBLIC?'), findsOneWidget);
+    expect(find.text('Make this server public?'), findsOneWidget);
+    expect(find.text('Make public'), findsWidgets);
     expect(find.text('general'), findsWidgets);
     expect(client.sent('PATCH /servers/s1/public-visibility'), isEmpty);
 

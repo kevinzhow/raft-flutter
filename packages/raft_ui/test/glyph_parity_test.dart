@@ -116,12 +116,15 @@ void main() {
       final render =
           boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
       final image = await render.toImage();
+      addTearDown(image.dispose);
       flutterPixels = (await image.toByteData())!.buffer.asUint8List();
       flutterPng = (await image.toByteData(format: ui.ImageByteFormat.png))!;
       final codec = await ui.instantiateImageCodec(
         File('${_dir.path}/reference/chromium.png').readAsBytesSync(),
       );
       final frame = await codec.getNextFrame();
+      addTearDown(codec.dispose);
+      addTearDown(frame.image.dispose);
       expect(frame.image.width, width);
       expect(frame.image.height, height);
       referencePixels = (await frame.image.toByteData())!.buffer.asUint8List();

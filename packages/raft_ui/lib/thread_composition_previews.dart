@@ -42,15 +42,15 @@ class _ThreadCompositionPreviewState extends State<_ThreadCompositionPreview> {
           viewportHeight: 560,
           threadLabel: 'Thread',
           parentLabel: '#design',
-          jumpLabel: 'Scroll thread to first message',
+          jumpLabel: 'Scroll Thread to First Message',
           backLabel: 'Back',
-          closeLabel: 'Close thread',
+          closeLabel: 'Close Thread',
           onJumpToStart: () => scroll.jumpTo(0),
           onBack: () => setState(() => actions++),
           onClose: () => setState(() => actions++),
           actions: [
             RaftThreadOverflowAction(
-              label: 'Thread actions',
+              label: 'Thread Actions',
               onPressed: () => setState(() => actions++),
             ),
           ],

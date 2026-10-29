@@ -45,7 +45,7 @@ class _InlineBadgePreviewState extends State<_InlineBadgePreview> {
             ),
             const SizedBox(height: 24),
             RaftButton(
-              label: enabled ? 'Disable editor' : 'Enable editor',
+              label: enabled ? 'Disable Editor' : 'Enable Editor',
               secondary: true,
               onPressed: () => setState(() => enabled = !enabled),
             ),

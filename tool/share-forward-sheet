@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""Contact sheet for the incoming-share / forward page alignment (docs/parity.md,
+"Phone forward page and incoming share").
+
+  tool/share-forward-sheet --web DIR --forward-before DIR --forward-after DIR \
+      --share-before DIR --share-after DIR --out /tmp/share-forward/sheet.png
+
+One block per theme (brutal | elegant | elegant-dark), one row per state, three
+columns: Web | before | after.
+  forward mode  Web = React ForwardComposerMobile (components.forward-mobile.page.<state>.<theme>.png in
+                --web), before / after = the Flutter forward page, same case ids in --forward-before / -after.
+  share mode    Web = the React page of the closest state, before / after = the share picker captures of
+                apps/raft_flutter/tool/captures/share_forward_capture_test.dart (<theme>-en-files-<state>.png).
+Needs Pillow.
+"""
+import argparse
+import os
+from PIL import Image, ImageDraw
+
+THEMES = [('brutal', 'brutal'), ('elegant', 'elegant'), ('elegant-dark', 'elegant-dark')]
+# (label, forward case state)
+FORWARD = ['targets', 'search', 'search-empty', 'search-error', 'search-loading', 'multi', 'note']
+# (label, share capture state, Web case state)
+SHARE = [('initial', 'initial', 'targets'), ('search', 'search', 'search'),
+         ('search-empty', 'search-empty', 'search-empty'), ('selected', 'selected', 'note')]
+CELL_W = 260
+
+
+def load(path):
+    if not os.path.exists(path):
+        return None
+    im = Image.open(path).convert('RGB')
+    return im.resize((CELL_W, round(im.height * CELL_W / im.width)), Image.LANCZOS)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    for name in ('web', 'forward-before', 'forward-after', 'share-before', 'share-after'):
+        ap.add_argument('--' + name, required=True)
+    ap.add_argument('--out', required=True)
+    a = ap.parse_args()
+    rows = [('forward', s, s) for s in FORWARD] + [('share', l, w) for l, _, w in SHARE]
+    head, pad, gap = 44, 6, 24
+    cell_h = round(844 * CELL_W / 390)
+    block_w = 3 * CELL_W + 4 * pad
+    row_h = cell_h + 26
+    sheet = Image.new('RGB', (3 * block_w + 2 * gap, head + len(rows) * row_h), 'white')
+    d = ImageDraw.Draw(sheet)
+    for bi, (theme, suffix) in enumerate(THEMES):
+        x0 = bi * (block_w + gap)
+        d.text((x0 + pad, 6), f'{theme}: Web | before | after', fill='black')
+        for ri, (mode, label, state) in enumerate(rows):
+            y = head + ri * row_h
+            d.text((x0 + pad, y + 4), f'{mode} / {label}', fill=(90, 90, 90))
+            if mode == 'forward':
+                name = f'components.forward-mobile.page.{state}.{suffix}.png'
+                imgs = [os.path.join(a.web, name), os.path.join(a.forward_before, name),
+                        os.path.join(a.forward_after, name)]
+            else:
+                shot = dict((l, s) for l, s, _ in SHARE)[label]
+                web = f'components.forward-mobile.page.{state}.{suffix}.png'
+                own = f'{theme}-en-files-{shot}.png'
+                imgs = [os.path.join(a.web, web), os.path.join(a.share_before, own),
+                        os.path.join(a.share_after, own)]
+            for ci, path in enumerate(imgs):
+                im = load(path)
+                if im:
+                    sheet.paste(im, (x0 + pad + ci * (CELL_W + pad), y + 24))
+    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
+    sheet.save(a.out)
+    print(a.out, sheet.size)
+
+
+if __name__ == '__main__':
+    main()

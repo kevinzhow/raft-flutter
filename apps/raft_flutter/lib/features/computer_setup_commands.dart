@@ -1,8 +1,12 @@
 /// Native instructions for the pinned Web Computer install/setup contract.
 /// This configuration contains no credentials; commands are copy-only.
 class ComputerSetupCommands {
-  const ComputerSetupCommands(this.install, this.setup);
+  const ComputerSetupCommands(this.install, this.setup, [this.installAndSetup]);
   final String install, setup;
+
+  /// mac/Linux production only: install, then run setup with the installed
+  /// binary, in one paste (Web `ComputerCommands.installAndSetup`).
+  final String? installAndSetup;
   static ComputerSetupCommands? build({
     required String slug,
     required String serverUrl,
@@ -64,7 +68,13 @@ class ComputerSetupCommands {
     ];
     final install =
         'curl -fsSL $base/install.sh | ${env.isNotEmpty ? '${env.join(' ')} ' : ''}sh';
-    if (!isolated) return ComputerSetupCommands(install, 'raft-computer $args');
+    if (!isolated) {
+      return ComputerSetupCommands(
+        install,
+        'raft-computer $args',
+        '$install -s -- --$args',
+      );
+    }
     final home = '\$HOME/.raft-computer-$normalized';
     final environment =
         'RAFT_HOME="$home" RAFT_COMPUTER_INSTALL_DIR="$home/bin"';
@@ -91,9 +101,15 @@ class ComputerCommands {
     required this.restart,
     required this.stop,
     required this.start,
+    this.installAndSetup,
   });
   final String install, setup, status, doctor, restartService, restart;
   final String stop, start;
+
+  /// mac/Linux production only: install, then run setup with the installed
+  /// binary, in one paste (`… | sh -s -- --setup /slug`). Null where install
+  /// and setup stay separate steps (Windows, isolated test deployments).
+  final String? installAndSetup;
 
   /// [deployment] is VITE_DEPLOYMENT_ENV: `production` adds `--server-url`
   /// only for a non-default server, `staging`/`slockdev` isolate the home,
@@ -192,6 +208,9 @@ class ComputerCommands {
     return ComputerCommands(
       install: windows ? windowsInstall() : unixInstall(),
       setup: 'raft-computer setup /$s$setupArgs',
+      installAndSetup: windows
+          ? null
+          : '${unixInstall()} -s -- --setup /$s$setupArgs',
       status: 'raft-computer status',
       doctor: 'raft-computer doctor',
       restartService: 'raft-computer restart',

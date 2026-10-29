@@ -11,15 +11,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'activity_open_clears_new_test.dart' show activityRow;
 import 'message_presentation_test.dart' show fixture;
+import 'support/app_services_fixture.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final (dark) in [(true)]) {
     for (final width in [1440.0, 390.0]) {
       testWidgets(
-        '[Activity no activation] $family/$dark ${width.toInt()}px unread indicators stay without a tap, through auto paths and a revisit',
+        '[Activity no activation] ${dark ? 'dark' : 'light'} ${width.toInt()}px unread indicators stay without a tap, through auto paths and a revisit',
         (tester) async {
           SharedPreferences.setMockInitialValues({});
           tester.view.physicalSize = Size(width, 900);
@@ -28,7 +26,7 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           // The retained main channel is also an Activity row.
           w.dms = [
             RaftChannel({
@@ -89,12 +87,14 @@ void main() {
 
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );
@@ -129,7 +129,7 @@ void main() {
       final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
       w.loading = false;
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       w.dms = [
         RaftChannel({'id': 'd1', 'name': 'Bob', 'type': 'dm', 'joined': true}),
       ];
@@ -155,7 +155,7 @@ void main() {
       };
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: ResourceView(
               controller: w,
@@ -204,7 +204,7 @@ void main() {
       final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
       w.loading = false;
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       w.dms = [
         RaftChannel({'id': 'd1', 'name': 'Bob', 'type': 'dm', 'joined': true}),
       ];
@@ -240,12 +240,14 @@ void main() {
       }
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
-          home: WorkspaceView(
-            controller: w,
-            appearance: RaftAppearance(light: RaftFamily.elegant),
-            onAppearance: (_) async {},
-            onLogout: () async {},
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
           ),
         ),
       );
@@ -288,7 +290,7 @@ void main() {
       final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
       w.loading = false;
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       w.dms = [
         RaftChannel({'id': 'd1', 'name': 'Bob', 'type': 'dm', 'joined': true}),
       ];
@@ -325,12 +327,14 @@ void main() {
       }
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
-          home: WorkspaceView(
-            controller: w,
-            appearance: RaftAppearance(light: RaftFamily.elegant),
-            onAppearance: (_) async {},
-            onLogout: () async {},
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
           ),
         ),
       );

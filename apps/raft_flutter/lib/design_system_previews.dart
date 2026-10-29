@@ -117,6 +117,10 @@ Widget appVisualFileChip() => rich.visualFileChip();
 @RaftPreviews('Attachment')
 Widget appAttachmentPreview() => attachment.attachmentPreview();
 
+@RaftPreviews('Attachment transfer')
+Widget appAttachmentTransferPreview() =>
+    attachment.attachmentTransferPreview();
+
 @RaftPreviews('Document and media preview')
 Widget appDocumentMediaPreview() => document.documentMediaPreview();
 

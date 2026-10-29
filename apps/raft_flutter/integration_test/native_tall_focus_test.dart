@@ -19,10 +19,9 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   WidgetController.hitTestWarningShouldBeFatal = true;
   final runId = DateTime.now().toUtc().toIso8601String();
-  for (final (family, dark, theme) in [
-    (RaftFamily.brutal, false, 'brutal-light'),
-    (RaftFamily.elegant, false, 'elegant-light'),
-    (RaftFamily.elegant, true, 'elegant-dark'),
+  for (final (dark, theme) in [
+    (false, 'elegant-light'),
+    (true, 'elegant-dark'),
   ]) {
     testWidgets('[P01] native tall focus and first context-menu input $theme', (
       tester,
@@ -94,7 +93,6 @@ void main() {
       try {
         await checkTallFocusReceipt(
           tester,
-          family: family,
           dark: dark,
           hostBuilder: (child) => Center(
             child: ValueListenableBuilder<Size>(
@@ -110,7 +108,7 @@ void main() {
                     viewPadding: EdgeInsets.zero,
                     viewInsets: EdgeInsets.zero,
                   ),
-                  child: RepaintBoundary(key: imageKey, child: child!),
+                  child: RepaintBoundary(key: imageKey, child: child),
                 ),
               ),
             ),

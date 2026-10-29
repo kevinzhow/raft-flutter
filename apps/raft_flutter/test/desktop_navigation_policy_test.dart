@@ -79,7 +79,7 @@ void main() {
           .usesConversationSidebar;
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftAdaptiveWorkspace(
               sidebarVisible: visible,
@@ -115,7 +115,7 @@ void main() {
     addTearDown(text.dispose);
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: StatefulBuilder(
             builder: (_, setState) {

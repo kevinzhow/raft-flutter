@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Show the icon for notification/share entry points as well as launcher. -->
+    <style name="LaunchTheme" parent="RaftSystemSplash">
+        <item name="android:windowSplashScreenBehavior">icon_preferred</item>
+    </style>
+</resources>

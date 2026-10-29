@@ -7,10 +7,12 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show fixture;
 import 'activity_follow_ack_test.dart' show thread;
+import 'support/app_services_fixture.dart';
 
 const activeRow = <String, dynamic>{
   'kind': 'channel',
@@ -37,13 +39,9 @@ Map<String, dynamic> flag(bool enabled) => {
 };
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[N24h] $family/$dark flag-enabled ACK survives Saved facets and cached All return',
+      '[N24h] ${dark ? 'dark' : 'light'} flag-enabled ACK survives Saved facets and cached All return',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(1440, 900);
@@ -68,12 +66,14 @@ void main() {
         };
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -83,7 +83,7 @@ void main() {
           buttons: kSecondaryMouseButton,
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.widgetWithText(RaftMenuItem, 'Unfollow'));
+        await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Unfollow'));
         await tester.pumpAndSettle();
         final dynamic state = tester.state(find.byType(ResourceView));
         expect((state.rows.single as Map)['isFollowing'], false);
@@ -112,7 +112,7 @@ void main() {
       variant: const TargetPlatformVariant({TargetPlatform.linux}),
     );
     testWidgets(
-      '[N24h] $family/$dark late selected-server evaluation cannot enable the new server page',
+      '[N24h] ${dark ? 'dark' : 'light'} late selected-server evaluation cannot enable the new server page',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(1440, 900);
@@ -133,12 +133,14 @@ void main() {
         api.routes['GET /channels/inbox'] = (_) => {'items': [], 'groups': []};
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -166,7 +168,7 @@ void main() {
       variant: const TargetPlatformVariant({TargetPlatform.linux}),
     );
     testWidgets(
-      '[N24h] $family/$dark late Saved and active facet windows cannot replace the selected Done page',
+      '[N24h] ${dark ? 'dark' : 'light'} late Saved and active facet windows cannot replace the selected Done page',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(1440, 900);
@@ -197,12 +199,14 @@ void main() {
         };
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -269,7 +273,7 @@ void main() {
           find.byKey(const ValueKey('activity-switcher-group-c1')),
           findsOneWidget,
         );
-        await tester.tap(find.byType(RaftCloseButton));
+        await tester.tap(find.byType(RaftDialogClose));
         await tester.pumpAndSettle();
       },
       variant: const TargetPlatformVariant({TargetPlatform.linux}),
@@ -278,7 +282,7 @@ void main() {
     for (final enabled in [false, true]) {
       for (final width in [1440.0, 390.0]) {
         testWidgets(
-          '[N24h] $family/$dark ${enabled ? 'flag-enabled' : 'flag-disabled'} ${width == 390 ? 'mobile' : 'desktop'} actual Activity sources',
+          '[N24h] ${dark ? 'dark' : 'light'} ${enabled ? 'flag-enabled' : 'flag-disabled'} ${width == 390 ? 'mobile' : 'desktop'} actual Activity sources',
           (tester) async {
             SharedPreferences.setMockInitialValues({});
             tester.view.physicalSize = Size(width, 900);
@@ -341,12 +345,14 @@ void main() {
             };
             await tester.pumpWidget(
               MaterialApp(
-                theme: raftTheme(family, dark: dark),
-                home: WorkspaceView(
-                  controller: w,
-                  appearance: RaftAppearance(light: family),
-                  onAppearance: (_) async {},
-                  onLogout: () async {},
+                theme: raftTheme(dark: dark),
+                home: withAppServices(
+                  WorkspaceView(
+                    controller: w,
+                    appearance: RaftAppearance(),
+                    onAppearance: (_) async {},
+                    onLogout: () async {},
+                  ),
                 ),
               ),
             );
@@ -361,15 +367,19 @@ void main() {
                   c.path == '/feature-flags/evaluate' &&
                   (c.data as Map)['keys'].contains('activity_sidebar_inbox_v0'),
             );
+            // featureFlagEvaluateBody: platform plus the client facts the
+            // server's `client` rules read (os only on native mobile).
             expect(request.data, {
               'keys': ['activity_sidebar_inbox_v0'],
               'serverId': 's1',
               'platform': width == 390 ? 'mobile' : 'web',
+              if (width == 390) 'os': 'android',
+              'buildType': 'debug',
             });
             evaluation.complete(flag(enabled));
             await tester.pumpAndSettle();
             expect(find.byTooltip('Filters'), findsNothing);
-            expect(find.text('Unfollowed threads'), findsNothing);
+            expect(find.text('Unfollowed Threads'), findsNothing);
             if (!enabled) {
               expect(find.byType(RaftActivityScopeToolbar), findsNothing);
               expect(find.byType(RaftSegmentedControl<String>), findsOneWidget);
@@ -392,8 +402,7 @@ void main() {
             expect(
               find.byType(RaftActivityScopeToolbar),
               findsOneWidget,
-              reason:
-                  'The accepted server flag must mount Source enabled controls.',
+              reason: 'The accepted server flag must mount Source enabled controls.',
             );
             final toolbar = tester.widget<RaftActivityScopeToolbar>(
               find.byType(RaftActivityScopeToolbar),
@@ -405,7 +414,7 @@ void main() {
                     find.byKey(const ValueKey('activity-enabled-toolbar')),
                   )
                   .height,
-              width >= 768 ? (family == RaftFamily.brutal ? 90 : 89) : 54,
+              width >= 768 ? (89) : 54,
             );
             expect(find.byType(RaftSegmentedControl<String>), findsNothing);
             Future<void> select(String view) async {
@@ -439,7 +448,7 @@ void main() {
               find.byKey(const ValueKey('activity-channel-done-channel')),
               findsOneWidget,
             );
-            expect(find.byTooltip('Restore conversation'), findsOneWidget);
+            expect(find.byTooltip('Restore Conversation'), findsOneWidget);
             expect(find.text('5 active · 2 unread'), findsOneWidget);
             expect(
               find.byKey(const ValueKey('activity-switcher-dialog')),
@@ -456,7 +465,7 @@ void main() {
             await select('saved');
             expect(find.text('Accepted saved result'), findsOneWidget);
             expect(
-              find.byTooltip('Mark conversation done'),
+              find.byTooltip('Mark Conversation Done'),
               findsNothing,
               reason: 'Source Saved activity rows have doneAction=none.',
             );

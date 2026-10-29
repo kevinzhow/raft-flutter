@@ -5,53 +5,24 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'error_presentation.dart' show RaftErrorScope;
 import 'dialog_card.dart' show raftRecipeThemeOf;
 import 'icons.dart';
+import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/field.g.dart' as field_recipe;
-import 'recipes/radio_group.g.dart';
+import 'recipes/web_agent_reset_options.g.dart';
+import 'radio_group.dart';
+import 'recipe_surface.dart' show RaftSlotPaint;
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
+import 'agent_avatar_picker.dart' show RaftAvatarDiscardConfirmation;
 import 'banner.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'settings_controls.dart';
 import 'settings_layout.dart' show RaftSettingsText;
 import 'theme.dart';
-
-/// raft-ui `RadioGroupItem` (`radioGroup` recipe `item` + `dot`): a 14px
-/// (Brutal 16px with a 2px border) circle, filled when [checked] with a 6px dot.
-class RaftRadioMark extends StatelessWidget {
-  const RaftRadioMark({super.key, required this.checked});
-  final bool checked;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
-    final s = RaftRadioGroupRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
-      states: RaftRecipeStates({
-        if (checked) RaftRecipeStates.checked,
-        if (t.dark) RaftRecipeStates.dark,
-      }),
-      tokens: rt,
-    );
-    final item = s.item, dot = s.dot;
-    final size = item.width ?? (t.brutal ? 16.0 : 14.0);
-    return Container(
-      width: size,
-      height: item.height ?? size,
-      alignment: Alignment.center,
-      decoration: item.decoration(rt),
-      child: checked
-          ? Container(
-              width: dot.width ?? 6,
-              height: dot.height ?? 6,
-              decoration: dot.decoration(rt),
-            )
-          : null,
-    );
-  }
-}
 
 /// Web `ResetAgentDialog`: [ConfirmDialog] (`max-w-md`) holding a radio group
 /// of restart / reset-session / full-reset, a warning banner for the full reset
@@ -92,7 +63,7 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
       : [
           (
             'restart',
-            'Restart',
+            RaftTokens.of(context).isRaftLook ? 'Restart' : 'Restart Agent',
             'Stop and restart the agent process. Keeps the runtime session and workspace files.',
           ),
           (
@@ -109,82 +80,107 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
         ];
 
   @override
+  void didUpdateWidget(RaftResetAgentDialog old) {
+    super.didUpdateWidget(old);
+    // The chosen mode can leave the list (e.g. Full Reset once the viewer
+    // loses permission while the dialog is open): fall back to the default.
+    if (!options.any((o) => o.$1 == mode)) mode = 'restart';
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final choices = options;
-    final selected = choices.firstWhere((o) => o.$1 == mode);
-    final strong = t.brutal ? Colors.black : t.strong;
+    final selected = choices.firstWhere(
+      (o) => o.$1 == mode,
+      orElse: () => choices.first,
+    );
+    final strong = t.strong;
+    final recipeTokens = RaftRecipeTokens(t);
+    final optionsRecipe = t.isRaftLook
+        ? RaftWebAgentResetOptionsRecipe.resolve(tokens: recipeTokens)
+        : null;
     return RaftConfirmDialog(
       surfaceKey: const ValueKey('agent-dialog'),
-      title: raftFormat(context, 'Restart {name}', {'name': widget.agentName}),
+      title: raftFormat(context, 'Restart or reset {name}', {
+        'name': widget.agentName,
+      }),
       maxWidth: 448,
       confirmLabel: raftText(context, selected.$2),
+      cancelLabel: raftText(context, t.isRaftLook ? 'Cancel' : 'Keep Working'),
       loadingLabel: raftText(context, 'Restarting…'),
       confirmGlyph: RaftGlyph.rotateCcw,
       confirmVariant: mode == 'full'
           ? RaftButtonRecipeVariant.danger
-          : mode == 'session'
+          : mode == 'session' || t.isRaftLook
           ? RaftButtonRecipeVariant.warning
           : RaftButtonRecipeVariant.primary,
+      plainMessage: t.isRaftLook,
       onConfirm: () => widget.onConfirm(mode),
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // `space-y-3` group, `gap-3` between the radio rows.
-          for (final (i, o) in choices.indexed) ...[
-            if (i > 0) const SizedBox(height: 12),
-            GestureDetector(
-              key: ValueKey('agent-reset-option-${o.$1}'),
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => mode = o.$1),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // `mt-0.5 shrink-0`
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: RaftRadioMark(checked: mode == o.$1),
+          // Product composition classes are extracted from ResetAgentDialog;
+          RaftRadioGroup<String>(
+            value: mode,
+            onChanged: (next) => setState(() => mode = next),
+            spacing: optionsRecipe?.root.rowGap ?? 12,
+            children: [
+              for (final o in choices)
+                RaftRadioGroupItem<String>(
+                  key: ValueKey('agent-reset-option-${o.$1}'),
+                  value: o.$1,
+                  markInset:
+                      optionsRecipe?.indicator.margin ??
+                      const EdgeInsets.only(top: 2),
+                  padding: optionsRecipe?.row.padding ?? EdgeInsets.zero,
+                  minHeight: optionsRecipe?.row.minHeight ?? 0,
+                  gap: optionsRecipe?.row.columnGap ?? 12,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: optionsRecipe?.content.rowGap ?? 0,
+                    children: [
+                      RaftCssText(
+                        raftText(context, o.$2),
+                        style:
+                            optionsRecipe?.title.text(recipeTokens) ??
+                            RaftTypography.body(
+                              t,
+                              size: 14,
+                              line: 20,
+                              weight: FontWeight.w700,
+                              color: strong,
+                            ),
+                      ),
+                      if (optionsRecipe == null) const SizedBox(height: 4),
+                      RaftCssText(
+                        raftText(context, o.$3),
+                        style:
+                            optionsRecipe?.description.text(recipeTokens) ??
+                            RaftTypography.body(
+                              t,
+                              size: 12,
+                              line: 16,
+                              color: t.muted,
+                            ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // `block text-sm font-bold uppercase`
-                        RaftCssText(
-                          raftText(context, o.$2).toUpperCase(),
-                          style: RaftTypography.body(
-                            t,
-                            size: 14,
-                            line: 20,
-                            weight: FontWeight.w700,
-                            color: strong,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        // `mt-1 block text-xs text-foreground-muted`
-                        RaftCssText(
-                          raftText(context, o.$3),
-                          style: RaftTypography.body(
-                            t,
-                            size: 12,
-                            line: 16,
-                            color: t.muted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+                ),
+            ],
+          ),
           if (mode == 'full') ...[
             const SizedBox(height: 12),
             RaftBanner(
               size: RaftBannerRecipeSize.sm,
+              status: t.isRaftLook
+                  ? RaftBannerRecipeStatus.destructive
+                  : RaftBannerRecipeStatus.warning,
               descriptionWeight: FontWeight.w700,
-              glyph: RaftGlyph.triangleAlert,
+              glyph: t.isRaftLook
+                  ? RaftGlyph.octagonAlert
+                  : RaftGlyph.triangleAlert,
               description: raftText(
                 context,
                 'This will permanently delete all workspace files including MEMORY.md and notes/. This cannot be undone.',
@@ -233,7 +229,8 @@ class _RaftAgentProfileEditDialogState
   late final name = TextEditingController(text: widget.displayName);
   late final description = TextEditingController(text: widget.description);
   late String? role = widget.role;
-  bool saving = false;
+  bool saving = false, confirming = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next save starts; the dialog state is dropped when it closes.
   String? error;
 
   @override
@@ -243,10 +240,31 @@ class _RaftAgentProfileEditDialogState
     super.dispose();
   }
 
+  /// `requestClose` of AgentProfileEditDialog.tsx: nothing while saving, a
+  /// dirty draft asks before it is discarded. The X, Cancel, Escape, Back
+  /// and an outside press all run it.
+  Future<void> requestClose() async {
+    if (saving || confirming) return;
+    if (!dirty) {
+      Navigator.of(context).pop(false);
+      return;
+    }
+    confirming = true;
+    final discard = await showRaftDialog<bool>(
+      context: context,
+      builder: (c) => RaftAvatarDiscardConfirmation(
+        onKeep: () => Navigator.pop(c, false),
+        onDiscard: () => Navigator.pop(c, true),
+      ),
+    );
+    confirming = false;
+    if (discard == true && mounted) Navigator.of(context).pop(false);
+  }
+
   String get title => switch (widget.field) {
-    'description' => 'Edit description',
-    'role' => 'Edit role',
-    _ => 'Edit display name',
+    'description' => 'Edit Description',
+    'role' => 'Edit Role',
+    _ => 'Edit Display Name',
   };
 
   bool get tooLong =>
@@ -280,7 +298,11 @@ class _RaftAgentProfileEditDialogState
       if (mounted) {
         setState(() {
           saving = false;
-          error = e is StateError ? e.message : '$e';
+          // Web: `data.error || agent.detail.editProfile.saveFailed`.
+          error = RaftErrorScope.of(context)(
+            e,
+            fallback: 'Could not save changes. Try again.',
+          );
         });
       }
     }
@@ -302,8 +324,8 @@ class _RaftAgentProfileEditDialogState
       t,
       size: 14,
       line: 20,
-      weight: t.brutal ? FontWeight.w700 : FontWeight.w500,
-      color: t.brutal ? Colors.black : t.ink,
+      weight: FontWeight.w500,
+      color: t.ink,
     ),
   );
 
@@ -338,35 +360,26 @@ class _RaftAgentProfileEditDialogState
           ],
         ],
       ),
-      'role' => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      'role' => RaftRadioGroup<String>(
+        value: role,
+        onChanged: (next) => setState(() => role = next),
+        spacing: 12,
         children: [
-          for (final (i, o) in widget.roleOptions.indexed) ...[
-            if (i > 0) const SizedBox(height: 12),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => role = o.$1),
-              child: SizedBox(
-                height: 20,
-                child: Row(
-                  children: [
-                    RaftRadioMark(checked: role == o.$1),
-                    const SizedBox(width: 8),
-                    RaftCssText(
-                      raftText(context, o.$2),
-                      style: RaftTypography.body(
-                        t,
-                        size: 14,
-                        line: 20,
-                        weight: FontWeight.w500,
-                        color: t.brutal ? Colors.black : t.ink,
-                      ),
-                    ),
-                  ],
+          for (final o in widget.roleOptions)
+            RaftRadioGroupItem<String>(
+              value: o.$1,
+              gap: 8,
+              child: RaftCssText(
+                raftText(context, o.$2),
+                style: RaftTypography.body(
+                  t,
+                  size: 14,
+                  line: 20,
+                  weight: FontWeight.w500,
+                  color: t.ink,
                 ),
               ),
             ),
-          ],
         ],
       ),
       _ => Column(
@@ -385,37 +398,43 @@ class _RaftAgentProfileEditDialogState
         ],
       ),
     };
-    return RaftDialogShell(
-      surfaceKey: const ValueKey('agent-dialog'),
-      title: title,
-      maxWidth: 512,
-      outlineClose: true,
-      onClose: saving ? null : () => Navigator.of(context).pop(false),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          fieldBody,
-          if (error != null) ...[
-            const SizedBox(height: 20),
-            RaftBanner(size: RaftBannerRecipeSize.sm, description: error!),
+    return PopScope(
+      canPop: !saving && !dirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) requestClose();
+      },
+      child: RaftDialog.shell(
+        surfaceKey: const ValueKey('agent-dialog'),
+        title: title,
+        maxWidth: 512,
+        outlineClose: true,
+        onClose: saving ? null : requestClose,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            fieldBody,
+            if (error != null) ...[
+              const SizedBox(height: 20),
+              RaftBanner(size: RaftBannerRecipeSize.sm, description: error!),
+            ],
           ],
+        ),
+        footer: [
+          RaftSettingsRecipeButton(
+            label: raftText(context, 'Cancel'),
+            size: RaftButtonRecipeSize.sm,
+            disabledOpacity: .3,
+            onPressed: saving ? null : requestClose,
+          ),
+          RaftSettingsRecipeButton(
+            key: const ValueKey('agent-profile-edit-save'),
+            label: raftText(context, 'Save'),
+            variant: RaftButtonRecipeVariant.accent,
+            size: RaftButtonRecipeSize.sm,
+            onPressed: dirty && !tooLong && !saving ? save : null,
+          ),
         ],
       ),
-      footer: [
-        RaftSettingsRecipeButton(
-          label: raftText(context, 'Cancel'),
-          size: RaftButtonRecipeSize.sm,
-          disabledOpacity: .3,
-          onPressed: saving ? null : () => Navigator.of(context).pop(false),
-        ),
-        RaftSettingsRecipeButton(
-          key: const ValueKey('agent-profile-edit-save'),
-          label: raftText(context, 'Save'),
-          variant: RaftButtonRecipeVariant.accent,
-          size: RaftButtonRecipeSize.sm,
-          onPressed: dirty && !tooLong && !saving ? save : null,
-        ),
-      ],
     );
   }
 }

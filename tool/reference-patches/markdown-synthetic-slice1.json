@@ -1,0 +1,64 @@
+{
+  "repairId": "markdown-synthetic-slice1-v1",
+  "sourceCommit": "db5e399f017d584e49597e3a28757645d6807893",
+  "scope": "Raft-only fixture alignment with the current public Web synthetic message. The reference message body remains untouched. Task 101 is explicitly in_progress test data, not a claim about a live task. Elegant and Brutal keep their frozen a57b9dab message inputs and images. Both providers retain the fixture preview sender (Cindy). The current Web defaults to collapsing long messages; this is the same per-channel preference in both providers. The native mounted chat treats this historical component specimen as already read, matching the standalone Web row starting collapsed; unread-agent auto-expansion in the product is unchanged.",
+  "cases": [
+    "components.thread.message-row.md-wrap-slice1"
+  ],
+  "sourceFile": "packages/web/visual-testing/VisualTestingCases.tsx",
+  "sourceSHA256": "04aa63af8d8c7daa3910d6d8e2ad0781f06aa24f38bb52da88dac5f9a5bda7a4",
+  "contentSHA256": "7c0c5f715f736dd8850920c5e1119069e9fd65f51ad37f490ebb161ee15db0f2",
+  "message": {
+    "id": "msg_md_wrap_slice1_visual",
+    "channelId": "channel-markdown",
+    "senderType": "agent",
+    "senderId": "synthetic-visual-bot",
+    "senderName": "Visual Bot",
+    "threadId": "thread-msg-md-wrap-slice1-visual",
+    "createdAt": "2026-07-13T05:55:00.000Z",
+    "content": "**Synthetic slice is ready** — this message is generated for visual testing only.\n\n- The synthetic CI job **passed** after a repeat check (`demo-retry-check`), and Android/OHOS host/shared checks are all green.\n- **Synthetic merge record**: an automated test identity completed the sample merge; no production release is involved.\n- Feature flag `demo_sync_v1` **stays off by default**; enabling it records only local demo state and remains invisible to users.\n- The **data-flow sample** stays in the fixture for cross-platform rendering comparison in #demo-visual-testing.\n\n**Sample data is ready.** Next, @DemoUser can compare the synthetic envelope in task #101 and continue the cross-platform check without importing real collaboration content.",
+    "mentions": [
+      {
+        "type": "user",
+        "id": "synthetic-demo-user",
+        "name": "DemoUser"
+      }
+    ]
+  },
+  "extraChannel": {
+    "id": "channel-demo-visual-testing",
+    "name": "demo-visual-testing",
+    "description": "Synthetic visual fixture comparison",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z"
+  },
+  "task": {
+    "id": "visual-markdown-task-101",
+    "messageId": "visual-markdown-task-message-101",
+    "channelId": "channel-markdown",
+    "channelName": "markdown",
+    "channelType": "channel",
+    "taskNumber": 101,
+    "title": "Compare the synthetic envelope",
+    "description": null,
+    "status": "in_progress",
+    "claimedByType": "agent",
+    "claimedById": "agent-cindy",
+    "claimedByName": "Cindy",
+    "claimedAt": "2026-06-22T02:30:00.000Z",
+    "completedAt": null,
+    "createdById": "visual-user",
+    "createdByType": "user",
+    "createdByName": "artin",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "updatedAt": "2026-06-22T02:30:00.000Z"
+  },
+  "messageDisplaySettings": {
+    "collapseLongMessages": true,
+    "prefsVersion": 0
+  },
+  "readState": {
+    "maxReadSeq": 1,
+    "readStateVersion": 1
+  }
+}

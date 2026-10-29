@@ -14,36 +14,54 @@ void main() {
       addTearDown(t.view.resetDevicePixelRatio);
       final semantics = t.ensureSemantics();
       try {
-        for (final family in RaftFamily.values) {
-          for (final dark in [false, true]) {
-            await t.pumpWidget(
-              MaterialApp(
-                theme: raftTheme(family, dark: dark),
-                home: Scaffold(body: channelConversionPreview()),
-              ),
-            );
-            await t.tap(find.text('failed'));
-            await t.pump();
-            expect(find.text('Conversion needs attention'), findsOneWidget);
-            expect(
-              t
-                  .widgetList<Semantics>(find.byType(Semantics))
-                  .any((s) => s.properties.liveRegion == true),
-              isTrue,
-            );
-            Focus.of(t.element(find.text('Retry conversion'))).requestFocus();
-            await t.pump();
-            await t.sendKeyEvent(LogicalKeyboardKey.enter);
-            await t.pump();
-            expect(find.text('Preparing conversion'), findsOneWidget);
-            Focus.of(t.element(find.text('Cancel conversion'))).requestFocus();
-            await t.pump();
-            await t.sendKeyEvent(LogicalKeyboardKey.enter);
-            await t.pump();
-            expect(find.text('Conversion canceled'), findsOneWidget);
-            expect(t.takeException(), isNull);
-            await t.pumpWidget(const SizedBox());
-          }
+        for (final dark in [false, true]) {
+          await t.pumpWidget(
+            MaterialApp(
+              theme: raftTheme(dark: dark),
+              home: Scaffold(body: channelConversionPreview()),
+            ),
+          );
+          await t.tap(find.text('failed'));
+          await t.pump();
+          expect(find.text('Conversion needs attention'), findsOneWidget);
+          expect(
+            t
+                .widgetList<Semantics>(find.byType(Semantics))
+                .any((s) => s.properties.liveRegion == true),
+            isTrue,
+          );
+          t
+              .widget<FocusableActionDetector>(
+                find
+                    .descendant(
+                      of: find.widgetWithText(RaftButton, 'Retry Conversion'),
+                      matching: find.byType(FocusableActionDetector),
+                    )
+                    .first,
+              )
+              .focusNode!
+              .requestFocus();
+          await t.pump();
+          await t.sendKeyEvent(LogicalKeyboardKey.enter);
+          await t.pump();
+          expect(find.text('Preparing conversion'), findsOneWidget);
+          t
+              .widget<FocusableActionDetector>(
+                find
+                    .descendant(
+                      of: find.widgetWithText(RaftButton, 'Cancel Conversion'),
+                      matching: find.byType(FocusableActionDetector),
+                    )
+                    .first,
+              )
+              .focusNode!
+              .requestFocus();
+          await t.pump();
+          await t.sendKeyEvent(LogicalKeyboardKey.enter);
+          await t.pump();
+          expect(find.text('Conversion canceled'), findsOneWidget);
+          expect(t.takeException(), isNull);
+          await t.pumpWidget(const SizedBox());
         }
       } finally {
         semantics.dispose();

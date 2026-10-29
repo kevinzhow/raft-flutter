@@ -7,7 +7,9 @@ void main() {
     for (final capability in raftServerCapabilities) {
       expect(raftCan('owner', capability), isTrue);
       expect(raftCan('admin', capability), capability != 'manageBilling');
-      expect(raftCan('guest', capability), isFalse);
+      // A guest holds nothing server-wide except reading channels, which the
+      // server (not this matrix) authorizes per channel.
+      expect(raftCan('guest', capability), capability == 'viewChannel');
       expect(raftCan(null, capability), isFalse);
       expect(raftCan('unexpected', capability), isFalse);
     }
@@ -16,6 +18,25 @@ void main() {
       hasLength(11),
     );
     expect(raftCan('owner', 'inventedPermission'), isFalse);
+  });
+  test('a guest may read channels but never act on them', () {
+    expect(raftCan('guest', 'viewChannel'), isTrue);
+    expect(
+      raftCan(
+        'guest',
+        'viewChannel',
+        channelCapabilities: {'viewChannel': false},
+      ),
+      isTrue,
+    );
+    for (final capability in raftServerCapabilities.where(
+      (c) => c != 'viewChannel',
+    )) {
+      expect(raftCan('guest', capability), isFalse, reason: capability);
+    }
+    // Other non-member states still read nothing.
+    expect(raftCan(null, 'viewChannel'), isFalse);
+    expect(raftCan('unexpected', 'viewChannel'), isFalse);
   });
   test(
     'channel authority overrides management but preserves server read grants',

@@ -139,7 +139,7 @@ class _SurfaceFixtureState extends State<_SurfaceFixture> {
     (hostKey.currentContext as Element).visitChildren(visit);
     final t = RaftTokens.of(context);
     debugPrint(
-      'RICH_VISUAL_GEOMETRY ${jsonEncode({'kind': widget.kind, 'theme': '${t.brutal ? 'brutal' : 'elegant'}-${t.dark ? 'dark' : 'light'}', 'geometry': geometry})}',
+      'RICH_VISUAL_GEOMETRY ${jsonEncode({'kind': widget.kind, 'theme': '${'elegant'}-${t.dark ? 'dark' : 'light'}', 'geometry': geometry})}',
     );
   }
 
@@ -166,8 +166,7 @@ class _SurfaceFixtureState extends State<_SurfaceFixture> {
       'forwarded' ||
       'forwarded-long' => RaftForwardedBundle(metadata: metadata!),
       'list-markers' => const RaftMessageBody(
-        content:
-            '- First\n  - Nested\n- Second\n\n99. First ordinal\n100. Second ordinal',
+        content: '- First\n  - Nested\n- Second\n\n99. First ordinal\n100. Second ordinal',
       ),
       'table-borders' => const RaftMessageBody(
         content:
@@ -192,7 +191,7 @@ class _SurfaceFixtureState extends State<_SurfaceFixture> {
       'lightbox' =>
         !lightboxOpen
             ? RaftButton(
-                label: 'Open preview',
+                label: 'Open Preview',
                 onPressed: () => setState(() => lightboxOpen = true),
               )
             : RaftAttachmentLightbox(
@@ -210,7 +209,7 @@ class _SurfaceFixtureState extends State<_SurfaceFixture> {
                   ),
                 ),
                 footer: RaftTextButton(
-                  label: 'Download original',
+                  label: 'Download Original',
                   glyph: RaftGlyph.download,
                   onPressed: () =>
                       setState(() => result = 'Download requested'),

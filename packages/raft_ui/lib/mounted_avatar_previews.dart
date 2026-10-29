@@ -1,3 +1,5 @@
+import 'src/raft/button.dart';
+
 import 'package:flutter/material.dart';
 
 import 'previews.dart';
@@ -21,7 +23,7 @@ class _MountedAvatarsState extends State<_MountedAvatars> {
   bool deactivated = false;
   bool muted = false;
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,6 +39,7 @@ class _MountedAvatarsState extends State<_MountedAvatars> {
                 identity: RaftMountedAvatarIdentity.agent,
                 presence:
                     role == RaftMountedAvatarContext.panelHeader ||
+                        role == RaftMountedAvatarContext.messageRow ||
                         role == RaftMountedAvatarContext.compactList
                     ? RaftAvatarPresence(
                         activity: activity,
@@ -75,15 +78,15 @@ class _MountedAvatarsState extends State<_MountedAvatars> {
           spacing: 8,
           children: [
             for (final state in RaftAvatarActivity.values)
-              TextButton(
+              RaftButton.text(
                 onPressed: () => setState(() => activity = state),
                 child: Text(state.name),
               ),
-            TextButton(
+            RaftButton.text(
               onPressed: () => setState(() => deactivated = !deactivated),
-              child: Text(deactivated ? 'Activate agent' : 'Deactivate agent'),
+              child: Text(deactivated ? 'Activate Agent' : 'Deactivate Agent'),
             ),
-            TextButton(
+            RaftButton.text(
               onPressed: () => setState(() => muted = !muted),
               child: Text(muted ? 'Joined channel' : 'Not in channel'),
             ),

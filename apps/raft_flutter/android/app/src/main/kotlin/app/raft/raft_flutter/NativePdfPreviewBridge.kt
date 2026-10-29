@@ -21,16 +21,20 @@ class NativePdfPreviewBridge(private val activity: Activity, engine: FlutterEngi
                 val path = call.argument<String>("path")
                 val pageIndex = call.argument<Int>("page") ?: 0
                 val dimension = (call.argument<Int>("maxDimension") ?: 1600).coerceIn(100, 1600)
-                val root: String
+                val roots: List<String>
                 val file: File?
                 try {
-                    root = File(activity.cacheDir, "raft-previews").canonicalPath + File.separator
+                    // Private downloads of this app only: the per-open temp folder
+                    // and the persistent attachment cache (both under cacheDir).
+                    roots = listOf("raft-previews", "raft-attachments").map {
+                        File(activity.cacheDir, it).canonicalPath + File.separator
+                    }
                     file = path?.let { File(it).canonicalFile }
                 } catch (_: Exception) {
                     result.error("invalid", "The PDF input is unavailable.", null)
                     return@setMethodCallHandler
                 }
-                if (file == null || !file.path.startsWith(root) || !file.isFile || file.length() > 50L * 1024 * 1024) {
+                if (file == null || roots.none { file.path.startsWith(it) } || !file.isFile || file.length() > 50L * 1024 * 1024) {
                     result.error("invalid", "The PDF input is unavailable.", null)
                     return@setMethodCallHandler
                 }

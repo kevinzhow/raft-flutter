@@ -1,3 +1,6 @@
+@Tags(['look-elegant'])
+library;
+
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
@@ -6,32 +9,25 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/task_surface_previews.dart';
+import 'package:raft_ui/test_themes.dart';
 
-Widget host(Widget child, RaftFamily family, bool dark) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+Widget host(Widget child, bool dark) => MaterialApp(
+  theme: raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
   home: Scaffold(body: child),
 );
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final legacy in [false, true]) {
       testWidgets(
-        'Task page uses shared header, semantics and keyboard Back $family/$dark/$legacy',
+        'Task page uses shared header, semantics and keyboard Back ${dark ? 'dark' : 'light'}/$legacy',
         (t) async {
           t.view.physicalSize = const Size(390, 844);
           t.view.devicePixelRatio = 1;
           addTearDown(t.view.reset);
           final semantics = t.ensureSemantics();
           await t.pumpWidget(
-            host(
-              legacy ? legacyTaskPagePreview() : taskPagePreview(),
-              family,
-              dark,
-            ),
+            host(legacy ? legacyTaskPagePreview() : taskPagePreview(), dark),
           );
           // Web's phone TaskModalBar (`px-4 py-2`, 28px `size-7` Back) rather
           // than the shared 56px page header; the touch area is still 48.
@@ -51,7 +47,7 @@ void main() {
           // The extended touch area is the semantics rect of the Back button.
           SemanticsNode? node;
           void visit(SemanticsNode n) {
-            if (n.label == 'Close task') node = n;
+            if (n.label == 'Close Task') node = n;
             n.visitChildren((c) {
               visit(c);
               return true;
@@ -66,26 +62,26 @@ void main() {
           await t.sendKeyEvent(LogicalKeyboardKey.tab);
           await t.sendKeyEvent(LogicalKeyboardKey.enter);
           await t.pump();
-          expect(find.text('Reopen preview'), findsOneWidget);
+          expect(find.text('Reopen Preview'), findsOneWidget);
           // The 28px Back keeps a >= 44px touch area (4px below its edge).
-          await t.tap(find.text('Reopen preview'));
+          await t.tap(find.text('Reopen Preview'));
           await t.pump();
           await t.tapAt(t.getCenter(back) + const Offset(0, 18));
           await t.pump();
-          expect(find.text('Reopen preview'), findsOneWidget);
+          expect(find.text('Reopen Preview'), findsOneWidget);
           expect(t.takeException(), isNull);
           semantics.dispose();
         },
       );
     }
     testWidgets(
-      'Task preview history has actual expanded semantics and Escape closes $family/$dark',
+      'Task preview history has actual expanded semantics and Escape closes ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
         addTearDown(t.view.reset);
         final semantics = t.ensureSemantics();
-        await t.pumpWidget(host(taskModalPreview(), family, dark));
+        await t.pumpWidget(host(taskModalPreview(), dark));
         final history = find.byKey(const ValueKey('task-properties-history'));
         expect(find.text('Created task'), findsNothing);
         expect(
@@ -102,7 +98,7 @@ void main() {
         await t.sendKeyEvent(LogicalKeyboardKey.escape);
         await t.pump();
         expect(find.byKey(const ValueKey('task-thread-modal')), findsNothing);
-        await t.tap(find.text('Reopen preview'));
+        await t.tap(find.text('Reopen Preview'));
         await t.pump();
         expect(find.byKey(const ValueKey('task-thread-modal')), findsOneWidget);
         expect(find.text('Created task'), findsNothing);
@@ -111,12 +107,12 @@ void main() {
       },
     );
     testWidgets(
-      'Legacy dock preview switches desktop close to narrow back $family/$dark',
+      'Legacy dock preview switches desktop close to narrow back ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(1280, 844);
         t.view.devicePixelRatio = 1;
         addTearDown(t.view.reset);
-        await t.pumpWidget(host(legacyDockedTaskPreview(), family, dark));
+        await t.pumpWidget(host(legacyDockedTaskPreview(), dark));
         expect(
           t.getRect(find.byKey(const ValueKey('legacy-task-panel'))),
           const Rect.fromLTWH(900, 0, 380, 844),
@@ -137,17 +133,17 @@ void main() {
       },
     );
     testWidgets(
-      'Legacy preview is bounded metadata with no property writes $family/$dark',
+      'Legacy preview is bounded metadata with no property writes ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(1280, 844);
         t.view.devicePixelRatio = 1;
         addTearDown(t.view.reset);
-        await t.pumpWidget(host(legacyTaskPreview(), family, dark));
+        await t.pumpWidget(host(legacyTaskPreview(), dark));
         expect(
           t.getSize(find.byKey(const ValueKey('legacy-task-panel'))),
           const Size(760, 658.32),
         );
-        expect(find.text('Task #8 · LEGACY'), findsOneWidget);
+        expect(find.text('Task #8 · Legacy'), findsOneWidget);
         expect(find.textContaining('posting is disabled.'), findsOneWidget);
         expect(find.byType(RaftInlineBadgeEditor), findsNothing);
         expect(

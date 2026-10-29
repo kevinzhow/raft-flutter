@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/main.dart' as app;
 
@@ -30,7 +31,9 @@ void main() {
       expect(ready(), true);
     }
 
-    await tester.pumpWidget(app.RaftApp(sessionStore: MemorySessionStore()));
+    await tester.pumpWidget(app.RaftApp(
+      services: const AppServices.updatesDisabledForTestOrPreview(),
+    sessionStore: MemorySessionStore()));
     await until(
       () => find.byKey(const Key('login-email')).evaluate().isNotEmpty,
     );

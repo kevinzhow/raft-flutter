@@ -10,6 +10,9 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/task_surface.dart';
+import 'package:raft_ui/test_themes.dart';
+
+import 'flutter_test_config.dart' show leakDebt;
 
 class _Adapter implements HttpClientAdapter {
   final calls = <RequestOptions>[];
@@ -94,10 +97,9 @@ Widget _host(
   _Workspace w,
   String section, {
   String? channelId,
-  RaftFamily family = RaftFamily.elegant,
   bool dark = false,
 }) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+  theme: raftTheme(dark: dark),
   home: Scaffold(
     body: ResourceView(
       controller: w,
@@ -142,13 +144,11 @@ void _taskRoutes(_Workspace w, _Adapter a) {
 }
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  // Leak debt (open task dialog): see docs/development.md, Leak tracking.
+  leakDebt(const ['TaskSurfaceController']);
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K10a] immediate task dialog while both requests are held ${theme.$1}/${theme.$2}',
+      '[K10a] immediate task dialog while both requests are held ${dark ? 'dark' : 'light'}',
       (tester) async {
         final (w, a) = (await tester.runAsync(_fixture))!;
         addTearDown(w.dispose);
@@ -156,9 +156,7 @@ void main() {
         final details = Completer<dynamic>(), history = Completer<dynamic>();
         a.routes['GET /tasks/channel/c1/number/1'] = (_) => details.future;
         a.routes['GET /tasks/t1/history'] = (_) => history.future;
-        await tester.pumpWidget(
-          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
-        );
+        await tester.pumpWidget(_host(w, 'tasks', dark: dark));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Private task'));
         await tester.pump();
@@ -198,21 +196,19 @@ void main() {
       },
     );
     testWidgets(
-      '[K10c] closing a pending task rejects late details ${theme.$1}/${theme.$2}',
+      '[K10c] closing a pending task rejects late details ${dark ? 'dark' : 'light'}',
       (tester) async {
         final (w, a) = (await tester.runAsync(_fixture))!;
         addTearDown(w.dispose);
         _taskRoutes(w, a);
         final details = Completer<dynamic>();
         a.routes['GET /tasks/channel/c1/number/1'] = (_) => details.future;
-        await tester.pumpWidget(
-          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
-        );
+        await tester.pumpWidget(_host(w, 'tasks', dark: dark));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Private task'));
         await tester.pump();
         expect(find.byType(SourceTaskSurface), findsOneWidget);
-        await tester.tap(find.byTooltip('Close task'));
+        await tester.tap(find.byTooltip('Close Task'));
         await tester.pumpAndSettle();
         details.complete({'task': task});
         await tester.pumpAndSettle();
@@ -229,16 +225,14 @@ void main() {
       },
     );
     testWidgets(
-      '[K10c] revocation closes a pending task before late lookup ${theme.$1}/${theme.$2}',
+      '[K10c] revocation closes a pending task before late lookup ${dark ? 'dark' : 'light'}',
       (tester) async {
         final (w, a) = (await tester.runAsync(_fixture))!;
         addTearDown(w.dispose);
         _taskRoutes(w, a);
         final details = Completer<dynamic>();
         a.routes['GET /tasks/channel/c1/number/1'] = (_) => details.future;
-        await tester.pumpWidget(
-          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
-        );
+        await tester.pumpWidget(_host(w, 'tasks', dark: dark));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Private task'));
         await tester.pump();
@@ -261,7 +255,7 @@ void main() {
       },
     );
     testWidgets(
-      'pending task history failure remains an error ${theme.$1}/${theme.$2}',
+      'pending task history failure remains an error ${dark ? 'dark' : 'light'}',
       (tester) async {
         final (w, a) = (await tester.runAsync(_fixture))!;
         addTearDown(w.dispose);
@@ -269,9 +263,7 @@ void main() {
         final history = Completer<dynamic>();
         a.routes['GET /tasks/t1/history'] = (_) => history.future;
         a.statuses['GET /tasks/t1/history'] = 500;
-        await tester.pumpWidget(
-          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
-        );
+        await tester.pumpWidget(_host(w, 'tasks', dark: dark));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Private task'));
         await tester.pump();
@@ -294,7 +286,7 @@ void main() {
       },
     );
     testWidgets(
-      'closed task discards late history failure ${theme.$1}/${theme.$2}',
+      'closed task discards late history failure ${dark ? 'dark' : 'light'}',
       (tester) async {
         final (w, a) = (await tester.runAsync(_fixture))!;
         addTearDown(w.dispose);
@@ -302,14 +294,12 @@ void main() {
         final history = Completer<dynamic>();
         a.routes['GET /tasks/t1/history'] = (_) => history.future;
         a.statuses['GET /tasks/t1/history'] = 500;
-        await tester.pumpWidget(
-          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
-        );
+        await tester.pumpWidget(_host(w, 'tasks', dark: dark));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Private task'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 1));
-        await tester.tap(find.byTooltip('Close task'));
+        await tester.tap(find.byTooltip('Close Task'));
         await tester.pumpAndSettle();
         history.complete({'error': 'Late history failed'});
         await tester.pumpAndSettle();
@@ -333,9 +323,14 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Filter tasks by creator'));
       await tester.pumpAndSettle();
+      final popup = find.byKey(
+        const ValueKey('task-selection-creator-popover'),
+      );
+      expect(popup, findsOneWidget);
       expect(find.text('Created by me'), findsOneWidget);
       _role(w, 'guest');
       await tester.pumpAndSettle();
+      expect(popup, findsNothing);
       expect(find.text('Created by me'), findsNothing);
       a.routes['GET /channels/inbox'] = (_) => {
         'items': <dynamic>[],
@@ -443,7 +438,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Board'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Load more Todo'));
+      await tester.tap(find.text('Load More'));
       await tester.pump();
       _role(w, 'guest');
       await tester.pumpAndSettle();
@@ -562,7 +557,7 @@ void main() {
       _taskRoutes(w, a);
       await tester.pumpWidget(_host(w, 'tasks', channelId: 'c1'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('New Task'));
+      await tester.tap(find.text('Create Task'));
       await tester.pumpAndSettle();
       final submit = tester
           .widget<RaftCreateTaskDialogView>(

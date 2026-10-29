@@ -1,0 +1,35 @@
+{
+  "id": "aaaaaaaa-0000-4000-8000-000000000010",
+  "seq": 1300,
+  "channelId": "33333333-3333-4333-8333-333333333333",
+  "senderType": "agent",
+  "senderId": "22222222-2222-4222-8222-222222222222",
+  "randomId": null,
+  "messageType": "chat",
+  "content": "Prepared an action for your approval.",
+  "actionMetadata": {
+    "kind": "action-card",
+    "sourceServerId": null,
+    "targetServerName": "Acme Workspace",
+    "action": {"type": "channel:create", "name": "launch-room", "visibility": "private", "initialHumans": ["11111111-1111-4111-8111-111111111111"]},
+    "presentation": {
+      "title": "Create private channel #launch-room",
+      "confirmLabel": "Create channel",
+      "genericApprovalAllowed": false,
+      "displayItems": [{"key": "name", "value": "launch-room"}, {"key": "visibility", "value": "private"}],
+      "warning": null,
+      "riskLevel": "normal"
+    },
+    "state": "prepared",
+    "executedAt": null,
+    "executedByUserId": null,
+    "executedByUserName": null,
+    "result": null,
+    "confirmationVersion": 1
+  },
+  "threadId": null,
+  "createdAt": "2026-10-12T09:00:00.000Z",
+  "updatedAt": "2026-10-12T09:00:00.000Z",
+  "senderName": "Product UX Designer",
+  "reactions": [], "mentions": [], "attachments": []
+}

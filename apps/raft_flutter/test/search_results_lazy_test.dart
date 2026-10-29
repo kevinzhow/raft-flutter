@@ -1,22 +1,22 @@
+@Tags(['slow'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/resource_search.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final threaded in [false, true]) {
       testWidgets(
-        '1000 search results stay lazy $family/$dark/thread=$threaded',
+        '1000 search results stay lazy ${dark ? 'dark' : 'light'}/thread=$threaded',
         (t) async {
           Map<String, dynamic>? selected;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: ResourceSearchResults(
                   query: 'result',

@@ -4,13 +4,63 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-Widget _host(Widget child, {RaftFamily family = RaftFamily.elegant}) =>
-    MaterialApp(
-      theme: raftTheme(family),
-      home: Scaffold(body: child),
-    );
+Widget _host(Widget child) => MaterialApp(
+  theme: raftTheme(),
+  home: Scaffold(body: child),
+);
 
 void main() {
+  // Web draws drawers and dialogs on raft-ui's `bg-layer-popover` (Drawer popup,
+  // DialogSurface), not on the page canvas (`layer-panel` in the Raft pack).
+  testWidgets(
+    'settings drawer and dialog card paint the popover role in dark',
+    (t) async {
+      final dark = MaterialApp(
+        theme: raftTheme(dark: true),
+        home: Scaffold(
+          body: Column(
+            children: [
+              Expanded(
+                child: RaftOverflowSheet(
+                  title: '#fixture',
+                  onClose: () {},
+                  children: const [],
+                ),
+              ),
+              Expanded(
+                child: RaftDialogCard(
+                  title: 'Dialog',
+                  onClose: () {},
+                  child: const Text('Body'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await t.pumpWidget(dark);
+      await t.pumpAndSettle();
+      final tokens = RaftTokens.of(t.element(find.byType(RaftOverflowSheet)));
+      final popover = tokens.popover;
+      expect(popover, isNot(tokens.panel));
+      final sheet = find.byKey(const ValueKey('channel-overflow-sheet'));
+      final drawer = t.widget<Material>(
+        find.descendant(of: sheet, matching: find.byType(Material)).first,
+      );
+      expect(drawer.color, popover);
+      final fills = [
+        for (final box in t.widgetList<DecoratedBox>(
+          find.descendant(
+            of: find.byType(RaftDialogCard),
+            matching: find.byType(DecoratedBox),
+          ),
+        ))
+          if (box.decoration is BoxDecoration)
+            (box.decoration as BoxDecoration).color,
+      ];
+      expect(fills, contains(popover));
+    },
+  );
   testWidgets('settings drawer lays out only visible panel rows', (t) async {
     var built = 0;
     await t.pumpWidget(
@@ -69,22 +119,14 @@ void main() {
     },
   );
 
-  testWidgets('drawer width: Brutal 544, Elegant 448, phones full width', (
-    t,
-  ) async {
-    for (final (family, view, width) in [
-      (RaftFamily.brutal, 1280.0, 544.0),
-      (RaftFamily.elegant, 1280.0, 448.0),
-      (RaftFamily.brutal, 390.0, 390.0),
-      (RaftFamily.elegant, 390.0, 390.0),
-    ]) {
+  testWidgets('Raft drawer follows source 420px, phones full width', (t) async {
+    for (final (view, width) in [(1280.0, 420.0), (390.0, 390.0)]) {
       t.view.physicalSize = Size(view, 800);
       t.view.devicePixelRatio = 1;
       addTearDown(t.view.reset);
       await t.pumpWidget(
         _host(
           RaftOverflowSheet(title: '#work', onClose: () {}, children: const []),
-          family: family,
         ),
       );
       // The theme change animates; let it land before measuring.
@@ -92,7 +134,7 @@ void main() {
       expect(
         t.getSize(find.byKey(const ValueKey('channel-overflow-sheet'))).width,
         width,
-        reason: '$family @ $view',
+        reason: '@ $view',
       );
     }
   });
@@ -133,14 +175,14 @@ void main() {
       final gate = Completer<void>();
       Future<void> action() async {
         attempt++;
-        if (attempt == 1) throw StateError('Server said no');
+        if (attempt == 1) throw const RaftUserError('Server said no');
         await gate.future;
       }
 
       bool? result;
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Builder(
             builder: (context) => TextButton(
               onPressed: () async => result = await RaftConfirmDialog.show(
@@ -181,7 +223,7 @@ void main() {
   );
 
   testWidgets(
-    'unsaved prompt: three actions, Save and close only when savable',
+    'unsaved prompt: three actions, Save and Close only when savable',
     (t) async {
       final taps = <String>[];
       await t.pumpWidget(
@@ -194,15 +236,12 @@ void main() {
           ),
         ),
       );
-      // Press through the buttons: the unwrapped test-font row may overflow.
-      void press(String label) => t
-          .widget<RaftSettingsRecipeButton>(
-            find.widgetWithText(RaftSettingsRecipeButton, label),
-          )
+      void press(String key) => t
+          .widget<RaftSettingsRecipeButton>(find.byKey(ValueKey(key)))
           .onPressed!();
-      press('Keep editing');
-      press('Discard changes');
-      press('Save and close');
+      press('channel-overflow-unsaved-keep');
+      press('channel-overflow-unsaved-discard');
+      press('channel-overflow-unsaved-save');
       expect(taps, ['keep', 'discard', 'save']);
       await t.pumpWidget(
         _host(
@@ -213,7 +252,10 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Save and close'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('channel-overflow-unsaved-save')),
+        findsNothing,
+      );
     },
   );
 

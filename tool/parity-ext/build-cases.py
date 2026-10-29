@@ -158,7 +158,7 @@ MDP = 'packages/web/src/components/machine/MachineDetailPanel.tsx'
 SIDEBAR = 'packages/web/src/components/layout/Sidebar.tsx (computers mode, ComputerRow)'
 ADD = 'packages/web/src/components/machine/AddMachineDialog.tsx'
 DIALOG = '[data-slot="dialog-content"]'
-CARD_DIALOG = '.fixed.inset-0 [data-slot="card"]'
+CARD_DIALOG = '.fixed.inset-0 [data-slot="dialog-card"]'
 cases = []
 
 
@@ -236,12 +236,12 @@ SECTIONS = {
              'div.px-5.py-4:has(input[placeholder="Computer name"])'),
     'description': ('div.px-5.py-4:has(> div > button[aria-label="Edit computer description"]), '
                     'div.px-5.py-4:has(textarea)'),
-    'info': 'div.px-5.py-4.border-b:has(.gap-x-8)',
+    'info': 'div.px-5.py-4:has(> div.space-y-3)',
     'agents': 'div.space-y-6 > div:has(> div.flex-wrap.gap-y-2)',
-    'workspaces': 'div.mt-2.border-t:has(svg.lucide-folder-open)',
+    'workspaces': 'div.mt-2:has(svg.lucide-folder-open)',
     'service': '[data-testid="computer-service-actions"]',
     'recovery-guide': '[data-testid="computer-recovery-guide"]',
-    'delete': 'div.mt-2.border-t > div.p-4:last-child',
+    'delete': 'div.mt-2 > [data-slot="card"]:last-child',
     'recovery-card': '[data-testid="computer-recovery-card"]',
 }
 
@@ -520,10 +520,16 @@ settings_fixture = {
     'name': 'raft-flutter parity extension: settings (Workspace + Resources groups)',
     'scope': 'Public deterministic test data; no credentials.',
     'sourceCommit': '26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6',
-    # Web AboutSection shows the Web artifact version (packages/web/package.json
-    # at the pinned commit); the Flutter builder passes the same string.
+    # Keep the frozen legacy version; current Web About uses the pinned
+    # v1.21.23 artifact version (confirmed by the actual rendered page).
     'appVersion': '1.17.5',
+    'webAppVersion': '1.21.23',
     'routes': {
+        # Controlled availability matching the Web's initial defaults, not a
+        # claim about the live release. The API always supplies all three OSes.
+        'GET /desktop-download/platforms': {
+            'mac': {'status': 'unknown'}, 'linux': {'status': 'unknown'}, 'windows': {'status': 'none'},
+        },
         'GET /release-notes': {'items': releases, 'nextCursor': None},
         'GET /product-feedback/tickets': {'tickets': tickets, 'next_cursor': None, 'unread_total': 2},
         f"GET /product-feedback/tickets/{FB_ACTIVE['id']}": FB_ACTIVE_DETAIL,
@@ -534,6 +540,11 @@ settings_fixture = {
         # providers render the same data.
         f'GET /servers/{SID}/usage': {'agents': 2, 'machines': 1, 'channels': 4},
         'GET /billing/subscription': billing_free,
+        # This fixture has local agents and no hosted runtime. The mounted
+        # billing route returns 404 in that state (billing.ts at v1.21.23),
+        # rather than a 200 empty object that crashes HostedRuntimeSpendCard.
+        'GET /billing/hosted-runtime-usage': {'$status': 404, '$body': {
+            'error': 'This server has no cloud agents', 'code': 'hosted_runtime_spend_not_enabled'}},
         f'GET /servers/{SID}/members': members,
         f'GET /servers/{SID}/invites': invites,
         f'GET /servers/{SID}/join-links': join_links,
@@ -596,6 +607,9 @@ def settings_case(key, title, *, tab, region=None, selector=None, android_key=No
                   flags='', route_set='', interactions=(), android=(), hint=SETTINGS_HINT, notes=None,
                   platform='desktop'):
     props = {'tab': tab, 'role': role}
+    # Feedback routes must not be shadowed by another family's empty inbox.
+    if tab == 'feedback':
+        props['extFixture'] = 'settings'
     if platform != 'desktop':
         props['platform'] = platform
     if flags:
@@ -636,9 +650,13 @@ settings_case('nav.row-hover', 'rail: hovered Documentation row', tab='about', h
 ABOUT_HINT = SETTINGS_HINT + '#AboutSection + MobileDownloadQr.tsx'
 settings_case('about.page', 'About: whole page', tab='about', hint=ABOUT_HINT, selector=None)
 settings_case('about.panel', 'About: panel', tab='about', region='panel', hint=ABOUT_HINT)
-for i, name in enumerate(['version', 'mobile-app', 'workspace'], start=1):
+for name, section in {
+    'version': 'div.space-y-6 > section:first-of-type',
+    'mobile-app': 'div.space-y-6 > section:has([data-testid="mobile-download-android"])',
+    'workspace': '[data-testid="settings-about-workspace"]',
+}.items():
     settings_case(f'about.{name}', f'About section: {name}', tab='about', hint=ABOUT_HINT,
-                  selector=f"[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type({i})",
+                  selector=f"[data-parity-region='settings-panel'] {section}",
                   android_key=f'settings-about-{name}')
 RN_HINT = 'packages/web/src/components/settings/ReleaseNotesPanel.tsx'
 settings_case('release-notes.page', 'Release Notes: whole page', tab='release-notes', hint=RN_HINT)
@@ -801,7 +819,9 @@ settings_case('billing.pro', 'Plan & Billing: Pro subscription (seat usage, mana
 settings_case('billing.pro-plan', 'Plan & Billing: Pro current plan card (seat bar, portal)', tab='billing',
               selector=CURRENT_PLAN, android_key='billing-current-plan-card', route_set='billing-pro', hint=PLAN_HINT)
 settings_case('billing.pro-summary', 'Plan & Billing: manage seats summary card', tab='billing',
-              selector=SUMMARY, android_key='billing-summary-card', route_set='billing-pro', hint=PLAN_HINT)
+              selector=SUMMARY, android_key='billing-summary-card', route_set='billing-pro', hint=PLAN_HINT,
+              interactions=[{'type': 'reveal', 'target': SUMMARY}],
+              android=[{'type': 'reveal', 'key': 'billing-summary-card'}])
 settings_case('billing.admin', 'Plan & Billing: admin (cannot change billing)', tab='billing', role='admin',
               region='panel', viewport=FRAME_TALL, route_set='billing-admin', hint=PLAN_HINT)
 settings_case('billing.loading', 'Plan & Billing: loading skeleton', tab='billing', region='panel',

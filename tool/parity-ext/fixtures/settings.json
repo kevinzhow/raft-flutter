@@ -3,7 +3,19 @@
  "scope": "Public deterministic test data; no credentials.",
  "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
  "appVersion": "1.17.5",
+ "webAppVersion": "1.21.23",
  "routes": {
+  "GET /desktop-download/platforms": {
+   "mac": {
+    "status": "unknown"
+   },
+   "linux": {
+    "status": "unknown"
+   },
+   "windows": {
+    "status": "none"
+   }
+  },
   "GET /release-notes": {
    "items": [
     {
@@ -351,6 +363,13 @@
    "permissions": {
     "canReadBillingSummary": true,
     "canManageBilling": true
+   }
+  },
+  "GET /billing/hosted-runtime-usage": {
+   "$status": 404,
+   "$body": {
+    "error": "This server has no cloud agents",
+    "code": "hosted_runtime_spend_not_enabled"
    }
   },
   "GET /servers/visual-server/members": [

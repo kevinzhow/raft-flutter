@@ -1,0 +1,12 @@
+{
+  "events": [
+    {"id":"e1","seq":101,"eventType":"created","actorType":"user","actorName":"alice","payload":{"taskNumber":12,"status":"todo","requiresResourceReceipt":false},"createdAt":"2026-10-09T10:00:00.000Z"},
+    {"id":"e2","seq":102,"eventType":"assignee_changed","actorType":"agent","actorName":"cindy","payload":{"assigneeType":"agent","assigneeId":"ag-0000-4000-8000-000000000002"},"createdAt":"2026-10-10T08:15:00.000Z"},
+    {"id":"e3","seq":103,"eventType":"status_changed","actorType":"agent","actorName":"cindy","payload":{"from":"todo","to":"in_progress"},"createdAt":"2026-10-10T08:15:01.000Z"},
+    {"id":"e4","seq":104,"eventType":"status_changed","actorType":"agent","actorName":"cindy","payload":{"from":"in_progress","to":"in_review","forced":false},"createdAt":"2026-10-11T09:00:00.000Z"},
+    {"id":"e5","seq":105,"eventType":"amended","actorType":"user","actorName":"alice","payload":{"changes":{"title":{"from":"Ship the onboarding checklist","to":"Ship the onboarding checklist v2"}}},"createdAt":"2026-10-11T09:30:00.000Z"},
+    {"id":"e6","seq":106,"eventType":"assignee_changed","actorType":"user","actorName":"alice","payload":{"assigneeType":null,"assigneeId":null,"previousAssigneeType":"agent","previousAssigneeId":"ag-0000-4000-8000-000000000002"},"createdAt":"2026-10-11T09:40:00.000Z"},
+    {"id":"e7","seq":107,"eventType":"closed","actorType":"system","actorName":null,"payload":{"from":"in_review","to":"closed","forced":true},"createdAt":"2026-10-11T10:00:00.000Z"},
+    {"id":"e8","seq":108,"eventType":"resource_receipt_recorded","actorType":"agent","actorName":"cindy","payload":{"object":"vm-1"},"createdAt":"2026-10-11T10:01:00.000Z"}
+  ]
+}

@@ -8,9 +8,11 @@ import 'package:raft_flutter/features/conversation_panel.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_flutter/features/task_surface_controller.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_presentation_test.dart' show fixture;
 import 'task_surface_test.dart' show modernTask, taskRoutes;
+import 'flutter_test_config.dart' show leakDebt;
 
 /// Lets Dio and the controllers finish real async work, then paints.
 Future<void> settle(WidgetTester t) async {
@@ -20,6 +22,21 @@ Future<void> settle(WidgetTester t) async {
     );
     await t.pump(const Duration(milliseconds: 16));
   }
+}
+
+/// Taps a tab of the agent panel's strip. The strip centres the active tab
+/// (panel_layout.dart:833, Web `scrollActiveTabIntoView`), so a neighbour such
+/// as Profile can sit left of the 800px viewport (x=-11.7 with Reminders
+/// active): scroll the real tab into view and prove it is hittable first.
+Future<void> tapAgentTab(WidgetTester t, String label) async {
+  final tab = find.descendant(
+    of: find.byType(RaftPanelTabBar<AgentDetailTab>),
+    matching: find.text(label, findRichText: true),
+  );
+  await t.ensureVisible(tab);
+  await t.pump();
+  expect(tab.hitTestable(), findsOneWidget, reason: '$label tab not hittable');
+  await t.tap(tab);
 }
 
 /// Completes a held route response, then lets the result reach the widgets.
@@ -46,16 +63,14 @@ Map<String, dynamic> fileRow(String id, {String name = ''}) => {
 /// Panel text is painted through RaftCssText (RichText).
 Finder rich(String text) => find.text(text, findRichText: true);
 
-const _themes = [
-  (RaftFamily.brutal, false),
-  (RaftFamily.elegant, false),
-  (RaftFamily.elegant, true),
-];
+const _themes = [(false), (true)];
 
 void main() {
-  for (final (family, dark) in _themes) {
+  // Leak debt (other): see docs/development.md, Leak tracking.
+  leakDebt(const ['SourceChannelFilesStore']);
+  for (final (dark) in raftThemeMatrix(_themes)) {
     testWidgets(
-      '$family/$dark Files tab: revisit and thread open show cached rows at the first frame; refresh replaces in place; identity change drops them',
+      '${dark ? 'dark' : 'light'} Files tab: revisit and thread open show cached rows at the first frame; refresh replaces in place; identity change drops them',
       (t) async {
         final (w, api) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
@@ -81,7 +96,7 @@ void main() {
         };
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: ConversationPanel(controller: w)),
           ),
         );
@@ -121,8 +136,8 @@ void main() {
         }
 
         // Opening a thread / socket traffic does not re-fence the list.
-        w.threadGeneration++;
-        w.channelGeneration++;
+        w.messageWindows.threadGeneration++;
+        w.messageWindows.channelGeneration++;
         w.notifyListeners();
         await t.pump();
         expect(find.text('Loading files…'), findsNothing);
@@ -191,11 +206,10 @@ void main() {
   };
   Widget agentPanel(
     dynamic w,
-    RaftFamily family,
     bool dark, {
     AgentDetailTab tab = AgentDetailTab.profile,
   }) => MaterialApp(
-    theme: raftTheme(family, dark: dark),
+    theme: raftTheme(dark: dark),
     home: Scaffold(
       body: AgentDetailPanel(
         key: const ValueKey('agent-panel'),
@@ -210,9 +224,9 @@ void main() {
     ),
   );
 
-  for (final (family, dark) in _themes) {
+  for (final (dark) in raftThemeMatrix(_themes)) {
     testWidgets(
-      '$family/$dark agent Chat tab: no 0 counts on revisit, in-place refresh, identity change drops it',
+      '${dark ? 'dark' : 'light'} agent Chat tab: no 0 counts on revisit, in-place refresh, identity change drops it',
       (t) async {
         final (w, api) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
@@ -245,7 +259,7 @@ void main() {
             },
           ],
         };
-        await t.pumpWidget(agentPanel(w, family, dark));
+        await t.pumpWidget(agentPanel(w, dark));
         await t.pump();
         final tabs = find.byType(RaftPanelTabBar<AgentDetailTab>);
         Future<void> openTab(String label) =>
@@ -253,7 +267,7 @@ void main() {
         await openTab('Chat');
         await t.pump();
         // First visit: a loading line, never fabricated zero counts.
-        expect(rich('Loading…'), findsOneWidget);
+        expect(rich('Loading profile…'), findsOneWidget);
         expect(rich('Channels'), findsNothing);
         await settle(t);
         expect(rich('general'), findsOneWidget);
@@ -265,7 +279,7 @@ void main() {
         await settle(t);
         await openTab('Chat');
         await t.pump();
-        expect(rich('Loading…'), findsNothing);
+        expect(rich('Loading profile…'), findsNothing);
         expect(rich('general'), findsOneWidget);
         expect(rich('carol'), findsOneWidget);
         expect(t.getRect(rich('general')), general);
@@ -290,7 +304,7 @@ void main() {
         await openTab('Chat');
         await t.pump();
         expect(rich('general'), findsNothing);
-        expect(rich('Loading…'), findsOneWidget);
+        expect(rich('Loading profile…'), findsOneWidget);
         await t.pumpWidget(const SizedBox());
         await t.pump(const Duration(seconds: 1));
         expect(t.takeException(), isNull);
@@ -298,7 +312,7 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark agent Reminders tab: refresh never inserts a Loading line above shown rows',
+      '${dark ? 'dark' : 'light'} agent Reminders tab: refresh never inserts a Loading line above shown rows',
       (t) async {
         final (w, api) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
@@ -321,14 +335,12 @@ void main() {
           held.add(gate);
           return gate.future;
         };
-        await t.pumpWidget(agentPanel(w, family, dark));
+        await t.pumpWidget(agentPanel(w, dark));
         await t.pump();
-        final tabs = find.byType(RaftPanelTabBar<AgentDetailTab>);
-        Future<void> openTab(String label) =>
-            t.tap(find.descendant(of: tabs, matching: rich(label)));
+        Future<void> openTab(String label) => tapAgentTab(t, label);
         await openTab('Reminders');
         await t.pump();
-        expect(rich('Loading…'), findsOneWidget);
+        expect(rich('Loading reminders…'), findsOneWidget);
         await settle(t);
         final standup = t.getRect(rich('Stand-up'));
 
@@ -336,13 +348,13 @@ void main() {
         await settle(t);
         await openTab('Reminders');
         await t.pump();
-        expect(rich('Loading…'), findsNothing);
+        expect(rich('Loading reminders…'), findsNothing);
         expect(t.getRect(rich('Stand-up')), standup);
         await settle(t);
         expect(held, hasLength(1));
         for (var i = 0; i < 3; i++) {
           await t.pump(const Duration(milliseconds: 16));
-          expect(rich('Loading…'), findsNothing);
+          expect(rich('Loading reminders…'), findsNothing);
           expect(t.getRect(rich('Stand-up')), standup);
         }
         await release(t, held.single, {
@@ -358,7 +370,7 @@ void main() {
         await openTab('Reminders');
         await t.pump();
         expect(rich('Stand-up'), findsNothing);
-        expect(rich('Loading…'), findsOneWidget);
+        expect(rich('Loading reminders…'), findsOneWidget);
         await t.pumpWidget(const SizedBox());
         await t.pump(const Duration(seconds: 1));
         expect(t.takeException(), isNull);
@@ -366,7 +378,7 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark agent Workspace tab: expanded folders survive tab switches and the tree refreshes in place',
+      '${dark ? 'dark' : 'light'} agent Workspace tab: expanded folders survive tab switches and the tree refreshes in place',
       (t) async {
         final (w, api) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
@@ -393,14 +405,15 @@ void main() {
           held.add(gate);
           return gate.future;
         };
-        await t.pumpWidget(agentPanel(w, family, dark));
+        await t.pumpWidget(agentPanel(w, dark));
         await t.pump();
-        final tabs = find.byType(RaftPanelTabBar<AgentDetailTab>);
-        Future<void> openTab(String label) =>
-            t.tap(find.descendant(of: tabs, matching: rich(label)));
+        Future<void> openTab(String label) => tapAgentTab(t, label);
         await openTab('Workspace');
         await t.pump();
-        expect(rich('Loading…'), findsOneWidget);
+        // The Raft pack (agentWorkspace.look web23) shows Web's
+        // agent.workspace.loading, "Loading..." (agent_profile.dart:2292,2501).
+        const loadingFiles = 'Loading...';
+        expect(rich(loadingFiles), findsOneWidget);
         await settle(t);
         await t.tap(rich('src'));
         await settle(t);
@@ -414,7 +427,7 @@ void main() {
         await openTab('Workspace');
         await t.pump();
         // First frame: same tree, same open folder, no Loading line.
-        expect(rich('Loading…'), findsNothing);
+        expect(rich(loadingFiles), findsNothing);
         expect(t.getRect(rich('src')), src);
         expect(t.getRect(rich('main.dart')), main);
         expect(t.getRect(rich('notes.md')), notes);
@@ -422,7 +435,7 @@ void main() {
         expect(held, hasLength(1));
         for (var i = 0; i < 3; i++) {
           await t.pump(const Duration(milliseconds: 16));
-          expect(rich('Loading…'), findsNothing);
+          expect(rich(loadingFiles), findsNothing);
           expect(t.getRect(rich('main.dart')), main);
         }
         await release(t, held.single, {
@@ -446,7 +459,7 @@ void main() {
         await t.pump();
         expect(rich('src'), findsNothing);
         expect(rich('main.dart'), findsNothing);
-        expect(rich('Loading…'), findsOneWidget);
+        expect(rich(loadingFiles), findsOneWidget);
         await t.pumpWidget(const SizedBox());
         await t.pump(const Duration(seconds: 1));
         expect(t.takeException(), isNull);
@@ -454,9 +467,9 @@ void main() {
     );
   }
 
-  for (final (family, dark) in _themes) {
+  for (final (dark) in raftThemeMatrix(_themes)) {
     testWidgets(
-      '$family/$dark task detail: known row and cached history at the first frame, background refresh in place, identity change drops history',
+      '${dark ? 'dark' : 'light'} task detail: known row and cached history at the first frame, background refresh in place, identity change drops history',
       (t) async {
         final (w, api) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
@@ -490,9 +503,14 @@ void main() {
           owners.add(owner);
           unawaited(owner.start());
           return MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
-              body: SourceTaskSurface(owner: owner, onClose: () {}),
+              body: SourceTaskSurface(
+                owner: owner,
+                onClose: () {},
+                onTask: null,
+                onViewBilling: null,
+              ),
             ),
           );
         }

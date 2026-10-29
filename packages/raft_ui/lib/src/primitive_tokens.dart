@@ -22,18 +22,15 @@ abstract final class RaftPrimitives {
   static const Duration smoothScrollDuration = Duration(milliseconds: 300);
   static const Curve smoothScrollCurve = RaftScale.defaultTransitionCurve;
 
-  /// fonts.css `--sans-font` / `--heading-font` (Brutal) bundled family.
-  static String get brutalFont => RaftThemeMetrics.brutal.sansFont;
+  /// The bundled `--sans-font` family (Space Grotesk follows with the fonts PR).
+  static String get elegantBodyFont => RaftTokenSet.light.metrics.sansFont;
 
-  /// fonts.css Elegant `--sans-font` bundled family.
-  static String get elegantBodyFont => RaftThemeMetrics.elegantLight.sansFont;
-
-  /// fonts.css Elegant `--heading-font` bundled family.
+  /// The bundled `--heading-font` family.
   static String get elegantHeadingFont =>
-      RaftThemeMetrics.elegantLight.headingFont;
+      RaftTokenSet.light.metrics.headingFont;
 
-  /// fonts.css `--mono-font` bundled family.
-  static String get monoFont => RaftThemeMetrics.brutal.monoFont;
+  /// The bundled `--mono-font` family.
+  static String get monoFont => RaftTokenSet.light.metrics.monoFont;
   static const spacing = <double>[
     0,
     2,

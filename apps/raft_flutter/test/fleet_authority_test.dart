@@ -7,6 +7,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
+import 'flutter_test_config.dart' show leakDebt;
 
 class _Client extends RaftClient {
   _Client()
@@ -54,6 +55,8 @@ class _Workspace extends WorkspaceController {
 }
 
 void main() {
+  // Leak debt (dialog notifier): see docs/development.md, Leak tracking.
+  leakDebt(const ['ValueNotifier<Object?>']);
   late _Client c;
   late _Workspace w;
   setUp(() {
@@ -69,7 +72,7 @@ void main() {
   Future<void> detail(WidgetTester t, {Widget? child}) async {
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: Builder(
             builder: (context) => Column(
@@ -107,7 +110,7 @@ void main() {
       w.queueReads = true;
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: Scaffold(body: FleetView(controller: w, computers: false)),
         ),
       );
@@ -165,7 +168,7 @@ void main() {
       await t.pumpAndSettle();
       final form = t.widget<RaftFormDialog>(find.byType(RaftFormDialog));
       await t.enterText(find.byType(TextField).first, 'Lab');
-      await t.tap(find.text('Register'));
+      await t.tap(find.widgetWithText(RaftButton, 'Register Computer'));
       await t.pump(const Duration(milliseconds: 500));
       await t.pump();
       expect(find.text('Save this credential'), findsOneWidget);
@@ -205,7 +208,7 @@ void main() {
       await t.tap(find.text('Start registration'));
       await t.pumpAndSettle();
       await t.enterText(find.byType(TextField).first, 'Lab');
-      await t.tap(find.text('Register'));
+      await t.tap(find.widgetWithText(RaftButton, 'Register Computer'));
       await t.pump();
       final generation = c.generation;
       c.user = RaftRecord({'id': 'bob'});
@@ -231,10 +234,12 @@ void main() {
       await t.tap(find.byKey(const ValueKey('computer-delete')));
       await t.pumpAndSettle();
       await t.tap(
-        find.descendant(
-          of: find.byType(RaftConfirmDialog),
-          matching: find.text('Delete Computer'),
-        ),
+        find
+            .descendant(
+              of: find.byType(RaftConfirmDialog),
+              matching: find.text('Delete Computer'),
+            )
+            .last,
       );
       await t.pump();
       expect(w.commands, 1);

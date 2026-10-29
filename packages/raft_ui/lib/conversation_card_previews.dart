@@ -29,9 +29,9 @@ class _ActivationPreviewState extends State<_ActivationPreview> {
             tooltip: 'Done',
             onPressed: () => setState(() => result = 'Nested action'),
           ),
-          child: const SizedBox(
-            height: 64,
-            child: Text('An accepted conversation'),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 64),
+            child: const Text('An accepted conversation'),
           ),
         ),
         Text(result),

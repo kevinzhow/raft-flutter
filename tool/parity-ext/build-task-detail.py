@@ -2,7 +2,7 @@
 """Append the Tasks board page and task detail modal cases to
 the run-time manifest ($PARITY_EXT_MANIFEST) and write tool/parity-ext/fixtures/taskdetail.json.
 
-Run last of the chain (build-cases.py -> build-live-activity.py ->
+Run last of the chain (build-cases.py ->
 build-channel-header.py -> build-announcements.py -> this); idempotent: every
 `components.taskspage.*` / `components.taskdetail.*` case is replaced, all
 other cases are kept in place (append-only for the other families).

@@ -5,11 +5,15 @@ import 'package:flutter/services.dart';
 
 import '../platform/oauth_broker.dart';
 import '../platform/local_network_access.dart';
+import '../platform/app_services.dart';
 import '../platform/system_bars.dart';
 
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/server_error_code.dart';
+import '../data/user_error.dart';
+import 'auth_account_link.dart';
 import 'management_support.dart';
 
 bool isValidAuthEmail(String value) =>
@@ -29,6 +33,24 @@ String? authOriginError(String value) {
       : 'Enter the server origin, such as https://raft.example.com.';
 }
 
+/// Web `authServerErrorMessage(err, fallback)`: bad credentials get the
+/// localized sentence, otherwise the server's own text, else [fallback].
+String authFailureText(Object error, String fallback, {String? where}) =>
+    serverErrorIs(error, 'Invalid email or password')
+    ? 'Incorrect email or password.'
+    // Native only (no Web counterpart): the Android local-network permission
+    // the person has to grant is actionable, so it is shown as is.
+    : serverErrorIs(error, localNetworkPermissionError)
+    ? localNetworkPermissionError
+    : userErrorText(
+        error,
+        fallback: fallback,
+        codeText: const {
+          'AUTH_INVALID_CREDENTIALS': 'Incorrect email or password.',
+        },
+        where: where,
+      );
+
 String authLinkToken(String value, {String parameter = 'token'}) {
   final uri = Uri.tryParse(value);
   return uri != null && uri.hasScheme
@@ -45,10 +67,17 @@ class AuthView extends StatefulWidget {
     this.bootError,
     this.onOAuth,
     this.anonymousClientFactory,
+    this.oauthBrokerFactory,
     this.initialMode = 'login',
     this.resetToken,
+    this.authenticate,
   });
   final Future<void> Function(String, String, String, bool)? onOAuth;
+
+  /// Runs a sign-in step on the app's session client. With it the browser
+  /// sign-in completes through it (so [onOAuth] is not needed), and the
+  /// "sign in and connect" continuation can add its handle to the request.
+  final AuthAuthenticate? authenticate;
 
   /// First mode shown: 'login', 'register', 'forgot' or 'reset' (a reset or
   /// verification link opens straight into its page, like the Web query
@@ -60,6 +89,9 @@ class AuthView extends StatefulWidget {
   /// page also asks for the link or code (native clients have no URL).
   final String? resetToken;
   final RaftClient Function(String)? anonymousClientFactory;
+
+  /// The browser sign-in broker (tests inject a fake launcher).
+  final NativeOAuthBroker Function()? oauthBrokerFactory;
   final String origin;
   final String? bootError;
   final Future<void> Function(String, String, String) onLogin;
@@ -69,6 +101,10 @@ class AuthView extends StatefulWidget {
 }
 
 class _AuthState extends State<AuthView> {
+  LocalNetworkAccess get networkAccess =>
+      AppServicesScope.maybeReadOf(context)?.localNetwork ??
+      const LocalNetworkAccess();
+
   late final base = TextEditingController(text: widget.origin);
   final email = TextEditingController(),
       password = TextEditingController(),
@@ -77,9 +113,20 @@ class _AuthState extends State<AuthView> {
   bool busy = false, visible = false, accepted = false;
   bool forgotSent = false, resetDone = false;
   String sentEmail = '';
+  // ignore: raft_lints/avoid_imperative_notice_state -- Each clears when its field is edited, on submit revalidation and on mode switch.
   String? emailError, passwordError, confirmError, tokenError;
   List<Map<String, dynamic>> providers = [];
   NativeOAuthBroker? broker;
+
+  /// The pending "sign in and connect" this page continues, and why its last
+  /// attempt failed (a server `code`). Kept across the forgot-password page.
+  PendingAccountLink? link;
+
+  /// The sign-in code waits for an explicit acceptance of the terms.
+  SocialLegalStep? legal;
+  bool legalChecked = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Clears on submit, social sign-in start, cancel, restart and when a new link starts.
+  String? linkFailure;
   Timer? providerDebounce;
   int providerRequest = 0;
   @override
@@ -88,9 +135,11 @@ class _AuthState extends State<AuthView> {
     loadProviders();
   }
 
+  bool get hasOAuth => widget.onOAuth != null || widget.authenticate != null;
+
   Future<void> loadProviders({bool requestPermission = false}) async {
     final request = ++providerRequest;
-    if (widget.onOAuth == null || authOriginError(base.text) != null) {
+    if (!hasOAuth || authOriginError(base.text) != null) {
       if (mounted) setState(() => providers = []);
       return;
     }
@@ -101,10 +150,7 @@ class _AuthState extends State<AuthView> {
           sessionStore: MemorySessionStore(),
         );
     try {
-      await const LocalNetworkAccess().ensure(
-        client.origin,
-        request: requestPermission,
-      );
+      await networkAccess.ensure(client.origin, request: requestPermission);
       if (!mounted || request != providerRequest) return;
       final data = await client.request(
         'GET',
@@ -124,7 +170,9 @@ class _AuthState extends State<AuthView> {
       if (mounted && request == providerRequest) {
         setState(() {
           providers = [];
-          if (requestPermission && e is RaftApiException) error = e.message;
+          if (requestPermission && e is RaftApiException) {
+            error = authFailureText(e, 'Login failed', where: 'auth providers');
+          }
         });
       }
     } finally {
@@ -133,13 +181,16 @@ class _AuthState extends State<AuthView> {
   }
 
   Future<void> social(String provider) async {
-    if (busy || widget.onOAuth == null || authOriginError(base.text) != null) {
+    if (busy || !hasOAuth || authOriginError(base.text) != null) {
       return;
     }
     setState(() {
       busy = true;
       error = null;
       notice = null;
+      linkFailure = null;
+      legal = null;
+      legalChecked = false;
     });
     final client =
         widget.anonymousClientFactory?.call(base.text.trim()) ??
@@ -147,25 +198,28 @@ class _AuthState extends State<AuthView> {
           origin: base.text.trim(),
           sessionStore: MemorySessionStore(),
         );
-    final active = NativeOAuthBroker();
+    final active =
+        widget.oauthBrokerFactory?.call() ??
+        NativeOAuthBroker(locale: Localizations.maybeLocaleOf(context));
     broker = active;
+    void helpChanged() {
+      if (mounted) setState(() {});
+    }
+
+    active.helpUrl.addListener(helpChanged);
+    OAuthHandoff? handoff;
     try {
-      await const LocalNetworkAccess().ensure(base.text.trim(), request: true);
+      await networkAccess.ensure(base.text.trim(), request: true);
       if (!mounted) return;
-      final handoff = await active.begin(client, provider);
-      if (mounted) {
-        await widget.onOAuth!(
-          base.text.trim(),
-          handoff.code,
-          handoff.verifier,
-          // Login: "By continuing, you agree to the Terms of Service and
-          // Privacy Policy" (pages.login.legalAgreement); register: checkbox.
-          mode == 'login' || accepted,
-        );
-      }
+      handoff = await active.begin(client, provider);
+      if (mounted) await exchange(handoff, provider);
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      // A sign-in the person cancelled reports nothing.
+      if (mounted && !active.cancelled) {
+        setState(() => socialFailed(e, handoff, provider));
+      }
     } finally {
+      active.helpUrl.removeListener(helpChanged);
       await active.cancel();
       await client.dispose();
       broker = null;
@@ -173,7 +227,127 @@ class _AuthState extends State<AuthView> {
     }
   }
 
+  /// The browser's one-time code, exchanged for a session. [accepting] adds
+  /// the explicit acceptance of the terms the server asked for.
+  Future<void> exchange(
+    OAuthHandoff handoff,
+    String provider, {
+    LegalVersions? accepting,
+  }) {
+    final pending = link?.continuation, run = widget.authenticate;
+    return run != null
+        ? run(
+            base.text.trim(),
+            (c) => c.completeMobileOAuth(
+              handoff.code,
+              handoff.verifier,
+              acceptTerms: accepting != null,
+              legal: accepting ?? LegalVersions.current,
+              link: pending,
+            ),
+          )
+        : widget.onOAuth!(
+            base.text.trim(),
+            handoff.code,
+            handoff.verifier,
+            accepting != null,
+          );
+  }
+
+  /// Web SocialAuthCallbackPage: the account-link page, the legal-acceptance
+  /// step, or `finishFailed` unless the server sent text.
+  void socialFailed(Object e, OAuthHandoff? handoff, String provider) {
+    final conflict = PendingAccountLink.fromError(e);
+    legal = null;
+    if (conflict != null) {
+      startLink(conflict);
+    } else if (handoff != null && isLegalAcceptanceRejection(e)) {
+      legal = SocialLegalStep(
+        handoff,
+        provider,
+        changed: (e as RaftApiException).message == 'TERMS_CHANGED',
+        versions: LegalVersions.fromError(e),
+      );
+    } else if (link != null && isAccountLinkFailure(e)) {
+      linkFailure = serverErrorCode(e);
+    } else {
+      error = authFailureText(
+        e,
+        'Failed to finish sign-in',
+        where: 'social sign-in',
+      );
+    }
+  }
+
+  /// "Continue" on the legal-acceptance step: the same code, now accepted.
+  Future<void> continueLegal() async {
+    final step = legal;
+    if (step == null || busy || !legalChecked) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await exchange(
+        step.handoff,
+        step.provider,
+        accepting: step.versions ?? LegalVersions.current,
+      );
+    } catch (e) {
+      if (mounted) setState(() => socialFailed(e, step.handoff, step.provider));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  /// The server asked to sign in to the account that owns this email: the
+  /// page becomes "Connect to your existing account" (Web `accountLink`).
+  void startLink(PendingAccountLink pending) {
+    link = pending;
+    linkFailure = null;
+    error = null;
+    mode = 'login';
+    accepted = false;
+    email.text = pending.email;
+    password.clear();
+    emailError = passwordError = null;
+  }
+
+  /// "Don't connect {provider}" / "Back to Sign In": drop the pending link on
+  /// the server, then show the ordinary sign-in page.
+  Future<void> cancelLink() async {
+    final pending = link;
+    if (pending == null || busy) return;
+    setState(() {
+      busy = true;
+      error = null;
+      linkFailure = null;
+    });
+    try {
+      await anonymous('/auth/pending-link/cancel', {
+        'pendingLinkToken': pending.token,
+      });
+      if (mounted) setState(() => link = null);
+    } catch (_) {
+      if (mounted) setState(() => error = 'Login failed');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  /// An expired link only continues by starting the provider again.
+  void restartLink() {
+    final pending = link;
+    if (pending == null || busy) return;
+    setState(() {
+      link = null;
+      linkFailure = null;
+    });
+    unawaited(social(pending.provider));
+  }
+
   late String mode = widget.initialMode;
+  // ignore: raft_lints/avoid_imperative_notice_state -- error clears on submit, social sign-in start, mode switch and server edit; notice is never raised (always null).
   String? error, notice;
   @override
   void dispose() {
@@ -195,7 +369,7 @@ class _AuthState extends State<AuthView> {
           sessionStore: MemorySessionStore(),
         );
     try {
-      await const LocalNetworkAccess().ensure(base.text.trim(), request: true);
+      await networkAccess.ensure(base.text.trim(), request: true);
       if (!mounted) return null;
       return await client.request('POST', path, data: data, authorized: false);
     } finally {
@@ -236,12 +410,12 @@ class _AuthState extends State<AuthView> {
     setState(() {
       error = null;
       notice = null;
+      linkFailure = null;
     });
     if (!validate()) return;
     if (mode == 'register' && !accepted) {
       setState(
-        () =>
-            error = 'Accept the terms and privacy policy to create an account.',
+        () => error = 'You must agree to the Terms of Service and acknowledge the Privacy Policy to create an account.',
       );
       return;
     }
@@ -249,11 +423,20 @@ class _AuthState extends State<AuthView> {
     try {
       switch (mode) {
         case 'login':
-          await widget.onLogin(
-            base.text.trim(),
-            email.text.trim(),
-            password.text,
-          );
+          final pending = link?.continuation;
+          final run = widget.authenticate;
+          if (pending != null && run != null) {
+            await run(
+              base.text.trim(),
+              (c) => c.login(email.text.trim(), password.text, link: pending),
+            );
+          } else {
+            await widget.onLogin(
+              base.text.trim(),
+              email.text.trim(),
+              password.text,
+            );
+          }
         case 'register':
           await widget.onRegister(
             base.text.trim(),
@@ -274,9 +457,7 @@ class _AuthState extends State<AuthView> {
         case 'reset':
           final code = widget.resetToken ?? authLinkToken(token.text.trim());
           if (code.isEmpty) {
-            throw const RaftApiException(
-              'Enter a password reset link or code.',
-            );
+            throw const RaftUserError('Enter a password reset link or code.');
           }
           await anonymous('/auth/reset-password', {
             'token': code,
@@ -286,13 +467,18 @@ class _AuthState extends State<AuthView> {
       }
     } catch (e) {
       if (mounted) {
-        setState(
-          () => error =
-              e is RaftApiException &&
-                  e.details['code'] == 'AUTH_INVALID_CREDENTIALS'
-              ? 'Incorrect email or password.'
-              : '$e',
-        );
+        setState(() {
+          if (mode == 'login' && link != null && isAccountLinkFailure(e)) {
+            linkFailure = serverErrorCode(e);
+          } else {
+            error = authFailureText(e, switch (mode) {
+              'register' => 'Registration failed',
+              'forgot' => 'Failed to send reset email',
+              'reset' => 'Password reset failed. The link may be expired.',
+              _ => 'Login failed',
+            }, where: 'auth $mode');
+          }
+        });
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -331,8 +517,8 @@ class _AuthState extends State<AuthView> {
     if (busy) return;
     String? next;
     // ds-allow: native-only server origin editor (no Web counterpart); opens the shared RaftFormDialog.
-    await showDialog<void>(
-      context: context,
+    await showRaftForm<void>(
+      context,
       builder: (context) => RaftFormDialog(
         title: raftText(context, 'Server URL'),
         fields: [
@@ -370,6 +556,24 @@ class _AuthState extends State<AuthView> {
   @override
   Widget build(BuildContext context) {
     String tr(String s) => raftText(context, s);
+    final step = legal;
+    if (step != null) {
+      return RaftAuthLegalPage(
+        providerLabel: socialProviderLabel(step.provider),
+        accepted: legalChecked,
+        busy: busy,
+        changed: step.changed,
+        error: error == null ? null : tr(error!),
+        onAccepted: (v) => setState(() => legalChecked = v),
+        onContinue: continueLegal,
+        onBack: () => setState(() {
+          legal = null;
+          legalChecked = false;
+        }),
+        onTerms: () => managementLaunch('https://raft.build/terms'),
+        onPrivacy: () => managementLaunch('https://raft.build/privacy'),
+      );
+    }
     if (mode == 'forgot' && forgotSent) {
       // ForgotPasswordPage `sent`: "Check your email" + Back to Sign In.
       return RaftAuthResultPage(
@@ -385,7 +589,7 @@ class _AuthState extends State<AuthView> {
         // client takes the link or code here. Pinned over the page bottom so
         // the Web composition keeps its geometry.
         overlayLink: RaftAuthTextLink(
-          label: tr('I have a reset link'),
+          label: tr('I Have a Reset Link'),
           onTap: () => switchMode('reset'),
         ),
       );
@@ -400,10 +604,12 @@ class _AuthState extends State<AuthView> {
       );
     }
     final t = RaftTokens.of(context);
-    Widget bars(Widget page) => RaftSystemBarSurface(
-      statusBarBackground: t.brutal ? t.product.softSignal : t.panel,
-      child: page,
-    );
+    final pending = link;
+    final failure = pending == null || linkFailure == null
+        ? null
+        : accountLinkFailureText(context, linkFailure, pending);
+    Widget bars(Widget page) =>
+        RaftSystemBarSurface(statusBarFallback: t.canvas, child: page);
     final page = AutofillGroup(
       key: ValueKey(mode),
       onDisposeAction: mode == 'login'
@@ -414,7 +620,17 @@ class _AuthState extends State<AuthView> {
         busy: busy,
         server: Uri.tryParse(base.text.trim())?.authority ?? base.text.trim(),
         onServer: busy ? null : editServer,
-        banner: error == null ? widget.bootError : tr(error!),
+        banner: failure ?? (error == null ? widget.bootError : tr(error!)),
+        accountLink: pending == null || mode != 'login'
+            ? null
+            : RaftAuthAccountLink(
+                providerLabel: socialProviderLabel(pending.provider),
+                passwordSignIn: pending.passwordSignIn,
+                expired: linkFailure == 'pending_link_expired',
+                conflict: linkFailure == 'provider_conflict',
+                onCancel: busy ? null : cancelLink,
+                onRestart: busy ? null : restartLink,
+              ),
         notice: notice,
         emailError: emailError == null ? null : tr(emailError!),
         tokenError: tokenError == null ? null : tr(tokenError!),
@@ -452,6 +668,7 @@ class _AuthState extends State<AuthView> {
             : RaftTextInput(
                 key: Key(mode == 'reset' ? 'reset-password' : 'login-password'),
                 controller: password,
+                autofocus: pending != null,
                 // Web: plain Input type=password, no visibility toggle
                 // (LoginPage.tsx, RegisterPage.tsx).
                 obscureText: true,
@@ -494,10 +711,23 @@ class _AuthState extends State<AuthView> {
             : submitChecked,
         providers: [
           for (final p in providers)
-            RaftAuthProviderEntry('${p['id']}', '${p['label']}'),
+            if (pending == null || pending.providers.contains(p['id']))
+              RaftAuthProviderEntry('${p['id']}', '${p['label']}'),
         ],
         onProvider: (id) => social(id),
         onCancelBrowser: broker == null ? null : () => broker!.cancel(),
+        // "Browser didn't open?": the launcher failed or nothing came back
+        // after a few seconds (desktop). The URL stays out of logs.
+        onCopyLink: broker?.helpUrl.value == null
+            ? null
+            : () => unawaited(
+                Clipboard.setData(
+                  ClipboardData(text: broker!.helpUrl.value.toString()),
+                ),
+              ),
+        onOpenAgain: broker?.helpUrl.value == null
+            ? null
+            : () => unawaited(broker!.openAgain()),
         onMode: (next) => switchMode(next.name),
         onTerms: () => managementLaunch('https://raft.build/terms'),
         onPrivacy: () => managementLaunch('https://raft.build/privacy'),

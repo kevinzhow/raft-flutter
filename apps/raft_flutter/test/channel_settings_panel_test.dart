@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart' show RequestOptions;
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -7,6 +8,7 @@ import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'message_presentation_test.dart' show MessageAdapter, fixture;
+import 'parity/parity_harness.dart' show loadParityFonts;
 
 // The channel / DM settings drawer as Web mounts it (ChannelOverflowMenu ->
 // OverflowSheet + EditChannelDialog presentation="panel").
@@ -74,9 +76,12 @@ Future<(WorkspaceController, MessageAdapter)> _open(
   WidgetTester t, {
   String role = 'owner',
   Map<String, dynamic>? row,
-  RaftFamily family = RaftFamily.elegant,
   String? dmName,
   Size size = const Size(1280, 1800),
+  bool dark = false,
+  Locale locale = const Locale('en'),
+  RaftThemePack? pack,
+  TargetPlatform? platform,
 }) async {
   final (w, api) = (await t.runAsync(() => fixture(role)))!;
   addTearDown(w.dispose);
@@ -95,7 +100,14 @@ Future<(WorkspaceController, MessageAdapter)> _open(
   addTearDown(t.view.reset);
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family),
+      theme: raftTheme(
+        dark: dark,
+        pack: pack,
+        locale: locale,
+      ).copyWith(platform: platform),
+      locale: locale,
+      supportedLocales: const [Locale('en'), Locale('zh')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: Builder(
         builder: (context) => Scaffold(
           body: Center(
@@ -185,7 +197,7 @@ void main() {
       }
       // Pin, mute and collapse live in Preferences.
       for (final label in [
-        'Pin channel',
+        'Pin Channel',
         'Mute activity',
         'Collapse long messages',
       ]) {
@@ -238,7 +250,7 @@ void main() {
     expect(find.byType(RaftChannelInfoForm), findsNothing);
     expect(find.text('Actions'), findsNothing);
     expect(find.text('Preferences'), findsOneWidget);
-    expect(find.text('Pin channel'), findsOneWidget);
+    expect(find.text('Pin Channel'), findsOneWidget);
     expect(find.text('Collapse long messages'), findsOneWidget);
     expect(find.text('Mute activity'), findsNothing);
     // A DM never asks for the roster.
@@ -246,7 +258,7 @@ void main() {
       t
           .widget<RaftSwitch>(
             find.byWidgetPredicate(
-              (w) => w is RaftSwitch && w.semanticLabel == 'Pin channel',
+              (w) => w is RaftSwitch && w.semanticLabel == 'Pin Channel',
             ),
           )
           .value,
@@ -356,8 +368,9 @@ void main() {
       await t.tapAt(const Offset(20, 20)); // the scrim
       await t.pumpAndSettle();
       expect(_id('channel-overflow-unsaved-prompt'), findsOneWidget);
-      await t.tap(find.text('Keep editing'));
+      await t.tap(_id('channel-overflow-unsaved-keep'));
       await t.pumpAndSettle();
+      expect(_id('channel-overflow-unsaved-prompt'), findsNothing);
       expect(find.byType(RaftOverflowSheet), findsOneWidget);
       expect(_controller(t, 'channel-settings-name').text, 'draft');
       await t.tap(_id('channel-overflow-scrim'));
@@ -401,10 +414,12 @@ void main() {
 
     Future<void> confirm(WidgetTester t, String label) async {
       await t.tap(
-        find.descendant(
-          of: _id('channel-settings-confirm-dialog'),
-          matching: find.text(label),
-        ),
+        find
+            .descendant(
+              of: _id('channel-settings-confirm-dialog'),
+              matching: find.text(label),
+            )
+            .last,
       );
       await t.pumpAndSettle(const Duration(milliseconds: 100));
     }
@@ -419,7 +434,7 @@ void main() {
         find.textContaining('Members keep read access to "work"'),
         findsOneWidget,
       );
-      await confirm(t, 'Archive');
+      await confirm(t, 'Archive Channel');
       expect(_writes(api).map((c) => '${c.method} ${c.path}'), [
         'POST /channels/c1/archive',
       ]);
@@ -432,18 +447,18 @@ void main() {
       final (_, api) = await _open(t);
       api.routes['POST /channels/c1/archive'] = (_) => throw StateError('x');
       await press(t, 'channel-settings-archive-action');
-      await confirm(t, 'Archive');
+      await confirm(t, 'Archive Channel');
       expect(find.byType(RaftOverflowSheet), findsOneWidget);
       expect(_id('channel-settings-confirm-dialog'), findsNothing);
-      expect(find.byType(RaftWarningBanner), findsOneWidget);
+      expect(find.byType(RaftErrorBanner), findsOneWidget);
     });
 
     testWidgets('visibility PATCHes the opposite visibility', (t) async {
       final (_, api) = await _open(t);
       api.routes['PATCH /channels/c1'] = (_) => _row(type: 'private');
       await press(t, 'channel-settings-visibility-action');
-      expect(find.text('MAKE CHANNEL PRIVATE'), findsOneWidget);
-      await confirm(t, 'Private');
+      expect(find.text('Make Private'), findsNWidgets(3));
+      await confirm(t, 'Make Private');
       final patch = _writes(api).single;
       expect(patch.path, '/channels/c1');
       expect(patch.data, {'visibility': 'private'});
@@ -458,10 +473,73 @@ void main() {
       );
       api.routes['POST /channels/c1/leave'] = (_) => {};
       await press(t, 'channel-overflow-leave');
-      await confirm(t, 'Leave');
+      await confirm(t, 'Leave Channel');
       expect(_writes(api).single.path, '/channels/c1/leave');
       expect(find.byType(RaftOverflowSheet), findsNothing);
     });
+
+    for (final dark in [false, true]) {
+      for (final locale in [const Locale('en'), const Locale('zh')]) {
+        testWidgets('Web delete confirmation ${locale.languageCode}/$dark', (
+          t,
+        ) async {
+          final (_, api) = await _open(t, dark: dark, locale: locale);
+          api.routes['DELETE /channels/c1'] = (_) => {};
+          api.routes['GET /channels'] = (_) => [];
+          final cancel = locale.languageCode == 'zh' ? '取消' : 'Cancel';
+          final delete = locale.languageCode == 'zh' ? '删除' : 'Delete';
+          Finder inDialog(String text) => find.descendant(
+            of: _id('channel-settings-confirm-dialog'),
+            matching: find.text(text),
+          );
+
+          await press(t, 'channel-settings-delete-action');
+          expect(inDialog(cancel), findsOneWidget);
+          expect(inDialog(delete), findsOneWidget);
+          expect(_writes(api), isEmpty);
+          await t.tap(inDialog(cancel));
+          await t.pumpAndSettle();
+          expect(_id('channel-settings-confirm-dialog'), findsNothing);
+          expect(find.byType(RaftOverflowSheet), findsOneWidget);
+          expect(_writes(api), isEmpty);
+
+          await press(t, 'channel-settings-delete-action');
+          await t.tap(inDialog(delete));
+          await t.pumpAndSettle(const Duration(milliseconds: 100));
+          expect(_writes(api).map((c) => '${c.method} ${c.path}'), [
+            'DELETE /channels/c1',
+          ]);
+          expect(find.byType(RaftOverflowSheet), findsNothing);
+          expect(_id('channel-settings-confirm-dialog'), findsNothing);
+        });
+      }
+    }
+
+    for (final id in [elegantThemePackId, brutalThemePackId]) {
+      testWidgets('legacy delete confirmation keeps existing copy $id', (
+        t,
+      ) async {
+        final (_, api) = await _open(t, pack: packForThemeId(id));
+        api.routes['DELETE /channels/c1'] = (_) => {};
+        api.routes['GET /channels'] = (_) => [];
+        Finder inDialog(String text) => find.descendant(
+          of: _id('channel-settings-confirm-dialog'),
+          matching: find.text(text),
+        );
+        await press(t, 'channel-settings-delete-action');
+        expect(inDialog('Keep Channel'), findsOneWidget);
+        await t.tap(inDialog('Keep Channel'));
+        await t.pumpAndSettle();
+        expect(_writes(api), isEmpty);
+        await press(t, 'channel-settings-delete-action');
+        await t.tap(inDialog('Delete Channel').last);
+        await t.pumpAndSettle(const Duration(milliseconds: 100));
+        expect(_writes(api).map((c) => '${c.method} ${c.path}'), [
+          'DELETE /channels/c1',
+        ]);
+        expect(find.byType(RaftOverflowSheet), findsNothing);
+      });
+    }
 
     testWidgets('delete asks first and DELETEs the channel', (t) async {
       final (_, api) = await _open(t);
@@ -577,67 +655,57 @@ void main() {
 
   // ChannelMembers presentation="page" mounted bare in the drawer. Its insets
   // differ by design (Web): header and search px-4, member rows and the bottom
-  // Add button px-3 / p-3, the group header's chevron box at 8 + 2 (brutal).
-  for (final family in RaftFamily.values.where(
-    (f) => f == RaftFamily.brutal || f == RaftFamily.elegant,
-  )) {
-    testWidgets('$family members page keeps the Web column insets', (t) async {
-      final (_, api) = await _open(
-        t,
-        family: family,
-        size: const Size(1280, 800),
-      );
-      api.routes['GET /servers/s1/members'] = (_) => [
-        {'userId': 'u9', 'name': 'zed', 'displayName': 'Zed'},
-      ];
-      await t.tap(_id('channel-overflow-members-entry'));
-      await t.pumpAndSettle();
-      final left =
-          t.getTopLeft(_id('channel-overflow-sheet')).dx +
-          (family == RaftFamily.brutal ? 2 : 0);
-      final right = t.getTopRight(_id('channel-overflow-sheet')).dx;
-      double inset(Finder f) => t.getTopLeft(f).dx - left;
-      double insetEnd(Finder f) => right - t.getTopRight(f).dx;
-      expect(inset(_id('member-page-back')), 16, reason: 'header px-4');
-      expect(
-        inset(
-          find.descendant(
-            of: _id('member-page-search'),
-            matching: find.byType(RaftDialogTextInput),
-          ),
+  // Add button px-3 / p-3, the group header's chevron box at 8 + 2.
+  testWidgets('members page keeps the Web column insets', (t) async {
+    final (_, api) = await _open(t, size: const Size(1280, 800));
+    api.routes['GET /servers/s1/members'] = (_) => [
+      {'userId': 'u9', 'name': 'zed', 'displayName': 'Zed'},
+    ];
+    await t.tap(_id('channel-overflow-members-entry'));
+    await t.pumpAndSettle();
+    final left = t.getTopLeft(_id('channel-overflow-sheet')).dx;
+    final right = t.getTopRight(_id('channel-overflow-sheet')).dx;
+    double inset(Finder f) => t.getTopLeft(f).dx - left;
+    double insetEnd(Finder f) => right - t.getTopRight(f).dx;
+    expect(inset(_id('member-page-back')), 16, reason: 'header px-4');
+    expect(
+      inset(
+        find.descendant(
+          of: _id('member-page-search'),
+          matching: find.byType(RaftDialogTextInput),
         ),
-        16,
-        reason: 'search px-4',
-      );
-      expect(
-        insetEnd(
-          find.descendant(
-            of: _id('member-page-search'),
-            matching: find.byType(RaftDialogTextInput),
-          ),
+      ),
+      16,
+      reason: 'search px-4',
+    );
+    expect(
+      insetEnd(
+        find.descendant(
+          of: _id('member-page-search'),
+          matching: find.byType(RaftDialogTextInput),
         ),
-        16,
-      );
-      expect(
-        inset(find.byType(RaftMountedAvatarFrame).first),
-        12,
-        reason: 'ChannelMemberRow px-3',
-      );
-      expect(inset(_id('add-member-open')), 12, reason: 'footer p-3');
-      expect(insetEnd(_id('add-member-open')), 12);
-      // Role tag of the owner row ends at the row's 12px inset.
-      expect(find.text('Channel Admin'), findsNothing);
-      await t.tap(_id('add-member-open'));
-      await t.pumpAndSettle();
-      expect(inset(_id('add-member-back')), 16);
-      expect(
-        inset(find.byKey(const ValueKey('add-member-confirm'))),
-        16,
-        reason: 'add view px-4',
-      );
-      expect(insetEnd(find.byKey(const ValueKey('add-member-confirm'))), 16);
-    });
-  }
+      ),
+      16,
+    );
+    expect(
+      inset(find.byType(RaftMountedAvatarFrame).first),
+      12,
+      reason: 'ChannelMemberRow px-3',
+    );
+    expect(inset(_id('add-member-open')), 12, reason: 'footer p-3');
+    expect(insetEnd(_id('add-member-open')), 12);
+    // Role tag of the owner row ends at the row's 12px inset.
+    expect(find.text('Channel Admin'), findsNothing);
+    await t.tap(_id('add-member-open'));
+    await t.pumpAndSettle();
+    expect(inset(_id('add-member-back')), 16);
+    expect(
+      inset(find.byKey(const ValueKey('add-member-confirm'))),
+      16,
+      reason: 'add view px-4',
+    );
+    expect(insetEnd(find.byKey(const ValueKey('add-member-confirm'))), 16);
+  });
 
   testWidgets('members page back returns to the drawer root with its draft', (
     t,
@@ -663,13 +731,76 @@ void main() {
     expect(find.byType(RaftOverflowSheet), findsNothing);
   });
 
-  for (final (family, width) in [
-    (RaftFamily.brutal, 544.0),
-    (RaftFamily.elegant, 448.0),
-  ]) {
-    testWidgets('$family drawer is $width wide on desktop', (t) async {
-      await _open(t, family: family);
-      expect(t.getSize(_id('channel-overflow-sheet')).width, width);
-    });
+  testWidgets('drawer is 420 wide on desktop', (t) async {
+    await _open(t);
+    // The default Raft pack sets size.channelOverflowDrawer to 420 (Web
+    // OverflowSheet: "420 wide, the whole width on a phone"); the 448 width
+    // belongs to the Elegant pack.
+    expect(t.getSize(_id('channel-overflow-sheet')).width, 420.0);
+  });
+
+  final promptScenarios = [
+    (
+      name: 'desktop',
+      size: const Size(1280, 800),
+      platform: TargetPlatform.linux,
+    ),
+    (
+      name: 'narrow desktop',
+      size: const Size(390, 844),
+      platform: TargetPlatform.linux,
+    ),
+    (
+      name: 'foldable portrait',
+      size: const Size(856, 944),
+      platform: TargetPlatform.android,
+    ),
+    (
+      name: 'foldable landscape',
+      size: const Size(944, 856),
+      platform: TargetPlatform.android,
+    ),
+  ];
+  for (final scenario in promptScenarios) {
+    for (final dark in [false, true]) {
+      for (final locale in [const Locale('en'), const Locale('zh')]) {
+        testWidgets(
+          'unsaved prompt ${scenario.name}/$dark/${locale.languageCode} keeps the draft from both button edges',
+          (t) async {
+            await t.runAsync(loadParityFonts);
+            final (_, api) = await _open(
+              t,
+              size: scenario.size,
+              platform: scenario.platform,
+              dark: dark,
+              locale: locale,
+            );
+            await t.enterText(_id('channel-settings-name'), 'draft');
+            await t.pump();
+            for (final left in [true, false]) {
+              await t.tapAt(const Offset(20, 20));
+              await t.pumpAndSettle();
+              final prompt = _id('channel-overflow-unsaved-prompt');
+              expect(prompt, findsOneWidget);
+              expect(
+                find.text(
+                  locale.languageCode == 'zh' ? '继续编辑' : 'Keep editing',
+                ),
+                findsOneWidget,
+              );
+              final keep = _id('channel-overflow-unsaved-keep');
+              final rect = t.getRect(keep);
+              await t.tapAt(
+                Offset(left ? rect.left + 2 : rect.right - 2, rect.center.dy),
+              );
+              await t.pumpAndSettle();
+              expect(prompt, findsNothing);
+              expect(_controller(t, 'channel-settings-name').text, 'draft');
+              expect(_writes(api), isEmpty);
+            }
+          },
+        );
+      }
+    }
   }
 }

@@ -1,0 +1,212 @@
+diff --git a/packages/server/src/raftbench/contract.ts b/packages/server/src/raftbench/contract.ts
+index c4f5e14..a29b4d5 100644
+--- a/packages/server/src/raftbench/contract.ts
++++ b/packages/server/src/raftbench/contract.ts
+@@ -1,5 +1,5 @@
+ import { z } from "zod";
+-import { getRaftbenchCanaryServerId } from "../services/agentRuntimeProviderService";
++import { getLocalAntiprotonOrigin, getLocalRaftbenchServerId, getRaftbenchCanaryServerId } from "../services/agentRuntimeProviderService";
+ 
+ /** This pilot permission is independent of browser flags and production enrollment. */
+ export const PILOT_SERVER_IDS = new Set([
+@@ -9,10 +9,11 @@ export const PILOT_SERVER_IDS = new Set([
+ ]);
+ export function pilotServerIds(): string[] {
+   const canary = getRaftbenchCanaryServerId();
+-  return [...PILOT_SERVER_IDS, ...(canary ? [canary] : [])];
++  const local = getLocalRaftbenchServerId();
++  return [...PILOT_SERVER_IDS, ...(canary ? [canary] : []), ...(local ? [local] : [])];
+ }
+ export function isPilotServer(serverId: string, environment: string | undefined): boolean {
+-  return environment === "staging" && pilotServerIds().includes(serverId);
++  return (environment === "staging" || getLocalAntiprotonOrigin() !== null) && pilotServerIds().includes(serverId);
+ }
+ export const READ_GRANTS = ["server:read", "channel:read", "message:read"] as const;
+ export const configureSchema = z.object({
+diff --git a/packages/server/src/raftbench/worker.ts b/packages/server/src/raftbench/worker.ts
+index b1ec1cf..1ec5c12 100644
+--- a/packages/server/src/raftbench/worker.ts
++++ b/packages/server/src/raftbench/worker.ts
+@@ -1,13 +1,14 @@
+ import { and, eq } from "drizzle-orm";
+ import { getDb } from "../db/index";
+ import { thirdPartyAgentEvents } from "../db/schema";
++import { effectiveDeploymentEnv } from "../services/agentRuntimeProviderService";
+ import type { AgentOrchestrator } from "../services/agentOrchestrator";
+ import { buildThirdPartyAgentMessage, claimQueuedThirdPartyAgentEventForDelivery, releaseThirdPartyAgentEventDeliveryClaim } from "../services/oauthService";
+ import { advanceServer, enrolledServers } from "./controls";
+ 
+ /** Source reads and model work stay in the hosted plugin; this worker only assigns bounded runs. */
+ export async function tickRaftbench(orchestrator: Pick<AgentOrchestrator, "deliverMessage">) {
+-  if (process.env.DEPLOYMENT_ENV !== "staging") return;
++  if (effectiveDeploymentEnv() !== "staging") return;
+   for (const { serverId } of await enrolledServers()) {
+     await advanceServer(serverId);
+     const events = await getDb().select().from(thirdPartyAgentEvents).where(and(eq(thirdPartyAgentEvents.serverId, serverId), eq(thirdPartyAgentEvents.systemApp, "system.raftbench"), eq(thirdPartyAgentEvents.status, "queued"))).limit(1);
+diff --git a/packages/server/src/services/agentRuntimeProviderService.ts b/packages/server/src/services/agentRuntimeProviderService.ts
+index dfba101..ade3dbe 100644
+--- a/packages/server/src/services/agentRuntimeProviderService.ts
++++ b/packages/server/src/services/agentRuntimeProviderService.ts
+@@ -80,8 +80,10 @@ export function __setAgentRuntimeProviderTransportForTests(transport: ProviderTr
+   testTransport = transport;
+ }
+ 
+-function transportFetch(): typeof globalThis.fetch {
++function transportFetch(url: string): typeof globalThis.fetch {
+   if (testTransport) return testTransport.fetch;
++  const local = getLocalAntiprotonOrigin();
++  if (local && url.startsWith(`${local}/`)) return globalThis.fetch;
+   safeFetch ??= createSafeFetch();
+   return safeFetch.fetch;
+ }
+@@ -161,10 +163,46 @@ export function getRaftOrigin(raw = process.env.SERVER_URL): string | null {
+ export const ANTIPROTON_PROVISIONING_TOKEN_ENV = "ANTIPROTON_PROVISIONING_TOKEN";
+ export const ANTIPROTON_CANARY_PROVISIONING_TOKEN_ENV = "ANTIPROTON_CANARY_PROVISIONING_TOKEN";
+ export type AgentRuntimeProviderTarget = "default" | "canary";
++const LOCAL_ANTIPROTON_HOSTS: ReadonlySet<string> = new Set(["localhost", "127.0.0.1"]);
++
++/**
++ * Local test stack only: a loopback antiproton (plain http) that stands in for the hosted one.
++ * Active only when DEPLOYMENT_ENV is exactly `slockdev` (raftdev) and
++ * ANTIPROTON_BASE_URL_OVERRIDE is a bare http://localhost or http://127.0.0.1 origin; no other
++ * deployment can reach it. Returns that origin, else null.
++ */
++export function getLocalAntiprotonOrigin(env: NodeJS.ProcessEnv = process.env): string | null {
++  if (env.DEPLOYMENT_ENV?.trim() !== "slockdev") return null;
++  const raw = env.ANTIPROTON_BASE_URL_OVERRIDE?.trim();
++  if (!raw) return null;
++  try {
++    const url = new URL(raw);
++    const bare = url.pathname === "/" && !url.search && !url.hash && !url.username && !url.password;
++    return url.protocol === "http:" && LOCAL_ANTIPROTON_HOSTS.has(url.hostname) && bare ? url.origin : null;
++  } catch {
++    return null;
++  }
++}
++
++/**
++ * Local test stack only: the server RaftBench is enabled for next to a local antiproton, so the
++ * same server can also host Cloud agents (the canary server may not: it is frozen to canary
++ * RaftBench provisions). Only read while getLocalAntiprotonOrigin() is active.
++ */
++export function getLocalRaftbenchServerId(env: NodeJS.ProcessEnv = process.env): string | null {
++  const id = env.RAFTBENCH_LOCAL_SERVER_ID?.trim();
++  return getLocalAntiprotonOrigin(env) && id && UUID_RE.test(id) ? id.toLowerCase() : null;
++}
++
++/** DEPLOYMENT_ENV, except that a local loopback antiproton makes the stack behave like staging. */
++export function effectiveDeploymentEnv(env: NodeJS.ProcessEnv = process.env): string {
++  return getLocalAntiprotonOrigin(env) ? "staging" : (env.DEPLOYMENT_ENV?.trim() ?? "");
++}
++
+ /** An operator explicitly enrolls exactly one synthetic staging server, never a production server. */
+ export function getRaftbenchCanaryServerId(env: NodeJS.ProcessEnv = process.env): string | null {
+   const id = env.RAFTBENCH_CANARY_SERVER_ID?.trim();
+-  return env.DEPLOYMENT_ENV === "staging" && id && UUID_RE.test(id) ? id.toLowerCase() : null;
++  return effectiveDeploymentEnv(env) === "staging" && id && UUID_RE.test(id) ? id.toLowerCase() : null;
+ }
+ 
+ /**
+@@ -204,14 +242,16 @@ export function resolveProviderConfig(
+   target: AgentRuntimeProviderTarget = "default",
+ ): ResolvedProviderConfig | null {
+   if (kind !== "antiproton") return null;
+-  const deploymentEnv = env.DEPLOYMENT_ENV?.trim() ?? "";
++  const deploymentEnv = effectiveDeploymentEnv(env);
++  const localOrigin = getLocalAntiprotonOrigin(env);
+   // Check before test transport overrides too; production cannot select canary.
+   if (target === "canary") {
+     if (deploymentEnv !== "staging") return null;
+     const token = normalizeToken(env[ANTIPROTON_CANARY_PROVISIONING_TOKEN_ENV]);
+-    return token ? { kind, baseUrl: "https://canary.antiproton.ai", token } : null;
++    return token ? { kind, baseUrl: localOrigin ?? "https://canary.antiproton.ai", token } : null;
+   }
+   const baseUrl = testTransport?.baseUrl
++    ?? localOrigin
+     ?? (Object.hasOwn(ANTIPROTON_BASE_URL_BY_DEPLOYMENT_ENV, deploymentEnv) ? ANTIPROTON_BASE_URL_BY_DEPLOYMENT_ENV[deploymentEnv] : null);
+   const token = normalizeToken(env[ANTIPROTON_PROVISIONING_TOKEN_ENV]);
+   if (!baseUrl || !token) return null;
+@@ -321,7 +361,7 @@ async function sendProviderRequest(
+   if (options.body !== undefined) headers["content-type"] = "application/json";
+   if (options.idempotencyKey) headers["idempotency-key"] = options.idempotencyKey;
+   try {
+-    const response = await transportFetch()(`${target.baseUrl}${path}`, {
++    const response = await transportFetch(`${target.baseUrl}${path}`)(`${target.baseUrl}${path}`, {
+       method,
+       headers,
+       body: options.body === undefined ? undefined : JSON.stringify(options.body),
+diff --git a/packages/server/src/services/appNotificationDeliveryService.ts b/packages/server/src/services/appNotificationDeliveryService.ts
+index 550c225..7123ca5 100644
+--- a/packages/server/src/services/appNotificationDeliveryService.ts
++++ b/packages/server/src/services/appNotificationDeliveryService.ts
+@@ -1,5 +1,6 @@
+ import { createHmac, randomUUID } from "node:crypto";
+ import { lookup } from "node:dns/promises";
++import { request as httpRequest } from "node:http";
+ import { request as httpsRequest } from "node:https";
+ import {
+   clearClockInterval,
+@@ -43,6 +44,7 @@ import {
+ import { oauthClientIsUserManagedPredicate } from "./oauthClientManagementPolicy";
+ import { deriveAppMemberRef } from "./appOutboundProjectionService";
+ import { responseRequestId } from "./externalRequestCorrelation";
++import { getLocalAntiprotonOrigin } from "./agentRuntimeProviderService";
+ 
+ const DELIVERY_LOCK_TIMEOUT_MS = 2 * 60 * 1000;
+ const DELIVERY_TIMEOUT_MS = 10_000;
+@@ -455,6 +457,7 @@ async function renderEventSubject(
+  */
+ export async function postPublicHttps(input: Parameters<WebhookPost>[0]): Promise<WebhookPostResponse> {
+   const url = new URL(input.endpointUrl);
++  if (url.origin === getLocalAntiprotonOrigin()) return postLocalAntiproton(url, input);
+   const hostname = url.hostname.replace(/^\[|\]$/g, "");
+   const startedAt = performance.now();
+   const sinceStart = () => Math.round(performance.now() - startedAt);
+@@ -516,6 +519,23 @@ export async function postPublicHttps(input: Parameters<WebhookPost>[0]): Promis
+   });
+ }
+ 
++/** Local test stack only: plain-http POST to the loopback antiproton (see getLocalAntiprotonOrigin). */
++function postLocalAntiproton(url: URL, input: Parameters<WebhookPost>[0]): Promise<WebhookPostResponse> {
++  const startedAt = performance.now();
++  const timing: WebhookPostTiming = { dnsMs: 0, socketReused: false };
++  return new Promise((resolve, reject) => {
++    const request = httpRequest(url, { method: "POST", headers: input.headers, timeout: input.timeoutMs }, (response) => {
++      timing.ttfbMs = Math.round(performance.now() - startedAt);
++      response.resume();
++      const retryAfter = response.headers["retry-after"];
++      resolve({ status: response.statusCode ?? 0, ...(typeof retryAfter === "string" ? { retryAfter } : {}), timing });
++    });
++    request.on("timeout", () => request.destroy(new Error("Webhook request timed out")));
++    request.on("error", (error) => reject(new WebhookPostError(error, { ...timing }, null)));
++    request.end(input.body);
++  });
++}
++
+ export function appWebhookDeliveryOutcomeForStatus(status: number, attemptNumber: number): "delivered" | "retry" | "dead_lettered" {
+   if (status >= 200 && status < 300) return "delivered";
+   const retryable = status === 0 || status === 408 || status === 425 || status === 429 || status >= 500;
+diff --git a/packages/server/src/services/appWebhookConfigService.ts b/packages/server/src/services/appWebhookConfigService.ts
+index f3d0c34..01ef207 100644
+--- a/packages/server/src/services/appWebhookConfigService.ts
++++ b/packages/server/src/services/appWebhookConfigService.ts
+@@ -7,6 +7,7 @@ import { oauthAppWebhookConfigs, oauthClients } from "../db/schema";
+ import { ensureLocalAppSourceInstallation } from "./appSourceInstallationService";
+ import * as integrationAuditService from "./integrationAuditService";
+ import { oauthClientIsUserManagedPredicate } from "./oauthClientManagementPolicy";
++import { getLocalAntiprotonOrigin } from "./agentRuntimeProviderService";
+ 
+ const WEBHOOK_SECRET_PREFIX = "raft_webhook_secret_";
+ export const APP_WEBHOOK_REPLAY_WINDOW_MS = 5 * 60 * 1000;
+@@ -133,6 +134,11 @@ export function normalizeAppWebhookEndpoint(raw: unknown): string {
+   } catch {
+     throw new AppWebhookConfigError("endpointUrl must be a valid URL");
+   }
++  if (url.origin === getLocalAntiprotonOrigin() && !url.username && !url.password) {
++    // Local test stack: the loopback antiproton is the only plain-http endpoint allowed.
++    url.hash = "";
++    return url.toString();
++  }
+   if (url.protocol !== "https:" || url.username || url.password) {
+     throw new AppWebhookConfigError("endpointUrl must be credential-free HTTPS");
+   }

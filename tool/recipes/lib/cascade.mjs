@@ -1,5 +1,5 @@
 // Cascade + var() resolution for a list of utilities under a set of
-// condition atoms. Mirrors packages/raft_ui/lib/src/recipes/recipe_runtime.dart.
+// condition atoms. Mirrors packages/raft_theme/lib/recipes/recipe_runtime.dart.
 import { evaluate, serialize } from './css-value.mjs';
 
 // states: {flags: Set<string>, width?: number, height?: number, containerWidth?: number}

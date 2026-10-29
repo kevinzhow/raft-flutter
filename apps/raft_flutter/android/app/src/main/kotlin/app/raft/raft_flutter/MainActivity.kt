@@ -4,6 +4,9 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.app.Activity
+import android.app.ActivityManager
+import android.webkit.CookieManager
+import android.webkit.WebStorage
 import android.Manifest
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -13,7 +16,11 @@ import java.util.ArrayDeque
 import android.os.Build
 import android.content.Intent
 import android.net.Uri
+import android.provider.DocumentsContract
 import java.io.File
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : FlutterActivity() {
     private var shareReceiverReady = false
@@ -23,6 +30,11 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareSharedUris(intent)
         super.onCreate(savedInstanceState)
+        // Flutter switches to NormalTheme before first paint. Give the window
+        // the stored theme's canvas for that startup interval, and persist the
+        // splash theme (stored appearance + enabled icon) for the next launch.
+        window.setBackgroundDrawable(LaunchTheme.background(this))
+        LaunchTheme.apply(this)
         consumeShare(intent)
     }
 
@@ -70,16 +82,121 @@ class MainActivity : FlutterActivity() {
         consumeShare(intent)
     }
     private var systemFonts: NativeSystemFontsBridge? = null
+    private var systemProxy: NativeProxyBridge? = null
+    private var artifactDownloads: ArtifactDownloadBridge? = null
     private var saveResult: MethodChannel.Result? = null
+    private var trackedSave = false
+    private val artifactSaveTargets = ArtifactSaveTargets()
+    private val artifactDocumentCleanup = ArtifactDocumentCleanup(artifactSaveTargets) { uri ->
+        // ACTION_CREATE_DOCUMENT returns a DocumentsProvider URI. Its generic
+        // ContentResolver.delete is unsupported; use the document contract.
+        DocumentsContract.deleteDocument(contentResolver, Uri.parse(uri))
+    }
     private val saveRequest = 45071
     private val localNetworkRequest = 45072
+    private val galleryPermissionRequest = 45073
+    private var galleryPending: Pair<Map<String, String>, MethodChannel.Result>? = null
     private val localNetworkResults = mutableListOf<MethodChannel.Result>()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.raft/device-memory")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "availableStorageBytes") {
+                    val path = call.argument<String>("path")
+                    try {
+                        if (path.isNullOrBlank()) result.error("invalid_path", "A storage path is required.", null)
+                        else result.success(android.os.StatFs(path).availableBytes)
+                    } catch (_: Exception) {
+                        result.error("storage_unavailable", "Available storage could not be read.", null)
+                    }
+                } else if (call.method != "snapshot") {
+                    result.notImplemented()
+                } else {
+                    val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+                    val memory = ActivityManager.MemoryInfo()
+                    manager.getMemoryInfo(memory)
+                    result.success(mapOf("totalBytes" to memory.totalMem, "lowRam" to manager.isLowRamDevice))
+                }
+            }
         sharing = NativeSharingBridge(this, flutterEngine, ::shareReceiverAttached)
         systemFonts = NativeSystemFontsBridge(this, flutterEngine)
+        systemProxy = NativeProxyBridge(this, flutterEngine)
+        NativeBatteryBridge(this, flutterEngine)
+        NativePermissionBridge(this, flutterEngine)
+        LaunchTheme.register(this, flutterEngine)
         NativePdfPreviewBridge(this, flutterEngine)
+        NativeVideoFrameBridge(flutterEngine)
+        artifactDownloads = ArtifactDownloadBridge(flutterEngine)
+        // Uploaded HTML previews run in an Android WebView. Its documents are
+        // hostile input, so the process-wide cookie jar and web storage belong
+        // to the preview while it is open: never send or keep cookies, drop
+        // storage. The artifact browser is the one other WebView; it switches
+        // cookies back on when it opens (`enableCookies`).
+        // Mirrors the Web sandbox (opaque origin, no cookie/storage access).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.raft/html-preview-privacy")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "lockDown" -> {
+                        val cookies = CookieManager.getInstance()
+                        cookies.setAcceptCookie(false)
+                        cookies.removeAllCookies { WebStorage.getInstance().deleteAllData(); result.success(null) }
+                        cookies.flush()
+                    }
+                    // The in-app artifact browser needs its session cookie: it
+                    // switches back on what lockDown switched off.
+                    "enableCookies" -> {
+                        CookieManager.getInstance().setAcceptCookie(true)
+                        result.success(null)
+                    }
+                    "purge" -> {
+                        val cookies = CookieManager.getInstance()
+                        cookies.removeAllCookies { WebStorage.getInstance().deleteAllData(); result.success(null) }
+                        cookies.flush()
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        // System back-gesture exclusion for a rail on the window's right edge.
+        // Rects are Flutter logical pixels in window coordinates; Android
+        // honours at most 200 dp of exclusion per edge, so clip to that here
+        // too. API 29+, a no-op below.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.raft/gesture-exclusion")
+            .setMethodCallHandler { call, result ->
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                    result.success(false)
+                    return@setMethodCallHandler
+                }
+                when (call.method) {
+                    "set" -> {
+                        val ratio = (call.argument<Double>("ratio") ?: 1.0).toFloat()
+                        val raw = call.argument<List<List<Double>>>("rects") ?: emptyList()
+                        var budget = (200 * resources.displayMetrics.density).toInt()
+                        val rects = ArrayList<android.graphics.Rect>()
+                        for (r in raw) {
+                            if (r.size != 4 || budget <= 0) continue
+                            val rect = android.graphics.Rect(
+                                (r[0] * ratio).toInt(), (r[1] * ratio).toInt(),
+                                (r[2] * ratio).toInt(), (r[3] * ratio).toInt(),
+                            )
+                            if (rect.height() > budget) rect.bottom = rect.top + budget
+                            budget -= rect.height()
+                            rects.add(rect)
+                        }
+                        window.decorView.systemGestureExclusionRects = rects
+                        result.success(true)
+                    }
+                    "clear" -> {
+                        window.decorView.systemGestureExclusionRects = emptyList()
+                        result.success(true)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.raft/ime")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "visible") result.success(imeVisible()) else result.notImplemented()
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.raft/local-network")
             .setMethodCallHandler { call, result ->
                 if (call.method != "ensure") {
@@ -104,6 +221,7 @@ class MainActivity : FlutterActivity() {
                             result.error("busy", "A document picker is already open.", null)
                         } else {
                             saveResult = result
+                            trackedSave = call.argument<Boolean>("trackIncomplete") == true
                             val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                                 addCategory(Intent.CATEGORY_OPENABLE)
                                 type = call.argument<String>("mimeType") ?: "application/octet-stream"
@@ -112,28 +230,109 @@ class MainActivity : FlutterActivity() {
                             try { startActivityForResult(intent, saveRequest) }
                             catch (_: Exception) {
                                 saveResult = null
+                                trackedSave = false
                                 result.error("unavailable", "No document picker is available.", null)
                             }
+                        }
+                    }
+                    "cancelSave", "acknowledgeSave" -> {
+                        val uri = call.argument<String>("uri")
+                        val token = call.argument<String>("saveToken")
+                        if (uri == null || token == null) result.error("invalid", "Invalid save destination.", null)
+                        else if (call.method == "cancelSave") result.success(artifactSaveTargets.cancel(token, uri))
+                        else { artifactSaveTargets.acknowledge(token, uri); result.success(null) }
+                    }
+                    "discardSave" -> {
+                        val uri = try { call.argument<String>("uri")?.let(Uri::parse) }
+                        catch (_: Exception) { null }
+                        val token = call.argument<String>("saveToken")
+                        if (uri == null || uri.scheme != "content" || uri.authority.isNullOrBlank() ||
+                            token == null) {
+                            result.error("invalid", "Invalid save destination.", null)
+                        } else {
+                            // Opt-in cleanup for an incomplete document created
+                            // by ACTION_CREATE_DOCUMENT; no raw filesystem path.
+                            Thread {
+                                try {
+                                    val discarded = artifactDocumentCleanup.discard(token, uri.toString())
+                                    runOnUiThread {
+                                        if (discarded) result.success(null)
+                                        else result.error("invalid", "Invalid save destination.", null)
+                                    }
+                                } catch (_: Exception) {
+                                    runOnUiThread { result.error("discard_failed", "The incomplete document could not be removed.", null) }
+                                }
+                            }.start()
                         }
                     }
                     "writeSaved" -> {
                         val uri = call.argument<String>("uri")
                         val path = call.argument<String>("path")
+                        val token = call.argument<String>("saveToken")
                         if (uri == null || path == null ||
-                            !File(path).canonicalPath.startsWith(cacheDir.canonicalPath + File.separator)) {
+                            !File(path).canonicalPath.startsWith(cacheDir.canonicalPath + File.separator) ||
+                            (token == null && artifactSaveTargets.owns(uri)) ||
+                            (token != null && !artifactSaveTargets.beginWrite(token, uri))) {
                             result.error("invalid", "Invalid temporary attachment file.", null)
                         } else {
                             Thread {
                                 try {
                                     contentResolver.openOutputStream(Uri.parse(uri), "wt").use { output ->
                                         requireNotNull(output)
-                                        File(path).inputStream().use { input -> input.copyTo(output) }
+                                        File(path).inputStream().use { input ->
+                                            if (token == null) input.copyTo(output)
+                                            else {
+                                                val bytes = ByteArray(65536)
+                                                while (true) {
+                                                    if (artifactSaveTargets.isCancelled(token, uri)) {
+                                                        throw java.util.concurrent.CancellationException()
+                                                    }
+                                                    val count = input.read(bytes)
+                                                    if (count < 0) break
+                                                    output.write(bytes, 0, count)
+                                                }
+                                            }
+                                        }
                                     }
-                                    runOnUiThread { result.success(null) }
+                                    val committed = token == null || artifactSaveTargets.finishWrite(token, uri, true)
+                                    if (!committed && token != null) {
+                                        check(artifactDocumentCleanup.discard(token, uri))
+                                    }
+                                    runOnUiThread { result.success(if (token == null) null else mapOf("committed" to committed, "discarded" to !committed)) }
                                 } catch (_: Exception) {
-                                    runOnUiThread { result.error("save_failed", "The attachment could not be saved.", null) }
+                                    if (token != null) {
+                                        artifactSaveTargets.finishWrite(token, uri, false)
+                                        if (artifactSaveTargets.isCancelled(token, uri)) {
+                                            try {
+                                                check(artifactDocumentCleanup.discard(token, uri))
+                                                runOnUiThread { result.success(mapOf("committed" to false, "discarded" to true)) }
+                                            } catch (_: Exception) {
+                                                runOnUiThread { result.error("discard_failed", "The incomplete document could not be removed.", null) }
+                                            }
+                                        } else runOnUiThread { result.error("save_failed", "The attachment could not be saved.", null) }
+                                    } else runOnUiThread { result.error("save_failed", "The attachment could not be saved.", null) }
                                 }
                             }.start()
+                        }
+                    }
+                    "saveToGallery" -> {
+                        val path = call.argument<String>("path")
+                        val filename = call.argument<String>("filename")
+                        val mimeType = call.argument<String>("mimeType") ?: "image/*"
+                        if (path == null || filename.isNullOrEmpty() ||
+                            !File(path).canonicalPath.startsWith(cacheDir.canonicalPath + File.separator)) {
+                            result.error("invalid", "Invalid temporary image file.", null)
+                        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+                            checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                            // Before Android 10 a public Pictures folder needs the legacy permission.
+                            if (galleryPending != null) {
+                                result.error("busy", "A permission request is already open.", null)
+                            } else {
+                                galleryPending = Pair(mapOf("path" to path, "filename" to filename, "mimeType" to mimeType), result)
+                                requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), galleryPermissionRequest)
+                            }
+                        } else {
+                            writeToGallery(path, filename, mimeType, result)
                         }
                     }
                     "openSaved" -> {
@@ -154,6 +353,56 @@ class MainActivity : FlutterActivity() {
             }
     }
 
+    // The IME closes with the window when the app is backgrounded. Back in the
+    // foreground the system runs an IME animation that changes nothing, and at its
+    // end Flutter's ImeSyncDeferringInsetsCallback re-dispatches the WindowInsets it
+    // cached at the last keyboard show, so the engine reports the old
+    // viewInsets.bottom although the IME is hidden (flutter#118761, device log in
+    // docs/keyboard-repro.md). Re-dispatch the real insets right after every IME
+    // animation ends (a callback on the decor view runs before the one Flutter
+    // installed on FlutterView, hence post). Dart's KeyboardInsetGuard is the net.
+    override fun onResume() {
+        super.onResume()
+        if (!imeAnimationObserved) {
+            imeAnimationObserved = true
+            ViewCompat.setWindowInsetsAnimationCallback(
+                window.decorView,
+                object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+                    override fun onProgress(
+                        insets: WindowInsetsCompat,
+                        runningAnimations: MutableList<WindowInsetsAnimationCompat>,
+                    ) = insets
+
+                    override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                        if (animation.typeMask and WindowInsetsCompat.Type.ime() == 0) return
+                        val decor = window.decorView
+                        decor.post { decor.rootWindowInsets?.let { decor.dispatchApplyWindowInsets(it) } }
+                    }
+                },
+            )
+        }
+        ViewCompat.requestApplyInsets(window.decorView)
+        disableNativeFocusHighlight(window.decorView)
+    }
+
+    // After any keyboard key event (hardware or an IME's Enter / Backspace) Android
+    // draws its own focus ring around the focused FlutterView and keeps it through
+    // later touches, like a stuck desktop focus state. Flutter paints its own focus
+    // highlights (FocusManager.highlightMode follows touch vs key input), so the
+    // platform ring is never wanted.
+    private fun disableNativeFocusHighlight(view: android.view.View) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) view.defaultFocusHighlightEnabled = false
+        if (view is android.view.ViewGroup) {
+            for (i in 0 until view.childCount) disableNativeFocusHighlight(view.getChildAt(i))
+        }
+    }
+
+    private var imeAnimationObserved = false
+
+    // null when the insets are not attached yet: Dart then trusts the engine.
+    private fun imeVisible(): Boolean? =
+        ViewCompat.getRootWindowInsets(window.decorView)?.isVisible(WindowInsetsCompat.Type.ime())
+
     override fun onNewIntent(intent: Intent) {
         prepareSharedUris(intent)
         if (!shareReceiverReady && intent.action in listOf(Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE)) {
@@ -168,8 +417,73 @@ class MainActivity : FlutterActivity() {
         systemFonts?.configurationChanged()
     }
 
+    /** Adds an image to the public gallery (MediaStore); off the UI thread. */
+    private fun writeToGallery(path: String, filename: String, mimeType: String, result: MethodChannel.Result) {
+        Thread {
+            try {
+                val source = File(path)
+                val uri: String
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val values = android.content.ContentValues().apply {
+                        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                        put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                        put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/Raft")
+                        put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
+                    }
+                    val target = requireNotNull(contentResolver.insert(
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values))
+                    try {
+                        contentResolver.openOutputStream(target, "wt").use { output ->
+                            requireNotNull(output)
+                            source.inputStream().use { input -> input.copyTo(output) }
+                        }
+                        val done = android.content.ContentValues().apply {
+                            put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+                        }
+                        contentResolver.update(target, done, null, null)
+                    } catch (e: Exception) {
+                        contentResolver.delete(target, null, null)
+                        throw e
+                    }
+                    uri = target.toString()
+                } else {
+                    @Suppress("DEPRECATION")
+                    val folder = File(android.os.Environment.getExternalStoragePublicDirectory(
+                        android.os.Environment.DIRECTORY_PICTURES), "Raft")
+                    check(folder.isDirectory || folder.mkdirs())
+                    var destination = File(folder, filename)
+                    var n = 1
+                    while (destination.exists()) {
+                        val dot = filename.lastIndexOf('.')
+                        destination = File(folder, if (dot > 0) filename.substring(0, dot) + " ($n)" + filename.substring(dot) else "$filename ($n)")
+                        n++
+                    }
+                    source.copyTo(destination)
+                    android.media.MediaScannerConnection.scanFile(this, arrayOf(destination.path), arrayOf(mimeType), null)
+                    uri = Uri.fromFile(destination).toString()
+                }
+                runOnUiThread { result.success(uri) }
+            } catch (_: Exception) {
+                runOnUiThread { result.error("save_failed", "The image could not be saved.", null) }
+            }
+        }.start()
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == galleryPermissionRequest) {
+            val pending = galleryPending
+            galleryPending = null
+            if (pending != null) {
+                val (args, result) = pending
+                if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+                    writeToGallery(args.getValue("path"), args.getValue("filename"), args.getValue("mimeType"), result)
+                } else {
+                    result.error("permission", "Photo library access was declined.", null)
+                }
+            }
+            return
+        }
         if (requestCode == localNetworkRequest) {
             val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
             val pending = localNetworkResults.toList()
@@ -178,10 +492,17 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        artifactDownloads?.dispose()
+        artifactDownloads = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
     override fun onDestroy() {
         earlyShares.clear()
         sharing?.dispose()
         systemFonts?.dispose()
+        systemProxy?.dispose()
         localNetworkResults.forEach { it.success(false) }
         localNetworkResults.clear()
         super.onDestroy()
@@ -192,7 +513,18 @@ class MainActivity : FlutterActivity() {
         if (requestCode == saveRequest) {
             val pending = saveResult
             saveResult = null
-            pending?.success(if (resultCode == Activity.RESULT_OK) data?.data?.toString() else null)
+            val tracked = trackedSave
+            trackedSave = false
+            val uri = if (resultCode == Activity.RESULT_OK) data?.data else null
+            if (pending == null) return
+            if (tracked && uri != null) {
+                try {
+                    val token = artifactSaveTargets.selected(uri.toString())
+                    pending.success(mapOf("uri" to uri.toString(), "saveToken" to token))
+                } catch (_: Exception) {
+                    pending.error("invalid", "Invalid save destination.", null)
+                }
+            } else pending.success(uri?.toString())
         } else { super.onActivityResult(requestCode, resultCode, data) }
     }
 }

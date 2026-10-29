@@ -8,6 +8,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'chat_focus_receipt_test.dart' show contextRows, paintedMessage;
 import 'message_presentation_test.dart' show MessageAdapter;
@@ -21,7 +22,6 @@ class _SearchFocusPage {
 
   static Future<_SearchFocusPage> mount(
     WidgetTester tester,
-    RaftFamily family,
     bool dark, {
     bool otherChannel = false,
   }) async {
@@ -63,7 +63,7 @@ class _SearchFocusPage {
       ],
       'hasMore': false,
     };
-    await mountPage(tester, w, family, dark);
+    await mountPage(tester, w, dark);
     await tester.enterText(find.byType(TextField).first, 'Actual');
     await tester.pump(const Duration(milliseconds: 210));
     for (var frame = 0; frame < 8; frame++) {
@@ -120,40 +120,40 @@ class _SearchFocusPage {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[L01] $family/$dark actual cached Search result centers without another context GET or metadata reset',
+      '[L01] ${dark ? 'dark' : 'light'} actual cached Search result centers without another context GET or metadata reset',
       (tester) async {
-        final page = await _SearchFocusPage.mount(tester, family, dark);
+        final page = await _SearchFocusPage.mount(tester, dark);
         final w = page.workspace;
         final before = (
           page.contextRequests,
-          w.hasMore,
-          w.hasNewer,
-          w.historyLimited,
-          jsonEncode(w.threadSummaries),
-          w.messages.map((row) => row.id).toList(),
+          w.messageDomain.state.hasMore,
+          w.messageDomain.state.hasNewer,
+          w.messageDomain.state.historyLimited,
+          jsonEncode(w.messageDomain.threadSummaries),
+          w.messageDomain.messages.map((row) => row.id).toList(),
         );
         expect(before.$1, 0);
         expect((before.$2, before.$3, before.$4), (false, false, true));
-        expect(w.threadSummaries['cache-20']['replyCount'], 2);
+        expect(w.messageDomain.threadSummaries['cache-20']['replyCount'], 2);
         final first = await page.clickFirst(tester);
         for (var frame = 0; frame < 8; frame++) {
           await tester.pump(const Duration(milliseconds: 16));
           expect(page.assertCentered(tester, 'cache-20'), first);
           page.assertHighlighted(tester, 'cache-20', true);
-          expect(w.channelLoading, false);
+          expect(w.messageDomain.state.channelLoading, false);
           expect(page.contextRequests, before.$1);
           expect(
-            (w.hasMore, w.hasNewer, w.historyLimited),
+            (
+              w.messageDomain.state.hasMore,
+              w.messageDomain.state.hasNewer,
+              w.messageDomain.state.historyLimited,
+            ),
             (before.$2, before.$3, before.$4),
           );
-          expect(jsonEncode(w.threadSummaries), before.$5);
-          expect(w.messages.map((row) => row.id), before.$6);
+          expect(jsonEncode(w.messageDomain.threadSummaries), before.$5);
+          expect(w.messageDomain.messages.map((row) => row.id), before.$6);
         }
         expect(w.location.content?.id, 'c1');
         expect(w.location.messageId, 'cache-20');
@@ -163,9 +163,9 @@ void main() {
     );
 
     testWidgets(
-      '[L03] $family/$dark actual second cached Search target owns its full highlight lifetime after the old timer deadline',
+      '[L03] ${dark ? 'dark' : 'light'} actual second cached Search target owns its full highlight lifetime after the old timer deadline',
       (tester) async {
-        final page = await _SearchFocusPage.mount(tester, family, dark);
+        final page = await _SearchFocusPage.mount(tester, dark);
         final w = page.workspace;
         await page.clickFirst(tester);
         final Timer oldTimer = page.getState(tester).highlightTimer;
@@ -175,17 +175,17 @@ void main() {
         await tester.tap(find.byType(RaftSearchResultSurface).last);
         final second = await page.waitForCentered(tester, 'cache-55');
         expect(oldTimer.isActive, false);
-        expect(w.highlightedMessageId, 'cache-55');
+        expect(w.messageDomain.state.highlightedMessageId, 'cache-55');
         page.assertHighlighted(tester, 'cache-55', true);
         // Cross the first target's old expiry while the second owns its timer.
         await tester.pump(const Duration(milliseconds: 1100));
-        expect(w.highlightedMessageId, 'cache-55');
+        expect(w.messageDomain.state.highlightedMessageId, 'cache-55');
         page.assertHighlighted(tester, 'cache-55', true);
         expect(page.assertCentered(tester, 'cache-55'), second);
         await tester.pump(const Duration(milliseconds: 600));
-        expect(w.highlightedMessageId, 'cache-55');
+        expect(w.messageDomain.state.highlightedMessageId, 'cache-55');
         await tester.pump(const Duration(milliseconds: 400));
-        expect(w.highlightedMessageId, isNull);
+        expect(w.messageDomain.state.highlightedMessageId, isNull);
         page.assertHighlighted(tester, 'cache-55', false);
         expect(page.assertCentered(tester, 'cache-55'), second);
         expect(page.contextRequests, 0);
@@ -195,11 +195,10 @@ void main() {
     );
 
     testWidgets(
-      '[L03] $family/$dark actual cross-channel Search target survives the old expiry while its context is held',
+      '[L03] ${dark ? 'dark' : 'light'} actual cross-channel Search target survives the old expiry while its context is held',
       (tester) async {
         final page = await _SearchFocusPage.mount(
           tester,
-          family,
           dark,
           otherChannel: true,
         );
@@ -217,8 +216,8 @@ void main() {
           await tester.pump(const Duration(milliseconds: 16));
           expect(w.channel?.id, 'c2');
           expect(w.location.content?.id, 'c2');
-          expect(w.highlightedMessageId, 'next-40');
-          expect(w.channelLoading, true);
+          expect(w.messageDomain.state.highlightedMessageId, 'next-40');
+          expect(w.messageDomain.state.channelLoading, true);
           expect(paintedMessage(tester, 'cache-20'), isNull);
           expect(paintedMessage(tester, 'next-40'), isNull);
         }
@@ -234,13 +233,13 @@ void main() {
           'hasNewer': true,
         });
         final next = await page.waitForCentered(tester, 'next-40');
-        expect(w.channelLoading, false);
+        expect(w.messageDomain.state.channelLoading, false);
         page.assertHighlighted(tester, 'next-40', true);
         await tester.pump(const Duration(milliseconds: 1700));
-        expect(w.highlightedMessageId, 'next-40');
+        expect(w.messageDomain.state.highlightedMessageId, 'next-40');
         page.assertHighlighted(tester, 'next-40', true);
         await tester.pump(const Duration(milliseconds: 400));
-        expect(w.highlightedMessageId, isNull);
+        expect(w.messageDomain.state.highlightedMessageId, isNull);
         page.assertHighlighted(tester, 'next-40', false);
         expect(page.assertCentered(tester, 'next-40'), next);
         expect(page.contextRequests, 1);

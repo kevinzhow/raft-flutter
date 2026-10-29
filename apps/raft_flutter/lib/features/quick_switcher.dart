@@ -95,6 +95,7 @@ class QuickSwitcher extends StatefulWidget {
     this.onSnapshot,
     this.authority = '',
     this.clock,
+    this.searchAnchor,
   });
 
   /// Notifies when the workspace behind [data] changes.
@@ -121,14 +122,17 @@ class QuickSwitcher extends StatefulWidget {
   final String authority;
   final DateTime Function()? clock;
 
+  /// The mounted top search field, read again when viewport layout changes.
+  final Rect? Function()? searchAnchor;
+
   /// Source OVERLAY_MESSAGE_PREVIEW_LIMIT and MAX_ENTITY_RESULTS.
   static const messagePreviewLimit = 5;
   static const entityLimit = 50;
   static const debounce = Duration(milliseconds: 200);
 
   /// Source searchOverlayCardStyle fallback placement and size.
-  static Rect cardRect(Size viewport) =>
-      RaftQuickSwitcherMetrics.cardRect(viewport);
+  static Rect cardRect(Size viewport, {Rect? anchor}) =>
+      RaftQuickSwitcherMetrics.cardRect(viewport, anchor: anchor);
 
   @override
   State<QuickSwitcher> createState() => _QuickSwitcherState();
@@ -397,9 +401,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
   KeyEventResult keyEvent(List<_Row> rows, int selected, KeyEvent event) {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
-    final modifier =
-        HardwareKeyboard.instance.isControlPressed ||
-        HardwareKeyboard.instance.isMetaPressed;
+    final modifier = primaryShortcutModifierDown();
     // IME composition owns Return, Escape and the arrows.
     if (composing) return KeyEventResult.ignored;
     if (modifier && key == LogicalKeyboardKey.keyK) {
@@ -435,7 +437,10 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final card = QuickSwitcher.cardRect(size);
+    final card = QuickSwitcher.cardRect(
+      size,
+      anchor: widget.searchAnchor?.call(),
+    );
     return Stack(
       children: [
         Positioned.fromRect(
@@ -511,7 +516,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
           controller: controller,
           focusNode: focus,
           hint: raftText(context, 'Channels, people, messages…'),
-          clearLabel: raftText(context, 'Clear search'),
+          clearLabel: raftText(context, 'Clear Search'),
           onClear: () {
             controller.clear();
             focus.requestFocus();
@@ -595,6 +600,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     final visible = visibleMessages;
     final total = entities.length + messages.length;
     final empty = !loading && total == 0 && failure == null;
+    // ignore: raft_lints/avoid_render_where_without_or_else -- rows always includes the 'all' row (built with `const _Row(_allKey, all: true)` in the same method).
     final allRow = rows.firstWhere((r) => r.all);
     final trimmed = query;
     return RaftQuickSwitcherList(
@@ -610,7 +616,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
                 key: const Key('quick-switcher-all-results'),
                 glyph: RaftGlyph.search,
                 title: trimmed.isEmpty
-                    ? raftText(context, 'View all results')
+                    ? raftText(context, 'View All Results')
                     : raftFormat(context, 'Search for “{query}”', {
                         'query': trimmed,
                       }),
@@ -695,7 +701,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
       actionLabel: !broad
           ? raftText(context, 'Retry')
           : filters.searchSort != 'recent'
-          ? raftText(context, 'Sort by newest')
+          ? raftText(context, 'Sort by Newest')
           : null,
       onAction: !broad
           ? retry
@@ -748,8 +754,10 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     return [
       for (final key in order)
         if (!key.startsWith('thread:'))
+          // ignore: raft_lints/avoid_render_index_assertion -- `order` and `groups` are built together from the same keys; each group holds at least one row.
           hit(groups[key]!.first)
         else
+          // ignore: raft_lints/avoid_render_index_assertion -- `order` and `groups` are built together from the same keys.
           _threadGroup(context, data, groups[key]!, selectedRow, hit),
     ];
   }
@@ -762,24 +770,6 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     Widget Function(Map<String, dynamic>, {bool nested, bool first}) hit,
   ) {
     final first = hits.first;
-    DateTime? latest;
-    for (final row in hits) {
-      final time = DateTime.tryParse('${row['createdAt']}');
-      if (time != null && (latest == null || time.isAfter(latest))) {
-        latest = time;
-      }
-    }
-    final title = '${first['parentMessageContent'] ?? ''}'
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-    final clipped = title.length > 80 ? '${title.substring(0, 77)}...' : title;
-    final time = latest == null
-        ? raftText(context, 'unknown time')
-        : resourceRelativeTime(
-            latest.toIso8601String(),
-            now: widget.clock?.call(),
-            chinese: Localizations.localeOf(context).languageCode == 'zh',
-          );
     return RaftQuickSwitcherThreadGroup(
       badge: raftText(context, 'Thread'),
       where: _sourceLabel(first, data),
@@ -788,8 +778,8 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
         hits.length == 1 ? '{count} hit' : '{count} hits',
         {'count': hits.length},
       ),
-      time: time,
-      title: clipped.isEmpty ? raftText(context, 'Thread discussion') : clipped,
+      time: searchThreadTime(context, hits, widget.clock?.call()),
+      title: searchThreadTitle(context, first['parentMessageContent']),
       selected: hits.any((r) => selectedRow?.key == 'message:${r['id']}'),
       children: [
         for (final (i, row) in hits.indexed)
@@ -798,21 +788,8 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     );
   }
 
-  /// Source getSourceLabel: `#channel` or `@peer`, DMs by the peer's name.
-  String _sourceLabel(Map<String, dynamic> row, QuickSwitcherData data) {
-    final thread = row['channelType'] == 'thread';
-    final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
-    final id = thread ? row['parentChannelId'] : row['channelId'];
-    final raw =
-        '${(thread ? row['parentChannelName'] : row['channelName']) ?? ''}';
-    var name = raw;
-    if (dm) {
-      final peer = data.dms.where((c) => c['id'] == id).firstOrNull;
-      final label = peer?['peerDisplayName'] ?? peer?['peerName'];
-      if (label is String && label.isNotEmpty) name = label;
-    }
-    return '${dm ? '@' : '#'}$name';
-  }
+  String _sourceLabel(Map<String, dynamic> row, QuickSwitcherData data) =>
+      searchSourceLabel(row, data.dms);
 
   Widget _leading(SearchEntity entity, QuickSwitcherData data) {
     if (entity.kind == 'channel') {
@@ -960,11 +937,13 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
               currentUser: data.currentUser,
             ),
       sender: sender,
-      time: resourceRelativeTime(
-        row['createdAt'] as String?,
-        now: widget.clock?.call(),
-        chinese: Localizations.localeOf(context).languageCode == 'zh',
-      ),
+      time: DateTime.tryParse('${row['createdAt']}') == null
+          ? raftText(context, 'unknown time')
+          : resourceRelativeTime(
+              row['createdAt'] as String?,
+              now: widget.clock?.call(),
+              chinese: Localizations.localeOf(context).languageCode == 'zh',
+            ),
       snippet: SearchHighlight(
         text: '${row['snippet'] ?? row['content'] ?? ''}',
         query: query,

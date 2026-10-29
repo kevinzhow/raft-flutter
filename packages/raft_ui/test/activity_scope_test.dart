@@ -2,67 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('$family/$dark mobile keeps swiped selection visible', (
-      t,
-    ) async {
-      var view = RaftActivityView.all;
-      late StateSetter update;
-      await t.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(family, dark: dark),
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: SizedBox(
-                width: 240,
-                child: StatefulBuilder(
-                  builder: (_, setState) {
-                    update = setState;
-                    return RaftActivityScopeToolbar(
-                      view: view,
-                      compact: false,
-                      onView: (next) => setState(() => view = next),
-                      onOpenSwitcher: () {},
-                      sort: 'desc',
-                      onSort: (_) {},
-                    );
-                  },
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      '${dark ? 'dark' : 'light'} mobile keeps swiped selection visible',
+      (t) async {
+        var view = RaftActivityView.all;
+        late StateSetter update;
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(dark: dark),
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: 240,
+                  child: StatefulBuilder(
+                    builder: (_, setState) {
+                      update = setState;
+                      return RaftActivityScopeToolbar(
+                        view: view,
+                        compact: false,
+                        onView: (next) => setState(() => view = next),
+                        onOpenSwitcher: () {},
+                        sort: 'desc',
+                        onSort: (_) {},
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-      await t.pumpAndSettle();
-      update(() => view = RaftActivityView.done);
-      await t.pumpAndSettle();
-      final toolbar = t.getRect(find.byType(RaftActivityScopeToolbar));
-      final done = t.getRect(find.byKey(const ValueKey('activity-view-done')));
-      expect(done.left, greaterThanOrEqualTo(toolbar.left));
-      expect(done.right, lessThanOrEqualTo(toolbar.right));
-      update(() => view = RaftActivityView.all);
-      await t.pumpAndSettle();
-      final all = t.getRect(find.byKey(const ValueKey('activity-view-all')));
-      expect(all.left, greaterThanOrEqualTo(toolbar.left));
-      expect(all.right, lessThanOrEqualTo(toolbar.right));
-      expect(t.takeException(), isNull);
-    });
+        );
+        await t.pumpAndSettle();
+        update(() => view = RaftActivityView.done);
+        await t.pumpAndSettle();
+        final toolbar = t.getRect(find.byType(RaftActivityScopeToolbar));
+        final done = t.getRect(
+          find.byKey(const ValueKey('activity-view-done')),
+        );
+        expect(done.left, greaterThanOrEqualTo(toolbar.left));
+        expect(done.right, lessThanOrEqualTo(toolbar.right));
+        update(() => view = RaftActivityView.all);
+        await t.pumpAndSettle();
+        final all = t.getRect(find.byKey(const ValueKey('activity-view-all')));
+        expect(all.left, greaterThanOrEqualTo(toolbar.left));
+        expect(all.right, lessThanOrEqualTo(toolbar.right));
+        expect(t.takeException(), isNull);
+      },
+    );
 
     testWidgets(
-      '$family/$dark Source compact min-height and keyboard switcher',
+      '${dark ? 'dark' : 'light'} Source compact min-height and keyboard switcher',
       (tester) async {
         var opens = 0;
         final semantics = tester.ensureSemantics();
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: Align(
                 alignment: Alignment.topLeft,
@@ -84,7 +84,7 @@ void main() {
         final button = find.byKey(const ValueKey('activity-scope-switcher'));
         expect(
           tester.getSize(find.byType(RaftActivityScopeToolbar)).height,
-          family == RaftFamily.brutal ? 90 : 89,
+          89,
         );
         final focus = find
             .descendant(of: button, matching: find.byType(Focus))
@@ -111,14 +111,14 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark Source finder keeps nonempty Escape and closes empty Escape',
+      '${dark ? 'dark' : 'light'} Source finder keeps nonempty Escape and closes empty Escape',
       (tester) async {
         final controller = TextEditingController();
         final focus = FocusNode();
         var dismissed = 0;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: SizedBox(
                 width: 320,
@@ -148,12 +148,12 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark Source picker groups independent of Saved and keyboard selection',
+      '${dark ? 'dark' : 'light'} Source picker groups independent of Saved and keyboard selection',
       (tester) async {
         final selected = <String>[];
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: SizedBox(
                 width: 440,

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/src/inline_thread_surface.dart';
 import 'package:raft_ui/src/theme.dart';
+import 'package:raft_ui/test_themes.dart';
 
 const publicReplies = [
   RaftInlineReply(
@@ -41,7 +42,6 @@ const publicReplies = [
 ];
 
 Widget host({
-  RaftFamily family = RaftFamily.elegant,
   bool dark = false,
   double width = 390,
   List<RaftInlineReply> replies = publicReplies,
@@ -49,7 +49,7 @@ Widget host({
   VoidCallback? onOpen,
   FocusNode? focus,
 }) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+  theme: raftTheme(dark: dark),
   home: Scaffold(
     body: Align(
       alignment: Alignment.topLeft,
@@ -69,44 +69,39 @@ Widget host({
 );
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('one parent surface uses source row geometry $family/$dark', (
-      tester,
-    ) async {
-      var calls = 0;
-      await tester.pumpWidget(
-        host(family: family, dark: dark, onOpen: () => calls++),
-      );
-      expect(find.text('5 replies ›'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('inline-reply-system-event')),
-        findsNothing,
-      );
-      expect(find.byKey(const ValueKey('inline-reply-four')), findsNothing);
-      expect(
-        tester.getSize(find.byKey(const ValueKey('inline-reply-one'))).height,
-        20,
-      );
-      final first = tester.getTopLeft(
-        find.byKey(const ValueKey('inline-reply-one')),
-      );
-      final second = tester.getTopLeft(
-        find.byKey(const ValueKey('inline-reply-two')),
-      );
-      expect(second.dy - first.dy, 24);
-      expect(first.dx, family == RaftFamily.brutal ? 10 : 10.5);
-      await tester.tap(find.text('Looks good'));
-      await tester.pump();
-      expect(calls, 1);
-      await tester.tap(find.text('5 replies ›'));
-      await tester.pump();
-      expect(calls, 2);
-      expect(tester.takeException(), isNull);
-    });
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      'one parent surface uses source row geometry ${dark ? 'dark' : 'light'}',
+      (tester) async {
+        var calls = 0;
+        await tester.pumpWidget(host(dark: dark, onOpen: () => calls++));
+        expect(find.text('5 replies ›'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('inline-reply-system-event')),
+          findsNothing,
+        );
+        expect(find.byKey(const ValueKey('inline-reply-four')), findsNothing);
+        expect(
+          tester.getSize(find.byKey(const ValueKey('inline-reply-one'))).height,
+          20,
+        );
+        final first = tester.getTopLeft(
+          find.byKey(const ValueKey('inline-reply-one')),
+        );
+        final second = tester.getTopLeft(
+          find.byKey(const ValueKey('inline-reply-two')),
+        );
+        expect(second.dy - first.dy, 24);
+        expect(first.dx, 10.5);
+        await tester.tap(find.text('Looks good'));
+        await tester.pump();
+        expect(calls, 1);
+        await tester.tap(find.text('5 replies ›'));
+        await tester.pump();
+        expect(calls, 2);
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
   testWidgets('whole surface has one enabled keyboard action', (tester) async {
     final focus = FocusNode();
@@ -206,7 +201,7 @@ void main() {
     final key = GlobalKey();
     var calls = 0;
     Widget app(bool right) => MaterialApp(
-      theme: raftTheme(RaftFamily.elegant),
+      theme: raftTheme(),
       home: Scaffold(
         body: Row(
           children: [
@@ -220,7 +215,7 @@ void main() {
                           replyCount: 5,
                           replies: publicReplies,
                           summary: const Text('5 replies ›'),
-                          semanticLabel: 'Open thread',
+                          semanticLabel: 'Open Thread',
                           onOpen: () => calls++,
                         )
                       : const SizedBox.shrink(),

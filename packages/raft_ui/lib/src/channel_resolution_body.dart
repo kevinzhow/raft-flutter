@@ -36,7 +36,7 @@ class RaftChannelResolutionBody extends StatelessWidget {
               const SizedBox(height: 16),
             ],
             RaftCssText(
-              label.toUpperCase(),
+              label,
               style: RaftTypography.heading(
                 t,
                 size: 18,

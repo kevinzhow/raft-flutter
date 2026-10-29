@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:file_selector/file_selector.dart';
@@ -6,7 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'auth_view.dart' show authLinkToken;
+import '../platform/file_selection.dart';
+
+import '../data/cause_notice.dart';
+import '../data/user_error.dart';
+import 'auth_view.dart' show authFailureText, authLinkToken;
 
 bool accountNeedsProfile(RaftRecord? user) =>
     user != null &&
@@ -31,27 +36,42 @@ String? accountUsernameError(String value) {
   return null;
 }
 
+/// A profile image chosen and checked for upload (Web `PROFILE_AVATAR_ACCEPT`,
+/// `MAX_PROFILE_AVATAR_BYTES`): the multipart `avatar` field.
+class PickedAvatar {
+  const PickedAvatar(this.name, this.bytes, this.mime);
+  final String name, mime;
+  final Uint8List bytes;
+
+  FormData get form => FormData.fromMap({
+    'avatar': MultipartFile.fromBytes(
+      bytes,
+      filename: name,
+      contentType: DioMediaType.parse(mime),
+    ),
+  });
+}
+
 class AccountMediaActions {
-  static Future<void> uploadAvatar(RaftClient client) async {
+  /// Opens the image picker (system photo picker on Android/iOS, the file
+  /// picker on desktop) and validates the choice; null when cancelled.
+  static Future<PickedAvatar?> pickAvatar(RaftClient client) async {
     final generation = client.generation;
-    final file = await openFile(
-      acceptedTypeGroups: const [
-        XTypeGroup(
-          label: 'Avatar image',
-          extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-          mimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-        ),
-      ],
+    final file = await selectImage(
+      typeGroup: const XTypeGroup(
+        label: 'Avatar image',
+        extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+        mimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+        uniformTypeIdentifiers: ['public.image'],
+      ),
     );
-    if (file == null) return;
+    if (file == null) return null;
     if (client.generation != generation) {
-      throw const RaftApiException(
-        'The active account changed. Choose the image again.',
-      );
+      throw const RaftUserError(raftGenericErrorText);
     }
     final length = await file.length();
     if (length > 5 * 1024 * 1024) {
-      throw const RaftApiException('Avatar image must be 5 MB or smaller.');
+      throw const RaftUserError('Avatar image must be 5 MB or smaller');
     }
     final extension = file.name.split('.').last.toLowerCase();
     final mime = {
@@ -62,24 +82,19 @@ class AccountMediaActions {
       'webp': 'image/webp',
     }[extension];
     if (mime == null) {
-      throw const RaftApiException('Choose a JPEG, PNG, GIF or WebP image.');
+      throw const RaftUserError('Failed to upload avatar');
     }
     final bytes = await file.readAsBytes();
     if (client.generation != generation) {
-      throw const RaftApiException(
-        'The active account changed. Choose the image again.',
-      );
+      throw const RaftUserError(raftGenericErrorText);
     }
-    await client.post(
-      '/auth/me/avatar',
-      data: FormData.fromMap({
-        'avatar': MultipartFile.fromBytes(
-          bytes,
-          filename: file.name,
-          contentType: DioMediaType.parse(mime),
-        ),
-      }),
-    );
+    return PickedAvatar(file.name, bytes, mime);
+  }
+
+  static Future<void> uploadAvatar(RaftClient client) async {
+    final picked = await pickAvatar(client);
+    if (picked == null) return;
+    await client.post('/auth/me/avatar', data: picked.form);
     await client.reloadUser();
   }
 
@@ -117,7 +132,16 @@ class _OnboardingState extends State<AccountOnboardingView>
   StreamSubscription<RaftEvent>? events;
   bool busy = false, displayNameEdited = false;
   bool manualOpen = false, resending = false, verifying = false, resent = false;
-  String? error, notice, handleError, displayNameError;
+  // ignore: raft_lints/avoid_imperative_notice_state -- handleError/displayNameError clear when the field is edited and are recomputed on submit; notice is never raised (always null).
+  String? notice, handleError, displayNameError;
+
+  /// The page's banner. Web keeps the verification step and the identity step
+  /// in two components, each with its own error, so a failure raised on one
+  /// (a rejected token, a failed resend) is dropped once the account moves to
+  /// the other.
+  late final CauseNotice _banner = CauseNotice(scope: () => emailVerified);
+  bool get emailVerified => client.user?.json['emailVerified'] == true;
+  String? get error => _banner.message;
   final usernameFocus = FocusNode();
   RaftClient get client => widget.client;
   @override
@@ -184,14 +208,24 @@ class _OnboardingState extends State<AccountOnboardingView>
     if (resending) return;
     setState(() {
       resending = true;
-      error = null;
+      _banner.clear();
       resent = false;
     });
     try {
       await client.post('/auth/resend-verification');
       if (mounted) setState(() => resent = true);
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) {
+        setState(
+          () => _banner.raise(
+            userErrorText(
+              e,
+              fallback: 'Failed to resend verification email',
+              where: 'resend verification',
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => resending = false);
     }
@@ -202,7 +236,7 @@ class _OnboardingState extends State<AccountOnboardingView>
     final generation = client.generation;
     setState(() {
       verifying = true;
-      error = null;
+      _banner.clear();
       resent = false;
     });
     try {
@@ -213,7 +247,15 @@ class _OnboardingState extends State<AccountOnboardingView>
       }
     } catch (e) {
       if (mounted && client.generation == generation) {
-        setState(() => error = '$e');
+        setState(
+          () => _banner.raise(
+            userErrorText(
+              e,
+              fallback: 'Verification failed. The link may be expired.',
+              where: 'verify email',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => verifying = false);
@@ -231,12 +273,15 @@ class _OnboardingState extends State<AccountOnboardingView>
     super.dispose();
   }
 
-  Future<void> run(Future<void> Function() action) async {
+  Future<void> run(
+    Future<void> Function() action, {
+    String fallback = "Couldn't finish identity setup",
+  }) async {
     if (busy) return;
     final generation = client.generation;
     setState(() {
       busy = true;
-      error = null;
+      _banner.clear();
       notice = null;
     });
     try {
@@ -247,7 +292,10 @@ class _OnboardingState extends State<AccountOnboardingView>
       }
     } catch (e) {
       if (mounted && client.generation == generation) {
-        setState(() => error = '$e');
+        setState(
+          () =>
+              _banner.raise(authFailureText(e, fallback, where: 'onboarding')),
+        );
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -257,8 +305,8 @@ class _OnboardingState extends State<AccountOnboardingView>
   Future<void> verify() async {
     final code = authLinkToken(token.text.trim());
     if (code.isEmpty) {
-      throw const RaftApiException(
-        'Enter the verification link or code from your email.',
+      throw const RaftUserError(
+        'Verification failed. The link may be expired.',
       );
     }
     await client.request(
@@ -286,8 +334,11 @@ class _OnboardingState extends State<AccountOnboardingView>
       query: {'name': username.text.trim()},
     );
     if (available['available'] != true) {
-      throw RaftApiException(
-        available['message'] ?? 'This username is unavailable.',
+      throw RaftUserError(
+        available['message'] is String &&
+                (available['message'] as String).trim().isNotEmpty
+            ? available['message'] as String
+            : 'This username is already taken.',
       );
     }
     await client.post(
@@ -371,29 +422,23 @@ class _OnboardingState extends State<AccountOnboardingView>
                   helper: tr(
                     "Your unique name for @mentions and links. It can't be changed later.",
                   ),
-                  child: RaftAuthHandleGroup(
-                    child: TextFormField(
-                      key: const Key('onboarding-username'),
-                      controller: username,
-                      focusNode: usernameFocus,
-                      style: t.fieldStyle,
-                      autofillHints: null,
-                      decoration: raftAuthGroupedInputDecoration(
-                        hintText: tr('alexchen'),
-                      ),
-                      onChanged: (value) {
-                        final next = value.replaceFirst(RegExp(r'^@+'), '');
-                        if (next != value) username.text = next;
-                        setState(() {
-                          handleError = null;
-                          // Mirror into the display name until edited.
-                          if (!displayNameEdited) {
-                            displayName.text = next;
-                            displayNameError = null;
-                          }
-                        });
-                      },
-                    ),
+                  child: RaftAuthHandleInput(
+                    fieldKey: const Key('onboarding-username'),
+                    controller: username,
+                    focusNode: usernameFocus,
+                    hintText: tr('alexchen'),
+                    onChanged: (value) {
+                      final next = value.replaceFirst(RegExp(r'^@+'), '');
+                      if (next != value) username.text = next;
+                      setState(() {
+                        handleError = null;
+                        // Mirror into the display name until edited.
+                        if (!displayNameEdited) {
+                          displayName.text = next;
+                          displayNameError = null;
+                        }
+                      });
+                    },
                   ),
                 ),
                 RaftAuthField(
@@ -403,12 +448,12 @@ class _OnboardingState extends State<AccountOnboardingView>
                     'How your name appears in messages. Change this anytime.',
                   ),
                   helperHint: true,
-                  child: TextFormField(
-                    key: const Key('onboarding-display-name'),
+                  child: RaftTextInput(
+                    fieldKey: const Key('onboarding-display-name'),
                     controller: displayName,
                     style: t.fieldStyle,
-                    autofillHints: null,
-                    decoration: InputDecoration(hintText: tr('Alex Chen')),
+                    hintText: tr('Alex Chen'),
+                    legacy: RaftLegacyInput.themed,
                     onChanged: (_) => setState(() {
                       displayNameEdited = true;
                       displayNameError = null;
@@ -420,14 +465,16 @@ class _OnboardingState extends State<AccountOnboardingView>
                   imageUrl: avatarUrl.isEmpty ? null : avatarUrl,
                   onUpload: busy
                       ? null
-                      : () =>
-                            run(() => AccountMediaActions.uploadAvatar(client)),
+                      : () => run(
+                          () => AccountMediaActions.uploadAvatar(client),
+                          fallback: 'Failed to upload avatar',
+                        ),
                 ),
                 RaftAuthWideButton(
                   key: const Key('onboarding-complete'),
                   variant: RaftControlVariant.accent,
                   onPressed: busy ? null : () => run(completeProfile),
-                  label: tr(busy ? 'Saving identity…' : 'Continue'),
+                  label: tr(busy ? 'Saving Identity…' : 'Continue'),
                 ),
               ],
             ),

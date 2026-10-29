@@ -8,6 +8,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/app_services_fixture.dart';
 
 /// First frame final: layout that depends on device preferences or on the
 /// last evaluated feature flags is already right on the first frame, and the
@@ -116,12 +117,14 @@ Future<(WorkspaceController, _Client)> _mount(
   });
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(RaftFamily.elegant),
-      home: WorkspaceView(
-        controller: w,
-        appearance: const RaftAppearance(),
-        onAppearance: (_) async {},
-        onLogout: () async {},
+      theme: raftTheme(),
+      home: withAppServices(
+        WorkspaceView(
+          controller: w,
+          appearance: const RaftAppearance(),
+          onAppearance: (_) async {},
+          onLogout: () async {},
+        ),
       ),
     ),
   );

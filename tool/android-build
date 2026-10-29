@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""Build local ARM64 release with pubspec-version-dev.HEAD[.dirty] in About and APK.
+
+Example: python3 tool/android-build --build-number 6050
+Then preflight and update with tool/android-install --apk <printed APK path>.
+This command never installs or launches an application.
+"""
+import argparse
+import json
+import subprocess
+import sys
+
+from android_app import SafetyError, build_local_android
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--build-number', type=int, required=True)
+args = parser.parse_args()
+try:
+    result = build_local_android(args.build_number)
+except (SafetyError, OSError, subprocess.CalledProcessError) as error:
+    sys.exit(str(error))
+print(json.dumps(result))

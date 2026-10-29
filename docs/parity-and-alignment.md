@@ -24,7 +24,7 @@ tool/parity-ext/run run --cases 'components.<area>.*' # comma list / globs; --re
 tool/parity-ext/run summary
 ```
 
-- Cases are generated on every run by the builders listed in `tool/parity-ext/builders.txt` into `build/parity-ext/cases.json` (never committed); Flutter-side cases live in `apps/raft_flutter/test/parity/cases/`. Adding or fixing a surface: [extension quickstart](parity-ext-quickstart.md).
+- Cases are generated on every run by the automatically discovered `tool/parity-ext/build-*.py` builders into `build/parity-ext/cases.json` (never committed); Flutter-side cases live in `apps/raft_flutter/test/parity/cases/`. Adding or fixing a surface: [extension quickstart](parity-ext-quickstart.md).
 - Theme sampling: `brutal-light` (the default theme) runs every case; `elegant-light` and `elegant-dark` run one or two cases per surface (rule in `tool/parity-ext/sampling.py`). `--cases` only sees the sampled set; `PARITY_EXT_ALL_THEMES=1` runs everything, `PARITY_EXT_ALL_DARK=1` keeps every elegant-dark case.
 - Web captures are cached across worktrees (`PARITY_EXT_CACHE` overrides the location) and recaptured only when their inputs change.
 - Output goes to `build/parity-ext/` (`PARITY_EXT_OUT`): `summary.md` (per-case and per-area tables) and `site/index.html`.
@@ -38,7 +38,7 @@ tool/parity-ext/run summary
 
 ## Page inventory
 
-[`docs/parity-page-inventory.md`](parity-page-inventory.md) lists every Web page, modal and state with desktop/phone coverage (`ok`, `partial`, `wip`, `MISSING`, `n/a`, `excluded`) and a priority. It is generated from rows in `tool/parity-ext/inventory.py`: edit the rows, run `python3 tool/parity-ext/inventory.py` to regenerate, and `python3 tool/parity-ext/inventory.py --check` to verify (the unit tests fail on a stale document). Note that running it without `--check` rewrites the document.
+The page inventory (every Web page, modal and state with desktop/phone coverage `ok`, `partial`, `web-only`, `MISSING`, `n/a`, `excluded`, and a priority) is generated on demand, not committed: `python3 tool/parity-ext/inventory.py --write build/parity-ext/page-inventory.md` (add `--case-map build/parity-ext/visual-testing-results/android-case-map.json` or run after a parity-ext run to see `web-only` pages). The rows in `tool/parity-ext/inventory.py` hold only Web page metadata and the expected case ids; every status is computed from the case ids that exist in the built manifests and the `noFlutterSurface` flags, so branches that add cases never edit it. `python3 tool/parity-ext/inventory.py --check` validates the rows and id globs.
 
 ## Alignment audit
 
@@ -51,7 +51,7 @@ tool/alignment-audit.py overlays --out DIR     # overlays of every flagged case
 tool/alignment-audit.py selftest
 ```
 
-`--root` is a parity output directory. Results go to `--out` (default `.local/alignment/audit`) and never into the root. An offset within 0.75 CSS px counts as aligned; up to 12 px is reported as an offset; beyond that is a layout difference. A near-miss pass flags mixed insets and tells you whether the Web page has them too. Method, results and the open list: [alignment audit](alignment-audit.md).
+`--root` is a parity output directory. Results go to `--out` (default `.local/alignment/audit`) and never into the root. An offset within 0.75 CSS px counts as aligned; up to 12 px is reported as an offset; beyond that is a layout difference. A near-miss pass flags mixed insets and tells you whether the Web page has them too.
 
 ## Where reports land
 

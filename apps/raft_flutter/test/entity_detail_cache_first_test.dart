@@ -7,7 +7,9 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/app_services_fixture.dart';
 
 const _agents = <Map<String, dynamic>>[
   {
@@ -89,16 +91,12 @@ class _Workspace extends WorkspaceController {
 /// accepted store at once; it never invents defaults and a changed target never
 /// shows the previous entity's facts.
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final computers in [false, true]) {
       final kind = computers ? 'computer' : 'agent';
       final rows = computers ? _computers : _agents;
       testWidgets(
-        '[L09] $family/$dark desktop $kind detail opens from the accepted store and switching target hides the previous entity at once',
+        '[L09] ${dark ? 'dark' : 'light'} desktop $kind detail opens from the accepted store and switching target hides the previous entity at once',
         (tester) async {
           SharedPreferences.setMockInitialValues({});
           tester.view.physicalSize = const Size(1440, 900);
@@ -118,12 +116,14 @@ void main() {
           });
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );
@@ -156,7 +156,7 @@ void main() {
           expect(w.pending.every((p) => !p.isCompleted), isTrue);
           expect(inDetail(rows[0]['name'] as String), findsWidgets);
           expect(
-            find.descendant(of: detail, matching: find.text('Loading...')),
+            find.descendant(of: detail, matching: find.text('Loading profile…')),
             findsNothing,
           );
           for (final text in invented) {
@@ -206,7 +206,7 @@ void main() {
       );
 
       testWidgets(
-        '[L09] $family/$dark $kind detail with only an id shows no invented defaults',
+        '[L09] ${dark ? 'dark' : 'light'} $kind detail with only an id shows no invented defaults',
         (tester) async {
           SharedPreferences.setMockInitialValues({});
           tester.view.physicalSize = const Size(900, 800);
@@ -227,7 +227,7 @@ void main() {
           w.holdLists = true;
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: FleetDetail(
                   controller: w,
@@ -239,7 +239,7 @@ void main() {
             ),
           );
           await tester.pump();
-          expect(find.text('Loading...'), findsOneWidget);
+          expect(find.text('Loading profile…'), findsOneWidget);
           for (final text in [
             'Default',
             'offline',
@@ -262,7 +262,7 @@ void main() {
           }
           await tester.pumpAndSettle();
           expect(find.text(rows[0]['name'] as String), findsWidgets);
-          expect(find.text('Loading...'), findsNothing);
+          expect(find.text('Loading profile…'), findsNothing);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
           await tester.pump();

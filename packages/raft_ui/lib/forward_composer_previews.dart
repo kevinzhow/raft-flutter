@@ -24,51 +24,47 @@ class _TargetsState extends State<_Targets> {
   @override
   Widget build(BuildContext context) => RaftForwardPage(
     child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        RaftMobilePageHeader(
-          title: const Text('Select destinations'),
-          onBack: () {},
+        RaftForwardPageHeader(
+          leading: RaftForwardIconAction(
+            glyph: RaftGlyph.arrowLeft,
+            tooltip: 'Back',
+            onPressed: () {},
+          ),
+          title: 'Select destinations',
+          subtitle: selected == null
+              ? 'Sharing 3 files'
+              : 'Add to #channel-$selected',
         ),
         Expanded(
           child: RaftForwardTargetsBody(
+            leading: [
+              RaftForwardServerChips(
+                semanticLabel: 'Server',
+                names: const {'a': 'Myoland', 'b': 'Raft Community'},
+                selected: 'a',
+                onSelected: (_) {},
+              ),
+            ],
             search: RaftForwardSearchInput(
               controller: search,
               focusNode: focus,
               placeholder: 'Search targets',
               onChanged: (_) => setState(() {}),
             ),
-            label: selected == null
-                ? 'Conversations'
-                : '#channel-$selected selected',
+            label: 'Recent',
             itemCount: search.text.isEmpty ? 10000 : 5,
             itemBuilder: (_, index) => RaftForwardTargetRow(
               icon: raftForwardTargetIcon(
                 name: 'channel-$index',
                 type: 'channel',
               ),
-              label: '#channel-$index',
+              label: 'channel-$index',
               selected: selected == index,
-              checkbox: true,
-              onTap: () =>
-                  setState(() => selected = selected == index ? null : index),
+              checkbox: false,
+              onTap: () => setState(() => selected = index),
             ),
-          ),
-        ),
-        RaftPanel(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              RaftForwardTextAction(
-                label: 'Clear',
-                onPressed: selected == null
-                    ? null
-                    : () => setState(() => selected = null),
-              ),
-              RaftButton(
-                label: 'Continue',
-                onPressed: selected == null ? null : () {},
-              ),
-            ],
           ),
         ),
       ],

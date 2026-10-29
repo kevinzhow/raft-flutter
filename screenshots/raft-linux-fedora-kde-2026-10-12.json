@@ -1,0 +1,18 @@
+{
+  "file": "raft-linux-fedora-kde-2026-10-12.png",
+  "imageSha256": "21eef1debf1873a2e28dd2f2fb2a46225c27309d42722bb91bcc4743c362c40d",
+  "width": 2664,
+  "height": 1640,
+  "providedBy": "kevinzhow",
+  "sourceAttachment": "e8304ef6-adac-44b1-83ac-5c6a7af063c3",
+  "providedAt": "2026-10-12T14:08:27Z",
+  "platform": "Linux x64, Fedora 45 KDE Plasma, Wayland",
+  "theme": "Brutal light",
+  "scope": "User-provided screenshot of an authenticated workspace; no inferred full feature or pixel-parity acceptance",
+  "captureScale": "Not supplied; original pixels retained",
+  "artifactObservedOnHost": {
+    "filename": "raft-flutter-0.1.0+3-appimage-x64.AppImage",
+    "sha256": "5405b2d472f93b4dcbba367ae82b484c17de88a1e6f7e8796b26ef8caee006cc",
+    "commit": "Not supplied"
+  }
+}

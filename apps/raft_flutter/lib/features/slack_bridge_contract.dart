@@ -29,6 +29,32 @@ class SlackBridgeProjection {
         : null;
   }
 
+  /// The `agentMentionSync` hint: Raft members Slack's @ menu could not list.
+  /// Mention sync is an enhancement, never a delivery problem (a typed unique
+  /// @name still reaches the member), so the hint shows only when an admin can
+  /// act on it. A free Slack plan and transient failures (no Slack error; the
+  /// next tick retries) show nothing.
+  ({String source, int count, String code})? get mentionSyncHint {
+    final sync = health['agentMentionSync'] as Map<String, dynamic>?;
+    if (sync == null || sync['state'] != 'degraded') return null;
+    final error = sync['slackError'] as String?;
+    if (error == null || _silentMentionErrors.contains(error)) return null;
+    final count = [
+      1,
+      (sync['expected'] as int) - (sync['actual'] as int),
+    ].reduce((a, b) => a > b ? a : b);
+    return (
+      source: switch (error) {
+        'restricted_action' || 'permission_denied' => _mentionRestricted,
+        'missing_scope' => _mentionMissingScope,
+        'name_taken' => count == 1 ? _mentionNameTakenOne : _mentionNameTaken,
+        _ => _mentionGeneric,
+      },
+      count: count,
+      code: error,
+    );
+  }
+
   /// Exact precedence from the enabled Web health projection.
   String get healthReason {
     final install = health['install'] as Map<String, dynamic>?;
@@ -148,14 +174,36 @@ class SlackBridgeProjection {
         );
       }
     }
-    final h = _object(s['rawHealth'], {
-      'install',
-      'credential',
-      'bindings',
-      'audiences',
-      'lastVerifiedAt',
-      'failingSurface',
-    });
+    final h = _object(
+      s['rawHealth'],
+      {
+        'install',
+        'credential',
+        'bindings',
+        'audiences',
+        'lastVerifiedAt',
+        'failingSurface',
+      },
+      optional: {'agentMentionSync'},
+    );
+    if (h['agentMentionSync'] != null) {
+      final m = _object(h['agentMentionSync'], {
+        'state',
+        'slackError',
+        'expected',
+        'actual',
+        'observedAt',
+      });
+      _enum(m['state'], {'synced', 'degraded'});
+      _text(m['slackError'], 160, nullable: true);
+      _require(
+        m['expected'] is int &&
+            m['expected'] >= 0 &&
+            m['actual'] is int &&
+            m['actual'] >= 0,
+      );
+      _date(m['observedAt']);
+    }
     if (h['install'] != null) {
       final i = _object(h['install'], {'state', 'epochs'});
       _enum(i['state'], {
@@ -241,7 +289,9 @@ class SlackBridgeProjection {
       );
       _integer(authority['grantEpoch']);
     }
-    if (s['stage'] == 'oauth') _require(authority != null);
+    // The authority is null whenever the viewer may not start OAuth, including
+    // a read-only member looking at the `oauth` stage; authorizing refuses
+    // without it.
     return SlackBridgeProjection._(s, authority);
   }
 
@@ -262,6 +312,19 @@ class SlackBridgeProjection {
 }
 
 const _checks = {'oauth', 'endpoint', 'scope', 'audience'};
+const _silentMentionErrors = {'paid_only', 'paid_teams_only'};
+const _mentionLead =
+    "Messages sync normally, and typing a Raft member's @name in Slack still reaches them when no one else in the channel has that name.";
+const _mentionRestricted =
+    "$_mentionLead To also list them in Slack's @ menu, a Slack admin needs to let members create user groups: Workspace settings \u2192 Permissions \u2192 User groups.";
+const _mentionMissingScope =
+    "$_mentionLead To also list them in Slack's @ menu, Raft needs one more Slack permission: use \u201cUpdate Slack authorization\u201d below.";
+const _mentionNameTakenOne =
+    "$_mentionLead {count} member couldn't get an entry in Slack's @ menu because every name Raft tried is already used in Slack. Renaming them in Raft, or freeing the name in Slack, fixes it.";
+const _mentionNameTaken =
+    "$_mentionLead {count} members couldn't get an entry in Slack's @ menu because every name Raft tried is already used in Slack. Renaming them in Raft, or freeing the name in Slack, fixes it.";
+const _mentionGeneric =
+    "$_mentionLead Slack refused to list some of them in its @ menu ({code}); Raft keeps retrying.";
 const _maxInteger = 9007199254740991;
 Never _invalid() => throw const FormatException(
   'The Slack bridge response is unsupported or incomplete. Refresh or contact your administrator.',

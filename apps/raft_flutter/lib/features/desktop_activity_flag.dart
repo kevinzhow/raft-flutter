@@ -3,12 +3,14 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import '../data/device_preferences.dart';
 import '../data/workspace_controller.dart';
+import '../data/feature_flag_client_facts.dart';
 
-/// ThreadsInbox's mounted activity_sidebar_inbox_v0 gate. Unknown/failed
-/// evaluation keeps the executable legacy1024 opener, rather than assuming768.
+/// ThreadsInbox's mounted activity_sidebar_inbox_v0 gate (sidebar chrome only;
+/// the split-preview threshold no longer depends on it, see [masterDetail]).
 class DesktopActivityFlag extends ChangeNotifier {
   DesktopActivityFlag(this.w) {
     w.addListener(changed);
@@ -44,7 +46,15 @@ class DesktopActivityFlag extends ChangeNotifier {
       w.server != null &&
       w.client.user != null &&
       (FeatureFlagMemory.read(memoryScope, flag) ?? false);
-  bool masterDetail(double width) => width >= (enabled ? 768 : 1024);
+
+  /// The Activity split preview exists at every width where the shell shows
+  /// its multi-column layout (>= [RaftLayoutMetrics.desktopBreakpoint]).
+  /// Source ThreadsInbox gates 768 on the flag and keeps 1024 for flag-off
+  /// servers, but there a foldable / narrow-window tap navigated straight into
+  /// the chat (owner decision "Activity click C": first click previews, only
+  /// the same row twice upgrades). The flag no longer raises the threshold.
+  bool masterDetail(double width) =>
+      width >= RaftLayoutMetrics.desktopBreakpoint;
 
   /// A new principal/server/role retires the evaluated presentation at once.
   /// [reevaluate] (server:updated under the same authority) keeps the
@@ -72,15 +82,10 @@ class DesktopActivityFlag extends ChangeNotifier {
     try {
       final value = await w.client.post(
         '/feature-flags/evaluate',
-        data: {
-          'keys': ['activity_sidebar_inbox_v0'],
-          'serverId': server,
-          'platform':
-              defaultTargetPlatform == TargetPlatform.android ||
-                  defaultTargetPlatform == TargetPlatform.iOS
-              ? 'mobile'
-              : 'web',
-        },
+        data: featureFlagEvaluateBody(
+          keys: ['activity_sidebar_inbox_v0'],
+          serverId: server,
+        ),
       );
       if (ended ||
           scope != sourceAuthority ||

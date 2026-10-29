@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -30,7 +31,7 @@ Future<void> verifyNativeMediaPreviewFlow(
         final dynamic state = tester.state(dialogs);
         final player = state.player;
         debugPrint(
-          'Native preview diagnostic: loading=${state.loading} error=${state.error != null} controls=${find.byType(RaftMediaControls).evaluate().length}',
+          'Native preview diagnostic: loading=${state.loading} error=${state.error != null} controls=${find.byKey(const Key('inline-video-bar')).evaluate().length}',
         );
         if (player is NativeAttachmentPlayer) {
           debugPrint(
@@ -53,7 +54,7 @@ Future<void> verifyNativeMediaPreviewFlow(
         for (final view in find.byType(RaftChatView).evaluate()) {
           final dynamic state = (view as StatefulElement).state;
           debugPrint(
-            'Media context diagnostic: loading=${w.channelLoading} rows=${w.messages.length} role=${(view.widget as RaftChatView).thread} adapter=${state.adapter.messages.length} target=${state.adapter.messages.any((dynamic m) => m.id == w.highlightedMessageId)} visible=${w.highlightedMessageId != null && state.focusReceiptVisible(w.highlightedMessageId!)} attached=${state.viewport.hasClients} offset=${state.viewport.hasClients ? state.viewport.offset : null} max=${state.viewport.hasClients ? state.viewport.position.maxScrollExtent : null}',
+            'Media context diagnostic: loading=${w.messageDomain.state.channelLoading} rows=${w.messageDomain.messages.length} role=${(view.widget as RaftChatView).thread} adapter=${state.adapter.messages.length} target=${state.adapter.messages.any((dynamic m) => m.id == w.messageDomain.state.highlightedMessageId)} visible=${w.messageDomain.state.highlightedMessageId != null && state.focusReceiptVisible(w.messageDomain.state.highlightedMessageId!)} attached=${state.viewport.hasClients} offset=${state.viewport.hasClients ? state.viewport.offset : null} max=${state.viewport.hasClients ? state.viewport.position.maxScrollExtent : null}',
           );
         }
         await capture('failure-media-context');
@@ -76,7 +77,7 @@ Future<void> verifyNativeMediaPreviewFlow(
   }
   expect(w.uploadsReady(), true);
   expect(await w.send('Native media previews $suffix'), true);
-  final message = w.messages.singleWhere(
+  final message = w.messageDomain.messages.singleWhere(
     (m) => m.content == 'Native media previews $suffix',
   );
   expect(message.attachments, hasLength(4));
@@ -119,32 +120,29 @@ Future<void> verifyNativeMediaPreviewFlow(
         findsOneWidget,
       );
       await capture('attachment-native-pdf-page-one');
-      await tester.tap(find.byTooltip('Next page'));
+      await tester.tap(find.byTooltip('Next Page'));
       await until(() => find.text('2 / 2').evaluate().isNotEmpty);
       await capture('attachment-native-pdf-page-two');
     } else {
+      final isVideo = name.endsWith('.webm');
+      // The viewer's own controls (no Material slider): read the state the
+      // dialog got from the native player.
+      AttachmentPlayback playback() =>
+          (tester.state(
+                find.byType(AttachmentPreviewDialog),
+              ) as dynamic).playback
+              as AttachmentPlayback;
+      final toggle = find.byKey(
+        isVideo
+            ? const Key('inline-video-surface')
+            : const Key('audio-play-toggle'),
+      );
+      await until(() => playback().duration > Duration.zero);
+      await tester.tap(toggle);
       await until(
-        () =>
-            find.byType(RaftMediaControls).evaluate().isNotEmpty &&
-            tester
-                    .widget<RaftMediaControls>(find.byType(RaftMediaControls))
-                    .duration >
-                Duration.zero,
+        () => playback().position > const Duration(milliseconds: 300),
       );
-      await tester.tap(find.byTooltip('Play'));
-      await until(
-        () =>
-            tester
-                .widget<RaftMediaControls>(find.byType(RaftMediaControls))
-                .position >
-            const Duration(milliseconds: 300),
-      );
-      expect(
-        tester
-            .widget<RaftMediaControls>(find.byType(RaftMediaControls))
-            .playing,
-        true,
-      );
+      expect(playback().playing, true);
       if (name.endsWith('.webm')) {
         await until(
           () =>
@@ -172,34 +170,38 @@ Future<void> verifyNativeMediaPreviewFlow(
             ? 'attachment-native-video-playing'
             : 'attachment-native-audio-playing',
       );
-      await tester.tap(find.byTooltip('Pause'));
-      await until(
-        () => !tester
-            .widget<RaftMediaControls>(find.byType(RaftMediaControls))
-            .playing,
+      await tester.tap(toggle);
+      await until(() => !playback().playing);
+      // A paused video keeps its control bar; hover shows the volume rail.
+      final timeline = find.byKey(
+        isVideo ? const Key('inline-video-seek') : const Key('audio-seek'),
       );
-      final timeline = find.byType(Slider).first;
       await tester.ensureVisible(timeline);
       await tester.tap(timeline);
       await until(
-        () =>
-            tester
-                .widget<RaftMediaControls>(find.byType(RaftMediaControls))
-                .position >=
-            const Duration(milliseconds: 1400),
+        () => playback().position >= const Duration(milliseconds: 1400),
       );
-      final volume = find.byType(Slider).last;
-      await tester.ensureVisible(volume);
-      await tester.tap(volume);
-      await until(
-        () =>
-            tester
-                .widget<RaftMediaControls>(find.byType(RaftMediaControls))
-                .volume ==
-            50,
-      );
+      if (isVideo) {
+        final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(location: Offset.zero);
+        await mouse.moveTo(
+          tester.getCenter(find.byKey(const Key('inline-video-mute'))),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        final volume = tester.getRect(
+          find.byKey(const Key('inline-video-volume')),
+        );
+        await tester.tapAt(Offset(volume.center.dx, volume.center.dy));
+        await until(() => (playback().volume - 50).abs() <= 12);
+        await mouse.removePointer();
+      } else {
+        final volume = find.byKey(const Key('audio-volume'));
+        await tester.ensureVisible(volume);
+        await tester.tap(volume);
+        await until(() => (playback().volume - 50).abs() <= 12);
+      }
     }
-    await tester.tap(find.byTooltip('Close preview'));
+    await tester.tap(find.byTooltip('Close Preview'));
     await until(() => find.byType(AttachmentPreviewDialog).evaluate().isEmpty);
     await tester.pump(const Duration(milliseconds: 250));
   }

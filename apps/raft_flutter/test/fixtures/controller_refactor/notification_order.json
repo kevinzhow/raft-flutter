@@ -1,0 +1,1450 @@
+{
+  "source": "0c0b5a3b2adeae731f8036d0023eb71d569f0c5e",
+  "scope": "Controller public operations and listener/request/cache ordering; not platform E2E.",
+  "expectedNotifications": {
+    "select-channel": 4,
+    "jump-message": 3,
+    "thread-open-close": 6,
+    "prefetch": 0,
+    "adopt-dm": 5,
+    "send-projection": 2,
+    "borrowed-select": 3
+  },
+  "scenarios": {
+    "select-channel": [
+      {
+        "event": "start",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {
+          "c2": 3
+        },
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": true,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {
+          "c2": 0
+        },
+        "uri": "/s/demo/channel/c2",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [],
+        "messages": [],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "api.get",
+        "path": "/tasks/channel/c2"
+      },
+      {
+        "event": "cache.write",
+        "kind": "unread",
+        "id": ""
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "agents"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "computers"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "members"
+      },
+      {
+        "event": "cache.read",
+        "kind": "draft",
+        "id": "c2"
+      },
+      {
+        "event": "cache.read",
+        "kind": "attempt",
+        "id": "c2"
+      },
+      {
+        "event": "cache.read",
+        "kind": "window",
+        "id": "c2"
+      },
+      {
+        "event": "join",
+        "id": "c2"
+      },
+      {
+        "event": "api.get",
+        "path": "/messages/channel/c2"
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {
+          "c2": 0
+        },
+        "uri": "/s/demo/channel/c2",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "c2-row"
+        ],
+        "messages": [
+          "c2-row"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "cache.write",
+        "kind": "window",
+        "id": "c2"
+      },
+      {
+        "event": "cache.write",
+        "kind": "selection",
+        "id": ""
+      },
+      {
+        "event": "api.post",
+        "path": "/channels/c2/read"
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {
+          "c2": 0
+        },
+        "uri": "/s/demo/channel/c2",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "c2-row"
+        ],
+        "messages": [
+          "c2-row"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {
+          "c2": 0
+        },
+        "uri": "/s/demo/channel/c2",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "c2-row"
+        ],
+        "messages": [
+          "c2-row"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "cache.write",
+        "kind": "read-frontiers",
+        "id": ""
+      },
+      {
+        "event": "cache.write",
+        "kind": "unread",
+        "id": ""
+      },
+      {
+        "event": "end",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {
+          "c2": 0
+        },
+        "uri": "/s/demo/channel/c2",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "c2-row"
+        ],
+        "messages": [
+          "c2-row"
+        ],
+        "replies": [],
+        "error": null
+      }
+    ],
+    "jump-message": [
+      {
+        "event": "start",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": true,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": "target",
+        "unread": {},
+        "uri": "/s/demo/channel/c2?msg=target",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [],
+        "messages": [],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "api.get",
+        "path": "/messages/context/target"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "agents"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "computers"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "members"
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": true,
+        "highlight": "target",
+        "unread": {},
+        "uri": "/s/demo/channel/c2?msg=target",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "target"
+        ],
+        "messages": [
+          "target"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": true,
+        "highlight": "target",
+        "unread": {},
+        "uri": "/s/demo/channel/c2?msg=target",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "target"
+        ],
+        "messages": [
+          "target"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "end",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": true,
+        "highlight": "target",
+        "unread": {},
+        "uri": "/s/demo/channel/c2?msg=target",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "target"
+        ],
+        "messages": [
+          "target"
+        ],
+        "replies": [],
+        "error": null
+      }
+    ],
+    "thread-open-close": [
+      {
+        "event": "start",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "c1",
+        "thread": null,
+        "parent": "parent",
+        "loading": false,
+        "threadLoading": true,
+        "resolving": true,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1?thread=c1%3Aparent",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "agents"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "computers"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "members"
+      },
+      {
+        "event": "cache.read",
+        "kind": "draft",
+        "id": "thread:parent"
+      },
+      {
+        "event": "cache.read",
+        "kind": "thread-window",
+        "id": "parent"
+      },
+      {
+        "event": "api.get",
+        "path": "/channels/c1/threads/parent"
+      },
+      {
+        "event": "notify",
+        "channel": "c1",
+        "thread": "thread",
+        "parent": "parent",
+        "loading": false,
+        "threadLoading": true,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1?thread=c1%3Aparent",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "api.get",
+        "path": "/messages/channel/thread"
+      },
+      {
+        "event": "join",
+        "id": "thread"
+      },
+      {
+        "event": "join",
+        "id": "c1"
+      },
+      {
+        "event": "notify",
+        "channel": "c1",
+        "thread": "thread",
+        "parent": "parent",
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1?thread=c1%3Aparent",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [
+          "thread-row"
+        ],
+        "error": null
+      },
+      {
+        "event": "api.post",
+        "path": "/channels/thread/read"
+      },
+      {
+        "event": "notify",
+        "channel": "c1",
+        "thread": "thread",
+        "parent": "parent",
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1?thread=c1%3Aparent",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [
+          "thread-row"
+        ],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "c1",
+        "thread": "thread",
+        "parent": "parent",
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1?thread=c1%3Aparent",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [
+          "thread-row"
+        ],
+        "error": null
+      },
+      {
+        "event": "leave",
+        "id": "thread"
+      },
+      {
+        "event": "notify",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "cache.write",
+        "kind": "read-frontiers",
+        "id": ""
+      },
+      {
+        "event": "cache.write",
+        "kind": "unread",
+        "id": ""
+      },
+      {
+        "event": "cache.write",
+        "kind": "window",
+        "id": "thread"
+      },
+      {
+        "event": "cache.write",
+        "kind": "thread-window",
+        "id": "parent"
+      },
+      {
+        "event": "end",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      }
+    ],
+    "prefetch": [
+      {
+        "event": "start",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {
+          "c2": 3
+        },
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "api.get",
+        "path": "/tasks/channel/c2"
+      },
+      {
+        "event": "api.get",
+        "path": "/messages/channel/c2"
+      },
+      {
+        "event": "end",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {
+          "c2": 3
+        },
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      }
+    ],
+    "adopt-dm": [
+      {
+        "event": "start",
+        "channel": "pending-dm:peer",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [
+          "pending-dm:peer"
+        ],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {
+          "pending-dm:peer": null
+        },
+        "timeline": [],
+        "messages": [],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "dm-peer",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [
+          "dm-peer"
+        ],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [
+          "dm-peer"
+        ],
+        "holds": {
+          "dm-peer": null
+        },
+        "timeline": [],
+        "messages": [],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "dm-peer",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [
+          "dm-peer"
+        ],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [
+          "dm-peer"
+        ],
+        "holds": {
+          "dm-peer": null
+        },
+        "timeline": [],
+        "messages": [],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "dm-peer",
+        "thread": null,
+        "parent": null,
+        "loading": true,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/dm/dm-peer",
+        "draftScopes": [
+          "dm-peer"
+        ],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [
+          "dm-peer"
+        ],
+        "holds": {
+          "dm-peer": null
+        },
+        "timeline": [],
+        "messages": [],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "api.get",
+        "path": "/tasks/channel/dm-peer"
+      },
+      {
+        "event": "cache.write",
+        "kind": "draft",
+        "id": "pending-dm:peer"
+      },
+      {
+        "event": "cache.write",
+        "kind": "attempt",
+        "id": "pending-dm:peer"
+      },
+      {
+        "event": "cache.write",
+        "kind": "draft",
+        "id": "dm-peer"
+      },
+      {
+        "event": "cache.write",
+        "kind": "channels",
+        "id": ""
+      },
+      {
+        "event": "cache.read",
+        "kind": "draft",
+        "id": "dm-peer"
+      },
+      {
+        "event": "cache.read",
+        "kind": "window",
+        "id": "dm-peer"
+      },
+      {
+        "event": "join",
+        "id": "dm-peer"
+      },
+      {
+        "event": "api.get",
+        "path": "/messages/channel/dm-peer"
+      },
+      {
+        "event": "notify",
+        "channel": "dm-peer",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/dm/dm-peer",
+        "draftScopes": [
+          "dm-peer"
+        ],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [
+          "dm-peer"
+        ],
+        "holds": {
+          "dm-peer": null
+        },
+        "timeline": [
+          "dm-peer-row"
+        ],
+        "messages": [
+          "dm-peer-row"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "cache.write",
+        "kind": "window",
+        "id": "dm-peer"
+      },
+      {
+        "event": "cache.write",
+        "kind": "selection",
+        "id": ""
+      },
+      {
+        "event": "notify",
+        "channel": "dm-peer",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/dm/dm-peer",
+        "draftScopes": [
+          "dm-peer"
+        ],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [
+          "dm-peer"
+        ],
+        "holds": {
+          "dm-peer": null
+        },
+        "timeline": [
+          "dm-peer-row"
+        ],
+        "messages": [
+          "dm-peer-row"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "end",
+        "channel": "dm-peer",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/dm/dm-peer",
+        "draftScopes": [
+          "dm-peer"
+        ],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [
+          "dm-peer"
+        ],
+        "holds": {
+          "dm-peer": null
+        },
+        "timeline": [
+          "dm-peer-row"
+        ],
+        "messages": [
+          "dm-peer-row"
+        ],
+        "replies": [],
+        "error": null
+      }
+    ],
+    "send-projection": [
+      {
+        "event": "start",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent",
+          "optimistic-fixed-send"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "agents"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "computers"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "members"
+      },
+      {
+        "event": "cache.write",
+        "kind": "attempt",
+        "id": "c1"
+      },
+      {
+        "event": "api.send",
+        "channel": "c1",
+        "randomId": "fixed-send"
+      },
+      {
+        "event": "complete-receipt"
+      },
+      {
+        "event": "notify",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent",
+          "accepted-send"
+        ],
+        "messages": [
+          "parent",
+          "accepted-send"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "cache.write",
+        "kind": "attempt",
+        "id": "c1"
+      },
+      {
+        "event": "cache.write",
+        "kind": "window",
+        "id": "c1"
+      },
+      {
+        "event": "end",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent",
+          "accepted-send"
+        ],
+        "messages": [
+          "parent",
+          "accepted-send"
+        ],
+        "replies": [],
+        "error": null
+      }
+    ],
+    "borrowed-select": [
+      {
+        "event": "start",
+        "channel": "c1",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c1",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "parent"
+        ],
+        "messages": [
+          "parent"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": true,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c2",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [],
+        "messages": [],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "api.get",
+        "path": "/tasks/channel/c2"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "agents"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "computers"
+      },
+      {
+        "event": "cache.read",
+        "kind": "entities",
+        "id": "members"
+      },
+      {
+        "event": "cache.read",
+        "kind": "draft",
+        "id": "c2"
+      },
+      {
+        "event": "cache.read",
+        "kind": "attempt",
+        "id": "c2"
+      },
+      {
+        "event": "cache.read",
+        "kind": "window",
+        "id": "c2"
+      },
+      {
+        "event": "join",
+        "id": "c2"
+      },
+      {
+        "event": "api.get",
+        "path": "/messages/channel/c2"
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c2",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "c2-row"
+        ],
+        "messages": [
+          "c2-row"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "cache.write",
+        "kind": "window",
+        "id": "c2"
+      },
+      {
+        "event": "cache.write",
+        "kind": "selection",
+        "id": ""
+      },
+      {
+        "event": "notify",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c2",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "c2-row"
+        ],
+        "messages": [
+          "c2-row"
+        ],
+        "replies": [],
+        "error": null
+      },
+      {
+        "event": "end",
+        "channel": "c2",
+        "thread": null,
+        "parent": null,
+        "loading": false,
+        "threadLoading": false,
+        "resolving": false,
+        "parentLoading": false,
+        "newer": false,
+        "highlight": null,
+        "unread": {},
+        "uri": "/s/demo/channel/c2",
+        "draftScopes": [],
+        "channels": [
+          "c1",
+          "c2"
+        ],
+        "dms": [],
+        "holds": {},
+        "timeline": [
+          "c2-row"
+        ],
+        "messages": [
+          "c2-row"
+        ],
+        "replies": [],
+        "error": null
+      }
+    ]
+  }
+}

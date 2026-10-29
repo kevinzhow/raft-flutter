@@ -1,0 +1,6107 @@
+{
+ "surfaces": [
+  {
+   "surface": "Top bar: AppTopBar (workspace name + quick-switch strip, centred search field, trailing actions)",
+   "level": "frame",
+   "webFiles": [
+    "components/topbar/AppTopBar.tsx",
+    "components/topbar/ShellTopBar.tsx",
+    "components/topbar/WorkspaceStrip.tsx",
+    "components/topbar/WorkspaceStripButton.tsx",
+    "components/topbar/WorkspaceStripCurrentMark.tsx",
+    "components/topbar/WorkspaceStripSortableAvatar.tsx",
+    "components/topbar/useStripLayout.ts",
+    "components/topbar/workspaceStripLayout.ts",
+    "components/topbar/topBarClasses.ts",
+    "components/topbar/topBarVisibility.ts"
+   ],
+   "linesChanged": 759,
+   "platforms": [
+    "desktop",
+    "phone (only when hosted)"
+   ],
+   "officialCases": [
+    "components.home.server-switcher.open"
+   ],
+   "officialPending": [
+    "components.home.server-switcher.open"
+   ],
+   "extGlobs": [
+    "components.frame.desktop.home",
+    "components.frame.desktop.topbar",
+    "components.frame.tablet.topbar",
+    "components.shell.desktop.server.menu",
+    "components.shell.desktop.sidebar.*"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.frame.desktop.home",
+    "components.frame.desktop.topbar",
+    "components.frame.tablet.topbar"
+   ],
+   "covered": {
+    "widths": [
+     "tablet",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.5988,
+   "scoreLightMin": 0.22355143229166666,
+   "scoreDarkMean": 0.7125,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Top bar right region: TopBarGlobalActions (WorkingNowSummary count + notification Bell)",
+   "level": "frame",
+   "webFiles": [
+    "components/topbar/TopBarGlobalActions.tsx",
+    "components/layout/WorkingNowSummary.tsx",
+    "components/layout/NotificationTrigger.tsx"
+   ],
+   "linesChanged": 262,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [
+    "components.home.notification-center.states"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.frame.desktop.topbar",
+    "components.list-pages.notification.desktop-center"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.frame.desktop.topbar",
+    "components.list-pages.notification.desktop-center"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.6552,
+   "scoreLightMin": 0.22355143229166666,
+   "scoreDarkMean": 0.6216,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Window chrome / desktop title-bar host contract (TopBarHostContext, data-raft-titlebar, edge insets)",
+   "level": "frame",
+   "webFiles": [
+    "components/topbar/topBarHostContext.ts",
+    "desktopHandshake.ts",
+    "desktopRuntimeEnvironment.ts",
+    "desktopServerTitle.ts",
+    "desktopServerWindow.ts",
+    "components/window/ThreadWindowRoute.tsx"
+   ],
+   "linesChanged": 79,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "Electron / host shell only; neither a browser nor a native client draws it (inventory excl host-only)."
+  },
+  {
+   "surface": "Left rail (AppRail: Chat / Activity / Members / Computers / Tasks / Saved tabs, Help, Settings)",
+   "level": "frame",
+   "webFiles": [
+    "components/layout/LeftRail.tsx"
+   ],
+   "linesChanged": 316,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.frame.desktop.home",
+    "components.frame.desktop.rail",
+    "components.shell.desktop.rail.help-menu",
+    "components.shell.desktop.sidebar.*"
+   ],
+   "extCases": 11,
+   "extSample": [
+    "components.frame.desktop.home",
+    "components.frame.desktop.rail",
+    "components.shell.desktop.rail.help-menu"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.6122,
+   "scoreLightMin": 0,
+   "scoreDarkMean": 0.7931,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Sidebar (channels / DMs / sections list, head removed, mobileInline home list)",
+   "level": "frame",
+   "webFiles": [
+    "components/layout/Sidebar.tsx",
+    "components/layout/SidebarSortMenu.tsx",
+    "components/layout/SidebarSectionDialog.tsx",
+    "components/layout/SidebarReadToggleMenuItem.tsx",
+    "components/layout/SidebarConversationFinder.tsx",
+    "components/layout/MoveToSectionMenuItem.tsx",
+    "components/layout/SectionSortModeMenuItem.tsx",
+    "components/layout/SidebarSectionEmojiPicker.tsx"
+   ],
+   "linesChanged": 1562,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.home.titlebar.states",
+    "screens.home.index",
+    "screens.home.loading"
+   ],
+   "officialPending": [
+    "screens.home.index"
+   ],
+   "extGlobs": [
+    "components.frame.desktop.sidebar",
+    "components.frame.phone.home",
+    "components.frame.tablet.home",
+    "components.list-pages.dialogs.desktop-emoji-picker",
+    "components.list-pages.dialogs.phone-*-section",
+    "components.list-pages.dialogs.phone-archive-channel",
+    "components.list-pages.dialogs.phone-emoji-picker",
+    "components.row-menus.desktop.menu.*",
+    "components.row-menus.mobile.menu.*",
+    "components.shell.desktop.dialog.*-section",
+    "components.shell.desktop.dialog.archive-channel",
+    "components.shell.desktop.menu.*",
+    "components.shell.desktop.sidebar.*",
+    "components.shell.desktop.sidebar.sort-menu",
+    "components.shell.mobile.menu.*",
+    "components.shell.mobile.sidebar.collapsed",
+    "components.shell.mobile.sidebar.default",
+    "components.shell.mobile.sidebar.sort-menu"
+   ],
+   "extCases": 42,
+   "extSample": [
+    "components.frame.desktop.sidebar",
+    "components.frame.phone.home",
+    "components.frame.tablet.home"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "tablet",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.669,
+   "scoreLightMin": 0.0902412109375,
+   "scoreDarkMean": 0.7273,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Phone Home / phone titlebar (sidebar as home list, workspace pill, notification trigger)",
+   "level": "frame",
+   "webFiles": [
+    "components/layout/Sidebar.tsx",
+    "components/layout/NotificationTrigger.tsx",
+    "utils/channelUnreadIndicator.ts"
+   ],
+   "linesChanged": 946,
+   "platforms": [
+    "phone"
+   ],
+   "officialCases": [
+    "components.home.titlebar.states",
+    "screens.home.index",
+    "screens.home.loading"
+   ],
+   "officialPending": [
+    "screens.home.index"
+   ],
+   "extGlobs": [
+    "components.frame.phone.home",
+    "components.shell.mobile.sidebar.collapsed",
+    "components.shell.mobile.sidebar.default"
+   ],
+   "extCases": 3,
+   "extSample": [
+    "components.frame.phone.home",
+    "components.shell.mobile.sidebar.collapsed",
+    "components.shell.mobile.sidebar.default"
+   ],
+   "covered": {
+    "widths": [
+     "phone"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8966,
+   "scoreLightMin": 0.8049995949285049,
+   "scoreDarkMean": 0.8662,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Phone bottom tab bar (MobileTabBar / raft-ui MobileNav*)",
+   "level": "frame",
+   "webFiles": [
+    "components/layout/MainLayout.tsx"
+   ],
+   "linesChanged": 96,
+   "platforms": [
+    "phone"
+   ],
+   "officialCases": [
+    "components.navigation.tabbar.states"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.frame.phone.home",
+    "components.frame.phone.tabbar"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.frame.phone.home",
+    "components.frame.phone.tabbar"
+   ],
+   "covered": {
+    "widths": [
+     "phone"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7077,
+   "scoreLightMin": 0.5950087661626123,
+   "scoreDarkMean": 0.426,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Main layout / panel layout (rail + sidebar + content + right panel, resizable, master-detail sizing)",
+   "level": "frame",
+   "webFiles": [
+    "components/layout/MainLayout.tsx",
+    "components/layout/masterDetailPanelSizing.ts",
+    "components/layout/rightPanelUrlSync.ts",
+    "components/layout/ContentSlotThreadPanel.tsx",
+    "components/ui/PanelResizeHandle.tsx",
+    "App.tsx"
+   ],
+   "linesChanged": 259,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.thread.channel"
+   ],
+   "officialPending": [
+    "screens.thread.channel"
+   ],
+   "extGlobs": [
+    "components.conversation.empty.desktop.no-channel",
+    "components.frame.desktop.channel",
+    "components.frame.desktop.home",
+    "components.frame.tablet.channel",
+    "components.frame.tablet.home",
+    "components.screens-ext.channel.desktop.full",
+    "components.screens-ext.channel.mobile.full",
+    "components.shell.desktop.activity.frame",
+    "components.shell.mobile.activity.frame"
+   ],
+   "extCases": 9,
+   "extSample": [
+    "components.conversation.empty.desktop.no-channel",
+    "components.frame.desktop.channel",
+    "components.frame.desktop.home"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "tablet",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8481,
+   "scoreLightMin": 0.7589830508474577,
+   "scoreDarkMean": 0.6608,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Thread / right panel frame (PanelHeader, ThreadPanelWrapper, panel resize)",
+   "level": "frame",
+   "webFiles": [
+    "components/ui/PanelHeader.tsx",
+    "components/layout/MainLayout.tsx",
+    "components/ui/PanelResizeHandle.tsx"
+   ],
+   "linesChanged": 207,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.thread-ext.thread.desktop.*",
+    "components.thread-ext.thread.mobile.*"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.thread-ext.thread.desktop.composer",
+    "components.thread-ext.thread.desktop.empty",
+    "components.thread-ext.thread.desktop.history-limited"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8732,
+   "scoreLightMin": 0.6890265906932573,
+   "scoreDarkMean": 0.3483,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Task detail modal frame (TaskModalBar / TaskModalHead)",
+   "level": "frame",
+   "webFiles": [
+    "components/layout/MainLayout.tsx",
+    "components/task/TaskModalHead.tsx"
+   ],
+   "linesChanged": 73,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.thread.task-thread"
+   ],
+   "officialPending": [
+    "screens.thread.task-thread"
+   ],
+   "extGlobs": [
+    "components.taskdetail.desktop.*",
+    "components.taskdetail.mobile.*"
+   ],
+   "extCases": 26,
+   "extSample": [
+    "components.taskdetail.desktop.assigned",
+    "components.taskdetail.desktop.description",
+    "components.taskdetail.desktop.empty"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8257,
+   "scoreLightMin": 0.7118486328125,
+   "scoreDarkMean": 0.3071,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Auth bootstrap status + Server resolver + access denied + server selection (App.tsx)",
+   "level": "page",
+   "webFiles": [
+    "App.tsx"
+   ],
+   "linesChanged": 66,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.desktop.bootstrap.*",
+    "components.auth-pages.desktop.server-denied.*",
+    "components.auth-pages.desktop.servers.*",
+    "components.auth-pages.mobile.bootstrap.*",
+    "components.auth-pages.mobile.server-denied.*",
+    "components.auth-pages.mobile.servers.*"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.auth-pages.desktop.bootstrap.loading",
+    "components.auth-pages.desktop.bootstrap.restoring",
+    "components.auth-pages.desktop.server-denied.no-server"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.206,
+   "scoreLightMin": 0,
+   "scoreDarkMean": 0.0025,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Login",
+   "level": "page",
+   "webFiles": [
+    "components/auth/LoginPage.tsx",
+    "components/auth/SocialProviderButton.tsx",
+    "components/auth/OpenInBrowserSignInGuide.tsx",
+    "components/brand/AuthBrandShell.tsx",
+    "components/auth/AuthPageFrame.tsx",
+    "assets/icons/provider_google.svg"
+   ],
+   "linesChanged": 146,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.auth.login",
+    "screens.auth.login.signing"
+   ],
+   "officialPending": [
+    "screens.auth.login"
+   ],
+   "extGlobs": [
+    "components.auth-ext.desktop.login.*",
+    "components.auth-ext.desktop.login.default",
+    "components.auth-ext.desktop.login.social",
+    "components.auth-ext.desktop.social.*",
+    "components.auth-ext.mobile.login.*",
+    "components.auth-ext.mobile.login.default",
+    "components.auth-ext.mobile.login.social",
+    "components.auth-ext.mobile.social.*"
+   ],
+   "extCases": 16,
+   "extSample": [
+    "components.auth-ext.desktop.login.default",
+    "components.auth-ext.desktop.login.error",
+    "components.auth-ext.desktop.login.filled"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9267,
+   "scoreLightMin": 0.7546905164092664,
+   "scoreDarkMean": 0.905,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Register",
+   "level": "page",
+   "webFiles": [
+    "components/auth/RegisterPage.tsx",
+    "components/auth/LegalAcceptanceCheckbox.tsx"
+   ],
+   "linesChanged": 38,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.auth.register.inputs"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.desktop.register.*",
+    "components.auth-pages.desktop.register.default",
+    "components.auth-pages.mobile.register.*",
+    "components.auth-pages.mobile.register.default"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.auth-pages.desktop.register.error",
+    "components.auth-pages.desktop.register.filled",
+    "components.auth-pages.desktop.register.invalid-email"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9273,
+   "scoreLightMin": 0.8737810723592714,
+   "scoreDarkMean": 0.8975,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Forgot password",
+   "level": "page",
+   "webFiles": [
+    "components/auth/ForgotPasswordPage.tsx"
+   ],
+   "linesChanged": 16,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.auth.forgot-password"
+   ],
+   "officialPending": [
+    "screens.auth.forgot-password"
+   ],
+   "extGlobs": [
+    "components.auth-ext.desktop.forgot.*",
+    "components.auth-ext.mobile.forgot.*"
+   ],
+   "extCases": 8,
+   "extSample": [
+    "components.auth-ext.desktop.forgot.default",
+    "components.auth-ext.desktop.forgot.error",
+    "components.auth-ext.desktop.forgot.filled"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9572,
+   "scoreLightMin": 0.9299695521259502,
+   "scoreDarkMean": 0.9415,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Reset password",
+   "level": "page",
+   "webFiles": [
+    "components/auth/ResetPasswordPage.tsx"
+   ],
+   "linesChanged": 14,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-ext.desktop.reset.*",
+    "components.auth-ext.mobile.reset.*"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.auth-ext.desktop.reset.default",
+    "components.auth-ext.desktop.reset.error",
+    "components.auth-ext.desktop.reset.filled"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9504,
+   "scoreLightMin": 0.9227201226016392,
+   "scoreDarkMean": 0.9237,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Email verification",
+   "level": "page",
+   "webFiles": [
+    "components/auth/EmailVerificationPage.tsx"
+   ],
+   "linesChanged": 28,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-ext.desktop.verify.*",
+    "components.auth-ext.mobile.verify.*"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.auth-ext.desktop.verify.default",
+    "components.auth-ext.desktop.verify.error",
+    "components.auth-ext.desktop.verify.manual"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9504,
+   "scoreLightMin": 0.9195247836243097,
+   "scoreDarkMean": 0.9092,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Account identity (profile) setup",
+   "level": "page",
+   "webFiles": [
+    "components/auth/AccountIdentitySetupPage.tsx"
+   ],
+   "linesChanged": 85,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.auth.profile-setup"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.desktop.identity.*",
+    "components.auth-pages.mobile.identity.*"
+   ],
+   "extCases": 4,
+   "extSample": [
+    "components.auth-pages.desktop.identity.default",
+    "components.auth-pages.desktop.identity.filled",
+    "components.auth-pages.mobile.identity.default"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7259,
+   "scoreLightMin": 0.4573076171875,
+   "scoreDarkMean": 0.8182,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Social auth callback",
+   "level": "page",
+   "webFiles": [
+    "components/auth/SocialAuthCallbackPage.tsx"
+   ],
+   "linesChanged": 91,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Invite accept",
+   "level": "page",
+   "webFiles": [
+    "components/auth/InviteAcceptPage.tsx",
+    "components/auth/CenteredCardFrame.tsx"
+   ],
+   "linesChanged": 36,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.desktop.invite.*",
+    "components.auth-pages.mobile.invite.*"
+   ],
+   "extCases": 20,
+   "extSample": [
+    "components.auth-pages.desktop.invite.accept-error",
+    "components.auth-pages.desktop.invite.agreement",
+    "components.auth-pages.desktop.invite.expired"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9402,
+   "scoreLightMin": 0.7134061786905389,
+   "scoreDarkMean": 0.9159,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Choose server / create server (ServerSelector, ServerCreatePreview, ServerOptionCard, OnboardingCreateShell)",
+   "level": "page",
+   "webFiles": [
+    "components/auth/ServerSelector.tsx",
+    "components/auth/ServerCreatePreview.tsx",
+    "components/auth/ServerOptionCard.tsx",
+    "components/auth/OnboardingCreateShell.tsx"
+   ],
+   "linesChanged": 182,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.auth.choose-server",
+    "screens.home.choose-server"
+   ],
+   "officialPending": [
+    "screens.auth.choose-server",
+    "screens.home.choose-server"
+   ],
+   "extGlobs": [
+    "components.auth-ext.desktop.server.choose",
+    "components.auth-ext.desktop.server.create-more*",
+    "components.auth-ext.mobile.server.choose",
+    "components.auth-ext.mobile.server.create-first*",
+    "components.auth-ext.mobile.server.create-more*",
+    "components.auth-pages.desktop.server.create-first*"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.auth-ext.desktop.server.choose",
+    "components.auth-ext.desktop.server.create-more",
+    "components.auth-ext.desktop.server.create-more-filled"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.884,
+   "scoreLightMin": 0.662009765625,
+   "scoreDarkMean": 0.8268,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Server setup: survey step",
+   "level": "page",
+   "webFiles": [
+    "components/onboarding/ServerSetupSurveyStep.tsx",
+    "components/onboarding/SetupStepFrame.tsx",
+    "components/onboarding/SetupSessionFooter.tsx"
+   ],
+   "linesChanged": 223,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-ext.desktop.setup.survey*",
+    "components.auth-ext.mobile.setup.survey*"
+   ],
+   "extCases": 8,
+   "extSample": [
+    "components.auth-ext.desktop.setup.survey",
+    "components.auth-ext.desktop.setup.survey-error",
+    "components.auth-ext.desktop.setup.survey-other"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7934,
+   "scoreLightMin": 0.7366899127839538,
+   "scoreDarkMean": 0.0061,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Server setup: connect computer / runtime step",
+   "level": "page",
+   "webFiles": [
+    "components/onboarding/ServerSetupComputerRuntimeStep.tsx",
+    "pages/ServerSetupComputerRuntimePreviewPage.tsx"
+   ],
+   "linesChanged": 140,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-ext.desktop.setup.computer-*",
+    "components.auth-ext.mobile.setup.computer-*"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.auth-ext.desktop.setup.computer-connecting",
+    "components.auth-ext.desktop.setup.computer-not-connected",
+    "components.auth-ext.desktop.setup.computer-not-ready"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7655,
+   "scoreLightMin": 0.6460326943018195,
+   "scoreDarkMean": 0.0199,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Server setup: handoff step",
+   "level": "page",
+   "webFiles": [
+    "components/onboarding/ServerSetupHandoffStep.tsx"
+   ],
+   "linesChanged": 60,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-ext.desktop.setup.handoff*",
+    "components.auth-ext.mobile.setup.handoff*"
+   ],
+   "extCases": 4,
+   "extSample": [
+    "components.auth-ext.desktop.setup.handoff",
+    "components.auth-ext.desktop.setup.handoff-starting",
+    "components.auth-ext.mobile.setup.handoff"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7893,
+   "scoreLightMin": 0.7071399339716441,
+   "scoreDarkMean": 0.0135,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Server setup: display style (appearance) step",
+   "level": "page",
+   "webFiles": [
+    "components/onboarding/ServerSetupDisplayStyleStep.tsx",
+    "components/onboarding/DisplayStylePicker.tsx",
+    "pages/DisplayStylePreviewPage.tsx",
+    "utils/onboardingDisplayStyle.ts"
+   ],
+   "linesChanged": 161,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "Web onboarding step added in v1.21.23; the Flutter app has no such step yet (no Flutter surface to capture)."
+  },
+  {
+   "surface": "Server setup projection gate",
+   "level": "page",
+   "webFiles": [
+    "components/onboarding/ServerSetupProjectionGate.tsx"
+   ],
+   "linesChanged": 74,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.desktop.setup-gate.*",
+    "components.auth-pages.mobile.setup-gate.*"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.auth-pages.desktop.setup-gate.complete",
+    "components.auth-pages.desktop.setup-gate.load-failed",
+    "components.auth-pages.desktop.setup-gate.loading"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9349,
+   "scoreLightMin": 0.9143030744926479,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Public server page (signed-out preview, join banner)",
+   "level": "page",
+   "webFiles": [
+    "pages/PublicServerPage.tsx",
+    "pages/PublicMessageRow.tsx",
+    "pages/MarketplaceServerRow.tsx",
+    "components/server/PublicServerChannelRow.tsx",
+    "components/server/PublicServerChannelSidebar.tsx",
+    "components/server/PublicServerSidebarFrame.tsx",
+    "components/server/PublicPageGlobe.tsx",
+    "components/server/PublicCookieConsent.tsx",
+    "analytics/publicVisitorConsent.ts",
+    "analytics/publicVisits.ts"
+   ],
+   "linesChanged": 741,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.public-server.desktop.page.*",
+    "components.public-server.desktop.page.join-*",
+    "components.public-server.mobile.page.*",
+    "components.public-server.mobile.page.join-*"
+   ],
+   "extCases": 16,
+   "extSample": [
+    "components.public-server.desktop.page.default",
+    "components.public-server.desktop.page.empty-channels",
+    "components.public-server.desktop.page.empty-messages"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.5893,
+   "scoreLightMin": 0.037568018255222047,
+   "scoreDarkMean": 0.401,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Device login (/login/device)",
+   "level": "page",
+   "webFiles": [
+    "pages/DeviceLoginPage.tsx"
+   ],
+   "linesChanged": 27,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "App login handoff (/login/app)",
+   "level": "page",
+   "webFiles": [
+    "pages/AppLoginPage.tsx"
+   ],
+   "linesChanged": 14,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Login with Raft setup (/login-with-raft/setup)",
+   "level": "page",
+   "webFiles": [
+    "pages/HumanLoginSetupPage.tsx",
+    "components/oauth/RequestedScopeConsent.tsx"
+   ],
+   "linesChanged": 239,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Integration invite (/integration-invite)",
+   "level": "page",
+   "webFiles": [
+    "pages/IntegrationInvitePage.tsx"
+   ],
+   "linesChanged": 78,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent connection callback (/connections/callback)",
+   "level": "page",
+   "webFiles": [
+    "pages/AgentConnectionCallbackPage.tsx"
+   ],
+   "linesChanged": 15,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Mobile download chooser (/download)",
+   "level": "page",
+   "webFiles": [
+    "pages/MobileDownloadChooserPage.tsx"
+   ],
+   "linesChanged": 95,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Chinese community page",
+   "level": "page",
+   "webFiles": [
+    "pages/ChineseCommunityPage.tsx"
+   ],
+   "linesChanged": 18,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Root error fallback",
+   "level": "page",
+   "webFiles": [
+    "components/errors/RootErrorFallback.tsx",
+    "components/errors/RootFallbackScroller.tsx"
+   ],
+   "linesChanged": 171,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.desktop.root-error.*",
+    "components.auth-pages.mobile.root-error.*"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.auth-pages.desktop.root-error.default",
+    "components.auth-pages.mobile.root-error.default"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7077,
+   "scoreLightMin": 0.6255053266901608,
+   "scoreDarkMean": 0.5972,
+   "noCaseReason": null
+  },
+  {
+   "surface": "App update gate",
+   "level": "page",
+   "webFiles": [
+    "components/errors/AppUpdateGate.tsx"
+   ],
+   "linesChanged": 113,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "PWA install prompt",
+   "level": "page",
+   "webFiles": [
+    "components/pwa/PwaInstallPrompt.tsx"
+   ],
+   "linesChanged": 51,
+   "platforms": [
+    "phone"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Palette audit page (/palette-audit, dev)",
+   "level": "page",
+   "webFiles": [
+    "pages/PaletteAuditPage.tsx"
+   ],
+   "linesChanged": 635,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "Development route (/palette-audit); token audit covers it."
+  },
+  {
+   "surface": "Dev previews (/dev/account-bootstrap)",
+   "level": "page",
+   "webFiles": [
+    "pages/AccountBootstrapPreviewPage.tsx"
+   ],
+   "linesChanged": 0,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "Development route, redirected away in production."
+  },
+  {
+   "surface": "Channel page (header + timeline + composer)",
+   "level": "page",
+   "webFiles": [
+    "components/message/ChatPanel.tsx",
+    "components/message/MessageTimeline.tsx",
+    "components/message/DateDivider.tsx",
+    "components/message/HistoryLimitBanner.tsx",
+    "components/message/HistoryTopState.tsx",
+    "components/message/ThreadUnreadJumpPill.tsx",
+    "components/channel/ChannelDescription.tsx",
+    "components/channel/channelKindIcon.tsx",
+    "hooks/useMessagePlacement.ts"
+   ],
+   "linesChanged": 598,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.thread.header.states",
+    "screens.thread.channel"
+   ],
+   "officialPending": [
+    "screens.thread.channel"
+   ],
+   "extGlobs": [
+    "components.channelheader.desktop.*",
+    "components.channelheader.mobile.*",
+    "components.conversation.banner.desktop.*",
+    "components.conversation.banner.mobile.*",
+    "components.screens-ext.channel.desktop.full",
+    "components.screens-ext.channel.mobile.full",
+    "components.thread-ext.timeline.desktop.*",
+    "components.thread-ext.timeline.mobile.*"
+   ],
+   "extCases": 54,
+   "extSample": [
+    "components.channelheader.desktop.dm-agent",
+    "components.channelheader.desktop.dm-human",
+    "components.channelheader.desktop.hover-search"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8093,
+   "scoreLightMin": 0.5045465337132004,
+   "scoreDarkMean": 0.5881,
+   "noCaseReason": null
+  },
+  {
+   "surface": "DM page (human DM / agent DM)",
+   "level": "page",
+   "webFiles": [
+    "components/message/ChatPanel.tsx",
+    "components/agent/AgentDMConversationCard.tsx",
+    "components/agent/AgentDMConversationList.tsx",
+    "components/layout/agentDmProfileSource.ts"
+   ],
+   "linesChanged": 287,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.thread.dm"
+   ],
+   "officialPending": [
+    "screens.thread.dm"
+   ],
+   "extGlobs": [
+    "components.screens-ext.dm.desktop.*",
+    "components.screens-ext.dm.mobile.agent"
+   ],
+   "extCases": 3,
+   "extSample": [
+    "components.screens-ext.dm.desktop.agent",
+    "components.screens-ext.dm.desktop.human",
+    "components.screens-ext.dm.mobile.agent"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8599,
+   "scoreLightMin": 0.8427863517910912,
+   "scoreDarkMean": 0.786,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Channel Files tab",
+   "level": "page",
+   "webFiles": [
+    "components/message/ChannelFilesPanel.tsx",
+    "components/message/ChannelFilesPanelFileRow.tsx",
+    "components/message/ChannelFileVisual.tsx",
+    "components/message/ChannelFileOverflowMenu.tsx",
+    "components/channel/ActiveUploadRow.tsx"
+   ],
+   "linesChanged": 89,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.thread.files.list"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.files.desktop.*",
+    "components.conversation.files.mobile.*"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.conversation.files.desktop.empty",
+    "components.conversation.files.desktop.error",
+    "components.conversation.files.desktop.list"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9156,
+   "scoreLightMin": 0.8283364988920544,
+   "scoreDarkMean": 0.2225,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Channel Tasks tab",
+   "level": "page",
+   "webFiles": [
+    "components/message/ChatPanel.tsx",
+    "components/task/TasksPanel.tsx"
+   ],
+   "linesChanged": 489,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.tasks.desktop.*",
+    "components.conversation.tasks.mobile.*"
+   ],
+   "extCases": 4,
+   "extSample": [
+    "components.conversation.tasks.desktop.empty",
+    "components.conversation.tasks.desktop.list",
+    "components.conversation.tasks.mobile.empty"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.4905,
+   "scoreLightMin": 0.12509282888429807,
+   "scoreDarkMean": 0.3846,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Thread page / thread panel",
+   "level": "page",
+   "webFiles": [
+    "components/message/ThreadPanel.tsx",
+    "components/message/ThreadOverflowMenu.tsx",
+    "components/message/InlineThreadReplies.tsx",
+    "components/message/threadSearch.ts",
+    "components/message/ThreadRepliesBadge.tsx",
+    "components/thread/ThreadAgentFollowers.tsx",
+    "components/thread/ThreadAgentFollowerRow.tsx",
+    "store/threadStore.ts",
+    "hooks/useParentThreadUnread.ts"
+   ],
+   "linesChanged": 629,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.followers.desktop.*",
+    "components.conversation.followers.mobile.*",
+    "components.conversation.threadsearch.desktop.*",
+    "components.conversation.threadsearch.mobile.*",
+    "components.conversation.threadstate.desktop.*",
+    "components.conversation.threadstate.mobile.*",
+    "components.thread-ext.inline.desktop.*",
+    "components.thread-ext.inline.mobile.*",
+    "components.thread-ext.thread.desktop.*",
+    "components.thread-ext.thread.mobile.*"
+   ],
+   "extCases": 34,
+   "extSample": [
+    "components.conversation.followers.desktop.error",
+    "components.conversation.followers.desktop.header",
+    "components.conversation.followers.desktop.popover"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8253,
+   "scoreLightMin": 0.5801527777777777,
+   "scoreDarkMean": 0.4338,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Activity (threads inbox) page",
+   "level": "page",
+   "webFiles": [
+    "components/thread/ThreadsInbox.tsx",
+    "components/thread/InboxContextMenu.tsx",
+    "components/thread/inboxPinnedConversation.ts"
+   ],
+   "linesChanged": 1329,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.home.activity.results",
+    "screens.home.activity"
+   ],
+   "officialPending": [
+    "screens.home.activity"
+   ],
+   "extGlobs": [
+    "components.list-pages.activity.desktop-context-menu",
+    "components.list-pages.activity.desktop-filter-*",
+    "components.list-pages.activity.phone-context-menu",
+    "components.list-pages.activity.phone-empty",
+    "components.list-pages.activity.phone-error",
+    "components.list-pages.activity.phone-filter-*",
+    "components.list-pages.activity.phone-loading",
+    "components.members-ext.activity.*",
+    "components.screens-ext.activity.desktop.list",
+    "components.thread-ext.inbox.desktop.empty"
+   ],
+   "extCases": 14,
+   "extSample": [
+    "components.list-pages.activity.desktop-context-menu",
+    "components.list-pages.activity.desktop-filter-mentions",
+    "components.list-pages.activity.desktop-filter-unread"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8477,
+   "scoreLightMin": 0.5152141105451802,
+   "scoreDarkMean": 0.8138,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Saved messages page",
+   "level": "page",
+   "webFiles": [
+    "components/saved/SavedPanel.tsx"
+   ],
+   "linesChanged": 53,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.home.saved.results",
+    "screens.home.saved"
+   ],
+   "officialPending": [
+    "screens.home.saved"
+   ],
+   "extGlobs": [
+    "components.list-pages.saved.desktop-actions",
+    "components.list-pages.saved.desktop-list",
+    "components.list-pages.saved.phone-actions",
+    "components.list-pages.saved.phone-empty",
+    "components.list-pages.saved.phone-error",
+    "components.list-pages.saved.phone-loading",
+    "components.members-ext.saved.*"
+   ],
+   "extCases": 9,
+   "extSample": [
+    "components.list-pages.saved.desktop-actions",
+    "components.list-pages.saved.desktop-list",
+    "components.list-pages.saved.phone-actions"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8545,
+   "scoreLightMin": 0.5371439351065836,
+   "scoreDarkMean": 0.7624,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Search page (MessageSearchPage) and search overlay",
+   "level": "page",
+   "webFiles": [
+    "components/search/MessageSearchPage.tsx",
+    "components/search/SearchOverlay.tsx",
+    "components/search/EntityResultRow.tsx",
+    "components/search/MessageHitRow.tsx",
+    "components/search/SearchHomeEntityRow.tsx",
+    "components/search/searchOverlayAnchor.ts",
+    "components/search/searchOverlayLocation.ts"
+   ],
+   "linesChanged": 693,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.home.search.channel-dropdown",
+    "components.home.search.results"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.list-pages.search.desktop-*",
+    "components.list-pages.search.desktop-channel-filter",
+    "components.list-pages.search.desktop-results",
+    "components.list-pages.search.phone-*",
+    "components.search-overlay.*"
+   ],
+   "extCases": 29,
+   "extSample": [
+    "components.list-pages.search.desktop-beyond-history",
+    "components.list-pages.search.desktop-channel-filter",
+    "components.list-pages.search.desktop-error"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7742,
+   "scoreLightMin": 0.2581467013888889,
+   "scoreDarkMean": 0.5805,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Tasks page (board / list)",
+   "level": "page",
+   "webFiles": [
+    "components/task/TasksPanel.tsx",
+    "components/task/TaskCard.tsx",
+    "components/task/TaskFilterSegmentedControl.tsx",
+    "components/task/StatusBadge.tsx",
+    "components/task/TaskChipList.tsx",
+    "components/task/CreateTaskDialog.tsx"
+   ],
+   "linesChanged": 320,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.tasks.panel.states",
+    "components.tasks.status-menu",
+    "screens.tasks.index"
+   ],
+   "officialPending": [
+    "screens.tasks.index"
+   ],
+   "extGlobs": [
+    "components.list-pages.tasks.desktop-board",
+    "components.list-pages.tasks.desktop-filter*",
+    "components.list-pages.tasks.desktop-list",
+    "components.list-pages.tasks.desktop-load-more",
+    "components.list-pages.tasks.desktop-loading",
+    "components.list-pages.tasks.desktop-status-menu",
+    "components.list-pages.tasks.phone-filter*",
+    "components.list-pages.tasks.phone-load-more",
+    "components.list-pages.tasks.phone-loading",
+    "components.taskspage.desktop.*",
+    "components.taskspage.mobile.*",
+    "components.wp6.tasks.create-dialog*",
+    "components.wp6.tasks.create-dialog*-mobile",
+    "components.wp6.tasks.empty-lanes",
+    "components.wp6.tasks.empty-lanes-expanded",
+    "components.wp6.tasks.empty-lanes-mobile",
+    "components.wp6.tasks.filter*",
+    "components.wp6.tasks.filter*-mobile"
+   ],
+   "extCases": 28,
+   "extSample": [
+    "components.list-pages.tasks.desktop-board",
+    "components.list-pages.tasks.desktop-filter-assignee",
+    "components.list-pages.tasks.desktop-filter-channels"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7702,
+   "scoreLightMin": 0.056829817734998976,
+   "scoreDarkMean": 0.6433,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Task detail (thread modal: properties, replies, history)",
+   "level": "page",
+   "webFiles": [
+    "components/task/TaskProperties.tsx",
+    "components/task/TaskTitleRow.tsx",
+    "components/task/HistoryTimeline.tsx",
+    "components/task/TaskModalHead.tsx",
+    "components/message/ThreadPanel.tsx"
+   ],
+   "linesChanged": 216,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.thread.task-thread"
+   ],
+   "officialPending": [
+    "screens.thread.task-thread"
+   ],
+   "extGlobs": [
+    "components.taskdetail.desktop.*",
+    "components.taskdetail.mobile.*"
+   ],
+   "extCases": 26,
+   "extSample": [
+    "components.taskdetail.desktop.assigned",
+    "components.taskdetail.desktop.description",
+    "components.taskdetail.desktop.empty"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8257,
+   "scoreLightMin": 0.7118486328125,
+   "scoreDarkMean": 0.3071,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Legacy v1 task panel (read-only)",
+   "level": "page",
+   "webFiles": [
+    "components/task/LegacyTaskPanel.tsx"
+   ],
+   "linesChanged": 127,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "Read-only legacy data only (inventory excl obsolete)."
+  },
+  {
+   "surface": "Members list (sidebar members mode)",
+   "level": "page",
+   "webFiles": [
+    "components/layout/MemberAgentRow.tsx",
+    "components/layout/MemberHumanRow.tsx",
+    "components/layout/Sidebar.tsx",
+    "components/member/CreatedAgentRow.tsx"
+   ],
+   "linesChanged": 261,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.members.index"
+   ],
+   "officialPending": [
+    "screens.members.index"
+   ],
+   "extGlobs": [
+    "components.members-ext.list.default",
+    "components.members-ext.list.empty",
+    "components.members-ext.list.error",
+    "components.members-ext.list.group-collapsed",
+    "components.members-ext.list.humans-collapsed",
+    "components.members-ext.list.loading",
+    "components.members-ext.list.row-hover",
+    "components.members-ext.list.selected-*",
+    "components.members-pages.phone.list.*"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.members-ext.list.default",
+    "components.members-ext.list.empty",
+    "components.members-ext.list.error"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8676,
+   "scoreLightMin": 0.7642760416666666,
+   "scoreDarkMean": 0.8607,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Human (member) detail page",
+   "level": "page",
+   "webFiles": [
+    "components/member/HumanDetailPanel.tsx",
+    "components/member/RolePermissionHelpDialog.tsx",
+    "components/member/InviteeRow.tsx",
+    "components/ui/AvatarEditVeil.tsx"
+   ],
+   "linesChanged": 263,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.members.avatar-management",
+    "screens.members.human.profile"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-ext.human.*",
+    "components.members-ext.human.edit-role",
+    "components.members-ext.human.remove-confirm",
+    "components.members-pages.desktop.agent.avatar-change",
+    "components.members-pages.desktop.agent.role-help",
+    "components.members-pages.desktop.human.avatar-view",
+    "components.members-pages.desktop.human.role-help",
+    "components.members-pages.phone.agent.role-help",
+    "components.members-pages.phone.human.edit-role",
+    "components.members-pages.phone.human.remove-confirm",
+    "components.members-pages.phone.human.role-help"
+   ],
+   "extCases": 15,
+   "extSample": [
+    "components.members-ext.human.admin",
+    "components.members-ext.human.edit-role",
+    "components.members-ext.human.guest"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8555,
+   "scoreLightMin": 0.61138671875,
+   "scoreDarkMean": 0.6118,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Invite human dialog",
+   "level": "page",
+   "webFiles": [
+    "components/member/InviteHumanDialog.tsx"
+   ],
+   "linesChanged": 92,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-ext.invite.*",
+    "components.members-pages.desktop.invite.link",
+    "components.members-pages.phone.invite.*"
+   ],
+   "extCases": 7,
+   "extSample": [
+    "components.members-ext.invite.default",
+    "components.members-ext.invite.guest",
+    "components.members-pages.desktop.invite.link"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.3917,
+   "scoreLightMin": 0.3411191450290976,
+   "scoreDarkMean": 0.1076,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent profile: Profile tab",
+   "level": "page",
+   "webFiles": [
+    "components/agent/AgentDetailPanel.tsx",
+    "components/agent/HostedRuntimeStatus.tsx",
+    "components/agent/AgentHostedRuntimeModel.tsx",
+    "components/agent/AgentHostedRuntimeUsage.tsx",
+    "components/agent/HostedModelChoice.tsx",
+    "components/agent/HostedCindyFailedBanner.tsx",
+    "components/agent/hostedRuntimeUsage.ts",
+    "components/agent/AgentSkills.tsx",
+    "components/agent/AgentConnections.tsx",
+    "components/agent/PixelAvatar.tsx"
+   ],
+   "linesChanged": 1233,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.members.agent-detail.profile",
+    "screens.members.agent-detail.profile",
+    "screens.members.agent-detail.profile.computer-missing",
+    "screens.members.agent-detail.profile.computer-offline",
+    "screens.members.agent-detail.profile.daemon-only",
+    "screens.members.agent-detail.profile.loading-state",
+    "screens.members.agent-detail.profile.long-machine-name",
+    "screens.members.agent-detail.profile.no-computer",
+    "screens.members.agent-detail.profile.no-membership"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-ext.agent.profile"
+   ],
+   "extCases": 1,
+   "extSample": [
+    "components.members-ext.agent.profile"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8775,
+   "scoreLightMin": 0.8667753608511902,
+   "scoreDarkMean": 0.8584,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent profile: Activity tab",
+   "level": "page",
+   "webFiles": [
+    "components/agent/AgentActivityLog.tsx",
+    "components/agent/AgentActivityOverview.tsx",
+    "components/agent/AgentActivityDot.tsx",
+    "utils/liveAgentActivity.ts"
+   ],
+   "linesChanged": 786,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.members.agent-detail.activity"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-ext.agent.activity*"
+   ],
+   "extCases": 4,
+   "extSample": [
+    "components.members-ext.agent.activity",
+    "components.members-ext.agent.activity-empty",
+    "components.members-ext.agent.activity-error"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9605,
+   "scoreLightMin": 0.9202319709428715,
+   "scoreDarkMean": 0.9068,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent profile: Chat tab",
+   "level": "page",
+   "webFiles": [
+    "components/agent/AgentDetailPanel.tsx"
+   ],
+   "linesChanged": 124,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent profile: Reminders tab",
+   "level": "page",
+   "webFiles": [
+    "components/agent/AgentRemindersSection.tsx"
+   ],
+   "linesChanged": 71,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.members.agent-detail.reminders"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-ext.agent.reminders"
+   ],
+   "extCases": 1,
+   "extSample": [
+    "components.members-ext.agent.reminders"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9704,
+   "scoreLightMin": 0.966500587353668,
+   "scoreDarkMean": 0.9117,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent profile: Workspace tab",
+   "level": "page",
+   "webFiles": [
+    "components/agent/AgentWorkspace.tsx"
+   ],
+   "linesChanged": 160,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.members.agent-detail.workspace"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-ext.agent.workspace"
+   ],
+   "extCases": 1,
+   "extSample": [
+    "components.members-ext.agent.workspace"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.6655,
+   "scoreLightMin": 0.3669728150406504,
+   "scoreDarkMean": 0.3484,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent profile: Apps tab",
+   "level": "page",
+   "webFiles": [
+    "components/agent/AgentAppAccessTab.tsx",
+    "components/agent/GrantableAppOption.tsx",
+    "components/agent/GrantScopeCheckbox.tsx",
+    "components/agent/AppEventFilterButton.tsx",
+    "components/agent/IntegrationActionButton.tsx"
+   ],
+   "linesChanged": 318,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.members.agent-detail.apps"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-ext.agent.apps"
+   ],
+   "extCases": 1,
+   "extSample": [
+    "components.members-ext.agent.apps"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.96,
+   "scoreLightMin": 0.9514393540459891,
+   "scoreDarkMean": 0.9012,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent profile: MCP tab",
+   "level": "page",
+   "webFiles": [
+    "components/agent/AgentMcpTab.tsx",
+    "components/agent/McpServerListItem.tsx",
+    "components/agent/McpRecommendationItem.tsx",
+    "components/agent/McpHeaderRow.tsx",
+    "components/agent/managedMcpCredentials.ts",
+    "components/agent/CredentialRow.tsx",
+    "components/ui/KeyValueInput.tsx",
+    "components/ui/KeyValueRow.tsx"
+   ],
+   "linesChanged": 507,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-ext.agent.mcp*",
+    "components.members-pages.phone.agent.mcp*"
+   ],
+   "extCases": 6,
+   "extSample": [
+    "components.members-ext.agent.mcp",
+    "components.members-ext.agent.mcp-empty",
+    "components.members-ext.agent.mcp-loading"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9195,
+   "scoreLightMin": 0.799212473501573,
+   "scoreDarkMean": 0.852,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent unavailable panel",
+   "level": "page",
+   "webFiles": [
+    "components/agent/AgentUnavailablePanel.tsx",
+    "components/agent/agentDetailAvailability.ts"
+   ],
+   "linesChanged": 17,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-pages.desktop.agent.unavailable",
+    "components.members-pages.phone.agent.unavailable"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.members-pages.desktop.agent.unavailable",
+    "components.members-pages.phone.agent.unavailable"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9828,
+   "scoreLightMin": 0.9791951904511146,
+   "scoreDarkMean": 0.952,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Agent archive (archive dialog + archived agents section)",
+   "level": "page",
+   "webFiles": [
+    "components/agentArchive/AgentArchiveDialog.tsx",
+    "components/agentArchive/AgentArchiveSection.tsx",
+    "components/agentArchive/archiveApi.ts",
+    "components/agentArchive/useArchivedAgentMachineName.ts"
+   ],
+   "linesChanged": 307,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "No Web host case yet: archive dialog + archived agents section need a fixture (candidate for the next batch)."
+  },
+  {
+   "surface": "Agent migration (dialogs, progress, hosted migration review)",
+   "level": "page",
+   "webFiles": [
+    "components/agentMigration/AgentMigrationDialog.tsx",
+    "components/agentMigration/AgentMigrationSection.tsx",
+    "components/agentMigration/AgentMigrationCancelDialog.tsx",
+    "components/agentMigration/AgentMigrationUpgradeDialog.tsx",
+    "components/agentMigration/HostedMigrationReview.tsx",
+    "components/agentMigration/MigrationProgressPanel.tsx",
+    "components/agentMigration/MigrationErrorContent.tsx",
+    "components/agentMigration/MigrationReference.tsx",
+    "components/agentMigration/presentation.ts",
+    "components/agentMigration/state.ts",
+    "components/agentMigration/realtime.ts",
+    "components/agentMigration/errors.ts"
+   ],
+   "linesChanged": 740,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Member graph (/members/graph)",
+   "level": "page",
+   "webFiles": [
+    "components/settings/MemberGraphSection.tsx"
+   ],
+   "linesChanged": 175,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-pages.desktop.graph",
+    "components.members-pages.phone.graph"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.members-pages.desktop.graph",
+    "components.members-pages.phone.graph"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.905,
+   "scoreLightMin": 0.8925861789605866,
+   "scoreDarkMean": 0.3072,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Computers list (sidebar computers mode)",
+   "level": "page",
+   "webFiles": [
+    "components/layout/Sidebar.tsx",
+    "components/machine/MachineAgentRow.tsx"
+   ],
+   "linesChanged": 131,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.computers.list.*"
+   ],
+   "extCases": 6,
+   "extSample": [
+    "components.computers.list.empty",
+    "components.computers.list.loading",
+    "components.computers.list.row-hover"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.6251,
+   "scoreLightMin": 0.002792114392080548,
+   "scoreDarkMean": 0.6278,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Phone Computers page",
+   "level": "page",
+   "webFiles": [
+    "components/machine/MobileComputersPanel.tsx"
+   ],
+   "linesChanged": 135,
+   "platforms": [
+    "phone"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.list-pages.computers.phone-attention",
+    "components.list-pages.computers.phone-empty",
+    "components.list-pages.computers.phone-list",
+    "components.list-pages.computers.phone-load-error",
+    "components.list-pages.computers.phone-loading",
+    "components.list-pages.computers.phone-refresh-error"
+   ],
+   "extCases": 6,
+   "extSample": [
+    "components.list-pages.computers.phone-attention",
+    "components.list-pages.computers.phone-empty",
+    "components.list-pages.computers.phone-list"
+   ],
+   "covered": {
+    "widths": [
+     "phone"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9315,
+   "scoreLightMin": 0.845339277192069,
+   "scoreDarkMean": 0.8001,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Computer detail",
+   "level": "page",
+   "webFiles": [
+    "components/machine/MachineDetailPanel.tsx",
+    "components/machine/ComputerCommandGuide.tsx",
+    "components/machine/ComputerReleaseNotesAffordance.tsx",
+    "components/machine/WorkspaceDeleteButton.tsx",
+    "components/machine/useRuntimeRescan.ts",
+    "components/machine/CommandRow.tsx",
+    "components/machine/CommandCopyRoot.tsx"
+   ],
+   "linesChanged": 675,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.computers.detail.*",
+    "components.computers.dialog.*",
+    "components.list-pages.computers.phone-detail.*",
+    "components.list-pages.computers.phone-dialog.*"
+   ],
+   "extCases": 58,
+   "extSample": [
+    "components.computers.detail.agents",
+    "components.computers.detail.delete",
+    "components.computers.detail.description"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7825,
+   "scoreLightMin": 0.13967307894460212,
+   "scoreDarkMean": 0.4625,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Add computer dialog",
+   "level": "page",
+   "webFiles": [
+    "components/machine/AddMachineDialog.tsx"
+   ],
+   "linesChanged": 160,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.computers.add-dialog*",
+    "components.list-pages.computers.phone-add-dialog*"
+   ],
+   "extCases": 4,
+   "extSample": [
+    "components.computers.add-dialog",
+    "components.computers.add-dialog.connect",
+    "components.list-pages.computers.phone-add-dialog"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Computer bulk change model dialog",
+   "level": "component",
+   "webFiles": [
+    "components/machine/BulkChangeModelDialog.tsx",
+    "components/machine/BulkResetOptionCard.tsx",
+    "analytics/bulkModelChange.ts"
+   ],
+   "linesChanged": 245,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "No case yet (flag-gated bulk action; candidate for the next batch)."
+  },
+  {
+   "surface": "Runtime usage chip",
+   "level": "component",
+   "webFiles": [
+    "components/machine/RuntimeAccountUsageChip.tsx"
+   ],
+   "linesChanged": 88,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.computers.detail.runtime-usage.*"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.computers.detail.runtime-usage.card",
+    "components.computers.detail.runtime-usage.info"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.744,
+   "scoreLightMin": 0.744033980204193,
+   "scoreDarkMean": 0.0008,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Channel settings (EditChannelDialog drawer)",
+   "level": "page",
+   "webFiles": [
+    "components/channel/EditChannelDialog.tsx",
+    "components/channel/ChannelMemberList.tsx",
+    "components/channel/ChannelPreferencesSection.tsx",
+    "components/channel/ChannelSlackBridgeField.tsx",
+    "components/channel/JointConversionSection.tsx",
+    "components/channel/JointAttachmentUploadSection.tsx",
+    "components/channel/channelSettingsClasses.ts",
+    "components/channel/memberPickerClasses.ts",
+    "components/agent/ChannelMembers.tsx"
+   ],
+   "linesChanged": 1141,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.channel.settings.panel"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.channelsettings.desktop.*",
+    "components.channelsettings.desktop.confirm-*",
+    "components.channelsettings.desktop.unsaved-prompt",
+    "components.channelsettings.mobile.*",
+    "components.channelsettings.mobile.confirm-delete",
+    "components.list-pages.members.desktop-remove-confirm",
+    "components.list-pages.members.phone-remove-confirm",
+    "components.members-pages.desktop.channel-members.*",
+    "components.members-pages.phone.channel-members.*"
+   ],
+   "extCases": 59,
+   "extSample": [
+    "components.channelsettings.desktop.admin",
+    "components.channelsettings.desktop.admin-full",
+    "components.channelsettings.desktop.all"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8207,
+   "scoreLightMin": 0.20842987537300334,
+   "scoreDarkMean": 0.2216,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Create channel dialog",
+   "level": "page",
+   "webFiles": [
+    "components/channel/CreateChannelDialog.tsx",
+    "components/channel/AddMembersDialog.tsx"
+   ],
+   "linesChanged": 200,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.channel.members.add-panel",
+    "components.home.create-channel.dialog"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.channelsettings.desktop.members-page-add",
+    "components.dialogs.desktop.create-channel",
+    "components.list-pages.create-channel.desktop-*",
+    "components.list-pages.create-channel.phone-*",
+    "components.list-pages.members.desktop-add-dialog",
+    "components.list-pages.members.phone-add-dialog",
+    "components.members-pages.phone.channel-members.add-view"
+   ],
+   "extCases": 13,
+   "extSample": [
+    "components.channelsettings.desktop.members-page-add",
+    "components.dialogs.desktop.create-channel",
+    "components.list-pages.create-channel.desktop-archived-name"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7449,
+   "scoreLightMin": 0.48337046488705254,
+   "scoreDarkMean": 0.3489,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Create shared (joint) channel dialog",
+   "level": "page",
+   "webFiles": [
+    "components/channel/CreateJointChannelDialog.tsx",
+    "components/channel/JointInviteDraftCard.tsx",
+    "components/channel/SameAdminJointNotice.tsx",
+    "components/layout/usePendingJointInvites.ts",
+    "utils/jointSameAdmin.ts"
+   ],
+   "linesChanged": 372,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.list-pages.members.desktop-create-joint",
+    "components.list-pages.members.phone-create-joint"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.list-pages.members.desktop-create-joint",
+    "components.list-pages.members.phone-create-joint"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7281,
+   "scoreLightMin": 0.6162835365442001,
+   "scoreDarkMean": 0.4089,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Create agent dialog (+ runtime config editor, external agent setup)",
+   "level": "page",
+   "webFiles": [
+    "components/agent/CreateAgentDialog.tsx",
+    "components/agent/RuntimeConfigFields.tsx",
+    "components/agent/RuntimeFormV2FieldControl.tsx",
+    "components/agent/RuntimeChoiceCombobox.tsx",
+    "components/agent/SchemaBuiltInRuntimeFields.tsx",
+    "components/agent/SchemaKimiRuntimeFields.tsx",
+    "components/agent/StableField.tsx",
+    "components/agent/EnvVarEntryRow.tsx",
+    "components/agent/ExternalAgentToken.tsx"
+   ],
+   "linesChanged": 750,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.members.create-agent.builtin-provider-dialog",
+    "components.members.create-agent.claude-custom-provider-dialog",
+    "components.members.create-agent.claude-dialog",
+    "components.members.create-agent.dialog",
+    "components.members.create-agent.dialog-empty",
+    "components.members.create-agent.dialog-error",
+    "components.members.create-agent.dialog-no-computer",
+    "components.members.create-agent.dialog-onboarding",
+    "components.members.create-agent.pi-provider-dialog"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.dialogs.desktop.create-agent*",
+    "components.members-pages.desktop.agent.external",
+    "components.members-pages.desktop.agent.runtime-edit",
+    "components.members-pages.phone.agent.external",
+    "components.members-pages.phone.agent.runtime-edit"
+   ],
+   "extCases": 8,
+   "extSample": [
+    "components.dialogs.desktop.create-agent",
+    "components.dialogs.desktop.create-agent-claude",
+    "components.dialogs.desktop.create-agent-empty"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.6677,
+   "scoreLightMin": 0.23860567640188493,
+   "scoreDarkMean": 0.3076,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Raftbench page (/raftbench)",
+   "level": "page",
+   "webFiles": [
+    "raftbench/RaftBenchPage.tsx",
+    "raftbench/HostedAnalysis.tsx",
+    "raftbench/ManagerOverview.tsx",
+    "raftbench/liveMessages.ts",
+    "raftbench/model.ts",
+    "raftbench/taskMetrics.ts",
+    "raftbench/costMetrics.ts",
+    "raftbench/periodMetrics.ts",
+    "raftbench/access.ts"
+   ],
+   "linesChanged": 1564,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.raftbench.page.*"
+   ],
+   "extCases": 22,
+   "extSample": [
+    "components.raftbench.page.disabled",
+    "components.raftbench.page.disabled-insights",
+    "components.raftbench.page.disabled-insights-mobile"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8344,
+   "scoreLightMin": 0.7921908966932664,
+   "scoreDarkMean": 0.6381,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Release notes page (/release-notes)",
+   "level": "page",
+   "webFiles": [
+    "components/settings/ReleaseNotesPanel.tsx"
+   ],
+   "linesChanged": 32,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.mobile.settings.release-notes*",
+    "components.ext-settings.release-notes.*"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.auth-pages.mobile.settings.release-notes",
+    "components.auth-pages.mobile.settings.release-notes-empty",
+    "components.auth-pages.mobile.settings.release-notes-error"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9047,
+   "scoreLightMin": 0.8494707065797114,
+   "scoreDarkMean": 0.7357,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings navigation (desktop rail list / phone root list)",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsSidebarList.tsx",
+    "components/settings/settingsNavigation.ts",
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/SettingsSegmentedControls.tsx"
+   ],
+   "linesChanged": 61,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.settings.root.page"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.nav.*"
+   ],
+   "extCases": 6,
+   "extSample": [
+    "components.ext-settings.nav.guest",
+    "components.ext-settings.nav.member",
+    "components.ext-settings.nav.owner"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9042,
+   "scoreLightMin": 0.8502083333333333,
+   "scoreDarkMean": 0.8495,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Account",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/SettingsProfileCard.tsx",
+    "components/settings/UsageDataSettings.tsx"
+   ],
+   "linesChanged": 156,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.settings.account.error-state",
+    "components.settings.account.page",
+    "screens.settings.storage"
+   ],
+   "officialPending": [
+    "screens.settings.storage"
+   ],
+   "extGlobs": [
+    "components.auth-pages.desktop.settings.account-*",
+    "components.auth-pages.mobile.settings.account-*",
+    "components.ext-settings.account.*",
+    "components.wp6.settings.usage-data",
+    "components.wp6.settings.usage-data-mobile"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.auth-pages.desktop.settings.account-logout-confirm",
+    "components.auth-pages.desktop.settings.account-password",
+    "components.auth-pages.desktop.settings.account-password-error"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8853,
+   "scoreLightMin": 0.7783921362120414,
+   "scoreDarkMean": 0.6472,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Language & Region",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "utils/translationContract.ts"
+   ],
+   "linesChanged": 71,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.wp6.settings.language*",
+    "components.wp6.settings.language*-mobile"
+   ],
+   "extCases": 5,
+   "extSample": [
+    "components.wp6.settings.language",
+    "components.wp6.settings.language-manual",
+    "components.wp6.settings.language-off"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9101,
+   "scoreLightMin": 0.9050576331967213,
+   "scoreDarkMean": 0.2899,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Appearance",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/AppearanceThemePicker.tsx",
+    "store/appearanceStore.ts"
+   ],
+   "linesChanged": 750,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.settings.appearance.page",
+    "screens.settings.appearance"
+   ],
+   "officialPending": [
+    "screens.settings.appearance"
+   ],
+   "extGlobs": [
+    "components.ext-settings.appearance.*"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.ext-settings.appearance.page",
+    "components.ext-settings.appearance.panel",
+    "components.ext-settings.appearance.states-switch-mid.default"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.543,
+   "scoreLightMin": 0.2567204301075269,
+   "scoreDarkMean": 0.1114,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Notifications",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/AppNotificationsControls.tsx",
+    "components/settings/AppNotificationEventCheckbox.tsx",
+    "components/settings/AppNotificationGroupCheckbox.tsx"
+   ],
+   "linesChanged": 518,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.settings.notifications.page"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.notifications.*",
+    "components.notifications.desktop.*"
+   ],
+   "extCases": 4,
+   "extSample": [
+    "components.ext-settings.notifications.page",
+    "components.ext-settings.notifications.panel",
+    "components.notifications.desktop.available"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "tablet",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8818,
+   "scoreLightMin": 0.8076087490180676,
+   "scoreDarkMean": 0.7792,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Server Profile (profile, public visibility, archived channels/agents, danger zone)",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/ArchivedChannelsSection.tsx",
+    "components/settings/ArchivedAgentsSection.tsx",
+    "components/settings/UnarchiveChannelButton.tsx",
+    "components/settings/DeleteServerConfirmDialog.tsx"
+   ],
+   "linesChanged": 340,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.settings.server.profile",
+    "screens.settings.server-danger-modal"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.desktop.settings.archived-channels",
+    "components.auth-pages.desktop.settings.server-danger-*",
+    "components.auth-pages.mobile.settings.archived-channels",
+    "components.ext-settings.server.*"
+   ],
+   "extCases": 8,
+   "extSample": [
+    "components.auth-pages.desktop.settings.archived-channels",
+    "components.auth-pages.desktop.settings.server-danger-delete",
+    "components.auth-pages.desktop.settings.server-danger-delete-typed"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8784,
+   "scoreLightMin": 0.7786793994139966,
+   "scoreDarkMean": 0.6177,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Plan & Billing",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/PlanSectionContent.tsx",
+    "components/settings/HostedRuntimeSpendCard.tsx",
+    "utils/billingControls.ts",
+    "utils/usdAmount.ts"
+   ],
+   "linesChanged": 457,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "screens.settings.billing-portal"
+   ],
+   "officialPending": [
+    "screens.settings.billing-portal"
+   ],
+   "extGlobs": [
+    "components.auth-pages.desktop.settings.downgrade-*",
+    "components.auth-pages.mobile.settings.downgrade-*",
+    "components.ext-settings.billing.*",
+    "components.ext-settings.billing.mobile*"
+   ],
+   "extCases": 12,
+   "extSample": [
+    "components.auth-pages.desktop.settings.downgrade-active",
+    "components.auth-pages.desktop.settings.downgrade-expired",
+    "components.ext-settings.billing.admin"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7234,
+   "scoreLightMin": 0.7234042008196722,
+   "scoreDarkMean": 0.3668,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Administration (admins, system channels, invites, join links, agreement, onboarding agent, translation, permissions)",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/AdminPrincipalRow.tsx",
+    "components/settings/PendingInviteRow.tsx",
+    "components/settings/JoinLinkRow.tsx"
+   ],
+   "linesChanged": 264,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.administration.*",
+    "components.ext-settings.administration.mobile.*"
+   ],
+   "extCases": 24,
+   "extSample": [
+    "components.ext-settings.administration.admins",
+    "components.ext-settings.administration.admins.as-admin",
+    "components.ext-settings.administration.admins.picker-open"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8783,
+   "scoreLightMin": 0.7368160190325139,
+   "scoreDarkMean": 0.3009,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Applications (installed / my apps / marketplace / detail)",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/InstalledConnectedAppItem.tsx",
+    "components/settings/RegisteredConnectedAppItem.tsx",
+    "components/settings/AppPermissionAccessRow.tsx",
+    "components/settings/connectedAppsErrorSurface.tsx",
+    "components/integrations/AppSetup.tsx"
+   ],
+   "linesChanged": 891,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.integrations.*",
+    "components.ext-settings.integrations.mobile*"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.ext-settings.integrations.detail",
+    "components.ext-settings.integrations.detail-installed",
+    "components.ext-settings.integrations.empty"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8195,
+   "scoreLightMin": 0.48892600455100454,
+   "scoreDarkMean": 0.4511,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Application editor (register app, redirects, scopes)",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/DeclaredScopeToggle.tsx",
+    "components/settings/AppWhenToUseField.tsx"
+   ],
+   "linesChanged": 134,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.desktop.settings.app-editor",
+    "components.auth-pages.mobile.settings.app-editor"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.auth-pages.desktop.settings.app-editor",
+    "components.auth-pages.mobile.settings.app-editor"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: MCP Servers",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/agent/McpServerListItem.tsx",
+    "components/agent/McpHeaderRow.tsx"
+   ],
+   "linesChanged": 326,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.mcp.*",
+    "components.ext-settings.mcp.mobile"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.ext-settings.mcp.page",
+    "components.ext-settings.mcp.panel"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9472,
+   "scoreLightMin": 0.9218184621710527,
+   "scoreDarkMean": 0.9394,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: AI Providers",
+   "level": "page",
+   "webFiles": [
+    "components/settings/ProviderConnectionsSettings.tsx",
+    "components/settings/ProviderAccountRow.tsx",
+    "components/settings/ManagedConnectionRow.tsx",
+    "components/settings/AssignedAgentRow.tsx",
+    "components/icons/ProviderLogos.tsx"
+   ],
+   "linesChanged": 259,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.providers.*",
+    "components.ext-settings.providers.mobile"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.ext-settings.providers.page",
+    "components.ext-settings.providers.panel"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.963,
+   "scoreLightMin": 0.9407874177631579,
+   "scoreDarkMean": 0.9678,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: IM Bridges",
+   "level": "page",
+   "webFiles": [
+    "components/settings/IMBridgesSettingsSection.tsx",
+    "components/settings/slackBridgeProvisioning.ts",
+    "components/settings/slackBridgeVisibility.ts"
+   ],
+   "linesChanged": 6,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.im-bridges.*",
+    "components.ext-settings.im-bridges.mobile"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.ext-settings.im-bridges.page",
+    "components.ext-settings.im-bridges.panel"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8886,
+   "scoreLightMin": 0.8491036184210526,
+   "scoreDarkMean": 0.8854,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Slack bridge setup wizard",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SlackBridgeSetupWizard.tsx",
+    "components/settings/slackOAuthReturn.ts",
+    "components/settings/slackBridgeProvisioningApi.ts"
+   ],
+   "linesChanged": 230,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.wp6.settings.bridge-*",
+    "components.wp6.settings.bridge-*-mobile"
+   ],
+   "extCases": 13,
+   "extSample": [
+    "components.wp6.settings.bridge-channels",
+    "components.wp6.settings.bridge-channels-pairs",
+    "components.wp6.settings.bridge-connect"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.857,
+   "scoreLightMin": 0.85703125,
+   "scoreDarkMean": 0.8518,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Labs",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/ServerLabRow.tsx"
+   ],
+   "linesChanged": 72,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.labs.*",
+    "components.ext-settings.labs.mobile"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.ext-settings.labs.page",
+    "components.ext-settings.labs.panel"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9566,
+   "scoreLightMin": 0.9330129523026316,
+   "scoreDarkMean": 0.804,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: About",
+   "level": "page",
+   "webFiles": [
+    "components/settings/SettingsPanel.tsx",
+    "components/settings/DesktopDownloadOptions.tsx",
+    "components/settings/MobileDownloadQr.tsx",
+    "utils/desktopDownload.ts"
+   ],
+   "linesChanged": 341,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.about.*",
+    "components.ext-settings.about.mobile"
+   ],
+   "extCases": 5,
+   "extSample": [
+    "components.ext-settings.about.mobile-app",
+    "components.ext-settings.about.page",
+    "components.ext-settings.about.panel"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Feedback (My Feedback)",
+   "level": "page",
+   "webFiles": [
+    "components/settings/AboutFeedbackDialog.tsx",
+    "components/settings/LazyAboutFeedbackDialog.tsx",
+    "feedback/feedbackSdkTheme.ts"
+   ],
+   "linesChanged": 29,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.ext-settings.feedback.*",
+    "components.wp6.settings.feedback-*-mobile"
+   ],
+   "extCases": 19,
+   "extSample": [
+    "components.ext-settings.feedback.close-confirm",
+    "components.ext-settings.feedback.close-confirm-resolved",
+    "components.ext-settings.feedback.close-error"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9243,
+   "scoreLightMin": 0.7831147540983606,
+   "scoreDarkMean": 0.7871,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Settings: Agent JWT settings (removed)",
+   "level": "component",
+   "webFiles": [],
+   "linesChanged": 61,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "Removed in v1.21.23 (the server answers 410)."
+  },
+  {
+   "surface": "Notification center (popover / phone sheet)",
+   "level": "component",
+   "webFiles": [
+    "components/layout/NotificationCenter.tsx",
+    "components/layout/NotificationTrigger.tsx",
+    "components/layout/dismissedNotificationStore.ts",
+    "components/layout/useSystemNotifications.tsx"
+   ],
+   "linesChanged": 163,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.home.notification-center.states"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.list-pages.notification.desktop-center"
+   ],
+   "extCases": 1,
+   "extSample": [
+    "components.list-pages.notification.desktop-center"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.871,
+   "scoreLightMin": 0.8706041666666666,
+   "scoreDarkMean": 0.8649,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Server switcher menu",
+   "level": "component",
+   "webFiles": [
+    "components/ui/ServerSwitcherMenu.tsx"
+   ],
+   "linesChanged": 264,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.home.server-switcher.open"
+   ],
+   "officialPending": [
+    "components.home.server-switcher.open"
+   ],
+   "extGlobs": [
+    "components.shell.desktop.server.menu"
+   ],
+   "extCases": 1,
+   "extSample": [
+    "components.shell.desktop.server.menu"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.3147,
+   "scoreLightMin": 0.3146725171232877,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Live agent activity bar -> WorkingNowSummary",
+   "level": "component",
+   "webFiles": [
+    "components/layout/WorkingNowSummary.tsx"
+   ],
+   "linesChanged": 291,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "Removed from the Web in v1.21.23 (WorkingNowSummary in the top bar replaces it)."
+  },
+  {
+   "surface": "Message row (MessageItem) + hover toolbar + reactions",
+   "level": "component",
+   "webFiles": [
+    "components/message/MessageItem.tsx",
+    "components/message/MessageHoverToolbar.tsx",
+    "components/message/ReactionGlyph.tsx",
+    "components/message/MentionLink.tsx",
+    "components/message/MessageSelectionShortcut.tsx"
+   ],
+   "linesChanged": 1132,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.thread.message-menu.default",
+    "components.thread.message-menu.task",
+    "components.thread.message-row.deleted-human",
+    "components.thread.message-row.long-inline-code",
+    "components.thread.message-row.md-latest-release",
+    "components.thread.message-row.md-link-ref",
+    "components.thread.message-row.md-wrap-adjacent",
+    "components.thread.message-row.md-wrap-clarify",
+    "components.thread.message-row.md-wrap-slice1",
+    "components.thread.message-row.md-wrap-status606",
+    "components.thread.message-row.md-wrap-task607",
+    "components.thread.message-row.rich-content",
+    "components.thread.message.row"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.menu.desktop.*",
+    "components.conversation.reactions.desktop.*",
+    "components.conversation.reactions.mobile.*",
+    "components.thread-ext.message.picker*",
+    "components.thread-ext.message.toolbar*",
+    "components.thread-ext.message.toolbar.desktop"
+   ],
+   "extCases": 13,
+   "extSample": [
+    "components.conversation.menu.desktop.default",
+    "components.conversation.menu.desktop.task",
+    "components.conversation.reactions.desktop.multi"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7479,
+   "scoreLightMin": 0.35635146103896104,
+   "scoreDarkMean": 0.7551,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Message markdown rendering pipeline",
+   "level": "component",
+   "webFiles": [
+    "components/message/remarkMessageTokens.ts",
+    "components/message/repairGeneratedMarkdown.ts",
+    "components/message/messageMarkdownSecurity.ts",
+    "components/markdown/MarkdownContent.tsx",
+    "components/markdown/CustomProtocolLink.tsx",
+    "components/markdown/MarkdownOutline.tsx",
+    "utils/markdownAutolink.ts",
+    "utils/markdownSourceAlignment.ts"
+   ],
+   "linesChanged": 548,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Composer (MessageInput) + suggestions + pending-mention strip",
+   "level": "component",
+   "webFiles": [
+    "components/message/MessageInput.tsx",
+    "components/message/useComposerAutosize.ts",
+    "components/message/PendingMentionActionStrip.tsx",
+    "components/message/PendingMentionActionStripRow.tsx",
+    "components/message/AutocompleteOptionRow.tsx",
+    "components/message/composerHost.ts"
+   ],
+   "linesChanged": 450,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.thread.composer.as-task-selected",
+    "components.thread.composer.channel-suggestions",
+    "components.thread.composer.empty",
+    "components.thread.composer.file-previews",
+    "components.thread.composer.image-preview",
+    "components.thread.composer.member-suggestions",
+    "components.thread.composer.pending-mention-actions",
+    "components.thread.composer.states"
+   ],
+   "officialPending": [
+    "components.thread.composer.file-previews"
+   ],
+   "extGlobs": [
+    "components.composer-states.as-task.desktop.*",
+    "components.composer-states.as-task.mobile.*",
+    "components.composer-states.pending-mention.desktop.*",
+    "components.composer-states.pending-mention.mobile.*",
+    "components.composer-states.suggestions.desktop.*",
+    "components.composer-states.suggestions.mobile.*",
+    "components.composer-states.warning.desktop.*",
+    "components.composer-states.warning.mobile.*",
+    "components.composerattachments.desktop.*",
+    "components.composerattachments.mobile.*",
+    "components.screens-ext.composer.desktop.*",
+    "components.thread-ext.thread.desktop.composer",
+    "components.thread-ext.thread.mobile.composer"
+   ],
+   "extCases": 47,
+   "extSample": [
+    "components.composer-states.as-task.desktop.as-task",
+    "components.composer-states.as-task.mobile.as-task",
+    "components.composer-states.pending-mention.desktop.multi"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7772,
+   "scoreLightMin": 0.00022396416573348266,
+   "scoreDarkMean": 0.426,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Attachments: chips, preview surfaces, read-only attachments, comments panel",
+   "level": "component",
+   "webFiles": [
+    "components/message/AttachmentChip.tsx",
+    "components/message/AttachmentTypeBadge.tsx",
+    "components/message/AttachmentMetaText.tsx",
+    "components/message/ReadOnlyMessageAttachments.tsx",
+    "components/message/attachmentPreviewSurfaces.tsx",
+    "components/message/AttachmentCommentsPanel.tsx",
+    "utils/attachmentBadgeLabel.ts"
+   ],
+   "linesChanged": 652,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.thread.comment-anchor"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.attach.desktop.*",
+    "components.conversation.attach.mobile.*",
+    "components.thread-ext.attachment.*",
+    "components.thread-ext.attachment.*.mobile",
+    "components.thread-ext.attachment.doc.header-pdf"
+   ],
+   "extCases": 35,
+   "extSample": [
+    "components.conversation.attach.desktop.audio",
+    "components.conversation.attach.desktop.patch",
+    "components.conversation.attach.desktop.pdf"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.6881,
+   "scoreLightMin": 0.0685126953125,
+   "scoreDarkMean": 0.1948,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Forward composer",
+   "level": "component",
+   "webFiles": [
+    "components/message/ForwardComposerMobile.tsx",
+    "components/message/ForwardComposerDesktop.tsx",
+    "components/message/ForwardComposerTargetList.tsx",
+    "components/message/ForwardComposerDialog.tsx",
+    "components/message/ForwardComposerWarnings.tsx",
+    "components/message/ForwardToastProvider.tsx",
+    "components/message/ForwardedBundleRouteCard.tsx",
+    "components/message/ForwardedBundleCard.tsx"
+   ],
+   "linesChanged": 253,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.thread.forward-modal"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.forward.desktop.*",
+    "components.forward-mobile.page.*",
+    "components.thread-ext.message.forward-*",
+    "components.thread-ext.message.forward-*.mobile"
+   ],
+   "extCases": 13,
+   "extSample": [
+    "components.conversation.forward.desktop.dialog",
+    "components.forward-mobile.page.multi",
+    "components.forward-mobile.page.note"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.9141,
+   "scoreLightMin": 0.8210043532338308,
+   "scoreDarkMean": 0.7262,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Select mode / share lightbox",
+   "level": "component",
+   "webFiles": [
+    "components/message/SelectShareLightbox.tsx",
+    "components/message/SelectModeToolbar.tsx",
+    "components/message/useSelectionShareHandlers.ts",
+    "utils/selectScreenshot.ts",
+    "components/ui/SelectionPopover.tsx"
+   ],
+   "linesChanged": 341,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.thread.message-share.preview",
+    "components.thread.message-share.selection"
+   ],
+   "officialPending": [
+    "components.thread.message-share.preview"
+   ],
+   "extGlobs": [
+    "components.conversation.selection.desktop.*"
+   ],
+   "extCases": 2,
+   "extSample": [
+    "components.conversation.selection.desktop.one",
+    "components.conversation.selection.desktop.two"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7811,
+   "scoreLightMin": 0.7327500303803621,
+   "scoreDarkMean": 0.7468,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Profile preview card / mention hover preview / external identity",
+   "level": "component",
+   "webFiles": [
+    "components/message/ProfilePreviewCardContent.tsx",
+    "components/message/MentionHoverActivityPreview.tsx",
+    "components/message/ExternalIdentityPreviewCard.tsx",
+    "components/profile/ProfilePanel.tsx",
+    "components/profile/ExternalIdentityDetailPanel.tsx"
+   ],
+   "linesChanged": 229,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.external.desktop.*",
+    "components.conversation.external.mobile.*",
+    "components.conversation.profile.desktop.agent",
+    "components.conversation.profile.desktop.agent-activity",
+    "components.conversation.profile.desktop.human",
+    "components.members-ext.agent.*",
+    "components.members-ext.human.*"
+   ],
+   "extCases": 34,
+   "extSample": [
+    "components.conversation.external.desktop.card",
+    "components.conversation.external.desktop.detail",
+    "components.conversation.external.mobile.detail"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8706,
+   "scoreLightMin": 0.3239536199095023,
+   "scoreDarkMean": 0.7342,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Quoted message / permalink preview",
+   "level": "component",
+   "webFiles": [
+    "components/message/QuotedMessagePermalinkPreview.tsx",
+    "components/message/quotedMessagePermalink.ts",
+    "components/ui/cards/QuotedMessageCard.tsx",
+    "components/ui/cards/ConversationPreviewCard.tsx"
+   ],
+   "linesChanged": 165,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.quote.desktop.*",
+    "components.conversation.quote.mobile.*"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.conversation.quote.desktop.archived",
+    "components.conversation.quote.desktop.attachment",
+    "components.conversation.quote.desktop.loading"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8653,
+   "scoreLightMin": 0.8074227799227799,
+   "scoreDarkMean": 0.0117,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Action card in a message (install app / create agent / channel members ...)",
+   "level": "component",
+   "webFiles": [
+    "components/actions/ActionCard.tsx",
+    "components/actions/ActionCardScopes.tsx",
+    "components/actions/ActionCardScopeNotices.tsx",
+    "components/actions/ActionTypeIcon.tsx",
+    "components/actions/useActionCardDetail.ts"
+   ],
+   "linesChanged": 750,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.action.desktop.*",
+    "components.conversation.action.mobile.*"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.conversation.action.desktop.channel-members",
+    "components.conversation.action.desktop.create-agent",
+    "components.conversation.action.desktop.executed"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8041,
+   "scoreLightMin": 0.5474985087980913,
+   "scoreDarkMean": 0.0395,
+   "noCaseReason": null
+  },
+  {
+   "surface": "SOS dialog / notification activation banner",
+   "level": "component",
+   "webFiles": [
+    "components/message/SOSDialog.tsx",
+    "components/message/NotificationActivationBanner.tsx"
+   ],
+   "linesChanged": 36,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.thread-ext.message.banner.desktop",
+    "components.thread-ext.message.banner.mobile",
+    "components.thread-ext.message.sos-*",
+    "components.thread-ext.message.sos-confirm.mobile"
+   ],
+   "extCases": 4,
+   "extSample": [
+    "components.thread-ext.message.banner.desktop",
+    "components.thread-ext.message.sos-confirm.desktop",
+    "components.thread-ext.message.sos-guidance.desktop"
+   ],
+   "covered": {
+    "widths": [
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.6385,
+   "scoreLightMin": 0.6384710451977401,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Mermaid card + viewer",
+   "level": "component",
+   "webFiles": [
+    "components/mermaid/MermaidDiagram.tsx",
+    "components/mermaid/MermaidToolbar.tsx",
+    "components/mermaid/mermaid.css",
+    "components/mermaid/mermaidTheme.ts"
+   ],
+   "linesChanged": 106,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.conversation.mermaid.desktop.*",
+    "components.conversation.mermaid.mobile.*",
+    "components.thread-ext.message.mermaid-*",
+    "components.thread-ext.message.mermaid-toolbar.mobile"
+   ],
+   "extCases": 5,
+   "extSample": [
+    "components.conversation.mermaid.desktop.fullscreen",
+    "components.conversation.mermaid.mobile.fullscreen",
+    "components.thread-ext.message.mermaid-code.desktop"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8215,
+   "scoreLightMin": 0.6082513536185464,
+   "scoreDarkMean": 0.8057,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Handoff dialog",
+   "level": "component",
+   "webFiles": [
+    "components/handoff/HandoffCreateFlow.tsx",
+    "components/handoff/HandoffDialog.tsx",
+    "components/handoff/HandoffToolTab.tsx"
+   ],
+   "linesChanged": 150,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Report issue / reset agent / agent profile edit / agent overflow menu",
+   "level": "component",
+   "webFiles": [
+    "components/agent/ReportIssueDialog.tsx",
+    "components/agent/ResetAgentDialog.tsx",
+    "components/agent/AgentProfileEditDialog.tsx",
+    "components/agent/AgentProfileOverflowMenu.tsx",
+    "components/agent/stopHostedTurn.ts"
+   ],
+   "linesChanged": 281,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.members.agent-lifecycle-actions"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.members-ext.agent.edit-*",
+    "components.members-ext.agent.reset-*",
+    "components.members-pages.desktop.agent.delete-confirm",
+    "components.members-pages.desktop.agent.stop-confirm",
+    "components.members-pages.desktop.report-issue",
+    "components.members-pages.phone.agent.delete-confirm",
+    "components.members-pages.phone.agent.edit-*",
+    "components.members-pages.phone.agent.overflow-menu",
+    "components.members-pages.phone.agent.stop-confirm",
+    "components.members-pages.phone.report-issue"
+   ],
+   "extCases": 16,
+   "extSample": [
+    "components.members-ext.agent.edit-description",
+    "components.members-ext.agent.edit-name",
+    "components.members-ext.agent.edit-role"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.6895,
+   "scoreLightMin": 0.27711278540662426,
+   "scoreDarkMean": 0.425,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Channel overflow menu / member removal / archive visual",
+   "level": "component",
+   "webFiles": [
+    "components/channel/ChannelOverflowMenu.tsx",
+    "components/channel/useChannelMemberRemoval.tsx",
+    "components/channel/channelArchiveVisual.ts",
+    "components/channel/ChannelPinMenuItem.tsx"
+   ],
+   "linesChanged": 98,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.list-pages.members.desktop-remove-confirm",
+    "components.list-pages.members.phone-remove-confirm",
+    "components.members-pages.desktop.channel-members.*",
+    "components.members-pages.phone.channel-members.*"
+   ],
+   "extCases": 9,
+   "extSample": [
+    "components.list-pages.members.desktop-remove-confirm",
+    "components.list-pages.members.phone-remove-confirm",
+    "components.members-pages.desktop.channel-members.remove-confirm"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8556,
+   "scoreLightMin": 0.7328992317143976,
+   "scoreDarkMean": 0.6393,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Community agreement dialog",
+   "level": "component",
+   "webFiles": [
+    "components/server/CommunityAgreementDialog.tsx",
+    "components/server/AgreementBody.tsx"
+   ],
+   "linesChanged": 33,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.auth-pages.desktop.community-agreement.*",
+    "components.auth-pages.mobile.community-agreement.*"
+   ],
+   "extCases": 6,
+   "extSample": [
+    "components.auth-pages.desktop.community-agreement.default",
+    "components.auth-pages.desktop.community-agreement.error",
+    "components.auth-pages.desktop.community-agreement.joining"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.857,
+   "scoreLightMin": 0.7561800407771971,
+   "scoreDarkMean": 0.5699,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Announcement modal",
+   "level": "component",
+   "webFiles": [
+    "components/AnnouncementModal.tsx",
+    "analytics/announcements.ts"
+   ],
+   "linesChanged": 74,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.announcements.desktop.*",
+    "components.announcements.mobile.*"
+   ],
+   "extCases": 17,
+   "extSample": [
+    "components.announcements.desktop.cta",
+    "components.announcements.desktop.cta-long",
+    "components.announcements.desktop.image"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7324,
+   "scoreLightMin": 0.5533306364617044,
+   "scoreDarkMean": 0.6301,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Confirm dialog / Modal / toasts",
+   "level": "component",
+   "webFiles": [
+    "components/ConfirmDialog.tsx",
+    "components/Modal.tsx",
+    "components/LocalizedToastProvider.tsx",
+    "components/toastBridge.ts"
+   ],
+   "linesChanged": 127,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.shell.desktop.confirm.*",
+    "components.shell.desktop.toast.*",
+    "components.shell.mobile.confirm.*",
+    "components.shell.mobile.toast.*"
+   ],
+   "extCases": 14,
+   "extSample": [
+    "components.shell.desktop.confirm.ack",
+    "components.shell.desktop.confirm.danger",
+    "components.shell.desktop.confirm.warning"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.4061,
+   "scoreLightMin": 0,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Inline badge editor / menu item",
+   "level": "component",
+   "webFiles": [
+    "components/InlineBadgeEditor.tsx",
+    "components/InlineBadgeMenuItem.tsx"
+   ],
+   "linesChanged": 52,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Image lightbox + ui Lightbox + PreviewShell",
+   "level": "component",
+   "webFiles": [
+    "components/ImageLightbox.tsx",
+    "components/ui/Lightbox.tsx",
+    "components/ui/PreviewShell.tsx"
+   ],
+   "linesChanged": 134,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.thread.comment-anchor"
+   ],
+   "officialPending": [],
+   "extGlobs": [
+    "components.thread-ext.attachment.*",
+    "components.thread-ext.attachment.*.mobile"
+   ],
+   "extCases": 21,
+   "extSample": [
+    "components.thread-ext.attachment.comments.blocked",
+    "components.thread-ext.attachment.comments.empty",
+    "components.thread-ext.attachment.comments.error"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.7553,
+   "scoreLightMin": 0.0685126953125,
+   "scoreDarkMean": 0.3161,
+   "noCaseReason": null
+  },
+  {
+   "surface": "ui: FormDialog (NEW shared dialog shell) + DialogCard + FormField + SlugInput",
+   "level": "component",
+   "webFiles": [
+    "components/ui/FormDialog.tsx",
+    "components/ui/DialogCard.tsx",
+    "components/ui/FormField.tsx",
+    "components/ui/SlugInput.tsx"
+   ],
+   "linesChanged": 233,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.tokens.palette",
+    "components.ui.attention-dot.states",
+    "components.ui.avatar-list-row.states",
+    "components.ui.badge.states",
+    "components.ui.button.states",
+    "components.ui.button.states.elegant",
+    "components.ui.card.states",
+    "components.ui.card.states.elegant",
+    "components.ui.check-marker.states",
+    "components.ui.checkbox.states",
+    "components.ui.checkbox.states.elegant",
+    "components.ui.form-field.states",
+    "components.ui.form-field.states.elegant",
+    "components.ui.menu-item.states",
+    "components.ui.progress-bar.states",
+    "components.ui.section-eyebrow.states",
+    "components.ui.section-header.states",
+    "components.ui.segmented-control.states",
+    "components.ui.select.states",
+    "components.ui.selection-popover.states",
+    "components.ui.skeleton.states",
+    "components.ui.slug-input.states",
+    "components.ui.spinner.states",
+    "components.ui.status-dot.states",
+    "components.ui.surface-list-item.states",
+    "components.ui.textarea.states",
+    "components.ui.textarea.states.elegant"
+   ],
+   "officialPending": [
+    "components.tokens.palette"
+   ],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [
+     "phone"
+    ],
+    "modes": [
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8793,
+   "scoreLightMin": 0.5705660756830347,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "ui: AvatarListRow + AvatarSlot + AttentionDot + StatusDot + AvatarEditVeil",
+   "level": "component",
+   "webFiles": [
+    "components/ui/AvatarListRow.tsx",
+    "components/ui/AvatarSlot.tsx",
+    "components/ui/AttentionDot.tsx",
+    "components/ui/StatusDot.tsx",
+    "components/ui/AvatarEditVeil.tsx",
+    "components/member/GravatarAvatar.tsx"
+   ],
+   "linesChanged": 646,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [
+    "components.tokens.palette",
+    "components.ui.attention-dot.states",
+    "components.ui.avatar-list-row.states",
+    "components.ui.badge.states",
+    "components.ui.button.states",
+    "components.ui.button.states.elegant",
+    "components.ui.card.states",
+    "components.ui.card.states.elegant",
+    "components.ui.check-marker.states",
+    "components.ui.checkbox.states",
+    "components.ui.checkbox.states.elegant",
+    "components.ui.form-field.states",
+    "components.ui.form-field.states.elegant",
+    "components.ui.menu-item.states",
+    "components.ui.progress-bar.states",
+    "components.ui.section-eyebrow.states",
+    "components.ui.section-header.states",
+    "components.ui.segmented-control.states",
+    "components.ui.select.states",
+    "components.ui.selection-popover.states",
+    "components.ui.skeleton.states",
+    "components.ui.slug-input.states",
+    "components.ui.spinner.states",
+    "components.ui.status-dot.states",
+    "components.ui.surface-list-item.states",
+    "components.ui.textarea.states",
+    "components.ui.textarea.states.elegant"
+   ],
+   "officialPending": [
+    "components.tokens.palette"
+   ],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [
+     "phone"
+    ],
+    "modes": [
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": true,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8793,
+   "scoreLightMin": 0.5705660756830347,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "ui: OverflowSheet + BottomSheet + MenuItem + ContextMenuDivider + TextLink + CloseButton + CopyIconButton",
+   "level": "component",
+   "webFiles": [
+    "components/ui/OverflowSheet.tsx",
+    "components/ui/BottomSheet.tsx",
+    "components/ui/MenuItem.tsx",
+    "components/ui/ContextMenuDivider.tsx",
+    "components/ui/TextLink.tsx",
+    "components/ui/CloseButton.tsx",
+    "components/ui/CopyIconButton.tsx",
+    "components/ui/CopyButton.tsx"
+   ],
+   "linesChanged": 339,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.shell.desktop.banner.*",
+    "components.shell.desktop.bottomsheet.*",
+    "components.shell.desktop.empty.*",
+    "components.shell.desktop.overflow.*",
+    "components.shell.mobile.banner.*",
+    "components.shell.mobile.bottomsheet.*",
+    "components.shell.mobile.empty.*",
+    "components.shell.mobile.overflow.*"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.shell.desktop.banner.all",
+    "components.shell.desktop.bottomsheet.default",
+    "components.shell.desktop.empty.full"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8579,
+   "scoreLightMin": 0.6328339041095891,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "ui: Banner + EmptyState + Skeleton + ProgressBar + SectionEyebrow + SectionHeader + SurfaceListItem + ShowMoreToggle + Tooltip",
+   "level": "component",
+   "webFiles": [
+    "components/ui/Banner.tsx",
+    "components/ui/EmptyState.tsx",
+    "components/ui/Skeleton.tsx",
+    "components/ui/ProgressBar.tsx",
+    "components/ui/SectionEyebrow.tsx",
+    "components/ui/SectionHeader.tsx",
+    "components/ui/SurfaceListItem.tsx",
+    "components/ui/ShowMoreToggle.tsx",
+    "components/ui/Tooltip.tsx"
+   ],
+   "linesChanged": 260,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [
+    "components.shell.desktop.banner.*",
+    "components.shell.desktop.bottomsheet.*",
+    "components.shell.desktop.empty.*",
+    "components.shell.desktop.overflow.*",
+    "components.shell.mobile.banner.*",
+    "components.shell.mobile.bottomsheet.*",
+    "components.shell.mobile.empty.*",
+    "components.shell.mobile.overflow.*"
+   ],
+   "extCases": 10,
+   "extSample": [
+    "components.shell.desktop.banner.all",
+    "components.shell.desktop.bottomsheet.default",
+    "components.shell.desktop.empty.full"
+   ],
+   "covered": {
+    "widths": [
+     "phone",
+     "desktop"
+    ],
+    "modes": [
+     "dark",
+     "light"
+    ]
+   },
+   "casesExist": true,
+   "coveredBefore": false,
+   "coveredAfter": true,
+   "scoreLightMean": 0.8579,
+   "scoreLightMin": 0.6328339041095891,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "ui: CheckMarker (removed; replaced by raft-ui CheckboxIndicator)",
+   "level": "component",
+   "webFiles": [],
+   "linesChanged": 71,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "App theme: AppThemeProvider / appTheme / appThemeCache / appThemeChrome / index.css (mode only: light/dark/system)",
+   "level": "component",
+   "webFiles": [
+    "theme/AppThemeProvider.tsx",
+    "theme/appTheme.ts",
+    "theme/appThemeCache.ts",
+    "theme/appThemeChrome.ts",
+    "theme/appThemeContract.ts",
+    "index.css"
+   ],
+   "linesChanged": 760,
+   "platforms": [
+    "phone",
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": null
+  },
+  {
+   "surface": "Dev/e2e probe (sidebar DnD)",
+   "level": "component",
+   "webFiles": [
+    "utils/sidebarDndE2eProbe.tsx"
+   ],
+   "linesChanged": 211,
+   "platforms": [
+    "desktop"
+   ],
+   "officialCases": [],
+   "officialPending": [],
+   "extGlobs": [],
+   "extCases": 0,
+   "extSample": [],
+   "covered": {
+    "widths": [],
+    "modes": []
+   },
+   "casesExist": false,
+   "coveredBefore": false,
+   "coveredAfter": false,
+   "scoreLightMean": null,
+   "scoreLightMin": null,
+   "scoreDarkMean": null,
+   "noCaseReason": "Test probe, not a product surface."
+  }
+ ],
+ "controlStates": [
+  {
+   "control": "rail tab",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "layout/LeftRail.tsx",
+   "kind": "selectable",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "selected"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "selected"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "rail-tab",
+    "rail-tab-selected"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "rail settings button",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "layout/LeftRail.tsx",
+   "kind": "icon",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "rail-settings"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "sidebar row",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "layout/Sidebar.tsx",
+   "kind": "row",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "selected"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "selected"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "sidebar-row",
+    "sidebar-row-selected",
+    "sidebar-row-unread"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "sidebar section sort button",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "layout/Sidebar.tsx",
+   "kind": "icon",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "sidebar-sort"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "sidebar section toggle",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "layout/Sidebar.tsx",
+   "kind": "icon",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "focus"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "sidebar-section-toggle"
+   ],
+   "notCaptured": [
+    "pressed"
+   ]
+  },
+  {
+   "control": "sidebar Saved entry",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "layout/Sidebar.tsx",
+   "kind": "row",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "selected"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "focus"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "sidebar-saved"
+   ],
+   "notCaptured": [
+    "pressed",
+    "selected"
+   ]
+  },
+  {
+   "control": "channel header search button",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "message/ChatPanel.tsx",
+   "kind": "icon",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "header-search"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "channel header settings button",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "message/ChatPanel.tsx",
+   "kind": "icon",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "header-overflow"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "conversation tab (Chat / Tasks / Files)",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "message/ChatPanel.tsx",
+   "kind": "selectable",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "selected"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "selected"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "conversation-tab",
+    "conversation-tab-selected"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "top bar search",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "topbar/AppTopBar.tsx",
+   "kind": "icon",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "flutterSurface": false,
+   "controls": [
+    "topbar-search"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "top bar bell",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "topbar/TopBarGlobalActions.tsx",
+   "kind": "icon",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "flutterSurface": false,
+   "controls": [
+    "topbar-bell"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "top bar workspace trigger",
+   "scene": "channel",
+   "level": "frame",
+   "webFile": "topbar/AppTopBar.tsx",
+   "kind": "icon",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "focus"
+   ],
+   "flutterSurface": false,
+   "controls": [
+    "topbar-workspace"
+   ],
+   "notCaptured": [
+    "pressed"
+   ]
+  },
+  {
+   "control": "composer send button",
+   "scene": "channel",
+   "level": "page",
+   "webFile": "message/MessageInput.tsx",
+   "kind": "submit",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "disabled",
+    "loading"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "disabled"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "composer-submit"
+   ],
+   "notCaptured": [
+    "loading"
+   ]
+  },
+  {
+   "control": "composer As Task toggle",
+   "scene": "channel",
+   "level": "page",
+   "webFile": "message/MessageInput.tsx",
+   "kind": "toggle",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "checked",
+    "disabled"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "focus",
+    "checked"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "composer-as-task"
+   ],
+   "notCaptured": [
+    "pressed",
+    "disabled"
+   ]
+  },
+  {
+   "control": "Activity row",
+   "scene": "activity",
+   "level": "page",
+   "webFile": "thread/ThreadsInbox.tsx",
+   "kind": "row",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "selected"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "activity-row"
+   ],
+   "notCaptured": [
+    "selected"
+   ]
+  },
+  {
+   "control": "Activity row Done button",
+   "scene": "activity",
+   "level": "page",
+   "webFile": "thread/ThreadsInbox.tsx",
+   "kind": "icon",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus"
+   ],
+   "flutterSurface": false,
+   "controls": [
+    "activity-row-done"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "phone tab bar item",
+   "scene": "phone-home",
+   "level": "frame",
+   "webFile": "layout/MainLayout.tsx (MobileTabBar)",
+   "kind": "touch",
+   "webStates": [
+    "default",
+    "pressed",
+    "selected"
+   ],
+   "captured": [
+    "default",
+    "pressed",
+    "selected"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "phone-tab",
+    "phone-tab-selected"
+   ],
+   "notCaptured": []
+  },
+  {
+   "control": "phone sidebar row",
+   "scene": "phone-home",
+   "level": "frame",
+   "webFile": "layout/Sidebar.tsx",
+   "kind": "touch",
+   "webStates": [
+    "default",
+    "pressed",
+    "selected"
+   ],
+   "captured": [
+    "default",
+    "pressed"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "phone-sidebar-row"
+   ],
+   "notCaptured": [
+    "selected"
+   ]
+  },
+  {
+   "control": "settings switch",
+   "scene": "settings appearance",
+   "level": "page",
+   "webFile": "settings/SettingsPanel.tsx (AppearanceSection)",
+   "kind": "toggle",
+   "webStates": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "checked",
+    "disabled"
+   ],
+   "captured": [
+    "default",
+    "hover",
+    "pressed",
+    "focus",
+    "checked"
+   ],
+   "flutterSurface": true,
+   "controls": [
+    "switch",
+    "switch-mid"
+   ],
+   "notCaptured": [
+    "disabled"
+   ]
+  }
+ ],
+ "stateGaps": [
+  [
+   "Activity row: menu / saved actions, row selection",
+   "Activity (threads inbox) page",
+   "the row menu opens a popover; selected-row state needs the master-detail pane"
+  ],
+  [
+   "Message hover toolbar buttons (reply, react, more)",
+   "Channel page",
+   "appear only on message hover; Flutter shows them through a different gesture (long press / hover region)"
+  ],
+  [
+   "Composer attach image / file buttons, emoji, mention",
+   "Channel page",
+   "Flutter keys missing on these buttons; Web locators exist"
+  ],
+  [
+   "Settings select / combobox, segmented control, checkbox rows",
+   "Settings pages",
+   "Flutter settings page keys cover only the switches; Web theme picker is now a 3-card radio group (Flutter still a segmented control)"
+  ],
+  [
+   "List-row actions (members row, task card, computer row)",
+   "Members / Tasks / Computers pages",
+   "no state cases yet"
+  ],
+  [
+   "Dialog buttons (confirm / cancel / danger) in context",
+   "Dialogs",
+   "covered at component level by the official components.ui.button.states cases"
+  ],
+  [
+   "Loading state of buttons (spinner)",
+   "any",
+   "needs a pending fixture per button; official button states cover the primitive"
+  ],
+  [
+   "Keyboard focus of rows inside scroll views",
+   "Sidebar, Activity",
+   "focus ring is captured on the control itself; scroll-into-view focus is not"
+  ]
+ ],
+ "officialSkipped": [
+  {
+   "id": "components.tokens.palette",
+   "officialStatus": "hidden",
+   "upstreamReason": "Temporarily hidden: palette screenshot is not a valid parity gate; use token-audit for machine validation.",
+   "proxyGlobs": [],
+   "note": "Hidden upstream: a palette screenshot is not a parity gate; the machine token audit (tool/theme-token-audit, docs/design-tokens.md) is the check.",
+   "proxyCases": 0,
+   "proxyScoreMean": null,
+   "proxyScoreMin": null
+  },
+  {
+   "id": "components.thread.composer.file-previews",
+   "officialStatus": "hidden",
+   "upstreamReason": "fixture alignment deferred — artin 2026-07-05: 例子没对齐，但也许不用做了",
+   "proxyGlobs": [
+    "components.composerattachments.mobile.*"
+   ],
+   "note": null,
+   "proxyCases": 12,
+   "proxyScoreMean": 0.7087,
+   "proxyScoreMin": 0.4822065986582116
+  },
+  {
+   "id": "components.thread.message-share.preview",
+   "officialStatus": "pending",
+   "upstreamReason": "Pending for Android visual baselines until the fixture can drive the merged native screenshot/export bridge and render the real exported image preview.",
+   "proxyGlobs": [
+    "components.conversation.selection.*"
+   ],
+   "note": "Android-only export bridge upstream; the Web select-mode lightbox is the nearest render (desktop width only).",
+   "proxyCases": 2,
+   "proxyScoreMean": 0.8053,
+   "proxyScoreMin": 0.7717721036585365
+  },
+  {
+   "id": "components.home.server-switcher.open",
+   "officialStatus": "pending",
+   "upstreamReason": "baselineStatus pending: no React capture in the official host (no fixture, no render route)",
+   "proxyGlobs": [
+    "components.shell.desktop.server.menu"
+   ],
+   "note": "Desktop server menu only; the phone server selector has no extension case yet.",
+   "proxyCases": 1,
+   "proxyScoreMean": 0.3147,
+   "proxyScoreMin": 0.3146725171232877
+  },
+  {
+   "id": "screens.tasks.index",
+   "officialStatus": "pending",
+   "upstreamReason": "Missing true Tasks screen parity: list, filters, task status, and create-task entry need real route captures.",
+   "proxyGlobs": [
+    "components.tasks.panel.states",
+    "components.list-pages.tasks.phone-*",
+    "components.taskspage.mobile.*"
+   ],
+   "note": null,
+   "proxyCases": 9,
+   "proxyScoreMean": 0.7985,
+   "proxyScoreMin": 0.7314635908237804
+  },
+  {
+   "id": "screens.auth.login",
+   "officialStatus": "pending",
+   "upstreamReason": "Missing true login route parity; old auth.login inputs are not active in the canonical manifest.",
+   "proxyGlobs": [
+    "components.auth-ext.mobile.login.default"
+   ],
+   "note": null,
+   "proxyCases": 1,
+   "proxyScoreMean": 0.945,
+   "proxyScoreMin": 0.944976100781788
+  },
+  {
+   "id": "screens.auth.choose-server",
+   "officialStatus": "pending",
+   "upstreamReason": "Missing post-login choose-server gate parity; this is distinct from the Home top-bar server switcher opened inside the app shell.",
+   "proxyGlobs": [
+    "components.auth-ext.mobile.server.choose"
+   ],
+   "note": null,
+   "proxyCases": 1,
+   "proxyScoreMean": 0.9323,
+   "proxyScoreMin": 0.9323115404868959
+  },
+  {
+   "id": "screens.auth.forgot-password",
+   "officialStatus": "pending",
+   "upstreamReason": "Missing forgot-password route parity for the auth recovery flow.",
+   "proxyGlobs": [
+    "components.auth-ext.mobile.forgot.default"
+   ],
+   "note": null,
+   "proxyCases": 1,
+   "proxyScoreMean": 0.9464,
+   "proxyScoreMin": 0.946439421557905
+  },
+  {
+   "id": "screens.thread.channel",
+   "officialStatus": "pending",
+   "upstreamReason": "Pending: needs a real ThreadPage channel route capture with seeded channel messages, attachments, replies, task metadata, and composer state on both React and Android. Do not activate with standalone pageData-only fixtures.",
+   "proxyGlobs": [
+    "components.screens-ext.channel.mobile.full",
+    "components.frame.desktop.channel"
+   ],
+   "note": null,
+   "proxyCases": 2,
+   "proxyScoreMean": 0.808,
+   "proxyScoreMin": 0.7952265625
+  },
+  {
+   "id": "screens.thread.dm",
+   "officialStatus": "pending",
+   "upstreamReason": "Pending: needs a real ThreadPage DM route capture with seeded peer identity/status, member-scoped mentions, replies, attachments, and composer state on both React and Android. Do not activate with standalone pageData-only fixtures.",
+   "proxyGlobs": [
+    "components.screens-ext.dm.mobile.agent"
+   ],
+   "note": null,
+   "proxyCases": 1,
+   "proxyScoreMean": 0.8428,
+   "proxyScoreMin": 0.8427863517910912
+  },
+  {
+   "id": "screens.thread.task-thread",
+   "officialStatus": "pending",
+   "upstreamReason": "Pending: needs a real task-thread route plus seeded task data/status controls before capture. Keep pending until React and Android can launch the same task-bound thread without fake pageData.",
+   "proxyGlobs": [
+    "components.taskdetail.mobile.*"
+   ],
+   "note": null,
+   "proxyCases": 13,
+   "proxyScoreMean": 0.9014,
+   "proxyScoreMin": 0.8248561996192328
+  },
+  {
+   "id": "screens.members.index",
+   "officialStatus": "pending",
+   "upstreamReason": "Pending: needs real Members route/provider capture with seeded humans, agents, invite/add states, and loading/empty/error coverage. Do not activate through the component-only agent detail visual page.",
+   "proxyGlobs": [
+    "components.members-pages.phone.list.*",
+    "components.members-ext.list.*"
+   ],
+   "note": null,
+   "proxyCases": 12,
+   "proxyScoreMean": 0.8676,
+   "proxyScoreMin": 0.7642760416666666
+  },
+  {
+   "id": "screens.settings.storage",
+   "officialStatus": "pending",
+   "upstreamReason": "Pending: needs React Settings Storage route/provider plus Android Settings Storage route capture with seeded storage rows; do not activate through the generic settings visual page.",
+   "proxyGlobs": [
+    "components.wp6.settings.usage-data-mobile"
+   ],
+   "note": null,
+   "proxyCases": 1,
+   "proxyScoreMean": null,
+   "proxyScoreMin": null
+  },
+  {
+   "id": "screens.settings.appearance",
+   "officialStatus": "pending",
+   "upstreamReason": "Pending as a full Settings screen route. Component coverage lives in components.settings.appearance.page; this screen case needs real Settings route launch on both providers, not a component visual page.",
+   "proxyGlobs": [
+    "components.settings.appearance.page"
+   ],
+   "note": "Official component page case (390) is the phone render; desktop is components.ext-settings.appearance.*.",
+   "proxyCases": 1,
+   "proxyScoreMean": 0.7132,
+   "proxyScoreMin": 0.7132245716368939
+  },
+  {
+   "id": "screens.settings.billing-portal",
+   "officialStatus": "hidden",
+   "upstreamReason": "Skipped: billing portal is an external browser URL action (https://raft.build/settings/billing), not an in-app screen/WebView route. Validate the Billing page/action state instead.",
+   "proxyGlobs": [
+    "components.ext-settings.billing.mobile*"
+   ],
+   "note": "External URL action upstream; the Billing page is the in-app render.",
+   "proxyCases": 2,
+   "proxyScoreMean": null,
+   "proxyScoreMin": null
+  },
+  {
+   "id": "screens.home.index",
+   "officialStatus": "pending",
+   "upstreamReason": "Missing true Home channel/thread list screen parity with realistic server/channel data.",
+   "proxyGlobs": [
+    "components.frame.phone.home",
+    "components.shell.mobile.sidebar.default"
+   ],
+   "note": null,
+   "proxyCases": 2,
+   "proxyScoreMean": 0.8865,
+   "proxyScoreMin": 0.8824013313349807
+  },
+  {
+   "id": "screens.home.choose-server",
+   "officialStatus": "pending",
+   "upstreamReason": "Missing true Home top-bar choose-server capture after opening the server selector from the app shell; distinct from the post-login auth choose-server gate.",
+   "proxyGlobs": [
+    "components.auth-ext.mobile.server.choose"
+   ],
+   "note": "The in-shell server switcher on a phone has no extension case yet.",
+   "proxyCases": 1,
+   "proxyScoreMean": 0.9323,
+   "proxyScoreMin": 0.9323115404868959
+  },
+  {
+   "id": "screens.home.saved",
+   "officialStatus": "pending",
+   "upstreamReason": "Existing components.home.saved.results is a connected visual fixture; this tracks the real Home Saved route/screen capture.",
+   "proxyGlobs": [
+    "components.home.saved.results",
+    "components.list-pages.saved.phone-*"
+   ],
+   "note": null,
+   "proxyCases": 5,
+   "proxyScoreMean": 0.8656,
+   "proxyScoreMin": 0.6027112284893835
+  },
+  {
+   "id": "screens.home.activity",
+   "officialStatus": "pending",
+   "upstreamReason": "Existing components.home.activity.results is a connected visual fixture; this tracks the real Home Activity route/screen capture.",
+   "proxyGlobs": [
+    "components.home.activity.results",
+    "components.list-pages.activity.phone-*"
+   ],
+   "note": null,
+   "proxyCases": 7,
+   "proxyScoreMean": 0.8507,
+   "proxyScoreMin": 0.5666834349913015
+  },
+  {
+   "id": "components.settings.integrations.permission-review",
+   "officialStatus": "pending",
+   "upstreamReason": "baselineStatus pending: no React capture in the official host (no fixture, no render route)",
+   "proxyGlobs": [
+    "components.ext-settings.integrations.mobile*"
+   ],
+   "note": null,
+   "proxyCases": 2,
+   "proxyScoreMean": 0.6744,
+   "proxyScoreMin": 0.5408603891722668
+  }
+ ]
+}

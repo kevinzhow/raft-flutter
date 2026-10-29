@@ -5,18 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show fixture;
+import 'support/app_services_fixture.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K09e] $family/$dark mounted Chat/Activity attention owns distinct accepted data and suppresses active',
+      '[K09e] ${dark ? 'dark' : 'light'} mounted Chat/Activity attention owns distinct accepted data and suppresses active',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(1440, 900);
@@ -33,7 +31,7 @@ void main() {
             'joined': false,
           }),
         ];
-        w.unread['discovery'] = 17;
+        w.conversationReads.unread['discovery'] = 17;
         w.section = 'search';
         final accepted = Completer<Map<String, dynamic>>();
         api.routes['GET /channels/inbox'] = (_) => accepted.future;
@@ -48,12 +46,14 @@ void main() {
         };
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -69,7 +69,7 @@ void main() {
         );
         expect(attention('activity'), findsNothing);
         expect(find.byType(RaftRailUnreadCount), findsNothing);
-        w.unread['c1'] = 3;
+        w.conversationReads.unread['c1'] = 3;
         w.notifyListeners();
         await tester.pumpAndSettle();
         expect(attention('chat'), findsOneWidget);
@@ -94,7 +94,7 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('rail-tasks')));
         await tester.pumpAndSettle();
         expect(attention('activity'), findsOneWidget);
-        w.unread['c1'] = 0;
+        w.conversationReads.unread['c1'] = 0;
         w.notifyListeners();
         await tester.pumpAndSettle();
         expect(attention('chat'), findsNothing);
@@ -149,7 +149,7 @@ void main() {
     );
 
     testWidgets(
-      '[K09e] $family/$dark actual pinned Agent row uses Source SidebarItemCount',
+      '[K09e] ${dark ? 'dark' : 'light'} actual pinned Agent row uses Source SidebarItemCount',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(1440, 900);
@@ -173,7 +173,7 @@ void main() {
             'joined': true,
           }),
         ];
-        w.unread['agent-dm'] = 12;
+        w.conversationReads.unread['agent-dm'] = 12;
         api.routes['GET /agents'] = (_) => [
           {'id': 'agent-1', 'name': 'Actual Agent'},
         ];
@@ -187,12 +187,14 @@ void main() {
         };
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -204,7 +206,7 @@ void main() {
           matching: find.byType(RaftSidebarUnreadCount),
         );
         expect(badge, findsOneWidget);
-        expect(tester.getSize(badge).height, 16);
+        expect(tester.getSize(badge).height, 20);
         expect(
           find.descendant(of: badge, matching: find.text('12')),
           findsOneWidget,
@@ -217,11 +219,8 @@ void main() {
         final text = tester.widget<Text>(
           find.descendant(of: badge, matching: find.text('12')),
         );
-        expect(text.style!.fontSize, 10);
-        expect(
-          text.style!.fontWeight,
-          family == RaftFamily.brutal ? FontWeight.w700 : FontWeight.w400,
-        );
+        expect(text.style!.fontSize, 12);
+        expect(text.style!.fontWeight, FontWeight.w700);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       },

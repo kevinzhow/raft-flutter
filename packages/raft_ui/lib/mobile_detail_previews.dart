@@ -32,19 +32,19 @@ class _DmSettingsPreviewState extends State<_DmSettingsPreview> {
   @override
   Widget build(BuildContext context) => closed
       ? RaftButton(
-          label: 'Open settings',
+          label: 'Open Settings',
           onPressed: () => setState(() => closed = false),
         )
       : RaftChannelSettingsSheet(
           page: true,
-          title: 'Conversation settings',
+          title: 'Conversation Settings',
           channelName: 'alice',
           channelLabel: 'Alice',
           onClose: () => setState(() => closed = true),
           sections: [
             RaftSheetSection('Preferences', [
               RaftSheetSwitchRow(
-                title: 'Pin channel',
+                title: 'Pin Channel',
                 description:
                     'Keep this conversation at the top of your sidebar.',
                 value: pinned,
@@ -72,7 +72,7 @@ class _AttachmentPagePreviewState extends State<_AttachmentPagePreview> {
   @override
   Widget build(BuildContext context) => closed
       ? RaftButton(
-          label: 'Open preview',
+          label: 'Open Preview',
           onPressed: () => setState(() => closed = false),
         )
       : RaftAttachmentLightbox(
@@ -80,7 +80,7 @@ class _AttachmentPagePreviewState extends State<_AttachmentPagePreview> {
           title: widget.document ? 'research.md' : '日本語・设计.png',
           onClose: () => setState(() => closed = true),
           footer: RaftTextButton(
-            label: receipt ?? 'Download original',
+            label: receipt ?? 'Download Original',
             glyph: RaftGlyph.download,
             onPressed: () => setState(() => receipt = 'Download requested'),
           ),

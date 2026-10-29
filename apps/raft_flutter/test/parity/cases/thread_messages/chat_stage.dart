@@ -223,6 +223,8 @@ class ChatStage {
     this.footer,
     this.targetRow = true,
     this.backgroundColor,
+    bool? collapseLongMessages,
+    Map<String, dynamic>? initialReadState,
   }) : ids = ParityIdentities(ctx) {
     var seq = 0;
     final rows = [
@@ -241,7 +243,22 @@ class ChatStage {
       ids.channel('androidArtifacts'),
       ...extraChannels,
     ];
+    if (collapseLongMessages != null) {
+      for (var i = 0; i < channels.length; i++) {
+        if (channels[i]['id'] == channelId) {
+          channels[i] = {
+            ...channels[i],
+            'collapseLongMessages': collapseLongMessages,
+          };
+        }
+      }
+    }
     client = ParityRaftClient({
+      if (collapseLongMessages != null)
+        'GET /channels/$channelId/message-display-settings': (_) => {
+          'collapseLongMessages': collapseLongMessages,
+          'prefsVersion': 0,
+        },
       'GET /messages/channel/$channelId': (_) => {
         'messages': rows,
         'historyLimited': false,
@@ -256,7 +273,17 @@ class ChatStage {
       ..server = RaftRecord(ids.server)
       ..channels = channels.map(RaftChannel.new).toList()
       ..dms = dms.map(RaftChannel.new).toList();
-    w.ledger.switchServer(ids.serverId);
+    ctx.onDispose(w.dispose);
+    ctx.onDispose(geometry.dispose);
+    if (initialReadState != null) {
+      final outcome = w.readState.consumeUpdate(
+        {...initialReadState, 'serverId': ids.serverId, 'scopeId': channelId},
+        serverId: ids.serverId,
+        principalId: ids.user['id'] as String,
+      );
+      expect(outcome, 'accepted', reason: 'The declared read fact must apply.');
+    }
+    w.messageDomain.ledger.switchServer(ids.serverId);
     unawaited(
       w.selectChannel(
         w.channels.firstWhere((c) => c.id == channelId),
@@ -303,8 +330,12 @@ class ChatStage {
   Widget build() {
     // The app hosts RaftChatView inside a Scaffold (Material ancestor for the
     // composer TextField, ScaffoldMessenger, bottom sheets).
-    final chat = RaftChatView(key: chatKey, controller: w);
-    if (rowWidth == null) return Scaffold(backgroundColor: backgroundColor, body: chat);
+    // Web's task chip is always an enabled button; a host without a task slot
+    // would paint it disabled (60% opacity), which the Web capture never shows.
+    final chat = RaftChatView(key: chatKey, controller: w, onTask: (_, _) {});
+    if (rowWidth == null) {
+      return Scaffold(backgroundColor: backgroundColor, body: chat);
+    }
     final canvas = this.canvas;
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -387,7 +418,7 @@ class ChatStage {
     for (var i = 0; i < 80; i++) {
       await t.pump(const Duration(milliseconds: 50));
       if (find.byType(RaftMessageRow).evaluate().length >= rows &&
-          !w.channelLoading) {
+          !w.messageDomain.state.channelLoading) {
         break;
       }
     }

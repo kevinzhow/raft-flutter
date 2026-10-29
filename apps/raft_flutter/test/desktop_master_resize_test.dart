@@ -18,7 +18,7 @@ void main() {
       final changes = <(double, bool)>[];
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: StatefulBuilder(
               builder: (_, setState) {

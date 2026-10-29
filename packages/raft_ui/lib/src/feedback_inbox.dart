@@ -5,8 +5,12 @@
 // class list (hands-feedback CSS and the raft-ui Tabs / TaskCard / Badge /
 // MessageReferenceChip / EmptyState / Skeleton / Banner recipes it composes)
 // is resolved here.
+import 'interaction.dart';
+import 'hover_region.dart';
+
 import 'package:flutter/material.dart';
 
+import 'control_typography.dart';
 import 'banner.dart';
 import 'system_inset.dart';
 import 'components.dart' show RaftButton;
@@ -21,12 +25,10 @@ import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'recipes/message_reference.g.dart';
-import 'recipes/skeleton.g.dart';
-import 'recipes/tabs.g.dart';
+import 'raft/tabs.dart';
 import 'recipes/task_card.g.dart';
 import 'theme.dart';
 import 'section_pager.dart';
-import 'design_primitives.dart' show RaftLayoutMetrics;
 
 /// `.hands-feedback-root { font-family: ui-sans-serif, system-ui, ... }`:
 /// the platform UI face (an unknown family name resolves to the platform
@@ -162,16 +164,27 @@ class RaftFeedbackInbox extends StatelessWidget {
       final tickets = ticketsForFilter?.call(filter) ?? this.tickets;
       final emptyKind = any ? filter : RaftFeedbackFilter.all;
       final showEmpty = !loading && error == null && tickets.isEmpty;
-      return showEmpty
-          ? Padding(
-              // `[data-feedback-empty-scroll]`: 6px 2px 0.
-              padding: EdgeInsets.fromLTRB(
-                2,
-                6,
-                2 + raftFeedbackScrollGutter(context),
-                0,
+      final emptyState = RaftFeedbackEmptyState(kind: emptyKind);
+      return showEmpty && onLoadMore == null
+          ? LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                primary: false,
+                child: ConstrainedBox(
+                  // Keep the original full-height, centred empty state when
+                  // it fits; let larger text extend below the viewport.
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Padding(
+                    // `[data-feedback-empty-scroll]`: 6px 2px 0.
+                    padding: EdgeInsets.fromLTRB(
+                      2,
+                      6,
+                      2 + raftFeedbackScrollGutter(context),
+                      0,
+                    ),
+                    child: emptyState,
+                  ),
+                ),
               ),
-              child: RaftFeedbackEmptyState(kind: emptyKind),
             )
           : KeyedSubtree(
               key: const ValueKey('feedback-inbox'),
@@ -193,10 +206,18 @@ class RaftFeedbackInbox extends StatelessWidget {
                   // cannot shrink the track, so the 12px grid
                   // gap after it stays.
                   const SizedBox(height: 12),
+                  // No match in the loaded pages does not exhaust the inbox.
+                  // Keep pagination reachable, including when the empty copy
+                  // needs to scroll at larger text sizes.
+                  if (showEmpty) emptyState,
                   if (loading)
                     for (var i = 0; i < 3; i++) ...[
                       if (i > 0) const SizedBox(height: 8),
-                      const RaftUiSkeleton(height: 64),
+                      RaftSkeleton(
+                        themed: true,
+                        width: double.infinity,
+                        height: 64,
+                      ),
                     ],
                   if (error != null) ...[
                     if (loading) const SizedBox(height: 12),
@@ -207,7 +228,7 @@ class RaftFeedbackInbox extends StatelessWidget {
                       action: onRetry == null
                           ? null
                           : RaftButton(
-                              label: 'Try again',
+                              label: 'Try Again',
                               variant: RaftControlVariant.outline,
                               size: RaftButtonRecipeSize.sm,
                               onPressed: onRetry,
@@ -232,7 +253,7 @@ class RaftFeedbackInbox extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: RaftButton(
-                        label: 'Load more',
+                        label: 'Load More',
                         variant: RaftControlVariant.outline,
                         onPressed: onLoadMore,
                       ),
@@ -274,8 +295,7 @@ class RaftFeedbackInbox extends StatelessWidget {
                         child:
                             any &&
                                 ticketsForFilter != null &&
-                                MediaQuery.sizeOf(context).width <
-                                    RaftLayoutMetrics.desktopBreakpoint
+                                RaftInteraction.of(context).touch
                             ? RaftSectionPager<RaftFeedbackFilter>(
                                 sections: RaftFeedbackFilter.values,
                                 value: filter,
@@ -325,10 +345,7 @@ class RaftFeedbackHeaderBand extends StatelessWidget {
 }
 
 /// raft-ui `Tabs` (default variant, top placement) as FeedbackInbox renders
-/// it: All / Active / Ended. Elegant: `p-px gap-1` list, `h-9 px-3.5`
-/// tabs and the raised `bg-layer-panel` indicator under the active tab;
-/// Brutal: the `border-2` list with `px-4 py-1.5` tabs, 2px dividers and
-/// the `bg-primary-400` active tab.
+/// it: All / Active / Ended, the selected tab a yellow sticker ([RaftTabsList]).
 class RaftFeedbackFilterTabs extends StatefulWidget {
   const RaftFeedbackFilterTabs({
     super.key,
@@ -349,105 +366,19 @@ class RaftFeedbackFilterTabs extends StatefulWidget {
 }
 
 class _RaftFeedbackFilterTabsState extends State<RaftFeedbackFilterTabs> {
-  RaftFeedbackFilter? hovered;
-
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final rt = t.recipeTokens;
-    RaftTabsRecipeStyle style({bool active = false, bool hover = false}) =>
-        RaftTabsRecipe.resolve(
-          theme: t.recipeTheme,
-          variant: RaftTabsRecipeVariant.default_,
-          states: t.recipeStates(
-            hovered: hover,
-            extra: [if (active) 'data-active'],
-          ),
-          tokens: rt,
-        );
-    final base = style();
-    final list = base.list;
-    Widget tab(RaftFeedbackFilter value, int index) {
-      final active = value == widget.value;
-      final s = style(active: active, hover: hovered == value);
-      final slot = s.tab;
-      final text = _system(
-        t,
-        size: slot.fontSize ?? 13,
-        line: slot.lineHeight == null
-            ? null
-            : slot.lineHeight! * (slot.fontSize ?? 13),
-        weight: slot.fontWeight ?? FontWeight.w500,
-        color: slot.color?.resolve(rt),
-      ).copyWith(letterSpacing: slot.letterSpacing);
-      final indicator = s.indicator;
-      Widget body = Container(
-        height: slot.height,
-        padding: slot.padding,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: slot.backgroundColor?.resolve(rt)),
-        foregroundDecoration: t.brutal && index > 0
-            ? BoxDecoration(
-                border: Border(
-                  left: BorderSide(color: t.colors['line-strong']!, width: 2),
-                ),
-              )
-            : null,
-        child: _line(
-          text,
-          Text(
-            raftText(context, RaftFeedbackFilterTabs.labels[value]!),
-            maxLines: 1,
-            softWrap: false,
-            style: text,
-          ),
+  Widget build(BuildContext context) => RaftTabsList<RaftFeedbackFilter>(
+    value: widget.value,
+    onChanged: widget.onChanged,
+    tabs: [
+      for (final value in RaftFeedbackFilter.values)
+        RaftTabItem(
+          value: value,
+          // ignore: raft_lints/avoid_render_index_assertion -- `value` iterates the fixed filter tab ids that labels covers.
+          label: RaftFeedbackFilterTabs.labels[value]!,
         ),
-      );
-      if (active && !t.brutal) {
-        // The indicator: 1px inset horizontally, ~1.67px vertically.
-        body = Stack(
-          children: [
-            Positioned.fill(
-              left: 1,
-              right: 1,
-              top: 1.671875,
-              bottom: 1.671875,
-              child: DecoratedBox(decoration: indicator.decoration(rt)),
-            ),
-            body,
-          ],
-        );
-      }
-      return MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = value),
-        onExit: (_) => setState(() => hovered = null),
-        child: Semantics(
-          button: true,
-          selected: active,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => widget.onChanged(value),
-            child: body,
-          ),
-        ),
-      );
-    }
-
-    final values = RaftFeedbackFilter.values;
-    return Container(
-      padding: list.padding,
-      decoration: list.decoration(rt),
-      child: IntrinsicHeight(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: list.columnGap ?? 0,
-          children: [for (final (i, v) in values.indexed) tab(v, i)],
-        ),
-      ),
-    );
-  }
+    ],
+  );
 }
 
 /// One ticket: raft-ui `TaskCard` (`px-3 py-2.5`) + `TaskCardRow`
@@ -527,9 +458,12 @@ class _RaftFeedbackTicketCardState extends State<RaftFeedbackTicketCard> {
                 ),
                 const SizedBox(height: 4),
                 _line(date, Text(ticket.date, maxLines: 1, style: date)),
+                // ds-allow: Web hands-feedback/styles.css .hands-feedback-ticket-meta `margin-top: 5px`
                 const SizedBox(height: 5),
                 Wrap(
+                  // ds-allow: Web hands-feedback/styles.css .hands-feedback-ticket-meta `gap: 5px`
                   spacing: 5,
+                  // ds-allow: Web hands-feedback/styles.css .hands-feedback-ticket-meta `gap: 5px`
                   runSpacing: 5,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
@@ -557,7 +491,7 @@ class _RaftFeedbackTicketCardState extends State<RaftFeedbackTicketCard> {
         ],
       ),
     );
-    return MouseRegion(
+    return RaftHoverRegion(
       cursor: widget.onOpen == null
           ? MouseCursor.defer
           : SystemMouseCursors.click,
@@ -617,14 +551,17 @@ class RaftFeedbackKindChip extends StatelessWidget {
     final iconColor = problem
         ? t.colors['danger']!
         : (s.target('& > svg')?.color?.resolve(rt) ?? fg);
-    final text = TextStyle(
-      // The chip inherits the hands-feedback root face.
-      fontFamily: raftSystemUiFont,
-      fontSize: 10.5,
-      height: 1,
-      fontWeight: FontWeight.w700,
-      color: fg,
-      leadingDistribution: TextLeadingDistribution.even,
+    final text = RaftControlTypography.of(
+      context,
+      TextStyle(
+        // The chip inherits the hands-feedback root face.
+        fontFamily: raftSystemUiFont,
+        fontSize: 10.5,
+        height: 1,
+        fontWeight: FontWeight.w700,
+        color: fg,
+        leadingDistribution: TextLeadingDistribution.even,
+      ),
     );
     return Container(
       height: 20,
@@ -687,6 +624,7 @@ class RaftFeedbackStatusBadge extends StatelessWidget {
       ),
     };
     return RaftBadge(
+      // ignore: raft_lints/avoid_render_index_assertion -- `labels` covers every RaftFeedbackStatus; status is that enum.
       label: raftText(context, labels[status]!),
       variant: variant,
       fontFamily: raftSystemUiFont,
@@ -721,35 +659,6 @@ class RaftFeedbackUnreadCount extends StatelessWidget {
   );
 }
 
-/// raft-ui `Skeleton` (block, as opposed to the Web app's own
-/// ui/Skeleton [RaftSkeleton]): the recipe's `data-[variant=block]` fill and
-/// radius, held at its first `animate-pulse` frame like Playwright's
-/// disabled animations (reduced motion).
-class RaftUiSkeleton extends StatelessWidget {
-  const RaftUiSkeleton({super.key, required this.height});
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final s = RaftSkeletonRecipe.resolve(
-      theme: t.recipeTheme,
-      variant: RaftSkeletonRecipeVariant.block,
-      states: t.recipeStates(extra: ['data-variant=block']),
-      tokens: t.recipeTokens,
-    ).root;
-    return ExcludeSemantics(
-      child: RaftRecipeBox(
-        style: s,
-        tokens: t.recipeTokens,
-        width: double.infinity,
-        height: height,
-        applyOpacity: false,
-      ),
-    );
-  }
-}
-
 /// The inbox EmptyState with the hands-feedback overrides: a 2px dashed
 /// `--color-brutal-stone` box (`padding: 40px 24px 48px`) centring the 44px
 /// cream icon tile (2px border, 2px hard shadow, `margin-bottom: 14px`), the
@@ -776,12 +685,13 @@ class RaftFeedbackEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // ignore: raft_lints/avoid_render_index_assertion -- `copy` covers every empty-state kind; kind is a fixed enum.
     final (title, body) = copy[kind]!;
     final strong = t.colors['line-strong']!;
     final titleStyle = _system(
       t,
       size: 15.5,
-      line: t.brutal ? 28 : 20,
+      line: 20,
       weight: FontWeight.w700,
     );
     final bodyStyle = _system(

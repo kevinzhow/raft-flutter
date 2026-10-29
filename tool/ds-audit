@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure and ratchet design-system drift in apps/raft_flutter/lib.
+"""Measure and ratchet design-system drift in apps/raft_flutter/lib and theme-contract drift in components and the independent recipe engine.
 
 The scan itself is a resolved-AST Dart program (tool/ds_audit) run with the
 pinned SDK; this wrapper aggregates its findings, writes .local/ds-audit.json,
@@ -7,9 +7,28 @@ prints a summary and compares per-file/per-category counts with the checked-in
 baseline tool/ds-audit-baseline.json.
 
   tool/ds-audit                     summary + baseline comparison (exit 0)
-  tool/ds-audit --check             exit 1 if any file/category count grew
-  tool/ds-audit --update-baseline   lower the baseline to the current counts
+  tool/ds-audit --check             exit 1 if any file/category count grew (a decrease never fails)
+  tool/ds-audit --update-baseline   lower the baseline to the current counts (integration branch only)
   tool/ds-audit --json PATH...      print aggregated JSON for given paths
+
+Two scopes share one baseline (files are keyed by path):
+  apps/raft_flutter/lib   widget.* and style.* (Material widgets and raw style literals);
+  packages/raft_ui/lib    contract.* (docs/theme-contract.md 7.3: literal colours, font sizes,
+                          radii and stroke widths, theme-name branches, direct RaftRecipeTheme use).
+  both scopes      bypass.* (raw Material/Cupertino controls and overlays that should be a Raft component;
+                   only the wrapper files in BYPASS_ALLOWLIST may host a Material primitive) and
+                   duplicate.<family> (references to deprecated duplicate Raft components outside
+                   their own file; one implementation per family, registry tool/ds-audit-families.json).
+The independent recipe tables and runtime are also scanned; theme pack data definitions are not.
+Generated *.g.dart recipe files are not scanned for literals; their `const`
+variables are counted per recipe file as `generated.recipe_constants`, which is
+informational and never fails --check.
+
+Workflow: a feature branch only has to keep every count at or below the baseline
+and never edits tool/ds-audit-baseline.json (parallel branches that lower the same
+file would conflict on it). Counts that went down only print a "can lower" note.
+After a batch is merged, the integration owner runs `tool/ds-audit --update-baseline`
+and commits the lowered baseline as a separate small commit.
 
 Rules for every category: docs/ds-migration.md ("Audit rules").
 Escape hatch for genuinely platform-only code (reviewed, counted separately):
@@ -17,6 +36,7 @@ Escape hatch for genuinely platform-only code (reviewed, counted separately):
 """
 import argparse
 import collections
+import importlib.util
 import json
 import os
 import pathlib
@@ -25,9 +45,69 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SCOPE = 'apps/raft_flutter/lib'
+CONTRACT_SCOPE = 'packages/raft_ui/lib'
+ENGINE_SCOPES = [
+    'packages/raft_theme/lib/recipes',
+    'packages/raft_theme/lib/src/css_recipe_decoration.dart',
+    'packages/raft_theme/lib/src/outer_shadow_painter.dart',
+    'packages/raft_theme/lib/src/lru_cache.dart',
+]
+SCOPES = [SCOPE, CONTRACT_SCOPE, *ENGINE_SCOPES]
+CONTRACT_SCOPES = [CONTRACT_SCOPE, *ENGINE_SCOPES]  # excludes theme-pack definitions
+# Directories whose files also get the bypass scan (raw Material/Cupertino controls, `bypass.*`).
+BYPASS_SCOPES = [SCOPE, CONTRACT_SCOPE]
+# Designated raft_ui wrapper files that legitimately host a Material primitive: {file: {family: reason}}.
+# Their findings are reported as allowlisted, never counted by --check. Keep this small; everything else
+# in the app and in raft_ui must go through the Raft component (see BYPASS_USE).
+_UI = 'packages/raft_ui/lib/src/'
+BYPASS_ALLOWLIST = {
+    _UI + 'form_controls.dart': {
+        'text_field': 'implements RaftTextInput, RaftTextarea, RaftInputGroup and RaftBareInput on TextField'},
+    _UI + 'form_controls_frozen.dart': {
+        'text_field': 'the frozen Elegant and Brutal paint of the same inputs (part of form_controls.dart; delete with the legacy looks)'},
+    _UI + 'select_field_frozen.dart': {
+        'select': 'the frozen Elegant and Brutal labelled Material dropdown (part of select_field.dart; delete with the legacy looks)'},
+    _UI + 'raft/checkbox_frozen.dart': {
+        'toggle': 'the frozen Elegant and Brutal Material checkbox and checkbox list tile (part of raft/checkbox.dart; delete with the legacy looks)'},
+    _UI + 'overlays/dialog.dart': {
+        'dialog': 'the canonical dialog host preserves Material rendering and routing only for frozen-look compatibility'},
+    _UI + 'tooltip.dart': {
+        'tooltip': 'RaftTooltip extends Tooltip',
+        'overlay': 'RaftTooltip renders its own popup'},
+    _UI + 'toast.dart': {
+        'overlay': 'RaftToastPortal is the toast host'},
+    _UI + 'pull_to_refresh.dart': {
+        'refresh': 'RaftPullToRefresh wraps RefreshIndicator.adaptive'},
+    _UI + 'raft/legacy_material_button_surface.dart': {
+        'button': 'RaftButton frozen legacy painter reads unmounted TextButton/OutlinedButton default styles; it never mounts their input widgets'},
+}
+# What to use instead, per bypass family (names from packages/raft_ui/lib/raft_ui.dart).
+BYPASS_USE = {
+    'bypass.dialog': 'RaftDialog / showRaftDialog, showRaftAlertDialog (RaftAlertDialog), RaftFormDialog, showRaftModal',
+    'bypass.bottom_sheet': 'RaftBottomSheet / RaftSheet, showRaftOverflowSheet',
+    'bypass.menu': 'RaftDropdownMenu (RaftMenuItem / RaftMenuEntry / RaftMenuPanel)',
+    'bypass.select': 'RaftSelectField (or RaftDropdownMenu for actions)',
+    'bypass.tooltip': 'RaftTooltip',
+    'bypass.button': 'RaftButton / RaftTextButton',
+    'bypass.icon_button': 'RaftIconButton / RaftBackButton',
+    'bypass.toggle': 'RaftCheckbox / RaftSwitch',
+    'bypass.chip': 'RaftBadge / RaftSegmentedControl / RaftPickerTriggerButton',
+    'bypass.list_tile': 'RaftListRow',
+    'bypass.progress': 'RaftSpinner / RaftProgressBar',
+    'bypass.refresh': 'RaftPullToRefresh',
+    'bypass.divider': 'the Raft separator (RaftSeparatorRecipe) or a RaftMenuEntry.separator()',
+    'bypass.text_field': 'RaftTextInput / RaftTextarea / RaftInputGroup (RaftPrefixedInput, RaftSearchInput) / RaftBareInput',
+    'bypass.picker': 'a Raft picker (RaftPickerTriggerButton + RaftAnchoredPopup); there is no Raft date picker yet',
+    'bypass.snackbar': 'showRaftToast / RaftToast',
+    'bypass.overlay': 'RaftAnchoredPopup / RaftPopoverSurface / showRaftToast / RaftTooltip',
+}
 BASELINE = ROOT / 'tool/ds-audit-baseline.json'
+FAMILIES = ROOT / 'tool/ds-audit-families.json'
 REPORT = ROOT / '.local/ds-audit.json'
 UPDATE_HINT = 'tool/ds-audit --update-baseline'
+_coverage_spec = importlib.util.spec_from_file_location('ds_coverage', ROOT / 'tool/ds_coverage.py')
+coverage = importlib.util.module_from_spec(_coverage_spec)
+_coverage_spec.loader.exec_module(coverage)
 
 
 class AuditError(RuntimeError):
@@ -47,20 +127,65 @@ def dart_executable():
     return pathlib.Path(flutter_root) / 'bin' / ('dart.bat' if os.name == 'nt' else 'dart')
 
 
-def run_scanner(paths):
-    """Return the raw scanner document ({scanned, errors, findings})."""
+def load_families(path=None):
+    """The family registry (tool/ds-audit-families.json) as {family: {canonical, deprecated, ...}}."""
+    return json.loads((path or FAMILIES).read_text())['families']
+
+
+def duplicate_index(families):
+    """Flatten the registry to {deprecated name: {family, file}} for the scanner."""
+    index = {}
+    for family, entry in families.items():
+        for name, file in entry['deprecated'].items():
+            if name in index:
+                raise AuditError(f'{name} is deprecated in two families: {index[name]["family"]} and {family}')
+            index[name] = {'family': family, 'file': file}
+    return index
+
+
+def run_scanner(paths, contract=None, bypass=None, bypass_allow=None, families=None, inventory=False, inventory_paths=None):
+    """Return the raw scanner document ({scanned, errors, findings, generated}).
+
+    `contract` lists the directories (relative to the repo) scanned with the
+    theme-contract rules; it defaults to CONTRACT_SCOPES. `bypass` lists the
+    directories that also get the bypass scan (default BYPASS_SCOPES) and
+    `bypass_allow` the wrapper allowlist (default BYPASS_ALLOWLIST). The same
+    directories are scanned for references to the deprecated duplicates in
+    `families` (a registry dict, default tool/ds-audit-families.json).
+    """
+    contract = CONTRACT_SCOPES if contract is None else contract
+    bypass = BYPASS_SCOPES if bypass is None else bypass
+    bypass_allow = BYPASS_ALLOWLIST if bypass_allow is None else bypass_allow
+    duplicates = duplicate_index(load_families() if families is None else families)
+    inventory_args = []
+    if inventory:
+        _, roots = coverage.runtime_sources(ROOT)
+        if inventory_paths is not None:
+            roots = inventory_paths  # explicit resolved-fixture API; --check never supplies an override
+        inventory_args = [arg for prefix in roots for arg in ('--inventory', prefix)]
+        canonical = {name: binding['declarationId'].split('#', 1)[0]
+                     for entry in load_families().values()
+                     for name, binding in entry.get('canonicalBindings', {}).items()
+                     if '#function:' in binding['declarationId']}
+        inventory_args += ['--canonical-functions', json.dumps(canonical)]
     package_config = ROOT / '.dart_tool/package_config.json'
     if not package_config.is_file() or '"ds_audit"' not in package_config.read_text():
         raise AuditError('workspace is not resolved; run `tool/flutter pub get` at the repository root')
     out = subprocess.run(
         [str(dart_executable()), f'--packages={package_config}',
-         str(ROOT / 'tool/ds_audit/bin/ds_audit.dart'), '--root', str(ROOT), *paths],
+         str(ROOT / 'tool/ds_audit/bin/ds_audit.dart'), '--root', str(ROOT),
+         *[arg for prefix in contract for arg in ('--contract', prefix)],
+         *[arg for prefix in bypass for arg in ('--bypass', prefix)],
+         '--bypass-allow', json.dumps(bypass_allow), '--families', json.dumps(duplicates),
+         *inventory_args, *paths],
         cwd=ROOT, capture_output=True, text=True)
     if out.returncode != 0:
         raise AuditError(f'ds_audit scanner failed (exit {out.returncode}):\n{out.stderr.strip()}')
     document = json.loads(out.stdout)
     if not document['scanned']:
         raise AuditError(f'ds_audit scanned no Dart files under {paths}')
+    if inventory and 'ownership' not in document:
+        raise AuditError('scanner omitted the required resolved ownership inventory')
     return document
 
 
@@ -72,20 +197,28 @@ def aggregate(document):
     for f in document['findings']:
         (allowed if f['allowed'] else files)[f['file']][f['category']] += 1
         if f.get('allowError'):
-            malformed.append(f"{f['file']}:{f['line']}: {f['allowError']}")
+            message = f"{f['file']}:{f['line']}: {f['allowError']}"
+            if message not in malformed:  # a line can carry both an app and a bypass finding
+                malformed.append(message)
     as_dict = lambda table: {name: dict(sorted(c.items())) for name, c in sorted(table.items()) if c}
     files, allowed = as_dict(files), as_dict(allowed)
-    return {
-        'version': 1,
-        'scope': SCOPE,
+    generated = dict(sorted(document.get('generated', {}).items()))
+    report = {
+        'version': 2,
+        'scopes': SCOPES,
         'scannedFiles': len(document['scanned']),
         'totals': totals(files),
         'allowedTotals': totals(allowed),
         'files': files,
         'allowed': allowed,
+        'generated': generated,
+        'generatedTotal': sum(generated.values()),
         'malformedAllows': malformed,
         'findings': document['findings'],
     }
+    if 'ownership' in document:
+        report['ownership'] = document['ownership']
+    return report
 
 
 def totals(files):
@@ -115,12 +248,15 @@ def compare(baseline_files, current_files):
 
 def baseline_document(report):
     return {
-        'version': 1,
-        'scope': SCOPE,
-        'about': 'Ratchet for tool/ds-audit. Counts may only go down. '
-                 f'Regenerate with `{UPDATE_HINT}` after removing violations.',
+        'version': 2,
+        'scopes': SCOPES,
+        'about': 'Ratchet for tool/ds-audit. Counts may only go down. Feature branches never edit this file; '
+                 f'the integration owner runs `{UPDATE_HINT}` after merges (separate small commit). '
+                 '`generated` is informational (const variables per generated recipe file) and is never checked.',
         'totals': report['totals'],
         'files': report['files'],
+        'generatedTotal': report['generatedTotal'],
+        'generated': report['generated'],
     }
 
 
@@ -130,22 +266,29 @@ def load_baseline():
     return json.loads(BASELINE.read_text())
 
 
+def scope_of(name):
+    return next((scope for scope in SCOPES if name == scope or name.startswith(scope + '/')), SCOPE)
+
+
 def format_summary(report, top):
-    lines = [f"ds-audit: {report['scannedFiles']} files in {report['scope']}"]
-    t = report['totals']
-    widget = sum(v for k, v in t.items() if k.startswith('widget.'))
-    style = sum(v for k, v in t.items() if k.startswith('style.'))
-    lines.append(f'enforced violations: {widget + style} (widget {widget}, style {style}); '
-                 f"allowlisted: {sum(report['allowedTotals'].values())}")
-    for category, count in sorted(t.items(), key=lambda kv: (-kv[1], kv[0])):
-        allowed = report['allowedTotals'].get(category, 0)
-        lines.append(f'  {category:28} {count:5}' + (f'  (+{allowed} allowlisted)' if allowed else ''))
-    ranked = sorted(report['files'].items(), key=lambda kv: (-sum(kv[1].values()), kv[0]))
-    lines.append(f'top {min(top, len(ranked))} files:')
-    for name, counts in ranked[:top]:
-        w = sum(v for k, v in counts.items() if k.startswith('widget.'))
-        s = sum(v for k, v in counts.items() if k.startswith('style.'))
-        lines.append(f'  {sum(counts.values()):4}  (widget {w:3}, style {s:3})  {name}')
+    lines = [f"ds-audit: {report['scannedFiles']} files in {', '.join(report['scopes'])}"]
+    for scope in report['scopes']:
+        files = {n: c for n, c in report['files'].items() if scope_of(n) == scope}
+        totals_ = totals(files)
+        allowed = totals({n: c for n, c in report['allowed'].items() if scope_of(n) == scope})
+        lines.append(f'{scope}: enforced violations {sum(totals_.values())}; allowlisted {sum(allowed.values())}')
+        for category, count in sorted(totals_.items(), key=lambda kv: (-kv[1], kv[0])):
+            extra = allowed.get(category, 0)
+            lines.append(f'  {category:30} {count:5}' + (f'  (+{extra} allowlisted)' if extra else ''))
+        ranked = sorted(files.items(), key=lambda kv: (-sum(kv[1].values()), kv[0]))
+        lines.append(f'  top {min(top, len(ranked))} files:')
+        for name, counts in ranked[:top]:
+            lines.append(f'  {sum(counts.values()):5}  {name}')
+    generated = report.get('generated', {})
+    if generated:
+        ranked = sorted(generated.items(), key=lambda kv: (-kv[1], kv[0]))
+        lines.append(f"generated.recipe_constants (informational, not checked): {report['generatedTotal']} "
+                     f'in {len(generated)} recipe files; largest {ranked[0][0]} ({ranked[0][1]})')
     return '\n'.join(lines)
 
 
@@ -154,11 +297,26 @@ def format_comparison(regressions, improvements):
     if regressions:
         lines.append(f'DESIGN-SYSTEM DRIFT GREW in {len(regressions)} file/category pair(s):')
         lines += [f'  {f}: {c} {b} -> {n}' for f, c, b, n in regressions]
-        lines.append('Use raft_ui components/tokens instead (docs/ds-migration.md). Genuinely '
+        bypass = sorted({c for _, c, _, _ in regressions if c in BYPASS_USE})
+        if bypass:
+            lines.append('A raw Material/Cupertino control or overlay bypasses the design system. Use the Raft component:')
+            lines += [f'  {c}: {BYPASS_USE[c]}' for c in bypass]
+            lines.append('Only the designated wrapper files in BYPASS_ALLOWLIST (tool/ds-audit) may host a Material primitive.')
+        duplicate = sorted({c for _, c, _, _ in regressions if c.startswith('duplicate.')})
+        if duplicate:
+            registry = load_families()
+            lines.append('A deprecated duplicate Raft component was used (one implementation per family, '
+                         'tool/ds-audit-families.json). Use the canonical component:')
+            for c in duplicate:
+                entry = registry.get(c.removeprefix('duplicate.'), {})
+                lines.append(f"  {c}: use {' / '.join(entry.get('canonical', ['?']))} "
+                             f"instead of {', '.join(sorted(entry.get('deprecated', {})))}")
+        lines.append('Use raft_ui components/tokens and the theme pack instead (docs/ds-migration.md). Genuinely '
                      'platform-only code may carry `// ds-allow: <reason>` for review.')
     if improvements:
-        lines.append(f'{len(improvements)} file/category count(s) went down; lock them in with '
-                     f'`{UPDATE_HINT}` and commit tool/ds-audit-baseline.json:')
+        lines.append(f'baseline can lower: {len(improvements)} file/category count(s) went down. This does not fail '
+                     f'--check; do NOT edit tool/ds-audit-baseline.json on a feature branch. The integration owner runs '
+                     f'`{UPDATE_HINT}` after merges and commits it separately:')
         lines += [f'  {f}: {c} {b} -> {n}' for f, c, b, n in improvements]
     if not regressions and not improvements:
         lines.append('baseline: no change')
@@ -167,29 +325,50 @@ def format_comparison(regressions, improvements):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('paths', nargs='*', help=f'files/dirs relative to the repo (default {SCOPE})')
+    parser.add_argument('paths', nargs='*', help=f"files/dirs relative to the repo (default {' and '.join(SCOPES)})")
     parser.add_argument('--check', action='store_true', help='fail on any count above the baseline')
     parser.add_argument('--update-baseline', action='store_true', help='write current counts to the baseline')
     parser.add_argument('--accept-increase', action='store_true',
                         help='with --update-baseline: also accept counts that grew (needs review)')
     parser.add_argument('--json', action='store_true', help='print the aggregated report as JSON')
-    parser.add_argument('--top', type=int, default=15)
+    parser.add_argument('--contract', action='append', default=[], metavar='DIR',
+                        help='also scan DIR (relative to the repo) with the theme-contract rules; for fixtures and spot checks')
+    parser.add_argument('--top', type=int, default=20)
     args = parser.parse_args(argv)
     custom = bool(args.paths)
+    if args.contract and not custom:
+        parser.error('--contract needs explicit paths')
     if custom and (args.check or args.update_baseline):
         parser.error('--check/--update-baseline always scan the full scope; do not pass paths')
     try:
-        report = aggregate(run_scanner(args.paths or [SCOPE]))
-    except AuditError as error:
+        document = run_scanner(args.paths or SCOPES, [*CONTRACT_SCOPES, *args.contract], inventory=not custom)
+        report = aggregate(document)
+        # Production run_scanner enforces this field when requested. Unit
+        # fixtures that mock the old count-only document remain count tests.
+        if not custom and 'ownership' in document:
+            report['coverage'] = coverage.check(ROOT, document['ownership'])
+    except (AuditError, OSError, ValueError) as error:
         print(f'ds-audit: {error}', file=sys.stderr)
         return 2
+    ownership_errors = report.get('coverage', {}).get('errors', [])
     if args.json:
         print(json.dumps(report, indent=1))
+        if args.check:
+            regressions, _ = compare(load_baseline().get('files', {}), report['files'])
+            return int(bool(regressions or report['malformedAllows'] or ownership_errors))
         return 0
     if not custom:
         REPORT.parent.mkdir(exist_ok=True)
         REPORT.write_text(json.dumps(report, indent=1) + '\n')
     print(format_summary(report, args.top))
+    if 'coverage' in report:
+        checked = report['coverage']
+        print(f"ownership: {checked.get('registeredRecipes', 0)} recipes; "
+              f"{checked.get('resolvedDeclarations', 0)} resolved declarations; "
+              f"{checked.get('unresolvedMappings', 0)} unresolved mappings; "
+              f"{checked.get('visualPasses', 0)} current visual passes")
+        for problem in ownership_errors:
+            print(f'ownership: {problem}')
     if custom:
         return 0
     print(f'full report: {REPORT.relative_to(ROOT)}')
@@ -198,6 +377,9 @@ def main(argv=None):
     for problem in report['malformedAllows']:
         print(f'malformed allow: {problem}')
     if args.update_baseline:
+        if ownership_errors:
+            print('refusing to update the style baseline while ownership registration is invalid', file=sys.stderr)
+            return 1
         if regressions and not args.accept_increase:
             print('refusing to raise the baseline; fix the regressions or pass --accept-increase',
                   file=sys.stderr)
@@ -205,7 +387,7 @@ def main(argv=None):
         BASELINE.write_text(json.dumps(baseline_document(report), indent=1) + '\n')
         print(f'wrote {BASELINE.relative_to(ROOT)}')
         return 0
-    if args.check and (regressions or report['malformedAllows']):
+    if args.check and (regressions or report['malformedAllows'] or ownership_errors):
         return 1
     return 0
 

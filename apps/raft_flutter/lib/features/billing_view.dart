@@ -4,38 +4,15 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../data/user_error.dart';
+import '../data/billing_plans.dart';
+
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
+import 'agent_hosted_spend.dart';
 import 'management_support.dart';
 
-/// Plan constants from `@botiverse/raft-shared` (raft-source 26f77ef).
-abstract final class RaftBillingPlans {
-  static const proSeatMonthlyUsd = 10;
-  static const proSeatAnnualUsd = 105.6;
-  static const proAgentSeatBlockSize = 10;
-  static const proAgentSeatFraction = 1 / proAgentSeatBlockSize;
-  static const proPackAnnualDiscountPercent = 12;
-  static const freeMonthlyFileUploadLimitBytes = 100 * 1024 * 1024;
-  static const freeMessageHistoryDays = 30;
-  static const freeLimitedMaxAgents = -1;
-  static const downgradeGracePeriodDays = 7;
-  static final trialStart = DateTime.utc(2026, 4, 18);
-  static final trialEnd = DateTime.utc(2026, 6, 23, 12);
-  static const comparePlansUrl = 'https://raft.build/#pricing';
-
-  /// `isTrialActive(now)`.
-  static bool trialActive(DateTime now) =>
-      !now.isBefore(trialStart) && now.isBefore(trialEnd);
-
-  /// `formatGlobalTrialCutoffDate`: the last instant of the trial in UTC-12.
-  static String trialCutoffDate(String locale) => DateFormat.yMMMd(locale)
-      .format(trialEnd.subtract(const Duration(milliseconds: 1, hours: 12)));
-
-  /// `getEffectiveLimits(plan)` for the free-plan limits DowngradeWarningCard
-  /// compares against (`-1` = unlimited; the trial lifts every limit).
-  static ({int agents, int machines, int channels}) freeLimits(DateTime now) =>
-      (agents: -1, machines: -1, channels: -1);
-}
+export '../data/billing_plans.dart' show RaftBillingPlans;
 
 /// `getFinitePlanLimitExcess`.
 int billingLimitExcess(num usage, int limit) {
@@ -100,6 +77,7 @@ billingPlanPresentation(
 }) {
   const pro = [
     'Everything in Free',
+    'Agent migration',
     'Unlimited message history',
     'Higher file upload limits',
     'Use Joint Channels',
@@ -147,6 +125,7 @@ billingPlanPresentation(
         'Use Joint Channels (each Joint Channel has 2 free-server slots)',
       ],
       notIncluded: const [
+        'Agent migration',
         'Higher file upload limits',
         'Unlimited message history',
         'More professional features coming soon',
@@ -186,6 +165,7 @@ class _BillingState extends ManagementState<BillingView> {
   WorkspaceController get w => widget.controller;
   Map<String, dynamic>? billing, usage;
   _BillingAction? pending;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Both clear when the next billing action starts (Web setBillingError/Notice('') at each handler) and on account/server change (clearData).
   String billingError = '', billingNotice = '';
   int? desiredSeatOverride;
 
@@ -200,10 +180,21 @@ class _BillingState extends ManagementState<BillingView> {
   void initState() {
     super.initState();
     startManagement();
+    seenPlanRevision = w.planRevision;
+    w.addListener(reloadOnPlanUpdate);
+  }
+
+  /// Web `server:plan-updated`: patch the plan, then reload billing and usage.
+  int seenPlanRevision = 0;
+  void reloadOnPlanUpdate() {
+    if (!mounted || w.planRevision == seenPlanRevision) return;
+    seenPlanRevision = w.planRevision;
+    reload();
   }
 
   @override
   void dispose() {
+    w.removeListener(reloadOnPlanUpdate);
     seatInput.dispose();
     promotion.dispose();
     super.dispose();
@@ -286,8 +277,18 @@ class _BillingState extends ManagementState<BillingView> {
     }
   }
 
-  String _error(Object e, String fallback) =>
-      e is RaftApiException && e.message.isNotEmpty ? e.message : fallback;
+  String _error(Object e, String fallback) => userErrorText(
+    e,
+    fallback: fallback,
+    // Web `promotion_code_unavailable` on checkout.
+    codeText: {
+      'promotion_code_unavailable': raftText(
+        context,
+        'This promotion code is unavailable. Check it or remove it to continue.',
+      ),
+    },
+    where: 'billing',
+  );
 
   Future<void> _mutate(
     _BillingAction kind,
@@ -562,6 +563,7 @@ class _BillingState extends ManagementState<BillingView> {
           '/billing/checkout',
           data: {
             'targetPlan': 'pro',
+            if (promotionCode.isNotEmpty) 'promotionCode': promotionCode,
             'billingInterval': annual ? 'annual' : 'monthly',
             'seatQuantity': requestedSeats,
             'humanSeatQuantity': requestedSeats,
@@ -640,6 +642,12 @@ class _BillingState extends ManagementState<BillingView> {
           confirmVariant: RaftButtonRecipeVariant.accent,
           content: RaftBillingConfirmMessage(
             lead: tr('You are about to start Pro checkout.'),
+            note: promotionCode.isEmpty
+                ? null
+                : tr(
+                    'Promotion code: {code}. The final discount is confirmed on Stripe Checkout.',
+                    {'code': promotionCode},
+                  ),
             lines: [
               '${tr('Seats')}: $draftSeats',
               '${tr('Capacity')}: ${humanCapacity(draftSeats)} ${agentCapacity(draftAgentSeats)}',
@@ -748,6 +756,7 @@ class _BillingState extends ManagementState<BillingView> {
             'Cancel the whole Pro subscription at the end of the current billing period. The server keeps Pro capacity until the cancellation date, then returns to Free.',
           ),
           confirmLabel: tr('Cancel subscription'),
+          cancelLabel: tr('Cancel'),
           confirmVariant: RaftButtonRecipeVariant.warning,
         ),
       );
@@ -843,26 +852,43 @@ class _BillingState extends ManagementState<BillingView> {
     RaftBillingSeatUsage? seatUsage;
     final seatStats = <RaftBillingStat>[];
     if (isPro && usesUniversal) {
-      String usingSeats(num people, String one, String other, num seats) =>
-          '${tr(_plural(people, one, other), {'count': people})} ${tr('using')} ${billingSeatNumber(seats)} ${tr(_plural(seats, 'seat', 'seats'))}';
+      // Web `billing.humansUsingSeats` / `agentsUsingSeats`: one catalog string
+      // per singular/plural combination so each has a Chinese entry.
+      String usingSeats(num people, bool human, num seats) {
+        final values = {'count': people, 'seats': billingSeatNumber(seats)};
+        final seat = seats == 1;
+        return switch ((human, people == 1, seat)) {
+          (true, true, true) => tr('1 human using {seats} seat', values),
+          (true, true, false) => tr('1 human using {seats} seats', values),
+          (true, false, true) => tr(
+            '{count} humans using {seats} seat',
+            values,
+          ),
+          (true, false, false) => tr(
+            '{count} humans using {seats} seats',
+            values,
+          ),
+          (false, true, true) => tr('1 agent using {seats} seat', values),
+          (false, true, false) => tr('1 agent using {seats} seats', values),
+          (false, false, true) => tr(
+            '{count} agents using {seats} seat',
+            values,
+          ),
+          (false, false, false) => tr(
+            '{count} agents using {seats} seats',
+            values,
+          ),
+        };
+      }
+
       seatUsage = RaftBillingSeatUsage(
         label: tr('Seat'),
         value:
             '${billingSeatNumber(usedUniversal)} / ${formatLimit(universalLimit)} ${tr('used')}',
         humanPercent: pct(usedHuman),
         agentPercent: pct(usedAgent),
-        humanTooltip: usingSeats(
-          humanCount ?? 0,
-          '1 human',
-          '{count} humans',
-          usedHuman,
-        ),
-        agentTooltip: usingSeats(
-          agentCount,
-          '1 agent',
-          '{count} agents',
-          usedAgent,
-        ),
+        humanTooltip: usingSeats(humanCount ?? 0, true, usedHuman),
+        agentTooltip: usingSeats(agentCount, false, usedAgent),
         humansLabel: tr('Humans'),
         agentsLabel: tr('Agents'),
       );
@@ -936,6 +962,10 @@ class _BillingState extends ManagementState<BillingView> {
         label: tr('See all features and compare plans'),
         onPressed: () => _launch(Uri.parse(RaftBillingPlans.comparePlansUrl)),
       ),
+      afterPlan:
+          managementMap(b?['permissions'])['canReadBillingSummary'] == true
+          ? AgentHostedSpendCard(controller: w)
+          : null,
       manage: !showManage
           ? null
           : RaftBillingManagePlan(
@@ -978,14 +1008,19 @@ class _BillingState extends ManagementState<BillingView> {
                 });
               },
               onSeatCommitted: commitSeats,
-              promotionLabel: manageSeatMode && seatDelta > 0
+              promotionLabel: checkoutMode || (manageSeatMode && seatDelta > 0)
                   ? tr('Promotion code (optional)')
                   : null,
-              promotionController: manageSeatMode && seatDelta > 0
+              promotionController:
+                  checkoutMode || (manageSeatMode && seatDelta > 0)
                   ? promotion
                   : null,
               onPromotionChanged: (_) => setState(() => seatPreview = null),
-              promotionHint: manageSeatMode && seatDelta > 0
+              promotionHint: checkoutMode
+                  ? tr(
+                      'Stripe checks this code at Checkout. Leave blank to enter a code there.',
+                    )
+                  : manageSeatMode && seatDelta > 0
                   ? tr('Enter a code approved for existing seat updates.')
                   : null,
               help: seatHelp,

@@ -1,0 +1,42 @@
+<resources>
+    <style name="IconLaunchYellow" parent="RaftSystemSplash">
+        <item name="android:windowBackground">@drawable/launch_yellow</item>
+        <item name="windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/NormalTheme</item>
+        <item name="android:windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_yellow</item>
+    </style>
+    <style name="IconLaunchBlue" parent="RaftSystemSplash">
+        <item name="android:windowBackground">@drawable/launch_blue</item>
+        <item name="windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/NormalTheme</item>
+        <item name="android:windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_blue</item>
+    </style>
+    <style name="IconLaunchGreen" parent="RaftSystemSplash">
+        <item name="android:windowBackground">@drawable/launch_green</item>
+        <item name="windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/NormalTheme</item>
+        <item name="android:windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_green</item>
+    </style>
+    <style name="IconLaunchWhite" parent="RaftSystemSplash">
+        <item name="android:windowBackground">@drawable/launch_white</item>
+        <item name="windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/NormalTheme</item>
+        <item name="android:windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_white</item>
+    </style>
+    <style name="IconLaunchPink" parent="RaftSystemSplash">
+        <item name="android:windowBackground">@drawable/launch_pink</item>
+        <item name="windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/NormalTheme</item>
+        <item name="android:windowSplashScreenBackground">@color/raft_canvas_system_brutal</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_pink</item>
+    </style>
+</resources>

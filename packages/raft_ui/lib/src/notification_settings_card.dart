@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
+import 'raft/checkbox.dart' show RaftCheckbox;
+
 import 'package:flutter/rendering.dart';
 
 import 'icons.dart';
-import 'indicators.dart';
+import 'error_presentation.dart' show RaftErrorBanner;
 import 'localization.dart';
-import 'recipe_surface.dart';
 import 'components.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
@@ -25,6 +27,9 @@ class RaftNotificationSettingsCard extends StatelessWidget {
     required this.muted,
     this.sectionLabel = 'Notifications',
     this.hint,
+    this.notice,
+    this.noticeActionLabel,
+    this.onNoticeAction,
     this.error,
     this.message,
     this.muteDescription,
@@ -37,27 +42,28 @@ class RaftNotificationSettingsCard extends StatelessWidget {
   });
   final String sectionLabel, title, description, status, actionLabel, saveLabel;
   final String? hint, error, message, muteDescription;
+
+  /// A short action the person can take outside the app for notifications to
+  /// work (Android battery optimisation), with one button for it.
+  final String? notice, noticeActionLabel;
   final bool muted;
   final RaftButtonRecipeVariant actionTone;
-  final VoidCallback? onAction, onRetry, onSave;
+  final VoidCallback? onAction, onRetry, onSave, onNoticeAction;
   final ValueChanged<bool>? onMutedChanged;
 
   /// `inline-flex shrink-0 border border-line-strong bg-primary-soft px-2 py-1
-  /// text-[10px] font-bold uppercase text-primary-strong theme-brutal:border-2
+  /// text-[10px] font-bold text-primary-strong theme-brutal:border-2
   /// theme-brutal:border-black theme-brutal:bg-soft-signal theme-brutal:text-black`.
   static Widget statusPill(BuildContext context, String label) {
     final t = RaftTokens.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: t.colors[t.brutal ? 'color-soft-signal' : 'primary-soft'],
-        border: Border.all(
-          color: t.brutal ? Colors.black : t.colors['line-strong']!,
-          width: t.brutal ? 2 : 1,
-        ),
+        color: t.colors['primary-soft'],
+        border: Border.all(color: t.colors['line-strong']!, width: 1),
       ),
       child: Text(
-        raftText(context, label).toUpperCase(),
+        raftText(context, label),
         maxLines: 1,
         softWrap: false,
         // Web: `font-display` (Hanken Grotesk) at 10px bold, line-height 1.5.
@@ -68,7 +74,7 @@ class RaftNotificationSettingsCard extends StatelessWidget {
           height: 1.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 0,
-          color: t.brutal ? Colors.black : t.colors['primary-strong'],
+          color: t.colors['primary-strong'],
         ),
       ),
     );
@@ -96,9 +102,7 @@ class RaftNotificationSettingsCard extends StatelessWidget {
         RaftSettingsSectionHeader(label: sectionLabel, glyph: RaftGlyph.bell),
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: RaftSettingsCard.decoration(
-            t,
-          ).copyWith(color: t.brutal ? Colors.white : t.card),
+          decoration: RaftSettingsCard.decoration(t).copyWith(color: t.card),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -128,25 +132,33 @@ class RaftNotificationSettingsCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(raftText(context, hint!), style: hintStyle),
               ],
-              if (error != null) ...[
+              if (notice != null) ...[
                 const SizedBox(height: 12),
-                Semantics(
-                  liveRegion: true,
-                  child: RaftRecipeBox(
-                    style: RaftBannerRecipe.resolve(
-                      theme: t.recipeTheme,
-                      status: RaftBannerRecipeStatus.warning,
-                      size: RaftBannerRecipeSize.sm,
-                      states: t.recipeStates(),
-                      tokens: t.recipeTokens,
-                    ).root,
-                    tokens: t.recipeTokens,
-                    child: Text(
-                      raftText(context, error!),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                Text(
+                  raftText(context, notice!),
+                  key: const ValueKey('notification-settings-notice'),
+                  style: hintStyle.copyWith(fontWeight: FontWeight.w700),
+                ),
+                if (noticeActionLabel != null) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: RaftButton(
+                      key: const ValueKey(
+                        'notification-settings-notice-action',
+                      ),
+                      label: noticeActionLabel!,
+                      tone: RaftButtonRecipeVariant.outline,
+                      size: RaftButtonRecipeSize.sm,
+                      onPressed: onNoticeAction,
                     ),
                   ),
-                ),
+                ],
+              ],
+              if (error != null) ...[
+                const SizedBox(height: 12),
+                // Web SettingsPanel: `<Banner intent="warning" density="sm" className="font-bold">`.
+                RaftErrorBanner(error!, small: true, bold: true),
                 if (onRetry != null) ...[
                   const SizedBox(height: 12),
                   Align(
@@ -171,23 +183,17 @@ class RaftNotificationSettingsCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: t.brutal
-                          ? t.colors['color-brutal-lime']!.withValues(alpha: .3)
-                          : t.colors['success-soft'],
+                      color: t.colors['success-soft'],
                       border: Border.all(
-                        color: t.brutal
-                            ? Colors.black
-                            : t.colors['line-muted']!,
-                        width: t.brutal ? 2 : 1,
+                        color: t.colors['line-muted']!,
+                        width: 1,
                       ),
                     ),
                     child: Text(
                       message!,
                       style: hintStyle.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: t.brutal
-                            ? Colors.black
-                            : t.colors['success-strong'],
+                        color: t.colors['success-strong'],
                       ),
                     ),
                   ),
@@ -210,12 +216,7 @@ class RaftNotificationSettingsCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 12),
                   decoration: BoxDecoration(
                     border: Border(
-                      top: BorderSide(
-                        color: t.brutal
-                            ? Colors.black.withValues(alpha: .2)
-                            : t.colors['line-muted']!,
-                        width: 2,
-                      ),
+                      top: BorderSide(color: t.colors['line-muted']!, width: 2),
                     ),
                   ),
                   child: Column(
@@ -234,7 +235,6 @@ class RaftNotificationSettingsCard extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 2),
                               child: RaftCheckbox(
                                 value: muted,
-                                size: RaftCheckboxRecipeSize.md,
                                 semanticLabel: raftText(
                                   context,
                                   'Mute this server',

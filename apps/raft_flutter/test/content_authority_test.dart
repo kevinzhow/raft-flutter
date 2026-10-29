@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart' show TargetPlatform;
-
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/platform/content_coordinator.dart';
 import 'package:raft_flutter/platform/content_target.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
+import 'package:raft_flutter/platform/windows_tray.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -76,6 +76,9 @@ class _Notifications extends NativeNotificationService {
     required String title,
     required String body,
     required String payload,
+    int? unread,
+    bool quiet = false,
+    String? conversation,
   }) async {
     sent.add(payload);
   }
@@ -114,6 +117,27 @@ void main() {
     w.dispose();
     await c.stream.close();
   });
+  test(
+    'share wake bypasses content navigation even before account restoration',
+    () {
+      var wakes = 0;
+      links.onIncomingShare = () => wakes++;
+      links.bindWorkspace(null);
+      links.receiveLink(Uri.parse('raft://share/${'a' * 32}'));
+      expect(wakes, 1);
+      expect(c.reads, 0);
+      expect(w.jumps, isEmpty);
+      links.bindWorkspace(w);
+      links.receiveLink(Uri.parse('raft://share/${'a' * 32}'));
+      links.receiveLink(
+        Uri.parse('raft://share/${'a' * 32}?path=/tmp/private'),
+      );
+      links.receiveLink(Uri.parse('raft://oauth/callback?code=fixture'));
+      expect(wakes, 2);
+      expect(c.reads, 0);
+      expect(w.jumps, isEmpty);
+    },
+  );
   test(
     'Windows taps restore the window and retain message authorization',
     () async {
@@ -251,6 +275,59 @@ void main() {
       expect(await links.pollBackground(), true);
     },
   );
+
+  test('Windows tray hide backgrounds a resumed workspace and opens the delivery gate', () async {
+    await links.dispose();
+    const channel = MethodChannel('test/windows-tray');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      channel,
+      (_) async => {'available': true},
+    );
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    n = _WindowsNotifications();
+    links = NativeContentCoordinator(
+      notifications: n,
+      links: const Stream.empty(),
+      tray: WindowsTray(platform: TargetPlatform.windows, channel: channel),
+    );
+    await links.init();
+    links.bindWorkspace(w);
+    links.didChangeAppLifecycleState(AppLifecycleState.resumed);
+    w.setForeground(true);
+    final push = {
+      'serverId': 's',
+      'kind': 'channel',
+      'channelId': 'c',
+      'messageId': 'visible',
+      'title': 'Raft',
+      'body': 'Synthetic preview',
+    };
+    c.stream.add(RaftEvent('notification:push', push));
+    await Future<void>.delayed(Duration.zero);
+    expect(n.sent, isEmpty);
+    final hidden = Completer<void>();
+    messenger.handlePlatformMessage(
+      channel.name,
+      const StandardMethodCodec().encodeMethodCall(
+        const MethodCall('hidden', true),
+      ),
+      (_) => hidden.complete(),
+    );
+    await hidden.future;
+    expect(links.appForeground, false);
+    expect(w.foreground, false);
+    expect(n.deliveryAllowed!(), true);
+    expect(w.jumps, isEmpty);
+    // ShowWindow + SetForegroundWindow restores Flutter's resumed lifecycle.
+    // The root reacts to onForegroundChanged and restores workspace visibility.
+    links.onForegroundChanged = () => w.setForeground(links.appForeground);
+    links.didChangeAppLifecycleState(AppLifecycleState.resumed);
+    expect(links.appForeground, true);
+    expect(w.foreground, true);
+    expect(n.deliveryAllowed!(), false);
+  });
 
   test('only eligible server notification event delivers, duplicates/foreground suppress', () async {
     final p = {

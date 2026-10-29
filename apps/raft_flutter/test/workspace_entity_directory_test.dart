@@ -216,9 +216,11 @@ void main() {
         }, 's'),
         isTrue,
       );
+      // v1.21.23 agentDetailAvailability: an archived agent keeps a
+      // read-only profile.
       expect(
         canRenderWorkspaceAgent({...agent, 'deletedAt': 'now'}, 's'),
-        isFalse,
+        isTrue,
       );
       expect(
         canRenderWorkspaceAgent({
@@ -437,6 +439,71 @@ void main() {
       },
     );
 
+    test(
+      '[BP-RT-061][BP-RT-062] machine:upgrade-request and a successful computer:restart:done re-read only the machine list',
+      () async {
+        await hydrate();
+        events.add(const RaftEvent('machine:upgrade-request', {'machineId': 'c'}));
+        await settle();
+        expect(counts(), {
+          '/agents': 1,
+          '/servers/s/machines': 2,
+          '/servers/s/members': 1,
+        });
+        requests['/servers/s/machines']!.last.complete([computer]);
+        await settle();
+        // A restart that failed changes nothing the list shows.
+        events.add(
+          const RaftEvent('computer:restart:done', {
+            'machineId': 'c',
+            'requestId': 'r1',
+            'ok': false,
+            'error': 'restart_failed',
+          }),
+        );
+        await settle();
+        expect(counts()['/servers/s/machines'], 2);
+        events.add(
+          const RaftEvent('computer:restart:done', {
+            'machineId': 'c',
+            'requestId': 'r2',
+            'ok': true,
+          }),
+        );
+        await settle();
+        expect(counts(), {
+          '/agents': 1,
+          '/servers/s/machines': 3,
+          '/servers/s/members': 1,
+        });
+      },
+    );
+
+    test(
+      '[BP-RT-060] agent:deleted re-reads only the agent list, with or without the id',
+      () async {
+        await hydrate();
+        events.add(const RaftEvent('agent:deleted', {}));
+        await settle();
+        expect(counts(), {
+          '/agents': 2,
+          '/servers/s/machines': 1,
+          '/servers/s/members': 1,
+        });
+        requests['/agents']!.last.complete([agent]);
+        await settle();
+        events.add(const RaftEvent('agent:deleted', {'agentId': 'a'}));
+        expect(directory.agent('a'), isNull);
+        expect(directory.agentDeleted('a'), isTrue);
+        await settle();
+        expect(counts(), {
+          '/agents': 3,
+          '/servers/s/machines': 1,
+          '/servers/s/members': 1,
+        });
+      },
+    );
+
     test('agent:created upserts the pushed row and agent:deleted leaves a tombstone before the agent list read', () async {
       await hydrate();
       const created = {
@@ -476,6 +543,44 @@ void main() {
         )['deletedAt'],
         '2026-10-10T00:00:00.000Z',
       );
+    });
+
+    test('a migration reaching a terminal state re-reads agents only, without the page open', () async {
+      await hydrate();
+      // Web does not broadcast agent:updated when a migration completes.
+      for (final state in const [
+        'completed',
+        'aborted',
+        'failed',
+        'canceled_pre_flip',
+        'canceled_post_flip',
+      ]) {
+        final before = reads('/agents');
+        events.add(
+          RaftEvent('agent:migration-updated', {
+            'agentId': 'a',
+            'state': state,
+          }),
+        );
+        await settle();
+        expect(reads('/agents'), before + 1, reason: state);
+        requests['/agents']!.last.complete([agent]);
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(reads('/servers/s/machines'), 1);
+      expect(reads('/servers/s/members'), 1);
+      final before = counts();
+      for (final state in const ['provisioning', 'prep', 'in_transit']) {
+        events.add(
+          RaftEvent('agent:migration-updated', {
+            'agentId': 'a',
+            'state': state,
+          }),
+        );
+      }
+      events.add(const RaftEvent('agent:migration-updated', {'agentId': 'a'}));
+      await settle();
+      expect(counts(), before);
     });
 
     test(
@@ -645,6 +750,43 @@ void main() {
         expect((saved['rows'] as List).single['model'], 'gpt-7');
         expect(saved['role'], 'owner');
         expect(disk[key(s, WorkspaceEntityKind.computers)], isNotNull);
+      },
+    );
+
+    test(
+      'a completed migration refreshes the in-memory and saved agent rows',
+      () async {
+        final s = scope();
+        final pending = device.preload();
+        reads['/agents']!.single.complete([
+          {...agent, 'machineId': 'old'},
+        ]);
+        reads['/servers/s/members']!.single.complete([member]);
+        reads['/servers/s/machines']!.single.complete({
+          'machines': [computer],
+        });
+        await pending;
+        device.flushDevice();
+        List savedRows() =>
+            (disk[key(s, WorkspaceEntityKind.agents)] as Map)['rows'] as List;
+        expect(savedRows().single['machineId'], 'old');
+        events.add(
+          const RaftEvent('agent:migration-updated', {
+            'agentId': 'a',
+            'state': 'completed',
+          }),
+        );
+        await Future<void>.delayed(
+          WorkspaceEntityDirectory.reloadDelay +
+              const Duration(milliseconds: 50),
+        );
+        reads['/agents']!.last.complete([
+          {...agent, 'machineId': 'new'},
+        ]);
+        await Future<void>.delayed(Duration.zero);
+        expect(device.agent('a')?['machineId'], 'new');
+        device.flushDevice();
+        expect(savedRows().single['machineId'], 'new');
       },
     );
 

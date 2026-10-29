@@ -1,0 +1,116 @@
+// Chinese (zh) strings, see the catalog header in ../localization.dart.
+// English source text is the key. Part of `raftChinese` (merged by the generated zh_index.g.dart).
+const Map<String, String> zhCatalogSweep = <String, String>{
+  // zh sweep (test/zh_catalog_test.dart): English literals that reached zh
+  // users. Wording is Web zh-cn.ts verbatim (placeholders renamed to the
+  // native call site) wherever Web has the string.
+  "Runtime Config": "运行时配置",
+  "Error: {detail}": "错误：{detail}",
+  "Last active {time}": "上次活跃 {time}",
+  "Keep at least {min} seats to cover current server usage.":
+      "至少保留 {min} 个席位以覆盖服务器当前用量。",
+  "Adds {seats}": "增加 {seats}",
+  "Removes {seats}": "减少 {seats}",
+  "{seats} selected": "已选择 {seats}",
+  "Enter at least {min} seats to cover current server usage.":
+      "请输入至少 {min} 个席位以覆盖服务器当前用量。",
+  "Enter the total seats to keep. {capacity}.": "请输入要保留的席位总数。{capacity}。",
+  "{capacity}.": "{capacity}。",
+  "Full-featured free trial remains active through {date} in every time zone. Paid plans begin after this global cutoff. All features currently unlocked — enjoy unlimited computers, agents, channels, and message history while the trial lasts.": "全功能免费试用将在所有时区持续到 {date}。付费套餐将在这一全球截止时间后开始。试用期间所有功能均已解锁，包括无限电脑、Agent、频道和消息历史。",
+  "Save {percent}%": "节省 {percent}%",
+  "{interval} · cancellation scheduled": "{interval} · 已安排取消",
+  "Start {interval} Pro checkout for {seats} billable seats.":
+      "开始 Pro {interval}结账，共 {seats} 个计费席位。",
+  "{name} will be removed from every channel on this server. Their past messages will remain in history.":
+      "{name} 会从此服务器的所有频道中移除，但过往消息仍会保留在历史记录中。",
+  "You'll lose access to {serverName} and all of its channels. You can be re-invited later.":
+      "你将失去对 {serverName} 及其所有频道的访问权限。之后可以重新被邀请。",
+  "Send to {targets}": "发送至 {targets}",
+  "{label} @{handle} is reserved. Choose another name.":
+      "{label} @{handle} 为保留名，请换一个。",
+  "#{raftName} ↔ #{slackName}": "#{raftName} ↔ #{slackName}",
+  "{name} will stop receiving ordinary delivery from #{channel} and cannot send messages until they rejoin. Existing followed threads are not automatically unfollowed; followed public threads can still notify them until they unfollow or manage those threads. Private content remains gated by current access.": "{name} 将停止接收 #{channel} 的常规消息，并且在重新加入前无法发送消息。已有的关注消息列不会自动取消关注；关注过的公开消息列仍可通知他们，直到他们自行取消关注或管理这些消息列。私有内容仍受当前访问权限限制。",
+  "{name} is a server owner or admin, so they remain a Channel Admin in every channel. Change their server role in Server Administration first.": "{name} 是服务器 Owner 或 Admin，因此在所有频道中都会保持频道管理员权限。请先在 Server Administration 中修改其服务器角色。",
+  "Make {name} a Channel Admin": "将 {name} 设为频道管理员",
+  "Remove Channel Admin from {name}": "撤销 {name} 的频道管理员",
+  "Archive \"{name}\"? Members keep read access and history, but writes will be frozen and the channel will be hidden from sidebars. You can unarchive it later.":
+      "归档“{name}”？成员仍可查看历史消息和读取内容，但将无法写入，频道也会从侧栏中隐藏。你之后可以取消归档。",
+  "Delete \"{name}\"? Its conversations will return to their default sections.":
+      "删除“{name}”？其中的会话将返回默认分区。",
+  "{count} installs": "{count} 个有效安装",
+  "{category} · by {developer}": "{category} · 由 {developer} 提供",
+  "New data group: {group}": "新数据组：{group}",
+  "{used}/{max} uses": "{used}/{max} 次使用",
+  "{used} uses": "{used} 次使用",
+  "expires {when}": "{when} 过期",
+  "Connected as {email}": "已连接为 {email}",
+  "Remove Invitee {index}": "移除第 {index} 位受邀人",
+  "Restart or reset {name}": "重新启动或重置 {name}",
+  "Description must be {count} characters or fewer.": "描述不能超过 {count} 个字符。",
+  "I am getting {serverName} ready.": "正在为你准备 {serverName}。",
+  "Message #{channel}": "发消息到 #{channel}",
+  "morning — can <mention>@{handle}</mention> take a look at the Q3 draft?":
+      "早上好 —— <mention>@{handle}</mention> 能看一下 Q3 的草稿吗？",
+  "Agreement body must be {max} characters or fewer": "协议正文不得超过 {max} 个字符",
+  "Activity Diagnostics": "活动诊断",
+  "Preview truncated for performance. Showing the first {count} rows of this sheet.":
+      "为保证性能，预览已截断，仅显示此工作表前 {count} 行。",
+  "Showing {shown} of {total} rows": "已显示 {shown} 行，共 {total} 行",
+  "Preview truncated for performance. Showing first {count} rows from the file prefix.":
+      "为保证性能，预览已截断，仅显示文件开头的前 {count} 行。",
+  "Column {index}": "第 {index} 列",
+  "Committed by {name}": "由 {name} 提交",
+  "Create agent {name}": "创建 Agent「{name}」",
+  "Joins {channel} automatically after creation": "建好后自动加入 {channel}",
+  "Add Selected ({count})": "添加所选（{count}）",
+  "Joining...": "正在加入…",
+  "Continue with {provider}": "使用 {provider} 继续",
+  "No matches for \"{query}\"": "没有匹配「{query}」的结果",
+  "The name <mono>#{name}</mono> is held by an archived channel.":
+      "名称 <mono>#{name}</mono> 已被一个已归档的频道占用。",
+  "No account?": "还没有账号？",
+  "Create one": "创建一个",
+  "Already have an account?": "已有账号？",
+  "Terms of Service": "服务条款",
+  "Privacy Policy": "隐私政策",
+  "{limitLabel} reached ({usage}/{limit} on {planName} plan).":
+      "{limitLabel}已达上限（{usage}/{limit}，{planName} 套餐）。",
+  "Create private channel #{name}": "创建私密频道 #{name}",
+  "Create public channel #{name}": "创建公开频道 #{name}",
+  "Open task #{number}: {title}": "打开任务 #{number}：{title}",
+  "**{days}** remaining in grace period. All resources are within free limits.":
+      "**{days} 天**宽限期剩余。所有资源均在免费额度内。",
+  "**{days}** remaining in grace period. After the grace period, excess agents will be stopped automatically.":
+      "**{days} 天**宽限期剩余。宽限期结束后，超出额度的 Agent 将自动停止。",
+  "up to 1 Human": "最多 1 位人类成员",
+  "up to {count} Humans": "最多 {count} 位人类成员",
+  "or 1 Agent": "或 1 个 Agent",
+  "or {count} Agents": "或 {count} 个 Agent",
+  "1 seat": "1 个席位",
+  "{count} seats": "{count} 个席位",
+  "1 day": "1 天",
+  "{n} days": "{n} 天",
+  "Search channels, DMs, messages…": "搜索频道、私信、消息…",
+  "saved item": "项",
+  "saved items": "项",
+  "replies": "条回复",
+  "new": "条新消息",
+  "unread": "未读",
+  "{count} New Messages": "{count} 条新消息",
+  "{count} message": "{count} 条消息",
+  "message": "条消息",
+  "from {target} · thread": "来自 {target} · 消息列",
+  "{count} messages": "{count} 条消息",
+  "item": "项",
+  "items": "项",
+  "results": "条结果",
+  "Search...": "搜索…",
+  "1 human using {seats} seat": "{count} 位人类成员使用 {seats} 个席位",
+  "1 human using {seats} seats": "{count} 位人类成员使用 {seats} 个席位",
+  "{count} humans using {seats} seat": "{count} 位人类成员使用 {seats} 个席位",
+  "{count} humans using {seats} seats": "{count} 位人类成员使用 {seats} 个席位",
+  "1 agent using {seats} seat": "{count} 个 Agent 使用 {seats} 个席位",
+  "1 agent using {seats} seats": "{count} 个 Agent 使用 {seats} 个席位",
+  "{count} agents using {seats} seat": "{count} 个 Agent 使用 {seats} 个席位",
+  "{count} agents using {seats} seats": "{count} 个 Agent 使用 {seats} 个席位",
+};

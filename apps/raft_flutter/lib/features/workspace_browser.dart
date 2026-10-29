@@ -6,8 +6,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
 
-/// An external workspace route is meaningful only with a frontend explicitly
-/// bound to this API. API origins are never guessed to serve the Web client.
+/// An external workspace route is meaningful only with a known Web client:
+/// a frontend explicitly bound to this API, or the official Web app of an
+/// official API origin ([ContentLinks.officialWebOrigin]). Any other API
+/// origin is never guessed to serve the Web client (the local test API and Web
+/// frontend use different ports).
 Uri? workspaceBrowserOrigin(
   String coordinator, {
   String frontend = const String.fromEnvironment('RAFT_FRONTEND_ORIGIN'),
@@ -15,6 +18,14 @@ Uri? workspaceBrowserOrigin(
     'RAFT_ORIGIN',
     defaultValue: 'https://api.raft.build',
   ),
+}) =>
+    _explicitBrowserOrigin(coordinator, frontend: frontend, api: api) ??
+    ContentLinks.officialWebOrigin(coordinator);
+
+Uri? _explicitBrowserOrigin(
+  String coordinator, {
+  required String frontend,
+  required String api,
 }) {
   final candidate = Uri.tryParse(frontend);
   if (candidate == null ||
@@ -85,16 +96,7 @@ Future<void> openWorkspaceInBrowser(
     if (!opened) throw const FormatException('Browser unavailable');
   } catch (_) {
     if (context.mounted && current()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            raftText(
-              context,
-              'The workspace could not be opened in the browser.',
-            ),
-          ),
-        ),
-      );
+      showRaftToast(context, 'The server could not be opened in the browser.');
     }
   }
 }

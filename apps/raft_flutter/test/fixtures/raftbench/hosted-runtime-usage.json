@@ -1,0 +1,34 @@
+{
+  "currency": "USD",
+  "estimated": true,
+  "bucket": "day",
+  "from": "2026-10-10T00:00:00.000Z",
+  "to": "2026-10-24T00:00:00.000Z",
+  "periods": [
+    {
+      "start": "2026-10-10T00:00:00.000Z",
+      "totalUsd": 0.5,
+      "unpriced": []
+    },
+    {
+      "start": "2026-10-12T00:00:00.000Z",
+      "totalUsd": 0.25,
+      "unpriced": []
+    },
+    {
+      "start": "2026-10-17T00:00:00.000Z",
+      "totalUsd": 0.125,
+      "unpriced": []
+    },
+    {
+      "start": "2026-10-20T00:00:00.000Z",
+      "totalUsd": 1.5,
+      "unpriced": []
+    },
+    {
+      "start": "2026-10-23T00:00:00.000Z",
+      "totalUsd": 0.0049,
+      "unpriced": []
+    }
+  ]
+}

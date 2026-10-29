@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+"""Auth / onboarding keyboard acceptance driver (docs/auth-keyboard.md).
+
+Drives apps/raft_flutter/integration_test/login_qa_main.dart (fixture API, signed out, no real login) on an
+Android emulator. For every text-entry page it focuses each field with the soft keyboard up, saves a screenshot
+and checks that the focused field and the page's primary action sit fully inside the window above the keyboard
+and below the status bar. Exit status 1 if any check fails.
+
+  adb -s emulator-5584 forward tcp:18791 tcp:8791
+  tool/auth-keyboard-qa --serial emulator-5584 --port 18791 --out /tmp/auth-keyboard/after [--theme elegant] [case ...]
+"""
+import argparse, importlib.machinery, importlib.util, json, os, sys, time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+loader = importlib.machinery.SourceFileLoader('login_qa', os.path.join(HERE, 'login-qa'))
+spec = importlib.util.spec_from_loader('login_qa', loader)
+qa = importlib.util.module_from_spec(spec)
+loader.exec_module(qa)
+
+MARGIN_DP = 0.5  # rounding slack
+
+
+def rect(key=None, **q):
+    r = qa.call('/rect', **({'key': key} if key else q))
+    try:
+        return json.loads(r)
+    except Exception:
+        return None
+
+
+class Check:
+    def __init__(self, d, theme):
+        self.d, self.theme, self.results = d, theme, []
+
+    def bring(self, key=None, **q):
+        """Scroll the page by hand (a finger drag) until the target is on screen, like a user would.
+        Drags stay in the middle of the window: a swipe near the bottom edge is the Home gesture."""
+        q = q or {'key': key}
+        for _ in range(8):
+            info = json.loads(qa.call('/texts'))
+            r = rect(**q)
+            if r is None:
+                return
+            dpr = r['dpr']
+            low = (info['size'][1] - info['viewInsetsBottom']) * dpr
+            high = info['paddingTop'] * dpr + 16
+            x = int(info['size'][0] * dpr / 2)
+            span = low - high
+            a, b = int(high + span * .25), int(high + span * .75)
+            if r['top'] < high:
+                self.d.adb('shell', 'input', 'swipe', str(x), str(a), str(x), str(b), '300')
+            elif r['bottom'] > low:
+                self.d.adb('shell', 'input', 'swipe', str(x), str(b), str(x), str(a), '300')
+            else:
+                return
+            time.sleep(.6)
+
+    def tap(self, **q):
+        self.bring(**q)
+        self.d.tap(**q)
+
+    def focus(self, case, field, action, *, type_text=None, together=True, last=True):
+        """Tap [field], then verify field + [action] are in the visible window."""
+        d = self.d
+        # a field may start off screen (previous field's scroll): drag it in first, as a user does
+        self.bring(field)
+        d.tap(key=field)
+        time.sleep(1.4)
+        if type_text:
+            d.type(type_text)
+            time.sleep(.5)
+        info = json.loads(qa.call('/texts'))
+        ime = info['viewInsetsBottom']
+        top = info['paddingTop']
+        height = info['size'][1]
+        fr = rect(field)
+        ar = rect(action) if action else None
+        dpr = fr['dpr'] if fr else 1
+        low = height - ime
+        problems = []
+        # Landscape phone: ~125 dp above the keyboard. Field and button cannot share it unless
+        # adjacent; the field wins and the button is required from the last field.
+        if low - top < 200:
+            together = False
+        if ime <= 0:
+            problems.append('keyboard not up')
+        if fr is None:
+            problems.append('field not found')
+        else:
+            if fr['top'] / dpr < top - MARGIN_DP:
+                problems.append(f"field top {fr['top']/dpr:.0f} above status bar {top:.0f}")
+            if fr['bottom'] / dpr > low + MARGIN_DP:
+                problems.append(f"field bottom {fr['bottom']/dpr:.0f} under keyboard {low:.0f}")
+        if action and together:
+            if ar is None:
+                problems.append('action not found')
+            else:
+                if ar['bottom'] / dpr > low + MARGIN_DP:
+                    problems.append(f"action bottom {ar['bottom']/dpr:.0f} under keyboard {low:.0f}")
+                if ar['top'] / dpr < top - MARGIN_DP:
+                    problems.append(f"action top {ar['top']/dpr:.0f} above status bar {top:.0f}")
+        name = f'{case}.{field}.{self.theme}'
+        d.shot(name)
+        ok = not problems
+        self.results.append({
+            'case': case, 'field': field, 'action': action, 'ok': ok, 'problems': problems,
+            'ime_dp': ime, 'window_dp': height,
+            'field_dp': fr and [round(fr['top'] / dpr, 1), round(fr['bottom'] / dpr, 1)],
+            'action_dp': ar and [round(ar['top'] / dpr, 1), round(ar['bottom'] / dpr, 1)],
+            'screenshot': f'{name}.png',
+        })
+        print(('PASS ' if ok else 'FAIL ') + name, '; '.join(problems), flush=True)
+
+
+def reset_kb(d):
+    # one Back closes the IME; a second would leave the app. Wait for the inset to settle.
+    info = json.loads(qa.call('/texts'))
+    if info['viewInsetsBottom'] > 0:
+        d.key(4)
+        for _ in range(10):
+            time.sleep(.4)
+            if json.loads(qa.call('/texts'))['viewInsetsBottom'] <= 0:
+                return
+        print('  WARNING: keyboard inset did not return to 0', flush=True)
+
+
+def case_login(c, d, theme):
+    d.scenario('login', theme)
+    c.focus('login', 'login-email', 'login-submit', last=False)
+    c.focus('login', 'login-password', 'login-submit', type_text='secret-pass')
+    c.focus('login', 'login-email', 'login-submit', last=False)
+    reset_kb(d)
+
+
+def case_register(c, d, theme):
+    d.scenario('login', theme)
+    c.tap(text='Create one'); time.sleep(.8)
+    c.focus('register', 'login-email', 'login-submit', last=False)
+    c.focus('register', 'login-password', 'login-submit', type_text='longenoughpassword')
+    reset_kb(d)
+
+
+def case_forgot(c, d, theme):
+    d.scenario('login', theme)
+    c.tap(text='Forgot password?'); time.sleep(.8)
+    c.focus('forgot', 'login-email', 'login-submit', type_text='alice@example.invalid')
+    reset_kb(d)
+
+
+def case_reset(c, d, theme):
+    d.scenario('login', theme)
+    c.tap(text='Forgot password?'); time.sleep(.8)
+    c.tap(key='login-email'); d.type('alice@example.invalid'); reset_kb(d)
+    c.tap(key='login-submit'); time.sleep(1.5)
+    c.tap(text='I have a reset link'); time.sleep(.8)
+    c.focus('reset', 'reset-token', 'login-submit', last=False)
+    c.focus('reset', 'reset-password', 'login-submit', last=False)
+    c.focus('reset', 'reset-confirm', 'login-submit')
+    reset_kb(d)
+
+
+def case_verify(c, d, theme):
+    d.scenario('onboarding-verify', theme, 4)
+    c.tap(text='Enter code manually'); time.sleep(.8)
+    c.focus('verify', 'verification-token', 'verify-submit')
+    reset_kb(d)
+
+
+def case_profile(c, d, theme):
+    d.scenario('onboarding-profile', theme, 4)
+    # On a 640dp-tall window (280 dp above the keyboard) the button is three rows below the
+    # username: the field wins and the button is required from the last field.
+    short = json.loads(qa.call('/texts'))['size'][1] < 760
+    c.focus('profile', 'onboarding-username', 'onboarding-complete', together=not short, last=False)
+    c.focus('profile', 'onboarding-display-name', 'onboarding-complete')
+    c.focus('profile', 'onboarding-username', 'onboarding-complete', together=not short, last=False)
+    reset_kb(d)
+
+
+def case_first_server(c, d, theme):
+    # The name field is autofocused: the keyboard is up as soon as the page is.
+    d.scenario('servers-none', theme, 5)
+    time.sleep(1.0)
+    c.focus('first-server', 'global-server-name', 'global-server-create-submit', last=False)
+    c.focus('first-server', 'global-server-slug', 'global-server-create-submit')
+    reset_kb(d)
+
+
+def case_create_server(c, d, theme):
+    d.scenario('servers-two', theme, 5)
+    c.tap(text='+ Create New Server'); time.sleep(.8)
+    c.focus('create-server', 'global-server-name', 'global-server-create-submit', last=False)
+    c.focus('create-server', 'global-server-slug', 'global-server-create-submit')
+    reset_kb(d)
+
+
+def case_server_url(c, d, theme):
+    d.scenario('login', theme)
+    d.tap(key='login-server'); time.sleep(1.0)
+    d.shot(f'server-url-dialog.{theme}')
+    # the dialog field autofocuses; check it is above the keyboard
+    info = json.loads(qa.call('/texts'))
+    print('server-url dialog: ime', info['viewInsetsBottom'], flush=True)
+    d.key(4)
+
+
+def case_survey(c, d, theme):
+    d.scenario('workspace-setup-survey', theme, 6)
+    d.tap(text='general'); time.sleep(3)
+    c.tap(key='signup-role-software_engineer'); time.sleep(.4)
+    c.tap(key='signup-source-other'); time.sleep(.6)
+    c.focus('survey', 'signup-source-other-input', 'server-setup-survey-continue')
+    reset_kb(d)
+
+
+CASES = {
+    'login': case_login,
+    'register': case_register,
+    'forgot': case_forgot,
+    'reset': case_reset,
+    'verify': case_verify,
+    'profile': case_profile,
+    'first-server': case_first_server,
+    'create-server': case_create_server,
+    'server-url': case_server_url,
+    'survey': case_survey,
+}
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--serial', required=True)
+    ap.add_argument('--port', type=int, default=8791)
+    ap.add_argument('--out', required=True)
+    ap.add_argument('--theme', default='elegant')
+    ap.add_argument('cases', nargs='*')
+    a = ap.parse_args()
+    qa.PORT = a.port
+    d = qa.Driver(a.serial, a.out)
+    c = Check(d, a.theme)
+    for name in a.cases or list(CASES):
+        print('==', name, flush=True)
+        try:
+            qa.call('/texts')
+        except Exception:
+            # the app left the foreground (a stray Back): start it again
+            d.adb('shell', 'am', 'start', '-n', 'app.raft.raft_flutter.linkperf/app.raft.raft_flutter.MainActivity')
+            time.sleep(8)
+        try:
+            CASES[name](c, d, a.theme)
+        except Exception as e:  # keep going: one broken page must not hide the others
+            print('  ERROR', name, repr(e), flush=True)
+            c.results.append({'case': name, 'ok': False, 'problems': [repr(e)]})
+    path = os.path.join(a.out, f'results.{a.theme}.json')
+    with open(path, 'w') as f:
+        json.dump(c.results, f, indent=1)
+    bad = [r for r in c.results if not r['ok']]
+    print(f'{len(c.results) - len(bad)} pass, {len(bad)} fail ->', path)
+    sys.exit(1 if bad else 0)

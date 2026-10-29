@@ -16,7 +16,7 @@ void main() {
       final seats = TextEditingController(text: '12');
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: Scaffold(
             body: ListView(
               children: [

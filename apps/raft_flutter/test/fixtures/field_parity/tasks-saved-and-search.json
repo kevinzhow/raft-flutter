@@ -1,0 +1,16 @@
+{
+  "GET /channels/saved": {
+    "saved": [
+      {"messageId":"m-th-0009","channelId":"t1000000-0000-4000-8000-0000000000t1","channelName":"thread","channelType":"thread","content":"PR is up","senderType":"agent","senderId":"ag-0000-4000-8000-000000000002","senderName":"Cindy","senderAvatarUrl":"pixel:robot","createdAt":"2026-10-11T12:05:00.000Z","savedAt":"2026-10-11T13:00:00.000Z","parentChannelId":"a1b2c3d4-0000-4000-8000-000000000001","parentChannelName":"design","parentChannelType":"channel","parentMessageId":"5c0d9e22-7a31-4b6f-8d44-222222222222","parentMessagePreview":"Ship the onboarding checklist","parentMessageSenderType":"user","parentMessageSenderId":"u-0000-4000-8000-000000000001","replyCount":9}
+    ],
+    "hasMore": false,
+    "total": 1,
+    "globalTotal": 7
+  },
+  "GET /messages/search": {
+    "results": [
+      {"id":"m-ext-1","seq":88,"channelId":"a1b2c3d4-0000-4000-8000-000000000001","threadId":null,"parentMessageId":null,"parentMessageContent":null,"parentChannelId":"a1b2c3d4-0000-4000-8000-000000000001","parentChannelName":"design","parentChannelType":"channel","parentChannelArchivedAt":null,"senderId":"ext-1","senderType":"external_projection","senderName":"Slack Bridge","senderAvatarUrl":null,"externalMessage":null,"channelName":"design","channelType":"channel","channelArchivedAt":null,"content":"onboarding checklist shipped","snippet":"<mark>onboarding</mark> checklist shipped","createdAt":"2026-10-11T14:00:00.000Z"}
+    ],
+    "hasMore": false
+  }
+}

@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:path_parsing/path_parsing.dart';
 
 part 'brand_marks.g.dart';
+part 'app_icon_mark.g.dart';
 
 /// Vector data of one Web brand SVG (see tool/gen-brand/gen.py).
 @immutable
@@ -19,6 +20,9 @@ class RaftBrandSvg {
 enum RaftBrandMarkKind {
   /// public/brand/raft-icon.svg (AuthBrandIntro, `size-9`).
   icon(_raftIcon),
+
+  /// Packaged mobile icon: original mark with the paper-colored inlay.
+  appIcon(_raftAppIcon),
 
   /// public/brand/raft-logo.svg (RaftBrandLockup).
   logo(_raftLogo),

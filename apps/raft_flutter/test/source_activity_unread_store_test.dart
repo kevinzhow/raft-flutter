@@ -6,13 +6,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_flutter/data/source_activity_unread_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show MessageAdapter;
+import 'support/app_services_fixture.dart';
 
 class _ActivityAdapter extends MessageAdapter {
   final statuses = <String, int>{};
@@ -100,13 +101,9 @@ Future<void> _dispatch(WidgetTester tester) async {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K09f] $family/$dark actual Chat preloads accepted Activity and reconciles while Activity is unopened',
+      '[K09f] ${dark ? 'dark' : 'light'} actual Chat preloads accepted Activity and reconciles while Activity is unopened',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(1440, 900);
@@ -118,12 +115,14 @@ void main() {
         api.routes['GET /channels/inbox'] = (_) => initial.future;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -231,7 +230,7 @@ void main() {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
       api.routes['GET /channels/inbox'] = (_) => _window(4);
-      final store = SourceActivityUnreadStore(w);
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       client.ingress.add(const RaftEvent('connected', null));
       client.ingress.add(
@@ -264,7 +263,7 @@ void main() {
       final (w, api, _) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
       api.routes['GET /channels/inbox'] = (_) => _window(3);
-      final store = SourceActivityUnreadStore(w);
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       await tester.pump(const Duration(milliseconds: 1999));
       expect(api.inbox, isEmpty);
@@ -286,7 +285,7 @@ void main() {
           last = Completer<Map<String, dynamic>>();
       api.routes['GET /channels/inbox'] = (_) =>
           api.inbox.length == 1 ? first.future : last.future;
-      final store = SourceActivityUnreadStore(w);
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       final opening = store.refresh();
       final trailing = store.refresh();
@@ -318,7 +317,7 @@ void main() {
       addTearDown(w.dispose);
       final held = Completer<Map<String, dynamic>>();
       api.routes['GET /channels/inbox'] = (_) => held.future;
-      final store = SourceActivityUnreadStore(w);
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       final loading = store.refresh();
       await tester.pump();
@@ -365,7 +364,7 @@ void main() {
     (tester) async {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
-      final store = SourceActivityUnreadStore(w);
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       store.acceptWindow(_window(7), scope: store.scope);
       final oldPageEpoch = store.authorityEpoch;
@@ -418,7 +417,7 @@ void main() {
           s2 = Completer<Map<String, dynamic>>();
       api.routes['GET /channels/inbox'] = (r) =>
           r.headers['X-Server-Id'] == 's1' ? s1.future : s2.future;
-      final store = SourceActivityUnreadStore(w);
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       store.acceptWindow(_window(7), scope: store.scope);
       final opening = store.refresh();
@@ -464,8 +463,15 @@ void main() {
           'muteFromSeq': 10,
         }),
       ];
-      api.routes['GET /channels/inbox'] = (_) => _window(2);
-      final store = SourceActivityUnreadStore(w);
+      // The window already lists c1 past every seq below: the server is not
+      // behind, so these events owe no convergence retries.
+      api.routes['GET /channels/inbox'] = (_) => {
+        ..._window(2),
+        'items': [
+          {'kind': 'channel', 'channelId': 'c1', 'latestActivitySeq': '99'},
+        ],
+      };
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       client.ingress.add(
         const RaftEvent('message:new', {
@@ -520,7 +526,7 @@ void main() {
     (tester) async {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
-      final store = SourceActivityUnreadStore(w);
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       store.acceptWindow({
         'totalUnreadCount': 3,
@@ -578,7 +584,7 @@ void main() {
       api.routes['GET /channels/inbox'] = (_) => _window(0);
       final heldRead = Completer<Map<String, dynamic>>();
       api.routes['POST /channels/c1/read'] = (_) => heldRead.future;
-      final store = SourceActivityUnreadStore(w);
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       store.acceptWindow(_window(7), scope: store.scope);
       final oldRead = client.post('/channels/c1/read', data: {'seq': 10});
@@ -600,7 +606,8 @@ void main() {
       expect(
         api.inbox,
         hasLength(1),
-        reason: 'the old principal read acknowledgement has no new-scope side effects',
+        reason:
+            'the old principal read acknowledgement has no new-scope side effects',
       );
       expect(store.totalUnreadCount, 0);
       store.dispose();
@@ -614,7 +621,7 @@ void main() {
       addTearDown(w.dispose);
       final stale = Completer<Map<String, dynamic>>();
       api.routes['GET /channels/inbox'] = (_) => stale.future;
-      final store = SourceActivityUnreadStore(w);
+      final store = w.activityUnread..start();
       addTearDown(store.dispose);
       final accepted = {
         'totalUnreadCount': 2,

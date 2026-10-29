@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -14,11 +17,11 @@ import 'message_presentation_test.dart' show fixture;
 /// Scrolling up into history: when an older page arrives, the rows on screen
 /// keep their exact position on every frame; history grows above them.
 void main() {
-  for (final tall in [false, true]) {
-    for (final thread in [false, true]) {
-      for (final family in [RaftFamily.brutal, RaftFamily.elegant]) {
+  for (final direct in [false, true]) {
+    for (final tall in [false, true]) {
+      for (final thread in [false, true]) {
         testWidgets(
-          '${thread ? 'thread' : 'channel'} $family tall=$tall: older page keeps the reading position',
+          '${thread ? 'thread' : 'channel'} tall=$tall direct=$direct: older page keeps the reading position',
           (tester) async {
             SharedPreferences.setMockInitialValues({});
             tester.view.physicalSize = const Size(1280, 800);
@@ -26,7 +29,7 @@ void main() {
             addTearDown(tester.view.reset);
             final (w, api) = (await tester.runAsync(() => fixture('member')))!;
             addTearDown(w.dispose);
-            w.ledger.switchServer('s1');
+            w.messageDomain.ledger.switchServer('s1');
             final scopeId = thread ? 'th' : 'c1';
             final rows = [
               for (final r in contextRows('h', count: 200))
@@ -84,14 +87,37 @@ void main() {
                 await w.selectChannel(w.channel!, navigate: false);
               }
             });
+            final chat = RaftChatView(controller: w, thread: thread);
             await tester.pumpWidget(
               MaterialApp(
-                theme: raftTheme(family),
+                theme: raftTheme(),
                 home: Scaffold(
-                  body: RaftChatView(controller: w, thread: thread),
+                  body: direct
+                      ? MobileChatDirectRead(
+                          channel: !thread,
+                          thread: thread,
+                          child: chat,
+                        )
+                      : chat,
                 ),
               ),
             );
+            expect(
+              find.byType(MobileChatDirectRead),
+              direct ? findsOneWidget : findsNothing,
+            );
+            if (direct) {
+              final scope = tester.widget<MobileChatDirectRead>(
+                find.byType(MobileChatDirectRead),
+              );
+              expect(scope.channel, !thread);
+              expect(scope.thread, thread);
+              final window = thread
+                  ? w.messageDomain.threadWindow
+                  : w.messageDomain.messageWindow;
+              expect(window, isNotNull);
+              expect(window!.retired, isFalse);
+            }
             for (var i = 0; i < 30; i++) {
               await tester.pump(const Duration(milliseconds: 16));
             }
@@ -141,7 +167,8 @@ void main() {
               }
               for (
                 var i = 0;
-                i < 200 && w.messages.length + w.replies.length <= 50;
+                i < 200 &&
+                    w.messageDomain.messages.length + w.replies.length <= 50;
                 i++
               ) {
                 await Future<void>.delayed(const Duration(milliseconds: 10));
@@ -162,7 +189,10 @@ void main() {
               );
               if (now == null || (now.top - before.top).abs() > .5) moved++;
             }
-            expect(w.messages.length + w.replies.length, greaterThan(50));
+            expect(
+              w.messageDomain.messages.length + w.replies.length,
+              greaterThan(50),
+            );
             expect(moved, 0, reason: log.join('\n'));
             await tester.pumpWidget(const SizedBox());
             await tester.pump(const Duration(seconds: 3));

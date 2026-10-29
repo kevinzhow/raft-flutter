@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart';
 
 import '../data/workspace_controller.dart';
 import 'private_route_guard.dart';
@@ -14,12 +16,16 @@ Future<String?> showSidebarSortMenu(
   GlobalKey anchor,
   String current,
 ) async {
-  final box = anchor.currentContext?.findRenderObject();
+  final anchorContext = anchor.currentContext;
+  if (anchorContext == null) return null;
+  final box = anchorContext.findRenderObject();
   if (box is! RenderBox || !box.attached) return null;
   final scope = workspaceAuthority(controller);
   final previousFocus = FocusManager.instance.primaryFocus;
   final rect = box.localToGlobal(Offset.zero) & box.size;
   final navigator = Navigator.of(context);
+  final themes = captureRaftPopoverThemes(anchorContext, navigator: navigator);
+  final currentPopover = RaftTokens.of(anchorContext).isRaftLook;
   late final RawDialogRoute<String> route;
   void revoke() {
     if (scope != workspaceAuthority(controller) && route.isActive) {
@@ -35,6 +41,64 @@ Future<String?> showSidebarSortMenu(
     pageBuilder: (context, _, _) {
       if (scope != workspaceAuthority(controller)) {
         return const SizedBox.shrink();
+      }
+      if (currentPopover) {
+        return themes.wrap(
+          Builder(
+            builder: (context) {
+              final tokens = RaftTokens.of(context);
+              final surface = RaftWebSidebarSortMenuRecipe.resolve(
+                tokens: tokens.recipeTokens,
+                states: tokens.recipeStates(),
+              ).root;
+              void close([String? mode]) {
+                if (scope == workspaceAuthority(controller) &&
+                    route.isCurrent) {
+                  navigator.pop(mode);
+                }
+              }
+
+              return Stack(
+                children: [
+                  RaftAnchoredPopup(
+                    anchorKey: anchor,
+                    alignRight: true,
+                    gap: 8,
+                    child: CallbackShortcuts(
+                      bindings: {
+                        const SingleActivator(LogicalKeyboardKey.escape): () =>
+                            close(),
+                      },
+                      child: Focus(
+                        autofocus: true,
+                        child: RaftSelectionPopover(
+                          key: const Key('sidebar-sort-popover'),
+                          title: raftText(context, 'Sort'),
+                          showHeader: false,
+                          width: surface.minWidth,
+                          surfaceStyle: surface,
+                          options: [
+                            for (final entry in const {
+                              'manual': 'Manual',
+                              'recent': 'Recent',
+                              'az': 'A-Z',
+                            }.entries)
+                              RaftSelectionOption(
+                                rowKey: ValueKey('sidebar-sort-${entry.key}'),
+                                label: raftText(context, entry.value),
+                                checked: entry.key == current,
+                                onTap: () => close(entry.key),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
       }
       final size = MediaQuery.sizeOf(context);
       final width = math.min(136.0, size.width - 16);

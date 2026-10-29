@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
 
@@ -11,14 +12,28 @@ const betaMemoryKey =
     'raft.server-surface.https%3A%2F%2Ffixture.invalid.alice.b';
 
 Future<void> openMenu(WidgetTester t, double width) async {
-  await t.tap(
-    find.byKey(Key(width < 768 ? 'mobile-server-selector' : 'rail-workspace')),
+  // Wide layout (>= 768, the Raft pack's `shell.browserTopBar: shown`, no
+  // native window chrome in tests): the workspace entry is the top bar's
+  // `topbar-workspace` (server_switcher_top_bar.dart:401) and the rail header
+  // is empty (workspace_view.dart:2804), so `rail-workspace` must not exist
+  // (raftShowsWorkspaceTopBar, workspace_top_bar.dart:18). Phone widths keep
+  // `mobile-server-selector` and have no top bar.
+  final mobile = width < 768;
+  final entry = find.byKey(
+    Key(mobile ? 'mobile-server-selector' : 'topbar-workspace'),
   );
+  expect(entry, findsOneWidget);
+  expect(
+    find.byKey(Key(mobile ? 'topbar-workspace' : 'rail-workspace')),
+    findsNothing,
+  );
+  expect(entry.hitTestable(), findsOneWidget);
+  await t.tap(entry);
   await t.pumpAndSettle();
 }
 
 void main() {
-  for (final theme in ['brutal', 'elegant-light', 'elegant-dark']) {
+  for (final theme in raftThemeMatrix(['light', 'dark'])) {
     testWidgets(
       '[K08m] actual RaftApp $theme invalid server memory PUSHes accepted desktop root then REPLACEs the first real channel',
       (t) async {

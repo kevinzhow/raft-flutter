@@ -1,0 +1,18 @@
+{
+  "surfaces": 3,
+  "from": "2026-10-10T00:00:00.000Z",
+  "midpoint": "2026-10-17T00:00:00.000Z",
+  "to": "2026-10-24T00:00:00.000Z",
+  "current": {
+    "completed": 4,
+    "durationSamples": 3,
+    "meanHours": 8.25,
+    "medianHours": 5.5
+  },
+  "previous": {
+    "completed": 1,
+    "durationSamples": 1,
+    "meanHours": 30,
+    "medianHours": 30
+  }
+}

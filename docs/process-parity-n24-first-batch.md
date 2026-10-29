@@ -252,8 +252,8 @@ Android tail, close the preceding thread, and preserve the channel shell and
 composer. The restored tail keeps its initial checkpoint position on each side.
 The context response then accepts the target and centers it with highlight;
 canonical URI/expiry checkpoints match. The thread's independent parent/reply
-hydration checkpoints remain admitted. The cache ownership boundaries are
-specified in [the accepted bucket contract](accepted-context-bucket.md).
+hydration checkpoints remain admitted. The accepted channel window stays available while a context request is pending
+and is replaced atomically (pinned by `accepted_context_bucket_test.dart`).
 
 The old v5 pair is still FAIL with byte SHA
 `eeca9008d546308d42bbc0fe1858430e002758eff7ea99501eeaa9771fb334d3`.

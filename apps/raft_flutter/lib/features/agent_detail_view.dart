@@ -5,6 +5,7 @@
 // tab's content. FleetDetail keeps the data loading, authority fencing and
 // lifecycle commands and hands them to this view.
 import 'dart:async';
+import 'dart:convert' show base64Decode;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,16 +13,39 @@ import 'package:intl/intl.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/agent_hosted_runtime.dart';
+import '../data/runtime_config.dart';
 import '../data/source_time_formatter.dart';
+import '../data/runtime_error.dart';
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import 'agent_archive_requests.dart';
+import 'agent_activity_pane.dart';
 import 'agent_apps_view.dart';
+import 'agent_diagnostic_info.dart';
+import 'feedback_attachment_preview.dart' show showFeedbackImage;
+import 'agent_archive_section.dart';
+import 'agent_connections_section.dart';
+import 'agent_hosted_model.dart';
+import 'agent_identity_adoption.dart';
+import 'agent_hosted_usage.dart';
+import 'agent_migration_section.dart';
+import 'agent_profile_rules.dart';
+import 'external_agent_setup.dart';
 import 'channel_form_fields.dart' show ChannelCandidateAvatar;
 import 'create_channel_dialog.dart' show ChannelMemberCandidate;
+import 'agent_activity_refs.dart';
 import 'agent_trajectory_log.dart';
+import 'tool_display.dart';
 import 'runtime_usage_chip.dart';
 import 'agent_metadata_catalog.dart';
+import 'agent_runtime_catalog.dart' show reasoningEfforts, runtimeInfos;
+import 'agent_runtime_labels.dart'
+    show isRuntimeDeprecated, runtimeLabelWithStatus;
+import 'agent_metadata_projection.dart';
 import 'mcp_views.dart';
+import 'panel_width_store.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
 import 'resource_cards.dart' show resourceRelativeTime;
 
@@ -50,26 +74,28 @@ class SourceProfileLoadingPanel extends StatelessWidget {
             if (onClose != null)
               RaftPanelIconButton(
                 glyph: RaftGlyph.x,
-                tooltip: raftText(context, 'Close profile'),
+                tooltip: raftText(context, 'Close Profile'),
                 onPressed: onClose,
               ),
           ],
         ),
         Expanded(
-          child: RaftPanelMessage(
-            raftText(
-              context,
-              error == null ? 'Loading...' : 'Profile could not be loaded.',
-            ),
-            action: error == null || onRetry == null
-                ? null
-                : RaftButton(label: 'Retry', onPressed: onRetry),
-          ),
+          child: error == null
+              ? RaftPanelMessage(raftText(context, 'Loading profile…'))
+              // Web page-level load failure: message + outline Retry.
+              : RaftLoadError('Profile could not be loaded.', onRetry: onRetry),
         ),
       ],
     ),
   );
 }
+
+/// AgentWorkspace `formatSize`.
+String workspaceFileSize(int bytes) => bytes < 1024
+    ? '$bytes B'
+    : bytes < 1024 * 1024
+    ? '${(bytes / 1024).toStringAsFixed(1)} KB'
+    : '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 
 enum AgentDetailTab { profile, activity, chat, reminders, workspace, apps, mcp }
 
@@ -77,6 +103,8 @@ enum AgentDetailTab { profile, activity, chat, reminders, workspace, apps, mcp }
 class AgentDetailActions {
   const AgentDetailActions({
     this.onBack,
+    this.onClose,
+    this.backAlways = false,
     this.onEditName,
     this.onEditDescription,
     this.onEditRole,
@@ -84,12 +112,45 @@ class AgentDetailActions {
     this.onEditRuntime,
     this.onStartStop,
     this.onRestartReset,
+    this.onStopHostedTurn,
     this.onDelete,
+    this.canArchive = false,
+    this.onOpenComputer,
+    this.onOpenCreator,
+    this.onOpenChannel,
+    this.onOpenMessage,
     this.onMessage,
-    this.onMigrate,
+    this.canMigrate = false,
+    this.canShowCloudArrival = false,
     this.onPermissions,
+    this.onReportIssue,
   });
+
+  /// Keep the Back chevron at md+ (`backButtonVisibility="always"`).
+  final bool backAlways;
+
+  /// The viewer may archive the agent and delete an archived agent's
+  /// workspace (Web `canArchiveAgent`: deleteAgents or the human creator).
+  final bool canArchive;
+
+  /// Mount the Agent migration section (Web `AgentMigrationSection`: the
+  /// viewer manages a non-external agent that has a computer and
+  /// `agent_migration_v0` is on).
+  final bool canMigrate;
+
+  /// A cloud agent the viewer manages: mount the migration section to show the
+  /// end of the move that brought it to the cloud (Web `arrivalOnly`).
+  final bool canShowCloudArrival;
+
+  /// Info rows: the Computer name opens that Computer; the creator opens
+  /// their profile (`human` or `agent`).
+  final ValueChanged<String>? onOpenComputer, onOpenChannel;
+  final void Function(String type, String id)? onOpenCreator;
+
+  /// A reminder's message permalink: jump back to that message.
+  final ValueChanged<String>? onOpenMessage;
   final VoidCallback? onBack,
+      onClose,
       onEditName,
       onEditDescription,
       onEditRole,
@@ -97,10 +158,14 @@ class AgentDetailActions {
       onEditRuntime,
       onStartStop,
       onRestartReset,
+      /// A cloud agent: stop the running turn (the agent stays).
+      onStopHostedTurn,
       onDelete,
       onMessage,
-      onMigrate,
-      onPermissions;
+      onPermissions,
+      /// Report Issue (offered only when the build names a feedback export
+      /// worker, Web `FEEDBACK_EXPORT_ENABLED`).
+      onReportIssue;
 }
 
 /// Shared runtime catalog (packages/shared/src/runtimeCatalog.ts RUNTIMES).
@@ -119,30 +184,9 @@ const sourceRuntimeDisplayNames = <String, String>{
   'pi': 'Pi',
 };
 
-/// shared/src/index.ts REASONING_EFFORT_RUNTIMES / RUNTIME_FAST_MODE_RUNTIMES.
-const _reasoningRuntimes = {
-  'builtin',
-  'claude',
-  'codex',
-  'grok',
-  'copilot',
-  'pi',
-  'kimi-sdk',
-};
-const _fastModeRuntimes = {'claude', 'codex'};
-const _reasoningLabels = {
-  'low': 'Low',
-  'medium': 'Medium',
-  'high': 'High',
-  'xhigh': 'Extra High',
-};
-const _activityLabels = {
-  'online': 'Online',
-  'thinking': 'Thinking',
-  'working': 'Working',
-  'error': 'Error',
-  'offline': 'Offline',
-};
+/// Web `reasoningEffortLabelId`: the ladder label, else Default.
+String _reasoningEffortLabel(String? effort) =>
+    reasoningEfforts.where((e) => e.$1 == effort).firstOrNull?.$2 ?? 'Default';
 
 class AgentDetailPanel extends StatefulWidget {
   const AgentDetailPanel({
@@ -159,6 +203,7 @@ class AgentDetailPanel extends StatefulWidget {
     this.canControlRuntime = false,
     this.busy = false,
     this.error,
+    this.onDismissError,
     this.clock,
   });
   final WorkspaceController controller;
@@ -176,6 +221,9 @@ class AgentDetailPanel extends StatefulWidget {
   final AgentDetailTab initialTab;
   final bool canManage, canViewPrivate, canControlRuntime, busy;
   final String? error;
+
+  /// The `startError` strip's dismiss `X`.
+  final VoidCallback? onDismissError;
   final DateTime Function()? clock;
   @override
   State<AgentDetailPanel> createState() => _AgentDetailPanelState();
@@ -202,28 +250,62 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
   late AgentDetailTab tab = widget.initialTab;
 
   Map<String, dynamic> get a => widget.agent;
-  String get displayName => '${a['displayName'] ?? a['name'] ?? ''}';
+  String get displayName => agentRowName(a);
   bool get external => a['external'] == true || a['runtime'] == 'external';
-  String get activity =>
-      '${widget.liveActivity?['activity'] ?? a['activity'] ?? (a['status'] == 'active' ? 'online' : 'offline')}';
+
+  /// Web `externalStatus?.hostedRuntime ?? agent.hostedRuntime`: the hosted
+  /// provisioning summary, present for callers who can manage the agent.
+  Map? get _hostedRuntime {
+    final fromStatus = externalStatus?['hostedRuntime'];
+    final value = fromStatus is Map ? fromStatus : a['hostedRuntime'];
+    return value is Map ? value : null;
+  }
+
+  /// "Stop current turn": only a cloud agent that is up has a turn to stop;
+  /// the state is the freshest one the profile has read.
+  bool get _canStopHostedTurn =>
+      widget.actions.onStopHostedTurn != null &&
+      _hostedRuntime?['state'] == 'active';
+  AgentAmbientDisplay get _display => agentRowAmbientDisplay(
+    a,
+    live: widget.liveActivity,
+    now: (widget.clock ?? DateTime.now)(),
+  );
+  String get activity => _display.activity;
   bool get online => activity != 'offline';
+
+  /// Another server's agent, or a channel_summary card, stays on the public
+  /// profile. Caller flags are the current server's capabilities; they do not
+  /// apply to that projection.
+  bool get _bounded => isBoundedPublicAgent(a, widget.controller.server?.id);
+  bool get _canManage => widget.canManage && !_bounded;
+  bool get _canViewPrivate => widget.canViewPrivate && !_bounded;
+  bool get _canControlRuntime => widget.canControlRuntime && !_bounded;
+  bool get _canMessage => !_bounded && widget.actions.onMessage != null;
 
   /// AGENT_PANEL_TABS filtered by visibility, then ordered like raft-ui
   /// `reconcileTabOrder`: the server's `agentPanelTabOrder` first (`channels` /
   /// `dms` are the legacy ids of Chat, `integrations` of Apps), the rest in
   /// their default order.
   List<AgentDetailTab> get tabs {
-    final visible = [
-      AgentDetailTab.profile,
-      if (widget.canViewPrivate) ...[
-        AgentDetailTab.activity,
-        AgentDetailTab.chat,
-        AgentDetailTab.reminders,
-        AgentDetailTab.workspace,
-        AgentDetailTab.apps,
-      ],
-      if (widget.canManage) AgentDetailTab.mcp,
-    ];
+    // An archived agent keeps its profile and a read-only workspace.
+    final archived = a['deletedAt'] != null;
+    final visible = archived
+        ? [
+            AgentDetailTab.profile,
+            if (_canViewPrivate) AgentDetailTab.workspace,
+          ]
+        : [
+            AgentDetailTab.profile,
+            if (_canViewPrivate) ...[
+              AgentDetailTab.activity,
+              AgentDetailTab.chat,
+              AgentDetailTab.reminders,
+              AgentDetailTab.workspace,
+              AgentDetailTab.apps,
+            ],
+            if (_canManage) AgentDetailTab.mcp,
+          ];
     final stored = widget.controller.sidebarOrder['agentPanelTabOrder'];
     final ordered = <AgentDetailTab>[];
     for (final raw in stored is List ? stored : const []) {
@@ -243,6 +325,199 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     ];
   }
 
+  bool diagnosticCopied = false;
+  Timer? diagnosticTimer;
+
+  /// Web `useArchivedAgentMachineName`: the Computer an archived agent last
+  /// ran on (its archive record); advisory, any failure keeps the plain
+  /// "No computer assigned".
+  String? archivedMachine;
+  String? archivedMachineFor;
+
+  Future<void> loadArchivedMachine() async {
+    final id = '${a['id']}';
+    if (a['deletedAt'] == null || _bounded || archivedMachineFor == id) return;
+    archivedMachineFor = id;
+    try {
+      final archive = await fetchAgentArchive(widget.controller, id);
+      if (!mounted || archivedMachineFor != id) return;
+      setState(() => archivedMachine = archive?.machineName);
+    } catch (_) {}
+  }
+
+  /// GET /agents/:id/external-status (external agents): the setup state the
+  /// presence line and the External setup block share.
+  Map<String, dynamic>? externalStatus;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when a status read succeeds and on an agent change (didUpdateWidget); stale reads are fenced by externalStatusFor.
+  String? externalStatusError;
+  String? externalStatusFor;
+
+  @override
+  void initState() {
+    super.initState();
+    _adoptCachedExternalStatus();
+    unawaited(loadExternalStatus());
+    unawaited(loadArchivedMachine());
+    unawaited(loadExternalDiagnostics());
+  }
+
+  /// A revisit shows the last accepted setup state at its first frame (the
+  /// presence line and the setup block do not change when the read lands).
+  void _adoptCachedExternalStatus() {
+    if (!external) return;
+    final cached = widget.controller.agentTabCache.peek(
+      'external-status/${a['id']}',
+    );
+    if (cached is Map<String, dynamic>) externalStatus = cached;
+  }
+
+  @override
+  void didUpdateWidget(AgentDetailPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.agent['id'] != a['id'] ||
+        oldWidget.agent['runtime'] != a['runtime'] ||
+        oldWidget.agent['external'] != a['external']) {
+      if (oldWidget.agent['id'] != a['id']) {
+        // The status, its failure and the in-flight read belong to the
+        // previous agent.
+        externalStatus = null;
+        externalStatusError = null;
+        externalStatusFor = null;
+        archivedMachine = null;
+        archivedMachineFor = null;
+        externalDiagnostics = null;
+        externalDiagnosticsFor = null;
+        _adoptCachedExternalStatus();
+      }
+      unawaited(loadExternalStatus());
+    }
+    unawaited(loadArchivedMachine());
+    unawaited(loadExternalDiagnostics());
+  }
+
+  /// A fresher external status from the cloud agent's status panel (its poll
+  /// while the provider works, the read after Retry).
+  void adoptExternalStatus(Map<String, dynamic> status) {
+    widget.controller.agentTabCache.put('external-status/${a['id']}', status);
+    setState(() {
+      externalStatus = status;
+      externalStatusError = null;
+    });
+  }
+
+  Future<void> loadExternalStatus() async {
+    final id = '${a['id']}';
+    if (!external || _bounded || externalStatusFor == id) return;
+    externalStatusFor = id;
+    try {
+      final status = await widget.controller.client.get(
+        '/agents/$id/external-status',
+      );
+      if (!mounted || externalStatusFor != id) return;
+      if (status is Map) {
+        final accepted = Map<String, dynamic>.from(status);
+        widget.controller.agentTabCache.put('external-status/$id', accepted);
+        setState(() {
+          externalStatus = accepted;
+          externalStatusError = null;
+        });
+      }
+    } catch (e) {
+      if (!mounted || externalStatusFor != id) return;
+      setState(
+        () => externalStatusError = userErrorText(
+          e,
+          fallback: 'Failed to load external setup status',
+          where: 'agent external status',
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    diagnosticTimer?.cancel();
+    _errorCopiedTimer?.cancel();
+    super.dispose();
+  }
+
+  /// External agents: `GET /agents/:id/external-diagnostics`, keyed by agent
+  /// (a switch never shows the previous agent's facts). Null while loading or
+  /// when the read failed; the text then says "unavailable".
+  Map<String, dynamic>? externalDiagnostics;
+  String? externalDiagnosticsFor;
+
+  Future<void> loadExternalDiagnostics() async {
+    final id = '${a['id']}';
+    if (!external || _bounded || !_canViewPrivate || a['deletedAt'] != null) {
+      return;
+    }
+    if (externalDiagnosticsFor == id) return;
+    externalDiagnosticsFor = id;
+    try {
+      final view = admittedExternalDiagnostics(
+        await widget.controller.query('/agents/$id/external-diagnostics'),
+      );
+      if (!mounted || externalDiagnosticsFor != id) return;
+      setState(() => externalDiagnostics = view);
+    } catch (_) {
+      // A failed read counts as unavailable.
+    }
+  }
+
+  /// `buildAgentDiagnosticInfo`: managed agents carry their identity, runtime,
+  /// Computer and live state; external agents the external diagnostics.
+  String get diagnosticInfo {
+    final id = '${a['id']}';
+    final log = agentCachedActivityEntries(widget.controller, id);
+    final stamp = log.isEmpty ? null : log.last['timestamp'];
+    final display = _display;
+    return buildAgentDiagnosticInfo(
+      agent: a,
+      title: raftText(context, 'Raft Diagnostic Info'),
+      serverId: widget.controller.server?.id,
+      machine: machine,
+      activity: display.activity,
+      detailKind: display.detailKind,
+      activityDetail: display.detail,
+      lastActivityAtMs: stamp is num ? stamp.toInt() : null,
+      errorMessage: _canViewPrivate ? runtimeErrorDiagnostic : null,
+      externalDiagnostics: externalDiagnostics,
+    );
+  }
+
+  /// The raw diagnostic kept for the copy text even when the banner shows the
+  /// classified catalog message (Web `diagnosticErrorMessage`).
+  String? get runtimeErrorDiagnostic {
+    final display = _display;
+    if (display.activity != 'error' && a['lastRuntimeError'] == null) {
+      return null;
+    }
+    final raw = display.activity == 'error'
+        ? display.detail
+        : '${(a['lastRuntimeError'] as Map?)?['message'] ?? ''}';
+    final typed = a['lastRuntimeError'];
+    if (typed is Map &&
+        typed['errorClass'] != null &&
+        typed['errorReason'] != null) {
+      return [
+        raw,
+        'class=${typed['errorClass']} reason=${typed['errorReason']} fingerprint=${typed['fingerprint']}',
+      ].where((line) => line.isNotEmpty).join('\n');
+    }
+    return raw;
+  }
+
+  Future<void> copyDiagnosticInfo() async {
+    await Clipboard.setData(ClipboardData(text: diagnosticInfo));
+    if (!mounted) return;
+    setState(() => diagnosticCopied = true);
+    diagnosticTimer?.cancel();
+    diagnosticTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted) setState(() => diagnosticCopied = false);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!canRenderWorkspaceAgent(a, widget.controller.server?.id)) {
@@ -254,13 +529,13 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     final visible = tabs;
     final current = visible.contains(tab) ? tab : AgentDetailTab.profile;
     final menu = <RaftMenuEntry>[
-      if (widget.actions.onMessage != null)
+      if (_canMessage)
         RaftMenuEntry(
           label: raftText(context, 'Direct Message'),
           leading: const RaftDirectMessageIcon(size: 14),
           onPressed: widget.actions.onMessage,
         ),
-      if (widget.canControlRuntime && !external) ...[
+      if (_canControlRuntime && !external) ...[
         RaftMenuEntry(
           label: raftText(context, online ? 'Stop Agent' : 'Start Agent'),
           glyph: online ? RaftGlyph.square : RaftGlyph.play,
@@ -272,6 +547,12 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
           onPressed: widget.actions.onRestartReset,
         ),
       ],
+      if (_canStopHostedTurn)
+        RaftMenuEntry(
+          label: raftText(context, 'Stop current turn'),
+          glyph: RaftGlyph.square,
+          onPressed: widget.actions.onStopHostedTurn,
+        ),
     ];
     return LayoutBuilder(
       builder: (context, box) =>
@@ -287,15 +568,21 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     double panelWidth,
   ) {
     return RaftPanelTextScope(
+      sans: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           RaftPanelHeaderBar(
             title: displayName,
+            // Web v1.21.12: the `@handle` subtitle, 15px mono in elegant.
+            subtitle: '@${a['name'] ?? ''}',
+            profileHandle: true,
             profileBody: true,
             iconAlwaysVisible: true,
             // `useMobileBack` renders the chevron below `md` only.
-            onBack: MediaQuery.sizeOf(context).width >= 768
+            onBack:
+                MediaQuery.sizeOf(context).width >= 768 &&
+                    !widget.actions.backAlways
                 ? null
                 : widget.actions.onBack,
             backTooltip: raftText(context, 'Back'),
@@ -318,16 +605,46 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                   RaftOverflowMenuButton(
                     key: const Key('agent-profile-overflow-trigger'),
                     entries: menu,
-                    tooltip: raftText(context, 'More actions'),
+                    tooltip: raftText(context, 'More Actions'),
                   ),
+              // AgentDetailHeader `onClose` (`hidden md:flex`): the profile
+              // overlay's close action once the back chevron is gone.
+              if (widget.actions.onClose != null &&
+                  MediaQuery.sizeOf(context).width >= 768)
+                RaftPanelIconButton(
+                  glyph: RaftGlyph.x,
+                  tooltip: raftText(context, 'Close Profile'),
+                  onPressed: widget.actions.onClose,
+                ),
             ],
           ),
+          // Web `startError` strip: between the header and the tab bar.
+          if (widget.error != null)
+            RaftPanelErrorStrip(
+              widget.error!,
+              onDismiss: widget.onDismissError,
+            ),
+          ?_runtimeErrorBanner(context, current),
           RaftPanelTabBar<AgentDetailTab>(
             tabs: [for (final id in visible) _tabSpec(context, id)],
             value: current,
             onChanged: (v) => setState(() => tab = v),
+            // Web `SortableTabsList`: the new order of the visible tabs is the
+            // server's `agentPanelTabOrder`.
+            onReorder: (order) {
+              unawaited(
+                widget.controller.updateSidebarOrder({
+                  // Web's id of the Apps tab is `integrations`.
+                  'agentPanelTabOrder': [
+                    for (final id in order)
+                      id == AgentDetailTab.apps ? 'integrations' : id.name,
+                  ],
+                }),
+              );
+              // The order applies at once (the PATCH follows).
+              setState(() {});
+            },
           ),
-          if (widget.error != null) RaftPanelError(widget.error!),
           Expanded(
             child: RaftSectionPager<AgentDetailTab>(
               key: ValueKey((
@@ -341,9 +658,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
               sections: visible,
               value: current,
               onChanged: (value) => setState(() => tab = value),
-              swipeEnabled:
-                  MediaQuery.sizeOf(context).width <
-                  RaftLayoutMetrics.desktopBreakpoint,
+              swipeEnabled: RaftInteraction.of(context).touch,
               builder: _content,
             ),
           ),
@@ -353,14 +668,14 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
   }
 
   List<Widget> _inlineActions(BuildContext context) => [
-    if (widget.actions.onMessage != null)
+    if (_canMessage)
       RaftPanelIconButton(
         key: const Key('agent-profile-inline-message'),
         icon: (size, color) => RaftDirectMessageIcon(size: size, color: color),
         tooltip: raftText(context, 'Direct Message'),
         onPressed: widget.actions.onMessage,
       ),
-    if (widget.canControlRuntime && !external) ...[
+    if (_canControlRuntime && !external) ...[
       RaftPanelIconButton(
         key: const Key('agent-profile-inline-start-stop'),
         glyph: online ? RaftGlyph.square : RaftGlyph.play,
@@ -374,6 +689,13 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         onPressed: widget.actions.onRestartReset,
       ),
     ],
+    if (_canStopHostedTurn)
+      RaftPanelIconButton(
+        key: const Key('agent-profile-inline-stop-hosted-turn'),
+        glyph: RaftGlyph.square,
+        tooltip: raftText(context, 'Stop current turn'),
+        onPressed: widget.actions.onStopHostedTurn,
+      ),
   ];
 
   RaftPanelTab<AgentDetailTab> _tabSpec(
@@ -424,23 +746,29 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     final agentId = a['id'] as String;
     return switch (id) {
       AgentDetailTab.profile => _profile(context),
-      AgentDetailTab.activity => AgentActivityTab(
-        key: ValueKey('agent-activity-$agentId'),
+      AgentDetailTab.activity => AgentActivityPane(
+        key: ValueKey('agent-activity-pane-$agentId'),
         controller: w,
         agentId: agentId,
+        machineId: a['machineId'] as String?,
+        activity: _display.activity,
+        activityText: _statusText(context),
         initialEntries: widget.initialTrajectoryLog,
+        onOpenComputer: widget.actions.onOpenComputer,
       ),
       AgentDetailTab.chat => AgentChatTab(
         key: ValueKey('agent-chat-$agentId'),
         controller: w,
         agentId: agentId,
         clock: widget.clock,
+        onOpenChannel: widget.actions.onOpenChannel,
       ),
       AgentDetailTab.reminders => AgentRemindersTab(
         key: ValueKey('agent-reminders-$agentId'),
         controller: w,
         agentId: agentId,
         clock: widget.clock,
+        onOpenMessage: widget.actions.onOpenMessage,
       ),
       AgentDetailTab.workspace => AgentWorkspaceTab(
         key: ValueKey('agent-workspace-$agentId'),
@@ -481,40 +809,197 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         .format(agentTimeFormatter(context, widget.controller).wallTime(date));
   }
 
+  /// EXTERNAL_AGENT_ONLINE_WINDOW_MS (store/presenceClock.ts).
+  static const _externalOnlineWindow = Duration(milliseconds: 120000);
+
+  /// Web `AgentStatusBadge` for an external agent: presence is the credential
+  /// seen within the online window, and managers also see the setup state.
+  /// While seen with a non-idle activity the badge reads like a managed
+  /// agent's (null here).
+  (Color, String)? _externalPresence(BuildContext context, RaftTokens t) {
+    if (!external) return null;
+    final seen = a['lastSeenAt'] is String
+        ? DateTime.tryParse(a['lastSeenAt'] as String)
+        : null;
+    final now = (widget.clock ?? DateTime.now)();
+    final online = seen != null && now.difference(seen) < _externalOnlineWindow;
+    final live = widget.liveActivity?['activity'];
+    if (online && live is String && live != 'online' && live != 'offline') {
+      return null;
+    }
+    final setup = externalStatus?['setupState'];
+    final detail = _canViewPrivate;
+    final color = online
+        ? t.product.brutalLime
+        : setup == 'waiting_for_login'
+        ? raftGray400
+        : t.product.brutalCyan;
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    final relative = !online && seen != null
+        ? resourceRelativeTime(
+            a['lastSeenAt'] as String,
+            now: now,
+            chinese: chinese,
+          )
+        : null;
+    final text = detail && setup == 'waiting_for_login'
+        ? raftText(context, 'External · Setup required')
+        : online
+        ? raftText(context, 'External · Online')
+        : relative != null
+        ? raftFormat(context, 'External · Last active {time}', {
+            'time': relative,
+          })
+        : detail && (setup == 'credential_minted' || setup == 'connected')
+        ? raftText(context, 'External · No Raft activity yet')
+        : detail && externalStatus != null
+        ? raftText(context, 'External · Not configured')
+        : raftText(context, 'External');
+    return (color, text);
+  }
+
+  /// An Info value that navigates: a hover-underlined button with the full
+  /// text as its tooltip, or the plain value when nothing can open it.
+  Widget _profileLink({
+    required Key key,
+    required VoidCallback? onPressed,
+    required String tooltip,
+    required Widget child,
+  }) => onPressed == null
+      ? child
+      : RaftTooltip(
+          message: tooltip,
+          child: RaftProfileLink(key: key, onPressed: onPressed, child: child),
+        );
+
+  /// Web `viewAvatar`: a custom (uploaded) avatar opens enlarged for people
+  /// who cannot change it.
+  Future<void> viewAvatar() async {
+    final url = agentProfileAvatarUrl(
+      widget.controller.client.origin,
+      a['avatarUrl'] as String?,
+    );
+    if (url == null) return;
+    try {
+      final bytes = await RaftImageBytes.instance.load(url);
+      if (!mounted) return;
+      await showFeedbackImage(
+        context,
+        filename: displayName,
+        contentType: 'image/png',
+        bytes: bytes,
+      );
+    } catch (_) {
+      if (mounted) showRaftToast(context, 'Failed to load file');
+    }
+  }
+
+  bool _errorCopied = false;
+  Timer? _errorCopiedTimer;
+
+  Future<void> _copyErrorInfo() async {
+    await Clipboard.setData(ClipboardData(text: diagnosticInfo));
+    if (!mounted) return;
+    setState(() => _errorCopied = true);
+    _errorCopiedTimer?.cancel();
+    _errorCopiedTimer = Timer(const Duration(milliseconds: 2000), () {
+      if (mounted) setState(() => _errorCopied = false);
+    });
+  }
+
+  /// Web runtime error banner (`hasRuntimeError`): the agent is in `error` or
+  /// carries a `lastRuntimeError`. The error detail reaches every member over
+  /// the socket, so people who may not see private surfaces get a generic line
+  /// and no actions.
+  Widget? _runtimeErrorBanner(BuildContext context, AgentDetailTab current) {
+    final display = _display;
+    final typed = a['lastRuntimeError'];
+    if (display.activity != 'error' && typed is! Map) return null;
+    final fallback = raftText(context, 'Agent encountered an error');
+    if (!_canViewPrivate) return RaftRuntimeErrorBanner(message: fallback);
+    final raw = display.activity == 'error'
+        ? display.detail
+        : '${typed is Map ? typed['message'] ?? '' : ''}';
+    final kind =
+        classifyTypedRuntimeError(typed) ??
+        (raw.isNotEmpty ? classifyRuntimeError(raw) : null);
+    final lookup = kind == RuntimeErrorKind.notInstalled
+        ? runtimeLookupDisplayForReason(agentRowSpawnLookupReason(a))
+        : null;
+    final runtime = '${a['runtime'] ?? ''}';
+    final text =
+        lookup != null && lookup != RuntimeLookupDisplay.confirmedMissing
+        ? raftFormat(context, runtimeLookupText(lookup), {
+            'runtimeName':
+                runtimeInfos.where((r) => r.id == runtime).firstOrNull?.name ??
+                runtime,
+          })
+        : kind != null
+        ? raftText(context, runtimeErrorText(kind))
+        : agentActivityText(
+            'error',
+            raw,
+            null,
+            translate: (source, values) => raftFormat(context, source, values),
+          );
+    return RaftRuntimeErrorBanner(
+      message: text,
+      copied: _errorCopied,
+      onCopy: _copyErrorInfo,
+      onViewLogs: current == AgentDetailTab.activity
+          ? null
+          : () => setState(() => tab = AgentDetailTab.activity),
+    );
+  }
+
+  /// The agent's status line (header and Activity overview): the activity text
+  /// with a failed start's typed reason standing in for the daemon's detail
+  /// (Web `formatSpawnFailureDetail`). The classified runtime error text
+  /// (`agent.runtimeError.*`, the install / lookup copy) belongs to the banner
+  /// under the head, not here.
+  String _statusText(BuildContext context) {
+    final display = _display;
+    final spawnText =
+        _canViewPrivate && display.detailKind == 'runtime_unavailable'
+        ? spawnFailureDetailText(
+            agentRowSpawnFailure(a),
+            display.detail,
+            (source, values) => raftFormat(context, source, values),
+          )
+        : null;
+    return agentActivityText(
+      display.activity,
+      _canViewPrivate ? spawnText ?? display.detail : '',
+      _canViewPrivate ? display.detailKind : null,
+      translate: (source, values) => raftFormat(context, source, values),
+    );
+  }
+
   Widget _profile(BuildContext context) {
     final t = RaftTokens.of(context);
-    final canEdit = widget.canManage && a['deletedAt'] == null;
-    final detail = widget.liveActivity?['detail'] ?? a['activityDetail'];
-    final status =
-        widget.canViewPrivate && detail is String && detail.isNotEmpty
-        ? detail
-        : raftText(context, _activityLabels[activity] ?? activity);
+    final canEdit = _canManage && a['deletedAt'] == null;
+    final status = _statusText(context);
+    final agentId = '${a['id']}';
+    final externalPresence = _externalPresence(context, t);
     final role = a['serverRole'];
+    final roleChip = agentServerRoleChip(role, deletedAt: a['deletedAt']);
     final pending =
         a['machineId'] is String && widget.machines == null && !external;
     final m = machine;
     final creator = a['creator'];
-    final runtime = '${a['runtime'] ?? ''}';
-    final model = '${a['model'] ?? ''}';
+    // Web `currentRuntimeConfig = hydrateRuntimeConfigForm(agent)`: the
+    // structured runtimeConfig (mode, reasoning, model), flat columns as the
+    // fallback. Never read the flat columns directly for these rows.
+    final config = RuntimeConfig.fromAgent(a);
+    final runtime = config.runtime;
+    final model = config.model;
     final env = {
       if (a['envVars'] is Map)
         for (final e in (a['envVars'] as Map).entries) '${e.key}': '${e.value}',
     };
-    final created = (a['createdAgents'] as List? ?? const [])
-        .whereType<Map>()
-        .toList();
     final buttons = <Widget>[
       if (!external) ...[
-        if (widget.actions.onMigrate != null)
-          RaftButton(
-            label: raftText(context, 'Move to another computer'),
-            glyph: RaftGlyph.moveRight,
-            tone: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.md,
-            expand: true,
-            onPressed: widget.busy ? null : widget.actions.onMigrate,
-          ),
-        if (widget.canControlRuntime) ...[
+        if (_canControlRuntime) ...[
           RaftButton(
             label: raftText(context, online ? 'Stop Agent' : 'Start Agent'),
             glyph: online ? RaftGlyph.square : RaftGlyph.play,
@@ -533,10 +1018,36 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
           ),
         ],
       ],
+      // AgentDetailPanel Actions: `CopyButton` "Copy Diagnostic Info" (outline,
+      // Clipboard / Check icon), between Restart / Reset and Archive.
+      RaftButton(
+        key: const ValueKey('agent-copy-diagnostic'),
+        label: raftText(
+          context,
+          diagnosticCopied ? 'Diagnostic Info Copied' : 'Copy Diagnostic Info',
+        ),
+        glyph: diagnosticCopied ? RaftGlyph.check : RaftGlyph.clipboard,
+        tone: RaftButtonRecipeVariant.outline,
+        size: RaftButtonRecipeSize.md,
+        expand: true,
+        onPressed: copyDiagnosticInfo,
+      ),
+      // `FEEDBACK_EXPORT_ENABLED && <Button variant="warning">` (Bug icon).
+      if (widget.actions.onReportIssue != null)
+        RaftButton(
+          key: const ValueKey('agent-report-issue'),
+          label: raftText(context, 'Report Issue'),
+          glyph: RaftGlyph.bug,
+          tone: RaftButtonRecipeVariant.warning,
+          size: RaftButtonRecipeSize.md,
+          expand: true,
+          onPressed: widget.busy ? null : widget.actions.onReportIssue,
+        ),
       if (widget.actions.onDelete != null)
         RaftButton(
-          label: raftText(context, 'Delete Agent'),
-          glyph: RaftGlyph.trash2,
+          key: const ValueKey('agent-archive-button'),
+          label: raftText(context, 'Archive Agent'),
+          glyph: RaftGlyph.archive,
           tone: RaftButtonRecipeVariant.danger,
           size: RaftButtonRecipeSize.md,
           expand: true,
@@ -547,6 +1058,26 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
       key: const Key('fleet-detail'),
       padding: raftScrollPadding(context),
       children: [
+        if (agentSourceServerLabel(a, widget.controller.server?.id)
+            case final source?)
+          RaftPanelSection(
+            topBorder: false,
+            vertical: 12,
+            gap: 4,
+            children: [
+              RaftSectionEyebrow(raftTextZh(context, 'From', '来自')),
+              RaftCssText(
+                source,
+                style: raftCssText.merge(
+                  RaftTypography.heading(
+                    t,
+                    size: 14,
+                    line: 20,
+                  ).copyWith(color: t.colors['foreground-strong']),
+                ),
+              ),
+            ],
+          ),
         RaftProfileIdentity(
           name: displayName,
           handle: '${a['name'] ?? ''}',
@@ -555,13 +1086,34 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             a['avatarUrl'] as String?,
           ),
           avatarButton: canEdit,
-          onAvatar: canEdit ? widget.actions.onEditAvatar : null,
+          // Web: a manager changes the avatar; anyone else with a custom
+          // (uploaded) avatar can enlarge it. An archived agent's is static.
+          onAvatar: canEdit
+              ? widget.actions.onEditAvatar
+              : a['deletedAt'] == null &&
+                    isCustomAgentAvatar(a['avatarUrl'] as String?)
+              ? viewAvatar
+              : null,
+          avatarLabel: canEdit ? null : raftText(context, 'View avatar'),
           onEditName: canEdit ? widget.actions.onEditName : null,
-          statusColor: raftActivityDotColor(t, activity),
-          statusText: a['deletedAt'] == null ? status : null,
+          statusColor:
+              externalPresence?.$1 ?? raftActivityDotColor(t, activity),
+          statusText: a['deletedAt'] == null
+              ? externalPresence?.$2 ?? status
+              : null,
           // `min-h-[66px] theme-brutal:min-h-[72px]`.
-          minHeight: t.brutal ? 72 : 66,
+          minHeight: 66,
         ),
+        // Onboarding identity adoption (the server's onboarding agent only).
+        if (_canManage &&
+            widget.controller.server?.string('onboardingAgentId') == agentId)
+          AgentOnboardingIdentity(
+            key: ValueKey('identity-adoption-$agentId'),
+            controller: widget.controller,
+            agentId: agentId,
+            identityKey:
+                '${a['name']}|${a['displayName']}|${a['description']}|${a['avatarUrl']}',
+          ),
         // Description: `px-5 py-3` (no top border).
         RaftPanelSection(
           topBorder: false,
@@ -574,93 +1126,183 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             ),
           ],
         ),
-        RaftPanelSection(
-          children: [
-            RaftSectionEyebrow(raftText(context, 'Info')),
-            RaftInfoRow(
-              label: raftText(context, 'Role'),
-              actions: [
-                RaftInlineIconButton(
-                  glyph: RaftGlyph.circleHelp,
-                  tooltip: raftText(context, 'Role permissions'),
-                ),
-                if (canEdit && role != null && role != 'owner')
-                  RaftInlineIconButton(
-                    key: const ValueKey('agent-edit-role'),
-                    glyph: RaftGlyph.pencil,
-                    tooltip: raftText(context, 'Edit role'),
-                    onPressed: widget.actions.onEditRole,
-                  ),
-              ],
-              child: role == null
-                  ? const SizedBox.shrink()
-                  : RaftInlineBadge(
-                      badge: RaftRecipeBadge(
-                        raftText(context, role == 'admin' ? 'Admin' : 'Member'),
-                        variant: role == 'admin'
-                            ? RaftBadgeRecipeVariant.accent
-                            : RaftBadgeRecipeVariant.muted,
-                      ),
-                    ),
-            ),
-            RaftInfoRow(
-              label: raftText(context, 'Computer'),
-              child: external
-                  ? RaftCssText(
-                      raftText(context, 'External runtime'),
-                      style: RaftPanelText.muted(t),
-                    )
-                  : pending
-                  ? const SizedBox.shrink()
-                  : m != null
-                  ? RaftCssText(
-                      '${m['name']}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: RaftPanelText.monoSemibold(t),
-                    )
-                  : RaftCssText(
-                      raftText(context, 'No computer assigned'),
-                      style: RaftPanelText.muted(t),
-                    ),
-            ),
-            if (!external && m != null) ...[
+        // `showOperationalInfo && isExternalAgent && canManageAgent`
+        if (external && _canManage)
+          ExternalAgentSetup(
+            key: ValueKey('external-setup-$agentId'),
+            controller: widget.controller,
+            agent: a,
+            setupState: externalStatus?['setupState'] as String?,
+            credentialLastUsedAt:
+                externalStatus?['credentialLastUsedAt'] as String?,
+            statusError: externalStatusError,
+            hostedRuntime: HostedRuntimeSummary.parse(_hostedRuntime),
+            onStatus: adoptExternalStatus,
+          ),
+        // `showOperationalInfo && isExternalAgent && canManageAgent &&
+        // hostedRuntime?.state === "active"`.
+        if (external && _canManage && _hostedRuntime?['state'] == 'active') ...[
+          AgentHostedRuntimeModel(
+            key: ValueKey('model-$agentId'),
+            controller: widget.controller,
+            agentId: agentId,
+          ),
+          AgentConnectionsSection(
+            key: ValueKey('connections-$agentId'),
+            controller: widget.controller,
+            agentId: agentId,
+          ),
+          AgentHostedRuntimeUsage(
+            key: ValueKey('usage-$agentId'),
+            controller: widget.controller,
+            agentId: agentId,
+          ),
+        ],
+        if (!_bounded)
+          RaftPanelSection(
+            children: [
+              RaftSectionEyebrow(raftText(context, 'Info')),
               RaftInfoRow(
-                label: raftText(context, 'Computer status'),
-                child: RaftConnectionValue(online: m['status'] == 'online'),
+                label: raftText(context, 'Role'),
+                actions: [
+                  RaftInlineIconButton(
+                    key: const ValueKey('agent-role-help'),
+                    glyph: RaftGlyph.circleHelp,
+                    tooltip: raftText(context, 'Agent Roles'),
+                    onPressed: () =>
+                        showRaftRolePermissionHelp(context, agent: true),
+                  ),
+                  if (canEdit && roleChip != null && role != 'owner')
+                    RaftInlineIconButton(
+                      key: const ValueKey('agent-edit-role'),
+                      glyph: RaftGlyph.pencil,
+                      tooltip: raftText(context, 'Edit Role'),
+                      onPressed: widget.actions.onEditRole,
+                    ),
+                ],
+                child: roleChip == null
+                    ? const SizedBox.shrink()
+                    : RaftInlineBadge(
+                        badge: RaftRecipeBadge(
+                          roleChip.known
+                              ? raftText(
+                                  context,
+                                  roleChip.label == 'admin'
+                                      ? 'Admin'
+                                      : 'Member',
+                                )
+                              : roleChip.label,
+                          variant: roleChip.label == 'admin'
+                              ? RaftBadgeRecipeVariant.accent
+                              : RaftBadgeRecipeVariant.muted,
+                        ),
+                      ),
               ),
               RaftInfoRow(
-                label: raftText(context, 'Computer Version'),
-                child: RaftCssText(runLabel(m), style: RaftPanelText.mono(t)),
+                label: raftText(context, 'Computer'),
+                child: external
+                    ? RaftCssText(
+                        raftText(context, 'External runtime'),
+                        style: RaftPanelText.muted(t),
+                      )
+                    : pending
+                    ? const SizedBox.shrink()
+                    : m != null
+                    ? _profileLink(
+                        key: const ValueKey('agent-computer-link'),
+                        onPressed: widget.actions.onOpenComputer == null
+                            ? null
+                            : () =>
+                                  widget.actions.onOpenComputer!('${m['id']}'),
+                        tooltip: '${m['name']}',
+                        child: RaftCssText(
+                          '${m['name']}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          // v1.21.12: the machine link is plain `text-sm
+                          // text-foreground-muted` (no `font-mono font-semibold`).
+                          style: RaftPanelText.profileValue(t),
+                        ),
+                      )
+                    : archivedMachine != null
+                    // An archived agent has no Computer; say where it last ran.
+                    ? RaftCssText(
+                        raftFormat(context, 'Last on {name}', {
+                          'name': archivedMachine,
+                        }),
+                        key: const ValueKey('agent-archived-last-computer'),
+                        style: RaftPanelText.muted(t),
+                      )
+                    : RaftCssText(
+                        raftText(context, 'No computer assigned'),
+                        style: RaftPanelText.muted(t),
+                      ),
+              ),
+              if (!external && m != null) ...[
+                RaftInfoRow(
+                  label: raftText(context, 'Computer status'),
+                  child: RaftConnectionValue(online: m['status'] == 'online'),
+                ),
+                RaftInfoRow(
+                  label: raftText(context, 'Raft Computer version'),
+                  child: RaftCssText(
+                    runLabel(m),
+                    style: RaftPanelText.profileMono(t),
+                  ),
+                ),
+              ],
+              RaftInfoRow(
+                label: raftText(context, 'Created'),
+                // `tabular-nums theme-brutal:font-mono`.
+                child: RaftCssText(
+                  createdDate(context),
+                  style: RaftPanelText.profileValue(t).copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              RaftInfoRow(
+                label: raftText(context, 'Creator'),
+                child: creator is Map
+                    ? _profileLink(
+                        key: const ValueKey('agent-creator-link'),
+                        onPressed:
+                            widget.actions.onOpenCreator == null ||
+                                creator['id'] is! String
+                            ? null
+                            : () => widget.actions.onOpenCreator!(
+                                creator['type'] == 'human' ? 'human' : 'agent',
+                                creator['id'] as String,
+                              ),
+                        tooltip: nonEmptyOr(
+                          creator['displayName'],
+                          creator['name'],
+                        ),
+                        child: RaftCreatorLink(
+                          name: nonEmptyOr(
+                            creator['displayName'],
+                            creator['name'],
+                          ),
+                          handle: '${creator['name']}',
+                          human: creator['type'] == 'human',
+                          avatarUrl: creator['avatarUrl'] as String?,
+                        ),
+                      )
+                    : RaftCssText(
+                        raftText(context, 'No creator assigned'),
+                        style: RaftPanelText.muted(t),
+                      ),
               ),
             ],
-            RaftInfoRow(
-              label: raftText(context, 'Created'),
-              child: RaftCssText(createdDate(context)),
-            ),
-            RaftInfoRow(
-              label: raftText(context, 'Creator'),
-              child: creator is Map
-                  ? RaftCreatorLink(
-                      name: '${creator['displayName'] ?? creator['name']}',
-                      handle: '${creator['name']}',
-                      human: creator['type'] == 'human',
-                      avatarUrl: creator['avatarUrl'] as String?,
-                    )
-                  : RaftCssText(
-                      raftText(context, 'No creator assigned'),
-                      style: RaftPanelText.muted(t),
-                    ),
-            ),
-          ],
-        ),
-        if (!external)
+          ),
+        if (!_bounded && !external)
           RaftPanelSection(
             children: [
               RaftEditableEyebrow(
                 raftText(context, 'Runtime Config'),
                 onEdit: canEdit ? widget.actions.onEditRuntime : null,
-                editLabel: raftText(context, 'Edit runtime config'),
+                editLabel: raftText(context, 'Edit Runtime Config'),
+                editKey: const ValueKey('agent-edit-runtime'),
               ),
               RaftInfoRow(
                 label: raftText(context, 'Runtime'),
@@ -671,13 +1313,13 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                     enabled: canViewRuntimeUsage(widget.controller, machine),
                     runtimeId: runtime,
                     machineId: '${machine?['id'] ?? ''}',
-                    label: sourceRuntimeDisplayNames[runtime] ?? runtime,
+                    label: runtimeLabelWithStatus(context, runtime),
                     runtimeVersion: machine?['runtimeVersions'] is Map
                         ? (machine!['runtimeVersions'] as Map)[runtime]
                               as String?
                         : null,
                     chip: (status) => RaftRecipeBadge(
-                      sourceRuntimeDisplayNames[runtime] ?? runtime,
+                      runtimeLabelWithStatus(context, runtime),
                       appearance: RaftBadgeRecipeAppearance.solid,
                       variant: RaftBadgeRecipeVariant.information,
                       trailing: status,
@@ -685,6 +1327,18 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                   ),
                 ),
               ),
+              // Web `currentRuntimeDeprecated`: the agent keeps running, but new
+              // agents cannot select this runtime.
+              if (isRuntimeDeprecated(runtime))
+                RaftBanner(
+                  status: RaftBannerRecipeStatus.warning,
+                  size: RaftBannerRecipeSize.sm,
+                  descriptionWeight: FontWeight.w700,
+                  description: raftText(
+                    context,
+                    'This agent uses a deprecated runtime. It can keep running, but new agents cannot select this runtime.',
+                  ),
+                ),
               RaftInfoRow(
                 label: raftText(context, 'Model'),
                 child: RaftInlineBadge(
@@ -696,74 +1350,92 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                   ),
                 ),
               ),
-              if (_reasoningRuntimes.contains(runtime))
+              if (config.supportsReasoning)
                 RaftInfoRow(
                   label: raftText(context, 'Reasoning'),
                   child: RaftInlineBadge(
                     badge: RaftRecipeBadge(
                       raftText(
                         context,
-                        _reasoningLabels[a['reasoningEffort']] ?? 'Default',
+                        _reasoningEffortLabel(config.reasoningEffort),
                       ),
                       variant: RaftBadgeRecipeVariant.primary,
                     ),
                   ),
                 ),
-              if (_fastModeRuntimes.contains(runtime))
+              if (config.supportsFastMode)
                 RaftInfoRow(
                   label: raftText(context, 'Mode'),
                   child: RaftInlineBadge(
                     badge: RaftRecipeBadge(
                       raftText(
                         context,
-                        a['fastMode'] == true ? 'Fast mode' : 'Default',
+                        config.fastMode ? 'Fast mode' : 'Default',
                       ),
                       variant: RaftBadgeRecipeVariant.warning,
                     ),
                   ),
                 ),
+              // Web (Claude only): the custom provider's API URL and the
+              // command override, in machine type, else "Default".
+              if (runtime == 'claude') ...[
+                for (final (label, value) in [
+                  ('Provider', config.providerApiUrl),
+                  ('Command', config.commandText),
+                ])
+                  RaftInfoRow(
+                    key: ValueKey('agent-runtime-${label.toLowerCase()}'),
+                    label: raftText(context, label),
+                    child: value.isEmpty
+                        ? RaftCssText(
+                            raftText(context, 'Default'),
+                            style: RaftPanelText.muted(t),
+                          )
+                        : RaftCssText(
+                            value,
+                            style: RaftPanelText.profileMono(t),
+                          ),
+                  ),
+              ],
               if (env.isNotEmpty) RaftEnvVarsBlock(vars: env),
             ],
           ),
-        RaftPanelSection(
-          children: [
-            RaftSectionHeader(
-              label: raftText(context, 'Created Agents'),
-              count: created.length,
-            ),
-            if (created.isNotEmpty)
-              RaftGapColumn(
-                children: [
-                  for (final c in created)
-                    RaftAvatarListRow(
-                      avatar: RaftAvatarSlot(
-                        name: '${c['displayName'] ?? c['name']}',
-                        avatarUrl: c['avatarUrl'] as String?,
-                        slot: RaftAvatarSlotContext.surfaceList,
-                      ),
-                      name: '${c['displayName'] ?? c['name']}',
-                      subtitle:
-                          sourceRuntimeDisplayNames['${c['runtime']}'] ??
-                          '${c['runtime'] ?? ''}',
-                      rightContent: [
-                        RaftActivityDot(
-                          color: raftActivityDotColor(
-                            t,
-                            c['status'] == 'active' ? 'online' : 'offline',
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-          ],
-        ),
+        // v1.21.23: no "Created Agents" section on an agent profile (a
+        // person's profile keeps it).
         // Web AgentDetailPanel `{canViewPrivateAgentSurfaces && <AgentSkills
         // embedded />}`, between the profile info and Actions.
-        if (widget.canViewPrivate)
+        if (_canViewPrivate && a['deletedAt'] == null)
           AgentSkillsSection(
             controller: widget.controller,
             agentId: '${a['id']}',
+          ),
+        // Web `{canManageAgent && !agent.deletedAt && !isExternalAgent &&
+        // <AgentMigrationSection />}`, between Skills and Actions.
+        if (widget.actions.canMigrate && canEdit && !external)
+          AgentMigrationSection(
+            controller: widget.controller,
+            agent: a,
+            machines: widget.machines ?? const [],
+            now: widget.clock,
+          ),
+        if (widget.actions.canShowCloudArrival &&
+            canEdit &&
+            external &&
+            _hostedRuntime != null)
+          AgentMigrationSection(
+            key: ValueKey('cloud-arrival-$agentId'),
+            controller: widget.controller,
+            agent: a,
+            machines: widget.machines ?? const [],
+            now: widget.clock,
+            arrivalOnly: true,
+          ),
+        // Web `agent.deletedAt && canViewPrivateAgentSurfaces`.
+        if (a['deletedAt'] != null && _canViewPrivate)
+          AgentArchiveSection(
+            controller: widget.controller,
+            agentId: agentId,
+            canManage: !_bounded && widget.actions.canArchive,
           ),
         if (canEdit && buttons.isNotEmpty)
           RaftPanelSection(
@@ -806,6 +1478,9 @@ class _AgentSkillsSectionState extends State<AgentSkillsSection>
     'skills/${widget.agentId}',
     _SkillsSnapshot.new,
   ) as _SkillsSnapshot;
+  @override
+  String get loadFailedFallback => 'Failed to load skills';
+
   @override
   bool get hasContent => snapshot.loaded;
 
@@ -871,8 +1546,22 @@ class _ActivitySnapshot extends _AgentTabSnapshot {
   List<Map<String, dynamic>> entries = [];
 }
 
+/// The agent's live activity window the Activity tab holds (Web
+/// `getActivityLog`); empty until that tab was opened.
+List<Map<String, dynamic>> agentCachedActivityEntries(
+  WorkspaceController w,
+  String agentId,
+) {
+  final snapshot = w.agentTabCache.peek('activity/$agentId');
+  return snapshot is _ActivitySnapshot ? snapshot.entries : const [];
+}
+
 class _ChatSnapshot extends _AgentTabSnapshot {
   List<Map<String, dynamic>> channels = [], dms = [];
+
+  /// Web keeps the channels and DMs reads (and their failures) separate.
+  // ignore: raft_lints/avoid_imperative_notice_state -- Rewritten (null on success) by every reload of the chat tab snapshot, which is keyed by agent and server.
+  String? channelsError, dmsError;
 }
 
 class _RemindersSnapshot extends _AgentTabSnapshot {
@@ -884,16 +1573,30 @@ class _WorkspaceSnapshot extends _AgentTabSnapshot {
   final expanded = <String>{};
   bool showHidden = false;
   String? openFile, openContent;
+
+  /// `DirTruncation` per listing (`''` is the root): the server cut it short.
+  final truncation = <String, ({int shown, int? omitted})>{};
+
+  /// Last read per file (`/workspace-files/read` body), shown at once when the
+  /// file opens again.
+  final contents = <String, Map<String, dynamic>>{};
+  Map<String, dynamic>? openMeta;
 }
 
 mixin _AgentTabLoader<T extends StatefulWidget> on State<T> {
   WorkspaceController get w;
   int _ticket = 0;
 
-  /// Skeleton/"Loading…" only while there is nothing to show yet.
-  bool loading = true;
+  /// Skeleton/"Loading…" only while there is nothing to show yet (also before
+  /// the tab is first active: a snapshot is shown, never a skeleton).
+  late bool loading = !hasContent;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when reload() starts, set only for a current ticket and only when nothing is on screen; the tab is keyed by agent.
   String? loadError;
   bool tabActive = true, reloadWhenActive = false;
+
+  /// Web's per-surface `... Failed` message for a read that carries no server
+  /// error text.
+  String get loadFailedFallback => raftGenericErrorText;
 
   @override
   void didChangeDependencies() {
@@ -928,7 +1631,13 @@ mixin _AgentTabLoader<T extends StatefulWidget> on State<T> {
       setState(() {
         loading = false;
         // A failed background refresh never replaces rows already shown.
-        loadError = hasContent ? null : '$e';
+        loadError = hasContent
+            ? null
+            : userErrorText(
+                e,
+                fallback: loadFailedFallback,
+                where: 'agent tab load',
+              );
       });
     }
   }
@@ -977,6 +1686,7 @@ class _AgentActivityTabState extends State<AgentActivityTab>
       admittedAgentTrajectoryRows(widget.initialEntries),
     );
     snapshot.entries = entries;
+    pillChannels = w.channels;
     w.addListener(scopeChanged);
     listenEvents();
     reload();
@@ -1035,7 +1745,16 @@ class _AgentActivityTabState extends State<AgentActivityTab>
     });
   }
 
+  /// The channel list the reference pills last resolved against.
+  List<RaftChannel>? pillChannels;
+
   void scopeChanged() {
+    // A channel list that arrives (or changes) turns `#channel` tokens into
+    // pills; nothing else about the controller redraws the log.
+    if (!identical(pillChannels, w.channels)) {
+      pillChannels = w.channels;
+      if (mounted) setState(() {});
+    }
     if (openingScope == scope) return;
     openingScope = scope;
     readRevision++;
@@ -1100,15 +1819,9 @@ class _AgentActivityTabState extends State<AgentActivityTab>
       ..loaded = true;
   }
 
-  static String _toolLabel(String name) => switch (name) {
-    'shell' || 'bash' || 'Bash' => 'Running command',
-    'read' || 'Read' => 'Reading file',
-    'write' || 'Write' => 'Writing file',
-    'edit' || 'Edit' => 'Editing file',
-    _ => 'Using $name',
-  };
-
-  RaftActivityLogEntry _entry(
+  /// Web `AgentActivityLog` `TrajectoryItem`: one row per entry kind. An entry
+  /// of an unknown kind renders nothing (the Web `switch` has no default).
+  RaftActivityLogEntry? _entry(
     BuildContext context,
     RaftTokens t,
     SourceTimeFormatter f,
@@ -1120,42 +1833,84 @@ class _AgentActivityTabState extends State<AgentActivityTab>
     final time = f.clock(item['timestamp'], seconds: true).toUpperCase();
     final kind = entry['kind'];
     final text = '${entry['text'] ?? ''}';
-    final status = agentTrajectoryStatusDisplay(
-      '${entry['activity']}',
-      '${entry['detail'] ?? ''}',
-      entry['detailKind'] as String?,
-    );
+    List<InlineSpan> linkify(BuildContext c, String s, TextStyle style) =>
+        linkifyActivityRefs(c, w, s, style);
+    // `SubagentBadge`: lineage-bearing status and tool rows only.
+    final lineage = entry['subagent'];
+    final type = lineage is Map ? lineage['subagentType'] : null;
+    final badge = lineage is! Map
+        ? null
+        : type is String && type.isNotEmpty
+        ? raftFormat(context, 'Subagent: {type}', {'type': type})
+        : raftText(context, 'Subagent');
     return switch (kind) {
-      'status' => RaftActivityLogEntry(
+      'status' => () {
+        final activity = '${entry['activityKind'] ?? entry['activity']}';
+        final status = agentTrajectoryStatusDisplay(
+          activity,
+          '${entry['detail'] ?? ''}',
+          entry['detailKind'] as String?,
+        );
+        return RaftActivityLogEntry(
+          time: time,
+          dot: raftActivityDotColor(t, activity),
+          title: raftText(context, status.primary),
+          badge: badge,
+          inlineDetail: status.secondary,
+          linkify: linkify,
+          compact: true,
+        );
+      }(),
+      'tool_start' =>
+        hideToolStartInActivityLog('${entry['toolName']}')
+            ? null
+            : RaftActivityLogEntry(
+                time: time,
+                dot: t.product.statusBusy,
+                title: toolLogLabel('${entry['toolName']}'),
+                badge: badge,
+                inlineDetail: '${entry['toolInput'] ?? ''}',
+                inlineMono: true,
+              ),
+      'compaction_started' || 'compaction_finished' => RaftActivityLogEntry(
         time: time,
-        dot: raftActivityDotColor(t, '${entry['activity']}'),
-        title: raftText(context, status.primary),
-        inlineDetail: status.secondary,
-        compact: true,
+        dot: kind == 'compaction_started'
+            ? t.product.brutalOrange
+            : t.product.brutalLime,
+        title: raftText(
+          context,
+          kind == 'compaction_started'
+              ? 'Context Compaction Started'
+              : 'Context Compaction Finished',
+        ),
       ),
-      'tool_start' => RaftActivityLogEntry(
-        time: time,
-        dot: t.product.statusBusy,
-        title: raftText(context, _toolLabel('${entry['toolName']}')),
-        inlineDetail: '${entry['toolInput'] ?? ''}',
-        inlineMono: true,
-      ),
-      _ => RaftActivityLogEntry(
-        time: time,
-        dot: switch (kind) {
-          'thinking' => t.product.statusBusy,
-          'text' => t.product.brutalCyan,
-          'slock_action' => raftBlue300,
-          _ => t.product.brutalOrange,
-        },
-        title: switch (kind) {
-          'thinking' => raftText(context, 'Thinking'),
-          'text' => raftText(context, 'Message'),
-          _ => '${entry['title'] ?? entry['kind'] ?? ''}',
-        },
-        detail: text,
-        clamp: text.length > 200,
-      ),
+      'thinking' || 'text' || 'slock_action' || 'system' => () {
+        return RaftActivityLogEntry(
+          time: time,
+          dot: switch (kind) {
+            'thinking' => t.product.statusBusy,
+            'text' => t.product.brutalCyan,
+            'slock_action' => raftBlue300,
+            _ => t.product.brutalOrange,
+          },
+          title: switch (kind) {
+            'thinking' => raftText(context, 'Thinking'),
+            'text' => raftText(context, 'Output'),
+            _ => '${entry['title'] ?? ''}',
+          },
+          // Web: a `system` row carries the subagent badge too.
+          badge: kind == 'system' ? badge : null,
+          detail: text,
+          expandable: text.length > 200,
+          // Reference pills only in the structured-metadata kinds; Output and
+          // Thinking are free-form agent text.
+          linkify: kind == 'slock_action' || kind == 'system' ? linkify : null,
+          detailExtra: kind == 'slock_action' || kind == 'system'
+              ? activityRefLineExtra(w, text)
+              : 0,
+        );
+      }(),
+      _ => null,
     };
   }
 
@@ -1163,9 +1918,11 @@ class _AgentActivityTabState extends State<AgentActivityTab>
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final f = agentTimeFormatter(context, w);
+    // Web `visibleLog` + an empty EmptyState: the log has no loading or error
+    // state of its own; before the first read and after a failed one it is the
+    // same "No activity yet" empty state.
     return RaftActivityLogView(
-      entries: [for (final e in entries) _entry(context, t, f, e)],
-      emptyLabel: loading ? raftText(context, 'Loading…') : loadError,
+      entries: [for (final e in entries) ?_entry(context, t, f, e)],
       onCopy: () => Clipboard.setData(
         ClipboardData(
           text: [for (final e in entries) '${e['timestamp']} ${e['entry']}']
@@ -1184,10 +1941,14 @@ class AgentChatTab extends StatefulWidget {
     required this.controller,
     required this.agentId,
     this.clock,
+    this.onOpenChannel,
   });
   final WorkspaceController controller;
   final String agentId;
   final DateTime Function()? clock;
+
+  /// A channel row opens that channel (Web `nav.toChannel`).
+  final ValueChanged<String>? onOpenChannel;
   @override
   State<AgentChatTab> createState() => _AgentChatTabState();
 }
@@ -1221,13 +1982,41 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
 
   @override
   Future<void> fetch() async {
-    final results = await Future.wait([
-      w.query('/agents/${widget.agentId}/channels'),
-      w.query('/agents/${widget.agentId}/agent-dms'),
+    // Web loads the two lists independently; each failure shows in its own
+    // section (`agent.detail.loadAgentChannelsFailed` / `loadAgentDmsFailed`).
+    final channelsRead = w.query('/agents/${widget.agentId}/channels');
+    final dmsRead = w.query('/agents/${widget.agentId}/agent-dms');
+    Object? channelsFailure, dmsFailure;
+    Object? channelsResult, dmsResult;
+    await Future.wait([
+      channelsRead.then<void>(
+        (v) => channelsResult = v,
+        onError: (Object e) => channelsFailure = e,
+      ),
+      dmsRead.then<void>(
+        (v) => dmsResult = v,
+        onError: (Object e) => dmsFailure = e,
+      ),
     ]);
     snapshot
-      ..channels = _rows(results[0], 'channels')
-      ..dms = _rows(results[1], 'dms')
+      ..channels = channelsFailure != null
+          ? const []
+          : _rows(channelsResult, 'channels')
+      ..dms = dmsFailure != null ? const [] : _rows(dmsResult, 'dms')
+      ..channelsError = channelsFailure == null
+          ? null
+          : userErrorText(
+              channelsFailure,
+              fallback: 'Failed to load agent channels',
+              where: 'agent channels',
+            )
+      ..dmsError = dmsFailure == null
+          ? null
+          : userErrorText(
+              dmsFailure,
+              fallback: 'Failed to load agent DMs',
+              where: 'agent dms',
+            )
       ..loaded = true;
   }
 
@@ -1236,7 +2025,7 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
     // Nothing accepted yet: no "Channels 0" counts that would then fill in.
     if (!hasContent) {
       return RaftPanelMessage(
-        loadError ?? raftText(context, 'Loading…'),
+        raftText(context, loadError ?? 'Loading profile…'),
         action: loadError == null
             ? null
             : RaftButton(label: raftText(context, 'Retry'), onPressed: reload),
@@ -1245,6 +2034,8 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
     final origin = w.client.origin;
     final chinese = Localizations.localeOf(context).languageCode == 'zh';
     return RaftAgentChatView(
+      channelsError: snapshot.channelsError,
+      dmsError: snapshot.dmsError,
       // visibleAgentChatChannels: archived memberships are not listed.
       channels: [
         for (final c in channels)
@@ -1256,6 +2047,9 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
               type: '${c['type'] ?? 'channel'}',
               activityMuted: c['activityMuted'] == true,
               muteFromSeq: c['muteFromSeq'],
+              onTap: widget.onOpenChannel == null
+                  ? null
+                  : () => widget.onOpenChannel!('${c['id']}'),
             ),
       ],
       dms: [
@@ -1297,10 +2091,14 @@ class AgentRemindersTab extends StatefulWidget {
     required this.controller,
     required this.agentId,
     this.clock,
+    this.onOpenMessage,
   });
   final WorkspaceController controller;
   final String agentId;
   final DateTime Function()? clock;
+
+  /// Opens the message a reminder was set from, given its `msgPermalink`.
+  final ValueChanged<String>? onOpenMessage;
   @override
   State<AgentRemindersTab> createState() => _AgentRemindersTabState();
 }
@@ -1315,6 +2113,9 @@ class _AgentRemindersTabState extends State<AgentRemindersTab>
   ) as _RemindersSnapshot;
   List<Map<String, dynamic>> get reminders => snapshot.reminders;
   set reminders(List<Map<String, dynamic>> value) => snapshot.reminders = value;
+  @override
+  String get loadFailedFallback => 'Failed to load reminders';
+
   @override
   bool get hasContent => snapshot.loaded;
   StreamSubscription<RaftEvent>? events;
@@ -1395,6 +2196,7 @@ class _AgentRemindersTabState extends State<AgentRemindersTab>
     return RaftReminderListView(
       loading: loading,
       error: loadError,
+      onRetry: reload,
       reminders: [
         for (final r in reminders)
           RaftReminderItem(
@@ -1408,6 +2210,13 @@ class _AgentRemindersTabState extends State<AgentRemindersTab>
             recurrence: r['recurrence'] is Map
                 ? '${(r['recurrence'] as Map)['description'] ?? ''}'
                 : null,
+            msgRef: r['msgRef'] is String ? r['msgRef'] as String : null,
+            onOpenMessage:
+                widget.onOpenMessage == null ||
+                    r['msgPermalink'] is! String ||
+                    (r['msgPermalink'] as String).isEmpty
+                ? null
+                : () => widget.onOpenMessage!(r['msgPermalink'] as String),
           ),
       ],
     );
@@ -1444,6 +2253,13 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
   set openFile(String? value) => snapshot.openFile = value;
   String? get openContent => snapshot.openContent;
   set openContent(String? value) => snapshot.openContent = value;
+
+  /// The open file's read body (binary / encoding / mime / size / time).
+  Map<String, dynamic>? get openMeta => snapshot.openMeta;
+  set openMeta(Map<String, dynamic>? value) => snapshot.openMeta = value;
+  @override
+  String get loadFailedFallback => 'Failed to load files';
+
   @override
   bool get hasContent => snapshot.loaded;
 
@@ -1453,12 +2269,43 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
     reload();
   }
 
+  /// Folders whose listing is in flight (`loadingDirs`).
+  final loadingDirs = <String>{};
+
+  /// The server's `code` of the last failed root listing: an archived agent's
+  /// workspace says why it cannot be read (`loadErrorMessageId`).
+  String? errorCode;
+
+  /// `isFinalLoadError`: nothing to retry and no Computer path to show.
+  bool get errorFinal => errorCode == 'archive_workspace_unavailable';
+
+  String get errorText => switch (errorCode) {
+    'archive_workspace_unavailable' => 'This workspace was deleted from its Computer, so there is nothing to browse.',
+    'machine_offline' || 'daemon_offline' => 'The Computer that holds this workspace is offline. Files can be browsed again when it reconnects.',
+    _ => 'Failed to load files',
+  };
+
   Future<List<Map<String, dynamic>>> list(String dir) async {
     final result = await w.query(
       '/agents/${widget.agentId}/workspace-files',
-      query: {if (dir.isNotEmpty) 'dirPath': dir},
+      // The server owns which entries are hidden (`includeHidden`).
+      query: {
+        if (dir.isNotEmpty) 'dirPath': dir,
+        'includeHidden': '$showHidden',
+      },
     );
     final files = result is Map ? result['files'] : result;
+    // Web `listingTruncation`: only `truncated: true` shows the hint.
+    if (result is Map && result['truncated'] == true) {
+      snapshot.truncation[dir] = (
+        shown: files is List ? files.length : 0,
+        omitted: result['omitted'] is num
+            ? (result['omitted'] as num).toInt()
+            : null,
+      );
+    } else {
+      snapshot.truncation.remove(dir);
+    }
     return [
       for (final f in (files is List ? files : const []))
         if (f is Map) Map<String, dynamic>.from(f),
@@ -1469,7 +2316,15 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
   Future<void> fetch() async {
     // Refresh in place: the tree and the folders the member opened stay
     // exactly as shown until each listing is replaced.
-    final root = await list('');
+    final List<Map<String, dynamic>> root;
+    try {
+      root = await list('');
+      errorCode = null;
+    } on RaftApiException catch (e) {
+      final code = e.details['code'];
+      errorCode = code is String ? code : null;
+      rethrow;
+    }
     final open = expanded.toList();
     final refreshed = await Future.wait([
       for (final dir in open)
@@ -1486,77 +2341,206 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
     snapshot.loaded = true;
   }
 
+  /// Web `handleToggleHiddenFiles`: the listing is read again with the new
+  /// `includeHidden`; the open file and every expanded folder reset.
+  void toggleHidden() {
+    setState(() {
+      showHidden = !showHidden;
+      expanded.clear();
+      children.clear();
+      snapshot
+        ..loaded = false
+        ..truncation.clear();
+      openFile = null;
+      openContent = null;
+      openMeta = null;
+      openError = null;
+    });
+    reload();
+  }
+
   Future<void> toggle(String path) async {
     if (expanded.remove(path)) {
       setState(() {});
       return;
     }
-    setState(() => expanded.add(path));
+    setState(() {
+      expanded.add(path);
+      // Nothing remembered for the folder: its row shows the loading line.
+      if (children[path] == null) loadingDirs.add(path);
+    });
     // A remembered listing shows at once; the read refreshes it in place.
     try {
       final rows = await list(path);
       if (mounted) setState(() => children[path] = rows);
     } catch (_) {
       // Keep whatever listing is already shown for this folder.
+    } finally {
+      if (mounted) setState(() => loadingDirs.remove(path));
     }
   }
 
+  int openTicket = 0;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next file opens; set only for the current open ticket and file.
+  String? openError;
+  bool openLoading = false;
+
   Future<void> open(String path) async {
-    final result = await w.query(
-      '/agents/${widget.agentId}/workspace-files/read',
-      query: {'path': path},
-    );
-    if (!mounted) return;
+    // The preview opens at once: with the content read before when there is
+    // one, else empty until the read lands (never another file's content).
+    final ticket = ++openTicket;
+    final known = snapshot.contents[path];
     setState(() {
       openFile = path;
-      openContent = result is Map ? '${result['content'] ?? ''}' : '$result';
+      openMeta = known;
+      openContent = known == null ? '' : '${known['content'] ?? ''}';
+      openError = null;
+      // Web `loadingFile`: nothing read before, so the pane shows "Loading...".
+      openLoading = known == null;
+    });
+    final Object? result;
+    try {
+      result = await w.query(
+        '/agents/${widget.agentId}/workspace-files/read',
+        query: {'path': path},
+      );
+    } catch (e) {
+      // Web `fileError || agent.workspace.fileLoadFailed` in the preview pane;
+      // the tree is still usable.
+      if (mounted && ticket == openTicket && openFile == path) {
+        setState(() {
+          openLoading = false;
+          openError = userErrorText(
+            e,
+            fallback: 'Failed to load file',
+            where: 'agent workspace file',
+          );
+        });
+      }
+      return;
+    }
+    if (!mounted) return;
+    final file = result is Map
+        ? Map<String, dynamic>.from(result)
+        : <String, dynamic>{'content': '$result'};
+    snapshot.contents[path] = file;
+    if (ticket != openTicket || openFile != path) return;
+    setState(() {
+      openMeta = file;
+      openContent = '${file['content'] ?? ''}';
+      openLoading = false;
     });
   }
 
+  /// Web `TruncationHint`.
+  RaftWorkspaceNode? hint(String dir, int depth) {
+    final cut = snapshot.truncation[dir];
+    if (cut == null) return null;
+    return RaftWorkspaceNode.hint(
+      cut.omitted != null
+          ? raftFormat(
+              context,
+              'Showing the first {shown} items; {omitted} more not shown',
+              {'shown': cut.shown, 'omitted': cut.omitted},
+            )
+          : raftFormat(
+              context,
+              'Showing the first {shown} items; more not shown',
+              {'shown': cut.shown},
+            ),
+      depth: dir.isEmpty ? -1 : depth,
+    );
+  }
+
   List<RaftWorkspaceNode> nodes(String dir, int depth) => [
-    for (final f in children[dir] ?? const <Map<String, dynamic>>[])
-      if (showHidden || !'${f['name']}'.startsWith('.')) ...[
-        RaftWorkspaceNode(
-          name: '${f['name']}',
-          depth: depth,
-          directory: f['isDirectory'] == true,
-          open: expanded.contains(f['path']),
-          bold: f['name'] == 'memory.md',
-          onTap: () => f['isDirectory'] == true
-              ? toggle('${f['path']}')
-              : open('${f['path']}'),
-        ),
-        if (f['isDirectory'] == true && expanded.contains(f['path']))
+    for (final f in children[dir] ?? const <Map<String, dynamic>>[]) ...[
+      RaftWorkspaceNode(
+        name: '${f['name']}',
+        depth: depth,
+        directory: f['isDirectory'] == true,
+        open: expanded.contains(f['path']),
+        bold: f['name'] == 'memory.md',
+        hidden: f['isHidden'] == true,
+        selected: f['isDirectory'] != true && openFile == f['path'],
+        onTap: () => f['isDirectory'] == true
+            ? toggle('${f['path']}')
+            : open('${f['path']}'),
+      ),
+      if (f['isDirectory'] == true && expanded.contains(f['path']))
+        if (loadingDirs.contains('${f['path']}'))
+          RaftWorkspaceNode.loading(depth: depth + 1)
+        else if (children['${f['path']}'] != null) ...[
           ...nodes('${f['path']}', depth + 1),
-      ],
+          ?hint('${f['path']}', depth + 1),
+        ],
+    ],
   ];
+
+  Map<String, dynamic>? _imageFrom;
+  Uint8List? _imageBytes;
+
+  /// `isWorkspaceImagePreview`: a binary file the server sent base64 with an
+  /// `image/*` type, decoded once per read.
+  Uint8List? get _openImage {
+    final meta = openMeta;
+    if (meta == null) return null;
+    if (identical(meta, _imageFrom)) return _imageBytes;
+    _imageFrom = meta;
+    _imageBytes = null;
+    final content = meta['content'];
+    if (meta['binary'] == true &&
+        meta['encoding'] == 'base64' &&
+        content is String &&
+        content.isNotEmpty &&
+        '${meta['mimeType'] ?? ''}'.startsWith('image/')) {
+      try {
+        _imageBytes = base64Decode(content);
+      } on FormatException {
+        _imageBytes = null;
+      }
+    }
+    return _imageBytes;
+  }
 
   @override
   Widget build(BuildContext context) {
     final path = '~/.slock/agents/${widget.agentId}/';
     final wide = MediaQuery.sizeOf(context).width >= 768;
-    if (openFile != null && !wide) {
-      return RaftWorkspaceFilePreview(
-        path: openFile!,
-        content: openContent ?? '',
-        onBack: () => setState(() => openFile = null),
-      );
-    }
     return RaftWorkspaceTreeView(
       preview: openFile == null
           ? null
           : RaftWorkspaceFilePreview(
+              // The phone shows the pane alone and closes it with the arrow.
+              onBack: wide ? null : () => setState(() => openFile = null),
               embedded: true,
               path: openFile!,
               content: openContent ?? '',
+              error: openError,
+              loading: openLoading,
+              imageBytes: _openImage,
+              binary: openMeta?['binary'] == true,
+              sizeLabel: openMeta?['size'] is num
+                  ? workspaceFileSize((openMeta!['size'] as num).toInt())
+                  : null,
+              modifiedLabel: openMeta?['modifiedAt'] == null
+                  ? null
+                  : agentTimeFormatter(
+                      context,
+                      w,
+                    ).shortDateTime(openMeta!['modifiedAt']),
             ),
       path: path,
-      nodes: nodes('', 0),
+      nodes: [...nodes('', 0), ?hint('', 0)],
       loading: loading,
-      error: loadError,
+      // Web: fixed catalog messages, not the server's text.
+      error: loadError == null ? null : errorText,
+      errorFinal: loadError != null && errorFinal,
       showHidden: showHidden,
+      treeWidth: workspaceTreeWidth.value,
+      onTreeWidthChanged: workspaceTreeWidth.save,
+      treeResizeLabel: raftText(context, 'Resize file tree'),
       onCopyPath: () => Clipboard.setData(ClipboardData(text: path)),
-      onToggleHidden: () => setState(() => showHidden = !showHidden),
+      onToggleHidden: toggleHidden,
       onRefresh: reload,
     );
   }

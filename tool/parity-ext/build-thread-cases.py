@@ -2,7 +2,7 @@
 """Append the thread / timeline cases to the run-time manifest ($PARITY_EXT_MANIFEST) and write
 tool/parity-ext/fixtures/thread.json.
 
-Run after build-cases.py, build-live-activity.py, build-channel-header.py,
+Run after build-cases.py, build-channel-header.py,
 build-announcements.py, build-search-overlay-cases.py and the other builders;
 idempotent: every `components.thread-ext.<scene>.*` case of THIS builder is
 replaced, all other cases (including the sibling `components.thread-ext.*`

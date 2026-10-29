@@ -3,9 +3,9 @@
 // Serves the pinned official Vite render host (packages/web/visual-testing)
 // with three generated, anchor-checked additions; the Source checkout itself
 // is never edited:
-//   1. VisualTestingRoot.tsx: the `parityTheme` URL param selects
-//      brutal-light / elegant-light / elegant-dark (same override as
-//      tool/theme-parity-web.mjs, the supplemental three-theme runner).
+//   1. VisualTestingRoot.tsx: the `parityTheme` URL param selects the light or
+//      the dark appearance (brutal-light / elegant-light render light,
+//      elegant-dark renders dark; same override as tool/theme-parity-web.mjs).
 //   2. VisualTestingCases.tsx: tool/parity-ext/host/*.tsx is appended and the
 //      default export asks the extension registry first; official ids fall
 //      through unchanged.
@@ -15,9 +15,9 @@
 //      PLAYWRIGHT_WEB_PORT (Playwright webServer contract).
 import { createRequire } from 'node:module';
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 const source = process.env.PARITY_RAFT_SOURCE;
 const out = process.env.PARITY_EXT_HOST_OUT;
@@ -35,22 +35,40 @@ function once(code, before, after) {
 const sha = (text) => createHash('sha256').update(text).digest('hex');
 
 const rootOriginal = readFileSync(rootTarget, 'utf8');
-let rootCode = once(rootOriginal,
-  '  const preset: AppThemePreset = defaultTheme === "elegant" ? "elegant-light" : "brutal";',
-  `  const override = new URLSearchParams(window.location.search).get('parityTheme');
-  if (override && !['brutal-light', 'elegant-light', 'elegant-dark'].includes(override)) {
+// v1.21.23 has one "Raft" appearance (light or dark, no Brutal/Elegant presets). The case
+// builders still name their theme (brutal-light / elegant-light / elegant-dark) for the
+// Flutter side, which keeps those themes: on the Web reference the two light names render
+// the same page and elegant-dark selects the dark mode.
+const THEME_OVERRIDE = `  const override = new URLSearchParams(window.location.search).get('parityTheme');
+  if (override && !['brutal-light', 'elegant-light', 'elegant-dark', 'raft-light', 'raft-dark'].includes(override)) {
     throw new Error('Unknown extension parity theme');
   }
-  const selectedTheme = override ? (override === 'brutal-light' ? 'brutal' : 'elegant') : defaultTheme;
-  const dark = override === 'elegant-dark';
-  const preset: AppThemePreset = dark ? 'elegant-dark' : selectedTheme === 'elegant' ? 'elegant-light' : 'brutal';`);
-rootCode = once(rootCode, '    resolvedMode: "light" as const,', '    resolvedMode: dark ? "dark" as const : "light" as const,');
-rootCode = once(rootCode,
-  '<ThemeProvider defaultTheme={defaultTheme} defaultMode="light">',
-  '<ThemeProvider defaultTheme={selectedTheme} defaultMode={dark ? "dark" : "light"}>');
+  const effectiveMode: AppResolvedMode = override ? (override.endsWith('-dark') ? 'dark' : 'light') : mode;
+`;
+const rootCode = once(rootOriginal,
+  '  return (\n    <ThemeProvider mode={mode}>\n'
+  + '      <AppThemeContext.Provider value={FIXED_THEME_CONTEXTS[mode]}>',
+  `${THEME_OVERRIDE}  return (
+    <ThemeProvider mode={effectiveMode}>
+      <AppThemeContext.Provider value={FIXED_THEME_CONTEXTS[effectiveMode]}>`);
 
 const casesOriginal = readFileSync(casesTarget, 'utf8');
-const hostFiles = readdirSync(resolve(ext, 'host')).filter((f) => f.endsWith('.tsx')).sort();
+// A host file mounts REAL Web components. When the pinned Web removed one of them (v1.21.23
+// dropped LiveAgentActivityBar and MobileBottomBarStack for the Working-now header summary)
+// the file cannot compile and would take the whole host down: it is skipped with a warning
+// and listed in the receipt; its case ids then fail loudly as "Unknown visual case id".
+const hostDir = dirname(casesTarget);
+const resolvable = (spec) => ['', '.ts', '.tsx', '.json', '.js', '.css', '/index.ts', '/index.tsx']
+  .some((suffix) => existsSync(resolve(hostDir, spec) + suffix));
+const skippedHostFiles = {};
+const hostFiles = readdirSync(resolve(ext, 'host')).filter((f) => f.endsWith('.tsx')).sort().filter((file) => {
+  const code = readFileSync(resolve(ext, 'host', file), 'utf8');
+  const missing = [...code.matchAll(/from\s+["'](\.\.?\/[^"']+)["']/g)].map((m) => m[1]).filter((spec) => !resolvable(spec));
+  if (missing.length === 0) return true;
+  skippedHostFiles[file] = missing;
+  console.warn(`parity-ext host: skipping ${file}, Web files missing at this pin: ${missing.join(', ')}`);
+  return false;
+});
 let casesCode = once(casesOriginal,
   'export default function VisualTestingCases() {\n  const caseId = requestedCaseId();',
   'export default function VisualTestingCases() {\n  const parityExtElement = parityExtElements();\n'
@@ -75,7 +93,7 @@ writeFileSync(resolve(out, 'VisualTestingCases.generated.tsx'), casesCode);
 writeFileSync(resolve(out, 'host-receipt.json'), JSON.stringify({
   originalRootSha256: sha(rootOriginal), generatedRootSha256: sha(rootCode),
   originalCasesSha256: sha(casesOriginal), generatedCasesSha256: sha(casesCode),
-  extensionHostFiles: hostFiles, fixtures: Object.fromEntries(Object.entries(fixtures).map(([k, v]) => [k, sha(v)])),
+  extensionHostFiles: hostFiles, skippedHostFiles, fixtures: Object.fromEntries(Object.entries(fixtures).map(([k, v]) => [k, sha(v)])),
   scope: 'theme override at the fixture root + appended extension cases; official ids unchanged',
   sourceEdited: false, generatedAt: new Date().toISOString(),
 }, null, 2));

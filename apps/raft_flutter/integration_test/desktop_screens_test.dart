@@ -30,6 +30,7 @@ import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test/support/app_services_fixture.dart';
 
 /// Fixture client: identical lookup rule to web-runtime.mjs `lookup()`.
 class DesktopFixtureClient extends RaftClient {
@@ -128,11 +129,7 @@ class DesktopFixtureClient extends RaftClient {
   }
 }
 
-const _themes = {
-  'brutal': (RaftFamily.brutal, false),
-  'elegant-light': (RaftFamily.elegant, false),
-  'elegant-dark': (RaftFamily.elegant, true),
-};
+const _themes = {'elegant-light': (false), 'elegant-dark': (true)};
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -166,7 +163,7 @@ void main() {
         (visualCase['variants'] as List).first['props'],
       );
       final flow = props['flutter'] as String;
-      final (family, dark) = _themes[visualCase['theme']]!;
+      final (dark) = _themes[visualCase['theme']]!;
       final viewport = Size(
         (visualCase['viewport']['width'] as num).toDouble(),
         (visualCase['viewport']['height'] as num).toDouble(),
@@ -230,8 +227,8 @@ void main() {
             locale: const Locale('en'),
             supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
-            theme: raftTheme(family),
-            darkTheme: raftTheme(RaftFamily.elegant, dark: true),
+            theme: raftTheme(),
+            darkTheme: raftTheme(dark: true),
             themeMode: dark ? ThemeMode.dark : ThemeMode.light,
             builder: (context, child) => Align(
               alignment: Alignment.topLeft,
@@ -253,18 +250,19 @@ void main() {
                 ),
               ),
             ),
-            home: WorkspaceView(
-              controller: w,
-              presentation: presentation,
-              appearance: RaftAppearance(
-                mode: dark ? ThemeMode.dark : ThemeMode.light,
-                light: family,
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                presentation: presentation,
+                appearance: RaftAppearance(
+                  mode: dark ? ThemeMode.dark : ThemeMode.light,
+                ),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+                // Production always passes the native service (main.dart:276);
+                // it gates the Settings > Notifications tab.
+                notifications: notifications,
               ),
-              onAppearance: (_) async {},
-              onLogout: () async {},
-              // Production always passes the native service (main.dart:276);
-              // it gates the Settings > Notifications tab.
-              notifications: notifications,
             ),
           ),
         );
@@ -297,7 +295,7 @@ void main() {
             await waitText('On it. Desktop tasks');
           case 'thread-open':
             await tap(find.byKey(const ValueKey('inline-thread-msg-agent-reply')));
-            await until(() => w.threadParent != null && !w.threadLoading, 'thread');
+            await until(() => w.messageDomain.state.threadParent != null && !w.messageDomain.state.threadLoading, 'thread');
             await frames(30);
           case 'channel-tasks-tab':
             await tap(find.byKey(const ValueKey('panel-tab-tasks')));

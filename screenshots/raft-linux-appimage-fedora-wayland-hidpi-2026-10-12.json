@@ -1,0 +1,23 @@
+{
+  "artifact": "raft-flutter-0.1.0-appimage-x64.AppImage",
+  "commit": "a634dc25220260428febb623132654e4a37b282d",
+  "sha256": "f0c20d75a74ed67ded611543c004e18f29802cf1e097097173161a94039317e3",
+  "mode": "wayland",
+  "fuseDevice": "absent",
+  "window": "Raft toplevel 40, painted Wayland surface 30",
+  "GDK_SCALE": 2,
+  "GDK_DPI_SCALE": 1,
+  "osRelease": "NAME=\"Fedora Linux\"\nVERSION=\"44 (Container Image)\"\nRELEASE_TYPE=stable\nID=fedora\nVERSION_ID=44\nVERSION_CODENAME=\"\"\nPRETTY_NAME=\"Fedora Linux 44 (Container Image)\"\nANSI_COLOR=\"0;38;2;60;110;180\"\nLOGO=fedora-logo-icon\nCPE_NAME=\"cpe:/o:fedoraproject:fedora:44\"\nDEFAULT_HOSTNAME=\"fedora\"\nHOME_URL=\"https://fedoraproject.org/\"\nDOCUMENTATION_URL=\"https://docs.fedoraproject.org/en-US/fedora/f44/\"\nSUPPORT_URL=\"https://ask.fedoraproject.org/\"\nBUG_REPORT_URL=\"https://bugzilla.redhat.com/\"\nREDHAT_BUGZILLA_PRODUCT=\"Fedora\"\nREDHAT_BUGZILLA_PRODUCT_VERSION=44\nREDHAT_SUPPORT_PRODUCT=\"Fedora\"\nREDHAT_SUPPORT_PRODUCT_VERSION=44\nSUPPORT_END=2027-05-19\nVARIANT=\"Container Image\"\nVARIANT_ID=container\n",
+  "scope": "production first screen; no account or messaging acceptance",
+  "softwareRenderingForced": true,
+  "captureWindow": "0x200000",
+  "waylandOutputScale": 2,
+  "file": "raft-linux-appimage-fedora-wayland-hidpi-2026-10-12.png",
+  "width": 2880,
+  "height": 1800,
+  "colors": 877,
+  "capture": "Nested KWin rendered output (native Wayland client)",
+  "imageSha256": "38645b375dc20172093a6a4034a107fb09c8048ca1572a479e5e266f87b44214",
+  "buildWorkflow": "https://github.com/kevinzhow/raft-flutter/actions/runs/38249687164",
+  "verification": "Local disposable Fedora 44 container; native Wayland client, KWin nested output, no /dev/fuse, 2x output; software rendering"
+}

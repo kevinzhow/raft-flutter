@@ -1,14 +1,6 @@
 name: Message performance
 
 on:
-  pull_request:
-    paths:
-      - 'apps/raft_flutter/**'
-      - 'packages/raft_ui/**'
-      - 'packages/flutter_chat_ui/**'
-      - 'tool/performance/**'
-      - 'tool/checklist/**'
-      - '.github/workflows/performance.yml'
   workflow_dispatch:
 
 permissions:

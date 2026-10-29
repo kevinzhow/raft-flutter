@@ -1,0 +1,44 @@
+{
+  "_source": "POST /channels with visibility joint and jointInvites[].sameAdmin (RFC 075 4.5): packages/server/src/routes/channels.ts parseJointInviteRequests + POST / handler, services/channelService.ts acceptSameAdminJointInvites; invite row = db/schema.ts jointChannelInvites (acceptedVia same_admin). Web v1.21.23 CreateChannelDialog sends sameAdmin per invite request.",
+  "request": {
+    "name": "launch-room",
+    "visibility": "joint",
+    "agentIds": [],
+    "userIds": [],
+    "jointInvites": [
+      {
+        "targetServerSlug": "partner",
+        "invitedPeople": [
+          "@owner"
+        ],
+        "sameAdmin": true
+      }
+    ]
+  },
+  "response": {
+    "id": "c5555555-5555-4555-8555-555555555501",
+    "serverId": "s0000000-0000-4000-8000-000000000001",
+    "name": "launch-room",
+    "type": "joint",
+    "joined": true,
+    "description": null,
+    "jointInvites": [
+      {
+        "id": "d1000000-0000-4000-8000-000000000001",
+        "jointChannelId": "j1000000-0000-4000-8000-000000000001",
+        "fromServerId": "s0000000-0000-4000-8000-000000000001",
+        "toServerId": "s0000000-0000-4000-8000-000000000002",
+        "invitedUserId": "u1000000-0000-4000-8000-0000000000c1",
+        "invitedByUserId": "u1000000-0000-4000-8000-0000000000c1",
+        "acceptedByUserId": "u1000000-0000-4000-8000-0000000000c1",
+        "status": "accepted",
+        "expiresAt": "2026-10-30T00:00:00.000Z",
+        "createdAt": "2026-10-23T00:00:00.000Z",
+        "acceptedAt": "2026-10-23T00:00:01.000Z",
+        "acceptedVia": "same_admin"
+      }
+    ],
+    "jointInvite": null,
+    "activityMuteSupported": true
+  }
+}

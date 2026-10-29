@@ -2,34 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'control_transition_paint_test.dart' show pixel;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final directDecoration in [false, true]) {
       testWidgets(
-        '[K09a] $family/$dark CSS rounded-full uses actual size (direct=$directDecoration)',
+        '[K09a] ${dark ? 'dark' : 'light'} CSS rounded-full uses actual size (direct=$directDecoration)',
         (tester) async {
-          final theme = raftTheme(family, dark: dark),
-              t = raftTheme(family, dark: dark).extension<RaftTokens>()!;
+          final theme = raftTheme(dark: dark),
+              t = raftTheme(dark: dark).extension<RaftTokens>()!;
           final rt = t.recipeTokens;
-          final root = directDecoration
-              ? RaftAvatarRecipe.resolve(
-                  theme: t.recipeTheme,
-                  type_: RaftAvatarRecipeType.human,
-                  size: RaftAvatarRecipeSize.xl,
-                  tokens: rt,
-                ).root
-              : RaftBadgeRecipe.resolve(
-                  theme: t.recipeTheme,
-                  states: t.recipeStates(),
-                  tokens: rt,
-                ).root;
+          // raft-ui 0.7.0 has no pill Badge or Avatar any more; the radio item is a
+          // Raft slot that still declares `rounded-full`.
+          final root = RaftRadioGroupRecipe.resolve(
+            theme: t.recipeTheme,
+            tokens: rt,
+          ).item;
           // Preserve the generated Source radius; isolate geometry from colors.
           BoxDecoration black(BoxDecoration d) => d.copyWith(
             color: Colors.black,
@@ -70,10 +61,7 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(
-            await pixel(tester, const Offset(1, 1)),
-            family == RaftFamily.brutal ? Colors.black : Colors.white,
-          );
+          expect(await pixel(tester, const Offset(1, 1)), Colors.white);
           expect(await pixel(tester, const Offset(40, 10)), Colors.black);
           final decoration = black(root.decoration(rt));
           expect(
@@ -82,7 +70,7 @@ void main() {
               const Offset(1, 1),
               textDirection: TextDirection.ltr,
             ),
-            family == RaftFamily.brutal,
+            false,
           );
           expect(
             decoration.hitTest(

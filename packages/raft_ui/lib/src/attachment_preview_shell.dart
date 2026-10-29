@@ -1,12 +1,17 @@
+import 'reduced_motion.dart';
+
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'attachment_comment_scope.dart';
 import 'attachment_lightbox.dart';
 import 'design_primitives.dart' show RaftLightboxRecipe, RaftSpinner;
-import 'dialog_card.dart' show RaftShadowSet;
 import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftPanelHeaderBar;
+import 'shortcut_platform.dart';
 import 'system_inset.dart';
 import 'theme.dart';
 
@@ -36,15 +41,21 @@ class RaftAttachmentPreviewShell extends StatefulWidget {
     required this.onClose,
     required this.child,
     this.onDownload,
+    this.onShare,
     this.copyText,
     this.commentsBuilder,
     this.canvas = false,
+    this.dark = false,
     this.commentsOpenInitially = false,
     this.page = false,
+    this.commentSession,
   });
   final String filename;
   final VoidCallback onClose;
   final VoidCallback? onDownload;
+
+  /// The system share sheet (native platforms that have one); null hides it.
+  final VoidCallback? onShare;
   final Widget child;
 
   /// The pane's text; when set the header offers the copy action.
@@ -54,7 +65,15 @@ class RaftAttachmentPreviewShell extends StatefulWidget {
   final Widget Function(BuildContext context, RaftCommentsSheetControls? sheet)?
   commentsBuilder;
   final bool canvas;
+
+  /// Web `VideoPreviewBody`: the stage is solid black (`bg-black`).
+  final bool dark;
   final bool commentsOpenInitially;
+
+  /// The comment session shared with the panel and the body (Web
+  /// `PreviewCommentModeContext`); the shell makes its own when the owner
+  /// does not need to reach it.
+  final RaftAttachmentCommentState? commentSession;
 
   /// Mobile page route: a plain Material page with the shared page header
   /// instead of a fullscreen dialog.
@@ -67,6 +86,26 @@ class RaftAttachmentPreviewShell extends StatefulWidget {
 class _RaftAttachmentPreviewShellState
     extends State<RaftAttachmentPreviewShell> {
   late bool open = widget.commentsOpenInitially;
+  late final RaftAttachmentCommentState session =
+      widget.commentSession ?? RaftAttachmentCommentState();
+  late final bool ownsSession = widget.commentSession == null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Web: comment mode keeps the panel open; a pushed anchor opens it.
+    session
+      ..commentMode = open
+      ..openPanel = () => setOpen(true);
+  }
+
+  @override
+  void dispose() {
+    session.openPanel = null;
+    if (ownsSession) session.dispose();
+    super.dispose();
+  }
+
   // Sticky after the first open: the panel keeps its content (and fetched
   // comments) across collapse and reopen.
   late bool mounted_ = open;
@@ -74,6 +113,8 @@ class _RaftAttachmentPreviewShellState
 
   void setOpen(bool value) => setState(() {
     open = value;
+    // Closing the panel ends the comment session (the pending anchor dies).
+    session.commentMode = value;
     if (value) mounted_ = true;
   });
 
@@ -93,11 +134,11 @@ class _RaftAttachmentPreviewShellState
     final size = MediaQuery.sizeOf(context);
     final wide = size.width >= raftLightboxSmBreakpoint;
     final comments = widget.commentsBuilder;
-    final bodyColor = widget.canvas
-        ? (t.brutal
-              ? t.components.brutalCream
-              : t.colors['layer-canvas-muted']!)
-        : (t.brutal ? Colors.white : t.panel);
+    final bodyColor = widget.dark
+        ? Colors.black
+        : widget.canvas
+        ? (t.colors['layer-canvas-muted']!)
+        : t.panel;
     final actions = [
       if (comments != null)
         RaftLightboxIconAction(
@@ -113,6 +154,13 @@ class _RaftAttachmentPreviewShellState
           glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
           label: 'Copy',
           onPressed: copy,
+        ),
+      if (widget.onShare != null)
+        RaftLightboxIconAction(
+          key: const ValueKey('attachment-preview-share'),
+          glyph: RaftGlyph.share2,
+          label: 'Share',
+          onPressed: widget.onShare,
         ),
       RaftLightboxIconAction(
         key: const ValueKey('attachment-preview-download'),
@@ -131,34 +179,50 @@ class _RaftAttachmentPreviewShellState
             iconSlot: RaftFileTypeBadge(filename: widget.filename),
             iconAlwaysVisible: true,
             onBack: widget.onClose,
-            backTooltip: 'Close preview',
+            backTooltip: 'Close Preview',
             actions: actions,
           )
         : RaftLightboxHeader(
             title: widget.filename,
-            leading: RaftFileTypeBadge(filename: widget.filename),
+            leading: RaftFileTypeBadge(
+              filename: widget.filename,
+              headerLabel: true,
+            ),
             borderWidth: 1,
             onClose: widget.onClose,
             actions: actions,
           );
-    final rule = t.brutal ? 2.0 : 1.0;
-    // The body background runs under the system bar; with no bottom sheet the
-    // content itself clears it.
+    final rule = 1.0;
+    final inset = raftBottomInset(context);
+    // Collapsed, the sheet is exactly its header row (`py-2` around the 28px
+    // expand button or the scaled 12/16 title) plus the system inset: a fixed
+    // 40 left the header's bottom padding, and at larger text its title,
+    // inside the gesture / navigation bar. [rule] is the sheet's own top
+    // border.
+    final titleLine = 16 * MediaQuery.textScalerOf(context).scale(12) / 12;
+    final collapsedHeader = math.max(40.0, 16 + math.max(28.0, titleLine));
+    final collapsedBar = collapsedHeader + rule + inset;
+    final bottomSheet = comments != null && !wide;
+    // The body background runs under the system bar and the comments bar.
+    // The content itself ends above the collapsed bar (or, with no bar, above
+    // the system bar), so its last line and the card's border can scroll
+    // clear of it. The open sheet is an overlay: the body does not move.
     Widget body = ColoredBox(
       color: bodyColor,
-      child: comments != null && !wide
-          ? widget.child
-          : Padding(
-              padding: EdgeInsets.only(bottom: raftBottomInset(context)),
-              child: widget.child,
-            ),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomSheet ? collapsedBar : inset),
+        child: widget.child,
+      ),
     );
     if (comments != null && wide) {
       body = Row(
         children: [
           Expanded(child: body),
           AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            duration: raftMotionDuration(
+              context,
+              const Duration(milliseconds: 300),
+            ),
             curve: Curves.easeInOut,
             width: open ? raftLightboxAsideWidth : 0,
             child: !mounted_
@@ -179,28 +243,28 @@ class _RaftAttachmentPreviewShellState
       );
     }
     Widget? sheet;
-    if (comments != null && !wide) {
+    if (bottomSheet) {
       // The sheet's own background reaches the screen bottom; collapsed it
       // grows by the system inset, open the composer pads itself.
-      final inset = raftBottomInset(context);
-      final height = open ? size.height * .45 : 40.0 + inset;
+      final height = open ? size.height * .45 : collapsedBar;
       sheet = Positioned(
         left: 0,
         right: 0,
         bottom: 0,
         child: RaftNavigationBarStyle(
-          background: t.brutal ? Colors.white : t.panel,
+          background: t.panel,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            key: const ValueKey('attachment-comments-sheet'),
+            duration: raftMotionDuration(
+              context,
+              const Duration(milliseconds: 300),
+            ),
             curve: Curves.easeInOut,
             height: height,
             decoration: BoxDecoration(
-              color: t.brutal ? Colors.white : t.panel,
+              color: t.panel,
               border: Border(
-                top: BorderSide(
-                  color: t.brutal ? Colors.black : t.colors['line-muted']!,
-                  width: rule,
-                ),
+                top: BorderSide(color: t.colors['line-muted']!, width: rule),
               ),
             ),
             child: ClipRect(
@@ -227,10 +291,11 @@ class _RaftAttachmentPreviewShellState
     final content = CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): widget.onClose,
-        const SingleActivator(LogicalKeyboardKey.keyW, control: true):
-            widget.onClose,
-        const SingleActivator(LogicalKeyboardKey.keyW, meta: true):
-            widget.onClose,
+        SingleActivator(
+          LogicalKeyboardKey.keyW,
+          control: !usesCommandShortcuts(),
+          meta: usesCommandShortcuts(),
+        ): widget.onClose,
       },
       child: Focus(
         autofocus: true,
@@ -252,11 +317,12 @@ class _RaftAttachmentPreviewShellState
         ),
       ),
     );
+    final scoped = RaftAttachmentCommentScope(state: session, child: content);
     return widget.page
-        ? Material(color: pageRecipe.backdrop, child: content)
+        ? Material(color: pageRecipe.backdrop, child: scoped)
         : Dialog.fullscreen(
-            backgroundColor: raftLightboxBackdrop,
-            child: content,
+            backgroundColor: raftLightboxBackdropOf(t),
+            child: scoped,
           );
   }
 }
@@ -269,8 +335,8 @@ class RaftPreviewPreparing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final panel = t.brutal ? Colors.white : t.panel;
-    final rule = t.brutal ? 2.0 : 1.0;
+    final panel = t.panel;
+    final rule = 1.0;
     return ColoredBox(
       color: Colors.white,
       child: ColoredBox(
@@ -282,13 +348,8 @@ class RaftPreviewPreparing extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: panel,
-                border: Border.all(
-                  color: t.brutal ? Colors.black : t.colors['line-muted']!,
-                  width: rule,
-                ),
-                boxShadow: t.brutal
-                    ? RaftShadowSet.brutalSm
-                    : t.themeShadows.sm.outer,
+                border: Border.all(color: t.colors['line-muted']!, width: rule),
+                boxShadow: t.themeShadows.sm.outer,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -305,7 +366,7 @@ class RaftPreviewPreparing extends StatelessWidget {
                       fontSize: 12,
                       height: 16 / 12,
                       fontWeight: FontWeight.w700,
-                      color: t.brutal ? Colors.black : t.strong,
+                      color: t.strong,
                     ),
                   ),
                 ],

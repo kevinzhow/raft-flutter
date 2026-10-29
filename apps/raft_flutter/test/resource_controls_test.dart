@@ -6,8 +6,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/activity_rollout_flags.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/task_selection_filter.dart';
+
+import 'flutter_test_config.dart' show leakDebt;
+
+Finder _taskPopover(String field) =>
+    find.byKey(ValueKey('task-selection-${field.toLowerCase()}-popover'));
+
+Finder _taskOption(String field, String value) => find.descendant(
+  of: _taskPopover(field),
+  matching: find.byKey(ValueKey('task-filter-$field-$value')),
+);
 
 class _Client extends RaftClient {
   _Client()
@@ -98,6 +109,8 @@ class _Workspace extends WorkspaceController {
 }
 
 void main() {
+  // Leak debt (open task dialog): see docs/development.md, Leak tracking.
+  leakDebt(const ['TaskSurfaceController']);
   late _Client c;
   late _Workspace w;
   setUp(() {
@@ -116,7 +129,7 @@ void main() {
   Future<void> mount(WidgetTester t, String section) async {
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: RaftDensityScope(
           density: RaftDensity.touch,
           child: Scaffold(
@@ -138,9 +151,9 @@ void main() {
       w.inboxUnread = 1; // Mark all read shows only while something is unread.
       await mount(t, 'activity');
       expect(find.byTooltip('Filters'), findsNothing);
-      expect(find.byTooltip('Activity actions'), findsNothing);
-      expect(find.text('Unfollowed threads'), findsNothing);
-      expect(find.text('Group by channel'), findsNothing);
+      expect(find.byTooltip('Activity Actions'), findsNothing);
+      expect(find.text('Unfollowed Threads'), findsNothing);
+      expect(find.text('Group by Channel'), findsNothing);
       expect(find.text('All'), findsOneWidget);
       expect(find.text('Unread'), findsOneWidget);
       expect(find.text('Mentions'), findsOneWidget);
@@ -161,19 +174,20 @@ void main() {
       await mount(t, 'tasks');
       await t.tap(find.byTooltip('Filter tasks by assignee'));
       await t.pumpAndSettle();
-      final dialog = find.byType(RaftMenuPanel);
+      final dialog = _taskPopover('Assignee');
       final search = find.descendant(
         of: dialog,
-        matching: find.byType(TextField),
+        matching: find.byType(EditableText),
       );
-      await t.enterText(search, 'Assigned to me');
+      await t.enterText(search, 'Assigned to Me');
       await t.pumpAndSettle();
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Assigned to me'));
+      expect(find.text('Assigned to me'), findsOneWidget);
+      await t.tap(_taskOption('Assignee', 'user:alice'));
       await t.pumpAndSettle();
       await t.enterText(search, 'Unassigned');
       await t.pumpAndSettle();
-      expect(find.widgetWithText(RaftMenuItem, 'Unassigned'), findsOneWidget);
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Unassigned'));
+      expect(_taskOption('Assignee', 'unassigned'), findsOneWidget);
+      await t.tap(_taskOption('Assignee', 'unassigned'));
       await t.pumpAndSettle();
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
@@ -184,6 +198,7 @@ void main() {
 
   testWidgets('disposing the resource closes its owned task picker', (t) async {
     final view = ValueNotifier(true);
+    addTearDown(view.dispose);
     await t.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -203,12 +218,11 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.byTooltip('Filter tasks by assignee'));
     await t.pumpAndSettle();
-    expect(find.byType(RaftMenuPanel), findsOneWidget);
+    expect(_taskPopover('Assignee'), findsOneWidget);
     view.value = false;
     await t.pumpAndSettle();
-    expect(find.byType(RaftMenuPanel), findsNothing);
+    expect(find.byType(RaftSelectionPopover), findsNothing);
     expect(find.text('Home'), findsOneWidget);
-    view.dispose();
   });
 
   Future<void> menu(WidgetTester t, String title, String value) async {
@@ -223,25 +237,32 @@ void main() {
   ) async {
     await mount(t, 'search');
     expect(w.calls.where((r) => r.path == '/messages/search'), isEmpty);
-    await menu(t, 'Filter by channel', '#General');
+    await menu(t, 'Filter by Channel', '#General');
     expect(w.calls.last.query!['q'], '');
     expect(w.calls.last.query!['channelId'], 'c');
     expect(find.text('Authorized match'), findsOneWidget);
-    await menu(t, 'Filter by sender', 'Bob · Human');
+    await menu(t, 'Filter by Sender', 'Bob · Human');
     expect(w.calls.last.query!['senderId'], 'bob');
     expect(w.calls.last.query!.containsKey('senderType'), false);
-    await t.tap(find.byTooltip('Search scope'));
+    await t.tap(find.byTooltip('Search Scope'));
     await t.pumpAndSettle();
-    await t.tap(find.widgetWithText(RaftMenuItem, 'Mentions me'));
+    expect(
+      find.descendant(
+        of: _taskPopover('Scope'),
+        matching: find.text('Mentions Me'),
+      ),
+      findsOneWidget,
+    );
+    await t.tap(_taskOption('Scope', 'mentioned'));
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await t.pumpAndSettle();
     expect(w.calls.last.query!['mentionTarget'], 'self');
-    await menu(t, 'Search date range', 'Today');
+    await menu(t, 'Search Date Range', 'Today');
     expect(w.calls.last.query!['after'], isA<String>());
     await t.enterText(find.byType(TextField), 'hello');
     await t.testTextInput.receiveAction(TextInputAction.done);
     await t.pumpAndSettle();
-    await menu(t, 'Sort search results', 'Recent');
+    await menu(t, 'Sort Search Results', 'Recent');
     expect(w.calls.last.query!['sort'], 'recent');
     expect(t.takeException(), isNull);
   });
@@ -253,10 +274,10 @@ void main() {
         find.byWidgetPredicate(
           (widget) =>
               widget is TaskSelectionFilter &&
-              widget.tooltip == 'Filter by sender',
+              widget.tooltip == 'Filter by Sender',
         ),
       );
-      await t.tap(find.byTooltip('Filter by sender'));
+      await t.tap(find.byTooltip('Filter by Sender'));
       await t.pumpAndSettle();
       expect(find.text('Bob · Human'), findsOneWidget);
       w.server = RaftRecord({'id': 's', 'role': 'guest'});
@@ -284,9 +305,17 @@ void main() {
       },
     ];
     await mount(t, 'activity');
-    await t.tap(find.byTooltip('Mark conversation done'));
+    // Touch exposes Done through the real row menu.
+    await t.longPress(find.byType(RaftConversationCard));
     await t.pumpAndSettle();
-    expect(c.mutations, isEmpty);
+    await t.tap(find.text('Done'));
+    await t.pumpAndSettle();
+    // Activity owns its layout flag query; an invalid frontier must still
+    // produce no Done (or other storage-domain) write.
+    expect(c.mutations, hasLength(1));
+    expect(c.mutations.single.path, '/feature-flags/evaluate');
+    expect(c.mutations.single.data['keys'], ActivityRolloutFlags.keys);
+    expect(c.mutations.single.data['serverId'], 's');
     expect(
       find.text('Refresh Activity before marking this conversation done.'),
       findsOneWidget,
@@ -302,22 +331,21 @@ void main() {
     w.channels = [
       RaftChannel({
         'id': 'c',
-        'name':
-            'A very long accessible conversation name for the native filter menu',
+        'name': 'A very long accessible conversation name for the native filter menu',
         'joined': true,
       }),
     ];
     await mount(t, 'search');
     await menu(
       t,
-      'Filter by channel',
+      'Filter by Channel',
       '#A very long accessible conversation name for the native filter menu',
     );
     expect(t.takeException(), isNull);
   });
   for (final special in [
-    ('Done conversations', '/channels/inbox/done'),
-    ('Unfollowed threads', '/channels/inbox/unfollowed'),
+    ('Done Conversations', '/channels/inbox/done'),
+    ('Unfollowed Threads', '/channels/inbox/unfollowed'),
   ]) {
     testWidgets(
       'Activity ${special.$1} protocol state returns to visible All with one click',
@@ -327,7 +355,7 @@ void main() {
         // historical terminal-view request remains a protocol contract; seed the
         // real ResourceView state without inventing an unsupported UI entry.
         final dynamic state = t.state(find.byType(ResourceView));
-        state.filter = special.$1 == 'Done conversations'
+        state.filter = special.$1 == 'Done Conversations'
             ? 'done'
             : 'unfollowed';
         await state.load();
@@ -389,15 +417,21 @@ void main() {
       await t.pumpAndSettle();
       expect(c.mutations.last.path, '/channels/threads/follow');
       expect(c.mutations.last.data, {'parentMessageId': 'p'});
-      await t.tap(find.byTooltip('Mark conversation done'));
+      // Touch exposes Done through the real row menu.
+      await t.longPress(find.byType(RaftConversationCard));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Done'));
       await t.pumpAndSettle();
       // Source inboxStore1427–1441 performs Done, starts a human-self read-all,
       // and owns one awaited refresh. Preserve the exact storage-domain write.
       expect(c.mutations.map((m) => m.path), [
+        '/feature-flags/evaluate',
         '/channels/threads/follow',
         '/channels/threads/done',
         '/channels/t/read-all',
       ]);
+      expect(c.mutations.first.data['keys'], ActivityRolloutFlags.keys);
+      expect(c.mutations.first.data['serverId'], 's');
       final done = c.mutations[c.mutations.length - 2];
       expect(done.path, '/channels/threads/done');
       expect(done.data, {
@@ -415,7 +449,7 @@ void main() {
     w.people = Completer<dynamic>();
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: ResourceView(
             controller: w,
@@ -433,7 +467,7 @@ void main() {
       {'userId': 'bob', 'displayName': 'Private old Bob'},
     ]);
     await t.pumpAndSettle();
-    await t.tap(find.byTooltip('Filter by sender'));
+    await t.tap(find.byTooltip('Filter by Sender'));
     await t.pumpAndSettle();
     expect(find.textContaining('Private old Bob'), findsNothing);
     expect(t.takeException(), isNull);
@@ -508,18 +542,24 @@ void main() {
       await mount(t, 'tasks');
       await t.tap(find.byTooltip('Filter tasks by creator'));
       await t.pumpAndSettle();
-      await t.enterText(find.byType(TextField), 'bob');
+      await t.enterText(
+        find.descendant(
+          of: _taskPopover('Creator'),
+          matching: find.byType(EditableText),
+        ),
+        'bob',
+      );
       await t.pumpAndSettle();
-      expect(find.widgetWithText(RaftMenuItem, 'Writer'), findsNothing);
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Bob'));
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Robot Bob'));
+      expect(_taskOption('Creator', 'agent:agent'), findsNothing);
+      await t.tap(_taskOption('Creator', 'user:bob'));
+      await t.tap(_taskOption('Creator', 'agent:bob'));
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
       expect(find.text('Human unassigned'), findsOneWidget);
       expect(find.text('Agent same ID'), findsOneWidget);
       await t.tap(find.byTooltip('Filter tasks by assignee'));
       await t.pumpAndSettle();
-      await t.tap(find.widgetWithText(RaftMenuItem, 'Unassigned'));
+      await t.tap(_taskOption('Assignee', 'unassigned'));
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
       expect(find.text('Human unassigned'), findsOneWidget);
@@ -592,7 +632,12 @@ void main() {
       await t.tap(find.byTooltip('Filter tasks by creator'));
       await t.pumpAndSettle();
       final select = t
-          .widget<RaftMenuItem>(find.widgetWithText(RaftMenuItem, 'Bob'))
+          .widget<RaftInteractive>(
+            find.descendant(
+              of: _taskOption('Creator', 'user:bob'),
+              matching: find.byType(RaftInteractive),
+            ),
+          )
           .onPressed!;
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
@@ -601,7 +646,7 @@ void main() {
       final dynamic state = t.state(find.byType(ResourceView));
       expect(state.taskAdvanced.creators, isEmpty);
       expect(find.byType(ResourceView), findsOneWidget);
-      expect(find.byType(RaftMenuPanel), findsNothing);
+      expect(find.byType(RaftSelectionPopover), findsNothing);
       expect(t.takeException(), isNull);
     },
   );
@@ -626,7 +671,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.text('Mark done'), findsNothing);
-      expect(find.text('Close task'), findsNothing);
+      expect(find.text('Close Task'), findsNothing);
       expect(c.mutations, isEmpty);
     },
   );

@@ -7,21 +7,18 @@ import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/page_layout.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'desktop_footer_sidebar_page_test.dart' show shellFonts;
 import 'workspace_shell_contract_test.dart' show retire;
 import 'workspace_source_location_contract_test.dart'
     show pageFixture, frames, LocalNotifications;
+import 'support/app_services_fixture.dart';
 
-// Source SettingsPanel.tsx:7911–7940 keeps the transparent Elegant header on
-// the Panel's canvas-muted surface and the content on a separate panel surface.
-// Exact Chromium samples are retained in the desktop-region-audit receipt.
+// Current Raft uses its approved panel-header surface; content independently
+// owns layer-panel. Keep actual raster samples at both viewport widths.
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final (tab, width) in [
       ('language-region', 1280.0),
       ('notifications', 1280.0),
@@ -31,7 +28,7 @@ void main() {
       ('language-region', 390.0),
     ]) {
       testWidgets(
-        '$family/$dark $tab width$width actual Settings header inherits its own surface',
+        '${dark ? 'dark' : 'light'} $tab width$width actual Settings header inherits its own surface',
         (t) async {
           final (w, api) = await pageFixture(t, section: 'settings');
           api.routes['GET /servers/s1/notification-settings'] = (_) => {
@@ -48,15 +45,17 @@ void main() {
           final key = GlobalKey();
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: RepaintBoundary(
                 key: key,
-                child: WorkspaceView(
-                  controller: w,
-                  appearance: RaftAppearance(light: family),
-                  onAppearance: (_) async {},
-                  onLogout: () async {},
-                  notifications: notifications,
+                child: withAppServices(
+                  WorkspaceView(
+                    controller: w,
+                    appearance: RaftAppearance(),
+                    onAppearance: (_) async {},
+                    onLogout: () async {},
+                    notifications: notifications,
+                  ),
                 ),
               ),
             ),
@@ -72,7 +71,12 @@ void main() {
             'administration' => 'Administration',
             _ => 'Applications',
           });
-          expect(t.getRect(header).top, 0);
+          final headerTop = width >= 768 ? 48.0 : 0.0;
+          expect(t.getRect(header).top, headerTop);
+          expect(
+            find.byType(RaftWorkspaceTopBar),
+            width >= 768 ? findsOneWidget : findsNothing,
+          );
           expect(find.byType(RaftPageHeader), findsNothing);
           final boundary =
               key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
@@ -86,18 +90,23 @@ void main() {
                 for (var c = 0; c < 3; c++)
                   data.getUint8((y * image.width + image.width - 8) * 4 + c),
               ];
+              final colors =
+                  (dark ? RaftTokenSet.dark : RaftTokenSet.light).colors;
+              List<int> bytes(Color c) => [
+                (c.r * 255).round(),
+                (c.g * 255).round(),
+                (c.b * 255).round(),
+              ];
               expect(
-                rgb(28),
-                family == RaftFamily.brutal
-                    ? [255, 255, 255]
-                    : dark
-                    ? [13, 13, 11]
-                    : [248, 248, 247],
-                reason: 'Source transparent header inherits canvas-muted',
+                rgb(headerTop.toInt() + 28),
+                bytes(
+                  RaftTokens.theme(dark: dark).colors['layer-panel-header']!,
+                ),
+                reason: 'Raft header owns layer-panel-header',
               );
               expect(
                 rgb(780),
-                dark ? [36, 36, 34] : [255, 255, 255],
+                bytes(colors.layerPanel),
                 reason: 'Source content independently owns layer-panel',
               );
             } finally {

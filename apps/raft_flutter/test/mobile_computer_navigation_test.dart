@@ -9,6 +9,7 @@ import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/mobile_workspace_pages.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
 import 'mobile_back_history_test.dart' show watchAppExit;
@@ -42,8 +43,8 @@ Future<void> loadComputerPageFonts(WidgetTester t) async {
   await loadTaskFonts(t);
   await t.runAsync(() async {
     for (final (alias, asset) in [
-      ('sans-serif', 'packages/raft_ui/assets/fonts/Inter.ttf'),
-      ('monospace', 'packages/raft_ui/assets/fonts/GeistMono.ttf'),
+      ('sans-serif', 'packages/raft_ui/assets/fonts/SpaceGrotesk.ttf'),
+      ('monospace', 'packages/raft_ui/assets/fonts/SpaceMono.ttf'),
       ('MaterialIcons', 'fonts/MaterialIcons-Regular.otf'),
     ]) {
       await (FontLoader(alias)..addFont(rootBundle.load(asset))).load();
@@ -112,7 +113,7 @@ void main() {
     t,
   ) async {
     final f = fixture();
-    await f.mount(t, 'brutal', 430, uri: Uri(path: '/s/alpha'));
+    await f.mount(t, 'light', 430, uri: Uri(path: '/s/alpha'));
     final w = f.workspace(t);
     t.widget<WorkspaceView>(find.byType(WorkspaceView).first).onChooseServer!();
     await f.flush(t);
@@ -128,13 +129,14 @@ void main() {
     t,
   ) async {
     final f = fixture();
-    await f.mount(t, 'brutal', 390, uri: Uri.parse('/s/alpha'));
+    await f.mount(t, 'light', 390, uri: Uri.parse('/s/alpha'));
     final w = f.workspace(t);
     final pages = t.widget<MobileWorkspacePages>(
       find.byType(MobileWorkspacePages),
     );
-    w.error = 'Live connection error';
-    w.notifyListeners();
+    // A workspace failure is Web's toast.error, shown after the frame.
+    w.setError('Live connection error');
+    await t.pump();
     await t.pump();
     expect(find.text('Live connection error'), findsOneWidget);
     expect(
@@ -148,7 +150,7 @@ void main() {
     await f.close(t);
   });
 
-  for (final theme in ['brutal', 'elegant-light', 'elegant-dark']) {
+  for (final theme in raftThemeMatrix(['light', 'dark'])) {
     testWidgets(
       '$theme Settings → Computers → detail uses one URL-owned stack',
       (t) async {

@@ -38,6 +38,7 @@ class _EditProviderConnectionDialogState
   final apiKey = TextEditingController();
   late bool supportsImageInput = widget.connection['supportsImageInput'] == true;
   bool submitting = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next submit starts; the dialog state is dropped when it closes.
   String? error;
 
   @override

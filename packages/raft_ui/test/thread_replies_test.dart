@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
   RaftThreadReplyPreview reply(String id, {String type = 'user'}) =>
@@ -17,7 +18,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftThreadReplies(
               replyCount: 12,
@@ -42,7 +43,7 @@ void main() {
       expect(find.byKey(const ValueKey('thread-preview-four')), findsNothing);
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftThreadReplies(
               replyCount: 1,
@@ -56,13 +57,9 @@ void main() {
       expect(find.byType(TextButton), findsNothing);
     },
   );
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'CJK reply pointer, keyboard and semantics at phone width ${theme.$1}/${theme.$2}',
+      'CJK reply pointer, keyboard and semantics at phone width ${dark ? 'dark' : 'light'}',
       (tester) async {
         tester.view.physicalSize = const Size(320, 640);
         tester.view.devicePixelRatio = 1;
@@ -74,7 +71,7 @@ void main() {
           var opens = 0;
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(theme.$1, dark: theme.$2),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: RaftThreadReplies(
                   replyCount: 5,

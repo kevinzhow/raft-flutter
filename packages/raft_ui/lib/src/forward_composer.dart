@@ -1,16 +1,29 @@
 // Presentational pieces of Web ForwardComposerMobile
 // (packages/web/src/components/message/ForwardComposerMobile.tsx,
 // ForwardComposerTargetList.tsx). The app owns targets, search and sending.
+import 'raft/checkbox.dart' show RaftCheckbox;
+import 'text_selection_toolbar.dart';
+import 'hover_region.dart';
+
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
+import 'raft_underline.dart';
+import 'attachment_card.dart';
+import 'attachment_transfer.dart';
+import 'avatar_content.dart';
 import 'components.dart';
 import 'design_primitives.dart';
+import 'error_presentation.dart' show RaftErrorBanner;
+import 'form_controls.dart' show RaftTextInput, RaftLegacyInput;
 import 'icons.dart';
+
+import 'localization.dart';
+import 'message_body.dart';
 import 'mounted_avatar_recipe.dart';
-import 'recipes/input.g.dart';
-import 'recipes/recipe_runtime.dart';
-import 'recipes/token_binding.dart';
+import 'rich_card_tokens.dart';
 import 'system_inset.dart';
+import 'status_bar.dart';
 import 'theme.dart';
 
 /// `fixed inset-0 z-40 flex flex-col bg-layer-canvas text-foreground-strong`.
@@ -24,15 +37,22 @@ class RaftForwardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    return Material(
-      color: RaftTokens.of(context).colors['layer-canvas'],
-      child: DefaultTextHeightBehavior(
-        textHeightBehavior: raftCssTextHeightBehavior,
-        child: Padding(
-          padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-          child: MediaQuery(
-            data: media.removeViewInsets(removeBottom: true),
-            child: SafeArea(bottom: false, child: child),
+    final canvas = RaftTokens.of(context).colors['layer-canvas']!;
+    // The status bar shows the page's own header colour (a RaftPanelHeaderBar
+    // child publishes it), else the canvas.
+    return RaftStatusBarHost(
+      fallback: canvas,
+      expand: true,
+      child: Material(
+        color: canvas,
+        child: DefaultTextHeightBehavior(
+          textHeightBehavior: raftCssTextHeightBehavior,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+            child: MediaQuery(
+              data: media.removeViewInsets(removeBottom: true),
+              child: SafeArea(bottom: false, child: child),
+            ),
           ),
         ),
       ),
@@ -58,15 +78,20 @@ class RaftForwardPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // The header paints the page canvas; it publishes that colour so the status
+    // bar band above it matches (docs/status-bar.md).
+    return RaftStatusBarSource(
+      color: t.colors['layer-canvas']!,
+      child: _page(t),
+    );
+  }
+
+  Widget _page(RaftTokens t) {
     return Container(
       constraints: const BoxConstraints(minHeight: 56),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: t.brutal
-              ? const BorderSide(color: Colors.black, width: 2)
-              : BorderSide(color: t.colors['line-hairline']!),
-        ),
+        border: Border(bottom: BorderSide(color: t.colors['line-hairline']!)),
       ),
       child: Row(
         children: [
@@ -85,6 +110,7 @@ class RaftForwardPageHeader extends StatelessWidget {
                     height: 24 / 16,
                     fontWeight: FontWeight.w700,
                     color: t.strong,
+                    leadingDistribution: TextLeadingDistribution.even,
                   ),
                 ),
                 Text(
@@ -96,6 +122,7 @@ class RaftForwardPageHeader extends StatelessWidget {
                     fontSize: 12,
                     height: 16 / 12,
                     color: t.colors['foreground-muted'],
+                    leadingDistribution: TextLeadingDistribution.even,
                   ),
                 ),
               ],
@@ -135,12 +162,20 @@ class RaftForwardIconAction extends StatelessWidget {
 
 /// raft-ui `Button size="sm" variant="outline"` (h-7 px-2.5).
 class RaftForwardTextAction extends StatelessWidget {
-  const RaftForwardTextAction({super.key, required this.label, this.onPressed});
+  const RaftForwardTextAction({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.selected = false,
+  });
   final String label;
   final VoidCallback? onPressed;
+
+  /// The chosen option of a chip row: `variant="accent"` instead of outline.
+  final bool selected;
   @override
   Widget build(BuildContext context) => RaftControl(
-    variant: RaftControlVariant.outline,
+    variant: selected ? RaftControlVariant.accent : RaftControlVariant.outline,
     visualHeight: 28,
     minimumTargetSize: 28,
     padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -161,7 +196,12 @@ class RaftForwardTargetsBody extends StatelessWidget {
     this.itemBuilder,
     this.itemCount,
     this.labelAction,
+    this.leading = const [],
   });
+
+  /// Share mode only: the progress bar and server chip row above the search,
+  /// each followed by `mb-3`.
+  final List<Widget> leading;
   final Widget search;
   final String label;
   final Widget? labelAction;
@@ -183,6 +223,8 @@ class RaftForwardTargetsBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          for (final item in leading)
+            Padding(padding: const EdgeInsets.only(bottom: 12), child: item),
           Padding(padding: const EdgeInsets.only(bottom: 12), child: search),
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -224,13 +266,8 @@ class RaftForwardLinkAction extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Text(
-      label,
-      style: const TextStyle(decoration: TextDecoration.underline),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      GestureDetector(onTap: onTap, child: RaftUnderlinedText(label));
 }
 
 /// Search-mode placeholder rows: spinner, failure (+ retry), or no results
@@ -281,7 +318,7 @@ class RaftForwardSearchStatus extends StatelessWidget {
   }
 }
 
-/// `flex shrink-0 items-center gap-1 text-[10px] font-bold uppercase
+/// `flex shrink-0 items-center gap-1 text-[10px] font-bold
 /// text-foreground-hint` with a 10px glyph ("Not joined" / "New DM").
 class RaftForwardTargetBadge extends StatelessWidget {
   const RaftForwardTargetBadge({
@@ -301,7 +338,7 @@ class RaftForwardTargetBadge extends StatelessWidget {
         RaftIcon(glyph, size: 10, color: color),
         const SizedBox(width: 4),
         Text(
-          label.toUpperCase(),
+          label,
           style: TextStyle(
             fontFamily: t.headingFont,
             fontSize: 10,
@@ -320,6 +357,9 @@ Widget raftForwardTargetIcon({
   required String name,
   String type = 'channel',
   bool agent = false,
+  String? pixelKey,
+  String? uploadedUrl,
+  String? gravatarUrl,
 }) {
   if (type == 'dm' || type == 'human' || type == 'agent') {
     final isAgent = agent || type == 'agent';
@@ -328,11 +368,23 @@ Widget raftForwardTargetIcon({
       size: 20,
       kind: isAgent ? RaftAvatarKind.agent : RaftAvatarKind.human,
       mountedContext: RaftMountedAvatarContext.compactList,
-      content: RaftMountedAvatarFallback(
-        avatarContext: RaftMountedAvatarContext.compactList,
-        identity: isAgent
-            ? RaftMountedAvatarIdentity.agent
-            : RaftMountedAvatarIdentity.human,
+      // AvatarSlot compact-list: the peer's pixel / uploaded / Gravatar
+      // artwork; an agent without one wears the default robot.
+      content: RaftAvatarContent(
+        name: name,
+        kind: isAgent
+            ? RaftAvatarContentKind.agent
+            : RaftAvatarContentKind.human,
+        pixelKey: isAgent ? pixelKey ?? 'robot' : null,
+        uploadedUrl: uploadedUrl,
+        gravatarUrl: gravatarUrl,
+        fallback: RaftMountedAvatarFallback(
+          avatarContext: RaftMountedAvatarContext.compactList,
+          identity: isAgent
+              ? RaftMountedAvatarIdentity.agent
+              : RaftMountedAvatarIdentity.human,
+          gravatar: gravatarUrl != null,
+        ),
       ),
     );
   }
@@ -361,6 +413,7 @@ class RaftForwardNoteField extends StatelessWidget {
   final bool enabled, autofocus;
   @override
   Widget build(BuildContext context) => TextField(
+    contextMenuBuilder: RaftTextSelectionToolbar.editableText,
     autofillHints: null,
     controller: controller,
     autofocus: autofocus,
@@ -380,13 +433,25 @@ class RaftForwardPreviewStep extends StatelessWidget {
     super.key,
     required this.previewLabel,
     required this.preview,
-    required this.noteLabel,
-    required this.note,
-    required this.send,
+    this.noteLabel,
+    this.note,
+    this.send,
+    this.action,
+    this.warnings = const [],
+    this.hint,
     this.error,
-  });
-  final String previewLabel, noteLabel;
-  final Widget preview, note, send;
+  }) : assert(action != null || (noteLabel != null && note != null));
+  final String previewLabel;
+  final String? noteLabel, hint;
+  final Widget preview;
+  final Widget? note, send;
+
+  /// Share mode: the bar holds this one full-width action ("Continue")
+  /// instead of the optional-note editor and the send icon.
+  final Widget? action;
+
+  /// Banners above the preview (Web `{warnings}`).
+  final List<Widget> warnings;
   final String? error;
   @override
   Widget build(BuildContext context) {
@@ -394,8 +459,10 @@ class RaftForwardPreviewStep extends StatelessWidget {
     final label = TextStyle(
       fontFamily: t.headingFont,
       fontSize: 12,
+      height: 16 / 12,
       fontWeight: FontWeight.w700,
       color: t.strong,
+      leadingDistribution: TextLeadingDistribution.even,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -405,47 +472,74 @@ class RaftForwardPreviewStep extends StatelessWidget {
             // The footer below owns the inset; the list ends above it.
             padding: const EdgeInsets.all(12),
             children: [
-              if (error != null)
-                Semantics(
-                  liveRegion: true,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(error!),
-                  ),
+              for (final warning in warnings)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: warning,
                 ),
+              // `mb-2`, less the 4px the bundle / share card keeps above itself.
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 4),
                 child: Text(previewLabel, style: label),
               ),
               preview,
+              if (hint != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    hint!,
+                    style: label.copyWith(
+                      color:
+                          t.colors['foreground-hint'] ??
+                          t.colors['foreground-muted'],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
         RaftBottomInsetSurface(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: t.brutal ? Colors.white : t.colors['layer-panel'],
-            border: Border(
-              top: t.brutal
-                  ? const BorderSide(color: Colors.black, width: 2)
-                  : BorderSide(color: t.colors['line-hairline']!),
-            ),
+            color: t.colors['layer-panel'],
+            border: Border(top: BorderSide(color: t.colors['line-hairline']!)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(noteLabel, style: label),
-              const SizedBox(height: 6),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(child: note),
-                  const SizedBox(width: 8),
-                  send,
-                ],
-              ),
-            ],
-          ),
+          child: action != null
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (error != null) ...[
+                      RaftErrorBanner(error!, small: true, bold: true),
+                      const SizedBox(height: 8),
+                    ],
+                    action!,
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(noteLabel!, style: label),
+                    const SizedBox(height: 6),
+                    // Web MessageInput's own error row (`density="sm" font-bold`).
+                    if (error != null) ...[
+                      RaftErrorBanner(error!, small: true, bold: true),
+                      const SizedBox(height: 8),
+                    ],
+                    // With no [send] the editor carries its own submit (the
+                    // compact MessageInput, as on Web).
+                    if (send == null)
+                      note!
+                    else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(child: note!),
+                          const SizedBox(width: 8),
+                          send!,
+                        ],
+                      ),
+                  ],
+                ),
         ),
       ],
     );
@@ -463,6 +557,7 @@ class RaftForwardTargetRow extends StatefulWidget {
     required this.label,
     required this.selected,
     required this.checkbox,
+    this.checkboxDisabled = false,
     this.unavailable = false,
     this.trailing,
     this.onTap,
@@ -470,6 +565,9 @@ class RaftForwardTargetRow extends StatefulWidget {
   final Widget icon;
   final String label;
   final bool selected, checkbox, unavailable;
+
+  /// Web `<Checkbox disabled>`: an unchecked row once ten are chosen.
+  final bool checkboxDisabled;
   final Widget? trailing;
   final VoidCallback? onTap;
   @override
@@ -486,21 +584,17 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
             alpha: t.colors['fill-muted']!.a * .4,
           )
         : widget.selected
-        ? (t.brutal
-              ? t.colors['color-soft-signal']!
-              : t.colors['primary-soft']!)
+        ? (t.colors['primary-soft']!)
         : hovered
-        ? (t.brutal
-              ? t.colors['color-brutal-cyan']!.withValues(alpha: .15)
-              : t.colors['fill-muted']!)
-        : (t.brutal ? Colors.white : t.colors['layer-panel']!);
+        ? (t.colors['fill-muted']!)
+        : (t.colors['layer-panel']!);
     return Semantics(
       button: !widget.checkbox,
       checked: widget.checkbox ? widget.selected : null,
       enabled: widget.onTap != null,
       label: widget.label,
       excludeSemantics: true,
-      child: MouseRegion(
+      child: RaftHoverRegion(
         cursor: widget.onTap == null
             ? SystemMouseCursors.forbidden
             : SystemMouseCursors.click,
@@ -516,21 +610,21 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: fill,
-                border: t.brutal
-                    ? Border.all(color: Colors.black, width: 2)
-                    : Border.all(color: t.colors['line-muted']!),
-                borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+                border: Border.all(color: t.colors['line-muted']!),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Row(
                 children: [
                   if (widget.checkbox) ...[
-                    SizedBox.square(
-                      dimension: 16,
-                      child: Checkbox(
-                        value: widget.selected,
-                        onChanged: null,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
+                    // raft-ui `Checkbox` (14px), pointer-events-none in the row.
+                    ExcludeSemantics(
+                      child: IgnorePointer(
+                        // Never `disabled` unless the limit is reached: the
+                        // row owns the tap (`pointer-events-none`).
+                        child: RaftCheckbox(
+                          value: widget.selected,
+                          onChanged: widget.checkboxDisabled ? null : (_) {},
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -568,7 +662,7 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
 
 /// raft-ui `Input` with `pl-9 placeholder:text-foreground-placeholder` and the
 /// absolutely positioned 14px Search icon at `left-3`.
-class RaftForwardSearchInput extends StatefulWidget {
+class RaftForwardSearchInput extends StatelessWidget {
   const RaftForwardSearchInput({
     super.key,
     required this.controller,
@@ -581,90 +675,448 @@ class RaftForwardSearchInput extends StatefulWidget {
   final String placeholder;
   final ValueChanged<String> onChanged;
   @override
-  State<RaftForwardSearchInput> createState() => _RaftForwardSearchInputState();
+  Widget build(BuildContext context) => RaftTextInput(
+    controller: controller,
+    focusNode: focusNode,
+    hintText: placeholder,
+    onChanged: onChanged,
+    // `autoFocus`.
+    autofocus: true,
+    leadingGlyph: RaftGlyph.search,
+    legacy: RaftLegacyInput.recipe,
+  );
 }
 
-class _RaftForwardSearchInputState extends State<RaftForwardSearchInput> {
+/// Share mode: the server switch. Web's forward page has no server picker (the
+/// destination list is the current server's), so the chips reuse its own
+/// `Button size="sm"` (`h-7 px-2.5`): outline, `accent` for the chosen server,
+/// in a horizontally scrolling `gap-1.5` row.
+class RaftForwardServerChips extends StatelessWidget {
+  const RaftForwardServerChips({
+    super.key,
+    required this.semanticLabel,
+    required this.names,
+    required this.selected,
+    required this.onSelected,
+  });
+  final String semanticLabel;
+
+  /// Chip label by server id, in display order.
+  final Map<String, String> names;
+  final String selected;
+
+  /// Null while a hand-off is running: the chips stay but are inert.
+  final ValueChanged<String>? onSelected;
   @override
-  void initState() {
-    super.initState();
-    widget.focusNode.addListener(changed);
-    // `autoFocus`.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) widget.focusNode.requestFocus();
-    });
-  }
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    label: semanticLabel,
+    child: SizedBox(
+      height: 28,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: names.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 6),
+        itemBuilder: (_, index) {
+          final id = names.keys.elementAt(index);
+          return RaftForwardTextAction(
+            key: ValueKey('forward-server-$id'),
+            // ignore: raft_lints/avoid_render_index_assertion -- `id` is taken from names.keys in the same builder.
+            label: names[id]!,
+            selected: id == selected,
+            onPressed: onSelected == null ? null : () => onSelected!(id),
+          );
+        },
+      ),
+    ),
+  );
+}
 
-  void changed() => setState(() {});
+/// Where one shared file is in the copy into the app's private inbox.
+enum RaftForwardShareFileState {
+  /// Copied (or nothing to wait for): the plain chip.
+  ready,
 
-  @override
-  void dispose() {
-    widget.focusNode.removeListener(changed);
-    super.dispose();
-  }
+  /// Queued behind an earlier file.
+  waiting,
 
+  /// Bytes are being copied; [RaftForwardShareFile.transfer] carries them.
+  copying,
+
+  /// The file cannot be added; [RaftForwardShareFile.error] says why.
+  failed,
+}
+
+/// One shared file in [RaftForwardSharePreview].
+class RaftForwardShareFile {
+  const RaftForwardShareFile({
+    required this.filename,
+    required this.mimeType,
+    this.sizeBytes,
+    this.state = RaftForwardShareFileState.ready,
+    this.transfer,
+    this.error,
+  });
+  final String filename, mimeType;
+  final int? sizeBytes;
+  final RaftForwardShareFileState state;
+
+  /// Copied bytes of this file. The status line listens to it itself, so the
+  /// card is not rebuilt per update.
+  final ValueListenable<RaftTransferProgress?>? transfer;
+
+  /// Reason shown under a [RaftForwardShareFileState.failed] chip.
+  final String? error;
+}
+
+/// Status under one shared file's chip while it is copied: the inline transfer
+/// bar of the attachment download design (Option A) with `1.2 / 3.4 MB · 36%`,
+/// a quiet "Waiting" line for a queued file, or the red bar and the reason.
+class RaftForwardShareFileStatus extends StatelessWidget {
+  const RaftForwardShareFileStatus({super.key, required this.file});
+  final RaftForwardShareFile file;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final resolver = RaftRecipeTokens(t);
-    final focused = widget.focusNode.hasFocus;
-    final s = RaftInputRecipe.resolve(
-      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
-      states: RaftRecipeStates({
-        if (focused) RaftRecipeStates.focus,
-        if (focused) RaftRecipeStates.focusVisible,
-      }),
-      tokens: resolver,
-    ).root;
-    final text = s
-        .textStyle(resolver)
-        .copyWith(
-          color: t.colors['foreground'],
-          leadingDistribution: TextLeadingDistribution.even,
+    final recipe = RaftTransferRecipe(t);
+    final mono = RaftTypography.mono(t, size: 11, line: 14, color: t.muted);
+    Widget line(String text, {Color? color}) => Text(
+      text,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: color == null ? mono : mono.copyWith(color: color),
+    );
+    switch (file.state) {
+      case RaftForwardShareFileState.ready:
+        return const SizedBox.shrink();
+      case RaftForwardShareFileState.waiting:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const RaftTransferBar(value: 0, style: RaftTransferBarStyle.inline),
+            const SizedBox(height: 4),
+            line(raftText(context, 'Waiting')),
+          ],
         );
-    final border = s.borderWidth;
-    return Container(
-      decoration: s.decoration(resolver),
-      child: Stack(
-        alignment: Alignment.centerLeft,
-        children: [
-          TextField(
-            autofillHints: null,
-            controller: widget.controller,
-            focusNode: widget.focusNode,
-            onChanged: widget.onChanged,
-            style: text,
-            cursorColor: t.strong,
-            decoration: InputDecoration(
-              isCollapsed: true,
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              hintText: widget.placeholder,
-              hintStyle: text.copyWith(
-                color: t.colors['foreground-placeholder'],
-              ),
-              contentPadding: EdgeInsets.fromLTRB(
-                36,
-                s.padding.top,
-                s.padding.right,
-                s.padding.bottom,
-              ),
-            ),
+      case RaftForwardShareFileState.copying:
+        final transfer = file.transfer;
+        Widget bar(RaftTransferProgress? value) => RaftTransferBar(
+          value: (value ?? RaftTransferProgress.connecting)
+              .withFallbackTotal(file.sizeBytes)
+              .fraction,
+          style: RaftTransferBarStyle.inline,
+        );
+        String label(RaftTransferProgress? value) {
+          final resolved = (value ?? RaftTransferProgress.connecting)
+              .withFallbackTotal(file.sizeBytes);
+          final fraction = resolved.fraction;
+          return resolved.waiting
+              ? raftText(context, 'Preparing…')
+              : fraction == null
+              ? resolved.sizeLabel
+              : '${resolved.sizeLabel} · ${(fraction * 100).floor()}%';
+        }
+
+        if (transfer == null) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [bar(null), const SizedBox(height: 4), line(label(null))],
+          );
+        }
+        return ValueListenableBuilder<RaftTransferProgress?>(
+          valueListenable: transfer,
+          builder: (context, value, _) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              bar(value),
+              const SizedBox(height: 4),
+              line(label(value)),
+            ],
           ),
-          Positioned(
-            left: 12 - border.left,
-            child: IgnorePointer(
-              child: RaftIcon(
-                RaftGlyph.search,
-                size: 14,
-                color: t.colors['foreground-muted'],
+        );
+      case RaftForwardShareFileState.failed:
+        return Semantics(
+          liveRegion: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const RaftTransferBar(
+                failed: true,
+                style: RaftTransferBarStyle.inline,
               ),
-            ),
+              const SizedBox(height: 4),
+              line(file.error ?? '', color: recipe.dangerText),
+            ],
           ),
-        ],
+        );
+    }
+  }
+}
+
+/// Share mode: what is being added, in the frame of Web's `ForwardedBundleCard`
+/// (the "Message preview" element of the note page): the same bordered card,
+/// header strip (glyph, label, count), text body and attachment chips. The
+/// card shows no author or timestamp row because the content is not a message.
+class RaftForwardSharePreview extends StatelessWidget {
+  const RaftForwardSharePreview({
+    super.key,
+    required this.header,
+    this.count,
+    this.text,
+    this.files = const [],
+  });
+  final String header;
+  final String? count, text;
+  final List<RaftForwardShareFile> files;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final recipe = ForwardedSnapshotRecipe(
+      t,
+      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+    );
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: recipe.maxWidth),
+        child: Container(
+          decoration: recipe.decoration,
+          padding: recipe.inset,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                decoration: recipe.headerDecoration,
+                padding: recipe.headerInset(viewportWidth),
+                child: Row(
+                  children: [
+                    RaftIcon(
+                      RaftGlyph.share2,
+                      size: 12,
+                      color: recipe.header.color,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(header, style: recipe.header),
+                    if (count != null) ...[
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          count!,
+                          // Same 16.5px header line as the note page's bundle.
+                          style: recipe.count.copyWith(height: 16.5 / 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              DecoratedBox(
+                decoration: recipe.contentDecoration,
+                child: Padding(
+                  padding: recipe.itemInset,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (text != null && text!.isNotEmpty)
+                        // Long text is cut like the bundle's collapsed body.
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: recipe.collapsedHeight,
+                          ),
+                          child: SingleChildScrollView(
+                            primary: false,
+                            physics: const NeverScrollableScrollPhysics(),
+                            child: RaftMessageBody(
+                              content: text!,
+                              foregroundColor: recipe.semantic.prose,
+                              exportMode: true,
+                            ),
+                          ),
+                        ),
+                      if (files.isNotEmpty)
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: text != null && text!.isNotEmpty ? 6 : 0,
+                          ),
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final file in files)
+                                SizedBox(
+                                  width: RaftAttachmentRecipe(t).size.width,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      RaftAttachmentCard(
+                                        onOpen: null,
+                                        filename: file.filename,
+                                        // A shared image is not readable here
+                                        // until it is staged, so it is listed
+                                        // as a file chip rather than as an
+                                        // empty image box.
+                                        mimeType:
+                                            file.mimeType.startsWith('image/')
+                                            ? 'application/octet-stream'
+                                            : file.mimeType,
+                                        sizeBytes: file.sizeBytes,
+                                        exportMode: true,
+                                      ),
+                                      if (file.state !=
+                                          RaftForwardShareFileState.ready) ...[
+                                        const SizedBox(height: 4),
+                                        RaftForwardShareFileStatus(file: file),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+}
+
+/// What Continue is waiting for, shown above the button (Option A): the inline
+/// transfer bar, a `Preparing 2 of 3 files · 12.3 / 30.1 MB` line and Cancel,
+/// the same bar / size line / Cancel arrangement as the file download panel.
+class RaftForwardWait {
+  const RaftForwardWait({
+    required this.label,
+    this.progress,
+    this.onCancel,
+    this.failed = false,
+  });
+
+  /// Localized status line, e.g. "Preparing 2 of 3 files".
+  final String label;
+
+  /// Bytes copied so far; null draws the indeterminate sweep (a check or the
+  /// hand-off itself is the wait, not a copy).
+  final ValueListenable<RaftTransferProgress?>? progress;
+  final VoidCallback? onCancel;
+  final bool failed;
+}
+
+/// Share mode: the note page's send action as one full-width accent button
+/// (Web's send is the accent `Button`; its label here is "Continue").
+///
+/// While [busy] the button keeps its size and shows a spinner with
+/// [busyLabel] instead of looking untouched; [wait] adds the progress block
+/// above it.
+class RaftForwardContinueAction extends StatelessWidget {
+  const RaftForwardContinueAction({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.busy = false,
+    this.busyLabel,
+    this.wait,
+  });
+  final String label;
+  final VoidCallback? onPressed;
+  final bool busy;
+  final String? busyLabel;
+  final RaftForwardWait? wait;
+  @override
+  Widget build(BuildContext context) {
+    final control = LayoutBuilder(
+      builder: (context, box) => RaftControl(
+        variant: RaftControlVariant.accent,
+        visualWidth: box.maxWidth,
+        busy: busy,
+        onPressed: onPressed,
+        semanticLabel: busy ? busyLabel ?? label : null,
+        child: busy
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const RaftSpinner(),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      busyLabel ?? label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              )
+            : Text(label),
+      ),
+    );
+    final wait = this.wait;
+    if (wait == null) return control;
+    final t = RaftTokens.of(context);
+    final recipe = RaftTransferRecipe(t);
+    final mono = RaftTypography.mono(
+      t,
+      size: 12,
+      line: 16,
+      color: wait.failed ? recipe.dangerText : t.muted,
+    );
+    Widget bar(RaftTransferProgress? value) => RaftTransferBar(
+      failed: wait.failed,
+      value: value?.fraction,
+      style: RaftTransferBarStyle.inline,
+    );
+    Widget text(RaftTransferProgress? value) => Text(
+      value == null || value.waiting
+          ? wait.label
+          : '${wait.label} · ${value.sizeLabel}',
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: mono,
+    );
+    final progress = wait.progress;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          liveRegion: true,
+          child: progress == null
+              ? bar(null)
+              : ValueListenableBuilder<RaftTransferProgress?>(
+                  valueListenable: progress,
+                  builder: (context, value, _) => bar(value),
+                ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: progress == null
+                  ? text(null)
+                  : ValueListenableBuilder<RaftTransferProgress?>(
+                      valueListenable: progress,
+                      builder: (context, value, _) => text(value),
+                    ),
+            ),
+            if (wait.onCancel != null)
+              RaftTextButton(
+                label: raftText(context, 'Cancel'),
+                glyph: RaftGlyph.x,
+                onPressed: wait.onCancel,
+                visualHeight: 32,
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        control,
+      ],
     );
   }
 }

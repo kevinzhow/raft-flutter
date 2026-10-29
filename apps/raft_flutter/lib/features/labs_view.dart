@@ -24,6 +24,7 @@ class _LabsViewState extends ManagementState<LabsView> {
   WorkspaceController get w => widget.controller;
   Map<String, dynamic> readback = {};
   bool unavailable = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the next toggle starts and on account/server change (clearData); the page is remounted on server change.
   String? mutationError;
   String get base => '/servers/${w.server!.id}';
 
@@ -149,7 +150,7 @@ class _LabsViewState extends ManagementState<LabsView> {
         : readback.isEmpty
         ? RaftServerLabsStatus.failed
         : RaftServerLabsStatus.ready;
-    return RaftServerLabsSection(
+    final section = RaftServerLabsSection(
       status: status,
       busy: busy,
       masterEnabled: master,
@@ -191,5 +192,6 @@ class _LabsViewState extends ManagementState<LabsView> {
           }(),
       ],
     );
+    return section;
   }
 }

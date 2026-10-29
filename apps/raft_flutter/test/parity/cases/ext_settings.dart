@@ -14,14 +14,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
-import 'package:raft_flutter/features/workspace_mode_settings_card.dart';
 import 'package:raft_flutter/features/workspace_settings.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
+import 'package:raft_flutter/platform/app_update.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../parity_harness.dart';
 import 'members_settings/fixture_client.dart';
+import 'release_notes_source.dart';
 
 Map<String, dynamic> _fx(ParityContext ctx) =>
     ctx.fixtures['ext:settings'] as Map<String, dynamic>;
@@ -45,6 +46,13 @@ MsRoutes _routes(ParityContext ctx) {
     // WP6 route sets (fixtures/wp6.json) apply to the same cases by name.
     ...Map<String, dynamic>.from(
       ((((ctx.fixtures['ext:wp6'] as Map?)?['routeSets'])
+                  as Map?)?[ctx.props['routeSet']]
+              as Map?) ??
+          const {},
+    ),
+    // RaftBench route sets (fixtures/raftbench.json).
+    ...Map<String, dynamic>.from(
+      ((((ctx.fixtures['ext:raftbench'] as Map?)?['routeSets'])
                   as Map?)?[ctx.props['routeSet']]
               as Map?) ??
           const {},
@@ -78,6 +86,7 @@ Widget _page(ParityContext ctx) {
     'providers': 'provider_connections_v0',
     'bridge': 'slack_bridge_v0',
     'analytics': 'product_analytics_settings_v0',
+    'raftbench': 'raftbench_overview_v0',
   };
   final enabled = {
     for (final MapEntry(:key, :value) in flagKeys.entries)
@@ -98,18 +107,24 @@ Widget _page(ParityContext ctx) {
           const {},
     ),
   };
-  final (w, fixtureClient) = fixture.workspace({
-    'GET /servers/visual-server': (_) => serverJson,
-    // The official spec's /api/agents rows (fxAgentDetailAgents).
-    'GET /agents': (_) => fixture.agents,
-    'POST /feature-flags/evaluate': (data) => {
-      'evaluations': [
-        for (final key in (data is Map ? data['keys'] as List? : null) ?? [])
-          {'key': key, 'enabled': enabled.contains(key)},
-      ],
+  final (w, fixtureClient) = fixture.workspace(
+    channels: ctx.props['tab'] == 'raftbench'
+        ? const ['design', 'androidArtifacts']
+        : const ['design'],
+    {
+      'GET /servers/visual-server': (_) => serverJson,
+      // The official spec's /api/agents rows (fxAgentDetailAgents).
+      'GET /agents': (_) => fixture.agents,
+      'POST /feature-flags/evaluate': (data) => {
+        'evaluations': [
+          for (final key in (data is Map ? data['keys'] as List? : null) ?? [])
+            {'key': key, 'enabled': enabled.contains(key)},
+        ],
+      },
+      ..._routes(ctx),
     },
-    ..._routes(ctx),
-  }, fallback: (method, path, data) => _fx(ctx)['fallback']);
+    fallback: (method, path, data) => _fx(ctx)['fallback'],
+  );
   // WP6 per-case signed-in user preferences (host/Wp6Cases.tsx
   // PARITY_EXT_WP6_USER_PREFS).
   // The official visual user (VisualTestingCases.tsx) translates manually.
@@ -140,6 +155,22 @@ Widget _page(ParityContext ctx) {
       ...w.channels,
     ];
   }
+  // Missing-page case 'archived': archived channels join the channel list (the React host
+  // patches the channel store with fixtures/auth-pages.json `archivedChannels`).
+  if (ctx.props['patch'] == 'archived') {
+    final base = w.channels.first.json;
+    w.channels = [
+      ...w.channels,
+      for (final c
+          in (ctx.fixtures['ext:auth-pages'] as Map)['archivedChannels']
+              as List)
+        RaftChannel({
+          ...base,
+          ...Map<String, dynamic>.from(c as Map),
+          'joined': true,
+        }),
+    ];
+  }
   final server = RaftRecord(serverJson);
   w
     ..server = server
@@ -152,35 +183,46 @@ Widget _page(ParityContext ctx) {
   final now = DateTime.fromMillisecondsSinceEpoch(
     (ctx.fixtureData['locale']['nowEpochMillis'] as num).toInt(),
   );
+  Widget page(AppUpdateService? updates) => Material(
+    type: MaterialType.transparency,
+    child: WorkspaceSettings(
+      controller: w,
+      appUpdate: updates,
+      appearance: const RaftAppearance(mode: ThemeMode.light),
+      onAppearance: (_) {},
+      presentation: PersonalPresentationStore(),
+      notifications: NativeNotificationService(platform: TargetPlatform.linux),
+      onLogout: () async {},
+      initialTab: ctx.props['tab'] as String,
+      mobileRoot: false,
+      providerEnabled: flags.contains('providers'),
+      bridgeEnabled: flags.contains('bridge'),
+      labsEnabled: flags.contains('labs'),
+      now: () => now,
+      appVersion:
+          _fx(ctx)[ctx.againstWeb && ctx.props['tab'] == 'about'
+                  ? 'webAppVersion'
+                  : 'appVersion']
+              as String,
+      // The React render host's origin (the QR encodes `<origin>/download`).
+      frontendOrigin: Uri.parse(
+        'http://127.0.0.1:${Platform.environment['PARITY_EXT_WEB_PORT'] ?? '4396'}',
+      ),
+    ),
+  );
   return ctx.frame(
     width: mobile ? ctx.width : 1216,
     height: ctx.height,
     padding: EdgeInsets.zero,
-    child: Material(
-      type: MaterialType.transparency,
-      child: WorkspaceSettings(
-        controller: w,
-        appearance: const RaftAppearance(mode: ThemeMode.light),
-        onAppearance: (_) {},
-        presentation: PersonalPresentationStore(),
-        notifications: NativeNotificationService(
-          platform: TargetPlatform.linux,
-        ),
-        onLogout: () async {},
-        initialTab: ctx.props['tab'] as String,
-        mobileRoot: false,
-        workspaceModeCard: WorkspaceModeSettingsCard(controller: w),
-        providerEnabled: flags.contains('providers'),
-        bridgeEnabled: flags.contains('bridge'),
-        labsEnabled: flags.contains('labs'),
-        now: () => now,
-        appVersion: _fx(ctx)['appVersion'] as String,
-        // The React render host's origin (the QR encodes `<origin>/download`).
-        frontendOrigin: Uri.parse(
-          'http://127.0.0.1:${Platform.environment['PARITY_EXT_WEB_PORT'] ?? '4396'}',
-        ),
-      ),
-    ),
+    child: ctx.props['tab'] == 'release-notes'
+        ? ParityReleaseNotesSource(
+            load: () => fixtureClient.request('GET', '/release-notes'),
+            version: _fx(ctx)['appVersion'] as String,
+            now: now,
+            platform: mobile ? TargetPlatform.android : TargetPlatform.linux,
+            builder: page,
+          )
+        : page(null),
   );
 }
 

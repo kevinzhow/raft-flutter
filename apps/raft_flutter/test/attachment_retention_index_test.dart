@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/attachment_image_repository.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_sync/raft_sync.dart';
 
 const _metadata = {
   'id': 'image',
@@ -40,7 +41,7 @@ class _Fixture {
       ..server = RaftRecord({'id': 'server', 'role': 'owner'})
       ..channel = RaftChannel({'id': 'channel', 'joined': true});
     w.channels = [w.channel!];
-    w.ledger.switchServer('server');
+    w.messageDomain.ledger.switchServer('server');
     ingest(_metadata, '1');
     imageKey = AttachmentImageKey.fromMetadata(
       scope: w.attachmentImageScope,
@@ -56,18 +57,19 @@ class _Fixture {
   late final WorkspaceController w;
   late final AttachmentImageKey imageKey;
   int loads = 0;
-  void ingest(Map<String, dynamic> metadata, String seq) => w.ledger.ingest([
-    {
-      'id': 'host',
-      'channelId': 'channel',
-      'seq': seq,
-      'content': 'fixture',
-      'attachments': [metadata],
-    },
-  ], expectedGeneration: w.ledger.generation);
+  void ingest(Map<String, dynamic> metadata, String seq) =>
+      w.messageDomain.ledger.ingest([
+        {
+          'id': 'host',
+          'channelId': 'channel',
+          'seq': seq,
+          'content': 'fixture',
+          'attachments': [metadata],
+        },
+      ], expectedGeneration: w.messageDomain.ledger.generation);
 
   Future<Object> retain() async {
-    final lease = w.acquireAttachmentImage(
+    final lease = w.attachmentMedia.acquireImage(
       imageKey,
       authorized: () => true,
       load: (_) async {
@@ -79,7 +81,7 @@ class _Fixture {
     );
     final provider = await lease.lease.ready;
     lease.release();
-    expect(w.retainedImageCount, 1);
+    expect(w.attachmentMedia.retainedImageCount, 1);
     return provider;
   }
 }
@@ -92,11 +94,11 @@ void main() {
     () async {
       final f = _Fixture();
       final image = await f.retain();
-      final firstBuilds = f.w.debugRetainedAttachmentIndexBuilds;
+      final firstBuilds = f.w.attachmentRetentionIndex.debugBuilds;
       for (var i = 0; i < 20; i++) {
         f.w.section = i.isEven ? 'settings' : 'chat';
         f.w.notifyListeners();
-        final ready = f.w.peekAttachmentImage(
+        final ready = f.w.attachmentMedia.peekImage(
           f.imageKey,
           authorized: () => true,
         );
@@ -105,7 +107,7 @@ void main() {
         ready.release();
       }
       expect(f.loads, 1);
-      expect(f.w.debugRetainedAttachmentIndexBuilds, firstBuilds);
+      expect(f.w.attachmentRetentionIndex.debugBuilds, firstBuilds);
     },
   );
 
@@ -114,13 +116,13 @@ void main() {
     () async {
       final f = _Fixture();
       await f.retain();
-      final firstBuilds = f.w.debugRetainedAttachmentIndexBuilds;
+      final firstBuilds = f.w.attachmentRetentionIndex.debugBuilds;
       f.w.channels = [
         RaftChannel({'id': 'channel', 'name': 'renamed', 'joined': true}),
       ];
       f.w.notifyListeners();
-      expect(f.w.retainedImageCount, 1);
-      expect(f.w.debugRetainedAttachmentIndexBuilds, firstBuilds);
+      expect(f.w.attachmentMedia.retainedImageCount, 1);
+      expect(f.w.attachmentRetentionIndex.debugBuilds, firstBuilds);
     },
   );
 
@@ -131,9 +133,9 @@ void main() {
       await f.retain();
       f.w.channels[0] = RaftChannel({'id': 'other', 'joined': true});
       f.w.notifyListeners();
-      expect(f.w.retainedImageCount, 0);
+      expect(f.w.attachmentMedia.retainedImageCount, 0);
       expect(
-        f.w.peekAttachmentImage(f.imageKey, authorized: () => true),
+        f.w.attachmentMedia.peekImage(f.imageKey, authorized: () => true),
         isNull,
       );
     },
@@ -144,11 +146,13 @@ void main() {
     () async {
       final f = _Fixture();
       await f.retain();
+      final builds = f.w.attachmentRetentionIndex.debugBuilds;
       f.ingest({..._metadata, 'contentVersion': 'next'}, '2');
       f.w.notifyListeners();
-      expect(f.w.retainedImageCount, 0);
+      expect(f.w.attachmentRetentionIndex.debugBuilds, builds);
+      expect(f.w.attachmentMedia.retainedImageCount, 0);
       expect(
-        f.w.peekAttachmentImage(f.imageKey, authorized: () => true),
+        f.w.attachmentMedia.peekImage(f.imageKey, authorized: () => true),
         isNull,
       );
     },
@@ -164,10 +168,10 @@ void main() {
       // A ledger read can precede its owner's next notification. Its revision
       // must refresh admission as well as the cached attachment metadata.
       expect(
-        f.w.peekAttachmentImage(f.imageKey, authorized: () => true),
+        f.w.attachmentMedia.peekImage(f.imageKey, authorized: () => true),
         isNull,
       );
-      expect(f.w.retainedImageCount, 0);
+      expect(f.w.attachmentMedia.retainedImageCount, 0);
     },
   );
 
@@ -179,9 +183,9 @@ void main() {
       f.client.bus.add(
         const RaftEvent('channel:removed', {'channelId': 'channel'}),
       );
-      expect(f.w.retainedImageCount, 0);
+      expect(f.w.attachmentMedia.retainedImageCount, 0);
       expect(
-        f.w.peekAttachmentImage(f.imageKey, authorized: () => true),
+        f.w.attachmentMedia.peekImage(f.imageKey, authorized: () => true),
         isNull,
       );
     },
@@ -199,12 +203,234 @@ void main() {
           f.client.user = RaftRecord({'id': 'bob'});
         }
         f.w.notifyListeners();
-        expect(f.w.retainedImageCount, 0);
+        expect(f.w.attachmentMedia.retainedImageCount, 0);
         expect(
-          f.w.peekAttachmentImage(f.imageKey, authorized: () => true),
+          f.w.attachmentMedia.peekImage(f.imageKey, authorized: () => true),
           isNull,
         );
       }
+    },
+  );
+
+  test(
+    'plain arrivals keep the retained image without a complete history scan',
+    () async {
+      final f = _Fixture();
+      final image = await f.retain();
+      final builds = f.w.attachmentRetentionIndex.debugBuilds;
+      for (var i = 0; i < 20; i++) {
+        f.w.messageDomain.ledger.ingest([
+          {
+            'id': 'plain-$i',
+            'channelId': 'channel',
+            'seq': '${i + 2}',
+            'content': 'An ordinary message without attachments.',
+          },
+        ], expectedGeneration: f.w.messageDomain.ledger.generation);
+        f.w.notifyListeners();
+        final lease = f.w.attachmentMedia.peekImage(
+          f.imageKey,
+          authorized: () => true,
+        );
+        expect(lease, isNotNull);
+        expect(lease!.lease.value, same(image));
+        lease.release();
+      }
+      expect(f.loads, 1);
+      expect(
+        f.w.attachmentRetentionIndex.debugBuilds,
+        builds,
+        reason: 'no attachment or admission changed in these arrivals',
+      );
+    },
+  );
+
+  test(
+    'a new message retains its own attachment without a history scan',
+    () async {
+      final f = _Fixture();
+      await f.retain();
+      final builds = f.w.attachmentRetentionIndex.debugBuilds;
+      final extra = {..._metadata, 'id': 'extra'};
+      f.w.messageDomain.ledger.ingest([
+        {
+          'id': 'other',
+          'channelId': 'channel',
+          'seq': '2',
+          'attachments': [extra],
+        },
+      ], expectedGeneration: f.w.messageDomain.ledger.generation);
+      final key = AttachmentImageKey.fromMetadata(
+        scope: f.w.attachmentImageScope,
+        channelId: 'channel',
+        metadata: extra,
+      );
+      final lease = f.w.attachmentMedia.acquireImage(
+        key,
+        authorized: () => true,
+        load: (_) async {
+          ++f.loads;
+          return base64Decode(
+            'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
+          );
+        },
+      );
+      await lease.lease.ready;
+      lease.release();
+      final ready = f.w.attachmentMedia.peekImage(key, authorized: () => true);
+      expect(ready, isNotNull);
+      ready!.release();
+      expect(f.loads, 2);
+      expect(f.w.attachmentRetentionIndex.debugBuilds, builds);
+      final kept = f.w.attachmentMedia.peekImage(
+        f.imageKey,
+        authorized: () => true,
+      );
+      expect(kept, isNotNull);
+      kept!.release();
+    },
+  );
+
+  test(
+    'one plain message stays within a millisecond after long history',
+    () async {
+      for (final history in [100, 2000]) {
+        final f = _Fixture();
+        final image = await f.retain();
+        final builds = f.w.attachmentRetentionIndex.debugBuilds;
+        for (var i = 0; i < history; i++) {
+          f.w.messageDomain.ledger.ingest([
+            {
+              'id': 'bulk-$i',
+              'channelId': 'channel',
+              'seq': '${i + 2}',
+              'content': 'bulk',
+            },
+          ], expectedGeneration: f.w.messageDomain.ledger.generation);
+          if ((i + 1) % MessageLedger.incrementalChangeLimit == 0) {
+            final drained = f.w.attachmentMedia.peekImage(
+              f.imageKey,
+              authorized: () => true,
+            );
+            expect(drained, isNotNull);
+            drained!.release();
+          }
+        }
+        final caughtUp = f.w.attachmentMedia.peekImage(
+          f.imageKey,
+          authorized: () => true,
+        );
+        expect(caughtUp, isNotNull);
+        expect(caughtUp!.lease.value, same(image));
+        caughtUp.release();
+        expect(f.w.attachmentRetentionIndex.debugBuilds, builds);
+        final micros = <int>[];
+        for (var i = 0; i < 21; i++) {
+          final watch = Stopwatch()..start();
+          f.w.messageDomain.ledger.ingest([
+            {
+              'id': 'timed-$history-$i',
+              'channelId': 'channel',
+              'seq': '${history + i + 3}',
+              'content': 'timed',
+            },
+          ], expectedGeneration: f.w.messageDomain.ledger.generation);
+          final lease = f.w.attachmentMedia.peekImage(
+            f.imageKey,
+            authorized: () => true,
+          );
+          watch.stop();
+          expect(lease, isNotNull);
+          expect(lease!.lease.value, same(image));
+          lease.release();
+          micros.add(watch.elapsedMicroseconds);
+        }
+        micros.sort();
+        final median = micros[micros.length ~/ 2];
+        expect(f.loads, 1);
+        expect(f.w.attachmentRetentionIndex.debugBuilds, builds);
+        expect(
+          median,
+          lessThan(1000),
+          reason:
+              'plain message after $history took ${median}us '
+              '(min ${micros.first}us, max ${micros.last}us)',
+        );
+      }
+    },
+  );
+
+  test('an unread change window still retains images by rebuilding', () async {
+    final f = _Fixture();
+    final image = await f.retain();
+    final builds = f.w.attachmentRetentionIndex.debugBuilds;
+    final limit = MessageLedger.incrementalChangeLimit;
+    for (var i = 0; i < limit; i++) {
+      f.w.messageDomain.ledger.ingest([
+        {
+          'id': 'unread-$i',
+          'channelId': 'channel',
+          'seq': '${i + 2}',
+          'content': 'unread',
+        },
+      ], expectedGeneration: f.w.messageDomain.ledger.generation);
+    }
+    final extra = {..._metadata, 'id': 'extra'};
+    f.w.messageDomain.ledger.ingest([
+      {
+        'id': 'extra-host',
+        'channelId': 'channel',
+        'seq': '${limit + 2}',
+        'attachments': [extra],
+      },
+    ], expectedGeneration: f.w.messageDomain.ledger.generation);
+    expect(f.w.messageDomain.ledger.debugChangeCount, lessThanOrEqualTo(limit));
+    final kept = f.w.attachmentMedia.peekImage(
+      f.imageKey,
+      authorized: () => true,
+    );
+    expect(kept, isNotNull);
+    expect(kept!.lease.value, same(image));
+    kept.release();
+    expect(f.w.attachmentRetentionIndex.debugBuilds, builds + 1);
+    final key = AttachmentImageKey.fromMetadata(
+      scope: f.w.attachmentImageScope,
+      channelId: 'channel',
+      metadata: extra,
+    );
+    final lease = f.w.attachmentMedia.acquireImage(
+      key,
+      authorized: () => true,
+      load: (_) async {
+        ++f.loads;
+        return base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
+        );
+      },
+    );
+    await lease.lease.ready;
+    lease.release();
+    final ready = f.w.attachmentMedia.peekImage(key, authorized: () => true);
+    expect(ready, isNotNull);
+    ready!.release();
+    expect(f.loads, 2);
+    expect(f.w.attachmentRetentionIndex.debugBuilds, builds + 1);
+  });
+
+  test(
+    'removing the host message drops its image without a history scan',
+    () async {
+      final f = _Fixture();
+      await f.retain();
+      final builds = f.w.attachmentRetentionIndex.debugBuilds;
+      f.w.messageDomain.ledger.remove('channel', 'host');
+      f.w.notifyListeners();
+      expect(
+        f.w.attachmentMedia.peekImage(f.imageKey, authorized: () => true),
+        isNull,
+      );
+      expect(f.w.attachmentMedia.retainedImageCount, 0);
+      expect(f.w.attachmentRetentionIndex.debugBuilds, builds);
     },
   );
 }

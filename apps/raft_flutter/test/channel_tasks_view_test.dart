@@ -23,7 +23,7 @@ void main() {
       transport.routes['GET /tasks/channel/c1'] = (_) => page.future;
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: ResourceView(
               controller: w,

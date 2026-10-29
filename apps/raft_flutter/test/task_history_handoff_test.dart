@@ -4,20 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_context_transition_test.dart' show row;
 import 'message_presentation_test.dart' show fixture;
 import 'task_surface_test.dart' show taskRoutes, modernTask, taskHost, flush;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [390.0, 1280.0]) {
       testWidgets(
-        '[K10d] $family/$dark/$width displayed History accepts pointer during reply handoff',
+        '[K10d] ${dark ? 'dark' : 'light'}/$width displayed History accepts pointer during reply handoff',
         (t) async {
           t.view.physicalSize = Size(width, 844);
           t.view.devicePixelRatio = 1;
@@ -37,7 +34,7 @@ void main() {
               },
             ],
           };
-          await t.pumpWidget(taskHost(w, family, dark));
+          await t.pumpWidget(taskHost(w, dark));
           await flush(t);
           await t.tap(find.text('Scoped actual task'));
           await flush(t);
@@ -75,6 +72,16 @@ void main() {
           expect(owner.discussion!.replies.single.id, 'first-reply');
           expect(w.client.user!.id, 'alice');
           expect(t.takeException(), isNull);
+          // Unmounting the page closes the task dialog, which releases the
+          // task surface and its discussion controller.
+          await t.pumpWidget(
+            MaterialApp(
+              theme: raftTheme(dark: dark),
+              home: const Scaffold(body: SizedBox()),
+            ),
+          );
+          await flush(t);
+          expect(owner.closed, isTrue, reason: 'the task surface was released');
         },
       );
     }

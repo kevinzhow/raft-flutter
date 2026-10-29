@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'workspace_host_scope.dart';
+
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -9,9 +12,11 @@ import '../data/recent_conversations.dart';
 import '../data/search_memory.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import 'conversation_finder_model.dart';
 import 'private_route_guard.dart';
 import 'quick_switcher.dart';
 import 'quick_switcher_model.dart';
+import 'rail_location_memory.dart';
 import 'resource_search.dart';
 import 'search_home.dart';
 
@@ -72,6 +77,7 @@ class QuickSwitcherHost {
     RecentConversationStore? recents,
     SearchMemoryStore? searchMemory,
     this.clock,
+    this.searchAnchor,
   }) : w = controller,
        recents = recents ?? RecentConversationStore(),
        searchMemory = searchMemory ?? SearchMemoryStore(clock: clock) {
@@ -83,7 +89,27 @@ class QuickSwitcherHost {
   final QuickSwitcherActions actions;
   final RecentConversationStore recents;
   final SearchMemoryStore searchMemory;
+
+  /// Where each rail mode was last left (see [RailLocationMemory]); recorded
+  /// with the visits, from the first frame.
+  final railMemory = RailLocationMemory();
   final DateTime Function()? clock;
+  final Rect? Function()? searchAnchor;
+
+  /// The mounted header registers its search box here. Removing that header
+  /// removes the context, so a later opening falls back to centered placement.
+  final searchKey = GlobalKey();
+  Rect? searchBarRect() {
+    final context = searchKey.currentContext;
+    if (context == null || !WorkspaceHostScope.showsTopBar(context)) {
+      return null;
+    }
+    final box = context.findRenderObject() as RenderBox?;
+    return box == null || !box.hasSize
+        ? null
+        : box.localToGlobal(Offset.zero) & box.size;
+  }
+
   RawDialogRoute<void>? route;
   String? openedAuthority, lastVisit, lastVisitScope;
   bool _disposed = false;
@@ -124,6 +150,7 @@ class QuickSwitcherHost {
     if (_disposed) return;
     if (route != null && openedAuthority != directoryAuthority(w)) close();
     recordVisit();
+    railMemory.record(w);
   }
 
   /// Source useRecordRecentConversation: a conversation counts once it has
@@ -150,7 +177,7 @@ class QuickSwitcherHost {
   List<Map<String, dynamic>> _computers = const [];
 
   QuickSwitcherData data() {
-    final directory = w.entityDirectory;
+    final directory = w.services.entityDirectory;
     final principal = w.client.user?.id;
     final machines = w.can('viewMachines');
     if (machines) directory.ensure(const [WorkspaceEntityKind.computers]);
@@ -240,7 +267,7 @@ class QuickSwitcherHost {
     final seeded = seed(entry, channelId: channelId);
     // Conversations the server-level lists have not delivered yet start now;
     // settled kinds are reused as they are.
-    w.entityDirectory.ensureAuthors();
+    w.services.entityDirectory.ensureAuthors();
     final created = RawDialogRoute<void>(
       barrierDismissible: true,
       barrierColor: RaftQuickSwitcherLayer.barrierColor,
@@ -248,9 +275,14 @@ class QuickSwitcherHost {
       transitionDuration: Duration.zero,
       pageBuilder: (_, _, _) => RaftQuickSwitcherLayer(
         child: QuickSwitcher(
-          listenable: Listenable.merge([w, w.entityDirectory, recents]),
+          listenable: Listenable.merge([
+            w,
+            w.services.entityDirectory,
+            recents,
+          ]),
           data: data,
           clock: clock,
+          searchAnchor: searchAnchor ?? searchBarRect,
           seed: seeded,
           authority: openedAuthority!,
           onStateChanged: saveState,
@@ -359,11 +391,30 @@ class QuickSwitcherHost {
       if (channel != null) await actions.openConversation(channel);
       return;
     }
-    final agent = entity.kind == 'agent';
+    await _openPeer(entity.id, entity.kind == 'agent', authority);
+  }
+
+  /// The sidebar "Find a conversation…" box opened [result]: a channel or DM
+  /// as it is, a person or agent without a DM through a new one. Only a
+  /// search records what was opened for "Frequently used".
+  Future<void> openFinderResult(ConversationMatch result) async {
+    final authority = directoryAuthority(w);
+    if (result.kind == 'channel' || result.kind == 'dm') {
+      final channel = [
+        ...w.channels,
+        ...w.dms,
+      ].where((c) => c.id == result.id).firstOrNull;
+      if (channel != null) await actions.openConversation(channel);
+      return;
+    }
+    await _openPeer(result.id, result.kind == 'agent', authority);
+  }
+
+  Future<void> _openPeer(String id, bool agent, String authority) async {
     final existing = w.dms
         .where(
           (c) =>
-              c.json['peerId'] == entity.id &&
+              c.json['peerId'] == id &&
               c.json['peerType'] == (agent ? 'agent' : 'user'),
         )
         .firstOrNull;
@@ -375,7 +426,7 @@ class QuickSwitcherHost {
       final result = await w.command(
         'POST',
         '/channels/dm',
-        data: {agent ? 'agentId' : 'userId': entity.id},
+        data: {agent ? 'agentId' : 'userId': id},
       );
       if (_disposed || authority != directoryAuthority(w)) return;
       if (result is Map && result['id'] is String) {
@@ -390,7 +441,7 @@ class QuickSwitcherHost {
       if (_disposed || authority != directoryAuthority(w)) return;
     }
     // Source falls back to the person's or agent's profile.
-    actions.openDirectory(agent ? RaftRoute.agent : RaftRoute.human, entity.id);
+    actions.openDirectory(agent ? RaftRoute.agent : RaftRoute.human, id);
   }
 
   Future<void> openMessage(Map<String, dynamic> row, String query) async {
@@ -402,6 +453,15 @@ class QuickSwitcherHost {
       final parentMessage = row['parentMessageId'];
       if (parentChannel is! String || parentMessage is! String) return;
       unawaited(remember(channelId: parentChannel, query: query));
+      // Web openResultInChat (nav.toThreadMessage): the thread opens in its
+      // parent conversation, not over the one that was showing.
+      final parent = [
+        ...w.channels,
+        ...w.dms,
+      ].where((c) => c.id == parentChannel).firstOrNull;
+      if (parent != null && w.channel?.id != parent.id) {
+        await actions.openConversation(parent);
+      }
       await actions.openThread(
         parentChannelId: parentChannel,
         parentMessageId: parentMessage,

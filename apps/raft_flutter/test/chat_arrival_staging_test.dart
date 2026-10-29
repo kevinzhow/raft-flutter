@@ -5,19 +5,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show contextRows, paintedMessage;
 import 'message_presentation_test.dart' show fixture;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[L02] $family/$dark live message during context preparation preserves old paint and first centered target',
+      '[L02] ${dark ? 'dark' : 'light'} live message during context preparation preserves old paint and first centered target',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(390, 844);
@@ -25,10 +22,15 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final old = contextRows('old', count: 8);
-        w.ledger.ingest(old, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = old.map((m) => m['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          old,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = old
+            .map((m) => m['id'] as String)
+            .toSet();
         final gate = Completer<Map<String, dynamic>>.sync();
         final requested = Completer<void>.sync();
         api.routes['GET /messages/context/target-40'] = (_) {
@@ -38,7 +40,7 @@ void main() {
         api.routes['POST /channels/c1/read'] = (_) => {};
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: RaftChatView(controller: w)),
           ),
         );
@@ -60,15 +62,15 @@ void main() {
             'hasOlder': true,
             'hasNewer': false,
           });
-          for (var n = 0; n < 40 && w.channelLoading; n++) {
+          for (var n = 0; n < 40 && w.messageDomain.state.channelLoading; n++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
-          expect(w.channelLoading, false);
+          expect(w.messageDomain.state.channelLoading, false);
         });
         // The accepted context is positioned inside its first layout. A native
         // socket event arriving before that first frame must not disturb it.
         await tester.runAsync(() async {
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {
               'id': 'live-arrival',
               'channelId': 'c1',
@@ -76,8 +78,8 @@ void main() {
               'senderId': 'bob',
               'content': 'Arrived while the context was preparing',
             },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1']!.add('live-arrival');
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1']!.add('live-arrival');
           w.notifyListeners();
           await Future<void>.delayed(Duration.zero);
         });
@@ -109,7 +111,7 @@ void main() {
           }
         }
         expect(first, isNotNull);
-        expect(w.messages.last.id, 'live-arrival');
+        expect(w.messageDomain.messages.last.id, 'live-arrival');
         await tester.drag(
           find.byType(Scrollable).first,
           const Offset(0, -6000),

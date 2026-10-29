@@ -201,10 +201,7 @@ class _AppearancePagePreviewState extends State<_AppearancePagePreview> {
       child: RaftAppearanceSection(
         appearance:
             value ??
-            RaftAppearance(
-              mode: t.dark ? ThemeMode.dark : ThemeMode.light,
-              light: t.family,
-            ),
+            RaftAppearance(mode: t.dark ? ThemeMode.dark : ThemeMode.light),
         onAppearance: (next) => setState(() => value = next),
         presentation: presentation,
       ),

@@ -3,22 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_presentation_test.dart' show fixture;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark actual mobile add opens scoped picker without mutation and Escape preserves draft',
+      '${dark ? 'dark' : 'light'} actual mobile add opens scoped picker without mutation and Escape preserves draft',
       (t) async {
         final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           {
             'id': 'm1',
             'channelId': 'c1',
@@ -37,14 +34,14 @@ void main() {
               },
             ],
           },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'m1'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'m1'};
         transport.routes['GET /agents'] = (_) => [];
         transport.routes['GET /servers/s1/members'] = (_) => [];
         transport.routes['GET /tasks/channel/c1'] = (_) => {'tasks': []};
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: MediaQuery(
               data: const MediaQueryData(size: Size(390, 720)),
               child: Scaffold(
@@ -67,7 +64,8 @@ void main() {
         await t.pump();
         final add = find.byKey(const ValueKey('message-reaction-add'));
         expect(add, findsOneWidget);
-        expect(t.getSize(add).height, 20);
+        // raft-ui 0.7 `messageReaction` addButton: `h-6`.
+        expect(t.getSize(add).height, 24);
         await t.tap(add);
         await t.pump();
         expect(find.byType(RaftQuickReactionPicker), findsOneWidget);

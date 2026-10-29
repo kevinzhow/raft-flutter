@@ -21,12 +21,12 @@ class _AgentMenuPreviewState extends State<_AgentMenuPreview> {
         title: 'Cindy',
         actions: [
           RaftOverflowMenuButton(
-            tooltip: 'More actions',
+            tooltip: 'More Actions',
             entries: [
               RaftMenuEntry(
-                label: 'Direct message',
+                label: 'Direct Message',
                 leading: const RaftDirectMessageIcon(size: 14),
-                onPressed: () => setState(() => action = 'Direct message'),
+                onPressed: () => setState(() => action = 'Direct Message'),
               ),
               RaftMenuEntry(
                 label: 'Stop Agent',

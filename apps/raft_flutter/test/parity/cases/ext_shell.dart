@@ -10,16 +10,18 @@
 // capture region is a keyed overlay over the same rectangle the React host
 // crops (`capture.androidKey`).
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart'
+    show expect, find, findsOneWidget, isFalse, isTrue;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/data/workspace_mode_store.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../parity_harness.dart';
 import 'thread_composer/fake_workspace.dart';
+import '../../support/app_services_fixture.dart';
 
 Map<String, dynamic> _fx(ParityContext ctx) =>
     ctx.fixtures['ext:shell'] as Map<String, dynamic>;
@@ -31,7 +33,14 @@ Map<String, dynamic> _preset(ParityContext ctx) {
   );
 }
 
-WorkspaceController _workspace(ParityContext ctx) => shellWorkspace(ctx);
+WorkspaceController _workspace(ParityContext ctx) => shellWorkspace(
+  ctx,
+  routes: ctx.props['extKind'] == 'framework'
+      ? Map<String, dynamic>.from(
+          (ctx.fixtures['ext:framework'] as Map)['routes'] as Map,
+        )
+      : const {},
+);
 
 /// The shell workspace (preset `ctx.props['preset']`) of the shell cases; the
 /// composed-screen cases (ext_screens.dart) add their message / inbox
@@ -48,6 +57,14 @@ WorkspaceController shellWorkspace(
   final cindy = base.agent('cindy');
   final productUx = base.agent('productUx');
   final designer = base.human('designer');
+  Map activityWire(Map a) {
+    if (ctx.props['extKind'] != 'framework') return a;
+    final frames =
+        (ctx.fixtures['ext:framework'] as Map)['agentActivities'] as Map;
+    final live = frames[a['id']];
+    return live is Map ? live : a;
+  }
+
   Map<String, dynamic> agentWire(Map<String, dynamic> a) => {
     'id': a['id'],
     'serverId': 'visual-server',
@@ -55,9 +72,15 @@ WorkspaceController shellWorkspace(
     'displayName': a['displayName'],
     'avatarUrl': a['avatar'],
     'description': a['description'],
+    if (ctx.props['extKind'] == 'framework') ...{
+      'runtime': a['runtime'],
+      'external': a['external'],
+    },
     'status': a['status'],
-    'activity': a['activity'],
-    'activityDetail': a['activityDetail'],
+    // FrameworkCases primes these newer live frames over the shared snapshot.
+    // Historical shell cases retain their original inputs.
+    'activity': activityWire(a)['activity'],
+    'activityDetail': activityWire(a)['activityDetail'],
     'deletedAt': null,
   };
   final order = <String, dynamic>{
@@ -75,6 +98,8 @@ WorkspaceController shellWorkspace(
     routes: {
       'GET /agents': [agentWire(cindy), agentWire(productUx)],
       'GET /servers/visual-server/sidebar-order': order,
+      // The Saved row count (Web savedStore `total`, shared visual fixture).
+      'GET /channels/saved': ctx.fixtures['savedMessagesFixture'],
       'GET /servers/unread-summary': [
         for (final e in (fx['serverUnread'] as Map).entries)
           {'serverId': e.key, ...Map<String, dynamic>.from(e.value as Map)},
@@ -131,14 +156,18 @@ WorkspaceController shellWorkspace(
     ]
     ..sidebarOrder = order
     ..loading = preset['loading'] == true
-    ..unread = {
+    ..conversationReads.unread = {
       for (final e in (preset['unread'] as Map).entries)
         if (e.key != selected) e.key as String: e.value as int,
+    }
+    ..conversationReads.mentions = {
+      for (final id in preset['mentions'] as List)
+        if (id != selected) id as String,
     };
   for (final e in (preset['drafts'] as Map).entries) {
     w.drafts['${e.key}'] = '${e.value}';
   }
-  w.ledger.switchServer('visual-server');
+  w.messageDomain.ledger.switchServer('visual-server');
   return w;
 }
 
@@ -149,23 +178,24 @@ class _Host extends StatefulWidget {
   State<_Host> createState() => _HostState();
 }
 
+/// Mount the workspace without the historical shell fixture's crop or mask.
+Widget shellWorkspaceView(ParityContext ctx) => _Host(ctx: ctx);
+
 class _HostState extends State<_Host> {
   late final WorkspaceController w = _workspace(widget.ctx);
-  // The Web browser default (hide-empty off); the Linux desktop client turns
-  // it on like the Electron shell.
+  // Hide-empty defaults off in the browser and native clients.
   final presentation = PersonalPresentationStore();
 
   @override
   void dispose() {
-    workspaceModeDevOverride = null;
+    w.dispose();
+    presentation.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
-    // Release availability: the Enter Workspace rail action needs the flag.
-    workspaceModeDevOverride = false;
     WidgetsBinding.instance.addPostFrameCallback((_) => _open());
   }
 
@@ -181,21 +211,24 @@ class _HostState extends State<_Host> {
   }
 
   @override
-  Widget build(BuildContext context) => WorkspaceView(
-    controller: w,
-    presentation: presentation,
-    appearance: RaftAppearance(
-      mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
-      light: widget.ctx.family,
+  Widget build(BuildContext context) => withAppServices(
+    WorkspaceHostScope(
+      browser: widget.ctx.props['shell'] == 'browser',
+      child: WorkspaceView(
+        controller: w,
+        presentation: presentation,
+        appearance: RaftAppearance(
+          mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+        ),
+        onAppearance: (_) async {},
+        onLogout: () async {},
+      ),
     ),
-    onAppearance: (_) async {},
-    onLogout: () async {},
   );
 }
 
 /// The rail + sidebar rectangle of the desktop shell (rail 64 / 56, sidebar 240).
-double _railSidebarWidth(ParityContext ctx) =>
-    (ctx.family == RaftFamily.brutal ? 64 : 56) + 240;
+double _railSidebarWidth(ParityContext ctx) => (56) + 240;
 
 Rect _railSidebar(ParityContext ctx) => Rect.fromLTWH(
   0,
@@ -208,12 +241,7 @@ Widget _desktop(ParityContext ctx) {
   final activity = ctx.props['route'] == 'activity';
   // The Activity frame crops the rail plus the 560px master column.
   final region = activity
-      ? Rect.fromLTWH(
-          0,
-          0,
-          (ctx.family == RaftFamily.brutal ? 64 : 56) + 560,
-          ctx.height,
-        )
+      ? Rect.fromLTWH(0, 0, (56) + 560, ctx.height)
       : _railSidebar(ctx);
   return Stack(
     children: [
@@ -224,7 +252,14 @@ Widget _desktop(ParityContext ctx) {
         top: 0,
         right: 0,
         bottom: 0,
-        child: const ColoredBox(color: Color(0xFFFFFFFF)),
+        // Dialog cases capture the whole viewport: under the Web Modal scrim sits
+        // the document body (Brutal cream, Elegant `layer-canvas-muted`).
+        child: Builder(
+          builder: (context) {
+            final t = RaftTokens.of(context);
+            return ColoredBox(color: t.sidebar);
+          },
+        ),
       ),
       Positioned.fromRect(
         rect: region,
@@ -262,6 +297,10 @@ Widget _mobile(ParityContext ctx) {
   );
 }
 
+/// The mobile Home / desktop rail cases, shared with ext_row_menus.dart.
+ParityCase get extShellMobileCase => _mobileCase;
+ParityCase get extShellDesktopCase => _desktopCase;
+
 final ParityCase _mobileCase = ParityCase(
   widgets: const ['raft_flutter:WorkspaceView', 'raft_ui:RaftNavItem'],
   notes: 'Extension suite (not official). Real WorkspaceView, mobile Home.',
@@ -279,6 +318,94 @@ final ParityCase _desktopCase = ParityCase(
   notes: 'Extension suite (not official). Real WorkspaceView, rail + sidebar.',
   settle: const Duration(milliseconds: 900),
   build: _desktop,
+);
+
+// Open the product Help menu through rail-help, then crop its own keyed
+// surface. Do not apply the historical shell fixture's blank main-panel mask
+// or substitute a component board for this real WorkspaceView entry.
+final ParityCase _helpPopupCase = ParityCase(
+  widgets: const [
+    'raft_flutter:WorkspaceView',
+    'raft_ui:RaftWorkspaceHelpMenu',
+    'raft_ui:RaftDropdownMenu',
+    'raft_ui:RaftMenuPanel',
+    'raft_ui:RaftMenuItem',
+  ],
+  notes:
+      'Extension suite (not official). Real WorkspaceView Help popup bounds; '
+      'historical whole-shell cases retain their own results.',
+  settle: const Duration(milliseconds: 900),
+  build: shellWorkspaceView,
+  interact: (tester, ctx) async {
+    final popup = find.byKey(const ValueKey('workspace-help-popup'));
+    expect(popup, findsOneWidget);
+    final documentation = find.descendant(
+      of: popup,
+      matching: find.widgetWithText(RaftMenuItem, 'Raft Documentation'),
+    );
+    expect(documentation, findsOneWidget);
+    if (ctx.props['helpPopupState'] != 'focus') return;
+    final detectors = find
+        .descendant(
+          of: documentation,
+          matching: find.byType(FocusableActionDetector),
+          matchRoot: true,
+        )
+        .evaluate()
+        .map((element) => element.widget as FocusableActionDetector);
+    expect(
+      detectors.any((detector) => detector.focusNode?.hasPrimaryFocus ?? false),
+      isTrue,
+      reason: 'The actual Help documentation row must own keyboard focus.',
+    );
+  },
+);
+
+// Current Raft: the actual WorkspaceView sort action, complete popup bounds.
+final ParityCase _sidebarSortPopupCase = ParityCase(
+  widgets: const [
+    'raft_flutter:WorkspaceView',
+    'raft_flutter:showSidebarSortMenu',
+    'raft_ui:RaftSelectionPopover',
+  ],
+  notes:
+      'Extension suite (not official). Real WorkspaceView Channels sort popup. '
+      'Historical whole-sidebar cases and their results remain separate.',
+  settle: const Duration(milliseconds: 900),
+  build: shellWorkspaceView,
+  interact: (tester, ctx) async {
+    final popup = find.byKey(const ValueKey('sidebar-sort-popover'));
+    expect(popup, findsOneWidget);
+    final selection = tester.widget<RaftSelectionPopover>(popup);
+    expect(selection.showHeader, isFalse);
+    expect(selection.options.map((option) => option.label), [
+      'Manual',
+      'Recent',
+      'A-Z',
+    ]);
+    expect(
+      selection.options
+          .where((option) => option.checked)
+          .map((option) => option.label),
+      ['Manual'],
+    );
+    if (ctx.props['sortPopupState'] != 'focus') return;
+    final focusedRow = find.byKey(const ValueKey('sidebar-sort-recent'));
+    expect(focusedRow, findsOneWidget);
+    expect(
+      find
+          .descendant(
+            of: focusedRow,
+            matching: find.byType(FocusableActionDetector),
+            matchRoot: true,
+          )
+          .evaluate()
+          .map((element) => element.widget as FocusableActionDetector)
+          .any((detector) => detector.focusNode?.hasPrimaryFocus ?? false),
+      isTrue,
+      reason: 'The actual Recent option must own keyboard focus.',
+    );
+  },
 );
 
 const _desktopSurfaces = [
@@ -375,13 +502,12 @@ Widget _banners(ParityContext ctx) {
                   : null,
               action: b['action'] == null
                   ? null
-                  : Text(
+                  : RaftUnderlinedText(
                       b['action'] as String,
                       style: const TextStyle(
                         fontSize: 14,
                         height: 20 / 14,
                         fontWeight: FontWeight.w700,
-                        decoration: TextDecoration.underline,
                       ),
                     ),
             ),
@@ -448,17 +574,12 @@ Widget _bottomSheet(ParityContext ctx) {
                 const SizedBox(height: 8),
                 Text(
                   'Install Raft for faster access and notifications.',
-                  style:
-                      RaftTypography.heading(
-                        t,
-                        size: 14,
-                        line: 20,
-                        weight: FontWeight.w400,
-                      ).copyWith(
-                        color: t.brutal
-                            ? Colors.black.withValues(alpha: .7)
-                            : t.muted,
-                      ),
+                  style: RaftTypography.heading(
+                    t,
+                    size: 14,
+                    line: 20,
+                    weight: FontWeight.w400,
+                  ).copyWith(color: t.muted),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -526,8 +647,18 @@ ParityCase _primitive(Widget Function(ParityContext) build, String widget) =>
       ),
     );
 
-/// Every extension shell case, keyed by id (3 themes each).
+/// Historical shell cases keep 3 themes; Help popup bounds add current Raft
+/// light/dark without changing those historical entries.
 final Map<String, ParityCase> extShellCases = {
+  for (final state in const ['default', 'hover', 'focus'])
+    for (final theme in const ['raft', 'raft-dark'])
+      'components.shell.desktop.sidebar.sort-popup.$state.$theme':
+          _sidebarSortPopupCase,
+  for (final state in const ['default', 'hover', 'focus'])
+    for (final density in const ['', 'compact-'])
+      for (final theme in const ['raft', 'raft-dark'])
+        'components.shell.desktop.rail.help-popup.$density$state.$theme':
+            _helpPopupCase,
   for (final surface in [..._desktopSurfaces, 'activity.frame'])
     for (final theme in const ['brutal', 'elegant', 'elegant-dark'])
       'components.shell.desktop.$surface.$theme': _desktopCase,

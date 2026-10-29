@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 // SidebarRowsSkeleton + Tailwind animate-pulse: 2s cycle, opacity .5 at
 // midpoint, source18px avatar and 8px vertical padding => stable34px rows.
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'Home loading pulse preserves source layout and retires ticker $theme',
+      'Home loading pulse preserves source layout and retires ticker ${dark ? 'dark' : 'light'}',
       (t) async {
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(theme.$1, dark: theme.$2),
+            theme: raftTheme(dark: dark),
             home: const Scaffold(
               body: SizedBox(
                 width: 320,

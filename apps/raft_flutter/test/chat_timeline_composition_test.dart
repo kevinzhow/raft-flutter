@@ -4,27 +4,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_presentation_test.dart' show fixture;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final thread in [false, true]) {
       testWidgets(
-        'actual sparse timeline geometry and resize $family/$dark/thread=$thread',
+        'actual sparse timeline geometry and resize ${dark ? 'dark' : 'light'}/thread=$thread',
         (t) async {
           final (w, _) = (await t.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           await t.binding.setSurfaceSize(const Size(390, 720));
           addTearDown(() => t.binding.setSurfaceSize(null));
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           final channelId = thread ? 'thread-c1' : 'c1';
           if (thread) {
-            w.threadParent = RaftMessage({
+            w.messageDomain.state.threadParent = RaftMessage({
               'id': 'parent',
               'channelId': 'c1',
               'seq': 1,
@@ -34,7 +31,7 @@ void main() {
             });
             w.threadChannelId = channelId;
           }
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             for (var i = 1; i <= 2; i++)
               {
                 'id': 'row-$i',
@@ -45,11 +42,11 @@ void main() {
                 'content': 'Public row $i',
                 'createdAt': '2026-06-22T02:30:00Z',
               },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds[channelId] = {'row-1', 'row-2'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds[channelId] = {'row-1', 'row-2'};
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: RaftDensityScope(
                   density: RaftDensity.desktop,
@@ -134,8 +131,8 @@ void main() {
             of: composer,
             matching: find.byType(TextField),
           );
-          expect(t.widget<RaftComposer>(composer).autofocus, thread);
-          expect(t.widget<TextField>(editor).focusNode!.hasFocus, thread);
+          expect(t.widget<RaftComposer>(composer).autofocus, true);
+          expect(t.widget<TextField>(editor).focusNode!.hasFocus, true);
           await t.enterText(editor, 'Public retained 中文');
           await t.pump();
           await t.binding.setSurfaceSize(const Size(390, 800));

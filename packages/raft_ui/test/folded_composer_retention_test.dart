@@ -3,15 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'fold/split retains real editor and excludes hidden actions $family/$dark',
+      'fold/split retains real editor and excludes hidden actions ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.devicePixelRatio = 1;
         t.view.physicalSize = const Size(957, 720);
@@ -21,7 +18,7 @@ void main() {
         late StateSetter update;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: StatefulBuilder(
                 builder: (_, set) {

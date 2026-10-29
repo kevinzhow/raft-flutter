@@ -3,15 +3,29 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'mobile_page_header.dart';
+import 'status_bar.dart';
+import 'tap_slop.dart';
+import 'raft/status.dart' show RaftAttentionDot;
 
 import 'design_primitives.dart';
 import 'components.dart' show RaftSidebarUnreadCount;
 import 'icons.dart';
 import 'localization.dart';
 import 'primitive_tokens.dart';
+import 'public_page_mark.dart';
+import 'workspace_shell.dart' show RaftWorkspaceRailAction;
 import 'recipe_surface.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
+import 'text_scaling.dart';
+import 'large_content_viewer.dart';
+
+import 'raft/blink_snap.dart';
+import 'raft/css_box.dart' show raftControlBorderPx;
+import 'panel_layout.dart' show RaftCssText, RaftCssFocusOutline;
+
+part 'mobile_navigation_docked.dart';
+part 'mobile_workspace_header.dart';
 
 @immutable
 class RaftMobileNavItem {
@@ -40,24 +54,17 @@ class RaftMobileNavRecipe {
   const RaftMobileNavRecipe(this.tokens, {required this.viewportHeight});
   final RaftTokens tokens;
   final double viewportHeight;
-  bool get showGlyph => !tokens.brutal || viewportHeight > 600;
+  bool get showGlyph => true;
   double get glyphSize => 18;
   double get capsuleInset => 4;
   double get itemGap => 8;
   double capsuleWidth(int count) =>
       capsuleInset * 2 + count * 44 + (count - 1) * itemGap;
   double get capsuleHeight => capsuleInset * 2 + 44;
-  double get itemHeight => tokens.brutal
-      ? showGlyph
-            ? 51
-            : 31
-      : 44;
-  double bottomSpace(double inset) =>
-      tokens.brutal ? math.min(inset, 34) : math.max(8, inset);
+  double get itemHeight => 44;
+  double bottomSpace(double inset) => math.max(8, inset);
   Color get background => tokens.panel;
-  List<BoxShadow> get rootShadows => tokens.brutal
-      ? const []
-      : tokens.dark
+  List<BoxShadow> get rootShadows => tokens.dark
       ? [
           BoxShadow(
             color: Colors.black.withValues(alpha: .55),
@@ -99,16 +106,11 @@ class _MobileItemRecipe extends RaftControlRecipe {
   @override
   double get disabledOpacity => .45;
   @override
-  Color foregroundFor({bool hovered = false}) => hovered && !selected
-      ? tokens.brutal
-            ? Colors.black
-            : tokens.muted
-      : foreground;
+  Color foregroundFor({bool hovered = false}) =>
+      hovered && !selected ? tokens.muted : foreground;
   @override
   Color get background => selected
-      ? tokens.brutal
-            ? tokens.colors['primary-400']!
-            : tokens.dark
+      ? tokens.dark
             ? tokens.colors['fill-muted']!
             : tokens.panel
       : Colors.transparent;
@@ -116,20 +118,12 @@ class _MobileItemRecipe extends RaftControlRecipe {
   Color backgroundForInteraction({
     bool hovered = false,
     bool pressed = false,
-  }) => pressed && !selected
-      ? tokens.colors[tokens.brutal ? 'ink-6' : 'fill-strong']!
-      : background;
+  }) => pressed && !selected ? tokens.colors['fill-strong']! : background;
   @override
-  Color get foreground => selected
-      ? tokens.brutal
-            ? Colors.black
-            : tokens.strong
-      : tokens.brutal
-      ? Colors.black.withValues(alpha: .55)
-      : tokens.colors['foreground-placeholder']!;
+  Color get foreground =>
+      selected ? tokens.strong : tokens.colors['foreground-placeholder']!;
   @override
-  Color get focusRing =>
-      tokens.brutal ? Colors.black : tokens.colors['line-strong']!;
+  Color get focusRing => tokens.colors['line-strong']!;
   // CSS :focus-visible is an outside outline, separate from selected shadows.
   // Consumed by RaftControl's modality-gated outside-RRect painter.
   @override
@@ -137,16 +131,15 @@ class _MobileItemRecipe extends RaftControlRecipe {
   @override
   double get focusOutlineOffset => 2;
   @override
-  BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 22);
+  BorderRadius get radius => BorderRadius.circular(22);
   @override
   BorderSide side({bool hovered = false}) => BorderSide.none;
   @override
   EdgeInsets get padding => EdgeInsets.zero;
   @override
-  double get insetHighlightAlpha =>
-      !tokens.brutal && tokens.dark && selected ? .06 : 0;
+  double get insetHighlightAlpha => tokens.dark && selected ? .06 : 0;
   @override
-  Gradient? get overlayGradient => selected && !tokens.brutal && !tokens.dark
+  Gradient? get overlayGradient => selected && !tokens.dark
       ? LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -175,7 +168,7 @@ class _MobileItemRecipe extends RaftControlRecipe {
     bool pressed = false,
     bool focused = false,
   }) => [
-    if (selected && !tokens.brutal && tokens.dark) ...[
+    if (selected && tokens.dark) ...[
       BoxShadow(color: Colors.black.withValues(alpha: .6), spreadRadius: 1),
       BoxShadow(
         color: Colors.black.withValues(alpha: .5),
@@ -196,7 +189,7 @@ class _MobileItemRecipe extends RaftControlRecipe {
         spreadRadius: -3,
       ),
     ],
-    if (selected && !tokens.brutal && !tokens.dark) ...[
+    if (selected && !tokens.dark) ...[
       BoxShadow(
         color: RaftPrimitiveColors.black.withValues(alpha: .071),
         offset: const Offset(0, .5),
@@ -253,162 +246,135 @@ class RaftMobileNav extends StatelessWidget {
       viewportHeight: viewportHeight ?? MediaQuery.sizeOf(context).height,
     );
     final inset = bottomInset ?? MediaQuery.viewPaddingOf(context).bottom;
-    final touch = RaftDensityScope.of(context) == RaftDensity.touch;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth = constraints.hasBoundedWidth
-            ? constraints.maxWidth
-            : MediaQuery.sizeOf(context).width;
-        final itemWidth = availableWidth / items.length;
-        // The count sits on the glyph's upper right corner and may overhang
-        // the cell: the capsule gap (Elegant) and the neighbour's rule
-        // (Brutal) leave room for "99+".
-        Widget badged(RaftMobileNavItem i, Widget glyph) => i.badgeCount <= 0
-            ? glyph
-            : Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  glyph,
-                  Positioned(
-                    top: t.brutal ? -3 : -8,
-                    left: 11,
-                    child: Semantics(
-                      key: ValueKey('mobile-nav-badge-${i.id}'),
-                      label: raftFormat(context, '{count} unread', {
-                        'count': i.badgeCount > 99 ? '99+' : i.badgeCount,
-                      }),
-                      child: ExcludeSemantics(
-                        child: RaftSidebarUnreadCount(count: i.badgeCount),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-        Widget item(RaftMobileNavItem i, int index) {
-          final selected = i.id == selectedId;
-          final height = recipe.itemHeight;
-          final control = Semantics(
-            selected: selected,
-            child: RaftControl(
-              key: i.key,
-              onPressed: i.enabled ? () => onSelected(i.id) : null,
-              tooltip: t.brutal ? null : raftText(context, i.label),
-              semanticLabel: t.brutal ? null : raftText(context, i.label),
-              visualHeight: height,
-              visualWidth: t.brutal
-                  ? itemWidth - (index == items.length - 1 ? 0 : 2)
-                  : 44,
-              minimumTargetSize: touch ? math.max(48, height) : height,
-              recipe: _MobileItemRecipe(t, selected: selected),
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
-                  if (t.brutal)
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (recipe.showGlyph) ...[
-                          badged(i, RaftIcon(i.glyph, size: 18)),
-                          const SizedBox(height: 2),
-                        ],
-                        Text(
-                          raftText(context, i.label),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    )
-                  else
-                    badged(i, RaftIcon(i.glyph, size: 18)),
-                  if (i.attention)
-                    Positioned(
-                      top: t.brutal ? 4 : -4,
-                      right: t.brutal ? 8 : -4,
-                      child: _AttentionDot(t),
-                    ),
-                ],
-              ),
-            ),
-          );
-          return t.brutal
-              ? Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: index == items.length - 1
-                          ? null
-                          // `border-r-2 border-line-strong` (MobileNavItem).
-                          : Border(
-                              right: BorderSide(
-                                color: t.semantic.lineStrong,
-                                width: 2,
-                              ),
-                            ),
-                    ),
-                    child: control,
-                  ),
-                )
-              : control;
-        }
-
-        final bar = Container(
-          key: t.brutal ? null : const ValueKey('mobile-nav-source-capsule'),
-          width: t.brutal ? null : recipe.capsuleWidth(items.length),
-          height: t.brutal ? null : recipe.capsuleHeight,
-          padding: t.brutal
-              ? EdgeInsets.only(bottom: recipe.bottomSpace(inset))
-              : EdgeInsets.zero,
-          decoration: BoxDecoration(
-            color: recipe.background,
-            border: t.brutal
-                ? const Border(
-                    top: BorderSide(color: Colors.black, width: 2),
-                    bottom: BorderSide(color: Colors.black, width: 2),
-                  )
-                : null,
-            borderRadius: t.brutal ? null : BorderRadius.circular(1000),
-            boxShadow: recipe.rootShadows,
+    if (t.option('mobileNav.style', or: 'docked') == 'docked') {
+      return RaftChrome(
+        child: RaftLargeContentScope(
+          child: _DockedMobileNav(
+            items: items,
+            selectedId: selectedId,
+            onSelected: onSelected,
+            bottomInset: inset,
+            viewportHeight: recipe.viewportHeight,
           ),
-          child: t.brutal
-              ? Row(
-                  children: [
-                    for (var index = 0; index < items.length; index++)
-                      item(items[index], index),
-                  ],
-                )
-              : Stack(
-                  // Expanded touch targets fit INSIDE the source capsule and its
-                  // gaps. They never borrow pixels from the neighboring body.
-                  children: [
-                    for (var index = 0; index < items.length; index++)
-                      Positioned(
-                        left:
-                            recipe.capsuleInset +
-                            index * (44 + recipe.itemGap) -
-                            (touch ? 2 : 0),
-                        top: recipe.capsuleInset - (touch ? 2 : 0),
-                        width: touch ? 48 : 44,
-                        height: touch ? 48 : 44,
-                        child: item(items[index], index),
-                      ),
-                  ],
+        ),
+      );
+    }
+    final touch = RaftDensityScope.of(context) == RaftDensity.touch;
+    // Fixed chrome: label text is bounded (RaftChrome) and, once that hides
+    // growth, a long press shows the item large (Large Content Viewer).
+    return RaftChrome(
+      child: RaftLargeContentScope(
+        child: LayoutBuilder(
+          builder: (context, constraints) =>
+              _bar(context, constraints, t, recipe, inset, touch),
+        ),
+      ),
+    );
+  }
+
+  Widget _bar(
+    BuildContext context,
+    BoxConstraints constraints,
+    RaftTokens t,
+    RaftMobileNavRecipe recipe,
+    double inset,
+    bool touch,
+  ) {
+    // The count sits on the glyph's upper right corner and may overhang
+    // the cell: the capsule gap (Elegant) and the neighbour's rule
+    // (Brutal) leave room for "99+".
+    Widget badged(RaftMobileNavItem i, Widget glyph) => i.badgeCount <= 0
+        ? glyph
+        : Stack(
+            clipBehavior: Clip.none,
+            children: [
+              glyph,
+              Positioned(
+                top: -8,
+                left: 11,
+                child: Semantics(
+                  key: ValueKey('mobile-nav-badge-${i.id}'),
+                  label: raftFormat(context, '{count} unread', {
+                    'count': i.badgeCount > 99 ? '99+' : i.badgeCount,
+                  }),
+                  child: ExcludeSemantics(
+                    child: RaftSidebarUnreadCount(count: i.badgeCount),
+                  ),
                 ),
-        );
-        return t.brutal
-            ? bar
-            : Padding(
-                padding: EdgeInsets.only(
-                  top: 8,
-                  bottom: recipe.bottomSpace(inset),
-                ),
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  widthFactor: 1,
-                  heightFactor: 1,
-                  child: bar,
-                ),
-              );
-      },
+              ),
+            ],
+          );
+    Widget item(RaftMobileNavItem i, int index) {
+      final selected = i.id == selectedId;
+      final height = recipe.itemHeight;
+      Widget control = Semantics(
+        selected: selected,
+        child: RaftControl(
+          key: i.key,
+          onPressed: i.enabled ? () => onSelected(i.id) : null,
+          tooltip: raftText(context, i.label),
+          semanticLabel: raftText(context, i.label),
+          visualHeight: height,
+          visualWidth: 44,
+          minimumTargetSize: touch ? math.max(48, height) : height,
+          recipe: _MobileItemRecipe(t, selected: selected),
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              badged(i, RaftIcon(i.glyph, size: 18)),
+              if (i.attention)
+                Positioned(top: -4, right: -4, child: _AttentionDot(t)),
+            ],
+          ),
+        ),
+      );
+      control = RaftLargeContentViewer(
+        label: raftText(context, i.label),
+        enabled: i.enabled,
+        onActivate: () => onSelected(i.id),
+        iconBuilder: (context, size) => RaftIcon(i.glyph, size: size),
+        child: control,
+      );
+      return control;
+    }
+
+    final bar = Container(
+      key: const ValueKey('mobile-nav-source-capsule'),
+      width: recipe.capsuleWidth(items.length),
+      height: recipe.capsuleHeight,
+      padding: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: recipe.background,
+        borderRadius: BorderRadius.circular(1000),
+        boxShadow: recipe.rootShadows,
+      ),
+      child: Stack(
+        // Expanded touch targets fit INSIDE the source capsule and its
+        // gaps. They never borrow pixels from the neighboring body.
+        children: [
+          for (var index = 0; index < items.length; index++)
+            Positioned(
+              left:
+                  recipe.capsuleInset +
+                  index * (44 + recipe.itemGap) -
+                  (touch ? 2 : 0),
+              top: recipe.capsuleInset - (touch ? 2 : 0),
+              width: touch ? 48 : 44,
+              height: touch ? 48 : 44,
+              child: item(items[index], index),
+            ),
+        ],
+      ),
+    );
+    return Padding(
+      padding: EdgeInsets.only(top: 8, bottom: recipe.bottomSpace(inset)),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        widthFactor: 1,
+        heightFactor: 1,
+        child: bar,
+      ),
     );
   }
 }
@@ -424,12 +390,32 @@ class RaftMobileServerSelectorRecipe {
   final double viewportHeight;
   bool get compact => viewportHeight <= 600;
   double get contentAngle => compact ? 0 : -2 * math.pi / 180;
-  double get chevronAngle => -contentAngle;
+  double get chevronAngle => _stickerWorkspace(tokens) ? 0 : -contentAngle;
+  double get controlHeight =>
+      compact ? tokens.size('size.mobileWorkspaceCompact', fallback: 24) : 36;
   EdgeInsets get contentInset => compact
       ? EdgeInsets.zero
-      : const EdgeInsets.symmetric(horizontal: 14, vertical: 6);
+      : EdgeInsets.fromLTRB(
+          tokens.size('space.mobileWorkspaceStart', fallback: 14),
+          tokens.size('space.mobileWorkspaceBlock', fallback: 6),
+          tokens.size('space.mobileWorkspaceEnd', fallback: 14),
+          tokens.size('space.mobileWorkspaceBlock', fallback: 6),
+        );
   Color get foreground =>
-      tokens.colors[tokens.brutal ? 'color-brutal-yellow' : 'primary-strong']!;
+      tokens.colors[compact
+          ? 'foreground-mobile-workspace-compact'
+          : 'foreground-mobile-workspace'] ??
+      tokens.colors['primary-strong']!;
+  TextStyle get titleStyle =>
+      RaftTypography.heading(
+        tokens,
+        size: tokens.size('type.mobileWorkspaceTitle.size', fallback: 16),
+        line: tokens.size('type.mobileWorkspaceTitle.line', fallback: 24),
+        weight: FontWeight.w700,
+      ).copyWith(
+        color: foreground,
+        fontFamily: tokens.fontFamily('font.mobileWorkspaceTitle'),
+      );
   List<Offset> polygon(Size size, {double shadowOffset = 0}) {
     final center = Offset(size.width / 2, size.height / 2);
     final cosine = math.cos(contentAngle), sine = math.sin(contentAngle);
@@ -455,6 +441,7 @@ class RaftMobileServerSelector extends StatelessWidget {
     this.viewportHeight,
     this.attentionLabel,
     this.focusNode,
+    this.publicPageLive = false,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -462,6 +449,10 @@ class RaftMobileServerSelector extends StatelessWidget {
   final String? attentionLabel;
   final double? viewportHeight;
   final FocusNode? focusNode;
+
+  /// The server's public page is live: a globe after the name (Web
+  /// `PublicPageGlobe`).
+  final bool publicPageLive;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -469,6 +460,17 @@ class RaftMobileServerSelector extends StatelessWidget {
       t,
       viewportHeight: viewportHeight ?? MediaQuery.sizeOf(context).height,
     );
+    if (_stickerWorkspace(t)) {
+      return _StickerWorkspaceSelector(
+        recipe: recipe,
+        label: label,
+        onPressed: onPressed,
+        attention: attention,
+        attentionLabel: attentionLabel,
+        focusNode: focusNode,
+        publicPageLive: publicPageLive,
+      );
+    }
     return _SelectorControl(
       recipe: recipe,
       label: label,
@@ -476,6 +478,7 @@ class RaftMobileServerSelector extends StatelessWidget {
       attention: attention,
       attentionLabel: attentionLabel,
       focusNode: focusNode,
+      publicPageLive: publicPageLive,
     );
   }
 }
@@ -488,6 +491,7 @@ class _SelectorControl extends StatelessWidget {
     required this.attention,
     this.attentionLabel,
     this.focusNode,
+    this.publicPageLive = false,
   });
   final RaftMobileServerSelectorRecipe recipe;
   final String label;
@@ -495,12 +499,13 @@ class _SelectorControl extends StatelessWidget {
   final bool attention;
   final String? attentionLabel;
   final FocusNode? focusNode;
+  final bool publicPageLive;
   @override
   Widget build(BuildContext context) => RaftControl(
     focusNode: focusNode,
     onPressed: onPressed,
     semanticLabel: null,
-    visualHeight: recipe.compact ? 24 : 36,
+    visualHeight: recipe.controlHeight,
     recipe: _SelectorRecipe(recipe.tokens),
     padding: recipe.contentInset,
     child: CustomPaint(
@@ -521,15 +526,18 @@ class _SelectorControl extends StatelessWidget {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: RaftTypography.heading(
-                        recipe.tokens,
-                        size: 16,
-                        line: 24,
-                        weight: FontWeight.w700,
-                      ).copyWith(color: recipe.foreground),
+                      style: recipe.titleStyle,
                     ),
                   ),
                 ),
+                if (publicPageLive) ...[
+                  const SizedBox(width: 6),
+                  RaftPublicPageGlobe(
+                    live: true,
+                    size: 14,
+                    color: recipe.foreground,
+                  ),
+                ],
                 const SizedBox(width: 6),
                 Transform.rotate(
                   angle: recipe.chevronAngle,
@@ -543,8 +551,10 @@ class _SelectorControl extends StatelessWidget {
             ),
             if (attention)
               Positioned(
-                top: -10,
-                right: -18,
+                // `-right-1 -top-1` of the padding-box anchor: 4px beyond it,
+                // that is 12 / 4px past the content box.
+                top: -8,
+                right: -16,
                 child: Semantics(
                   label: attentionLabel,
                   child: _AttentionDot(recipe.tokens),
@@ -586,18 +596,17 @@ class _SelectorPainter extends CustomPainter {
   final RaftMobileServerSelectorRecipe recipe;
   @override
   void paint(Canvas canvas, Size size) {
-    // SVG extends2px beyond the measured button, scales viewBox by4px extra.
+    // `.mobile-server-selector-vector-surface { inset: -2px }` is measured
+    // from the button's padding box (the button has a 2px transparent
+    // border), so the SVG covers exactly the button's border box and its
+    // viewBox maps 1:1.
     final inset = recipe.contentInset;
     final buttonSize = Size(
       size.width + inset.horizontal,
       size.height + inset.vertical,
     );
     canvas.save();
-    canvas.translate(-inset.left - 2, -inset.top - 2);
-    canvas.scale(
-      (buttonSize.width + 4) / buttonSize.width,
-      (buttonSize.height + 4) / buttonSize.height,
-    );
+    canvas.translate(-inset.left, -inset.top);
     Path path(double shadow) {
       final points = recipe.polygon(buttonSize, shadowOffset: shadow);
       return Path()..addPolygon(points, true);
@@ -605,7 +614,7 @@ class _SelectorPainter extends CustomPainter {
 
     canvas.drawPath(
       path(2),
-      Paint()..color = RaftProductColors.brutal.brutalBlack,
+      Paint()..color = RaftTokenSet.light.product.brutalBlack,
     );
     canvas.drawPath(path(0), Paint()..color = Colors.black);
     canvas.restore();
@@ -624,13 +633,7 @@ class _AttentionDot extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: 10,
     height: 10,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: tokens.brutal
-          ? tokens.colors['color-brutal-pink']!
-          : tokens.accentFill,
-      border: tokens.brutal ? Border.all(color: Colors.black) : null,
-    ),
+    decoration: BoxDecoration(shape: BoxShape.circle, color: tokens.accentFill),
   );
 }
 
@@ -655,18 +658,18 @@ class RaftMobileRootHeaderRecipe {
   final double inset;
   double get height =>
       RaftLayoutMetrics.shellHeaderHeight(tokens, viewportHeight);
-  Color get background =>
-      tokens.brutal ? tokens.colors['color-soft-signal']! : tokens.panel;
+  // Web PanelSectionHeader; old theme packs preserve a57's root fill.
+  Color get background => tokens.colors['layer-section-header-mobile']!;
   BorderSide get border => BorderSide(
-    color: tokens.brutal ? Colors.black : tokens.colors['line-muted']!,
-    width: tokens.brutal ? 2 : 1,
+    color: tokens.colors['line-muted']!,
+    width: tokens.size('stroke.rule', fallback: 1),
   );
   TextStyle get title => RaftTypography.heading(
     tokens,
     size: 16,
     line: 24,
     weight: FontWeight.w700,
-    color: tokens.brutal ? Colors.black : tokens.strong,
+    color: tokens.strong,
   );
 }
 
@@ -679,7 +682,11 @@ class RaftMobileRootHeader extends StatelessWidget {
     this.actions = const [],
     this.viewportHeight,
     this.inset = 16,
+    this.workspace = false,
   });
+
+  /// The phone Home workspace header has natural-width frame actions.
+  final bool workspace;
   final Widget? leading;
   final String? title;
   final List<Widget> actions;
@@ -692,6 +699,13 @@ class RaftMobileRootHeader extends StatelessWidget {
       viewportHeight: viewportHeight ?? MediaQuery.sizeOf(context).height,
       inset: inset,
     );
+    if (workspace && _stickerWorkspace(recipe.tokens) && leading != null) {
+      return _MobileWorkspaceHeader(
+        recipe: recipe,
+        leading: leading!,
+        actions: actions,
+      );
+    }
     return RaftMobilePageHeader(
       background: recipe.background,
       border: recipe.border,
@@ -719,9 +733,13 @@ class RaftMobileNotificationButton extends StatelessWidget {
     super.key,
     this.onPressed,
     this.open = false,
-    this.semanticLabel = 'Notification center',
+    this.semanticLabel = 'Notification Center',
     this.visualSize = 32,
     this.glyphSize = 16,
+    this.rail = false,
+    this.onFrame = false,
+    this.mobileHeader = false,
+    this.attention = false,
   });
   final VoidCallback? onPressed;
   final bool open;
@@ -729,9 +747,53 @@ class RaftMobileNotificationButton extends StatelessWidget {
 
   /// Original mobile32/16 and LeftRail40/18 share one trigger state recipe.
   final double visualSize, glyphSize;
+
+  /// NotificationTrigger `rail-bottom`: the bell reads like every other rail
+  /// item's icon (the AppRailItem glyph size and `foreground-icon`, brightening
+  /// to `foreground-strong` on hover; Brutal `foreground-strong`) instead of
+  /// the fixed [glyphSize] and muted colour, and [attention] rides the same
+  /// AppRailItemAttention composite the other rail items use. [glyphSize] is
+  /// ignored then.
+  final bool rail, attention;
+  final bool onFrame, mobileHeader;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (mobileHeader && _stickerWorkspace(t)) {
+      final extent = t.size('size.mobileHeaderAction', fallback: 44);
+      final control = RaftControl(
+        onPressed: onPressed,
+        semanticLabel: raftText(context, semanticLabel),
+        minimumTargetSize: extent,
+        visualHeight: extent,
+        visualWidth: extent,
+        recipe: _MobileHeaderBellRecipe(
+          t,
+          selected: open,
+          borderWidth: raftControlBorderPx(context, 1.5),
+        ),
+        child: RaftIcon(
+          RaftGlyph.bell,
+          size: t.size('size.mobileHeaderActionGlyph', fallback: 22),
+        ),
+      );
+      return RaftDensityScope.of(context) == RaftDensity.touch
+          ? RaftTapSlopAnchor(
+              minSize: const Size.square(RaftMetrics.touchTarget),
+              child: control,
+            )
+          : control;
+    }
+    if (rail || onFrame) {
+      return RaftWorkspaceRailAction(
+        extent: onFrame ? 36 : null,
+        label: raftText(context, semanticLabel),
+        glyph: RaftGlyph.bell,
+        selected: open,
+        attention: attention,
+        onPressed: onPressed,
+      );
+    }
     final recipe = _MobileNotificationRecipe(t, selected: open);
     return RaftInteractive(
       onPressed: onPressed,
@@ -760,7 +822,7 @@ class RaftMobileNotificationButton extends StatelessWidget {
             open ? t.themeShadows.sm.inset : const [],
             recipe.radius,
             null,
-            EdgeInsets.all(t.brutal ? 2 : 1),
+            EdgeInsets.all(t.border),
           ),
           child: RaftIcon(
             RaftGlyph.bell,
@@ -778,28 +840,18 @@ class _MobileNotificationRecipe extends RaftControlRecipe {
   @override
   bool get transformsOnInteraction => false;
   @override
-  Color get background => selected
-      ? tokens.brutal
-            ? tokens.panel
-            : tokens.colors['fill-muted']!
-      : Colors.transparent;
+  Color get background =>
+      selected ? tokens.colors['fill-muted']! : Colors.transparent;
   @override
-  Color backgroundFor({bool hovered = false}) => selected || !hovered
-      ? background
-      : tokens.brutal
-      ? tokens.panel
-      : tokens.colors['fill-muted']!;
+  Color backgroundFor({bool hovered = false}) =>
+      selected || !hovered ? background : tokens.colors['fill-muted']!;
   @override
-  Color get foreground => tokens.brutal ? Colors.black : tokens.muted;
+  Color get foreground => tokens.muted;
   @override
-  BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 6);
+  BorderRadius get radius => BorderRadius.circular(6);
   @override
-  BorderSide side({bool hovered = false}) => BorderSide(
-    color: tokens.brutal && (selected || hovered)
-        ? Colors.black
-        : Colors.transparent,
-    width: tokens.brutal ? 2 : 1,
-  );
+  BorderSide side({bool hovered = false}) =>
+      BorderSide(color: Colors.transparent, width: 1);
   @override
   Gradient? get overlayGradient => null;
   @override

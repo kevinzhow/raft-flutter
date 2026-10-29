@@ -5,6 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
+
+import 'support/activity_row_actions.dart';
 
 import 'activity_follow_ack_test.dart' show Client, Workspace, thread;
 
@@ -21,11 +24,7 @@ Map<String, dynamic> doneThread({String authoritySeq = '12'}) => {
 };
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     late Client client;
     late Workspace workspace;
     setUp(() {
@@ -45,7 +44,7 @@ void main() {
     Future<dynamic> mount(WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(theme.$1, dark: theme.$2),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: ResourceView(
               controller: workspace,
@@ -60,7 +59,7 @@ void main() {
     }
 
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} held pre-intent read cannot restore the row after newer ACK reconciliation',
+      '[Activity Done] ${dark ? 'dark' : 'light'} held pre-intent read cannot restore the row after newer ACK reconciliation',
       (tester) async {
         final dynamic state = await mount(tester);
         final stale = Completer<dynamic>();
@@ -68,7 +67,7 @@ void main() {
         workspace.inbox = stale;
         final Future<void> oldRead = state.load(append: true);
         await tester.pump();
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         workspace.inbox = null;
         client.pending.single.complete({});
@@ -85,17 +84,21 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} failed ACK refresh shows the actual error and retires its bridge before retry',
+      '[Activity Done] ${dark ? 'dark' : 'light'} failed ACK refresh shows the actual error and retires its bridge before retry',
       (tester) async {
         final dynamic state = await mount(tester);
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         final failed = Completer<dynamic>();
         workspace.inbox = failed;
         client.pending.single.complete({});
         await tester.pump();
         failed.completeError(
-          const RaftApiException('Refresh failed', status: 500),
+          RaftApiException.response(
+            'Refresh failed',
+            status: 500,
+            body: {'error': 'Refresh failed'},
+          ),
         );
         await tester.pumpAndSettle();
         expect(find.textContaining('Refresh failed'), findsOneWidget);
@@ -106,10 +109,10 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} first owned refresh stays armed until acceptance then retires suppression',
+      '[Activity Done] ${dark ? 'dark' : 'light'} first owned refresh stays armed until acceptance then retires suppression',
       (tester) async {
         final dynamic state = await mount(tester);
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         final held = Completer<dynamic>();
         workspace.inbox = held;
@@ -134,10 +137,10 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} newer authority activity bypasses suppression while POST is pending and after ACK',
+      '[Activity Done] ${dark ? 'dark' : 'light'} newer authority activity bypasses suppression while POST is pending and after ACK',
       (tester) async {
         final dynamic state = await mount(tester);
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         workspace.row = doneThread(authoritySeq: '13');
         await state.load();
@@ -151,10 +154,10 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} failed persistence restores canonical row and unread through reconciliation',
+      '[Activity Done] ${dark ? 'dark' : 'light'} failed persistence restores canonical row and unread through reconciliation',
       (tester) async {
         final dynamic state = await mount(tester);
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         expect(state.rows, isEmpty);
         client.pending.single.completeError(
@@ -167,10 +170,10 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} principal change rejects late success and old refresh effects',
+      '[Activity Done] ${dark ? 'dark' : 'light'} principal change rejects late success and old refresh effects',
       (tester) async {
         final dynamic state = await mount(tester);
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         client.user = RaftRecord({'id': 'bob'});
         workspace.notifyListeners();
@@ -185,13 +188,17 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} denied persistence retires rows and never accepts optimistic success',
+      '[Activity Done] ${dark ? 'dark' : 'light'} denied persistence retires rows and never accepts optimistic success',
       (tester) async {
         final dynamic state = await mount(tester);
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         client.pending.single.completeError(
-          const RaftApiException('Denied', status: 403),
+          RaftApiException.response(
+            'Denied',
+            status: 403,
+            body: {'error': 'Denied'},
+          ),
         );
         await tester.pumpAndSettle();
         expect(state.rows, isEmpty);
@@ -200,10 +207,10 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} old success cannot clear the newer Done generation or drive its refresh',
+      '[Activity Done] ${dark ? 'dark' : 'light'} old success cannot clear the newer Done generation or drive its refresh',
       (tester) async {
         final dynamic state = await mount(tester);
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         workspace.row = {
           ...doneThread(authoritySeq: '13'),
@@ -211,7 +218,7 @@ void main() {
         };
         await state.load();
         await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         final before = workspace.inboxRequests;
         client.pending[0].complete({});
@@ -230,11 +237,11 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} legacy server omits sequence and never sends display units',
+      '[Activity Done] ${dark ? 'dark' : 'light'} legacy server omits sequence and never sends display units',
       (tester) async {
         workspace.row.remove('doneFrontierSeq');
         final dynamic state = await mount(tester);
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         expect(client.posts.single.data, {'threadChannelId': 'thread'});
         expect(state.rows, isEmpty);
@@ -245,7 +252,7 @@ void main() {
     );
     for (final kind in ['channel', 'dm']) {
       testWidgets(
-        '[Activity Done] ${theme.$1}/${theme.$2} $kind uses inbox Done with their accepted storage frontier',
+        '[Activity Done] ${dark ? 'dark' : 'light'} $kind uses inbox Done with their accepted storage frontier',
         (tester) async {
           workspace.row = {
             ...doneThread(),
@@ -253,7 +260,7 @@ void main() {
             'channelId': 'channel',
           };
           final dynamic state = await mount(tester);
-          await tester.tap(find.byTooltip('Mark conversation done'));
+          await clickActivityDone(tester);
           await tester.pumpAndSettle();
           expect(client.posts.single.path, '/channels/inbox/done');
           expect(client.posts.single.data, {
@@ -261,7 +268,7 @@ void main() {
             'throughActivitySeq': '12',
             'frontierSpace': 'storage',
           });
-          expect(workspace.unread['channel'], 0);
+          expect(workspace.conversationReads.unread['channel'], 0);
           client.pending.single.complete({});
           await tester.pumpAndSettle();
           expect(state.rows, isEmpty);
@@ -269,10 +276,10 @@ void main() {
       );
     }
     testWidgets(
-      '[Activity Done] ${theme.$1}/${theme.$2} intent removes exact row before POST and stale ACK refresh stays removed',
+      '[Activity Done] ${dark ? 'dark' : 'light'} intent removes exact row before POST and stale ACK refresh stays removed',
       (tester) async {
         final dynamic state = await mount(tester);
-        await tester.tap(find.byTooltip('Mark conversation done'));
+        await clickActivityDone(tester);
         await tester.pumpAndSettle();
         expect(client.posts.single.path, '/channels/threads/done');
         expect(client.posts.single.data, {

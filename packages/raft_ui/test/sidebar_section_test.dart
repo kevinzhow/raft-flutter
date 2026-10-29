@@ -1,17 +1,16 @@
+// Frozen a57b9dab Elegant contract. Current Raft source geometry is covered
+// by framework_navigation_contract_test and framework_sidebar_phone_contract_test.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final density in RaftDensity.values) {
       testWidgets(
-        '$family dark=$dark $density controlled section geometry and actions',
+        '${dark ? 'dark' : 'light'} $density controlled section geometry and actions',
         (tester) async {
           var expanded = true, sorted = 0, added = 0;
           const disclosureKey = ValueKey('section-disclosure');
@@ -19,7 +18,10 @@ void main() {
           const addKey = ValueKey('section-add');
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(
+                pack: packForThemeId(elegantThemePackId),
+                dark: dark,
+              ),
               home: Scaffold(
                 body: RaftDensityScope(
                   density: density,
@@ -44,7 +46,7 @@ void main() {
                             ),
                             RaftSidebarSectionAction(
                               key: addKey,
-                              label: 'Create channel',
+                              label: 'Create Channel',
                               glyph: RaftGlyph.plus,
                               onPressed: () => added++,
                             ),
@@ -92,14 +94,17 @@ void main() {
             tester.widget<Text>(find.text('3')).style!.fontWeight,
             FontWeight.w700,
           );
-          final title = tester.widget<Text>(find.text('CHANNELS'));
+          final title = tester.widget<Text>(find.text('Channels'));
           expect(title.style!.fontSize, 12);
-          expect(title.style!.fontWeight, FontWeight.w700);
+          expect(title.style!.fontWeight, FontWeight.w400);
           expect(title.style!.letterSpacing, 1.2);
           expect(
             tester.widget<Text>(find.text('3')).style!.fontFamily,
             RaftSidebarSectionRecipe(
-              raftTheme(family, dark: dark).extension<RaftTokens>()!,
+              raftTheme(
+                pack: packForThemeId(elegantThemePackId),
+                dark: dark,
+              ).extension<RaftTokens>()!,
               density,
             ).count.fontFamily,
           );
@@ -128,6 +133,7 @@ void main() {
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox.shrink());
         },
+        skip: raftLookSkip(raftLookElegant),
       );
     }
   }
@@ -136,7 +142,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: SizedBox(
               width: 320,
@@ -151,7 +157,7 @@ void main() {
       );
       expect(find.byType(RaftControl), findsNothing);
       expect(find.byType(AnimatedRotation), findsNothing);
-      expect(find.text('WORKSPACE'), findsOneWidget);
+      expect(find.text('Workspace'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },

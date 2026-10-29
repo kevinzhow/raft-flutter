@@ -14,7 +14,13 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/account_onboarding.dart';
 import 'package:raft_flutter/features/auth_view.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/community_join.dart'
+    show communityAgreementError;
 import 'package:raft_flutter/features/global_server_selector.dart';
+import 'package:raft_flutter/features/invite_accept_view.dart';
+import 'package:raft_flutter/features/server_setup_gate.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../parity_harness.dart';
@@ -71,6 +77,148 @@ Widget _register(ParityContext ctx) => AuthView(
 /// label centred (main.dart shows the same widget while the session restores).
 Widget _splash(String label) => RaftServerResolutionBody(label: label);
 
+/// RootErrorFallback over fixtures `rootError` (message, stack, React component stack).
+Widget _rootError(ParityContext ctx) {
+  final error = _fx(ctx)['rootError'] as Map<String, dynamic>;
+  return RaftRootErrorFallback(
+    message: error['message'] as String,
+    stack: error['stack'] as String,
+    componentStack: error['componentStack'] as String,
+    onReload: () {},
+  );
+}
+
+/// ServerAccessDeniedPage over the case's server list (the fallback is the first server).
+Widget _serverDenied(ParityContext ctx) {
+  final servers =
+      (_fx(ctx)['servers'] as Map)[ctx.props['servers']] as List? ?? const [];
+  return RaftServerAccessDeniedPage(
+    serverName: servers.isEmpty
+        ? null
+        : (servers.first as Map)['name'] as String,
+    onContinue: () {},
+  );
+}
+
+/// ServerSetupProjectionGate over a blank page (the Web case mounts the gate alone): the
+/// deferred-setup resume bar floats at the bottom of the viewport.
+Widget _setupGate(ParityContext ctx) {
+  final fx = _fx(ctx);
+  final server = Map<String, dynamic>.from(
+    ((fx['servers'] as Map)[ctx.props['servers']] as List).first as Map,
+  );
+  return ScreenClientHost(
+    create: () => ScreenFixtureClient(
+      (method, path, query) => _answer(ctx, method, path),
+      user: Map<String, dynamic>.from(fx['user'] as Map),
+      server: server['id'] as String,
+    ),
+    builder: (context, client) => _SetupGateHost(
+      controller: WorkspaceController(client)..server = RaftRecord(server),
+    ),
+  );
+}
+
+class _SetupGateHost extends StatefulWidget {
+  const _SetupGateHost({required this.controller});
+  final WorkspaceController controller;
+  @override
+  State<_SetupGateHost> createState() => _SetupGateHostState();
+}
+
+class _SetupGateHostState extends State<_SetupGateHost> {
+  @override
+  void dispose() {
+    widget.controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: Colors.white,
+    child: ServerSetupGate(
+      controller: widget.controller,
+      child: const SizedBox.expand(),
+    ),
+  );
+}
+
+/// CommunityAgreementDialog over a blank page: `props.kind` 'error' fails the join with
+/// agreement_changed, 'pending' never answers (the interaction presses "Agree & Continue").
+Widget _communityAgreement(ParityContext ctx) {
+  final agreement = _fx(ctx)['agreement'] as Map<String, dynamic>;
+  final kind = ctx.props['kind'];
+  return Stack(
+    children: [
+      const Positioned.fill(child: ColoredBox(color: Colors.white)),
+      Positioned.fill(
+        child: RaftCommunityAgreementDialog(
+          title: agreement['title'] as String,
+          version: agreement['version'] as int,
+          bodyMarkdown: agreement['bodyMarkdown'] as String,
+          errorMessage: communityAgreementError,
+          onClose: () {},
+          onAgree: () async {
+            if (kind == 'pending') await Completer<void>().future;
+            if (kind == 'error') {
+              throw const RaftApiException('agreement_changed');
+            }
+          },
+        ),
+      ),
+    ],
+  );
+}
+
+Future<void> _agree(WidgetTester t, ParityContext ctx) async {
+  for (var i = 0; i < 4; i++) {
+    await t.pump(const Duration(milliseconds: 50));
+  }
+  if (ctx.props['kind'] == 'error' || ctx.props['kind'] == 'pending') {
+    await t.tap(find.text('Agree & Continue'));
+    for (var i = 0; i < 6; i++) {
+      await t.pump(const Duration(milliseconds: 50));
+    }
+  }
+}
+
+/// InviteAcceptPage over the case's invite-info route set (`$pending` never answers, `$status`
+/// fails); `props.user` 'verified' is the signed-in page.
+Widget _invite(ParityContext ctx) => InviteAcceptView(
+  token: 'parity-invite-token',
+  signedIn: ctx.props['user'] == 'verified',
+  loadInfo: () async {
+    final answer = _answer(ctx, 'GET', '/auth/invite-info');
+    if (identical(answer, ScreenFixtureClient.pending)) {
+      await Completer<void>().future;
+    }
+    return Map<String, dynamic>.from(answer as Map);
+  },
+  accept: (agreementId) async {
+    final answer = _answer(ctx, 'POST', '/auth/accept-invite');
+    return InviteJoined(
+      'srv-1',
+      '${(answer as Map)['serverName'] ?? 'Raft Design'}',
+    );
+  },
+  onEnter: (_) async => true,
+  onSignIn: () {},
+  onCreateAccount: () {},
+  onGoToRaft: () {},
+);
+
+Future<void> _inviteInteract(WidgetTester t, ParityContext ctx) async {
+  for (var i = 0; i < 6; i++) {
+    await t.pump(const Duration(milliseconds: 50));
+  }
+  if (ctx.id.contains('.invite.accept-error.')) {
+    await t.tap(find.text('Join Server'));
+    for (var i = 0; i < 6; i++) {
+      await t.pump(const Duration(milliseconds: 50));
+    }
+  }
+}
+
 Widget _serversLoading(ParityContext ctx) {
   final fx = _fx(ctx);
   return GlobalServerSelector(
@@ -126,13 +274,17 @@ Widget _serverSelector(ParityContext ctx) {
   );
 }
 
-ParityCase _case(Widget Function(ParityContext) build, {String? note}) =>
-    ParityCase(
-      widgets: const ['raft_flutter:AuthView', 'raft_ui:RaftAuthPage'],
-      notes: 'Extension suite (not official).${note == null ? '' : ' $note'}',
-      settle: const Duration(milliseconds: 300),
-      build: build,
-    );
+ParityCase _case(
+  Widget Function(ParityContext) build, {
+  String? note,
+  ParityInteraction? interact,
+}) => ParityCase(
+  interact: interact,
+  widgets: const ['raft_flutter:AuthView', 'raft_ui:RaftAuthPage'],
+  notes: 'Extension suite (not official).${note == null ? '' : ' $note'}',
+  settle: const Duration(milliseconds: 300),
+  build: build,
+);
 
 /// surface name -> builder; the platform lists are in [_platforms].
 final Map<String, ParityCase> _surfaces = {
@@ -160,6 +312,7 @@ final Map<String, ParityCase> _surfaces = {
     'settings.server-danger-delete-typed',
     'settings.server-danger-member',
     'settings.server-danger-leave',
+    'settings.archived-channels',
     'settings.downgrade-active',
     'settings.downgrade-expired',
     'settings.app-editor',
@@ -180,6 +333,24 @@ final Map<String, ParityCase> _surfaces = {
   'bootstrap.restoring': _case((_) => _splash('Restoring session…')),
   'bootstrap.loading': _case((_) => _splash('Loading…')),
   'servers.loading': _case(_serversLoading),
+  'root-error.default': _case(_rootError),
+  'invite.signed-out': _case(_invite, interact: _inviteInteract),
+  'invite.signed-in': _case(_invite, interact: _inviteInteract),
+  'invite.join-link': _case(_invite, interact: _inviteInteract),
+  'invite.agreement': _case(_invite, interact: _inviteInteract),
+  'invite.hidden-counts': _case(_invite, interact: _inviteInteract),
+  'invite.seat-limit': _case(_invite, interact: _inviteInteract),
+  'invite.expired': _case(_invite, interact: _inviteInteract),
+  'invite.throttled': _case(_invite, interact: _inviteInteract),
+  'invite.loading': _case(_invite, interact: _inviteInteract),
+  'invite.accept-error': _case(_invite, interact: _inviteInteract),
+  'servers.joining-community': _case((_) => _splash('Joining community…')),
+  'community-agreement.default': _case(_communityAgreement, interact: _agree),
+  'community-agreement.error': _case(_communityAgreement, interact: _agree),
+  'community-agreement.joining': _case(_communityAgreement, interact: _agree),
+  'setup-gate.resume-bar': _case(_setupGate),
+  'server-denied.with-server': _case(_serverDenied),
+  'server-denied.no-server': _case(_serverDenied),
 };
 
 /// Surfaces a platform does not run (see build-auth-pages.py `platforms`).
@@ -213,40 +384,6 @@ final Map<String, ParityCase> extAuthPagesCases = {
 
 /// Web pages the Flutter app has no widget for: surface name -> why.
 const _missing = <String, String>{
-  'servers.joining-community':
-      'Flutter page missing: the app has no community-by-slug join route, so no "Joining community…" splash.',
-  'server-denied.with-server':
-      'Flutter page missing: an unknown /s/<slug> opens the server selector instead of a "Server not found" page.',
-  'server-denied.no-server':
-      'Flutter page missing: an unknown /s/<slug> opens the server selector instead of a "Server not found" page.',
-  'invite.signed-out':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'invite.signed-in':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'invite.join-link':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'invite.agreement':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'invite.hidden-counts':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'invite.seat-limit':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'invite.expired':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'invite.throttled':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'invite.loading':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'invite.accept-error':
-      'Flutter page missing: invites are accepted from the Join workspace dialog (server_views.dart), not a page.',
-  'community-agreement.default':
-      'Flutter page missing: the app has no community-agreement dialog (the invite flow shows the agreement as text in a form dialog).',
-  'community-agreement.error':
-      'Flutter page missing: the app has no community-agreement dialog (the invite flow shows the agreement as text in a form dialog).',
-  'community-agreement.joining':
-      'Flutter page missing: the app has no community-agreement dialog (the invite flow shows the agreement as text in a form dialog).',
-  'setup-gate.resume-bar':
-      'Flutter page missing: no "not set up yet / Resume setup" bar for a deferred setup (ServerSetupGate has no deferred state).',
   'setup-gate.loading':
       'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no loading page.',
   'setup-gate.unavailable':
@@ -255,10 +392,6 @@ const _missing = <String, String>{
       'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no load-failed page.',
   'setup-gate.complete':
       'Flutter page missing: the dedicated native setup surface is a Web page for native WebView hosts; the app renders setup natively with no completion page.',
-  'settings.archived-channels':
-      'Flutter page missing: Server settings has no Archived channels section (no Unarchive list).',
-  'root-error.default':
-      'Flutter page missing: no root error fallback (no ErrorWidget.builder / zone handler renders a reload page).',
 };
 
 /// Cases without a Flutter widget (gap noFlutterSurface), merged into parityUncovered by case_map.dart.

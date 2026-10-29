@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+"""Attachment open smoke: opens every attachment kind from every entry point on Linux or an Android emulator.
+
+  tool/attachment-open-smoke/run --platform linux   --out /tmp/aos/linux-current
+  tool/attachment-open-smoke/run --platform android --serial emulator-5640 --out /tmp/aos/android-current --build
+  tool/attachment-open-smoke/run --platform linux --tree ../raft-flutter-wt/attachment-open-smoke-8074 --label 8074 ...
+
+Options: --only img-png,pdf   cases (id or id prefix; default: all for `list`, the core set for other entries)
+         --entries list,search,thread,forward,joint,files,viewer
+         --tree DIR            another checkout to test (an older build); the harness is copied into it and, when it
+                               predates the attachment cache / `labWorkspace(origin:)`, adapted (see adapt_tree)
+         --build               (Android) build the profile APK; without it the last built APK of the tree is used
+
+What it does: generates the fixtures (aos_fixtures.py), starts the fixture server (aos_server.py: presigned storage,
+server-streamed and redirecting URLs, thumbnails, expired signatures; counts every request), runs
+integration_test/attachment_open_smoke_test.dart against the production RaftApp, takes screenshots of failures
+(adb screencap / the private Xvfb display), and writes <out>/results.jsonl, <out>/summary.md and the logs.
+Only the isolated app id app.raft.raft_flutter.linkperf is installed or touched; never the real app or a phone.
+Android: pick an emulator YOU started (see `adb devices`); this script never starts or kills one.
+"""
+import argparse, json, os, re, shutil, signal, socket, subprocess, sys, threading, time, urllib.request
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+TEST = 'integration_test/attachment_open_smoke_test.dart'
+HARNESS = ['integration_test/attachment_open_smoke_test.dart', 'integration_test/support/open_smoke.dart',
+           'integration_test/support/cache_install.dart', 'test_driver/integration_test.dart']
+PACKAGE = 'app.raft.raft_flutter.linkperf'
+sys.path.insert(0, str(HERE))
+
+
+def free_port():
+    with socket.socket() as s:
+        s.bind(('127.0.0.1', 0))
+        return s.getsockname()[1]
+
+
+def adapt_tree(tree: Path):
+    """Copies the harness into an older checkout and patches only what the harness needs from the lab fixtures."""
+    app = tree / 'apps/raft_flutter'
+    if tree.resolve() != ROOT.resolve():
+        for rel in HARNESS:
+            (app / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(ROOT / 'apps/raft_flutter' / rel, app / rel)
+    if not (app / 'lib/data/attachment_disk_cache.dart').exists():
+        (app / 'integration_test/support/cache_install.dart').write_text(
+            '// Stub: this build predates the attachment cache.\nFuture<void> installAttachmentCache() async {}\n')
+    fixtures = app / 'integration_test/perf_lab/fixtures.dart'
+    text = fixtures.read_text()
+    if "String origin = 'https://example.invalid'" not in text:
+        text = text.replace('{bool mobile = false, bool ownsClient = true}) async {\n  final api = LabAdapter();',
+                            "{bool mobile = false, bool ownsClient = true, String origin = 'https://example.invalid', LabAdapter? adapter}) async {\n  final api = adapter ?? LabAdapter();")
+        text = text.replace('final client = LabClient(api);', 'final client = LabClient(api, origin: origin);')
+        text = text.replace("LabClient(LabAdapter adapter)\n    : super(origin: 'https://example.invalid',", "LabClient(LabAdapter adapter, {String origin = 'https://example.invalid'})\n    : super(origin: origin,")
+        fixtures.write_text(text)
+    media = tree / '.local/media-linux'
+    if not media.exists() and (ROOT / '.local/media-linux').exists():
+        media.parent.mkdir(exist_ok=True)
+        media.symlink_to((ROOT / '.local/media-linux').resolve())
+
+
+class Host(threading.Thread):
+    """Answers the test's host commands (screenshots) through the server's mailbox."""
+
+    def __init__(self, base, platform, serial, display, shots):
+        super().__init__(daemon=True)
+        self.base, self.platform, self.serial, self.display, self.shots = base, platform, serial, display, shots
+        self.stop = False
+
+    def get(self, path):
+        with urllib.request.urlopen(self.base + path, timeout=5) as r:
+            return json.load(r)
+
+    def shot(self, name):
+        target = self.shots / f'{name}.png'
+        if self.platform == 'android':
+            data = subprocess.run(['adb', '-s', self.serial, 'exec-out', 'screencap', '-p'], capture_output=True).stdout
+            target.write_bytes(data)
+        else:
+            subprocess.run(['import', '-display', self.display, '-window', 'root', str(target)], capture_output=True)
+        return f'shot:{target.name}'
+
+    def foreground(self):
+        """Android: a case that hands a URL to the OS opens a browser over the app (the app then draws no frames and the
+        test waits forever). Close that app and bring ours back; only the browsers/download apps the handoff starts."""
+        out = subprocess.run(['adb', '-s', self.serial, 'shell', 'dumpsys', 'activity', 'activities'], capture_output=True, text=True).stdout
+        top = re.search(r'topResumedActivity=ActivityRecord\{\S+ \S+ ([\w.]+)/', out)
+        if not top or top.group(1) == PACKAGE:
+            self.away = 0
+            return
+        self.away = getattr(self, 'away', 0) + 1
+        if self.away >= 2 and top.group(1) in ('com.android.chrome', 'com.google.android.apps.chrome', 'com.android.documentsui',
+                                              'com.google.android.documentsui', 'com.android.providers.downloads.ui',
+                                              'com.google.android.apps.docs', 'com.android.vending'):
+            subprocess.run(['adb', '-s', self.serial, 'shell', 'am', 'force-stop', top.group(1)], capture_output=True)
+            subprocess.run(['adb', '-s', self.serial, 'shell', 'am', 'start', '-n', f'{PACKAGE}/app.raft.raft_flutter.MainActivity'], capture_output=True)
+            self.away = 0
+
+    def run(self):
+        ticks = 0
+        while not self.stop:
+            ticks += 1
+            if self.platform == 'android' and ticks % 20 == 0:
+                try:
+                    self.foreground()
+                except Exception:
+                    pass
+            try:
+                state = self.get('/__cmd')
+            except Exception:
+                time.sleep(0.3)
+                continue
+            command = state.get('pending')
+            if not command:
+                time.sleep(0.1)
+                continue
+            result = self.shot(command.split(':', 1)[1]) if command.startswith('shot:') else f'unknown:{command}'
+            try:
+                self.get('/__cmd?ack=' + urllib.request.quote(result))
+            except Exception:
+                pass
+
+
+def summarize(out: Path, label: str):
+    rows = [json.loads(l) for l in (out / 'results.jsonl').read_text().splitlines() if l.strip()] if (out / 'results.jsonl').exists() else []
+    lines = [f'# Attachment open smoke: {label}', '', '| entry | case | kind | result | first content ms | reopen ms | detail |', '|---|---|---|---|---|---|---|']
+    for r in rows:
+        lines.append(f"| {r['entry']} | {r['case']} | {r['kind']} | {'OK' if r['ok'] else 'FAIL'} | {r.get('ms')} | {r.get('reopenMs')} | {str(r['detail'])[:160].replace('|', '/')} |")
+    failed = [r for r in rows if not r['ok']]
+    lines += ['', f'{len(rows)} cases, {len(failed)} failed.']
+    (out / 'summary.md').write_text('\n'.join(lines) + '\n')
+    return rows, failed
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('--platform', choices=['linux', 'android'], required=True)
+    ap.add_argument('--serial', help='the emulator to use (android)')
+    ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('--tree', type=Path, default=ROOT)
+    ap.add_argument('--label', default='current')
+    ap.add_argument('--only', default='')
+    ap.add_argument('--entries', default='list')
+    ap.add_argument('--build', action='store_true')
+    ap.add_argument('--data', type=Path, default=Path(os.environ.get('AOS_DATA', '/tmp/attachment-open-smoke/data')))
+    ap.add_argument('--port', type=int, default=0)
+    args = ap.parse_args()
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))  # run the cleanup below
+    tree = args.tree.resolve()
+    app = tree / 'apps/raft_flutter'
+    out = args.out.resolve()
+    (out / 'shots').mkdir(parents=True, exist_ok=True)
+    (out / 'results.jsonl').write_text('')
+    adapt_tree(tree)
+    import aos_fixtures
+    aos_fixtures.generate(args.data)
+    port = args.port or (18793 if args.platform == 'android' else free_port())
+    base = f'http://127.0.0.1:{port}'
+    config = json.dumps({'only': args.only, 'entries': args.entries, 'label': args.label})
+    server = subprocess.Popen([sys.executable, str(HERE / 'aos_server.py'), str(args.data), str(port), config, str(out / 'results.jsonl')],
+                              stderr=(out / 'server.log').open('w'))
+    children, display, xvfb = [], None, None
+    host = None
+    flutter = str(tree / 'tool/flutter') if (tree / 'tool/flutter').exists() else str(ROOT / 'tool/flutter')
+    code = 1
+    try:
+        time.sleep(1)
+        defines = [f'--dart-define=AOS_BASE={base}', '--dart-define=AOS_HOST=true']
+        log = out / 'suite.log'
+        if args.platform == 'linux':
+            n = 100 + (os.getpid() % 800)
+            display = f':{n}'
+            xvfb = subprocess.Popen(['Xvfb', display, '-screen', '0', '1440x900x24', '-nolisten', 'tcp'], stderr=subprocess.DEVNULL)
+            time.sleep(1.5)
+            env = dict(os.environ, DISPLAY=display, GDK_BACKEND='x11')
+            host = Host(base, 'linux', None, display, out / 'shots')
+            host.start()
+            cmd = [flutter, 'test', '-d', 'linux', TEST, *defines]
+            with log.open('w') as f:
+                proc = subprocess.Popen(cmd, cwd=app, env=env, stdout=f, stderr=subprocess.STDOUT, start_new_session=True)
+                children.append(proc)
+                proc.wait()
+        else:
+            if not args.serial:
+                sys.exit('--serial is required for android (an emulator you started)')
+            serial = args.serial
+            apk = app / 'build/app/outputs/flutter-apk/app-profile.apk'
+            if args.build or not apk.exists():
+                build = [flutter, 'build', 'apk', '--profile', '--target-platform', 'android-x64',
+                         '--android-project-arg=raftApplicationIdSuffix=.linkperf', '-t', TEST, *defines]
+                with (out / 'build.log').open('w') as f:
+                    if subprocess.run(build, cwd=app, stdout=f, stderr=subprocess.STDOUT).returncode:
+                        sys.exit(f'build failed; see {out / "build.log"}')
+            adb = lambda *a, **k: subprocess.run(['adb', '-s', serial, *a], capture_output=True, text=True, **k)
+            # Chrome's first-run screen would swallow the Files-tab hand-off of a URL (an emulator-only artefact): skip it.
+            # Needs an emulator that allows `adb root` (userdebug); best effort.
+            adb('root')
+            time.sleep(2)
+            adb('shell', 'echo "_ --no-first-run --disable-fre --no-default-browser-check" > /data/local/tmp/chrome-command-line')
+            adb('shell', 'chmod', '755', '/data/local/tmp/chrome-command-line')
+            adb('shell', 'am', 'set-debug-app', '--persistent', 'com.android.chrome')
+            adb('uninstall', PACKAGE)  # a clean cache and storage for every run; only the isolated package
+            adb('shell', 'am', 'force-stop', 'com.google.android.documentsui')
+            adb('shell', 'input', 'keyevent', 'KEYCODE_HOME')
+            subprocess.run(['adb', '-s', serial, 'reverse', f'tcp:{port}', f'tcp:{port}'], check=True)
+            adb('logcat', '-c')
+            host = Host(base, 'android', serial, None, out / 'shots')
+            host.start()
+            drive = [flutter, 'drive', '--profile', '-d', serial, '--no-pub', '--keep-app-running',
+                     '--driver=test_driver/integration_test.dart', f'--target={TEST}', f'--use-application-binary={apk}', *defines]
+            with log.open('w') as f:
+                proc = subprocess.Popen(drive, cwd=app, stdout=f, stderr=subprocess.STDOUT, start_new_session=True)
+                children.append(proc)
+                finished = None
+                while proc.poll() is None:
+                    time.sleep(2)
+                    text = log.read_text(errors='replace')
+                    # The drive tool can stay alive after the driver reported: stop it then.
+                    if 'Leaving the application running' in text or 'All tests passed' in text or 'Some tests failed' in text:
+                        finished = finished or time.time()
+                        if time.time() - finished > 8:
+                            os.killpg(proc.pid, signal.SIGTERM)
+                            break
+                proc.wait()
+            with (out / 'logcat.txt').open('w') as f:
+                subprocess.run(['adb', '-s', serial, 'logcat', '-d', '-v', 'time'], stdout=f)
+            adb('shell', 'getprop', 'ro.build.fingerprint')
+            (out / 'device.txt').write_text(adb('shell', 'getprop', 'ro.build.fingerprint').stdout + adb('shell', 'getprop', 'ro.product.model').stdout)
+    finally:
+        if host:
+            host.stop = True
+        for child in children:
+            if child.poll() is None:
+                try:
+                    os.killpg(child.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+        if args.platform == 'android' and args.serial:
+            subprocess.run(['adb', '-s', args.serial, 'reverse', '--remove', f'tcp:{port}'], capture_output=True)
+        if xvfb:
+            xvfb.terminate()
+        server.terminate()
+    rows, failed = summarize(out, f'{args.label} on {args.platform}')
+    print((out / 'summary.md').read_text())
+    sys.exit(1 if failed or not rows else 0)
+
+
+if __name__ == '__main__':
+    main()

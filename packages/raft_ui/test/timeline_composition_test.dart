@@ -59,6 +59,8 @@ void main() {
   testWidgets('centered composition: history grows above the center without '
       'moving the rows below it', (tester) async {
     Widget host(int history) {
+      final scroll = ScrollController(initialScrollOffset: 85);
+      addTearDown(scroll.dispose);
       const forwardKey = ValueKey('forward');
       return Directionality(
         textDirection: TextDirection.ltr,
@@ -69,7 +71,7 @@ void main() {
             height: 400,
             child: CustomScrollView(
               // At the latest end: forward rows, sentinel and footer.
-              controller: ScrollController(initialScrollOffset: 85),
+              controller: scroll,
               center: forwardKey,
               anchor: 1,
               slivers: const RaftTimelineCompositionRecipe().centeredSlivers(

@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
 import 'channel_conversion_progress.dart';
+import '../data/feature_flag_client_facts.dart';
 
 final _observations = Expando<Map<String, ConversionObservation>>();
 
@@ -138,9 +140,12 @@ class _ConversionSectionState
   }
 
   @override
-  Future<V?> scopedDialog<V>(Widget Function(BuildContext) builder) async {
+  Future<V?> scopedDialog<V>(
+    Widget Function(BuildContext) builder, {
+    bool form = false,
+  }) async {
     try {
-      return await super.scopedDialog<V>((context) {
+      return await super.scopedDialog<V>(form: form, (context) {
         modal = context;
         return builder(context);
       });
@@ -166,16 +171,22 @@ class _ConversionSectionState
     final result = managementMap(
       await w.client.post(
         '/feature-flags/evaluate',
-        data: {
-          'keys': [channelConversionFlag],
-          'serverId': w.server?.id,
-          'platform': 'web',
-        },
+        data: featureFlagEvaluateBody(
+          keys: [channelConversionFlag],
+          serverId: w.server?.id,
+        ),
       ),
     );
     return managementRows(result['evaluations'])
         .any((f) => f['key'] == channelConversionFlag && f['enabled'] == true);
   }
+
+  /// Web `responseData.error || formatMessage('channel.edit.failedConvertJoint')`.
+  String conversionError(RaftApiException e) => userErrorText(
+    e,
+    fallback: 'Failed to convert channel to joint channel',
+    where: 'channel conversion',
+  );
 
   @override
   Future<void> loadData(int request, int generation) async {
@@ -297,10 +308,10 @@ class _ConversionSectionState
     }
     final confirmed = await confirm(
       kind == 'cancel'
-          ? 'Cancel conversion'
+          ? 'Cancel Conversion'
           : kind == 'retry'
-          ? 'Retry conversion'
-          : 'Convert to joint channel',
+          ? 'Retry Conversion'
+          : 'Convert to Joint Channel',
       kind == 'cancel'
           ? 'Cancel eligible work before audience cutover and restore the original channel. Completed conversion cannot be reversed.'
           : 'Preserve this channel history and members while preparing a shared conversation. Sending may be temporarily unavailable during conversion.',
@@ -377,11 +388,11 @@ class _ConversionSectionState
               'conversionJob': e.details['conversionJob'],
             });
             observations.remove(key);
-            error = e.message;
+            error = conversionError(e);
           } else if (e is RaftApiException &&
               [400, 403, 404, 409].contains(e.status)) {
             observations.remove(key);
-            error = e.message;
+            error = conversionError(e);
             uploadBlocked =
                 e.details['code'] == 'channel_conversion_uploads_in_flight';
             if ([401, 403, 404].contains(e.status)) {
@@ -390,15 +401,16 @@ class _ConversionSectionState
             }
           } else {
             uncertain = true;
-            error = 'The conversion outcome is not confirmed. Check status before trying again.';
+            error = 'Conversion status could not be confirmed. Reconnecting; the last known progress is preserved.';
           }
         }
       },
       submit: kind == 'cancel'
-          ? 'Cancel conversion'
+          ? 'Cancel Conversion'
           : kind == 'retry'
-          ? 'Retry conversion'
-          : 'Convert to joint channel',
+          ? 'Retry Conversion'
+          : 'Convert to Joint Channel',
+      cancel: kind == 'cancel' ? 'Keep Conversion' : 'Cancel',
       destructive: kind == 'cancel',
     );
     if (!confirmed || !same(source)) return;
@@ -415,7 +427,7 @@ class _ConversionSectionState
   Future<void> cancelUpload(Map<String, dynamic> upload) async {
     final source = authority;
     final saved = await confirm(
-      'Cancel upload',
+      'Cancel Upload',
       'Cancel ${upload['filename']} from this channel. The unfinished attachment will not be sent.',
       () async {
         if (!enabled || !same(source)) {
@@ -429,7 +441,8 @@ class _ConversionSectionState
         canceledUploads.add('${upload['uploadId']}');
         uploads.removeWhere((u) => u['uploadId'] == upload['uploadId']);
       },
-      submit: 'Cancel upload',
+      submit: 'Cancel Upload',
+      cancel: 'Keep Uploading',
       destructive: true,
     );
     if (saved && same(source)) {
@@ -481,7 +494,7 @@ class _ConversionSectionState
             ),
           ),
           if (pending != null) ...[
-            const LinearProgressIndicator(),
+            const RaftProgressBar(),
             Text(
               raftText(
                 context,
@@ -490,22 +503,26 @@ class _ConversionSectionState
                     : 'Waiting for server confirmation.',
               ),
             ),
-            action('Check conversion status', guard(reload)),
+            action('Check Conversion Status', guard(reload)),
           ],
           if (uploads.isNotEmpty) ...[
             Text(raftText(context, 'Uploads still in progress')),
             for (final upload in uploads)
-              ListTile(
-                title: Text('${upload['filename']}'),
-                subtitle: Text(
-                  '${raftText(context, upload['state'] == 'verifying' ? 'Verifying upload' : 'Upload pending')} · ${upload['sizeBytes']} B',
-                ),
-                trailing: action(
-                  'Cancel upload',
-                  guard(() => cancelUpload(upload)),
-                ),
+              RaftListRow(
+                interactive: false,
+                children: [
+                  RaftListRowBody(
+                    children: [
+                      RaftListRowTitle('${upload['filename']}'),
+                      RaftListRowDescription(
+                        '${raftText(context, upload['state'] == 'verifying' ? 'Verifying upload' : 'Upload pending')} · ${upload['sizeBytes']} B',
+                      ),
+                    ],
+                  ),
+                  action('Cancel Upload', guard(() => cancelUpload(upload))),
+                ],
               ),
-            action('Return to channel', guard(openChannel)),
+            action('Return to Channel', guard(openChannel)),
           ],
           if (snapshot.job.isNotEmpty && pending == null)
             ChannelConversionProgress(
@@ -518,33 +535,26 @@ class _ConversionSectionState
           if (snapshot.status == 'failed' &&
               snapshot.job.isEmpty &&
               snapshot.command['error'] is String)
-            Text(
-              snapshot.command['error'],
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          if (error != null)
-            Text(
-              error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
+            RaftErrorBanner(snapshot.command['error'], small: true),
+          if (error != null) RaftErrorBanner(error!, small: true),
           Wrap(
             spacing: 8,
             children: [
               if (canStart)
                 action(
-                  'Convert to joint channel',
+                  'Convert to Joint Channel',
                   guard(() => command('start')),
                   glyph: RaftGlyph.gitBranch,
                 ),
               if (pending == null && snapshot.job['status'] == 'failed')
-                action('Retry conversion', guard(() => command('retry'))),
+                action('Retry Conversion', guard(() => command('retry'))),
               if (pending == null && snapshot.canCancel)
-                action('Cancel conversion', guard(() => command('cancel'))),
+                action('Cancel Conversion', guard(() => command('cancel'))),
               if (snapshot.status == 'done')
                 Text(
                   raftText(
                     context,
-                    'Conversion complete. Invite another workspace from Joint channels.',
+                    'Conversion complete. Invite another server from Joint Channels.',
                   ),
                 ),
               if (snapshot.status == 'canceled')

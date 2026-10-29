@@ -37,40 +37,70 @@ std::string AppId(const EncodableValue* argument) {
   return *id;
 }
 
-// Unpackaged desktop toasts need a Start Menu link with both the AUMID and
-// activator CLSID. The link and COM server contain only this executable path.
-void RegisterShortcut(const std::wstring& executable, const std::string& id,
-                      const GUID& guid) {
+// Display assets complement the AUMID-bearing Start Menu shortcut below.
+// Notification clicks use protocol activation, without a COM server.
+void RegisterIdentity(const std::string& id, const std::wstring& icon) {
+  const auto path = L"Software\\Classes\\AppUserModelId\\" +
+      std::wstring(winrt::to_hstring(id));
+  HKEY key = nullptr;
+  winrt::check_win32(RegCreateKeyExW(HKEY_CURRENT_USER, path.c_str(), 0,
+      nullptr, 0, KEY_SET_VALUE, nullptr, &key, nullptr));
+  const auto name = id == "app.raft.raft_flutter.notificationlab"
+      ? std::wstring(L"Raft notification lab") : std::wstring(L"Raft");
+  auto status = RegSetValueExW(key, L"DisplayName", 0, REG_SZ,
+      reinterpret_cast<const BYTE*>(name.c_str()),
+      static_cast<DWORD>((name.size() + 1) * sizeof(wchar_t)));
+  if (status == ERROR_SUCCESS) {
+    status = RegSetValueExW(key, L"IconUri", 0, REG_SZ,
+        reinterpret_cast<const BYTE*>(icon.c_str()),
+        static_cast<DWORD>((icon.size() + 1) * sizeof(wchar_t)));
+  }
+  RegCloseKey(key);
+  winrt::check_win32(status);
+}
+
+// The desktop Toast contract requires a Start Menu shortcut carrying the AUMID.
+// Use the installer's per-user location so ZIP and installed builds share one
+// entry. Refresh a stale target when a portable bundle moves; leave a matching
+// shortcut untouched. The lab always has a separate entry.
+void RegisterShortcut(const std::wstring& executable, const std::string& id) {
   PWSTR programs = nullptr;
   winrt::check_hresult(SHGetKnownFolderPath(FOLDERID_Programs, KF_FLAG_CREATE,
                                           nullptr, &programs));
-  const std::wstring folder = std::wstring(programs) +
+  const auto path = std::wstring(programs) +
       (id == "app.raft.raft_flutter.notificationlab"
-          ? L"\\Raft Flutter notification lab" : L"\\Raft Flutter");
+          ? L"\\Raft notification lab.lnk" : L"\\Raft.lnk");
   CoTaskMemFree(programs);
-  if (!CreateDirectoryW(folder.c_str(), nullptr) &&
-      GetLastError() != ERROR_ALREADY_EXISTS) {
-    winrt::throw_last_error();
-  }
   winrt::com_ptr<IShellLinkW> link;
   winrt::check_hresult(CoCreateInstance(CLSID_ShellLink, nullptr,
       CLSCTX_INPROC_SERVER, IID_PPV_ARGS(link.put())));
+  const auto file = link.as<IPersistFile>();
+  if (SUCCEEDED(file->Load(path.c_str(), STGM_READWRITE))) {
+    wchar_t target[32768] = {};
+    PROPVARIANT existing = {};
+    const auto status = link.as<IPropertyStore>()->GetValue(
+        PKEY_AppUserModel_ID, &existing);
+    const bool matches = SUCCEEDED(status) && existing.vt == VT_LPWSTR &&
+        existing.pwszVal != nullptr &&
+        winrt::to_hstring(id) == existing.pwszVal &&
+        SUCCEEDED(link->GetPath(target, 32768, nullptr, SLGP_RAWPATH)) &&
+        _wcsicmp(target, executable.c_str()) == 0;
+    PropVariantClear(&existing);
+    if (matches) return;
+  }
   winrt::check_hresult(link->SetPath(executable.c_str()));
+  winrt::check_hresult(link->SetArguments(L""));
   const auto directory = executable.substr(0, executable.find_last_of(L"\\/"));
   winrt::check_hresult(link->SetWorkingDirectory(directory.c_str()));
   winrt::check_hresult(link->SetIconLocation(executable.c_str(), 0));
   const auto properties = link.as<IPropertyStore>();
-  PROPVARIANT value;
+  PROPVARIANT value = {};
   winrt::check_hresult(InitPropVariantFromString(winrt::to_hstring(id).c_str(), &value));
-  auto status = properties->SetValue(PKEY_AppUserModel_ID, value);
-  PropVariantClear(&value);
-  winrt::check_hresult(status);
-  winrt::check_hresult(InitPropVariantFromCLSID(guid, &value));
-  status = properties->SetValue(PKEY_AppUserModel_ToastActivatorCLSID, value);
+  const auto status = properties->SetValue(PKEY_AppUserModel_ID, value);
   PropVariantClear(&value);
   winrt::check_hresult(status);
   winrt::check_hresult(properties->Commit());
-  winrt::check_hresult(link.as<IPersistFile>()->Save((folder + L"\\Raft.lnk").c_str(), TRUE));
+  winrt::check_hresult(file->Save(path.c_str(), TRUE));
 }
 
 bool NotificationPermission(const std::string& id) {
@@ -103,38 +133,17 @@ std::string Configure(const EncodableValue* argument, HWND window) {
   const auto values = argument ? std::get_if<EncodableMap>(argument) : nullptr;
   if (!values) throw winrt::hresult_error(E_INVALIDARG);
   const auto id = AppId(&values->at(EncodableValue("appId")));
-  const auto& guid = std::get<std::string>(values->at(EncodableValue("guid")));
-  const auto expected_guid = id == "app.raft.raft_flutter.notificationlab"
-      ? "c7f8c268-2e7c-5079-9305-1a7294c70d9d"
-      : "b951813c-37ff-5d5c-95ac-f9573572c87c";
-  if (guid != expected_guid) throw winrt::hresult_error(E_INVALIDARG);
-  const std::wstring clsid = L"{" + std::wstring(winrt::to_hstring(guid)) + L"}";
-  GUID validated_guid;
-  winrt::check_hresult(CLSIDFromString(clsid.c_str(), &validated_guid));
   const auto executable = ExecutablePath();
-  RegisterShortcut(executable, id, validated_guid);
-  const auto command = L"\"" + executable + L"\" --notification-activation";
-  const auto key_path = L"Software\\Classes\\CLSID\\" + clsid + L"\\LocalServer32";
-  HKEY key = nullptr;
-  winrt::check_win32(RegCreateKeyExW(HKEY_CURRENT_USER, key_path.c_str(), 0,
-                                   nullptr, 0, KEY_SET_VALUE, nullptr, &key, nullptr));
-  auto status = RegSetValueExW(key, nullptr, 0, REG_SZ,
-      reinterpret_cast<const BYTE*>(command.c_str()),
-      static_cast<DWORD>((command.size() + 1) * sizeof(wchar_t)));
-  if (status == ERROR_SUCCESS) {
-    status = RegSetValueExW(key, L"ServerExecutable", 0, REG_SZ,
-        reinterpret_cast<const BYTE*>(executable.c_str()),
-        static_cast<DWORD>((executable.size() + 1) * sizeof(wchar_t)));
-  }
-  RegCloseKey(key);
-  winrt::check_win32(status);
   winrt::check_hresult(SetCurrentProcessExplicitAppUserModelID(
       winrt::to_hstring(id).c_str()));
   if (id == "app.raft.raft_flutter.notificationlab") {
     SetWindowTextW(window, L"Raft notification lab");
   }
   const auto directory = executable.substr(0, executable.find_last_of(L"\\/"));
-  return winrt::to_string(directory + L"\\raft.ico");
+  const auto icon = directory + L"\\raft.ico";
+  RegisterIdentity(id, icon);
+  RegisterShortcut(executable, id);
+  return winrt::to_string(icon);
 }
 }  // namespace
 
@@ -150,22 +159,31 @@ CreateWindowsNotificationsChannel(flutter::BinaryMessenger* messenger,
           if (call.method_name() == "configure") {
             result->Success(EncodableValue(Configure(call.arguments(), window)));
           } else if (call.method_name() == "configureSdk") {
+            // Keep the existing Dart channel name; delivery uses system Toast.
             const auto icon = Configure(call.arguments(), window);
             const auto values = std::get_if<EncodableMap>(call.arguments());
-            InitializeWindowsNotificationSdk(
+            InitializeWindowsNotifications(
                 AppId(&values->at(EncodableValue("appId"))), icon);
             result->Success();
           } else if (call.method_name() == "show") {
-            ShowWindowsSdkNotification(call.arguments());
+            ShowWindowsNotification(call.arguments());
             result->Success();
           } else if (call.method_name() == "cancelAll") {
-            ClearWindowsSdkNotifications();
+            ClearWindowsNotifications();
             result->Success();
           } else if (call.method_name() == "takeActivations") {
             result->Success(EncodableValue(TakeWindowsNotificationActivations()));
           } else if (call.method_name() == "permission") {
             const auto id = AppId(call.arguments());
             result->Success(EncodableValue(NotificationPermission(id)));
+          } else if (call.method_name() == "isActive") {
+            const HWND foreground = GetForegroundWindow();
+            DWORD process_id = 0;
+            if (foreground != nullptr) {
+              GetWindowThreadProcessId(foreground, &process_id);
+            }
+            result->Success(EncodableValue(
+                foreground != nullptr && process_id == GetCurrentProcessId()));
           } else if (call.method_name() == "present") {
             ShowWindow(window, IsIconic(window) ? SW_RESTORE : SW_SHOW);
             SetForegroundWindow(window);

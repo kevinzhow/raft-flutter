@@ -100,7 +100,7 @@ class _NotificationInteractionPreviewState
                         label: 'Dismiss',
                         onPressed: () => setState(() {
                           planVisible = false;
-                          lastAction = 'Dismiss plan';
+                          lastAction = 'Dismiss Plan';
                         }),
                       ),
                     ],
@@ -186,11 +186,11 @@ class _NotificationAttentionPreviewState
         RaftNotificationAttention(count: count),
         RaftControl(
           semanticLabel: count == 0
-              ? 'Show attention mark'
-              : 'Clear attention mark',
+              ? 'Show Attention Mark'
+              : 'Clear Attention Mark',
           onPressed: () => setState(() => count = count == 0 ? 3 : 0),
           child: Text(
-            count == 0 ? 'Show attention mark' : 'Clear attention mark',
+            count == 0 ? 'Show Attention Mark' : 'Clear Attention Mark',
           ),
         ),
         Text('$count notifications'),
@@ -237,13 +237,13 @@ class _NotificationComputerPreviewState
                       label: 'View',
                       primary: true,
                       onPressed: () =>
-                          setState(() => lastAction = 'View computers'),
+                          setState(() => lastAction = 'View Computers'),
                     ),
                     RaftNotificationAction(
                       label: 'Dismiss',
                       onPressed: () => setState(() {
                         dismissed = true;
-                        lastAction = 'Dismiss computers';
+                        lastAction = 'Dismiss Computers';
                       }),
                     ),
                   ],

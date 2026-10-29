@@ -43,6 +43,23 @@ void main() {
       expect(value['messages'][0]['accessToken'], 'test-only');
     });
   }
+  test('the public unsigned thumbnailUrl survives the cache; a signed URL does not', () async {
+    // The server builds thumbnailUrl from its public CDN base and the
+    // thumbnail key (no signature), so a restored message keeps it.
+    final payload = await encodeWorkspaceCache({
+      'attachments': [
+        {
+          'id': 'a1',
+          'thumbnailUrl': 'https://cdn.example.invalid/thumbs/s1/a1.webp',
+          'downloadUrl': 'https://example.invalid/a1?X-Amz-Signature=test-only',
+        },
+      ],
+    });
+    final attachment = (await decodeWorkspaceCache(payload))['attachments'][0];
+    expect(attachment['thumbnailUrl'], 'https://cdn.example.invalid/thumbs/s1/a1.webp');
+    expect(attachment.containsKey('downloadUrl'), isFalse);
+  });
+
   test('translation batches retain order and sanitize every row', () async {
     final entries = [
       for (var i = 0; i < 300; i++)

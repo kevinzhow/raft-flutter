@@ -45,10 +45,20 @@ Widget recipeGroupOpacityPreview() => Padding(
 );
 
 @RaftPreviews('Composer editable CSS line boxes', size: Size(390, 240))
-Widget composerEditableLineBoxPreview() => Align(
-  alignment: Alignment.bottomCenter,
+Widget composerEditableLineBoxPreview() => SingleChildScrollView(
+  // Anchored at the bottom like a composer; scrolls when larger text makes it
+  // taller than the preview.
+  reverse: true,
   child: RaftComposer(
     initialDraft: 'Review the Android composer crop before release.',
+    suggestions: const [
+      RaftComposerSuggestion(
+        type: 'external',
+        id: 'synthetic-slack',
+        name: 'ada-slack',
+        title: 'Ada Slack',
+      ),
+    ],
     onImagePick: () {},
     onAttach: () {},
     onSend: (_) async => false,
@@ -81,6 +91,7 @@ class _GroupPreviewState extends State<_GroupPreview> {
               RaftChatSidebarGroupKind.directMessages => 'Direct messages',
             },
             count: 0,
+            // ignore: raft_lints/avoid_render_index_assertion -- Preview-only widget; the map is built over every kind.
             expanded: expanded[kind]!,
             hideEmpty: hideEmpty,
             loading: loading,
@@ -115,11 +126,11 @@ class _GroupPreviewState extends State<_GroupPreview> {
           spacing: 8,
           children: [
             RaftTextButton(
-              label: hideEmpty ? 'Show empty groups' : 'Hide empty groups',
+              label: hideEmpty ? 'Show Empty Groups' : 'Hide Empty Groups',
               onPressed: () => setState(() => hideEmpty = !hideEmpty),
             ),
             RaftTextButton(
-              label: loading ? 'Finish loading' : 'Begin loading',
+              label: loading ? 'Finish Loading' : 'Begin Loading',
               onPressed: () => setState(() => loading = !loading),
             ),
           ],
@@ -167,8 +178,8 @@ class _TabPreviewState extends State<_TabPreview> {
           child: RaftConversationHeaderActions(
             onSearch: () => setState(() => actions++),
             onSettings: () => setState(() => actions++),
-            searchLabel: 'Search conversation',
-            settingsLabel: 'Conversation settings',
+            searchLabel: 'Search Conversation',
+            settingsLabel: 'Conversation Settings',
           ),
         ),
         Text('Fixture panel: ${value.name}; actions: $actions'),
@@ -197,7 +208,7 @@ class _TaskPreviewState extends State<_TaskPreview> {
         },
         taskAction: RaftComposerTaskToggle(
           checked: checked,
-          label: 'As task',
+          label: 'As Task',
           onChanged: (value) => setState(() => checked = value),
         ),
       ),

@@ -3,6 +3,9 @@
 // `<ComposerAttachments>` and the failed-upload alert rows) over the raft-ui
 // `composerAttachment` recipe. The app owns the upload lifecycle and passes a
 // view model; this file never reads files, network or controllers.
+import 'reduced_motion.dart';
+import 'hover_region.dart';
+
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -15,8 +18,14 @@ import 'panel_layout.dart' show RaftCssText;
 import 'recipes/composer_attachment.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
+import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
+import 'raft/css_box.dart' show raftControlBorderPx;
+import 'raft/ui_tokens.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'tooltip.dart';
+import 'sized_image.dart';
+import 'reorderable_wrap.dart';
 
 /// Web `PendingFile.uploadStatus`: `validating` is the local selection check
 /// that runs before any transfer, `queued` is not shown separately.
@@ -153,8 +162,13 @@ class RaftComposerAttachments extends StatelessWidget {
     required this.onRemove,
     this.onRetry,
     this.onPreview,
+    this.onReorder,
   });
   final List<RaftComposerAttachment> items;
+
+  /// Web `handleAttachmentDragEnd`: the chips were dragged into a new order
+  /// (ids of every chip, in order). Null leaves them fixed.
+  final ValueChanged<List<String>>? onReorder;
   final ValueChanged<RaftComposerAttachment> onRemove;
   final ValueChanged<RaftComposerAttachment>? onRetry;
 
@@ -190,24 +204,29 @@ class RaftComposerAttachments extends StatelessWidget {
         children: [
           if (chips.isNotEmpty)
             Padding(
-              padding: root.padding,
-              child: Wrap(
+              // raft-ui 0.7 `attachments`: `pt-1.5 pe-1.5`.
+              padding:
+                  t.option('composerAttachment.style', or: 'recipe') == 'raft'
+                  ? const EdgeInsets.only(top: 6, right: 6)
+                  : root.padding,
+              child: RaftReorderableWrap<RaftComposerAttachment>(
                 spacing: (root.columnGap ?? gap) - hang.right,
                 runSpacing: (root.rowGap ?? gap) - hang.top,
-                children: [
-                  for (final item in chips)
-                    _AttachmentChip(
-                      key: ValueKey('composer-attachment-${item.id}'),
-                      item: item,
-                      onRemove: () => onRemove(item),
-                      onPreview:
-                          onPreview != null &&
-                              item.preview != null &&
-                              item.status == RaftComposerAttachmentStatus.ready
-                          ? () => onPreview!(item)
-                          : null,
-                    ),
-                ],
+                items: chips,
+                idOf: (item) => item.id,
+                onReorder: onReorder,
+                itemBuilder: (context, item) => _AttachmentChip(
+                  key: ValueKey('composer-attachment-${item.id}'),
+                  item: item,
+                  sortable: onReorder != null,
+                  onRemove: () => onRemove(item),
+                  onPreview:
+                      onPreview != null &&
+                          item.preview != null &&
+                          item.status == RaftComposerAttachmentStatus.ready
+                      ? () => onPreview!(item)
+                      : null,
+                ),
               ),
             ),
           for (final item in failures) ...[
@@ -235,7 +254,7 @@ RaftComposerAttachmentRecipeStyle _style(
   required bool touch,
   bool hovered = false,
 }) => RaftComposerAttachmentRecipe.resolve(
-  theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+  theme: RaftRecipeTheme.elegant,
   states: RaftRecipeStates({
     if (t.dark) RaftRecipeStates.dark,
     if (image) 'has:data-slot=composer-attachment-image',
@@ -251,8 +270,10 @@ class _AttachmentChip extends StatefulWidget {
     required this.item,
     required this.onRemove,
     this.onPreview,
+    this.sortable = false,
   });
   final RaftComposerAttachment item;
+  final bool sortable;
   final VoidCallback onRemove;
   final VoidCallback? onPreview;
   @override
@@ -264,9 +285,258 @@ class _AttachmentChipState extends State<_AttachmentChip> {
 
   RaftComposerAttachment get item => widget.item;
 
+  /// raft-ui 0.7 `composerAttachment`: a `fill-muted` card with a hairline
+  /// (file 176x64 / image 64x64), a bare ink-bordered remove square that is
+  /// always visible, and `layer-card` washes for checking / uploading / failed.
+  Widget _buildRaft(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    final image = item.preview != null;
+    final radius = t.size('radius.control', fallback: 8);
+    final hairline = raftControlBorderPx(context, 1);
+    final preview = widget.onPreview;
+    Widget body;
+    if (image) {
+      body = SizedBox.square(
+        dimension: 64,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: ui.fillMuted,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: ui.lineHairline, width: hairline),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(radius - hairline),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const CustomPaint(painter: _TransparencyPainter()),
+                RaftSizedImage.memory(
+                  item.preview!,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.medium,
+                  gaplessPlayback: true,
+                  semanticLabel: item.name,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } else {
+      final metaText = item.mimeType.isEmpty
+          ? raftText(context, 'file')
+          : item.mimeType;
+      body = Container(
+        width: 176,
+        // `h-16`: a minimum, so larger text never overflows the chip.
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: ui.fillMuted,
+          borderRadius: BorderRadius.circular(radius),
+          border: Border.all(color: ui.lineHairline, width: hairline),
+        ),
+        child: Row(
+          children: [
+            RaftIcon(RaftGlyph.fileText, size: 16, color: ui.foregroundMuted),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RaftCssText(
+                    item.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.scale(
+                      RaftTypeScale.footnote,
+                      weight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  RaftCssText(
+                    metaText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.scale(
+                      RaftTypeScale.monoMeta,
+                      mono: true,
+                      color: ui.foregroundHint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    if (preview != null) {
+      body = Semantics(
+        button: true,
+        label: raftFormat(context, 'Preview {file}', {'file': item.name}),
+        child: RaftTooltip(
+          message: raftText(context, 'Preview Image'),
+          child: RaftHoverRegion(
+            cursor: SystemMouseCursors.zoomIn,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: preview,
+              child: ExcludeSemantics(child: body),
+            ),
+          ),
+        ),
+      );
+    } else if (widget.sortable) {
+      body = RaftHoverRegion(cursor: SystemMouseCursors.grab, child: body);
+    }
+    Widget wash(Color fill, List<Widget> children, {Border? border}) =>
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: fill,
+              borderRadius: BorderRadius.circular(radius),
+              border: border,
+            ),
+            child: ClipRect(
+              child: OverflowBox(
+                maxHeight: double.infinity,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: children,
+                ),
+              ),
+            ),
+          ),
+        );
+    TextStyle meta(Color color) => t.scale(
+      RaftTypeScale.monoMeta,
+      mono: true,
+      weight: FontWeight.w700,
+      color: color,
+    );
+    final overlays = <Widget>[
+      if (item.status == RaftComposerAttachmentStatus.checking)
+        wash(ui.layerCard.withValues(alpha: .8), [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: RaftSpinner(),
+          ),
+          RaftCssText(
+            raftText(context, 'Checking file…'),
+            textAlign: TextAlign.center,
+            style: meta(ui.foreground),
+          ),
+        ]),
+      if (item.status == RaftComposerAttachmentStatus.uploading) ...[
+        wash(ui.layerCard.withValues(alpha: .8), [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: RaftSpinner(),
+          ),
+          RaftCssText(
+            item.progress >= 99
+                ? raftText(context, 'Finishing upload…')
+                : item.progress > 0
+                ? '${item.progress}%'
+                : raftText(context, 'Uploading'),
+            textAlign: TextAlign.center,
+            style: meta(ui.foreground),
+          ),
+        ]),
+        Positioned(
+          left: 6,
+          right: 6,
+          bottom: 6,
+          height: 4,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: ui.layerCard,
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: item.progress.clamp(0, 100) / 100,
+                  heightFactor: 1,
+                  child: ColoredBox(color: ui.info),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+      if (item.status == RaftComposerAttachmentStatus.failed)
+        wash(ui.layerCard.withValues(alpha: .9), [
+          RaftCssText(
+            raftText(context, 'Upload failed'),
+            textAlign: TextAlign.center,
+            style: t.scale(
+              RaftTypeScale.caption,
+              weight: FontWeight.w600,
+              color: ui['danger-strong'],
+            ),
+          ),
+        ], border: Border.all(color: ui['danger-strong'], width: hairline)),
+    ];
+    final removeSize = 20.0;
+    final stickerRadius = t.size('radius.sticker', fallback: 4);
+    final removeButton = Semantics(
+      button: true,
+      label: raftFormat(context, 'Remove {file}', {'file': item.name}),
+      excludeSemantics: true,
+      onTap: widget.onRemove,
+      child: GestureDetector(
+        key: const ValueKey('composer-attachment-remove'),
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onRemove,
+        child: Container(
+          width: removeSize,
+          height: removeSize,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: ui.layerCard,
+            borderRadius: BorderRadius.circular(stickerRadius),
+            border: Border.all(
+              color: ui.lineStrong,
+              width: raftControlBorderPx(context, 1.5),
+            ),
+          ),
+          child: RaftIcon(RaftGlyph.x, size: 12, color: ui.foreground),
+        ),
+      ),
+    );
+    return RaftHoverRegion(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Padding(
+            padding: _overhangInset,
+            child: KeyedSubtree(
+              key: ValueKey('composer-attachment-box-${item.id}'),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [body, if (image) ...overlays else ...overlays],
+              ),
+            ),
+          ),
+          Positioned(top: 0, right: 0, child: removeButton),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.option('composerAttachment.style', or: 'recipe') == 'raft') {
+      return _buildRaft(context, t);
+    }
     final resolver = RaftRecipeTokens(t);
     final touch = RaftDensityScope.of(context) == RaftDensity.touch;
     final image = item.preview != null;
@@ -283,13 +553,17 @@ class _AttachmentChipState extends State<_AttachmentChip> {
     }
     final preview = widget.onPreview;
     Widget content = body;
+    if (preview == null && widget.sortable) {
+      // Web `cursor-grab`: the chip body is the drag handle.
+      content = RaftHoverRegion(cursor: SystemMouseCursors.grab, child: body);
+    }
     if (preview != null) {
       content = Semantics(
         button: true,
         label: raftFormat(context, 'Preview {file}', {'file': item.name}),
         child: RaftTooltip(
-          message: raftText(context, 'Preview image'),
-          child: MouseRegion(
+          message: raftText(context, 'Preview Image'),
+          child: RaftHoverRegion(
             cursor: SystemMouseCursors.zoomIn,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -342,7 +616,7 @@ class _AttachmentChipState extends State<_AttachmentChip> {
             tokens: t,
             label: raftText(context, 'Upload failed'),
             // The brutal image chip already has the 2px border.
-            borderless: image && t.brutal,
+            borderless: false,
           ),
         ),
     ];
@@ -350,8 +624,10 @@ class _AttachmentChipState extends State<_AttachmentChip> {
       ignoring: !visible,
       child: AnimatedOpacity(
         opacity: visible ? 1 : 0,
-        duration:
-            remove.transitionDuration ?? const Duration(milliseconds: 150),
+        duration: raftMotionDuration(
+          context,
+          remove.transitionDuration ?? const Duration(milliseconds: 150),
+        ),
         curve: remove.transitionCurve ?? Curves.ease,
         child: Semantics(
           button: true,
@@ -405,7 +681,7 @@ class _AttachmentChipState extends State<_AttachmentChip> {
     // brutal image chip's border); here the layout box already carries the
     // 6px overhang, so it lies inside the Stack and takes hover and taps.
     final inset = fixed ? s.attachment.borderWidth : EdgeInsets.zero;
-    return MouseRegion(
+    return RaftHoverRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
       child: Stack(
@@ -476,7 +752,7 @@ class _ImageBody extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         const CustomPaint(painter: _TransparencyPainter()),
-        Image.memory(
+        RaftSizedImage.memory(
           item.preview!,
           fit: BoxFit.cover,
           filterQuality: FilterQuality.medium,
@@ -523,10 +799,7 @@ class _FileBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final slot = style.attachmentFile;
-    final brutal = tokens.brutal;
-    final iconColor = brutal
-        ? const Color(0xb3000000)
-        : tokens.colors['foreground-icon'] ?? tokens.muted;
+    final iconColor = tokens.colors['foreground-icon'] ?? tokens.muted;
     final meta = style.attachmentMeta;
     final metaText = item.mimeType.isEmpty
         ? raftText(context, 'file')
@@ -545,27 +818,10 @@ class _FileBody extends StatelessWidget {
       style: text(meta),
     );
     final padding = slot.padding;
-    final body = brutal
-        ? SizedBox(
-            height: style.attachmentBody.height,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: style.attachmentTitle.margin.top,
-                  ),
-                  child: title,
-                ),
-                metaWidget,
-              ],
-            ),
-          )
-        : Transform.translate(
-            offset: style.attachmentTitle.translate ?? Offset.zero,
-            child: title,
-          );
+    final body = Transform.translate(
+      offset: style.attachmentTitle.translate ?? Offset.zero,
+      child: title,
+    );
     final inner = slot.width == null
         ? null
         : slot.width! - slot.borderWidth.horizontal;
@@ -581,9 +837,7 @@ class _FileBody extends StatelessWidget {
             child: Padding(
               padding: padding,
               child: Row(
-                crossAxisAlignment: brutal
-                    ? CrossAxisAlignment.center
-                    : CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   RaftIcon(RaftGlyph.fileText, size: 16, color: iconColor),
                   SizedBox(width: slot.columnGap ?? 8),
@@ -592,26 +846,23 @@ class _FileBody extends StatelessWidget {
               ),
             ),
           ),
-          if (!brutal)
-            Positioned(
-              right: meta.length('right') ?? 10,
-              bottom: meta.length('bottom') ?? 6,
-              width: inner,
-              child: Align(alignment: Alignment.bottomRight, child: metaWidget),
-            ),
+          Positioned(
+            right: meta.length('right') ?? 10,
+            bottom: meta.length('bottom') ?? 6,
+            width: inner,
+            child: Align(alignment: Alignment.bottomRight, child: metaWidget),
+          ),
         ],
       ),
     );
     // Elegant ring (`ring-1 ink10`) is a box-shadow outside the card.
-    if (!brutal) {
-      card = DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: slot.borderRadius,
-          boxShadow: slot.decoration(resolver).boxShadow,
-        ),
-        child: card,
-      );
-    }
+    card = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: slot.borderRadius,
+        boxShadow: slot.decoration(resolver).boxShadow,
+      ),
+      child: card,
+    );
     return card;
   }
 }
@@ -755,11 +1006,109 @@ class _FailureRow extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback? onRetry;
 
+  /// raft-ui 0.7 failure row (MessageInput `role="alert"`): `rounded-container
+  /// bg-warning-soft px-3 py-2 text-footnote text-foreground`, the file name
+  /// bold, the message muted, an outline `sm` retry and a ghost icon remove.
+  Widget _buildRaft(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    final style = t.scale(RaftTypeScale.footnote, color: ui.foreground);
+    final retry = item.canRetry && onRetry != null;
+    final label = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RaftCssText(
+          item.name,
+          style: style.copyWith(fontWeight: FontWeight.w700),
+        ),
+        RaftCssText(
+          item.error ?? raftText(context, 'Upload failed'),
+          style: style.copyWith(color: ui.foregroundMuted),
+        ),
+        if (item.progress > 0)
+          RaftCssText(
+            raftFormat(context, '{progress}% sent', {
+              'progress': item.progress,
+            }),
+            style: style.copyWith(fontWeight: FontWeight.w700),
+          ),
+      ],
+    );
+    final actions = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (retry) ...[
+          RaftButton(
+            key: const ValueKey('composer-attachment-retry'),
+            uiVariant: RaftButtonVariant.outline,
+            uiSize: RaftButtonSize.sm,
+            label: raftText(context, 'Tap to retry'),
+            semanticLabel: raftFormat(context, 'Retry Uploading {file}', {
+              'file': item.name,
+            }),
+            onPressed: onRetry,
+          ),
+          const SizedBox(width: 6),
+        ],
+        RaftButton(
+          key: const ValueKey('composer-attachment-remove'),
+          uiVariant: RaftButtonVariant.ghost,
+          uiSize: RaftButtonSize.iconSm,
+          label: '',
+          glyph: RaftGlyph.x,
+          semanticLabel: raftFormat(context, 'Remove {file}', {
+            'file': item.name,
+          }),
+          onPressed: onRemove,
+        ),
+      ],
+    );
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: ui['warning-soft'],
+          borderRadius: BorderRadius.circular(
+            t.size('radius.container', fallback: 10),
+          ),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // `flex flex-wrap gap-2`: the text block (basis 14rem) and the
+            // shrink-0 actions share a line while both fit.
+            final wide = constraints.maxWidth >= 224 + 8 + (retry ? 128 : 32);
+            return wide
+                ? Row(
+                    children: [
+                      Expanded(child: label),
+                      const SizedBox(width: 8),
+                      actions,
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      label,
+                      const SizedBox(height: 8),
+                      Align(alignment: Alignment.centerRight, child: actions),
+                    ],
+                  );
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final brutal = t.brutal;
-    final ink = brutal ? Colors.black : t.colors['warning-foreground']!;
+    if (t.option('composerAttachment.style', or: 'recipe') == 'raft') {
+      return _buildRaft(context, t);
+    }
+    final ink = t.colors['warning-foreground']!;
     final style = TextStyle(
       fontFamily: t.headingFont,
       fontSize: 12,
@@ -795,7 +1144,7 @@ class _FailureRow extends StatelessWidget {
         if (retry) ...[
           Semantics(
             button: true,
-            label: raftFormat(context, 'Retry uploading {file}', {
+            label: raftFormat(context, 'Retry Uploading {file}', {
               'file': item.name,
             }),
             excludeSemantics: true,
@@ -807,21 +1156,17 @@ class _FailureRow extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: brutal ? Colors.white : t.panel,
-                  borderRadius: BorderRadius.circular(brutal ? 0 : 6),
-                  border: Border.all(
-                    color: brutal ? Colors.black : t.colors['line-muted']!,
-                    width: brutal ? 2 : 1,
-                  ),
+                  color: t.panel,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: t.colors['line-muted']!, width: 1),
                   boxShadow: t.themeShadows.xs.paintOrder,
                 ),
                 child: RaftCssText(
                   raftText(context, 'Tap to retry'),
+                  underline: true,
                   style: style.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: brutal ? Colors.black : t.strong,
-                    decoration: TextDecoration.underline,
-                    decorationColor: brutal ? Colors.black : t.strong,
+                    color: t.strong,
                   ),
                 ),
               ),
@@ -843,17 +1188,14 @@ class _FailureRow extends StatelessWidget {
               height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: brutal ? Colors.black : t.colors['inactive'],
-                borderRadius: BorderRadius.circular(brutal ? 0 : 6),
-                border: Border.all(
-                  color: brutal ? Colors.black : t.colors['line-strong']!,
-                  width: brutal ? 2 : 1,
-                ),
+                color: t.colors['inactive'],
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: t.colors['line-strong']!, width: 1),
               ),
               child: RaftIcon(
                 RaftGlyph.x,
                 size: 12,
-                color: brutal ? Colors.white : t.colors['inactive-foreground'],
+                color: t.colors['inactive-foreground'],
               ),
             ),
           ),
@@ -867,12 +1209,9 @@ class _FailureRow extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
-          color: brutal ? t.product.brutalOrange : t.colors['warning'],
-          borderRadius: BorderRadius.circular(brutal ? 0 : 6),
-          border: Border.all(
-            color: brutal ? Colors.black : t.colors['line-strong']!,
-            width: brutal ? 2 : 1,
-          ),
+          color: t.colors['warning'],
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: t.colors['line-strong']!, width: 1),
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -887,7 +1226,7 @@ class _FailureRow extends StatelessWidget {
               textDirection: TextDirection.ltr,
             )..layout();
             final actionsWidth =
-                28 + (retry ? 6 + measured.width + 16 + (brutal ? 4 : 2) : 0);
+                28 + (retry ? 6 + measured.width + 16 + (2) : 0);
             measured.dispose();
             final wide = constraints.maxWidth >= 224 + 8 + actionsWidth;
             return wide

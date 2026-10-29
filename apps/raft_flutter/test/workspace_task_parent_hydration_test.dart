@@ -12,12 +12,14 @@ import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_context_transition_test.dart' show row;
 import 'task_surface_test.dart' show modernTask, taskRoutes, flush;
 import 'message_presentation_test.dart' show MessageAdapter;
 import 'workspace_source_location_contract_test.dart' show LocalClient;
+import 'support/app_services_fixture.dart';
 
 class ParentAdapter extends MessageAdapter {
   final statuses = <String, int>{};
@@ -70,7 +72,7 @@ Future<(WorkspaceController, ParentAdapter)> parentFixture(
   w.channel = RaftChannel({'id': 'c1', 'name': 'test', 'joined': true});
   w.channels = [w.channel!];
   w.loading = false;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.section = 'tasks';
   api.routes['POST /feature-flags/evaluate'] = (_) => {'evaluations': []};
   api.routes['GET /channels/threads/followed'] = (_) => {'threads': []};
@@ -101,14 +103,10 @@ final realTask = {
 };
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [390.0, 1280.0]) {
       testWidgets(
-        '[K10b cold parent] real metadata precedes borrowed discussion and task facts $family/$dark/$width',
+        '[K10b cold parent] real metadata precedes borrowed discussion and task facts ${dark ? 'dark' : 'light'}/$width',
         (t) async {
           t.view.physicalSize = Size(width, 844);
           t.view.devicePixelRatio = 1;
@@ -130,10 +128,10 @@ void main() {
               lookup.future;
           api.routes['GET /messages/channel/task-thread'] = (_) =>
               replies.future;
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             row('accepted-main', 'c1', 1),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'accepted-main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'accepted-main'};
           w.drafts[w.draftScope()!] = 'Retained real main draft';
           w.navigation.navigateTask(
             w.location.withQuery({
@@ -145,12 +143,14 @@ void main() {
           final revision = w.navigationRevision;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );
@@ -204,7 +204,7 @@ void main() {
           expect(owner.canAssign, isTrue);
           expect(owner.cleanup, isFalse);
           expect(w.channel!.id, 'c1');
-          expect(w.messages.single.id, 'accepted-main');
+          expect(w.messageDomain.messages.single.id, 'accepted-main');
           await t.sendKeyEvent(LogicalKeyboardKey.escape);
           await flush(t);
           // The closed task page stays live for the platform pop transition.
@@ -221,7 +221,7 @@ void main() {
             'messages': [row('remote-reply', 'task-thread', 3)],
           });
           await flush(t);
-          expect(w.messages.single.id, 'accepted-main');
+          expect(w.messageDomain.messages.single.id, 'accepted-main');
           expect(w.drafts[w.draftScope()], 'Retained real main draft');
           expect(
             api.calls.where((r) => r.path == '/channels/task-thread/read'),
@@ -235,7 +235,7 @@ void main() {
     }
     for (final denial in ['403', '404', 'wrong-server', 'malformed']) {
       testWidgets(
-        '[K10b cold parent] $denial metadata cannot admit task facts or discussion $family/$dark',
+        '[K10b cold parent] $denial metadata cannot admit task facts or discussion ${dark ? 'dark' : 'light'}',
         (t) async {
           t.view.physicalSize = const Size(390, 844);
           t.view.devicePixelRatio = 1;
@@ -257,12 +257,14 @@ void main() {
           );
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );
@@ -305,7 +307,7 @@ void main() {
     }
     for (final lateError in [false, true]) {
       testWidgets(
-        '[K10b cold parent] Back and real new card reject late metadata ${lateError ? 'error' : 'success'} $family/$dark',
+        '[K10b cold parent] Back and real new card reject late metadata ${lateError ? 'error' : 'success'} ${dark ? 'dark' : 'light'}',
         (t) async {
           t.view.physicalSize = const Size(390, 844);
           t.view.devicePixelRatio = 1;
@@ -327,12 +329,14 @@ void main() {
           final revision = w.navigationRevision;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );
@@ -340,7 +344,7 @@ void main() {
           final retired = t
               .widget<SourceTaskSurface>(find.byType(SourceTaskSurface))
               .owner;
-          await t.tap(find.byTooltip('Close task'));
+          await t.tap(find.byTooltip('Close Task'));
           await flush(t);
           // The owner retires with its page once the pop transition ends.
           await t.pump(const Duration(milliseconds: 500));
@@ -368,8 +372,8 @@ void main() {
           );
           expect(w.location.query('task'), 'c1:task-parent');
           expect(w.navigationRevision, revision);
-          expect(w.highlightedMessageId, 'pending-main');
-          expect(w.messages.single.id, 'pending-main');
+          expect(w.messageDomain.state.highlightedMessageId, 'pending-main');
+          expect(w.messageDomain.messages.single.id, 'pending-main');
           expect(
             api.calls.where(
               (r) =>
@@ -387,7 +391,7 @@ void main() {
     }
     for (final change in ['principal', 'server', 'role', 'removed']) {
       testWidgets(
-        '[K10b cold parent] held metadata is rejected after $change $family/$dark',
+        '[K10b cold parent] held metadata is rejected after $change ${dark ? 'dark' : 'light'}',
         (t) async {
           t.view.physicalSize = const Size(390, 844);
           t.view.devicePixelRatio = 1;
@@ -406,12 +410,14 @@ void main() {
           );
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );
@@ -425,7 +431,7 @@ void main() {
             case 'server':
               w.client.selectServer('other-server');
             case 'role':
-              w.server = RaftRecord({...w.server!.json, 'role': 'guest'});
+              w.server = RaftRecord({...w.server!.json, 'role': 'removed'});
             case 'removed':
               (w.client as ParentClient).eventStream.add(
                 const RaftEvent('channel:removed', {
@@ -490,7 +496,7 @@ void main() {
       );
     }
     testWidgets(
-      '[K10b cold parent] accepted private metadata revokes immediately and renewed denial cannot retain composer $family/$dark',
+      '[K10b cold parent] accepted private metadata revokes immediately and renewed denial cannot retain composer ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
@@ -521,12 +527,14 @@ void main() {
         );
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );

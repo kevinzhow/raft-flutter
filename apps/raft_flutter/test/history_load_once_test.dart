@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -20,7 +23,7 @@ Future<(WorkspaceController, List<Completer<void>>)> historyFixture(
 }) async {
   final (w, api) = (await tester.runAsync(() => fixture('member')))!;
   addTearDown(w.dispose);
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   final scopeId = thread ? 'th' : 'c1';
   final rows = [
     for (final r in contextRows('h', count: total))
@@ -79,17 +82,21 @@ Future<void> land(
   List<Completer<void>> older, {
   required bool thread,
 }) async {
-  int count() => thread ? w.replies.length : w.messages.length;
+  int count() => thread ? w.replies.length : w.messageDomain.messages.length;
   final before = count();
   older.firstWhere((c) => !c.isCompleted).complete();
-  for (var i = 0; i < 200 && (count() == before || w.loadingOlder); i++) {
+  for (
+    var i = 0;
+    i < 200 && (count() == before || w.messageDomain.state.loadingOlder);
+    i++
+  ) {
     await tester.pump(const Duration(milliseconds: 16));
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 2)),
     );
   }
   expect(count(), before + 50);
-  expect(w.loadingOlder, isFalse);
+  expect(w.messageDomain.state.loadingOlder, isFalse);
   await tester.pump(const Duration(milliseconds: 16));
 }
 
@@ -124,7 +131,7 @@ void main() {
       );
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftChatView(controller: w, thread: thread),
           ),
@@ -185,7 +192,7 @@ void main() {
       final (w, older) = await historyFixture(tester, thread: thread);
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftChatView(controller: w, thread: thread),
           ),

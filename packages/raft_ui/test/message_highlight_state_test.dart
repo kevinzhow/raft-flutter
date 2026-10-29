@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
   const code = 'flowchart LR\n  A[中文输入] --> B[日本語確認]';
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [411.0, 1280.0]) {
       testWidgets(
-        '[K13a][K13c] highlight expiry preserves Mermaid source and selected text $family/$dark/$width',
+        '[K13a][K13c] highlight expiry preserves Mermaid source and selected text ${dark ? 'dark' : 'light'}/$width',
         (tester) async {
           tester.view.physicalSize = Size(width, 915);
           tester.view.devicePixelRatio = 1;
@@ -21,7 +18,7 @@ void main() {
           addTearDown(highlighted.dispose);
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: SingleChildScrollView(
                   child: ValueListenableBuilder(
@@ -43,7 +40,7 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          await tester.tap(find.byTooltip('Show source'));
+          await tester.tap(find.byTooltip('Show Source'));
           await tester.pumpAndSettle();
           expect(find.text(code), findsOneWidget);
           final sourceRect = tester.getRect(find.byType(RaftMermaidBlock));
@@ -66,16 +63,14 @@ void main() {
           expect(
             selection.isCollapsed,
             isFalse,
-            reason:
-                'A real source text selection must exist before highlight expiry.',
+            reason: 'A real source text selection must exist before highlight expiry.',
           );
           highlighted.value = false;
           await tester.pumpAndSettle();
           expect(
             find.text(code),
             findsOneWidget,
-            reason:
-                'Highlight paint expiry must not replace the selected code view.',
+            reason: 'Highlight paint expiry must not replace the selected code view.',
           );
           expect(tester.getRect(find.byType(RaftMermaidBlock)), sourceRect);
           expect(
@@ -87,7 +82,7 @@ void main() {
         },
       );
       testWidgets(
-        '[K13b] highlight expiry preserves expanded long message $family/$dark/$width',
+        '[K13b] highlight expiry preserves expanded long message ${dark ? 'dark' : 'light'}/$width',
         (tester) async {
           tester.view.physicalSize = Size(width, 915);
           tester.view.devicePixelRatio = 1;
@@ -101,7 +96,7 @@ void main() {
           ).join('\n\n');
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: SingleChildScrollView(
                   child: ValueListenableBuilder(
@@ -119,9 +114,9 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(find.text('Show more'), findsOneWidget);
+          expect(find.text('Show More'), findsOneWidget);
           final before = tester.getSize(find.byType(RaftCollapsible));
-          await tester.tap(find.text('Show more'));
+          await tester.tap(find.text('Show More'));
           await tester.pumpAndSettle();
           final expanded = tester.getSize(find.byType(RaftCollapsible));
           expect(expanded.height, greaterThan(before.height));

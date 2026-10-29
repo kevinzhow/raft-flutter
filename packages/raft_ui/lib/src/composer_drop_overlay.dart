@@ -4,6 +4,10 @@
 // the platform drop target and decides when it is active.
 import 'package:flutter/widgets.dart';
 
+import 'raft/css_box.dart' show raftControlBorderPx;
+import 'raft/ui_tokens.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
+
 import 'localization.dart';
 import 'theme.dart';
 
@@ -23,26 +27,64 @@ class RaftComposerDropOverlay extends StatelessWidget {
   });
   final String label;
 
+  /// raft-ui 0.7 `composerDropOverlay`: `rounded-container border-[1.5px]
+  /// border-dashed border-line-seam` over an opaque `info-soft` wash with the
+  /// label (`text-callout font-semibold`) centred bare.
+  Widget _buildRaft(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    final width = raftControlBorderPx(context, 1.5);
+    final radius = t.size('radius.container', fallback: 10);
+    return IgnorePointer(
+      child: ExcludeSemantics(
+        child: CustomPaint(
+          key: const ValueKey('composer-drop-overlay'),
+          foregroundPainter: _DashedRoundedPainter(
+            color: ui.lineSeam,
+            width: width,
+            radius: radius,
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color.alphaBlend(ui['info-soft'], ui.layerCard),
+              borderRadius: BorderRadius.circular(radius),
+            ),
+            child: Center(
+              child: Text(
+                raftText(context, label),
+                textAlign: TextAlign.center,
+                style: t.scale(
+                  RaftTypeScale.callout,
+                  weight: FontWeight.w600,
+                  color: ui.foreground,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final pink = t.product.brutalPink;
-    final frame = t.brutal ? pink : t.accent;
-    final fill = t.brutal
-        ? pink.withValues(alpha: .15)
-        : t.accentSoft.withValues(
-            // Chromium quantises the `/50` alpha to 8 bits before blending:
-            // measured one level darker than float blending on white.
-            alpha: t.dark
-                ? t.accentSoft.a * .5
-                : (t.accentSoft.a * 255 * .5).ceilToDouble() / 255,
-          );
+    if (t.option('composerAttachment.style', or: 'recipe') == 'raft') {
+      return _buildRaft(context, t);
+    }
+    final frame = t.accent;
+    final fill = t.accentSoft.withValues(
+      // Chromium quantises the `/50` alpha to 8 bits before blending:
+      // measured one level darker than float blending on white.
+      alpha: t.dark
+          ? t.accentSoft.a * .5
+          : (t.accentSoft.a * 255 * .5).ceilToDouble() / 255,
+    );
     // `absolute inset-0` resolves against the composer root's padding box,
     // below its `border-t` (2px Brutal, 1px Elegant).
     return IgnorePointer(
       child: ExcludeSemantics(
         child: Padding(
-          padding: EdgeInsets.only(top: t.brutal ? 2 : 1),
+          padding: EdgeInsets.only(top: t.border),
           child: CustomPaint(
             key: const ValueKey('composer-drop-overlay'),
             foregroundPainter: _DashedFramePainter(color: frame, width: 2),
@@ -55,14 +97,12 @@ class RaftComposerDropOverlay extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: t.brutal ? const Color(0xffffffff) : t.panel,
+                    color: t.panel,
                     border: Border.all(
-                      color: t.brutal
-                          ? const Color(0xff000000)
-                          : t.colors['line-strong']!,
-                      width: t.brutal ? 2 : 1,
+                      color: t.colors['line-strong']!,
+                      width: 1,
                     ),
-                    borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+                    borderRadius: BorderRadius.circular(6),
                     boxShadow: t.shadows,
                   ),
                   child: Text(
@@ -73,7 +113,7 @@ class RaftComposerDropOverlay extends StatelessWidget {
                       fontSize: 14,
                       height: 20 / 14,
                       fontWeight: FontWeight.w700,
-                      color: t.brutal ? const Color(0xff000000) : t.strong,
+                      color: t.strong,
                     ),
                   ),
                 ),
@@ -126,4 +166,45 @@ class _DashedFramePainter extends CustomPainter {
   @override
   bool shouldRepaint(_DashedFramePainter old) =>
       old.color != color || old.width != width;
+}
+
+/// A dashed rounded border: dashes 3x the width along the whole outline, the gap
+/// adjusted so the path closes on a dash.
+class _DashedRoundedPainter extends CustomPainter {
+  _DashedRoundedPainter({
+    required this.color,
+    required this.width,
+    required this.radius,
+  });
+  final Color color;
+  final double width, radius;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = width
+      ..style = PaintingStyle.stroke;
+    final rect = Rect.fromLTWH(
+      0,
+      0,
+      size.width,
+      size.height,
+    ).deflate(width / 2);
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(rect, Radius.circular(radius - width / 2)),
+      );
+    final dash = width * 3;
+    for (final metric in path.computeMetrics()) {
+      final count = (metric.length / (dash * 2)).round().clamp(1, 100000);
+      final step = metric.length / count;
+      for (var i = 0; i < count; i++) {
+        canvas.drawPath(metric.extractPath(i * step, i * step + dash), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedRoundedPainter old) =>
+      old.color != color || old.width != width || old.radius != radius;
 }

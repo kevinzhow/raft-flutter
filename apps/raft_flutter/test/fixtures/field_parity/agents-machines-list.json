@@ -1,0 +1,95 @@
+{
+  "machines": [
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "serverId": "99999999-9999-4999-8999-999999999999",
+      "userId": "22222222-2222-4222-8222-222222222222",
+      "name": "kai-macbook",
+      "description": "Kai's laptop",
+      "apiKeyPrefix": "sk_computer_ab",
+      "runtimes": [
+        "claude",
+        "codex",
+        "builtin"
+      ],
+      "hostname": "kai-macbook.local",
+      "os": "darwin",
+      "daemonVersion": "1.4.2",
+      "lastHeartbeat": "2026-10-12T09:59:30.000Z",
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "status": "online",
+      "statusVersion": 12,
+      "runtimeVersions": {
+        "claude": "2.1.5",
+        "codex": "0.9.0"
+      },
+      "computerVersion": "0.0.41",
+      "isComputer": true,
+      "computerAttachedByCurrentUser": true,
+      "agentCount": 2,
+      "diskStatus": {
+        "availableBytes": 20000000000,
+        "totalBytes": 500000000000
+      },
+      "creator": {
+        "type": "human",
+        "id": "22222222-2222-4222-8222-222222222222",
+        "name": "kai",
+        "displayName": "Kai",
+        "avatarUrl": null
+      },
+      "computerUpgradeAvailable": true,
+      "computerBroadcastPolicy": {
+        "eligibility": "eligible",
+        "targetVersion": "0.0.43",
+        "targetRole": "post_K",
+        "migrationClass": "seamless",
+        "policyRevision": "rev_fake",
+        "reasonCode": "eligible"
+      },
+      "upgradeRequest": {
+        "id": "req_fake",
+        "targetVersion": "0.0.43",
+        "requestedAt": "2026-10-12T09:50:00.000Z",
+        "state": "pending",
+        "observedVersion": null,
+        "reason": null,
+        "resolvedAt": null
+      },
+      "remoteUpgradeSupported": true
+    },
+    {
+      "id": "88888888-8888-4888-8888-888888888888",
+      "serverId": "99999999-9999-4999-8999-999999999999",
+      "userId": "22222222-2222-4222-8222-222222222222",
+      "name": "old-daemon",
+      "description": null,
+      "apiKeyPrefix": "sk_machine_cd",
+      "runtimes": [],
+      "hostname": null,
+      "os": null,
+      "daemonVersion": null,
+      "lastHeartbeat": null,
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "status": "offline",
+      "statusVersion": 3,
+      "runtimeVersions": {},
+      "computerVersion": null,
+      "isComputer": false,
+      "computerAttachedByCurrentUser": false,
+      "agentCount": 0,
+      "diskStatus": null,
+      "creator": null,
+      "computerUpgradeAvailable": null,
+      "computerBroadcastPolicy": null,
+      "remoteUpgradeSupported": null
+    }
+  ],
+  "latestDaemonVersion": null,
+  "latestComputerVersion": "0.0.43",
+  "latestComputerReleaseNotes": {
+    "version": "0.0.43",
+    "en": "- Faster startup\n- Fixes restart on Windows",
+    "zh-CN": "- 启动更快\n- 修复 Windows 重启问题"
+  }
+}

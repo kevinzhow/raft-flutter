@@ -23,15 +23,17 @@ class _ToastPreviewState extends State<_ToastPreview> {
   @override
   Widget build(BuildContext context) => RaftToastPortal(
     controller: controller,
-    child: Column(
-      children: [
-        RaftButton(
-          label: 'Copy MD',
-          onPressed: () => controller.show('Copied Markdown'),
-        ),
-        RaftButton(label: 'Clear feedback', onPressed: controller.clear),
-        const Text('Hover feedback to pause its five-second timeout.'),
-      ],
+    child: SingleChildScrollView(
+      child: Column(
+        children: [
+          RaftButton(
+            label: 'Copy MD',
+            onPressed: () => controller.show('Copied Markdown'),
+          ),
+          RaftButton(label: 'Clear Feedback', onPressed: controller.clear),
+          const Text('Hover feedback to pause its five-second timeout.'),
+        ],
+      ),
     ),
   );
 }

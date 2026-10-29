@@ -1,0 +1,22 @@
+{
+  "$comment": "Single source of the raft-ui specimen reference set. Each specimen is rendered by host/src/specimens.tsx (same id) in every mode; tool/parity-ui/run builds the official-CLI manifest from it. width = frame content width in CSS px (frame padding 16 is added). The Flutter preview wraps the same region with ValueKey raft-ui-specimen-<id>.",
+  "raftUi": "0.7.1",
+  "modes": ["light", "dark"],
+  "specimens": [
+    {"id": "button.variants", "component": "button", "title": "Button variants", "width": 358, "source": "components/button.md (Variants table; ButtonPreviewContent)"},
+    {"id": "button.sizes", "component": "button", "title": "Button sizes and icon buttons", "width": 358, "source": "components/button.md (Sizes, Icon buttons)"},
+    {"id": "button.states", "component": "button", "title": "Button disabled and loading", "width": 358, "source": "components/button.md (States)"},
+    {"id": "badge.variants", "component": "badge", "title": "Badge appearances and variants", "width": 358, "source": "components/badge.md (Variants, unread count, @ marker)"},
+    {"id": "status.lights", "component": "status", "title": "Status presence lights and colors", "width": 358, "source": "components/status.md (Presence lights, StatusContent)"},
+    {"id": "avatar.faces", "component": "avatar", "title": "Avatar faces: agent pixel faces, person initials", "width": 358, "source": "components/avatar.md (Faces, AvatarPanelHeaderContent)"},
+    {"id": "avatar.sizes", "component": "avatar", "title": "Avatar sizes", "width": 358, "source": "components/avatar.md (Sizes)"},
+    {"id": "avatar.presence", "component": "avatar", "title": "Avatar presence lights", "width": 358, "source": "components/avatar.md (AvatarBadgePresenceContent, AvatarPreviewContent)"},
+    {"id": "input.states", "component": "input", "title": "Input default, filled, invalid, disabled", "width": 358, "source": "components/input.md (InputPreviewContent; States)"},
+    {"id": "switch.states", "component": "switch", "title": "Switch off, on, disabled", "width": 358, "source": "components/switch.md"},
+    {"id": "checkbox.states", "component": "checkbox", "title": "Checkbox and CheckboxIndicator states", "width": 358, "source": "components/checkbox.md (CheckboxPreviewContent, CheckboxSettingsGroupContent, CheckboxIndicatorContent)"},
+    {"id": "tabs.variants", "component": "tabs", "title": "Tabs default and underline", "width": 358, "source": "components/tabs.md (TabsPlacements)"},
+    {"id": "segmented-control.states", "component": "segmented-control", "title": "SegmentedControl view mode, filters, disabled", "width": 358, "source": "components/segmented-control.md"},
+    {"id": "list-row.variants", "component": "list-row", "title": "ListRow default, plain, entry", "width": 358, "source": "components/list-row.md (ListRowConversationsComposition, ListRowSettingsComposition, ListRowEntriesComposition)"},
+    {"id": "icon-tile.variants", "component": "icon-tile", "title": "IconTile sizes and variants", "width": 358, "source": "components/icon-tile.md (IconTileSizesComposition, IconTileVariantsComposition)"}
+  ]
+}

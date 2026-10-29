@@ -1,3 +1,5 @@
+import 'hover_region.dart';
+
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -8,6 +10,8 @@ import 'package:flutter/services.dart';
 
 import 'design_primitives.dart' show RaftTouchTarget;
 import 'pointer_intent.dart';
+import 'focus_visible.dart';
+import 'hover_dismiss_scope.dart';
 import 'theme.dart';
 
 /// RUI tooltip1392 and foundation361/489; product timing is provider-owned.
@@ -15,25 +19,21 @@ import 'theme.dart';
 class RaftTooltipRecipe {
   const RaftTooltipRecipe(this.tokens);
   final RaftTokens tokens;
-  double get sideOffset => tokens.brutal ? 6 : 8;
+  double get sideOffset => 8;
   double get collisionPadding => 5;
   double get maximumWidth => 320;
-  double get radius => tokens.brutal ? 0 : 6;
+  double get radius => 6;
   EdgeInsets get padding =>
       const EdgeInsets.symmetric(horizontal: 10, vertical: 4);
   Duration get transition => const Duration(milliseconds: 150);
   Curve get curve => const Cubic(.22, 1, .36, 1);
-  bool get hasArrow => !tokens.brutal;
+  bool get hasArrow => true;
   // tooltip recipe `content` brutal background-color: token(primary400).
-  Color get background => tokens.brutal
-      ? tokens.colors['primary-400']!
-      : tokens.dark
+  Color get background => tokens.dark
       ? tokens.popover
       // foundation.css311 oklch(.263 .009 294.9), converted to sRGB.
       : tokens.colors['layer-hud'] ?? const Color(0xff252429);
-  Color get foreground => tokens.brutal
-      ? tokens.strong
-      : tokens.dark
+  Color get foreground => tokens.dark
       ? tokens.ink
       // foundation.css312 oklch(.965 .002 286), converted to sRGB.
       : tokens.colors['layer-hud-foreground'] ?? const Color(0xfff3f3f5);
@@ -42,54 +42,14 @@ class RaftTooltipRecipe {
     fontFamilyFallback: tokens.fontFallback,
     fontSize: 13,
     height: 18 / 13,
-    fontWeight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
-    letterSpacing: tokens.brutal ? 0 : -.065,
+    fontWeight: FontWeight.w500,
+    letterSpacing: -.065,
     color: foreground,
   );
-  List<BoxShadow> get shadows => tokens.brutal
-      ? [
-          BoxShadow(
-            color: tokens.colors['line-strong']!,
-            offset: const Offset(2, 2),
-          ),
-        ]
-      : tokens.dark
-      ? [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .55),
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .45),
-            offset: const Offset(0, 10),
-            blurRadius: 20,
-            spreadRadius: -6,
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .35),
-            offset: const Offset(0, 4),
-            blurRadius: 8,
-            spreadRadius: -3,
-          ),
-        ]
-      : [
-          // foundation.css371 oklch(.21 .006 106.42).
-          BoxShadow(
-            color: const Color(0xff191815).withValues(alpha: .1),
-            offset: const Offset(0, 1),
-            blurRadius: 1,
-          ),
-          BoxShadow(
-            color: const Color(0xff191815).withValues(alpha: .04),
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color: const Color(0xff191815).withValues(alpha: .16),
-            offset: const Offset(0, 2),
-            blurRadius: 12,
-            spreadRadius: -4,
-          ),
-        ];
+  List<BoxShadow> get shadows => [
+    for (final layer in tokens.shadowLayers('shadow.tooltip').reversed)
+      if (!layer.inset) layer.toBoxShadow(),
+  ];
 }
 
 /// Generic RUI defaults: delay0, closeDelay0, adjacent-trigger timeout400.
@@ -240,6 +200,11 @@ class _RaftTooltipState extends State<RaftTooltip>
   /// for a real pointer move.
   bool awaitingMove = false;
   int epoch = 0;
+  int? dismissedFocusEpoch;
+  RaftHoverDismissController? dismissController;
+  bool listeningDismiss = false;
+  bool get keyboardAllowed =>
+      dismissedFocusEpoch != RaftFocusVisible.shared.keyEpoch;
   bool get allowed => widget.enabled && widget.message.isNotEmpty;
   bool get reduced => MediaQuery.disableAnimationsOf(context);
   @override
@@ -251,6 +216,7 @@ class _RaftTooltipState extends State<RaftTooltip>
     );
     HardwareKeyboard.instance.addHandler(_key);
     RaftPointerIntent.install();
+    RaftFocusVisible.shared.acquire();
   }
 
   @override
@@ -264,7 +230,16 @@ class _RaftTooltipState extends State<RaftTooltip>
     }
     scope = nextScope;
     watch.sync(context);
-    if (widget.keyboardFocused && allowed && !focusBlocked) {
+    final nextDismiss = RaftHoverDismissScope.maybeOf(context);
+    if (dismissController != nextDismiss) {
+      if (listeningDismiss) {
+        dismissController?.removeListener(_navigationChanged);
+      }
+      listeningDismiss = false;
+      dismissController = nextDismiss;
+      _syncDismiss();
+    }
+    if (widget.keyboardFocused && allowed && !focusBlocked && keyboardAllowed) {
       _deferKeyboard();
     }
   }
@@ -282,7 +257,8 @@ class _RaftTooltipState extends State<RaftTooltip>
     if (widget.keyboardFocused &&
         allowed &&
         !old.keyboardFocused &&
-        !focusBlocked) {
+        !focusBlocked &&
+        keyboardAllowed) {
       _deferKeyboard();
     } else if (!widget.keyboardFocused && old.keyboardFocused && !hovered) {
       _hide();
@@ -290,13 +266,15 @@ class _RaftTooltipState extends State<RaftTooltip>
   }
 
   void _deferKeyboard() {
+    _syncDismiss();
     final ticket = ++epoch;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted &&
           ticket == epoch &&
           widget.keyboardFocused &&
           allowed &&
-          !focusBlocked) {
+          !focusBlocked &&
+          keyboardAllowed) {
         _show(immediate: true);
       }
     });
@@ -320,6 +298,7 @@ class _RaftTooltipState extends State<RaftTooltip>
 
   /// Holds the wheel/trackpad subscription only while hovered or open.
   void _syncSignal() {
+    _syncDismiss();
     final want = hovered || portal.isShowing;
     if (want == listeningSignal) return;
     listeningSignal = want;
@@ -328,6 +307,26 @@ class _RaftTooltipState extends State<RaftTooltip>
     } else {
       RaftPointerIntent.unlistenScroll(_wheel);
     }
+  }
+
+  void _syncDismiss() {
+    final want =
+        dismissController != null &&
+        (hovered || portal.isShowing || widget.keyboardFocused);
+    if (want == listeningDismiss) return;
+    listeningDismiss = want;
+    if (want) {
+      dismissController!.addListener(_navigationChanged);
+    } else {
+      dismissController?.removeListener(_navigationChanged);
+    }
+  }
+
+  void _navigationChanged() {
+    dismissedFocusEpoch = RaftFocusVisible.shared.keyEpoch;
+    awaitingMove = hovered;
+    _hide(immediate: true);
+    scope?.group.settle();
   }
 
   /// A wheel or trackpad scroll signal: any open tooltip closes at once and
@@ -370,11 +369,9 @@ class _RaftTooltipState extends State<RaftTooltip>
   void _hover(PointerHoverEvent event) {
     final previous = pointer;
     pointer = event.position;
-    if (!allowed ||
-        !hovered ||
-        hoverBlocked ||
-        portal.isShowing ||
-        widget.keyboardFocused) {
+    // Retained keyboard focus can coexist with fresh pointer intent after
+    // dismissal. An already open popup needs no hover timer.
+    if (!allowed || !hovered || hoverBlocked || portal.isShowing) {
       return;
     }
     if (awaitingMove) {
@@ -430,7 +427,7 @@ class _RaftTooltipState extends State<RaftTooltip>
   }
 
   void _show({bool immediate = false}) {
-    if (!mounted || !allowed) {
+    if (!mounted || !allowed || ModalRoute.isCurrentOf(context) == false) {
       return;
     }
     openTimer?.cancel();
@@ -456,6 +453,7 @@ class _RaftTooltipState extends State<RaftTooltip>
     final ticket = ++epoch;
     scope?.group.release(this, scope!.hysteresis);
     if (!portal.isShowing) {
+      _syncDismiss();
       return;
     }
     closing = true;
@@ -511,6 +509,8 @@ class _RaftTooltipState extends State<RaftTooltip>
     openTimer?.cancel();
     closeTimer?.cancel();
     watch.dispose();
+    RaftFocusVisible.shared.release();
+    if (listeningDismiss) dismissController?.removeListener(_navigationChanged);
     if (listeningSignal) RaftPointerIntent.unlistenScroll(_wheel);
     HardwareKeyboard.instance.removeHandler(_key);
     scope?.group.release(this, scope!.hysteresis);
@@ -577,7 +577,7 @@ class _RaftTooltipState extends State<RaftTooltip>
       },
       child: Semantics(
         tooltip: widget.excludeDescription || !allowed ? null : widget.message,
-        child: MouseRegion(
+        child: RaftHoverRegion(
           onEnter: _enter,
           onExit: _exit,
           onHover: _hover,
@@ -654,18 +654,15 @@ class _TooltipSurface extends StatelessWidget {
     decoration: BoxDecoration(
       color: recipe.background,
       borderRadius: BorderRadius.circular(recipe.radius),
-      border: recipe.tokens.brutal
-          ? Border.all(color: recipe.tokens.colors['line-strong']!, width: 2)
-          : null,
       boxShadow: recipe.shadows,
     ),
     child: CustomPaint(
-      foregroundPainter: recipe.tokens.dark && !recipe.tokens.brutal
+      foregroundPainter: recipe.tokens.dark
           ? _TooltipInset(recipe.radius)
           : null,
       child: Padding(
         // CSS border-box: the brutal border sits outside the padding.
-        padding: recipe.padding + EdgeInsets.all(recipe.tokens.brutal ? 2 : 0),
+        padding: recipe.padding + EdgeInsets.all(0),
         child: Text(message, style: recipe.text),
       ),
     ),

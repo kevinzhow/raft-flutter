@@ -11,10 +11,12 @@ import 'package:raft_flutter/features/attachment_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/attachment_files.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'workspace_source_location_contract_test.dart' show pageFixture;
 import 'message_context_transition_test.dart' show row;
 import 'task_surface_test.dart' show flush;
+import 'support/app_services_fixture.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -37,8 +39,11 @@ class _Client extends RaftClient {
 
 class _Files extends AttachmentFiles {
   @override
-  Future<Uint8List> image(String url, {required CancelToken cancel}) async =>
-      throw StateError('Fixture image unavailable');
+  Future<Uint8List> image(
+    String url, {
+    required CancelToken cancel,
+    void Function(int, int)? onProgress,
+  }) async => throw StateError('Fixture image unavailable');
 }
 
 class _Routes extends NavigatorObserver {
@@ -50,14 +55,10 @@ class _Routes extends NavigatorObserver {
 
 void main() {
   _narrowDesktopTests();
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final dm in [false, true]) {
       testWidgets(
-        'Attachment predictive back preserves message history $family/$dark DM=$dm',
+        'Attachment predictive back preserves message history ${dark ? 'dark' : 'light'} DM=$dm',
         (t) async {
           t.view.physicalSize = const Size(390, 844);
           t.view.devicePixelRatio = 1;
@@ -83,7 +84,7 @@ void main() {
               entityId: 'c1',
             ),
           );
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {
               ...row('attachment-message', 'c1', 1),
               'attachments': [
@@ -94,8 +95,8 @@ void main() {
                 },
               ],
             },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'attachment-message'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'attachment-message'};
           api.routes['GET /messages/attachment-preview/enabled'] = (_) => {
             'enabled': true,
           };
@@ -104,11 +105,13 @@ void main() {
             'data': {'kind': 'text', 'text': 'Fixture document'},
           };
           final router = RaftAppRouter(
-            home: (_) => WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            home: (_) => withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
             onLocation: (_) async {},
             onRootBack: () async => false,
@@ -117,7 +120,7 @@ void main() {
           addTearDown(router.dispose);
           await t.pumpWidget(
             MaterialApp.router(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               routerDelegate: router,
               routeInformationParser: const RaftAppRouteParser(),
             ),
@@ -152,7 +155,7 @@ void main() {
             } else if (back == 'system') {
               await t.binding.handlePopRoute();
             } else {
-              await t.tap(find.byTooltip('Close preview'));
+              await t.tap(find.byTooltip('Close Preview'));
             }
             await t.pumpAndSettle();
             expect(previewSurface, findsNothing);
@@ -181,14 +184,21 @@ void main() {
       );
     }
   }
-  for (final width in [390.0, 1280.0]) {
+  // (width, platform): a phone, an unfolded foldable (wide layout, touched) and
+  // a desktop window. Layout follows the width; the media viewer follows the
+  // input.
+  for (final (width, platform) in [
+    (390.0, TargetPlatform.android),
+    (856.0, TargetPlatform.android),
+    (1280.0, TargetPlatform.linux),
+  ]) {
     for (final (name, mime) in [
       ('photo.png', 'image/png'),
       ('research.md', 'text/markdown'),
       ('page.html', 'text/html'),
     ]) {
       testWidgets(
-        'Actual attachment $name uses platform page on phone $width',
+        'Actual attachment $name uses platform page on phone $width $platform',
         (t) async {
           t.view.physicalSize = Size(width, 844);
           t.view.devicePixelRatio = 1;
@@ -202,7 +212,7 @@ void main() {
           final routes = _Routes();
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(RaftFamily.elegant),
+              theme: raftTheme().copyWith(platform: platform),
               navigatorObservers: [routes],
               home: Scaffold(
                 body: Align(
@@ -229,24 +239,41 @@ void main() {
             );
             await t.pumpAndSettle();
             expect(previewSurface, findsOneWidget);
-            if (width < RaftAdaptiveWorkspace.desktopMinWidth) {
+            final image = mime.startsWith('image/');
+            final phone = width < RaftAdaptiveWorkspace.desktopMinWidth;
+            final touch = platform == TargetPlatform.android;
+            if (image) {
+              // Images open in the media browser: a fading route (the card's
+              // picture flies in), immersive and black on a phone.
+              expect(routes.latest, isA<RaftMediaBrowserRoute<void>>());
+              expect(routes.latest?.settings.name, '/attachment-preview');
+              expect(
+                find.byType(RaftMediaImmersiveShell).evaluate().isNotEmpty,
+                touch,
+                reason: 'the immersive stage follows touch, not width',
+              );
+            } else if (phone) {
               expect(routes.latest, isA<MaterialPageRoute<void>>());
               expect(routes.latest?.settings.name, '/attachment-preview');
               expect(find.byType(Dialog), findsNothing);
-              // Native-only page: Web's phone PanelHeader (62 brutal / 56
-              // elegant, px-5, boxed 26x28 / 32x32 Back).
+              // Current Raft header: a 44px ghost action. Web pl-4
+              // minus its 13px leading overhang places the target at x=3.
               expect(find.byType(RaftMobilePageHeader), findsNothing);
-              final brutal = RaftTokens.of(t.element(previewSurface)).brutal;
+              expect(t.getSize(find.byType(RaftPanelHeaderBar)).height, 56);
               expect(
-                t.getSize(find.byType(RaftPanelHeaderBar)).height,
-                brutal ? 62 : 56,
+                t.getSize(find.byType(RaftPanelAction)),
+                const Size(44, 44),
               );
-              expect(t.getTopLeft(find.byType(RaftPanelAction)).dx, 20);
+              expect(t.getTopLeft(find.byType(RaftPanelAction)).dx, 3);
             } else {
               expect(routes.latest, isA<DialogRoute<void>>());
               expect(find.byType(RaftMobilePageHeader), findsNothing);
             }
-            await t.tap(find.byTooltip('Close preview'));
+            await t.tap(
+              image && touch
+                  ? find.bySemanticsLabel('Back')
+                  : find.byTooltip('Close Preview'),
+            );
             await t.pumpAndSettle();
             expect(previewSurface, findsNothing);
             expect(find.byType(RaftAttachmentCard), findsOneWidget);
@@ -293,15 +320,15 @@ Future<(WorkspaceController, RaftAppRouter)> _desktopChat(
       entityId: 'c1',
     ),
   );
-  w.ledger.ingest([
+  w.messageDomain.ledger.ingest([
     {
       ...row('attachment-message', 'c1', 1),
       'attachments': [
         {'id': 'preview-attachment', 'filename': filename, 'mimeType': mime},
       ],
     },
-  ], expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {'attachment-message'};
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = {'attachment-message'};
   api.routes['GET /messages/attachment-preview/enabled'] = (_) => {
     'enabled': true,
   };
@@ -310,11 +337,13 @@ Future<(WorkspaceController, RaftAppRouter)> _desktopChat(
     'data': {'kind': 'text', 'text': 'Fixture document'},
   };
   final router = RaftAppRouter(
-    home: (_) => WorkspaceView(
-      controller: w,
-      appearance: RaftAppearance(light: RaftFamily.elegant),
-      onAppearance: (_) async {},
-      onLogout: () async {},
+    home: (_) => withAppServices(
+      WorkspaceView(
+        controller: w,
+        appearance: RaftAppearance(),
+        onAppearance: (_) async {},
+        onLogout: () async {},
+      ),
     ),
     onLocation: (_) async {},
     onRootBack: () async => false,
@@ -323,7 +352,7 @@ Future<(WorkspaceController, RaftAppRouter)> _desktopChat(
   addTearDown(router.dispose);
   await t.pumpWidget(
     MaterialApp.router(
-      theme: raftTheme(RaftFamily.elegant),
+      theme: raftTheme(),
       routerDelegate: router,
       routeInformationParser: const RaftAppRouteParser(),
     ),
@@ -375,7 +404,7 @@ void _narrowDesktopTests() {
         if (back == 'system') {
           await t.binding.handlePopRoute();
         } else {
-          await t.tap(find.byTooltip('Close preview'));
+          await t.tap(find.byTooltip('Close Preview'));
         }
         await t.pumpAndSettle();
         expect(previewSurface, findsNothing);
@@ -447,7 +476,10 @@ void _narrowDesktopTests() {
 
 /// Images open in the lightbox; documents and HTML in the preview shell.
 final previewSurface = find.byWidgetPredicate(
-  (w) => w is RaftAttachmentLightbox || w is RaftAttachmentPreviewShell,
+  (w) =>
+      w is RaftAttachmentLightbox ||
+      w is RaftMediaImmersiveShell ||
+      w is RaftAttachmentPreviewShell,
 );
 
 Future<void> backEvent(WidgetTester t, MethodCall call) async {

@@ -17,7 +17,7 @@ void main() {
       };
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftMessageTile(
               author: 'Public Agent',
@@ -54,7 +54,7 @@ void main() {
       var actions = 0;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftMessageTile(
               author: 'Public Agent',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 /// The account root owns `/` and `/servers`; WorkspaceNavigation continues to
 /// own only authorized `/s/:slug` surfaces. No placeholder server is invented.
@@ -36,6 +37,18 @@ class RaftAppRouter extends RouterDelegate<Uri>
 
   void refresh() => notifyListeners();
 
+  PlatformRouteInformationProvider informationProvider(Uri initialLocation) =>
+      RaftAppRouteInformationProvider(
+        initialRouteInformation: RouteInformation(uri: initialLocation),
+        consumeReplacement: consumeReplacement,
+      );
+
+  Widget withHoverDismiss(Widget child) => RaftHoverDismissScope(
+    navigation: this,
+    location: () => currentConfiguration,
+    child: child,
+  );
+
   @override
   Future<void> setNewRoutePath(Uri configuration) => onLocation(configuration);
 
@@ -46,17 +59,24 @@ class RaftAppRouter extends RouterDelegate<Uri>
   }
 
   @override
-  Widget build(BuildContext context) => Navigator(
-    key: navigatorKey,
-    observers: observers,
-    pages: [
-      MaterialPage<void>(
-        key: const ValueKey('raft-app-root'),
-        child: home(context),
-      ),
-    ],
-    onDidRemovePage: (_) {},
-  );
+  Widget build(BuildContext context) {
+    final hoverDismiss = RaftHoverDismissScope.maybeOf(context);
+    return Navigator(
+      key: navigatorKey,
+      observers: [
+        ...observers,
+        if (hoverDismiss != null && !observers.contains(hoverDismiss))
+          hoverDismiss,
+      ],
+      pages: [
+        MaterialPage<void>(
+          key: const ValueKey('raft-app-root'),
+          child: home(context),
+        ),
+      ],
+      onDidRemovePage: (_) {},
+    );
+  }
 }
 
 class RaftAppRouteParser extends RouteInformationParser<Uri> {

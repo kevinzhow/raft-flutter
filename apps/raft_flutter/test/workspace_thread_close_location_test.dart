@@ -5,19 +5,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show fixture;
 import 'workspace_activity_activation_test.dart' show message;
+import 'support/app_services_fixture.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[N07a] $family/$dark desktop Close replaces the mounted pending thread slot',
+      '[N07a] ${dark ? 'dark' : 'light'} desktop Close replaces the mounted pending thread slot',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(1440, 900);
@@ -26,12 +24,12 @@ void main() {
         final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
         w.loading = false;
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         w.section = 'chat';
-        w.ledger.ingest([
+        w.messageDomain.ledger.ingest([
           message('main-tail', 'c1'),
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'main-tail'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'main-tail'};
         api.routes['GET /servers/s1/setup-projection'] = (_) => {
           'phase': 'complete',
           'surface': 'complete',
@@ -42,12 +40,14 @@ void main() {
         api.routes['POST /channels/c1/read'] = (_) => {};
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -82,7 +82,7 @@ void main() {
         final beforeTaskClose = Map<String, String>.from(
           w.location.uri.queryParameters,
         );
-        await tester.tap(find.byTooltip('Close task'));
+        await tester.tap(find.byTooltip('Close Task'));
         await tester.pump();
         expect(
           w.location.uri.queryParameters,

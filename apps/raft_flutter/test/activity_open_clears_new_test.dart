@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_presentation_test.dart' show fixture;
 
@@ -61,15 +62,11 @@ Map<String, dynamic> activityRow(
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final kind in ['channel', 'thread', 'dm']) {
       for (final canonical in [true, false]) {
         testWidgets(
-          '[Activity open clears new] $family/$dark $kind ${canonical ? 'master-detail opens at once' : 'single route opens at once'}',
+          '[Activity open clears new] ${dark ? 'dark' : 'light'} $kind ${canonical ? 'master-detail opens at once' : 'single route opens at once'}',
           (tester) async {
             final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
             addTearDown(w.dispose);
@@ -114,7 +111,7 @@ void main() {
               'readStateVersion': 7,
             };
             Widget page() => MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: ResourceView(
                   controller: w,
@@ -159,7 +156,7 @@ void main() {
             // leaving and returning keeps the row read from the first frame.
             await tester.pumpWidget(
               MaterialApp(
-                theme: raftTheme(family, dark: dark),
+                theme: raftTheme(dark: dark),
                 home: const Scaffold(body: SizedBox.expand()),
               ),
             );

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
@@ -7,6 +6,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
+import 'idle_work.dart';
+import 'inline_thread_surface.dart' show RaftInlineThreadRecipe;
 import 'dialog_card.dart' show raftRecipeThemeOf;
 import 'message_content_tokens.dart';
 import 'message_row_recipe.dart';
@@ -23,9 +24,10 @@ import 'tooltip.dart';
 /// "Back to bottom" button or a bold run scrolls in.
 ///
 /// [RaftFontWarmUp] lays out one short sample (Latin, CJK and emoji) per
-/// distinct combination the message list and its chrome use. Samples run one
-/// per event-loop turn, only while the user is not interacting (no pointer
-/// or key input for [quietPeriod]) and no watched list is scrolling; ambient
+/// distinct combination the message list and its chrome use. Samples run in
+/// short event-loop turns (one cold lookup, or a millisecond of warm ones),
+/// only while the user is not interacting (no pointer or key input for
+/// [quietPeriod]) and no watched list is scrolling; ambient
 /// animations such as a spinner do not hold them back. Already-resolved
 /// combinations cost a fraction of a millisecond.
 abstract final class RaftFontWarmUp {
@@ -38,10 +40,13 @@ abstract final class RaftFontWarmUp {
 
   static final _done = <_FontKey>{};
   static final _queue = Queue<TextStyle>();
-  static final _themes = <(RaftFamily, bool, bool)>{};
+  static final _themes = <(bool, bool, Locale?)>{};
   static final _positions = <WeakReference<ScrollPosition>>[];
   static final _watched = Expando<bool>('raftFontWarmUp');
-  static Timer? _timer;
+  // Ambient animation does not hold the warm-up back (see the class comment),
+  // but every step still waits a positive delay so the platform event loop
+  // (native input on Windows) runs between steps.
+  static final _idle = RaftIdleTimer(yieldToAnimation: false);
   static bool _inputHooked = false;
   static final _sinceInput = Stopwatch();
 
@@ -54,15 +59,14 @@ abstract final class RaftFontWarmUp {
 
   @visibleForTesting
   static void reset() {
-    _timer?.cancel();
-    _timer = null;
+    _idle.cancel();
     _queue.clear();
     _done.clear();
     _themes.clear();
     _positions.clear();
   }
 
-  /// Schedules the samples for [context]'s theme once per theme family,
+  /// Schedules the samples for [context]'s theme once per
   /// brightness and font mode, and pauses them while [context]'s scrollable moves. Cheap
   /// to call from every build.
   static void schedule(BuildContext context) {
@@ -77,9 +81,9 @@ abstract final class RaftFontWarmUp {
     final theme = Theme.of(context);
     final tokens = theme.extension<RaftTokens>();
     if (!_themes.add((
-      tokens?.family ?? RaftFamily.elegant,
       tokens?.dark ?? theme.brightness == Brightness.dark,
       tokens?.systemFonts ?? false,
+      tokens?.textLocale,
     ))) {
       return;
     }
@@ -111,27 +115,35 @@ abstract final class RaftFontWarmUp {
     return position != null && position.isScrollingNotifier.value;
   });
 
-  static void _arm([Duration delay = Duration.zero]) {
-    if (_queue.isEmpty || _timer != null) return;
-    _timer = Timer(delay, _run);
+  static void _arm([Duration delay = RaftIdleWork.minDelay]) {
+    if (_queue.isEmpty || _idle.isActive) return;
+    _idle.start(delay, _run);
   }
 
+  /// Longest a turn may keep resolving already-warm combinations (fractions of
+  /// a millisecond each). A cold fontconfig lookup blows the budget and ends
+  /// the turn after that one sample.
+  static const _turnBudget = Duration(microseconds: 1500);
+
   static void _run() {
-    _timer = null;
     final wait = quietPeriod - _sinceInput.elapsed;
     if (wait > Duration.zero || _scrolling) {
       _arm(wait > const Duration(milliseconds: 50) ? wait : quietPeriod);
       return;
     }
-    final style = _queue.removeFirst();
-    if (_done.add(_FontKey(style))) _layOut(style);
-    _arm(); // One potentially slow lookup per event-loop turn.
+    final turn = Stopwatch()..start();
+    do {
+      final style = _queue.removeFirst();
+      if (_done.add(_FontKey(style))) _layOut(style);
+    } while (_queue.isNotEmpty && turn.elapsed < _turnBudget);
+    _arm(); // Then yield to the event loop with a positive delay.
   }
 
   static void _layOut(TextStyle style) {
     final painter = TextPainter(
       text: TextSpan(text: 'Ag 中文 日本語 👍', style: style),
       textDirection: TextDirection.ltr,
+      locale: style.locale,
     )..layout();
     painter.dispose();
   }
@@ -157,10 +169,7 @@ class RaftFontWarmUpScope extends StatelessWidget {
 List<TextStyle> raftFontWarmUpStyles(ThemeData theme) {
   final t =
       theme.extension<RaftTokens>() ??
-      RaftTokens.theme(
-        RaftFamily.elegant,
-        dark: theme.brightness == Brightness.dark,
-      );
+      RaftTokens.theme(dark: theme.brightness == Brightness.dark);
   final ambient = theme.textTheme.bodyMedium ?? const TextStyle();
   final recipeTokens = RaftRecipeTokens(t);
   final recipeTheme = raftRecipeThemeOf(t);
@@ -177,6 +186,28 @@ List<TextStyle> raftFontWarmUpStyles(ThemeData theme) {
           tokens: recipeTokens,
         ).root.textStyle(recipeTokens),
     RaftTooltipRecipe(t).text,
+    // Inline thread replies under a message (the first one scrolled in used
+    // to resolve these combinations during layout).
+    RaftInlineThreadRecipe(t).summary,
+    RaftInlineThreadRecipe(t).sender,
+    RaftInlineThreadRecipe(t).preview,
+    RaftInlineThreadRecipe(t).clock,
+    // Transfer chips over images, and the headings task cards and the composer
+    // place in the heading family (each optical size is its own instance).
+    RaftTypography.mono(
+      t,
+      size: 11,
+      line: 14,
+    ).copyWith(fontWeight: FontWeight.w600),
+    for (final size in const [14.0, 16.0, 18.0]) ...[
+      RaftTypography.heading(t, size: size, line: size + 6),
+      RaftTypography.heading(
+        t,
+        size: size,
+        line: size + 6,
+        weight: FontWeight.w400,
+      ),
+    ],
     row.body,
     row.author,
     row.time,
@@ -217,8 +248,24 @@ List<TextStyle> raftFontWarmUpStyles(ThemeData theme) {
     ])
       ?style,
   ];
+  // Markdown and the page merge a declared style into the Material text
+  // style they sit in (a heading into titleLarge, ...), and whatever that
+  // supplies (fallback list, optical-size axis) is part of the engine's key.
+  final parents = <TextStyle>[
+    ambient,
+    for (final parent in [
+      theme.textTheme.headlineSmall,
+      theme.textTheme.titleLarge,
+      theme.textTheme.titleMedium,
+      theme.textTheme.bodyLarge,
+    ])
+      ?parent,
+  ];
   return [
-    for (final style in declared) ...[style, ambient.merge(style)],
+    for (final style in declared) ...[
+      style,
+      for (final parent in parents) parent.merge(style),
+    ],
   ];
 }
 
@@ -230,12 +277,14 @@ class _FontKey {
       fallback = style.fontFamilyFallback,
       weight = style.fontWeight,
       slant = style.fontStyle,
-      variations = style.fontVariations;
+      variations = style.fontVariations,
+      locale = style.locale;
   final String? family;
   final List<String>? fallback;
   final FontWeight? weight;
   final FontStyle? slant;
   final List<FontVariation>? variations;
+  final Locale? locale;
   @override
   bool operator ==(Object other) =>
       other is _FontKey &&
@@ -243,6 +292,7 @@ class _FontKey {
       listEquals(other.fallback, fallback) &&
       other.weight == weight &&
       other.slant == slant &&
+      other.locale == locale &&
       listEquals(other.variations, variations);
   @override
   int get hashCode => Object.hash(
@@ -250,6 +300,7 @@ class _FontKey {
     fallback == null ? null : Object.hashAll(fallback!),
     weight,
     slant,
+    locale,
     variations == null ? null : Object.hashAll(variations!),
   );
 }

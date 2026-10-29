@@ -21,13 +21,21 @@ class _Client extends RaftClient {
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async => {
     'url': 'https://storage.example.invalid/private-signed-capability',
   };
+
+  // The batch route is not served here: tiles fall back to the single route.
+  @override
+  Future<dynamic> post(String path, {dynamic data}) async => {'urls': []};
 }
 
 class _Files extends AttachmentFiles {
   final pending = Completer<Uint8List>();
   CancelToken? cancellation;
   @override
-  Future<Uint8List> image(String url, {required CancelToken cancel}) {
+  Future<Uint8List> image(
+    String url, {
+    required CancelToken cancel,
+    void Function(int, int)? onProgress,
+  }) {
     cancellation = cancel;
     return pending.future;
   }
@@ -37,7 +45,11 @@ class _RebindingFiles extends AttachmentFiles {
   final pending = <Completer<Uint8List>>[];
   final cancellations = <CancelToken>[];
   @override
-  Future<Uint8List> image(String url, {required CancelToken cancel}) {
+  Future<Uint8List> image(
+    String url, {
+    required CancelToken cancel,
+    void Function(int, int)? onProgress,
+  }) {
     final next = Completer<Uint8List>();
     pending.add(next);
     cancellations.add(cancel);
@@ -86,7 +98,7 @@ void main() {
       });
       final files = _RebindingFiles();
       Widget host(WorkspaceController w, int revision) => MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme().copyWith(platform: TargetPlatform.linux),
         home: Scaffold(
           body: AttachmentView(
             key: const Key('same-slot'),
@@ -102,11 +114,11 @@ void main() {
         ),
       );
       await t.pumpWidget(host(first, 1));
-      await t.pump();
+      await t.pump(const Duration(milliseconds: 60));
       final state = t.state(find.byType(AttachmentView));
       expect(files.pending.length, 1);
       await t.pumpWidget(host(first, 2));
-      await t.pump();
+      await t.pump(const Duration(milliseconds: 60));
       expect(t.state(find.byType(AttachmentView)), same(state));
       expect(files.pending.length, 2);
       expect(files.cancellations[0].isCancelled, true);
@@ -129,7 +141,7 @@ void main() {
         isNotNull,
       );
       await t.pumpWidget(host(second, 2));
-      await t.pump();
+      await t.pump(const Duration(milliseconds: 60));
       expect(t.state(find.byType(AttachmentView)), same(state));
       expect(files.pending.length, 3);
       expect(
@@ -163,7 +175,7 @@ void main() {
       final files = _Files();
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme().copyWith(platform: TargetPlatform.linux),
           home: Scaffold(
             body: AttachmentView(
               controller: w,
@@ -177,7 +189,7 @@ void main() {
           ),
         ),
       );
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
       expect(files.cancellation, isNotNull);
       w.revokeServer('server');
       await tester.pump();
@@ -216,7 +228,7 @@ void main() {
       );
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme().copyWith(platform: TargetPlatform.linux),
         home: Scaffold(
           body: AttachmentView(
             controller: w,
@@ -234,10 +246,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Preview private.png'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Close preview'), findsOneWidget);
+    expect(find.byTooltip('Close Preview'), findsOneWidget);
     w.revokeServer('server');
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Close preview'), findsNothing);
+    expect(find.byTooltip('Close Preview'), findsNothing);
     expect(
       tester
           .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
@@ -257,23 +269,23 @@ void main() {
         ..server = RaftRecord({'id': 'server', 'role': 'owner'})
         ..channel = RaftChannel({'id': 'channel', 'joined': true});
       w.channels = [w.channel!];
-      w.ledger.switchServer('server');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('server');
+      w.messageDomain.ledger.ingest([
         {
           'id': 'host',
           'channelId': 'channel',
           'seq': '1',
           'content': 'private',
         },
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['channel'] = {'host'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['channel'] = {'host'};
       final bytes = base64Decode(
         'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
       );
       final files = _Files()..pending.complete(bytes);
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme().copyWith(platform: TargetPlatform.linux),
           home: Scaffold(
             body: AttachmentView(
               controller: w,
@@ -292,16 +304,16 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Preview private.png'));
       await tester.pumpAndSettle();
-      expect(find.byTooltip('Close preview'), findsOneWidget);
-      w.visibleIds['channel'] = {};
+      expect(find.byTooltip('Close Preview'), findsOneWidget);
+      w.messageDomain.visibleIds['channel'] = {};
       w.notifyListeners();
       await tester.pumpAndSettle();
-      expect(find.byTooltip('Close preview'), findsNothing);
+      expect(find.byTooltip('Close Preview'), findsNothing);
       expect(
         PaintingBinding.instance.imageCache.containsKey(MemoryImage(bytes)),
         false,
       );
-      w.visibleIds['channel'] = {'host'};
+      w.messageDomain.visibleIds['channel'] = {'host'};
       w.notifyListeners();
       await tester.pump();
       expect(
@@ -328,7 +340,7 @@ void main() {
       var ready = 0;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme().copyWith(platform: TargetPlatform.linux),
           home: Scaffold(
             body: AttachmentView(
               controller: w,
@@ -383,7 +395,7 @@ void main() {
     final show = ValueNotifier(true);
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme().copyWith(platform: TargetPlatform.linux),
         home: Scaffold(
           body: ValueListenableBuilder<bool>(
             valueListenable: show,
@@ -406,10 +418,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Preview private.png'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Close preview'), findsOneWidget);
+    expect(find.byTooltip('Close Preview'), findsOneWidget);
     show.value = false;
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Close preview'), findsNothing);
+    expect(find.byTooltip('Close Preview'), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     show.dispose();
@@ -425,8 +437,8 @@ void main() {
         ..server = RaftRecord({'id': 'server', 'role': 'owner'})
         ..channel = RaftChannel({'id': 'channel', 'joined': true});
       w.channels = [w.channel!];
-      w.ledger.switchServer('server');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('server');
+      w.messageDomain.ledger.ingest([
         {
           'id': 'parent',
           'channelId': 'channel',
@@ -435,14 +447,14 @@ void main() {
           'content': 'parent',
         },
         {'id': 'reply', 'channelId': 'thread', 'seq': '1', 'content': 'reply'},
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['channel'] = {'parent'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['channel'] = {'parent'};
       expect(w.replies, isEmpty);
       final files = _Files();
       var ready = 0;
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme().copyWith(platform: TargetPlatform.linux),
           home: Scaffold(
             body: AttachmentView(
               controller: w,
@@ -459,7 +471,7 @@ void main() {
           ),
         ),
       );
-      await t.pump();
+      await t.pump(const Duration(milliseconds: 60));
       expect(files.cancellation, isNotNull);
       final bytes = base64Decode(
         'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
@@ -473,14 +485,16 @@ void main() {
         t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
         isNotNull,
       );
-      w.visibleIds['channel'] = {};
+      w.messageDomain.visibleIds['channel'] = {};
       w.notifyListeners();
       await t.pumpAndSettle();
       expect(
         t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
         isNull,
       );
-      expect(files.cancellation!.isCancelled, true);
+      // The fetch had completed, so its token was already released (keeping
+      // it pinned the response bytes); revocation has nothing left to cancel.
+      expect(files.cancellation!.isCancelled, false);
       expect(
         PaintingBinding.instance.imageCache.containsKey(MemoryImage(bytes)),
         false,

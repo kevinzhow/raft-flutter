@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final agent in [false, true]) {
       testWidgets(
-        'natural header and adjacent body/footer margin $family/$dark/agent=$agent',
+        'natural header and adjacent body/footer margin ${dark ? 'dark' : 'light'}/agent=$agent',
         (t) async {
           var mentions = 0;
-          final theme = raftTheme(family, dark: dark);
+          final theme = raftTheme(dark: dark);
           Future<void> mount(bool footer) async {
             await t.pumpWidget(
               MaterialApp(
@@ -60,10 +57,8 @@ void main() {
           final author = find.byWidgetPredicate(
             (w) => w is RaftControl && w.kind == RaftControlKind.textLink,
           );
-          expect(
-            t.getSize(author).height,
-            family == RaftFamily.brutal ? 20 : 14,
-          );
+          // Web MessageItem sender keeps its 20px line box.
+          expect(t.getSize(author).height, 20);
           await t.tap(author);
           expect(mentions, 1);
           await mount(true);
@@ -82,14 +77,12 @@ void main() {
           );
           expect(
             t.getSize(find.byType(RaftMessageRow)).height - withoutFooter,
-            family == RaftFamily.brutal ? 26 : 20,
+            // Native body has no bottom margin; footer adds mt-1.5 plus20px.
+            26,
           );
-          if (family == RaftFamily.elegant) {
-            expect(withoutFooter, agent ? 81 : 74);
-            expect(
-              t.getSize(find.byType(RaftMessageRow)).height,
-              agent ? 101 : 94,
-            );
+          {
+            expect(withoutFooter, 57);
+            expect(t.getSize(find.byType(RaftMessageRow)).height, 83);
           }
           expect(t.takeException(), isNull);
         },

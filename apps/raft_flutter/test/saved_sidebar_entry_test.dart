@@ -57,7 +57,7 @@ void main() {
   Future<void> host(WidgetTester t, WorkspaceController w) async {
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: SavedSidebarEntry(
             controller: w,

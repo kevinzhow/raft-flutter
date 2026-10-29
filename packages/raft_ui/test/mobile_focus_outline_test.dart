@@ -1,8 +1,12 @@
+@Tags(['look-elegant'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 const navItems = [
   RaftMobileNavItem(
@@ -32,14 +36,10 @@ const navItems = [
 ];
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final density in RaftDensity.values) {
       testWidgets(
-        'pointer selected shadow survives; keyboard separate outline recipe is2px+2px: $family/$dark/$density',
+        'pointer selected shadow survives; keyboard separate outline recipe is2px+2px: ${dark ? 'dark' : 'light'}/$density',
         (tester) async {
           final semantics = tester.ensureSemantics();
           try {
@@ -47,7 +47,12 @@ void main() {
             var activations = 0;
             await tester.pumpWidget(
               MaterialApp(
-                theme: raftTheme(family, dark: dark),
+                // Keep the capsule contract on its owning theme. The docked
+                // default has a separate pixel/interaction regression below.
+                theme: raftTheme(
+                  pack: packForThemeId(elegantThemePackId),
+                  dark: dark,
+                ),
                 home: Scaffold(
                   body: RaftDensityScope(
                     density: density,
@@ -104,7 +109,6 @@ void main() {
             final pointerPaint =
                 tester.widget<AnimatedContainer>(surface).decoration!
                     as BoxDecoration;
-            final tokens = RaftTokens.of(tester.element(tasks));
             expect(
               pointerPaint.boxShadow,
               control.recipe!.shadows(focused: false),
@@ -135,15 +139,10 @@ void main() {
                   .length,
               paintCount + 1,
             );
-            if (!tokens.brutal) {
-              final capsule = tester.getSize(
-                find.byKey(const ValueKey('mobile-nav-source-capsule')),
-              );
-              expect(
-                capsule,
-                const Size(208, 52),
-              ); // Source face geometry independent of transparent touch48 target.
-            }
+            final capsule = tester.getSize(
+              find.byKey(const ValueKey('mobile-nav-source-capsule')),
+            );
+            expect(capsule, const Size(208, 52)); // Source face geometry independent of transparent touch48 target.
             await tester.tap(find.byKey(const ValueKey('focus-tab-home')));
             await tester.pump(const Duration(milliseconds: 200));
             expect(selected, 'home');

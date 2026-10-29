@@ -1,0 +1,20 @@
+{
+  "_event": "channel:updated",
+  "_source": "routes/channels.ts:2149-2196 (POST /channels/system/all/hide -> publishChannelUpdate(io, updated)); services/channelRealtimeEvents.ts:56-79 emits { channel } with the raw channels row (no joined, no channelCapabilities, no joint*)",
+  "channel": {
+    "id": "c9000000-0000-4000-8000-000000000009",
+    "serverId": "s0000000-0000-4000-8000-000000000001",
+    "name": "all",
+    "description": "General channel for all members",
+    "type": "private",
+    "guestVisible": false,
+    "guestJoinable": false,
+    "parentMessageId": null,
+    "parentChannelId": null,
+    "createdAt": "2026-08-01T00:00:00.000Z",
+    "archivedAt": null,
+    "archivedByUserId": null,
+    "archivedByAgentId": null,
+    "deletedAt": null
+  }
+}

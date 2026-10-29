@@ -73,6 +73,31 @@ void main() {
       throwsUnsupportedError,
     );
   });
+  test('an agreement rejection keeps the agreement the caller must accept', () async {
+    final error = await rejection({
+      'error': 'agreement_required',
+      'agreement': {
+        'id': 'agreement-1',
+        'title': 'Community agreement',
+        'bodyMarkdown': '1. Be kind',
+        'version': 3,
+        'acceptedByEveryone': 'unexpected-do-not-retain',
+      },
+      'internal': 'unexpected-do-not-retain',
+    }, 409);
+    expect(error.toString(), 'agreement_required');
+    expect(error.details['agreement'], {
+      'id': 'agreement-1',
+      'title': 'Community agreement',
+      'bodyMarkdown': '1. Be kind',
+      'version': 3,
+    });
+    expect(error.details.containsKey('internal'), false);
+    expect(
+      () => error.details['agreement']['title'] = 'changed',
+      throwsUnsupportedError,
+    );
+  });
   test(
     'admitted failed job preserves receipt without opaque raw server payload',
     () async {
@@ -145,7 +170,7 @@ void main() {
             .having(
               (e) => e.message,
               'scope-safe message',
-              'The account or workspace changed. Please retry.',
+              'The account or server changed. Try again.',
             ),
       ),
     );

@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:raft_ui/raft_ui.dart' show raftStaticHtmlMaxChars;
+
+import 'attachment_http.dart';
 
 /// Preview capabilities belong to one attachment and one server. Normal
 /// presigned download URLs never authorize execution of HTML in a browser.
@@ -50,39 +53,98 @@ bool attachmentHtmlSandboxed(String? value) {
   ].every((key) => directives[key]?.join(' ') == "'none'");
 }
 
+/// The static (no WebView) preview refused a document for its size. Carries
+/// the real size so the message can say why instead of "could not be loaded".
+class AttachmentHtmlTooLarge extends FormatException {
+  const AttachmentHtmlTooLarge(this.limit, [this.size])
+    : super('The HTML is too large for a native preview.');
+  final int limit;
+  final int? size;
+}
+
+/// The server's response did not carry the pinned sandbox policy, so the
+/// document must not execute in any browser surface.
+class AttachmentHtmlNotIsolated extends FormatException {
+  const AttachmentHtmlNotIsolated()
+    : super('The server did not provide an isolated HTML preview.');
+}
+
+/// What the preview WebView does with a main-frame navigation request. The
+/// uploaded document is hostile input: it may only ever show itself.
+enum AttachmentHtmlNavigationAction { allow, external, block }
+
+/// Parent-owned navigation policy for the WebView preview (web equivalent:
+/// the sandboxed iframe lacks allow-top-navigation/allow-popups, and links are
+/// opened by the parent through the same external-link policy). The preview
+/// URL itself (and in-page `#fragment` jumps) stays; a policy-approved https
+/// link opens in the system browser; everything else (relative links, other
+/// Raft paths, file:/data:/javascript:/intent: schemes) is inert.
+({AttachmentHtmlNavigationAction action, Uri? link}) attachmentHtmlNavigation(
+  String url,
+  Uri preview,
+  String origin,
+) {
+  final target = Uri.tryParse(url);
+  if (target != null &&
+      target.scheme == preview.scheme &&
+      target.host == preview.host &&
+      target.port == preview.port &&
+      target.path == preview.path &&
+      target.query == preview.query &&
+      target.userInfo.isEmpty) {
+    return (action: AttachmentHtmlNavigationAction.allow, link: null);
+  }
+  final link = attachmentHtmlExternalLink(url, origin);
+  return link == null
+      ? (action: AttachmentHtmlNavigationAction.block, link: null)
+      : (action: AttachmentHtmlNavigationAction.external, link: link);
+}
+
 class AttachmentHtmlLoader {
   AttachmentHtmlLoader({Dio? dio})
-    : dio =
-          dio ??
-          Dio(
-            BaseOptions(
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 30),
-              followRedirects: false,
-            ),
-          );
+    : dio = dio ?? AttachmentHttp.shared,
+      _shared = dio == null;
   final Dio dio;
-  static const maxBytes = 2 * 1024 * 1024;
+  // The default client is the app-wide attachment pool: closing it with the
+  // preview broke every later HTML preview (and other attachment fetches).
+  final bool _shared;
+
+  /// Static-preview (desktop without a WebView) download cap. The sanitizer
+  /// parses the whole document; see [raftStaticHtmlMaxChars].
+  static const maxBytes = raftStaticHtmlMaxChars;
 
   Future<String?> load(
     Uri uri, {
     required CancelToken cancel,
     required bool Function() authorized,
+    void Function(int received, int? total)? onProgress,
   }) async {
     if (!authorized() || cancel.isCancelled) return null;
-    final response = await dio.get<List<int>>(
-      uri.toString(),
-      cancelToken: cancel,
-      options: Options(
-        responseType: ResponseType.bytes,
-        followRedirects: false,
-      ),
-      onReceiveProgress: (received, total) {
-        if (!authorized() || received > maxBytes || total > maxBytes) {
-          cancel.cancel();
-        }
-      },
-    );
+    int? oversize;
+    final Response<List<int>> response;
+    try {
+      response = await dio.get<List<int>>(
+        uri.toString(),
+        cancelToken: cancel,
+        options: Options(
+          responseType: ResponseType.bytes,
+          followRedirects: false,
+        ),
+        onReceiveProgress: (received, total) {
+          if (received > maxBytes || total > maxBytes) {
+            oversize = total > maxBytes ? total : received;
+            cancel.cancel();
+          } else if (!authorized()) {
+            cancel.cancel();
+          } else {
+            onProgress?.call(received, total > 0 ? total : null);
+          }
+        },
+      );
+    } on DioException {
+      if (oversize != null) throw AttachmentHtmlTooLarge(maxBytes, oversize);
+      rethrow;
+    }
     final bytes = response.data;
     if (bytes == null) {
       throw const FormatException('The HTML preview could not be loaded.');
@@ -90,16 +152,12 @@ class AttachmentHtmlLoader {
     try {
       if (!authorized() || cancel.isCancelled) return null;
       if (bytes.length > maxBytes) {
-        throw const FormatException(
-          'The HTML is too large for a native preview.',
-        );
+        throw AttachmentHtmlTooLarge(maxBytes, bytes.length);
       }
       if (!attachmentHtmlSandboxed(
         response.headers.value('content-security-policy'),
       )) {
-        throw const FormatException(
-          'The server did not provide an isolated HTML preview.',
-        );
+        throw const AttachmentHtmlNotIsolated();
       }
       return utf8.decode(bytes, allowMalformed: true);
     } finally {
@@ -131,7 +189,9 @@ class AttachmentHtmlLoader {
         );
   }
 
-  void dispose() => dio.close(force: true);
+  void dispose() {
+    if (!_shared) dio.close(force: true);
+  }
 }
 
 /// Source-equivalent parent-owned link policy. Uploaded relative links,

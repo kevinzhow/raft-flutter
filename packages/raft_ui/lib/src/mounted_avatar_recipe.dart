@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 
 import 'css_pixel_snap.dart';
-
-import 'design_primitives.dart' show RaftTypography;
 import 'icons.dart';
+
+import 'raft/avatar.dart';
+import 'raft/status.dart';
+import 'raft/ui_tokens.dart';
 import 'theme.dart';
-import 'tooltip.dart';
 
 /// Mounted AvatarSlot contexts, independent of generic Avatar sizing.
 enum RaftMountedAvatarContext {
   panelHeader,
+  // AvatarSlot context="message-row" (Web v1.21.12): no forced frame. The
+  // message row's avatar slot recipe sizes the image (32, 28 below 768, 34 on
+  // the large text tier; the row passes tight constraints) and elegant drops
+  // the border.
+  messageRow,
   compactList,
   // AvatarSlot context="members-row": RAFT_AVATAR_SPEC `!size-7 !border`.
   membersRow,
@@ -42,15 +48,29 @@ class RaftAvatarPresence {
   final RaftAvatarActivity activity;
   final bool external, online;
   final String? label;
+
+  /// The presence light this state shows: an external agent that is not online is `external`, otherwise the
+  /// activity (thinking and working are both `busy`).
+  RaftPresence get light => external && !online
+      ? RaftPresence.external
+      : switch (activity) {
+          RaftAvatarActivity.online => RaftPresence.online,
+          RaftAvatarActivity.thinking ||
+          RaftAvatarActivity.working => RaftPresence.busy,
+          RaftAvatarActivity.error => RaftPresence.error,
+          RaftAvatarActivity.offline => RaftPresence.offline,
+        };
 }
 
-/// Tier 1: product index.css57 and Tailwind gray-400 (CSS to sRGB conversion).
+/// The 0.7.1 presence lights as RGB (light mode), kept for callers that compare against the busy / offline
+/// colours without a theme.
 abstract final class RaftAvatarStatusPrimitives {
   static const busy = Color(0xffffd440);
-  static const offline = Color(0xff99a1af);
+  static const offline = Color(0xffc0b9b1);
 }
 
-/// Tier 3: AvatarSlot SPEC/RAFT_AVATAR_SPEC and RUI0.5.27 avatar recipe.
+/// AvatarSlot contexts over the raft-ui 0.7.1 sticker avatar: the slot fixes the outer extent (RAFT_AVATAR_SPEC
+/// `!size-9` ...), the text, placeholder icon and badge follow the nearest raft-ui size class.
 @immutable
 class RaftMountedAvatarRecipe {
   const RaftMountedAvatarRecipe(this.tokens, this.avatarContext, this.identity);
@@ -58,86 +78,56 @@ class RaftMountedAvatarRecipe {
   final RaftMountedAvatarContext avatarContext;
   final RaftMountedAvatarIdentity identity;
   bool get panelHeader => avatarContext == RaftMountedAvatarContext.panelHeader;
+  bool get messageRow => avatarContext == RaftMountedAvatarContext.messageRow;
   bool get sidebarList => avatarContext == RaftMountedAvatarContext.sidebarList;
   bool get previewMini => avatarContext == RaftMountedAvatarContext.previewMini;
   bool get membersRow => avatarContext == RaftMountedAvatarContext.membersRow;
   // RAFT_AVATAR_SPEC: panel-header !size-9, compact-list !size-5,
-  // sidebar-list !size-[18px], preview-mini !size-[14px]; SPEC icon sizes.
+  // sidebar-list !size-[18px], preview-mini !size-[14px]; members-row !size-7.
   double get extent => panelHeader
       ? 36
+      : messageRow
+      ? 32
       : membersRow
       ? 28
       : sidebarList
-      ? 18
+      ? tokens.size('size.avatar.sidebarList', fallback: 18)
       : previewMini
       ? 14
       : 20;
-  double get borderWidth => panelHeader ? 2 : 1;
+  RaftAvatarSize get avatarSize => RaftAvatarSize.nearest(extent);
+
+  /// `border-[1.5px]` (the painted width floors per device, see [raftControlBorderPx]).
+  double get borderWidth => 1.5;
   double get contentExtent => extent - borderWidth * 2;
-  double get placeholderExtent => panelHeader
-      ? 18
-      : membersRow
-      ? 14
-      : sidebarList || previewMini
-      ? 10
-      : 12;
+  double get placeholderExtent => sidebarList
+      ? tokens.size('size.avatar.sidebarGlyph', fallback: 12)
+      : avatarSize.icon;
   // One glyph size for the humanPlaceholder and the Gravatar User fallback:
   // a gravatar hash that arrives after first paint never resizes the glyph.
   double get gravatarFallbackExtent => placeholderExtent;
-  // raft-ui avatar badge: size-2.5 md, size-2 sm (members-row), size-1.5 xs.
-  double get badgeExtent => panelHeader
-      ? 10
-      : membersRow
-      ? 8
-      : 6;
-  double get radius => tokens.brutal ? 0 : extent / 2;
-  Color get border => tokens.brutal ? Colors.black : Colors.transparent;
-  Color get fallbackFill => tokens.brutal
-      ? identity == RaftMountedAvatarIdentity.agent
-            ? tokens.colors['color-brutal-cyan']!
-            : identity == RaftMountedAvatarIdentity.human
-            ? tokens.colors['color-brutal-lavender']!
-            : tokens.primaryFill
-      : tokens.colors[identity == RaftMountedAvatarIdentity.human
-            ? 'fill-strong'
-            : 'fill-muted']!;
-  Color get placeholderForeground => tokens.brutal
-      ? Colors.black
-      : tokens.colors['foreground-placeholder']!.withValues(
-          alpha: tokens.colors['foreground-placeholder']!.a * .7,
-        );
+  double get badgeExtent => avatarSize.badge;
 
-  // Absolute CSS badge positions are relative to the padding box. The panel
-  // value is also checked against actual mounted DOM: global inset1 Elegant,
-  // global inset-2.75 Brutal. Compact badge is source-recipe only: the public
-  // MessageReplies fixture mounts compact avatars without presence chrome.
-  double get badgeInset => tokens.brutal
-      ? borderWidth - (panelHeader ? 4.75 : 2.75)
-      : panelHeader || sidebarList
-      ? 1
-      : borderWidth + .333;
-  Color get badgeBorder =>
-      tokens.brutal ? Colors.black : tokens.colors['line-strong']!;
-  List<BoxShadow> get badgeOutline => tokens.brutal
-      ? const []
-      : [BoxShadow(color: tokens.panel, spreadRadius: 2)];
+  /// `rounded-sticker`.
+  double get radius => 4;
+  Color get border => tokens.ui.stickerInk;
+  RaftAvatarType get type => identity == RaftMountedAvatarIdentity.human
+      ? RaftAvatarType.human
+      : RaftAvatarType.agent;
+  Color get fallbackFill => type == RaftAvatarType.human
+      ? tokens.ui['palette-lavender-400']
+      : tokens.ui.inactive;
+  Color get placeholderForeground => tokens.ui.stickerInk;
 
-  /// Tier 2: fixed status roles; the busy lamp never inherits a skin accent.
+  /// Tier 2: fixed status roles (`--presence-*`); the busy light never inherits a skin accent.
   Color activityFill(RaftAvatarPresence presence) =>
-      presence.external && !presence.online
-      ? tokens.colors['color-brutal-cyan']!
-      : switch (presence.activity) {
-          RaftAvatarActivity.online => tokens.colors['color-brutal-lime']!,
-          RaftAvatarActivity.thinking ||
-          RaftAvatarActivity.working => RaftAvatarStatusPrimitives.busy,
-          RaftAvatarActivity.error => tokens.colors['color-brutal-orange']!,
-          RaftAvatarActivity.offline => RaftAvatarStatusPrimitives.offline,
-        };
+      tokens.ui.presence(presence.light.name);
 }
 
-/// Fallback for the leaf's existing uploaded → Gravatar → placeholder chain.
-/// Use gravatar:true for the nested GravatarAvatar User icon, false for the
-/// explicit humanPlaceholder branch. Neither path resolves identity or URLs.
+/// Fallback for the leaf's existing uploaded -> Gravatar -> placeholder chain.
+/// A person with a name shows initials (`MC`), without one the placeholder icon; an agent shows its first
+/// letter. Neither path resolves identity or URLs. [gravatar] is kept for call sites: the explicit
+/// humanPlaceholder branch and the nested Gravatar User fallback now draw the same icon.
 class RaftMountedAvatarFallback extends StatelessWidget {
   const RaftMountedAvatarFallback({
     super.key,
@@ -152,40 +142,42 @@ class RaftMountedAvatarFallback extends StatelessWidget {
   final String initials;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final r = RaftMountedAvatarRecipe(t, avatarContext, identity);
-    return Center(
-      child: identity == RaftMountedAvatarIdentity.human
-          ? RaftIcon(
-              RaftGlyph.user,
-              size: gravatar ? r.gravatarFallbackExtent : r.placeholderExtent,
-              color: r.placeholderForeground,
-            )
-          : identity == RaftMountedAvatarIdentity.agent
-          ? const SizedBox.shrink() // Existing RaftAvatarContent owns pixel art.
-          : Text(
-              initials.trim().isEmpty
-                  ? identity == RaftMountedAvatarIdentity.server
-                        ? 'S'
-                        : 'A'
-                  : initials
-                        .trim()
-                        .characters
-                        .take(
-                          identity == RaftMountedAvatarIdentity.server ? 1 : 2,
-                        )
-                        .toString()
-                        .toUpperCase(),
-              style: TextStyle(
-                fontFamily: t.headingFont,
-                fontSize: r.panelHeader ? 14 : 10,
-                fontWeight: identity == RaftMountedAvatarIdentity.app
-                    ? RaftTypography.black(t)
-                    : FontWeight.w700,
-                color: t.brutal ? Colors.black : r.placeholderForeground,
-              ),
-            ),
+    final r = RaftMountedAvatarRecipe(
+      RaftTokens.of(context),
+      avatarContext,
+      identity,
     );
+    if (identity == RaftMountedAvatarIdentity.human &&
+        avatarContext == RaftMountedAvatarContext.sidebarList &&
+        RaftTokens.of(context)
+                .option('avatar.sidebarHumanFallback', or: 'identity') ==
+            'user') {
+      return Center(
+        child: RaftIcon(
+          RaftGlyph.user,
+          size: r.placeholderExtent,
+          color: RaftTokens.of(context).ui.stickerInk,
+        ),
+      );
+    }
+    final size = r.avatarSize;
+    final text = switch (identity) {
+      RaftMountedAvatarIdentity.human =>
+        RaftTokens.of(context).option('avatar.humanFallback', or: 'initials') ==
+                'icon'
+            ? ''
+            : raftAvatarInitials(initials),
+      RaftMountedAvatarIdentity.agent => raftAvatarInitials(initials, max: 1),
+      RaftMountedAvatarIdentity.server =>
+        initials.trim().isEmpty ? 'S' : raftAvatarInitials(initials, max: 1),
+      RaftMountedAvatarIdentity.app =>
+        initials.trim().isEmpty
+            ? 'A'
+            : initials.trim().characters.take(2).toString().toUpperCase(),
+    };
+    return text.isEmpty
+        ? RaftAvatarPlaceholder(size: size)
+        : RaftAvatarInitials(text, size: size);
   }
 }
 
@@ -211,7 +203,7 @@ class RaftMountedAvatarFrame extends StatelessWidget {
   final RaftAvatarPresence? presence;
   final bool deactivated;
 
-  /// Source MentionCandidateAvatar: !border-black/40 opacity-60, no badge.
+  /// Source MentionCandidateAvatar: opacity-60, no badge.
   final bool muted;
 
   /// Explicit product size override, such as LeftRail's short-desktop size-8.
@@ -219,71 +211,44 @@ class RaftMountedAvatarFrame extends StatelessWidget {
   final double? extent;
   @override
   Widget build(BuildContext context) {
-    final r = RaftMountedAvatarRecipe(
-      RaftTokens.of(context),
-      avatarContext,
-      identity,
-    );
+    final t = RaftTokens.of(context);
+    final r = RaftMountedAvatarRecipe(t, avatarContext, identity);
     final admitted =
         identity == RaftMountedAvatarIdentity.agent && !deactivated && !muted
         ? presence
         : null;
     final dimension = extent ?? r.extent;
-    final radius = BorderRadius.circular(r.tokens.brutal ? 0 : dimension / 2);
-    Widget frame = SizedBox.square(
-      dimension: dimension,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              key: const ValueKey('mounted-avatar-frame'),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: muted ? Colors.black.withValues(alpha: .4) : r.border,
-                  width: r.borderWidth,
-                ),
-                borderRadius: radius,
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(r.borderWidth),
-                child: DecoratedBox(
-                  key: const ValueKey('mounted-avatar-fallback-fill'),
-                  decoration: BoxDecoration(
-                    color: r.fallbackFill,
-                    borderRadius: radius,
-                  ),
-                  child: ClipRRect(
-                    key: const ValueKey('mounted-avatar-image-clip'),
-                    borderRadius: radius,
-                    child: SizedBox.expand(
-                      child:
-                          child ??
-                          RaftMountedAvatarFallback(
-                            avatarContext: avatarContext,
-                            identity: identity,
-                            initials: name,
-                          ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+    final size = RaftAvatarSize.nearest(dimension);
+    Widget badge() {
+      final dot = RaftAvatarBadge(
+        key: const ValueKey('mounted-avatar-presence'),
+        size: size,
+        presence: admitted!.light,
+        outlineColor: t.panel,
+        label: admitted.label,
+      );
+      // Sidebar rows: Blink keeps the fractional inset and paints the
+      // badge snapped to device pixels.
+      return avatarContext == RaftMountedAvatarContext.sidebarList
+          ? RaftCssPixelSnap(child: dot)
+          : dot;
+    }
+
+    Widget frame = RaftStickerAvatar(
+      size: size,
+      extent: dimension,
+      type: r.type,
+      badgeOutlineColor: t.panel,
+      frameKey: const ValueKey('mounted-avatar-frame'),
+      contentKey: const ValueKey('mounted-avatar-image-clip'),
+      badge: admitted == null ? null : badge(),
+      child:
+          child ??
+          RaftMountedAvatarFallback(
+            avatarContext: avatarContext,
+            identity: identity,
+            initials: name,
           ),
-          if (admitted != null)
-            Positioned(
-              right: r.badgeInset,
-              bottom: r.badgeInset,
-              // Sidebar rows: Blink keeps the fractional inset and paints the
-              // badge snapped to device pixels.
-              child: avatarContext == RaftMountedAvatarContext.sidebarList
-                  ? RaftCssPixelSnap(
-                      child: _PresenceDot(recipe: r, presence: admitted),
-                    )
-                  : _PresenceDot(recipe: r, presence: admitted),
-            ),
-        ],
-      ),
     );
     if (muted) frame = Opacity(opacity: .6, child: frame);
     if (deactivated && identity == RaftMountedAvatarIdentity.agent) {
@@ -322,30 +287,5 @@ class RaftMountedAvatarFrame extends StatelessWidget {
       excludeSemantics: true,
       child: frame,
     );
-  }
-}
-
-class _PresenceDot extends StatelessWidget {
-  const _PresenceDot({required this.recipe, required this.presence});
-  final RaftMountedAvatarRecipe recipe;
-  final RaftAvatarPresence presence;
-  @override
-  Widget build(BuildContext context) {
-    final dot = SizedBox.square(
-      dimension: recipe.badgeExtent,
-      child: DecoratedBox(
-        key: const ValueKey('mounted-avatar-presence'),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: recipe.activityFill(presence),
-          border: Border.all(color: recipe.badgeBorder),
-          boxShadow: recipe.badgeOutline,
-        ),
-      ),
-    );
-    final label = presence.label;
-    return label == null || label.isEmpty
-        ? dot
-        : RaftTooltip(message: label, child: dot);
   }
 }

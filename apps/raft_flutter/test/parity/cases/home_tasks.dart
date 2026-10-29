@@ -552,7 +552,11 @@ final ParityCase _createChannel = ParityCase(
       ..server = base.server
       ..channels = base.channels
       ..section = base.section;
+    ctx.onDispose(w.dispose);
     return Scaffold(
+      // Both Web hosts explicitly use bg-white under the Modal in every mode.
+      // Keep the frozen references' original fixture; repair only Web comparison.
+      backgroundColor: ctx.againstWeb ? Colors.white : null,
       body: CreateChannelDialog(
         controller: w,
         prefilledName: ctx.props['name'] as String,

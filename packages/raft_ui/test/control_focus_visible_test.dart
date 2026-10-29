@@ -4,16 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-class _FocusRecipe extends RaftControlRecipe {
-  _FocusRecipe(super.tokens);
-  @override
-  List<BoxShadow> shadows({
-    bool hovered = false,
-    bool pressed = false,
-    bool focused = false,
-  }) => focused ? const [BoxShadow(color: Colors.red, spreadRadius: 4)] : [];
-}
-
 void main() {
   for (final kind in [PointerDeviceKind.mouse, PointerDeviceKind.touch]) {
     testWidgets(
@@ -24,13 +14,11 @@ void main() {
         var count = 0;
         await t.pumpWidget(
           MaterialApp(
+            theme: raftTheme(),
             home: Scaffold(
               body: RaftControl(
                 key: const Key('control'),
                 focusNode: node,
-                recipe: _FocusRecipe(
-                  raftTheme(RaftFamily.elegant).extension<RaftTokens>()!,
-                ),
                 onPressed: () => count++,
                 child: const Text('Action'),
               ),
@@ -45,17 +33,22 @@ void main() {
         await t.pumpAndSettle();
         expect(node.hasFocus, true);
         expect(count, 1);
-        final surface = find.descendant(
-          of: find.byKey(const Key('control')),
-          matching: find.byType(AnimatedContainer),
-        );
-        BoxDecoration paint() =>
-            t.widget<AnimatedContainer>(surface).decoration! as BoxDecoration;
-        expect(paint().boxShadow, isEmpty);
+        List<BoxShadow> shadows() => t
+            .widgetList<CustomPaint>(
+              find.descendant(
+                of: find.byKey(const Key('control')),
+                matching: find.byType(CustomPaint),
+              ),
+            )
+            .map((w) => w.painter)
+            .whereType<RaftOuterShadowPainter>()
+            .expand((p) => p.shadows)
+            .toList();
+        final before = shadows();
         await t.sendKeyEvent(LogicalKeyboardKey.enter);
         await t.pumpAndSettle();
         expect(count, 2);
-        expect(paint().boxShadow!.single.color, Colors.red);
+        expect(shadows().length, greaterThan(before.length));
         // A subsequent real pointer interaction removes only focus-visible paint.
         final again = await t.startGesture(
           t.getCenter(find.byKey(const Key('control'))),
@@ -65,7 +58,8 @@ void main() {
         await t.pumpAndSettle();
         expect(count, 3);
         expect(node.hasFocus, true);
-        expect(paint().boxShadow, isEmpty);
+        expect(shadows(), before);
+        await t.pumpWidget(const SizedBox());
       },
     );
   }

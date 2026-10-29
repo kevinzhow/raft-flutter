@@ -21,7 +21,7 @@ class RaftPullToRefresh extends StatelessWidget {
     if (!enabled) return child;
     final t = RaftTokens.of(context);
     return RefreshIndicator.adaptive(
-      color: t.brutal ? t.strong : t.accent,
+      color: t.accent,
       backgroundColor: t.panel,
       onRefresh: onRefresh,
       child: child,

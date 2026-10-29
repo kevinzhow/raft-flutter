@@ -1,0 +1,42 @@
+[
+  {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "serverId": "99999999-9999-4999-8999-999999999999",
+    "name": "atlas",
+    "displayName": "Atlas",
+    "avatarUrl": "pixel:mug",
+    "description": "Release engineer",
+    "allChannelIntroSentAt": null,
+    "status": "active",
+    "sessionId": "sess_fake_01",
+    "model": "sonnet",
+    "runtime": "claude",
+    "lastRuntimeError": {
+      "message": "Authentication failed: invalid x-api-key",
+      "at": "2026-10-12T08:00:00.000Z",
+      "launchId": "launch_fake_01",
+      "actionRequired": true,
+      "errorClass": "AuthError",
+      "errorReason": "auth_failed",
+      "fingerprint": "fp_fake_01"
+    },
+    "reasoningEffort": null,
+    "executionMode": "byoc",
+    "creatorType": "user",
+    "creatorId": "22222222-2222-4222-8222-222222222222",
+    "machineId": "33333333-3333-4333-8333-333333333333",
+    "statusProtocolAdoptedAt": null,
+    "deletedAt": null,
+    "createdAt": "2026-09-01T10:00:00.000Z",
+    "updatedAt": "2026-10-12T08:00:00.000Z",
+    "external": false,
+    "serverRole": "owner",
+    "activity": "error",
+    "activityDetail": "{\"error\":{\"message\":\"Authentication failed: invalid x-api-key\"}}",
+    "runtimeProfile": { "current": { "machineId": "33333333-3333-4333-8333-333333333333", "runtime": "claude", "model": "sonnet" }, "migrationStatus": "stable", "pending": null },
+    "creator": { "type": "human", "id": "22222222-2222-4222-8222-222222222222", "name": "kai", "displayName": "Kai", "avatarUrl": null, "gravatarHash": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "createdAgents": [
+      { "id": "44444444-4444-4444-8444-444444444444", "name": "scout", "displayName": "", "avatarUrl": null, "runtime": "codex", "external": false, "status": "stopped" }
+    ]
+  }
+]

@@ -22,7 +22,7 @@ class _MobileHeaderPreviewState extends State<_MobileHeaderPreview> {
         title: const Text('Account'),
         onBack: () => setState(() => backCount++),
         actions: [
-          IconButton(
+          RaftButton.iconAction(
             onPressed: () {},
             tooltip: 'Search',
             icon: const Icon(Icons.search),

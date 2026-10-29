@@ -35,9 +35,12 @@ void main() {
   test('main links use one ordered clipboard commit; parent does not include hidden reply', () async {
     final (w, a) = await fixture('owner');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'parent', 'later'};
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest(
+      messages(),
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
     a.routes['GET /servers'] = (_) => [
       {'id': 's1', 'slug': 'public-workspace'},
     ];
@@ -71,11 +74,14 @@ void main() {
   test('thread root and reply use canonical parent route and fresh context validation', () async {
     final (w, a) = await fixture('owner');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'parent', 'later'};
-    w.visibleIds['t1'] = {'reply'};
-    w.threadParent = w.messages.first;
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest(
+      messages(),
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
+    w.messageDomain.visibleIds['t1'] = {'reply'};
+    w.messageDomain.state.threadParent = w.messageDomain.messages.first;
     w.threadChannelId = 't1';
     a.routes['GET /servers'] = (_) => [
       {'id': 's1', 'slug': 'public-workspace'},
@@ -126,9 +132,12 @@ void main() {
       () async {
         final (w, a) = await fixture('owner');
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'parent', 'later'};
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest(
+          messages(),
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
         a.routes['GET /servers'] = (_) => [
           {'id': 's1', 'slug': 'public-workspace'},
         ];
@@ -158,9 +167,9 @@ void main() {
           case 'selection':
             selection.toggle('later');
           case 'content':
-            w.ledger.ingest([
+            w.messageDomain.ledger.ingest([
               {...messages().first, 'content': 'Replacement'},
-            ], expectedGeneration: w.ledger.generation);
+            ], expectedGeneration: w.messageDomain.ledger.generation);
         }
         response.complete({
           'messages': [
@@ -175,9 +184,12 @@ void main() {
   test('second target rejection does not leak a partial link batch', () async {
     final (w, a) = await fixture('owner');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'parent', 'later'};
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest(
+      messages(),
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
     a.routes['GET /servers'] = (_) => [
       {'id': 's1', 'slug': 'public-workspace'},
     ];

@@ -101,9 +101,7 @@ class RaftThreadRepliesLoadingBody extends StatelessWidget {
       t,
       size: 14,
       line: 20,
-      color: t.brutal
-          ? Colors.black.withValues(alpha: .4)
-          : t.colors['foreground-placeholder'],
+      color: t.colors['foreground-placeholder'],
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

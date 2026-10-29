@@ -35,6 +35,16 @@ python3 tool/performance/lab.py summarize .local/performance/lab/<name>         
 | `--reference DIR` | Runs `compare` against `DIR` when the run finishes. |
 | `-- <flutter drive args>` | Passes extra arguments through, for example `-- --no-enable-impeller`. |
 
+### Diagnostic switches (environment of the app or driver)
+
+| Variable | Effect |
+|---|---|
+| `RAFT_LAB_DEEP=1` | The driver keeps long self/inclusive/app lists and a pruned top-down call tree (`callTree`) of all CPU samples in `*.attribution.json`. Pair it with `FLUTTER_ENGINE_SWITCHES=1 FLUTTER_ENGINE_SWITCH_1=dart-flags=--max_profile_depth=600`, otherwise deep widget stacks lose their leaf frames. Native frames outside the VM (engine text/font code, GC) arrive without Dart callers. |
+| `RAFT_LAB_FONT_KEYS=1` | After every frame the lab walks the render tree for text and writes a `fontKeys` note for each font combination (family, fallback list, weight, slant, variations, locale) that the idle font warm-up (`raftFontWarmUpStyles`) does not cover. The first use of such a combination is a 50-200 ms engine stall. |
+| `RAFT_LAB_IDLE_SECONDS` | Length of the `idle-final` scenario (default 30): no input, window visible, after the last theme's scenarios. Select it with `--scenarios ...,idle-final`. **Not an idle proof:** the lab runs under the integration/test binding, which schedules a frame after every frame, so this phase shows ~60-120 frames/s and busy CPU. Measure real idle with `tool/idle-cpu/run.sh` (plain app, real workspace view). |
+
+Every scenario record has `cpuSeconds` (whole process) and, on Linux, `uiThreadCpuSeconds` (on-CPU time of the Dart UI thread). On a busy host wall-clock frame times grow, CPU time much less; `mount-*` steps also record `cpuUs` per jump, and the summary prints the per-row UI-thread CPU. Prefer it when other work shares the machine.
+
 ### Run safeguards
 
 - **Android isolation.** Android runs require a prebuilt APK whose aapt package identity is `app.raft.raft_flutter.linkperf`; the runner forces `--keep-app-running`. It refuses source-only drive or the official App APK. See [installation workflow](android-installation.md). Merely changing applicationId while retaining the official namespace is not safe for Flutter drive cleanup.
@@ -177,8 +187,11 @@ profile App includes `integration_test` and the normal release excludes it.
 | `section-back-drag` | Mobile opt-in: fully accept Tasks, then hold a reverse drag exposing Chat and roll back to Tasks. | continuous |
 | `section-cycle` | Mobile opt-in: Chat → Tasks → Files → Tasks → Chat twice, checking accepted sections. | transitions |
 | `mount-<kind>` | One channel per row kind with 120 rows of that kind. Jumps 0.9 viewport per step. Per-row cost = UI time of the mounting frame ÷ rows mounted in it. Kinds: plain, markdown, code, image, attachments, reactions, thread-summary, task. | mount |
+| `keyboard` | On the chat page, taps the composer and slides the soft-keyboard inset open and closed. An unfiltered Android run includes it. A desktop run includes it only with `--scenarios keyboard`. The measured windows are the inset slides, not the hold between them. The report shows the worst UI and raster milliseconds of those frames, how many exceed 8.33 ms and 16.7 ms, the build, layout and paint counts of each frame, and the UI thread's on-CPU time during the slides. | keyboard |
 
-Mobile section scenarios require explicit selection and a mobile viewport. They warm 600 task-tagged messages, 600 tasks and 240 PNG files, asserting visible tags, actual cards and decoded thumbnails before timing. They are not included implicitly in desktop runs. Compile scenario/theme defines into the isolated APK; changing runner options does not override defines baked into a prebuilt artifact. See [section investigation](section-swipe-investigation.md) for measurements and limitations.
+Mobile section scenarios require explicit selection and a mobile viewport. They warm 600 task-tagged messages, 600 tasks and 240 PNG files, asserting visible tags, actual cards and decoded thumbnails before timing. They are not included implicitly in desktop runs. The `keyboard` scene is not part of a default desktop run. Compile scenario/theme defines into the isolated APK; changing runner options does not override defines baked into a prebuilt artifact.
+
+This build's VM timeline events do not carry `tts` or `tdur` on the UI or raster thread. The host sampler still counts that absence. Scene CPU is the change in the first field of `/proc/<pid>/task/<tid>/schedstat`, nanoseconds spent on CPU, from scenario start to scenario end. The raster thread is the kernel name `1.raster`, or `io.flutter.rast` when the 15-character comm truncates `io.flutter.raster`. The UI thread is `1.ui` or `io.flutter.ui` when that name exists. Otherwise it is the main thread, because Android merges the UI task onto the platform thread, and the report prints that kernel name. It is a whole-scene total, not a per-frame number. The slide's schedstat total is a separate number and stays empty on Android. Rounds inside one launch share a cache, so the independent sample is the launch batch, not the round. Pair one old-build launch with one new-build launch and resample those launches whole with `cluster_ratio_ci`. `paired_ratio_ci` resamples rounds and is not that count. Neither is what `compare` flags yet. Each launch records one warmup keyboard cycle. That cycle is marked `warmup` and is not a sample. The record also stores the round index, whether the fixture was reset, the scenario-clock window, and the host load. `RAFT_LAB_BATCH`, `RAFT_LAB_PAIR` and `RAFT_LAB_ORDER` name the launch when the host alternates an old batch with a new batch.
 
 For read-only native evidence, start this watcher against a new output directory **before** the runner:
 
@@ -440,7 +453,7 @@ The macOS run is kept brief because the current gate is Linux 60 Hz.
 
 ### Requirements
 
-- The pinned Flutter SDK (`tool/flutter`, 3.47.6), Xcode with command-line tools, and CocoaPods.
+- The pinned Flutter SDK (`tool/flutter`, selected by `.fvmrc`), Xcode with command-line tools, and CocoaPods.
 - An Apple-silicon Mac with a ProMotion display: a built-in MacBook Pro panel, or an external 120 Hz display. Build arm64; under Rosetta, x64 may be capped at 60 Hz.
 
 ### Command

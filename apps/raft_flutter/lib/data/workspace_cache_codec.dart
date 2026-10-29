@@ -102,3 +102,26 @@ dynamic _cacheSafe(dynamic value) {
   }
   return value;
 }
+
+/// Compares the latest accepted body with its durable sanitized projection.
+/// Other copies count toward memory, but do not override that latest body.
+Future<List<({String id, int bytes, bool durable})>> inspectHistoryBodies(
+  Map<String, List<Map<String, dynamic>>> versions,
+  Map<String, String> stored,
+) => Isolate.run(() {
+  dynamic canonical(dynamic value) {
+    if (value is Map) {
+      final keys = value.keys.map((key) => '$key').toList()..sort();
+      return {for (final key in keys) key: canonical(value[key])};
+    }
+    if (value is List) return value.map(canonical).toList();
+    return value;
+  }
+  return [for (final entry in versions.entries) (
+    id: entry.key,
+    bytes: entry.value.fold<int>(0, (sum, row) => sum + utf8.encode(jsonEncode(row)).length),
+    durable: stored[entry.key] != null &&
+      jsonEncode(canonical(_cacheSafe(entry.value.first))) ==
+      jsonEncode(canonical(jsonDecode(stored[entry.key]!))),
+  )];
+}, debugName: 'raft-history-memory-proof');

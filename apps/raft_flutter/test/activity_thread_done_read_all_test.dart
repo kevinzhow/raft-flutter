@@ -8,6 +8,9 @@ import 'package:raft_flutter/data/source_activity_unread_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
+
+import 'support/activity_row_actions.dart';
 
 import 'activity_done_lifecycle_test.dart' show doneThread;
 import 'message_presentation_test.dart' show fixture, MessageAdapter;
@@ -20,7 +23,7 @@ Future<void> _dispatch(WidgetTester tester) async {
 
 class _MountedDone {
   _MountedDone(this.workspace, this.api)
-    : attention = SourceActivityUnreadStore(workspace);
+    : attention = workspace.activityUnread..start();
   final WorkspaceController workspace;
   final MessageAdapter api;
   final SourceActivityUnreadStore attention;
@@ -34,7 +37,6 @@ class _MountedDone {
 
   static Future<_MountedDone> mount(
     WidgetTester tester,
-    RaftFamily family,
     bool dark, {
     Map<String, dynamic>? row,
   }) async {
@@ -56,14 +58,14 @@ class _MountedDone {
     final epoch = result.attention.authorityEpoch;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(family, dark: dark),
+        theme: raftTheme(dark: dark),
         home: Scaffold(
           body: ResourceView(
             key: result.viewKey,
             controller: w,
             section: 'activity',
             onMessage: (_, _) async {},
-            onActivityWindowAccepted: (window) {
+            onActivityWindowAccepted: (window, {firstPage = false}) {
               if (window != null) {
                 result.attention.acceptWindow(
                   window,
@@ -89,7 +91,7 @@ class _MountedDone {
   }
 
   Future<void> click(WidgetTester tester) async {
-    await tester.tap(find.byTooltip('Mark conversation done'));
+    await clickActivityDone(tester);
     await _dispatch(tester);
   }
 
@@ -108,15 +110,11 @@ class _MountedDone {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[Activity thread Done persisted read] $family/$dark ACK starts bodyless read-all independently of one owned inbox refresh',
+      '[Activity thread Done persisted read] ${dark ? 'dark' : 'light'} ACK starts bodyless read-all independently of one owned inbox refresh',
       (tester) async {
-        final page = await _MountedDone.mount(tester, family, dark);
+        final page = await _MountedDone.mount(tester, dark);
         try {
           expect(find.byType(RaftConversationCard), findsOneWidget);
           expect(page.attention.totalUnreadCount, 3);
@@ -137,7 +135,7 @@ void main() {
           expect(request.headers.containsKey('Authorization'), isTrue);
           // The real write stays held while the owned refresh is in flight.
           expect(page.inboxCalls, before + 1);
-          page.workspace.unread['thread'] = 1;
+          page.workspace.conversationReads.unread['thread'] = 1;
           page.workspace.notifyListeners();
           refreshed.complete({
             'items': [],
@@ -149,7 +147,7 @@ void main() {
           await _dispatch(tester);
           // Persisted success never blindly clears a newly arrived reply and
           // never starts a second background inbox GET.
-          expect(page.workspace.unread['thread'], 1);
+          expect(page.workspace.conversationReads.unread['thread'], 1);
           expect(page.inboxCalls, before + 1);
           expect(find.byType(RaftConversationCard), findsNothing);
           expect(tester.takeException(), isNull);
@@ -159,9 +157,9 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity thread Done persisted read] $family/$dark write failure preserves Done and emits no second refresh',
+      '[Activity thread Done persisted read] ${dark ? 'dark' : 'light'} write failure preserves Done and emits no second refresh',
       (tester) async {
-        final page = await _MountedDone.mount(tester, family, dark);
+        final page = await _MountedDone.mount(tester, dark);
         try {
           await page.click(tester);
           page.done.complete({});
@@ -180,9 +178,9 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity thread Done persisted read] $family/$dark failed Done does not persist a successful read',
+      '[Activity thread Done persisted read] ${dark ? 'dark' : 'light'} failed Done does not persist a successful read',
       (tester) async {
-        final page = await _MountedDone.mount(tester, family, dark);
+        final page = await _MountedDone.mount(tester, dark);
         try {
           await page.click(tester);
           page.done.completeError(page.failure(500));
@@ -202,9 +200,9 @@ void main() {
       'Done generation',
     ]) {
       testWidgets(
-        '[Activity thread Done persisted read] $family/$dark obsolete $authority Done ACK cannot write read-all in the new authority',
+        '[Activity thread Done persisted read] ${dark ? 'dark' : 'light'} obsolete $authority Done ACK cannot write read-all in the new authority',
         (tester) async {
-          final page = await _MountedDone.mount(tester, family, dark);
+          final page = await _MountedDone.mount(tester, dark);
           try {
             await page.click(tester);
             switch (authority) {
@@ -254,9 +252,9 @@ void main() {
       );
     }
     testWidgets(
-      '[Activity thread Done persisted read] $family/$dark late persisted response cannot clear or refresh the new server',
+      '[Activity thread Done persisted read] ${dark ? 'dark' : 'light'} late persisted response cannot clear or refresh the new server',
       (tester) async {
-        final page = await _MountedDone.mount(tester, family, dark);
+        final page = await _MountedDone.mount(tester, dark);
         try {
           await page.click(tester);
           page.done.complete({});
@@ -264,13 +262,13 @@ void main() {
           expect(page.writes, hasLength(1));
           page.workspace.client.selectServer('s2');
           page.workspace.server = RaftRecord({'id': 's2', 'role': 'owner'});
-          page.workspace.unread['thread'] = 7;
+          page.workspace.conversationReads.unread['thread'] = 7;
           page.workspace.notifyListeners();
           await _dispatch(tester);
           final before = page.inboxCalls;
           page.read.complete({});
           await _dispatch(tester);
-          expect(page.workspace.unread['thread'], 7);
+          expect(page.workspace.conversationReads.unread['thread'], 7);
           expect(page.inboxCalls, before);
           expect(tester.takeException(), isNull);
         } finally {
@@ -279,11 +277,10 @@ void main() {
       },
     );
     testWidgets(
-      '[Activity thread Done persisted read] $family/$dark channel Done keeps its own exact storage RPC without a thread read-all',
+      '[Activity thread Done persisted read] ${dark ? 'dark' : 'light'} channel Done keeps its own exact storage RPC without a thread read-all',
       (tester) async {
         final page = await _MountedDone.mount(
           tester,
-          family,
           dark,
           row: {
             'kind': 'channel',

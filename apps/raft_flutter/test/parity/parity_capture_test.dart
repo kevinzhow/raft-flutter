@@ -16,20 +16,19 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/features/sidebar_conversation_finder.dart';
+import 'package:raft_updater/raft_updater.dart';
 
+import '../flutter_test_config.dart' show RaftTestBinding;
 import 'case_map.dart';
 import 'parity_harness.dart';
 
-/// flutter_test's automated binding sets `debugDisableShadows`, which paints
-/// every BoxShadow / PhysicalModel shadow without its blur (hard-edged
-/// blocks). A device renders blurred shadows, so captures must too.
-class _ParityBinding extends AutomatedTestWidgetsFlutterBinding {
-  @override
-  bool get disableShadows => false;
-}
-
 void main() {
-  _ParityBinding();
+  // flutter_test's automated binding hides shadow blur (`debugDisableShadows`);
+  // a device renders blurred shadows, so captures must too.
+  RaftTestBinding.showShadows();
+  // The browser reference has no "Find a conversation" box (Electron only).
+  SidebarFinderLayer.hiddenForParity = true;
   final env = Platform.environment;
   final sharedDir = env['PARITY_SHARED_DIR'];
   final resultRoot = env['PARITY_RESULT_ROOT'];
@@ -38,6 +37,15 @@ void main() {
       'parity capture (set PARITY_SHARED_DIR/PARITY_RESULT_ROOT)',
       () {},
       skip: true,
+    );
+    return;
+  }
+  final missingFonts = missingParityFontReason();
+  if (missingFonts != null) {
+    test(
+      'parity capture requires system test fonts',
+      () {},
+      skip: missingFonts,
     );
     return;
   }
@@ -67,6 +75,10 @@ void main() {
   // React fixture host. Message content and official manifest stay pinned.
   fixtures['markdownTasksFixture'] = json.decode(
     File('../../tool/reference-patches/markdown-tasks.json').readAsStringSync(),
+  );
+  fixtures['markdownSyntheticSlice1Fixture'] = json.decode(
+    File('../../tool/reference-patches/markdown-synthetic-slice1.json')
+        .readAsStringSync(),
   );
   fixtures['notificationCenterFixture'] = json.decode(
     File('../../tool/reference-patches/notification-center.json')
@@ -102,6 +114,9 @@ void main() {
   final shardTotal = int.tryParse(env['PARITY_SHARD_TOTAL'] ?? '') ?? 1;
 
   setUpAll(() async {
+    // The process-owned updater outlives captures. Initialize its availability
+    // notifier with the suite, rather than charging it to the first About case.
+    final _ = AppUpdater.instance;
     await loadParityFonts();
   });
   tearDownAll(() {

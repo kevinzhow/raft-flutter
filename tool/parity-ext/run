@@ -6,13 +6,18 @@
   tool/parity-ext/run summary
   tool/parity-ext/run publish [--no-verify]
 
+Without --frozen, a run compares the Raft look against the explicit pinned Web
+reference in tool/parity-reference.json. Historical brutal/elegant case names
+supply brightness only. Wrong reference inputs or Flutter look metadata stop the
+comparison before scoring; geometry differences remain product failures.
+
 Same pipeline as tool/parity (official React provider spec + Playwright config
 as generated copies, Flutter provider test/parity/parity_capture_test.dart,
 official `cli.mjs diff` + `site`), pointed at the extension manifest
 (sharedCases.json schema, ids components.<area>.*) instead of the official case
 set, which stays untouched. The manifest is NOT committed: every invocation
-builds <out>/cases.json by running tool/parity-ext/build-*.py in the order of
-tool/parity-ext/builders.txt (builders.py), then derives cases.sampled.json
+builds <out>/cases.json by running the discovered tool/parity-ext/build-*.py
+(builders.py: build-cases.py first, then optional `ORDER = n`, then file name), then derives cases.sampled.json
 (theme sampling: brutal-light complete, elegant themes 1-2 per surface,
 tool/parity-ext/sampling.py) from it. Differences from tool/parity, all generated,
 never edits to the Source checkout:
@@ -26,7 +31,7 @@ never edits to the Source checkout:
   * React captures come from a content-addressed cache shared by all worktrees
     (react_cache.py; PARITY_EXT_CACHE, default
     <main checkout>/../raft-flutter-wt/.parity-cache): hit = copied, Playwright
-    skipped; miss = captured and stored; --refresh-react recaptures and overwrites;
+    skipped; miss = captured and stored; --refresh-react recaptures while verified origins are retained;
   * the summary adds a non-text score per case and a geometry verdict
     (analyze-diffs.py), next to the unchanged official 96% pass;
   * output build/parity-ext/ (PARITY_EXT_OUT); publish to
@@ -58,6 +63,8 @@ sys.path.insert(0, str(EXT))
 import builders  # noqa: E402  (tool/parity-ext/builders.py)
 import react_cache  # noqa: E402  (tool/parity-ext/react_cache.py)
 import sampling  # noqa: E402  (tool/parity-ext/sampling.py: theme sampling rule)
+import reference_contract  # noqa: E402
+import frozen_ref  # noqa: E402  (tool/parity-ext/frozen_ref.py: frozen a57b9dab references)
 
 _ad_loader = importlib.machinery.SourceFileLoader('parity_ext_analyze_diffs', str(EXT / 'analyze-diffs.py'))
 analyze = importlib.util.module_from_spec(importlib.util.spec_from_loader(_ad_loader.name, _ad_loader))
@@ -110,14 +117,30 @@ def cli(*args, log=None):
 
 
 SPEC_EXT_PATCHES = [
+    # Cropping an observational overlay must inspect the real rendered content
+    # for font evidence. The metadata explicitly records this separate scope.
+    ('    const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);',
+     '    const parityMetadataSelector = (visualCase.capture as { metadataSelector?: string } | undefined)?.metadataSelector || selector;\n'
+     '    const parityPlatformFonts = await parityCollectPlatformFonts(page, parityMetadataSelector);'),
+    ('            textRunWidths: await parityTextRunWidths(page, selector),',
+     '            textRunWidths: await parityTextRunWidths(page, parityMetadataSelector),\n'
+     '            metadataSelector: parityMetadataSelector,'),
     # Per-case clock: `props.clockIso` replaces the fixture instant (plan limits
     # that depend on the trial end date, relative labels).
     ('      await page.clock.setFixedTime(new Date(fixtureNowEpochMillis));',
      '      const parityExtClock = (visualCase.variants?.[0]?.props as Record<string, string> | undefined)?.clockIso;\n'
      '      await page.clock.setFixedTime(new Date(parityExtClock ? Date.parse(parityExtClock) : fixtureNowEpochMillis));'),
     ('    await page.goto(caseUrl(visualCase));',
+     '    const parityExtTimeout = (visualCase.variants?.[0]?.props as Record<string, unknown> | undefined)?.captureTimeoutMs;\n'
+     '    if (parityExtTimeout !== undefined) {\n'
+     '      const timeout = Number(parityExtTimeout);\n'
+     '      if (!Number.isFinite(timeout) || timeout < 1 || timeout > 120000) throw new Error("Invalid captureTimeoutMs");\n'
+     '      test.setTimeout(timeout);\n'
+     '    }\n'
      '    await parityExtRoutes(page, visualCase);\n    await page.goto(caseUrl(visualCase));'),
     ('    } else if (interaction.type === "fill" && interaction.target) {',
+     '    } else if ((interaction.type as string) === "reveal" && interaction.target) {\n'
+     '      await page.locator(interaction.target).first().scrollIntoViewIfNeeded();\n'
      '    } else if ((interaction.type as string) === "hover" && interaction.target) {\n'
      '      await page.locator(interaction.target).first().hover();\n'
      '    } else if ((interaction.type as string) === "press" && interaction.target) {\n'
@@ -161,6 +184,31 @@ SPEC_EXT_PATCHES = [
      '      await parityExtDomDump(page, selector, visualCase.id, process.env.PARITY_EXT_DOM_DUMP);\n'
      '      return;\n'
      '    }\n'),
+]
+# Applied after SPEC_EXT_PATCHES. These actual executor bytes are part of every
+# React cache key, including focus actions used outside components.states.*.
+SPEC_STATES_PATCHES = [
+    ('    } else if (interaction.type === "fill" && interaction.target) {',
+     '    } else if ((interaction.type as string) === "hold" && interaction.target) {\n'
+     '      // Pointer down on the control, no release: the pressed state.\n'
+     '      const holdBox = await page.locator(interaction.target).first().boundingBox();\n'
+     '      await page.mouse.move(holdBox!.x + holdBox!.width / 2, holdBox!.y + holdBox!.height / 2);\n'
+     '      await page.mouse.down();\n'
+     '    } else if ((interaction.type as string) === "focus" && interaction.target) {\n'
+     '      await page.locator(interaction.target).first().focus();\n'
+     '    } else if ((interaction.type as string) === "tab") {\n'
+     '      // Keyboard focus: Tab `count` times.\n'
+     '      for (let n = 0; n < Number((interaction as { count?: number }).count ?? 1); n++) await page.keyboard.press("Tab");\n'
+     '    } else if ((interaction.type as string) === "mark" && interaction.target) {\n'
+     '      // Crop marker over the control (+ pad px): the capture selector is [data-testid="states-crop"].\n'
+     '      await page.locator(interaction.target).first().evaluate((el: Element, pad: number) => {\n'
+     '        const r = el.getBoundingClientRect();\n'
+     '        const m = document.createElement("div");\n'
+     '        m.setAttribute("data-testid", "states-crop");\n'
+     '        m.style.cssText = `position:fixed;left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + 2 * pad}px;height:${r.height + 2 * pad}px;pointer-events:none`;\n'
+     '        document.body.appendChild(m);\n'
+     '      }, Number((interaction as { pad?: number }).pad ?? 6));\n'
+     '    } else if (interaction.type === "fill" && interaction.target) {'),
 ]
 SPEC_EXT_APPENDIX = r'''
 
@@ -224,15 +272,29 @@ async function parityExtRoutes(page: Page, visualCase: VisualCase) {
     }
     for (const [key, body] of Object.entries(routes)) {
       const [method, path] = key.split(" ");
-      const special = (body || {}) as { $pending?: boolean; $status?: number; $body?: unknown };
       await page.route((url: URL) => url.pathname === `/api${path}`, (route: any) => {
         if (route.request().method() !== method) return route.fallback();
+        // `{"$when": [{"query": {"dirPath": "notes"}, "answer": A}], "$default": B}` answers one path differently
+        // by query string (the Flutter fixture client applies the same rule).
+        let answer: any = body;
+        const when = (body as any)?.$when;
+        if (Array.isArray(when)) {
+          const params = new URL(route.request().url()).searchParams;
+          const hit = when.find((w: any) => Object.entries(w.query || {}).every(([k, v]) => params.get(k) === v));
+          answer = hit ? hit.answer : (body as any).$default;
+        }
+        const special = (answer || {}) as { $pending?: boolean; $status?: number; $body?: unknown; $file?: string; $contentType?: string };
         if (special.$pending) return;
+        // `{"$file": "name.png", "$contentType": "image/png"}` answers the bytes of a fixture file.
+        if (special.$file) {
+          return route.fulfill({ status: 200, contentType: special.$contentType || "application/octet-stream",
+            body: readFileSync(resolve(dir, special.$file)) });
+        }
         if (special.$status) {
           return route.fulfill({ status: special.$status, contentType: "application/json",
             body: JSON.stringify(special.$body ?? { error: "fixture error" }) });
         }
-        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(answer) });
       });
     }
   }
@@ -286,6 +348,127 @@ async function parityExtDomDump(page: Page, selector: string, caseId: string, di
   wf(resolve(dir, `${caseId}.json`), JSON.stringify({ caseId, selector, viewport: page.viewportSize(), ...dump }, null, 1));
 }
 '''
+# Only new pending-address cases install this machinery. Existing cases keep
+# their cache input; the new case carries an explicit machineryRev.
+PENDING_ADDRESS_SETUP = r'''
+  if (props.pendingSpinner === "1") {
+    const fixture = JSON.parse(readFileSync(resolve(dir, 'threadattachments.json'), 'utf8'));
+    const queryPath = '/api' + fixture.pendingSpinner.queryPath;
+    const state: PendingAddressState = {
+      id: visualCase.id, held: new Set<any>(), seen: 0, imageRequests: 0,
+      accepting: true, lateAborted: 0, abortErrors: 0, unexpectedMethods: 0,
+      closingWork: new Set<Promise<void>>(),
+      predicate: (url: URL) => url.pathname === queryPath,
+      handler: async (route: any) => {
+        state.seen++;
+        if (route.request().method() !== 'GET') state.unexpectedMethods++;
+        if (!state.accepting) {
+          const work = route.abort('aborted').then(
+            () => { state.lateAborted++; }, () => { state.abortErrors++; });
+          state.closingWork.add(work);
+          await work;
+          state.closingWork.delete(work);
+          return;
+        }
+        state.held.add(route);
+        // Real request stays pending until visible-close/page-owned cleanup.
+      },
+    };
+    parityExtPendingAddresses.set(page, state);
+    page.on('request', (request: any) => {
+      if (request.resourceType() === 'image' && /^https?:/.test(request.url())) state.imageRequests++;
+    });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.route(state.predicate, state.handler);
+  }
+'''
+SPEC_PENDING_ADDRESS_APPENDIX = r'''
+type PendingAddressState = {
+  id: string; held: Set<any>; seen: number; imageRequests: number;
+  accepting: boolean; lateAborted: number; abortErrors: number; unexpectedMethods: number;
+  closingWork: Set<Promise<void>>;
+  predicate: (url: URL) => boolean; handler: (route: any) => Promise<void>;
+};
+const parityExtPendingAddresses = new WeakMap<Page, PendingAddressState>();
+
+async function parityExtAssertPendingAddress(page: Page, visualCase: VisualCase) {
+  if (String(visualCase.variants?.[0]?.props?.pendingSpinner) !== "1") return;
+  const state = parityExtPendingAddresses.get(page)!;
+  await expect.poll(() => state.seen).toBeGreaterThan(0);
+  expect(state.held.size).toBeGreaterThan(0);
+  expect(state.imageRequests).toBe(0);
+  expect(state.unexpectedMethods).toBe(0);
+  const spinner = page.locator('[data-testid="image-lightbox"] [data-slot="spinner"]');
+  await expect(spinner).toHaveCount(1);
+  await expect(spinner.locator('[data-spinner-pixel]')).toHaveCount(4);
+  const box = await spinner.boundingBox();
+  expect(box?.width).toBe(19);
+  expect(box?.height).toBe(19);
+  const reducedMotion = await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches);
+  expect(reducedMotion).toBe(true);
+  const dir = resolve(resultRoot, 'react');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(resolve(dir, `${state.id}.pending-state.json`), JSON.stringify({
+    caseId: state.id, stage: 'waiting-for-download-address-no-preview',
+    actualSpinnerCount: await spinner.count(), actualPixelCount: await spinner.locator('[data-spinner-pixel]').count(),
+    gridWidth: box!.width, gridHeight: box!.height, reducedMotion,
+    addressQueries: state.seen, pending: state.held.size, imageRequests: state.imageRequests,
+  }, null, 2));
+}
+
+// Keep the exact query interceptor installed for the entire page lifetime.
+// Close the real UI first, so source ImageLightbox's cleanup cancels its observer.
+// New requests cannot enter the held set and are aborted even during teardown.
+test.afterEach(async ({ page }: { page: Page }) => {
+  const state = parityExtPendingAddresses.get(page);
+  if (!state) return;
+  state.accepting = false;
+  let aborted = 0, visibleCloseUsed = false, closeErrors = 0;
+  try {
+    if (!page.isClosed()) {
+      const lightbox = page.locator('[data-testid="image-lightbox"]');
+      if (await lightbox.isVisible()) {
+        // This is the source's visible X/Close action, not a store mutation.
+        const close = lightbox.locator('button').filter({ has: page.locator('svg.lucide-x') });
+        await expect(close).toHaveCount(1);
+        await close.click();
+        await expect(lightbox).toHaveCount(0);
+        visibleCloseUsed = true;
+      }
+    }
+  } catch { closeErrors++; }
+  finally {
+    for (const route of state.held) {
+      try { await route.abort('aborted'); aborted++; }
+      catch { state.abortErrors++; }
+    }
+    state.held.clear();
+    // No unroute while a live page could retry. Page close retires its routes.
+    try { if (!page.isClosed()) await page.close(); }
+    catch { closeErrors++; }
+    await Promise.all(Array.from(state.closingWork));
+    parityExtPendingAddresses.delete(page);
+    const dir = resolve(resultRoot, 'react');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(resolve(dir, `${state.id}.pending-cleanup.json`), JSON.stringify({
+      caseId: state.id, stage: 'waiting-for-download-address-no-preview',
+      acceptingNewQueries: state.accepting, queries: state.seen, aborted,
+      lateAborted: state.lateAborted, abortErrors: state.abortErrors,
+      unexpectedMethods: state.unexpectedMethods, pending: state.held.size,
+      imageRequests: state.imageRequests, visibleCloseUsed, closeErrors,
+      pageClosed: page.isClosed(), interceptorRemovedOnlyWithPage: true,
+    }, null, 2));
+  }
+  expect(state.abortErrors).toBe(0);
+  expect(closeErrors).toBe(0);
+  expect(visibleCloseUsed).toBe(true);
+  expect(state.unexpectedMethods).toBe(0);
+  expect(aborted + state.lateAborted).toBe(state.seen);
+  expect(state.imageRequests).toBe(0);
+  expect(page.isClosed()).toBe(true);
+});
+'''
+
 CONFIG_EXT_PATCHES = [
     ('    deviceScaleFactor: 3,', '    deviceScaleFactor: Number(process.env.PARITY_EXT_DSF || 3),'),
     ('    command: ' + json.dumps('node ' + str(ROOT / 'tool/parity-baseline-web.mjs')) + ',',
@@ -296,94 +479,318 @@ CONFIG_EXT_PATCHES = [
 
 def capture_machinery():
     """The capture-side code and flags that feed the React cache key (react_cache.py)."""
-    return repr((SPEC_EXT_PATCHES, SPEC_EXT_APPENDIX, CONFIG_EXT_PATCHES, TEXT_RENDER,
+    return repr((SPEC_EXT_PATCHES, SPEC_STATES_PATCHES, SPEC_EXT_APPENDIX, CONFIG_EXT_PATCHES, TEXT_RENDER,
                  parity.CHROMIUM_TEXT_ARGS[TEXT_RENDER]))
+
+
+def _now():
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def _error(row, stage, error):
+    value = {'stage': stage, 'type': type(error).__name__, 'message': str(error)}
+    for field in ('copySteps', 'cleanupSteps'):
+        if hasattr(error, field):
+            value[field] = getattr(error, field)
+    row['error'] = value
+    row['events'].append(value)
+
+
+def _clear_results(row, react_dir, reason):
+    """Retire only this invocation's owned result copies; preserve their bytes."""
+    steps, errors = {}, []
+    for extension in ('png', 'metadata.json'):
+        path = react_dir / f"{row['caseId']}.{extension}"
+        steps[extension] = {'presentBefore': path.is_file(), 'removed': False}
+        try:
+            if path.is_file():
+                digest = react_cache.sha(path.read_bytes())
+                archived = OUT / 'react-discarded-results' / f"{row['caseId']}.{digest}.{extension}"
+                archived.parent.mkdir(parents=True, exist_ok=True)
+                if not archived.exists():
+                    react_cache._atomic_copy(path, archived)
+                if react_cache.sha(archived.read_bytes()) != digest:
+                    raise ValueError('discarded result evidence differs from its digest')
+                steps[extension]['preservedAt'] = str(archived)
+            path.unlink(missing_ok=True)
+            steps[extension]['removed'] = not path.exists()
+        except (OSError, ValueError) as error:
+            steps[extension]['error'] = str(error)
+            errors.append(error)
+    row['events'].append({'stage': 'result-cleanup', 'reason': reason, 'steps': steps})
+    if errors:
+        error = OSError('could not retire unverified result copies')
+        error.cleanupSteps = steps
+        raise error
+
+
+def _generated_identity(spec_file, config):
+    return {'specSha256': react_cache.sha(spec_file.read_bytes()),
+            'configSha256': react_cache.sha(config.read_bytes())}
+
+
+def _applied_patch_identity(extra_spec_patches=(), extra_appendix=''):
+    def pairs(patches):
+        return [{'anchorSha256': react_cache.sha(old), 'replacementSha256': react_cache.sha(new)}
+                for old, new in patches]
+    return {'baseProviderSha256': react_cache.sha((ROOT / 'tool/parity').read_bytes()),
+            'spec': pairs(SPEC_EXT_PATCHES + SPEC_STATES_PATCHES + list(extra_spec_patches)),
+            'config': pairs(CONFIG_EXT_PATCHES),
+            'appendixSha256': react_cache.sha(SPEC_EXT_APPENDIX + extra_appendix)}
 
 
 def react_capture(cases, refresh, dom_dump=None):
     react_dir = parity.RESULTS / 'react'
     cache = ctx = None
-    keys = {}
-    if dom_dump:
-        need = list(cases)
-    else:
-        cache = react_cache.Cache(react_cache.default_cache_dir(ROOT))
-        ctx = react_cache.KeyContext(ROOT, EXT, parity.RAFT_SOURCE, capture_machinery())
-        keys = {c['id']: ctx.key(c) for c in cases}
-        need = []
-        for c in cases:
-            if not refresh and cache.has(keys[c['id']]):
-                cache.restore(keys[c['id']], c['id'], react_dir)
-            else:  # a failed capture must never leave a stale image behind
-                (react_dir / f"{c['id']}.png").unlink(missing_ok=True)
-                (react_dir / f"{c['id']}.metadata.json").unlink(missing_ok=True)
-                need.append(c)
-        print(f'react cache {cache.dir}: {len(cases) - len(need)} hit, {len(need)} to capture'
-              + (' (--refresh-react)' if refresh else ''), flush=True)
-        write_react_source(len(cases) - len(need), len(need), cache.dir)
-    if not need:
-        return
-    parity.cmd_fonts(argparse.Namespace(refresh=False))
-    config = parity.prepare_react_provider()
-    spec_file = parity.REACT_GEN / 'react-provider.spec.ts'
-    code = spec_file.read_text()
-    for old, new in SPEC_EXT_PATCHES:
-        code = parity.patch_exactly_once(code, old, new, 'react-provider.spec.ts (extension)')
-    spec_file.write_text(code + SPEC_EXT_APPENDIX)
-    conf = config.read_text()
-    for old, new in CONFIG_EXT_PATCHES:
-        conf = parity.patch_exactly_once(conf, old, new, 'playwright.visual-testing.config.ts (extension)')
-    config.write_text(conf)
-    log = OUT / ('react-dom-dump.log' if dom_dump else 'react-capture.log')
-    log.write_text('')
-    densities = sorted({(c.get('viewport') or {}).get('density', 1) for c in need})
-    failed = 0
-    for density in densities:
-        ids = [c['id'] for c in need if (c.get('viewport') or {}).get('density', 1) == density]
-        env = parity.node_env()
-        env.update({
-            'SLOCK_VISUAL_PROVIDER': 'react',
-            'SLOCK_VISUAL_CASE_IDS': ','.join(ids),
-            'SLOCK_VISUAL_CASE_MANIFEST': str(MANIFEST),
-            'SLOCK_VISUAL_RESULT_ROOT': str(parity.RESULTS),
-            'SLOCK_ANDROID_REPO_ROOT': str(OUT),
-            'PARITY_VT_ROOT': str(parity.VT),
-            'PARITY_FONT_CACHE': str(parity.FONT_CACHE),
-            'PARITY_CHROMIUM_ARGS': json.dumps(parity.CHROMIUM_TEXT_ARGS[TEXT_RENDER]),
-            'PARITY_BASELINE_HOST_OUT': str(parity.REACT_GEN),
-            'PARITY_EXT_DSF': str(density),
-            'PARITY_EXT_FIXTURES': str(FIXTURES),
-            'PARITY_EXT_HOST_OUT': str(OUT / 'host'),
-            'PARITY_RAFT_SOURCE': str(parity.RAFT_SOURCE),
-        })
+    keys, inputs, need = {}, {}, []
+    rows = {c['id']: {'caseId': c['id'], 'mode': 'attempted', 'outcome': 'pending',
+                     'attemptedThisRun': False, 'playwrightAttempted': False, 'actionsExecutedThisRun': None,
+                     'producedArtifacts': False, 'executionProof': None,
+                     'observedState': {'status': 'not-recorded'}, 'events': [], 'error': None}
+            for c in cases}
+    stage = 'cache-prepare'
+    failed = False
+    fatal = False
+    try:
+        OUT.mkdir(parents=True, exist_ok=True)
         if dom_dump:
-            env['PARITY_EXT_DOM_DUMP'] = str(dom_dump)
+            need = list(cases)
         else:
-            env.pop('PARITY_EXT_DOM_DUMP', None)
-        cmd = ['pnpm', 'exec', 'playwright', 'test', '--config', str(config), '--reporter=line']
-        print('+', ' '.join(cmd), f'({len(ids)} case(s) at {density}x)', flush=True)
-        with open(log, 'a') as sink:
-            r = subprocess.run(cmd, cwd=parity.RAFT_SOURCE / 'packages/web', env=env,
-                               stdout=sink, stderr=subprocess.STDOUT)
-        failed += r.returncode != 0
-    if dom_dump:
-        count = len(list(pathlib.Path(dom_dump).glob('*.json')))
-        print(f'dom dump: {count} file(s) in {dom_dump}' + (f'; some runs failed, see {log}' if failed else ''))
-        return
-    stored = sum(cache.store(keys[c['id']], c['id'], react_dir, ctx.inputs(c)) for c in need)
-    print(f'react cache: stored {stored}/{len(need)} fresh capture(s)')
-    if failed:
-        print(f'react: some captures failed; see {log}')
+            cache = react_cache.Cache(react_cache.default_cache_dir(ROOT))
+            ctx = react_cache.KeyContext(ROOT, EXT, parity.RAFT_SOURCE, capture_machinery())
+            for c in cases:
+                cid, row = c['id'], rows[c['id']]
+                inputs[cid], keys[cid] = ctx.inputs(c), ctx.key(c)
+                row['cacheKey'] = keys[cid]
+                if not refresh and cache.has(keys[cid], inputs[cid]):
+                    try:
+                        proof = cache.restore(keys[cid], cid, react_dir, inputs[cid])
+                        row.update(mode='cache-hit', outcome='restored', executionProof=proof,
+                                   actionsExecutedThisRun=False, restoredAt=_now())
+                        continue
+                    except Exception as error:
+                        fatal = True
+                        _error(row, 'restore', error)
+                        row['outcome'] = 'restore-failed'
+                # Never let a failed fresh attempt inherit a prior result pair.
+                _clear_results(row, react_dir, 'before-preparation')
+                need.append(c)
+        if not need:
+            return False
+        stage = 'prepare'
+        parity.cmd_fonts(argparse.Namespace(refresh=False))
+        # A first font preparation can change the bytes used by the key. Bind
+        # fresh attempts after that preparation; restored entries keep origins.
+        if not dom_dump:
+            ctx = react_cache.KeyContext(ROOT, EXT, parity.RAFT_SOURCE, capture_machinery())
+            for c in need:
+                cid = c['id']
+                inputs[cid], keys[cid] = ctx.inputs(c), ctx.key(c)
+                rows[cid]['cacheKey'] = keys[cid]
+        config = pathlib.Path(parity.prepare_react_provider())
+        spec_file = parity.REACT_GEN / 'react-provider.spec.ts'
+        code = spec_file.read_text()
+        for old, new in SPEC_EXT_PATCHES + SPEC_STATES_PATCHES:
+            code = parity.patch_exactly_once(code, old, new, 'react-provider.spec.ts (extension)')
+        changes = []
+        prepared = code + SPEC_EXT_APPENDIX
+        if any(str(c.get('variants', [{}])[0].get('props', {}).get('pendingSpinner')) == '1'
+               for c in cases):
+            changes = [
+                ('    await applyInteractions(page, visualCase);',
+                 '    await applyInteractions(page, visualCase);\n'
+                 '    await parityExtAssertPendingAddress(page, visualCase);'),
+                ('  const props = (visualCase.variants?.[0]?.props || {}) as Record<string, string>;\n',
+                 '  const props = (visualCase.variants?.[0]?.props || {}) as Record<string, string>;\n'
+                 + PENDING_ADDRESS_SETUP),
+            ]
+            for old, new in changes:
+                if prepared.count(old) != 1:
+                    raise RuntimeError('Pending-address capture anchor changed')
+                prepared = prepared.replace(old, new)
+            prepared += SPEC_PENDING_ADDRESS_APPENDIX
+        spec_file.write_text(prepared)
+        conf = config.read_text()
+        for old, new in CONFIG_EXT_PATCHES:
+            conf = parity.patch_exactly_once(conf, old, new, 'playwright.visual-testing.config.ts (extension)')
+        config.write_text(conf)
+        generated, applied = _generated_identity(spec_file, config), _applied_patch_identity(
+            changes, SPEC_PENDING_ADDRESS_APPENDIX if changes else '')
+        # Preserve the exact temp executor bytes that will be handed to the
+        # process, not merely their source patches. These snapshots are never
+        # rewritten on a hit or used as evidence of rendered state.
+        snapshots = OUT / 'react-execution-inputs'
+        snapshots.mkdir(parents=True, exist_ok=True)
+        generated_references = {}
+        for name, path in (('spec', spec_file), ('config', config)):
+            digest = generated[f'{name}Sha256']
+            target = snapshots / f'{name}-{digest}.ts'
+            if target.exists():
+                if react_cache.sha(target.read_bytes()) != digest:
+                    raise ValueError('execution input snapshot differs from its digest')
+            else:
+                with target.open('xb') as sink:
+                    sink.write(path.read_bytes())
+            generated_references[f'{name}Snapshot'] = str(target.resolve())
+            generated_references[f'{name}ExecutedPath'] = str(path.resolve())
+        log = OUT / ('react-dom-dump.log' if dom_dump else 'react-capture.log')
+        log.write_text('')
+        densities = sorted({(c.get('viewport') or {}).get('density', 1) for c in need})
+        for density in densities:
+            group = [c for c in need if (c.get('viewport') or {}).get('density', 1) == density]
+            ids = [c['id'] for c in group]
+            stage = 'runner'
+            started, returncode, runner_error = _now(), None, None
+            try:
+                if _generated_identity(spec_file, config) != generated:
+                    raise ValueError('temporary executor changed before execution')
+                if not dom_dump:
+                    current = react_cache.KeyContext(ROOT, EXT, parity.RAFT_SOURCE, capture_machinery())
+                    if any(current.inputs(c) != inputs[c['id']] for c in group):
+                        raise ValueError('source bindings changed before execution')
+                    for cid in ids:
+                        _clear_results(rows[cid], react_dir, 'immediately-before-runner')
+                env = parity.node_env()
+                env.update({
+                    'SLOCK_VISUAL_PROVIDER': 'react', 'SLOCK_VISUAL_CASE_IDS': ','.join(ids),
+                    'SLOCK_VISUAL_CASE_MANIFEST': str(MANIFEST),
+                    'SLOCK_VISUAL_RESULT_ROOT': str(parity.RESULTS), 'SLOCK_ANDROID_REPO_ROOT': str(OUT),
+                    'PARITY_VT_ROOT': str(parity.VT), 'PARITY_FONT_CACHE': str(parity.FONT_CACHE),
+                    'PARITY_CHROMIUM_ARGS': json.dumps(parity.CHROMIUM_TEXT_ARGS[TEXT_RENDER]),
+                    'PARITY_BASELINE_HOST_OUT': str(parity.REACT_GEN), 'PARITY_EXT_DSF': str(density),
+                    'PARITY_EXT_FIXTURES': str(FIXTURES), 'PARITY_EXT_HOST_OUT': str(OUT / 'host'),
+                    'PARITY_RAFT_SOURCE': str(parity.RAFT_SOURCE),
+                })
+                if dom_dump:
+                    env['PARITY_EXT_DOM_DUMP'] = str(dom_dump)
+                else:
+                    env.pop('PARITY_EXT_DOM_DUMP', None)
+                cmd = ['pnpm', 'exec', 'playwright', 'test', '--config', str(config), '--reporter=line']
+                for cid in ids:
+                    rows[cid]['playwrightAttempted'] = True
+                    rows[cid]['attemptedThisRun'] = True
+                with open(log, 'a') as sink:
+                    result = subprocess.run(cmd, cwd=parity.RAFT_SOURCE / 'packages/web', env=env,
+                                            stdout=sink, stderr=subprocess.STDOUT)
+                returncode = result.returncode
+            except (Exception, SystemExit) as error:
+                runner_error = error
+                failed = True
+                fatal = True
+            completed = _now()
+            stable = False
+            try:
+                stable = _generated_identity(spec_file, config) == generated
+                if not dom_dump:
+                    current = react_cache.KeyContext(ROOT, EXT, parity.RAFT_SOURCE, capture_machinery())
+                    stable = stable and all(current.inputs(c) == inputs[c['id']] for c in group)
+            except Exception as error:
+                runner_error = runner_error or error
+            if not stable:
+                failed = True
+                fatal = True
+            failed = failed or returncode not in (None, 0)
+            for c in group:
+                cid, row = c['id'], rows[c['id']]
+                row['playwrightGroupExit'] = returncode
+                if runner_error:
+                    _error(row, 'runner', runner_error)
+                if dom_dump:
+                    row['outcome'] = 'diagnostic'
+                    continue
+                png, meta = react_dir / f'{cid}.png', react_dir / f'{cid}.metadata.json'
+                row['outputPresence'] = {'png': png.is_file(), 'metadata': meta.is_file()}
+                row['producedArtifacts'] = png.is_file() and meta.is_file()
+                if not stable:
+                    row['outcome'] = 'executor-drift'
+                    _error(row, 'executor-stability', ValueError('executor/source bytes not stable around execution'))
+                    continue
+                if runner_error or returncode is None:
+                    row['outcome'] = 'runner-failed'
+                    continue
+                if not row['producedArtifacts']:
+                    row['outcome'] = 'runner-failed' if returncode != 0 else 'missing-artifacts'
+                    failed = True
+                    continue
+                try:
+                    metadata = json.loads(meta.read_text())
+                    proof = {'version': react_cache.VERSION, 'caseId': cid, 'cacheKey': keys[cid],
+                             'capturedAt': metadata.get('capturedAt'),
+                             'sourceBindings': inputs[cid]['sourceBindings'],
+                             'executorInputs': inputs[cid]['executorInputs'],
+                             'generated': {**generated, **generated_references},
+                             'appliedPatches': applied,
+                             'appliedPatchIdentity': react_cache.sha(react_cache._canon(applied)),
+                             'execution': {'startedAt': started, 'completedAt': completed,
+                                           'returncode': returncode, 'temporaryBytesStable': True},
+                             'artifacts': react_cache.artifact_identity(png, meta),
+                             'observedState': {'status': 'not-recorded'}}
+                    if not react_cache._valid_proof(proof, keys[cid], cid, inputs[cid], png, meta):
+                        raise ValueError('fresh artifact pair has no valid original execution proof')
+                    row.update(mode='executed', outcome='captured', executionProof=proof, error=None)
+                    if returncode != 0:
+                        row.update(outcome='runner-failed', cacheStore='not-stored-group-failure')
+                        _error(row, 'runner', ValueError(f'Playwright group exited {returncode}; artifacts retained'))
+                        continue
+                    stage = 'store'
+                    if not cache.store(keys[cid], cid, react_dir, inputs[cid], execution_proof=proof):
+                        raise ValueError('cache refused fresh execution proof')
+                    row['cacheStore'] = cache.last_store_status
+                except (Exception, SystemExit) as error:
+                    failed = True
+                    fatal = True
+                    row['outcome'] = 'store-failed'
+                    _error(row, 'store', error)
+        if failed and not dom_dump:
+            # Preserve --allow-structural-gaps: ordinary missing surfaces and
+            # assertion failures are adjudicated by cmd_run's missing/lost/
+            # no-reference rules. Infrastructure/proof errors remain fatal.
+            stage = 'runner-log'
+            text = log.read_text(errors='replace')
+            fatal = fatal or any(marker in text for marker in (
+                'browserType.launch:', "Executable doesn't exist at",
+                'Target page, context or browser has been closed',
+            ))
+    except (Exception, SystemExit) as error:
+        failed = True
+        fatal = True
+        for row in rows.values():
+            if row['mode'] != 'cache-hit':
+                if row['outcome'] in ('pending', 'restore-failed'):
+                    row['outcome'] = 'prepare-failed'
+                _error(row, stage, error)
+    finally:
+        if not dom_dump:
+            values = list(rows.values())
+            for row in values:
+                if row['mode'] != 'cache-hit' and row['executionProof'] is None:
+                    try:
+                        _clear_results(row, react_dir, 'unverified-result-after-failure')
+                    except (Exception, SystemExit) as error:
+                        fatal = True
+                        _error(row, 'result-cleanup', error)
+            write_react_source(sum(row['mode'] == 'cache-hit' for row in values),
+                               sum(row['executionProof'] is not None and row['mode'] == 'executed'
+                                   for row in values), cache.dir if cache else None, values)
+    return failed if dom_dump else fatal
 
 
-def write_react_source(hits, captured, cache_dir):
-    (OUT / 'react-source.json').write_text(json.dumps({
+def write_react_source(hits, captured, cache_dir, cases=None):
+    cases = cases or []
+    report = {
+        'receiptVersion': react_cache.VERSION,
         'fonts': 'production', 'textRender': TEXT_RENDER, 'raftSource': str(parity.RAFT_SOURCE),
         'commit': parity.git(parity.RAFT_SOURCE, 'rev-parse', 'HEAD'),
         'dirtyFiles': parity.git(parity.RAFT_SOURCE, 'status', '--short').splitlines(),
-        'cache': {'dir': str(cache_dir), 'hits': hits, 'captured': captured},
-        'checkedAt': dt.datetime.now(dt.timezone.utc).isoformat(),
-    }, indent=2))
+        'cache': {'dir': str(cache_dir) if cache_dir is not None else None,
+                  'hits': hits, 'attempted': sum(row['playwrightAttempted'] for row in cases),
+                  'captured': captured, 'produced': sum(row['producedArtifacts'] for row in cases),
+                  'successfulCaptures': sum(row['mode'] == 'executed'
+                                            and row.get('playwrightGroupExit') == 0 for row in cases)},
+        'cases': cases, 'checkedAt': _now(),
+    }
+    OUT.mkdir(parents=True, exist_ok=True)
+    react_cache._atomic_write(OUT / 'react-source.json', json.dumps(report, indent=2))
 
 
 def area_of(case_id):
@@ -504,14 +911,43 @@ def summarize(chosen_ids=None):
 
 def cmd_run(a):
     OUT.mkdir(parents=True, exist_ok=True)
+    try:
+        override = reference_contract.configure_theme(frozen=a.frozen, env=os.environ)
+        if not a.frozen:
+            reference = reference_contract.validate_reference(
+                parity.RAFT_SOURCE, json.loads((ROOT / 'tool/parity-reference.json').read_text()))
+            (OUT / 'comparison-inputs.json').write_text(json.dumps({
+                'phase': 'reference-and-request', 'status': 'INPUTS_VALIDATED',
+                'themeOverride': override, 'reference': reference,
+            }, indent=2) + '\n')
+    except (OSError, ValueError) as error:
+        sys.exit(f'extension comparison precondition failed: {error}')
     chosen = parity.select(ext_cases(), a.cases)
     if not chosen:
         sys.exit(f'no extension cases match {a.cases!r}')
-    react_capture(chosen, a.refresh_react)
+    chosen_ids = {case['id'] for case in chosen}
+    previous = OUT / 'summary.json'
+    expected = {row['id'] for row in json.loads(previous.read_text()).get('cases', [])
+                if row.get('react') and row['id'] in chosen_ids} if previous.is_file() else set()
+    environment_failed = False
+    flutter_failed = 0
+    if a.frozen:
+        # Elegant / Brutal: the reference is the frozen a57b9dab render, not the Web (frozen_ref.py).
+        found, missing = frozen_ref.install(parity.RESULTS, [c['id'] for c in chosen], frozen_ref.search_dirs('ext'))
+        print(f'frozen references: {len(found)} found, {len(missing)} without a frozen image', flush=True)
+        (OUT / 'frozen-missing.json').write_text(json.dumps(missing, indent=1))
+    else:
+        environment_failed = react_capture(chosen, a.refresh_react) is True
     if not a.skip_flutter:
         os.environ['PARITY_MANIFEST'] = str(MANIFEST)
         os.environ['PARITY_EXT_FIXTURES'] = str(FIXTURES)
-        parity.flutter_capture(chosen, a.cases, a.shards)
+        flutter_failed = parity.flutter_capture(chosen, a.cases, a.shards) or 0
+    if not a.frozen:
+        context = reference_contract.validate_flutter_metadata(
+            chosen, parity.RESULTS / 'android', override)
+        (OUT / 'comparison-context.json').write_text(json.dumps(context, indent=2) + '\n')
+        if context['errors']:
+            sys.exit('extension comparison INADMISSIBLE: ' + '; '.join(context['errors']))
     log = OUT / 'cli.log'
     log.write_text('')
     cli('diff', '--pairs', parity.PAIR, log=log)
@@ -527,6 +963,18 @@ def cmd_run(a):
     t = summary['totals']
     print(f"extension {parity.PAIR}: {t['passing']}/{t['total']} passing = {t['percentage']}% (official 96%); "
           f"geometry pass {t['geometryPass']}/{t['total']} = {t['geometryPercentage']}%")
+    # Full runs retain known structural gaps. Explicit selections and references
+    # that succeeded in this output directory before must remain capturable.
+    missing = t.get('flutterCaptureFailed', 0)
+    if not getattr(a, 'allow_structural_gaps', False):
+        missing += t.get('reactMissing', 0) + t.get('notCovered', 0)
+    lost = {row['id'] for row in summary.get('cases', []) if row['id'] in expected and not row.get('react')}
+    no_references = t['total'] > 0 and t.get('reactCaptured', 0) == 0
+    if environment_failed or flutter_failed or missing or lost or no_references:
+        print(f'extension capture failed: {missing} required capture(s) missing, {len(lost)} previous reference(s) lost; '
+              f'capture/provenance failure={environment_failed}, failing Flutter shards={flutter_failed}, '
+              f'no references={no_references}', file=sys.stderr)
+        sys.exit(1)
 
 
 def cmd_dom_dump(a):
@@ -534,7 +982,8 @@ def cmd_dom_dump(a):
     chosen = parity.select(ext_cases(), a.cases)
     if not chosen:
         sys.exit(f'no extension cases match {a.cases!r}')
-    react_capture(chosen, False, dom_dump=pathlib.Path(a.out).resolve())
+    if react_capture(chosen, False, dom_dump=pathlib.Path(a.out).resolve()) is True:
+        sys.exit('React diagnostic capture/preparation failed; see its execution log')
 
 
 def cmd_publish(a):
@@ -593,7 +1042,15 @@ def main():
     r.add_argument('--refresh-react', action='store_true')
     r.add_argument('--shards', type=int, default=int(os.environ.get('PARITY_SHARDS', '4')))
     r.add_argument('--skip-flutter', action='store_true')
+    r.add_argument('--frozen', action='store_true',
+                   help='compare against the frozen a57b9dab images (Elegant / Brutal looks) instead of the Web render')
+    r.add_argument('--allow-structural-gaps', action='store_true',
+                   help='full-suite mode: report known missing Web/frozen surfaces without failing; capture failures still fail')
     r.set_defaults(fn=cmd_run)
+    g = sub.add_parser('regress', help='three-level (frame / page / component) x look (raft / elegant / brutal) regression')
+    import regress  # noqa: E402  (tool/parity-ext/regress.py)
+    regress.add_arguments(g)
+    g.set_defaults(fn=regress.command)
     d = sub.add_parser('dom-dump', help='diagnostic: dump the Web DOM geometry/style of the capture target per case')
     d.add_argument('--cases', default='components.search-overlay.*', help='ids or globs (default: search overlay)')
     d.add_argument('--out', default=str(OUT / 'react-dom'))

@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 
 /// Source SettingsPanel inline password form. Credentials remain in controllers
@@ -23,7 +25,17 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
       next = TextEditingController(),
       confirmation = TextEditingController();
   bool expanded = false, saving = false, saved = false;
+
+  /// A rejected save (server text). Cleared when the next save starts.
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next save starts, a validation attempt runs, the form is collapsed or the account changes.
   String? error;
+
+  /// The form was submitted incomplete: the problem is then shown live and
+  /// ends as soon as the fields stop having it.
+  bool attempted = false;
+
+  /// Web hides "Password updated!" after 2 seconds.
+  Timer? savedTimer;
   late String scope;
   String get authority =>
       '${identityHashCode(widget.controller.client)}|${widget.controller.client.origin}|${widget.controller.client.generation}|${widget.controller.client.user?.id}';
@@ -34,6 +46,27 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
     super.initState();
     scope = authority;
     widget.controller.addListener(accountChanged);
+    for (final c in [current, next, confirmation]) {
+      c.addListener(fieldChanged);
+    }
+  }
+
+  void fieldChanged() {
+    if (attempted && mounted) setState(() {});
+  }
+
+  String? get problem => current.text.isEmpty
+      ? 'Enter your current password.'
+      : next.text.length < 8
+      ? 'New password must be at least 8 characters'
+      : next.text != confirmation.text
+      ? 'Passwords do not match'
+      : null;
+
+  void clearSaved() {
+    savedTimer?.cancel();
+    savedTimer = null;
+    saved = false;
   }
 
   void clearCredentials() {
@@ -46,11 +79,12 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
     if (scope == authority) return;
     scope = authority;
     clearCredentials();
+    clearSaved();
     setState(() {
       expanded = false;
       saving = false;
-      saved = false;
       error = null;
+      attempted = false;
     });
   }
 
@@ -67,6 +101,10 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
   @override
   void dispose() {
     widget.controller.removeListener(accountChanged);
+    savedTimer?.cancel();
+    for (final c in [current, next, confirmation]) {
+      c.removeListener(fieldChanged);
+    }
     clearCredentials();
     current.dispose();
     next.dispose();
@@ -77,22 +115,18 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
   Future<void> submit() async {
     final captured = authority;
     if (saving || !accepts(captured)) return;
-    if (current.text.isEmpty ||
-        next.text.length < 8 ||
-        next.text != confirmation.text) {
-      setState(
-        () => error = current.text.isEmpty
-            ? 'Enter your current password.'
-            : next.text.length < 8
-            ? 'New password must be at least 8 characters'
-            : 'Passwords do not match',
-      );
+    if (problem != null) {
+      setState(() {
+        attempted = true;
+        error = null;
+      });
       return;
     }
+    clearSaved();
     setState(() {
       saving = true;
-      saved = false;
       error = null;
+      attempted = false;
     });
     try {
       await widget.controller.client.patch(
@@ -102,13 +136,19 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
       if (!accepts(captured)) return;
       clearCredentials();
       setState(() => saved = true);
+      savedTimer = Timer(const Duration(seconds: 2), () {
+        savedTimer = null;
+        if (mounted) setState(() => saved = false);
+      });
       widget.onUpdated?.call();
     } catch (cause) {
       if (accepts(captured)) {
         setState(
-          () => error = cause is RaftApiException
-              ? cause.message
-              : 'Could not update your password. Try again.',
+          () => error = userErrorText(
+            cause,
+            fallback: 'Failed to change password',
+            where: 'change password',
+          ),
         );
       }
     } finally {
@@ -151,8 +191,9 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
                 ? null
                 : () => setState(() {
                     expanded = !expanded;
-                    saved = false;
+                    clearSaved();
                     error = null;
+                    attempted = false;
                     if (!expanded) clearCredentials();
                   }),
             child: Semantics(
@@ -196,14 +237,10 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
             '',
             const ValueKey('account-confirm-password'),
           ),
-          if (error != null)
+          if (error ?? (attempted ? problem : null) case final shown?)
             Padding(
               padding: const EdgeInsets.only(top: RaftSpace.x3),
-              child: RaftBanner(
-                description: error!,
-                size: RaftBannerRecipeSize.sm,
-                descriptionWeight: FontWeight.w700,
-              ),
+              child: RaftErrorBanner(shown, small: true, bold: true),
             ),
           if (saved)
             Padding(

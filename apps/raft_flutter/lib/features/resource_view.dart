@@ -9,34 +9,63 @@ import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart' hide RaftPanelHeaderRecipe;
+import 'package:raft_ui/recipes.dart'
+    as rui
+    show
+        RaftRecipeStates,
+        RaftRecipeTheme,
+        RaftRecipeTokens,
+        RaftSearchRecipe,
+        RaftSearchRecipeStyle;
 
 import '../data/source_activity_unread_store.dart';
+import '../data/channel_activity_scope.dart';
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import '../data/workspace_services.dart';
 import '../data/search_memory.dart';
 import '../data/activity_follow_state.dart';
 import '../data/activity_done_state.dart';
 import '../data/source_read_all_transport.dart';
 import '../data/resource_row_reconcile.dart';
+import '../data/activity_row_window.dart';
 import '../data/resource_snapshot_cache.dart';
+import '../data/server_page_window.dart';
+import '../data/server_task_window.dart';
+import '../data/server_saved_window.dart';
+import 'server_task_scope.dart';
+import 'saved_page_scope.dart';
 import '../data/task_board_reconcile.dart';
+import '../data/task_view_mode_preference.dart';
+import 'activity_card_row.dart';
+import 'activity_first_unread.dart';
+import 'activity_list_row.dart';
+import 'activity_rollout_flags.dart';
+import 'activity_find_scope.dart';
 import 'create_task_dialog.dart';
-import 'desktop_navigation_policy.dart'
-    show DesktopContentKind, DesktopContentTarget;
+import 'desktop_navigation_policy.dart' show DesktopContentTarget;
 import 'search_home.dart';
+import 'search_snapshot.dart';
 import 'task_surface.dart';
+import 'task_status_request.dart';
 import 'task_surface_controller.dart';
 import 'resource_filters.dart';
+import 'resource_authority_cache.dart';
+import 'activity_context_menu.dart';
 import 'page_layout.dart';
 import 'resource_cards.dart';
 import 'search_filter_bar.dart';
 import 'task_selection_filter.dart';
+import 'task_assignment_dialog.dart';
 import 'sender_avatar_projection.dart';
 import 'message_reference_directory.dart';
 import 'private_route_guard.dart';
+import 'quick_switcher.dart' show QuickSwitcherFailure, classifySearchFailure;
 import 'resource_search.dart';
 import 'resource_list_updates.dart';
 import 'saved_sidebar_entry.dart';
 import 'reading_anchor.dart';
+import 'agent_message_collapse.dart' show captureActivityAgentCollapse;
 import '../platform/content_links.dart';
 import '../platform/interaction_timing.dart';
 
@@ -64,6 +93,7 @@ class ResourceView extends StatefulWidget {
     this.onActivityWindowAccepted,
     this.searchMemory,
     this.restoreSearchState = true,
+    this.searchFocusRequests,
     this.channelId,
     this.onTask,
   });
@@ -89,6 +119,10 @@ class ResourceView extends StatefulWidget {
 
   final SearchMemoryStore? searchMemory;
   final bool restoreSearchState;
+
+  /// Cmd/Ctrl+K while this Search page is showing (Source
+  /// `SEARCH_FOCUS_REQUEST_EVENT`): focus the field and select its text.
+  final Listenable? searchFocusRequests;
   final Future<void> Function(SearchEntity)? onSearchEntity;
 
   /// Typed Source search hits retain thread and parent identities for the
@@ -121,7 +155,7 @@ class ResourceView extends StatefulWidget {
 
   /// Accepted Activity response for an independent scoped unread data owner.
   /// Includes real row frontiers; null retires it after an authority denial.
-  final ValueChanged<Map?>? onActivityWindowAccepted;
+  final void Function(Map? window, {bool firstPage})? onActivityWindowAccepted;
   @override
   State<ResourceView> createState() => _ResourceViewState();
 }
@@ -244,19 +278,65 @@ class _ResourceViewState extends State<ResourceView> {
     }
   }
 
-  Future<void> activateSearchMemory({required bool restore}) async {
+  /// Applies the stored Search state before the first frame when the device
+  /// store can answer synchronously, so a revisit opens on its query (and the
+  /// results it already holds) instead of the home page. Returns false when
+  /// nothing is restored here; [activateSearchMemory] then restores it once
+  /// the store has been read. A restored sender needs the people catalog, so
+  /// it takes the asynchronous path.
+  bool restoreSearchMemorySync() {
+    final personal = memoryScope;
+    if (personal == null ||
+        !widget.restoreSearchState ||
+        widget.initialQuery != null ||
+        widget.initialSearchChannelId != null) {
+      return false;
+    }
+    final snapshot = searchMemory.loadSync(personal).state;
+    final empty = jsonEncode(const SearchStateSnapshot().toJson());
+    if (snapshot.senderKey != null || jsonEncode(snapshot.toJson()) == empty) {
+      return false;
+    }
+    query.text = snapshot.query;
+    advanced.scopes.addAll(snapshot.scopes);
+    advanced.timeRange = snapshot.range;
+    advanced.searchSort = snapshot.sort;
+    advanced.channelId =
+        [...w.channels, ...w.dms].any((c) => c.id == snapshot.channelId)
+        ? snapshot.channelId
+        : null;
+    memoryReadyKey = personal.key;
+    return true;
+  }
+
+  Future<void> activateSearchMemory({
+    required bool restore,
+    bool restored = false,
+  }) async {
     final personal = memoryScope, scope = authority;
     if (personal == null) return;
     final before = jsonEncode(currentSearchState.toJson());
     final data = await searchMemory.load(personal);
     if (!accepts(scope) || memoryScope?.key != personal.key) return;
     final untouched = before == jsonEncode(currentSearchState.toJson());
+    if (restored) {
+      // The first frame already carries the restored state and its load.
+      setState(() => memoryReadyKey = personal.key);
+      saveSearchState();
+      if (untouched) {
+        lastPublishedQuery = query.text.trim();
+        widget.onSearchQueryCommitted?.call(lastPublishedQuery!);
+      }
+      return;
+    }
+    final restoring =
+        restore &&
+        untouched &&
+        widget.initialQuery == null &&
+        widget.initialSearchChannelId == null;
     setState(() {
       memoryReadyKey = personal.key;
-      if (restore &&
-          untouched &&
-          widget.initialQuery == null &&
-          widget.initialSearchChannelId == null) {
+      if (restoring) {
         final snapshot = data.state;
         query.text = snapshot.query;
         advanced.scopes.addAll(snapshot.scopes);
@@ -271,14 +351,13 @@ class _ResourceViewState extends State<ResourceView> {
       }
     });
     saveSearchState();
-    if (restore &&
-        untouched &&
-        widget.initialQuery == null &&
-        widget.initialSearchChannelId == null) {
+    if (restoring) {
       lastPublishedQuery = query.text.trim();
       widget.onSearchQueryCommitted?.call(lastPublishedQuery!);
+      // Only a restored state asks for its own read; a page that already
+      // loaded what it was opened with keeps it (and its cached window).
+      if (jsonEncode(currentSearchState.toJson()) != before) await load();
     }
-    if (restore && untouched) await load();
   }
 
   void resolveRestoredSender() {
@@ -363,13 +442,19 @@ class _ResourceViewState extends State<ResourceView> {
   }
 
   List<Map<String, dynamic>> rows = [];
+  bool get indexedActivity =>
+      widget.section == 'activity' && !(enabledActivity && filter == 'saved');
   final activityFollowState = ActivityFollowState();
   final activityDoneState = ActivityDoneState();
   bool loading = true;
 
   /// The failure came from the blocking first read (no list on screen yet).
   bool errorWhileLoading = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when a load starts or succeeds, on authority change and on initialQuery change; set only for the accepted scope/request.
   String? error;
+
+  /// Why the last Search read failed (Source `classifySearchFailure`).
+  QuickSwitcherFailure? searchFailureKind;
   String filter = 'all';
   ResourceFilters advanced = ResourceFilters();
   List<ResourceSender> senders = [];
@@ -378,6 +463,13 @@ class _ResourceViewState extends State<ResourceView> {
   String activeActivityFilter = 'all';
   int? activityAllCount;
   int savedActivityTotal = 0;
+  int get directMessagesTotal => ChannelActivityScope.directMessagesTotal(
+    rowsView,
+    totalCount,
+    viewWindows,
+  );
+  ChannelActivityScope get activityScope =>
+      ChannelActivityScope(filter, savedEnabled: enabledActivity);
   List<Map<String, dynamic>> savedActivityItems = [], doneActivityItems = [];
   bool activitySearchVisible = false;
   int activityFacetRequest = 0;
@@ -433,12 +525,10 @@ class _ResourceViewState extends State<ResourceView> {
   String? listViewFor(String filter) {
     if (!cachesViewWindows) return null;
     final path = switch (widget.section) {
-      'activity' => switch (filter) {
-        'saved' when enabledActivity => '/channels/saved',
-        'done' => '/channels/inbox/done',
-        'unfollowed' => '/channels/inbox/unfollowed',
-        _ => '/channels/inbox',
-      },
+      'activity' => ChannelActivityScope(
+        filter,
+        savedEnabled: enabledActivity,
+      ).path,
       'saved' => '/channels/saved',
       _ => '/messages/search',
     };
@@ -446,21 +536,10 @@ class _ResourceViewState extends State<ResourceView> {
         ? advanced.search(query.text)
         : advanced.list(
             query.text,
-            filter:
-                widget.section == 'activity' &&
-                    !['saved', 'done', 'unfollowed'].contains(filter)
-                ? filter
-                : null,
+            activityView: widget.section == 'activity' ? filter : null,
           );
     if (params == null) return null;
-    return jsonEncode([
-      path,
-      {
-        for (final entry in params.entries)
-          if (!['limit', 'offset', 'cursor'].contains(entry.key))
-            entry.key: entry.value,
-      },
-    ]);
+    return ResourceFilters.viewKey(path, params);
   }
 
   /// [listView] with the relative time window's clock-derived `after`/`before`
@@ -489,7 +568,7 @@ class _ResourceViewState extends State<ResourceView> {
       totalUnreadCount: totalUnreadCount,
     );
     while (viewWindows.length > maxViewWindows) {
-      viewWindows.remove(viewWindows.keys.first);
+      viewWindows.remove(ChannelActivityScope.evictionKey(viewWindows));
     }
   }
 
@@ -498,7 +577,8 @@ class _ResourceViewState extends State<ResourceView> {
 
   /// Source inboxStore inboxLocalReadSuppressedMarkers: rows this principal
   /// just opened present read against any response that predates the read.
-  final activityReadMarkers = <String, ({BigInt frontier, DateTime until})>{};
+  final activityReadMarkers =
+      <String, ({BigInt frontier, DateTime until, int? versionAtRead})>{};
 
   /// Activity and Saved keep their accepted list in the workspace across
   /// navigation, including where the list was scrolled.
@@ -535,10 +615,22 @@ class _ResourceViewState extends State<ResourceView> {
   final listUpdates = ResourceListUpdates();
 
   void observeListUpdates() {
+    if (indexedActivity) {
+      rows = ActivityRowWindow.from(rows);
+      acceptedActivityItems = ActivityRowWindow.from(acceptedActivityItems);
+      if (activityGestureRows != null) {
+        activityGestureRows = ActivityRowWindow.from(activityGestureRows!);
+      }
+    }
     final scroll = listScroll;
-    listUpdates.observe(
+    if (activityPage) {
+      ActivityFirstUnread.of(w).observe(visibleRows, rowKey, scroll, context);
+    }
+    listUpdates.observeRows(
       view: (widget.section, filter, rowsView, advanced.groupByChannel),
-      keys: [for (final row in visibleRows) rowKey(row)],
+      rows: visibleRows,
+      keyOf: rowKey,
+      indexedActivity: indexedActivity,
       position:
           scroll != null && scroll.hasClients && scroll.positions.length == 1
           ? scroll.position
@@ -561,6 +653,13 @@ class _ResourceViewState extends State<ResourceView> {
   /// list across navigation (Source's task store is per server and channel).
   bool get taskSnapshotted => widget.section == 'tasks';
 
+  /// Workspace Tasks only. Its accepted board is the session window, not the
+  /// `tasks` snapshot slot. A channel tab keeps `tasks:<channelId>`.
+  bool get serverTaskPage =>
+      widget.section == 'tasks' && widget.channelId == null;
+
+  bool get savedPage => widget.section == 'saved' && widget.channelId == null;
+
   /// Snapshot slot of this page; the identity binding includes the channel.
   String get snapshotSection => widget.channelId == null
       ? widget.section
@@ -569,14 +668,25 @@ class _ResourceViewState extends State<ResourceView> {
   double taskListOffset = 0, taskBoardOffset = 0;
 
   bool restoreTaskSnapshot() {
-    var snapshot = w.resourceSnapshots.read<TaskSnapshot>(
-      snapshotSection,
-      identityAuthority,
-    );
-    if (snapshot != null && !acceptsTaskChannel) {
-      // A channel lost while the tab was away never shows its cached tasks.
-      w.resourceSnapshots.remove(snapshotSection);
-      snapshot = null;
+    TaskSnapshot? snapshot;
+    if (serverTaskPage) {
+      // The workspace page no longer reads the `tasks` slot.
+      snapshot = takeServerPage<TaskSnapshot>(
+        w.resourceSnapshots,
+        serverTasksPage,
+        identityAuthority,
+        accept: (_) => acceptsTaskChannel,
+      );
+    } else {
+      snapshot = w.resourceSnapshots.read<TaskSnapshot>(
+        snapshotSection,
+        identityAuthority,
+      );
+      if (snapshot != null && !acceptsTaskChannel) {
+        // A channel lost while the tab was away never shows its cached tasks.
+        w.resourceSnapshots.remove(snapshotSection);
+        snapshot = null;
+      }
     }
     taskListOffset = snapshot?.listOffset ?? 0;
     taskBoardOffset = snapshot?.boardOffset ?? 0;
@@ -631,39 +741,97 @@ class _ResourceViewState extends State<ResourceView> {
         error != null ||
         rowsView == null) {
       w.resourceSnapshots.remove(snapshotSection);
+      if (serverTaskPage) w.resourceSnapshots.dropServerPage(serverTasksPage);
+      return;
+    }
+    final snapshot = TaskSnapshot(
+      identity: acceptedIdentity!,
+      layout: taskLayout,
+      view: rowsView,
+      filter: filter,
+      rows: rows,
+      cursor: cursor,
+      hasMore: hasMore,
+      totalCount: totalCount,
+      lanes: Map.of(lanes),
+      laneCursors: Map.of(laneCursors),
+      channels: Set.of(taskAdvanced.channels),
+      creators: Set.of(taskAdvanced.creators),
+      assignees: Set.of(taskAdvanced.assignees),
+      collapsed: Set.of(collapsedTaskStatuses),
+      channelAccess: acceptedAccess,
+      listOffset: taskListOffset,
+      boardOffset: taskBoardOffset,
+    );
+    if (!serverTaskPage) {
+      w.resourceSnapshots.write(snapshotSection, snapshot);
+      return;
+    }
+    w.resourceSnapshots.remove(snapshotSection);
+    final controller = w;
+    final window = holdServerTaskWindow(
+      controller.resourceSnapshots,
+      client: controller.client,
+      events: controller.client.events,
+      snapshot: snapshot,
+      belongs: (task) => serverTaskBelongs(controller, task),
+      channelName: (id) => serverTaskChannelName(controller, id),
+      serverId: () => controller.client.serverId,
+      identity: () => serverTaskIdentity(controller),
+    );
+    if (window.attached > 0) window.detach();
+  }
+
+  /// Search keeps the results of its recently used queries across visits.
+  bool get searchSnapshotted =>
+      widget.section == 'search' && widget.channelId == null;
+
+  void restoreSearchWindows() {
+    final snapshot = w.resourceSnapshots.read<SearchSnapshot>(
+      widget.section,
+      identityAuthority,
+    );
+    if (snapshot == null) return;
+    viewWindows
+      ..clear()
+      ..addAll(snapshot.windows);
+    // Channels lost while the page was away never reappear from the cache.
+    refilterRows(lostChannels(snapshot.channelAccess, acceptedAccess));
+  }
+
+  void saveSearchWindows() {
+    if (identityAuthority != acceptedIdentity || error != null) {
+      w.resourceSnapshots.remove(widget.section);
+      return;
+    }
+    stashViewWindow();
+    if (viewWindows.isEmpty) {
+      w.resourceSnapshots.remove(widget.section);
       return;
     }
     w.resourceSnapshots.write(
-      snapshotSection,
-      TaskSnapshot(
+      widget.section,
+      SearchSnapshot(
         identity: acceptedIdentity!,
-        layout: taskLayout,
-        view: rowsView,
-        filter: filter,
-        rows: rows,
-        cursor: cursor,
-        hasMore: hasMore,
-        totalCount: totalCount,
-        lanes: Map.of(lanes),
-        laneCursors: Map.of(laneCursors),
-        channels: Set.of(taskAdvanced.channels),
-        creators: Set.of(taskAdvanced.creators),
-        assignees: Set.of(taskAdvanced.assignees),
-        collapsed: Set.of(collapsedTaskStatuses),
+        windows: Map.of(viewWindows),
         channelAccess: acceptedAccess,
-        listOffset: taskListOffset,
-        boardOffset: taskBoardOffset,
       ),
     );
   }
 
   bool restoreSnapshot() {
+    if (searchSnapshotted) {
+      restoreSearchWindows();
+      return false;
+    }
     if (taskSnapshotted) return restoreTaskSnapshot();
     if (!snapshotted) return false;
-    final snapshot = w.resourceSnapshots.read<ResourceSnapshot>(
-      widget.section,
-      identityAuthority,
-    );
+    final snapshot = savedPage
+        ? takeServerSavedPage(w.resourceSnapshots, identityAuthority)
+        : w.resourceSnapshots.read<ResourceSnapshot>(
+            widget.section,
+            identityAuthority,
+          );
     final usable =
         snapshot != null && snapshot.enabledActivity == enabledActivity;
     listOffset = usable ? snapshot.scrollOffset : 0;
@@ -698,10 +866,12 @@ class _ResourceViewState extends State<ResourceView> {
     loading = false;
     // Channels lost while the page was away never reappear from the cache.
     refilterRows(lostChannels(snapshot.channelAccess, acceptedAccess));
+    patchKnownActivityReads();
     return true;
   }
 
   void saveSnapshot() {
+    if (searchSnapshotted) return saveSearchWindows();
     if (taskSnapshotted) return saveTaskSnapshot();
     if (!snapshotted) return;
     if (identityAuthority != acceptedIdentity ||
@@ -709,37 +879,40 @@ class _ResourceViewState extends State<ResourceView> {
         error != null ||
         rowsView == null) {
       w.resourceSnapshots.remove(widget.section);
+      if (savedPage) w.resourceSnapshots.dropServerPage(serverSavedPage);
       return;
     }
     viewWindows.remove(rowsView);
-    w.resourceSnapshots.write(
-      widget.section,
-      ResourceSnapshot(
-        identity: acceptedIdentity!,
-        enabledActivity: enabledActivity,
-        view: rowsView,
-        rows: rows,
-        hasMore: hasMore,
-        filter: filter,
-        activeActivityFilter: activeActivityFilter,
-        query: query.text,
-        channelId: advanced.channelId,
-        direction: advanced.direction,
-        totalCount: totalCount,
-        totalUnreadCount: totalUnreadCount,
-        activityAllCount: activityAllCount,
-        savedActivityTotal: savedActivityTotal,
-        activityGroups: activityGroups,
-        acceptedActivityItems: acceptedActivityItems,
-        savedActivityItems: savedActivityItems,
-        doneActivityItems: doneActivityItems,
-        channelAccess: acceptedAccess,
-        scrollOffset: listOffset,
-        sectionScrollOffsets: Map.of(activityScrollOffsets),
-        viewWindows: Map.of(viewWindows),
-        inboxSerial: inboxSerial,
-      ),
+    final snapshot = ResourceSnapshot(
+      identity: acceptedIdentity!,
+      enabledActivity: enabledActivity,
+      view: rowsView,
+      rows: rows,
+      hasMore: hasMore,
+      filter: filter,
+      activeActivityFilter: activeActivityFilter,
+      query: query.text,
+      channelId: advanced.channelId,
+      direction: advanced.direction,
+      totalCount: totalCount,
+      totalUnreadCount: totalUnreadCount,
+      activityAllCount: activityAllCount,
+      savedActivityTotal: savedActivityTotal,
+      activityGroups: activityGroups,
+      acceptedActivityItems: acceptedActivityItems,
+      savedActivityItems: savedActivityItems,
+      doneActivityItems: doneActivityItems,
+      channelAccess: acceptedAccess,
+      scrollOffset: listOffset,
+      sectionScrollOffsets: Map.of(activityScrollOffsets),
+      viewWindows: Map.of(viewWindows),
+      inboxSerial: inboxSerial,
     );
+    if (savedPage) {
+      keepServerSavedPage(w, snapshot);
+      return;
+    }
+    w.resourceSnapshots.write(widget.section, snapshot);
   }
 
   /// Id of the newest shared-inbox window this page has presented.
@@ -750,16 +923,47 @@ class _ResourceViewState extends State<ResourceView> {
   /// list reads the same inboxStore `items` the badge counts, so opening
   /// Activity paints the arrival that lit the badge on the first frame.
   Map<String, dynamic>? sharedInboxSeed() {
-    if (widget.section != 'activity' ||
+    if (!activityPage ||
         listView != SourceActivityUnreadStore.defaultInboxView) {
       return null;
     }
-    return w.activityUnreadIfBound?.windowSince(inboxSerial);
+    return _services.activityUnreadIfBound?.windowSince(inboxSerial);
+  }
+
+  /// The Activity badge's store, whose own reads (the retries that wait for
+  /// the server's inbox to list a new message, and the immediate read on
+  /// return to the foreground) are presented here as they are accepted, rather
+  /// than read a second time.
+  SourceActivityUnreadStore? sharedInbox;
+
+  void bindActivitySources() {
+    if (activityPage) ActivityRolloutFlags.of(w);
+    sharedInbox?.removeListener(sharedInboxChanged);
+    sharedInbox = activityPage
+        ? (_services.activityUnreadIfBound?..addListener(sharedInboxChanged))
+        : null;
+  }
+
+  void sharedInboxChanged() {
+    // A read of this page in flight is at least as new as the store's.
+    if (!mounted || activeLoad != null) return;
+    final seed = sharedInboxSeed();
+    if (seed != null) {
+      unawaited(load(keep: true, quietErrors: true, seed: seed));
+    }
   }
 
   StreamSubscription<RaftEvent>? events;
   Timer? refreshTimer, catalogTimer;
   WorkspaceController get w => widget.controller;
+  bool get activityPage => widget.section == 'activity';
+  WorkspaceServices get _services => w.services;
+
+  /// Source serverTaskPages: the server-wide Tasks page (board and list alike)
+  /// walks one cursor per status lane; only a channel's tasks load whole.
+  bool get lanePaged =>
+      widget.section == 'tasks' &&
+      (taskLayout == 'board' || widget.channelId == null);
   String get taskPath => widget.channelId == null
       ? '/tasks/server'
       : '/tasks/channel/${widget.channelId}';
@@ -774,29 +978,10 @@ class _ResourceViewState extends State<ResourceView> {
   String? acceptedAuthority;
   int authorityRevision = 0;
   final Set<ModalRoute<dynamic>> dialogs = {};
+  String? menuRowKey;
   final Set<MenuController> filterMenus = {};
   final dragFeedbackRevision = ValueNotifier<int>(0);
-  static const channelAccessKeys = [
-    'isPrivate',
-    'visibility',
-    'accessLevel',
-    'membership',
-    'capabilities',
-    'channelCapabilities',
-    'guestAccessEnabled',
-    'readOnlyReason',
-    'parentChannelId',
-    'serverId',
-    'role',
-  ];
-  Map<String, dynamic> channelAccessFacts(RaftChannel c) => {
-    'id': c.id,
-    'type': c.type,
-    'joined': c.joined,
-    'archived': c.archived,
-    for (final key in channelAccessKeys)
-      if (c.json.containsKey(key)) key: c.json[key],
-  };
+  final _authorityCache = ResourceAuthorityCache();
 
   /// Principal, server, role and page identity. A change here retires every
   /// accepted row; a channel-only change re-filters rows in place instead.
@@ -810,28 +995,25 @@ class _ResourceViewState extends State<ResourceView> {
     widget.section,
     widget.channelId,
   ]);
-  String get authority {
-    final channels = [...w.channels, ...w.dms]
-      ..sort((a, b) => a.id.compareTo(b.id));
-    return jsonEncode([
-      w.client.origin,
-      w.client.generation,
-      w.client.user?.id,
-      w.client.serverId,
-      w.server?.id,
-      w.server?.string('role'),
-      widget.section,
-      widget.channelId,
-      authorityRevision,
-      for (final c in channels) channelAccessFacts(c),
-    ]);
-  }
+  String get authority => _authorityCache.read(
+    identity: (
+      origin: w.client.origin,
+      generation: w.client.generation,
+      principal: w.client.user?.id,
+      clientServer: w.client.serverId,
+      server: w.server?.id,
+      role: w.server?.string('role'),
+      section: widget.section,
+      channel: widget.channelId,
+    ),
+    revision: authorityRevision,
+    channels: w.channels,
+    dms: w.dms,
+  );
 
   String? acceptedIdentity;
   Map<String, Map<String, dynamic>> acceptedAccess = {};
-  Map<String, Map<String, dynamic>> get channelAccess => {
-    for (final c in [...w.channels, ...w.dms]) c.id: channelAccessFacts(c),
-  };
+  Map<String, Map<String, dynamic>> get channelAccess => _authorityCache.access;
 
   bool privateLike(Map<String, dynamic>? facts) =>
       facts == null ||
@@ -996,13 +1178,24 @@ class _ResourceViewState extends State<ResourceView> {
     }
     setState(() {
       errorWhileLoading = loading;
-      error = '$cause';
+      error = userErrorText(cause, where: widget.section);
+      searchFailureKind = widget.section == 'search'
+          ? classifySearchFailure(cause)
+          : null;
       loading = false;
     });
   }
 
-  void authorityChanged({Set<String> revoked = const {}}) {
-    if (!mounted || acceptedAuthority == authority) return;
+  void authorityChanged({
+    Set<String> revoked = const {},
+    bool forceAccess = false,
+  }) {
+    if (!mounted) return;
+    _authorityCache.synchronize(w.channels, w.dms, force: forceAccess);
+    if (acceptedAuthority == authority) {
+      patchKnownActivityReads();
+      return;
+    }
     final identity = identityAuthority, access = channelAccess;
     final sameIdentity = identity == acceptedIdentity;
     final previousAccess = acceptedAccess;
@@ -1040,6 +1233,8 @@ class _ResourceViewState extends State<ResourceView> {
       unawaited(load(keep: true, quietErrors: rows.isNotEmpty));
       return;
     }
+    if (serverTaskPage) w.resourceSnapshots.dropServerPage(serverTasksPage);
+    if (savedPage) w.resourceSnapshots.dropServerPage(serverSavedPage);
     setState(() {
       clearRows();
       resetAdvanced();
@@ -1086,6 +1281,7 @@ class _ResourceViewState extends State<ResourceView> {
     String scope,
     Widget Function(BuildContext) builder, {
     bool sourceModal = false,
+    bool form = false,
   }) async {
     if (!accepts(scope)) return null;
     ModalRoute<dynamic>? owned;
@@ -1102,11 +1298,50 @@ class _ResourceViewState extends State<ResourceView> {
     }
 
     try {
-      return sourceModal
-          ? await showRaftModal<V>(context, builder: buildOwned)
-          : await showDialog<V>(context: context, builder: buildOwned);
+      return await showRaftWindow<V>(
+        context,
+        buildOwned,
+        modal: sourceModal,
+        form: form,
+      );
     } finally {
       dialogs.remove(owned);
+    }
+  }
+
+  /// The Web `ContextMenuPopup` / base-ui ContextMenu: a transparent dismiss
+  /// backdrop and a popup placed at the pointer, never a centred modal.
+  /// [rowKey] keeps that row in its popup-open state while the menu is up.
+  Future<V?> scopedMenu<V>(
+    String scope,
+    Offset at,
+    Widget Function(BuildContext) builder, {
+    String? rowKey,
+  }) async {
+    if (!accepts(scope)) return null;
+    ModalRoute<dynamic>? owned;
+    Widget buildOwned(BuildContext context) {
+      owned = ModalRoute.of(context);
+      if (owned != null) dialogs.add(owned!);
+      if (!accepts(scope)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (owned?.isActive == true) owned?.navigator?.removeRoute(owned!);
+        });
+        return const SizedBox.shrink();
+      }
+      return builder(context);
+    }
+
+    setState(() => menuRowKey = rowKey);
+    try {
+      return await showRaftMessageContextMenu<V>(
+        context: context,
+        anchor: at,
+        builder: buildOwned,
+      );
+    } finally {
+      dialogs.remove(owned);
+      if (mounted && menuRowKey == rowKey) setState(() => menuRowKey = null);
     }
   }
 
@@ -1120,14 +1355,10 @@ class _ResourceViewState extends State<ResourceView> {
 
   void subscribeEvents() {
     final client = w.client;
-    events = client.events.listen((event) {
+    final inbox = activityPage ? _services.activityUnreadIfBound : null;
+    events = (inbox?.pageEvents ?? client.events).listen((event) {
       if (!mounted || !identical(client, w.client)) return;
-      if ([
-        'channel:removed',
-        'channel:updated',
-        'channel:members-updated',
-        'channel:authority-updated',
-      ].contains(event.name)) {
+      if (SourceActivityUnreadStore.changesAuthority(event.name)) {
         final payload = event.payload;
         final id = payload is Map
             ? payload['channelId'] ?? payload['id']
@@ -1143,7 +1374,7 @@ class _ResourceViewState extends State<ResourceView> {
           }
         }
         authorityRevision++;
-        authorityChanged(revoked: revoked);
+        authorityChanged(revoked: revoked, forceAccess: true);
         return;
       }
       if (['search', 'saved'].contains(widget.section) &&
@@ -1163,13 +1394,17 @@ class _ResourceViewState extends State<ResourceView> {
         patchMessage(event.payload);
         return;
       }
+      if (widget.section == 'saved' && event.name == 'message:deleted') {
+        dropSavedMessage(event.payload);
+        return;
+      }
+      if (activityPage &&
+          (event.name == 'task:updated' || event.name == 'task:created')) {
+        patchActivityTasks(event.payload);
+        return;
+      }
       final relevant = switch (widget.section) {
-        'activity' =>
-          event.name.startsWith('message:') ||
-              event.name.startsWith('read_state:') ||
-              event.name.startsWith('scope_read:') ||
-              event.name.startsWith('thread:') ||
-              event.name == 'sync:resume:response',
+        'activity' => SourceActivityUnreadStore.reconcilesPage(event.name),
         // Source catchUpServerTasksOnReconnect: events missed while the
         // socket was down are recovered by revalidating the loaded lanes.
         'tasks' => event.name.startsWith('task:') || event.name == 'connected',
@@ -1180,8 +1415,16 @@ class _ResourceViewState extends State<ResourceView> {
         _ => false,
       };
       if (relevant) {
-        if (widget.section == 'activity') patchActivity(event);
+        if (activityPage) patchActivity(event);
         if (widget.section == 'tasks' && patchTasks(event)) return;
+        if (inbox?.ownsPageRefresh(
+              event,
+              view: listView,
+              loadedRows: rows.length,
+            ) ==
+            true) {
+          return;
+        }
         final scope = authority;
         refreshTimer?.cancel();
         refreshTimer = Timer(const Duration(milliseconds: 150), () {
@@ -1211,97 +1454,58 @@ class _ResourceViewState extends State<ResourceView> {
   /// message:updated is merge-only: patch the matching saved/search row by
   /// message id instead of reloading the page.
   void patchMessage(Object? payload) {
-    if (payload is! Map || payload['id'] is! String) return;
-    final id = payload['id'] as String;
-    final field = widget.section == 'saved' ? 'messageId' : 'id';
-    var changed = false;
-    final next = [
-      for (final row in rows)
-        if (row[field] != id)
-          row
-        else
-          () {
-            final merged = <String, dynamic>{
-              ...row,
-              for (final MapEntry(:key, :value) in payload.entries)
-                if (key is String &&
-                    !['id', 'channelId', 'messageId'].contains(key) &&
-                    (row.containsKey(key) || key == 'content') &&
-                    !(key == 'content' && value == null))
-                  key: value,
-            };
-            if (rowDeepEquals(merged, row)) return row;
-            changed = true;
-            return merged;
-          }(),
-    ];
-    if (changed) setState(() => rows = next);
+    final next = mergeSavedRow(
+      rows,
+      payload,
+      byMessageId: widget.section == 'saved',
+    );
+    if (next != null) setState(() => rows = next);
+  }
+
+  void dropSavedMessage(Object? payload) {
+    final next = omitSavedMessage(
+      rows: rows,
+      windows: viewWindows,
+      totalCount: totalCount,
+      payload: payload,
+    );
+    if (next == null) return;
+    setState(() {
+      rows = next.rows;
+      totalCount = next.totalCount;
+      viewWindows
+        ..clear()
+        ..addAll(next.windows);
+    });
   }
 
   /// Source taskRealtimeSync: task:created/updated/deleted upsert, move or
   /// remove the single task by id. False when the payload does not identify
   /// a task, so the caller revalidates the loaded windows instead.
   bool patchTasks(RaftEvent event) {
-    final payload = event.payload;
-    if (payload is! Map) return false;
-    if (payload['serverId'] is String &&
-        payload['serverId'] != w.client.serverId) {
-      return true;
-    }
-    Map<String, dynamic>? task(Object? raw) => raw is Map && raw['id'] is String
-        ? Map<String, dynamic>.from(raw)
-        : null;
-    final patches = <String, Map<String, dynamic>?>{};
-    switch (event.name) {
-      case 'task:created':
-        final list = payload['tasks'] is List
-            ? payload['tasks'] as List
-            : [payload['task']];
-        for (final raw in list) {
-          final next = task(raw);
-          if (next == null) return false;
-          patches[next['id'] as String] = next;
-        }
-      case 'task:updated':
-        final next =
-            task(payload['task']) ??
-            (payload['status'] is String ? task(payload) : null);
-        if (next == null) return false;
-        patches[next['id'] as String] = next;
-      case 'task:deleted':
-        final id =
-            payload['taskId'] ?? task(payload['task'])?['id'] ?? payload['id'];
-        if (id is! String) return false;
-        patches[id] = null;
-      default:
+    switch (classifyTaskEvent(event, serverId: w.client.serverId)) {
+      case TaskEventIgnored():
+        return true;
+      case TaskEventUnrecognized():
         return false;
+      case TaskEventPatch(:final patches):
+        // A window in flight predates these facts; they are applied over it.
+        taskTouched.addAll(patches);
+        final before = rows;
+        applyTaskPatches(patches);
+        if (!identical(before, rows)) setState(() {});
+        return true;
     }
-    if (patches.isEmpty) return false;
-    // A window in flight predates these facts; they are applied over it.
-    taskTouched.addAll(patches);
-    final before = rows;
-    applyTaskPatches(patches);
-    if (!identical(before, rows)) setState(() {});
-    return true;
   }
 
   /// Whether [task] belongs to this page and its current view.
   bool taskBelongs(Map<String, dynamic> task) {
     if (!raftTaskStatuses.contains(task['status'])) return false;
-    if (taskLayout != 'board' && filter != 'all' && task['status'] != filter) {
+    if (!lanePaged && filter != 'all' && task['status'] != filter) {
       return false;
     }
     if (widget.channelId != null) return task['channelId'] == widget.channelId;
-    // Source shouldIncludeInServerTasks.
-    final type = task['channelType'];
-    if (type is String && !['channel', 'private', 'joint'].contains(type)) {
-      return false;
-    }
-    final channel = [
-      ...w.channels,
-      ...w.dms,
-    ].where((c) => c.id == task['channelId']).firstOrNull;
-    return channel == null || w.can('viewChannel', resource: channel);
+    return serverTaskBelongs(w, task);
   }
 
   /// The accepted task with [id], wherever it is shown.
@@ -1309,76 +1513,25 @@ class _ResourceViewState extends State<ResourceView> {
       id is! String ? null : rows.where((row) => row['id'] == id).firstOrNull;
 
   /// Apply live task facts (null = deleted) to the board lanes or the list
-  /// in place. Unchanged rows keep their objects; [rows] is replaced only
-  /// when something changed. Callers rebuild.
+  /// in place. Unchanged rows keep their objects. Callers rebuild.
   void applyTaskPatches(Map<String, Map<String, dynamic>?> patches) {
-    if (patches.isEmpty) return;
-    final board = taskLayout == 'board';
-    var changed = false;
-    for (final MapEntry(key: id, value: incoming) in patches.entries) {
-      String? from;
-      var index = -1;
-      Map<String, dynamic>? existing;
-      if (board) {
-        for (final MapEntry(key: status, value: lane) in lanes.entries) {
-          index = lane.indexWhere((row) => row['id'] == id);
-          if (index >= 0) {
-            from = status;
-            existing = lane[index];
-            break;
-          }
-        }
-      } else {
-        index = rows.indexWhere((row) => row['id'] == id);
-        if (index >= 0) existing = rows[index];
-      }
-      var next = incoming == null
-          ? null
-          : existing == null
-          ? incoming
-          : mergeTaskFields(existing, incoming);
-      if (next != null && next['channelName'] == null) {
-        final name = [
-          ...w.channels,
-          ...w.dms,
-        ].where((c) => c.id == next!['channelId']).firstOrNull?.name;
-        if (name != null) next = {...next, 'channelName': name};
-      }
-      if (next != null && !taskBelongs(next)) next = null;
-      if (existing != null && next != null && rowDeepEquals(existing, next)) {
-        continue;
-      }
-      if (board) {
-        final to = next?['status'] as String?;
-        if (from != null && from == to) {
-          lanes[from] = [...lanes[from]!]..[index] = next!;
-        } else {
-          if (from != null) lanes[from] = [...lanes[from]!]..removeAt(index);
-          if (to != null) {
-            final placed = insertTask(
-              lanes[to] ?? const [],
-              next!,
-              more: laneCursors[to] != null,
-            );
-            if (placed != null) lanes[to] = placed;
-          }
-        }
-        changed = true;
-      } else if (existing != null) {
-        rows = next == null
-            ? ([...rows]..removeAt(index))
-            : ([...rows]..[index] = next);
-        if (next == null && totalCount != null) totalCount = totalCount! - 1;
-        changed = true;
-      } else if (next != null) {
-        // The list presents rows in Source sort order (visibleRows).
-        rows = [next, ...rows];
-        if (totalCount != null) totalCount = totalCount! + 1;
-        changed = true;
-      }
+    final slice = TaskBoardSlice(
+      lanes: lanes,
+      laneCursors: laneCursors,
+      rows: rows,
+      totalCount: totalCount,
+      board: lanePaged,
+    );
+    if (!patchTaskBoard(
+      patches,
+      slice,
+      belongs: taskBelongs,
+      channelName: (id) => serverTaskChannelName(w, id),
+    )) {
+      return;
     }
-    if (!changed) return;
-    if (board) rows = lanes.values.expand((r) => r).toList();
+    rows = slice.rows;
+    totalCount = slice.totalCount;
     dragFeedbackRevision.value++;
   }
 
@@ -1398,9 +1551,7 @@ class _ResourceViewState extends State<ResourceView> {
       !['saved', 'done'].contains(filter) &&
       rows.isNotEmpty;
 
-  /// Apply live socket facts to the accepted Activity rows before the
-  /// debounced canonical reconcile (Source receiveThreadReply and
-  /// applyReadStateProjection).
+  /// Apply live Activity facts before the canonical reconcile.
   void patchActivity(RaftEvent event) {
     final payload = event.payload;
     if (!activityRowsLive || payload is! Map) return;
@@ -1414,71 +1565,89 @@ class _ResourceViewState extends State<ResourceView> {
         payload['latestReply'] is Map) {
       advanceActivity(payload['latestReply'] as Map);
     } else if (event.name.startsWith('read_state:')) {
-      // The ledger may not have folded this frame yet; the frame itself is
-      // the newest read fact for its scopes.
-      final facts = <String, int>{
-        for (final update in [
-          if (payload['scopes'] is List) ...payload['scopes'] as List,
-          if (payload['scopeId'] is String) payload,
-        ])
-          if (update is Map &&
-              update['scopeId'] is String &&
-              update['maxReadSeq'] is int)
-            update['scopeId'] as String: update['maxReadSeq'] as int,
-      };
-      final known = applyKnownReads(rows, facts: facts);
-      if (identical(known.rows, rows)) return;
-      setState(() {
-        rows = known.rows;
-        acceptedActivityItems = applyKnownReads(
-          acceptedActivityItems,
-          facts: facts,
-        ).rows;
-        if (totalUnreadCount != null) {
-          totalUnreadCount = (totalUnreadCount! - known.cleared).clamp(
-            0,
-            1 << 53,
-          );
-        }
-        if (totalCount != null && known.removed > 0) {
-          totalCount = (totalCount! - known.removed).clamp(0, 1 << 53);
-        }
-      });
+      final server = w.client.serverId, user = w.client.user?.id;
+      patchKnownActivityReads(
+        facts: activityReadFacts(
+          payload,
+          knownVersions: {
+            if (server != null && user != null)
+              for (final row in rows)
+                if (activityScopeId(row) case final String scope)
+                  if (w.readState.state(server, user, scope) case {
+                    'readStateVersion': final int version,
+                  })
+                    scope: version,
+          },
+        ),
+      );
     }
   }
 
-  bool activityMuted(Map<String, dynamic> row) {
-    final id = row['kind'] == 'thread'
-        ? row['parentChannelId']
-        : row['channelId'];
-    return [
-      ...w.channels,
-      ...w.dms,
-    ].any((c) => c.id == id && c.json['activityMuted'] == true);
+  /// HTTP read receipts also advance the ledger, without a socket echo.
+  void patchKnownActivityReads({Map<String, int> facts = const {}}) {
+    if (!activityRowsLive) return;
+    final known = applyKnownReads(rows, facts: facts);
+    if (identical(known.rows, rows)) return;
+    setState(() {
+      rows = known.rows;
+      acceptedActivityItems = applyKnownReads(
+        acceptedActivityItems,
+        facts: facts,
+      ).rows;
+      if (totalUnreadCount != null) {
+        totalUnreadCount = (totalUnreadCount! - known.cleared).clamp(
+          0,
+          1 << 53,
+        );
+      }
+      if (totalCount != null && known.removed > 0) {
+        totalCount = (totalCount! - known.removed).clamp(0, 1 << 53);
+      }
+    });
   }
 
-  void advanceActivity(Map message) {
-    for (var i = 0; i < rows.length; i++) {
-      final next = advanceActivityRow(rows[i], message);
-      if (next == null) continue;
-      if (activityMuted(rows[i])) return;
-      final key = rowKey(next), frontier = activityFrontier(next);
-      if (key != null && frontier != null) {
-        activityLocalFrontiers[key] = frontier;
-      }
-      setState(() {
-        final rest = [...rows]..removeAt(i);
-        // Newest-first windows move the advanced conversation to the top.
-        rows = advanced.direction == 'asc'
-            ? ([...rows]..[i] = next)
-            : [next, ...rest];
-        acceptedActivityItems = [
-          for (final row in acceptedActivityItems)
-            rowKey(row) == key ? next : row,
-        ];
-      });
+  /// Source applyTaskToInboxItems: a task fact overlays the thread rows whose
+  /// parent message is the task's message.
+  void patchActivityTasks(Object? payload) {
+    if (!activityRowsLive || payload is! Map) return;
+    final tasks = [
+      if (payload['tasks'] is List) ...payload['tasks'] as List,
+      if (payload['task'] is Map) payload['task'],
+    ];
+    var next = rows, accepted = acceptedActivityItems;
+    for (final task in tasks) {
+      if (task is! Map) continue;
+      next = applyTaskToActivityRows(next, task);
+      accepted = applyTaskToActivityRows(accepted, task);
+    }
+    if (identical(next, rows) && identical(accepted, acceptedActivityItems)) {
       return;
     }
+    setState(() {
+      rows = next;
+      acceptedActivityItems = accepted;
+    });
+  }
+
+  bool activityMuted(Map<String, dynamic> row) =>
+      _authorityCache.activityMuted(row, channels: w.channels, dms: w.dms);
+
+  void advanceActivity(Map message) {
+    final next = ActivityRowWindow.from(rows).advance(
+      message,
+      muted: activityMuted,
+      newestFirst: advanced.direction != 'asc',
+    );
+    if (next == null) return;
+    final key = next.key, frontier = activityFrontier(next.row);
+    if (key != null && frontier != null) {
+      activityLocalFrontiers[key] = frontier;
+    }
+    setState(() {
+      rows = next.window;
+      acceptedActivityItems = ActivityRowWindow.from(acceptedActivityItems)
+          .replaceKey(key, next.row);
+    });
   }
 
   /// Known read frontiers (Source applyKnownReadStateProjectionsToItems):
@@ -1494,30 +1663,65 @@ class _ResourceViewState extends State<ResourceView> {
     }
     var cleared = 0, removed = 0, changed = false;
     final next = <Map<String, dynamic>>[];
+    final retained = activityRowsByReadVersion([
+      ...acceptedActivityItems,
+      ...rows,
+    ]);
     final now = widget.clock?.call() ?? DateTime.now();
     activityReadMarkers.removeWhere((_, marker) => now.isAfter(marker.until));
     for (final row in source) {
       final scope = activityScopeId(row);
-      final marker = activityReadMarkers[rowKey(row)]?.frontier;
+      final key = rowKey(row);
+      final intent = activityReadMarkers[key];
+      var marker = intent?.frontier;
+      final intentVersion = intent?.versionAtRead;
       final state = scope == null
           ? null
           : w.readState.state(server, user, scope);
+      final stateVersion = state?['readStateVersion'];
       final ledger = state?['maxReadSeq'], frame = facts[scope];
       final read = [
         if (ledger is int) ledger,
         ?frame,
       ].fold<int?>(null, (a, b) => a == null || b > a ? b : a);
       final readSeq = read == null ? null : BigInt.from(read);
+      final held = scope == null
+          ? null
+          : w.conversationReads.queue.receipt(scope);
+      // A cursor already known when Read was pressed cannot prove that this
+      // write persisted. Only a newer version/ACK can retire that local intent.
+      if (marker != null &&
+          (intentVersion != null &&
+                  stateVersion is int &&
+                  stateVersion > intentVersion ||
+              intentVersion == null && readSeq != null && readSeq >= marker ||
+              held != null &&
+                  held.unreadCount > 0 &&
+                  (state == null ||
+                      state['readStateVersion'] <= held.version) &&
+                  (intentVersion == null || held.version > intentVersion))) {
+        activityReadMarkers.remove(key);
+        marker = null;
+      }
       final projected = projectFullyRead(
-        row,
+        w.conversationReads.projectActivityReadState(
+          row,
+          retained: retained[scope],
+        ),
         marker != null && (readSeq == null || marker > readSeq)
             ? marker
             : readSeq,
+        readStateVersion: marker != null
+            ? null
+            : state?['readStateVersion'] as int?,
       );
       if (!identical(projected, row)) {
         changed = true;
-        cleared += (row['unreadCount'] as num? ?? 0).toInt();
-        if (filter == 'unread') {
+        cleared +=
+            (row['unreadCount'] as num? ?? 0).toInt() -
+            (projected['unreadCount'] as num? ?? 0).toInt();
+        if (filter == 'unread' &&
+            (projected['unreadCount'] as num? ?? 0) == 0) {
           removed++;
           continue;
         }
@@ -1552,7 +1756,23 @@ class _ResourceViewState extends State<ResourceView> {
     query.text = widget.initialQuery ?? '';
     lastPublishedQuery = widget.initialQuery ?? '';
     lastSearchEditingValue = query.value;
-    query.addListener(searchCompositionCommitted);
+    // The Search page re-queries when an IME composition commits. Every other
+    // section shares `query` for its own filter field (Activity find, Saved,
+    // Tasks); there the listener would drop the rows and queue a second load.
+    if (widget.section == 'search') {
+      query.addListener(searchCompositionCommitted);
+    }
+    if (widget.section == 'search') {
+      widget.searchFocusRequests?.addListener(focusSearchField);
+      // Source MessageSearchPage focuses the field on mount (and selects a
+      // restored query). A touch screen keeps the keyboard down until a tap,
+      // at any width; a pointer window focuses it at any width.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && RaftInteraction.of(context).pointer) {
+          focusSearchField();
+        }
+      });
+    }
     if (widget.section == 'search' && widget.initialSearchChannelId != null) {
       final channel = [
         ...w.channels,
@@ -1565,9 +1785,20 @@ class _ResourceViewState extends State<ResourceView> {
         initialSearchUnavailable = true;
       }
     }
+    final restoredMemory = restoreSearchMemorySync();
+    if (restoredMemory) {
+      lastPublishedQuery = query.text.trim();
+      lastSearchEditingValue = query.value;
+    }
     w.addListener(authorityChanged);
     subscribeEvents();
-    unawaited(activateSearchMemory(restore: widget.restoreSearchState));
+    bindActivitySources();
+    unawaited(
+      activateSearchMemory(
+        restore: widget.restoreSearchState,
+        restored: restoredMemory,
+      ),
+    );
     final restored = restoreSnapshot();
     final seed = sharedInboxSeed();
     if (seed != null) {
@@ -1589,11 +1820,7 @@ class _ResourceViewState extends State<ResourceView> {
     bindSectionActivity();
     if (!initializedTaskLayout && widget.section == 'tasks') {
       initializedTaskLayout = true;
-      final next =
-          MediaQuery.sizeOf(context).width >=
-              RaftLayoutMetrics.desktopBreakpoint
-          ? 'board'
-          : 'list';
+      final next = initialTaskView(MediaQuery.sizeOf(context).width);
       if (taskLayout != next) {
         taskLayout = next;
         load();
@@ -1636,13 +1863,25 @@ class _ResourceViewState extends State<ResourceView> {
       bindAuthors();
     }
     if (!identical(oldWidget.controller, w)) {
+      final section = oldWidget.section;
+      if (oldWidget.channelId == null &&
+          (section == serverTasksPage || section == serverSavedPage)) {
+        final previous = oldWidget.controller.resourceSnapshots.serverPage(
+          section,
+        );
+        if (previous != null && previous.attached > 0) previous.detach();
+      }
       oldWidget.controller.removeListener(authorityChanged);
-      events?.cancel();
       w.addListener(authorityChanged);
+    }
+    if (!identical(oldWidget.controller, w) ||
+        oldWidget.section != widget.section) {
+      events?.cancel();
+      bindActivitySources();
       subscribeEvents();
     }
     authorityChanged();
-    if (widget.section == 'activity' &&
+    if (activityPage &&
         oldWidget.activitySidebarEnabled != widget.activitySidebarEnabled) {
       ++requestGeneration;
       ++activityFacetRequest;
@@ -1680,6 +1919,8 @@ class _ResourceViewState extends State<ResourceView> {
   @override
   void dispose() {
     sectionActivity?.removeListener(sectionActivityChanged);
+    events?.cancel();
+    events = null;
     saveSnapshot();
     if (widget.section == 'activity') {
       for (final scroll in activityScrolls.values) {
@@ -1709,9 +1950,11 @@ class _ResourceViewState extends State<ResourceView> {
     authorDirectory = null;
     searchDebounce?.cancel();
     clearActivityGesture();
+    widget.searchFocusRequests?.removeListener(focusSearchField);
     queryFocus.dispose();
     query.dispose();
     events?.cancel();
+    sharedInbox?.removeListener(sharedInboxChanged);
     refreshTimer?.cancel();
     catalogTimer?.cancel();
     super.dispose();
@@ -1753,6 +1996,7 @@ class _ResourceViewState extends State<ResourceView> {
         clearRows();
         loading = false;
         error = 'This channel is no longer available.';
+        searchFailureKind = null;
       });
       return;
     }
@@ -1791,7 +2035,10 @@ class _ResourceViewState extends State<ResourceView> {
         rowsView = wanted;
         hasMore = cached.hasMore;
         totalCount = cached.totalCount;
-        totalUnreadCount = cached.totalUnreadCount;
+        if (!activityScope.directMessages) {
+          totalUnreadCount = cached.totalUnreadCount;
+        }
+        patchKnownActivityReads();
         loading = false;
         error = null;
         laneBusy.clear();
@@ -1819,11 +2066,11 @@ class _ResourceViewState extends State<ResourceView> {
     activeLoad = request;
     activeAppend = append;
     if (widget.section == 'tasks' && !append) taskTouched.clear();
-    if (enabledActivity && ['saved', 'done'].contains(filter) && !append) {
+    if (enabledActivity && !activityScope.globalInbox && !append) {
       unawaited(loadActivityFacets(scope));
     }
     try {
-      if (widget.section == 'tasks' && taskLayout == 'board') {
+      if (lanePaged) {
         final boardView = jsonEncode([taskPath, 'board']);
         // Source loadServerTaskStatusPage: a background revalidation spans
         // each lane's loaded window instead of resetting it to one page.
@@ -1847,10 +2094,16 @@ class _ResourceViewState extends State<ResourceView> {
           ),
         );
         if (!accepts(scope, request)) return;
+        // A lane holds only its own status (`moreLane` applies the same rule).
         final fetched = {
           for (var i = 0; i < raftTaskStatuses.length; i++)
             raftTaskStatuses[i]: (pages[i]['tasks'] as List)
                 .map((r) => Map<String, dynamic>.from(r))
+                .where(
+                  (r) =>
+                      (r['status'] ?? raftTaskStatuses[i]) ==
+                      raftTaskStatuses[i],
+                )
                 .toList(),
         };
         final fetchedIds = {
@@ -1881,12 +2134,7 @@ class _ResourceViewState extends State<ResourceView> {
         return;
       }
       final path = switch (widget.section) {
-        'activity' => switch (filter) {
-          'saved' when enabledActivity => '/channels/saved',
-          'done' => '/channels/inbox/done',
-          'unfollowed' => '/channels/inbox/unfollowed',
-          _ => '/channels/inbox',
-        },
+        'activity' => activityScope.path,
         'saved' => '/channels/saved',
         'search' => '/messages/search',
         'tasks' => taskPath,
@@ -1908,17 +2156,17 @@ class _ResourceViewState extends State<ResourceView> {
           ? rows.length.clamp(50, 100).toInt()
           : 50;
       final params = widget.section == 'search'
-          ? advanced.search(query.text, offset: append ? rows.length : 0)
+          ? advanced.search(
+              query.text,
+              offset: append ? rows.length : 0,
+              append: append,
+            )
           : ['saved', 'activity'].contains(widget.section)
           ? advanced.list(
               query.text,
               offset: append ? rows.length : 0,
               limit: windowSize,
-              filter:
-                  widget.section == 'activity' &&
-                      !['saved', 'done', 'unfollowed'].contains(filter)
-                  ? filter
-                  : null,
+              activityView: widget.section == 'activity' ? filter : null,
             )
           : {
               if (widget.section == 'tasks' && filter != 'all')
@@ -1931,15 +2179,8 @@ class _ResourceViewState extends State<ResourceView> {
                 'cursor': cursor,
               if (widget.section != 'tasks') 'offset': append ? rows.length : 0,
             };
-      final view = jsonEncode([
-        path,
-        {
-          for (final entry in (params ?? const {}).entries)
-            if (!['limit', 'offset', 'cursor'].contains(entry.key))
-              entry.key: entry.value,
-        },
-      ]);
-      final sharedSerial = w.activityUnreadIfBound?.windowSerial ?? 0;
+      final view = ResourceFilters.viewKey(path, params ?? const {});
+      final sharedSerial = _services.activityUnreadIfBound?.windowSerial ?? 0;
       var value =
           seed ??
           (path == '/channels/inbox'
@@ -2013,7 +2254,7 @@ class _ResourceViewState extends State<ResourceView> {
             preserveTail:
                 rows.length > windowSize &&
                 (widget.section == 'saved' ||
-                    filter == 'all' &&
+                    (filter == 'all' || activityScope.directMessages) &&
                         advanced.channelId == null &&
                         advanced.direction == 'desc' &&
                         query.text.trim().isEmpty),
@@ -2037,6 +2278,11 @@ class _ResourceViewState extends State<ResourceView> {
                     .clamp(0, 1 << 53),
           };
         }
+        if (activityWindow && value is Map) {
+          // Publish the projected rows with their projected total. Sending
+          // raw rows with the adjusted total would apply the same ACK twice.
+          value = {...value, 'items': nextRows};
+        }
         setState(() {
           rows = nextRows;
           rowsView = view;
@@ -2059,6 +2305,9 @@ class _ResourceViewState extends State<ResourceView> {
           if (enabledActivity && filter == 'done') {
             doneActivityItems = List.of(rows);
           }
+          if (enabledActivity && filter != 'saved' && filter != 'done') {
+            unawaited(SavedCountStore.of(w).checkActivityRows(rows));
+          }
           dragFeedbackRevision.value++;
           if (enabledActivity && filter == 'saved' && value is Map) {
             savedActivityTotal =
@@ -2069,18 +2318,21 @@ class _ResourceViewState extends State<ResourceView> {
           }
           if (value is Map &&
               !(enabledActivity && ['saved', 'done'].contains(filter))) {
-            totalCount = (value['total'] ?? value['totalCount']) as int?;
-            totalUnreadCount = value['totalUnreadCount'] as int?;
+            totalCount = ((value['total'] ?? value['totalCount']) as num?)
+                ?.toInt();
+            if (widget.section != 'activity' || !activityScope.directMessages) {
+              totalUnreadCount = (value['totalUnreadCount'] as num?)?.toInt();
+            }
           }
           if (widget.section == 'activity' &&
-              !['saved', 'done'].contains(filter) &&
+              activityScope.globalInbox &&
               value is Map) {
             acceptActivityFacets(value, rows);
           }
           cursor = nextCursor;
           hasMore = widget.section == 'tasks'
               ? cursor != null
-              : value is Map && value['hasMore'] == true;
+              : advanced.morePages(widget.section, view, value);
           if (widget.section == 'tasks' && !append) {
             applyTaskPatches(taskTouched);
             taskTouched.clear();
@@ -2088,7 +2340,7 @@ class _ResourceViewState extends State<ResourceView> {
         });
         if (seed == null &&
             widget.section == 'activity' &&
-            !['saved', 'done'].contains(filter) &&
+            activityScope.globalInbox &&
             value is Map &&
             value['totalUnreadCount'] is num) {
           widget.onActivityUnreadAccepted?.call(
@@ -2097,9 +2349,13 @@ class _ResourceViewState extends State<ResourceView> {
         }
         if (seed == null &&
             widget.section == 'activity' &&
-            !['saved', 'done'].contains(filter) &&
+            activityScope.globalInbox &&
             value is Map) {
-          acceptActivityWindow?.call(value);
+          acceptActivityWindow?.call(
+            value,
+            firstPage:
+                !append && view == SourceActivityUnreadStore.defaultInboxView,
+          );
         }
       }
     } catch (e) {
@@ -2160,46 +2416,33 @@ class _ResourceViewState extends State<ResourceView> {
   /// Source savedStore `unsaveMessage`: the row, the page totals and the
   /// sidebar badge go at once; a failed request restores them (Source then
   /// reloads, which also reconciles the list).
-  Future<void> removeSaved(Map<String, dynamic> row, String scope) async {
-    if (!accepts(scope)) return;
-    final id = row['messageId'];
-    if (id is! String) return;
-    final index = rows.indexWhere((item) => item['messageId'] == id);
-    final held = index < 0 ? null : rows[index];
-    final heldTotal = totalCount, heldSaved = savedActivityTotal;
-    final removes = held != null;
-    List<Map<String, dynamic>> without(List<Map<String, dynamic>> list) =>
-        list.where((item) => item['messageId'] != id).toList();
-    setState(() {
-      rows = without(rows);
-      savedActivityItems = without(savedActivityItems);
-      if (removes && totalCount != null) {
-        totalCount = (totalCount! - 1).clamp(0, 1 << 53);
-      }
-      if (removes) {
-        savedActivityTotal = (savedActivityTotal - 1).clamp(0, 1 << 53);
-      }
-    });
-    try {
-      await SavedCountStore.of(w).setSaved(id, false);
-      if (!accepts(scope)) return;
-      await w.refreshUnread();
-      if (!accepts(scope)) return;
-      await load(keep: true);
-    } catch (e) {
-      if (!accepts(scope)) return;
-      setState(() {
-        if (held != null && !rows.any((item) => item['messageId'] == id)) {
-          rows = [...rows]..insert(index.clamp(0, rows.length), held);
-        }
-        totalCount = heldTotal;
-        savedActivityTotal = heldSaved;
-        if (enabledActivity && filter == 'saved') {
-          savedActivityItems = List.of(rows);
-        }
-      });
-      fail(e, scope);
-    }
+  Future<void> removeSaved(Map<String, dynamic> row, String scope) {
+    return unsaveSavedRow(
+      accepts: () => accepts(scope),
+      row: row,
+      readRows: () => rows,
+      readSavedActivityItems: () => savedActivityItems,
+      readTotalCount: () => totalCount,
+      readSavedActivityTotal: () => savedActivityTotal,
+      activitySaved: () => enabledActivity && filter == 'saved',
+      apply: (next) => setState(() {
+        rows = next.rows;
+        savedActivityItems = next.savedActivityItems;
+        totalCount = next.totalCount;
+        savedActivityTotal = next.savedActivityTotal;
+      }),
+      store: SavedCountStore.of(w),
+      refreshUnread: w.refreshUnread,
+      reload: () => load(keep: true),
+      fail: (cause) => fail(cause, scope),
+    );
+  }
+
+  Color get resourceSurface {
+    final t = RaftTokens.of(context);
+    return t.option('resource.surface', or: 'sidebar') == 'canvas'
+        ? t.canvas
+        : t.sidebar;
   }
 
   @override
@@ -2208,41 +2451,54 @@ class _ResourceViewState extends State<ResourceView> {
     if (snapshotted) observeListUpdates();
     // ThreadsInbox mounts ActivityInboxPanel with `theme-brutal:!border-l`.
     final activityEdge = widget.section == 'activity';
-    // Owner decision 2026-10-11 (overrides the Web measurement): the mobile
-    // Activity page draws no vertical border at x = 0; the desktop panel keeps
-    // its line beside the rail.
-    final activityBorder = !RaftAdaptiveWorkspace.compactOf(context);
-    final body = Container(
-      decoration: activityEdge
-          ? BoxDecoration(
-              color: t.brutal ? t.panel : t.sidebar,
-              border: activityBorder
-                  ? Border(
-                      left: BorderSide(
-                        color: t.brutal ? t.colors['color-black']! : t.line,
-                      ),
-                    )
-                  : null,
-            )
-          // SavedPanel: `bg-layer-canvas-muted theme-brutal:bg-white`.
-          : widget.section == 'saved'
-          ? BoxDecoration(color: t.brutal ? t.panel : t.sidebar)
-          : null,
-      child: widget.section == 'tasks'
-          ? DefaultTextStyle.merge(
-              style: RaftTaskSectionRecipe(t).documentStyle,
-              child: buildBody(context),
-            )
-          : buildBody(context),
-    );
-    return enabledActivity
-        ? CallbackShortcuts(
-            bindings: {
-              const SingleActivator(LogicalKeyboardKey.keyF, control: true):
-                  showActivitySearch,
-              const SingleActivator(LogicalKeyboardKey.keyF, meta: true):
-                  showActivitySearch,
-            },
+    // Shared edge rule (RaftPanelEdge): the Activity panel keeps its line
+    // beside the navigation column, except on the full-width phone page and
+    // when the column is on the right (it draws that line).
+    final BoxDecoration? surface = activityEdge
+        ? BoxDecoration(
+            color: resourceSurface,
+            border: RaftPanelEdge.besideNavigation(
+              context,
+              RaftPanelEdgeStyle.activityInbox,
+            ),
+          )
+        // SavedPanel: `bg-layer-canvas-muted theme-brutal:bg-white`.
+        : widget.section == 'saved'
+        ? BoxDecoration(color: resourceSurface)
+        : widget.section == 'search'
+        ? searchSlots(context).frame.decoration(rui.RaftRecipeTokens(t))
+        // TasksPanelViewport is `dark:bg-transparent`: Elegant dark shows the
+        // mounted ancestor, ConversationPanelContent's card in a channel tab
+        // and the canvas-muted page surface on the Tasks page.
+        : widget.section == 'tasks' && t.dark
+        ? BoxDecoration(
+            color: widget.channelId != null
+                ? t.card
+                : t.colors['layer-canvas-muted']!,
+          )
+        : null;
+    final bodyChild = widget.section == 'tasks'
+        ? DefaultTextStyle.merge(
+            style: RaftTaskSectionRecipe(t).documentStyle,
+            child: buildBody(context),
+          )
+        : buildBody(context);
+    final box = Container(decoration: surface, child: bodyChild);
+    // The page surface (and the Activity edge) is the column's top surface
+    // under a transparent header, so it continues under the status bar.
+    final body = surface == null
+        ? box
+        : RaftStatusBarSource(
+            color: surface.color ?? Colors.transparent,
+            border: surface.border is Border ? surface.border as Border : null,
+            child: box,
+          );
+    // Activity find: Cmd+F on Apple platforms, Ctrl+F elsewhere, while the
+    // keyboard scope is the Activity panel (ActivityFindScope).
+    return widget.section == 'activity'
+        ? ActivityFindScope(
+            enabled: enabledActivity && widget.compactActivitySidebar,
+            onFind: showActivitySearch,
             child: body,
           )
         : body;
@@ -2250,6 +2506,18 @@ class _ResourceViewState extends State<ResourceView> {
 
   Widget buildBody(BuildContext context) {
     final scope = authority;
+    final body = buildBodyColumn(context, scope);
+    return widget.section == 'search'
+        ? Focus(
+            canRequestFocus: false,
+            skipTraversal: true,
+            onKeyEvent: searchKeyEvent,
+            child: body,
+          )
+        : body;
+  }
+
+  Widget buildBodyColumn(BuildContext context, String scope) {
     return Column(
       children: [
         if (widget.channelId == null)
@@ -2266,18 +2534,16 @@ class _ResourceViewState extends State<ResourceView> {
               children: [
                 if (['search', 'saved'].contains(widget.section))
                   Expanded(
-                    child: TextField(
-                      autofillHints: null,
+                    child: RaftTextInput(
                       controller: query,
-                      decoration: InputDecoration(
-                        hintText: raftText(
-                          context,
-                          widget.section == 'search'
-                              ? 'Search messages'
-                              : 'Filter saved messages',
-                        ),
-                        prefixIcon: const RaftIcon(RaftGlyph.search),
+                      hintText: raftText(
+                        context,
+                        widget.section == 'search'
+                            ? 'Search messages'
+                            : 'Filter saved messages',
                       ),
+                      leadingGlyph: RaftGlyph.search,
+                      legacy: RaftLegacyInput.themed,
                       onSubmitted: (_) => load(),
                     ),
                   )
@@ -2286,7 +2552,7 @@ class _ResourceViewState extends State<ResourceView> {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: RaftSegmentedControl<String>(
-                        style: RaftSegmentedStyle.tabs,
+                        legacyStyle: RaftSegmentedStyle.tabs,
                         value: ['all', 'unread', 'mentions'].contains(filter)
                             ? filter
                             : '',
@@ -2326,15 +2592,11 @@ class _ResourceViewState extends State<ResourceView> {
                                 'closed',
                               ]
                               .map(
-                                (s) => DropdownMenuItem(
+                                (s) => RaftSelectItem(
                                   value: s,
-                                  child: Text(
-                                    raftText(
-                                      context,
-                                      s == 'all'
-                                          ? 'All'
-                                          : raftTaskStatusLabel(s),
-                                    ),
+                                  label: raftText(
+                                    context,
+                                    s == 'all' ? 'All' : raftTaskStatusLabel(s),
                                   ),
                                 ),
                               )
@@ -2357,10 +2619,10 @@ class _ResourceViewState extends State<ResourceView> {
                     message: raftText(
                       context,
                       taskLayout == 'board'
-                          ? 'Show task list'
-                          : 'Show task board',
+                          ? 'Show Task List'
+                          : 'Show Task Board',
                     ),
-                    child: IconButton(
+                    child: RaftButton.iconAction(
                       icon: RaftIcon(
                         taskLayout == 'board'
                             ? RaftGlyph.layoutList
@@ -2369,14 +2631,15 @@ class _ResourceViewState extends State<ResourceView> {
                       ),
                       onPressed: () {
                         taskLayout = taskLayout == 'board' ? 'list' : 'board';
+                        rememberTaskView(taskLayout);
                         load();
                       },
                     ),
                   ),
                 if (widget.section == 'tasks')
                   RaftTooltip(
-                    message: raftText(context, 'Create task'),
-                    child: IconButton(
+                    message: raftText(context, 'Create Task'),
+                    child: RaftButton.iconAction(
                       onPressed: w.server?.string('role') == 'guest'
                           ? null
                           : () => createTask(sourceScope: scope),
@@ -2385,7 +2648,7 @@ class _ResourceViewState extends State<ResourceView> {
                   ),
                 if (widget.section == 'activity')
                   RaftTooltip(
-                    message: raftText(context, 'Activity actions'),
+                    message: raftText(context, 'Activity Actions'),
                     child: PopupMenuButton<String>(
                       onSelected: (action) {
                         if (!accepts(scope)) return;
@@ -2407,11 +2670,11 @@ class _ResourceViewState extends State<ResourceView> {
                         ),
                         PopupMenuItem(
                           value: 'done',
-                          child: Text(raftText(context, 'Done conversations')),
+                          child: Text(raftText(context, 'Done Conversations')),
                         ),
                         PopupMenuItem(
                           value: 'unfollowed',
-                          child: Text(raftText(context, 'Unfollowed threads')),
+                          child: Text(raftText(context, 'Unfollowed Threads')),
                         ),
                       ],
                     ),
@@ -2429,16 +2692,15 @@ class _ResourceViewState extends State<ResourceView> {
         if (widget.section == 'tasks') taskFilters(),
         // Web Inbox and Saved render no error line when the first read fails:
         // the (empty) list stays as is.
+        // Search shows its failure as a card inside the results instead.
         if (error != null &&
+            !(widget.section == 'search' && searchFailureKind != null) &&
             !(errorWhileLoading &&
                 rows.isEmpty &&
                 (widget.section == 'activity' || widget.section == 'saved')))
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              raftText(context, error!),
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
+            child: RaftErrorBanner(error!, small: true),
           ),
         Expanded(
           child:
@@ -2468,6 +2730,17 @@ class _ResourceViewState extends State<ResourceView> {
       : const ['all', 'unread', 'mentions'];
 
   Widget resourceResults(BuildContext context) {
+    final results = resourceResultsPager(context);
+    if (widget.section != 'search') return results;
+    // SearchShellViewport: `bg-layer-panel` (transparent in dark, Brutal white).
+    final t = RaftTokens.of(context);
+    final fill = t.option('listGroup.frame', or: 'framed') == 'plain'
+        ? BoxDecoration(color: t.canvas)
+        : searchSlots(context).viewport.decoration(rui.RaftRecipeTokens(t));
+    return DecoratedBox(decoration: fill, child: results);
+  }
+
+  Widget resourceResultsPager(BuildContext context) {
     final scope = authority, view = filter;
     // Inside each pager page: a wrapper outside PageView would receive the
     // horizontal pager's notifications instead of this vertical list's.
@@ -2488,21 +2761,25 @@ class _ResourceViewState extends State<ResourceView> {
   }
 
   bool get mobileActivityRefresh =>
-      widget.section == 'activity' && RaftAdaptiveWorkspace.compactOf(context);
+      widget.section == 'activity' && RaftInteraction.of(context).touch;
 
   Widget resourceResultsBody(BuildContext context) {
     final scope = authority;
-    return loading && visibleRows.isEmpty
+    final searchHomeNow = atSearchHome;
+    // Search keeps its summary, entity matches and a messages skeleton while
+    // the first read is in flight (Source `showInitialSkeleton`).
+    final searching = loading && visibleRows.isEmpty;
+    return searching && !(widget.section == 'search' && !searchHomeNow)
         // ConversationCardSkeleton: Inbox and Saved share the card
         // placeholder list.
         ? enabledActivity ||
                   widget.section == 'activity' ||
                   widget.section == 'saved'
               ? const RaftActivityLoadingList()
-              : Center(child: CircularProgressIndicator())
-        : widget.section == 'search' &&
-              query.text.trim().isEmpty &&
-              (!advanced.hasSearchFilter || widget.initialSearchDeferUntilQuery)
+              : widget.section == 'tasks'
+              ? const RaftTaskLoadingList()
+              : const Center(child: RaftSpinner())
+        : searchHomeNow
         ? searchHome(scope)
         : widget.section == 'search'
         ? ResourceSearchResults(
@@ -2513,16 +2790,28 @@ class _ResourceViewState extends State<ResourceView> {
             origin: w.client.origin,
             agents: rowAgents,
             members: rowPeople,
+            dms: w.dms,
             currentUser: w.client.user?.json,
             plan: w.server?.string('plan', 'free') ?? 'free',
             now: widget.clock?.call() ?? DateTime.now(),
-            selectedKey:
-                selectedSearchKey ?? currentSearchEntities.firstOrNull?.key,
+            selectedKey: selectedSearchKey ?? firstSearchKey,
             onMessage: (row) => openSearchMessage(row, scope),
             onEntity: (entity) => openSearchEntity(entity, scope),
             hasMore: hasMore,
             onMore: () => load(append: true),
+            filters: advanced,
+            view: rowsView,
+            loading: searching,
+            failure: error == null ? null : searchFailureKind,
+            onRetry: () => load(),
           )
+        : widget.section == 'tasks' &&
+              widget.channelId != null &&
+              !loading &&
+              (taskLayout == 'board'
+                  ? lanes.values.every((lane) => lane.isEmpty)
+                  : rows.isEmpty)
+        ? channelTasksEmpty()
         : widget.section == 'tasks' && taskLayout == 'board'
         ? taskBoard()
         : widget.section == 'tasks' && rows.isNotEmpty
@@ -2546,7 +2835,7 @@ class _ResourceViewState extends State<ResourceView> {
                         description: widget.section == 'saved'
                             ? raftText(
                                 context,
-                                'Save a message by selecting its bookmark icon.',
+                                'Save a message to find it here later.',
                               )
                             : raftText(context, activityEmptyDetail),
                         icon: (context, size, color) => RaftIcon(
@@ -2561,7 +2850,7 @@ class _ResourceViewState extends State<ResourceView> {
                       )
                     : RaftEmptyState(
                         title: widget.section == 'search'
-                            ? 'Search your workspace'
+                            ? 'Search your server'
                             : 'No ${widget.section}',
                         detail: widget.section == 'search'
                             ? 'Enter words to find messages.'
@@ -2573,8 +2862,8 @@ class _ResourceViewState extends State<ResourceView> {
         : widget.section == 'activity' && advanced.groupByChannel
         ? groupedActivity()
         : Material(
-            color: RaftTokens.of(context).brutal
-                ? RaftTokens.of(context).panel
+            color: widget.section == 'activity' || widget.section == 'saved'
+                ? resourceSurface
                 : RaftTokens.of(context).sidebar,
             child: Stack(
               children: [
@@ -2584,8 +2873,8 @@ class _ResourceViewState extends State<ResourceView> {
                     label: raftFormat(
                       context,
                       listUpdates.count == 1
-                          ? '{count} new update'
-                          : '{count} new updates',
+                          ? '{count} New Update'
+                          : '{count} New Updates',
                       {'count': listUpdates.count},
                     ),
                     onPressed: revealListUpdates,
@@ -2602,26 +2891,34 @@ class _ResourceViewState extends State<ResourceView> {
     if (window == null) return const RaftActivityLoadingList();
     if (window.rows.isEmpty) {
       return RaftEmptyState(
-        title: activityEmptyTitleFor(value),
-        detail: activityEmptyDetailFor(value),
+        title: activityEmptyState(value).title,
+        detail: activityEmptyState(value).detail,
       );
     }
     if (advanced.groupByChannel) {
       return groupedActivity(viewFilter: value, windowRows: window.rows);
     }
+    final listed = activityPinnedFirst(w, window.rows);
     return ListView.separated(
       key: PageStorageKey(('resource-list', 'activity', value)),
       primary: false,
-      padding: raftScrollPadding(
-        context,
-        RaftResourceMetrics.activityListInset,
-      ),
+      padding: activityListLayout
+          ? EdgeInsets.zero
+          : raftScrollPadding(
+              context,
+              RaftConversationCardRecipe(RaftTokens.of(context)).listInset,
+            ),
       controller: activityScrolls[value],
-      itemCount: window.rows.length,
-      separatorBuilder: (_, _) =>
-          const SizedBox(height: RaftConversationCardRecipe.gap),
+      itemCount: listed.length,
+      separatorBuilder: (_, _) => SizedBox(
+        height: activityListLayout
+            ? 0
+            : (widget.section == 'activity' || widget.section == 'saved'
+                  ? RaftConversationCardRecipe(RaftTokens.of(context)).listGap
+                  : RaftConversationCardRecipe.gap),
+      ),
       itemBuilder: (_, i) =>
-          activityCard(window.rows[i], authority, viewFilter: value),
+          listedActivityCard(listed, i, authority, viewFilter: value),
     );
   }
 
@@ -2642,25 +2939,39 @@ class _ResourceViewState extends State<ResourceView> {
       physics: mobileActivityRefresh
           ? const AlwaysScrollableScrollPhysics()
           : null,
-      padding: raftScrollPadding(context, const EdgeInsets.all(16)),
+      padding: activityListLayout
+          ? EdgeInsets.zero
+          : raftScrollPadding(
+              context,
+              widget.section == 'activity' || widget.section == 'saved'
+                  ? RaftConversationCardRecipe(RaftTokens.of(context)).listInset
+                  : const EdgeInsets.all(16),
+            ),
       // SavedPanel loads the next page when its sentinel comes
       // within `rootMargin: 240px` of the scroller.
       scrollCacheExtent: widget.section == 'saved'
           ? const ScrollCacheExtent.pixels(240)
           : null,
       itemCount: shown.length + (hasMore ? 1 : 0),
-      separatorBuilder: (_, _) =>
-          const SizedBox(height: RaftConversationCardRecipe.gap),
+      separatorBuilder: (_, _) => SizedBox(
+        height: activityListLayout
+            ? 0
+            : (widget.section == 'activity' || widget.section == 'saved'
+                  ? RaftConversationCardRecipe(RaftTokens.of(context)).listGap
+                  : RaftConversationCardRecipe.gap),
+      ),
       itemBuilder: (context, index) => index == shown.length
           ? widget.section == 'saved'
                 ? savedSentinel()
-                : TextButton(
+                : RaftButton.text(
                     onPressed: () => load(append: true),
-                    child: Text(raftText(context, 'Load more')),
+                    child: Text(raftText(context, 'Load More')),
                   )
           : KeyedSubtree(
               key: listUpdates.keyOf(rowKey(shown[index])),
-              child: item(shown[index]),
+              child: widget.section == 'activity'
+                  ? listedActivityCard(shown, index, authority)
+                  : item(shown[index], topRule: index > 0),
             ),
       findItemIndexCallback: listUpdates.indexOf,
     );
@@ -2715,6 +3026,21 @@ class _ResourceViewState extends State<ResourceView> {
       if (widget.onSearchEntity != null) {
         rememberSearchOpen(scope, entity: entity, queryText: committed);
         await widget.onSearchEntity!(entity);
+        return;
+      }
+      // The DM is usually already in the sidebar: open it at once; only a
+      // first conversation asks the server to create it.
+      final existing = w.dms
+          .where(
+            (c) =>
+                c.json['peerId'] == entity.id &&
+                c.json['peerType'] ==
+                    (entity.kind == 'agent' ? 'agent' : 'user'),
+          )
+          .firstOrNull;
+      if (existing != null) {
+        rememberSearchOpen(scope, entity: entity, queryText: committed);
+        await widget.onMessage(existing.id, null);
         return;
       }
       try {
@@ -2772,6 +3098,67 @@ class _ResourceViewState extends State<ResourceView> {
     });
   }
 
+  /// No query and no filter yet: history and frequent destinations.
+  bool get atSearchHome =>
+      widget.section == 'search' &&
+      query.text.trim().isEmpty &&
+      (!advanced.hasSearchFilter || widget.initialSearchDeferUntilQuery);
+
+  /// Selectable results in order: destinations, then messages (Source
+  /// `selectableResults`).
+  List<String> get searchKeys => [
+    ...(atSearchHome ? frequentEntities : currentSearchEntities).map(
+      (e) => e.key,
+    ),
+    ...rows.map((r) => 'message:${r['id']}'),
+  ];
+
+  /// The cursor before any arrow key: the first selectable result.
+  String? get firstSearchKey => searchKeys.firstOrNull;
+
+  /// Cmd/Ctrl+K on the Search page and its first frame (Source
+  /// `focusSearchInput`): focus the field and select what it holds.
+  void focusSearchField() {
+    if (!mounted) return;
+    queryFocus.requestFocus();
+    if (query.text.isNotEmpty) {
+      query.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: query.text.length,
+      );
+    }
+  }
+
+  /// Source `handleRailKeyDown`, scoped to the Search page subtree so it runs
+  /// wherever focus sits inside it (field, filter chips, a result), and never
+  /// once focus moves to a conversation beside it. Up/Down move the cursor
+  /// (repeating while held), Escape leaves Search. IME composition owns every
+  /// key it is using.
+  KeyEventResult searchKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    if (query.value.composing.isValid && !query.value.composing.isCollapsed) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.escape) {
+      if (event is! KeyDownEvent) return KeyEventResult.ignored;
+      widget.onBack?.call();
+      return KeyEventResult.handled;
+    }
+    if (key != LogicalKeyboardKey.arrowDown &&
+        key != LogicalKeyboardKey.arrowUp) {
+      return KeyEventResult.ignored;
+    }
+    final keys = searchKeys;
+    if (keys.isEmpty) return KeyEventResult.ignored;
+    final index = keys.indexOf(selectedSearchKey ?? keys.first);
+    final step = key == LogicalKeyboardKey.arrowDown ? 1 : -1;
+    setState(
+      () => selectedSearchKey = keys[(index + step).clamp(0, keys.length - 1)],
+    );
+    return KeyEventResult.handled;
+  }
+
   Widget searchHeader(String scope) {
     final t = RaftTokens.of(context),
         mobile =
@@ -2782,88 +3169,55 @@ class _ResourceViewState extends State<ResourceView> {
       viewportHeight: MediaQuery.sizeOf(context).height,
       mobile: mobile,
     );
+    final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
     final row = Row(
       children: [
-        Container(
-          width: RaftLayoutMetrics.panelIcon,
-          height: RaftLayoutMetrics.panelIcon,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: recipe.iconBackground,
-            border: Border.all(color: t.line, width: t.border),
-          ),
-          child: const RaftIcon(RaftGlyph.search, size: 18),
-        ),
-        const SizedBox(width: RaftLayoutMetrics.panelGap),
-        Expanded(
-          child: Focus(
-            onKeyEvent: (_, event) {
-              if (event is! KeyDownEvent) return KeyEventResult.ignored;
-              final keys = [
-                ...(query.text.trim().isEmpty
-                        ? frequentEntities
-                        : currentSearchEntities)
-                    .map((e) => e.key),
-                ...rows.map((r) => 'message:${r['id']}'),
-              ];
-              if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
-                  event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                if (keys.isEmpty) return KeyEventResult.ignored;
-                final index = keys.indexOf(selectedSearchKey ?? keys.first),
-                    step = event.logicalKey == LogicalKeyboardKey.arrowDown
-                        ? 1
-                        : -1;
-                setState(
-                  () => selectedSearchKey =
-                      keys[(index + step).clamp(0, keys.length - 1)],
-                );
-                return KeyEventResult.handled;
-              }
-              if (event.logicalKey == LogicalKeyboardKey.escape) {
-                widget.onBack?.call();
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            },
-            child: RaftSearchInput(
-              controller: query,
-              focusNode: queryFocus,
-              hint: raftText(context, 'Search messages'),
-              clearLabel: raftText(context, 'Clear search'),
-              showEscape: !mobile,
-              onClear: () {
-                query.clear();
-                searchChanged('');
-              },
-              onChanged: searchChanged,
-              onSubmitted: (_) {
-                searchDebounce?.cancel();
-                final selected =
-                    selectedSearchKey ??
-                    (query.text.trim().isEmpty
-                            ? frequentEntities
-                            : currentSearchEntities)
-                        .firstOrNull
-                        ?.key ??
-                    (rows.isEmpty ? null : 'message:${rows.first['id']}');
-                final entity =
-                    (query.text.trim().isEmpty
-                            ? frequentEntities
-                            : currentSearchEntities)
-                        .where((e) => e.key == selected)
-                        .firstOrNull;
-                final row = rows
-                    .where((r) => 'message:${r['id']}' == selected)
-                    .firstOrNull;
-                if (entity != null) {
-                  openSearchEntity(entity, scope);
-                } else if (row != null) {
-                  openSearchMessage(row, scope);
-                } else {
-                  load();
-                }
-              },
+        if (!plain)
+          Container(
+            width: RaftLayoutMetrics.panelIcon,
+            height: RaftLayoutMetrics.panelIcon,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: recipe.iconBackground,
+              border: Border.all(color: t.line, width: t.border),
             ),
+            child: const RaftIcon(RaftGlyph.search, size: 18),
+          ),
+        if (!plain) const SizedBox(width: RaftLayoutMetrics.panelGap),
+        Expanded(
+          child: RaftSearchInput(
+            controller: query,
+            focusNode: queryFocus,
+            // search.placeholder: the shortcut hint follows on desktop.
+            hint: mobile
+                ? raftText(context, 'Search channels, DMs, messages…')
+                : '${raftText(context, 'Search channels, DMs, messages…')}   '
+                      '${globalSearchShortcutLabel()}',
+            clearLabel: raftText(context, 'Clear Search'),
+            showEscape: !mobile,
+            onClear: () {
+              query.clear();
+              searchChanged('');
+            },
+            onChanged: searchChanged,
+            onSubmitted: (_) {
+              searchDebounce?.cancel();
+              final selected = selectedSearchKey ?? firstSearchKey;
+              final entity =
+                  (atSearchHome ? frequentEntities : currentSearchEntities)
+                      .where((e) => e.key == selected)
+                      .firstOrNull;
+              final row = rows
+                  .where((r) => 'message:${r['id']}' == selected)
+                  .firstOrNull;
+              if (entity != null) {
+                openSearchEntity(entity, scope);
+              } else if (row != null) {
+                openSearchMessage(row, scope);
+              } else {
+                load();
+              }
+            },
           ),
         ),
       ],
@@ -2871,6 +3225,7 @@ class _ResourceViewState extends State<ResourceView> {
     return mobile
         ? RaftPanelHeaderBar(
             title: raftText(context, 'Search'),
+            background: plain ? t.canvas : null,
             titleSlot: row,
             onBack: widget.onBack ?? () {},
             backTooltip: raftText(context, 'Back'),
@@ -2888,19 +3243,44 @@ class _ResourceViewState extends State<ResourceView> {
           );
   }
 
+  /// raft-ui `search` recipe slots (SearchShellRoot / Filters / Viewport).
+  rui.RaftSearchRecipeStyle searchSlots(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return rui.RaftSearchRecipe.resolve(
+      theme: rui.RaftRecipeTheme.elegant,
+      states: rui.RaftRecipeStates({
+        if (t.dark) rui.RaftRecipeStates.dark,
+      }, MediaQuery.sizeOf(context).width),
+      tokens: rui.RaftRecipeTokens(t),
+    );
+  }
+
   Widget searchFilters() {
     final scope = authority;
-    // MessageSearchPage filters row: `px-4 py-3 border-b theme-brutal:border-b-2`.
+    // SearchShellFilters (raft-ui search `filtersRow`): brutal `px-4 py-3
+    // border-b-2 border-black bg-white`, elegant `border-b bg-layer-panel px-3
+    // py-2 max-md:pl-5 max-md:pr-3.5` (transparent in dark).
+    final plain =
+        RaftTokens.of(context).option('listGroup.frame', or: 'framed') ==
+        'plain';
+    final row = searchSlots(context).filtersRow;
+    final rowDecoration = row.decoration(
+      rui.RaftRecipeTokens(RaftTokens.of(context)),
+    );
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: RaftTokens.of(context).line,
-            width: RaftTokens.of(context).border,
-          ),
-        ),
-      ),
+      padding: plain
+          ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+          : row.padding,
+      decoration: plain
+          ? BoxDecoration(
+              color: RaftTokens.of(context).canvas,
+              border: Border(
+                bottom: BorderSide(
+                  color: RaftTokens.of(context).colors['line-seam']!,
+                ),
+              ),
+            )
+          : rowDecoration,
       child: SizedBox(
         width: double.infinity,
         child: SearchFilterBar(
@@ -2986,7 +3366,9 @@ class _ResourceViewState extends State<ResourceView> {
 
   void acceptActivityFacets(Map value, List<Map<String, dynamic>> items) {
     acceptedActivityItems = List.of(items);
-    totalCount = (value['totalCount'] as num?)?.toInt() ?? totalCount;
+    if (!activityScope.directMessages) {
+      totalCount = (value['totalCount'] as num?)?.toInt() ?? totalCount;
+    }
     totalUnreadCount =
         (value['totalUnreadCount'] as num?)?.toInt() ?? totalUnreadCount;
     activityAllCount =
@@ -2994,31 +3376,28 @@ class _ResourceViewState extends State<ResourceView> {
         (activeActivityFilter == 'all' &&
                 query.text.trim().isEmpty &&
                 advanced.channelId == null
-            ? totalCount
+            ? (value['totalCount'] as num?)?.toInt() ?? totalCount
             : activityAllCount);
-    if (value['groups'] is! List) return;
-    final selected = activityGroups
-        .where((g) => g['channelId'] == advanced.channelId)
-        .firstOrNull;
-    activityGroups = (value['groups'] as List)
-        .whereType<Map>()
-        .map((g) => Map<String, dynamic>.from(g))
-        .toList();
-    if (selected != null &&
-        !activityGroups.any((g) => g['channelId'] == advanced.channelId)) {
-      activityGroups.add({...selected, 'count': 0});
-    }
+    activityGroups = ChannelActivityScope.groups(
+      value,
+      activityGroups,
+      advanced.channelId,
+    );
   }
 
   Future<void> loadActivityFacets(String scope) async {
     final ticket = ++activityFacetRequest;
+    final view = listView;
     final acceptWindow = widget.onActivityWindowAccepted;
     try {
       var value = await w.query(
         '/channels/inbox',
         query: advanced.list(query.text, filter: activeActivityFilter),
       );
-      if (!accepts(scope) || ticket != activityFacetRequest || value is! Map) {
+      if (!accepts(scope) ||
+          view != listView ||
+          ticket != activityFacetRequest ||
+          value is! Map) {
         return;
       }
       value = activityFollowState.window(value);
@@ -3039,6 +3418,7 @@ class _ResourceViewState extends State<ResourceView> {
       }
       acceptWindow?.call(value);
     } catch (e) {
+      if (view != listView) return;
       if (accepts(scope) && ticket == activityFacetRequest) fail(e, scope);
     }
   }
@@ -3074,7 +3454,7 @@ class _ResourceViewState extends State<ResourceView> {
       ..sort((a, b) {
         int priority(Map g) => g['channelId'] == advanced.channelId
             ? 0
-            : (w.unread['${g['channelId']}'] ?? 0) > 0
+            : (w.conversationReads.unread['${g['channelId']}'] ?? 0) > 0
             ? 1
             : 2;
         final delta = priority(a.$2).compareTo(priority(b.$2));
@@ -3154,7 +3534,7 @@ class _ResourceViewState extends State<ResourceView> {
       hasMore = false;
       listOffset = activityScrollOffsets[next] ?? 0;
       listScroll = activityScrolls.putIfAbsent(next, newActivityScroll);
-      if (!['saved', 'done'].contains(filter)) activeActivityFilter = filter;
+      if (activityScope.globalInbox) activeActivityFilter = filter;
     });
     load();
   }
@@ -3168,7 +3548,7 @@ class _ResourceViewState extends State<ResourceView> {
         }
 
         return Center(
-          child: RaftDialogCard(
+          child: RaftDialog.card(
             key: const ValueKey('activity-switcher-dialog'),
             title: 'Activity',
             onClose: () => Navigator.pop(dialogContext),
@@ -3178,6 +3558,7 @@ class _ResourceViewState extends State<ResourceView> {
                 RaftActivityView.all: activityAllCount ?? totalCount ?? 0,
                 RaftActivityView.unread: totalUnreadCount ?? 0,
                 RaftActivityView.saved: savedActivityTotal,
+                RaftActivityView.dms: directMessagesTotal,
                 RaftActivityView.done: doneActivityItems.length,
               },
               groups: activitySourceGroups,
@@ -3196,33 +3577,31 @@ class _ResourceViewState extends State<ResourceView> {
         );
       });
 
-  String get activityEmptyTitle => activityEmptyTitleFor(filter);
-  String activityEmptyTitleFor(String filter) => switch (filter) {
-    'saved' => 'No saved threads yet',
-    'done' => 'Nothing completed yet',
-    'mentions' => 'No mentions yet',
-    'unread' => 'No unread chats',
-    _ =>
-      advanced.channelId == null
-          ? 'Activity is empty'
-          : 'No activity in ${activitySourceGroups.where((g) => g.id == advanced.channelId).firstOrNull?.label ?? 'Selected channel'}',
-  };
-  String get activityEmptyDetail => activityEmptyDetailFor(filter);
-  String activityEmptyDetailFor(String filter) => switch (filter) {
-    'saved' => 'Save a thread or message from Activity to keep it here.',
-    'done' => 'Items you mark done appear here and can be restored.',
-    _ when advanced.channelId != null =>
-      'Try another channel or clear the channel filter.',
-    'mentions' => 'Channels, DMs, and threads where someone @mentions you will appear here.',
-    _ => 'Channels, DMs, and followed threads stay here until they are done.',
-  };
+  String get activityEmptyTitle => activityEmptyState(filter).title;
+  String get activityEmptyDetail => activityEmptyState(filter).detail;
+  ({String title, String detail}) activityEmptyState(String filter) {
+    final selected = activitySourceGroups
+        .where((g) => g.id == advanced.channelId)
+        .firstOrNull;
+    return ChannelActivityScope(filter).emptyState(
+      channelLabel: advanced.channelId == null
+          ? null
+          : selected?.label ?? 'Selected channel',
+    );
+  }
 
   void showActivitySearch() {
     if (!mounted || !enabledActivity || !widget.compactActivitySidebar) return;
     setState(() => activitySearchVisible = true);
+    // keydown-focus-on-open: focus the field and select its text, so the next
+    // keystroke replaces the previous query.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && enabledActivity) {
         queryFocus.requestFocus();
+        query.selection = TextSelection(
+          baseOffset: 0,
+          extentOffset: query.text.length,
+        );
       }
     });
   }
@@ -3260,13 +3639,8 @@ class _ResourceViewState extends State<ResourceView> {
               },
             )
           : null,
-      markAllRead:
-          (totalUnreadCount ?? 0) > 0 && !['saved', 'done'].contains(filter)
-          ? RaftTextButton(
-              label: 'Mark all read',
-              variant: RaftControlVariant.outline,
-              visualHeight: 32,
-              minimumTargetSize: 32,
+      markAllRead: (totalUnreadCount ?? 0) > 0 && activityScope.globalInbox
+          ? RaftResourceMarkReadButton(
               onPressed: () => command(
                 'POST',
                 '/channels/inbox/read-all',
@@ -3282,27 +3656,23 @@ class _ResourceViewState extends State<ResourceView> {
     // ThreadsInbox `inbox-toolbar`: `flex h-[54px] items-center
     // justify-between gap-3 px-4 border-b theme-brutal:border-b-2`.
     return Container(
-      height: RaftResourceMetrics.activityToolbarHeight,
+      constraints: RaftResourceMetrics.activityToolbarConstraints,
       padding: RaftResourceMetrics.activityToolbarInset,
       decoration: BoxDecoration(
         color: t.panel,
         border: Border(
-          bottom: BorderSide(
-            color: t.brutal ? t.colors['color-black']! : t.line,
-            width: t.border,
-          ),
+          bottom: BorderSide(color: t.line, width: t.border),
         ),
       ),
       child: Row(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              primary: false,
-              scrollDirection: Axis.horizontal,
+            child: RaftResourceFilterViewport(
               child: RaftSegmentedControl<String>(
+                shrinkFrame: t.option('resource.rows', or: 'cards') == 'flat',
                 // ThreadsInbox uses the raft-ui SegmentedControl recipe,
                 // rather than the older 11px tab-button presentation.
-                style: RaftSegmentedStyle.buttons,
+                legacyStyle: RaftSegmentedStyle.buttons,
                 value: ['all', 'unread', 'mentions'].contains(filter)
                     ? filter
                     : '',
@@ -3329,43 +3699,30 @@ class _ResourceViewState extends State<ResourceView> {
             ),
           ),
           // `showMarkAllRead`: only while something is unread.
-          if ((totalUnreadCount ?? 0) > 0 &&
-              !['saved', 'done'].contains(filter)) ...[
+          if ((totalUnreadCount ?? 0) > 0 && activityScope.globalInbox) ...[
             const SizedBox(width: RaftResourceMetrics.activityToolbarGap),
-            // Button sm outline `h-8 px-2 text-xs font-bold`.
-            RaftInteractive(
-              semanticLabel: raftText(context, 'Mark all read'),
-              onPressed: () => command(
-                'POST',
-                '/channels/inbox/read-all',
-                sourceScope: scope,
-              ),
-              builder: (context, state) => RaftRecipeBox(
-                style: RaftButtonRecipe.resolve(
-                  theme: t.recipeTheme,
-                  variant: RaftButtonRecipeVariant.outline,
-                  size: RaftButtonRecipeSize.sm,
-                  states: t.recipeStates(
-                    hovered: state.hovered,
-                    pressed: state.pressed,
-                    focusVisible: state.focusVisible,
+            if (RaftScaled.grows(context))
+              Flexible(
+                child: RaftResourceMarkReadButton(
+                  onPressed: () => command(
+                    'POST',
+                    '/channels/inbox/read-all',
+                    sourceScope: scope,
                   ),
-                  tokens: t.recipeTokens,
-                ).root,
-                tokens: t.recipeTokens,
-                height: RaftResourceMetrics.activityToolbarActionHeight,
-                padding: RaftResourceMetrics.activityToolbarActionInset,
-                alignment: Alignment.center,
-                child: RaftCssText(
-                  raftText(context, 'Mark all read'),
-                  style: RaftResourceMetrics.activityToolbarActionLabel,
+                ),
+              )
+            else
+              RaftResourceMarkReadButton(
+                onPressed: () => command(
+                  'POST',
+                  '/channels/inbox/read-all',
+                  sourceScope: scope,
                 ),
               ),
-            ),
           ],
           if (extraFilters)
             RaftTooltip(
-              message: raftText(context, 'Activity actions'),
+              message: raftText(context, 'Activity Actions'),
               child: PopupMenuButton<String>(
                 onSelected: (value) {
                   if (accepts(scope)) {
@@ -3376,11 +3733,11 @@ class _ResourceViewState extends State<ResourceView> {
                 itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'done',
-                    child: Text(raftText(context, 'Done conversations')),
+                    child: Text(raftText(context, 'Done Conversations')),
                   ),
                   PopupMenuItem(
                     value: 'unfollowed',
-                    child: Text(raftText(context, 'Unfollowed threads')),
+                    child: Text(raftText(context, 'Unfollowed Threads')),
                   ),
                 ],
               ),
@@ -3397,7 +3754,10 @@ class _ResourceViewState extends State<ResourceView> {
     if (widget.mobileRoot && mobile && widget.section == 'activity') {
       return const RaftMobileRootHeader(title: 'Activity');
     }
-    return RaftPageHeader(
+    final header = RaftPageHeader(
+      background: widget.section == 'activity' || widget.section == 'saved'
+          ? resourceSurface
+          : null,
       title: raftText(context, switch (widget.section) {
         'tasks' => 'Tasks',
         'saved' => 'Saved',
@@ -3417,6 +3777,9 @@ class _ResourceViewState extends State<ResourceView> {
       mobile: mobile,
       leftInset: widget.section == 'activity' ? 12 : null,
       bottomRule: widget.section == 'activity',
+      iconBackground: widget.section == 'saved'
+          ? RaftTokens.of(context).colors['primary-soft']
+          : null,
       variant: widget.section == 'tasks'
           ? RaftPanelHeaderVariant.tasks
           : RaftPanelHeaderVariant.canonical,
@@ -3432,26 +3795,17 @@ class _ResourceViewState extends State<ResourceView> {
           ? (widget.onBack ?? () {})
           : null,
     );
+    return activityHeaderJump(context, w, widget.section, header);
   }
 
-  /// Whether [row] is the item open in the preview. Identity is the content
-  /// target's id (thread channel / channel), never the target's message focus:
-  /// that moves with unread state and refreshes, the row's identity does not.
-  /// A mention action additionally requires its own message, so opening an
-  /// ordinary channel row never lights up a mention row of that channel.
+  /// Whether [row] is the item open in the preview, else the row a double
+  /// click on the Activity entry marked as the first unread.
   bool activityRowSelected(Map<String, dynamic> row) {
     final target = widget.activitySelectedTarget;
-    if (widget.section != 'activity' || target == null) return false;
-    final kind = row['kind'];
-    if (kind == 'thread') {
-      return target.kind == DesktopContentKind.thread &&
-          target.id == row['threadChannelId'];
-    }
-    if (target.kind != DesktopContentKind.channel ||
-        target.id != row['channelId']) {
-      return false;
-    }
-    return kind != 'mention_action' || target.messageId == row['messageId'];
+    return widget.section == 'activity' &&
+        (target == null
+            ? ActivityFirstUnread.of(w).highlights(rowKey(row))
+            : activityRowOpen(target, row));
   }
 
   void activateActivity(
@@ -3535,8 +3889,20 @@ class _ResourceViewState extends State<ResourceView> {
     if (scopeId == null || unread <= 0) return;
     final frontier = activityFrontier(current);
     if (frontier != null) {
+      final serverId = w.client.serverId, principal = w.client.user?.id;
+      final known = serverId == null || principal == null
+          ? null
+          : w.readState.state(serverId, principal, scopeId);
+      var versionAtRead = known?['readStateVersion'] as int?;
+      final rowState = current['readState'];
+      final rowVersion = rowState is Map ? rowState['readStateVersion'] : null;
+      if (rowVersion is int &&
+          (versionAtRead == null || rowVersion > versionAtRead)) {
+        versionAtRead = rowVersion;
+      }
       activityReadMarkers[key] = (
         frontier: frontier,
+        versionAtRead: versionAtRead,
         until: (widget.clock?.call() ?? DateTime.now()).add(
           const Duration(seconds: 3),
         ),
@@ -3579,16 +3945,18 @@ class _ResourceViewState extends State<ResourceView> {
         totalUnreadCount = (totalUnreadCount! - unread).clamp(0, 1 << 53);
       }
     });
-    if ((w.unread[scopeId] ?? 0) != 0) {
-      w.unread = {...w.unread, scopeId: 0};
+    if ((w.conversationReads.unread[scopeId] ?? 0) != 0) {
+      w.conversationReads.unread = {...w.conversationReads.unread, scopeId: 0};
       w.notifyListeners();
     }
     if (totalUnreadCount != null) {
       acceptUnread?.call(totalUnreadCount);
-      acceptWindow?.call({
-        'items': acceptedActivityItems.isEmpty ? rows : acceptedActivityItems,
-        'totalUnreadCount': totalUnreadCount,
-      });
+      if (activityScope.globalInbox) {
+        acceptWindow?.call({
+          'items': acceptedActivityItems.isEmpty ? rows : acceptedActivityItems,
+          'totalUnreadCount': totalUnreadCount,
+        });
+      }
     }
     unawaited(persistActivityRead(key, scopeId, scope));
   }
@@ -3601,27 +3969,22 @@ class _ResourceViewState extends State<ResourceView> {
     final controller = w;
     final identity = SourceReadAllIdentity.capture(controller.client);
     try {
-      final receipt = await SourceReadAllTransport.of(controller.client)
-          .readAll(scopeId, identity: identity);
-      if (identity.current(controller.client)) {
-        controller.acceptReadAllAck(
-          scopeId,
-          receipt,
-          serverId: identity.serverId!,
-          principalId: identity.principalId!,
-        );
-      }
+      await controller.conversationReads.markAllRead(
+        scopeId,
+        identity: identity,
+      );
     } catch (_) {
       if (!identity.current(controller.client)) return;
       // Source forgets the suppression and refreshes the inbox in background.
       if (mounted) activityReadMarkers.remove(key);
-      await controller.refreshUnread();
+      await controller.conversationReads.reconcileUnread();
       if (mounted && accepts(scope)) await load(keep: true, quietErrors: true);
     }
   }
 
   Future<void> openConversation(Map<String, dynamic> row, String scope) async {
     if (!accepts(scope)) return;
+    captureActivityAgentCollapse(w, widget.section, row);
     markActivityRead(row, scope);
     if (widget.section == 'activity' && widget.onActivityItem != null) {
       await widget.onActivityItem!(Map<String, dynamic>.from(row));
@@ -3645,7 +4008,11 @@ class _ResourceViewState extends State<ResourceView> {
     chinese: Localizations.localeOf(context).languageCode == 'zh',
   );
 
-  Widget savedCard(Map<String, dynamic> row, String scope) {
+  Widget savedCard(
+    Map<String, dynamic> row,
+    String scope, {
+    bool topRule = false,
+  }) {
     final recipe = RaftConversationCardRecipe(
       RaftTokens.of(context),
       saved: true,
@@ -3693,8 +4060,10 @@ class _ResourceViewState extends State<ResourceView> {
     return RaftConversationCard(
       key: ValueKey('saved-${row['messageId']}'),
       saved: true,
+      topRule: topRule,
       onOpen: () => openConversation(row, scope),
-      onContextMenu: () => savedMenu(row, scope),
+      onContextMenu: (at) => savedMenu(row, scope, at),
+      popupOpen: menuRowKey == '${row['messageId']}',
       child: Row(
         children: [
           Expanded(
@@ -3726,9 +4095,7 @@ class _ResourceViewState extends State<ResourceView> {
                               child: RaftIcon(
                                 RaftGlyph.user,
                                 size: 10,
-                                color: RaftTokens.of(context).brutal
-                                    ? RaftTokens.of(context).ink
-                                    : RaftTokens.of(context).muted,
+                                color: RaftTokens.of(context).muted,
                               ),
                             )
                           : null,
@@ -3747,7 +4114,7 @@ class _ResourceViewState extends State<ResourceView> {
           ),
           const SizedBox(width: 12),
           RaftSavedToggle(
-            label: 'Remove saved message',
+            label: 'Remove Saved Message',
             onPressed: () => removeSaved(row, scope),
           ),
         ],
@@ -3766,315 +4133,189 @@ class _ResourceViewState extends State<ResourceView> {
     return RaftInfiniteScrollSentinel(loading: loading);
   }
 
-  Future<void> savedMenu(Map<String, dynamic> row, String scope) async {
-    await scopedDialog<void>(
+  /// SavedPanel `ContextMenuContent`: Copy link, Copy Markdown, a separator,
+  /// Remove from Saved.
+  Future<void> savedMenu(
+    Map<String, dynamic> row,
+    String scope,
+    Offset at,
+  ) async {
+    await scopedMenu<void>(
       scope,
-      (context) => rowMenu(context, scope, [
-        RaftMenuItem(
-          label: raftText(context, 'Copy link'),
-          glyph: RaftGlyph.link,
-          onPressed: w.server?.string('slug').isEmpty != false
-              ? null
-              : () async {
-                  if (!accepts(scope)) return;
-                  final thread = row['channelType'] == 'thread';
-                  final text = ContentLinks.messageUrl(
-                    origin: ContentLinks.originFor(w.client.origin),
-                    slug: w.server!.string('slug'),
-                    channelId: '${row['parentChannelId'] ?? row['channelId']}',
-                    messageId: '${row['messageId']}',
-                    kind:
-                        '${thread ? row['parentChannelType'] : row['channelType']}',
-                    parentMessageId: thread
-                        ? row['parentMessageId'] as String?
-                        : null,
-                  ).toString();
-                  closeOwnedDialog(context, scope);
-                  if (accepts(scope)) {
-                    await Clipboard.setData(ClipboardData(text: text));
-                  }
-                },
-        ),
-        RaftMenuItem(
-          label: raftText(context, 'Copy Markdown'),
-          glyph: RaftGlyph.copy,
-          onPressed: () async {
-            if (!accepts(scope)) return;
-            closeOwnedDialog(context, scope);
-            if (accepts(scope)) {
-              await Clipboard.setData(
-                ClipboardData(text: '${row['content'] ?? ''}'),
-              );
-            }
-          },
-        ),
-        RaftMenuItem(
-          label: raftText(context, 'Remove saved message'),
-          glyph: RaftGlyph.bookmark,
-          onPressed: () {
-            if (!accepts(scope)) return;
-            closeOwnedDialog(context, scope);
-            removeSaved(row, scope);
-          },
-        ),
-      ]),
-    );
-  }
-
-  /// ThreadsInbox context menu: Done (Check 14) and, for threads,
-  /// Unfollow (BellOff 14) / Follow (Bell 14).
-  Future<void> activityMenu(Map<String, dynamic> row, String scope) async {
-    final thread = row['kind'] == 'thread';
-    final following = row['isFollowing'] != false;
-    await scopedDialog<void>(
-      scope,
-      (context) => rowMenu(context, scope, [
-        RaftMenuItem(
-          label: raftText(context, 'Done'),
-          glyph: RaftGlyph.check,
-          onPressed: () {
-            if (!accepts(scope)) return;
-            closeOwnedDialog(context, scope);
-            activityAction(row, 'done', scope);
-          },
-        ),
-        if (thread)
-          RaftMenuItem(
-            label: raftText(context, following ? 'Unfollow' : 'Follow'),
-            // BellOff is not in the glyph set yet.
-            glyph: RaftGlyph.bell,
+      at,
+      (context) => RaftContextMenuContent(
+        onDismiss: () => closeOwnedDialog(context, scope),
+        entries: [
+          RaftContextMenuContentItem(
+            label: raftText(context, 'Copy Link'),
+            glyph: RaftGlyph.link,
+            onPressed: w.server?.string('slug').isEmpty != false
+                ? null
+                : () async {
+                    if (!accepts(scope)) return;
+                    final thread = row['channelType'] == 'thread';
+                    final text = ContentLinks.messageUrl(
+                      origin: ContentLinks.originFor(w.client.origin),
+                      slug: w.server!.string('slug'),
+                      channelId:
+                          '${row['parentChannelId'] ?? row['channelId']}',
+                      messageId: '${row['messageId']}',
+                      kind:
+                          '${thread ? row['parentChannelType'] : row['channelType']}',
+                      parentMessageId: thread
+                          ? row['parentMessageId'] as String?
+                          : null,
+                    ).toString();
+                    closeOwnedDialog(context, scope);
+                    if (accepts(scope)) {
+                      await Clipboard.setData(ClipboardData(text: text));
+                    }
+                  },
+          ),
+          RaftContextMenuContentItem(
+            label: raftText(context, 'Copy Markdown'),
+            glyph: RaftGlyph.copy,
+            onPressed: () async {
+              if (!accepts(scope)) return;
+              closeOwnedDialog(context, scope);
+              if (accepts(scope)) {
+                await Clipboard.setData(
+                  ClipboardData(text: '${row['content'] ?? ''}'),
+                );
+              }
+            },
+          ),
+          const RaftContextMenuContentSeparator(),
+          RaftContextMenuContentItem(
+            label: raftText(context, 'Remove from Saved'),
+            glyph: RaftGlyph.bookmark,
             onPressed: () {
               if (!accepts(scope)) return;
               closeOwnedDialog(context, scope);
-              activityAction(row, following ? 'unfollow' : 'follow', scope);
+              removeSaved(row, scope);
             },
           ),
-      ]),
+        ],
+      ),
+      rowKey: '${row['messageId']}',
     );
   }
 
-  /// Context-menu dialog shared by the Saved and Activity rows.
-  Widget rowMenu(BuildContext context, String scope, List<Widget> children) =>
-      Dialog(
-        backgroundColor: Colors.transparent,
-        child: RaftMenuPanel(
-          width: 240,
-          onDismiss: () => closeOwnedDialog(context, scope),
-          children: children,
-        ),
+  /// ThreadsInbox `activity-context-menu` (`ContextMenuPopup`, inline width 184
+  /// bounded by the current recipe's 240 minimum): Mark as
+  /// Read / Mark as Unread (not for an unfollowed thread), Done and, for
+  /// threads, Unfollow (BellOff 14) / Follow (Bell 14).
+  Future<void> activityMenu(
+    Map<String, dynamic> row,
+    String scope,
+    Offset at,
+  ) async {
+    final unread = (row['unreadCount'] as num? ?? 0) > 0;
+    await scopedMenu<void>(scope, at, (context) {
+      void close() => closeOwnedDialog(context, scope);
+      return buildActivityContextMenu(
+        context,
+        row,
+        onDismiss: close,
+        onAction: (action) {
+          if (!accepts(scope)) return;
+          close();
+          if (action == ActivityContextAction.toggleRead) {
+            unawaited(toggleActivityRead(row, scope, unread));
+          } else {
+            unawaited(activityAction(row, action.name, scope));
+          }
+        },
       );
+    }, rowKey: rowKey(row));
+  }
+
+  /// Menu "Mark as Read" reads the row's scope. A complete unread ACK projects
+  /// through the shared owner; only an unprojectable reply needs an inbox read.
+  Future<void> toggleActivityRead(
+    Map<String, dynamic> row,
+    String scope,
+    bool unread,
+  ) async {
+    if (unread) {
+      markActivityRead(row, scope);
+      return;
+    }
+    final id = row['kind'] == 'thread'
+        ? row['threadChannelId']
+        : row['channelId'];
+    if (id is! String) return;
+    final controller = w;
+    var projected = false;
+    try {
+      projected = await controller.conversationReads.markUnreadWithProjection(
+        id,
+      );
+    } catch (_) {}
+    if (!mounted || !accepts(scope)) return;
+    if (!projected) await load(keep: true, quietErrors: true);
+  }
+
+  /// The conversation list (`activity_conversation_list_v0`) fills the page
+  /// edge to edge: no inset around it and no gap between its rows.
+  bool get activityListLayout =>
+      activityPage &&
+      ActivityRolloutFlags.peek(w)?.activityConversationList == true;
+
+  /// The Activity row at [index] of [rows], with its section heading and
+  /// hairline when the conversation list is on.
+  Widget listedActivityCard(
+    List<Map<String, dynamic>> rows,
+    int index,
+    String scope, {
+    String? viewFilter,
+  }) {
+    final section = activityListSectionAt(w, rows, index);
+    return activityCard(
+      rows[index],
+      scope,
+      viewFilter: viewFilter,
+      section: section,
+      separator: index > 0 && section == null,
+      topRule: index > 0,
+    );
+  }
 
   Widget activityCard(
     Map<String, dynamic> row,
     String scope, {
     String? viewFilter,
+    ActivityListSection? section,
+    bool separator = false,
+    bool topRule = false,
   }) {
     final filter = viewFilter ?? this.filter;
     final pin = activityGestureMatches(scope);
-    final recipe = RaftConversationCardRecipe(RaftTokens.of(context));
-    final thread = row['kind'] == 'thread';
-    final dm = row['kind'] == 'dm' || row['channelType'] == 'dm';
-    final unread = (row['unreadCount'] as num? ?? 0).toInt();
-    final title = thread
-        ? '${row['parentMessagePreview'] ?? ''}'
-        : '${row['channelName'] ?? row['peerDisplayName'] ?? row['peerName'] ?? row['messagePreview'] ?? 'Conversation'}';
-    final senderType =
-        row[thread ? 'latestActivitySenderType' : 'lastMessageSenderType'];
-    final senderId =
-        row[thread ? 'latestActivitySenderId' : 'lastMessageSenderId'];
-    final sender = senderType == 'system' || senderId == 'system'
-        ? raftText(context, 'System')
-        : '${row[thread ? 'latestActivitySenderName' : 'lastMessageSenderName'] ?? stableSender('activity:$senderType:$senderId', () => directorySenderLabel(senderId, senderType))}';
-    final preview =
-        '${thread ? row['latestActivityPreview'] ?? '' : row['lastMessagePreview'] ?? row['messagePreview'] ?? ''}';
-    return Builder(
-      builder: (cardContext) => ConstrainedBox(
-        constraints: pin && activityGestureHeights[rowKey(row)] != null
-            ? BoxConstraints(minHeight: activityGestureHeights[rowKey(row)]!)
-            : const BoxConstraints(),
-        child: RaftConversationCard(
-          key: thread
-              ? ValueKey('activity-thread-${row['threadChannelId']}')
-              : ValueKey(
-                  'activity-${row['kind']}-${row['channelId'] ?? row['messageId']}',
-                ),
-          selected: activityRowSelected(row),
-          onOpen: () => openConversation(row, scope),
-          onActivate: widget.onActivityCanonical == null
-              ? null
-              : (detail) => activateActivity(
-                  row,
-                  scope,
-                  detail,
-                  (cardContext.findRenderObject() as RenderBox?)?.size.height,
-                ),
-          onPointerActivate: widget.onActivityCanonical == null
-              ? null
-              : (detail) => activateActivity(
-                  row,
-                  scope,
-                  detail,
-                  (cardContext.findRenderObject() as RenderBox?)?.size.height,
-                  pointer: true,
-                ),
-          doubleClickInterval: pin
-              ? activityGestureInterval!
-              : doubleClickInterval,
-          onContextMenu: row['kind'] == 'mention_action'
-              ? null
-              : () => activityMenu(row, scope),
-          actions: enabledActivity && filter == 'saved'
-              ? null
-              : row['kind'] == 'mention_action'
-              ? null
-              // ThreadsInbox row action: ghost icon-sm Check 14 (RotateCcw 14 to
-              // restore). Follow/unfollow is only in the context menu.
-              : RaftIconButton(
-                  glyph: filter == 'done'
-                      ? RaftGlyph.rotateCcw
-                      : RaftGlyph.check,
-                  visualSize: 28,
-                  minimumTargetSize: 28,
-                  tooltip: filter == 'done'
-                      ? 'Restore conversation'
-                      : 'Mark conversation done',
-                  onPressed: () => activityAction(
-                    row,
-                    filter == 'done' ? 'undone' : 'done',
-                    scope,
-                  ),
-                ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (thread)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: RaftCssText(
-                    '#${row['parentChannelName'] ?? ''}',
-                    style: recipe.metadata.copyWith(
-                      fontSize: 11,
-                      height: 12 / 11,
-                      color: recipe.titleIconColor,
-                    ),
-                  ),
-                ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: RaftCssText.rich(
-                      TextSpan(
-                        children: [
-                          // ThreadsInbox's icon is inline, not a separate flex
-                          // column: wrapped title lines return to the row's edge.
-                          WidgetSpan(
-                            alignment: PlaceholderAlignment.baseline,
-                            baseline: TextBaseline.alphabetic,
-                            child: Transform.translate(
-                              offset: const Offset(0, 2),
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: thread
-                                    ? RaftThreadIcon(
-                                        size: 13,
-                                        color: recipe.titleIconColor,
-                                      )
-                                    : dm
-                                    ? RaftDirectMessageIcon(
-                                        size: 13,
-                                        color: recipe.titleIconColor,
-                                      )
-                                    : RaftIcon(
-                                        RaftGlyph.hash,
-                                        size: 13,
-                                        color: recipe.titleIconColor,
-                                      ),
-                              ),
-                            ),
-                          ),
-                          TextSpan(text: title),
-                        ],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: recipe.titleStyle(unread > 0),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  RaftConversationTimestamp(
-                    child: RaftCssText(
-                      relativeTime(
-                        row['lastActivityAt'] ?? row['lastMessageAt'],
-                      ),
-                      style: recipe.timestamp,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              RaftCssText.rich(
-                TextSpan(
-                  children: [
-                    if (sender.isNotEmpty)
-                      TextSpan(
-                        text: '$sender: ',
-                        style: recipe.body.copyWith(
-                          color: recipe.senderColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    TextSpan(text: preview),
-                  ],
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: recipe.body.copyWith(
-                  color: recipe.titleColor(unread > 0),
-                ),
-              ),
-              const SizedBox(height: 4),
-              ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 20),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (row['taskNumber'] != null &&
-                        row['taskStatus'] is String)
-                      RaftTaskStatus(status: row['taskStatus']),
-                    if (thread)
-                      RaftResourceBadge(
-                        label:
-                            '${row['replyCount'] ?? 0} ${raftText(context, 'replies')}',
-                        appearance: RaftBadgeRecipeAppearance.outline,
-                        variant: RaftBadgeRecipeVariant.muted,
-                      ),
-                    if (thread && row['isFollowing'] == false)
-                      RaftResourceBadge(
-                        label: raftText(context, 'Unfollowed'),
-                        appearance: RaftBadgeRecipeAppearance.outline,
-                        variant: RaftBadgeRecipeVariant.muted,
-                      ),
-                    // shouldShowMentionBadge: mention with unread messages.
-                    if (row['hasMention'] == true && unread > 0)
-                      RaftResourceBadge(
-                        label: raftText(context, 'you'),
-                        glyph: RaftGlyph.atSign,
-                        variant: RaftBadgeRecipeVariant.primary,
-                      ),
-                    if (unread > 0)
-                      RaftResourceBadge(
-                        label: '$unread ${raftText(context, 'new')}',
-                        variant: RaftBadgeRecipeVariant.accent,
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    return ActivityCardRow(
+      row: row,
+      host: ActivityRowHost(
+        controller: w,
+        filter: filter,
+        interval: pin ? activityGestureInterval! : doubleClickInterval,
+        pinnedHeight: pin ? activityGestureHeights[rowKey(row)] : null,
+        selected: activityRowSelected(row),
+        canonical: widget.onActivityCanonical != null,
+        popupOpen: menuRowKey != null && menuRowKey == rowKey(row),
+        savedView: enabledActivity && filter == 'saved',
+        listLayout: activityListLayout,
+        section: section,
+        separator: separator,
+        topRule: topRule,
+        open: () => openConversation(row, scope),
+        activate: (detail, height, {bool pointer = false}) =>
+            activateActivity(row, scope, detail, height, pointer: pointer),
+        menu: (at) => activityMenu(row, scope, at),
+        action: (action) => activityAction(row, action, scope),
+        relativeTime: relativeTime,
+        stableSender: stableSender,
+        directorySenderLabel: directorySenderLabel,
+        agents: rowAgents,
+        people: rowPeople,
       ),
     );
   }
@@ -4098,7 +4339,7 @@ class _ResourceViewState extends State<ResourceView> {
     // otherwise rebuilds and lays out hundreds of offscreen cards when the
     // pager changes its accepted selection/TickerMode.
     return ColoredBox(
-      color: t.colors[t.brutal ? 'color-white' : 'layer-canvas-muted']!,
+      color: taskViewportFill(t),
       child: CustomScrollView(
         controller: taskListScroll,
         slivers: [
@@ -4107,7 +4348,8 @@ class _ResourceViewState extends State<ResourceView> {
             // of `p-4` (Brutal resets it).
             padding: raftScrollPadding(
               context,
-              !t.brutal && MediaQuery.sizeOf(context).width < 768
+              MediaQuery.sizeOf(context).width < 768 &&
+                      t.option('listGroup.frame', or: 'framed') != 'plain'
                   ? const EdgeInsets.fromLTRB(20, 16, 14, 16)
                   : RaftTaskSectionRecipe(t).viewportInset,
             ),
@@ -4116,14 +4358,15 @@ class _ResourceViewState extends State<ResourceView> {
                 for (final status in raftTaskStatuses.where(
                   (s) => filter == 'all' || filter == s,
                 )) ...[
+                  // ignore: raft_lints/avoid_render_index_assertion -- `groups` is initialised with one list per raftTaskStatuses entry and `status` iterates raftTaskStatuses.
                   taskSection(status, groups[status]!, scope),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 ],
-                if (hasMore)
+                if (hasMore && !lanePaged)
                   SliverToBoxAdapter(
-                    child: TextButton(
+                    child: RaftButton.text(
                       onPressed: () => load(append: true),
-                      child: Text(raftText(context, 'Load more')),
+                      child: Text(raftText(context, 'Load More')),
                     ),
                   ),
               ],
@@ -4160,6 +4403,13 @@ class _ResourceViewState extends State<ResourceView> {
       },
       findChildIndexCallback: (key) =>
           key is ValueKey<String> ? indices[key.value] : null,
+      footer: laneCursors[status] == null
+          ? null
+          : RaftTaskLoadMoreButton(
+              key: ValueKey('task-load-more-$status'),
+              loading: laneBusy.contains(status),
+              onPressed: () => moreLane(status),
+            ),
       itemBuilder: (_, i) => SourceTaskRowExtent(
         key: ValueKey('task-${tasks[i]['id']}'),
         child: item(tasks[i], sourceScope: scope),
@@ -4325,7 +4575,7 @@ class _ResourceViewState extends State<ResourceView> {
   Widget advancedFilters() {
     final scope = authority;
     final channelOptions = <String, String>{
-      '': 'All channels',
+      '': 'All Channels',
       for (final c in [...w.channels, ...w.dms])
         c.id: '${c.type == 'dm' ? '@' : '#'}${c.name}',
     };
@@ -4361,21 +4611,19 @@ class _ResourceViewState extends State<ResourceView> {
           if (widget.section == 'activity')
             SizedBox(
               width: 220,
-              child: TextField(
-                autofillHints: null,
+              child: RaftTextInput(
                 controller: query,
-                decoration: InputDecoration(
-                  hintText: raftText(context, 'Filter Activity'),
-                  prefixIcon: const RaftIcon(RaftGlyph.search),
-                ),
+                hintText: raftText(context, 'Filter Activity'),
+                leadingGlyph: RaftGlyph.search,
+                legacy: RaftLegacyInput.themed,
                 onSubmitted: (_) {
                   if (accepts(scope)) load();
                 },
               ),
             ),
           filterMenu(
-            'Filter by channel',
-            channelOptions[advanced.channelId] ?? 'All channels',
+            'Filter by Channel',
+            channelOptions[advanced.channelId] ?? 'All Channels',
             channelOptions,
             (id) {
               advanced.channelId = id.isEmpty ? null : id;
@@ -4384,10 +4632,10 @@ class _ResourceViewState extends State<ResourceView> {
           ),
           if (widget.section == 'search') ...[
             filterMenu(
-              'Filter by sender',
-              advanced.sender?.label ?? 'All senders',
+              'Filter by Sender',
+              advanced.sender?.label ?? 'All Senders',
               {
-                '': 'All senders',
+                '': 'All Senders',
                 for (final sender in options.values)
                   sender.key:
                       '${sender.label} · ${sender.type == 'user' ? raftText(context, 'Human') : raftText(context, 'Agent')}',
@@ -4398,33 +4646,42 @@ class _ResourceViewState extends State<ResourceView> {
               },
               labelIsContent: advanced.sender != null,
             ),
-            for (final entry in const {
-              'mentioned': 'Mentions me',
-              'humans': 'Humans',
-              'agents': 'Agents',
-            }.entries)
-              FilterChip(
-                label: Text(raftText(context, entry.value)),
-                selected: advanced.scopes.contains(entry.key),
-                onSelected: (_) {
-                  if (!accepts(scope)) return;
-                  advanced.toggleScope(entry.key);
-                  load();
-                },
-              ),
+            RaftToggleGroup<String>(
+              multiple: true,
+              semanticLabel: 'Search scope',
+              value: {...advanced.scopes},
+              onChanged: (next) {
+                if (!accepts(scope)) return;
+                for (final key in const ['mentioned', 'humans', 'agents']) {
+                  if (next.contains(key) != advanced.scopes.contains(key)) {
+                    advanced.toggleScope(key);
+                  }
+                }
+                load();
+              },
+              items: [
+                for (final entry in const {
+                  'mentioned': 'Mentions Me',
+                  'humans': 'Humans',
+                  'agents': 'Agents',
+                }.entries)
+                  RaftToggleGroupItem(value: entry.key, label: entry.value),
+              ],
+            ),
             filterMenu(
-              'Search date range',
+              'Search Date Range',
+              // ignore: raft_lints/avoid_render_index_assertion -- timeRange is validated against the four known values when restored (search_memory.dart) and only set from the dropdown.
               const {
-                'any': 'Any time',
+                'any': 'Any Time',
                 'today': 'Today',
-                '7d': 'Last 7 days',
-                '30d': 'Last 30 days',
+                '7d': 'Last 7 Days',
+                '30d': 'Last 30 Days',
               }[advanced.timeRange]!,
               const {
-                'any': 'Any time',
+                'any': 'Any Time',
                 'today': 'Today',
-                '7d': 'Last 7 days',
-                '30d': 'Last 30 days',
+                '7d': 'Last 7 Days',
+                '30d': 'Last 30 Days',
               },
               (value) {
                 advanced.timeRange = value;
@@ -4432,7 +4689,7 @@ class _ResourceViewState extends State<ResourceView> {
               },
             ),
             filterMenu(
-              'Sort search results',
+              'Sort Search Results',
               advanced.searchSort == 'recent' ? 'Recent' : 'Relevant',
               const {'relevance': 'Relevant', 'recent': 'Recent'},
               (value) {
@@ -4442,33 +4699,38 @@ class _ResourceViewState extends State<ResourceView> {
             ),
           ] else ...[
             filterMenu(
-              'Sort conversations',
-              advanced.direction == 'asc' ? 'Oldest first' : 'Newest first',
-              const {'desc': 'Newest first', 'asc': 'Oldest first'},
+              'Sort Conversations',
+              advanced.direction == 'asc' ? 'Oldest First' : 'Newest First',
+              const {'desc': 'Newest First', 'asc': 'Oldest First'},
               (value) {
                 advanced.direction = value;
                 load();
               },
             ),
             if (widget.section == 'activity')
-              FilterChip(
-                label: Text(raftText(context, 'Group by channel')),
-                selected: advanced.groupByChannel,
-                onSelected: (value) {
+              RaftToggleGroup<bool>(
+                value: {if (advanced.groupByChannel) true},
+                onChanged: (next) {
                   if (accepts(scope)) {
-                    setState(() => advanced.groupByChannel = value);
+                    setState(() => advanced.groupByChannel = next.isNotEmpty);
                   }
                 },
+                items: const [
+                  RaftToggleGroupItem(value: true, label: 'Group by Channel'),
+                ],
               ),
           ],
-          TextButton(
-            onPressed: () {
-              if (!accepts(scope)) return;
-              advanced = ResourceFilters();
-              query.clear();
-              load();
-            },
-            child: Text(raftText(context, 'Clear filters')),
+          RaftTouchTargetExpander(
+            minSize: const Size.square(RaftMetrics.touchTarget),
+            child: RaftTaskFilterButton(
+              onPressed: () {
+                if (!accepts(scope)) return;
+                advanced = ResourceFilters();
+                query.clear();
+                load();
+              },
+              child: Text(raftText(context, 'Clear All')),
+            ),
           ),
         ],
       ),
@@ -4501,7 +4763,7 @@ class _ResourceViewState extends State<ResourceView> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              '${group.first['parentChannelName'] ?? group.first['channelName'] ?? group.first['peerDisplayName'] ?? group.first['peerName'] ?? raftText(context, 'Conversation')} · ${group.length}',
+              '${activityGroupTitle(group.first, [...w.channels, ...w.dms]) ?? raftText(context, 'Conversation')} · ${group.length}',
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ),
@@ -4511,9 +4773,9 @@ class _ResourceViewState extends State<ResourceView> {
                 : activityCard(row, authority, viewFilter: value),
         ],
         if (viewFilter == null && hasMore)
-          TextButton(
+          RaftButton.text(
             onPressed: () => load(append: true),
-            child: Text(raftText(context, 'Load more')),
+            child: Text(raftText(context, 'Load More')),
           ),
       ],
     );
@@ -4537,6 +4799,35 @@ class _ResourceViewState extends State<ResourceView> {
         .firstOrNull;
     if (current == null) return;
     row = current;
+    if (row['kind'] == 'mention_action' && action == 'done') {
+      setState(() {
+        rows = rows.where((item) => rowKey(item) != itemKey).toList();
+        acceptedActivityItems = acceptedActivityItems
+            .where((item) => rowKey(item) != itemKey)
+            .toList();
+        activityGestureRows = activityGestureRows
+            ?.where((item) => rowKey(item) != itemKey)
+            .toList();
+        activityGroups = ActivityDoneState.groups(activityGroups, [
+          row,
+        ], advanced.channelId);
+        if (totalCount != null) {
+          totalCount = (totalCount! - 1).clamp(0, 1 << 53);
+        }
+        if (activityAllCount != null) {
+          activityAllCount = (activityAllCount! - 1).clamp(0, 1 << 53);
+        }
+      });
+      widget.onActivityWindowAccepted?.call({
+        'items': acceptedActivityItems.isEmpty ? rows : acceptedActivityItems,
+        'totalCount': totalCount,
+        'allCount': activityAllCount,
+        'groups': activityGroups,
+        'totalUnreadCount': totalUnreadCount,
+      });
+      saveSnapshot();
+      return;
+    }
     final mutation = activityMutation(row, action);
     if (mutation == null) {
       if (action == 'done') {
@@ -4587,14 +4878,18 @@ class _ResourceViewState extends State<ResourceView> {
       final channelId =
           row[row['kind'] == 'thread' ? 'threadChannelId' : 'channelId']
               as String;
-      w.unread[channelId] = 0;
+      w.conversationReads.unread[channelId] = 0;
       w.notifyListeners();
       if (totalUnreadCount != null) {
         acceptUnread?.call(totalUnreadCount);
-        acceptWindow?.call({
-          'items': acceptedActivityItems.isEmpty ? rows : acceptedActivityItems,
-          'totalUnreadCount': totalUnreadCount,
-        });
+        if (activityScope.globalInbox) {
+          acceptWindow?.call({
+            'items': acceptedActivityItems.isEmpty
+                ? rows
+                : acceptedActivityItems,
+            'totalUnreadCount': totalUnreadCount,
+          });
+        }
       }
       try {
         await w.client.request('POST', mutation.path, data: mutation.data);
@@ -4644,7 +4939,7 @@ class _ResourceViewState extends State<ResourceView> {
         // Source ThreadsInbox mutates through threadStore.followedThreads.
         final parentId = row['parentMessageId'];
         if (parentId is String) {
-          w.followedThreads.acknowledge(
+          _services.followedThreads.acknowledge(
             parentMessageId: parentId,
             threadChannelId: id,
             following: action == 'follow',
@@ -4686,10 +4981,12 @@ class _ResourceViewState extends State<ResourceView> {
         });
         if (totalUnreadCount != null) {
           acceptUnread?.call(totalUnreadCount);
-          acceptWindow?.call({
-            'items': rows,
-            'totalUnreadCount': totalUnreadCount,
-          });
+          if (activityScope.globalInbox) {
+            acceptWindow?.call({
+              'items': rows,
+              'totalUnreadCount': totalUnreadCount,
+            });
+          }
         }
       } catch (e) {
         if (!accepts(scope) || !activityFollowState.accepts(id, ticket)) return;
@@ -4715,12 +5012,11 @@ class _ResourceViewState extends State<ResourceView> {
 
   List<Map<String, dynamic>> get visibleRows {
     if (widget.section == 'activity' && activityGestureCurrent) {
-      final current = {for (final row in rows) rowKey(row): row};
-      return [
-        for (final row in activityGestureRows!) current[rowKey(row)] ?? row,
-      ];
+      return ActivityRowWindow.from(rows).retaining(activityGestureRows!);
     }
-    if (widget.section != 'tasks') return rows;
+    if (widget.section != 'tasks') {
+      return widget.section == 'activity' ? activityPinnedFirst(w, rows) : rows;
+    }
     return rows.where(matchesTask).toList()..sort((a, b) {
       final order = raftTaskStatuses
           .indexOf('${a['status']}')
@@ -4769,7 +5065,7 @@ class _ResourceViewState extends State<ResourceView> {
     };
     final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
     final toolbar = RaftTasksPanelRecipe.resolve(
-      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      theme: RaftRecipeTheme.elegant,
       states: RaftRecipeStates({
         if (t.dark) RaftRecipeStates.dark,
       }, MediaQuery.sizeOf(context).width),
@@ -4812,18 +5108,27 @@ class _ResourceViewState extends State<ResourceView> {
                     final options = field == 'Channel'
                         ? channelOptions
                         : <String, String>{
+                            // IdentityFilterChip: "me" first, then Unassigned.
+                            if (self != null)
+                              'user:${self.id}': t.isRaftLook
+                                  ? raftTextZh(
+                                      context,
+                                      field == 'Creator'
+                                          ? 'Created by me'
+                                          : 'Assigned to me',
+                                      field == 'Creator' ? '我创建的' : '分配给我的',
+                                    )
+                                  : raftText(
+                                      context,
+                                      field == 'Creator'
+                                          ? 'Created by Me'
+                                          : 'Assigned to Me',
+                                    ),
                             if (field == 'Assignee')
                               'unassigned': raftTextZh(
                                 context,
                                 'Unassigned',
                                 '未分配',
-                              ),
-                            if (self != null)
-                              'user:${self.id}': raftText(
-                                context,
-                                field == 'Creator'
-                                    ? 'Created by me'
-                                    : 'Assigned to me',
                               ),
                             for (final entry in ordered)
                               if (entry.key != 'user:${self?.id}')
@@ -4833,6 +5138,18 @@ class _ResourceViewState extends State<ResourceView> {
                       key: ValueKey('$scope:$field'),
                       field: field,
                       options: options,
+                      selfIdentity: self == null
+                          ? null
+                          : ResourceSender(self.id, 'user', self.name),
+                      identityAvatars: t.isRaftLook && field != 'Channel'
+                          ? projectTaskFilterAvatars(
+                              origin: w.client.origin,
+                              identityKeys: names.keys,
+                              agents: rowAgents,
+                              members: rowPeople,
+                              currentUser: self?.json,
+                            )
+                          : const {},
                       selection: selection,
                       beforeOpen: (active) {
                         for (final menu in filterMenus) {
@@ -4873,7 +5190,7 @@ class _ResourceViewState extends State<ResourceView> {
                   onPressed: () => createTask(sourceScope: scope),
                 ),
               RaftSegmentedControl<String>(
-                style: RaftSegmentedStyle.taskViews,
+                legacyStyle: RaftSegmentedStyle.taskViews,
                 value: taskLayout,
                 visualHeight: RaftMetrics.buttonMd,
                 minimumTargetSize: RaftMetrics.buttonMd,
@@ -4882,29 +5199,33 @@ class _ResourceViewState extends State<ResourceView> {
                   RaftSegmentedOption(
                     value: 'board',
                     label: 'Board',
-                    tooltip: 'Show task board',
+                    tooltip: 'Show Task Board',
                     glyph: RaftGlyph.columns3,
                   ),
                   RaftSegmentedOption(
                     value: 'list',
                     label: 'List',
-                    tooltip: 'Show task list',
+                    tooltip: 'Show Task List',
                     glyph: RaftGlyph.layoutList,
                   ),
                 ],
                 onChanged: (layout) {
                   if (accepts(scope) && taskLayout != layout) {
                     taskLayout = layout;
+                    rememberTaskView(layout);
                     load();
                   }
                 },
               ),
               if (!taskAdvanced.isEmpty)
-                TextButton(
-                  onPressed: () {
-                    if (accepts(scope)) setState(taskAdvanced.clear);
-                  },
-                  child: Text(raftText(context, 'Clear filters')),
+                RaftTouchTargetExpander(
+                  minSize: const Size.square(RaftMetrics.touchTarget),
+                  child: RaftTaskFilterButton(
+                    onPressed: () {
+                      if (accepts(scope)) setState(taskAdvanced.clear);
+                    },
+                    child: Text(raftText(context, 'Clear All')),
+                  ),
                 ),
             ],
           ),
@@ -5026,15 +5347,54 @@ class _ResourceViewState extends State<ResourceView> {
           );
   }
 
+  /// TasksPanelViewport `bg-layer-canvas-muted theme-brutal:bg-white
+  /// dark:bg-transparent`: dark shows the ancestor surface (see build).
+  Color taskViewportFill(RaftTokens t) =>
+      t.option('listGroup.frame', or: 'framed') == 'plain'
+      ? t.canvas
+      : (t.dark ? t.sidebar.withAlpha(0) : t.sidebar);
+
+  /// TasksPanel channel mode with no task at all: the centred EmptyState
+  /// (`sortedTasks.length === 0 && isChannelMode`) instead of empty lanes.
+  Widget channelTasksEmpty() {
+    final filtered = !taskAdvanced.isEmpty;
+    return RaftProductEmptyPanel(
+      title: raftText(
+        context,
+        filtered ? 'No tasks match this filter' : 'No tasks yet',
+      ),
+      description: raftText(
+        context,
+        filtered
+            ? 'Try a different combination or clear the current selection.'
+            : 'Create one with the Create Task button.',
+      ),
+      icon: (context, size, color) =>
+          RaftIcon(RaftGlyph.checkSquare, size: size, color: color),
+    );
+  }
+
   Widget taskBoard() {
     final t = RaftTokens.of(context), scope = authority;
     return ColoredBox(
-      color: t.brutal ? t.panel : t.sidebar,
+      color: taskViewportFill(t),
       child: SingleChildScrollView(
         controller: taskBoardScroll,
         primary: false,
         scrollDirection: Axis.horizontal,
-        padding: raftScrollPadding(context, const EdgeInsets.all(16)),
+        padding: raftScrollPadding(
+          context,
+          widget.section == 'activity' || widget.section == 'saved'
+              ? RaftConversationCardRecipe(RaftTokens.of(context)).listInset
+              : EdgeInsets.symmetric(
+                  horizontal:
+                      MediaQuery.sizeOf(context).width <
+                          RaftLayoutMetrics.desktopBreakpoint
+                      ? 16
+                      : t.size('space.tasksViewportInline', fallback: 20),
+                  vertical: 16,
+                ),
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -5050,32 +5410,33 @@ class _ResourceViewState extends State<ResourceView> {
                   onAcceptWithDetails: (details) {
                     final payload = details.data;
                     if (canMoveTask(payload.row, payload.scope, status)) {
-                      command(
-                        'PATCH',
-                        '/tasks/${payload.row['id']}/status',
-                        data: {'status': status},
-                        sourceScope: payload.scope,
+                      moveTaskStatus(
+                        command,
+                        taskById(payload.row['id']) ?? payload.row,
+                        status,
+                        payload.scope,
                       );
                     }
                   },
-                  builder: (context, candidates, rejected) => RaftTaskBoardColumn(
-                    status: status,
-                    count:
-                        '${(lanes[status] ?? []).where(matchesTask).length}${laneCursors[status] != null ? '+' : ''}',
-                    collapsed: collapsedTaskStatuses.contains(status),
-                    dropActive: candidates.isNotEmpty,
-                    triggerKey: ValueKey('task-group-$status'),
-                    onToggle: () {
-                      if (accepts(scope)) {
-                        setState(() {
-                          if (!collapsedTaskStatuses.remove(status)) {
-                            collapsedTaskStatuses.add(status);
+                  builder: (context, candidates, rejected) =>
+                      RaftTaskBoardColumn(
+                        status: status,
+                        count:
+                            '${(lanes[status] ?? []).where(matchesTask).length}',
+                        collapsed: collapsedTaskStatuses.contains(status),
+                        dropActive: candidates.isNotEmpty,
+                        triggerKey: ValueKey('task-group-$status'),
+                        onToggle: () {
+                          if (accepts(scope)) {
+                            setState(() {
+                              if (!collapsedTaskStatuses.remove(status)) {
+                                collapsedTaskStatuses.add(status);
+                              }
+                            });
                           }
-                        });
-                      }
-                    },
-                    body: taskBoardLane(status, scope),
-                  ),
+                        },
+                        body: taskBoardLane(status, scope),
+                      ),
                 ),
               ),
           ],
@@ -5105,13 +5466,9 @@ class _ResourceViewState extends State<ResourceView> {
           key is ValueKey<String> ? indices[key.value] : null,
       itemBuilder: (context, index) {
         if (more && index == (empty ? 1 : tasks.length)) {
-          return RaftTextButton(
-            label: laneBusy.contains(status)
-                ? 'Loading…'
-                : 'Load more ${raftTaskStatusLabel(status)}',
-            onPressed: laneBusy.contains(status)
-                ? null
-                : () => moreLane(status),
+          return RaftTaskLoadMoreButton(
+            loading: laneBusy.contains(status),
+            onPressed: () => moreLane(status),
           );
         }
         if (empty) {
@@ -5128,7 +5485,11 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
 
-  Widget item(Map<String, dynamic> row, {String? sourceScope}) {
+  Widget item(
+    Map<String, dynamic> row, {
+    String? sourceScope,
+    bool topRule = false,
+  }) {
     final section = widget.section, scope = sourceScope ?? authority;
     final name =
         (row['title'] ??
@@ -5141,7 +5502,13 @@ class _ResourceViewState extends State<ResourceView> {
                 'Conversation')
             .toString();
     if (section == 'tasks') {
-      final status = '${row['status'] ?? 'todo'}';
+      // A task row always carries its status (TaskCard requires it); a row
+      // without one is skipped rather than rendered as Todo.
+      final rowStatus = row['status'];
+      if (rowStatus is! String || rowStatus.isEmpty) {
+        return const SizedBox.shrink();
+      }
+      final status = rowStatus;
       final role = w.server?.string('role');
       final allowed = ['owner', 'admin'].contains(role)
           ? raftTaskStatuses
@@ -5150,10 +5517,12 @@ class _ResourceViewState extends State<ResourceView> {
         key: ValueKey('task-${row['id']}'),
         title: name,
         number: '${row['taskNumber'] ?? row['number'] ?? ''}',
-        channel: '${row['channelName'] ?? ''}',
+        // TaskCard shows the channel chip only on the server-wide page.
+        channel: widget.channelId != null ? '' : '${row['channelName'] ?? ''}',
         status: status,
         description: '${row['descriptionPreview'] ?? row['description'] ?? ''}',
         assignee: row['claimedByName'] as String?,
+        legacy: row['isLegacy'] == true,
         onTap: () => taskDetails(row, sourceScope: scope),
         statusOptions: allowed,
         onStatus:
@@ -5163,16 +5532,18 @@ class _ResourceViewState extends State<ResourceView> {
                   (c) => c.id == row['channelId'] && c.joined && !c.archived,
                 )
             ? null
-            : (next) => command(
-                'PATCH',
-                '/tasks/${row['id']}/status',
-                data: {'status': next},
-                sourceScope: scope,
+            : (next) => moveTaskStatus(
+                command,
+                taskById(row['id']) ?? row,
+                next,
+                scope,
               ),
       );
     }
-    if (section == 'saved') return savedCard(row, scope);
-    if (section == 'activity') return activityCard(row, scope);
+    if (section == 'saved') return savedCard(row, scope, topRule: topRule);
+    if (section == 'activity') {
+      return activityCard(row, scope, topRule: topRule);
+    }
     return const SizedBox.shrink();
   }
 
@@ -5195,7 +5566,7 @@ class _ResourceViewState extends State<ResourceView> {
             if (accepts(scope)) await load(keep: rows.isNotEmpty);
           },
         ),
-        sourceModal: true,
+        form: true,
       );
       return;
     }
@@ -5206,9 +5577,10 @@ class _ResourceViewState extends State<ResourceView> {
     }
     await scopedDialog<bool>(
       scope,
+      form: true,
       (dialogContext) => RaftFormDialog(
-        title: 'Create task',
-        submitLabel: 'Create',
+        title: 'Create Task',
+        submitLabel: 'Create Task',
         fields: [
           RaftFormField(
             'channel',
@@ -5278,22 +5650,13 @@ class _ResourceViewState extends State<ResourceView> {
       ];
       final selected = await scopedDialog<Map<String, dynamic>>(
         scope,
-        (context) => SimpleDialog(
-          title: Text(raftText(context, 'Assign task')),
-          children: [
-            SimpleDialogOption(
-              onPressed: () =>
-                  closeOwnedDialog(context, scope, <String, dynamic>{}),
-              child: Text(raftText(context, 'Unassign')),
-            ),
-            for (final person in choices)
-              SimpleDialogOption(
-                onPressed: () => closeOwnedDialog(context, scope, person),
-                child: Text(
-                  '${person['displayName'] ?? person['name']} · ${person['actorType'] ?? person['type']}',
-                ),
-              ),
-          ],
+        (context) => taskAssignmentDialog(
+          context: context,
+          choices: choices,
+          claimedById: task['claimedById'],
+          claimedByType: task['claimedByType'],
+          onSelected: (value) => closeOwnedDialog(context, scope, value),
+          onClose: () => closeOwnedDialog(context, scope),
         ),
       );
       if (selected != null && accepts(scope)) {
@@ -5357,6 +5720,10 @@ class _ResourceViewState extends State<ResourceView> {
       result = await scopedDialog<String>(scope, (context) {
         return SourceTaskSurface(
           owner: owner,
+          // The board dialog is its own modal: no task slot / billing page
+          // behind it (references fall back to their read-only summary).
+          onTask: null,
+          onViewBilling: null,
           onClose: () => closeOwnedDialog(context, scope),
           onCleanupDelete: () {
             if (owner.canCleanupDelete) {
@@ -5373,16 +5740,17 @@ class _ResourceViewState extends State<ResourceView> {
     if (result == 'delete' && mounted) {
       final confirmed = await scopedDialog<bool>(
         scope,
-        (context) => AlertDialog(
-          title: Text(raftText(context, 'Delete task?')),
+        (context) => RaftAlertDialog(
+          legacy: RaftLegacyAlert.material,
+          title: Text(raftText(context, 'Delete Task')),
           content: Text('${task['title']}'),
           actions: [
-            TextButton(
+            RaftButton.text(
               onPressed: () => closeOwnedDialog(context, scope, false),
-              child: Text(raftText(context, 'Cancel')),
+              child: Text(raftText(context, 'Keep Task')),
             ),
             RaftButton(
-              label: 'Delete',
+              label: 'Delete Task',
               onPressed: () => closeOwnedDialog(context, scope, true),
             ),
           ],
@@ -5393,6 +5761,114 @@ class _ResourceViewState extends State<ResourceView> {
       }
     }
   }
+}
+
+/// Web `peerDisplayName || peerName` of the DM/channel [id] in [channels];
+/// null when the channel is unknown or carries neither (ThreadsInbox.tsx:324).
+String? _peerLabelFor(Iterable<RaftChannel> channels, Object? id) {
+  if (id == null) return null;
+  for (final c in channels) {
+    if (c.id != id) continue;
+    final label = c.firstNonEmpty(const ['peerDisplayName', 'peerName']);
+    if (label.isNotEmpty) return label;
+  }
+  return null;
+}
+
+/// Activity channel/DM card title. A DM row resolves the peer through the DM
+/// channel list (the inbox `channelName` is only the other user's handle);
+/// everything else keeps `channelName`.
+String activityRowTitle(Map<String, dynamic> row, Iterable<RaftChannel> dms) {
+  final fallback =
+      row['channelName'] ??
+      row['peerDisplayName'] ??
+      row['peerName'] ??
+      row['messagePreview'] ??
+      'Conversation';
+  if (row['kind'] != 'dm') return '$fallback';
+  final peer = _peerLabelFor(dms, row['channelId']);
+  final name = row['channelName'];
+  return peer ?? (name is String && name.isNotEmpty ? name : '$fallback');
+}
+
+/// Thread card subtitle: `@peer` for a thread under a DM, `#parent` otherwise
+/// (inboxChannelFilter.ts itemFilterChannelLabel).
+String activityThreadSubtitle(
+  Map<String, dynamic> row,
+  Iterable<RaftChannel> channels,
+) {
+  final name = '${row['parentChannelName'] ?? ''}';
+  if (row['parentChannelType'] != 'dm') return '#$name';
+  final peer = _peerLabelFor(channels, row['parentChannelId']);
+  return '@${peer ?? name}';
+}
+
+/// Grouped Activity header title: the parent channel (peer name for a DM).
+String? activityGroupTitle(
+  Map<String, dynamic> first,
+  Iterable<RaftChannel> channels,
+) {
+  final thread = first['kind'] == 'thread';
+  final dm = thread
+      ? first['parentChannelType'] == 'dm'
+      : first['kind'] == 'dm';
+  if (dm) {
+    final peer = _peerLabelFor(
+      channels,
+      thread ? first['parentChannelId'] : first['channelId'],
+    );
+    if (peer != null) return peer;
+  }
+  final name =
+      first['parentChannelName'] ??
+      first['channelName'] ??
+      first['peerDisplayName'] ??
+      first['peerName'];
+  return name == null ? null : '$name';
+}
+
+/// Thread-row task label `#N @claimant` (ThreadsInbox.tsx task badge).
+String activityTaskLabel(Map<String, dynamic> row) {
+  final claimant = row['taskClaimedByName'];
+  return '#${row['taskNumber']}'
+      '${claimant is String && claimant.isNotEmpty ? ' @$claimant' : ''}';
+}
+
+/// Source applyTaskToInboxItems / normalizeTaskMetadataUpdate: overlay
+/// `taskNumber`, `taskStatus`, `taskClaimedByName` (null when unclaimed) on
+/// thread rows whose `parentMessageId` is the task's `messageId`. Returns
+/// [rows] itself when nothing changed.
+List<Map<String, dynamic>> applyTaskToActivityRows(
+  List<Map<String, dynamic>> rows,
+  Map task,
+) {
+  final messageId = task['messageId'], status = task['status'];
+  final number = task['taskNumber'];
+  if (messageId is! String || status is! String || number is! num) return rows;
+  final claimant = task['claimedByName'];
+  final name = claimant is String ? claimant : null;
+  var changed = false;
+  final next = [
+    for (final row in rows)
+      if (row['kind'] != 'thread' || row['parentMessageId'] != messageId)
+        row
+      else if (row['taskNumber'] == number &&
+          row['taskStatus'] == status &&
+          row['taskClaimedByName'] == name)
+        row
+      else ...[
+        () {
+          changed = true;
+          return {
+            ...row,
+            'taskNumber': number,
+            'taskStatus': status,
+            'taskClaimedByName': name,
+          };
+        }(),
+      ],
+  ];
+  return changed ? next : rows;
 }
 
 class _TaskDrag {

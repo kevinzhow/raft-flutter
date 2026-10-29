@@ -5,11 +5,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../tool/testing/system_fonts.dart';
+
 import 'package:raft_ui/mobile_tabbar_config_previews.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Future<void> loadFonts(WidgetTester t) => t.runAsync(() async {
-  for (final family in ['HankenGrotesk', 'Inter', 'Geist', 'GeistMono']) {
+  for (final family in [
+    'SpaceGrotesk',
+    'SpaceMono',
+    'HankenGrotesk',
+    'Inter',
+    'Geist',
+    'GeistMono',
+  ]) {
     ByteData bytes;
     try {
       bytes = await rootBundle.load(
@@ -24,7 +35,7 @@ Future<void> loadFonts(WidgetTester t) => t.runAsync(() async {
   }
   // Material's back arrow (RaftMobileBackButton) is an icon-font glyph.
   final icons = File(
-    '${Platform.environment['FLUTTER_ROOT'] ?? '/home/kevinzhow/flutter-sdks/versions/3.47.6'}'
+    '${Platform.environment['FLUTTER_ROOT'] ?? '/home/kevinzhow/flutter-sdks/versions/3.47.8'}'
     '/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
   );
   if (icons.existsSync()) {
@@ -35,11 +46,9 @@ Future<void> loadFonts(WidgetTester t) => t.runAsync(() async {
   }
   // The CJK fallback the theme names ('Noto Sans CJK JP'): load the system
   // font so Chinese renders in screenshots instead of tofu.
-  const dir = '/usr/share/fonts/opentype/noto';
   final loader = FontLoader('Noto Sans CJK JP');
   var any = false;
-  for (final f in ['NotoSansCJK-Regular.ttc', 'NotoSansCJK-Bold.ttc']) {
-    final file = File('$dir/$f');
+  for (final file in cjkTestFonts()) {
     if (file.existsSync()) {
       final bytes = await file.readAsBytes();
       loader.addFont(Future.value(ByteData.sublistView(bytes)));
@@ -49,11 +58,7 @@ Future<void> loadFonts(WidgetTester t) => t.runAsync(() async {
   if (any) await loader.load();
 });
 
-final _themes = [
-  ('brutal', RaftFamily.brutal, false),
-  ('elegant', RaftFamily.elegant, false),
-  ('elegant-dark', RaftFamily.elegant, true),
-];
+final _themes = [('elegant', false), ('elegant-dark', true)];
 
 /// The default (English) Material strings for any locale: the test only
 /// needs the Material widgets to build under `zh`.
@@ -77,29 +82,24 @@ final _delegates = <LocalizationsDelegate<dynamic>>[
   ),
 ];
 
-Widget host(
-  RaftFamily family,
-  bool dark,
-  Locale locale,
-  GlobalKey capture,
-  Widget child,
-) => MaterialApp(
-  debugShowCheckedModeBanner: false,
-  theme: raftTheme(family, dark: dark),
-  home: Scaffold(
-    body: RepaintBoundary(
-      key: capture,
-      child: Builder(
-        builder: (context) => Localizations.override(
-          context: context,
-          locale: locale,
-          delegates: _delegates,
-          child: child,
+Widget host(bool dark, Locale locale, GlobalKey capture, Widget child) =>
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: raftTheme(dark: dark),
+      home: Scaffold(
+        body: RepaintBoundary(
+          key: capture,
+          child: Builder(
+            builder: (context) => Localizations.override(
+              context: context,
+              locale: locale,
+              delegates: _delegates,
+              child: child,
+            ),
+          ),
         ),
       ),
-    ),
-  ),
-);
+    );
 
 Future<void> shot(WidgetTester t, GlobalKey capture, String name) =>
     t.runAsync(() async {
@@ -129,7 +129,7 @@ bool anyTruncated(WidgetTester t, Finder root) {
 
 void main() {
   const zh = Locale('zh'), en = Locale('en');
-  for (final (name, family, dark) in _themes) {
+  for (final (name, dark) in raftThemeMatrix(_themes)) {
     for (final (loc, locale) in [('zh', zh), ('en', en)]) {
       if (loc == 'en' && dark) continue;
       for (final (page, build) in <(String, Widget Function())>[
@@ -142,12 +142,18 @@ void main() {
         ('config-minimum', mobileTabbarConfigMinimumPreview),
       ]) {
         testWidgets('$page $name $loc', (t) async {
+          final missingFonts = missingTestFontReason(cjkTestFonts());
+          if (missingFonts != null) {
+            markTestSkipped(missingFonts);
+            return;
+          }
+
           t.view.physicalSize = const Size(390 * 3, 844 * 3);
           t.view.devicePixelRatio = 3;
           addTearDown(t.view.reset);
           await loadFonts(t);
           final capture = GlobalKey();
-          await t.pumpWidget(host(family, dark, locale, capture, build()));
+          await t.pumpWidget(host(dark, locale, capture, build()));
           await t.pump(const Duration(milliseconds: 300));
           expect(t.takeException(), isNull);
           expect(anyTruncated(t, find.byType(Scaffold)), isFalse);
@@ -156,13 +162,19 @@ void main() {
       }
 
       testWidgets('five items fit 360dp $name $loc', (t) async {
+        final missingFonts = missingTestFontReason(cjkTestFonts());
+        if (missingFonts != null) {
+          markTestSkipped(missingFonts);
+          return;
+        }
+
         t.view.physicalSize = const Size(360 * 3, 120 * 3);
         t.view.devicePixelRatio = 3;
         addTearDown(t.view.reset);
         await loadFonts(t);
         final capture = GlobalKey();
         await t.pumpWidget(
-          host(family, dark, locale, capture, mobileTabbarFiveItemsPreview()),
+          host(dark, locale, capture, mobileTabbarFiveItemsPreview()),
         );
         await t.pump(const Duration(milliseconds: 300));
         expect(t.takeException(), isNull);
@@ -180,21 +192,18 @@ void main() {
     await loadFonts(t);
     final capture = GlobalKey();
     await t.pumpWidget(
-      host(
-        RaftFamily.brutal,
-        false,
-        en,
-        capture,
-        mobileTabbarConfigDefaultPreview(),
-      ),
+      host(false, en, capture, mobileTabbarConfigDefaultPreview()),
     );
     await t.pump(const Duration(milliseconds: 300));
     RaftSwitch sw(String id) =>
         t.widget<RaftSwitch>(find.byKey(ValueKey('mobile-tabbar-switch-$id')));
     int navItems() => t.widgetList(find.byType(RaftMobileNavItem)).length;
+    // Both labelled and icon-only bars retain the large-content label.
     Finder preview(String id) => find.descendant(
       of: find.byKey(const Key('mobile-tabbar-preview')),
-      matching: find.text(id),
+      matching: find.byWidgetPredicate(
+        (w) => w is RaftLargeContentViewer && w.label == id,
+      ),
     );
 
     // Default: Home, Tasks, Members + Settings -> 4 of 5; nothing disabled.
@@ -232,10 +241,10 @@ void main() {
     expect(preview('Settings'), findsOneWidget);
 
     // Reset restores today's bar.
-    await t.tap(find.text('Reset to default'));
+    await t.tap(find.text('Reset to Default'));
     await t.pump();
     expect(find.text('4 / 5'), findsOneWidget);
-    expect(find.text('Reset to default'), findsNothing);
+    expect(find.text('Reset to Default'), findsNothing);
 
     // Reorder: drag Members' handle above Tasks.
     final handle = find.bySemanticsLabel('Reorder Members');

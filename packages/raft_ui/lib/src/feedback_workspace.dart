@@ -6,6 +6,12 @@
 // SegmentedControl, MessageReferenceChip, DropdownMenu, AlertDialog, Banner,
 // TextareaCounter). The app owns the store and the transport; every value
 // shown here arrives as data.
+import 'label.dart';
+import 'text_selection_toolbar.dart';
+import 'hover_region.dart';
+import 'indicators.dart' show RaftSkeleton;
+import 'dismiss_scope.dart';
+
 import 'dart:math' as math;
 import 'dart:ui' show SemanticsRole;
 
@@ -24,6 +30,8 @@ import 'icons.dart';
 import 'localization.dart';
 import 'overlays/dialog.dart';
 import 'recipe_surface.dart';
+import 'menu_action_row.dart';
+import 'popover_surface.dart';
 import 'recipes/avatar.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/dropdown_menu.g.dart';
@@ -33,8 +41,10 @@ import 'recipes/recipe_runtime.dart';
 import 'recipes/segmented_control.g.dart';
 import 'recipes/textarea_counter.g.dart';
 import 'system_inset.dart';
+import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
+import 'sized_image.dart';
 
 /// Reporter close reasons (`completed` / `no_longer_needed`).
 enum RaftFeedbackCloseReason { completed, noLongerNeeded }
@@ -55,7 +65,6 @@ class RaftFeedbackPortalTheme extends StatelessWidget {
     final t = RaftTokens.of(context);
     if (!t.dark) return child;
     final light = raftTheme(
-      RaftFamily.elegant,
       systemFonts: t.systemFonts,
       systemFontFamilies: t.systemFontFamilies,
     );
@@ -126,19 +135,20 @@ class RaftFeedbackViewHeader extends StatelessWidget {
   }
 }
 
-/// `.hands-feedback-field-label`: 13px, weight 650.
+/// A feedback form's field label: the shared [RaftLabel] (`.hands-feedback-field-label` 13px / 600 in the
+/// frozen looks).
 class RaftFeedbackFieldLabel extends StatelessWidget {
   const RaftFeedbackFieldLabel(this.text, {super.key});
   final String text;
   @override
-  Widget build(BuildContext context) => Text(
-    raftText(context, text),
-    style: raftFeedbackText(
-      RaftTokens.of(context),
-      size: 13,
-      weight: FontWeight.w600,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    if (t.recipeSet == RaftRecipeSet.raft) return RaftLabel(text);
+    return Text(
+      raftText(context, text),
+      style: raftFeedbackText(t, size: 13, weight: FontWeight.w600),
+    );
+  }
 }
 
 /// The feedback type `SegmentedControl` (Idea / Bug) with the
@@ -264,6 +274,7 @@ class RaftFeedbackComposer extends StatefulWidget {
     this.newFeedback = false,
     this.attachments = const [],
     this.onRemoveAttachment,
+    this.onOpenAttachment,
     this.onAttachImage,
     this.onAttachFile,
     this.busy = false,
@@ -282,6 +293,9 @@ class RaftFeedbackComposer extends StatefulWidget {
   final bool newFeedback;
   final List<RaftFeedbackPendingFile> attachments;
   final ValueChanged<String>? onRemoveAttachment;
+
+  /// A not-yet-sent attachment was tapped (Web `onOpenPendingAttachment`).
+  final ValueChanged<String>? onOpenAttachment;
   final VoidCallback? onAttachImage, onAttachFile;
   final bool busy;
   final String? error;
@@ -352,11 +366,7 @@ class _RaftFeedbackComposerState extends State<RaftFeedbackComposer> {
     final recipe = RaftComposerRecipe(t, desktop: true);
     final style = recipe.editorText;
     final attachmentsFull = widget.busy || widget.attachments.length >= 3;
-    final minimum = widget.newFeedback
-        ? 120.0
-        : t.brutal
-        ? 20.0
-        : 64.0;
+    final minimum = widget.newFeedback ? 120.0 : 64.0;
     // `max-h-32` (border-box) caps the autosized textarea.
     final editor = ConstrainedBox(
       constraints: BoxConstraints(
@@ -374,6 +384,7 @@ class _RaftFeedbackComposerState extends State<RaftFeedbackComposer> {
             label: raftText(context, widget.label),
             textField: true,
             child: TextField(
+              contextMenuBuilder: RaftTextSelectionToolbar.editableText,
               key: widget.inputKey,
               controller: widget.controller,
               focusNode: focus,
@@ -418,24 +429,26 @@ class _RaftFeedbackComposerState extends State<RaftFeedbackComposer> {
           children: [
             Expanded(
               child: Row(
-                spacing: t.brutal ? 12 : 16,
+                spacing: t.size('space.feedbackComposerMetaGap', fallback: 16),
                 children: [
                   RaftComposerAction(
                     key: const ValueKey('feedback-attach-image'),
                     glyph: RaftGlyph.imagePlus,
-                    tooltip: 'Attach image',
+                    tooltip: 'Attach Image',
                     onPressed: attachmentsFull ? null : widget.onAttachImage,
                   ),
                   RaftComposerAction(
                     key: const ValueKey('feedback-attach-file'),
                     glyph: RaftGlyph.paperclip,
-                    tooltip: 'Attach file',
+                    tooltip: 'Attach File',
                     onPressed: attachmentsFull ? null : widget.onAttachFile,
                   ),
                   if (widget.newFeedback)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: _Counter(length: widget.controller.text.length),
+                    Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: _Counter(length: widget.controller.text.length),
+                      ),
                     ),
                 ],
               ),
@@ -451,7 +464,7 @@ class _RaftFeedbackComposerState extends State<RaftFeedbackComposer> {
     );
     final shell = Container(
       padding: recipe.shellInset,
-      clipBehavior: t.brutal ? Clip.none : Clip.antiAlias,
+      clipBehavior: Clip.antiAlias,
       decoration: recipe.shellDecoration(focused: focus.hasFocus),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -467,7 +480,7 @@ class _RaftFeedbackComposerState extends State<RaftFeedbackComposer> {
               .round();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: t.brutal ? 8 : 6,
+      spacing: 6,
       children: [
         if (widget.attachments.isNotEmpty)
           Wrap(
@@ -482,6 +495,9 @@ class _RaftFeedbackComposerState extends State<RaftFeedbackComposer> {
                   onRemove: widget.onRemoveAttachment == null
                       ? null
                       : () => widget.onRemoveAttachment!(file.id),
+                  onOpen: widget.onOpenAttachment == null || file.bytes == null
+                      ? null
+                      : () => widget.onOpenAttachment!(file.id),
                 ),
             ],
           ),
@@ -543,15 +559,16 @@ class _PendingAttachment extends StatelessWidget {
     required this.file,
     required this.busy,
     required this.onRemove,
+    this.onOpen,
   });
   final RaftFeedbackPendingFile file;
   final bool busy;
-  final VoidCallback? onRemove;
+  final VoidCallback? onRemove, onOpen;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final radius = BorderRadius.circular(t.brutal ? 0 : 8);
+    final radius = BorderRadius.circular(8);
     final image = file.bytes != null && file.contentType.startsWith('image/');
     Widget tile = Container(
       width: 64,
@@ -560,13 +577,15 @@ class _PendingAttachment extends StatelessWidget {
       decoration: BoxDecoration(
         color: t.colors['layer-panel'],
         borderRadius: radius,
-        border: Border.all(
-          color: t.brutal ? t.colors['line-strong']! : t.colors['line-muted']!,
-          width: t.brutal ? 2 : 1,
-        ),
+        border: Border.all(color: t.colors['line-muted']!, width: 1),
       ),
       child: image
-          ? Image.memory(file.bytes!, fit: BoxFit.cover, gaplessPlayback: true)
+          ? RaftSizedImage.memory(
+              file.bytes!,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              evictOnDispose: true,
+            )
           : Center(
               child: RaftIcon(
                 RaftGlyph.paperclip,
@@ -615,7 +634,14 @@ class _PendingAttachment extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          tile,
+          onOpen == null
+              ? tile
+              : _FeedbackTap(
+                  key: ValueKey('feedback-pending-open-${file.id}'),
+                  label: '${raftText(context, 'Open')} ${file.name}',
+                  onTap: onOpen!,
+                  child: tile,
+                ),
           if (overlay != null) Positioned.fill(child: overlay),
           Positioned(
             top: -6,
@@ -623,6 +649,7 @@ class _PendingAttachment extends StatelessWidget {
             child: RaftRecipeButton(
               variant: RaftButtonRecipeVariant.outline,
               size: RaftButtonRecipeSize.iconXs,
+              squareExtent: 24,
               glyph: RaftGlyph.x,
               glyphSize: 12,
               tooltip: '${raftText(context, 'Remove')} ${file.name}',
@@ -650,7 +677,7 @@ class RaftFeedbackErrorBanner extends StatelessWidget {
     action: onRetry == null
         ? null
         : RaftRecipeButton(
-            label: 'Try again',
+            label: 'Try Again',
             variant: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.sm,
             onPressed: onRetry,
@@ -684,7 +711,7 @@ class RaftFeedbackNewForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          RaftFeedbackViewHeader(title: 'New feedback', onBack: onBack),
+          RaftFeedbackViewHeader(title: 'New Feedback', onBack: onBack),
           Expanded(
             child: SingleChildScrollView(
               padding: raftScrollPadding(
@@ -756,6 +783,7 @@ class RaftFeedbackMessageData {
     required this.time,
     required this.body,
     this.attachments = const [],
+    this.onOpenAttachment,
     this.footer = const [],
   });
   final String id, sender, time, body;
@@ -763,6 +791,10 @@ class RaftFeedbackMessageData {
 
   /// `(filename, size label)` rows.
   final List<(String, String)> attachments;
+
+  /// A sent attachment row was tapped, with its index in [attachments] (Web
+  /// `onOpenAttachment`). Null leaves the rows as plain text.
+  final ValueChanged<int>? onOpenAttachment;
   final List<Widget> footer;
 }
 
@@ -778,6 +810,39 @@ class RaftFeedbackMessage extends StatefulWidget {
 class _RaftFeedbackMessageState extends State<RaftFeedbackMessage> {
   bool hovered = false;
 
+  Widget _attachmentRow(
+    RaftTokens t,
+    RaftFeedbackMessageData m,
+    int index,
+    String name,
+    String size,
+  ) {
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 6,
+      children: [
+        RaftIcon(RaftGlyph.file, size: 14, color: t.colors['foreground-muted']),
+        Text(
+          '$name · $size',
+          style: raftFeedbackText(
+            t,
+            size: 12,
+            color: t.colors['foreground-muted'],
+          ),
+        ),
+      ],
+    );
+    final open = m.onOpenAttachment;
+    return open == null
+        ? row
+        : _FeedbackTap(
+            key: ValueKey('feedback-attachment-${m.id}-$index'),
+            label: '${raftText(context, 'Open')} $name',
+            onTap: () => open(index),
+            child: row,
+          );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -786,7 +851,7 @@ class _RaftFeedbackMessageState extends State<RaftFeedbackMessage> {
     // MessageItem's `max-md:` padding, gap and avatar (below 768px).
     final width = MediaQuery.sizeOf(context).width;
     // (Brutal keeps the desktop item at every width.)
-    final compact = width < 768 && !t.brutal;
+    final compact = width < 768;
     final base = t.recipeStates(hovered: hovered);
     final s = RaftMessageItemRecipe.resolve(
       theme: t.recipeTheme,
@@ -803,9 +868,7 @@ class _RaftFeedbackMessageState extends State<RaftFeedbackMessage> {
     // pre-wrap).
     final bodyText = m.body.trim().replaceAll(RegExp(r'\s+'), ' ');
     final header = Row(
-      crossAxisAlignment: t.brutal
-          ? CrossAxisAlignment.center
-          : CrossAxisAlignment.baseline,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       spacing: s.header.columnGap ?? 6,
       children: [
@@ -824,7 +887,7 @@ class _RaftFeedbackMessageState extends State<RaftFeedbackMessage> {
       ],
     );
     final root = s.root;
-    return MouseRegion(
+    return RaftHoverRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
       child: Padding(
@@ -835,7 +898,9 @@ class _RaftFeedbackMessageState extends State<RaftFeedbackMessage> {
           applyText: false,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: (root.minHeight ?? 48) - root.padding.vertical,
+              minHeight: ((root.minHeight ?? 48) - root.padding.vertical)
+                  .clamp(0, double.infinity)
+                  .toDouble(),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -871,26 +936,9 @@ class _RaftFeedbackMessageState extends State<RaftFeedbackMessage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           spacing: 8,
                           children: [
-                            for (final (name, size) in m.attachments)
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                spacing: 6,
-                                children: [
-                                  RaftIcon(
-                                    RaftGlyph.file,
-                                    size: 14,
-                                    color: t.colors['foreground-muted'],
-                                  ),
-                                  Text(
-                                    '$name · $size',
-                                    style: raftFeedbackText(
-                                      t,
-                                      size: 12,
-                                      color: t.colors['foreground-muted'],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            for (final (i, (name, size))
+                                in m.attachments.indexed)
+                              _attachmentRow(t, m, i, name, size),
                           ],
                         ),
                       ],
@@ -968,9 +1016,7 @@ class _FeedbackAvatar extends StatelessWidget {
             height: size,
             clip: true,
             applyText: false,
-            decorationOverride: t.brutal
-                ? null
-                : (d) => d.copyWith(border: null),
+            decorationOverride: (d) => d.copyWith(),
             child: RaftRecipeBox(
               style: fallback,
               tokens: rt,
@@ -978,7 +1024,13 @@ class _FeedbackAvatar extends StatelessWidget {
               height: double.infinity,
               alignment: Alignment.center,
               applyText: false,
-              child: Text(initial, style: style),
+              // Initials fill a fixed-size avatar: they grow with the text size
+              // only up to the chrome bound.
+              child: Text(
+                initial,
+                style: style,
+                textScaler: RaftChrome.boundedScalerOf(context),
+              ),
             ),
           ),
         ),
@@ -1020,9 +1072,7 @@ class RaftFeedbackConversation extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final narrow = MediaQuery.sizeOf(context).width <= 640;
-    final background = t.brutal
-        ? t.colors['layer-canvas']!
-        : t.dark
+    final background = t.dark
         ? t.colors['layer-card']!
         : t.colors['layer-panel']!;
     final list = ListView(
@@ -1030,10 +1080,7 @@ class RaftFeedbackConversation extends StatelessWidget {
       controller: controller,
       padding: raftScrollPadding(
         context,
-        EdgeInsets.only(
-          top: 2,
-          bottom: 12 + (composer != null && !t.brutal ? 160 : 0),
-        ),
+        EdgeInsets.only(top: 2, bottom: 12 + (composer != null ? 160 : 0)),
       ),
       children: [
         if (error != null)
@@ -1044,7 +1091,11 @@ class RaftFeedbackConversation extends StatelessWidget {
         if (loading)
           const Padding(
             padding: EdgeInsets.all(16),
-            child: RaftUiSkeleton(height: 160),
+            child: RaftSkeleton(
+              themed: true,
+              width: double.infinity,
+              height: 160,
+            ),
           ),
         for (final message in messages)
           RaftFeedbackMessage(
@@ -1055,7 +1106,7 @@ class RaftFeedbackConversation extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: RaftRecipeButton(
-              label: loadingMore ? 'Loading…' : 'Load more replies',
+              label: loadingMore ? 'Loading Replies…' : 'Load More Replies',
               variant: RaftButtonRecipeVariant.outline,
               disabled: loadingMore,
               onPressed: onLoadMore,
@@ -1081,14 +1132,6 @@ class RaftFeedbackConversation extends StatelessWidget {
                 .copyWith(
                   bottom: (narrow ? 14 : 18) + raftBottomInset(context),
                 ),
-        decoration: t.brutal
-            ? BoxDecoration(
-                color: t.colors['layer-canvas'],
-                border: Border(
-                  top: BorderSide(color: t.colors['line-strong']!, width: 2),
-                ),
-              )
-            : null,
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: raftFeedbackContentWidth),
@@ -1108,14 +1151,6 @@ class RaftFeedbackConversation extends StatelessWidget {
           Expanded(
             child: footer == null
                 ? centred
-                : t.brutal
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(child: centred),
-                      footer,
-                    ],
-                  )
                 : Stack(
                     children: [
                       Positioned.fill(child: centred),
@@ -1191,41 +1226,44 @@ class _RaftFeedbackCloseSplitState extends State<RaftFeedbackCloseSplit> {
 
   void _openMenu() {
     if (menu != null) return _closeMenu();
-    final t = RaftTokens.of(context);
     final overlay = Overlay.of(context);
     final theme = Theme.of(context);
     final text = DefaultTextStyle.of(context).style;
     menu = OverlayEntry(
-      builder: (_) => Theme(
-        data: theme,
-        child: RaftFeedbackPortalTheme(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _closeMenu,
-                ),
-              ),
-              RaftAnchoredPopup(
-                anchorKey: anchor,
-                alignRight: true,
-                snapToPixel: true,
-                gap: t.brutal ? 4 : 6,
-                child: Material(
-                  type: MaterialType.transparency,
-                  textStyle: text,
-                  child: RaftFeedbackCloseMenu(
-                    defaultReason: widget.defaultReason,
-                    onChoose: (reason) {
-                      _closeMenu();
-                      widget.onChoose(reason);
-                    },
-                    onDismiss: _closeMenu,
+      builder: (_) => RaftBackDismiss(
+        routeContext: this.context,
+        onDismiss: _closeMenu,
+        child: Theme(
+          data: theme,
+          child: RaftFeedbackPortalTheme(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _closeMenu,
                   ),
                 ),
-              ),
-            ],
+                RaftAnchoredPopup(
+                  anchorKey: anchor,
+                  alignRight: true,
+                  snapToPixel: true,
+                  gap: 6,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    textStyle: text,
+                    child: RaftFeedbackCloseMenu(
+                      defaultReason: widget.defaultReason,
+                      onChoose: (reason) {
+                        _closeMenu();
+                        widget.onChoose(reason);
+                      },
+                      onDismiss: _closeMenu,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1310,11 +1348,11 @@ class _RaftFeedbackCloseSplitState extends State<RaftFeedbackCloseSplit> {
       children: [
         part(
           key: ValueKey('feedback-close-main${widget.keySuffix}'),
-          label: raftText(context, 'Close ticket'),
+          label: raftText(context, 'Close Ticket'),
           main: true,
           onTap: () => widget.onChoose(widget.defaultReason),
           child: Text(
-            raftText(context, 'Close ticket'),
+            raftText(context, 'Close Ticket'),
             maxLines: 1,
             softWrap: false,
             style: text,
@@ -1322,7 +1360,7 @@ class _RaftFeedbackCloseSplitState extends State<RaftFeedbackCloseSplit> {
         ),
         part(
           key: ValueKey('feedback-close-caret${widget.keySuffix}'),
-          label: raftText(context, 'Choose a close reason'),
+          label: raftText(context, 'Choose a Close Reason'),
           main: false,
           onTap: _openMenu,
           child: RaftIcon(RaftGlyph.chevronDown, size: 10, color: fg),
@@ -1397,11 +1435,9 @@ class RaftFeedbackCloseMenu extends StatelessWidget {
           autofocus: true,
           child: Semantics(
             role: SemanticsRole.menu,
-            child: RaftRecipeBox(
+            child: RaftPopoverSurface(
               key: const ValueKey('feedback-close-menu'),
-              style: content,
-              tokens: rt,
-              clip: true,
+              surfaceStyle: content,
               child: _PixelSnappedIntrinsicWidth(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -1487,15 +1523,14 @@ class _CloseMenuItem extends StatelessWidget {
           rt,
           base: raftCssText.merge(DefaultTextStyle.of(context).style),
         );
-        final svg = item.target('& > svg') ?? item.target('& svg');
-        final glyph = t.brutal ? 14.0 : 16.0;
+        final glyph = 16.0;
         final caption = base.copyWith(
           fontSize: 12,
           height: 1.4,
           fontWeight: FontWeight.w400,
           color: t.colors['foreground-muted'],
         );
-        return RaftRecipeBox(
+        return RaftMenuItemSurface(
           style: item,
           tokens: rt,
           applyText: false,
@@ -1504,7 +1539,7 @@ class _CloseMenuItem extends StatelessWidget {
             spacing: item.columnGap ?? 8,
             children: [
               Transform.translate(
-                offset: t.brutal ? Offset.zero : const Offset(-1, 1),
+                offset: const Offset(-1, 1),
                 child: Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: SizedBox.square(
@@ -1513,12 +1548,10 @@ class _CloseMenuItem extends StatelessWidget {
                         ? RaftIcon(
                             RaftGlyph.check,
                             size: glyph,
-                            strokeWidth: t.brutal ? 2 : 1.5,
-                            color: t.brutal
-                                ? (svg?.color?.resolve(rt) ?? base.color)
-                                : (state.hovered || state.focusVisible
-                                      ? t.colors['foreground']
-                                      : t.colors['foreground-muted']),
+                            strokeWidth: 1.5,
+                            color: (state.hovered || state.focusVisible
+                                ? t.colors['foreground']
+                                : t.colors['foreground-muted']),
                           )
                         : null,
                   ),
@@ -1537,7 +1570,8 @@ class _CloseMenuItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // The CSS line box (16.8px), not the ceiled paragraph.
-                        SizedBox(
+                        RaftScaled.lineBox(
+                          context,
                           height: 16.8,
                           child: Text(
                             label,
@@ -1547,7 +1581,8 @@ class _CloseMenuItem extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        SizedBox(
+                        RaftScaled.lineBox(
+                          context,
                           height: 16.8,
                           child: Text(description, style: caption),
                         ),
@@ -1636,10 +1671,10 @@ class RaftFeedbackCloseDialog extends StatelessWidget {
                   ),
                   RaftButton(
                     key: const ValueKey('feedback-close-confirm'),
-                    label: 'Close ticket',
+                    label: 'Close Ticket',
                     semanticLabel: raftText(
                       context,
-                      busy ? 'Closing…' : 'Close ticket',
+                      busy ? 'Closing…' : 'Close Ticket',
                     ),
                     tone: RaftButtonRecipeVariant.accent,
                     size: RaftButtonRecipeSize.sm,
@@ -1654,4 +1689,34 @@ class RaftFeedbackCloseDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A tappable attachment (a sent row or a pending tile): a button for the
+/// pointer, the keyboard and assistive technology.
+class _FeedbackTap extends StatelessWidget {
+  const _FeedbackTap({
+    super.key,
+    required this.label,
+    required this.onTap,
+    required this.child,
+  });
+  final String label;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    excludeSemantics: true,
+    onTap: onTap,
+    child: MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: child,
+      ),
+    ),
+  );
 }

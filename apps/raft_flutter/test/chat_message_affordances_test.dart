@@ -4,22 +4,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_presentation_test.dart' show fixture;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark departed senders retain history but cannot be mentioned',
+      '${dark ? 'dark' : 'light'} departed senders retain history but cannot be mentioned',
       (t) async {
         final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           for (final (id, type, status, seq) in [
             ('active', 'user', 'active', 1),
             ('removed', 'user', 'removed', 2),
@@ -39,8 +36,8 @@ void main() {
               'content': 'History $id',
               'createdAt': '2026-06-22T02:30:00Z',
             },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {
           'active',
           'removed',
           'left',
@@ -64,7 +61,7 @@ void main() {
         ];
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: RaftChatView(controller: w)),
           ),
         );
@@ -72,9 +69,9 @@ void main() {
           () => Future<void>.delayed(const Duration(milliseconds: 40)),
         );
         await t.pumpAndSettle();
-        expect(find.text('REMOVED'), findsOneWidget);
-        expect(find.text('LEFT'), findsOneWidget);
-        expect(find.text('DELETED'), findsOneWidget);
+        expect(find.text('Removed'), findsOneWidget);
+        expect(find.text('Left'), findsOneWidget);
+        expect(find.text('Deleted'), findsOneWidget);
         for (final id in ['removed', 'left', 'deleted', 'external']) {
           final row = find.ancestor(
             of: find.text('Author $id'),
@@ -101,12 +98,12 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark protocol user gets scoped Owner and typed mention; foreign same-id stays private',
+      '${dark ? 'dark' : 'light'} protocol user gets scoped Owner and typed mention; foreign same-id stays private',
       (t) async {
         final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           for (final (id, name, server, seq) in [
             ('local', 'artin', 's1', 1),
             ('foreign', 'Foreign artin', 'other-server', 2),
@@ -126,15 +123,15 @@ void main() {
                   ? '2026-06-22T02:30:00Z'
                   : '2026-06-23T02:30:00Z',
             },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'local', 'foreign'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'local', 'foreign'};
         transport.routes['GET /agents'] = (_) => [];
         transport.routes['GET /servers/s1/members'] = (_) => [
           {'userId': 'owner-id', 'name': 'artin', 'role': 'owner'},
         ];
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: RaftChatView(controller: w)),
           ),
         );
@@ -158,9 +155,11 @@ void main() {
         final field = t.widget<TextField>(editor);
         expect(field.controller!.text, '已有中文 @artin ');
         expect(field.focusNode!.hasFocus, true);
-        expect(w.threadParent, isNull);
+        expect(w.messageDomain.state.threadParent, isNull);
         expect(
-          w.messages.every((message) => message.string('senderType') == 'user'),
+          w.messageDomain.messages.every(
+            (message) => message.string('senderType') == 'user',
+          ),
           true,
         );
         await t.pumpWidget(const SizedBox());
@@ -169,12 +168,12 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark actual sender insertion, scoped metadata, pointer picker and save',
+      '${dark ? 'dark' : 'light'} actual sender insertion, scoped metadata, pointer picker and save',
       (t) async {
         final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           {
             'id': 'm1',
             'channelId': 'c1',
@@ -185,8 +184,8 @@ void main() {
             'content': 'Public body',
             'createdAt': '2026-06-22T02:30:00Z',
           },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'m1'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'m1'};
         transport.routes['GET /agents'] = (_) => [
           {
             'id': 'agent',
@@ -214,14 +213,14 @@ void main() {
         };
         transport.routes['GET /channels/c1/threads/m1'] = (_) => {
           'threadChannelId': 'thread-m1',
-          'parentMessage': w.messages.first.json,
+          'parentMessage': w.messageDomain.messages.first.json,
         };
         transport.routes['GET /messages/channel/thread-m1'] = (_) => {
           'messages': [],
         };
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: RaftDensityScope(
                 density: RaftDensity.desktop,
@@ -258,7 +257,7 @@ void main() {
         final field = t.widget<TextField>(editor);
         expect(field.controller!.text, '草案 @Cindy ');
         expect(field.focusNode!.hasFocus, true);
-        expect(w.threadParent, null);
+        expect(w.messageDomain.state.threadParent, null);
         final row = find.byType(RaftMessageRow);
         final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
         await mouse.addPointer(location: Offset.zero);
@@ -289,9 +288,20 @@ void main() {
           ),
           hasLength(1),
         );
+        // A bare timeline has no task slot: the chip is painted disabled
+        // instead of opening the thread (Web opens the task, never the side
+        // thread, from the footer chip).
+        expect(
+          t
+              .widget<RaftMountedMessageTaskChip>(
+                find.byType(RaftMountedMessageTaskChip),
+              )
+              .onOpen,
+          isNull,
+        );
         await t.tap(find.byType(RaftMountedMessageTaskChip));
         await t.pump();
-        expect(w.threadParent?.id, 'm1');
+        expect(w.messageDomain.state.threadParent, isNull);
         await t.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 20)),
         );

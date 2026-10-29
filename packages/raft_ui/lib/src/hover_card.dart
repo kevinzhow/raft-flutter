@@ -1,3 +1,5 @@
+import 'hover_region.dart';
+
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -5,6 +7,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'dismiss_scope.dart';
+import 'focus_visible.dart';
+import 'hover_dismiss_scope.dart';
 import 'pointer_intent.dart';
 import 'recipe_surface.dart';
 import 'recipes/preview_card.g.dart';
@@ -133,6 +138,9 @@ class _RaftHoverCardState extends State<RaftHoverCard>
   bool pinned = false, closing = false, blocked = false, awaitingMove = false;
   bool tracking = false;
   int epoch = 0;
+  int? dismissedFocusEpoch;
+  RaftHoverDismissController? dismissController;
+  bool listeningDismiss = false;
 
   bool get allowed => widget.enabled;
   bool get reduced => MediaQuery.disableAnimationsOf(context);
@@ -142,12 +150,22 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     super.initState();
     widget.controller?._state = this;
     RaftPointerIntent.install();
+    RaftFocusVisible.shared.acquire();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     watch.sync(context);
+    final next = RaftHoverDismissScope.maybeOf(context);
+    if (dismissController != next) {
+      if (listeningDismiss) {
+        dismissController?.removeListener(_navigationChanged);
+      }
+      listeningDismiss = false;
+      dismissController = next;
+      _syncDismiss();
+    }
   }
 
   @override
@@ -166,6 +184,8 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     openTimer?.cancel();
     closeTimer?.cancel();
     watch.dispose();
+    RaftFocusVisible.shared.release();
+    if (listeningDismiss) dismissController?.removeListener(_navigationChanged);
     if (listeningSignal) RaftPointerIntent.unlistenScroll(_wheel);
     if (listeningKeys) HardwareKeyboard.instance.removeHandler(_key);
     if (widget.controller?._state == this) widget.controller?._state = null;
@@ -190,6 +210,7 @@ class _RaftHoverCardState extends State<RaftHoverCard>
 
   /// Holds the wheel/trackpad subscription only while hovered or open.
   void _syncSignal() {
+    _syncDismiss();
     final want = triggerHovered || portal.isShowing;
     if (want == listeningSignal) return;
     listeningSignal = want;
@@ -198,6 +219,26 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     } else {
       RaftPointerIntent.unlistenScroll(_wheel);
     }
+  }
+
+  void _syncDismiss() {
+    final want =
+        dismissController != null &&
+        (triggerHovered || portal.isShowing || openTimer?.isActive == true);
+    if (want == listeningDismiss) return;
+    listeningDismiss = want;
+    if (want) {
+      dismissController!.addListener(_navigationChanged);
+    } else {
+      dismissController?.removeListener(_navigationChanged);
+    }
+  }
+
+  void _navigationChanged() {
+    dismissedFocusEpoch = RaftFocusVisible.shared.keyEpoch;
+    blocked = false;
+    awaitingMove = triggerHovered;
+    _hide(immediate: true);
   }
 
   /// A wheel or trackpad scroll signal closes an unpinned card at once; the
@@ -264,13 +305,14 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     });
   }
 
-  bool get _keyboardMode =>
-      FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
+  bool get _keyboardMode => RaftFocusVisible.shared.keyboard;
 
   void _focusChanged(bool value) {
     focused = value;
     if (!widget.openOnKeyboardFocus || !allowed) return;
-    if (value && _keyboardMode) {
+    if (value &&
+        _keyboardMode &&
+        dismissedFocusEpoch != RaftFocusVisible.shared.keyEpoch) {
       _show();
     } else if (!value && !triggerHovered && !cardHovered) {
       _scheduleClose();
@@ -289,7 +331,8 @@ class _RaftHoverCardState extends State<RaftHoverCard>
   }
 
   void _show({bool pin = false}) {
-    if (!mounted || !allowed) return;
+    if (!mounted || !allowed || ModalRoute.isCurrentOf(context) == false)
+      return;
     openTimer?.cancel();
     closeTimer?.cancel();
     epoch++;
@@ -323,7 +366,10 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     final ticket = ++epoch;
     pinned = false;
     cardHovered = false;
-    if (!portal.isShowing) return;
+    if (!portal.isShowing) {
+      _syncDismiss();
+      return;
+    }
     void done() {
       portal.hide();
       _syncSignal();
@@ -411,7 +457,7 @@ class _RaftHoverCardState extends State<RaftHoverCard>
       child: TapRegion(
         groupId: this,
         onTapOutside: (_) => _hide(immediate: true),
-        child: MouseRegion(
+        child: RaftHoverRegion(
           onEnter: (_) {
             cardHovered = true;
             closeTimer?.cancel();
@@ -425,7 +471,7 @@ class _RaftHoverCardState extends State<RaftHoverCard>
       ),
     );
     if (!widget.interactive) card = IgnorePointer(child: card);
-    return Positioned.fill(
+    final layer = Positioned.fill(
       child: CustomSingleChildLayout(
         delegate: placement,
         child: AnimatedBuilder(
@@ -445,6 +491,10 @@ class _RaftHoverCardState extends State<RaftHoverCard>
         ),
       ),
     );
+    // A pinned card (a tap, not a hover) is a popup: Android Back closes it.
+    return pinned
+        ? RaftBackDismiss(onDismiss: () => _hide(immediate: true), child: layer)
+        : layer;
   }
 
   @override
@@ -457,7 +507,7 @@ class _RaftHoverCardState extends State<RaftHoverCard>
         canRequestFocus: false,
         skipTraversal: true,
         onFocusChange: _focusChanged,
-        child: MouseRegion(
+        child: RaftHoverRegion(
           onEnter: _enter,
           onHover: _hover,
           onExit: _exit,
@@ -567,7 +617,7 @@ class _RaftHoverRevealState extends State<RaftHoverReveal> {
     canRequestFocus: false,
     skipTraversal: true,
     onFocusChange: (value) => setState(() => focused = value),
-    child: MouseRegion(
+    child: RaftHoverRegion(
       onEnter: (event) {
         if (event.kind == PointerDeviceKind.mouse ||
             event.kind == PointerDeviceKind.stylus) {

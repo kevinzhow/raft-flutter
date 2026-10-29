@@ -8,15 +8,12 @@ import 'package:raft_flutter/data/source_channel_files_store.dart';
 import 'package:raft_flutter/features/source_channel_file_glyph.dart';
 import 'package:raft_flutter/features/source_channel_files_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'inline SVG actually paints and retires on authority loss $theme',
+      'inline SVG actually paints and retires on authority loss ${dark ? 'dark' : 'light'}',
       (tester) async {
         var authorized = true, acquired = 0;
         // Exact browser-supported encoding spelling used by Source's files
@@ -40,7 +37,7 @@ void main() {
           'source': {'type': 'channel', 'channelId': 'channel'},
         });
         Widget host() => MaterialApp(
-          theme: raftTheme(theme.$1, dark: theme.$2),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: Center(
               child: RepaintBoundary(

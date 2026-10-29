@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -16,22 +17,34 @@ class RaftFlexShrinkRow extends MultiChildRenderObjectWidget {
     super.key,
     this.gap = 0,
     this.spaceBetween = false,
+    this.truncating = false,
+    this.fixed = const {},
     required super.children,
   });
   final double gap;
+
+  /// The items are `truncate` / `overflow-hidden` boxes: their automatic
+  /// minimum size is 0 (not min-content), so they shrink all the way to an
+  /// ellipsis. Items listed in [fixed] are `shrink-0`.
+  final bool truncating;
+
+  /// Indices of the `shrink-0` items.
+  final Set<int> fixed;
 
   /// `justify-between`: the row fills its width and free space goes between
   /// the items.
   final bool spaceBetween;
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _RenderFlexShrinkRow(gap, spaceBetween);
+      _RenderFlexShrinkRow(gap, spaceBetween, truncating, fixed);
   @override
   void updateRenderObject(
     BuildContext context,
     _RenderFlexShrinkRow renderObject,
   ) => renderObject
     ..gap = gap
+    ..truncating = truncating
+    ..fixed = fixed
     ..spaceBetween = spaceBetween;
 }
 
@@ -41,9 +54,27 @@ class _RenderFlexShrinkRow extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, _FlexShrinkParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, _FlexShrinkParentData> {
-  _RenderFlexShrinkRow(this._gap, this._spaceBetween);
+  _RenderFlexShrinkRow(
+    this._gap,
+    this._spaceBetween,
+    this._truncating,
+    this._fixed,
+  );
   double _gap;
-  bool _spaceBetween;
+  bool _spaceBetween, _truncating;
+  Set<int> _fixed;
+  set truncating(bool value) {
+    if (value == _truncating) return;
+    _truncating = value;
+    markNeedsLayout();
+  }
+
+  set fixed(Set<int> value) {
+    if (setEquals(value, _fixed)) return;
+    _fixed = value;
+    markNeedsLayout();
+  }
+
   set spaceBetween(bool value) {
     if (value == _spaceBetween) return;
     _spaceBetween = value;
@@ -80,7 +111,11 @@ class _RenderFlexShrinkRow extends RenderBox
     ];
     final floor = [
       for (var i = 0; i < kids.length; i++)
-        math.min(basis[i], kids[i].getMinIntrinsicWidth(double.infinity)),
+        _fixed.contains(i)
+            ? basis[i]
+            : _truncating
+            ? 0.0
+            : math.min(basis[i], kids[i].getMinIntrinsicWidth(double.infinity)),
     ];
     final widths = [...basis];
     final gaps = _gap * math.max(0, kids.length - 1);

@@ -36,7 +36,7 @@ ACTION_SEND/MULTIPLE 是原生接收入口；Flutter 当前的确认弹窗只覆
 
 主 Activity 的 `singleTop` 加空 `taskAffinity` 允许来自其他任务的分享创建第二个 Flutter engine。第一 UI engine 持有进程级 NativeSessionOwner，第二个在 restore 的 acquire 等待 30 秒后超时，catch 统一显示登录表单。该错误路径没有读取或清除已保存的会话。
 
-修复为 `singleTask`，恢复应用默认 task affinity；外部 SEND/MULTIPLE、OAuth 与通知入口复用同一个主 Activity，通过现有 onNewIntent / 插件传入业务逻辑。保留会话互斥和后台 worker 等待机制，避免两个 UI 客户端同时刷新凭据。宿主回归约束同时检查启动模式、affinity、分享/链接/launcher 入口和 Flutter 自动深链关闭状态。
+修复为 `singleTask`，恢复应用默认 task affinity；外部 SEND/MULTIPLE、OAuth 与通知入口复用同一个主 Activity，通过现有 onNewIntent / 插件传入业务逻辑。会话所有权规则见 session-ownership.md（2026-10-12 起前台不再等待后台）。宿主回归约束同时检查启动模式、affinity、分享/链接/launcher 入口和 Flutter 自动深链关闭状态。
 
 Android 启动模式依据：[Tasks and the back stack](https://developer.android.com/guide/components/activities/tasks-and-back-stack)。原始 Activity 状态和截图只保存在忽略的 `.local/android-share-spinner`，不纳入仓库。
 
@@ -109,3 +109,46 @@ Flutter 既有 incoming_share_review 使用当前已加入会话和“添加分�
 三主题 10000 个目标的惰性列表用例验证首屏构建少于 30 行，且远端行未构建；它只证明构建数量，不替代手机帧耗时基准。已提供三主题 SDK Widget Preview 入口 `features/incoming_share_previews.dart`。
 
 最终 ARM64 release：Flutter build-number 4006，分 ABI 后实际 versionCode **6006**，target SDK **37**，仅 `arm64-v8a`。APK SHA-256 `aef7eeb0e85e818b3b587fe0a82e0eb7cbe6bf1f76f4c1b88f16f2505c3e2962`。用户要求安装后，重新执行 `tool/android-install --check-only` 通过真实制品身份 / 架构 / 版本 / 签名检查，再用同一脚本覆盖更新。安装结果 verified，版本从 4005 更新至 6006；首次安装时间及 CE / DE 数据目录 inode 均保持一致。没有主动启动 App 或操作手机 UI。安装回执保存在忽略的 `.local/android-installs/20261010T182203207084Z.json`；工程与基线详细结果保存在忽略的 `.local/incoming-share-validation.json` 及相邻日志中。本次 Android 真实 provider 分享、冷启动 / 后台生命周期与性能尚待验收。
+
+### 目标选择页对齐 Web 手机转发页（cindy/share-forward）
+
+选择页不再是独立样式：它与消息转发共用 Web `ForwardComposerMobile` 的同一组 raft_ui 页面组件，只在分享模式下替换内容。第一页标题为“选择目标”，副标题说明分享的内容（文件数 / 文字）；服务器 chips 位于搜索框上方（仅多个服务器时出现）；单选行无复选框、无箭头、无底部选择条；点击一行进入第二页“添加分享内容”，显示分享预览（文字片段、文件名与大小）和全宽“继续”。交接、暂存上限、加入频道确认、成员资格重验证和“不上传、不发送”均未改动。差异与测量见 docs/parity.md “Phone forward page and incoming share”。
+
+## 分享等待状态（2026-10-12，cindy/share-progress）
+
+Kevin 反馈：选好目标点“继续”后界面像卡住，没有任何反馈。在隔离模拟器（`app.raft.raft_flutter.linkperf`，真实 receive_intent + NativeSharingBridge，固定的假 API 可调延迟，真实 SEND/SEND_MULTIPLE + ClipData + 读授权）上逐步计时，等待有三个来源：
+
+1. 继续之后依次串行等待：`GET /servers`、`GET /channels/:id`、`selectChannel` 的消息页（含 `X-Server-Id` 切换时的整个工作区加载），每步一个往返；单个小图在 800 ms 往返下共 3.4 s，跨服务器 5.2 s。
+2. 源文件复制（接收到分享时已经在后台开始）：模拟器的本机存储 47 MB 约 0.5 s，所以只有云端 / 慢 provider 才会让继续等复制；模拟 1 MB/s 的 provider，两个文件共 10 s。
+3. 没有反馈：`RaftControl.busy` 只禁用点击，不画任何东西；“准备中”条按完成文件数计，一个大文件复制期间一直是“0 of N”。
+
+改动：继续时复制、成员资格读取、目标频道行读取并行；只等会话草稿恢复，不再等消息页网络；文件引用与工作区切换并行；取消（返回或系统返回）会终止尚未生效的交接。复制由 Kotlin 每 ~100 ms 回报字节；超限用 provider 声明的大小在复制前拒绝；失败原因（过大、不可读、授权被撤销、空文件）留在页面上标出文件，不再关闭页面后弹一个通用提示。继续在复制未完成时变为进度块（条 + 字节 + 取消 + 转圈按钮）；“添加分享内容”的每个文件卡片显示等待 / 字节进度 / 红色失败原因（方案 B）。`incomingShareWaitStyle` 一个常量切换为方案 A（只有继续按钮显示进度）。方案 C（立即进入输入框，附件显示暂存进度）未实现。
+
+模拟器计时（继续点击到交接完成，单位 ms，往返 120 / 800）：小图 607 -> 243 / 3415 -> 1083；4 张照片（26 MB）590 -> 248 / 3493 -> 1068；20 MB 视频 618 -> 314 / 3457 -> 1024；跨服务器小图 912 -> 567 / 5195 -> 2698。Android 路由收起动画另需约 0.45–0.5 s。模拟器不能证明真机复制速度和 Photos / Drive 的 provider 行为；方案 C 与真机验收未做。
+
+### 即时交接（2026-10-12，Kevin 12:26Z 要求，取代上文“继续前重新读取 fresh authority”）
+
+“继续”之后不再等待任何网络请求：手机已缓存服务器、频道和成员资格，验证放到导航之后。Android 与 iPhone 走同一个 `IncomingSharePicker` 和同一个 `onContinue`（iOS 的 Share Extension 已先把文件发布到共享 inbox，应用收到的是带 token 的暂存分享，所以只剩本机步骤）。
+
+继续时只等待本机操作：复制（慢 provider 时才有等待，带进度和取消）、账户认领、`chooseServer(cacheOnly: true)`（跨服务器时画出该服务器的设备缓存工作区，缓存缺失则直接继续，不等频道/消息页网络）、会话草稿恢复、本地文件引用、草稿和暂存附件写入。选择页自己的目录/成员资格重新验证不再阻塞继续。
+
+导航之后在后台（`verifySharedDestination`）：重读成员资格与目标频道行；公开未加入频道先立即显示“加入频道”确认框（不预先请求），确认后以已加入的本地行打开并在后台 `POST /channels/:id/join`；全新的 DM 以本地行 `pending-dm:...` 打开乐观输入框，后台 `POST /channels/dm` 后把草稿、暂存文件和选中项迁到真实 DM。验证期间该会话的 Send 关闭（控制器 `send` 也拒绝），不发送任何消息。
+
+结果：通过则恢复 Send；服务器明确拒绝（403/404、非成员、已归档/只读、新 DM 无法创建）时保留草稿和暂存文件，在输入框上方显示持久提示并保持 Send 关闭；暂时性失败（离线）则恢复 Send，因为每次发送本来就由服务器裁决；加入失败则换回原来的“加入”行并提示。控制器自身的撤权清理（消息页 403、频道列表缺失）对仍在“验证”或“被拒”状态的分享会话不再丢弃草稿和文件；整个服务器被撤销（`revokeServer`）仍会清理，因为此时已无输入框可展示。
+
+测试：`instant_entry_test.dart` 的新用例在 API 全部挂起、虚拟时间不前进时断言输入框到达（Android warm/cold、iOS 已暂存、跨服务器、新 DM、公开频道加入），并覆盖服务器拒绝、失去服务器、DM 创建失败、加入失败；注入一次 `await c.servers()` 的变异会使这些用例失败。`incoming_share_progress_test.dart` 断言选择页在目录读取永不返回时仍立即交接。
+
+模拟器计时（`app.raft.raft_flutter.linkperf`，真实 receive_intent / provider / ClipData，假 API 往返 120 / 800 ms；从指针按下到草稿与附件已暂存、页面开始退出，单位 ms；含约 60 ms 的测试点击按住；之后 Android 路由动画另需约 0.5 s）：
+
+| 分享 | 上一版（并行读取） 120 / 800 | 即时交接 120 / 800 |
+|---|---|---|
+| 小图 | 243 / 1083 | 144 / 186 |
+| 4 张照片 26 MB | 248 / 1068 | 109 / 142 |
+| 20 MB 视频 | 314 / 1024 | 83 / 118 |
+| 6 个文件 47 MB | 340 / 992 | 139 / 150 |
+| 目标在另一服务器（该服务器无设备缓存） | 567 / 2698 | 138 / 205 |
+| 新 DM（乐观输入框） | - | 80 / 85 |
+| 公开频道（确认框之后） | - | 126 / 77 |
+
+与往返延迟无关（后台验证在 120 ms 下约 0.25 s 完成，800 ms 下约 1 s，不阻塞）。原始版本为 607 / 3415（小图）和 912 / 5195（跨服务器）。慢 provider（1 MB/s 两个文件）仍受复制本身限制（约 9.6 s），有进度和取消。仅模拟器；真机与 iPhone 未实测。
+

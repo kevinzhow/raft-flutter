@@ -1,11 +1,15 @@
+@Tags(['look-elegant'])
+library;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 // Pinned Source SurfaceListItem.tsx 17–39, ProgressBar.tsx 47–66,
-// raft-ui 0.5.27 input/progress recipes. Actual SDK components; these do not
+// raft-ui 0.5.52 input/progress recipes. Actual SDK components; these do not
 // count as product-page or native-platform evidence.
 Widget host(ThemeData theme, Widget child) => MaterialApp(
   theme: theme,
@@ -18,20 +22,19 @@ Widget host(ThemeData theme, Widget child) => MaterialApp(
 );
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark real surface preserves caller text, selection and hover',
+      '${dark ? 'dark' : 'light'} real surface preserves caller text, selection and hover',
       (tester) async {
         var taps = 0;
-        final theme = raftTheme(family, dark: dark);
+        final theme = raftTheme(
+          pack: packForThemeId(elegantThemePackId),
+          dark: dark,
+        );
         await tester.pumpWidget(
           host(
             theme,
-            RaftSurfaceListItem(
+            RaftCard.item(
               selected: true,
               onTap: () => taps++,
               child: const Text(
@@ -43,17 +46,16 @@ void main() {
         );
         final box = tester.widget<RaftRecipeBox>(find.byType(RaftRecipeBox));
         final tokens = theme.extension<RaftTokens>()!;
-        if (family == RaftFamily.elegant) {
-          expect(box.style.borderWidth, const EdgeInsets.all(1));
-          expect(box.style.borderRadius, BorderRadius.circular(8));
-          expect(
-            box.style.border(tokens.recipeTokens)!.top.color,
-            dark ? Colors.transparent : tokens.semantic.info,
-          );
-          expect(box.style.classes, contains('shadow-raft-sm'));
-          expect(box.style.classes, isNot(contains('shadow-raft-xs')));
-          expect(box.decorationOverride, isNull);
-        }
+        expect(box.style.borderWidth, const EdgeInsets.all(1));
+        expect(box.style.borderRadius, BorderRadius.circular(8));
+        expect(
+          box.style.border(tokens.recipeTokens)!.top.color,
+          dark ? Colors.transparent : tokens.semantic.info,
+        );
+        expect(box.style.classes, contains('shadow-raft-sm'));
+        expect(box.style.classes, isNot(contains('shadow-raft-xs')));
+        expect(box.decorationOverride, isNull);
+
         expect(
           tester.widget<Text>(find.text('Actual caller text')).style!.color,
           Colors.black,
@@ -62,7 +64,7 @@ void main() {
         expect(taps, 1);
         final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
         await mouse.addPointer(location: const Offset(600, 600));
-        await mouse.moveTo(tester.getCenter(find.byType(RaftSurfaceListItem)));
+        await mouse.moveTo(tester.getCenter(find.byType(RaftCard)));
         await tester.pump();
         await mouse.moveTo(const Offset(600, 600));
         await tester.pump();
@@ -72,9 +74,12 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark real progress paints inherited variable shadows and clamps',
+      '${dark ? 'dark' : 'light'} real progress paints inherited variable shadows and clamps',
       (tester) async {
-        final theme = raftTheme(family, dark: dark);
+        final theme = raftTheme(
+          pack: packForThemeId(elegantThemePackId),
+          dark: dark,
+        );
         await tester.pumpWidget(
           host(
             theme,
@@ -120,13 +125,13 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark autofocus ring retains live editing across focus and theme',
+      '${dark ? 'dark' : 'light'} autofocus ring retains live editing across focus and theme',
       (tester) async {
         final controller = TextEditingController();
         final focus = FocusNode();
         final themes = [
-          raftTheme(family, dark: dark),
-          raftTheme(RaftFamily.elegant, dark: !dark),
+          raftTheme(pack: packForThemeId(elegantThemePackId), dark: dark),
+          raftTheme(pack: packForThemeId(elegantThemePackId), dark: !dark),
         ];
         Widget input(ThemeData theme) => host(
           theme,
@@ -141,24 +146,17 @@ void main() {
         await tester.pump();
         expect(focus.hasFocus, true);
         final state = tester.state(find.byType(EditableText));
-        final initial = tester.widget<RaftRecipeBox>(
-          find.byType(RaftRecipeBox),
+        // 0.7.1 `focus:shadow-focus`: the focus ring (2px surface gap, 2px ink) around the input.
+        final ring = RaftUiColors.of(dark).focusRing.layers;
+        expect(
+          tester
+              .widget<RaftCssBox>(find.byType(RaftCssBox))
+              .rings
+              .map((r) => r.spread),
+          ring.map((l) => l.spread),
+          reason: 'Source editable inputs match :focus-visible on autofocus.',
         );
-        if (family == RaftFamily.elegant) {
-          final layers = initial.style.cssShadows(
-            themes.first.extension<RaftTokens>()!.recipeTokens,
-          );
-          expect(
-            layers.any(
-              (layer) =>
-                  !layer.inset &&
-                  layer.spread == (dark ? 2 : 1) &&
-                  layer.color.a > 0,
-            ),
-            true,
-            reason: 'Source editable inputs match :focus-visible on autofocus.',
-          );
-        }
+
         await tester.showKeyboard(find.byType(TextField));
         tester.testTextInput.updateEditingValue(
           const TextEditingValue(

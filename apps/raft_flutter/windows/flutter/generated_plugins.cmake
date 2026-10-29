@@ -7,9 +7,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   desktop_drop
   file_selector_windows
   flutter_secure_storage_windows
+  flutter_timezone
   media_kit_libs_windows_video
   media_kit_video
   pasteboard
+  raft_updater
   uri_content
   url_launcher_windows
 )

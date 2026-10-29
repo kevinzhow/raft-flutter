@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/raft_canvas_system_brutal" />
+    <item android:drawable="@drawable/launch_tile_blue" />
+</layer-list>

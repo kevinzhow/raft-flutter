@@ -1,0 +1,178 @@
+{
+ "name": "forward-mobile",
+ "scope": "components.forward-mobile.*",
+ "sourceCommit": "26f77ef",
+ "serverId": "visual-server",
+ "channels": [
+  {
+   "id": "channel-fm-general",
+   "serverId": "visual-server",
+   "name": "general",
+   "description": "",
+   "type": "channel",
+   "createdAt": "2026-06-20T00:00:00.000Z",
+   "joined": true
+  },
+  {
+   "id": "channel-fm-design",
+   "serverId": "visual-server",
+   "name": "design",
+   "description": "",
+   "type": "private",
+   "createdAt": "2026-06-19T00:00:00.000Z",
+   "joined": true
+  },
+  {
+   "id": "channel-fm-release",
+   "serverId": "visual-server",
+   "name": "release",
+   "description": "",
+   "type": "joint",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  {
+   "id": "channel-fm-android",
+   "serverId": "visual-server",
+   "name": "android-artifacts",
+   "description": "",
+   "type": "channel",
+   "createdAt": "2026-06-17T00:00:00.000Z",
+   "joined": true
+  }
+ ],
+ "dms": [
+  {
+   "id": "dm-fm-cindy",
+   "serverId": "visual-server",
+   "name": "Cindy",
+   "description": "",
+   "type": "dm",
+   "createdAt": "2026-06-21T00:00:00.000Z",
+   "joined": true,
+   "peerId": "agent-cindy",
+   "peerName": "Cindy",
+   "peerDisplayName": "Cindy",
+   "peerType": "agent"
+  },
+  {
+   "id": "dm-fm-designer",
+   "serverId": "visual-server",
+   "name": "Designer",
+   "description": "",
+   "type": "dm",
+   "createdAt": "2026-06-16T00:00:00.000Z",
+   "joined": true,
+   "peerId": "user-designer",
+   "peerName": "Designer",
+   "peerDisplayName": "Designer",
+   "peerType": "user"
+  }
+ ],
+ "messages": [
+  {
+   "id": "msg-fm-1",
+   "seq": 1,
+   "serverId": "visual-server",
+   "channelId": "channel-fm-general",
+   "threadId": null,
+   "messageType": "chat",
+   "senderType": "user",
+   "senderId": "visual-user",
+   "senderName": "artin",
+   "content": "Release gates are green for the Android capture.",
+   "createdAt": "2026-06-22T02:10:00.000Z"
+  },
+  {
+   "id": "msg-fm-2",
+   "seq": 2,
+   "serverId": "visual-server",
+   "channelId": "channel-fm-general",
+   "threadId": null,
+   "messageType": "chat",
+   "senderType": "agent",
+   "senderId": "agent-cindy",
+   "senderName": "Cindy",
+   "content": "Captured the visual baselines and queued React parity.",
+   "createdAt": "2026-06-22T02:30:00.000Z"
+  }
+ ],
+ "routes": {
+  "GET /messages/forward/targets/search": {
+   "targets": [
+    {
+     "type": "channel",
+     "channelType": "private",
+     "id": "channel-fm-design",
+     "title": "design",
+     "subtitle": "channel",
+     "avatarUrl": null,
+     "channelId": "channel-fm-design",
+     "joined": true,
+     "dmExists": null,
+     "canForwardNow": true,
+     "requiredAction": null
+    },
+    {
+     "type": "channel",
+     "channelType": "channel",
+     "id": "channel-fm-product",
+     "title": "product-design",
+     "subtitle": "channel",
+     "avatarUrl": null,
+     "channelId": "channel-fm-product",
+     "joined": false,
+     "dmExists": null,
+     "canForwardNow": true,
+     "requiredAction": "join_channel"
+    },
+    {
+     "type": "dm",
+     "channelType": null,
+     "id": "dm-fm-cindy",
+     "title": "Cindy",
+     "subtitle": "agent",
+     "avatarUrl": null,
+     "channelId": "dm-fm-cindy",
+     "joined": true,
+     "dmExists": null,
+     "canForwardNow": true,
+     "requiredAction": null
+    },
+    {
+     "type": "human",
+     "channelType": null,
+     "id": "user-designer",
+     "title": "Designer",
+     "subtitle": "human",
+     "avatarUrl": null,
+     "channelId": null,
+     "joined": null,
+     "dmExists": false,
+     "canForwardNow": true,
+     "requiredAction": "create_dm"
+    }
+   ]
+  }
+ },
+ "routeSets": {
+  "fm-empty": {
+   "GET /messages/forward/targets/search": {
+    "targets": []
+   }
+  },
+  "fm-error": {
+   "GET /messages/forward/targets/search": {
+    "$status": 500,
+    "$body": {
+     "error": "fixture error"
+    }
+   }
+  },
+  "fm-loading": {
+   "GET /messages/forward/targets/search": {
+    "$pending": true
+   }
+  }
+ }
+}

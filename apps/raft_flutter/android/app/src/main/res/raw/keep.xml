@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- flutter_local_notifications resolves this drawable by name at runtime. -->
+<!-- flutter_local_notifications resolves ic_notification by name at runtime;
+     LaunchTheme.kt resolves the splash themes and canvas colours by name. -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_notification" />
+    tools:keep="@drawable/ic_notification,@style/RaftSplash_*,@color/raft_canvas_*" />

@@ -29,4 +29,8 @@ This builds `integration_test/perf_lab_test.dart` as an ARM64 profile APK with t
 - `RAFT_ROUTE_FRAME_DIAGNOSTICS=true`: off by default; logs per-route frame costs (route categories only, no IDs or content) for real-device investigations; collect with `tool/performance/route_probe.py` ([route performance probe](route-performance-probe.md)).
 - Profile builds only: debug-mode numbers are not meaningful. Compare identical fixtures, engine, renderer, view size and semantics mode.
 
-Audits and findings: [Android performance audit](android-performance-audit.md), [mobile route investigation](mobile-route-performance-investigation.md), [macOS investigation](mac-performance-investigation.md), [message performance](message-performance.md).
+Rules kept from earlier performance investigations:
+
+- Workspace data notifications must not rebuild the root app or the mobile `Navigator`; the root refreshes only for account, onboarding and server-selection facts, and the last-visited URI is written only when it changes. Background preparation of off-screen rows waits for route idle (nothing starts during a push, pop or held predictive back).
+- A long raster span with a tiny Dart UI cycle (e.g. 41.8 ms raster vs 0.9 ms UI) is a native present/`queueBuffer` wait, not a Dart rebuild; do not attribute it to widget cost. Compare identical fixtures under the isolated `.linkperf` app; a NOISY run is exploratory, not an acceptance baseline.
+- Interactions must not wait on fixed timers: text-input debounces (search 200 ms, forward targets 250 ms) stay, but a click (Retry, first Activity tap) acts immediately. Known unmeasured candidates: `WorkspaceController.selectChannel` awaits the draft restore before the message GET; cold `bootstrap` waits for entities, translations and draft restore before the first directory/message publish; `loadServerDirectory` saves before publishing.

@@ -11,23 +11,22 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
 import 'package:raft_flutter/features/message_timeline.dart';
 
+import 'flutter_test_config.dart' show RaftTestBinding;
 import 'message_presentation_test.dart' show fixture;
+import 'support/app_services_fixture.dart';
 
 /// Counts the semantics nodes each frame sends to the engine.
-class _CountingBinding extends AutomatedTestWidgetsFlutterBinding {
+class _Counts {
   int updated = 0;
   final edges = <int, List<int>>{};
   final orphans = <int>[];
   final labels = <int, String>{};
   final orphanOwners = <int, String>{};
-  @override
-  ui.SemanticsUpdateBuilder createSemanticsUpdateBuilder() =>
-      _CountingBuilder(this);
 }
 
 class _CountingBuilder implements ui.SemanticsUpdateBuilder {
   _CountingBuilder(this.binding);
-  final _CountingBinding binding;
+  final _Counts binding;
   final inner = ui.SemanticsUpdateBuilder();
   final updatedIds = <int>[];
   @override
@@ -64,7 +63,7 @@ class _CountingBuilder implements ui.SemanticsUpdateBuilder {
       }
 
       if (disconnected.isNotEmpty) {
-        for (final view in binding.renderViews) {
+        for (final view in TestWidgetsFlutterBinding.instance.renderViews) {
           inspect(view);
         }
       }
@@ -166,7 +165,8 @@ int rowNodeCount(Element row) {
 }
 
 void main() {
-  final binding = _CountingBinding();
+  final binding = _Counts();
+  RaftTestBinding.semanticsBuilderFactory = () => _CountingBuilder(binding);
   testWidgets(
     'tooltip portals remain reachable through list scrolling and dialog dismissal',
     (t) async {
@@ -196,7 +196,7 @@ void main() {
       );
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: Scaffold(
             body: Builder(
               builder: (context) => Column(
@@ -212,7 +212,7 @@ void main() {
                         ),
                       ),
                     ),
-                    child: const Text('Open dialog'),
+                    child: const Text('Open Dialog'),
                   ),
                   Expanded(
                     child: ListView.builder(
@@ -238,8 +238,8 @@ void main() {
       await t.pump(const Duration(milliseconds: 800));
       scroll.jumpTo(1200);
       await t.pumpAndSettle();
-      await mouse.moveTo(t.getCenter(find.text('Open dialog')));
-      await t.tap(find.text('Open dialog'));
+      await mouse.moveTo(t.getCenter(find.text('Open Dialog')));
+      await t.tap(find.text('Open Dialog'));
       await t.pumpAndSettle();
       await mouse.moveTo(t.getCenter(find.byKey(const Key('first-99'))));
       await t.pump(const Duration(milliseconds: 800));
@@ -265,10 +265,15 @@ void main() {
       final handle = t.ensureSemantics();
       final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final rows = [for (var i = 0; i < 60; i++) benchmarkRow(i)];
-      w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {for (final row in rows) row['id'] as String};
+      w.messageDomain.ledger.ingest(
+        rows,
+        expectedGeneration: w.messageDomain.ledger.generation,
+      );
+      w.messageDomain.visibleIds['c1'] = {
+        for (final row in rows) row['id'] as String,
+      };
       transport.routes['GET /agents'] = (_) => [];
       transport.routes['GET /servers/s1/members'] = (_) => [];
       transport.routes['GET /tasks'] = (_) => [];
@@ -279,12 +284,14 @@ void main() {
       binding.orphans.clear();
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
-          home: WorkspaceView(
-            controller: w,
-            appearance: const RaftAppearance(),
-            onAppearance: (_) async {},
-            onLogout: () async {},
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: const RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
           ),
         ),
       );
@@ -346,7 +353,7 @@ void main() {
       binding.orphans.clear();
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: Scaffold(
             body: Column(
               children: [
@@ -370,12 +377,12 @@ void main() {
                         toolbar: RaftMessageToolbar(
                           children: [
                             RaftMessageToolbarAction(
-                              label: 'Reply in thread',
+                              label: 'Reply in Thread',
                               icon: const SizedBox(),
                               onPressed: () => activations++,
                             ),
                             RaftMessageToolbarAction(
-                              label: 'More actions',
+                              label: 'More Actions',
                               icon: const SizedBox(),
                               onPressed: () => activations++,
                             ),
@@ -441,10 +448,15 @@ void main() {
     final handle = t.ensureSemantics();
     final (w, transport) = (await t.runAsync(() => fixture('member')))!;
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     final rows = [for (var i = 0; i < 60; i++) benchmarkRow(i)];
-    w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
+    w.messageDomain.ledger.ingest(
+      rows,
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {
+      for (final r in rows) r['id'] as String,
+    };
     transport.routes['GET /agents'] = (_) => [];
     transport.routes['GET /servers/s1/members'] = (_) => [];
     transport.routes['GET /tasks'] = (_) => [];
@@ -453,7 +465,7 @@ void main() {
     addTearDown(t.view.reset);
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(body: RaftChatView(controller: w)),
       ),
     );
@@ -504,9 +516,11 @@ void main() {
       'updatedPerScrollFrame=${perFrame.toStringAsFixed(1)} '
       'updatedOnRebuild=$rebuildUpdates',
     );
-    // Row node + Show more + reaction; header, avatar, prose and the
-    // collapsed tail add none.
-    expect(counts, everyElement(lessThanOrEqualTo(3)));
+    // Row node + Show more + reaction + the inline add-reaction "+" that a
+    // touch screen has instead of the hover bar (at any width, this window is
+    // 1280 wide on Android); header, avatar, prose and the collapsed tail add
+    // none.
+    expect(counts, everyElement(lessThanOrEqualTo(4)));
     // Edge rows are re-sent as one node each, not with their whole subtree.
     expect(perFrame, lessThan(10));
     expect(rebuildUpdates, 0);

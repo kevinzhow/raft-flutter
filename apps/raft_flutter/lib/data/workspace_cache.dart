@@ -61,3 +61,16 @@ abstract interface class WorkspaceCache {
   Future<void> revokeServer(String origin, String principal, String server);
   Future<void> close();
 }
+
+/// Reads the last committed message window while unrelated writes continue.
+/// Callers that need to read their own pending write use [WorkspaceCache.read].
+/// Legacy imports and saved context windows retain their ordered fallback.
+abstract interface class CommittedWorkspaceCache {
+  Future<dynamic> readCommittedWindow(
+    String origin,
+    String principal,
+    String server,
+    String kind,
+    String id,
+  );
+}

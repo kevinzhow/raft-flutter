@@ -4,25 +4,34 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import '../platform/content_links.dart';
+import 'account_onboarding.dart' show AccountMediaActions, PickedAvatar;
+import 'archived_channels_section.dart';
+import 'archived_agents_section.dart';
+import 'member_profile_rules.dart';
+import 'invite_accept_view.dart';
+import 'public_avatar_url.dart';
 import 'public_visibility_view.dart';
+import 'delete_server_confirm.dart';
 
 class WorkspaceActions {
   static Future<void> create(
     BuildContext context,
     WorkspaceController w,
   ) async {
-    await showDialog(
-      context: context,
+    await showRaftForm<void>(
+      context,
       builder: (_) => RaftFormDialog(
-        title: 'Create workspace',
-        submitLabel: 'Create',
+        title: 'Create Server',
+        submitLabel: 'Create Server',
         fields: [
-          const RaftFormField('name', 'Workspace name', required: true),
+          const RaftFormField('name', 'Server name', required: true),
           RaftFormField(
             'slug',
-            'Workspace address',
+            'Server address',
             required: true,
             help: 'Lowercase letters, numbers and hyphens.',
             validator: (v) => RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(v)
@@ -42,12 +51,14 @@ class WorkspaceActions {
     );
   }
 
+  /// Join workspace: paste an invite link or code; the invite page (the Web
+  /// InviteAcceptPage) then shows the invitation and joins.
   static Future<void> join(BuildContext context, WorkspaceController w) async {
-    await showDialog(
-      context: context,
+    await showRaftForm<void>(
+      context,
       builder: (dialogContext) => RaftFormDialog(
-        title: 'Join workspace',
-        submitLabel: 'Review invitation',
+        title: 'Join Server',
+        submitLabel: 'Review Invitation',
         fields: [
           RaftFormField(
             'token',
@@ -57,60 +68,14 @@ class WorkspaceActions {
           ),
         ],
         onSubmit: (values) async {
-          final input = values['token']!, uri = Uri.tryParse(values['token']!);
-          final token = uri != null && uri.hasScheme
-              ? (uri.queryParameters['invite'] ??
-                    uri.queryParameters['token'] ??
-                    (uri.pathSegments.length >= 2 &&
-                            uri.pathSegments.first == 'join'
-                        ? uri.pathSegments.last
-                        : ''))
-              : input;
-          if (token.isEmpty) {
+          // ignore: raft_lints/avoid_render_index_assertion -- Submit values of the form dialog: every field id is present in the submitted map.
+          final link = InviteLink.fromInput(values['token']!);
+          if (link == null) {
             throw const RaftApiException(
               'Enter a valid invitation link or code.',
             );
           }
-          final info = await w.client.get(
-            '/auth/invite-info',
-            query: {'token': token},
-          );
-          if (!dialogContext.mounted) return;
-          final agreement = info['agreement'];
-          String? joinedId;
-          final accepted = await showDialog<bool>(
-            context: dialogContext,
-            builder: (_) => RaftFormDialog(
-              title: raftFormat(context, 'Join {workspace}?', {
-                'workspace': info['serverName'],
-              }),
-              description: agreement is Map
-                  ? '${agreement['title']} · Version ${agreement['version']}\n\n${agreement['bodyMarkdown']}'
-                  : 'You have been invited to this workspace${info['inviterName'] == null ? '' : ' by ${info['inviterName']}'}.',
-              fields: [],
-              submitLabel: agreement == null
-                  ? 'Join workspace'
-                  : 'Agree and join',
-              onSubmit: (_) async {
-                final result = await w.client.post(
-                  '/auth/accept-invite',
-                  data: {
-                    'token': token,
-                    if (agreement is Map) 'agreementId': agreement['id'],
-                  },
-                );
-                joinedId = result['serverId'];
-              },
-            ),
-          );
-          if (accepted != true) {
-            throw const RaftApiException(
-              'The invitation has not been accepted.',
-            );
-          }
-          await w.recoverMembership();
-          final next = w.servers.where((s) => s.id == joinedId).firstOrNull;
-          if (next != null) await w.selectServer(next);
+          InviteRequests.instance.open(link);
         },
       ),
     );
@@ -123,25 +88,27 @@ class WorkspaceActions {
   }) async {
     final server = w.server;
     if (server == null) return;
-    await showDialog(
-      context: context,
+    await showRaftForm<void>(
+      context,
       builder: (_) => RaftFormDialog(
-        title: delete ? 'Delete workspace?' : 'Leave workspace?',
+        title: delete ? 'Delete Server' : 'Leave Server',
         description: delete
             ? raftFormat(
                 context,
-                'Delete {workspace}, its channels and messages. This cannot be undone.',
-                {'workspace': server.name},
+                'This will permanently delete {server} and all its data (agents, channels, messages). This cannot be undone.',
+                {'server': server.name},
               )
             : raftFormat(
                 context,
-                'Leave {workspace}. A new invitation is required to return.',
-                {'workspace': server.name},
+                "You'll lose access to {serverName} and all of its channels. You can be re-invited later.",
+                {'serverName': server.name},
               ),
         fields: [
           RaftFormField(
             'confirm',
-            'Type workspace name',
+            raftFormat(context, 'Type {name} to confirm:', {
+              'name': server.name,
+            }),
             required: true,
             validator: (v) => v == server.name
                 ? null
@@ -150,11 +117,12 @@ class WorkspaceActions {
                   }),
           ),
         ],
-        submitLabel: delete ? 'Delete' : 'Leave',
+        submitLabel: delete ? 'Delete Server' : 'Leave Server',
+        cancelLabel: delete ? 'Cancel' : 'Cancel',
         destructive: delete,
         onSubmit: (_) async {
           await w.client.exitServer(server.id, delete: delete);
-          w.revokeServer(server.id);
+          w.sessionScope.revokeServer(server.id);
           await w.recoverMembership();
         },
       ),
@@ -163,13 +131,21 @@ class WorkspaceActions {
 }
 
 /// SettingsPanel.tsx ServerTabContent for the fixture capabilities:
-/// ProfileSection + DangerZoneSection. (PublicVisibilitySection and
-/// ArchivedChannelsSection render nothing without public visibility /
-/// archived channels.) Invitations live under Administration and the
+/// ProfileSection + PublicVisibilitySection + ArchivedChannelsSection +
+/// DangerZoneSection (the middle two render nothing without public
+/// visibility / archived channels). Invitations live under Administration and the
 /// workspace push mode under Notifications.
 class ServerSettingsView extends StatefulWidget {
-  const ServerSettingsView({super.key, required this.controller});
+  const ServerSettingsView({
+    super.key,
+    required this.controller,
+    this.pickAvatar,
+  });
   final WorkspaceController controller;
+
+  /// Image chooser for the server avatar (tests); defaults to the account
+  /// avatar picker (system photo picker on Android/iOS, file picker on desktop).
+  final Future<PickedAvatar?> Function(RaftClient client)? pickAvatar;
   @override
   State<ServerSettingsView> createState() => _ServerSettingsViewState();
 }
@@ -177,8 +153,9 @@ class ServerSettingsView extends StatefulWidget {
 class _ServerSettingsViewState extends State<ServerSettingsView> {
   WorkspaceController get w => widget.controller;
   final name = TextEditingController();
-  String? savedName, error;
-  bool saving = false, saved = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- error clears when the next save starts; the page is remounted on server/account change (WorkspaceSettings key). avatarError is scoped to _avatarServerId and clears on retry, on a successful upload, on switching server and when the user loses edit permission (server_avatar_test).
+  String? savedName, error, avatarError, _avatarServerId;
+  bool saving = false, saved = false, avatarSaving = false;
   Timer? savedReset;
 
   @override
@@ -192,6 +169,44 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
     super.didUpdateWidget(oldWidget);
     final current = w.server?.name ?? '';
     if (current != savedName) name.text = savedName = current;
+    if (_avatarServerId != w.server?.id) avatarError = null;
+  }
+
+  /// Web ProfileSection `handleUploadAvatar`. The error is local to this page:
+  /// it clears on the next attempt, on success and when the server changes.
+  Future<void> uploadAvatar() async {
+    final id = w.server?.id;
+    if (id == null || avatarSaving) return;
+    _avatarServerId = id;
+    setState(() {
+      avatarError = null;
+      avatarSaving = true;
+    });
+    bool current() => mounted && w.server?.id == id;
+    try {
+      final picked =
+          await (widget.pickAvatar ?? AccountMediaActions.pickAvatar)(w.client);
+      if (picked == null || !current()) return;
+      final data = await w.command(
+        'POST',
+        '/servers/$id/avatar',
+        data: picked.form,
+      );
+      final url = data is Map ? data['avatarUrl'] : null;
+      w.applyServerAvatar(id, url is String ? url : null);
+    } catch (e) {
+      if (current()) {
+        setState(
+          () => avatarError = userErrorText(
+            e,
+            fallback: 'Failed to upload server avatar',
+            where: 'server avatar',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => avatarSaving = false);
+    }
   }
 
   @override
@@ -227,34 +242,21 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
         if (mounted) setState(() => saved = false);
       });
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) {
+        setState(
+          () => error = userErrorText(
+            e,
+            fallback: 'Failed to update server',
+            where: 'server profile',
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => saving = false);
     }
   }
 
-  Future<void> confirmDelete() async {
-    final server = w.server;
-    if (server == null) return;
-    final matches = ValueNotifier(false);
-    final ok = await RaftConfirmDialog.show(
-      context,
-      RaftConfirmDialog(
-        title: 'Delete Server',
-        confirmLabel: 'Delete Server',
-        surfaceKey: const ValueKey('server-danger-dialog'),
-        confirmKey: const Key('server-delete-confirm-button'),
-        content: _DeleteServerConfirm(
-          name: server.name,
-          slug: server.string('slug'),
-          matches: matches,
-        ),
-        confirmEnabled: matches,
-      ),
-    );
-    matches.dispose();
-    if (ok == true) await exitServer(delete: true);
-  }
+  Future<void> confirmDelete() => confirmDeleteServer(context, w);
 
   Future<void> confirmLeave() async {
     final server = w.server;
@@ -269,6 +271,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
           {'serverName': server.name},
         ),
         confirmLabel: 'Leave Server',
+        cancelLabel: 'Cancel',
         surfaceKey: const ValueKey('server-danger-dialog'),
         // confirmColor="bg-brutal-orange" -> warning tone.
         confirmVariant: RaftButtonRecipeVariant.warning,
@@ -282,7 +285,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
     final server = w.server;
     if (server == null) return;
     await w.client.exitServer(server.id, delete: delete);
-    w.revokeServer(server.id);
+    w.sessionScope.revokeServer(server.id);
     await w.recoverMembership();
   }
 
@@ -307,12 +310,35 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
           glyph: RaftGlyph.building2,
         ),
         RaftSettingsProfileCard(
-          avatar: RaftServerProfileTile(initial: initial),
+          avatar: RaftServerProfileTile(
+            key: const Key('server-profile-avatar'),
+            initial: initial,
+            imageUrl: raftPublicAvatarUrl(
+              w.client.origin,
+              server.json['avatarUrl'] as String?,
+            ),
+            onUpload: canEdit ? uploadAvatar : null,
+            busy: avatarSaving,
+            uploadLabel: 'Upload image',
+            busyLabel: 'Uploading avatar',
+          ),
           title: server.name,
           subtitle: '/$slug',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (avatarError != null && canEdit) ...[
+                // `<p className="text-xs font-bold text-brutal-red" role="alert">`
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    raftText(context, avatarError!),
+                    key: const Key('server-profile-avatar-error'),
+                    style: RaftSettingsText(t).alert,
+                  ),
+                ),
+                const SizedBox(height: RaftSpace.x3),
+              ],
               RaftSettingsField(
                 label: 'Name',
                 child: canEdit
@@ -346,7 +372,8 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
               ),
               if (error != null) ...[
                 const SizedBox(height: RaftSpace.x3),
-                Text(error!, style: RaftSettingsText(t).alert),
+                // `<Banner intent="warning" density="sm" className="font-bold">`
+                RaftErrorBanner(error!, small: true, bold: true),
               ],
               if (canEdit) ...[
                 const SizedBox(height: RaftSpace.x3),
@@ -377,6 +404,10 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
           controller: w,
           webOrigin: ContentLinks.originFor(w.client.origin).origin,
         ),
+        // ArchivedChannelsSection (may archive channels, any archived).
+        ArchivedChannelsSection(controller: w),
+        // ArchivedAgentsSection (archived agents of this server, if any).
+        ArchivedAgentsSection(controller: w),
         const RaftSettingsSectionHeader(
           label: 'Danger Zone',
           glyph: RaftGlyph.triangleAlert,
@@ -416,82 +447,6 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
   }
 }
 
-/// DangerZoneSection delete confirmation body: `space-y-4`, warning copy
-/// with the bold server name, then "Type `slug` to confirm:" over SlugInput.
-class _DeleteServerConfirm extends StatefulWidget {
-  const _DeleteServerConfirm({
-    required this.name,
-    required this.slug,
-    required this.matches,
-  });
-  final String name, slug;
-  final ValueNotifier<bool> matches;
-  @override
-  State<_DeleteServerConfirm> createState() => _DeleteServerConfirmState();
-}
-
-class _DeleteServerConfirmState extends State<_DeleteServerConfirm> {
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
-    // `<span className="font-bold">` inside the dialog copy.
-    final bold = RaftConfirmDialog.messageStyle(t)
-        .merge(text.title)
-        .copyWith(
-          fontSize: RaftConfirmDialog.messageStyle(t).fontSize,
-          height: RaftConfirmDialog.messageStyle(t).height,
-          color: RaftConfirmDialog.messageStyle(t).color,
-        );
-    // `text-sm text-foreground-muted theme-brutal:text-black/60 mb-2`
-    final prompt = text.bodyMuted;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: raftText(context, 'This will permanently delete '),
-              ),
-              TextSpan(text: widget.name, style: bold),
-              TextSpan(
-                text: raftText(
-                  context,
-                  ' and all its data (agents, channels, messages). This cannot be undone.',
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: RaftSpace.x4),
-        Text.rich(
-          // CSS gives the inline mono span the paragraph's 20px line box.
-          strutStyle: StrutStyle.fromTextStyle(prompt, forceStrutHeight: true),
-          TextSpan(
-            style: prompt,
-            children: [
-              TextSpan(text: raftText(context, 'Type ')),
-              TextSpan(text: widget.slug, style: text.monoBold),
-              TextSpan(text: raftText(context, ' to confirm:')),
-            ],
-          ),
-        ),
-        const SizedBox(height: RaftSpace.x2),
-        RaftSettingsPrefixedInput(
-          key: const Key('server-delete-slug-input'),
-          prefix: '/',
-          placeholder: widget.slug,
-          mono: true,
-          // Inherits the confirm copy's `text-foreground-muted`.
-          textColor: RaftConfirmDialog.messageStyle(t).color,
-          onChanged: (v) => widget.matches.value = v == widget.slug,
-        ),
-      ],
-    );
-  }
-}
-
 /// Workspace push mode and invitations (Administration).
 class MembersView extends StatefulWidget {
   const MembersView({
@@ -509,8 +464,16 @@ class MembersView extends StatefulWidget {
 
 class _MembersViewState extends State<MembersView> {
   WorkspaceController get w => widget.controller;
-  List<Map<String, dynamic>> members = [];
-  bool loading = true;
+  // The workspace directory already holds this list (same endpoint); the page
+  // opens with it and the read below revalidates in place.
+  late List<Map<String, dynamic>> members = [
+    if (w.server != null && w.client.user != null)
+      ...w.services.entityDirectory.rows(WorkspaceEntityKind.members),
+  ];
+  late bool loading =
+      members.isEmpty &&
+      !w.services.entityDirectory.state(WorkspaceEntityKind.members).loaded;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Members load/profile error clears on the next successful load or Retry; the page is disposed on navigation.
   String? error;
   StreamSubscription<RaftEvent>? events;
   @override
@@ -533,13 +496,16 @@ class _MembersViewState extends State<MembersView> {
     try {
       final result = await w.query('/servers/${w.server!.id}/members');
       if (mounted && generation == w.client.generation) {
-        setState(
-          () =>
-              members = [for (final p in result) Map<String, dynamic>.from(p)],
-        );
+        setState(() {
+          members = [for (final p in result) Map<String, dynamic>.from(p)];
+          // A retry that succeeds ends the load error it was offered for.
+          error = null;
+        });
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) {
+        setState(() => error = userErrorText(e, where: 'members'));
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -552,56 +518,87 @@ class _MembersViewState extends State<MembersView> {
       return;
     }
     try {
-      final value = await w.query(
-        '/servers/${w.server!.id}/members/${member['userId'] ?? member['id']}/profile',
-      );
-      if (!mounted) return;
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('${value['displayName'] ?? value['name']}'),
-          content: SelectableText(
-            '${value['description'] ?? ''}\n\n${value['email'] ?? ''}',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(raftText(context, 'Close')),
+      final userId = '${member['userId'] ?? member['id']}';
+      // The dialog opens at once from the directory's row (else the list row);
+      // the profile read fills the detail fields in place.
+      final profile = ValueNotifier<Map<String, dynamic>>({
+        ...member,
+        ...?w.services.entityDirectory.member(userId),
+      });
+      final owner = w;
+      unawaited(
+        w
+            .query('/servers/${w.server!.id}/members/$userId/profile')
+            .then<void>(
+              (value) {
+                if (value is Map && identical(owner, w)) {
+                  profile.value = {
+                    ...profile.value,
+                    ...Map<String, dynamic>.from(value),
+                  };
+                }
+              },
+              onError: (Object e) {
+                if (mounted) {
+                  setState(() => error = userErrorText(e, where: 'member'));
+                }
+              },
             ),
-          ],
+      );
+      await showRaftDialog(
+        legacyMaterial: true,
+        context: context,
+        builder: (context) => ValueListenableBuilder<Map<String, dynamic>>(
+          valueListenable: profile,
+          builder: (context, value, _) => RaftAlertDialog(
+            legacy: RaftLegacyAlert.material,
+            title: Text(humanDisplayName(value)),
+            content: SelectableText(
+              '${value['description'] ?? ''}\n\n${value['email'] ?? ''}',
+            ),
+            actions: [
+              RaftButton.text(
+                onPressed: () => Navigator.pop(context),
+                child: Text(raftText(context, 'Close')),
+              ),
+            ],
+          ),
         ),
       );
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = userErrorText(e, where: 'member'));
     }
   }
 
   Future<void> change(Map<String, dynamic> member, String role) async {
     final id = member['userId'] ?? member['id'],
         server = w.server!.id,
-        name = '${member['displayName'] ?? member['name']}';
-    await showDialog(
+        name = humanDisplayName(member);
+    await showRaftDialog(
+      legacyMaterial: true,
       context: context,
+      barrierDismissible: false,
       builder: (_) => RaftFormDialog(
         title: role == 'remove'
-            ? raftFormat(context, 'Remove {name}?', {'name': name})
-            : raftText(context, 'Change role?'),
+            ? raftText(context, 'Remove Member')
+            : raftText(context, 'Change Role'),
         description: role == 'remove'
             ? raftFormat(
                 context,
-                'Remove this member from {workspace}. They will lose workspace access.',
-                {'workspace': w.server!.name},
+                'Remove {name} from {server}. They will lose access to the server.',
+                {'name': name, 'server': w.server!.name},
               )
-            : raftFormat(context, 'Make {name} a {role} in {workspace}.', {
+            : raftFormat(context, 'Make {name} a {role} in {server}.', {
                 'name': name,
                 'role': raftText(
                   context,
                   '${role[0].toUpperCase()}${role.substring(1)}',
                 ),
-                'workspace': w.server!.name,
+                'server': w.server!.name,
               }),
         fields: [],
-        submitLabel: role == 'remove' ? 'Remove' : 'Confirm',
+        submitLabel: role == 'remove' ? 'Remove Member' : 'Change Role',
+        cancelLabel: role == 'remove' ? 'Keep Member' : 'Cancel',
         destructive: role == 'remove',
         onSubmit: (_) async {
           await w.command(
@@ -623,7 +620,7 @@ class _MembersViewState extends State<MembersView> {
           title: 'Members',
           actions: [
             RaftIconButton(
-              tooltip: 'Refresh members',
+              tooltip: 'Refresh Members',
               onPressed: load,
               glyph: RaftGlyph.refreshCw,
             ),
@@ -631,7 +628,7 @@ class _MembersViewState extends State<MembersView> {
         ),
       Expanded(
         child: loading
-            ? Center(child: CircularProgressIndicator())
+            ? const Center(child: RaftSpinner())
             : ListView(
                 padding: raftScrollPadding(context, const EdgeInsets.all(24)),
                 children: [
@@ -645,8 +642,8 @@ class _MembersViewState extends State<MembersView> {
                           ),
                         ),
                         RaftTooltip(
-                          message: raftText(context, 'Refresh members'),
-                          child: IconButton(
+                          message: raftText(context, 'Refresh Members'),
+                          child: RaftButton.iconAction(
                             onPressed: load,
                             icon: const Icon(Icons.refresh),
                           ),
@@ -654,58 +651,61 @@ class _MembersViewState extends State<MembersView> {
                       ],
                     ),
                   if (error != null)
-                    Semantics(liveRegion: true, child: Text(error!)),
+                    RaftLoadError(error!, onRetry: load, expand: false),
                   for (final member in members)
-                    ListTile(
-                      leading: RaftAvatar(
-                        name: '${member['displayName'] ?? member['name']}',
-                      ),
-                      title: Text('${member['displayName'] ?? member['name']}'),
-                      subtitle: Text(
-                        '${member['role']} · ${member['email'] ?? ''}',
-                      ),
-                      onTap: () => profile(member),
-                      trailing:
-                          w.can('changeMemberRoles') || w.can('removeMembers')
-                          ? RaftTooltip(
-                              message: raftText(context, 'Member actions'),
-                              child: PopupMenuButton<String>(
-                                onSelected: (role) => change(member, role),
-                                itemBuilder: (_) => [
-                                  if (w.can('changeMemberRoles')) ...[
-                                    for (final role
-                                        in w.server!.string('role') == 'owner'
-                                            ? [
-                                                'owner',
-                                                'admin',
-                                                'member',
-                                                'guest',
-                                              ]
-                                            : ['member', 'guest'])
-                                      PopupMenuItem(
-                                        value: role,
-                                        child: Text(
-                                          raftFormat(context, 'Make {role}', {
-                                            'role': raftText(
-                                              context,
-                                              '${role[0].toUpperCase()}${role.substring(1)}',
-                                            ),
-                                          }),
-                                        ),
-                                      ),
-                                  ],
-                                  if (w.can('removeMembers') &&
-                                      member['userId'] != w.client.user!.id)
+                    RaftListRow(
+                      onPressed: () => profile(member),
+                      children: [
+                        RaftAvatar(name: humanDisplayName(member)),
+                        RaftListRowBody(
+                          children: [
+                            RaftListRowTitle(humanDisplayName(member)),
+                            RaftListRowDescription(
+                              '${member['role']} · ${member['email'] ?? ''}',
+                            ),
+                          ],
+                        ),
+                        if (w.can('changeMemberRoles') ||
+                            w.can('removeMembers'))
+                          RaftTooltip(
+                            message: raftText(context, 'Member Actions'),
+                            child: PopupMenuButton<String>(
+                              onSelected: (role) => change(member, role),
+                              itemBuilder: (_) => [
+                                if (w.can('changeMemberRoles')) ...[
+                                  for (final role
+                                      in w.server!.string('role') == 'owner'
+                                          ? [
+                                              'owner',
+                                              'admin',
+                                              'member',
+                                              'guest',
+                                            ]
+                                          : ['member', 'guest'])
                                     PopupMenuItem(
-                                      value: 'remove',
+                                      value: role,
                                       child: Text(
-                                        raftText(context, 'Remove member'),
+                                        raftFormat(context, 'Make {role}', {
+                                          'role': raftText(
+                                            context,
+                                            '${role[0].toUpperCase()}${role.substring(1)}',
+                                          ),
+                                        }),
                                       ),
                                     ),
                                 ],
-                              ),
-                            )
-                          : null,
+                                if (w.can('removeMembers') &&
+                                    member['userId'] != w.client.user!.id)
+                                  PopupMenuItem(
+                                    value: 'remove',
+                                    child: Text(
+                                      raftText(context, 'Remove Member'),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                 ],
               ),

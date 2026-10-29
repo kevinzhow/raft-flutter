@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:raft_client/raft_client.dart';
 
-import 'workspace_controller.dart';
+import 'workspace_message_host.dart';
 
 final _pendingTaskBuckets = Expando<Map<String, Future<dynamic>>>();
 
@@ -10,33 +10,37 @@ final _pendingTaskBuckets = Expando<Map<String, Future<dynamic>>>();
 /// parent-channel bucket. This shares only a currently pending HTTP request;
 /// each consumer still owns its acceptance and authority checks.
 Future<dynamic> readSourceTaskBucket(
-  WorkspaceController w,
+  WorkspaceMessageHost host,
   String channelId, {
   RaftChannel? parentMetadata,
 }) {
+  final w = host.messageDomain;
   if (parentMetadata != null && parentMetadata.id != channelId) {
     throw ArgumentError('Task bucket metadata must match the parent channel');
   }
   final channel =
       parentMetadata ??
-      [...w.channels, ...w.dms].where((c) => c.id == channelId).firstOrNull;
+      [
+        ...w.channels.channels,
+        ...w.channels.dms,
+      ].where((c) => c.id == channelId).firstOrNull;
   final key = jsonEncode([
-    w.client.origin,
-    w.client.generation,
-    w.client.user?.id,
-    w.client.serverId,
-    w.server?.id,
-    w.server?.string('role'),
+    w.transport.client.origin,
+    w.transport.client.generation,
+    w.transport.client.user?.id,
+    w.transport.client.serverId,
+    w.context.server?.id,
+    w.context.server?.string('role'),
     channelId,
     channel?.joined,
     channel?.archived,
     channel?.json['channelCapabilities'],
   ]);
-  final RaftClient client = w.client;
+  final RaftClient client = w.transport.client;
   final pending = _pendingTaskBuckets[client] ??= {};
   if (pending[key] case final request?) return request;
   late final Future<dynamic> request;
-  request = w
+  request = w.transport
       .query('/tasks/channel/${Uri.encodeComponent(channelId)}')
       .whenComplete(() {
         if (identical(pending[key], request)) pending.remove(key);

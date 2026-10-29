@@ -210,6 +210,14 @@ for image in IMAGES:
 for aid in ATTACHMENT_IDS:
     routes[f'GET /attachments/{aid}/comments'] = comments_body(COMMENTS)
 
+# Public, identical logical input for both real clients. No preview URL,
+# local preview or cached original can conceal the wait for its address.
+PENDING_SPINNER = {
+    'image': att('att-spinner-address-289', 'waiting-address.png', 'image/png', 48211,
+                 width=640, height=400),
+    'queryPath': '/attachments/att-spinner-address-289/url',
+}
+
 route_sets = {
     'comments-empty': {f'GET /attachments/{aid}/comments': comments_body([]) for aid in ATTACHMENT_IDS},
     'comments-pending': {f'GET /attachments/{aid}/comments': {'$pending': True} for aid in ATTACHMENT_IDS},
@@ -231,6 +239,7 @@ fixture = {
     'comments': COMMENTS,
     'routes': routes,
     'routeSets': route_sets,
+    'pendingSpinner': PENDING_SPINNER,
 }
 
 # ------------------------------------------------------------------- the cases
@@ -275,15 +284,25 @@ OPEN_PREVIEW_COMMENTS_ANDROID = [{'type': 'tap', 'key': 'attachment-preview-mode
 # image lightbox (ImageLightbox.tsx) -------------------------------------------
 IMG = 'packages/web/src/components/ImageLightbox.tsx'
 add('image.single', 'single image', {'host': 'image', 'images': '1', 'index': '0'}, hint=IMG)
-add('image.gallery', 'gallery 2/3 with arrows and thumbnails', {'host': 'image', 'images': '3', 'index': '1'}, hint=IMG)
+# Flutter has no previous/next arrows (owner decision 2026-10-13: thumbnails, keys and swipe), so the React page
+# hides them (host/ThreadAttachmentCases.tsx hideArrows) and the cases compare counter, strip and stage.
+add('image.gallery', 'gallery 2/3: counter and thumbnails, Web arrows hidden', {'host': 'image', 'images': '3', 'index': '1', 'hideArrows': '1'},
+    hint=IMG)
+add('image.gallery-first', 'gallery 1/3: counter and thumbnails, Web arrows hidden', {'host': 'image', 'images': '3', 'index': '0', 'hideArrows': '1'},
+    hint=IMG)
 add('image.header', 'title bar, long file name and counter in a gallery', {'host': 'image', 'images': '3', 'index': '1'},
     selector=HEADER, crop='element', contract='component-bounds', hint=IMG)
 add('image.loading', 'full image still loading', {'host': 'image', 'images': '1', 'index': '0', 'routeSet': 'image-pending'},
     hint=IMG)
+add('image.pending-address-no-preview', 'waiting for the download address, no preview',
+    {'host': 'image', 'images': '1', 'index': '0', 'pendingSpinner': '1', 'machineryRev': 'spinner-address-289-v2-qualified-cleanup'}, hint=IMG,
+    notes='Actual address query pending, no thumbnail/localPreview/cache. Not image byte transfer. '
+          'Current Flutter missing Spinner is a product-state gap, not a successful Spinner capture.')
 add('image.error', 'full image failed to load', {'host': 'image', 'images': '1', 'index': '0', 'routeSet': 'image-error'},
     hint=IMG)
 add('image.single', 'single image', {'host': 'image', 'images': '1', 'index': '0'}, platform='mobile', hint=IMG)
-add('image.gallery', 'gallery 2/3', {'host': 'image', 'images': '3', 'index': '1'}, platform='mobile', hint=IMG)
+add('image.gallery', 'gallery 2/3, Web arrows hidden', {'host': 'image', 'images': '3', 'index': '1', 'hideArrows': '1'}, platform='mobile',
+    hint=IMG)
 
 # document host (DocumentPreviewHost + AttachmentPreviewShell) -------------------
 DOC = 'packages/web/src/components/message/DocumentPreviewHost.tsx + attachmentPreviewSurfaces.tsx'

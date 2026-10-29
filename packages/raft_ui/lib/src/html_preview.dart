@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'raft_selection_area.dart';
+
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as parser;
@@ -9,8 +12,15 @@ import 'theme.dart';
 
 /// Pure native HTML presentation. No script interpreter, iframe, local-file
 /// loader, remote image request or URL launcher belongs to this component.
+///
+/// The sanitizer builds the full DOM before it keeps a handful of text nodes,
+/// so the input is bounded by memory, not by what the page looks like. 16 MiB
+/// covers real single-file reports with inline base64 images (a 3 MB report
+/// failed at the former 2 MiB cap); beyond it the caller offers the browser.
+const raftStaticHtmlMaxChars = 16 * 1024 * 1024;
+
 String raftStaticHtml(String source) {
-  if (source.length > 2 * 1024 * 1024) {
+  if (source.length > raftStaticHtmlMaxChars) {
     throw const FormatException('The HTML is too large for a native preview.');
   }
   final document = parser.parse(source);
@@ -116,7 +126,7 @@ class RaftHtmlPreview extends StatelessWidget {
               ),
               if (onInteractive != null)
                 RaftButton(
-                  label: 'Open interactive preview in browser',
+                  label: 'Open Interactive Preview in Browser',
                   onPressed: busy ? null : onInteractive,
                   busy: busy,
                 ),
@@ -129,7 +139,7 @@ class RaftHtmlPreview extends StatelessWidget {
             color: t.panel,
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: SelectionArea(
+              child: RaftSelectionArea(
                 child: SingleChildScrollView(
                   child: HtmlWidget(
                     raftStaticHtml(html),
@@ -149,9 +159,11 @@ class RaftHtmlPreview extends StatelessWidget {
                         return InlineCustomWidget(
                           child: Semantics(
                             link: true,
-                            child: TextButton(
-                              style: TextButton.styleFrom(
-                                minimumSize: const Size(48, 48),
+                            child: RaftButton.text(
+                              legacyStyle: ButtonStyle(
+                                minimumSize: WidgetStatePropertyAll(
+                                  const Size(48, 48),
+                                ),
                               ),
                               onPressed: onLink == null
                                   ? null

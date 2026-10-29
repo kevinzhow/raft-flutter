@@ -1,6 +1,7 @@
 """Owner-authorized visual fixture repairs; no reference product edits."""
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 
@@ -36,6 +37,19 @@ HEADER_ANCHOR = '''        <ChatPanel
         />'''
 
 
+def synthetic_slice_content(code):
+    """Read the pinned source's literal concatenation without evaluating JS."""
+    anchor = 'const THREAD_MESSAGE_MD_WRAP_SLICE1: Message = {'
+    if code.count(anchor) != 1:
+        raise ValueError('reference synthetic message anchor changed')
+    chunk = code.split(anchor, 1)[1].split('\n};', 1)[0]
+    content = chunk.split('  content:\n', 1)[1].split('  mentions:', 1)[0]
+    literals = re.findall(r'"(?:[^"\\]|\\.)*"', content)
+    if not literals:
+        raise ValueError('reference synthetic message must contain literal text')
+    return ''.join(json.loads(value) for value in literals)
+
+
 def repair_definition(root):
     path = Path(root) / 'tool/reference-patches/markdown-tasks.json'
     repair = json.loads(path.read_text())
@@ -68,12 +82,21 @@ def repair_definition(root):
             or header['frame'] != {'width': 390, 'height': 120}
             or header['panelViewport'] != {'width': 390, 'height': 844}
             or header['headerHeight'] != 62 or header['tabsHeight'] != 30
+            or header['webGeometry'] != {'headerHeight': 56, 'tabsHeight': 49}
             or header['themeGeometry'] != {
                 'brutal-light': {'headerHeight': 62, 'tabsHeight': 30},
                 'elegant-light': {'headerHeight': 56, 'tabsHeight': 41},
                 'elegant-dark': {'headerHeight': 56, 'tabsHeight': 41}}):
         raise ValueError('header repair must retain the original strip and declared viewport')
-    repair['additionalRepairs'] = [notification, header]
+    synthetic_path = Path(root) / 'tool/reference-patches/markdown-synthetic-slice1.json'
+    synthetic = json.loads(synthetic_path.read_text())
+    synthetic['fixtureSha256'] = hashlib.sha256(synthetic_path.read_bytes()).hexdigest()
+    if (synthetic['sourceCommit'] != repair['sourceCommit']
+            or synthetic['cases'] != ['components.thread.message-row.md-wrap-slice1']
+            or synthetic['task']['taskNumber'] != 101 or synthetic['task']['status'] != 'in_progress'
+            or hashlib.sha256(synthetic['message']['content'].encode()).hexdigest() != synthetic['contentSHA256']):
+        raise ValueError('synthetic fixture must retain the declared public body and task state')
+    repair['additionalRepairs'] = [notification, header, synthetic]
     repair['markdownCases'] = list(repair['cases'])
     repair['cases'] = repair['cases'] + notification['cases'] + header['cases']
     return repair
@@ -84,7 +107,11 @@ def repair_cases(code, repair, source_commit):
         raise ValueError('markdown task repair is bound to a different reference commit')
     if code.count(TASKS_ANCHOR) != 1:
         raise ValueError('reference task fixture anchor changed; review the repair')
-    rows = json.dumps(repair['tasks'], ensure_ascii=False, indent=2)
+    synthetic = next(entry for entry in repair.get('additionalRepairs', [])
+                     if entry['repairId'] == 'markdown-synthetic-slice1-v1')
+    if synthetic_slice_content(code) != synthetic['message']['content']:
+        raise ValueError('public synthetic fixture differs from the pinned Web message')
+    rows = json.dumps([*repair['tasks'], synthetic['task']], ensure_ascii=False, indent=2)
     code = code.replace(TASKS_ANCHOR, '    // Owner-authorized fixture repair: complete shared task states.\n'
                         '    tasks: ' + rows + ' as never,')
     for notification in repair.get('additionalRepairs', []):
@@ -131,7 +158,17 @@ def capture_is_current(metadata, repair):
         if (not recorded.get('captureVerified')
                 or recorded.get('frame') != repair['frame']
                 or recorded.get('panelViewport') != repair['panelViewport']
-                or recorded.get('footerInCrop') is not False):
+                or recorded.get('footerInCrop') is not False
+                or recorded.get('header', {}).get('y') != 0
+                or recorded.get('header', {}).get('height') != repair['webGeometry']['headerHeight']
+                or recorded.get('tabs', {}).get('y') != repair['webGeometry']['headerHeight']
+                or recorded.get('tabs', {}).get('height') != repair['webGeometry']['tabsHeight']):
+            return False
+    if repair.get('repairId') == 'markdown-synthetic-slice1-v1':
+        expected_refs = [{'text': f"#{repair['task']['taskNumber']}", 'status': repair['task']['status']}]
+        if (recorded.get('captureVerified') is not True
+                or recorded.get('contentSHA256') != repair['contentSHA256']
+                or recorded.get('taskRefs') != expected_refs):
             return False
     return recorded.get('fixtureSha256') == repair['fixtureSha256'] and recorded.get('renderVerified') is True
 
@@ -190,6 +227,8 @@ def repair_annotations(out, site, repair):
                             if case_repair.get('repairId') == 'thread-header-viewport-frame-v1'
                             else '原测试声明两条通知却只渲染空白框。现挂载 Web 实际通知按钮并点击打开，两端使用同一份 warning/info 测试数据。浏览器已验证两条内容、数量及打开状态。这是组件测试，不代表实际通知送达。旧空白图保留，仍按原阈值计算差异。'
                             if case_repair.get('repairId') == 'notification-center-missing-component-v1'
+                            else '当前 Web 已使用公开合成样本，Flutter 的 Raft 夹具同步该正文、频道和 mention，并显式定义测试任务 #101 的状态。Web 正文和截图范围不改；旧两套外观继续使用冻结输入。原失败和旧图保留，仍按原阈值比较，不自动判通过。'
+                            if case_repair.get('repairId') == 'markdown-synthetic-slice1-v1'
                             else '原测试漏了任务状态，导致 Markdown 进入原文回退。现两端使用同一份完整任务数据，浏览器已验证任务标签正常渲染、无回退错误。旧截图保留；当前差异按原阈值重新计算，不自动判 Flutter 通过。'),
             'baselineSha256': hashlib.sha256(image.read_bytes()).hexdigest(),
             'links': links,

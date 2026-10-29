@@ -1,0 +1,32 @@
+// Chinese (zh) strings, see the catalog header in ../localization.dart.
+// Thread followers and attachment accessibility labels (moved from the former single map by the cindy/integration merge).
+const Map<String, String> zhCatalogFollowersAttachments = <String, String>{
+  "{count} Agent following": "{count} 个 Agent 正在关注",
+  "{count} Agents following": "{count} 个 Agent 正在关注",
+  "Remove {agent} from Followers": "将 {agent} 移出关注者",
+  "{count} images": "{count} 张图片",
+  "{count} attachments": "{count} 个附件",
+  "[{count} attachment]": "[{count} 个附件]",
+  "[{count} attachments]": "[{count} 个附件]",
+  "Open {filename} in Preview": "在预览中打开 {filename}",
+  "Download {filename}": "下载 {filename}",
+  "Loading {filename}": "正在加载 {filename}",
+  "Pause Audio {filename}": "暂停音频 {filename}",
+  "Play Audio {filename}": "播放音频 {filename}",
+  "Seek audio {filename}": "调整音频进度 {filename}",
+  "Audio volume {filename}": "调整音频音量 {filename}",
+  "Play Video {filename}": "播放视频 {filename}",
+  "Pause Video {filename}": "暂停视频 {filename}",
+  "Seek video {filename}": "调整视频进度 {filename}",
+  "Mute Video {filename}": "静音视频 {filename}",
+  "Unmute Video {filename}": "取消静音视频 {filename}",
+  "Video volume {filename}": "调整视频音量 {filename}",
+  "Full Screen {filename}": "全屏 {filename}",
+  "Exit Full Screen {filename}": "退出全屏 {filename}",
+  "Video {filename}": "视频 {filename}",
+  "{position} of {duration}": "{position} / {duration}",
+  "{agent} follows from {server}. Switch to that server to remove them.":
+      "{agent} 从 {server} 关注此消息列。请切到该服务器后移除。",
+  "Removed {agent} from this thread's followers.": "已将 {agent} 移出此消息列的关注者。",
+  "Restored {agent} as a follower.": "已恢复 {agent} 的关注。",
+};

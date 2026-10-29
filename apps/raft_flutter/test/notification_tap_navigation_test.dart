@@ -8,10 +8,12 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/platform/content_coordinator.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'chat_focus_receipt_test.dart' show paintedMessage;
 import 'message_presentation_test.dart' show MessageAdapter;
 import 'workspace_activity_activation_test.dart' show message;
+import 'flutter_test_config.dart' show leakDebt;
 import 'workspace_source_location_contract_test.dart'
     show LocalNotifications, frames, mountPage, pageFixture;
 
@@ -21,7 +23,7 @@ import 'workspace_source_location_contract_test.dart'
 // /s/<slug>/channel/<id>?msg=<id> or ?thread=<parent>:<msg>&msg=<reply>.
 // Drives main.dart's real NativeContentCoordinator tap handler, its
 // membership/context authorization and the mounted WorkspaceView.
-void _routes(WorkspaceController w, MessageAdapter api) {
+void notificationRoutes(WorkspaceController w, MessageAdapter api) {
   final other = RaftChannel({
     'id': 'c2',
     'serverId': 's1',
@@ -92,65 +94,62 @@ Future<void> _settle(WidgetTester t, bool Function() done) async {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('$family/$dark invalid notification payloads never navigate', (
-      t,
-    ) async {
-      final (w, api) = await pageFixture(t, section: 'chat');
-      _routes(w, api);
-      final n = LocalNotifications();
-      final coordinator = NativeContentCoordinator(
-        notifications: n,
-        links: const Stream.empty(),
-      );
-      await t.runAsync(coordinator.init);
-      coordinator.bindWorkspace(w);
-      await mountPage(t, w, family, dark);
-      final before = w.location,
-          entries = w.navigation.entries.length,
-          index = w.navigation.index;
-      api.calls.clear();
-      for (final payload in [
-        'not json',
-        'raft-notification-test',
-        jsonEncode(['list']),
-        _payload(w, _channelUri, change: {'origin': 'https://evil.invalid'}),
-        _payload(w, _channelUri, change: {'principal': 'mallory'}),
-        _payload(w, _channelUri, change: {'serverId': 'other'}),
-        _payload(w, _channelUri, change: {'uri': 42}),
-        _payload(w, 'raft://v1/servers/other/channels/c2/messages/m2'),
-        _payload(w, '$_channelUri#frag'),
-        _payload(w, 'https://evil.invalid/s/demo/channel/c2?msg=m2'),
-        _payload(w, 'raft://oauth/callback?code=x'),
-      ]) {
-        n.onTap!(payload);
-        await frames(t, () {
-          expect(w.location, before, reason: payload);
-          expect(w.navigation.entries.length, entries);
-          expect(w.navigation.index, index);
-        });
-      }
-      expect(api.calls, isEmpty);
-      expect(w.error, isNull);
-      expect(paintedMessage(t, 'm2'), isNull);
-      await t.runAsync(coordinator.dispose);
-      await t.pumpWidget(const SizedBox());
-      await t.pumpAndSettle();
-      expect(t.takeException(), isNull);
-    });
+  // Leak debt (app root): see docs/development.md, Leak tracking.
+  leakDebt(const ['LocalNotifications']);
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      '${dark ? 'dark' : 'light'} invalid notification payloads never navigate',
+      (t) async {
+        final (w, api) = await pageFixture(t, section: 'chat');
+        notificationRoutes(w, api);
+        final n = LocalNotifications();
+        final coordinator = NativeContentCoordinator(
+          notifications: n,
+          links: const Stream.empty(),
+        );
+        await t.runAsync(coordinator.init);
+        coordinator.bindWorkspace(w);
+        await mountPage(t, w, dark);
+        final before = w.location,
+            entries = w.navigation.entries.length,
+            index = w.navigation.index;
+        api.calls.clear();
+        for (final payload in [
+          'not json',
+          'raft-notification-test',
+          jsonEncode(['list']),
+          _payload(w, _channelUri, change: {'origin': 'https://evil.invalid'}),
+          _payload(w, _channelUri, change: {'principal': 'mallory'}),
+          _payload(w, _channelUri, change: {'serverId': 'other'}),
+          _payload(w, _channelUri, change: {'uri': 42}),
+          _payload(w, 'raft://v1/servers/other/channels/c2/messages/m2'),
+          _payload(w, '$_channelUri#frag'),
+          _payload(w, 'https://evil.invalid/s/demo/channel/c2?msg=m2'),
+          _payload(w, 'raft://oauth/callback?code=x'),
+        ]) {
+          n.onTap!(payload);
+          await frames(t, () {
+            expect(w.location, before, reason: payload);
+            expect(w.navigation.entries.length, entries);
+            expect(w.navigation.index, index);
+          });
+        }
+        expect(api.calls, isEmpty);
+        expect(w.error, isNull);
+        expect(paintedMessage(t, 'm2'), isNull);
+        await t.runAsync(coordinator.dispose);
+        await t.pumpWidget(const SizedBox());
+        await t.pumpAndSettle();
+        expect(t.takeException(), isNull);
+      },
+    );
 
-    // The thread link currently records two entries (channel PUSH, then
-    // thread PUSH); that case is tracked as an N28 defect, not asserted here.
-    for (final thread in [false]) {
+    for (final thread in [false, true]) {
       testWidgets(
-        '$family/$dark valid ${thread ? 'thread' : 'channel'} notification opens its original link with one history entry',
+        '${dark ? 'dark' : 'light'} valid ${thread ? 'thread' : 'channel'} notification opens its original link with one history entry',
         (t) async {
           final (w, api) = await pageFixture(t, section: 'chat');
-          _routes(w, api);
+          notificationRoutes(w, api);
           final n = LocalNotifications();
           final coordinator = NativeContentCoordinator(
             notifications: n,
@@ -158,7 +157,7 @@ void main() {
           );
           await t.runAsync(coordinator.init);
           coordinator.bindWorkspace(w);
-          await mountPage(t, w, family, dark);
+          await mountPage(t, w, dark);
           final before = w.location,
               entries = w.navigation.entries.length,
               index = w.navigation.index;
@@ -207,7 +206,7 @@ void main() {
     // neither step leaves the app.
     for (final thread in [false, true]) {
       testWidgets(
-        '$family/$dark cold-start ${thread ? 'thread' : 'channel'} notification Back reaches channel then server home without exiting',
+        '${dark ? 'dark' : 'light'} cold-start ${thread ? 'thread' : 'channel'} notification Back reaches channel then server home without exiting',
         (t) async {
           final exits = <MethodCall>[];
           t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -230,10 +229,10 @@ void main() {
           );
           await t.runAsync(coordinator.init);
           final (w, api) = await pageFixture(t, section: 'home');
-          _routes(w, api);
+          notificationRoutes(w, api);
           // Tapped while no workspace is bound yet: held, not dropped.
           n.onTap!(_payload(w, thread ? _threadUri : _channelUri));
-          await mountPage(t, w, family, dark, width: 390);
+          await mountPage(t, w, dark, width: 390);
           expect(w.location.toString(), '/s/demo');
           coordinator.bindWorkspace(w);
           await _settle(

@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+"""Merges run directories into one matrix (entry/case x platform x build): the report.md of a smoke campaign.
+
+  tool/attachment-open-smoke/report --out /tmp/attachment-open-smoke/report.md \
+      current-android=/tmp/aos/android-current current-linux=/tmp/aos/linux-current 8074-android=/tmp/aos/android-8074
+
+Each argument is `<build>-<platform>=<run dir>` (the run dir holds results.jsonl). A cell is OK, FAIL or `-` (not run),
+with the time to first content in ms; a trailing list below the table has the failure details and request logs.
+"""
+import argparse, json
+from pathlib import Path
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('runs', nargs='+')
+    args = ap.parse_args()
+    columns, data, order = [], {}, []
+    for spec in args.runs:
+        name, _, path = spec.partition('=')
+        columns.append(name)
+        for line in (Path(path) / 'results.jsonl').read_text().splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            key = (row['entry'], row['case'])
+            if key not in order:
+                order.append(key)
+            data.setdefault(key, {})[name] = row
+    lines = ['# Attachment open smoke matrix', '', '| entry | case | ' + ' | '.join(columns) + ' |', '|---|---|' + '---|' * len(columns)]
+    for key in order:
+        cells = []
+        for column in columns:
+            row = data[key].get(column)
+            cells.append('-' if row is None else ('OK %sms' % row.get('ms') if row['ok'] else 'FAIL'))
+        lines.append(f'| {key[0]} | {key[1]} | ' + ' | '.join(cells) + ' |')
+    lines += ['', '## Failures', '']
+    for key in order:
+        for column in columns:
+            row = data[key].get(column)
+            if row is not None and not row['ok']:
+                lines.append(f"### {key[0]}/{key[1]} on {column}")
+                lines.append('')
+                lines.append(f"- {row['detail']}")
+                lines.append(f"- requests: `{json.dumps(row.get('requests'))[:1500]}`")
+                lines.append('')
+    args.out.write_text('\n'.join(lines) + '\n')
+    print(f'{len(order)} cases x {len(columns)} runs -> {args.out}')
+
+
+if __name__ == '__main__':
+    main()

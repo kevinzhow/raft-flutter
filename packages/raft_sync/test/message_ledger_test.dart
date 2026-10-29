@@ -57,4 +57,68 @@ void main() {
       expect(l.messages('general'), hasLength(1));
     },
   );
+
+  test('later revisions keep an incremental record until it is discarded', () {
+    final l = MessageLedger()..switchServer('a');
+    final base = l.revision;
+    l.ingest([
+      row('a', '1'),
+      row('b', '2', channel: 'other'),
+    ], expectedGeneration: l.generation);
+    final changes = l.changesAfter(base);
+    expect(changes?.map((change) => change.messageId), ['a', 'b']);
+    l.discardChangesThrough(l.revision);
+    expect(l.changesAfter(l.revision), isEmpty);
+    final marked = l.revision;
+    l.remove('general', 'a');
+    final removed = l.changesAfter(marked);
+    expect(removed, hasLength(1));
+    expect(removed!.single.removed, isTrue);
+    expect(removed.single.messageId, 'a');
+    l.switchServer('b');
+    expect(l.changesAfter(marked), isNull);
+  });
+
+  test('a slower reader keeps changes another reader has finished', () {
+    final l = MessageLedger()..switchServer('a');
+    final reader = Object();
+    l.noteChangesRead(reader, l.revision);
+    final base = l.revision;
+    l.ingest([row('a', '1')], expectedGeneration: l.generation);
+    l.discardChangesThrough(l.revision);
+    expect(l.changesAfter(base)?.map((change) => change.messageId), ['a']);
+    l.noteChangesRead(reader, l.revision);
+    expect(l.changesAfter(l.revision), isEmpty);
+  });
+
+  test('the incremental cap still drops changes a reader has not applied', () {
+    final l = MessageLedger()..switchServer('a');
+    final reader = Object();
+    l.noteChangesRead(reader, l.revision);
+    final base = l.revision;
+    final count = MessageLedger.incrementalChangeLimit + 1;
+    for (var i = 0; i < count; i++) {
+      l.ingest([row('cap$i', '$i')], expectedGeneration: l.generation);
+    }
+    expect(
+      l.debugChangeCount,
+      lessThanOrEqualTo(MessageLedger.incrementalChangeLimit),
+    );
+    expect(l.changesAfter(base), isNull);
+  });
+
+  test('an unread incremental record stays within its window', () {
+    final l = MessageLedger()..switchServer('a');
+    final base = l.revision;
+    final count = MessageLedger.incrementalChangeLimit + 1;
+    for (var i = 0; i < count; i++) {
+      l.ingest([row('m$i', '$i')], expectedGeneration: l.generation);
+    }
+    expect(
+      l.debugChangeCount,
+      lessThanOrEqualTo(MessageLedger.incrementalChangeLimit),
+    );
+    expect(l.changesAfter(base), isNull);
+    expect(l.messages('general'), hasLength(count));
+  });
 }

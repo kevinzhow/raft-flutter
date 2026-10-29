@@ -1,0 +1,17 @@
+{
+  "userId": "66666666-6666-4666-8666-666666666666",
+  "serverId": "22222222-2222-4222-8222-222222222299",
+  "serverName": "Partner Studio",
+  "serverSlug": "partner-studio",
+  "name": "jo_park",
+  "displayName": "Jo Park",
+  "description": "Design lead at Partner Studio",
+  "avatarUrl": null,
+  "email": null,
+  "gravatarHash": "",
+  "role": null,
+  "joinedAt": null,
+  "membershipStatus": "active",
+  "createdAgents": [],
+  "profileProjection": "channel_summary"
+}

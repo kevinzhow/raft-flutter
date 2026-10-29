@@ -49,7 +49,7 @@ void main() {
               'Before paragraph\n\nAfter paragraph\n\n| Status | Count |\n|---|---|\n${List.generate(rows, (i) => '|Value $i|${i + 1}|').join('\n')}';
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(RaftFamily.elegant, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(body: RaftMessageBody(content: source)),
             ),
           );
@@ -109,11 +109,11 @@ void main() {
   }
 
   testWidgets(
-    'Brutal mixed-stroke table remains explicit pending renderer without global gap change',
+    'single-stroke table collapses half a border without global gap change',
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: const Scaffold(
             body: RaftMessageBody(
               content: '| Status | Count |\n|---|---|\n|Ready|3|',
@@ -123,8 +123,12 @@ void main() {
       );
       final context = tester.element(find.byType(RaftMessageBody));
       final recipe = MessageContentRecipe(RaftTokens.of(context));
-      expect(recipe.collapsedTableHalfStroke, 0);
-      expect(recipe.tableCellInset, MessageContentPrimitive.tableInset);
+      // One 1px stroke everywhere: the collapsed table owns half of it.
+      expect(recipe.collapsedTableHalfStroke, 0.5);
+      expect(
+        recipe.tableCellInset,
+        MessageContentPrimitive.tableInset + const EdgeInsets.all(.5),
+      );
       expect(recipe.stylesheet(context).blockSpacing, 4);
       expect(tester.takeException(), isNull);
     },

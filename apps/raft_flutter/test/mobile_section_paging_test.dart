@@ -16,13 +16,18 @@ import 'panel_revisit_cache_test.dart' show settle;
 import 'source_feedback_store_test.dart' as feedback;
 
 void main() {
-  Future<void> mount(WidgetTester t, Widget child) async {
-    t.view.physicalSize = const Size(390, 844);
+  Future<void> mount(
+    WidgetTester t,
+    Widget child, {
+    Size size = const Size(390, 844),
+    TargetPlatform? platform,
+  }) async {
+    t.view.physicalSize = size;
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme().copyWith(platform: platform),
         home: Scaffold(body: child),
       ),
     );
@@ -37,7 +42,7 @@ void main() {
   }
 
   testWidgets(
-    'Activity five sections share owner; revisits retain offset and show cached window before network',
+    'Activity six sections share owner; revisits retain offset and show cached window before network',
     (t) async {
       final (client, w) = activityFixture();
       addTearDown(() async {
@@ -60,7 +65,7 @@ void main() {
       await t.pumpAndSettle();
       final double offset = owner.listScroll.offset;
       expect(offset, greaterThan(100));
-      for (final view in ['unread', 'mentions', 'saved', 'done']) {
+      for (final view in ['unread', 'mentions', 'saved', 'dms', 'done']) {
         await swipe(t);
         expect(owner.filter, view);
         expect(t.state(find.byType(ResourceView)), same(originalOwner));
@@ -247,4 +252,69 @@ void main() {
       expect(t.takeException(), isNull);
     },
   );
+
+  // Swiping between sections is a finger gesture: it follows the input, not
+  // the width. An unfolded foldable is wide and touched; a narrow desktop
+  // window is narrow and driven by a mouse.
+  for (final (label, size, platform, swipes) in [
+    (
+      'foldable 856x944, touch',
+      const Size(856, 944),
+      TargetPlatform.android,
+      true,
+    ),
+    (
+      'landscape 944x856, touch',
+      const Size(944, 856),
+      TargetPlatform.android,
+      true,
+    ),
+    (
+      'phone 390x844, touch',
+      const Size(390, 844),
+      TargetPlatform.android,
+      true,
+    ),
+    (
+      'narrow 390x844, desktop',
+      const Size(390, 844),
+      TargetPlatform.linux,
+      false,
+    ),
+    (
+      'wide 1280x800, desktop',
+      const Size(1280, 800),
+      TargetPlatform.linux,
+      false,
+    ),
+  ]) {
+    testWidgets('Connected Apps sections swipe on $label: $swipes', (t) async {
+      final (w, api) = (await t.runAsync(() => fixture('owner')))!;
+      addTearDown(w.dispose);
+      api.routes['GET /integrations/clients'] = (_) => [];
+      api.routes['GET /integrations/marketplace'] = (_) => [];
+      api.routes['GET /integrations/overview'] = (_) => [];
+      await mount(
+        t,
+        IntegrationsView(controller: w),
+        size: size,
+        platform: platform,
+      );
+      RaftConnectedAppsTab tab() => t
+          .widget<RaftSectionPager<RaftConnectedAppsTab>>(
+            find.byType(RaftSectionPager<RaftConnectedAppsTab>),
+          )
+          .value;
+      final first = tab();
+      await t.drag(
+        find.byType(PageView).first,
+        Offset(-size.shortestSide * .8, 0),
+      );
+      await settle(t);
+      await t.pumpAndSettle();
+      expect(tab() != first, swipes);
+      await t.pumpWidget(const SizedBox());
+      expect(t.takeException(), isNull);
+    });
+  }
 }

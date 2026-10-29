@@ -42,7 +42,7 @@ Search、Account、Appearance 和移动四项导航已有后续实现与定向�
 ## Remaining client implementation and rendering limits
 
 - **Independent authenticated native workspace windows remain unimplemented.** Linux has one engine with single-instance URI forwarding. Separate workspace engines, focus/reuse and a shared secure session broker are missing. The configured Web-browser fallback is a separate capability and does not satisfy native-window parity. See `desktop-window-evidence.md`.
-- **Full Web Mermaid grammar is not reproduced by the native renderer.** Supported diagrams, source/copy/large-view interactions and failure fallback are implemented and tested. Syntax outside the native parser uses source fallback; a complete diagram-family rendering claim is unsupported. See `message-presentation-evidence.md`.
+- **Full Web Mermaid grammar is not reproduced by the native renderer.** Supported diagrams, source/copy/large-view interactions and failure fallback are implemented and tested. Syntax outside the native parser uses source fallback; a complete diagram-family rendering claim is unsupported.
 
 No mandatory mounted management/auth/joint/resource flow is intentionally replaced by a generic JSON form or fabricated server success. The repaired enabled reply/preference adapters are not classified as experimental gaps.
 
@@ -77,7 +77,7 @@ The Activity TypeSpec transport remains experimental/off under the pinned Web co
 
 The historical 6ab full runs cover native document/PDF/audio/video controls, supported Mermaid and source fallback. The earlier 042 native-player receipt is auxiliary EGL/MediaCodec evidence. Android 518ad5 reached actual PDF/audio/media checks before its later failure; it is not an aggregate pass. These earlier receipts do not replace final verification of the latest source and packaged runtime.
 
-Android cold-process background inbox delivery, the subsequent periodic deduplication check, actual OS notification activation and opt-out/logout cleanup were separately verified against c598e2c; see [background evidence](android-background-evidence.md). This does not prove iOS execution or later UI-source acceptance.
+Historical (the Android worker was removed on 2026-10-13, see [background inbox](background-inbox.md)): Android cold-process background inbox delivery, the subsequent periodic deduplication check, actual OS notification activation and opt-out/logout cleanup were separately verified against c598e2c; see [background evidence](android-background-evidence.md). This does not prove iOS execution or later UI-source acceptance.
 
 当前完整输入为 b98：仅附件测试使用支持的 Scrollable.ensureVisible 将真实标题居中，并等待有限时间内真实命中检查通过，再执行原有真实点击；PDF、音频、视频断言未改。工程与同源码 Linux／Android 整轮、最终制品运行与下载校验均已通过；这不证明 Search 自动定位或已解决此前 HTTP 异常。
 

@@ -77,7 +77,7 @@ WorkspaceController _workspace(ParityContext ctx) {
   w
     ..servers = [server]
     ..server = server;
-  w.ledger.switchServer(_serverId);
+  w.messageDomain.ledger.switchServer(_serverId);
   // Runtime usage relative times ("updated 5 minutes ago") read the fixture
   // instant the React provider freezes its clock at.
   final now = DateTime.fromMillisecondsSinceEpoch(
@@ -176,11 +176,7 @@ Widget _add(ParityContext ctx) => ScreenWorkspaceHost(
           return Stack(
             children: [
               Positioned.fill(
-                child: ColoredBox(
-                  color: t.brutal
-                      ? Colors.black.withValues(alpha: .6)
-                      : t.colors['layer-backdrop']!,
-                ),
+                child: ColoredBox(color: t.colors['layer-backdrop']!),
               ),
               AddComputerDialog(controller: w, deployment: 'development'),
             ],

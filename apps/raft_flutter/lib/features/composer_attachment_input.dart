@@ -23,10 +23,11 @@ bool Function() _fence(
   bool thread,
   bool Function() active,
 ) {
-  final scope = w.draftScope(thread: thread), generation = w.ledger.generation;
+  final scope = w.draftScope(thread: thread),
+      generation = w.messageDomain.ledger.generation;
   return () =>
       active() &&
-      generation == w.ledger.generation &&
+      generation == w.messageDomain.ledger.generation &&
       scope == w.draftScope(thread: thread);
 }
 
@@ -149,6 +150,16 @@ class _ComposerFileDropTargetState extends State<ComposerFileDropTarget> {
   Future<void> drop(DropDoneDetails details) async {
     final thread = widget.thread;
     final current = _fence(w, thread, active);
+    // Linux: the portal transfer and the URI list both failed (the plugin
+    // only sets this then), so say so rather than dropping the files silently.
+    if (details.error != null) {
+      // ignore: raft_lints/avoid_imperative_notice_state -- Drop notices (unreadable drop, skipped folders): composer notice store; ends with the composer visit, the next accepted send, or the next selection's decision (Web handleDrop/setError).
+      w.setComposerError(
+        raftText(context, "Couldn't read dropped files"),
+        thread: thread,
+      );
+      return;
+    }
     final bookmarks = [
       for (final item in details.files)
         if (Platform.isMacOS && (item.extraAppleBookmark?.isNotEmpty ?? false))
@@ -175,6 +186,7 @@ class _ComposerFileDropTargetState extends State<ComposerFileDropTarget> {
     // Web handleDrop: a drop of only folders uploads nothing; a mixed drop
     // notes the skip and the selection decision then owns the banner.
     if (read.folders > 0) {
+      // ignore: raft_lints/avoid_imperative_notice_state -- Drop notices (unreadable drop, skipped folders): composer notice store; ends with the composer visit, the next accepted send, or the next selection's decision (Web handleDrop/setError).
       w.setComposerError(
         raftText(
           context,

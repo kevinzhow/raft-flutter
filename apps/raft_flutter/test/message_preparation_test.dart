@@ -1,9 +1,56 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_flutter/features/message_preparation.dart';
 
 void main() {
+  testWidgets('an active ticker cannot spin idle retries or block input', (
+    tester,
+  ) async {
+    final scheduler = tester.binding;
+    final previousStrategy = scheduler.schedulingStrategy;
+    var idlePolls = 0, completed = 0, taps = 0;
+    // Bound the old zero-delay retry loop so this regression fails promptly
+    // instead of hanging the test runner. A real idle task must remain paused
+    // for the whole animation, regardless of how often admission is polled.
+    scheduler.schedulingStrategy = ({required priority, required scheduler}) {
+      if (priority == Priority.idle.value) return ++idlePolls >= 3;
+      return defaultSchedulingStrategy(
+        priority: priority,
+        scheduler: scheduler,
+      );
+    };
+    final ticker = Ticker((_) {})..start();
+    final owner = MessagePreparation(isIdle: () => true);
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: TextButton(onPressed: () => taps++, child: const Text('Tap')),
+        ),
+      );
+      owner.replace([() => completed++]);
+      await tester.pump(const Duration(milliseconds: 750));
+      expect(completed, 0, reason: 'Preparation waits for animation to finish');
+      await tester.tap(find.text('Tap'));
+      await tester.pump();
+      expect(taps, 1, reason: 'Input remains responsive while waiting');
+      ticker.stop();
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(
+        completed,
+        1,
+        reason: 'Retained preparation resumes after animation',
+      );
+    } finally {
+      owner.dispose();
+      ticker.dispose();
+      scheduler.schedulingStrategy = previousStrategy;
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
   testWidgets('preparation waits through route entry and predictive Back', (
     tester,
   ) async {

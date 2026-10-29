@@ -9,7 +9,7 @@ void main() {
   testWidgets('product radius override also changes inset shadow geometry', (
     tester,
   ) async {
-    final theme = raftTheme(RaftFamily.elegant, dark: true);
+    final theme = raftTheme(dark: true);
     final tokens = theme.extension<RaftTokens>()!;
     final style = RaftSlotStyle(
       {

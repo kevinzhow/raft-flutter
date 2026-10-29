@@ -1,5 +1,5 @@
 // GENERATED — do not edit. Regenerate with `tool/gen-tokens`.
-// Source: raft-ui-0.5.27/foundation.css, raft-web-26f77ef/index.css, tailwindcss-4.2.2/theme.css
+// Source: raft-ui-0.5.52/foundation.css, raft-web-a98ae00/index.css, tailwindcss-4.3.3/theme.css
 // dart format off
 // ignore_for_file: constant_identifier_names, lines_longer_than_80_chars
 
@@ -78,7 +78,9 @@ class RaftShadow {
   bool get hasInset => layers.any((l) => l.inset);
 }
 
-/// `--theme-shadow-*` (Tailwind `shadow-raft-*`) per theme.
+/// `--theme-shadow-*` (Tailwind `shadow-raft-*`): the field schema of the 0.5.52 control and
+/// overlay shadows. Raft 0.7.1 has no control shadows; raft_token_mapping.dart fills these
+/// from [RaftLight] / [RaftDark] (`xs`/`sm`/`md` empty, `lg`/`xl` the float elevation).
 @immutable
 class RaftThemeShadows {
   const RaftThemeShadows({
@@ -99,6 +101,15 @@ class RaftThemeShadows {
   /// `--theme-shadow-xl`
   final RaftShadow xl;
 
+  /// Every CSS name, in field order (without the leading `--`).
+  static const List<String> cssNames = [
+    'theme-shadow-xs',
+    'theme-shadow-sm',
+    'theme-shadow-md',
+    'theme-shadow-lg',
+    'theme-shadow-xl',
+  ];
+
   Map<String, RaftShadow> toCssMap() => {
     'theme-shadow-xs': xs,
     'theme-shadow-sm': sm,
@@ -106,104 +117,6 @@ class RaftThemeShadows {
     'theme-shadow-lg': lg,
     'theme-shadow-xl': xl,
   };
-  static const brutal = RaftThemeShadows(
-    // 1px 1px 0px var(--line-strong)
-    xs: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(1.0, 1.0), blur: 0.0, spread: 0.0, color: Color(0xff141110)),
-    ]),
-    // 2px 2px 0px var(--line-strong)
-    sm: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(2.0, 2.0), blur: 0.0, spread: 0.0, color: Color(0xff141110)),
-    ]),
-    // 4px 4px 0px var(--line-strong)
-    md: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(4.0, 4.0), blur: 0.0, spread: 0.0, color: Color(0xff141110)),
-    ]),
-    // 4px 4px 0px var(--color-black, oklch(0 0 0))
-    lg: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(4.0, 4.0), blur: 0.0, spread: 0.0, color: Color(0xff000000)),
-    ]),
-    // 6px 6px 0px var(--line-strong)
-    xl: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(6.0, 6.0), blur: 0.0, spread: 0.0, color: Color(0xff141110)),
-    ]),
-  );
-  static const elegantLight = RaftThemeShadows(
-    // oklch(0.145 0.002 106.42 / 0.071) 0px 0.5px 0px
-    xs: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.5), blur: 0.0, spread: 0.0, color: Color.fromRGBO(10, 10, 9, 0.071)),
-    ]),
-    // oklch(0.145 0.002 106.42 / 0.071) 0px 0.5px 0px, oklch(0.145 0.002 106.42 / 0.012) 0px 5px 4px -2px, oklch(0.145 0.002 106.42 / 0.02) 0px 3…
-    sm: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.5), blur: 0.0, spread: 0.0, color: Color.fromRGBO(10, 10, 9, 0.071)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 5.0), blur: 4.0, spread: -2.0, color: Color.fromRGBO(10, 10, 9, 0.012)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 3.0), blur: 3.0, spread: -1.0, color: Color.fromRGBO(10, 10, 9, 0.02)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 1.0), blur: 2.0, spread: -1.0, color: Color.fromRGBO(10, 10, 9, 0.039)),
-    ]),
-    // oklch(0.145 0.002 106.42 / 0.071) 0px 0.5px 0px, oklch(0.145 0.002 106.42 / 0.02) 0px 8px 8px -4px, oklch(0.145 0.002 106.42 / 0.027) 0px 5…
-    md: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.5), blur: 0.0, spread: 0.0, color: Color.fromRGBO(10, 10, 9, 0.071)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 8.0), blur: 8.0, spread: -4.0, color: Color.fromRGBO(10, 10, 9, 0.02)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 5.0), blur: 5.0, spread: -2.0, color: Color.fromRGBO(10, 10, 9, 0.027)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 2.0), blur: 3.0, spread: -1.0, color: Color.fromRGBO(10, 10, 9, 0.039)),
-    ]),
-    // 0px 1px 1px oklch(0.21 0.006 106.42 / 0.1), 0px 0px 0px 1px oklch(0.21 0.006 106.42 / 0.04), 0px 2px 12px -4px oklch(0.21 0.006 106.42 / 0.…
-    lg: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(0.0, 1.0), blur: 1.0, spread: 0.0, color: Color.fromRGBO(25, 24, 21, 0.1)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(25, 24, 21, 0.04)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 2.0), blur: 12.0, spread: -4.0, color: Color.fromRGBO(25, 24, 21, 0.16)),
-    ]),
-    // oklch(0.145 0.002 106.42 / 0.071) 0px 0.5px 0px, 0px 0px 0px 1px oklch(0.21 0.006 106.42 / 0.08), oklch(0.145 0.002 106.42 / 0.031) 0px 18p…
-    xl: RaftShadow([
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.5), blur: 0.0, spread: 0.0, color: Color.fromRGBO(10, 10, 9, 0.071)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(25, 24, 21, 0.08)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 18.0), blur: 24.0, spread: -12.0, color: Color.fromRGBO(10, 10, 9, 0.031)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 12.0), blur: 12.0, spread: -6.0, color: Color.fromRGBO(10, 10, 9, 0.039)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 4.0), blur: 6.0, spread: -3.0, color: Color.fromRGBO(10, 10, 9, 0.039)),
-    ]),
-  );
-  static const elegantDark = RaftThemeShadows(
-    // inset 0 1px 0 oklch(0.985 0.004 106.42 / 0.045), 0 0 0 1px oklch(0 0 0 / 0.4), 0 1px 3px oklch(0 0 0 / 0.22)
-    xs: RaftShadow([
-      RaftCssShadow(inset: true, offset: Offset(0.0, 1.0), blur: 0.0, spread: 0.0, color: Color.fromRGBO(250, 250, 247, 0.045)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(0, 0, 0, 0.4)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 1.0), blur: 3.0, spread: 0.0, color: Color.fromRGBO(0, 0, 0, 0.22)),
-    ]),
-    // inset 0 1px 0 oklch(0.985 0.004 106.42 / 0.05), inset 0 0 0 1px oklch(0.985 0.004 106.42 / 0.03), 0 0 0 1px oklch(0 0 0 / 0.45), 0 6px 6px …
-    sm: RaftShadow([
-      RaftCssShadow(inset: true, offset: Offset(0.0, 1.0), blur: 0.0, spread: 0.0, color: Color.fromRGBO(250, 250, 247, 0.05)),
-      RaftCssShadow(inset: true, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(250, 250, 247, 0.03)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(0, 0, 0, 0.45)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 6.0), blur: 6.0, spread: -2.0, color: Color.fromRGBO(0, 0, 0, 0.15)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 2.0), blur: 4.0, spread: 0.0, color: Color.fromRGBO(0, 0, 0, 0.25)),
-    ]),
-    // inset 0 1px 0 oklch(0.985 0.004 106.42 / 0.05), inset 0 0 0 1px oklch(0.985 0.004 106.42 / 0.03), 0 0 0 1px oklch(0 0 0 / 0.45), 0 10px 10p…
-    md: RaftShadow([
-      RaftCssShadow(inset: true, offset: Offset(0.0, 1.0), blur: 0.0, spread: 0.0, color: Color.fromRGBO(250, 250, 247, 0.05)),
-      RaftCssShadow(inset: true, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(250, 250, 247, 0.03)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(0, 0, 0, 0.45)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 10.0), blur: 10.0, spread: -4.0, color: Color.fromRGBO(0, 0, 0, 0.16)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 4.0), blur: 6.0, spread: -2.0, color: Color.fromRGBO(0, 0, 0, 0.2)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 1.0), blur: 2.0, spread: 0.0, color: Color.fromRGBO(0, 0, 0, 0.25)),
-    ]),
-    // inset 0 1px 0 oklch(0.985 0.004 106.42 / 0.06), inset 0 0 0 1px oklch(0.985 0.004 106.42 / 0.04), 0 0 0 1px oklch(0 0 0 / 0.55), 0 10px 20p…
-    lg: RaftShadow([
-      RaftCssShadow(inset: true, offset: Offset(0.0, 1.0), blur: 0.0, spread: 0.0, color: Color.fromRGBO(250, 250, 247, 0.06)),
-      RaftCssShadow(inset: true, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(250, 250, 247, 0.04)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(0, 0, 0, 0.55)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 10.0), blur: 20.0, spread: -6.0, color: Color.fromRGBO(0, 0, 0, 0.45)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 4.0), blur: 8.0, spread: -3.0, color: Color.fromRGBO(0, 0, 0, 0.35)),
-    ]),
-    // inset 0 1px 0 oklch(0.985 0.004 106.42 / 0.06), inset 0 0 0 1px oklch(0.985 0.004 106.42 / 0.04), 0 0 0 1px oklch(0 0 0 / 0.6), 0 24px 44px…
-    xl: RaftShadow([
-      RaftCssShadow(inset: true, offset: Offset(0.0, 1.0), blur: 0.0, spread: 0.0, color: Color.fromRGBO(250, 250, 247, 0.06)),
-      RaftCssShadow(inset: true, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(250, 250, 247, 0.04)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(0, 0, 0, 0.6)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 24.0), blur: 44.0, spread: -12.0, color: Color.fromRGBO(0, 0, 0, 0.5)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 10.0), blur: 16.0, spread: -6.0, color: Color.fromRGBO(0, 0, 0, 0.45)),
-      RaftCssShadow(inset: false, offset: Offset(0.0, 4.0), blur: 6.0, spread: -3.0, color: Color.fromRGBO(0, 0, 0, 0.4)),
-    ]),
-  );
 }
 
 /// Product (`packages/web/src/index.css` @theme) shadows and the Tailwind default
@@ -228,10 +141,6 @@ abstract final class RaftProductShadows {
   /// `--shadow-brutal-active: 1px 1px 0px #141111`
   static const shadowBrutalActive = RaftShadow([
     RaftCssShadow(inset: false, offset: Offset(1.0, 1.0), blur: 0.0, spread: 0.0, color: Color(0xff141111)),
-  ]);
-  /// `--shadow-workspace-mode-active: inset 3px 3px 0px rgb(20 17 17 / 35%)`
-  static const shadowWorkspaceModeActive = RaftShadow([
-    RaftCssShadow(inset: true, offset: Offset(3.0, 3.0), blur: 0.0, spread: 0.0, color: Color.fromRGBO(20, 17, 17, 0.35)),
   ]);
   /// `--shadow-soft-popover: 0 4px 12px rgba(0, 0, 0, 0.08)`
   static const shadowSoftPopover = RaftShadow([

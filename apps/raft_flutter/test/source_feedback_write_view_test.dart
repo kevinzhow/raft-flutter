@@ -45,7 +45,7 @@ class _Harness {
     await store.loadList();
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant, dark: dark),
+        theme: raftTheme(dark: dark),
         home: Scaffold(
           body: SourceFeedbackProjectionView(
             store: store,
@@ -73,7 +73,7 @@ void main() {
       'the created ticket', (tester) async {
     final h = _Harness(tickets: [fx.ticket(fx.first)]);
     await h.pump(tester);
-    expect(find.text('New feedback'), findsOneWidget);
+    expect(find.text('New Feedback'), findsOneWidget);
     await tester.tap(_key('feedback-new'));
     await tester.pumpAndSettle();
     expect(find.text('What would you like us to know?'), findsWidgets);
@@ -188,7 +188,7 @@ void main() {
     await tester.pump();
     // First frame: the ticket message from the inbox row, no skeleton.
     expect(find.text('Fixture ${fx.first}'), findsOneWidget);
-    expect(find.byType(RaftUiSkeleton), findsNothing);
+    expect(find.byType(RaftSkeleton), findsNothing);
     h.detailGate!.complete();
     h.detailGate = null;
     await tester.pumpAndSettle();

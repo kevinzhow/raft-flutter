@@ -13,8 +13,11 @@ import '../data/workspace_controller.dart';
 import '../data/message_task_cache.dart';
 import '../data/source_task_bucket.dart';
 import '../platform/system_bars.dart';
+import 'chat_view.dart' show ChatTaskOpener;
+import 'route_transition_gate.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
+import 'task_view_in_thread.dart';
 import 'mobile_workspace_pages.dart';
 
 /// Accepted task-card facts are tied to the authority that supplied the row.
@@ -50,14 +53,26 @@ class WorkspaceTaskHost extends StatefulWidget {
     super.key,
     required this.controller,
     required this.childBuilder,
+    required this.onTask,
+    required this.onViewBilling,
     this.leadingExtent = 0,
+    this.leadingOnRight = false,
     this.seed,
     this.presented = true,
   });
   final WorkspaceController controller;
   final Widget Function(double legacyDockWidth, VoidCallback? onLegacyEscape)
   childBuilder;
+
+  /// The discussion's task references and plan banner act on the host
+  /// workspace: another task replaces this one, billing leaves the modal.
+  final ChatTaskOpener? onTask;
+  final VoidCallback? onViewBilling;
   final double leadingExtent;
+
+  /// The [leadingExtent] column (rail and sidebar) sits on the right edge: the
+  /// side surface keeps clear of it there.
+  final bool leadingOnRight;
   final TaskSurfaceSeed? seed;
 
   /// MainLayout1394 suppresses global task presentation in active workspace.
@@ -233,6 +248,24 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
     w.notifyListeners();
   }
 
+  /// Web TaskModalBar "View in thread" (null while the task has no thread).
+  VoidCallback? viewInThread(TaskSurfaceController? task) {
+    if (task == null || legacy || !taskHasThreadToView(w, task.task)) {
+      return null;
+    }
+    return () {
+      if (identity != currentIdentity) return;
+      unawaited(
+        viewTaskInThread(
+          w,
+          task.task,
+          compact: RaftAdaptiveWorkspace.compactOf(context),
+          closeTask: close,
+        ),
+      );
+    };
+  }
+
   void back() {
     if (identity != currentIdentity) return;
     if (RaftAdaptiveWorkspace.compactOf(context)) {
@@ -250,8 +283,8 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: owner ?? w,
+  Widget build(BuildContext context) => QuietListenableBuilder(
+    listenable: owner ?? w,
     builder: (context, _) => layout(context, owner),
   );
 
@@ -299,7 +332,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
             Scaffold(
               backgroundColor: pageColor,
               body: RaftSystemBarSurface(
-                statusBarBackground: pageColor,
+                statusBarFallback: pageColor,
                 child: SafeArea(
                   bottom: false,
                   child: SourceTaskSurface(
@@ -307,7 +340,10 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
                     owner: task,
                     page: true,
                     onClose: back,
+                    onTask: widget.onTask,
+                    onViewBilling: widget.onViewBilling,
                     onBack: back,
+                    onViewInThread: viewInThread(task),
                     legacyPresentation: RaftLegacyTaskPresentation.mobileModal,
                   ),
                 ),
@@ -343,27 +379,41 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
           Positioned(
             top: 0,
             bottom: 0,
-            right: 0,
+            right: side && widget.leadingOnRight && viewport.width >= 768
+                ? widget.leadingExtent
+                : 0,
             left: side
                 ? docked
-                      ? viewport.width - legacyWidth
-                      : viewport.width >= 768
+                      ? viewport.width -
+                            legacyWidth -
+                            (widget.leadingOnRight ? widget.leadingExtent : 0)
+                      : viewport.width >= 768 && !widget.leadingOnRight
                       ? widget.leadingExtent
                       : 0
                 : 0,
-            child: SafeArea(
-              child: SourceTaskSurface(
-                key: ValueKey(identity),
-                owner: task,
-                onClose: close,
-                onBack: back,
-                legacyPresentation: presentation,
+            // The modal's scrim dims the status bar band too: this overlay sits
+            // above the workspace's own host, so it hosts a transparent strip.
+            child: RaftStatusBarHost.overlay(
+              child: SafeArea(
+                child: SourceTaskSurface(
+                  key: ValueKey(identity),
+                  owner: task,
+                  onClose: close,
+                  onTask: widget.onTask,
+                  onViewBilling: widget.onViewBilling,
+                  onBack: back,
+                  onViewInThread: viewInThread(task),
+                  legacyPresentation: presentation,
+                ),
               ),
             ),
           ),
         if (docked)
           Positioned(
-            right: legacyWidth - RaftPanelResizeHandle.hitExtent / 2,
+            right:
+                legacyWidth -
+                RaftPanelResizeHandle.hitExtent / 2 +
+                (widget.leadingOnRight ? widget.leadingExtent : 0),
             top: 0,
             bottom: 0,
             width: RaftPanelResizeHandle.hitExtent,

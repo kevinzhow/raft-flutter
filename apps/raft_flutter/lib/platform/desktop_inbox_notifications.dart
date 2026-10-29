@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../data/source_activity_unread_store.dart';
 import '../data/workspace_controller.dart';
 import 'background_inbox.dart';
 import 'background_notifications.dart' show notificationPayload;
@@ -21,22 +22,44 @@ class DesktopInboxNotifications {
   final DateTime Function() clock;
   final BackgroundInboxStore _store;
   WorkspaceController? workspace;
+  SourceActivityUnreadStore? _activity;
   Object? identity;
   int epoch = 0;
   bool closed = false, dirty = false;
   Future<void> prepared = Future.value();
   Future<void>? delivering;
 
+  Object? activeIdentity(WorkspaceController? w) {
+    final activity = w?.services.activityUnreadIfBound;
+    if (w == null ||
+        activity?.scope == null ||
+        !notifications.enabled ||
+        notifications.deliveryAllowed?.call() == false ||
+        w.foreground ||
+        !w.client.signedIn ||
+        w.server?.id != w.client.serverId ||
+        w.client.serverId == null) {
+      return null;
+    }
+    return (
+      w,
+      w.client.generation,
+      notificationScope(w.client),
+      w.server?.string('role'),
+      activity!.scope,
+      activity.authorityEpoch,
+    );
+  }
+
   void bind(WorkspaceController? next) {
     if (!identical(next, workspace)) {
       workspace?.removeListener(sync);
       workspace?.foregroundChanges.removeListener(sync);
-      workspace?.activityUnread.removeListener(inboxChanged);
-      workspace?.releaseActivityUnread(this);
+      _activity?.removeListener(inboxChanged);
+      _activity = null;
       workspace = next;
       next?.addListener(sync);
       next?.foregroundChanges.addListener(sync);
-      next?.acquireActivityUnread(this).addListener(inboxChanged);
     }
     sync();
   }
@@ -44,28 +67,16 @@ class DesktopInboxNotifications {
   void sync() {
     if (closed) return;
     final w = workspace;
-    final active =
-        w != null &&
-        notifications.enabled &&
-        notifications.deliveryAllowed?.call() != false &&
-        !w.foreground &&
-        w.client.signedIn &&
-        w.server?.id == w.client.serverId &&
-        w.client.serverId != null;
-    final next = active
-        ? (
-            w,
-            w.client.generation,
-            notificationScope(w.client),
-            w.server?.string('role'),
-            w.activityUnread.scope,
-            w.activityUnread.authorityEpoch,
-          )
-        : null;
+    final activity = w?.services.activityUnreadIfBound;
+    if (!identical(activity, _activity)) {
+      _activity?.removeListener(inboxChanged);
+      _activity = activity?..addListener(inboxChanged);
+    }
+    final next = activeIdentity(w);
     if (identity == next) return;
     identity = next;
     final revision = ++epoch;
-    if (!active) return;
+    if (next == null || w == null) return;
     final scope = notificationScope(w.client);
     prepared = () async {
       final old = await _store.state(scope);
@@ -83,9 +94,7 @@ class DesktopInboxNotifications {
       epoch == revision &&
       identity != null &&
       identical(workspace, w) &&
-      notifications.enabled &&
-      notifications.deliveryAllowed?.call() != false &&
-      !w.foreground;
+      identity == activeIdentity(w);
 
   void inboxChanged() {
     sync();
@@ -112,7 +121,7 @@ class DesktopInboxNotifications {
         final since = DateTime.tryParse('${state?['since']}');
         if (since == null || !valid(w, revision)) continue;
         final candidates = <BackgroundInboxAlert>[];
-        for (final row in w.activityUnread.acceptedRows) {
+        for (final row in w.services.activityUnreadIfBound?.acceptedRows ?? const []) {
           final alert = BackgroundInboxAlert.fromRow(
             row,
             w.client.serverId!,
@@ -141,7 +150,7 @@ class DesktopInboxNotifications {
         var count = 0;
         for (final alert in candidates) {
           if (!valid(w, revision)) break;
-          final stillUnread = w.activityUnread.acceptedRows.any(
+          final stillUnread = w.services.activityUnreadIfBound?.acceptedRows.any(
             (latest) =>
                 BackgroundInboxAlert.fromRow(
                   latest,
@@ -151,11 +160,12 @@ class DesktopInboxNotifications {
                 )?.target.messageId ==
                 alert.target.messageId,
           );
-          if (!stillUnread) continue;
+          if (stillUnread != true) continue;
           await notifications.show(
             title: alert.title,
             body: alert.body,
             payload: notificationPayload(w.client, alert.target),
+            unread: alert.unread,
           );
           if (!valid(w, revision)) break;
           if (notifications.error == null) {
@@ -177,7 +187,7 @@ class DesktopInboxNotifications {
     notifications.removeListener(sync);
     workspace?.removeListener(sync);
     workspace?.foregroundChanges.removeListener(sync);
-    workspace?.activityUnread.removeListener(inboxChanged);
-    workspace?.releaseActivityUnread(this);
+    _activity?.removeListener(inboxChanged);
+    _activity = null;
   }
 }

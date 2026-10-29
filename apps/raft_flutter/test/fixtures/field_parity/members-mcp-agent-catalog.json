@@ -1,0 +1,45 @@
+{
+  "servers": [
+    {
+      "id": "77777777-7777-4777-8777-777777777701",
+      "name": "Notion workspace",
+      "description": null,
+      "provider": "notion",
+      "authMode": "oauth",
+      "oauthStatus": "error",
+      "transport": "streamable_http",
+      "endpointUrl": "https://mcp.notion.invalid/mcp",
+      "enabled": true,
+      "configVersion": 4,
+      "catalogVersion": 2,
+      "toolCatalog": [
+        {
+          "name": "search",
+          "title": "Search pages",
+          "description": "Search the workspace",
+          "inputSchema": { "type": "object", "properties": { "query": { "type": "string" } }, "required": ["query"] },
+          "annotations": { "readOnlyHint": true }
+        }
+      ],
+      "lastCheckedAt": "2026-10-11T09:00:00.000Z",
+      "lastCheckError": "OAuth token refresh failed",
+      "credentialHeaderNames": [],
+      "hasCredentials": false,
+      "assignment": { "enabled": true, "allowedTools": null, "version": 1 },
+      "usage": { "invocationCount": 1, "lastInvokedAt": "2026-10-11T09:30:00.000Z", "lastToolName": "search" },
+      "createdAt": "2026-09-01T00:00:00.000Z",
+      "updatedAt": "2026-10-11T09:00:00.000Z"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "linear",
+      "name": "Linear",
+      "description": "Issues and projects",
+      "provider": "linear",
+      "authMode": "oauth",
+      "endpointUrl": "https://mcp.linear.invalid/mcp",
+      "credentialHeaderNames": []
+    }
+  ]
+}

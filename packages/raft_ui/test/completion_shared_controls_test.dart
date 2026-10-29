@@ -9,10 +9,7 @@ void main() {
   test(
     'dark inset recipe clips to CSS padding box and keeps source offsets',
     () {
-      final tokens = raftTheme(
-        RaftFamily.elegant,
-        dark: true,
-      ).extension<RaftTokens>()!;
+      final tokens = raftTheme(dark: true).extension<RaftTokens>()!;
       final recipe = RaftFieldInsetRecipe(tokens);
       final box = recipe.paddingBox(
         const Rect.fromLTWH(0, 0, 300, 38),
@@ -21,11 +18,11 @@ void main() {
       );
       expect(box.outerRect, const Rect.fromLTWH(1, 1, 298, 36));
       expect(box.tlRadiusX, 5);
-      expect(recipe.line.a, closeTo(.35, 1 / 255));
-      // Chrome-composite fit of oklch(0 0 0 / .35) (docs/design-tokens.md).
-      expect(recipe.line.r, closeTo(0, 1 / 255));
-      expect(recipe.top.a, closeTo(.30, 2 / 255)); // Chrome-composite fit
-      expect(recipe.top.r, closeTo(0, 1 / 255));
+      // raft-ui 0.7.1 has no dark input inset: the ring is the 10% hairline
+      // and the top highlight / bottom shadow are not painted.
+      expect(recipe.line, RaftDark.lineHairline);
+      expect(recipe.top.a, 0);
+      expect(recipe.bottom.a, 0);
       expect(recipe.topOffset, 1);
       expect(recipe.topBlurRadius, 2);
       expect(recipe.topBlurSigma, 1);
@@ -44,7 +41,7 @@ void main() {
     try {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) {
@@ -131,7 +128,7 @@ void main() {
     var selected = 0;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: RaftDensityScope(
             density: RaftDensity.desktop,
@@ -147,7 +144,7 @@ void main() {
     );
     final icons = tester.widgetList<RaftIcon>(find.byType(RaftIcon)).toList();
     expect(icons.map((i) => i.glyph), [RaftGlyph.hash, RaftGlyph.chevronDown]);
-    expect(icons.last.size, 12);
+    expect(icons.last.size, 16);
     await tester.tap(find.text('Channel'));
     expect(selected, 1);
     await tester.pumpWidget(const SizedBox.shrink());

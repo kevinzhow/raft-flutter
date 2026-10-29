@@ -7,6 +7,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/followed_threads_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/thread_actions.dart';
@@ -105,11 +106,11 @@ final _parent = RaftMessage({
 
 Future<void> _pumpThreadActions(WidgetTester t, WorkspaceController w) async {
   w
-    ..threadParent = _parent
+    ..messageDomain.state.threadParent = _parent
     ..threadChannelId = 't1';
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(RaftFamily.elegant),
+      theme: raftTheme(),
       home: Scaffold(
         body: ThreadActions(
           controller: w,
@@ -207,6 +208,136 @@ void main() {
         await pending;
         expect(store.isFollowing('m'), isFalse);
         expect(store.loaded, isFalse);
+        w.dispose();
+        await client.dispose();
+      },
+    );
+
+    test('[BP-READ-066] a served page older than a known read keeps the thread read', () async {
+      Map<String, dynamic> row(String parent, String thread, String seq) => {
+        ..._row(parent, thread),
+        'unreadCount': 3,
+        'latestActivitySeq': seq,
+        'firstUnreadMessageId': 'r1',
+        'hasMention': true,
+      };
+      final (w, a, client) = await _fixture(
+        followed: [
+          row('m', 't1', '10'),
+          row('n', 't2', '11'),
+          row('o', 't3', '5'),
+        ],
+      );
+      // This device read t1 up to seq 10 and t2 up to seq 10 (one short of
+      // its newest activity); t3 has no accepted read.
+      for (final (scope, seq) in [('t1', 10), ('t2', 10)]) {
+        expect(
+          w.readState.consumeUpdate(
+            {
+              'serverId': 's1',
+              'scopeId': scope,
+              'maxReadSeq': seq,
+              'readStateVersion': 1,
+            },
+            serverId: 's1',
+            principalId: 'alice',
+          ),
+          'accepted',
+        );
+      }
+      final store = w.followedThreads;
+      await store.refresh();
+      Map<String, dynamic> byThread(String id) =>
+          store.threads.firstWhere((r) => r['threadChannelId'] == id);
+      // Covered by the read: the stale unread count does not come back.
+      expect(byThread('t1')['unreadCount'], 0);
+      expect(byThread('t1')['firstUnreadMessageId'], isNull);
+      expect(byThread('t1')['hasMention'], isFalse);
+      // Newer activity than the read, or no read at all: the served count stays.
+      expect(byThread('t2')['unreadCount'], 3);
+      expect(byThread('t3')['unreadCount'], 3);
+      // A later reload with the same stale payload still reads as read.
+      await store.refresh();
+      expect(byThread('t1')['unreadCount'], 0);
+      w.dispose();
+      await client.dispose();
+    });
+
+    test(
+      '[BP-READ-066] a newer served read version beats an older local read',
+      () async {
+        Map<String, dynamic> row(String parent, String thread, int? version) =>
+            {
+              ..._row(parent, thread),
+              'unreadCount': 3,
+              'latestActivitySeq': '10',
+              'readStateVersion': ?version,
+            };
+        final (w, a, client) = await _fixture(
+          followed: [
+            row('m', 't1', 7), // server state newer than the ledger (v5)
+            row('n', 't2', 5), // same version: not newer
+            row('o', 't3', 4), // ledger newer
+            row('p', 't4', null), // no version served: 0
+          ],
+        );
+        for (final scope in ['t1', 't2', 't3', 't4']) {
+          w.readState.consumeUpdate(
+            {
+              'serverId': 's1',
+              'scopeId': scope,
+              'maxReadSeq': 10,
+              'readStateVersion': 5,
+            },
+            serverId: 's1',
+            principalId: 'alice',
+          );
+        }
+        final store = w.followedThreads;
+        await store.refresh();
+        int unread(String id) =>
+            store.threads.firstWhere(
+                  (r) => r['threadChannelId'] == id,
+                )['unreadCount']
+                as int;
+        expect(unread('t1'), 3);
+        expect(unread('t2'), 3);
+        expect(unread('t3'), 0);
+        expect(unread('t4'), 0);
+        w.dispose();
+        await client.dispose();
+      },
+    );
+
+    test(
+      '[BP-READ-066] a row held at 0 for the same activity stays read',
+      () async {
+        Map<String, dynamic> row(String seq, int unread) => {
+          ..._row('m', 't1'),
+          'unreadCount': unread,
+          'latestActivitySeq': seq,
+          'firstUnreadMessageId': unread > 0 ? 'r1' : null,
+          'hasMention': unread > 0,
+        };
+        final (w, a, client) = await _fixture(followed: [row('10', 0)]);
+        final store = w.followedThreads;
+        await store.refresh();
+        Map<String, dynamic> t1() => store.threads.single;
+        // No ledger entry at all: the previous local 0 for seq 10 holds.
+        a.routes[_followed] = (_) => {
+          'threads': [row('10', 4)],
+        };
+        await store.refresh();
+        expect(t1()['unreadCount'], 0);
+        expect(t1()['firstUnreadMessageId'], isNull);
+        expect(t1()['hasMention'], isFalse);
+        // New activity (seq 11): the served unread is real and is kept.
+        a.routes[_followed] = (_) => {
+          'threads': [row('11', 4)],
+        };
+        await store.refresh();
+        expect(t1()['unreadCount'], 4);
+        expect(t1()['firstUnreadMessageId'], 'r1');
         w.dispose();
         await client.dispose();
       },
@@ -329,6 +460,12 @@ void main() {
       'threadChannelId': 't1',
       'replyCount': 1,
     });
+    // Source followedThreadsRefresh: the reload waits for its coalescing window.
+    await t.runAsync(
+      () => Future<void>.delayed(
+        FollowedThreadsStore.refreshDelay + const Duration(milliseconds: 100),
+      ),
+    );
     await _settle(t, () => w.followedThreads.isFollowing('m'));
     expect(_followItem(t).label, 'Unfollow Thread');
     expect(a.count(_followed), 2);
@@ -359,8 +496,8 @@ void main() {
       'agents': [],
     };
     await t.runAsync(w.followedThreads.refresh);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       {
         'id': 'm',
         'channelId': 'c1',
@@ -372,11 +509,11 @@ void main() {
         'messageType': 'chat',
         'threadChannelId': 't1',
       },
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'m'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {'m'};
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(body: RaftChatView(controller: w)),
       ),
     );

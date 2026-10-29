@@ -13,11 +13,19 @@ import 'package:raft_flutter/features/message_presentation.dart';
 import 'package:raft_flutter/features/message_reference_directory.dart';
 import 'package:raft_flutter/features/private_route_guard.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/app_services_fixture.dart';
 
 class MessageAdapter implements HttpClientAdapter {
   final calls = <RequestOptions>[];
   final Map<String, FutureOr<dynamic> Function(RequestOptions)> routes = {};
+
+  /// While set, every request is held forever and counted in [hung] (the
+  /// "network never answers" switch of the no-wait-UI guard tests).
+  bool hangAll = false;
+  int hung = 0;
   @override
   Future<ResponseBody> fetch(
     RequestOptions o,
@@ -25,6 +33,10 @@ class MessageAdapter implements HttpClientAdapter {
     Future<void>? c,
   ) async {
     calls.add(o);
+    if (hangAll) {
+      hung++;
+      return Completer<ResponseBody>().future;
+    }
     final route = routes['${o.method} ${o.path}'];
     return ResponseBody.fromString(
       jsonEncode(
@@ -84,7 +96,7 @@ RaftMessage card(
   },
 });
 Widget host(Widget child, {PrivateRouteGuard? guard}) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant),
+  theme: raftTheme(),
   navigatorObservers: [?guard],
   home: Scaffold(body: child),
 );
@@ -224,47 +236,46 @@ void main() {
     w.dispose();
   });
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('linked-only task keeps bare label external $family/$dark', (
-      tester,
-    ) async {
-      final (w, _) = (await tester.runAsync(() => fixture('owner')))!;
-      addTearDown(w.dispose);
-      final linked = {'taskNumber': 1487, 'status': 'in_review'};
-      Widget body(bool known) => MaterialApp(
-        theme: raftTheme(family, dark: dark),
-        home: Scaffold(
-          body: MessagePresentation(
-            controller: w,
-            message: RaftMessage({
-              'id': 'm1',
-              'channelId': 'c1',
-              'content': 'Review [#1487 link title](https://example.org/review/1487) then task #1487.',
-            }),
-            taskByNumber: (n) => n == 1487 ? linked : null,
-            knownTaskNumber: (_) => known,
-            onExternalLink: (_) {},
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      'linked-only task keeps bare label external ${dark ? 'dark' : 'light'}',
+      (tester) async {
+        final (w, _) = (await tester.runAsync(() => fixture('owner')))!;
+        addTearDown(w.dispose);
+        final linked = {'taskNumber': 1487, 'status': 'in_review'};
+        Widget body(bool known) => MaterialApp(
+          theme: raftTheme(dark: dark),
+          home: Scaffold(
+            body: MessagePresentation(
+              controller: w,
+              message: RaftMessage({
+                'id': 'm1',
+                'channelId': 'c1',
+                'content': 'Review [#1487 link title](https://example.org/review/1487) then task #1487.',
+              }),
+              taskByNumber: (n) => n == 1487 ? linked : null,
+              knownTaskNumber: (_) => known,
+              onExternalLink: (_) {},
+            ),
           ),
-        ),
-      );
-      await tester.pumpWidget(body(false));
-      await tester.pump();
-      expect(find.byType(RaftReferenceChip), findsOneWidget);
-      final spans = find.byWidgetPredicate(
-        (w) =>
-            w is RichText &&
-            w.text.toPlainText().contains('Review #1487 link title'),
-      );
-      expect(spans, findsOneWidget);
-      await tester.pumpWidget(body(true));
-      await tester.pump();
-      expect(find.byType(RaftReferenceChip), findsNWidgets(2));
-      expect(tester.takeException(), isNull);
-    });
+        );
+        await tester.pumpWidget(body(false));
+        await tester.pump();
+        expect(find.byType(RaftReferenceChip), findsOneWidget);
+        final spans = find.byWidgetPredicate(
+          (w) =>
+              w is RichText &&
+              w.text.toPlainText().contains('Review #1487 link title'),
+        );
+        expect(spans, findsOneWidget);
+        await tester.pumpWidget(body(true));
+        await tester.pump();
+        // Current Web protects Markdown links before reference matching.
+        expect(find.byType(RaftReferenceChip), findsOneWidget);
+        expect(spans, findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
   testWidgets(
     'inline action submits exact state/version and shows canonical server result',
@@ -290,7 +301,7 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('Approve agent login').last);
+      await tester.tap(find.text('Approve Login').last);
       await tester.pumpAndSettle();
       final request = a.calls.singleWhere(
         (r) => r.path == '/actions/m1/execute',
@@ -300,7 +311,8 @@ void main() {
         'expectedConfirmationVersion': 7,
       });
       expect(find.text('Committed by Alice'), findsOneWidget);
-      expect(find.text('Approve agent login'), findsOneWidget);
+      // Executed: the verb button is gone.
+      expect(find.text('Approve Login'), findsNothing);
     },
   );
   testWidgets(
@@ -316,10 +328,10 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Guests cannot confirm actions.'), findsOneWidget);
+      expect(find.text("Guests can't run channel actions."), findsOneWidget);
       expect(
-        tester.widget<RaftButton>(find.byType(RaftButton)).onPressed,
-        isNull,
+        tester.widget<RaftRecipeButton>(find.byType(RaftRecipeButton)).disabled,
+        isTrue,
       );
       await tester.pumpWidget(
         host(
@@ -330,7 +342,9 @@ void main() {
         ),
       );
       expect(
-        find.text('Switch to the target workspace to use this action.'),
+        find.text(
+          'This is a history copy. Only the source server can run this action.',
+        ),
         findsOneWidget,
       );
       expect(a.calls.where((r) => r.path.startsWith('/actions/')), isEmpty);
@@ -371,15 +385,19 @@ void main() {
       await tester.pumpWidget(
         host(MessageActionCard(controller: w, message: card('channel:create'))),
       );
-      await tester.tap(find.text('Create channel').last);
+      await tester.tap(find.text('Create Channel').last);
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const ValueKey('field-name')),
         'edited',
       );
+      // The 0.7.1 controls are taller: scroll the dialog to the row first.
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('action-member-agent-a1')),
+      );
       await tester.tap(find.byKey(const ValueKey('action-member-agent-a1')));
       await tester.pump();
-      await tester.tap(find.text('Create').last);
+      await tester.tap(find.text('Create Channel').last);
       await tester.pumpAndSettle();
       final create = a.calls.singleWhere(
         (r) => r.method == 'POST' && r.path == '/channels',
@@ -405,6 +423,101 @@ void main() {
         ),
         isEmpty,
       );
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'channel:add_member opens the Web AddMembersDialog and marks the effective IDs',
+    (tester) async {
+      final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
+      addTearDown(w.dispose);
+      w.channels = [
+        RaftChannel({
+          'id': 'c1',
+          'name': 'test',
+          'joined': true,
+          'channelCapabilities': {'addChannelMembers': true},
+        }),
+      ];
+      w.channel = w.channels.first;
+      a.routes['POST /actions/m1/event'] = (_) => {};
+      a.routes['GET /channels/c1/members'] = (_) => {
+        'humans': [],
+        'agents': [],
+      };
+      a.routes['GET /servers/s1/members'] = (_) => [
+        {'userId': 'u1', 'name': 'human', 'displayName': 'Human'},
+      ];
+      a.routes['GET /agents'] = (_) => [
+        {'id': 'a1', 'name': 'agent', 'displayName': 'Agent'},
+      ];
+      a.routes['POST /channels/c1/members/batch'] = (_) => {};
+      a.routes['POST /actions/m1/mark-executed'] = (_) => {
+        'messageId': 'm1',
+        'metadata': {
+          'kind': 'action-card',
+          'sourceServerId': 's1',
+          'state': 'executed',
+          'action': {'type': 'channel:add_member'},
+        },
+      };
+      a.routes['GET /channels'] = (_) => {'channels': []};
+      a.routes['GET /channels/dm'] = (_) => {'channels': []};
+      final message = RaftMessage({
+        'id': 'm1',
+        'channelId': 'c1',
+        'content': 'Action',
+        'actionMetadata': {
+          'kind': 'action-card',
+          'sourceServerId': 's1',
+          'state': 'prepared',
+          'confirmationVersion': 7,
+          'action': {
+            'type': 'channel:add_member',
+            'channel': 'c1',
+            'humans': ['u1'],
+            'agents': ['a1'],
+          },
+        },
+      });
+      tester.view.physicalSize = const Size(1280, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        host(MessageActionCard(controller: w, message: message)),
+      );
+      await tester.tap(find.text('Add Members').last);
+      await tester.pumpAndSettle();
+      // The Web dialog: title, target channel, one row per candidate.
+      expect(find.text('Add Members'), findsNWidgets(2));
+      expect(find.text('Agent'), findsOneWidget);
+      expect(find.text('Human'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('add-members-remove-agent:a1')),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Add 1 Member'));
+      await tester.pumpAndSettle();
+      final batch = a.calls.singleWhere(
+        (r) => r.method == 'POST' && r.path == '/channels/c1/members/batch',
+      );
+      expect(batch.data, {
+        'userIds': ['u1'],
+        'agentIds': <String>[],
+        'actionCardMessageId': 'm1',
+        'actionCardConfirmationVersion': 7,
+      });
+      final mark = a.calls.singleWhere(
+        (r) => r.path == '/actions/m1/mark-executed',
+      );
+      expect(mark.data['result'], {
+        'kind': 'channel-members',
+        'channelId': 'c1',
+        'channelName': 'test',
+        'addedHumanIds': ['u1'],
+        'addedAgentIds': <String>[],
+      });
+      expect(find.text('Add Members'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -564,11 +677,13 @@ void main() {
                 ),
               ),
               Expanded(
-                child: WorkspaceView(
-                  controller: w,
-                  appearance: const RaftAppearance(),
-                  onAppearance: (_) async {},
-                  onLogout: () async {},
+                child: withAppServices(
+                  WorkspaceView(
+                    controller: w,
+                    appearance: const RaftAppearance(),
+                    onAppearance: (_) async {},
+                    onLogout: () async {},
+                  ),
                 ),
               ),
             ],

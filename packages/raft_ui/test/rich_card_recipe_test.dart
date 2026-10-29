@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/message_content_tokens.dart';
 import 'package:raft_ui/src/rich_card_tokens.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Map<String, dynamic> publicSnapshot({String target = '#design'}) => {
   'kind': 'forwarded-bundle',
@@ -30,17 +31,13 @@ Map<String, dynamic> publicSnapshot({String target = '#design'}) => {
 };
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true], full: true)) {
     testWidgets(
-      'action fills review surface; success badge and committed identity keep source roles $family/$dark',
+      'action fills review surface; success badge and committed identity keep source roles ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: const Scaffold(
               body: SizedBox(
                 width: 640,
@@ -64,10 +61,7 @@ void main() {
           (container.decoration! as BoxDecoration).color,
           recipe.semantic.success,
         );
-        expect(
-          tester.getSize(badge).height,
-          family == RaftFamily.brutal ? 20 : 18,
-        );
+        expect(tester.getSize(badge).height, 18);
         expect(find.text('Committed by Alice'), findsOneWidget);
         final committed = tester.widget<Text>(find.text('Committed by Alice'));
         final spans = (committed.textSpan! as TextSpan).children!
@@ -81,11 +75,11 @@ void main() {
       },
     );
     testWidgets(
-      'forwarded source is right aligned; real expansion retains projected content $family/$dark',
+      'forwarded source is right aligned; real expansion retains projected content ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: SingleChildScrollView(
                 child: SizedBox(
@@ -123,21 +117,13 @@ void main() {
         expect(tester.getTopLeft(find.text('Forwarded')).dx, lessThan(40));
         final context = tester.element(find.byType(RaftForwardedBundle));
         final recipe = ForwardedSnapshotRecipe(RaftTokens.of(context));
-        expect(
-          recipe.radius,
-          family == RaftFamily.brutal
-              ? BorderRadius.zero
-              : BorderRadius.circular(8),
-        );
-        expect(
-          recipe.headerDecoration.border != null,
-          family == RaftFamily.brutal,
-        );
+        expect(recipe.radius, BorderRadius.circular(8));
+        expect(recipe.headerDecoration.border, isNull);
         expect(
           find.text('Public message 2', findRichText: true).hitTestable(),
           findsNothing,
         );
-        await tester.tap(find.text('View all 3 messages'));
+        await tester.tap(find.text('View All 3 Messages'));
         await tester.pumpAndSettle();
         await tester.ensureVisible(
           find.text('Public message 2', findRichText: true),
@@ -152,13 +138,13 @@ void main() {
     );
     for (final width in [320.0, 640.0]) {
       testWidgets(
-        'long forwarded target stays within loose header at $width $family/$dark',
+        'long forwarded target stays within loose header at $width ${dark ? 'dark' : 'light'}',
         (tester) async {
           const target =
               '#a-very-long-public-channel-name-that-needs-truncation';
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: SingleChildScrollView(
                   child: SizedBox(
@@ -203,7 +189,7 @@ void main() {
             find.text('Public message 2', findRichText: true).hitTestable(),
             findsNothing,
           );
-          await tester.tap(find.text('View all 3 messages'));
+          await tester.tap(find.text('View All 3 Messages'));
           await tester.pumpAndSettle();
           expect(find.text('Collapse'), findsOneWidget);
           expect(tester.takeException(), isNull);
@@ -211,17 +197,17 @@ void main() {
       );
     }
     testWidgets(
-      'footer hover and keyboard activation use source roles $family/$dark',
+      'footer hover and keyboard activation use source roles ${dark ? 'dark' : 'light'}',
       (tester) async {
         var presses = 0;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: RaftDensityScope(
                 density: RaftDensity.desktop,
                 child: RaftShowMoreToggle(
-                  label: 'Show more',
+                  label: 'Show More',
                   onPressed: () => presses++,
                 ),
               ),
@@ -232,16 +218,16 @@ void main() {
         final semantic = MessageContentSemantic(RaftTokens.of(context));
         final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
         await mouse.addPointer(location: const Offset(700, 500));
-        await mouse.moveTo(tester.getCenter(find.text('Show more')));
+        await mouse.moveTo(tester.getCenter(find.text('Show More')));
         await tester.pump();
         expect(
-          tester.widget<Text>(find.text('Show more')).style!.color,
+          tester.widget<Text>(find.text('Show More')).style!.color,
           semantic.toggleHover,
         );
         await mouse.removePointer();
         await tester.pump();
         expect(
-          tester.widget<Text>(find.text('Show more')).style!.color,
+          tester.widget<Text>(find.text('Show More')).style!.color,
           semantic.toggle,
         );
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -251,11 +237,11 @@ void main() {
       },
     );
     testWidgets(
-      'prose inherits strong role and heading margin does not double adjacent gap $family/$dark',
+      'prose inherits strong role and heading margin does not double adjacent gap ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: const Scaffold(
               body: RaftMessageBody(
                 content: '# Heading\n\nParagraph\n\n## Subheading\n\nMore',
@@ -294,14 +280,14 @@ void main() {
         var pressed = false;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(RaftFamily.elegant),
+            theme: raftTheme(),
             home: Scaffold(
               body: SizedBox(
                 width: width,
                 child: RaftDensityScope(
                   density: density,
                   child: RaftShowMoreToggle(
-                    label: 'Show more',
+                    label: 'Show More',
                     onPressed: () => pressed = true,
                   ),
                 ),
@@ -313,7 +299,7 @@ void main() {
           tester.getSize(find.byType(RaftShowMoreToggle)).height,
           expectedHeight,
         );
-        await tester.tap(find.text('Show more'));
+        await tester.tap(find.text('Show More'));
         expect(pressed, isTrue);
         expect(tester.takeException(), isNull);
       },
@@ -325,7 +311,7 @@ void main() {
       var presses = 0;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: Align(
               alignment: Alignment.topLeft,

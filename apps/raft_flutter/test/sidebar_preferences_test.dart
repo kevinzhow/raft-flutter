@@ -86,7 +86,7 @@ void main() {
       addTearDown(w.dispose);
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(body: SidebarPreferencesView(controller: w)),
         ),
       );

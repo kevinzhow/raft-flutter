@@ -55,7 +55,7 @@ void main() {
   });
   Future<void> mount(WidgetTester t, Widget child) => t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(RaftFamily.elegant),
+      theme: raftTheme(),
       home: Scaffold(body: SingleChildScrollView(child: child)),
     ),
   );
@@ -85,7 +85,9 @@ void main() {
       client.pendingMethods!.complete(client.methods);
       await t.pumpAndSettle();
       await fill(t);
-      await t.ensureVisible(find.byKey(const ValueKey('account-password-submit')));
+      await t.ensureVisible(
+        find.byKey(const ValueKey('account-password-submit')),
+      );
       await t.tap(find.byKey(const ValueKey('account-password-submit')));
       await t.pumpAndSettle();
       expect(client.mutations.single.path, '/auth/me');
@@ -148,7 +150,7 @@ void main() {
       expect(find.text('Set password by email'), findsOneWidget);
       await t.tap(find.text('Disconnect'));
       await t.pumpAndSettle();
-      expect(find.text('Send email'), findsOneWidget);
+      expect(find.text('Send Email'), findsOneWidget);
       expect(client.mutations, isEmpty);
       await t.tap(find.text('Cancel'));
       await t.pumpAndSettle();
@@ -192,7 +194,9 @@ void main() {
       await mount(t, AccountConnectionsView(controller: w, inline: true));
       await t.pumpAndSettle();
       final oldAction = t
-          .widgetList<RaftSettingsRecipeButton>(find.byType(RaftSettingsRecipeButton))
+          .widgetList<RaftSettingsRecipeButton>(
+            find.byType(RaftSettingsRecipeButton),
+          )
           .singleWhere((button) => button.label == 'Set password by email')
           .onPressed!;
       client.user = RaftRecord({'id': 'next', 'email': 'next@example.invalid'});

@@ -1,4 +1,5 @@
-import 'package:raft_sync/raft_sync.dart' show canonicalUint64;
+import 'package:raft_sync/raft_sync.dart'
+    show canonicalUint64, canonicalWireSeq;
 
 /// Source inboxStore getInboxItemKey: one row per conversation scope.
 String? activityItemKey(Map row) {
@@ -19,6 +20,26 @@ String? activityScopeId(Map row) {
   return id is String && id.isNotEmpty ? id : null;
 }
 
+/// Read projections already retained by an Activity window. An older cached
+/// window cannot replace a newer accepted cursor version for the same scope.
+Map<String, Map<String, dynamic>> activityRowsByReadVersion(
+  Iterable<Map<String, dynamic>> rows,
+) {
+  final result = <String, Map<String, dynamic>>{};
+  int version(Map? row) {
+    final state = row?['readState'];
+    return state is Map && state['readStateVersion'] is int
+        ? state['readStateVersion'] as int
+        : 0;
+  }
+
+  for (final row in rows) {
+    final id = activityScopeId(row);
+    if (id != null && version(row) >= version(result[id])) result[id] = row;
+  }
+  return result;
+}
+
 /// Every channel identity a row discloses (thread, parent and own channel).
 Iterable<String> rowChannelIds(Map row) sync* {
   for (final field in ['channelId', 'parentChannelId', 'threadChannelId']) {
@@ -32,7 +53,8 @@ bool rowDeepEquals(Object? a, Object? b) {
   if (a is Map && b is Map) {
     if (a.length != b.length) return false;
     for (final entry in a.entries) {
-      if (!b.containsKey(entry.key) || !rowDeepEquals(entry.value, b[entry.key])) {
+      if (!b.containsKey(entry.key) ||
+          !rowDeepEquals(entry.value, b[entry.key])) {
         return false;
       }
     }
@@ -153,14 +175,37 @@ ActivityReconcile reconcileActivityWindow({
   return ActivityReconcile(stabilizeRows(merged, current, keyOf), unreadDelta);
 }
 
+/// Read-state socket facts can precede their ledger update. A version already
+/// adjudicated by the ledger cannot override a newer manual unread cursor.
+Map<String, int> activityReadFacts(
+  Map payload, {
+  Map<String, int> knownVersions = const {},
+}) => {
+  for (final update in [
+    if (payload['scopes'] is List) ...payload['scopes'] as List,
+    if (payload['scopeId'] is String) payload,
+  ])
+    if (update is Map &&
+        update['scopeId'] is String &&
+        update['maxReadSeq'] is int &&
+        (knownVersions[update['scopeId']] == null ||
+            update['readStateVersion'] is int &&
+                update['readStateVersion'] > knownVersions[update['scopeId']]!))
+      update['scopeId'] as String: update['maxReadSeq'] as int,
+};
+
 /// Source applyReadStateProjection for a fully read scope: a read frontier at
 /// or beyond the row's newest known activity clears its unread presentation.
 /// Partial reads are left to the canonical reconcile.
 Map<String, dynamic> projectFullyRead(
   Map<String, dynamic> row,
-  BigInt? maxReadSeq,
-) {
+  BigInt? maxReadSeq, {
+  int? readStateVersion,
+}) {
   if (maxReadSeq == null || _count(row['unreadCount']) == 0) return row;
+  if (activityUnreadCountOwnsCursor(row, maxReadSeq, readStateVersion)) {
+    return row;
+  }
   final latest = activityFrontier(row);
   if (latest == null || maxReadSeq < latest) return row;
   return {
@@ -172,6 +217,26 @@ Map<String, dynamic> projectFullyRead(
   };
 }
 
+/// A positive count already accepted at this cursor/version cannot be cleared
+/// by comparing the same cursor with an older Activity preview. Its unread
+/// message may not have reached that preview yet. A newer read-state version
+/// or a strictly greater known read cursor can supersede the count.
+bool activityUnreadCountOwnsCursor(
+  Map row,
+  BigInt maxReadSeq,
+  int? readStateVersion,
+) {
+  if (readStateVersion == null || _count(row['unreadCount']) <= 0) return false;
+  final state = row['readState'];
+  if (state is! Map || state['kind'] != 'present') return false;
+  final version = state['readStateVersion'];
+  final cursor = canonicalWireSeq(state['maxReadSeq']);
+  return version is int &&
+      cursor != null &&
+      (version > readStateVersion ||
+          version == readStateVersion && cursor >= maxReadSeq);
+}
+
 String? _seqString(Object? value) => value is int && value >= 0
     ? '$value'
     : value is String && canonicalUint64(value) != null
@@ -181,7 +246,10 @@ String? _seqString(Object? value) => value is int && value >= 0
 /// Source receiveThreadReply, extended to channel/DM rows: a live message
 /// strictly newer than the row's frontier advances that row's preview. Returns
 /// null when the message does not advance any loaded row.
-Map<String, dynamic>? advanceActivityRow(Map<String, dynamic> row, Map message) {
+Map<String, dynamic>? advanceActivityRow(
+  Map<String, dynamic> row,
+  Map message,
+) {
   final kind = row['kind'];
   if (kind == 'mention_action') return null;
   final id = message['id'], channel = message['channelId'];

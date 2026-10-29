@@ -1,0 +1,187 @@
+[
+ {
+  "id": "components.tokens.palette",
+  "officialStatus": "hidden",
+  "upstreamReason": "Temporarily hidden: palette screenshot is not a valid parity gate; use token-audit for machine validation.",
+  "proxyGlobs": [],
+  "note": "Hidden upstream: a palette screenshot is not a parity gate; the machine token audit (tool/theme-token-audit, docs/design-tokens.md) is the check."
+ },
+ {
+  "id": "components.thread.composer.file-previews",
+  "officialStatus": "hidden",
+  "upstreamReason": "fixture alignment deferred — artin 2026-07-05: 例子没对齐，但也许不用做了",
+  "proxyGlobs": [
+   "components.composerattachments.mobile.*"
+  ],
+  "note": null
+ },
+ {
+  "id": "components.thread.message-share.preview",
+  "officialStatus": "pending",
+  "upstreamReason": "Pending for Android visual baselines until the fixture can drive the merged native screenshot/export bridge and render the real exported image preview.",
+  "proxyGlobs": [
+   "components.conversation.selection.*"
+  ],
+  "note": "Android-only export bridge upstream; the Web select-mode lightbox is the nearest render (desktop width only)."
+ },
+ {
+  "id": "components.home.server-switcher.open",
+  "officialStatus": "pending",
+  "upstreamReason": "baselineStatus pending: no React capture in the official host (no fixture, no render route)",
+  "proxyGlobs": [
+   "components.shell.desktop.server.menu"
+  ],
+  "note": "Desktop server menu only; the phone server selector has no extension case yet."
+ },
+ {
+  "id": "screens.tasks.index",
+  "officialStatus": "pending",
+  "upstreamReason": "Missing true Tasks screen parity: list, filters, task status, and create-task entry need real route captures.",
+  "proxyGlobs": [
+   "components.tasks.panel.states",
+   "components.list-pages.tasks.phone-*",
+   "components.taskspage.mobile.*"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.auth.login",
+  "officialStatus": "pending",
+  "upstreamReason": "Missing true login route parity; old auth.login inputs are not active in the canonical manifest.",
+  "proxyGlobs": [
+   "components.auth-ext.mobile.login.default"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.auth.choose-server",
+  "officialStatus": "pending",
+  "upstreamReason": "Missing post-login choose-server gate parity; this is distinct from the Home top-bar server switcher opened inside the app shell.",
+  "proxyGlobs": [
+   "components.auth-ext.mobile.server.choose"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.auth.forgot-password",
+  "officialStatus": "pending",
+  "upstreamReason": "Missing forgot-password route parity for the auth recovery flow.",
+  "proxyGlobs": [
+   "components.auth-ext.mobile.forgot.default"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.thread.channel",
+  "officialStatus": "pending",
+  "upstreamReason": "Pending: needs a real ThreadPage channel route capture with seeded channel messages, attachments, replies, task metadata, and composer state on both React and Android. Do not activate with standalone pageData-only fixtures.",
+  "proxyGlobs": [
+   "components.screens-ext.channel.mobile.full",
+   "components.frame.desktop.channel"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.thread.dm",
+  "officialStatus": "pending",
+  "upstreamReason": "Pending: needs a real ThreadPage DM route capture with seeded peer identity/status, member-scoped mentions, replies, attachments, and composer state on both React and Android. Do not activate with standalone pageData-only fixtures.",
+  "proxyGlobs": [
+   "components.screens-ext.dm.mobile.agent"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.thread.task-thread",
+  "officialStatus": "pending",
+  "upstreamReason": "Pending: needs a real task-thread route plus seeded task data/status controls before capture. Keep pending until React and Android can launch the same task-bound thread without fake pageData.",
+  "proxyGlobs": [
+   "components.taskdetail.mobile.*"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.members.index",
+  "officialStatus": "pending",
+  "upstreamReason": "Pending: needs real Members route/provider capture with seeded humans, agents, invite/add states, and loading/empty/error coverage. Do not activate through the component-only agent detail visual page.",
+  "proxyGlobs": [
+   "components.members-pages.phone.list.*",
+   "components.members-ext.list.*"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.settings.storage",
+  "officialStatus": "pending",
+  "upstreamReason": "Pending: needs React Settings Storage route/provider plus Android Settings Storage route capture with seeded storage rows; do not activate through the generic settings visual page.",
+  "proxyGlobs": [
+   "components.wp6.settings.usage-data-mobile"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.settings.appearance",
+  "officialStatus": "pending",
+  "upstreamReason": "Pending as a full Settings screen route. Component coverage lives in components.settings.appearance.page; this screen case needs real Settings route launch on both providers, not a component visual page.",
+  "proxyGlobs": [
+   "components.settings.appearance.page"
+  ],
+  "note": "Official component page case (390) is the phone render; desktop is components.ext-settings.appearance.*."
+ },
+ {
+  "id": "screens.settings.billing-portal",
+  "officialStatus": "hidden",
+  "upstreamReason": "Skipped: billing portal is an external browser URL action (https://raft.build/settings/billing), not an in-app screen/WebView route. Validate the Billing page/action state instead.",
+  "proxyGlobs": [
+   "components.ext-settings.billing.mobile*"
+  ],
+  "note": "External URL action upstream; the Billing page is the in-app render."
+ },
+ {
+  "id": "screens.home.index",
+  "officialStatus": "pending",
+  "upstreamReason": "Missing true Home channel/thread list screen parity with realistic server/channel data.",
+  "proxyGlobs": [
+   "components.frame.phone.home",
+   "components.shell.mobile.sidebar.default"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.home.choose-server",
+  "officialStatus": "pending",
+  "upstreamReason": "Missing true Home top-bar choose-server capture after opening the server selector from the app shell; distinct from the post-login auth choose-server gate.",
+  "proxyGlobs": [
+   "components.auth-ext.mobile.server.choose"
+  ],
+  "note": "The in-shell server switcher on a phone has no extension case yet."
+ },
+ {
+  "id": "screens.home.saved",
+  "officialStatus": "pending",
+  "upstreamReason": "Existing components.home.saved.results is a connected visual fixture; this tracks the real Home Saved route/screen capture.",
+  "proxyGlobs": [
+   "components.home.saved.results",
+   "components.list-pages.saved.phone-*"
+  ],
+  "note": null
+ },
+ {
+  "id": "screens.home.activity",
+  "officialStatus": "pending",
+  "upstreamReason": "Existing components.home.activity.results is a connected visual fixture; this tracks the real Home Activity route/screen capture.",
+  "proxyGlobs": [
+   "components.home.activity.results",
+   "components.list-pages.activity.phone-*"
+  ],
+  "note": null
+ },
+ {
+  "id": "components.settings.integrations.permission-review",
+  "officialStatus": "pending",
+  "upstreamReason": "baselineStatus pending: no React capture in the official host (no fixture, no render route)",
+  "proxyGlobs": [
+   "components.ext-settings.integrations.mobile*"
+  ],
+  "note": null
+ }
+]

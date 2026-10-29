@@ -6,21 +6,20 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/mobile_navigation_previews.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('Mobile navigation border preview $family/$dark', (t) async {
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets('Mobile navigation border preview ${dark ? 'dark' : 'light'}', (
+      t,
+    ) async {
       t.view.physicalSize = const Size(390, 844);
       t.view.devicePixelRatio = 1;
       addTearDown(t.view.reset);
       final capture = GlobalKey();
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: RepaintBoundary(
               key: capture,
@@ -37,7 +36,7 @@ void main() {
       await t.pumpAndSettle();
       final nav = t.getRect(find.byType(RaftMobileNav));
       expect(nav.bottom, 810);
-      expect(nav.height, family == RaftFamily.brutal ? 55 : 68);
+      expect(nav.height, 52);
       await t.runAsync(() async {
         final boundary =
             capture.currentContext!.findRenderObject()!
@@ -54,30 +53,22 @@ void main() {
           );
         }
 
-        if (family == RaftFamily.brutal) {
-          // Full-width 2px divider at the tab edge, above the 34px system area.
-          for (final x in [1, 195, 388]) {
-            expect(pixel(x, 808), Colors.black);
-            expect(pixel(x, 809), Colors.black);
-            expect(pixel(x, 810), Colors.white);
-          }
-        } else {
-          // Elegant remains a centered capsule, without a full-width rule.
-          expect(pixel(1, 809), isNot(Colors.black));
-        }
+        // The docked source bar ends above the independently owned system inset.
+        expect(pixel(1, 809), isNot(Colors.black));
+
         final png = await image.toByteData(format: ui.ImageByteFormat.png);
         final output = File(
-          '../../.local/mobile-tabbar-border/${family.name}-$dark.png',
+          '../../.local/mobile-tabbar-border/${dark ? 'dark' : 'light'}.png',
         );
         await output.parent.create(recursive: true);
         await output.writeAsBytes(png!.buffer.asUint8List());
         image.dispose();
       });
-      final tasks = family == RaftFamily.brutal
-          ? find.widgetWithText(RaftControl, 'Tasks')
-          : find.byWidgetPredicate(
-              (w) => w is RaftControl && w.semanticLabel == 'Tasks',
-            );
+      final tasks = find.byWidgetPredicate(
+        (w) =>
+            (w is RaftControl && w.semanticLabel == 'Tasks') ||
+            (w is RaftInteractive && w.semanticLabel == 'Tasks'),
+      );
       await t.tap(tasks);
       await t.pump();
       expect(

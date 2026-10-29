@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'content_target.dart';
+import 'account_activity_unread.dart';
 
 const backgroundInboxTask = 'app.raft.raft_flutter.inbox_refresh';
 const backgroundScopeKey = 'raft.background.inbox.scope';
@@ -18,6 +19,12 @@ int messageNotificationId(String scope, String messageId) {
   return ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) &
       0x7fffffff;
 }
+
+/// One notification per conversation (Activity scope id: a thread's own
+/// channel for a thread), so a later message replaces it and reading the
+/// conversation removes it.
+int conversationNotificationId(String scope, String conversation) =>
+    messageNotificationId(scope, 'conversation:$conversation');
 
 /// Persist only scope, IDs and activation time; never message text or tokens.
 class BackgroundInboxStore {
@@ -104,9 +111,17 @@ class BackgroundInboxStore {
 }
 
 class BackgroundInboxAlert {
-  const BackgroundInboxAlert(this.target, this.title, this.body);
+  const BackgroundInboxAlert(
+    this.target,
+    this.title,
+    this.body, {
+    this.unread = 1,
+  });
   final ContentTarget target;
   final String title, body;
+
+  /// The conversation's Activity unread count when the alert was read.
+  final int unread;
   static BackgroundInboxAlert? fromRow(
     Map row,
     String serverId,
@@ -119,13 +134,11 @@ class BackgroundInboxAlert {
     );
     final message = row[thread ? 'latestActivityMessageId' : 'lastMessageId'];
     final channel = row[thread ? 'parentChannelId' : 'channelId'];
-    // The projection may omit firstMentionMessageId. Fail closed rather
-    // than label a later ordinary message as a personal mention.
-    if (mentionsOnly &&
-        (row['hasMention'] != true ||
-            row['firstMentionMessageId'] != message)) {
-      return null;
-    }
+    // The server only keeps unread mentions in `hasMention`; its
+    // firstMentionMessageId is the OLDEST unread mention (null on the
+    // RisingWave path), so it never gates the newest message. The unread
+    // count check below completes the `hasMention && unreadCount > 0` rule.
+    if (mentionsOnly && row['hasMention'] != true) return null;
     if (row['doneAt'] != null ||
         row['unreadCount'] is! num ||
         (row['unreadCount'] as num) <= 0 ||
@@ -143,10 +156,33 @@ class BackgroundInboxAlert {
                 !ContentTarget.validId(row['parentMessageId']))) {
       return null;
     }
-    final name =
-        '${row[thread ? 'parentChannelName' : 'channelName'] ?? 'Raft'}';
-    final body =
-        '${row[thread ? 'latestActivityPreview' : 'lastMessagePreview'] ?? 'New activity'}';
+    String? label(Object? value) {
+      if (value is! String) return null;
+      final text = value.replaceAll(RegExp(r'\s+'), ' ').trim();
+      return text.isEmpty ? null : text;
+    }
+
+    final name = label(row[thread ? 'parentChannelName' : 'channelName']);
+    final sender = label(
+      row[thread ? 'latestActivitySenderName' : 'lastMessageSenderName'],
+    );
+    final dm = row['kind'] == 'dm';
+    final conversation = name == null
+        ? 'Channel'
+        : name.startsWith('#')
+        ? name
+        : '#$name';
+    final title = dm
+        ? sender ?? name ?? 'Direct message'
+        : thread
+        ? '$conversation · Thread'
+        : conversation;
+    final preview =
+        label(row[thread ? 'latestActivityPreview' : 'lastMessagePreview']) ??
+        'New activity';
+    final body = !dm && sender != null ? '$sender: $preview' : preview;
+    String bounded(String value, int limit) =>
+        String.fromCharCodes(value.runes.take(limit));
     return BackgroundInboxAlert(
       ContentTarget(
         channelId: channel,
@@ -160,8 +196,9 @@ class BackgroundInboxAlert {
         threadId: thread ? row['threadChannelId'] as String : null,
         parentMessageId: thread ? row['parentMessageId'] as String : null,
       ),
-      name.substring(0, name.length.clamp(0, 160)),
-      body.substring(0, body.length.clamp(0, 512)),
+      bounded(title, 160),
+      bounded(body, 512),
+      unread: (row['unreadCount'] as num).toInt(),
     );
   }
 }
@@ -182,6 +219,10 @@ class BackgroundInboxPoller {
   final Future<void> Function(ContentTarget target, bool Function() valid)
   authorize;
   final bool Function(ContentTarget target)? suppress;
+
+  /// The account's membership sum. A missing summary leaves the OS badge
+  /// unchanged; a selected-server subtotal cannot replace it.
+  int? totalUnread;
   Future<bool> run() async {
     final scope = await store.scope();
     if (scope == null ||
@@ -220,6 +261,14 @@ class BackgroundInboxPoller {
       },
     );
     if (!await current() || page is! Map || page['items'] is! List) return true;
+    final total = page['totalUnreadCount'];
+    totalUnread = await backgroundActivityBadge(
+      client,
+      selectedTotal: mode == 'all' && total is num && total >= 0
+          ? total.toInt()
+          : null,
+    );
+    if (!await current()) return true;
     var count = 0;
     for (final row in (page['items'] as List).whereType<Map>()) {
       final alert = BackgroundInboxAlert.fromRow(

@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -6,6 +9,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/desktop_directory_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 class _GroupingClient extends RaftClient {
   _GroupingClient()
@@ -65,50 +69,47 @@ class _GroupingClient extends RaftClient {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('long directory builds only visible members $family/$dark', (
-      t,
-    ) async {
-      final client = _GroupingClient()..large = true;
-      final w = WorkspaceController(client)
-        ..server = RaftRecord({'id': 's', 'role': 'owner'});
-      addTearDown(() async {
-        w.dispose();
-        await client.stream.close();
-        await client.dispose();
-      });
-      await t.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(family, dark: dark),
-          home: Scaffold(
-            body: SizedBox(
-              width: 240,
-              child: DesktopDirectoryView(controller: w, onSelected: (_) {}),
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      'long directory builds only visible members ${dark ? 'dark' : 'light'}',
+      (t) async {
+        final client = _GroupingClient()..large = true;
+        final w = WorkspaceController(client)
+          ..server = RaftRecord({'id': 's', 'role': 'owner'});
+        addTearDown(() async {
+          w.dispose();
+          await client.stream.close();
+          await client.dispose();
+        });
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(dark: dark),
+            home: Scaffold(
+              body: SizedBox(
+                width: 240,
+                child: DesktopDirectoryView(controller: w, onSelected: (_) {}),
+              ),
             ),
           ),
-        ),
-      );
-      await t.pumpAndSettle();
-      expect(find.byType(RaftNavItem).evaluate().length, lessThan(30));
-      final scrollable = find.descendant(
-        of: find.byKey(const Key('desktop-directory-list')),
-        matching: find.byType(Scrollable),
-      );
-      await t.scrollUntilVisible(
-        find.byKey(const ValueKey('desktop-directory-agent-long-999')),
-        2000,
-        scrollable: scrollable,
-        maxScrolls: 40,
-      );
-      expect(find.text('Agent 999'), findsOneWidget);
-      expect(t.takeException(), isNull);
-    });
+        );
+        await t.pumpAndSettle();
+        expect(find.byType(RaftNavItem).evaluate().length, lessThan(30));
+        final scrollable = find.descendant(
+          of: find.byKey(const Key('desktop-directory-list')),
+          matching: find.byType(Scrollable),
+        );
+        await t.scrollUntilVisible(
+          find.byKey(const ValueKey('desktop-directory-agent-long-999')),
+          2000,
+          scrollable: scrollable,
+          maxScrolls: 40,
+        );
+        expect(find.text('Agent 999'), findsOneWidget);
+        expect(t.takeException(), isNull);
+      },
+    );
     testWidgets(
-      'authorized grouped directory $family/$dark preserves order and collapse',
+      'authorized grouped directory ${dark ? 'dark' : 'light'} preserves order and collapse',
       (t) async {
         final client = _GroupingClient();
         final w = WorkspaceController(client)
@@ -120,7 +121,7 @@ void main() {
         });
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: SizedBox(
                 width: 240,
@@ -189,7 +190,7 @@ void main() {
     });
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: DesktopDirectoryView(controller: w, onSelected: (_) {}),
         ),

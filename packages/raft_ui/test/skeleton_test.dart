@@ -4,89 +4,85 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
-class _VisibleShadowsBinding extends AutomatedTestWidgetsFlutterBinding {
-  @override
-  bool get disableShadows => false;
-}
+import 'flutter_test_config.dart' show RaftTestBinding;
 
 void main() {
-  _VisibleShadowsBinding();
-  for (final family in RaftFamily.values) {
-    testWidgets('circle skeleton paints the source avatar rim: $family', (
-      tester,
-    ) async {
-      final key = GlobalKey();
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(family),
-          home: MediaQuery(
-            data: const MediaQueryData(disableAnimations: true),
-            child: Scaffold(
-              body: Center(
-                child: RepaintBoundary(
-                  key: key,
-                  child: const ColoredBox(
-                    color: Colors.white,
-                    child: RaftSkeleton(
-                      variant: RaftSkeletonVariant.circle,
-                      width: 32,
-                      height: 32,
-                    ),
+  RaftTestBinding.showShadows();
+
+  testWidgets('circle skeleton paints the source avatar rim:', (tester) async {
+    final key = GlobalKey();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: Center(
+              child: RepaintBoundary(
+                key: key,
+                child: const ColoredBox(
+                  color: Colors.white,
+                  child: RaftSkeleton(
+                    variant: RaftSkeletonVariant.circle,
+                    width: 32,
+                    height: 32,
                   ),
                 ),
               ),
             ),
           ),
         ),
+      ),
+    );
+    await tester.pump();
+    final boundary =
+        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    expect(boundary.size, const Size(32, 32));
+    await tester.runAsync(() async {
+      final full = await boundary.toImage(pixelRatio: 3);
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      canvas.drawRect(
+        Offset.zero & Size(full.width.toDouble(), full.height.toDouble()),
+        Paint()..color = Colors.white,
       );
-      await tester.pump();
-      final boundary =
-          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-      expect(boundary.size, const Size(32, 32));
-      await tester.runAsync(() async {
-        final full = await boundary.toImage(pixelRatio: 3);
-        final recorder = ui.PictureRecorder();
-        final canvas = Canvas(recorder);
-        canvas.drawRect(
-          Offset.zero & Size(full.width.toDouble(), full.height.toDouble()),
-          Paint()..color = Colors.white,
-        );
-        canvas.drawImageRect(
-          full,
-          Offset.zero & Size(full.width.toDouble(), full.height.toDouble()),
-          Offset.zero & Size(full.width.toDouble(), full.height.toDouble()),
-          Paint()..filterQuality = FilterQuality.none,
-        );
-        final picture = recorder.endRecording();
-        final image = await picture.toImage(full.width, full.height);
-        picture.dispose();
-        full.dispose();
-        final bytes = (await image.toByteData(
-          format: ui.ImageByteFormat.rawRgba,
-        ))!;
-        int red(int x, int y) => bytes.getUint8((y * image.width + x) * 4);
-        expect(
-          red(48, 2),
-          lessThan(32),
-          reason: 'The black two-pixel rim must paint.',
-        );
-        expect(
-          red(48, 48),
-          inInclusiveRange(240, 244),
-          reason: 'The inner black/5 fill must paint.',
-        );
-        image.dispose();
-      });
+      canvas.drawImageRect(
+        full,
+        Offset.zero & Size(full.width.toDouble(), full.height.toDouble()),
+        Offset.zero & Size(full.width.toDouble(), full.height.toDouble()),
+        Paint()..filterQuality = FilterQuality.none,
+      );
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(full.width, full.height);
+      picture.dispose();
+      full.dispose();
+      final bytes = (await image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      ))!;
+      int red(int x, int y) => bytes.getUint8((y * image.width + x) * 4);
+      expect(
+        red(48, 2),
+        lessThan(32),
+        reason: 'The black two-pixel rim must paint.',
+      );
+      expect(
+        red(48, 48),
+        inInclusiveRange(240, 244),
+        reason: 'The inner black/5 fill must paint.',
+      );
+      image.dispose();
     });
-  }
+  }, skip: raftLookSkip(raftLookElegant));
+
   testWidgets(
     'skeleton avatar remains painted in a bounded scrolling row frame',
     (tester) async {
       final key = GlobalKey();
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           home: RepaintBoundary(
             key: key,
             child: Align(
@@ -158,6 +154,7 @@ void main() {
         image.dispose();
       });
     },
+    skip: raftLookSkip(raftLookElegant),
   );
 
   testWidgets('black/10 skeleton uses the source 8-bit alpha on white', (
@@ -166,6 +163,8 @@ void main() {
     final key = GlobalKey();
     await tester.pumpWidget(
       MaterialApp(
+        // black/10 is the recipe look; the Raft look paints fill-muted.
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: Center(
@@ -191,5 +190,35 @@ void main() {
       expect(bytes.getUint8((10 * image.width + 50) * 4), 229);
       image.dispose();
     });
+  }, skip: raftLookSkip(raftLookElegant));
+
+  testWidgets('Raft skeleton is a flat fill-muted sticker block', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: const Center(child: RaftSkeleton(width: 100, height: 20)),
+        ),
+      ),
+    );
+    await tester.pump();
+    final box = tester.widget<Container>(
+      find
+          .descendant(
+            of: find.byType(RaftSkeleton),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    final decoration = box.decoration! as BoxDecoration;
+    final t = RaftTokens.of(tester.element(find.byType(RaftSkeleton)));
+    expect(decoration.color, t.colors['fill-muted']);
+    expect(
+      decoration.borderRadius,
+      BorderRadius.circular(t.size('radius.sticker', fallback: 4)),
+    );
   });
 }

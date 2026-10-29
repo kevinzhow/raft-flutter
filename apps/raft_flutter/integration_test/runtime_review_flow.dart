@@ -37,7 +37,7 @@ Future<void> verifyRuntimeReview(
     expect(computer['status'], 'online');
     expect(computer['isComputer'], true);
     await section('agents');
-    await tester.tap(find.text('Create managed agent'));
+    await tester.tap(find.text('Create Managed Agent'));
     await wait(
       () => find
           .textContaining('Isolated Flutter runtime proof')

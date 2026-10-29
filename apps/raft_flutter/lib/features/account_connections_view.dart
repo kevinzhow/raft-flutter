@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/oauth_broker.dart';
 import 'management_support.dart';
@@ -97,7 +98,9 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
       return;
     }
     final generation = w.client.generation, scope = authority;
-    final active = NativeOAuthBroker();
+    final active = NativeOAuthBroker(
+      locale: Localizations.maybeLocaleOf(context),
+    );
     broker = active;
     await run(() async {
       try {
@@ -134,7 +137,7 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
           setState(() => passwordSetupSent = true);
         }
       },
-      submit: 'Send email',
+      submit: 'Send Email',
     );
   }
 
@@ -152,14 +155,15 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
       return;
     }
     final accepted = await confirm(
-      'Disconnect this sign-in account?',
+      'Disconnect Account',
       'You can still sign in with your remaining account methods.',
       () async {
         await w.client.delete(
           '/auth/identities/${Uri.encodeComponent(provider)}',
         );
       },
-      submit: 'Disconnect',
+      submit: 'Disconnect Account',
+      cancel: 'Cancel',
       destructive: true,
     );
     if (accepted && mounted && sourceAuthority == authority) await reload();
@@ -172,7 +176,15 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
       // owns its submit progress, so no outer spinner runs behind the dialog.
       await sendPasswordSetup();
     } catch (e) {
-      if (mounted && scope == authority) setState(() => error = '$e');
+      if (mounted && scope == authority) {
+        setState(
+          () => error = userErrorText(
+            e,
+            fallback: 'Failed to send password setup email',
+            where: 'password setup',
+          ),
+        );
+      }
     }
   }
 
@@ -201,8 +213,8 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
             style: recipe.detail,
           ),
         ),
-      if (error != null)
-        Semantics(liveRegion: true, child: Text(error!, style: recipe.detail)),
+      // `<Banner intent="warning" density="sm" className="font-bold">`
+      if (error != null) RaftErrorBanner(error!, small: true, bold: true),
       if (!loading && !passwordStateKnown)
         Text(
           raftText(
@@ -334,7 +346,7 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
             alignment: Alignment.centerLeft,
             // `variant="accent" size="sm"`
             child: RaftSettingsRecipeButton(
-              label: busy ? 'Sending setup email...' : 'Set password by email',
+              label: busy ? 'Sending setup email…' : 'Set password by email',
               variant: RaftButtonRecipeVariant.accent,
               size: RaftButtonRecipeSize.sm,
               onPressed: busy
@@ -362,14 +374,14 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
         Align(
           alignment: Alignment.centerLeft,
           child: RaftTextButton(
-            label: 'Refresh sign-in methods',
+            label: 'Refresh Sign-in Methods',
             glyph: RaftGlyph.refreshCw,
             onPressed: busy ? null : reload,
           ),
         ),
       if (broker != null)
         RaftTextButton(
-          label: 'Cancel sign-in',
+          label: 'Cancel Sign-in',
           onPressed: () => broker?.cancel(),
         ),
     ];
@@ -428,28 +440,35 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
             final canUnlink =
                 passwordStateKnown &&
                 (passwordConfigured || identities.length > 1);
-            return ListTile(
-              title: Text('${provider['label'] ?? id}'),
-              subtitle: Text(
-                identity == null
-                    ? raftText(context, 'Not connected')
-                    : '${identity['providerEmail'] ?? ''}',
-              ),
-              trailing: identity == null
-                  ? (provider['enabled'] == true &&
-                            passwordStateKnown &&
-                            !loading
-                        ? action(
-                            'Connect',
-                            () => connect(id, sourceAuthority: sourceScope),
-                          )
-                        : null)
-                  : action(
-                      'Disconnect',
-                      canUnlink
-                          ? () => disconnect(id, sourceAuthority: sourceScope)
-                          : null,
+            return RaftListRow(
+              interactive: false,
+              children: [
+                RaftListRowBody(
+                  children: [
+                    RaftListRowTitle('${provider['label'] ?? id}'),
+                    RaftListRowDescription(
+                      identity == null
+                          ? raftText(context, 'Not connected')
+                          : '${identity['providerEmail'] ?? ''}',
                     ),
+                  ],
+                ),
+                ?(identity == null
+                    ? (provider['enabled'] == true &&
+                              passwordStateKnown &&
+                              !loading
+                          ? action(
+                              'Connect',
+                              () => connect(id, sourceAuthority: sourceScope),
+                            )
+                          : null)
+                    : action(
+                        'Disconnect',
+                        canUnlink
+                            ? () => disconnect(id, sourceAuthority: sourceScope)
+                            : null,
+                      )),
+              ],
             );
           },
         ),
@@ -462,7 +481,7 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
         ),
       if (broker != null)
         RaftTextButton(
-          label: 'Cancel sign-in',
+          label: 'Cancel Sign-in',
           onPressed: () => broker?.cancel(),
         ),
     ]);

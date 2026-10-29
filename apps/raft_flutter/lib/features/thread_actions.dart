@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/cause_notice.dart';
 import '../data/followed_threads_store.dart';
 import '../data/workspace_controller.dart';
 import 'private_route_guard.dart';
@@ -25,16 +26,24 @@ class ThreadActions extends StatefulWidget {
   final String parentMessageId;
   final bool menuMode;
   final VoidCallback? onSearch, onViewChannel;
+
   @override
   State<ThreadActions> createState() => _ThreadActionsState();
 }
 
 class _ThreadActionsState extends State<ThreadActions> {
   WorkspaceController get w => widget.controller;
-  FollowedThreadsStore get store => w.followedThreads;
+  FollowedThreadsStore get store => w.services.followedThreads;
   late final int generation;
   late final StreamSubscription<RaftEvent> subscription;
-  String? error;
+  // The failed write. Bound to the thread it was for (this State can be
+  // reused for another parent) and to the membership it failed to change, so
+  // a refresh that shows a different membership retires it. Retry or a new
+  // toggle clears it.
+  late final CauseNotice errorNotice = CauseNotice(
+    scope: () => (widget.parentMessageId, workspaceAuthority(w)),
+  );
+  String? get error => errorNotice.message;
   late final String authority;
   OverlayEntry? menu;
   final menuGroup = Object();
@@ -75,7 +84,7 @@ class _ThreadActionsState extends State<ThreadActions> {
       mounted &&
       generation == w.client.generation &&
       authority == workspaceAuthority(w) &&
-      widget.parentMessageId == w.threadParentMessageId;
+      widget.parentMessageId == w.messageDomain.threadParentMessageId;
 
   /// Membership from the server-scoped followed list; null before its first
   /// accepted read for this identity.
@@ -96,7 +105,7 @@ class _ThreadActionsState extends State<ThreadActions> {
   }
 
   void retry() {
-    rebuild(() => error = null);
+    rebuild(errorNotice.clear);
     store.refresh();
   }
 
@@ -106,7 +115,7 @@ class _ThreadActionsState extends State<ThreadActions> {
     final threadId =
         store.threadChannelIdFor(widget.parentMessageId) ?? w.threadChannelId;
     if (wasFollowing && threadId == null) return;
-    rebuild(() => error = null);
+    rebuild(errorNotice.clear);
     try {
       // Optimistic in the shared store; it reverts if the write fails.
       wasFollowing
@@ -118,7 +127,10 @@ class _ThreadActionsState extends State<ThreadActions> {
     } catch (_) {
       if (current) {
         rebuild(
-          () => error = 'Thread notification settings could not be changed.',
+          () => errorNotice.raise(
+            'Thread notification settings could not be changed.',
+            whileTrue: () => following == wasFollowing,
+          ),
         );
       }
     }
@@ -151,6 +163,11 @@ class _ThreadActionsState extends State<ThreadActions> {
     if (box == null || overlayBox == null) return;
     final rect =
         box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
+    final placement = RaftThreadPlacement.maybeOf(context);
+    // Focus mode (Web `ThreadOverflowMenu.onToggleChannel`): offered only
+    // when the thread sits beside its own conversation (the layout says so).
+    final toggleFocus = placement?.toggleFocus;
+    final focused = placement?.focused ?? false;
     menu = OverlayEntry(
       builder: (context) => Positioned(
         left: (rect.right - 192).clamp(
@@ -158,57 +175,81 @@ class _ThreadActionsState extends State<ThreadActions> {
           (overlayBox.size.width - 200).clamp(8.0, double.infinity),
         ),
         top: rect.bottom + 4,
-        child: TapRegion(
-          groupId: menuGroup,
-          onTapOutside: (_) => closeMenu(),
-          child: RaftMenuPanel(
-            onDismiss: closeMenu,
-            children: [
-              if (widget.onSearch != null)
-                RaftMenuItem(
-                  label: raftText(context, 'Search in thread'),
-                  glyph: RaftGlyph.search,
-                  autofocus: true,
-                  onPressed: () {
-                    closeMenu();
-                    if (current) widget.onSearch!();
-                  },
-                ),
-              if (widget.onViewChannel != null)
-                RaftMenuItem(
-                  label: raftText(context, 'View in channel'),
-                  glyph: RaftGlyph.mapPin,
-                  onPressed: () {
-                    closeMenu();
-                    if (current) widget.onViewChannel!();
-                  },
-                ),
-              RaftMenuItem(
-                key: const Key('thread-follow-menu-item'),
-                label: raftText(
-                  context,
-                  following == true ? 'Unfollow Thread' : 'Follow Thread',
-                ),
-                glyph: following == true
-                    ? RaftGlyph.messageCircleOff
-                    : RaftGlyph.messageCirclePlus,
-                onPressed: following == null || busy
-                    ? null
-                    : () {
+        child: RaftBackDismiss(
+          routeContext: this.context,
+          onDismiss: closeMenu,
+          child: TapRegion(
+            groupId: menuGroup,
+            onTapOutside: (_) => closeMenu(),
+            child: RaftDismissScope(
+              onDismiss: closeMenu,
+              takeFocus: true,
+              child: RaftMenuPanel(
+                onDismiss: closeMenu,
+                children: [
+                  if (toggleFocus != null)
+                    RaftMenuItem(
+                      key: const Key('thread-focus-menu-item'),
+                      label: raftText(
+                        context,
+                        focused ? 'Standard mode' : 'Focus mode',
+                      ),
+                      glyph: focused
+                          ? RaftGlyph.minimize2
+                          : RaftGlyph.maximize2,
+                      autofocus: true,
+                      onPressed: () {
                         closeMenu();
-                        toggle();
+                        if (current) toggleFocus();
                       },
+                    ),
+                  if (widget.onSearch != null)
+                    RaftMenuItem(
+                      label: raftText(context, 'Search in Thread'),
+                      glyph: RaftGlyph.search,
+                      autofocus: toggleFocus == null,
+                      onPressed: () {
+                        closeMenu();
+                        if (current) widget.onSearch!();
+                      },
+                    ),
+                  if (widget.onViewChannel != null)
+                    RaftMenuItem(
+                      label: raftText(context, 'View in Channel'),
+                      glyph: RaftGlyph.mapPin,
+                      onPressed: () {
+                        closeMenu();
+                        if (current) widget.onViewChannel!();
+                      },
+                    ),
+                  RaftMenuItem(
+                    key: const Key('thread-follow-menu-item'),
+                    label: raftText(
+                      context,
+                      following == true ? 'Unfollow Thread' : 'Follow Thread',
+                    ),
+                    glyph: following == true
+                        ? RaftGlyph.messageCircleOff
+                        : RaftGlyph.messageCirclePlus,
+                    onPressed: following == null || busy
+                        ? null
+                        : () {
+                            closeMenu();
+                            toggle();
+                          },
+                  ),
+                  if (error != null || loadError != null)
+                    RaftMenuItem(
+                      label: raftText(context, 'Retry'),
+                      glyph: RaftGlyph.refreshCw,
+                      onPressed: () {
+                        closeMenu();
+                        retry();
+                      },
+                    ),
+                ],
               ),
-              if (error != null || loadError != null)
-                RaftMenuItem(
-                  label: raftText(context, 'Retry'),
-                  glyph: RaftGlyph.refreshCw,
-                  onPressed: () {
-                    closeMenu();
-                    retry();
-                  },
-                ),
-            ],
+            ),
           ),
         ),
       ),
@@ -223,7 +264,7 @@ class _ThreadActionsState extends State<ThreadActions> {
             groupId: menuGroup,
             child: RaftThreadOverflowAction(
               key: const Key('thread-options'),
-              label: raftText(context, 'Thread options'),
+              label: raftText(context, 'Thread Options'),
               onPressed: current ? () => openMenu(anchor) : null,
             ),
           ),
@@ -251,16 +292,16 @@ class _ThreadActionsState extends State<ThreadActions> {
                       ),
               ),
               if (loadError != null && following == null)
-                TextButton(
+                RaftButton.text(
                   onPressed: retry,
                   child: Text(raftText(context, 'Retry')),
                 )
               else
-                TextButton.icon(
+                RaftButton.text(
                   key: const Key('thread-follow-toggle'),
                   onPressed: following == null || busy ? null : toggle,
-                  // Web ThreadOverflowMenu.tsx:110 MessageCircleOff/MessageCirclePlus.
-                  icon: RaftIcon(
+                  icon: // Web ThreadOverflowMenu.tsx:110 MessageCircleOff/MessageCirclePlus.
+                  RaftIcon(
                     following == true
                         ? RaftGlyph.messageCircleOff
                         : RaftGlyph.messageCirclePlus,

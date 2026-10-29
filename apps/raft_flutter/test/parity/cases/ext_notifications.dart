@@ -34,11 +34,11 @@ Widget _build(ParityContext ctx) {
         builder: (context) {
           final t = RaftTokens.of(context);
           return ColoredBox(
-            color: t.brutal ? Colors.white : t.panel,
+            color: t.panel,
             child: Padding(
               // The panel's left border (brutal 2px, elegant 1px) + `px-5`
               // inside the 640px column.
-              padding: EdgeInsets.fromLTRB(t.brutal ? 22 : 21, 0, 20, 0),
+              padding: EdgeInsets.fromLTRB(21, 0, 20, 0),
               child: NotificationSettingsView(
                 service: _DesktopService(ready: ready),
               ),

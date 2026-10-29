@@ -1,14 +1,18 @@
-# Windows 通知（2026-10-12）
+# Windows 通知
 
 Windows 复用 DesktopInboxNotifications，消费 WorkspaceController 已接受的 Activity/unread 窗口，与 macOS 使用相同的通知规则、后台条件、去重和账户／服务器／角色／权限 fence。不会另开连接或重复消费移动端 notification:push。首次恢复的历史窗口只建立基线，退出、切换账户和授权撤销清理该身份下的系统通知。系统设置拥有通知开关，应用不保存第二份桌面 opt-in。
 
-Windows 宿主通过官方 Windows App SDK 1.7 的 AppNotificationManager.Register／Show 投递，使用 `<toast activationType='protocol'>` 和当前用户的 `raft-notification://open?payload=…` 协议。身份仍为 `app.raft.raft_flutter`；SDK 使用进程显式 AUMID，不借用其他应用身份。完整 bundle 包含 `raft.ico`、Raft 品牌 PNG `notification_icon.png` 和 bootstrap DLL；通知内容通过 appLogoOverride 显式引用品牌图标。每次运行更新自身快捷方式与协议命令的完整、加引号路径，并用 ActivationRegistrationManager.RegisterForProtocolActivation 登记应用能力。旧 COM GUID `b951813c-37ff-5d5c-95ac-f9573572c87c` 保留用于已有身份登记，当前通知点击不依赖该 COM 启动链路。
+Windows 宿主通过系统 Windows.UI.Notifications.ToastNotificationManager／ToastNotifier 投递，使用 `<toast activationType='protocol'>` 和当前用户的 `raft-notification://open?payload=…` 协议。身份为 `app.raft.raft_flutter`，通过 SetCurrentProcessExplicitAppUserModelID 与 HKCU 的 AppUserModelId DisplayName／IconUri 登记，不借用其他应用身份，也不创建 COM 激活器。按微软的桌面 Toast 契约，初始化时确保当前用户开始菜单的 `Raft.lnk` 携带同一 AUMID，位置与安装包一致；匹配的快捷方式不重写，移动便携 bundle 后更新目标路径。隔离 lab 使用单独的 `Raft notification lab.lnk`。完整 bundle 包含 `raft.ico` 和品牌 PNG `notification_icon.png`；通知通过 appLogoOverride 引用图标。每次运行刷新当前用户的协议命令及图标路径，不需要管理员或 Windows App Runtime。
 
 Dart 的 NativeNotificationService／NativeContentCoordinator 继续拥有投递规则、权限、账户 fence 和点击授权。宿主只处理系统投递、设置查询和窗口恢复。暖点击按完整 exe 路径找到既有 Flutter 窗口，通过有界 WM_COPYDATA 转交 URI；冷点击经命令参数启动，初始化回调后再处理目标。宿主兼容 SDK 的 `----ms-protocol:` 参数前缀；Dart 与宿主均兼容 Windows 给空路径补 `/` 的格式。进入内容前仍重新检查 origin、principal、server membership 和消息可访问性。解析限制单个 payload、4096 字符目标和 16384 字符 URI，并拒绝额外路径、端口、用户信息和 fragment；原生早到点击暂存最多 8 条。协议注册不包含账号或消息正文，通知本身包含目标 payload。
 
 未打包应用首次查询 Setting 可能返回 ERROR_NOT_FOUND。宿主仅针对这一错误执行与 [CommunityToolkit 初始化](https://github.com/CommunityToolkit/WindowsCommunityToolkit/blob/main/Microsoft.Toolkit.Uwp.Notifications/Toasts/Compat/ToastNotificationManagerCompat.cs) 相同的登记：禁止横幅、只含产品名称、15 秒过期并立即从历史移除，然后重新查询实际设置。其他查询失败按禁止投递处理。请勿打扰仍由系统控制，Enabled 不表示系统一定显示横幅。
 
-| 场景 | 当前证据 | 结果／边界 |
+## 历史验证记录（2026-10-12）
+
+以下保留旧 WinRT／COM 与 Windows App SDK 方案的原始结果，不表示当前系统 Toast 实现已经完成设备验收。旧运行库前提、管理员登记脚本和 COM 探针已不适用于当前构建；新版本的验证证据随对应 PR 交付。
+
+| 场景 | 当时证据 | 结果／边界 |
 | --- | --- | --- |
 | 身份与图标、OS 开关变化、无桌面私有 opt-in | Windows service/widget tests | 通过；原生查询也返回 allowed |
 | 后台新收件箱候选、前台抑制、规则、去重、权限／账户切换 | Windows 变体及 coordinator tests | 通过；没有向线上工作区发送验收消息 |

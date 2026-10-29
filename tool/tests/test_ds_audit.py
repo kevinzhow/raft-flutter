@@ -1,8 +1,14 @@
 """Design-system drift ratchet (tool/ds-audit) and scanner semantics."""
+import contextlib
+import copy
 import importlib.machinery
 import importlib.util
+import io
+import json
 import pathlib
+import tempfile
 import unittest
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 _loader = importlib.machinery.SourceFileLoader('ds_audit_cli', str(ROOT / 'tool/ds-audit'))
@@ -11,9 +17,36 @@ ds_audit = importlib.util.module_from_spec(_spec)
 _loader.exec_module(ds_audit)
 
 FIXTURE = 'apps/raft_flutter/test/fixtures/ds_audit_sample.dart'
+CONTRACT_FIXTURES = 'packages/raft_ui/test/fixtures/ds_audit_contract'
+BYPASS_FIXTURES = 'apps/raft_flutter/test/fixtures/ds_audit_bypass'
+FAMILY_FIXTURES = 'apps/raft_flutter/test/fixtures/ds_audit_family'
+
+
+def check_report(files, baseline, **extra):
+    """Run the real CLI policy against a fake report, without keeping scratch files."""
+    report = {'scannedFiles': 1, 'scopes': ds_audit.SCOPES, 'totals': {}, 'allowedTotals': {},
+              'allowed': {}, 'files': files, 'malformedAllows': [], 'generated': {},
+              'generatedTotal': 0, **extra}
+    output = io.StringIO()
+    with tempfile.TemporaryDirectory() as temporary:
+        root = pathlib.Path(temporary)
+        with mock.patch.object(ds_audit, 'run_scanner', return_value={}), \
+                mock.patch.object(ds_audit, 'aggregate', return_value=report), \
+                mock.patch.object(ds_audit, 'load_baseline', return_value=baseline), \
+                mock.patch.object(ds_audit, 'ROOT', root), \
+                mock.patch.object(ds_audit, 'REPORT', root / '.local/ds-audit.json'), \
+                contextlib.redirect_stdout(output):
+            code = ds_audit.main(['--check'])
+    return code, output.getvalue()
 
 
 class CompareTest(unittest.TestCase):
+    def test_engine_directories_and_exact_helper_files_keep_their_audit_scope(self):
+        for scope in ds_audit.ENGINE_SCOPES:
+            name = scope if scope.endswith('.dart') else scope + '/sample.g.dart'
+            self.assertEqual(ds_audit.scope_of(name), scope)
+        self.assertNotIn('packages/raft_theme/lib/src/raft_pack.g.dart', ds_audit.SCOPES)
+
     def test_growth_new_category_and_new_file_are_regressions(self):
         baseline = {'a.dart': {'widget.list_tile': 2}, 'b.dart': {'style.sized_box': 1}}
         current = {'a.dart': {'widget.list_tile': 3, 'style.edge_insets': 1},
@@ -30,8 +63,17 @@ class CompareTest(unittest.TestCase):
         self.assertEqual(regressions, [])
         self.assertEqual(improvements, [('a.dart', 'widget.list_tile', 2, 1),
                                         ('gone.dart', 'widget.dialog', 4, 0)])
-        self.assertIn('tool/ds-audit --update-baseline',
-                      ds_audit.format_comparison(regressions, improvements))
+        message = ds_audit.format_comparison(regressions, improvements)
+        self.assertIn('baseline can lower', message)
+        self.assertIn('tool/ds-audit --update-baseline', message)
+        self.assertIn('do NOT edit', message)  # feature branches leave the baseline to the integration owner
+
+    def test_check_passes_when_counts_went_down_and_fails_when_they_grew(self):
+        baseline = {'files': {'a.dart': {'widget.list_tile': 2}, 'b.dart': {'widget.dialog': 1}}}
+        for files, expected in (({'a.dart': {'widget.list_tile': 1}}, 0),  # decreases only
+                                ({'a.dart': {'widget.list_tile': 2}, 'b.dart': {'widget.dialog': 1}}, 0),
+                                ({'a.dart': {'widget.list_tile': 3}}, 1)):
+            self.assertEqual(check_report(files, baseline)[0], expected, files)
 
     def test_moving_a_violation_between_categories_still_fails(self):
         regressions, _ = ds_audit.compare({'a.dart': {'widget.button': 1}},
@@ -46,6 +88,31 @@ class CompareTest(unittest.TestCase):
         self.assertEqual(report['files'], {'a.dart': {'widget.tooltip': 2}})
         self.assertEqual(report['allowed'], {'a.dart': {'widget.tooltip': 1}})
         self.assertEqual(len(report['malformedAllows']), 1)
+
+
+class FakeReportHelperTest(unittest.TestCase):
+    def test_scratch_and_mocks_are_restored_when_the_cli_raises(self):
+        original_root, original_report = ds_audit.ROOT, ds_audit.REPORT
+        original_scanner = ds_audit.run_scanner
+        temporary_roots = []
+
+        def fail_after_writing_report(arguments):
+            self.assertEqual(arguments, ['--check'])
+            root = ds_audit.ROOT
+            temporary_roots.append(root)
+            self.assertTrue(root.is_dir())
+            ds_audit.REPORT.parent.mkdir()
+            ds_audit.REPORT.write_text('partial report before failure')
+            raise RuntimeError('fixture CLI failure')
+
+        with mock.patch.object(ds_audit, 'main', side_effect=fail_after_writing_report):
+            with self.assertRaisesRegex(RuntimeError, 'fixture CLI failure'):
+                check_report({}, {'files': {}})
+        self.assertEqual(len(temporary_roots), 1)
+        self.assertFalse(temporary_roots[0].exists())
+        self.assertEqual(ds_audit.ROOT, original_root)
+        self.assertEqual(ds_audit.REPORT, original_report)
+        self.assertIs(ds_audit.run_scanner, original_scanner)
 
 
 class ScannerFixtureTest(unittest.TestCase):
@@ -66,13 +133,596 @@ class ScannerFixtureTest(unittest.TestCase):
         self.assertEqual(len(report['malformedAllows']), 1)
 
 
+class ContractRatchetTest(unittest.TestCase):
+    """The packages/raft_ui/lib scope: growth fails --check, decreases never do."""
+
+    BASELINE = {'files': {
+        'packages/raft_ui/lib/src/a.dart': {'contract.color_literal': 3, 'contract.radius_literal': 2},
+        'packages/raft_ui/lib/src/b.dart': {'contract.legacy_recipe_theme': 1},
+    }}
+
+    def check(self, files, baseline=None, **extra):
+        return check_report(files, baseline or self.BASELINE, **extra)
+
+    def test_every_category_growing_in_raft_ui_fails(self):
+        a = 'packages/raft_ui/lib/src/a.dart'
+        for category in ('contract.color_literal', 'contract.font_size_literal', 'contract.radius_literal',
+                         'contract.stroke_width_literal', 'contract.theme_name_branch',
+                         'contract.legacy_recipe_theme'):
+            files = {a: {'contract.color_literal': 3, 'contract.radius_literal': 2},
+                     'packages/raft_ui/lib/src/b.dart': {'contract.legacy_recipe_theme': 1}}
+            files[a][category] = files[a].get(category, 0) + 1
+            code, output = self.check(files)
+            self.assertEqual(code, 1, category)
+            self.assertIn(f'{a}: {category}', output)
+
+    def test_a_new_raft_ui_file_with_literals_fails(self):
+        code, output = self.check({**self.BASELINE['files'],
+                                   'packages/raft_ui/lib/src/new.dart': {'contract.color_literal': 1}})
+        self.assertEqual(code, 1)
+        self.assertIn('new.dart: contract.color_literal 0 -> 1', output)
+
+    def test_raft_ui_counts_at_or_below_the_baseline_pass(self):
+        for files in (self.BASELINE['files'],
+                      {'packages/raft_ui/lib/src/a.dart': {'contract.color_literal': 1}},  # decrease + file gone
+                      {}):
+            code, output = self.check(files)
+            self.assertEqual(code, 0, files)
+            self.assertNotIn('GREW', output)
+
+    def test_decrease_prints_the_lower_baseline_note(self):
+        code, output = self.check({'packages/raft_ui/lib/src/a.dart': {'contract.color_literal': 1}})
+        self.assertEqual(code, 0)
+        self.assertIn('baseline can lower', output)
+
+    def test_generated_recipe_constants_are_informational(self):
+        generated = {'packages/raft_ui/lib/src/recipes/x.g.dart': 99999}
+        code, output = self.check(dict(self.BASELINE['files']), generated=generated, generatedTotal=99999)
+        self.assertEqual(code, 0)
+        self.assertIn('generated.recipe_constants (informational, not checked): 99999', output)
+
+    def test_the_app_scope_still_fails_next_to_a_clean_raft_ui(self):
+        files = {**self.BASELINE['files'], 'apps/raft_flutter/lib/features/x.dart': {'widget.dialog': 1}}
+        self.assertEqual(self.check(files)[0], 1)
+
+    def test_aggregate_keeps_generated_out_of_the_enforced_counts(self):
+        report = ds_audit.aggregate({'scanned': ['a.dart'], 'findings': [],
+                                     'generated': {'b.g.dart': 3, 'a.g.dart': 2}})
+        self.assertEqual((report['files'], report['totals']), ({}, {}))
+        self.assertEqual(report['generated'], {'a.g.dart': 2, 'b.g.dart': 3})
+        self.assertEqual(report['generatedTotal'], 5)
+
+    def test_baseline_document_lists_both_scopes_and_the_generated_counts(self):
+        report = ds_audit.aggregate({'scanned': ['a.dart'], 'findings': [], 'generated': {'b.g.dart': 3}})
+        document = ds_audit.baseline_document(report)
+        self.assertEqual(document['scopes'], [
+            'apps/raft_flutter/lib', 'packages/raft_ui/lib',
+            'packages/raft_theme/lib/recipes',
+            'packages/raft_theme/lib/src/css_recipe_decoration.dart',
+            'packages/raft_theme/lib/src/outer_shadow_painter.dart',
+            'packages/raft_theme/lib/src/lru_cache.dart',
+        ])
+        self.assertEqual(document['generated'], {'b.g.dart': 3})
+
+
+class ContractScannerFixtureTest(unittest.TestCase):
+    """Exact counts for the theme-contract rules on a fixture with negatives."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.report = ds_audit.aggregate(ds_audit.run_scanner([CONTRACT_FIXTURES], contract=[CONTRACT_FIXTURES]))
+
+    def test_fixture_counts_per_category(self):
+        self.assertEqual(self.report['totals'], {
+            'contract.color_literal': 5,
+            'contract.font_size_literal': 2,
+            'contract.legacy_recipe_theme': 2,
+            'contract.radius_literal': 3,
+            'contract.stroke_width_literal': 5,
+            'contract.theme_name_branch': 12,
+        })
+
+    def test_ds_allow_is_counted_separately_and_a_malformed_one_still_counts(self):
+        self.assertEqual(self.report['allowedTotals'],
+                         {'contract.color_literal': 2, 'contract.legacy_recipe_theme': 1})
+        self.assertEqual(len(self.report['malformedAllows']), 1)
+
+    def test_generated_files_are_excluded_from_literals_and_their_constants_counted(self):
+        generated = f'{CONTRACT_FIXTURES}/recipes/sample_recipe.g.dart'
+        self.assertEqual(self.report['generated'], {generated: 5})
+        self.assertEqual(self.report['generatedTotal'], 5)
+        self.assertNotIn(generated, self.report['files'])
+        self.assertFalse([f for f in self.report['findings'] if f['file'] == generated])
+
+    def test_the_app_rules_do_not_apply_to_the_contract_scope(self):
+        self.assertFalse([c for c in self.report['totals'] if c.startswith(('style.', 'widget.'))])
+
+    def test_without_the_contract_prefix_the_same_files_use_the_app_rules(self):
+        report = ds_audit.aggregate(ds_audit.run_scanner([CONTRACT_FIXTURES], contract=[]))
+        self.assertTrue(all(not c.startswith('contract.') for c in report['totals']))
+        self.assertEqual(report['generated'], {})
+
+
+class BypassRatchetTest(unittest.TestCase):
+    """The bypass group: raw Material/Cupertino controls and overlays in app and raft_ui."""
+
+    APP = 'apps/raft_flutter/lib/features/x.dart'
+    UI = 'packages/raft_ui/lib/src/y.dart'
+    BASELINE = {'files': {APP: {'bypass.dialog': 2, 'widget.dialog': 2}, UI: {'bypass.text_field': 1}}}
+
+    def check(self, files, **extra):
+        return ContractRatchetTest.check(self, files, baseline=self.BASELINE, **extra)
+
+    def test_growth_in_either_scope_fails_and_names_the_raft_component(self):
+        for name, category, use in ((self.APP, 'bypass.dialog', 'showRaftAlertDialog'),
+                                    (self.UI, 'bypass.text_field', 'RaftTextInput'),
+                                    (self.UI, 'bypass.menu', 'RaftDropdownMenu'),
+                                    (self.APP, 'bypass.button', 'RaftButton')):
+            files = {self.APP: {'bypass.dialog': 2, 'widget.dialog': 2}, self.UI: {'bypass.text_field': 1}}
+            files.setdefault(name, {})
+            files[name][category] = files[name].get(category, 0) + 1
+            code, output = self.check(files)
+            self.assertEqual(code, 1, category)
+            self.assertIn(f'{name}: {category}', output)
+            self.assertIn(f'{category}: ', output)
+            self.assertIn(use, output)
+            self.assertIn('BYPASS_ALLOWLIST', output)
+
+    def test_every_family_has_a_raft_replacement_hint(self):
+        for category in ('bypass.dialog', 'bypass.bottom_sheet', 'bypass.menu', 'bypass.select', 'bypass.tooltip',
+                         'bypass.button', 'bypass.icon_button', 'bypass.toggle', 'bypass.chip', 'bypass.list_tile',
+                         'bypass.progress', 'bypass.refresh', 'bypass.divider', 'bypass.text_field',
+                         'bypass.picker', 'bypass.snackbar', 'bypass.overlay'):
+            self.assertIn(category, ds_audit.BYPASS_USE)
+            self.assertIn('Raft', ds_audit.BYPASS_USE[category])
+
+    def test_decreases_and_unchanged_counts_pass(self):
+        for files in (self.BASELINE['files'],
+                      {self.APP: {'bypass.dialog': 1, 'widget.dialog': 2}},
+                      {}):
+            code, output = self.check(files)
+            self.assertEqual(code, 0, files)
+            self.assertNotIn('GREW', output)
+
+    def test_a_new_file_with_a_bypass_fails(self):
+        code, output = self.check({**self.BASELINE['files'], 'apps/raft_flutter/lib/new.dart': {'bypass.tooltip': 1}})
+        self.assertEqual(code, 1)
+        self.assertIn('new.dart: bypass.tooltip 0 -> 1', output)
+
+    def assert_wrapper_allowlist(self, allowlist):
+        # A count limit accepts an unknown replacement file or an extra family in
+        # a known host. Name the reviewed wrapper/family pairs instead.
+        ui = 'packages/raft_ui/lib/src/'
+        expected = {
+            ui + 'form_controls.dart': {'text_field'},
+            ui + 'form_controls_frozen.dart': {'text_field'},
+            ui + 'select_field_frozen.dart': {'select'},
+            ui + 'raft/checkbox_frozen.dart': {'toggle'},
+            ui + 'overlays/dialog.dart': {'dialog'},
+            ui + 'tooltip.dart': {'tooltip', 'overlay'},
+            ui + 'toast.dart': {'overlay'},
+            ui + 'pull_to_refresh.dart': {'refresh'},
+            ui + 'raft/legacy_material_button_surface.dart': {'button'},
+        }
+        self.assertEqual({name: set(families) for name, families in allowlist.items()}, expected)
+        for name, families in allowlist.items():
+            self.assertTrue((ROOT / name).is_file(), name)
+            for family, reason in families.items():
+                self.assertIn(f'bypass.{family}', ds_audit.BYPASS_USE, f'{name}: {family}')
+                self.assertIsInstance(reason, str)
+                self.assertGreater(len(reason.strip()), 10, f'{name}: {family} needs a reason')
+        dialog_reason = allowlist[ui + 'overlays/dialog.dart']['dialog']
+        self.assertIn('frozen', dialog_reason)
+        self.assertIn('compatibility', dialog_reason)
+
+    def test_the_wrapper_allowlist_is_explicit_small_and_points_at_real_files(self):
+        self.assert_wrapper_allowlist(ds_audit.BYPASS_ALLOWLIST)
+
+    def test_an_unknown_host_or_extra_family_cannot_hide_in_the_same_allowlist_size(self):
+        unknown = copy.deepcopy(ds_audit.BYPASS_ALLOWLIST)
+        unknown['packages/raft_ui/lib/src/unreviewed.dart'] = unknown.pop(
+            'packages/raft_ui/lib/src/overlays/dialog.dart')
+        extra_family = copy.deepcopy(ds_audit.BYPASS_ALLOWLIST)
+        extra_family['packages/raft_ui/lib/src/overlays/dialog.dart']['overlay'] = 'unreviewed popup host'
+        no_reason = copy.deepcopy(ds_audit.BYPASS_ALLOWLIST)
+        no_reason['packages/raft_ui/lib/src/overlays/dialog.dart']['dialog'] = ''
+        for allowlist in (unknown, extra_family, no_reason):
+            with self.subTest(allowlist=allowlist), self.assertRaises(AssertionError):
+                self.assert_wrapper_allowlist(allowlist)
+
+    def test_scanner_scopes_cover_app_and_raft_ui(self):
+        self.assertEqual(ds_audit.BYPASS_SCOPES, ['apps/raft_flutter/lib', 'packages/raft_ui/lib'])
+
+
+class BypassScannerFixtureTest(unittest.TestCase):
+    """Exact counts for the resolved-AST bypass scan on a fixture with negatives."""
+
+    WRAPPER = f'{BYPASS_FIXTURES}/wrapper_sample.dart'
+
+    @classmethod
+    def setUpClass(cls):
+        cls.document = ds_audit.run_scanner(
+            [BYPASS_FIXTURES], contract=[], bypass=[BYPASS_FIXTURES],
+            bypass_allow={cls.WRAPPER: {'text_field': 'fixture stands in for the input wrapper'}})
+        cls.report = ds_audit.aggregate(cls.document)
+
+    def bypass(self, table):
+        return {c: n for c, n in table.items() if c.startswith('bypass.')}
+
+    def test_fixture_counts_per_family(self):
+        self.assertEqual(self.bypass(self.report['totals']), {
+            'bypass.bottom_sheet': 1, 'bypass.button': 2, 'bypass.chip': 1,
+            'bypass.dialog': 5,  # AlertDialog, SimpleDialog, Dialog.fullscreen, showDialog(), showDialog tear-off
+            'bypass.divider': 1, 'bypass.icon_button': 2, 'bypass.list_tile': 1, 'bypass.menu': 2,
+            'bypass.overlay': 3, 'bypass.picker': 1, 'bypass.progress': 2, 'bypass.refresh': 1,
+            'bypass.select': 2, 'bypass.text_field': 2, 'bypass.toggle': 2,
+            'bypass.tooltip': 2,  # Tooltip( and `extends Tooltip`
+        })
+
+    def test_wrapper_allowlist_reports_separately_and_only_its_families(self):
+        self.assertEqual(self.bypass(self.report['files'][self.WRAPPER]), {'bypass.overlay': 1})
+        self.assertEqual(self.bypass(self.report['allowed'][self.WRAPPER]), {'bypass.text_field': 1})
+        reasons = [f['allowReason'] for f in self.document['findings'] if f['file'] == self.WRAPPER and f['allowed']]
+        self.assertEqual(reasons, ['raft_ui wrapper: fixture stands in for the input wrapper'])
+
+    def test_ds_allow_comments_work_for_bypass_findings(self):
+        self.assertEqual(self.bypass(self.report['allowedTotals']), {'bypass.dialog': 2, 'bypass.text_field': 1})
+        self.assertEqual(self.report['malformedAllows'], [])
+
+    def test_same_name_non_material_classes_and_raft_components_are_not_counted(self):
+        lookalikes = [f for f in self.document['findings'] if f['file'].endswith('lookalikes.dart')]
+        self.assertEqual(lookalikes, [])
+        names = {f['name'] for f in self.document['findings'] if f['category'].startswith('bypass.')}
+        self.assertFalse({n for n in names if n.startswith(('fake', 'Raft'))})
+        sample = [f for f in self.document['findings']
+                  if f['file'].endswith('bypass_sample.dart') and f['category'].startswith('bypass.')]
+        self.assertTrue(all(f['line'] < 78 or f['name'] == 'extends Tooltip' for f in sample), sample)
+
+    def test_without_the_bypass_prefix_nothing_is_counted(self):
+        report = ds_audit.aggregate(ds_audit.run_scanner([BYPASS_FIXTURES], contract=[], bypass=[]))
+        self.assertFalse([c for c in report['totals'] if c.startswith('bypass.')])
+        self.assertTrue(any(c.startswith('widget.') for c in report['totals']))  # the app rules still run
+
+
+class FamilyRegistryTest(unittest.TestCase):
+    """tool/ds-audit-families.json: one implementation per design-system family."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.families = ds_audit.load_families()
+        cls.sources = {p: p.read_text() for p in (ROOT / 'packages/raft_ui/lib').rglob('*.dart')}
+
+    @classmethod
+    def model_declarations(cls, texts):
+        """Use the pinned Dart AST for model kinds, never a typedef regex."""
+        import hashlib
+        import subprocess
+        cache = getattr(cls, '_model_declarations', {})
+        keyed = {hashlib.sha256(text.encode()).hexdigest(): text for text in texts}
+        missing = {key: text for key, text in keyed.items() if key not in cache}
+        if missing:
+            command = [str(ds_audit.dart_executable()),
+                       f'--packages={ROOT / ".dart_tool/package_config.json"}',
+                       str(ROOT / 'tool/tests/dart_model_declarations.dart')]
+            completed = subprocess.run(command, input=json.dumps(missing), text=True,
+                                       capture_output=True, cwd=ROOT, timeout=60)
+            if completed.returncode:
+                raise AssertionError(f'model declaration parser failed: {completed.stderr.strip()}')
+            parsed = json.loads(completed.stdout)
+            if set(parsed) != set(missing) or not all(isinstance(rows, list) for rows in parsed.values()):
+                raise AssertionError('model declaration parser returned incomplete inputs')
+            cache.update(parsed)
+            cls._model_declarations = cache
+        return [cache[hashlib.sha256(text.encode()).hexdigest()] for text in texts]
+
+    def declared(self, name, text, model_kind=None):
+        import re
+        if model_kind is not None:
+            rows = [row for row in self.model_declarations([text])[0] if row['name'] == name]
+            return len(rows) == 1 and rows[0]['kind'] == model_kind
+        # Component checks keep their syntax matcher; the ownership contract
+        # separately requires an actually resolved Widget/surface factory.
+        name = re.escape(name)
+        return re.search(rf'^(?:abstract |final |base |sealed |interface )*(?:class|mixin|enum) {name}\b'
+                         rf'|^[A-Za-z<>?, ]+ {name}[<(]', text, re.M) is not None
+
+    def test_every_deprecated_name_is_declared_in_its_listed_raft_ui_file(self):
+        for family, entry in self.families.items():
+            for name, file in entry['deprecated'].items():
+                self.assertTrue(file.startswith('packages/raft_ui/lib/'), f'{family}: {name}')
+                self.assertTrue((ROOT / file).is_file(), f'{family}: {name} -> {file}')
+                self.assertTrue(self.declared(name, (ROOT / file).read_text()), f'{name} is not declared in {file}')
+
+    def test_every_canonical_component_exists_in_raft_ui(self):
+        for family, entry in self.families.items():
+            if 'pending' in entry:  # canonical choice belongs to an open work package
+                self.assertEqual((entry['canonical'], entry['deprecated']), ([], {}), family)
+                continue
+            self.assertTrue(entry['canonical'], family)
+            for name in entry['canonical']:
+                self.assertTrue(any(self.declared(name, text) for text in self.sources.values()),
+                                f'{family}: canonical {name} not found in packages/raft_ui/lib')
+
+    def test_a_name_belongs_to_one_family_and_never_to_both_roles(self):
+        seen = ds_audit.duplicate_index(self.families)  # raises if two families deprecate the same name
+        canonical = {n for e in self.families.values() for n in e['canonical']}
+        self.assertEqual(canonical & set(seen), set())
+
+    def test_deprecating_a_name_twice_is_an_error(self):
+        families = {'a': {'canonical': ['X'], 'deprecated': {'Old': 'f.dart'}},
+                    'b': {'canonical': ['Y'], 'deprecated': {'Old': 'g.dart'}}}
+        with self.assertRaises(ds_audit.AuditError):
+            ds_audit.duplicate_index(families)
+
+    @classmethod
+    def resolved_contract(cls):
+        if not hasattr(cls, '_resolved_contract'):
+            roots = ['packages/raft_ui/lib', 'packages/raft_theme/lib/recipes']
+            document = ds_audit.run_scanner(
+                roots, contract=['packages/raft_theme/lib/recipes'],
+                bypass=[], bypass_allow={}, families={},
+                inventory=True, inventory_paths=roots)
+            cls._resolved_contract = document['ownership']
+        return cls._resolved_contract
+
+    def assert_registry_ownership(self, registry):
+        inventory = self.resolved_contract()
+        actual = {row['id']: row for row in inventory['declarations']}
+        ledger = json.loads((ROOT / 'docs/state-parity.json').read_text())['designSystemCoverage']
+        families, recipes = registry['families'], registry['recipes']
+        canonical_names, canonical_ids = set(), set()
+        all_canonical_names = {name for entry in families.values() for name in entry['canonical']}
+        ui_namespace = {row['name'] for row in actual.values()
+                        if row['kind'] in {'widget', 'paint_owner'} or
+                        row['kind'] == 'surface_factory' and row.get('owner') is None}
+        model_sources = {}
+        for family, entry in families.items():
+            for name, model in entry.get('nonWidgetModels', {}).items():
+                self.assertNotIn(name, all_canonical_names, f'{family}: data model is not a Widget')
+                self.assertIn(model['kind'], {'value_object', 'callback_typedef'},
+                              f'{family}.{name}: unsupported model kind')
+                self.assertEqual(model['declarationName'], name,
+                                 f'{family}.{name}: model declaration name mismatch')
+                self.assertIsInstance(model['sourceFile'], str)
+                source = pathlib.PurePosixPath(model['sourceFile'])
+                self.assertTrue(not source.is_absolute() and '..' not in source.parts and
+                                source.parts[:3] == ('packages', 'raft_ui', 'lib') and
+                                source.suffix == '.dart', f'{family}.{name}: model outside raft_ui namespace')
+                self.assertEqual(ds_audit.coverage.binding_errors(ROOT, model['sourceBindings']), [],
+                                 f'{family}.{name}: model source binding changed')
+                self.assertIn(model['sourceFile'], [row['file'] for row in model['sourceBindings']])
+                model_sources[(family, name)] = (ROOT / model['sourceFile']).read_text()
+        self.model_declarations(list(set(model_sources.values())))
+        for family, entry in families.items():
+            names, bindings = entry['canonical'], entry['canonicalBindings']
+            self.assertEqual(len(names), len(set(names)), family)
+            self.assertEqual(set(bindings), set(names), family)
+            if 'pending' in entry:
+                self.assertEqual((names, entry['deprecated']), ([], {}), family)
+                self.assertGreater(len(entry['pending'].strip()), 40, family)
+                self.assertTrue(any(row['family'] == family and row['decision'] == 'pending'
+                                    for row in recipes.values()), family)
+            else:
+                self.assertTrue(names, family)
+            if 'uncertain' in entry:
+                self.assertTrue(entry['uncertain'].strip(), family)
+                self.assertTrue(any(row['family'] == family and row['decision'] == 'uncertain'
+                                    for row in recipes.values()), family)
+            for name, binding in bindings.items():
+                identity = binding['declarationId']
+                self.assertNotIn(name, canonical_names, f'{family}: {name} has two owners')
+                self.assertNotIn(identity, canonical_ids, f'{family}: {identity} has two owners')
+                canonical_names.add(name)
+                canonical_ids.add(identity)
+                self.assertIn(identity, actual, f'{family}.{name}: not resolved')
+                self.assertEqual(actual[identity]['name'], name)
+                self.assertIn(actual[identity]['kind'], {'widget', 'surface_factory'})
+                self.assertEqual([row['id'] for row in actual.values()
+                                  if row['name'] == name and row['kind'] in {'widget', 'surface_factory'}],
+                                 [identity], f'{family}.{name}: canonical API is ambiguous')
+                self.assertIn(binding['role'], {'public_api', 'placement_part', 'paint_part', 'internal_part'})
+                self.assertEqual(ledger['declarations'][identity]['role'], 'canonical_component')
+                self.assertEqual(ledger['declarations'][identity]['familyRefs'], [family],
+                                 f'{family}.{name}: canonical owner differs')
+            for name, model in entry.get('nonWidgetModels', {}).items():
+                text = model_sources[(family, name)]
+                self.assertTrue(self.declared(name, text, model_kind=model['kind']),
+                                f'{family}.{name}: model kind/declaration mismatch')
+                self.assertNotIn(name, ui_namespace,
+                                 f'{family}.{name}: non-widget model resolves to a UI owner')
+        self.assertEqual(set(recipes), set(inventory['recipes']))
+        for name, row in recipes.items():
+            self.assertIn(row['decision'], {'existing', 'pending', 'uncertain', 'unresolved'}, name)
+            # A source ownership record can stay uncertain without forcing an
+            # already chosen component family back to an undecided API.
+            self.assertIsInstance(row['owner'], str)
+            self.assertTrue(row['owner'].strip(), f'{name}: missing recipe owner')
+            self.assertIsInstance(row['reason'], str)
+            self.assertTrue(row['reason'].strip(), f'{name}: missing recipe reason')
+            if row['family'] is None:
+                self.assertEqual(row['decision'], 'unresolved', name)
+            else:
+                self.assertIn(row['family'], families, name)
+            self.assertEqual(row['generatedFile'], inventory['recipes'][name]['file'],
+                             f'{name}: generated source changed')
+            self.assertEqual(row['axes'], inventory['recipes'][name]['axes'], name)
+
+    def test_the_requested_families_are_registered_and_uncertain_choices_say_why(self):
+        self.assertEqual(set(self.families), {'button', 'menu', 'popover', 'dialog', 'segmented', 'spinner',
+                                               'card', 'banner', 'list_row', 'checkbox', 'select', 'switch',
+                                               'radio_group', 'toggle_group', 'tabs', 'picker_trigger', 'combobox',
+                                               'steps'})
+        self.assert_registry_ownership(json.loads(ds_audit.FAMILIES.read_text()))
+        self.assertIn('RaftArchivedNameBanner', self.families['banner']['deprecated'])
+        self.assertNotIn('RaftAgentBanner', self.families['banner']['deprecated'])  # thin adapter over RaftBanner
+
+    def test_missing_ambiguous_or_unbound_ownership_is_rejected(self):
+        registry = json.loads(ds_audit.FAMILIES.read_text())
+        broken = []
+        missing = copy.deepcopy(registry)
+        missing['families']['dialog']['canonicalBindings']['RaftDialog']['declarationId'] = 'missing.dart#class:RaftDialog'
+        broken.append((missing, 'not resolved'))
+        duplicate = copy.deepcopy(registry)
+        duplicate['families']['button']['canonical'].append('RaftDialog')
+        duplicate['families']['button']['canonicalBindings']['RaftDialog'] = copy.deepcopy(
+            registry['families']['dialog']['canonicalBindings']['RaftDialog'])
+        broken.append((duplicate, 'two owners|canonical owner differs'))
+        for field in ('owner', 'reason'):
+            undecided = copy.deepcopy(registry)
+            undecided['recipes']['dialog'][field] = ''
+            broken.append((undecided, f'missing recipe {field}'))
+        wrong_source = copy.deepcopy(registry)
+        wrong_source['recipes']['dialog']['generatedFile'] = 'packages/raft_theme/lib/recipes/card.g.dart'
+        broken.append((wrong_source, 'generated source changed'))
+        unbound_model = copy.deepcopy(registry)
+        unbound_model['families']['select']['nonWidgetModels']['RaftSelectItem']['sourceBindings'][0]['sha256'] = '0' * 64
+        broken.append((unbound_model, 'model source binding changed'))
+        for index, (document, reason) in enumerate(broken):
+            with self.subTest(mutation=index), self.assertRaisesRegex(AssertionError, reason):
+                self.assert_registry_ownership(document)
+
+
+    def test_callback_typedef_ast_rejects_non_function_and_text_lookalikes(self):
+        samples = [
+            'typedef Callback = int Function(String value);',
+            'typedef Callback<T> = T Function(T value);',
+            'typedef int Callback(String value);',
+            'typedef Callback = int;',
+            'class Callback {}',
+            'int Callback(String value) => 0;',
+            '// typedef Callback = int Function(String value);\nconst x = 1;',
+            "const x = 'typedef Callback = int Function(String value);';",
+            'typedef Callback = int Function(); class Callback {}',
+        ]
+        parsed = self.model_declarations(samples)
+        for index, rows in enumerate(parsed):
+            matching = [row for row in rows if row['name'] == 'Callback']
+            is_callback = len(matching) == 1 and matching[0]['kind'] == 'callback_typedef'
+            self.assertEqual(is_callback, index < 3, f'AST sample {index}')
+
+    def test_non_widget_model_kind_declaration_namespace_and_binding_are_strict(self):
+        registry = json.loads(ds_audit.FAMILIES.read_text())
+        name = 'RaftMenuPopupSlotResolver'
+        broken = []
+        for kind in ('temporary_alias', 'value_object'):
+            document = copy.deepcopy(registry)
+            document['families']['menu']['nonWidgetModels'][name]['kind'] = kind
+            broken.append((document, 'unsupported model kind' if kind == 'temporary_alias'
+                           else 'model kind/declaration mismatch'))
+        wrong_name = copy.deepcopy(registry)
+        wrong_name['families']['menu']['nonWidgetModels'][name]['declarationName'] = 'RaftMenuPopupSlots'
+        broken.append((wrong_name, 'model declaration name mismatch'))
+        wrong_declaration = copy.deepcopy(registry)
+        other = registry['families']['select']['nonWidgetModels']['RaftSelectItem']
+        wrong_declaration['families']['menu']['nonWidgetModels'][name].update(
+            sourceFile=other['sourceFile'], sourceBindings=copy.deepcopy(other['sourceBindings']))
+        broken.append((wrong_declaration, 'model kind/declaration mismatch'))
+        wrong_binding = copy.deepcopy(registry)
+        wrong_binding['families']['menu']['nonWidgetModels'][name]['sourceBindings'][0]['sha256'] = '0' * 64
+        broken.append((wrong_binding, 'model source binding changed'))
+        widget_model = copy.deepcopy(registry)
+        state = '_RaftMenuPopupBackendState'
+        model = widget_model['families']['menu']['nonWidgetModels'].pop(name)
+        model.update(kind='value_object', declarationName=state)
+        widget_model['families']['menu']['nonWidgetModels'][state] = model
+        broken.append((widget_model, 'non-widget model resolves to a UI owner'))
+        for index, (document, reason) in enumerate(broken):
+            with self.subTest(mutation=index), self.assertRaisesRegex(AssertionError, reason):
+                self.assert_registry_ownership(document)
+
+class FamilyRatchetTest(unittest.TestCase):
+    """duplicate.<family>: growth fails and names the canonical component, decreases pass."""
+
+    APP = 'apps/raft_flutter/lib/features/x.dart'
+    UI = 'packages/raft_ui/lib/src/y.dart'
+    BASELINE = {'files': {APP: {'duplicate.button': 3}, UI: {'duplicate.dialog': 2}}}
+
+    def check(self, files):
+        return ContractRatchetTest.check(self, files, baseline=self.BASELINE)
+
+    def test_growth_fails_in_either_scope_and_names_the_canonical_component(self):
+        for name, category, canonical, old in ((self.APP, 'duplicate.button', 'RaftButton', 'RaftRecipeButton'),
+                                               (self.UI, 'duplicate.dialog', 'RaftDialog', 'RaftDialogCard'),
+                                               (self.UI, 'duplicate.list_row', 'RaftListRow', 'RaftAvatarListRow'),
+                                               (self.APP, 'duplicate.banner', 'RaftBanner', 'RaftComposerNotice')):
+            files = {self.APP: {'duplicate.button': 3}, self.UI: {'duplicate.dialog': 2}}
+            files.setdefault(name, {})
+            files[name][category] = files[name].get(category, 0) + 1
+            code, output = self.check(files)
+            self.assertEqual(code, 1, category)
+            self.assertIn(f'{name}: {category}', output)
+            self.assertIn(f'{category}: use {canonical}', output)
+            self.assertIn(old, output)
+
+    def test_unchanged_and_lower_counts_pass(self):
+        for files in (self.BASELINE['files'], {self.APP: {'duplicate.button': 1}}, {}):
+            code, output = self.check(files)
+            self.assertEqual(code, 0, files)
+            self.assertNotIn('GREW', output)
+
+    def test_a_new_file_using_a_deprecated_duplicate_fails(self):
+        code, output = self.check({**self.BASELINE['files'], 'apps/raft_flutter/lib/new.dart': {'duplicate.menu': 1}})
+        self.assertEqual(code, 1)
+        self.assertIn('new.dart: duplicate.menu 0 -> 1', output)
+
+
+class FamilyScannerFixtureTest(unittest.TestCase):
+    """Exact counts for the resolved-AST family scan on a fixture with negatives."""
+
+    OLD = f'{FAMILY_FIXTURES}/old_widgets.dart'
+    REGISTRY = {
+        'button': {'canonical': ['NewButton'], 'deprecated': {'OldButton': OLD}},
+        'banner': {'canonical': ['NewButton'], 'deprecated': {'OldBanner': OLD}},
+        'dialog': {'canonical': ['NewButton'], 'deprecated': {'showOldModal': OLD}},
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        cls.document = ds_audit.run_scanner([FAMILY_FIXTURES], contract=[], bypass=[FAMILY_FIXTURES],
+                                            bypass_allow={}, families=cls.REGISTRY)
+        cls.report = ds_audit.aggregate(cls.document)
+
+    def duplicates(self, table):
+        return {c: n for c, n in table.items() if c.startswith('duplicate.')}
+
+    def test_counts_references_outside_the_defining_file(self):
+        self.assertEqual(self.duplicates(self.report['totals']), {
+            'duplicate.banner': 1,
+            # field type, parameter type, extends, const call, named constructor, static member, is-check
+            'duplicate.button': 7,
+            'duplicate.dialog': 2,  # call and tear-off
+        })
+        self.assertEqual(list(self.report['files']), [f'{FAMILY_FIXTURES}/family_sample.dart'])
+
+    def test_the_defining_file_the_canonical_component_and_a_same_named_class_elsewhere_do_not_count(self):
+        counted = {f['file'].rsplit('/', 1)[1] for f in self.document['findings']
+                   if f['category'].startswith('duplicate.')}
+        self.assertEqual(counted, {'family_sample.dart'})  # not old_widgets.dart, new_widgets.dart or lookalike.dart
+        lines = {f['line'] for f in self.document['findings'] if f['category'].startswith('duplicate.')}
+        self.assertFalse(lines & {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12})  # comments, doc reference, imports, string
+
+    def test_without_a_registry_nothing_is_counted(self):
+        report = ds_audit.aggregate(ds_audit.run_scanner([FAMILY_FIXTURES], contract=[], bypass=[FAMILY_FIXTURES],
+                                                         bypass_allow={}, families={}))
+        self.assertFalse([c for c in report['totals'] if c.startswith('duplicate.')])
+
+    def test_a_directory_outside_the_scan_scopes_is_not_scanned(self):
+        report = ds_audit.aggregate(ds_audit.run_scanner([FAMILY_FIXTURES], contract=[], bypass=[],
+                                                         bypass_allow={}, families=self.REGISTRY))
+        self.assertFalse([c for c in report['totals'] if c.startswith('duplicate.')])
+
+
 class RatchetTest(unittest.TestCase):
-    """Fails when apps/raft_flutter/lib gains design-system drift."""
+    """Fails when apps/raft_flutter/lib or packages/raft_ui/lib gains drift.
+
+    tool/check-project runs this test with the host tests, so it is the gate
+    enforcement for both scopes (tool/preflight runs `tool/ds-audit --check`).
+    """
 
     def test_no_file_exceeds_the_baseline(self):
-        report = ds_audit.aggregate(ds_audit.run_scanner([ds_audit.SCOPE]))
+        report = ds_audit.aggregate(ds_audit.run_scanner(ds_audit.SCOPES))
         baseline = ds_audit.load_baseline()
-        self.assertEqual(baseline.get('scope'), ds_audit.SCOPE)
+        self.assertEqual(baseline.get('scopes'), ds_audit.SCOPES)
         regressions, improvements = ds_audit.compare(baseline['files'], report['files'])
         message = ds_audit.format_comparison(regressions, improvements)
         if improvements and not regressions:

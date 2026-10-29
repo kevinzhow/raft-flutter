@@ -14,13 +14,13 @@ import 'package:flutter_test/flutter_test.dart' show addTearDown;
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/data/workspace_mode_store.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../parity_harness.dart';
 import 'ext_shell.dart' show shellWorkspace;
 import 'thread_messages/chat_stage.dart' show ParityIdentities;
+import '../../support/app_services_fixture.dart';
 
 Map<String, dynamic> _scene(ParityContext ctx) {
   final scenes = Map<String, dynamic>.from(
@@ -66,15 +66,8 @@ class _HostState extends State<_Host> {
   final presentation = PersonalPresentationStore();
 
   @override
-  void dispose() {
-    workspaceModeDevOverride = null;
-    super.dispose();
-  }
-
-  @override
   void initState() {
     super.initState();
-    workspaceModeDevOverride = false;
     WidgetsBinding.instance.addPostFrameCallback((_) => _open());
   }
 
@@ -89,21 +82,22 @@ class _HostState extends State<_Host> {
   }
 
   @override
-  Widget build(BuildContext context) => WorkspaceView(
-    controller: w,
-    presentation: presentation,
-    appearance: RaftAppearance(
-      mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
-      light: widget.ctx.family,
+  Widget build(BuildContext context) => withAppServices(
+    WorkspaceView(
+      controller: w,
+      presentation: presentation,
+      appearance: RaftAppearance(
+        mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+      ),
+      onAppearance: (_) async {},
+      onLogout: () async {},
     ),
-    onAppearance: (_) async {},
-    onLogout: () async {},
   );
 }
 
 /// The `screen-window` rectangle of windowed cases (same numbers as the React marker).
 Rect? _window(ParityContext ctx) {
-  final rail = ctx.family == RaftFamily.brutal ? 64.0 : 56.0;
+  final rail = 56.0;
   return switch (ctx.props['win']) {
     'activity' => Rect.fromLTWH(0, 0, rail + 560, ctx.height),
     'composer' => Rect.fromLTWH(

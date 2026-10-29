@@ -1,0 +1,86 @@
+{
+  "_source": "GET /agents/:id/activity-log rows ({timestamp, entry, serverSeq?}): TrajectoryEntry in packages/shared/src/index.ts (Web v1.21.23): SubagentLineage.subagent gains phase 'ended' with outcome (done/failed/stopped/ceiling) and reportChars; status entries carry tool: ToolCallOutcome {callId, ok, durationMs, exitCode}. Web only types these fields (AgentActivityLog renders neither), so a reader must keep the row and ignore what it does not draw.",
+  "rows": [
+    {
+      "timestamp": 1792000000000,
+      "entry": {
+        "kind": "tool_start",
+        "toolName": "Agent",
+        "toolInput": "Explore the repo",
+        "callId": "toolu_01",
+        "subagent": {
+          "parentToolUseId": "toolu_01",
+          "subagentType": "Explore",
+          "taskId": "task_1",
+          "phase": "started"
+        }
+      }
+    },
+    {
+      "timestamp": 1792000001000,
+      "entry": {
+        "kind": "status",
+        "activity": "working",
+        "detail": "Tool finished",
+        "detailKind": "tool_end",
+        "tool": {
+          "callId": "toolu_02",
+          "ok": true,
+          "durationMs": 1200,
+          "exitCode": 1
+        },
+        "subagent": {
+          "parentToolUseId": "toolu_01",
+          "subagentType": "Explore",
+          "taskId": "task_1",
+          "phase": "progress"
+        }
+      }
+    },
+    {
+      "timestamp": 1792000002000,
+      "entry": {
+        "kind": "status",
+        "activity": "working",
+        "detail": "Subagent finished",
+        "detailKind": "subagent_activity",
+        "subagent": {
+          "parentToolUseId": "toolu_01",
+          "subagentType": "Explore",
+          "taskId": "task_1",
+          "phase": "ended",
+          "outcome": "done",
+          "reportChars": 812
+        }
+      }
+    },
+    {
+      "timestamp": 1792000003000,
+      "entry": {
+        "kind": "status",
+        "activity": "working",
+        "detail": "Subagent stopped",
+        "subagent": {
+          "parentToolUseId": "toolu_03",
+          "phase": "ended",
+          "outcome": "ceiling"
+        }
+      }
+    },
+    {
+      "timestamp": 1792000004000,
+      "entry": {
+        "kind": "system",
+        "title": "Subagent",
+        "text": "ended without a report",
+        "subagent": {
+          "parentToolUseId": "toolu_04",
+          "subagentType": "Plan",
+          "phase": "ended",
+          "outcome": "failed",
+          "reportChars": 0
+        }
+      }
+    }
+  ]
+}

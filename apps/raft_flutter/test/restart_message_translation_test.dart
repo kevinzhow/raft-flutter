@@ -76,7 +76,7 @@ Finder get _placeholder =>
 Future<(RootCache, String)> _firstProcess(WidgetTester t) async {
   final f = RootFixture();
   _routes(f);
-  await f.mount(t, 'elegant-light', 1280);
+  await f.mount(t, 'light', 1280);
   await t.tap(find.byKey(const ValueKey('global-server-a')));
   await f.flush(t);
   expect(find.text('EN mb'), findsOneWidget);
@@ -120,7 +120,7 @@ Future<RootFixture> _restart(
   };
   await f.mount(
     t,
-    'elegant-light',
+    'light',
     1280,
     cachedSession: true,
     preferences: {'$_memory.last': 'alpha', '$_memory.a': uri},

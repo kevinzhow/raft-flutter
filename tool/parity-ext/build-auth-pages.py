@@ -2,7 +2,7 @@
 """Append the MISSING auth / onboarding / entry page cases to the run-time manifest
 ($PARITY_EXT_MANIFEST) and write tool/parity-ext/fixtures/auth-pages.json.
 
-Page inventory rows (docs/parity-page-inventory.md): 1.01 1.05 1.06 1.10 1.12 1.14 1.16 1.17 1.18 1.33 ... and
+Page inventory rows (page inventory, tool/parity-ext/inventory.py): 1.01 1.05 1.06 1.10 1.12 1.14 1.16 1.17 1.18 1.33 ... and
 the Settings rows 9.03 9.09 9.10 9.12 9.15 9.23 (added by the second half of this file).
 Idempotent: every `components.auth-pages.*` case is replaced, all other cases are kept.
 

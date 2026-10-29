@@ -1,0 +1,30 @@
+{
+  "files": [
+    {
+      "path": "packages/server/src/raftbench/contract.ts",
+      "beforeSHA256": "4ff4b4f8a32a7c5dd0c46791890c66ddb7a511b24a05fabd3bba416a1d7024cb",
+      "afterSHA256": "d378dd0c07c54b6628d63a0e0db5fae974bb0d29ccb389efce9f75a9fc7876d3"
+    },
+    {
+      "path": "packages/server/src/raftbench/worker.ts",
+      "beforeSHA256": "382608a185a2035ffccafb803e8e9a9cc8280edafd7facb3c6ce4b4cb90bf6ef",
+      "afterSHA256": "59b21e6812ae0ae68526d691b5984060a64a5de48d1f46cd35cc290f3e329c02"
+    },
+    {
+      "path": "packages/server/src/services/agentRuntimeProviderService.ts",
+      "beforeSHA256": "c616f18e422d93326a5cae705c343e5a774ad17e7190523035df0ddfd8739bed",
+      "afterSHA256": "0625ddd9f1995879f756be3e03547834039bd11bb2348fb41c2f1a9fc4ed45cb"
+    },
+    {
+      "path": "packages/server/src/services/appNotificationDeliveryService.ts",
+      "beforeSHA256": "ef494da727f51297c7d20508ffad3cb2a494c14d2d71c1bf47435dfd2d1f5c54",
+      "afterSHA256": "ec2d64a1167a954de4ea3a9edd462faf02b7fc17c82d3a78fd5220aa5e7094ab"
+    },
+    {
+      "path": "packages/server/src/services/appWebhookConfigService.ts",
+      "beforeSHA256": "ccedccd7af435e5156384ea0a8d0cd8259858a6b57517f97672ef481a9751604",
+      "afterSHA256": "d7d0fa0fd2fa1e16ce093baee28682541db4be7f00da694a5a080954479eae9f"
+    }
+  ],
+  "reason": "Local test stack only: lets a loopback antiproton (ANTIPROTON_BASE_URL_OVERRIDE, http://localhost or http://127.0.0.1, active only under DEPLOYMENT_ENV=slockdev) stand in for the hosted one (RAFTBENCH_LOCAL_SERVER_ID names the server RaftBench may be enabled for, which can then also host Cloud agents). RaftBench enrollment, the RaftBench worker, provider requests and agent inbox push then behave as on staging for that origin only. No behavior changes when the variable is unset."
+}

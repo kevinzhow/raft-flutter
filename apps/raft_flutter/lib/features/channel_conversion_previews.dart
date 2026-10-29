@@ -34,27 +34,26 @@ class _ConversionPreviewState extends State<_ConversionPreview> {
                 ? 'Verification needs attention. Retry or cancel eligible work.'
                 : null,
           ),
-          Wrap(
-            spacing: 8,
-            children: [
+          RaftToggleGroup<String>(
+            value: {status},
+            onChanged: (next) {
+              if (next.isNotEmpty) setState(() => status = next.first);
+            },
+            items: [
               for (final choice in ['running', 'failed', 'done', 'canceled'])
-                ChoiceChip(
-                  label: Text(choice),
-                  selected: status == choice,
-                  onSelected: (_) => setState(() => status = choice),
-                ),
+                RaftToggleGroupItem(value: choice, label: choice),
             ],
           ),
           const SizedBox(height: 12),
           if (status == 'failed')
-            TextButton(
+            RaftButton.text(
               onPressed: () => setState(() => status = 'running'),
-              child: Text(raftText(context, 'Retry conversion')),
+              child: Text(raftText(context, 'Retry Conversion')),
             ),
           if (status == 'running' || status == 'failed')
-            TextButton(
+            RaftButton.text(
               onPressed: () => setState(() => status = 'canceled'),
-              child: Text(raftText(context, 'Cancel conversion')),
+              child: Text(raftText(context, 'Cancel Conversion')),
             ),
         ],
       ),

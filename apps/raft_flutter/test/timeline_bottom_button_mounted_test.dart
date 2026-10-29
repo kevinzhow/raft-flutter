@@ -2,24 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show contextRows, paintedMessage;
 import 'message_context_transition_test.dart' show row;
 import 'message_presentation_test.dart' show fixture;
 
-/// ChatPanel.tsx:1514-1525 / ThreadPanel.tsx:2610-2620: the "Back to bottom"
+/// ChatPanel.tsx:1514-1525 / ThreadPanel.tsx:2610-2620: the "Back to Bottom"
 /// button floats centered, 12px above the composer, in the channel timeline and
 /// in the thread timeline; in a centered history window it reloads the latest
 /// page.
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K04] $family/$dark history-window button is centered above the composer and reloads latest',
+      '[K04] ${dark ? 'dark' : 'light'} history-window button is centered above the composer and reloads latest',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(900, 800);
@@ -27,7 +24,7 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         api.routes['GET /messages/context/target-40'] = (_) => {
           'messages': contextRows('target'),
           'hasOlder': true,
@@ -35,25 +32,25 @@ void main() {
         };
         api.routes['POST /channels/c1/read'] = (_) => {};
         await tester.runAsync(() => w.jumpToMessage('c1', 'target-40'));
-        expect(w.hasNewer, true);
+        expect(w.messageDomain.state.hasNewer, true);
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: RaftChatView(controller: w)),
           ),
         );
         await tester.pumpAndSettle();
 
-        final button = find.byType(RaftTimelineBottomButton);
+        final button = find.byType(RaftTimelineBottomButtonBody);
         expect(button, findsOneWidget);
-        expect(find.text('Back to bottom'), findsOneWidget);
+        expect(find.text('Back to Bottom'), findsOneWidget);
         final timeline = tester.getRect(
           find.byKey(const ValueKey('current-timeline')),
         );
         final composer = tester.getRect(find.byType(RaftComposer));
         final control = tester.getRect(
           find.ancestor(
-            of: find.text('Back to bottom'),
+            of: find.text('Back to Bottom'),
             matching: find.byType(RaftRecipeButton),
           ),
         );
@@ -69,15 +66,15 @@ void main() {
           latestRequests.add(1);
           return {'messages': contextRows('latest', count: 8)};
         };
-        await tester.tap(find.text('Back to bottom'));
+        await tester.tap(find.text('Back to Bottom'));
         await tester.pump();
         await tester.runAsync(() => Future<void>.delayed(Duration.zero));
         await tester.pumpAndSettle();
         expect(latestRequests, hasLength(1));
-        expect(w.hasNewer, false);
+        expect(w.messageDomain.state.hasNewer, false);
         expect(paintedMessage(tester, 'latest-7'), isNotNull);
-        expect(find.text('Back to bottom'), findsNothing);
-        expect(find.byType(RaftTimelineBottomButton), findsNothing);
+        expect(find.text('Back to Bottom'), findsNothing);
+        expect(find.byType(RaftTimelineBottomButtonBody), findsNothing);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
         await tester.pump();
@@ -85,7 +82,7 @@ void main() {
     );
 
     testWidgets(
-      '[K04] $family/$dark thread panel shows the centered button when scrolled away, counts replies and returns to its end',
+      '[K04] ${dark ? 'dark' : 'light'} thread panel shows the centered button when scrolled away, counts replies and returns to its end',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(900, 800);
@@ -93,7 +90,7 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final replies = [
           for (var i = 0; i < 80; i++)
             {
@@ -115,13 +112,13 @@ void main() {
             initialThreadChannelId: 'thread-1',
             navigate: false,
           );
-          for (var i = 0; i < 40 && w.threadLoading; i++) {
+          for (var i = 0; i < 40 && w.messageDomain.state.threadLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
         });
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: RaftChatView(controller: w, thread: true)),
           ),
         );
@@ -130,18 +127,18 @@ void main() {
         final ScrollController viewport = state.viewport;
         // At the end of the thread there is no button.
         expect(state.distanceFromLatest(viewport.position), 0);
-        expect(find.byType(RaftTimelineBottomButton), findsNothing);
+        expect(find.byType(RaftTimelineBottomButtonBody), findsNothing);
 
         viewport.jumpTo(viewport.offset - 600);
         await tester.pumpAndSettle();
-        expect(find.text('Back to bottom'), findsOneWidget);
+        expect(find.text('Back to Bottom'), findsOneWidget);
         final timeline = tester.getRect(
           find.byKey(const ValueKey('current-timeline')),
         );
         final composer = tester.getRect(find.byType(RaftComposer));
         final control = tester.getRect(
           find.ancestor(
-            of: find.text('Back to bottom'),
+            of: find.text('Back to Bottom'),
             matching: find.byType(RaftRecipeButton),
           ),
         );
@@ -151,24 +148,24 @@ void main() {
 
         // A reply arriving while scrolled away is counted, not followed.
         await tester.runAsync(() async {
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {...row('reply-new', 'thread-1', 999), 'senderId': 'bob'},
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['thread-1']!.add('reply-new');
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['thread-1']!.add('reply-new');
           w.notifyListeners();
           await Future<void>.delayed(Duration.zero);
         });
         await tester.pump(const Duration(milliseconds: 16));
         await tester.pumpAndSettle();
-        expect(find.text('1 new'), findsOneWidget);
+        expect(find.text('1 New'), findsOneWidget);
         expect(state.distanceFromLatest(viewport.position), greaterThan(100));
 
         // The outer channel stays untouched by the thread's button.
         final channelCalls = api.calls.length;
-        await tester.tap(find.text('1 new'));
+        await tester.tap(find.text('1 New'));
         await tester.pumpAndSettle();
         expect(state.distanceFromLatest(viewport.position), 0);
-        expect(find.byType(RaftTimelineBottomButton), findsNothing);
+        expect(find.byType(RaftTimelineBottomButtonBody), findsNothing);
         expect(
           api.calls.skip(channelCalls).where((c) => c.path.contains('/c1')),
           isEmpty,

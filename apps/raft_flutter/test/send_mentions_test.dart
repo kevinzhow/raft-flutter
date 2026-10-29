@@ -11,6 +11,7 @@ class _Transport implements HttpClientAdapter {
   final writes = <Map<String, dynamic>>[];
   Completer<void>? pending;
   bool fail = true;
+  Map<String, dynamic> receipt = const {};
   Completer<void>? pagePending;
   bool requestedPage = false;
   @override
@@ -44,6 +45,7 @@ class _Transport implements HttpClientAdapter {
                 'content': o.data['content'],
                 'seq': '5',
               },
+              ...receipt,
             };
     } else {
       body = {'channels': []};
@@ -72,11 +74,35 @@ Future<WorkspaceController> _fixture(_Transport transport) async {
   final w = WorkspaceController(c)
     ..server = RaftRecord({'id': 's1', 'role': 'owner'})
     ..channel = RaftChannel({'id': 'c1', 'name': 'general', 'joined': true});
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return w;
 }
 
 void main() {
+  test('send receipt warnings are kept per scope until dismissed', () async {
+    final t = _Transport()
+      ..fail = false
+      ..receipt = {
+        'unresolvedMentionHandles': ['ghost', 3, 'nobody'],
+        'deliveryWarnings': [
+          {'targetType': 'agent', 'targetId': 'a1', 'reason': 'agent_stopped'},
+          {'targetType': 'agent', 'targetId': '', 'reason': 'agent_stopped'},
+        ],
+      };
+    final w = await _fixture(t);
+    addTearDown(w.dispose);
+    expect(w.sendWarningsFor().unresolved, isEmpty);
+    expect(await w.send('@ghost @nobody hi'), true);
+    expect(w.sendWarningsFor().unresolved, ['ghost', 'nobody']);
+    expect(w.sendWarningsFor().agentStopped, true);
+    w.dismissSendWarnings();
+    expect(w.sendWarningsFor().unresolved, isEmpty);
+    expect(w.sendWarningsFor().agentStopped, false);
+    // The next receipt replaces (clears) the previous one.
+    t.receipt = const {};
+    expect(await w.send('plain'), true);
+    expect(w.sendWarningsFor().unresolved, isEmpty);
+  });
   test(
     'conversion pauses writes without consuming the existing retry identity',
     () async {
@@ -114,7 +140,7 @@ void main() {
       final t = _Transport()..pagePending = Completer<void>();
       final w = await _fixture(t);
       addTearDown(w.dispose);
-      w.hasNewer = true;
+      w.messageDomain.state.hasNewer = true;
       final sending = w.send('retained draft');
       while (!t.requestedPage) {
         await Future<void>.delayed(Duration.zero);
@@ -186,19 +212,19 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
     w.channel = null;
-    w.channelGeneration++;
-    w.ledger.revokeChannel('c1');
-    w.visibleIds.remove('c1');
+    w.messageWindows.channelGeneration++;
+    w.messageDomain.ledger.revokeChannel('c1');
+    w.messageDomain.visibleIds.remove('c1');
     t.pending!.complete();
     expect(await sending, true);
-    expect(w.ledger.messages('c1'), isEmpty);
-    expect(w.visibleIds.containsKey('c1'), false);
+    expect(w.messageDomain.ledger.messages('c1'), isEmpty);
+    expect(w.messageDomain.visibleIds.containsKey('c1'), false);
   });
   test('navigation during latest-history refresh cannot send an old draft to the new channel', () async {
     final t = _Transport()..pagePending = Completer<void>();
     final w = await _fixture(t);
     addTearDown(w.dispose);
-    w.hasNewer = true;
+    w.messageDomain.state.hasNewer = true;
     final refreshed = <int>[];
     final sending = w.send(
       'old private draft',
@@ -208,7 +234,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
     w.channel = RaftChannel({'id': 'c2', 'name': 'other', 'joined': true});
-    w.channelGeneration++;
+    w.messageWindows.channelGeneration++;
     t.pagePending!.complete();
     expect(await sending, false);
     expect(t.writes, isEmpty);
@@ -226,7 +252,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
       }
       w.channel = RaftChannel({'id': 'c2', 'name': 'other', 'joined': true});
-      w.channelGeneration++;
+      w.messageWindows.channelGeneration++;
       t.pending!.complete();
       expect(await sending, false);
       expect(w.error, isNull);
@@ -236,13 +262,13 @@ void main() {
     final t = _Transport()..fail = false;
     final w = await _fixture(t);
     addTearDown(w.dispose);
-    w.hasNewer = true;
+    w.messageDomain.state.hasNewer = true;
     final refreshed = <int>[];
     expect(
       await w.send('current draft', onWindowRefreshed: refreshed.add),
       true,
     );
-    expect(refreshed, [w.channelGeneration]);
+    expect(refreshed, [w.messageDomain.channelGeneration]);
     expect(t.writes.single['channelId'], 'c1');
   });
   test('plain sends omit mentions and preserve retry identity', () async {

@@ -3,18 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show fixture;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K13d] $family/$dark actual highlight timer retains composer draft and keyboard selection',
+      '[K13d] ${dark ? 'dark' : 'light'} actual highlight timer retains composer draft and keyboard selection',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(411, 915);
@@ -22,8 +19,8 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           {
             'id': 'target',
             'channelId': 'c1',
@@ -34,9 +31,9 @@ void main() {
             'content': 'Visible highlighted message',
             'messageType': 'chat',
           },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'target'};
-        w.highlightedMessageId = 'target';
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'target'};
+        w.messageDomain.state.highlightedMessageId = 'target';
         api.routes['GET /servers/s1/setup-projection'] = (_) => {
           'phase': 'complete',
           'surface': 'complete',
@@ -51,7 +48,7 @@ void main() {
         };
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: RaftChatView(controller: w)),
           ),
         );
@@ -60,7 +57,7 @@ void main() {
         for (var i = 0; i < 12; i++) {
           await tester.pump(const Duration(milliseconds: 16));
         }
-        expect(w.highlightedMessageId, 'target');
+        expect(w.messageDomain.state.highlightedMessageId, 'target');
         const draft = '中文 draft 日本語';
         final input = find.descendant(
           of: find.byType(RaftComposer),
@@ -80,7 +77,7 @@ void main() {
         expect(w.drafts[w.draftScope()], draft);
         await tester.pump(const Duration(milliseconds: 2200));
         await tester.pump();
-        expect(w.highlightedMessageId, isNull);
+        expect(w.messageDomain.state.highlightedMessageId, isNull);
         final after = tester.widget<EditableText>(input);
         expect(after.controller.text, draft);
         expect(after.controller.selection, selection);

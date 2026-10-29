@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+"""Avatar cache smoke: requests per avatar URL and placeholder time on a real build.
+
+Drives apps/raft_flutter/integration_test/avatar_cache_main.dart (the production RaftApp on two long channels whose
+senders have avatars, served by an in-process loopback server that counts every request; no accounts, no real server).
+Build it first (profile), once per tree to compare:
+
+  tool/flutter build linux --profile -t integration_test/avatar_cache_main.dart
+  tool/flutter build apk --profile --target-platform android-x64 \\
+      --android-project-arg=raftApplicationIdSuffix=.linkperf -t integration_test/avatar_cache_main.dart
+
+An older checkout lacks installAvatarImageCache: copy the harness there with the lines marked NEW-ONLY removed
+(`sed '/NEW-ONLY/d'`).
+
+  tool/avatar-cache-smoke/run --platform linux   --bundle <bundle dir> --label new --out /tmp/x
+  tool/avatar-cache-smoke/run --platform android --serial emulator-5650 --apk <app-profile.apk> --label new --out /tmp/x
+
+Phases (each prints the app's stats JSON to <out>/<label>.json):
+  browse-cold    scroll channel a and b through twice, switching between them (first visit: requests are expected)
+  browse-warm    the same again, same process
+  flood          push 40 x 4 MB decoded images through the shared ImageCache, then switch a/b/a/b
+  background     (android) home key for --background-seconds (> the 30 s memory release), resume, switch a/b/a/b
+  cold-start     force-stop, start again: stats from process start until the first channel is on screen
+  cold-switch    switch a/b/a/b after the restart
+  clear-cache    Settings > Storage > Clear cache (AttachmentDiskCache.clear), then switch a/b/a/b
+Only the isolated app id app.raft.raft_flutter.linkperf is installed, started or stopped. Android: pass an emulator
+YOU started; this script never starts or kills one. Linux: a private Xvfb display and private XDG directories.
+"""
+import argparse, json, os, shutil, signal, subprocess, sys, tempfile, time, urllib.request
+from pathlib import Path
+
+PACKAGE = 'app.raft.raft_flutter.linkperf'
+PORT = 18795
+BASE = f'http://127.0.0.1:{PORT}'
+
+
+def get(path, timeout=300):
+    with urllib.request.urlopen(BASE + path, timeout=timeout) as r:
+        return json.load(r)
+
+
+def wait_stats(pred, timeout=90):
+    end = time.time() + timeout
+    last = None
+    while time.time() < end:
+        try:
+            last = get('/__stats', 5)
+            if pred(last):
+                return last
+        except Exception:
+            pass
+        time.sleep(0.5)
+    raise SystemExit(f'timeout waiting for the app; last stats: {last}')
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('--platform', choices=['linux', 'android'], required=True)
+    ap.add_argument('--serial')
+    ap.add_argument('--bundle', type=Path)
+    ap.add_argument('--apk', type=Path)
+    ap.add_argument('--label', required=True)
+    ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('--background-seconds', type=int, default=40)
+    ap.add_argument('--record', action='store_true', help='android: screenrecord the cold-warm "switch" phases')
+    args = ap.parse_args()
+    out = args.out.resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    result = {'label': args.label, 'platform': args.platform}
+    cleanup = []
+    try:
+        if args.platform == 'linux':
+            display = f':{200 + os.getpid() % 700}'
+            xvfb = subprocess.Popen(['Xvfb', display, '-screen', '0', '1280x900x24', '-nolisten', 'tcp'], stderr=subprocess.DEVNULL)
+            cleanup.append(lambda: xvfb.terminate())
+            time.sleep(1.5)
+            home = Path(tempfile.mkdtemp(prefix='avatar-smoke-'))
+            cleanup.append(lambda: shutil.rmtree(home, ignore_errors=True))
+            env = dict(os.environ, DISPLAY=display, GDK_BACKEND='x11', HOME=str(home), XDG_CACHE_HOME=str(home / 'cache'),
+                       XDG_DATA_HOME=str(home / 'data'), XDG_CONFIG_HOME=str(home / 'config'), XDG_RUNTIME_DIR=str(home / 'run'))
+            for d in ('cache', 'data', 'config', 'run'):
+                (home / d).mkdir()
+            (home / 'run').chmod(0o700)
+            procs = []
+
+            def start():
+                log = (out / f'{args.label}-app.log').open('a')
+                p = subprocess.Popen([str(args.bundle / 'raft_flutter')], env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                procs.append(p)
+                return p
+
+            def stop():
+                for p in procs:
+                    if p.poll() is None:
+                        os.killpg(p.pid, signal.SIGTERM)
+                        try:
+                            p.wait(10)
+                        except subprocess.TimeoutExpired:
+                            os.killpg(p.pid, signal.SIGKILL)
+                procs.clear()
+            cleanup.append(stop)
+            background = None
+        else:
+            serial = args.serial or sys.exit('--serial is required for android')
+            adb = lambda *a, **k: subprocess.run(['adb', '-s', serial, *a], capture_output=True, text=True, **k)
+            adb('uninstall', PACKAGE)  # clean storage and cache for this isolated package only
+            if subprocess.run(['adb', '-s', serial, 'install', '-r', str(args.apk)], capture_output=True).returncode:
+                sys.exit('install failed')
+            subprocess.run(['adb', '-s', serial, 'forward', f'tcp:{PORT}', f'tcp:{PORT}'], check=True)
+            cleanup.append(lambda: subprocess.run(['adb', '-s', serial, 'forward', '--remove', f'tcp:{PORT}'], capture_output=True))
+            adb('logcat', '-c')
+            activity = f'{PACKAGE}/app.raft.raft_flutter.MainActivity'
+
+            def start():
+                adb('shell', 'am', 'start', '-n', activity)
+
+            def stop():
+                adb('shell', 'am', 'force-stop', PACKAGE)
+
+            def background():
+                adb('shell', 'input', 'keyevent', 'KEYCODE_HOME')
+                time.sleep(args.background_seconds)
+                adb('shell', 'am', 'start', '-n', activity)
+            result['device'] = adb('shell', 'getprop', 'ro.product.model').stdout.strip() + ' / ' + adb('shell', 'getprop', 'ro.build.version.release').stdout.strip()
+            result['screen'] = adb('shell', 'wm', 'size').stdout.strip() + ' ' + adb('shell', 'wm', 'density').stdout.strip()
+
+        def phase(name, path):
+            t = time.time()
+            data = get(path)
+            data['wallSeconds'] = round(time.time() - t, 1)
+            result[name] = data
+            print(f'{args.label} {name}: avatar requests {data["avatarRequests"]} (max per url {data["avatarMaxPerUrl"]}), '
+                  f'slots {data["slotsSeen"]}, placeholder at first sight {data["slotsPlaceholderAtFirstSight"]}, '
+                  f'delay p50/p95/max {data["delayMsP50"]}/{data["delayMsP95"]}/{data["delayMsMax"]} ms, '
+                  f'placeholder frames {data["placeholderFrames"]}/{data["framesWithAvatarSlots"]}', flush=True)
+
+        start()
+        wait_stats(lambda s: s['slotsSeen'] > 0)
+        time.sleep(3)
+        recorder = None
+        phase('browse-cold', '/__run?name=browse')
+        phase('browse-warm', '/__run?name=browse')
+        if args.platform == 'android' and args.record:
+            adb('shell', 'rm', '-f', '/sdcard/av.mp4')
+            recorder = subprocess.Popen(['adb', '-s', serial, 'shell', 'screenrecord', '--time-limit', '25', '--bit-rate', '4000000', '/sdcard/av.mp4'])
+        phase('switch-warm', '/__run?name=switch')
+        if recorder:
+            recorder.wait()
+            subprocess.run(['adb', '-s', serial, 'pull', '/sdcard/av.mp4', str(out / f'{args.label}-switch-warm.mp4')], capture_output=True)
+        phase('flood', '/__run?name=flood&n=40')
+        if background:
+            get('/__reset')
+            background()
+            time.sleep(4)
+            phase('background-resume-settle', '/__run?name=settle&ms=1500')
+            phase('background-switch', '/__run?name=switch')
+        stop()
+        time.sleep(2)
+        start()
+        wait_stats(lambda s: s['slotsSeen'] > 0)
+        time.sleep(3)
+        result['cold-start'] = get('/__stats')
+        d = result['cold-start']
+        print(f'{args.label} cold-start: avatar requests {d["avatarRequests"]}, slots {d["slotsSeen"]}, '
+              f'placeholder at first sight {d["slotsPlaceholderAtFirstSight"]} (never painted {d["slotsNeverPainted"]}, left first {d["slotsLeftBeforePainted"]}), delay p50/max {d["delayMsP50"]}/{d["delayMsMax"]} ms', flush=True)
+        phase('cold-switch', '/__run?name=switch')
+        phase('clear-cache', '/__run?name=clearcache')
+        if args.platform == 'android':
+            with (out / f'{args.label}-logcat.txt').open('w') as f:
+                subprocess.run(['adb', '-s', serial, 'logcat', '-d', '-v', 'time'], stdout=f)
+    finally:
+        (out / f'{args.label}.json').write_text(json.dumps(result, indent=1))
+        for fn in reversed(cleanup):
+            try:
+                fn()
+            except Exception:
+                pass
+
+
+if __name__ == '__main__':
+    main()

@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'raft_underline.dart';
 import 'agent_profile.dart';
 import 'auth_page.dart';
 import 'cindy_setup_screen.dart';
@@ -15,11 +16,16 @@ import 'css_pixel_snap.dart';
 import 'design_primitives.dart';
 import 'form_controls.dart';
 import 'icons.dart';
+import 'keyboard_reveal.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
+import 'raft/css_box.dart';
+import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart' show RaftCssBoxDecoration;
+import 'tokens/tokens.dart' show RaftTypeScale;
+import 'text_measure.dart';
+import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'theme.dart';
-import 'tokens/tokens.dart';
 
 /// `sm:` breakpoint of the step footers (`flex-col-reverse gap-3
 /// sm:flex-row sm:items-center sm:justify-between`).
@@ -56,20 +62,13 @@ class _StepCard extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Container(
           decoration: RaftCssBoxDecoration(
-            color: t.brutal ? Colors.white : t.panel,
-            border: Border.all(
-              color: t.brutal ? Colors.black : t.colors['line-muted']!,
-              width: t.brutal ? 2 : 1,
-            ),
-            borderRadius: rounded && !t.brutal
-                ? BorderRadius.circular(8)
-                : null,
-            boxShadow: t.brutal
-                ? RaftProductShadows.shadowBrutal.outer
-                : t.themeShadows.md.outer,
+            color: t.panel,
+            border: Border.all(color: t.colors['line-muted']!, width: 1),
+            borderRadius: rounded ? BorderRadius.circular(8) : null,
+            boxShadow: t.themeShadows.md.outer,
           ),
           child: ClipRRect(
-            borderRadius: rounded && !t.brutal
+            borderRadius: rounded
                 ? BorderRadius.circular(7)
                 : BorderRadius.zero,
             child: child,
@@ -80,9 +79,8 @@ class _StepCard extends StatelessWidget {
   }
 }
 
-Color _hairline(RaftTokens t) =>
-    t.brutal ? Colors.black : t.colors['line-hairline']!;
-double _hairlineWidth(RaftTokens t) => t.brutal ? 2 : 1;
+Color _hairline(RaftTokens t) => t.colors['line-hairline']!;
+double _hairlineWidth(RaftTokens t) => 1;
 
 /// ServerSetupSurveyStep: header (eyebrow, title, hint), two [chip groups],
 /// footer with the session link and the Continue button.
@@ -101,6 +99,8 @@ class RaftSetupSurveyCard extends StatelessWidget {
     this.onSource,
     this.onContinue,
     this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
   });
 
   /// `id -> label`, in display order.
@@ -114,6 +114,8 @@ class RaftSetupSurveyCard extends StatelessWidget {
   final bool saving;
   final ValueChanged<String>? onRole, onSource;
   final VoidCallback? onContinue, onSwitchServer;
+  final VoidCallback? onDeleteServer;
+  final bool? showDeleteServer;
 
   @override
   Widget build(BuildContext context) =>
@@ -124,19 +126,27 @@ class RaftSetupSurveyCard extends StatelessWidget {
     String tr(String s) => raftText(context, s);
     final wide = _wide(context, available);
     final canContinue = !saving && role != null && source != null;
-    final cont = RaftButton(
-      key: const Key('server-setup-survey-continue'),
-      label: saving ? tr('Saving…') : tr('Continue'),
-      tone: RaftButtonRecipeVariant.accent,
-      size: RaftButtonRecipeSize.lg,
-      expand: !wide,
-      onPressed: canContinue ? onContinue : null,
+    final cont = RaftPrimaryAction(
+      child: RaftButton(
+        key: const Key('server-setup-survey-continue'),
+        label: saving ? tr('Saving…') : tr('Continue'),
+        tone: RaftButtonRecipeVariant.accent,
+        size: RaftButtonRecipeSize.lg,
+        expand: !wide,
+        onPressed: canContinue ? onContinue : null,
+      ),
     );
     final footer = wide
         ? Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _SessionFooter(onSwitchServer: onSwitchServer),
+              Flexible(
+                child: _SessionFooter(
+                  onSwitchServer: onSwitchServer,
+                  onDeleteServer: onDeleteServer,
+                  showDeleteServer: showDeleteServer,
+                ),
+              ),
               cont,
             ],
           )
@@ -145,7 +155,11 @@ class RaftSetupSurveyCard extends StatelessWidget {
             children: [
               cont,
               const SizedBox(height: 12),
-              _SessionFooter(onSwitchServer: onSwitchServer),
+              _SessionFooter(
+                onSwitchServer: onSwitchServer,
+                onDeleteServer: onDeleteServer,
+                showDeleteServer: showDeleteServer,
+              ),
             ],
           );
     return _StepCard(
@@ -222,7 +236,7 @@ class RaftSetupSurveyCard extends StatelessWidget {
   }
 }
 
-/// `font-mono text-[10px] font-bold uppercase tracking-wide` eyebrow, `mt-2
+/// `font-mono text-[10px] font-bold` eyebrow, `mt-2
 /// text-xl font-bold` title, `mt-1 text-xs leading-5` hint.
 class _StepHeading extends StatelessWidget {
   const _StepHeading({
@@ -239,13 +253,12 @@ class _StepHeading extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          eyebrow.toUpperCase(),
+          eyebrow,
           style: TextStyle(
             fontFamily: t.monoFont,
             fontSize: 10,
             height: 15 / 10,
             fontWeight: FontWeight.w700,
-            letterSpacing: .25,
             color: t.muted,
           ),
         ),
@@ -329,62 +342,124 @@ class _Chip extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
 
+  /// Raft look (`OptionGrid`): `h-8 rounded-control border-[1.5px] px-3 text-footnote font-bold`; the chosen one is
+  /// the yellow sticker (brand fill, ink border and type), the others sit on the card with the strong line. Hover
+  /// lays the press overlay on the resting fill.
+  Widget _raftChip(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    return RaftInteractive(
+      onPressed: onTap,
+      semanticLabel: label,
+      selected: selected,
+      builder: (context, state) {
+        final active = state.enabled && (state.hovered || state.pressed);
+        final base = selected ? ui.brand : ui.layerCard;
+        final fill = active
+            ? Color.alphaBlend(
+                selected ? ui.stickerPressed : ui.fillPressed,
+                base,
+              )
+            : base;
+        return RaftCssBox(
+          radius: t.size('radius.control', fallback: 8),
+          fill: fill,
+          borderWidth: raftControlBorderPx(context, 1.5),
+          borderColor: selected ? ui.stickerInk : ui.lineStrong,
+          rings: [
+            if (state.focusVisible)
+              for (final layer in ui.focusRing.layers)
+                RaftRing(layer.spread, layer.color),
+          ],
+          height: 32,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: t.scale(
+              RaftTypeScale.footnote,
+              weight: FontWeight.w700,
+              color: selected ? ui.stickerInk : ui.foreground,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final border = t.brutal ? 2.0 : 1.0;
-    final fill = t.brutal
-        ? (selected ? t.product.softSignal : Colors.white)
-        : (selected ? t.colors['primary-soft']! : t.panel);
-    final shadows = selected
-        ? (t.brutal
-              ? RaftProductShadows.shadowBrutalSm.outer
-              : t.themeShadows.xs.outer)
-        : const <BoxShadow>[];
-    return Semantics(
-      button: true,
+    if (t.isRaftLook) return _raftChip(context, t);
+    final border = 1.0;
+    final fill = (selected ? t.colors['primary-soft']! : t.panel);
+    final shadows = selected ? t.themeShadows.xs.outer : const <BoxShadow>[];
+    return RaftInteractive(
+      onPressed: onTap,
+      semanticLabel: label,
       selected: selected,
-      label: label,
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: RaftCssSnappedBox(
-          color: fill,
-          borderColor: t.brutal ? Colors.black : t.colors['line-muted']!,
-          borderWidth: border,
-          radius: t.brutal ? 0 : 6,
-          shadows: shadows,
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 12 + border,
-              vertical: 6 + border,
-            ),
-            child: Text(
-              label,
-              style: RaftTypography.heading(
-                t,
-                size: 14,
-                line: 20,
-              ).copyWith(color: t.brutal ? Colors.black : t.strong),
+      builder: (context, state) {
+        final active = state.enabled && (state.hovered || state.pressed);
+        // Not selected: hover / pressed tint the idle surface.
+        final shade = !selected && active
+            ? (t.colors['layer-canvas-muted']!)
+            : fill;
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [
+              if (state.focusVisible)
+                BoxShadow(color: t.ink.withValues(alpha: .8), spreadRadius: 2),
+            ],
+          ),
+          child: RaftCssSnappedBox(
+            color: shade,
+            borderColor: active
+                ? t.colors['line-strong']!
+                : t.colors['line-muted']!,
+            borderWidth: border,
+            radius: 6,
+            shadows: shadows,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 12 + border,
+                vertical: 6 + border,
+              ),
+              child: Text(
+                label,
+                style: RaftTypography.heading(
+                  t,
+                  size: 14,
+                  line: 20,
+                ).copyWith(color: t.strong),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
 /// SetupSessionFooter: `flex items-center gap-4 text-sm` with the muted
-/// "Switch server" TextLink.
+/// "Switch server" TextLink and the owner-only "Delete this server" one.
 class _SessionFooter extends StatelessWidget {
-  const _SessionFooter({this.onSwitchServer});
-  final VoidCallback? onSwitchServer;
+  const _SessionFooter({
+    this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
+  });
+  final VoidCallback? onSwitchServer, onDeleteServer;
+  final bool? showDeleteServer;
 
   @override
   Widget build(BuildContext context) => Align(
     alignment: AlignmentDirectional.centerStart,
     heightFactor: 1,
-    child: RaftCindySessionLink(onPressed: onSwitchServer),
+    child: RaftCindySessionFooter(
+      onSwitchServer: onSwitchServer,
+      onDeleteServer: onDeleteServer,
+      showDeleteServer: showDeleteServer,
+    ),
   );
 }
 
@@ -397,11 +472,15 @@ class RaftSetupHandoffCard extends StatelessWidget {
     this.agentName = 'Cindy',
     this.onDone,
     this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
   });
   final bool starting;
   final String agentName;
   final VoidCallback? onDone;
   final VoidCallback? onSwitchServer;
+  final VoidCallback? onDeleteServer;
+  final bool? showDeleteServer;
 
   @override
   Widget build(BuildContext context) =>
@@ -431,11 +510,7 @@ class RaftSetupHandoffCard extends StatelessWidget {
             child: Column(
               children: [
                 DecoratedBox(
-                  decoration: RaftCssBoxDecoration(
-                    boxShadow: t.brutal
-                        ? RaftProductShadows.shadowBrutalLg.outer
-                        : null,
-                  ),
+                  decoration: RaftCssBoxDecoration(boxShadow: null),
                   child: RaftAvatarSlot(
                     name: agentName,
                     avatarUrl: 'pixel:mug',
@@ -454,7 +529,7 @@ class RaftSetupHandoffCard extends StatelessWidget {
                     size: 24,
                     line: 32,
                     weight: RaftTypography.black(t),
-                  ).copyWith(color: t.brutal ? Colors.black : t.strong),
+                  ).copyWith(color: t.strong),
                 ),
                 const SizedBox(height: 12),
                 _BalancedText(
@@ -464,15 +539,12 @@ class RaftSetupHandoffCard extends StatelessWidget {
                     {'agentName': agentName},
                   ),
                   maxChars: 42,
-                  style:
-                      RaftTypography.heading(
-                        t,
-                        size: 16,
-                        line: 26,
-                        weight: FontWeight.w400,
-                      ).copyWith(
-                        color: t.brutal ? const Color(0xB3000000) : t.muted,
-                      ),
+                  style: RaftTypography.heading(
+                    t,
+                    size: 16,
+                    line: 26,
+                    weight: FontWeight.w400,
+                  ).copyWith(color: t.muted),
                 ),
               ],
             ),
@@ -482,7 +554,7 @@ class RaftSetupHandoffCard extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: t.brutal ? Colors.black : t.colors['line-muted']!,
+                  color: t.colors['line-muted']!,
                   width: _hairlineWidth(t),
                 ),
               ),
@@ -491,7 +563,13 @@ class RaftSetupHandoffCard extends StatelessWidget {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _SessionFooter(onSwitchServer: onSwitchServer),
+                      Flexible(
+                        child: _SessionFooter(
+                          onSwitchServer: onSwitchServer,
+                          onDeleteServer: onDeleteServer,
+                          showDeleteServer: showDeleteServer,
+                        ),
+                      ),
                       done,
                     ],
                   )
@@ -500,7 +578,11 @@ class RaftSetupHandoffCard extends StatelessWidget {
                     children: [
                       done,
                       const SizedBox(height: 12),
-                      _SessionFooter(onSwitchServer: onSwitchServer),
+                      _SessionFooter(
+                        onSwitchServer: onSwitchServer,
+                        onDeleteServer: onDeleteServer,
+                        showDeleteServer: showDeleteServer,
+                      ),
                     ],
                   ),
           ),
@@ -562,6 +644,7 @@ class RaftSetupComputerCard extends StatefulWidget {
     required this.guidePlatform,
     required this.onGuidePlatform,
     required this.guideCommands,
+    this.guideInstallAndSetup,
     required this.serverSlug,
     required this.canReset,
     required this.loading,
@@ -569,6 +652,8 @@ class RaftSetupComputerCard extends StatefulWidget {
     this.onStartOver,
     this.onNext,
     this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
     this.onCopyInstallCommand,
   });
 
@@ -586,10 +671,18 @@ class RaftSetupComputerCard extends StatefulWidget {
 
   /// (install, setup) of the selected platform; null without a slug.
   final (String, String)? guideCommands;
+
+  /// mac/Linux one-paste install + setup of the selected platform; null keeps
+  /// the two steps (Web `computerInstallAndSetupCommand`).
+  final String? guideInstallAndSetup;
   final String? serverSlug;
   final bool canReset, loading;
   final String? error;
   final VoidCallback? onStartOver, onNext, onSwitchServer;
+  final VoidCallback? onDeleteServer;
+
+  /// Owner-only "Delete this server" link; defaults to `onDeleteServer != null`.
+  final bool? showDeleteServer;
   final void Function(String runtimeId, String command)? onCopyInstallCommand;
 
   @override
@@ -619,8 +712,8 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
     final body = many
         ? "They're all set up already — setup continues as soon as any one of them comes online."
         : widget.recovering
-        ? "Your computer is already set up — it just isn't running. Start it and setup continues on its own."
-        : 'A computer is the machine your agents run on. Your server needs at least one online.';
+        ? "Your computer is already set up but isn't running. Start it and setup continues on its own."
+        : 'A computer is where your agents run. Your server needs at least one online.';
     final next = RaftButton(
       key: const Key('setup-computer-next'),
       label: widget.loading ? tr('Saving...') : tr('Next'),
@@ -640,7 +733,13 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
           ? Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _SessionFooter(onSwitchServer: widget.onSwitchServer),
+                Flexible(
+                  child: _SessionFooter(
+                    onSwitchServer: widget.onSwitchServer,
+                    onDeleteServer: widget.onDeleteServer,
+                    showDeleteServer: widget.showDeleteServer,
+                  ),
+                ),
                 next,
               ],
             )
@@ -649,7 +748,11 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
               children: [
                 next,
                 const SizedBox(height: 12),
-                _SessionFooter(onSwitchServer: widget.onSwitchServer),
+                _SessionFooter(
+                  onSwitchServer: widget.onSwitchServer,
+                  onDeleteServer: widget.onDeleteServer,
+                  showDeleteServer: widget.showDeleteServer,
+                ),
               ],
             ),
     );
@@ -745,6 +848,7 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
     platform: widget.guidePlatform,
     onPlatform: widget.onGuidePlatform,
     commands: widget.guideCommands,
+    installAndSetup: widget.guideInstallAndSetup,
   );
 
   Widget _runtimeBox(BuildContext context, RaftTokens t) {
@@ -765,11 +869,8 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
     );
     return Container(
       decoration: RaftCssBoxDecoration(
-        border: Border.all(
-          color: t.brutal ? Colors.black : t.colors['line-muted']!,
-          width: t.brutal ? 2 : 1,
-        ),
-        borderRadius: t.brutal ? null : BorderRadius.circular(6),
+        border: Border.all(color: t.colors['line-muted']!, width: 1),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -824,8 +925,9 @@ TextSpan _template(
   final children = <InlineSpan>[];
   var from = 0;
   for (final m in RegExp(r'\{(\w+)\}').allMatches(text)) {
-    if (m.start > from)
+    if (m.start > from) {
       children.add(TextSpan(text: text.substring(from, m.start)));
+    }
     children.add(slots[m[1]] ?? TextSpan(text: m[0]));
     from = m.end;
   }
@@ -839,14 +941,12 @@ TextStyle _mono(
   double line, {
   FontWeight weight = FontWeight.w700,
   Color? color,
-  double tracking = 0,
 }) => TextStyle(
   fontFamily: t.monoFont,
   fontSize: size,
   height: line / size,
   fontWeight: weight,
   color: color ?? t.strong,
-  letterSpacing: tracking,
   leadingDistribution: TextLeadingDistribution.even,
 );
 
@@ -883,8 +983,8 @@ class _GroupLabel extends StatelessWidget {
         TextSpan(
           children: [
             TextSpan(
-              text: label.toUpperCase(),
-              style: _mono(t, 10, 15, color: hint, tracking: 1),
+              text: label,
+              style: _mono(t, 10, 15, color: hint),
             ),
             if (note != null) const WidgetSpan(child: SizedBox(width: 8)),
             if (note != null)
@@ -928,16 +1028,14 @@ class _RuntimeRow extends StatelessWidget {
     final tile = runtime.recommended ? 28.0 : 24.0;
     final badgeColors = runtime.detected
         ? (
-            fill: t.brutal ? t.product.brutalLime : t.colors['success-soft']!,
-            text: t.brutal ? Colors.black : t.colors['success-strong']!,
-            border: t.brutal ? Colors.black : t.colors['line-muted']!,
+            fill: t.colors['success-soft']!,
+            text: t.colors['success-strong']!,
+            border: t.colors['line-muted']!,
           )
         : (
-            fill: t.brutal ? Colors.white : t.colors['layer-inset']!,
-            text: t.brutal ? const Color(0x66000000) : hint,
-            border: t.brutal
-                ? const Color(0x33000000)
-                : t.colors['line-muted']!,
+            fill: t.colors['layer-inset']!,
+            text: hint,
+            border: t.colors['line-muted']!,
           );
     final detail = TextStyle(
       fontFamily: t.headingFont,
@@ -953,11 +1051,7 @@ class _RuntimeRow extends StatelessWidget {
     final computer = computerName ?? tr('your computer');
     return Container(
       decoration: BoxDecoration(
-        color: expanded
-            ? (t.brutal
-                  ? t.product.softSignal.withValues(alpha: .2)
-                  : t.colors['fill-muted']!.withValues(alpha: .4))
-            : null,
+        color: expanded ? t.colors['fill-muted']!.withValues(alpha: .4) : null,
         border: Border(
           top: BorderSide(color: t.colors['line-hairline']!, width: 1),
         ),
@@ -965,70 +1059,79 @@ class _RuntimeRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          GestureDetector(
-            onTap: onToggle,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              child: Row(
-                children: [
-                  Container(
-                    width: tile,
-                    height: tile,
-                    alignment: Alignment.center,
-                    decoration: RaftCssBoxDecoration(
-                      color: t.brutal ? Colors.white : t.panel,
-                      border: Border.all(
-                        color: t.brutal
-                            ? Colors.black
-                            : t.colors['line-muted']!,
-                        width: t.brutal ? 2 : 1,
+          RaftInteractive(
+            onPressed: onToggle,
+            semanticLabel: runtime.displayName,
+            checked: null,
+            selected: expanded,
+            builder: (context, state) => DecoratedBox(
+              decoration: BoxDecoration(
+                color: state.enabled && (state.pressed || state.hovered)
+                    ? t.colors['fill-muted']!.withValues(alpha: .6)
+                    : null,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: tile,
+                      height: tile,
+                      alignment: Alignment.center,
+                      decoration: RaftCssBoxDecoration(
+                        color: t.panel,
+                        border: Border.all(
+                          color: t.colors['line-muted']!,
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      borderRadius: t.brutal ? null : BorderRadius.circular(6),
-                    ),
-                    child: Text(runtime.abbreviation, style: _mono(t, 9, 13.5)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      runtime.displayName,
-                      style: RaftTypography.heading(
-                        t,
-                        size: runtime.recommended ? 13 : 12,
-                        line: runtime.recommended ? 19.5 : 16,
-                      ).copyWith(color: quiet ? hint : t.ink),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: RaftCssBoxDecoration(
-                      color: badgeColors.fill,
-                      border: Border.all(
-                        color: badgeColors.border,
-                        width: t.brutal ? 2 : 1,
+                      child: Text(
+                        runtime.abbreviation,
+                        style: _mono(t, 9, 13.5),
                       ),
-                      borderRadius: t.brutal ? null : BorderRadius.circular(2),
                     ),
-                    child: Text(
-                      (runtime.detected ? tr('Detected') : tr('Not detected'))
-                          .toUpperCase(),
-                      style: _mono(t, 9, 13.5, color: badgeColors.text),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        runtime.displayName,
+                        style: RaftTypography.heading(
+                          t,
+                          size: runtime.recommended ? 13 : 12,
+                          line: runtime.recommended ? 19.5 : 16,
+                        ).copyWith(color: quiet ? hint : t.ink),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  RotatedBox(
-                    quarterTurns: expanded ? 1 : 0,
-                    child: RaftIcon(
-                      RaftGlyph.chevronRight,
-                      size: 15,
-                      color: quiet ? hint : t.ink,
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: RaftCssBoxDecoration(
+                        color: badgeColors.fill,
+                        border: Border.all(color: badgeColors.border, width: 1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Text(
+                        runtime.detected ? tr('Detected') : tr('Not detected'),
+                        style: _mono(t, 9, 13.5, color: badgeColors.text),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    RotatedBox(
+                      quarterTurns: expanded ? 1 : 0,
+                      child: RaftIcon(
+                        RaftGlyph.chevronRight,
+                        size: 15,
+                        color: quiet ? hint : t.ink,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1065,25 +1168,27 @@ class _RuntimeRow extends StatelessWidget {
                           ),
                         ),
                         if (command != null && onCopyInstallCommand != null)
-                          GestureDetector(
-                            onTap: () =>
+                          RaftInteractive(
+                            onPressed: () =>
                                 onCopyInstallCommand!(runtime.id, command),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                RaftIcon(
-                                  RaftGlyph.copy,
-                                  size: 12,
-                                  color: t.strong,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  tr('Copy install command'),
-                                  style: strong.copyWith(
-                                    decoration: TextDecoration.underline,
+                            semanticLabel: tr('Copy Install Command'),
+                            builder: (context, state) => Opacity(
+                              opacity: state.pressed ? .6 : 1,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  RaftIcon(
+                                    RaftGlyph.copy,
+                                    size: 12,
+                                    color: t.strong,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  RaftUnderlinedText(
+                                    tr('Copy Install Command'),
+                                    style: strong,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                       ],
@@ -1128,21 +1233,22 @@ class _Instructions extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
+                // ds-allow: Web ServerSetupComputerRuntimeStep.tsx step marker `mt-px`
                 padding: const EdgeInsets.only(top: 1),
+                // ignore: raft_lints/avoid_fixed_height_text -- a fixed 16px step marker: the digit is bounded by RaftChrome and always fits
                 child: Container(
                   width: 16,
                   height: 16,
                   alignment: Alignment.center,
                   decoration: RaftCssBoxDecoration(
-                    border: Border.all(
-                      color: t.brutal
-                          ? const Color(0x4D000000)
-                          : t.colors['line-muted']!,
-                    ),
-                    borderRadius: t.brutal ? null : BorderRadius.circular(2),
+                    border: Border.all(color: t.colors['line-muted']!),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                   child: Text(
                     '${i + 1}',
+                    // The digit fills a fixed 16px box: it grows with the text
+                    // size only up to the chrome bound.
+                    textScaler: RaftChrome.boundedScalerOf(context),
                     style: _mono(t, 9, 13.5, color: t.muted),
                   ),
                 ),
@@ -1349,13 +1455,12 @@ class _RecoveryCard extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                (many
-                        ? tr('Start one of your computers')
-                        : raftFormat(context, 'Bring {computer} back online', {
-                            'computer': name,
-                          }))
-                    .toUpperCase(),
-                style: _mono(t, 10, 15, color: t.muted, tracking: .25),
+                many
+                    ? tr('Start one of your computers')
+                    : raftFormat(context, 'Bring {computer} back online', {
+                        'computer': name,
+                      }),
+                style: _mono(t, 10, 15, color: t.muted),
               ),
             ),
           ],
@@ -1371,7 +1476,7 @@ class _RecoveryCard extends StatelessWidget {
         if (legacyDaemon) ...[
           block(
             tr(
-              'This machine was connected with the retired standalone daemon. Install Raft Computer on it to bring it back:',
+              'This computer was connected with the retired standalone app. Install Raft Computer on it to bring it back:',
             ),
             const [],
           ),
@@ -1384,7 +1489,7 @@ class _RecoveryCard extends StatelessWidget {
                   )
                 : raftFormat(
                     context,
-                    "This computer is set up on /{server} but isn't connected right now. Run this on the machine to bring it back:",
+                    "This computer is set up on /{server} but isn't connected right now. Run this on that computer to bring it back:",
                     {'server': serverSlug ?? tr('your server')},
                   ),
             const [_RecoveryCommand('raft-computer start')],
@@ -1417,7 +1522,7 @@ class _RecoveryCard extends StatelessWidget {
               const SizedBox(width: 4),
               RaftAuthTextLink(
                 key: const Key('setup-computer-start-over'),
-                label: tr('Start over'),
+                label: tr('Start Over'),
                 onTap: onStartOver,
               ),
             ],
@@ -1439,12 +1544,9 @@ class _OfflineRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: RaftCssBoxDecoration(
-        color: t.brutal ? Colors.white : t.panel,
-        border: Border.all(
-          color: t.brutal ? Colors.black : t.colors['line-muted']!,
-          width: t.brutal ? 2 : 1,
-        ),
-        borderRadius: t.brutal ? null : BorderRadius.circular(6),
+        color: t.panel,
+        border: Border.all(color: t.colors['line-muted']!, width: 1),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         children: [
@@ -1461,7 +1563,8 @@ class _OfflineRow extends StatelessWidget {
                   style: RaftTypography.heading(t, size: 12, line: 16),
                 ),
                 // CSS keeps the 16.5px line box; a paragraph would round up.
-                SizedBox(
+                RaftScaled.lineBox(
+                  context,
                   height: 16.5,
                   child: Text(
                     computer.lastSeen == null
@@ -1509,14 +1612,9 @@ class _RecoveryCommandState extends State<_RecoveryCommand> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: RaftCssBoxDecoration(
               color: Colors.black,
-              border: Border.all(
-                color: t.brutal ? Colors.black : t.colors['line-strong']!,
-                width: t.brutal ? 2 : 1,
-              ),
-              borderRadius: t.brutal ? null : BorderRadius.circular(6),
-              boxShadow: t.brutal
-                  ? RaftProductShadows.shadowBrutalSm.outer
-                  : t.themeShadows.sm.outer,
+              border: Border.all(color: t.colors['line-strong']!, width: 1),
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: t.themeShadows.sm.outer,
             ),
             child: Text(
               widget.command,
@@ -1561,21 +1659,27 @@ class _BalancedText extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      TextPainter painter(double width) => TextPainter(
-        text: TextSpan(text: text, style: style),
-        textAlign: TextAlign.center,
+      int lineCount(double width) {
+        final painter = TextPainter(
+          text: TextSpan(text: text, style: style),
+          textAlign: TextAlign.center,
+          textDirection: Directionality.of(context),
+        )..layout(maxWidth: width);
+        final lines = painter.computeLineMetrics().length;
+        painter.dispose();
+        return lines;
+      }
+
+      final zeroWidth = raftTextWidth(
+        TextSpan(text: '0', style: style),
         textDirection: Directionality.of(context),
-      )..layout(maxWidth: width);
-      final zero = TextPainter(
-        text: TextSpan(text: '0', style: style),
-        textDirection: Directionality.of(context),
-      )..layout();
-      final limit = (maxChars * zero.width).clamp(0.0, box.maxWidth);
-      final lines = painter(limit).computeLineMetrics().length;
+      );
+      final limit = (maxChars * zeroWidth).clamp(0.0, box.maxWidth);
+      final lines = lineCount(limit);
       var low = 0.0, high = limit;
       for (var i = 0; i < 24; i++) {
         final mid = (low + high) / 2;
-        if (painter(mid).computeLineMetrics().length <= lines) {
+        if (lineCount(mid) <= lines) {
           high = mid;
         } else {
           low = mid;

@@ -1,7 +1,11 @@
+import 'hover_region.dart';
+
 import 'package:flutter/material.dart';
 
+import 'control_typography.dart';
 import 'components.dart';
 import 'localization.dart';
+import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 import 'icons.dart';
 import 'design_primitives.dart';
@@ -62,19 +66,30 @@ class RaftThreadReplies extends StatelessWidget {
       if (hasDraft) raftText(context, 'Draft'),
     ];
     final label = [count, ...suffix].join(' · ');
-    final style = TextButton.styleFrom(
+    // Larger text: a reply stacks (author and time above, the preview wrapped
+    // below) instead of squeezing the preview out of a single line.
+    final grows = RaftScaled.grows(context);
+    final style = ButtonStyle(
       alignment: Alignment.centerLeft,
-      minimumSize: const Size(48, 48),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      foregroundColor: tokens.muted,
+      minimumSize: WidgetStatePropertyAll(const Size(48, 48)),
+      padding: WidgetStatePropertyAll(
+        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      ),
+      // Frozen TextButton.styleFrom foreground also supplied these overlays.
+      overlayColor: WidgetStateProperty.fromMap({
+        WidgetState.pressed: tokens.muted.withValues(alpha: .1),
+        WidgetState.hovered: tokens.muted.withValues(alpha: .08),
+        WidgetState.focused: tokens.muted.withValues(alpha: .1),
+      }),
+      foregroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.disabled) ? null : tokens.muted,
+      ),
     );
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: tokens.brutal
-              ? Colors.black.withValues(alpha: .03)
-              : tokens.card,
+          color: tokens.card,
           borderRadius: RaftShapes.field(tokens),
         ),
         child: Material(
@@ -82,9 +97,9 @@ class RaftThreadReplies extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextButton(
+              RaftButton.text(
                 onPressed: onOpen,
-                style: style,
+                legacyStyle: style,
                 child: Row(
                   children: [
                     Flexible(
@@ -101,12 +116,12 @@ class RaftThreadReplies extends StatelessWidget {
                 ),
               ),
               for (final reply in visible)
-                TextButton(
+                RaftButton.text(
                   key: ValueKey('thread-preview-${reply.id}'),
                   onPressed: onOpenReply == null
                       ? null
                       : () => onOpenReply!(reply.id),
-                  style: style,
+                  legacyStyle: style,
                   child: Semantics(
                     label: raftFormat(
                       context,
@@ -114,49 +129,37 @@ class RaftThreadReplies extends StatelessWidget {
                       {'name': reply.author, 'preview': reply.preview},
                     ),
                     excludeSemantics: true,
-                    child: Row(
-                      children: [
-                        if (reply.senderType == 'user')
-                          RaftAvatar(name: reply.author, size: 20)
-                        else
-                          RaftSymbol(
-                            reply.senderType == 'agent'
-                                ? Icons.smart_toy_outlined
-                                : Icons.apps,
-                            size: 20,
+                    child: grows
+                        ? _stackedReply(reply)
+                        : Row(
+                            children: [
+                              _replyAvatar(reply),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                flex: 3,
+                                child: Text(
+                                  reply.author,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: _authorStyle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                flex: 5,
+                                child: Text(
+                                  reply.preview,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: _previewStyle,
+                                ),
+                              ),
+                              if (reply.timestamp.isNotEmpty) ...[
+                                const SizedBox(width: 6),
+                                Text(reply.timestamp, style: _timeStyle),
+                              ],
+                            ],
                           ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          flex: 3,
-                          child: Text(
-                            reply.author,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          flex: 5,
-                          child: Text(
-                            reply.preview,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12.5),
-                          ),
-                        ),
-                        if (reply.timestamp.isNotEmpty) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            reply.timestamp,
-                            style: const TextStyle(fontSize: 11.5),
-                          ),
-                        ],
-                      ],
-                    ),
                   ),
                 ),
             ],
@@ -165,10 +168,45 @@ class RaftThreadReplies extends StatelessWidget {
       ),
     );
   }
+
+  static const _authorStyle = TextStyle(
+    fontSize: 12.5,
+    fontWeight: FontWeight.w600,
+  );
+  static const _previewStyle = TextStyle(fontSize: 12.5);
+  static const _timeStyle = TextStyle(fontSize: 11.5);
+
+  Widget _replyAvatar(RaftThreadReplyPreview reply) =>
+      reply.senderType == 'user'
+      ? RaftAvatar(name: reply.author, size: 20)
+      : RaftSymbol(
+          reply.senderType == 'agent' ? Icons.smart_toy_outlined : Icons.apps,
+          size: 20,
+        );
+
+  Widget _stackedReply(RaftThreadReplyPreview reply) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 2,
+        children: [
+          _replyAvatar(reply),
+          Text(reply.author, style: _authorStyle),
+          if (reply.timestamp.isNotEmpty)
+            Text(reply.timestamp, style: _timeStyle),
+        ],
+      ),
+      const SizedBox(height: 2),
+      // `clip`, not ellipsis: an ellipsis without maxLines keeps one line.
+      Text(reply.preview, overflow: TextOverflow.clip, style: _previewStyle),
+    ],
+  );
 }
 
 /// Web `ThreadRepliesBadge.tsx`: the message footer "N replies · M new" chip.
-/// raft-ui `Badge` (uppercase=false) — appearance soft/variant information
+/// raft-ui `Badge` — appearance soft/variant information
 /// with unread replies, solid/default otherwise; MessageSquare/Pencil 12.
 class RaftThreadRepliesBadge extends StatefulWidget {
   const RaftThreadRepliesBadge({
@@ -197,26 +235,28 @@ class _RaftThreadRepliesBadgeState extends State<RaftThreadRepliesBadge> {
     final tokens = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(tokens);
     final s = RaftBadgeRecipe.resolve(
-      theme: tokens.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      theme: RaftRecipeTheme.elegant,
       appearance: hasUnread
           ? RaftBadgeRecipeAppearance.soft
           : RaftBadgeRecipeAppearance.solid,
       variant: hasUnread
           ? RaftBadgeRecipeVariant.information
           : RaftBadgeRecipeVariant.default_,
-      uppercase: false,
       states: RaftRecipeStates({
         if (hovered && widget.onPressed != null) RaftRecipeStates.hover,
       }),
       tokens: resolver,
     ).root;
     // The badge sets no family: it inherits MessageItem's `font-display`.
-    final text = s
-        .textStyle(resolver)
-        .copyWith(
-          fontFamily: tokens.headingFont,
-          leadingDistribution: TextLeadingDistribution.even,
-        );
+    final text = RaftControlTypography.of(
+      context,
+      s
+          .textStyle(resolver)
+          .copyWith(
+            fontFamily: tokens.headingFont,
+            leadingDistribution: TextLeadingDistribution.even,
+          ),
+    );
     final color = text.color;
     final gap = SizedBox(width: s.columnGap ?? 4);
     Widget dot() => Opacity(opacity: .6, child: Text('·', style: text));
@@ -276,7 +316,7 @@ class _RaftThreadRepliesBadgeState extends State<RaftThreadRepliesBadge> {
     }
     return Semantics(
       button: true,
-      child: MouseRegion(
+      child: RaftHoverRegion(
         cursor: widget.onPressed == null
             ? MouseCursor.defer
             : SystemMouseCursors.click,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
   for (final keyboard in [0.0, 120.0]) {
@@ -19,7 +20,7 @@ void main() {
         String? selected;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(RaftFamily.elegant),
+            theme: raftTheme(),
             home: Scaffold(
               body: SafeArea(
                 child: Align(
@@ -73,14 +74,10 @@ void main() {
       },
     );
   }
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final inline in [true, false]) {
       testWidgets(
-        '$family/$dark ${inline ? 'badge' : 'dropdown'} bottom anchor flips before actual option click',
+        '${dark ? 'dark' : 'light'} ${inline ? 'badge' : 'dropdown'} bottom anchor flips before actual option click',
         (t) async {
           t.view.physicalSize = const Size(320, 720);
           t.view.devicePixelRatio = 1;
@@ -119,7 +116,7 @@ void main() {
                 );
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: RaftDensityScope(
                   density: RaftDensity.desktop,
@@ -162,7 +159,7 @@ void main() {
       addTearDown(scroll.dispose);
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftDensityScope(
               density: RaftDensity.desktop,
@@ -215,7 +212,7 @@ void main() {
       String? selected;
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: Align(
               alignment: Alignment.bottomRight,

@@ -39,7 +39,7 @@ class PersonalPresentationStore extends ChangeNotifier {
     SearchMemoryStorage? storage,
     this.desktop = false,
   }) : storage = storage ?? PreferencesSearchMemoryStorage() {
-    value = PersonalPresentation(hideEmptySections: desktop);
+    value = const PersonalPresentation();
   }
   final SearchMemoryStorage storage;
   final bool desktop;
@@ -71,10 +71,21 @@ class PersonalPresentationStore extends ChangeNotifier {
     fontChosen = ['sm', 'md', 'lg'].contains(profileFont);
     value = PersonalPresentation(
       font: ['sm', 'md', 'lg'].contains(profileFont) ? profileFont! : 'md',
-      hideEmptySections: desktop,
     );
+    if (nextKey == null) {
+      notifyListeners();
+      return;
+    }
+    // Preloaded device preferences answer at once: the stored choice (font,
+    // hidden empty sections, live activity) is in place before the first
+    // frame instead of replacing the defaults one frame later.
+    if (storage case final SynchronousSearchMemoryStorage sync
+        when sync.ready) {
+      _adopt(nextKey, sync.readSync(nextKey));
+      persist(nextKey, value);
+      return;
+    }
     notifyListeners();
-    if (nextKey == null) return;
     String? encoded;
     try {
       encoded = await storage.read(nextKey);
@@ -82,6 +93,11 @@ class PersonalPresentationStore extends ChangeNotifier {
       /* optional local storage */
     }
     if (ended || revision != ticket || key != nextKey) return;
+    _adopt(nextKey, encoded);
+    persist(nextKey, value);
+  }
+
+  void _adopt(String nextKey, String? encoded) {
     try {
       final raw = encoded == null ? null : jsonDecode(encoded);
       if (raw is Map) {
@@ -96,14 +112,13 @@ class PersonalPresentationStore extends ChangeNotifier {
           modelName: raw['modelName'] is bool ? raw['modelName'] : true,
           hideEmptySections: raw['hideEmptySections'] is bool
               ? raw['hideEmptySections']
-              : desktop,
+              : false,
         );
       }
     } catch (_) {
       /* corrupt device preferences use current safe defaults */
     }
     notifyListeners();
-    persist(nextKey, value);
   }
 
   bool update(

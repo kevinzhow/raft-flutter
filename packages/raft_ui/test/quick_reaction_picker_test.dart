@@ -5,9 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/src/design_primitives.dart';
 import 'package:raft_ui/src/quick_reaction_picker.dart';
 import 'package:raft_ui/src/theme.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Widget host({
-  RaftFamily family = RaftFamily.elegant,
   bool dark = false,
   ValueChanged<String>? select,
   VoidCallback? dismiss,
@@ -17,7 +17,7 @@ Widget host({
   VoidCallback? enter,
   VoidCallback? leave,
 }) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+  theme: raftTheme(dark: dark),
   home: Scaffold(
     body: Column(
       children: [
@@ -94,18 +94,12 @@ void main() {
     },
   );
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'seven source buttons preserve order and mounted dimensions $family/$dark',
+      'seven source buttons preserve order and mounted dimensions ${dark ? 'dark' : 'light'}',
       (tester) async {
         final selections = <String>[];
-        await tester.pumpWidget(
-          host(family: family, dark: dark, select: selections.add),
-        );
+        await tester.pumpWidget(host(dark: dark, select: selections.add));
         final controls = find.descendant(
           of: find.byType(RaftQuickReactionPicker),
           matching: find.byType(RaftControl),
@@ -129,10 +123,7 @@ void main() {
         }
         expect(
           tester.getSize(find.byType(RaftQuickReactionPicker)),
-          Size(
-            family == RaftFamily.brutal ? 224 : 220,
-            family == RaftFamily.brutal ? 40 : 36,
-          ),
+          Size(220, 36),
         );
         expect(tester.takeException(), isNull);
       },

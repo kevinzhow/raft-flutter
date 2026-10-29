@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 Widget _host(Widget child) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant),
+  theme: raftTheme(),
   home: Scaffold(
     body: SingleChildScrollView(
       child: Align(alignment: Alignment.topLeft, child: child),
@@ -46,8 +46,8 @@ void main() {
       await tester.pump();
     }
     expect(layouts, before);
-    expect(find.text('Show more'), findsOneWidget);
-    await tester.tap(find.text('Show more'));
+    expect(find.text('Show More'), findsOneWidget);
+    await tester.tap(find.text('Show More'));
     await tester.pumpAndSettle();
     expect(layouts, greaterThan(before));
     expect(find.text('Collapse'), findsOneWidget);
@@ -57,7 +57,7 @@ void main() {
     tester,
   ) async {
     Widget frame(Locale locale, bool dark) => MaterialApp(
-      theme: raftTheme(RaftFamily.elegant, dark: dark),
+      theme: raftTheme(dark: dark),
       home: Scaffold(
         body: Builder(
           builder: (context) => Localizations.override(
@@ -78,10 +78,10 @@ void main() {
     );
     await tester.pumpWidget(frame(const Locale('en'), false));
     await tester.pumpAndSettle();
-    expect(find.text('Show more'), findsOneWidget);
+    expect(find.text('Show More'), findsOneWidget);
     await tester.pumpWidget(frame(const Locale('zh'), true));
     await tester.pumpAndSettle();
-    expect(find.text('Show more'), findsNothing);
+    expect(find.text('Show More'), findsNothing);
     expect(find.text('展开全文'), findsOneWidget);
     await tester.tap(find.text('展开全文'));
     await tester.pumpAndSettle();
@@ -111,8 +111,8 @@ void main() {
       );
       expect(measure.child!.size.height, 2400);
       await tester.pumpAndSettle();
-      expect(find.text('Show more'), findsOneWidget);
-      await tester.tap(find.text('Show more'));
+      expect(find.text('Show More'), findsOneWidget);
+      await tester.tap(find.text('Show More'));
       await tester.pumpAndSettle();
       expect(tester.getSize(find.byType(ClipRect).last).height, 2400);
       await tester.ensureVisible(find.text('Collapse'));
@@ -144,7 +144,7 @@ void main() {
       expect(tester.getSize(find.byType(ClipRect).last).height, expected);
       await tester.pumpAndSettle();
       expect(
-        find.text('Show more'),
+        find.text('Show More'),
         enabled && height > 320 ? findsOneWidget : findsNothing,
       );
       expect(tester.takeException(), isNull);
@@ -178,7 +178,7 @@ void main() {
       await tester.pumpWidget(frame(280, true));
       await tester.pumpAndSettle();
       expect(tester.getSize(find.byType(ClipRect).last).height, 320);
-      expect(find.text('Show more'), findsOneWidget);
+      expect(find.text('Show More'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -246,7 +246,7 @@ void main() {
       expect(find.text('Hidden control').hitTestable(), findsNothing);
       visible.requestFocus();
       await tester.pumpAndSettle();
-      expect(find.text('Show more'), findsOneWidget);
+      expect(find.text('Show More'), findsOneWidget);
       hidden.requestFocus();
       await tester.pumpAndSettle();
       expect(find.text('Collapse'), findsOneWidget);

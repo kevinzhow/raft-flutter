@@ -1,0 +1,70 @@
+{
+  "format": "raft-theme/1",
+  "id": "user:acme",
+  "name": { "en": "Acme", "zh": "Acme 品牌" },
+  "version": "1.0.0",
+  "extends": "raft",
+  "builtIn": false,
+  "author": "Acme Design",
+  "fonts": {
+    "sans": { "family": "Acme Sans", "asset": "fonts/acme-sans-regular.ttf" }
+  },
+  "modes": {
+    "light": {
+      "colors": {
+        "brand-400": "#2f6f4f",
+        "brand-500": "#255a40",
+        "brand-strong": "#123024",
+        "brand-soft": "#e6f1eb",
+        "attention-400": "#d9593f",
+        "attention-soft": "#fbeae6",
+        "foreground": "#12100f",
+        "layer-canvas": "#fbfaf7",
+        "layer-sidebar": "#f2f0ea"
+      },
+      "geometry": {
+        "radius.control": 6,
+        "radius.container": 8,
+        "radius.sticker": 3,
+        "stroke.control": 1.5
+      },
+      "type": {
+        "body": [15, 22, 400, 0],
+        "title": [21, 27, 600, -0.01]
+      },
+      "shadows": {
+        "shadow.control": "none",
+        "shadow.popup": "0 1px 0 #12100f0a, 0 12px 32px -12px #12100f52"
+      },
+      "options": {
+        "control.edge": "inkBorder",
+        "nav.selection": "sticker"
+      }
+    },
+    "dark": {
+      "colors": {
+        "brand-400": "#5fbb8e",
+        "brand-500": "#7ecfa6",
+        "brand-strong": "#c4ecd8",
+        "brand-soft": "#1c2f27",
+        "attention-400": "#e88268",
+        "attention-soft": "#33211c",
+        "foreground": "#e9e7e1",
+        "layer-canvas": "#191b1a",
+        "layer-sidebar": "#121413"
+      },
+      "shadows": {
+        "shadow.control": "none",
+        "shadow.popup": "0 0 0 1px #fafaf714, 0 16px 40px -12px #000000cc"
+      },
+      "options": {
+        "control.edge": "inkBorder",
+        "sticker.ring": "dieCut"
+      }
+    }
+  },
+  "assets": {
+    "logo": "logo.svg",
+    "mark": "mark.svg"
+  }
+}

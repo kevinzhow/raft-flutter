@@ -8,9 +8,11 @@ import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show fixture;
+import 'support/app_services_fixture.dart';
 
 const threadRow = <String, dynamic>{
   'kind': 'thread',
@@ -44,11 +46,7 @@ Map<String, dynamic> message(String id, String channel) => {
 };
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final scenario in ['thread', 'channel', 'dm']) {
       final channelAfterThread = scenario != 'thread';
       final dm = scenario == 'dm';
@@ -59,7 +57,7 @@ void main() {
             ? '[N24c] DM-single'
             : channelAfterThread
             ? '[N24b] channel-after-thread'
-            : '[N24a] thread-single'} $family/$dark actual Activity slot has no channel detour',
+            : '[N24a] thread-single'} ${dark ? 'dark' : 'light'} actual Activity slot has no channel detour',
         (tester) async {
           SharedPreferences.setMockInitialValues({});
           tester.view.physicalSize = const Size(1440, 900);
@@ -68,7 +66,7 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           final unrelated = RaftChannel({
             'id': 'unrelated',
             'name': 'retained main channel',
@@ -84,10 +82,10 @@ void main() {
               'joined': true,
             }),
           ];
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             message('old-main', 'unrelated'),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['unrelated'] = {'old-main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['unrelated'] = {'old-main'};
           w.section = 'activity';
           final parent = Completer<Map<String, dynamic>>();
           final replies = Completer<Map<String, dynamic>>();
@@ -126,12 +124,14 @@ void main() {
           };
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );
@@ -163,7 +163,7 @@ void main() {
             expect(w.location.thread?.itemId, 'parent');
             expect(w.location.messageId, 'reply');
             expect(w.channel?.id, 'unrelated');
-            expect(w.messages.map((row) => row.id), ['old-main']);
+            expect(w.messageDomain.messages.map((row) => row.id), ['old-main']);
             expect(w.presentedThreadParent, isNull);
             expect(find.byType(RaftThreadHeader), findsOneWidget);
             expect(
@@ -251,10 +251,12 @@ void main() {
               w.location.content?.kind,
               dm ? RaftContentKind.dm : RaftContentKind.channel,
             );
-            expect(w.messages.map((row) => row.id), [channelTarget]);
+            expect(w.messageDomain.messages.map((row) => row.id), [
+              channelTarget,
+            ]);
           } else {
             expect(w.presentedThreadParent?.id, 'parent');
-            expect(w.messages.map((row) => row.id), ['old-main']);
+            expect(w.messageDomain.messages.map((row) => row.id), ['old-main']);
           }
           for (var frame = 0; frame < 5; ++frame) {
             await tester.pump(const Duration(milliseconds: 16));
@@ -267,7 +269,7 @@ void main() {
     }
     for (final thread in [true, false]) {
       testWidgets(
-        '[N24d] double-${thread ? 'thread' : 'channel'} $family/$dark actual Activity upgrades immediate preview and pushes one canonical route',
+        '[N24d] double-${thread ? 'thread' : 'channel'} ${dark ? 'dark' : 'light'} actual Activity upgrades immediate preview and pushes one canonical route',
         (tester) async {
           SharedPreferences.setMockInitialValues({});
           tester.view.physicalSize = const Size(1440, 900);
@@ -276,7 +278,7 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           w.section = 'activity';
           final parent = Completer<Map<String, dynamic>>(),
               resolution = Completer<Map<String, dynamic>>(),
@@ -308,12 +310,14 @@ void main() {
           };
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );

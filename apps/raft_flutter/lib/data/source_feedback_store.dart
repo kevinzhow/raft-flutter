@@ -347,19 +347,22 @@ class SourceFeedbackAttachment {
     this.filename,
     this.size, {
     this.contentType = 'application/octet-stream',
+    this.id = '',
   });
   factory SourceFeedbackAttachment.parse(dynamic raw) {
     final v = _map(raw);
     return SourceFeedbackAttachment(
       _string(v, 'filename'),
       _integer(v, 'size_bytes'),
+      id: v['id'] is String ? v['id'] as String : '',
       contentType: v['content_type'] is String
           ? v['content_type'] as String
           : 'application/octet-stream',
     );
   }
-  // Metadata only. No URL, private capability, or fetch action is retained.
-  final String filename, contentType;
+  // Metadata and the attachment's id; the bytes are read on demand through the
+  // account-authenticated route, never from a stored URL or capability.
+  final String filename, contentType, id;
   final int size;
 }
 

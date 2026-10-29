@@ -74,7 +74,7 @@ function ParityExtCsView({ props }: { props: ParityExtCsProps }) {
   const theme = parityExtCsTheme();
   const brutal = theme === "brutal-light";
   // AppShell root sets the header height the PanelHeader recipe reads.
-  const shellVars = { ["--shell-header-height" as string]: brutal ? "62px" : "56px" } as ParityExtCsCSSProperties;
+  const shellVars = { ["--shell-header-height" as string]: "56px" } as ParityExtCsCSSProperties;
   const mobile = props.platform === "mobile";
   const width = mobile ? 390 : 1280 - (brutal ? 64 : 56) - 240;
   const channel = useChannelStore((s) => [...s.channels, ...s.dmChannels].find((c) => c.id === props.channel) ?? null);

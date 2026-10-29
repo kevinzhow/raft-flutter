@@ -99,9 +99,9 @@ Future<void> verifyNativeNotificationFlow(
       var i = 0;
       i < 600 &&
           (w.channel?.id != channel.id ||
-              w.highlightedMessageId != message.id ||
-              w.channelLoading ||
-              !w.messages.any((m) => m.id == message.id));
+              w.messageDomain.state.highlightedMessageId != message.id ||
+              w.messageDomain.state.channelLoading ||
+              !w.messageDomain.messages.any((m) => m.id == message.id));
       i++
     ) {
       await tester.pump(const Duration(milliseconds: 100));
@@ -111,8 +111,8 @@ Future<void> verifyNativeNotificationFlow(
       channel.id,
       reason: 'Host must click the actual OS shade notification.',
     );
-    expect(w.highlightedMessageId, message.id);
-    expect(w.messages.any((m) => m.id == message.id), true);
+    expect(w.messageDomain.state.highlightedMessageId, message.id);
+    expect(w.messageDomain.messages.any((m) => m.id == message.id), true);
     await capture('linux-notification-message-navigation');
   } finally {
     if (await marker.exists()) await marker.delete();

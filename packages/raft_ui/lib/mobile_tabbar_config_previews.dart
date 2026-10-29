@@ -126,7 +126,9 @@ class MobileTabbarFiveItems extends StatelessWidget {
       for (final id in const ['chat', 'tasks', 'activity', 'computers'])
         RaftMobileNavItem(
           id: id,
+          // ignore: raft_lints/avoid_render_where_without_or_else -- Preview-only widget with a fixed tab list and ids taken from it.
           label: _tabs.firstWhere((t) => t.id == id).label,
+          // ignore: raft_lints/avoid_render_where_without_or_else -- Preview-only widget with a fixed tab list and ids taken from it.
           glyph: _tabs.firstWhere((t) => t.id == id).glyph,
         ),
       RaftMobileNavItem(
@@ -182,7 +184,7 @@ class MobileSettingsRootPreview extends StatelessWidget {
                       e('administration', 'Administration', RaftGlyph.shield),
                       e('integrations', 'Applications', RaftGlyph.link2),
                       e('mcp', 'MCP Servers', RaftGlyph.blocks),
-                      e('providers', 'AI Providers', RaftGlyph.keyRound),
+                      e('providers', 'Providers', RaftGlyph.keyRound),
                       e('computers', 'Computers', RaftGlyph.monitor),
                     ]),
                     RaftSettingsNavGroup('Resources', [

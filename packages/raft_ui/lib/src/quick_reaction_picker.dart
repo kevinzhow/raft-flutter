@@ -1,3 +1,5 @@
+import 'hover_region.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,11 +24,8 @@ class RaftQuickReactionRecipe extends RaftControlRecipe {
   @override
   Color get background => Colors.transparent;
   @override
-  Color backgroundFor({bool hovered = false}) => !hovered
-      ? background
-      : tokens.brutal
-      ? tokens.colors['color-brutal-pink']!.withValues(alpha: .2)
-      : tokens.accentSoft;
+  Color backgroundFor({bool hovered = false}) =>
+      !hovered ? background : tokens.accentSoft;
   @override
   Color backgroundForInteraction({
     bool hovered = false,
@@ -87,8 +86,9 @@ class _RaftQuickReactionPickerState extends State<RaftQuickReactionPicker> {
   KeyEventResult key(KeyEvent event) {
     if (!mounted ||
         event is! KeyDownEvent ||
-        event.logicalKey != LogicalKeyboardKey.escape)
+        event.logicalKey != LogicalKeyboardKey.escape) {
       return KeyEventResult.ignored;
+    }
     final returnFocus = widget.returnFocusNode;
     widget.onDismiss();
     if (returnFocus?.context != null) returnFocus!.requestFocus();
@@ -110,7 +110,7 @@ class _RaftQuickReactionPickerState extends State<RaftQuickReactionPicker> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final recipe = RaftQuickReactionRecipe(t);
-    return MouseRegion(
+    return RaftHoverRegion(
       onEnter: (_) => widget.onBoundaryEnter?.call(),
       onExit: (_) => widget.onBoundaryLeave?.call(),
       child: surface(

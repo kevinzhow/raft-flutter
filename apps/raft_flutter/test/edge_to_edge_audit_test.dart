@@ -1,10 +1,10 @@
-// Edge-to-edge regression suite (docs/edge-to-edge-audit.md). It renders real
+// Edge-to-edge regression suite (docs/architecture.md, "Android 边到边"). It renders real
 // mobile routes on a simulated Android phone whose system navigation bar is
 // transparent (edge-to-edge), tints the bar region in the PNGs, and asserts:
 //  * no opaque strip under the bar (no colour step at the bar line, uniform
-//    colour in the band; brutal tab roots own a panel-coloured band),
+//    colour in the band),
 //  * scroll lists can scroll their last text clear of the bar (and of the
-//    floating tab capsule on elegant tab roots),
+//    floating tab capsule on tab roots),
 //  * bottom-anchored controls reach the screen bottom,
 //  * keyboard up: composer sits on the keyboard with no double inset padding,
 //    and the home tab bar never follows the keyboard.
@@ -24,6 +24,7 @@ import 'package:raft_flutter/features/incoming_share_picker.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/system_bars.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
 import 'incoming_share_review_test.dart' show PickerClient;
@@ -155,7 +156,9 @@ Future<Map<String, Object?>> shoot(
       Rect.fromLTWH(0, 0, w.toDouble(), 100),
       Paint()..color = const Color(0x3300AA00),
     );
-    final out = await recorder.endRecording().toImage(w, h);
+    final picture = recorder.endRecording();
+    final out = await picture.toImage(w, h);
+    picture.dispose();
     final bytes = await out.toByteData(format: ui.ImageByteFormat.png);
     File('${outDir().path}/$name.png')
         .writeAsBytesSync(bytes!.buffer.asUint8List());
@@ -287,6 +290,13 @@ RootFixture richFixture() {
     'status': 'ok',
     'data': {'kind': 'text', 'text': 'Fixture document'},
   };
+  // Attachment comments are on (flag `attachment_comments_v0`), so the preview
+  // shows its comments bar at the screen bottom.
+  f.overrides['POST /feature-flags/evaluate'] = (_) => {
+    'evaluations': [
+      {'key': 'attachment_comments_v0', 'enabled': true},
+    ],
+  };
   return f;
 }
 
@@ -322,11 +332,11 @@ class Scenario {
   /// screen bottom.
   final bool bottomControl;
 
-  /// Also captured in the dark elegant theme.
+  /// Also captured in the dark theme.
   final bool dark;
 
-  /// The Bottom bar settings preview keeps the same Brutal bottom border as
-  /// the real tab bar. That intentional line is not an opaque system-bar strip.
+  /// The Bottom bar settings preview is a tab bar surface: its nav sits at
+  /// the system bar line.
   final bool tabBarSurface;
 }
 
@@ -374,7 +384,7 @@ Future<void> openForward(WidgetTester t, RootFixture f) async {
   await openChannel(t, f);
   final w = f.workspace(t);
   final ctx = t.element(find.byType(WorkspaceView));
-  final messages = w.messages.take(1).toList();
+  final messages = w.messageDomain.messages.take(1).toList();
   unawaited(showForwardComposerPage(ctx, w, messages));
   await f.flush(t);
   await settle(t);
@@ -595,20 +605,14 @@ Future<void> assertEdgeToEdge(
   Map<String, Object?> m,
 ) async {
   final label = '${s.name} $theme ${s.nav.id}';
-  final brutalRoot = (s.root || s.tabBarSurface) && theme == 'brutal';
-  if (brutalRoot) {
-    // The in-flow brutal tab bar owns the bar band and paints it panel-coloured.
-    expect(m['bandUniform'], isTrue, reason: '$label: band not uniform');
-  } else {
-    expect(
-      m['noStep'],
-      isTrue,
-      reason:
-          '$label: opaque strip: colour above the bar ${m['colourAboveBar']} '
-          'differs from the band ${m['bandColour']}',
-    );
-    expect(m['bandUniform'], isTrue, reason: '$label: band not uniform');
-  }
+  expect(
+    m['noStep'],
+    isTrue,
+    reason:
+        '$label: opaque strip: colour above the bar ${m['colourAboveBar']} '
+        'differs from the band ${m['bandColour']}',
+  );
+  expect(m['bandUniform'], isTrue, reason: '$label: band not uniform');
   if (s.bottomControl) {
     expect(
       bottomControlReachesEdge(t),
@@ -630,7 +634,7 @@ Future<void> assertEdgeToEdge(
   final gap = scrollGap(t);
   if (gap != null && gap < 1) {
     final inset = s.nav.px / _dpr;
-    final floating = s.root && theme != 'brutal';
+    final floating = s.root;
     // Capsule: 8 gap + 52 capsule + 8 + inset = Web's 68 + inset.
     final barTop = _size.height / _dpr - inset - (floating ? 60 : 0);
     final lowest = await lowestTextAfterScrollToEnd(t);
@@ -713,10 +717,17 @@ void main() {
     File('${outDir().path}/metrics.json')
         .writeAsStringSync(const JsonEncoder.withIndent('  ').convert(metrics));
   });
-  for (final theme in const ['brutal', 'elegant-light', 'elegant-dark']) {
-    final dark = theme == 'elegant-dark';
+  // matrix: nightly-full -- the gate runs the 3-button scenarios on the default
+  // theme only (gesture bar scenarios keep every theme); RAFT_TEST_TIER=full
+  // runs them all.
+  const themes = ['light', 'dark'];
+  for (final theme in raftThemeMatrix(themes, full: true)) {
+    final dark = theme == 'dark';
     for (final s in scenarios) {
       if (dark && (!s.dark || s.nav != Nav.gesture)) continue;
+      if (!raftMatrixCell(theme: themes.indexOf(theme), size: s.nav.index)) {
+        continue;
+      }
       testWidgets('${s.name} $theme ${s.nav.id}', (t) async {
         final f = await mountAt(
           t,
@@ -797,9 +808,7 @@ void main() {
       await t.pumpWidget(
         MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: raftTheme(
-            theme == 'brutal' ? RaftFamily.brutal : RaftFamily.elegant,
-          ),
+          theme: raftTheme(),
           home: RaftSystemBars(
             child: IncomingSharePicker(
               client: PickerClient(),
@@ -818,11 +827,27 @@ void main() {
         '25-share-picker-$theme-gesture',
         nav: Nav.gesture,
       );
+      // The destinations page is the Web forward page: no bottom bar.
       await assertEdgeToEdge(
         t,
-        const Scenario('25-share-picker', '', bottomControl: true),
+        const Scenario('25-share-picker', ''),
         theme,
         m,
+      );
+      // Choosing a row opens "Add shared content"; its Continue bar reaches
+      // the screen bottom.
+      await t.tap(find.byKey(const ValueKey('incoming-target-a-c')));
+      await settle(t, 6);
+      final next = await shoot(
+        t,
+        '25-share-picker-continue-$theme-gesture',
+        nav: Nav.gesture,
+      );
+      await assertEdgeToEdge(
+        t,
+        const Scenario('25-share-picker-continue', '', bottomControl: true),
+        theme,
+        next,
       );
       debugDefaultTargetPlatformOverride = null;
     });

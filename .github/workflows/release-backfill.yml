@@ -1,0 +1,204 @@
+name: Backfill an existing platform release
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to append independently
+        type: choice
+        required: true
+        default: macos
+        options: [macos, appimage]
+      release_tag:
+        description: Existing release tag (never moved)
+        type: string
+        required: true
+        default: 'v1.21.23+10'
+      source_commit:
+        description: Full original source commit from the existing release
+        type: string
+        required: true
+        default: '5e7f6f56863e5af2cf6fae174b795880dffa3ca9'
+      build_number:
+        description: Original build number from the existing release
+        type: string
+        required: true
+        default: '87'
+      publish:
+        description: Append verified platform assets to that release after building
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-backfill-${{ inputs.platform }}-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+env:
+  BACKFILL_PLATFORM: ${{ inputs.platform }}
+  BACKFILL_TAG: ${{ inputs.release_tag }}
+  BACKFILL_COMMIT: ${{ inputs.source_commit }}
+  BACKFILL_BUILD_NUMBER: ${{ inputs.build_number }}
+  PYTHONUTF8: '1'
+
+jobs:
+  build:
+    runs-on: ${{ inputs.platform == 'macos' && 'macos-15' || 'ubuntu-24.04' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: workflow
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: source/.fvmrc
+          architecture: ${{ runner.arch }}
+          channel: stable
+          cache: true
+      - name: Initialize the downloaded Flutter SDK
+        shell: bash
+        run: flutter --version --machine
+      - name: Select Ruby for the original macOS package
+        if: inputs.platform == 'macos'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - name: Install the locked original macOS packaging gems
+        if: inputs.platform == 'macos'
+        run: |
+          gem install cocoapods --version 1.16.2 --no-document
+          gem install json --version 2.18.0 --no-document
+          xcodebuild -version
+          command -v codesign
+      - name: Install Ubuntu 24.04 build and AppImage tools
+        if: inputs.platform == 'appimage'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev patchelf poppler-utils zsync libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
+      - name: Build the exact original source and build number
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SPARKLE_ED_PUBLIC_KEY: ${{ vars.SPARKLE_ED_PUBLIC_KEY }}
+          RAFT_FEEDBACK_EXPORT_URL: ${{ vars.RAFT_FEEDBACK_EXPORT_URL }}
+        run: python workflow/tool/release_backfill.py build --source source
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-backfill-${{ inputs.platform }}-${{ inputs.release_tag }}
+          path: source/build/release/*
+          if-no-files-found: error
+          retention-days: 14
+
+  appimage-startup:
+    needs: build
+    if: inputs.platform == 'appimage'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-backfill-${{ inputs.platform }}-${{ inputs.release_tag }}
+          path: source/build/release
+      - name: Install the original AppImage startup dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fuse3 libgtk-3-0t64 libsecret-1-0 libmpv2 poppler-utils libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
+      - name: Restore executable permission on the downloaded AppImage
+        run: chmod +x source/build/release/*.AppImage
+      - name: Run the original production AppImage at 2x display scale
+        working-directory: source
+        run: |
+          artifact=$(find build/release -maxdepth 1 -name '*.AppImage' -print -quit)
+          test -n "$artifact"
+          xvfb-run -a -s '-screen 0 2880x1800x24' dbus-run-session -- python tool/appimage-smoke.py --artifact "$artifact" --output build/appimage-smoke --mode direct
+          xvfb-run -a -s '-screen 0 2880x1800x24' dbus-run-session -- python tool/appimage-smoke.py --artifact "$artifact" --output build/appimage-smoke --mode extract
+      - name: Preserve AppImage startup evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-backfill-appimage-startup-${{ inputs.release_tag }}
+          path: source/build/appimage-smoke/
+          if-no-files-found: warn
+          retention-days: 14
+
+  appimage-compatibility:
+    needs: build
+    if: inputs.platform == 'appimage'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+          path: source
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-backfill-${{ inputs.platform }}-${{ inputs.release_tag }}
+          path: build/release
+      - name: Test the original AppImage on Fedora KDE Wayland without FUSE
+        run: |
+          chmod +x build/release/*.AppImage
+          mkdir -p build/appimage-compatibility
+          docker run --rm --cap-add IPC_LOCK --cap-add SYS_NICE --env GITHUB_ACTIONS=true --volume "$PWD/source:/source:ro" --volume "$PWD/build/release:/artifacts:ro" --volume "$PWD/build/appimage-compatibility:/evidence" fedora:44 bash /source/tool/appimage-fedora-test.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-backfill-appimage-fedora-${{ inputs.release_tag }}
+          path: build/appimage-compatibility/
+          if-no-files-found: warn
+          retention-days: 14
+
+  publish:
+    if: >-
+      ${{ !cancelled() && inputs.publish && needs.build.result == 'success' &&
+          (inputs.platform != 'appimage' || (needs.appimage-startup.result == 'success' &&
+           needs.appimage-compatibility.result == 'success')) }}
+    needs: [build, appimage-startup, appimage-compatibility]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: workflow
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-backfill-${{ inputs.platform }}-${{ inputs.release_tag }}
+          path: source/build/release
+      - name: Append only the selected platform after rechecking the existing release provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: python workflow/tool/release_backfill.py publish --source source

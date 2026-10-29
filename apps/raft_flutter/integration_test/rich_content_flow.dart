@@ -19,7 +19,9 @@ Future<void> verifyRichContent(
   final content =
       'Native rich message $marker\n\n**Markdown** and `code`\n\n```mermaid\n$source\n```';
   await w.send(content);
-  final message = w.messages.singleWhere((m) => m.content == content);
+  final message = w.messageDomain.messages.singleWhere(
+    (m) => m.content == content,
+  );
   await w.jumpToMessage(w.channel!.id, message.id);
   for (
     var i = 0;
@@ -76,10 +78,10 @@ Future<void> verifyRichContent(
           : <String, Object?>{};
     }).toList();
     debugPrint(
-      'Rich render diagnostic: workspaceRows=${w.messages.length} '
-      'workspaceTarget=${w.messages.any((m) => m.id == message.id)} '
-      'loading=${w.channelLoading} window=${w.channelGeneration} '
-      'highlightMatches=${w.highlightedMessageId == message.id} '
+      'Rich render diagnostic: workspaceRows=${w.messageDomain.messages.length} '
+      'workspaceTarget=${w.messageDomain.messages.any((m) => m.id == message.id)} '
+      'loading=${w.messageDomain.state.channelLoading} window=${w.messageDomain.channelGeneration} '
+      'highlightMatches=${w.messageDomain.state.highlightedMessageId == message.id} '
       'errorPresent=${w.error != null} lists=$lists '
       'adapterRows=${chats.map((c) => c.chatController.messages.length).toList()} '
       'adapterTargets=${chats.map((c) => c.chatController.messages.any((m) => m.id == message.id)).toList()} '
@@ -106,13 +108,13 @@ Future<void> verifyRichContent(
     }
   }
 
-  await tapToolbar('Show source');
+  await tapToolbar('Show Source');
   await tester.pump(const Duration(milliseconds: 300));
   expect(
     find.descendant(of: tile, matching: find.text(source)),
     findsOneWidget,
   );
-  await tapToolbar('Copy code');
+  await tapToolbar('Copy Code');
   final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
   expect(clipboard?.text, source);
   expect(
@@ -120,8 +122,8 @@ Future<void> verifyRichContent(
     findsOneWidget,
     reason: 'Copy and highlight expiry must preserve the selected source tab.',
   );
-  await tapToolbar('Show diagram');
-  await tapToolbar('Expand diagram');
+  await tapToolbar('Show Diagram');
+  await tapToolbar('Expand Diagram');
   expect(find.byType(Dialog), findsOneWidget);
   expect(
     find.text('Unable to render this diagram. The source is shown below.'),

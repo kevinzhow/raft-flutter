@@ -12,7 +12,9 @@ import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/desktop_directory_view.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/app_services_fixture.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -135,11 +137,10 @@ class _Client extends RaftClient {
 }
 
 void main() {
-  for (final theme in [
-    (name: 'Brutal', family: RaftFamily.brutal, dark: false),
-    (name: 'Elegant', family: RaftFamily.elegant, dark: false),
-    (name: 'Elegant dark', family: RaftFamily.elegant, dark: true),
-  ]) {
+  for (final theme in raftThemeMatrix([
+    (name: 'Light', dark: false),
+    (name: 'Dark', dark: true),
+  ])) {
     testWidgets(
       '${theme.name} settings retains one conversation and retires hidden authority',
       (t) async {
@@ -153,7 +154,7 @@ void main() {
         final w = WorkspaceController(client)
           ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
           ..channels = client.channelRows;
-        w.ledger.switchServer('s');
+        w.messageDomain.ledger.switchServer('s');
         await w.selectChannel(client.channelRows.single);
         addTearDown(() async {
           w.dispose();
@@ -161,12 +162,14 @@ void main() {
         });
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(theme.family, dark: theme.dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: const RaftAppearance(),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: theme.dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: const RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -282,9 +285,9 @@ void main() {
           ..channels = client.channelRows
           ..channel = client.channelRows.single
           ..section = 'chat'
-          ..channelLoading = true
+          ..messageDomain.state.channelLoading = true
           ..loading = true;
-        w.ledger.switchServer('s');
+        w.messageDomain.ledger.switchServer('s');
         final uri = w.location;
         addTearDown(() async {
           w.dispose();
@@ -292,12 +295,14 @@ void main() {
         });
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(theme.family, dark: theme.dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: const RaftAppearance(),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: theme.dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: const RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -381,9 +386,9 @@ void main() {
           ..channels = client.channelRows
           ..channel = client.channelRows.single
           ..section = 'activity'
-          ..channelLoading = true
+          ..messageDomain.state.channelLoading = true
           ..loading = true;
-        w.ledger.switchServer('s');
+        w.messageDomain.ledger.switchServer('s');
         w.navigation.navigate(
           w.location.withQuery({'open': 'channel:c', 'msg': 'm'}),
           kind: RaftNavigationKind.replace,
@@ -395,12 +400,14 @@ void main() {
         });
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(theme.family, dark: theme.dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: const RaftAppearance(),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: theme.dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: const RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -417,11 +424,11 @@ void main() {
           const Size(1024, 900),
           const Size(1023, 900),
           const Size(768, 900),
-          const Size(767, 900),
           const Size(900, 390),
-          const Size(390, 900),
           const Size(1280, 900),
         ]) {
+          // Below 768 the wide Activity slot becomes the phone conversation
+          // page above the list (foldable_layout_routing_test R2c).
           t.view.physicalSize = size;
           await t.pumpAndSettle();
           expect(w.location, uri, reason: '$size must preserve URI');
@@ -448,7 +455,7 @@ void main() {
           expect(t.takeException(), isNull);
         }
         // A real close action removes only the content slot and retains the master.
-        await t.tap(find.byTooltip('Close detail'));
+        await t.tap(find.byTooltip('Close Detail'));
         await t.pumpAndSettle();
         expect(w.location.content, isNull);
         expect(w.location.route.name, 'activity');
@@ -478,12 +485,14 @@ void main() {
       });
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
-          home: WorkspaceView(
-            controller: w,
-            appearance: const RaftAppearance(),
-            onAppearance: (_) async {},
-            onLogout: () async {},
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: const RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
           ),
         ),
       );
@@ -505,7 +514,7 @@ void main() {
         t.widget<TextField>(find.byType(TextField).first).controller!.text,
         'public',
       );
-      await t.tap(find.byTooltip('Close detail'));
+      await t.tap(find.byTooltip('Close Detail'));
       await t.pumpAndSettle();
       expect(find.byType(RaftChatView), findsNothing);
       expect(w.section, 'search');
@@ -537,12 +546,14 @@ void main() {
       });
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
-          home: WorkspaceView(
-            controller: w,
-            appearance: const RaftAppearance(),
-            onAppearance: (_) async {},
-            onLogout: () async {},
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: const RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
           ),
         ),
       );
@@ -594,12 +605,14 @@ void main() {
       });
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
-          home: WorkspaceView(
-            controller: w,
-            appearance: const RaftAppearance(),
-            onAppearance: (_) async {},
-            onLogout: () async {},
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: const RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
           ),
         ),
       );
@@ -642,17 +655,17 @@ void main() {
         w.dispose();
         await client.stream.close();
       });
-      w.ledger.switchServer('s');
+      w.messageDomain.ledger.switchServer('s');
       final loading = w.selectChannel(client.channelRows.single);
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(body: RaftChatView(controller: w)),
         ),
       );
       await t.pump(const Duration(milliseconds: 600));
       final composer = t.state(find.byType(RaftComposer));
-      expect(find.text('Loading...'), findsOneWidget);
+      expect(find.text('Loading messages…'), findsOneWidget);
       client.pendingMessages!.complete({
         'messages': [
           for (var i = 1; i <= 40; i++)
@@ -666,7 +679,7 @@ void main() {
       });
       await loading;
       expect(w.error, isNull);
-      expect(w.messages.length, 40);
+      expect(w.messageDomain.messages.length, 40);
       for (var i = 0; i < 180; i++) {
         await t.pump(const Duration(milliseconds: 16));
       }
@@ -693,26 +706,26 @@ void main() {
       ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
       ..channel = client.channelRows.single
       ..channels = client.channelRows
-      ..channelLoading = true;
+      ..messageDomain.state.channelLoading = true;
     addTearDown(() async {
       w.dispose();
       await client.stream.close();
     });
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(body: RaftChatView(controller: w)),
       ),
     );
     await t.pumpAndSettle();
     expect(find.byType(RaftComposer), findsOneWidget);
-    expect(find.text('Loading...'), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Loading messages…'), findsOneWidget);
+    expect(find.byType(RaftSpinner), findsNothing);
     final compose = t.state(find.byType(RaftComposer));
-    w.channelLoading = false;
+    w.messageDomain.state.channelLoading = false;
     w.notifyListeners();
     await t.pumpAndSettle();
-    expect(find.text('Loading...'), findsNothing);
+    expect(find.text('Loading messages…'), findsNothing);
     expect(find.byType(RaftComposer), findsOneWidget);
     expect(t.state(find.byType(RaftComposer)), same(compose));
   });

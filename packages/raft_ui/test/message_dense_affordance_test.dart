@@ -1,20 +1,23 @@
+@Tags(['look-elegant'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark mounted touch message controls preserve source flow and disjoint hits',
+      '${dark ? 'dark' : 'light'} legacy Elegant mounted touch message controls preserve source flow and disjoint hits',
       (t) async {
         var first = 0, second = 0, toggles = 0;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: Scaffold(
               body: RaftDensityScope(
                 density: RaftDensity.touch,

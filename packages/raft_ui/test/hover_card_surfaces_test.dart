@@ -4,11 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-Widget surfaceHost(Widget child, {RaftFamily family = RaftFamily.elegant}) =>
-    MaterialApp(
-      theme: raftTheme(family),
-      home: Scaffold(body: Center(child: child)),
-    );
+Widget surfaceHost(Widget child) => MaterialApp(
+  theme: raftTheme(),
+  home: Scaffold(body: Center(child: child)),
+);
 
 Future<TestGesture> hoverAt(WidgetTester tester, Offset at) async {
   final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
@@ -305,23 +304,28 @@ void main() {
 
     Widget chip(RaftRuntimeUsageData value, {VoidCallback? onOpen}) =>
         surfaceHost(
-          // Inline in a wrapping row like Detected Runtimes.
-          Wrap(
-            children: [
-              RaftRuntimeUsageChip(
-                label: 'Claude Code',
-                data: value,
-                onOpen: onOpen ?? () {},
-                onRefresh: () {},
-                chip: RaftRuntimeChip(
+          // A pointer window: the hover card is for a mouse, at any width
+          // (a touch screen opens the sheet instead).
+          RaftInteractionScope(
+            interaction: RaftInteraction.pointerMode,
+            // Inline in a wrapping row like Detected Runtimes.
+            child: Wrap(
+              children: [
+                RaftRuntimeUsageChip(
                   label: 'Claude Code',
-                  detected: true,
-                  trailing: value.known
-                      ? RaftRuntimeUsageStatus(attention: value.attention)
-                      : null,
+                  data: value,
+                  onOpen: onOpen ?? () {},
+                  onRefresh: () {},
+                  chip: RaftRuntimeChip(
+                    label: 'Claude Code',
+                    detected: true,
+                    trailing: value.known
+                        ? RaftRuntimeUsageStatus(attention: value.attention)
+                        : null,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
 
@@ -349,7 +353,7 @@ void main() {
       expect(opens, 1);
       for (final text in [
         'Claude usage',
-        'VERSION 2.1.0',
+        'Version 2.1.0',
         'Max',
         'ada****@example.com',
         'ok',
@@ -444,7 +448,7 @@ void main() {
         .widget<Opacity>(
           find
               .ancestor(
-                of: find.byTooltip('Copy code'),
+                of: find.byTooltip('Copy Code'),
                 matching: find.byType(Opacity),
               )
               .first,
@@ -474,7 +478,7 @@ void main() {
         );
         await tester.pump();
         expect(copyOpacity(tester), .55);
-        await mouse.moveTo(tester.getCenter(find.byTooltip('Copy code')));
+        await mouse.moveTo(tester.getCenter(find.byTooltip('Copy Code')));
         await tester.pump();
         expect(copyOpacity(tester), 1);
         await finish(tester, mouse);
@@ -539,51 +543,56 @@ void main() {
   });
 
   for (final density in RaftDensity.values) {
-    testWidgets('image download reveals on hover / focus ($density)', (
+    testWidgets('image actions stay absent on hover / focus ($density)', (
       tester,
     ) async {
-      double opacity() => tester
-          .widget<Opacity>(find.byKey(const ValueKey('image-actions')))
-          .opacity;
-      await tester.pumpWidget(
-        surfaceHost(
-          RaftDensityScope(
-            density: density,
-            child: RaftAttachmentCard(
-              filename: 'shot.png',
-              mimeType: 'image/png',
-              imageWidth: 320,
-              imageHeight: 200,
-              preview: const ColoredBox(color: Color(0xff336699)),
-              onOpen: () {},
-              onDownload: () {},
+      var opened = 0;
+      TestGesture? mouse;
+      void expectNoActions() {
+        expect(find.byKey(const ValueKey('image-actions')), findsNothing);
+        expect(find.byTooltip('Share shot.png'), findsNothing);
+        expect(find.byTooltip('Download shot.png'), findsNothing);
+      }
+
+      try {
+        await tester.pumpWidget(
+          surfaceHost(
+            RaftDensityScope(
+              density: density,
+              child: RaftAttachmentCard(
+                filename: 'shot.png',
+                mimeType: 'image/png',
+                imageWidth: 320,
+                imageHeight: 200,
+                preview: const ColoredBox(color: Color(0xff336699)),
+                onOpen: () => opened++,
+              ),
             ),
           ),
-        ),
-      );
-      if (density == RaftDensity.touch) {
-        expect(opacity(), 1);
-        return;
-      }
-      expect(opacity(), 0);
-      final mouse = await hoverAt(
-        tester,
-        tester.getCenter(find.byType(RaftAttachmentCard)),
-      );
-      await tester.pump();
-      expect(opacity(), 1);
-      await mouse.moveTo(Offset.zero);
-      await tester.pump();
-      expect(opacity(), 0);
-      await mouse.removePointer();
-      // Keyboard reaches the hidden download and reveals it.
-      for (var i = 0; i < 4 && opacity() == 0; i++) {
+        );
+        expectNoActions();
+        mouse = await hoverAt(
+          tester,
+          tester.getCenter(find.byType(RaftAttachmentCard)),
+        );
+        await tester.pump();
+        expectNoActions();
+        await mouse.moveTo(Offset.zero);
+        await tester.pump();
+        expectNoActions();
+        // Keyboard focus still opens the image, without extra action targets.
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
+        expectNoActions();
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pump();
+        expect(opened, 1);
+        expectNoActions();
+      } finally {
+        await mouse?.removePointer();
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 1));
       }
-      expect(opacity(), 1);
-      await tester.pumpWidget(const SizedBox());
-      await tester.pump(const Duration(seconds: 1));
     });
   }
 }

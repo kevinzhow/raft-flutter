@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/platform/app_services.dart';
+import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/workspace_cache.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/app_root_router.dart';
@@ -13,11 +16,23 @@ import 'package:raft_flutter/features/global_server_selector.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/main.dart';
 import 'package:raft_flutter/platform/content_coordinator.dart';
+import 'package:raft_flutter/platform/background_notifications.dart';
+import 'package:raft_flutter/platform/app_update.dart' show AppUpdateService;
+import 'package:raft_flutter/platform/local_network_access.dart';
 import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show MessageAdapter;
+
+// This fixture routes HTTP in memory; its permission probe uses the same
+// synthetic public network instead of resolving fixture.invalid on the host.
+Future<List<InternetAddress>> _fixtureAddresses(String host) async => [
+  InternetAddress('203.0.113.1'),
+];
+
+const _fixtureNetwork = LocalNetworkAccess(lookup: _fixtureAddresses);
 
 class RootAdapter extends MessageAdapter {
   final statuses = <String, int>{};
@@ -30,11 +45,20 @@ class RootAdapter extends MessageAdapter {
     calls.add(options);
     final key = '${options.method} ${options.path}',
         route = routes['${options.method} ${options.path}'];
+    var body = route == null
+        ? {'error': 'Unexpected endpoint'}
+        : await route(options);
+    // Read after the route ran: a route may set its own status while it runs.
+    final status = route == null ? 404 : statuses[key] ?? 200;
+    // The server answers every rejected credential with its JSON error
+    // (routes/auth.ts respondInvalidOrExpiredToken); only that body makes a
+    // 401 a definitive rejection for the client.
+    if (status == 401 && !(body is Map && body['error'] is String)) {
+      body = {'error': 'Invalid or expired token', 'code': 'auth_required'};
+    }
     return ResponseBody.fromString(
-      jsonEncode(
-        route == null ? {'error': 'Unexpected endpoint'} : await route(options),
-      ),
-      route == null ? 404 : statuses[key] ?? 200,
+      jsonEncode(body),
+      status,
       headers: {
         Headers.contentTypeHeader: ['application/json'],
       },
@@ -140,6 +164,10 @@ class RootCache implements WorkspaceCache {
 }
 
 class RootContent extends NativeContentCoordinator {
+  @override
+  void bindAccount(RaftClient? client) {}
+  @override
+  void retireAccount() => bindWorkspace(null);
   WorkspaceController? bound;
   final bindings = <WorkspaceController?>[];
   @override
@@ -179,9 +207,10 @@ class RootClient extends RaftClient {
   void connect() {}
   void event(String name, dynamic payload) =>
       injectedEvents.add(RaftEvent(name, payload));
+  Future<void>? disposing;
   @override
-  Future<void> dispose() async {
-    if (disposalCount > 0) return;
+  Future<void> dispose() => disposing ??= disposeOnce();
+  Future<void> disposeOnce() async {
     disposalCount++;
     await super.dispose();
     await forwardedEvents.cancel();
@@ -190,13 +219,28 @@ class RootClient extends RaftClient {
 }
 
 class RootFixture {
-  RootFixture({RootCache? cache, this.sharing}) : cache = cache ?? RootCache();
+  RootFixture({
+    RootCache? cache,
+    this.sharing,
+    this.sessionOwner,
+    this.onStartupReady,
+    this.contentOverride,
+    MemorySessionStore? sessionStore,
+  }) : cache = cache ?? RootCache(),
+       sessions = sessionStore ?? MemorySessionStore();
+
+  /// A real coordinator (notification/link handling) instead of [content].
+  final NativeContentCoordinator? contentOverride;
   final NativeSharing? sharing;
+  final NativeSessionOwner? sessionOwner;
+  final VoidCallback? onStartupReady;
   final RootCache cache;
   final engineRoutes = <Map<dynamic, dynamic>>[];
-  final adapter = RootAdapter(),
-      content = RootContent(),
-      sessions = MemorySessionStore();
+
+  /// Replaces the fixture's local-network check (public addresses only).
+  LocalNetworkAccess network = _fixtureNetwork;
+  final MemorySessionStore sessions;
+  final adapter = RootAdapter(), content = RootContent();
   late RootClient client;
   final servers = <Map<String, dynamic>>[
     {'id': 'a', 'name': 'Alpha', 'slug': 'alpha', 'role': 'owner'},
@@ -219,13 +263,18 @@ class RootFixture {
     bool cachedSession = false,
     String principal = 'alice',
     Map<String, Object> preferences = const {},
+    bool settle = true,
+    AppUpdateService? appUpdate,
   }) async {
     SharedPreferences.setMockInitialValues({
       'raft.origin': 'https://fixture.invalid',
-      'raft.mode': theme == 'elegant-dark' ? 'dark' : 'light',
-      'raft.light': theme == 'brutal' ? 'brutal' : 'elegant',
+      'raft.mode': theme == 'dark' ? 'dark' : 'light',
       ...preferences,
     });
+    // RaftApp adopts the preferences into the process-wide DevicePreferences
+    // on restore; left in place they carry this app's rail memory (the last
+    // visited Settings page) into whichever test runs next.
+    addTearDown(DevicePreferences.reset);
     t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.navigation,
       (call) async {
@@ -267,6 +316,12 @@ class RootFixture {
       'email': '$principal@example.invalid',
       'emailVerified': true,
     };
+    // A rejected stored session meets the real refresh answer for a dead
+    // token (routes/auth.ts): 401 with the JSON error.
+    adapter.routes['POST /auth/refresh'] = (_) => {
+      'error': 'Invalid or expired refresh token',
+    };
+    adapter.statuses['POST /auth/refresh'] = 401;
     if (offlineRestore) adapter.statuses['GET /auth/me'] = 503;
     adapter.routes['GET /servers'] = (_) => serverDirectory?.call() ?? servers;
     adapter.routes['GET /channels'] = (o) {
@@ -327,16 +382,21 @@ class RootFixture {
     }
     await t.pumpWidget(
       RaftApp(
+        services: appUpdate == null
+            ? AppServices.updatesDisabledForTestOrPreview(localNetwork: network)
+            : AppServices.withUpdates(appUpdate, localNetwork: network),
         sessionStore: sessions,
         initialLocation: uri ?? Uri(path: '/'),
-        nativeContent: content,
+        nativeContent: contentOverride ?? content,
         nativeSharing: sharing ?? NativeSharing(supported: false),
+        nativeSessionOwner: sessionOwner,
+        onStartupReady: onStartupReady,
         openWorkspaceCache: () async => cache,
         createClient: (origin, store, kind) =>
             client = RootClient(origin, store, kind, adapter),
       ),
     );
-    await flush(t);
+    if (settle) await flush(t);
   }
 
   /// The root surface painted by each [flush] frame, in order.
@@ -388,7 +448,7 @@ class RootFixture {
 }
 
 void main() {
-  for (final theme in ['brutal', 'elegant-light', 'elegant-dark']) {
+  for (final theme in raftThemeMatrix(['light', 'dark'])) {
     for (final width in [390.0, 1280.0]) {
       testWidgets(
         'actual RaftApp $theme/$width root selection, URI, return and draft',
@@ -527,7 +587,13 @@ void main() {
         await f.pushUri(t, '/s/unauthorized/settings/account');
         await f.flush(t);
         expect(find.byType(WorkspaceView), findsNothing);
-        expect(f.router(t).currentConfiguration.toString(), '/');
+        // Web ServerResolver: a slug the account does not have shows
+        // "Server not found" at the same URL, then redirects.
+        expect(find.byType(RaftServerAccessDeniedPage), findsOneWidget);
+        expect(
+          f.router(t).currentConfiguration.toString(),
+          '/s/unauthorized/settings/account',
+        );
         expect(w.server!.id, 'b');
         await f.close(t);
       },
@@ -762,7 +828,7 @@ void main() {
         expect(find.byType(WorkspaceView), findsNothing);
         held.complete([]);
         await f.flush(t);
-        expect(find.text('CREATE YOUR FIRST SERVER'), findsOneWidget);
+        expect(find.text('Create your first server'), findsOneWidget);
         expect(
           find.byKey(const ValueKey('global-server-name')),
           findsOneWidget,
@@ -862,7 +928,7 @@ void main() {
     'actual RaftApp creation denial does not open a fabricated workspace',
     (t) async {
       final f = RootFixture();
-      await f.mount(t, 'elegant-light', 390);
+      await f.mount(t, 'light', 390);
       // Deliver the actual 403 body through RaftClient's HTTP error path.
       final held = Completer<dynamic>();
       f.adapter.routes['POST /servers'] = (_) => held.future;
@@ -890,9 +956,9 @@ void main() {
       final f = RootFixture();
       f.serverDirectory = () => {'error': 'Directory unavailable'};
       f.adapter.statuses['GET /servers'] = 503;
-      await f.mount(t, 'elegant-light', 390);
+      await f.mount(t, 'light', 390);
       expect(find.textContaining('Directory unavailable'), findsOneWidget);
-      expect(find.text('CREATE YOUR FIRST SERVER'), findsNothing);
+      expect(find.text('Create your first server'), findsNothing);
       expect(find.byKey(const ValueKey('global-server-name')), findsNothing);
       expect(f.adapter.calls.where((c) => c.path == '/channels'), isEmpty);
       f.serverDirectory = null;

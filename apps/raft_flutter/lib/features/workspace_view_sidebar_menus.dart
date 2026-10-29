@@ -15,21 +15,10 @@ extension _SidebarContextMenus on _WorkspaceViewState {
       if (e is Map) Map<String, dynamic>.from(e),
   ];
 
-  Future<void> _patchOrder(Map<String, dynamic> data) async {
-    final scope = mobileAuthority;
-    if (w.server == null) return;
-    try {
-      await w.command(
-        'PATCH',
-        '/servers/${w.server!.id}/sidebar-order',
-        data: data,
-      );
-      if (!mounted || scope != mobileAuthority) return;
-      await w.loadSidebar();
-    } catch (error) {
-      if (mounted && scope == mobileAuthority) w.setError('$error');
-    }
-  }
+  /// Source `updateSidebarOrder`: the row moves at once, the PATCH follows
+  /// (with the `sectionsVersion` section writes need), a failure rolls back.
+  Future<void> _patchOrder(Map<String, dynamic> data) =>
+      w.updateSidebarOrder(data);
 
   bool _samePlacement(Map<String, dynamic> p, String kind, String id) =>
       p['kind'] == kind && p['id'] == id;
@@ -42,13 +31,17 @@ extension _SidebarContextMenus on _WorkspaceViewState {
       if (!_samePlacement(p, kind, id)) p,
   ];
 
+  /// Sidebar.tsx `togglePinnedRef`: Pin appends the ref and drops the item's
+  /// custom-section placements; `sectionPlacements` is only sent when one was
+  /// dropped (a section write needs the sections version, a pin does not).
   Future<void> _togglePinned(
     String kind,
     String id, [
     List<(String, String)> removePlacements = const [],
   ]) {
     final pinned = _isPinned(kind, id);
-    var placements = _maps(_order['sectionPlacements']);
+    final before = _maps(_order['sectionPlacements']);
+    var placements = before;
     if (!pinned) {
       for (final (k, i) in removePlacements) {
         placements = [
@@ -67,7 +60,8 @@ extension _SidebarContextMenus on _WorkspaceViewState {
               ..._maps(_order['pinned']),
               {'kind': kind, 'id': id},
             ],
-      if (!pinned) 'sectionPlacements': placements,
+      if (!pinned && placements.length != before.length)
+        'sectionPlacements': placements,
     });
   }
 
@@ -198,9 +192,9 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     anchor: at,
     builder: (menuContext) {
       void close() => Navigator.of(menuContext).pop();
-      return RaftSidebarContextMenu(
+      return RaftSidebarContextMenu.sidebar(
         entries: entries(close),
-        width: width,
+        legacyWidth: width,
         label: label,
         submenuEntries: submenu?.call(close),
         onDismiss: close,
@@ -226,66 +220,100 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     },
   );
 
-  Future<void> _toggleRead(String id) async {
-    final unread = (w.unread[id] ?? 0) > 0;
-    try {
-      await w.command(
-        'POST',
-        '/channels/$id/${unread ? 'read-all' : 'unread'}',
-      );
-      if (!mounted) return;
-      await w.refreshUnread();
-    } catch (error) {
-      if (mounted) w.setError('$error');
-    }
-  }
-
+  /// Sidebar.tsx `toggleChannelActivityMute`: optimistic, PATCH, adopt the
+  /// reply; a failure restores the row (when still untouched) and toasts.
   Future<void> _toggleMute(RaftChannel c) async {
+    if (!_canMute(c)) return;
+    final previous = {
+      'activityMuted': c.flag('activityMuted'),
+      'muteFromSeq': c.json['muteFromSeq'],
+      'prefsVersion': c.json['prefsVersion'],
+    };
+    final next = !(previous['activityMuted'] as bool);
+    final optimistic = {...previous, 'activityMuted': next};
+    w.setActivityMuteState(c.id, optimistic);
     try {
-      await w.command(
+      final reply = await w.command(
         'PATCH',
         '/channels/${c.id}/notification-settings',
-        data: {'activityMuted': !c.flag('activityMuted')},
+        data: {'activityMuted': next},
       );
-      if (mounted) await w.refreshChannels();
-    } catch (error) {
-      if (mounted) w.setError('$error');
+      if (!mounted || reply is! Map) return;
+      w.setActivityMuteState(c.id, {
+        'activityMuted': reply['activityMuted'] == true,
+        'muteFromSeq': reply['muteFromSeq'],
+        'prefsVersion': reply['prefsVersion'],
+      });
+    } catch (_) {
+      final held = w.channelById(c.id);
+      if (held != null &&
+          held.flag('activityMuted') == next &&
+          held.json['prefsVersion'] == previous['prefsVersion']) {
+        w.setActivityMuteState(c.id, previous);
+        if (mounted) {
+          rowToast.show(
+            tr(
+              next
+                  ? 'Failed to mute Activity for this channel.'
+                  : 'Failed to unmute Activity for this channel.',
+            ),
+          );
+        }
+      }
     }
   }
 
+  /// Source `canToggleActivityMute`: channel / private / joint rows the user
+  /// has joined (never DMs or threads).
+  bool _canMute(RaftChannel c) =>
+      c.joined && const {'channel', 'private', 'joint'}.contains(c.type);
+
+  /// Sidebar.tsx `closeDm`: hides the DM (server-synced) and leaves it when
+  /// it is the open conversation.
   Future<void> _closeDm(String id) async {
     final hidden = [
       for (final e in (_order['hiddenDmIds'] as List? ?? const [])) '$e',
     ];
     if (hidden.contains(id)) return;
-    await _patchOrder({
+    final open = w.section == 'chat' && w.channel?.id == id;
+    final update = _patchOrder({
       'hiddenDmIds': [...hidden, id],
     });
+    if (open) {
+      // Sidebar.tsx closeDm `navigate('/s/<slug>')`: wide layouts close the
+      // detail pane, a phone returns to the Home list.
+      if (wide) {
+        dismissPanel();
+      } else {
+        select('home');
+      }
+    }
+    await update;
   }
 
-  Future<void> _confirmArchive(RaftChannel c) async {
-    final ok = await RaftConfirmDialog.show(
-      context,
-      RaftConfirmDialog(
-        surfaceKey: const ValueKey('shell-dialog'),
-        title: tr('Archive Channel'),
-        message: raftFormat(
-          context,
-          'Archive "{name}"? Members keep read access and history, but writes will be frozen and the channel will be hidden from sidebars. You can unarchive it later.',
-          {'name': c.name},
-        ),
-        confirmLabel: tr('Archive Channel'),
-        confirmVariant: RaftButtonRecipeVariant.warning,
+  /// Sidebar.tsx archive ConfirmDialog: stays open on "Archiving…", closes
+  /// when the archive succeeded and shows the error under the message when
+  /// it failed.
+  Future<void> _confirmArchive(RaftChannel c) => RaftConfirmDialog.show(
+    context,
+    RaftConfirmDialog(
+      surfaceKey: const ValueKey('shell-dialog'),
+      title: tr('Archive Channel'),
+      message: raftFormat(
+        context,
+        'Archive "{name}"? Members keep read access and history, but writes will be frozen and the channel will be hidden from sidebars. You can unarchive it later.',
+        {'name': c.name},
       ),
-    );
-    if (ok != true || !mounted) return;
-    try {
-      await w.command('POST', '/channels/${c.id}/archive');
-      if (mounted) await w.refreshChannels();
-    } catch (error) {
-      if (mounted) w.setError('$error');
-    }
-  }
+      confirmLabel: tr('Archive Channel'),
+      cancelLabel: tr('Keep Channel'),
+      loadingLabel: tr('Archiving…'),
+      confirmVariant: RaftButtonRecipeVariant.warning,
+      onConfirm: () async {
+        await w.command('POST', '/channels/${c.id}/archive');
+        if (mounted) await w.refreshChannels();
+      },
+    ),
+  );
 
   Future<void> _showSectionDialog({
     Map<String, dynamic>? edit,
@@ -293,8 +321,8 @@ extension _SidebarContextMenus on _WorkspaceViewState {
   }) => showRaftSidebarSectionDialog(
     context,
     cardKey: const ValueKey('sidebar-section-dialog'),
-    title: edit == null ? 'New section' : 'Edit section',
-    submitLabel: edit == null ? 'Create section' : 'Save',
+    title: edit == null ? 'New Section' : 'Edit Section',
+    submitLabel: edit == null ? 'Create Section' : 'Save',
     initialName: '${edit?['name'] ?? ''}',
     initialEmoji: '${edit?['emoji'] ?? ''}',
     onSubmit: (name, emoji) {
@@ -320,13 +348,14 @@ extension _SidebarContextMenus on _WorkspaceViewState {
       context,
       RaftConfirmDialog(
         surfaceKey: const ValueKey('shell-dialog'),
-        title: tr('Delete section'),
+        title: tr('Delete Section'),
         message: raftFormat(
           context,
           'Delete "{name}"? Its conversations will return to their default sections.',
           {'name': '${section['name']}'},
         ),
-        confirmLabel: tr('Delete section'),
+        confirmLabel: tr('Delete Section'),
+        cancelLabel: tr('Keep Section'),
       ),
     );
     if (ok != true || !mounted) return;
@@ -382,7 +411,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         ),
       const RaftSidebarMenuDivider(),
       RaftSidebarMenuItem(
-        label: tr('New section…'),
+        label: tr('New Section…'),
         glyph: RaftGlyph.folderPlus,
         onPressed: () {
           close();
@@ -391,7 +420,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
       ),
       if (placement != null)
         RaftSidebarMenuItem(
-          label: tr('Remove from section'),
+          label: tr('Remove from Section'),
           glyph: RaftGlyph.x,
           onPressed: () {
             close();
@@ -405,25 +434,29 @@ extension _SidebarContextMenus on _WorkspaceViewState {
 
   RaftSidebarMenuItem _moveItem() => RaftSidebarMenuItem(
     itemKey: const ValueKey('sidebar-menu-move-to-section'),
-    label: tr('Move to section'),
+    label: tr('Move to Section'),
     glyph: RaftGlyph.folderInput,
     submenu: true,
   );
 
-  RaftSidebarMenuItem _readItem(String? dmOrChannelId, VoidCallback close) =>
-      _item(
-        (w.unread[dmOrChannelId] ?? 0) > 0 ? 'Mark as Read' : 'Mark as Unread',
-        (w.unread[dmOrChannelId] ?? 0) > 0
-            ? RaftGlyph.messageSquareCheck
-            : RaftGlyph.messageSquareDot,
-        close,
-        () => _toggleRead(dmOrChannelId!),
-      );
+  RaftSidebarMenuItem _readItem(
+    String? dmOrChannelId,
+    VoidCallback close, {
+    bool channel = false,
+  }) {
+    final toggle = SidebarReadToggle(w, '$dmOrChannelId', channel: channel);
+    return _item(
+      toggle.label,
+      toggle.unread ? RaftGlyph.messageSquareCheck : RaftGlyph.messageSquareDot,
+      close,
+      toggle.run,
+    );
+  }
 
   Future<void> openChannelMenu(Offset at, RaftChannel c) {
     if (c.type == 'dm') return openDmMenu(at, c);
     final pinned = _isPinned('channel', c.id);
-    final canMute = c.joined && c.type != 'thread';
+    final canMute = _canMute(c);
     final canArchive =
         w.can('archiveChannels', resource: c) &&
         c.name != 'all' &&
@@ -434,7 +467,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
       (close) => [
         _moveItem(),
         const RaftSidebarMenuDivider(),
-        _readItem(c.id, close),
+        _readItem(c.id, close, channel: c.joined),
         _item(
           pinned ? 'Unpin' : 'Pin',
           pinned ? RaftGlyph.pinOff : RaftGlyph.pin,
@@ -451,7 +484,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         if (canArchive) ...[
           const RaftSidebarMenuDivider(),
           _item(
-            'Archive',
+            'Archive Channel',
             RaftGlyph.archive,
             close,
             () => _confirmArchive(c),
@@ -498,6 +531,15 @@ extension _SidebarContextMenus on _WorkspaceViewState {
   ) {
     final id = '${agent['id']}';
     final pinned = _isPinned('agent', id);
+    // Sidebar.tsx `contextMovableItem` (agent): the agent itself while it is
+    // pinned or placed as an agent, else its DM channel.
+    final movable =
+        pinned ||
+            _maps(_order['sectionPlacements'])
+                .any((p) => _samePlacement(p, 'agent', id)) ||
+            dm == null
+        ? ('agent', id)
+        : ('channel', dm.id);
     return _openSidebarMenu(
       at,
       (close) => [
@@ -518,7 +560,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
           _item('Close Chat', RaftGlyph.x, close, () => _closeDm(dm.id)),
         ],
       ],
-      submenu: _moveSubmenu('agent', id),
+      submenu: _moveSubmenu(movable.$1, movable.$2),
       row: 'a:$id',
     );
   }
@@ -555,7 +597,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
             'Create Joint Channel',
             RaftGlyph.gitBranch,
             close,
-            () => select('joint-channels'),
+            createJointChannel,
           ),
           const RaftSidebarMenuDivider(),
         ],
@@ -588,15 +630,18 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         RaftSidebarMenuHeading(tr('Display')),
         if (group.id == 'system:channels')
           RaftSidebarMenuItem(
-            label: tr('Show joined channels only'),
-            checked: joinedChannelsOnly,
+            label: tr('Show Joined Channels Only'),
+            checked: sidebarDisclosure.joinedChannelsOnly,
             onPressed: () {
               close();
-              toggleJoinedChannelsOnly();
+              sidebarDisclosure.setJoinedChannelsOnly(
+                mobileAuthority,
+                !sidebarDisclosure.joinedChannelsOnly,
+              );
             },
           ),
         RaftSidebarMenuItem(
-          label: tr('Hide empty sections'),
+          label: tr('Hide Empty Sections'),
           checked: presentation.value.hideEmptySections,
           onPressed: () {
             close();
@@ -610,7 +655,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         if (custom != null)
           RaftSidebarMenuItem(
             itemKey: const ValueKey('sidebar-menu-rename-section'),
-            label: tr('Rename / change icon…'),
+            label: tr('Edit section…'),
             glyph: RaftGlyph.pencil,
             onPressed: () {
               close();
@@ -619,7 +664,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
           ),
         RaftSidebarMenuItem(
           itemKey: const ValueKey('sidebar-menu-new-section'),
-          label: tr('New section…'),
+          label: tr('New Section…'),
           glyph: RaftGlyph.folderPlus,
           onPressed: () {
             close();
@@ -630,7 +675,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
           const RaftSidebarMenuDivider(),
           RaftSidebarMenuItem(
             itemKey: const ValueKey('sidebar-menu-delete-section'),
-            label: tr('Delete section'),
+            label: tr('Delete Section'),
             glyph: RaftGlyph.trash2,
             onPressed: () {
               close();
@@ -640,7 +685,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         ],
       ],
       width: 256,
-      label: 'Section options',
+      label: 'Section Options',
     );
   }
 
@@ -654,13 +699,13 @@ extension _SidebarContextMenus on _WorkspaceViewState {
           'Create Joint Channel',
           RaftGlyph.gitBranch,
           close,
-          () => select('joint-channels'),
+          createJointChannel,
         ),
       if (w.can('editServerSettings') || w.can('federateChannels'))
         const RaftSidebarMenuDivider(),
       RaftSidebarMenuItem(
         itemKey: const ValueKey('sidebar-menu-new-section'),
-        label: tr('New section…'),
+        label: tr('New Section…'),
         glyph: RaftGlyph.folderPlus,
         onPressed: () {
           close();
@@ -669,6 +714,6 @@ extension _SidebarContextMenus on _WorkspaceViewState {
       ),
     ],
     width: 256,
-    label: 'Sidebar options',
+    label: 'Sidebar Options',
   );
 }

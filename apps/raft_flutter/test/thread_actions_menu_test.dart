@@ -33,14 +33,14 @@ void main() {
         });
         final w = _Workspace(client)
           ..server = RaftRecord({'id': 's', 'role': 'owner'})
-          ..threadParent = parent;
+          ..messageDomain.state.threadParent = parent;
         addTearDown(() async {
           w.dispose();
           await client.dispose();
         });
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(RaftFamily.elegant),
+            theme: raftTheme(),
             home: Scaffold(
               body: ThreadActions(
                 controller: w,

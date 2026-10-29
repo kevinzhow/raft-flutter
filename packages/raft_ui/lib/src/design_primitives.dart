@@ -1,7 +1,17 @@
+import 'hover_region.dart';
+import 'focus_visible.dart';
+import 'interaction.dart';
+import 'raft_underline.dart';
 import 'anchored_popup.dart';
+import 'dismiss_scope.dart';
 import 'tooltip.dart';
-import 'search_result_surface.dart';
-import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
+import 'tap_slop.dart';
+import 'small_icon_recipe.dart';
+import 'menu_action_row.dart';
+import 'menu_focus_reveal.dart';
+import 'popover_surface.dart';
+import 'text_scaling.dart' show RaftChrome, RaftScaled;
+import 'large_content_viewer.dart';
 
 import 'dart:math' as math;
 import 'dart:async';
@@ -19,9 +29,18 @@ import 'localization.dart';
 import 'theme.dart';
 import 'primitive_tokens.dart';
 import 'tokens/tokens.dart';
+import 'control_typography.dart';
 import 'recipe_surface.dart';
+import 'raft/css_box.dart';
+import 'raft/ui_tokens.dart';
+import 'raft/button.dart';
 import 'recipes/recipe_runtime.dart';
-import 'recipes/segmented_control.g.dart';
+import 'raft/pixel_spinner.dart';
+import 'recipes/spinner.g.dart' show RaftSpinnerRecipeSize;
+import 'recipes/popover.g.dart';
+import 'recipes/dropdown_menu.g.dart';
+import 'recipes/web_selection_panel.g.dart';
+import 'recipes/web_selection_row.g.dart';
 
 enum RaftDensity { desktop, touch }
 
@@ -34,13 +53,9 @@ class RaftDensityScope extends InheritedWidget {
   });
   final RaftDensity density;
   static RaftDensity of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<RaftDensityScope>()?.density ??
-      switch (Theme.of(context).platform) {
-        TargetPlatform.android ||
-        TargetPlatform.iOS ||
-        TargetPlatform.fuchsia => RaftDensity.touch,
-        _ => RaftDensity.desktop,
-      };
+      RaftInteraction.of(context).touch
+      ? RaftDensity.touch
+      : RaftDensity.desktop;
   @override
   bool updateShouldNotify(RaftDensityScope oldWidget) =>
       density != oldWidget.density;
@@ -63,7 +78,7 @@ class RaftControlBounds {
   double get visualBoundsHeight => visualHeight;
 }
 
-/// Shared recipe geometry from raft-ui 0.5.27 and pinned Web product overrides.
+/// Shared recipe geometry from raft-ui 0.5.52 and pinned Web product overrides.
 /// Visual dimensions are independent of the native accessible touch rectangle.
 abstract final class RaftMetrics {
   static const double touchTarget = 48;
@@ -91,14 +106,18 @@ abstract final class RaftLayoutMetrics {
   static double shellHeaderHeight(RaftTokens t, double viewportHeight) =>
       viewportHeight <= 600
       ? RaftMetrics.compactPanelHeader
-      : t.brutal
-      ? RaftMetrics.brutalPanelHeader
-      : RaftMetrics.panelHeader;
-  static double railWidth(RaftTokens t, double viewportHeight) => t.brutal
-      ? viewportHeight <= 600
-            ? 50
-            : 64
-      : 56;
+      : t.size('size.panelHeader', fallback: RaftMetrics.panelHeader);
+
+  /// `size.rail`, or `size.railShort` on short viewports (a57b9dab: Brutal
+  /// 64/50, others 56). The 600px threshold is form, not a theme value.
+  static double railWidth(RaftTokens t, double viewportHeight) {
+    final rail = t.size('size.rail', fallback: 56);
+    if (viewportHeight <= 600) {
+      return t.size('size.railShort', fallback: rail);
+    }
+    return rail;
+  }
+
   static const double desktopBreakpoint = 768, threadOverlayBreakpoint = 1024;
   // index.css900–940: actual thread-layout container + portrait xl rule.
   static const threadSplitContainerWidth = 680.0;
@@ -129,18 +148,18 @@ class RaftSidebarRecipe {
   final bool workspaceEnabled;
   bool get desktop => viewportWidth >= RaftLayoutMetrics.desktopBreakpoint;
   bool get product => variant == RaftSidebarVariant.mountedProduct;
-  bool get headerOverlaysContent => !product && !tokens.brutal;
-  // SidebarBody3151–3204 and mounted Sidebar3754 use the muted canvas;
-  // the Brutal mobile product explicitly replaces its cream with white.
-  Color get bodyBackground => tokens.brutal
-      ? desktop
-            ? tokens.colors['brutal-cream']!
-            : tokens.panel
-      : tokens.sidebar;
+  bool get headerOverlaysContent => !product;
+  // Mobile-inline Sidebar uses its own surface option; the desktop sidebar
+  // keeps its dedicated role. Other legacy muted surfaces stay unchanged.
+  Color get bodyBackground =>
+      !desktop &&
+          tokens.option('sidebar.mobileSurface', or: 'sidebar') == 'canvas'
+      ? tokens.canvas
+      : tokens.colors['layer-sidebar'] ?? tokens.sidebar;
   double get headerHeight => product && desktop && workspaceEnabled
       ? RaftMetrics.compactPanelHeader
       : RaftLayoutMetrics.shellHeaderHeight(tokens, viewportHeight);
-  EdgeInsetsDirectional get headerInset => product || tokens.brutal
+  EdgeInsetsDirectional get headerInset => product
       ? EdgeInsetsDirectional.symmetric(
           horizontal: desktop && !workspaceEnabled ? 20 : 16,
         )
@@ -150,32 +169,43 @@ class RaftSidebarRecipe {
         );
   EdgeInsetsDirectional contentInset({
     bool headerInFlow = false,
-    bool liveActivity = false,
     double bottomInset = 0,
+
+    /// False when the phone's navigation is the side rail: nothing floats at
+    /// the bottom, so the list reserves no capsule clearance.
+    bool bottomBar = true,
   }) => EdgeInsetsDirectional.only(
-    start: product || tokens.brutal
+    start: product
         ? 8
         : desktop
         ? 26
         : 28,
-    end: product || tokens.brutal
+    end: product
         ? 8
         : desktop
         ? 18
         : 28,
-    top: product || tokens.brutal
-        ? 12
+    top: product
+        ? tokens.size(
+            headerInFlow
+                ? 'space.sidebarContentTop'
+                : 'space.sidebarContentTopWithoutHeader',
+            fallback: tokens.size('space.sidebarContentTop', fallback: 12),
+          )
         : headerInFlow
         ? 0
         : headerHeight,
     bottom: product
-        ? !desktop && !tokens.brutal
-              ? (liveActivity ? 116 : 68) + bottomInset
-              : 12
-        : liveActivity && desktop
-        ? tokens.brutal
-              ? 52
-              : 68
+        ? !desktop
+              ? tokens.size('space.sidebarContentBottom', fallback: 12) +
+                    (bottomBar
+                        ? tokens.size(
+                            'space.sidebarBottomClearance',
+                            fallback: 56,
+                          )
+                        : 0) +
+                    bottomInset
+              : tokens.size('space.sidebarContentBottom', fallback: 12)
         : 12,
   );
 }
@@ -196,33 +226,25 @@ class RaftPanelHeaderRecipe {
   final bool mobile;
   double get height =>
       RaftLayoutMetrics.shellHeaderHeight(tokens, viewportHeight);
-  Color get background =>
-      mobile && tokens.brutal && variant == RaftPanelHeaderVariant.tasks
-      ? tokens.colors['color-soft-signal']!
-      : variant == RaftPanelHeaderVariant.tasks || tokens.brutal
+  Color get background => variant == RaftPanelHeaderVariant.tasks
       ? tokens.panel
       : tokens.colors['layer-canvas-muted']!;
-  Color get iconBackground =>
-      tokens.brutal ? tokens.primaryFill : tokens.colors['primary-soft']!;
+  Color get iconBackground => tokens.colors['primary-soft']!;
   Color get foreground => tokens.strong;
-  BorderSide get border =>
-      !tokens.brutal && variant == RaftPanelHeaderVariant.canonical
+  BorderSide get border => variant == RaftPanelHeaderVariant.canonical
       ? BorderSide.none
       // Brutal PanelHeader `border-b-2 border-black`: pure black, not ink.
-      : BorderSide(
-          color: tokens.brutal ? Colors.black : tokens.line,
-          width: tokens.border,
-        );
-  BorderRadius get iconRadius => BorderRadius.circular(tokens.brutal ? 0 : 6);
+      : BorderSide(color: tokens.line, width: tokens.border);
+  BorderRadius get iconRadius => BorderRadius.circular(6);
   EdgeInsets get inset =>
       const EdgeInsets.symmetric(horizontal: RaftLayoutMetrics.panelInset);
   TextStyle get title => variant == RaftPanelHeaderVariant.tasks
       ? RaftTypography.heading(tokens, size: 16, line: 20)
       : RaftTypography.heading(
           tokens,
-          size: tokens.brutal ? 18 : 17,
-          line: tokens.brutal ? 22.5 : 21.25,
-          weight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
+          size: 17,
+          line: 21.25,
+          weight: FontWeight.w500,
         );
   TextStyle get subtitle => RaftTypography.mono(tokens);
 }
@@ -233,29 +255,44 @@ class RaftRailRecipe {
   final RaftTokens tokens;
   final double viewportHeight;
   double get width => RaftLayoutMetrics.railWidth(tokens, viewportHeight);
-  double get glyphSize => tokens.brutal ? 18 : 16;
-  double get itemSize => tokens.brutal && viewportHeight <= 600
-      ? RaftMetrics.railItemCompact
-      : RaftMetrics.railItem;
+  double get glyphSize => tokens.size('size.railGlyph', fallback: 16);
+  double get itemSize => tokens.size(
+    viewportHeight <= 600 ? 'size.railItemCompact' : 'size.railItem',
+    fallback: RaftMetrics.railItem,
+  );
   // AppRailRoot's bg-primary resolves the primary-400 ramp; primaryFill is
   // the separate product Button alias and differs by one blue channel.
   Color get background =>
-      tokens.brutal ? tokens.colors['primary-400']! : tokens.sidebar;
-  Color get selectedBackground => tokens.brutal
-      ? tokens.panel
-      : tokens.dark
-      ? tokens.card
-      : tokens.colors['fill-strong']!;
-  Color get identityBackground =>
-      tokens.brutal ? tokens.colors['brutal-cream']! : tokens.panel;
-  Color get foreground => tokens.strong;
-  BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 6);
-  BorderRadius get avatarRadius => BorderRadius.circular(tokens.brutal ? 0 : 8);
+      tokens.colors['layer-workspace-rail'] ?? tokens.sidebar;
+  Color get selectedBackground =>
+      tokens.colors['layer-workspace-rail-selected'] ?? tokens.card;
+  Color get identityBackground => tokens.panel;
+  Color get foreground =>
+      tokens.colors['foreground-workspace-rail'] ?? tokens.muted;
+  Color get selectedForeground =>
+      tokens.colors['foreground-workspace-rail-selected'] ?? foreground;
+  BorderRadius get radius =>
+      BorderRadius.circular(tokens.size('radius.railItem', fallback: 6));
+  BorderRadius get avatarRadius => BorderRadius.circular(8);
   // AppRailRoot `theme-brutal:border-r-2 border-black`: pure black, not the ink line token.
   BorderSide get border => BorderSide(
-    color: tokens.brutal ? Colors.black : tokens.line,
-    width: tokens.border,
+    color: tokens.colors['line-workspace-rail'] ?? tokens.line,
+    width: tokens.size('stroke.rail', fallback: 0),
   );
+
+  List<BoxShadow> selectedShadows({bool action = false}) =>
+      _shadows(action ? 'shadow.railActionSelected' : 'shadow.railSelected');
+  List<BoxShadow> get focusShadows => _shadows('shadow.railFocus');
+  List<BoxShadow> _shadows(String role) => [
+    for (final layer in tokens.shadowLayers(role).reversed)
+      if (!layer.inset)
+        BoxShadow(
+          color: layer.color,
+          offset: layer.offset,
+          blurRadius: raftCssBlurRadius(layer.blur),
+          spreadRadius: layer.spread,
+        ),
+  ];
 }
 
 @immutable
@@ -277,9 +314,7 @@ class RaftAttachmentRecipe {
       const Size(RaftMetrics.attachmentWidth, RaftMetrics.attachmentHeight);
   Color get background => tokens.panel;
   BorderSide border({bool hovered = false, bool focused = false}) => BorderSide(
-    color: tokens.brutal
-        ? Colors.black.withValues(alpha: hovered || focused ? .3 : .15)
-        : tokens.colors[hovered || focused ? 'line-muted' : 'line-hairline']!,
+    color: tokens.colors[hovered || focused ? 'line-muted' : 'line-hairline']!,
   );
   BorderRadius get radius => RaftShapes.attachment(tokens);
   TextStyle get title =>
@@ -319,10 +354,8 @@ abstract final class RaftTypography {
     FontWeight weight = FontWeight.w700,
     Color? color,
   }) => TextStyle(
+    locale: t.textLocale,
     fontFamily: t.headingFont,
-    fontVariations: t.brutal || t.systemFonts
-        ? null
-        : [FontVariation('opsz', size.clamp(14.0, 32.0).toDouble())],
     fontFamilyFallback: t.fontFallback,
     fontSize: size,
     height: line / size,
@@ -382,6 +415,7 @@ abstract final class RaftTypography {
     FontWeight weight = FontWeight.w400,
     Color? color,
   }) => TextStyle(
+    locale: t.textLocale,
     fontFamily: t.bodyFont,
     fontFamilyFallback: t.fontFallback,
     fontSize: size,
@@ -413,6 +447,7 @@ abstract final class RaftTypography {
     double line = 16,
     Color? color,
   }) => TextStyle(
+    locale: t.textLocale,
     fontFamily: t.monoFont,
     fontSize: size,
     height: line / size,
@@ -429,18 +464,11 @@ abstract final class RaftTypography {
 
 abstract final class RaftShapes {
   static BorderRadius control(RaftTokens t, double visualHeight) =>
-      BorderRadius.circular(
-        t.brutal
-            ? 0
-            : visualHeight < 32
-            ? 4
-            : 6,
-      );
+      BorderRadius.circular(visualHeight < 32 ? 4 : 6);
   static BorderRadius field(RaftTokens t) =>
       BorderRadius.circular(t.fieldRadius);
   static BorderRadius panel(RaftTokens t) => BorderRadius.circular(t.radius);
-  static BorderRadius attachment(RaftTokens t) =>
-      BorderRadius.circular(t.brutal ? 0 : 6);
+  static BorderRadius attachment(RaftTokens t) => BorderRadius.circular(6);
 }
 
 enum RaftControlKind {
@@ -452,8 +480,6 @@ enum RaftControlKind {
   textLink,
   savedAction,
 }
-
-enum RaftSegmentedStyle { tabs, buttons, taskViews }
 
 enum RaftControlVariant { surface, primary, accent, outline, ghost, danger }
 
@@ -475,37 +501,53 @@ class RaftControlRecipe {
   final double visualHeight;
   bool get transformsOnInteraction => true;
 
+  /// A surface transform that leaves layout and hit bounds unchanged.
+  Matrix4 interactionTransform({
+    required bool hovered,
+    required bool pressed,
+    required bool reducedMotion,
+  }) {
+    final scale =
+        transformsOnInteraction &&
+            pressed &&
+            !reducedMotion &&
+            kind != RaftControlKind.textLink &&
+            kind != RaftControlKind.savedAction
+        ? .985
+        : 1.0;
+    return Matrix4.diagonal3Values(scale, scale, 1);
+  }
+
   /// Optional CSS outline, independent of selected borders/rings/shadows.
   double get focusOutlineWidth => 0;
   double get focusOutlineOffset => 0;
   double get disabledOpacity => .4;
   Color foregroundFor({bool hovered = false}) => foreground;
+
+  /// Icons inherit the text foreground unless the component separates them.
+  Color iconForegroundFor({bool hovered = false}) =>
+      foregroundFor(hovered: hovered);
   Color backgroundForInteraction({
     bool hovered = false,
     bool pressed = false,
   }) => backgroundFor(hovered: hovered);
-  Color get focusRing => tokens.brutal
-      ? Colors.transparent
-      : switch (variant) {
-          RaftControlVariant.surface ||
-          RaftControlVariant.outline => tokens.ink,
-          RaftControlVariant.ghost => tokens.colors['line-hairline']!,
-          RaftControlVariant.danger => tokens.colors['danger']!,
-          RaftControlVariant.primary => tokens.colors['primary-strong']!,
-          RaftControlVariant.accent => tokens.colors['accent-strong']!,
-        };
+  Color get focusRing => switch (variant) {
+    RaftControlVariant.surface || RaftControlVariant.outline => tokens.ink,
+    RaftControlVariant.ghost => tokens.colors['line-hairline']!,
+    RaftControlVariant.danger => tokens.colors['danger']!,
+    RaftControlVariant.primary => tokens.colors['primary-strong']!,
+    RaftControlVariant.accent => tokens.colors['accent-strong']!,
+  };
   Color get background => kind == RaftControlKind.savedAction
       ? tokens.colors['accent-soft']!.withValues(
           alpha: tokens.colors['accent-soft']!.a * .3,
         )
       : kind == RaftControlKind.textLink
       ? Colors.transparent
-      : highContrast && !tokens.brutal && variant == RaftControlVariant.danger
+      : highContrast && variant == RaftControlVariant.danger
       ? tokens.colors['button-danger-high-contrast']!
       : kind == RaftControlKind.sidebar && selected
-      ? tokens.brutal
-            ? tokens.accentFill
-            : tokens.dark
+      ? tokens.dark
             ? tokens.card
             : tokens.panel
       : kind == RaftControlKind.tab
@@ -515,40 +557,24 @@ class RaftControlRecipe {
             ? tokens.colors['fill-muted']!
             : tokens.panel
       : switch (variant) {
-          RaftControlVariant.primary =>
-            tokens.brutal ? tokens.primaryFill : tokens.colors['primary-soft']!,
-          RaftControlVariant.accent =>
-            tokens.brutal ? tokens.accentFill : tokens.colors['accent-soft']!,
-          RaftControlVariant.danger =>
-            tokens.brutal
-                ? tokens.colors['color-brutal-red']!
-                : tokens.colors['button-danger-fill']!,
+          RaftControlVariant.primary => tokens.colors['primary-soft']!,
+          RaftControlVariant.accent => tokens.colors['accent-soft']!,
+          RaftControlVariant.danger => tokens.colors['button-danger-fill']!,
           RaftControlVariant.ghost => Colors.transparent,
           RaftControlVariant.outline =>
-            tokens.brutal || !tokens.dark
-                ? tokens.panel
-                : tokens.colors['fill-muted']!,
-          RaftControlVariant.surface =>
-            tokens.brutal
-                ? tokens.panel
-                : tokens.colors['button-default-fill']!,
+            !tokens.dark ? tokens.panel : tokens.colors['fill-muted']!,
+          RaftControlVariant.surface => tokens.colors['button-default-fill']!,
         };
   Color get foreground => kind == RaftControlKind.savedAction
-      ? tokens.colors[tokens.brutal ? 'color-brutal-orange' : 'accent-strong']!
+      ? tokens.colors['accent-strong']!
       : kind == RaftControlKind.textLink
-      ? tokens.brutal
-            ? Colors.black.withValues(alpha: .6)
-            : tokens.muted
-      : highContrast && !tokens.brutal && variant == RaftControlVariant.danger
+      ? tokens.muted
+      : highContrast && variant == RaftControlVariant.danger
       ? tokens.colors['button-danger-high-contrast-foreground']!
       : kind == RaftControlKind.tab
-      ? selected && !tokens.brutal
+      ? selected
             ? tokens.colors['primary-950']!
-            : tokens.brutal
-            ? tokens.strong
             : tokens.ink
-      : tokens.brutal
-      ? tokens.strong
       : switch (variant) {
           RaftControlVariant.primary => tokens.colors['primary-strong']!,
           RaftControlVariant.accent => tokens.colors['accent-strong']!,
@@ -561,10 +587,9 @@ class RaftControlRecipe {
   Color backgroundFor({bool hovered = false}) {
     if (kind == RaftControlKind.savedAction) return background;
     if (kind == RaftControlKind.textLink) return Colors.transparent;
-    if (!hovered ||
-        tokens.brutal ||
-        highContrast && variant == RaftControlVariant.danger)
+    if (!hovered || highContrast && variant == RaftControlVariant.danger) {
       return background;
+    }
     if (kind == RaftControlKind.tab) return background;
     return switch (variant) {
       RaftControlVariant.primary => tokens.colors['button-primary-hover']!,
@@ -578,13 +603,13 @@ class RaftControlRecipe {
   }
 
   Gradient? get overlayGradient {
-    if (tokens.brutal ||
-        kind == RaftControlKind.savedAction ||
+    if (kind == RaftControlKind.savedAction ||
         kind == RaftControlKind.textLink ||
         kind == RaftControlKind.tab ||
-        variant == RaftControlVariant.ghost)
+        variant == RaftControlVariant.ghost) {
       return null;
-    if (variant == RaftControlVariant.outline)
+    }
+    if (variant == RaftControlVariant.outline) {
       return LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
@@ -595,6 +620,7 @@ class RaftControlRecipe {
         ],
         stops: const [0, .3, 1],
       );
+    }
     final alpha = switch (variant) {
       RaftControlVariant.surface => .08,
       RaftControlVariant.danger => .10,
@@ -611,9 +637,7 @@ class RaftControlRecipe {
   }
 
   double get insetHighlightAlpha =>
-      tokens.brutal ||
-          kind == RaftControlKind.textLink ||
-          kind == RaftControlKind.savedAction
+      kind == RaftControlKind.textLink || kind == RaftControlKind.savedAction
       ? 0
       : kind == RaftControlKind.tab
       ? .05
@@ -626,7 +650,7 @@ class RaftControlRecipe {
   BorderRadius get radius => kind == RaftControlKind.textLink
       ? BorderRadius.zero
       : kind == RaftControlKind.tab
-      ? BorderRadius.circular(tokens.brutal ? 0 : 4)
+      ? BorderRadius.circular(4)
       : RaftShapes.control(tokens, visualHeight);
   double get iconSize => kind == RaftControlKind.segmentedButton
       ? 12
@@ -640,7 +664,8 @@ class RaftControlRecipe {
       ? 14
       : 16;
   TextStyle get textStyle => TextStyle(
-    fontFamily: tokens.brutal ? tokens.headingFont : tokens.bodyFont,
+    locale: tokens.textLocale,
+    fontFamily: tokens.bodyFont,
     fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
     fontSize: kind == RaftControlKind.segmentedButton
         ? 12
@@ -669,10 +694,8 @@ class RaftControlRecipe {
         ? 20 / 14
         : 24 / 16,
     fontWeight: kind == RaftControlKind.tab
-        ? tokens.brutal
-              ? FontWeight.w600
-              : FontWeight.w500
-        : kind == RaftControlKind.filter || tokens.brutal
+        ? FontWeight.w500
+        : kind == RaftControlKind.filter
         ? FontWeight.w700
         : FontWeight.w500,
     letterSpacing: 0,
@@ -682,9 +705,7 @@ class RaftControlRecipe {
       ? EdgeInsets.zero
       : EdgeInsets.symmetric(
           horizontal: kind == RaftControlKind.sidebar
-              ? tokens.brutal
-                    ? 8
-                    : 6
+              ? 6
               : kind == RaftControlKind.segmentedButton
               ? 10
               : kind == RaftControlKind.tab
@@ -705,45 +726,23 @@ class RaftControlRecipe {
             variant == RaftControlVariant.ghost && !hovered
         ? Colors.transparent
         : tokens.line,
-    width: tokens.brutal && kind != RaftControlKind.textLink ? 2 : 0,
-    style: tokens.brutal && kind != RaftControlKind.textLink
-        ? BorderStyle.solid
-        : BorderStyle.none,
+    width: 0,
+    style: BorderStyle.none,
   );
   List<BoxShadow> shadows({
     bool hovered = false,
     bool pressed = false,
     bool focused = false,
   }) {
-    if (kind == RaftControlKind.savedAction && !tokens.brutal) {
+    if (kind == RaftControlKind.savedAction) {
       return focused
           ? [BoxShadow(color: tokens.colors['primary-500']!, spreadRadius: .5)]
           : const [];
     }
     if (kind == RaftControlKind.textLink) return const [];
-    if (variant == RaftControlVariant.ghost ||
-        kind == RaftControlKind.tab && tokens.brutal)
-      return const [];
-    if (tokens.brutal)
-      return [
-        BoxShadow(
-          color: tokens.strong,
-          offset: Offset(
-            pressed
-                ? 1
-                : hovered
-                ? 4
-                : 2,
-            pressed
-                ? 1
-                : hovered
-                ? 4
-                : 2,
-          ),
-        ),
-      ];
+    if (variant == RaftControlVariant.ghost) return const [];
     if (kind == RaftControlKind.tab) {
-      if (tokens.dark)
+      if (tokens.dark) {
         return [
           BoxShadow(
             color: Colors.black.withValues(alpha: .45),
@@ -761,6 +760,7 @@ class RaftControlRecipe {
             blurRadius: 4,
           ),
         ];
+      }
       return [
         BoxShadow(
           color: selected
@@ -807,7 +807,7 @@ class RaftControlRecipe {
 }
 
 /// A Web-recipe visual surface inside a keyboard and touch accessible target.
-class RaftControl extends StatefulWidget {
+class RaftControl extends StatelessWidget {
   const RaftControl({
     super.key,
     required this.child,
@@ -856,110 +856,224 @@ class RaftControl extends StatefulWidget {
   final FocusNode? focusNode;
   final RaftControlRecipe? recipe;
   @override
-  State<RaftControl> createState() => _RaftControlState();
+  Widget build(BuildContext context) => asButton();
+
+  /// Compatibility wrappers reuse the frozen paint while letting the current
+  /// Button compose label / icon slots from its own recipe.
+  Widget legacySurface(BuildContext context, RaftInteractionState state) =>
+      _RaftLegacyControlSurface(this, state);
+
+  Widget asButton({
+    String? label,
+    RaftGlyph? glyph,
+    RaftGlyph? trailingGlyph,
+    RaftButtonVariant? uiVariant,
+    bool useComponentRecipe = true,
+  }) {
+    final tab =
+        kind == RaftControlKind.tab || kind == RaftControlKind.segmentedButton;
+    // Tab/sidebar appearances belong to their own component family, not the
+    // Button variant axis. They keep the shared input and original surface.
+    if (tab || kind == RaftControlKind.sidebar) {
+      return RaftInteractive(
+        onPressed: onPressed,
+        busy: busy,
+        focusNode: focusNode,
+        focusOnPointer: focusOnPointer,
+        tooltip: tooltip,
+        semanticLabel: semanticLabel,
+        semanticContainer: false,
+        expandTouchTarget: false,
+        button: !tab,
+        checked: tab ? selected : null,
+        inMutuallyExclusiveGroup: tab,
+        selected: kind == RaftControlKind.sidebar ? selected : null,
+        inertWhenDisabled: inertWhenDisabled,
+        builder: (context, state) => _RaftLegacyControlSurface(this, state),
+      );
+    }
+    final square = visualWidth != null && visualWidth == visualHeight;
+    return RaftButton(
+      label: label ?? '',
+      child: label == null && glyph == null
+          ? (busy && child is RaftSpinner ? const SizedBox() : child)
+          : null,
+      glyph: glyph,
+      trailingGlyph: trailingGlyph,
+      onPressed: onPressed,
+      busy: busy,
+      variant: variant,
+      uiVariant:
+          uiVariant ??
+          (kind == RaftControlKind.textLink ? RaftButtonVariant.link : null),
+      uiSize: kind == RaftControlKind.textLink
+          ? RaftButtonSize.inline
+          : square
+          ? (visualHeight <= 24
+                ? RaftButtonSize.iconXs
+                : visualHeight <= 28
+                ? RaftButtonSize.iconSm
+                : visualHeight <= 32
+                ? RaftButtonSize.iconMd
+                : RaftButtonSize.iconLg)
+          : null,
+      visualHeight: visualHeight,
+      visualWidth: square ? null : visualWidth,
+      minimumTargetSize: minimumTargetSize,
+      layoutTouchTarget: true,
+      semanticContainer: false,
+      expandTouchTarget: false,
+      focusNode: focusNode,
+      focusOnPointer: focusOnPointer,
+      tooltip: tooltip,
+      semanticLabel: semanticLabel,
+      toggled: kind == RaftControlKind.savedAction ? selected : null,
+      inertWhenDisabled: inertWhenDisabled,
+      padding: padding?.resolve(TextDirection.ltr),
+      styleBuilder: recipe == null && !flexibleHeight
+          ? null
+          : (context, state, root) {
+              final tokens = RaftTokens.of(context);
+              final sourceShape =
+                  tokens.option('iconButton.surface', or: 'generic') ==
+                      'generic' &&
+                  tokens.option('press.effect', or: 'overlay') == 'overlay';
+              return !useComponentRecipe && sourceShape
+                  ? root
+                  : _raftControlButtonStyle(context, this, state, root);
+            },
+      legacyBuilder: (context, state) => _RaftLegacyControlSurface(this, state),
+    );
+  }
 }
 
-/// CSS focus-visible is keyboard modality, not Flutter's mouse/traditional
-/// focus mode. This process-local tracker stores no account or product state.
-class _RaftFocusVisible extends ChangeNotifier {
-  static final shared = _RaftFocusVisible();
-  bool keyboard = true;
-  int users = 0;
-  void acquire() {
-    if (users++ == 0) {
-      HardwareKeyboard.instance.addHandler(key);
-      GestureBinding.instance.pointerRouter.addGlobalRoute(pointer);
-    }
-  }
-
-  void release() {
-    if (--users == 0) {
-      HardwareKeyboard.instance.removeHandler(key);
-      GestureBinding.instance.pointerRouter.removeGlobalRoute(pointer);
-      keyboard = true;
-    }
-  }
-
-  void update(bool value) {
-    if (keyboard == value) return;
-    keyboard = value;
-    notifyListeners();
-  }
-
-  bool key(KeyEvent event) {
-    if (event is KeyDownEvent) update(true);
-    return false;
-  }
-
-  void pointer(PointerEvent event) {
-    if (event is PointerDownEvent) update(false);
-  }
+/// Existing composed-control recipes become explicit class overrides on the
+/// Button root. They no longer own a second input or surface implementation.
+RaftSlotStyle _raftControlButtonStyle(
+  BuildContext context,
+  RaftControl control,
+  RaftInteractionState state,
+  RaftSlotStyle root,
+) {
+  final recipe =
+      control.recipe ??
+      RaftControlRecipe(
+        RaftTokens.of(context),
+        variant: control.variant,
+        kind: control.kind,
+        selected: control.selected,
+        visualHeight: control.visualHeight,
+        highContrast: MediaQuery.highContrastOf(context),
+      );
+  CssColor color(Color c) => CssColor(c.toARGB32(), null, c);
+  final radius = recipe.radius.resolve(Directionality.of(context));
+  final border = recipe.side(hovered: state.hovered);
+  final text = recipe.textStyle;
+  final padding =
+      (control.padding ??
+              (control.visualWidth == null ? recipe.padding : EdgeInsets.zero))
+          .resolve(Directionality.of(context));
+  final matrix = recipe.interactionTransform(
+    hovered: state.hovered,
+    pressed: state.pressed,
+    reducedMotion: MediaQuery.disableAnimationsOf(context),
+  );
+  final shadows = control.shadow
+      ? recipe.shadows(
+          hovered: state.hovered,
+          pressed: state.pressed,
+          focused: state.focusVisible,
+        )
+      : <BoxShadow>[
+          if (state.focusVisible)
+            BoxShadow(
+              color: recipe.focusRing.withValues(
+                alpha: recipe.focusRing.a * .8,
+              ),
+              spreadRadius: 2,
+            ),
+        ];
+  return root.copyWith(
+    properties: {
+      ...root.properties,
+      'height': control.flexibleHeight
+          ? const CssKeyword('auto')
+          : CssNum(control.visualHeight, 'px'),
+      'min-height': CssNum(control.visualHeight, 'px'),
+      if (control.visualWidth != null)
+        'width': CssNum(control.visualWidth!, 'px'),
+      'background-color': color(
+        recipe.backgroundForInteraction(
+          hovered: state.hovered,
+          pressed: state.pressed,
+        ),
+      ),
+      'background-image': const CssKeyword('none'),
+      'color': color(recipe.foregroundFor(hovered: state.hovered)),
+      if (text.fontSize != null) 'font-size': CssNum(text.fontSize!, 'px'),
+      if (text.height != null) 'line-height': CssNum(text.height!),
+      if (text.fontWeight != null)
+        'font-weight': CssNum(text.fontWeight!.value.toDouble()),
+      if (text.fontFamily != null) 'font-family': CssString(text.fontFamily!),
+      if (text.letterSpacing != null)
+        'letter-spacing': CssNum(text.letterSpacing!, 'px'),
+      for (final side in ['top', 'right', 'bottom', 'left']) ...{
+        'border-$side-width': CssNum(border.width, 'px'),
+        'border-$side-style': const CssKeyword('solid'),
+        'border-$side-color': color(border.color),
+        'padding-$side': CssNum(switch (side) {
+          'top' => padding.top,
+          'right' => padding.right,
+          'bottom' => padding.bottom,
+          _ => padding.left,
+        }, 'px'),
+      },
+      'border-top-left-radius': CssNum(radius.topLeft.x, 'px'),
+      'border-top-right-radius': CssNum(radius.topRight.x, 'px'),
+      'border-bottom-left-radius': CssNum(radius.bottomLeft.x, 'px'),
+      'border-bottom-right-radius': CssNum(radius.bottomRight.x, 'px'),
+      'box-shadow': CssList([
+        // Recipes return Flutter paint order; CSS lists the top layer first.
+        for (final s in shadows.reversed)
+          CssSeq([
+            CssNum(s.offset.dx, 'px'),
+            CssNum(s.offset.dy, 'px'),
+            CssNum(
+              s.blurRadius <= .5
+                  ? s.blurRadius * 2
+                  : (s.blurRadius * .57735 + .5) * 2,
+              'px',
+            ),
+            CssNum(s.spreadRadius, 'px'),
+            color(s.color),
+          ]),
+      ]),
+      'translate': CssSeq([CssNum(matrix[12], 'px'), CssNum(matrix[13], 'px')]),
+      'scale': CssNum(matrix[0]),
+      'opacity': CssNum(
+        state.enabled || control.busy || control.inertWhenDisabled
+            ? 1
+            : recipe.disabledOpacity,
+      ),
+    },
+  );
 }
 
-class _RaftControlState extends State<RaftControl> {
-  bool hovered = false, focused = false, pressed = false;
-  // Tooltip admission follows a focus entry, while outline paint follows the
-  // current modality. Escape can change the latter without entering focus.
-  bool tooltipKeyboardFocused = false;
-  final ownedFocus = FocusNode();
-  FocusNode get controlFocus => widget.focusNode ?? ownedFocus;
-  @override
-  void initState() {
-    super.initState();
-    _RaftFocusVisible.shared.acquire();
-    _RaftFocusVisible.shared.addListener(focusModeChanged);
-  }
-
-  void focusModeChanged() {
-    final next =
-        enabled && controlFocus.hasFocus && _RaftFocusVisible.shared.keyboard;
-    final tooltipNext = tooltipKeyboardFocused && next;
-    if (mounted && (focused != next || tooltipKeyboardFocused != tooltipNext)) {
-      setState(() {
-        focused = next;
-        tooltipKeyboardFocused = tooltipNext;
-      });
-    }
-  }
-
-  void focusEntered(bool hasFocus) {
-    if (!mounted) return;
-    setState(() {
-      focused = enabled && hasFocus && _RaftFocusVisible.shared.keyboard;
-      tooltipKeyboardFocused = focused;
-    });
-  }
-
-  @override
-  void dispose() {
-    _RaftFocusVisible.shared.removeListener(focusModeChanged);
-    _RaftFocusVisible.shared.release();
-    ownedFocus.dispose();
-    super.dispose();
-  }
-
-  void activateControl() {
-    if (!enabled) return;
-    controlFocus.requestFocus();
-    widget.onPressed?.call();
-  }
-
-  bool get enabled => widget.onPressed != null && !widget.busy;
-  @override
-  void didUpdateWidget(RaftControl oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!enabled) {
-      pressed = false;
-      hovered = false;
-      focused = false;
-      tooltipKeyboardFocused = false;
-    }
-  }
-
+/// Frozen control paint. The enclosing Button / Interactive owns all input.
+class _RaftLegacyControlSurface extends StatelessWidget {
+  const _RaftLegacyControlSurface(this.control, this.state);
+  final RaftControl control;
+  final RaftInteractionState state;
   @override
   Widget build(BuildContext context) {
+    final widget = control;
+    final enabled = state.enabled;
+    final hovered = state.hovered;
+    final pressed = state.pressed;
+    final focused = state.focusVisible;
     final t = RaftTokens.of(context);
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    final flexible = widget.flexibleHeight || RaftScaled.grows(context);
     final bounds = RaftControlBounds(
       visualHeight: widget.visualHeight,
       density: RaftDensityScope.of(context),
@@ -975,269 +1089,150 @@ class _RaftControlState extends State<RaftControl> {
           visualHeight: widget.visualHeight,
           highContrast: MediaQuery.highContrastOf(context),
         );
-    final scale =
-        recipe.transformsOnInteraction &&
-            !t.brutal &&
-            pressed &&
-            !reducedMotion &&
-            widget.kind != RaftControlKind.textLink &&
-            widget.kind != RaftControlKind.savedAction
-        ? .985
-        : 1.0;
     final bg = recipe.backgroundForInteraction(
       hovered: hovered,
       pressed: pressed,
     );
     final inert = widget.inertWhenDisabled && !enabled;
-    Widget result = Semantics(
-      label: widget.semanticLabel,
-      excludeSemantics: widget.busy,
-      button:
-          !inert &&
-          !{
-            RaftControlKind.tab,
-            RaftControlKind.segmentedButton,
-          }.contains(widget.kind),
-      checked:
-          {
-            RaftControlKind.tab,
-            RaftControlKind.segmentedButton,
-          }.contains(widget.kind)
-          ? widget.selected
-          : null,
-      inMutuallyExclusiveGroup: {
-        RaftControlKind.tab,
-        RaftControlKind.segmentedButton,
-      }.contains(widget.kind),
-      selected: widget.kind == RaftControlKind.sidebar ? widget.selected : null,
-      toggled: widget.kind == RaftControlKind.savedAction
-          ? widget.selected
-          : null,
-      enabled: inert ? null : enabled,
-      onTap: enabled ? activateControl : null,
-      child: MouseRegion(
-        onEnter: enabled ? (_) => setState(() => hovered = true) : null,
-        onExit: (_) => setState(() => hovered = false),
-        child: FocusableActionDetector(
-          focusNode: controlFocus,
-          enabled: enabled,
-          mouseCursor: enabled
-              ? SystemMouseCursors.click
-              : SystemMouseCursors.basic,
-          onShowFocusHighlight: (_) => focusModeChanged(),
-          onFocusChange: focusEntered,
-          actions: {
-            ButtonActivateIntent: CallbackAction<ButtonActivateIntent>(
-              onInvoke: (_) {
-                activateControl();
-                return null;
-              },
-            ),
-            ActivateIntent: CallbackAction<ActivateIntent>(
-              onInvoke: (_) {
-                activateControl();
-                return null;
-              },
-            ),
-          },
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            excludeFromSemantics: true,
-            onTapDown: enabled
-                ? (_) {
-                    if (widget.focusOnPointer) controlFocus.requestFocus();
-                    setState(() => pressed = true);
-                  }
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth:
+            widget.minimumTargetSize ??
+            (RaftDensityScope.of(context) == RaftDensity.touch
+                ? RaftMetrics.touchTarget
+                : widget.visualWidth ?? 0),
+        minHeight: bounds.layoutHeight,
+      ),
+      child: Align(
+        widthFactor: 1,
+        heightFactor: 1,
+        child: Opacity(
+          opacity: enabled || widget.busy || inert ? 1 : recipe.disabledOpacity,
+          child: AnimatedContainer(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : RaftPrimitives.controlDuration,
+            curve: RaftPrimitives.controlCurve,
+            // A control labelled with scaled text is a minimum height
+            // (CSS min-height): at 1.0x it is the pinned visual height.
+            height: flexible ? null : widget.visualHeight,
+            constraints: flexible
+                ? BoxConstraints(minHeight: widget.visualHeight)
                 : null,
-            onTapUp: enabled
-                ? (details) {
-                    setState(() => pressed = false);
-                    final box = context.findRenderObject();
-                    if (box is RenderBox &&
-                        (Offset.zero & box.size).contains(
-                          details.localPosition,
-                        ))
-                      widget.onPressed?.call();
-                  }
-                : null,
-            onTapCancel: enabled ? () => setState(() => pressed = false) : null,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minWidth:
-                    widget.minimumTargetSize ??
-                    (RaftDensityScope.of(context) == RaftDensity.touch
-                        ? RaftMetrics.touchTarget
-                        : widget.visualWidth ?? 0),
-                minHeight: bounds.layoutHeight,
-              ),
-              child: Align(
-                widthFactor: 1,
-                heightFactor: 1,
-                child: Opacity(
-                  opacity: enabled || widget.busy || inert
-                      ? 1
-                      : recipe.disabledOpacity,
-                  child: AnimatedContainer(
-                    duration: MediaQuery.disableAnimationsOf(context)
-                        ? Duration.zero
-                        : RaftPrimitives.controlDuration,
-                    curve: RaftPrimitives.controlCurve,
-                    height: widget.flexibleHeight ? null : widget.visualHeight,
-                    constraints: widget.flexibleHeight
-                        ? BoxConstraints(minHeight: widget.visualHeight)
-                        : null,
-                    width: widget.visualWidth,
-                    transformAlignment: Alignment.center,
-                    transform: Matrix4.diagonal3Values(scale, scale, 1)
-                      ..setTranslationRaw(
-                        recipe.transformsOnInteraction &&
-                                t.brutal &&
-                                pressed &&
-                                !reducedMotion &&
-                                widget.kind != RaftControlKind.textLink
-                            ? 1
-                            : 0,
-                        recipe.transformsOnInteraction &&
-                                t.brutal &&
-                                !reducedMotion &&
-                                widget.kind != RaftControlKind.textLink
-                            ? pressed
-                                  ? 1
-                                  : hovered
-                                  ? -1
-                                  : 0
-                            : 0,
-                        0,
+            width: widget.visualWidth,
+            transformAlignment: Alignment.center,
+            transform: recipe.interactionTransform(
+              hovered: hovered,
+              pressed: pressed,
+              reducedMotion: reducedMotion,
+            ),
+            decoration: RaftCssBoxDecoration(
+              color: bg,
+              borderRadius: recipe.radius,
+              border: Border.fromBorderSide(recipe.side(hovered: hovered)),
+              boxShadow: widget.shadow
+                  ? recipe.shadows(
+                      hovered: hovered,
+                      pressed: pressed,
+                      focused: focused,
+                    )
+                  : focused
+                  ? [
+                      BoxShadow(
+                        color: recipe.focusRing.withValues(
+                          alpha: recipe.focusRing.a * .8,
+                        ),
+                        spreadRadius: 2,
                       ),
-                    decoration: RaftCssBoxDecoration(
-                      color: bg,
-                      borderRadius: recipe.radius,
-                      border: Border.fromBorderSide(
-                        recipe.side(hovered: hovered),
-                      ),
-                      boxShadow: widget.shadow
-                          ? recipe.shadows(
-                              hovered: hovered,
-                              pressed: pressed,
-                              focused: focused,
-                            )
-                          : focused
-                          ? [
-                              BoxShadow(
-                                color: recipe.focusRing.withValues(
-                                  alpha: recipe.focusRing.a * .8,
-                                ),
-                                spreadRadius: 2,
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      clipBehavior: Clip.none,
-                      children: [
-                        if (focused && recipe.focusOutlineWidth > 0)
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: CustomPaint(
-                                painter: _ControlFocusOutlinePainter(
-                                  color: recipe.focusRing,
-                                  width: recipe.focusOutlineWidth,
-                                  offset: recipe.focusOutlineOffset,
-                                  radius: recipe.radius.resolve(
-                                    Directionality.of(context),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (focused &&
-                            (widget.kind == RaftControlKind.textLink ||
-                                widget.kind == RaftControlKind.savedAction &&
-                                    t.brutal))
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: CustomPaint(
-                                painter: _TextLinkFocusPainter(
-                                  t.brutal
-                                      ? Colors.black
-                                      : t.colors['line-strong']!,
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (recipe.overlayGradient != null)
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: recipe.overlayGradient,
-                                  borderRadius: recipe.radius,
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (recipe.insetHighlightAlpha > 0)
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: CustomPaint(
-                                painter: _InsetHighlightPainter(
-                                  recipe.radius,
-                                  Colors.white.withValues(
-                                    alpha: recipe.insetHighlightAlpha,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        Padding(
-                          padding:
-                              widget.padding ??
-                              (widget.visualWidth == null
-                                  ? recipe.padding
-                                  : EdgeInsets.zero),
-                          child: IconTheme(
-                            data: IconThemeData(
-                              color:
-                                  widget.kind == RaftControlKind.textLink &&
-                                      hovered
-                                  ? t.strong
-                                  : recipe.foregroundFor(hovered: hovered),
-                              size: recipe.iconSize,
-                            ),
-                            child: DefaultTextStyle(
-                              style: recipe.textStyle.copyWith(
-                                color:
-                                    widget.kind == RaftControlKind.textLink &&
-                                        hovered
-                                    ? t.strong
-                                    : recipe.foregroundFor(hovered: hovered),
-                              ),
-                              child: Center(
-                                widthFactor: 1,
-                                child: widget.child,
-                              ),
-                            ),
+                    ]
+                  : null,
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                if (focused && recipe.focusOutlineWidth > 0)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _ControlFocusOutlinePainter(
+                          color: recipe.focusRing,
+                          width: recipe.focusOutlineWidth,
+                          offset: recipe.focusOutlineOffset,
+                          radius: recipe.radius.resolve(
+                            Directionality.of(context),
                           ),
                         ),
-                      ],
+                      ),
+                    ),
+                  ),
+                if (focused && (widget.kind == RaftControlKind.textLink))
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _TextLinkFocusPainter(
+                          t.colors['line-strong']!,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (recipe.overlayGradient != null)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: recipe.overlayGradient,
+                          borderRadius: recipe.radius,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (recipe.insetHighlightAlpha > 0)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _InsetHighlightPainter(
+                          recipe.radius,
+                          Colors.white.withValues(
+                            alpha: recipe.insetHighlightAlpha,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding:
+                      widget.padding ??
+                      (widget.visualWidth == null
+                          ? recipe.padding
+                          : EdgeInsets.zero),
+                  child: IconTheme(
+                    data: IconThemeData(
+                      color: widget.kind == RaftControlKind.textLink && hovered
+                          ? t.strong
+                          : recipe.iconForegroundFor(hovered: hovered),
+                      size: recipe.iconSize,
+                    ),
+                    child: DefaultTextStyle(
+                      style: RaftControlTypography.of(
+                        context,
+                        recipe.textStyle.copyWith(
+                          color:
+                              widget.kind == RaftControlKind.textLink && hovered
+                              ? t.strong
+                              : recipe.foregroundFor(hovered: hovered),
+                        ),
+                      ),
+                      child: Center(widthFactor: 1, child: widget.child),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
       ),
     );
-    if (widget.tooltip != null) {
-      result = RaftTooltip(
-        message: widget.tooltip!,
-        keyboardFocused: tooltipKeyboardFocused,
-        child: result,
-      );
-    }
-    return result;
   }
 }
 
@@ -1251,32 +1246,86 @@ class RaftIconButton extends StatelessWidget {
     this.minimumTargetSize,
     this.glyphSize,
     this.variant = RaftControlVariant.ghost,
+    this.uiVariant,
     this.shadow = true,
     this.busy = false,
+    this.semanticLabel,
   });
   final RaftGlyph glyph;
   final VoidCallback? onPressed;
   final String? tooltip;
+
+  /// The accessible name when it differs from the [tooltip] (Web `aria-label`
+  /// that carries more than the tooltip text).
+  final String? semanticLabel;
   final double visualSize;
   final double? minimumTargetSize;
   final double? glyphSize;
   final RaftControlVariant variant;
+
+  /// Source Button variant, including the frame's 36px / 20px icon role.
+  /// Legacy looks keep the frozen [variant] painter.
+  final RaftButtonVariant? uiVariant;
   final bool busy, shadow;
   @override
-  Widget build(BuildContext context) => RaftControl(
-    shadow: shadow,
-    onPressed: onPressed,
-    tooltip: tooltip == null ? null : raftText(context, tooltip!),
-    visualHeight: visualSize,
-    visualWidth: visualSize,
-    minimumTargetSize: minimumTargetSize,
-    variant: variant,
-    busy: busy,
-    semanticLabel: busy ? raftText(context, tooltip ?? 'Loading') : null,
-    child: busy
-        ? RaftSpinner(size: glyphSize)
-        : RaftIcon(glyph, size: glyphSize ?? (visualSize <= 28 ? 14 : 16)),
-  );
+  Widget build(BuildContext context) {
+    // Only the source's 24px icon path consumes the shared layout minimum.
+    // Larger icons retain their existing layout; explicit minima always win.
+    final smallTouch =
+        visualSize == RaftMetrics.buttonXs &&
+        RaftDensityScope.of(context) == RaftDensity.touch;
+    final button = RaftControl(
+      shadow: shadow,
+      onPressed: onPressed,
+      tooltip: tooltip == null ? null : raftText(context, tooltip!),
+      visualHeight: visualSize,
+      visualWidth: visualSize,
+      minimumTargetSize:
+          minimumTargetSize ??
+          (smallTouch
+              ? RaftTokens.of(context).size('size.touchLayoutMin', fallback: 0)
+              : null),
+      variant: variant,
+      recipe: visualSize == RaftMetrics.buttonXs
+          ? RaftSmallIconRecipe(
+              RaftTokens.of(context),
+              variant: variant,
+              visualHeight: visualSize,
+              highContrast: MediaQuery.highContrastOf(context),
+            )
+          : null,
+      busy: busy,
+      semanticLabel: busy
+          ? raftText(context, tooltip ?? 'Loading')
+          : semanticLabel,
+      child: busy
+          ? RaftSpinner(size: glyphSize)
+          : RaftIcon(glyph, size: glyphSize ?? (visualSize <= 28 ? 14 : 16)),
+    ).asButton(glyph: glyph, uiVariant: uiVariant, useComponentRecipe: false);
+    final label = tooltip;
+    // An icon button is fixed chrome: at large text sizes a long press shows
+    // its icon and label large (Large Content Viewer).
+    Widget result = label == null
+        ? button
+        : RaftChrome(
+            child: RaftLargeContentViewer(
+              label: raftText(context, label),
+              enabled: onPressed != null && !busy,
+              onActivate: onPressed,
+              iconBuilder: (context, size) => RaftIcon(glyph, size: size),
+              child: button,
+            ),
+          );
+    if (smallTouch) {
+      // Wrap tooltip and large-content-viewer boxes too. The anchor lets an
+      // enclosing RaftTapSlopHost route touches outside a narrow toolbar row.
+      result = RaftTapSlopAnchor(
+        minSize: const Size.square(RaftMetrics.touchTarget),
+        child: RaftTouchTarget(child: result),
+      );
+    }
+    return result;
+  }
 }
 
 /// Canonical framed navigation action; product callers supply source size.
@@ -1309,14 +1358,13 @@ class RaftSavedActionButton extends StatelessWidget {
   const RaftSavedActionButton({
     super.key,
     this.onPressed,
-    this.tooltip = 'Remove from saved',
+    this.tooltip = 'Remove from Saved',
   });
   final VoidCallback? onPressed;
   final String tooltip;
   @override
   Widget build(BuildContext context) {
-    final tokens = RaftTokens.of(context);
-    final dimension = tokens.brutal ? 28.0 : 32.0;
+    final dimension = 32.0;
     return RaftControl(
       onPressed: onPressed,
       tooltip: raftText(context, tooltip),
@@ -1325,7 +1373,7 @@ class RaftSavedActionButton extends StatelessWidget {
       visualHeight: dimension,
       visualWidth: dimension,
       variant: RaftControlVariant.outline,
-      child: RaftIcon(RaftGlyph.bookmarkFilled, size: tokens.brutal ? 14 : 16),
+      child: RaftIcon(RaftGlyph.bookmarkFilled, size: 16),
     );
   }
 }
@@ -1355,35 +1403,41 @@ class RaftTextButton extends StatelessWidget {
   final bool selected;
   final String? tooltip;
   @override
-  Widget build(BuildContext context) => RaftControl(
-    kind: kind,
-    selected: selected,
-    tooltip: tooltip,
-    onPressed: onPressed,
-    variant: variant,
-    visualHeight: visualHeight,
-    minimumTargetSize: minimumTargetSize,
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (glyph != null) ...[
-          RaftIcon(glyph!, size: visualHeight <= 28 ? 14 : 16),
-          const SizedBox(width: 5.5),
-        ],
-        Flexible(
-          child: Text(
-            raftText(context, label),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+  Widget build(BuildContext context) =>
+      RaftControl(
+        kind: kind,
+        selected: selected,
+        tooltip: tooltip,
+        onPressed: onPressed,
+        variant: variant,
+        visualHeight: visualHeight,
+        minimumTargetSize: minimumTargetSize,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (glyph != null) ...[
+              RaftIcon(glyph!, size: visualHeight <= 28 ? 14 : 16),
+              // ds-allow: Web raft-ui/button.tsx md `gap-[5.5px]`
+              const SizedBox(width: 5.5),
+            ],
+            Flexible(
+              child: Text(
+                raftText(context, label),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (trailingGlyph != null) ...[
+              const SizedBox(width: 6),
+              RaftIcon(trailingGlyph!, size: 12),
+            ],
+          ],
         ),
-        if (trailingGlyph != null) ...[
-          const SizedBox(width: 6),
-          RaftIcon(trailingGlyph!, size: 12),
-        ],
-      ],
-    ),
-  );
+      ).asButton(
+        label: raftText(context, label),
+        glyph: glyph,
+        trailingGlyph: trailingGlyph,
+      );
 }
 
 /// Shared field frame: retains the editor's focus/selection/validation behavior.
@@ -1399,42 +1453,29 @@ class _RaftFieldSurfaceState extends State<RaftFieldSurface> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    // Elegant `focus-visible:ring-*`: the field keeps its border and a ring is
-    // drawn OUTSIDE it (1px primary-400; dark: 2px primary-400 at 60%), not the
-    // Material focused-border colour swap.
+    // raft-ui 0.7.1 `focus:shadow-focus`: the field keeps its border and the focus ring (2px surface gap, 2px ink)
+    // is drawn OUTSIDE it, not the Material focused-border colour swap.
     final theme = Theme.of(context);
     final inputs = theme.inputDecorationTheme;
     return Focus(
       skipTraversal: true,
       onFocusChange: (value) => setState(() => focused = value),
-      child: DecoratedBox(
-        decoration: RaftCssBoxDecoration(
-          borderRadius: RaftShapes.field(t),
-          boxShadow: t.brutal
-              ? focused
-                    ? t.focusShadows
-                    : t.shadows
-              : focused
-              ? [
-                  BoxShadow(
-                    color: t.dark
-                        ? t.primaryFill.withValues(alpha: .6)
-                        : t.primaryFill,
-                    spreadRadius: t.dark ? 2 : 1,
-                  ),
-                ]
-              : null,
+      child: RaftOuterRings(
+        radius: 8,
+        rings: focused
+            ? [
+                for (final layer in t.ui.focusRing.layers)
+                  RaftRing(layer.spread, layer.color),
+              ]
+            : const [],
+        child: Theme(
+          data: theme.copyWith(
+            inputDecorationTheme: inputs.copyWith(
+              focusedBorder: inputs.enabledBorder,
+            ),
+          ),
+          child: widget.child,
         ),
-        child: t.brutal
-            ? widget.child
-            : Theme(
-                data: theme.copyWith(
-                  inputDecorationTheme: inputs.copyWith(
-                    focusedBorder: inputs.enabledBorder,
-                  ),
-                ),
-                child: widget.child,
-              ),
       ),
     );
   }
@@ -1451,41 +1492,31 @@ class RaftMenuRecipe {
   final RaftMenuKind kind;
   final double viewportHeight;
   Color get background => tokens.popover;
-  Color get foreground => tokens.brutal ? tokens.strong : tokens.muted;
-  Color get highlightedBackground => tokens.brutal
-      ? tokens.primaryFill.withValues(alpha: .3)
-      : tokens.colors['ink-4']!;
+  Color get foreground => tokens.muted;
+  Color get highlightedBackground => tokens.colors['ink-4']!;
   BorderRadius get radius => RaftShapes.field(tokens);
-  BorderSide get border => tokens.brutal
-      ? const BorderSide(color: Colors.black, width: 2)
-      : BorderSide.none;
-  EdgeInsets get inset => EdgeInsets.all(tokens.brutal ? 0 : 4);
+  BorderSide get border => BorderSide.none;
+  EdgeInsets get inset => EdgeInsets.all(4);
   EdgeInsets get rowInset => const EdgeInsets.symmetric(horizontal: 12);
   double get rowVisualHeight => kind == RaftMenuKind.selectionPopover
       ? 36
-      : tokens.brutal
-      ? viewportHeight <= 600
-            ? 28
-            : 36
       : viewportHeight <= 600
       ? 27.5
       : 31.5;
   double get rowTargetHeight => RaftMetrics.touchTarget;
-  double get popupGap => tokens.brutal ? 4 : 6;
+  double get popupGap => 6;
   TextStyle get label => kind == RaftMenuKind.selectionPopover
       ? RaftTypography.body(tokens, size: 12, line: 16, weight: FontWeight.w700)
       : RaftTypography.body(
           tokens,
-          size: tokens.brutal ? 14 : 13,
-          line: tokens.brutal ? 20 : 19.5,
-          weight: tokens.brutal ? FontWeight.w500 : FontWeight.w400,
+          size: 13,
+          line: 19.5,
+          weight: FontWeight.w400,
           color: foreground,
-        ).copyWith(letterSpacing: tokens.brutal ? 0 : -.065);
+        ).copyWith(letterSpacing: -.065);
   TextStyle get meta =>
       RaftTypography.body(tokens, size: 12, line: 16, color: tokens.muted);
-  List<BoxShadow> get shadows => tokens.brutal
-      ? const [BoxShadow(color: Colors.black, offset: Offset(4, 4))]
-      : tokens.dark
+  List<BoxShadow> get shadows => tokens.dark
       ? [
           BoxShadow(
             color: Colors.black.withValues(alpha: .45),
@@ -1513,10 +1544,21 @@ class RaftMenuRecipe {
         ];
 }
 
-/// Original raft-ui spinner ring recipe, using the enclosing control foreground.
+/// raft-ui `Spinner`, the one spinner of the client: the pixel grid in the Raft
+/// look and the original ring in the frozen looks, with caller overrides.
 class RaftSpinner extends StatefulWidget {
-  const RaftSpinner({super.key, this.size, this.inverse = false});
+  const RaftSpinner({
+    super.key,
+    this.size,
+    this.inverse = false,
+    this.recipeSize,
+  });
+
+  /// Explicit physical slot size. Wins over the recipe's intrinsic extent.
   final double? size;
+
+  /// Source size axis; retained separately from a caller's physical override.
+  final RaftSpinnerRecipeSize? recipeSize;
   final bool inverse;
   @override
   State<RaftSpinner> createState() => _RaftSpinnerState();
@@ -1534,14 +1576,25 @@ class _RaftSpinnerState extends State<RaftSpinner>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final t = RaftTokens.of(context);
+    final pixel = t.option('spinner.style', or: 'ring') == 'pixel';
+    final quarter = t.option('spinner.ringShape', or: 'sweep') == 'quarter';
     reduced = MediaQuery.disableAnimationsOf(context);
-    spin.duration = Duration(milliseconds: t.brutal ? 1000 : 1600);
-    if (reduced) {
+    spin.duration = Duration(
+      milliseconds: t.size('duration.spinnerTurn', fallback: 1600).round(),
+    );
+    if (reduced || pixel) {
       spin.stop();
       dash.stop();
     } else {
+      // ignore: raft_lints/avoid_unreviewed_idle_work -- Loop driven by an AnimationController whose vsync is this State, so TickerMode (hidden routes, offstage tabs, folded panels) mutes it, it is disposed with the widget, and reduced motion stops it.
       spin.repeat();
-      if (!t.brutal) dash.repeat();
+      // ignore: raft_lints/avoid_unreviewed_idle_work -- Loop driven by an AnimationController whose vsync is this State, so TickerMode (hidden routes, offstage tabs, folded panels) mutes it, it is disposed with the widget, and reduced motion stops it.
+      if (quarter) {
+        dash.stop();
+      } else {
+        // ignore: raft_lints/avoid_unreviewed_idle_work -- State vsync and TickerMode bound this animation; reduced motion stops it and dispose retires it.
+        dash.repeat();
+      }
     }
   }
 
@@ -1555,24 +1608,83 @@ class _RaftSpinnerState extends State<RaftSpinner>
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final dimension = widget.size ?? (t.brutal ? 16 : 14);
-    final color = t.brutal
-        ? widget.inverse
-              ? Colors.white
-              : Colors.black
+    final pixel = t.option('spinner.style', or: 'ring') == 'pixel';
+    final quarter = t.option('spinner.ringShape', or: 'sweep') == 'quarter';
+    final fixed = t.option('spinner.foreground', or: 'inherited') == 'fixed';
+    if (pixel) {
+      final size = switch (widget.recipeSize) {
+        RaftSpinnerRecipeSize.xs => RaftPixelSpinnerSize.xs,
+        RaftSpinnerRecipeSize.md => RaftPixelSpinnerSize.md,
+        RaftSpinnerRecipeSize.lg => RaftPixelSpinnerSize.lg,
+        _ => RaftPixelSpinnerSize.sm,
+      };
+      final ambient = DefaultTextStyle.of(context).style;
+      final color = size
+          .resolve(t.recipeTokens, inverse: widget.inverse)
+          .root
+          .text(
+            t.recipeTokens,
+            base: ambient.copyWith(
+              color: fixed
+                  ? t.colors['foreground-spinner']!
+                  : ambient.color ?? t.ink,
+            ),
+          )
+          .color;
+      final grid = RaftPixelSpinner(size: size, color: color);
+      return ExcludeSemantics(
+        child: RepaintBoundary(
+          child: widget.size == null && widget.recipeSize != null
+              ? grid
+              : SizedBox.square(
+                  dimension:
+                      widget.size ??
+                      t.size('size.spinnerDefault', fallback: 12),
+                  child: Center(child: grid),
+                ),
+        ),
+      );
+    }
+    final dimension =
+        widget.size ??
+        switch (widget.recipeSize) {
+          RaftSpinnerRecipeSize.xs => 10.0,
+          RaftSpinnerRecipeSize.sm => 16.0,
+          RaftSpinnerRecipeSize.md => 20.0,
+          RaftSpinnerRecipeSize.lg => 32.0,
+          null => t.size('size.spinnerDefault', fallback: 14),
+        };
+    // [inverse]: on a dark surface (the video stage, a dark button) in every
+    // theme; elegant used to ignore it and drew an ink spinner on black.
+    final color = widget.inverse
+        ? Colors.white
+        : fixed
+        ? t.colors['foreground-spinner']!
         : IconTheme.of(context).color ?? t.ink;
+    // The spinner repaints every frame while it is mounted. Its own repaint
+    // boundary keeps that to the spinner's layer instead of re-recording the
+    // button, page or list that happens to contain it.
     return ExcludeSemantics(
-      child: SizedBox.square(
-        dimension: dimension,
-        child: AnimatedBuilder(
-          animation: Listenable.merge([spin, dash]),
-          builder: (_, _) => CustomPaint(
-            painter: _SpinnerPainter(
-              brutal: t.brutal,
-              color: color,
-              rotation: reduced ? 0 : spin.value,
-              phase: reduced ? .5 : dash.value,
-              reduced: reduced,
+      child: RepaintBoundary(
+        child: SizedBox.square(
+          dimension: dimension,
+          child: AnimatedBuilder(
+            animation: Listenable.merge([spin, dash]),
+            builder: (_, _) => CustomPaint(
+              painter: _SpinnerPainter(
+                quarter: quarter,
+                stroke: t.size('stroke.spinnerRing', fallback: 0),
+                radiusRatio: t.size(
+                  'ratio.spinnerRingRadius',
+                  fallback: 10 / 24,
+                ),
+                inset: t.size('space.spinnerRingInset', fallback: 0),
+                arcOpacity: t.size('opacity.spinnerArc', fallback: .8),
+                color: color,
+                rotation: reduced ? 0 : spin.value,
+                phase: reduced ? .5 : dash.value,
+                reduced: reduced,
+              ),
             ),
           ),
         ),
@@ -1583,21 +1695,26 @@ class _RaftSpinnerState extends State<RaftSpinner>
 
 class _SpinnerPainter extends CustomPainter {
   const _SpinnerPainter({
-    required this.brutal,
     required this.color,
+    required this.quarter,
+    required this.stroke,
+    required this.radiusRatio,
+    required this.inset,
+    required this.arcOpacity,
     required this.rotation,
     required this.phase,
     required this.reduced,
   });
-  final bool brutal, reduced;
+  final bool reduced, quarter;
+  final double stroke, radiusRatio, inset, arcOpacity;
   final Color color;
   final double rotation, phase;
   @override
   void paint(Canvas canvas, Size size) {
-    final stroke = brutal ? 2.0 : size.width * 2.5 / 24;
+    final stroke = this.stroke > 0 ? this.stroke : size.width * 2.5 / 24;
     final rect = Rect.fromCircle(
       center: size.center(Offset.zero),
-      radius: brutal ? size.width / 2 - 1 : size.width * 10 / 24,
+      radius: size.width * radiusRatio - inset,
     );
     final paint = Paint()
       ..style = PaintingStyle.stroke
@@ -1607,8 +1724,8 @@ class _SpinnerPainter extends CustomPainter {
     canvas.translate(-size.width / 2, -size.height / 2);
     paint.color = color.withValues(alpha: .2);
     canvas.drawOval(rect, paint);
-    paint.color = color.withValues(alpha: brutal ? 1 : .8);
-    paint.strokeCap = brutal ? StrokeCap.butt : StrokeCap.round;
+    paint.color = color.withValues(alpha: arcOpacity);
+    paint.strokeCap = quarter ? StrokeCap.butt : StrokeCap.round;
     final eased = Curves.easeInOut.transform(phase);
     final length = reduced
         ? 72.0
@@ -1619,7 +1736,7 @@ class _SpinnerPainter extends CustomPainter {
     canvas.drawArc(
       rect,
       -math.pi / 2 + offset / 150 * math.pi * 2,
-      brutal ? math.pi / 2 : length / 150 * math.pi * 2,
+      quarter ? math.pi / 2 : length / 150 * math.pi * 2,
       false,
       paint,
     );
@@ -1627,10 +1744,14 @@ class _SpinnerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SpinnerPainter old) =>
+      old.quarter != quarter ||
+      old.stroke != stroke ||
+      old.radiusRatio != radiusRatio ||
+      old.inset != inset ||
+      old.arcOpacity != arcOpacity ||
       old.rotation != rotation ||
       old.phase != phase ||
       old.color != color ||
-      old.brutal != brutal ||
       old.reduced != reduced;
 }
 
@@ -1664,15 +1785,11 @@ class RaftMessageEmbedRecipe {
   final RaftTokens tokens;
   double get maxWidth => 544;
   BorderRadius get radius => BorderRadius.circular(8);
-  BorderSide get border => BorderSide(
-    color: tokens.brutal
-        ? Colors.black.withValues(alpha: .2)
-        : tokens.colors['line-muted']!,
-    width: tokens.brutal ? 1 : .5,
-  );
+  BorderSide get border =>
+      BorderSide(color: tokens.colors['line-muted']!, width: .5);
   EdgeInsets get inset => const EdgeInsets.all(2);
   EdgeInsets get itemInset =>
-      EdgeInsets.symmetric(horizontal: 12, vertical: tokens.brutal ? 8 : 14);
+      EdgeInsets.symmetric(horizontal: 12, vertical: 14);
   EdgeInsets get itemPadding => itemInset;
   EdgeInsets get headerPadding =>
       const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
@@ -1683,29 +1800,21 @@ class RaftMessageEmbedRecipe {
     borderRadius: radius,
     border: Border.fromBorderSide(border),
   );
-  TextStyle get author => metadata.copyWith(
-    fontWeight: tokens.brutal ? FontWeight.w700 : FontWeight.w600,
-    color: tokens.brutal ? Colors.black.withValues(alpha: .75) : tokens.strong,
-  );
+  TextStyle get author =>
+      metadata.copyWith(fontWeight: FontWeight.w600, color: tokens.strong);
   TextStyle get count => header.copyWith(
-    fontWeight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
-    color: tokens.brutal
-        ? Colors.black.withValues(alpha: .55)
-        : tokens.colors['foreground-placeholder']!,
+    fontWeight: FontWeight.w500,
+    color: tokens.colors['foreground-placeholder']!,
   );
-  TextStyle get source => count.copyWith(
-    color: tokens.brutal
-        ? Colors.black.withValues(alpha: .5)
-        : tokens.colors['foreground-placeholder']!,
-  );
+  TextStyle get source =>
+      count.copyWith(color: tokens.colors['foreground-placeholder']!);
   TextStyle get footer => showMore;
   TextStyle get header =>
       RaftTypography.body(tokens, size: 11, line: 16, color: tokens.muted);
   TextStyle get metadata => header;
-  TextStyle get showMore => header.copyWith(
-    fontWeight: RaftTypography.black(tokens),
-    decoration: TextDecoration.underline,
-  );
+  TextStyle get showMore =>
+      header.copyWith(fontWeight: RaftTypography.black(tokens));
+  bool get showMoreUnderlined => true;
   double get collapsedHeight => 160;
   int get collapsedLines => 8;
 }
@@ -1728,7 +1837,14 @@ class RaftLightboxRecipe {
       BorderSide(color: tokens.colors['line-strong']!, width: 2);
 }
 
-enum RaftMenuKind { dropdown, selectionPopover }
+enum RaftMenuKind {
+  /// The Web product MenuItem inside a Popover (for example Help).
+  dropdown,
+
+  /// The published RUI DropdownMenuContent / DropdownMenuItem slots.
+  dropdownMenu,
+  selectionPopover,
+}
 
 /// Scoped open state; the product owner closes it when its authority changes.
 class RaftMenuController extends ChangeNotifier {
@@ -1804,6 +1920,7 @@ class RaftDropdownMenu extends StatefulWidget {
     required this.label,
     required this.entries,
     this.controller,
+    this.kind = RaftMenuKind.dropdown,
     this.defaultOpen = false,
     this.width = 192,
     this.tooltip,
@@ -1818,6 +1935,7 @@ class RaftDropdownMenu extends StatefulWidget {
     this.sideOffset,
     this.triggerBuilder,
     this.header,
+    this.surfaceKey,
     this.panelInset,
     this.openOnHover = false,
     this.closeDelay = const Duration(milliseconds: 120),
@@ -1831,12 +1949,16 @@ class RaftDropdownMenu extends StatefulWidget {
   final double? sideOffset;
   final RaftDropdownTriggerBuilder? triggerBuilder;
   final Widget? header;
+
+  /// Identifies the rendered popup surface without changing trigger identity.
+  final Key? surfaceKey;
   final EdgeInsetsGeometry? panelInset;
   final bool openOnHover;
   final Duration closeDelay;
   final String label;
   final List<RaftMenuEntry> entries;
   final RaftMenuController? controller;
+  final RaftMenuKind kind;
   final bool defaultOpen;
   final double width;
   final String? tooltip;
@@ -1974,9 +2096,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
       return;
     }
     focusPopup =
-        !widget.openOnHover ||
-        _RaftFocusVisible.shared.keyboard ||
-        edge != null;
+        !widget.openOnHover || RaftFocusVisible.shared.keyboard || edge != null;
     controller.open();
     if (edge != null) {
       final captured = ticket;
@@ -2019,7 +2139,35 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
       menuFocus.requestFocus();
       return;
     }
-    nodes[delta > 0 ? enabled.first : enabled.last].requestFocus();
+    _focusAndReveal(delta > 0 ? enabled.first : enabled.last);
+  }
+
+  void _focusAndReveal(int index) {
+    final node = nodes[index];
+    node.requestFocus();
+    final captured = ticket;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !triggerEnabled ||
+          !controller.isOpen ||
+          captured != ticket ||
+          index >= nodes.length ||
+          nodes[index] != node ||
+          !node.hasFocus) {
+        return;
+      }
+      final rowContext = node.context;
+      if (rowContext == null ||
+          !rowContext.mounted ||
+          FocusScope.of(rowContext) != popup) {
+        return;
+      }
+      final target = rowContext.findRenderObject();
+      final scrollable = Scrollable.maybeOf(rowContext);
+      if (target == null || scrollable == null) return;
+      // The nearest scrollable is the anchored popup, never the page.
+      revealRaftMenuRow(target: target, position: scrollable.position);
+    });
   }
 
   void move(int delta) {
@@ -2035,7 +2183,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
       _edge(delta);
       return;
     }
-    nodes[choices[(current + delta) % choices.length]].requestFocus();
+    _focusAndReveal(choices[(current + delta) % choices.length]);
   }
 
   void activateEntry(int index) {
@@ -2071,6 +2219,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final grows = RaftScaled.grows(context);
     final recipe = RaftMenuRecipe(
       t,
       viewportHeight: MediaQuery.sizeOf(context).height,
@@ -2091,96 +2240,102 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
     final movement = Scrollable.maybeOf(context)?.position;
     return OverlayPortal(
       controller: portal,
-      overlayChildBuilder: (context) => !triggerEnabled
-          ? const SizedBox.shrink()
-          : Stack(
-              children: [
-                if (!widget.openOnHover)
-                  Positioned.fill(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => close(),
-                      child: const SizedBox.expand(),
+      overlayChildBuilder: raftBackDismissed(
+        () => close(),
+        (context) => !triggerEnabled
+            ? const SizedBox.shrink()
+            : Stack(
+                children: [
+                  if (!widget.openOnHover)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => close(),
+                        child: const SizedBox.expand(),
+                      ),
                     ),
-                  ),
-                Positioned.fill(
-                  child: RaftAnchoredPopup(
-                    anchorKey: anchorKey,
-                    movement: movement,
-                    above: top,
-                    toRight: widget.side == RaftDropdownSide.right,
-                    alignRight: right,
-                    gap: gap,
-                    child: MouseRegion(
-                      onEnter: (_) => hoverClose?.cancel(),
-                      onExit: (_) => hoverExit(),
-                      child: TapRegion(
-                        groupId: this,
-                        enabled: widget.openOnHover,
-                        child: FocusScope(
-                          node: popup,
-                          child: CallbackShortcuts(
-                            bindings: {
-                              const SingleActivator(
-                                LogicalKeyboardKey.escape,
-                              ): () =>
-                                  close(),
-                              const SingleActivator(
-                                LogicalKeyboardKey.arrowDown,
-                              ): () =>
-                                  move(1),
-                              const SingleActivator(
-                                LogicalKeyboardKey.arrowUp,
-                              ): () =>
-                                  move(-1),
-                              const SingleActivator(
-                                LogicalKeyboardKey.home,
-                              ): () =>
-                                  _edge(1),
-                              const SingleActivator(
-                                LogicalKeyboardKey.end,
-                              ): () =>
-                                  _edge(-1),
-                            },
-                            child: Focus(
-                              focusNode: menuFocus,
-                              child: RaftMenuPanel(
-                                width: widget.width,
-                                padding: widget.panelInset,
-                                onDismiss: () => close(),
-                                children: [
-                                  if (widget.header != null) widget.header!,
-                                  for (
-                                    var i = 0;
-                                    i < widget.entries.length;
-                                    i++
-                                  )
-                                    if (widget.entries[i].label == null)
-                                      SizedBox(
-                                        height: t.brutal ? 2 : 9,
-                                        child: Center(
-                                          child: Container(
-                                            height: t.brutal ? 2 : .5,
-                                            color: t.brutal
-                                                ? Colors.black
-                                                : t.colors['line-hairline'],
+                  Positioned.fill(
+                    child: RaftAnchoredPopup(
+                      anchorKey: anchorKey,
+                      movement: movement,
+                      above: top,
+                      toRight: widget.side == RaftDropdownSide.right,
+                      alignRight: right,
+                      gap: gap,
+                      snapToPixel: t.isRaftLook,
+                      child: RaftHoverRegion(
+                        onEnter: (_) => hoverClose?.cancel(),
+                        onExit: (_) => hoverExit(),
+                        child: TapRegion(
+                          groupId: this,
+                          enabled: widget.openOnHover,
+                          child: FocusScope(
+                            node: popup,
+                            child: CallbackShortcuts(
+                              bindings: {
+                                const SingleActivator(
+                                  LogicalKeyboardKey.escape,
+                                ): () =>
+                                    close(),
+                                const SingleActivator(
+                                  LogicalKeyboardKey.arrowDown,
+                                ): () =>
+                                    move(1),
+                                const SingleActivator(
+                                  LogicalKeyboardKey.arrowUp,
+                                ): () =>
+                                    move(-1),
+                                const SingleActivator(
+                                  LogicalKeyboardKey.home,
+                                ): () =>
+                                    _edge(1),
+                                const SingleActivator(
+                                  LogicalKeyboardKey.end,
+                                ): () =>
+                                    _edge(-1),
+                              },
+                              child: Focus(
+                                focusNode: menuFocus,
+                                child: RaftMenuPanel(
+                                  key: widget.surfaceKey,
+                                  kind: widget.kind,
+                                  width: widget.width,
+                                  padding: widget.panelInset,
+                                  onDismiss: () => close(),
+                                  children: [
+                                    if (widget.header != null) widget.header!,
+                                    for (
+                                      var i = 0;
+                                      i < widget.entries.length;
+                                      i++
+                                    )
+                                      if (widget.entries[i].label == null)
+                                        SizedBox(
+                                          height: 9,
+                                          child: Center(
+                                            child: Container(
+                                              height: .5,
+                                              color: t.colors['line-hairline'],
+                                            ),
                                           ),
+                                        )
+                                      else
+                                        RaftMenuItem(
+                                          kind: widget.kind,
+                                          label: widget.entries[i].label!,
+                                          glyph: widget.entries[i].glyph,
+                                          leading: widget.entries[i].leading,
+                                          trailing: widget.entries[i].trailing,
+                                          focusNode: nodes[i],
+                                          onMove: move,
+                                          onPressed:
+                                              widget.entries[i].onPressed ==
+                                                  null
+                                              ? null
+                                              : () => activateEntry(i),
                                         ),
-                                      )
-                                    else
-                                      RaftMenuItem(
-                                        label: widget.entries[i].label!,
-                                        glyph: widget.entries[i].glyph,
-                                        leading: widget.entries[i].leading,
-                                        trailing: widget.entries[i].trailing,
-                                        focusNode: nodes[i],
-                                        onMove: move,
-                                        onPressed:
-                                            widget.entries[i].onPressed == null
-                                            ? null
-                                            : () => activateEntry(i),
-                                      ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -2188,10 +2343,10 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-      child: MouseRegion(
+                ],
+              ),
+      ),
+      child: RaftHoverRegion(
         onEnter: (_) => hoverEnter(),
         onExit: (_) => hoverExit(),
         child: TapRegion(
@@ -2228,9 +2383,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                     variant: RaftControlVariant.outline,
                     visualHeight:
                         widget.triggerStyle == RaftDropdownTriggerStyle.picker
-                        ? t.brutal
-                              ? 32
-                              : 28
+                        ? 28
                         : 32,
                     recipe:
                         widget.triggerStyle == RaftDropdownTriggerStyle.picker
@@ -2256,12 +2409,26 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                             size:
                                 widget.triggerStyle ==
                                     RaftDropdownTriggerStyle.picker
-                                ? (t.brutal ? 14 : 12)
+                                ? (12)
                                 : 14,
                           ),
                           const SizedBox(width: 6),
                         ],
-                        Text(widget.label),
+                        if (t.isRaftLook)
+                          // Match Button's label constraints inside composed
+                          // content; icons keep their own intrinsic width.
+                          Flexible(
+                            child: Text(
+                              widget.label,
+                              maxLines: grows ? null : 1,
+                              softWrap: grows,
+                              overflow: grows
+                                  ? TextOverflow.clip
+                                  : TextOverflow.ellipsis,
+                            ),
+                          )
+                        else
+                          Text(widget.label),
                         if (widget.trailingGlyph != null) ...[
                           const SizedBox(width: 6),
                           if (widget.triggerStyle ==
@@ -2299,11 +2466,84 @@ class RaftMenuPanel extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   @override
   Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
     final recipe = RaftMenuRecipe(
-      RaftTokens.of(context),
+      t,
       kind: kind,
       viewportHeight: MediaQuery.sizeOf(context).height,
     );
+    final items = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    );
+    Widget panel;
+    if (t.isRaftLook && kind == RaftMenuKind.selectionPopover) {
+      final rt = t.recipeTokens;
+      final selection = RaftWebSelectionPanelRecipe.resolve(
+        tokens: rt,
+        states: t.recipeStates(),
+      );
+      final minimumWidth =
+          selection.root.minWidth ??
+          RaftPopoverRecipe.resolve(
+            theme: t.recipeTheme,
+            tokens: rt,
+            states: t.recipeStates(),
+          ).content.minWidth ??
+          0;
+      panel = SizedBox(
+        width: math.max(width, minimumWidth),
+        child: RaftPopoverSurface(
+          surfaceStyle: selection.root,
+          padding: padding?.resolve(Directionality.of(context)),
+          child: RaftRecipeBox(
+            style: selection.list,
+            tokens: rt,
+            applyText: false,
+            child: SingleChildScrollView(primary: false, child: items),
+          ),
+        ),
+      );
+    } else if (t.isRaftLook && kind != RaftMenuKind.selectionPopover) {
+      final rt = t.recipeTokens;
+      final currentPopover = kind == RaftMenuKind.dropdownMenu
+          ? RaftDropdownMenuRecipe.resolve(
+              theme: t.recipeTheme,
+              tokens: rt,
+              states: t.recipeStates(),
+            ).content
+          : RaftPopoverRecipe.resolve(
+              theme: t.recipeTheme,
+              tokens: rt,
+              states: t.recipeStates(),
+            ).content;
+      panel = SizedBox(
+        // CSS min-width wins over a narrower authored width; the placement
+        // owner's viewport constraints still cap the used popup width.
+        width: math.max(width, currentPopover.minWidth ?? 0),
+        child: RaftPopoverSurface(
+          surfaceStyle: currentPopover,
+          padding: padding?.resolve(Directionality.of(context)),
+          child: DefaultTextStyle.merge(
+            style: currentPopover.text(rt),
+            child: items,
+          ),
+        ),
+      );
+    } else {
+      panel = Container(
+        width: width,
+        padding: padding ?? recipe.inset,
+        decoration: BoxDecoration(
+          color: recipe.background,
+          borderRadius: recipe.radius,
+          border: Border.fromBorderSide(recipe.border),
+          boxShadow: recipe.shadows,
+        ),
+        child: items,
+      );
+    }
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): () =>
@@ -2317,21 +2557,7 @@ class RaftMenuPanel extends StatelessWidget {
           // debug "no Material" underline style off the items.
           child: DefaultTextStyle.merge(
             style: const TextStyle(decoration: TextDecoration.none),
-            child: Container(
-              width: width,
-              padding: padding ?? recipe.inset,
-              decoration: BoxDecoration(
-                color: recipe.background,
-                borderRadius: recipe.radius,
-                border: Border.fromBorderSide(recipe.border),
-                boxShadow: recipe.shadows,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: children,
-              ),
-            ),
+            child: panel,
           ),
         ),
       ),
@@ -2352,7 +2578,16 @@ class RaftMenuItem extends StatefulWidget {
     this.autofocus = false,
     this.focusNode,
     this.onMove,
+    this.italic = false,
+    this.divider = false,
   });
+
+  /// SelectionPopover sentinel rows ("Assigned to me", "Unassigned"):
+  /// `italic text-foreground-muted` (brutal black/70).
+  final bool italic;
+
+  /// SelectionPopover rows end in `border-b` (brutal black/10) except the last.
+  final bool divider;
   final String label;
   final VoidCallback? onPressed;
   final RaftGlyph? glyph;
@@ -2395,6 +2630,7 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
     // Match DropdownMenuItem's CSS row while retaining the same 48px native
     // hit/semantics expansion as the shared recipe controls.
     final height = recipe.rowVisualHeight;
+    final grows = RaftScaled.grows(context);
     Widget result = Semantics(
       role: widget.kind == RaftMenuKind.selectionPopover
           ? SemanticsRole.menuItemCheckbox
@@ -2455,69 +2691,182 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
             },
           ),
         },
-        child: MouseRegion(
+        child: RaftHoverRegion(
           onEnter: (_) => setState(() => hovered = true),
           onExit: (_) => setState(() => hovered = false),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             excludeFromSemantics: true,
             onTap: enabled ? activateItem : null,
-            child: Container(
-              height: height,
-              padding: recipe.rowInset,
-              decoration: BoxDecoration(
-                color: enabled && (hovered || focused)
-                    ? recipe.highlightedBackground
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(t.brutal ? 0 : 2),
-              ),
-              child: Opacity(
-                opacity: enabled ? 1 : .3,
-                child: Row(
-                  children: [
-                    if (widget.leading != null || widget.glyph != null) ...[
-                      if (widget.leading != null)
-                        DefaultTextStyle.merge(
-                          style: TextStyle(
-                            color: enabled && (hovered || focused)
-                                ? t.ink
-                                : recipe.foreground,
+            child: t.isRaftLook && widget.kind == RaftMenuKind.dropdown
+                ? RaftMenuActionRow(
+                    label: widget.label,
+                    leading:
+                        widget.leading ??
+                        (widget.glyph == null
+                            ? null
+                            : RaftIcon(widget.glyph!, size: 14)),
+                    trailing: widget.trailing,
+                    enabled: enabled,
+                    hovered: hovered,
+                    focusVisible: focused,
+                  )
+                : t.isRaftLook && widget.kind == RaftMenuKind.dropdownMenu
+                ? RaftMenuSlotRow(
+                    label: widget.label,
+                    leading:
+                        widget.leading ??
+                        (widget.glyph == null
+                            ? null
+                            : RaftIcon(widget.glyph!, size: 16)),
+                    trailing: widget.trailing,
+                    root: RaftDropdownMenuRecipe.resolve(
+                      theme: t.recipeTheme,
+                      tokens: t.recipeTokens,
+                      states: t
+                          .recipeStates(
+                            disabled: !enabled,
+                            extra: [
+                              if (!enabled) 'data-disabled',
+                              if (widget.selected) 'data-selected',
+                              if (enabled && (hovered || focused))
+                                'data-highlighted',
+                            ],
+                          )
+                          .copyWith(
+                            viewportWidth: MediaQuery.sizeOf(context).width,
+                            viewportHeight: MediaQuery.sizeOf(context).height,
                           ),
-                          child: widget.leading!,
-                        )
-                      else
-                        RaftIcon(
-                          widget.glyph!,
-                          size: t.brutal ? 14 : 16,
-                          strokeWidth: t.brutal ? 2 : 1.5,
-                          color: enabled && (hovered || focused)
-                              ? t.ink
-                              : recipe.foreground,
+                    ).item,
+                    tokens: t.recipeTokens,
+                  )
+                : t.isRaftLook && widget.kind == RaftMenuKind.selectionPopover
+                ? Builder(
+                    builder: (context) {
+                      final rt = t.recipeTokens;
+                      final slots = RaftWebSelectionRowRecipe.resolve(
+                        checked: widget.selected,
+                        disabled: !enabled,
+                        italic: widget.italic,
+                        states: t.recipeStates(
+                          hovered: enabled && hovered,
+                          focusVisible: enabled && focused,
+                          disabled: !enabled,
                         ),
-                      SizedBox(width: t.brutal ? 8 : 10),
-                    ],
-                    Expanded(
-                      child: Text(
-                        widget.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: recipe.label.copyWith(
-                          fontWeight:
-                              widget.selected ||
+                        tokens: rt,
+                      );
+                      return RaftMenuSlotRow(
+                        label: widget.label,
+                        labelChild: Text(
+                          widget.label,
+                          overflow: widget.italic
+                              ? TextOverflow.visible
+                              : TextOverflow.ellipsis,
+                        ),
+                        leading:
+                            widget.leading ??
+                            (widget.glyph == null
+                                ? null
+                                : RaftIcon(widget.glyph!, size: 16)),
+                        trailing: widget.trailing,
+                        indicator: widget.selected
+                            ? RaftIcon(
+                                RaftGlyph.check,
+                                size: slots.indicator.width!,
+                              )
+                            : null,
+                        root: slots.root,
+                        itemLeading: slots.leading,
+                        itemText: slots.label,
+                        itemIndicator: slots.indicator,
+                        tokens: rt,
+                      );
+                    },
+                  )
+                : Container(
+                    height: grows ? null : height,
+                    constraints: grows
+                        ? BoxConstraints(minHeight: height)
+                        : null,
+                    padding: recipe.rowInset,
+                    decoration: BoxDecoration(
+                      color: enabled && (hovered || focused)
+                          ? recipe.highlightedBackground
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(2),
+                      border: widget.divider
+                          ? Border(
+                              bottom: BorderSide(
+                                color: t.colors['line-muted']!,
+                              ),
+                            )
+                          : null,
+                    ),
+                    child: Opacity(
+                      opacity: enabled ? 1 : .3,
+                      child: Row(
+                        children: [
+                          if (widget.leading != null ||
+                              widget.glyph != null) ...[
+                            if (widget.leading != null)
+                              DefaultTextStyle.merge(
+                                style: TextStyle(
+                                  color: enabled && (hovered || focused)
+                                      ? t.ink
+                                      : recipe.foreground,
+                                ),
+                                child: widget.leading!,
+                              )
+                            else
+                              RaftIcon(
+                                widget.glyph!,
+                                size: 16,
+                                strokeWidth: 1.5,
+                                color: enabled && (hovered || focused)
+                                    ? t.ink
+                                    : recipe.foreground,
+                              ),
+                            SizedBox(
+                              width:
                                   widget.kind == RaftMenuKind.selectionPopover
-                              ? FontWeight.w700
-                              : recipe.label.fontWeight,
-                        ),
+                                  ? 8
+                                  : 10,
+                            ),
+                          ],
+                          Expanded(
+                            child: Text(
+                              widget.label,
+                              maxLines: grows ? null : 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: RaftControlTypography.of(
+                                context,
+                                recipe.label.copyWith(
+                                  fontWeight:
+                                      widget.selected ||
+                                          widget.kind ==
+                                              RaftMenuKind.selectionPopover
+                                      ? FontWeight.w700
+                                      : recipe.label.fontWeight,
+                                  fontStyle: widget.italic
+                                      ? FontStyle.italic
+                                      : null,
+                                  color: widget.italic ? t.muted : null,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (widget.trailing != null) widget.trailing!,
+                          if (widget.kind == RaftMenuKind.selectionPopover &&
+                              widget.selected)
+                            RaftIcon(
+                              RaftGlyph.check,
+                              size: 12,
+                              color: t.strong,
+                            ),
+                        ],
                       ),
                     ),
-                    if (widget.trailing != null) widget.trailing!,
-                    if (widget.kind == RaftMenuKind.selectionPopover &&
-                        widget.selected)
-                      RaftIcon(RaftGlyph.check, size: 12, color: t.strong),
-                  ],
-                ),
-              ),
-            ),
+                  ),
           ),
         ),
       ),
@@ -2554,7 +2903,7 @@ class RaftTextLink extends StatelessWidget {
           RaftIcon(glyph!, size: 12),
           const SizedBox(width: 4),
         ],
-        Text(
+        RaftUnderlinedText(
           label,
           style:
               textStyle ??
@@ -2563,7 +2912,6 @@ class RaftTextLink extends StatelessWidget {
                 fontSize: 11,
                 height: 16 / 11,
                 fontWeight: RaftTypography.black(RaftTokens.of(context)),
-                decoration: TextDecoration.underline,
               ),
         ),
       ],
@@ -2652,13 +3000,14 @@ class _TextLinkFocusPainter extends CustomPainter {
 class RaftTaskSectionRecipe {
   const RaftTaskSectionRecipe(this.tokens);
   final RaftTokens tokens;
-  EdgeInsets get inset => EdgeInsets.all(tokens.brutal ? 0 : 12);
+  EdgeInsets get inset => EdgeInsets.all(12);
 
   /// TasksPanel.tsx1178 applies p-4 over the raft-ui dark viewport p-7.
   EdgeInsets get viewportInset => const EdgeInsets.all(16);
 
   /// MainLayout.tsx2255 AppShellRoot font-display, inherited by task cards.
   TextStyle get documentStyle => TextStyle(
+    locale: tokens.textLocale,
     fontFamily: tokens.headingFont,
     fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
     fontSize: 16,
@@ -2668,194 +3017,18 @@ class RaftTaskSectionRecipe {
   );
   double get itemGap => 10;
   double get sectionGap => 24;
-  BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 10);
+  BorderRadius get radius => BorderRadius.circular(10);
   Color get background => tokens.colors['task-section-fill']!;
   BoxDecoration get decoration =>
       BoxDecoration(color: background, borderRadius: radius);
-  TextStyle get heading => RaftTypography.body(
-    tokens,
-    size: 12,
-    line: 16,
-    weight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
-  );
+  TextStyle get heading =>
+      RaftTypography.body(tokens, size: 12, line: 16, weight: FontWeight.w500);
   TextStyle get count => RaftTypography.mono(tokens, size: 12, line: 16);
-  Color get chevron => tokens.brutal
-      ? tokens.strong.withValues(alpha: .5)
-      : tokens.colors['foreground-icon']!;
-}
-
-@immutable
-class RaftSegmentedOption<T> {
-  const RaftSegmentedOption({
-    required this.value,
-    required this.label,
-    this.glyph,
-    this.tooltip,
-    this.count,
-    this.enabled = true,
-    this.labelSuffix,
-    this.itemKey,
-  });
-  final T value;
-  final String label;
-
-  /// Key of the segment (tests, parity interactions).
-  final Key? itemKey;
-
-  /// A `font-mono text-[10px] font-bold uppercase text-black/60` note inside
-  /// the label (`gap-1.5`), e.g. BillingIntervalSegmentedControl's "Save 12%".
-  final String? labelSuffix;
-  final RaftGlyph? glyph;
-  final String? tooltip;
-
-  /// `SegmentedControlCount` (buttons style).
-  final String? count;
-  final bool enabled;
-}
-
-/// One source radio group: arrow keys select and move focus within the group.
-class RaftSegmentedControl<T> extends StatefulWidget {
-  const RaftSegmentedControl({
-    super.key,
-    required this.value,
-    required this.items,
-    required this.onChanged,
-    this.label,
-    this.visualHeight = 32,
-    this.style = RaftSegmentedStyle.buttons,
-    this.minimumTargetSize,
-  });
-  final RaftSegmentedStyle style;
-  final T value;
-  final List<RaftSegmentedOption<T>> items;
-  final ValueChanged<T>? onChanged;
-  final String? label;
-  final double visualHeight;
-
-  /// Passed to each segment's [RaftControl] (layout follows the Web box when
-  /// set to [visualHeight]).
-  final double? minimumTargetSize;
-  @override
-  State<RaftSegmentedControl<T>> createState() =>
-      _RaftSegmentedControlState<T>();
-}
-
-class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
-  final scope = FocusScopeNode(
-    traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
-  );
-  @override
-  void dispose() {
-    scope.dispose();
-    super.dispose();
-  }
-
-  void move(int delta) {
-    if (widget.onChanged == null || widget.items.isEmpty) return;
-    final current = widget.items.indexWhere((e) => e.value == widget.value);
-    final next =
-        ((current < 0
-                ? delta > 0
-                      ? -1
-                      : 0
-                : current) +
-            delta) %
-        widget.items.length;
-    widget.onChanged!(widget.items[next].value);
-    if (delta > 0) {
-      scope.nextFocus();
-    } else {
-      scope.previousFocus();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => FocusScope(
-    node: scope,
-    child: CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.arrowRight): () => move(1),
-        const SingleActivator(LogicalKeyboardKey.arrowDown): () => move(1),
-        const SingleActivator(LogicalKeyboardKey.arrowLeft): () => move(-1),
-        const SingleActivator(LogicalKeyboardKey.arrowUp): () => move(-1),
-      },
-      child: Semantics(
-        label: widget.label,
-        container: true,
-        child: Wrap(
-          spacing: widget.style == RaftSegmentedStyle.buttons
-              ? _segmentedRoot(context).columnGap ?? 0
-              : 4,
-          runSpacing: widget.style == RaftSegmentedStyle.buttons
-              ? _segmentedRoot(context).rowGap ?? 0
-              : 4,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            for (var i = 0; i < widget.items.length; i++) ...[
-              if (widget.style == RaftSegmentedStyle.buttons)
-                _SegmentedItem<T>(
-                  key: widget.items[i].itemKey,
-                  option: widget.items[i],
-                  checked: widget.items[i].value == widget.value,
-                  onPressed:
-                      widget.onChanged == null || !widget.items[i].enabled
-                      ? null
-                      : () => widget.onChanged!(widget.items[i].value),
-                )
-              else if (widget.style == RaftSegmentedStyle.taskViews)
-                RaftTouchTargetExpander(
-                  minSize: const Size.square(RaftMetrics.touchTarget),
-                  child: RaftTaskFilterButton(
-                    selected: widget.items[i].value == widget.value,
-                    onPressed:
-                        widget.onChanged == null || !widget.items[i].enabled
-                        ? null
-                        : () => widget.onChanged!(widget.items[i].value),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      spacing: 6,
-                      children: [
-                        if (widget.items[i].glyph != null)
-                          RaftIcon(widget.items[i].glyph!, size: 14),
-                        Text(widget.items[i].label),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                RaftControl(
-                  kind: RaftControlKind.tab,
-                  variant: widget.items[i].value == widget.value
-                      ? RaftControlVariant.primary
-                      : RaftControlVariant.outline,
-                  selected: widget.items[i].value == widget.value,
-                  tooltip: widget.items[i].tooltip,
-                  visualHeight: widget.visualHeight,
-                  minimumTargetSize: widget.minimumTargetSize,
-                  onPressed: widget.onChanged == null
-                      ? null
-                      : () => widget.onChanged!(widget.items[i].value),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (widget.items[i].glyph != null) ...[
-                        RaftIcon(widget.items[i].glyph!, size: 13),
-                        const SizedBox(width: 4),
-                      ],
-                      Text(widget.items[i].label),
-                    ],
-                  ),
-                ),
-            ],
-          ],
-        ),
-      ),
-    ),
-  );
+  Color get chevron => tokens.colors['foreground-icon']!;
 }
 
 /// Original PickerTriggerButton, not the generic Button outline variant.
-/// Source: raft-ui0.5.27 index.mjs7146; Search activeFilterClass2173.
+/// Source: raft-ui 0.5.52 index.mjs, Search activeFilterClass.
 class RaftPickerTriggerRecipe extends RaftControlRecipe {
   const RaftPickerTriggerRecipe(
     super.tokens, {
@@ -2867,65 +3040,45 @@ class RaftPickerTriggerRecipe extends RaftControlRecipe {
   bool get transformsOnInteraction => false;
   @override
   Color get background => selected
-      ? tokens.brutal
-            ? tokens.primaryFill
-            : tokens.colors['primary-soft']!
+      ? tokens.colors['primary-soft']!
       : tokens.dark
       ? tokens.colors['fill-muted']!
       : tokens.panel;
   @override
-  Color backgroundFor({bool hovered = false}) =>
-      selected || !hovered || tokens.brutal
+  Color backgroundFor({bool hovered = false}) => selected || !hovered
       ? background
       : tokens.colors[tokens.dark ? 'fill-strong' : 'ink-2']!;
   @override
-  Color get foreground => selected
-      ? tokens.strong
-      : tokens.brutal
-      ? RaftPrimitiveColors.black.withValues(alpha: .7)
-      : tokens.colors['foreground-placeholder']!;
+  Color get foreground =>
+      selected ? tokens.strong : tokens.colors['foreground-placeholder']!;
   @override
   Color get focusRing => tokens.colors['primary-400']!;
   @override
-  BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 6);
+  BorderRadius get radius => BorderRadius.circular(6);
   @override
-  BorderSide side({bool hovered = false}) => tokens.brutal
-      ? BorderSide(
-          color: selected || hovered || popupOpen
-              ? RaftPrimitiveColors.black
-              : RaftPrimitiveColors.black.withValues(alpha: .3),
-          width: 2,
-        )
-      : BorderSide.none;
+  BorderSide side({bool hovered = false}) => BorderSide.none;
   @override
-  EdgeInsets get padding =>
-      EdgeInsets.symmetric(horizontal: tokens.brutal ? 12 : 10);
+  EdgeInsets get padding => EdgeInsets.symmetric(horizontal: 10);
   @override
   TextStyle get textStyle => RaftTypography.body(
     tokens,
     size: 12,
     line: 16,
-    weight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
+    weight: FontWeight.w500,
     color: foreground,
-  ).copyWith(letterSpacing: tokens.brutal ? 0 : -.06);
+  ).copyWith(letterSpacing: -.06);
   @override
-  double get insetHighlightAlpha => tokens.brutal
-      ? 0
-      : tokens.dark
-      ? .045
-      : .05;
+  double get insetHighlightAlpha => tokens.dark ? .045 : .05;
   @override
   List<BoxShadow> shadows({
     bool hovered = false,
     bool pressed = false,
     bool focused = false,
   }) => [
-    if (tokens.brutal && selected)
-      const BoxShadow(color: Colors.black, offset: Offset(2, 2)),
-    if (!tokens.brutal && selected) ...tokens.shadows,
-    if (!tokens.brutal && !selected && !tokens.dark)
+    if (selected) ...tokens.shadows,
+    if (!selected && !tokens.dark)
       BoxShadow(color: tokens.colors['line-muted']!, spreadRadius: 1),
-    if (!tokens.brutal && !selected && tokens.dark) ...[
+    if (!selected && tokens.dark) ...[
       BoxShadow(color: Colors.black.withValues(alpha: .4), spreadRadius: 1),
       BoxShadow(
         color: Colors.black.withValues(alpha: .22),
@@ -2933,56 +3086,43 @@ class RaftPickerTriggerRecipe extends RaftControlRecipe {
         blurRadius: 3,
       ),
     ],
-    if (focused && !tokens.brutal) BoxShadow(color: focusRing, spreadRadius: 2),
+    if (focused) BoxShadow(color: focusRing, spreadRadius: 2),
   ];
 }
 
-/// The same original PickerTriggerButton recipe for product-owned comboboxes.
-class RaftPickerTriggerButton extends StatelessWidget {
-  const RaftPickerTriggerButton({
-    super.key,
-    required this.label,
-    this.onPressed,
-    this.glyph,
-    this.trailingGlyph = RaftGlyph.chevronDown,
-    this.selected = false,
-    this.enabled = true,
-    this.tooltip,
-    this.focusNode,
-  });
-  final String label;
-  final VoidCallback? onPressed;
-  final RaftGlyph? glyph, trailingGlyph;
-  final bool selected, enabled;
-  final String? tooltip;
-  final FocusNode? focusNode;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return RaftControl(
-      onPressed: enabled ? onPressed : null,
-      focusNode: focusNode,
-      tooltip: tooltip,
-      visualHeight: t.brutal ? 32 : 28,
-      variant: RaftControlVariant.outline,
-      recipe: RaftPickerTriggerRecipe(t, selected: selected),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (glyph != null) ...[
-            RaftIcon(glyph!, size: 14),
-            const SizedBox(width: 8),
-          ],
-          Text(raftText(context, label)),
-          if (trailingGlyph != null) ...[
-            const SizedBox(width: 8),
-            RaftIcon(trailingGlyph!, size: 12),
-          ],
-        ],
-      ),
-    );
-  }
-}
+/// The frozen Elegant and Brutal paint of `RaftPickerTriggerButton`: the pre-0.7.0 PickerTriggerButton recipe on a
+/// [RaftControl]. Delete with the legacy looks.
+Widget raftFrozenPickerTriggerButton(
+  BuildContext context, {
+  required String label,
+  required VoidCallback? onPressed,
+  required RaftGlyph? glyph,
+  required RaftGlyph? trailingGlyph,
+  required bool selected,
+  required String? tooltip,
+  required FocusNode? focusNode,
+}) => RaftControl(
+  onPressed: onPressed,
+  focusNode: focusNode,
+  tooltip: tooltip,
+  visualHeight: 28,
+  variant: RaftControlVariant.outline,
+  recipe: RaftPickerTriggerRecipe(RaftTokens.of(context), selected: selected),
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (glyph != null) ...[
+        RaftIcon(glyph, size: 14),
+        const SizedBox(width: 8),
+      ],
+      Text(raftText(context, label)),
+      if (trailingGlyph != null) ...[
+        const SizedBox(width: 8),
+        RaftIcon(trailingGlyph, size: 12),
+      ],
+    ],
+  ),
+);
 
 /// Interaction state fed to recipe-painted controls (CSS :hover, :active,
 /// :focus-visible, :disabled).
@@ -3006,14 +3146,27 @@ class RaftInteractive extends StatefulWidget {
     required this.builder,
     this.onPressed,
     this.onKeyboardActivate,
+    this.onShowHoverHighlight,
+    this.onTapDown,
+    this.onTapCancel,
+    this.onLongPress,
+    this.onSecondaryTapDown,
+    this.semanticContainer,
+    this.expandTouchTarget = true,
+    this.cancelOutsideRelease = false,
     this.busy = false,
     this.focusNode,
     this.focusOnPointer = true,
     this.semanticLabel,
     this.semanticRole,
+    this.semanticValue,
+    this.liveRegion = false,
     this.button = true,
     this.selected,
     this.checked,
+    this.toggled,
+    this.inMutuallyExclusiveGroup = false,
+    this.inertWhenDisabled = false,
     this.tooltip,
   });
 
@@ -3024,17 +3177,43 @@ class RaftInteractive extends StatefulWidget {
   /// Optional keyboard/semantics activation. Pointer activation continues
   /// to call [onPressed]; without this callback all inputs call [onPressed].
   final VoidCallback? onKeyboardActivate;
-  final bool busy, focusOnPointer, button;
-  final bool? selected, checked;
+
+  /// Modality-gated hover paint, as supplied by [FocusableActionDetector].
+  final ValueChanged<bool>? onShowHoverHighlight;
+  final GestureTapDownCallback? onTapDown;
+  final GestureTapCancelCallback? onTapCancel;
+  final GestureLongPressCallback? onLongPress;
+  final GestureTapDownCallback? onSecondaryTapDown;
+  final bool? semanticContainer;
+  final bool busy, focusOnPointer, button, cancelOutsideRelease;
+  final bool expandTouchTarget;
+  final bool? selected, checked, toggled;
+  final bool inMutuallyExclusiveGroup, inertWhenDisabled;
   final FocusNode? focusNode;
   final String? semanticLabel, tooltip;
   final SemanticsRole? semanticRole;
+  final String? semanticValue;
+  final bool liveRegion;
 
   @override
   State<RaftInteractive> createState() => _RaftInteractiveState();
 }
 
-class _RaftInteractiveState extends State<RaftInteractive> {
+class _RaftInteractiveState extends State<RaftInteractive>
+    with AutomaticKeepAliveClientMixin<RaftInteractive> {
+  @override
+  bool get wantKeepAlive => pressed || heldPointers.isNotEmpty;
+  final heldPointers = <int>{};
+  void holdPointer(PointerEvent event) {
+    heldPointers.add(event.pointer);
+    updateKeepAlive();
+  }
+
+  void releasePointer(PointerEvent event) {
+    heldPointers.remove(event.pointer);
+    updateKeepAlive();
+  }
+
   bool hovered = false, focused = false, pressed = false;
   bool tooltipKeyboardFocused = false;
   final ownedFocus = FocusNode();
@@ -3044,14 +3223,14 @@ class _RaftInteractiveState extends State<RaftInteractive> {
   @override
   void initState() {
     super.initState();
-    _RaftFocusVisible.shared.acquire();
-    _RaftFocusVisible.shared.addListener(modeChanged);
+    RaftFocusVisible.shared.acquire();
+    RaftFocusVisible.shared.addListener(modeChanged);
   }
 
   @override
   void dispose() {
-    _RaftFocusVisible.shared.removeListener(modeChanged);
-    _RaftFocusVisible.shared.release();
+    RaftFocusVisible.shared.removeListener(modeChanged);
+    RaftFocusVisible.shared.release();
     ownedFocus.dispose();
     super.dispose();
   }
@@ -3061,11 +3240,12 @@ class _RaftInteractiveState extends State<RaftInteractive> {
     super.didUpdateWidget(oldWidget);
     if (!enabled) {
       pressed = hovered = focused = tooltipKeyboardFocused = false;
+      updateKeepAlive();
     }
   }
 
   void modeChanged() {
-    final next = enabled && node.hasFocus && _RaftFocusVisible.shared.keyboard;
+    final next = enabled && node.hasFocus && RaftFocusVisible.shared.keyboard;
     if (mounted && next != focused) {
       setState(() {
         focused = next;
@@ -3077,7 +3257,7 @@ class _RaftInteractiveState extends State<RaftInteractive> {
   void focusChanged(bool hasFocus) {
     if (!mounted) return;
     setState(() {
-      focused = enabled && hasFocus && _RaftFocusVisible.shared.keyboard;
+      focused = enabled && hasFocus && RaftFocusVisible.shared.keyboard;
       tooltipKeyboardFocused = focused;
     });
   }
@@ -3090,6 +3270,7 @@ class _RaftInteractiveState extends State<RaftInteractive> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final touch = RaftDensityScope.of(context) == RaftDensity.touch;
     final state = RaftInteractionState(
       hovered: hovered,
@@ -3097,22 +3278,29 @@ class _RaftInteractiveState extends State<RaftInteractive> {
       focusVisible: focused,
       enabled: enabled,
     );
+    final inert = widget.inertWhenDisabled && !enabled;
     Widget result = Semantics(
       // TouchTarget supplies this boundary and its larger semantics rect on
       // touch devices, including controls whose inner density is desktop to
       // preserve visual geometry. Other desktop controls own their boundary.
       container:
-          !touch &&
-          context.findAncestorWidgetOfExactType<RaftTouchTarget>() == null,
+          widget.semanticContainer ??
+          (!touch &&
+              context.findAncestorWidgetOfExactType<RaftTouchTarget>() == null),
       label: widget.semanticLabel,
+      value: widget.semanticValue,
+      liveRegion: widget.liveRegion,
       excludeSemantics: widget.busy,
-      button: widget.button,
+      button: !inert && widget.button,
       role: widget.semanticRole,
       selected: widget.selected,
       checked: widget.checked,
-      enabled: enabled,
+      toggled: widget.toggled,
+      inMutuallyExclusiveGroup: widget.inMutuallyExclusiveGroup,
+      enabled: inert ? null : enabled,
       onTap: enabled ? activateControl : null,
-      child: MouseRegion(
+      onLongPress: enabled ? widget.onLongPress : null,
+      child: RaftHoverRegion(
         onEnter: enabled ? (_) => setState(() => hovered = true) : null,
         onExit: (_) => setState(() => hovered = false),
         child: FocusableActionDetector(
@@ -3121,6 +3309,7 @@ class _RaftInteractiveState extends State<RaftInteractive> {
           mouseCursor: enabled
               ? SystemMouseCursors.click
               : SystemMouseCursors.basic,
+          onShowHoverHighlight: widget.onShowHoverHighlight,
           onShowFocusHighlight: (_) => modeChanged(),
           onFocusChange: focusChanged,
           actions: {
@@ -3137,23 +3326,52 @@ class _RaftInteractiveState extends State<RaftInteractive> {
               },
             ),
           },
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            excludeFromSemantics: true,
-            onTapDown: enabled
-                ? (_) {
-                    if (widget.focusOnPointer) node.requestFocus();
-                    setState(() => pressed = true);
-                  }
-                : null,
-            onTapUp: enabled
-                ? (_) {
-                    setState(() => pressed = false);
-                    widget.onPressed?.call();
-                  }
-                : null,
-            onTapCancel: enabled ? () => setState(() => pressed = false) : null,
-            child: widget.builder(context, state),
+          child: Listener(
+            onPointerDown: enabled ? holdPointer : null,
+            onPointerUp: releasePointer,
+            onPointerCancel: releasePointer,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              excludeFromSemantics: true,
+              onTapDown: enabled
+                  ? (details) {
+                      if (widget.focusOnPointer) node.requestFocus();
+                      setState(() => pressed = true);
+                      updateKeepAlive();
+                      widget.onTapDown?.call(details);
+                    }
+                  : null,
+              onTapUp: enabled
+                  ? (details) {
+                      setState(() => pressed = false);
+                      updateKeepAlive();
+                      if (!widget.cancelOutsideRelease) {
+                        widget.onPressed?.call();
+                        return;
+                      }
+                      final box = context.findRenderObject();
+                      final reach = details.kind == PointerDeviceKind.touch
+                          ? RaftMetrics.touchTarget / 2
+                          : 0.0;
+                      if (box is RenderBox &&
+                          (Offset.zero & box.size)
+                              .inflate(reach)
+                              .contains(details.localPosition)) {
+                        widget.onPressed?.call();
+                      }
+                    }
+                  : null,
+              onTapCancel: enabled
+                  ? () {
+                      setState(() => pressed = false);
+                      updateKeepAlive();
+                      widget.onTapCancel?.call();
+                    }
+                  : null,
+              onLongPress: enabled ? widget.onLongPress : null,
+              onSecondaryTapDown: enabled ? widget.onSecondaryTapDown : null,
+              child: widget.builder(context, state),
+            ),
           ),
         ),
       ),
@@ -3167,7 +3385,7 @@ class _RaftInteractiveState extends State<RaftInteractive> {
     }
     // The expander must surround the tooltip's render boxes too; otherwise
     // those 32px boxes reject pointers before the expanded target sees them.
-    if (touch) {
+    if (touch && widget.expandTouchTarget) {
       result = RaftTouchTarget(child: result);
     }
     return result;
@@ -3212,6 +3430,11 @@ class _RenderTouchTarget extends RenderProxyBox {
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
     if (!_target.contains(position)) return false;
+    if (!size.contains(position)) {
+      // Preserve the visual hit path while an enclosing host probes or
+      // protects a direct control. The control's own visible box still hits.
+      if (raftTapSlopVisualBoundsOnly(this)) return false;
+    }
     // Nearest point inside the box (Size.contains excludes the far edge).
     final inside = Offset(
       position.dx.clamp(0, math.max(0, size.width - 1e-3)),
@@ -3231,130 +3454,5 @@ class _RenderTouchTarget extends RenderProxyBox {
   void describeSemanticsConfiguration(SemanticsConfiguration config) {
     super.describeSemanticsConfiguration(config);
     config.isSemanticBoundary = true;
-  }
-}
-
-RaftSlotStyle _segmentedRoot(BuildContext context) {
-  final t = RaftTokens.of(context);
-  return RaftSegmentedControlRecipe.resolve(
-    theme: t.recipeTheme,
-    states: t.recipeStates(),
-    tokens: t.recipeTokens,
-  ).root;
-}
-
-/// raft-ui `SegmentedControlItem` (+ `SegmentedControlLabel` /
-/// `SegmentedControlCount`) on the `segmentedControl` recipe.
-class _SegmentedItem<T> extends StatelessWidget {
-  const _SegmentedItem({
-    super.key,
-    required this.option,
-    required this.checked,
-    required this.onPressed,
-  });
-  final RaftSegmentedOption<T> option;
-  final bool checked;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final rt = t.recipeTokens;
-    return RaftInteractive(
-      onPressed: onPressed,
-      button: false,
-      checked: checked,
-      tooltip: option.tooltip,
-      builder: (context, st) {
-        final s = RaftSegmentedControlRecipe.resolve(
-          theme: t.recipeTheme,
-          disabled: !option.enabled,
-          states: t.recipeStates(
-            hovered: st.hovered,
-            pressed: st.pressed,
-            focusVisible: st.focusVisible,
-            disabled: !option.enabled,
-            extra: [
-              checked ? 'data-checked' : 'data-unchecked',
-              if (checked) 'group/segmented-control-item:data-checked',
-              if (!option.enabled) 'data-disabled',
-              if (option.count != null) 'has:data-slot=segmented-control-count',
-              if (option.glyph != null) 'has:svg',
-            ],
-          ),
-          tokens: rt,
-        );
-        final svg = s.item.target("& svg:not([class*='size-'])");
-        final gap = s.item.columnGap ?? 0;
-        return RaftRecipeBox(
-          style: s.item,
-          tokens: rt,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (option.glyph != null) ...[
-                Builder(
-                  builder: (context) => RaftIcon(
-                    option.glyph!,
-                    size: svg?.width ?? 14,
-                    strokeWidth: 2.5,
-                    color: DefaultTextStyle.of(context).style.color,
-                  ),
-                ),
-                SizedBox(width: gap),
-              ],
-              Flexible(
-                child: Builder(
-                  builder: (context) {
-                    final inherited = RaftInheritedFontScope.active(context);
-                    final label = s.label
-                        .text(rt, base: DefaultTextStyle.of(context).style)
-                        .copyWith(fontFamily: inherited ? t.headingFont : null);
-                    final text = Text(
-                      option.label,
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                      style: label,
-                    );
-                    if (option.labelSuffix == null) return text;
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(child: text),
-                        const SizedBox(width: 6),
-                        Text(
-                          option.labelSuffix!.toUpperCase(),
-                          maxLines: 1,
-                          softWrap: false,
-                          style: label.copyWith(
-                            fontFamily: t.monoFont,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black.withValues(alpha: .6),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              if (option.count != null) ...[
-                SizedBox(width: gap),
-                Builder(
-                  builder: (context) => Text(
-                    option.count!,
-                    style: s.count.text(
-                      rt,
-                      base: DefaultTextStyle.of(context).style,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
   }
 }

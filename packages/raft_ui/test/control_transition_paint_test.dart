@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 var frameSequence = 0;
 const evidencePath = String.fromEnvironment('RAFT_TRANSITION_REPORT');
@@ -34,9 +35,8 @@ Future<Color> pixel(WidgetTester tester, Offset position) async {
       await dir.create(recursive: true);
       final id = '${frameSequence++}'.padLeft(4, '0');
       final png = (await image.toByteData(format: ui.ImageByteFormat.png))!;
-      await File(
-        '${dir.path}/frame-$id.png',
-      ).writeAsBytes(png.buffer.asUint8List());
+      await File('${dir.path}/frame-$id.png')
+          .writeAsBytes(png.buffer.asUint8List());
       await File('${dir.path}/frames.jsonl').writeAsString(
         '${jsonEncode({
           'frame': id,
@@ -107,37 +107,34 @@ Widget paintHost(ThemeData theme, Widget child) => MaterialApp(
 );
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('[K01a] $family/$dark hover exit has no dark interior frame', (
-      tester,
-    ) async {
-      final theme = raftTheme(family, dark: dark);
-      final tokens = theme.extension<RaftTokens>()!;
-      const rowKey = ValueKey('channel');
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: theme,
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: RepaintBoundary(
-                key: const ValueKey('paint'),
-                child: ColoredBox(
-                  color: tokens.colors['layer-canvas-muted']!,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: SizedBox(
-                      width: 300,
-                      child: RaftNavItem(
-                        key: rowKey,
-                        label: 'Channel',
-                        glyph: RaftGlyph.hash,
-                        conversationKind: RaftConversationNavKind.channel,
-                        onTap: () {},
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      '[K01a] ${dark ? 'dark' : 'light'} hover exit has no dark interior frame',
+      (tester) async {
+        final theme = raftTheme(dark: dark);
+        final tokens = theme.extension<RaftTokens>()!;
+        const rowKey = ValueKey('channel');
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: RepaintBoundary(
+                  key: const ValueKey('paint'),
+                  child: ColoredBox(
+                    color: tokens.colors['layer-canvas-muted']!,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 300,
+                        child: RaftNavItem(
+                          key: rowKey,
+                          label: 'Channel',
+                          glyph: RaftGlyph.hash,
+                          conversationKind: RaftConversationNavKind.channel,
+                          onTap: () {},
+                        ),
                       ),
                     ),
                   ),
@@ -145,86 +142,85 @@ void main() {
               ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      const sample = Offset(280, 28);
-      final idle = await pixel(tester, sample);
-      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await mouse.addPointer(location: const Offset(600, 500));
-      await mouse.moveTo(tester.getCenter(find.byKey(rowKey)));
-      await tester.pumpAndSettle();
-      final hover = await pixel(tester, sample);
-      await mouse.moveTo(const Offset(600, 500));
-      await tester.pump();
-      await expectTransition(tester, sample, hover, idle);
-      await mouse.removePointer();
-    });
-
-    testWidgets('[K01b] $family/$dark switching mobile tabs has no black frame', (
-      tester,
-    ) async {
-      final theme = raftTheme(family, dark: dark);
-      var selected = 'home';
-      late StateSetter update;
-      await tester.pumpWidget(
-        paintHost(
-          theme,
-          StatefulBuilder(
-            builder: (context, setState) {
-              update = setState;
-              return SizedBox(
-                width: 320,
-                child: RaftMobileNav(
-                  items: const [
-                    RaftMobileNavItem(
-                      id: 'home',
-                      label: 'Home',
-                      glyph: RaftGlyph.home,
-                      key: ValueKey('home'),
-                    ),
-                    RaftMobileNavItem(
-                      id: 'tasks',
-                      label: 'Tasks',
-                      glyph: RaftGlyph.squareCheck,
-                      key: ValueKey('tasks'),
-                    ),
-                  ],
-                  selectedId: selected,
-                  onSelected: (id) => setState(() => selected = id),
-                  bottomInset: 0,
-                ),
-              );
-            },
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      final rect = tester.getRect(find.byKey(const ValueKey('home')));
-      final sample = family == RaftFamily.brutal
-          ? rect.topLeft + const Offset(8, 8)
-          : rect.center - const Offset(13, 13);
-      final active = await pixel(tester, sample);
-      update(() => selected = 'tasks');
-      await tester.pumpAndSettle();
-      final idle = await pixel(tester, sample);
-      update(() => selected = 'home');
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('tasks')));
-      await tester.pump();
-      await expectTransition(tester, sample, active, idle);
-      expect(selected, 'tasks');
-      // Rapid reversal must use the current paint, without exposing the shadow.
-      await tester.tap(find.byKey(const ValueKey('home')));
-      await tester.pump();
-      await expectTransition(tester, sample, active, idle);
-      expect(selected, 'home');
-    });
+        );
+        await tester.pumpAndSettle();
+        const sample = Offset(280, 28);
+        final idle = await pixel(tester, sample);
+        final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(location: const Offset(600, 500));
+        await mouse.moveTo(tester.getCenter(find.byKey(rowKey)));
+        await tester.pumpAndSettle();
+        final hover = await pixel(tester, sample);
+        await mouse.moveTo(const Offset(600, 500));
+        await tester.pump();
+        await expectTransition(tester, sample, hover, idle);
+        await mouse.removePointer();
+      },
+    );
 
     testWidgets(
-      '[K01c] $family/$dark menu open close leaves selected sidebar paint stable',
+      '[K01b] ${dark ? 'dark' : 'light'} switching mobile tabs has no black frame',
       (tester) async {
-        final theme = raftTheme(family, dark: dark);
+        final theme = raftTheme(dark: dark);
+        var selected = 'home';
+        late StateSetter update;
+        await tester.pumpWidget(
+          paintHost(
+            theme,
+            StatefulBuilder(
+              builder: (context, setState) {
+                update = setState;
+                return SizedBox(
+                  width: 320,
+                  child: RaftMobileNav(
+                    items: const [
+                      RaftMobileNavItem(
+                        id: 'home',
+                        label: 'Home',
+                        glyph: RaftGlyph.home,
+                        key: ValueKey('home'),
+                      ),
+                      RaftMobileNavItem(
+                        id: 'tasks',
+                        label: 'Tasks',
+                        glyph: RaftGlyph.squareCheck,
+                        key: ValueKey('tasks'),
+                      ),
+                    ],
+                    selectedId: selected,
+                    onSelected: (id) => setState(() => selected = id),
+                    bottomInset: 0,
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final rect = tester.getRect(find.byKey(const ValueKey('home')));
+        final sample = rect.center - const Offset(13, 13);
+        final active = await pixel(tester, sample);
+        update(() => selected = 'tasks');
+        await tester.pumpAndSettle();
+        final idle = await pixel(tester, sample);
+        update(() => selected = 'home');
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('tasks')));
+        await tester.pump();
+        await expectTransition(tester, sample, active, idle);
+        expect(selected, 'tasks');
+        // Rapid reversal must use the current paint, without exposing the shadow.
+        await tester.tap(find.byKey(const ValueKey('home')));
+        await tester.pump();
+        await expectTransition(tester, sample, active, idle);
+        expect(selected, 'home');
+      },
+    );
+
+    testWidgets(
+      '[K01c] ${dark ? 'dark' : 'light'} menu open close leaves selected sidebar paint stable',
+      (tester) async {
+        final theme = raftTheme(dark: dark);
         final controller = RaftMenuController();
         var clicks = 0;
         await tester.pumpWidget(

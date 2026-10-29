@@ -1,4 +1,13 @@
+import 'sidebar_text.dart';
+import 'interaction.dart';
+import 'tap_slop.dart';
+import 'public_page_mark.dart';
+import 'raft/button.dart';
+import 'raft/avatar.dart';
+
 import 'dart:math' as math;
+
+import 'dismiss_scope.dart';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -8,8 +17,10 @@ import 'agent_profile.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'viewport_breakpoints.dart';
 import 'mobile_navigation.dart';
 import 'recipe_surface.dart';
+import 'status_bar.dart';
 import 'rail_attention.dart';
 import 'recipes/app_rail.g.dart';
 import 'recipes/avatar.g.dart';
@@ -17,8 +28,13 @@ import 'recipes/badge.g.dart';
 import 'recipes/context_menu.g.dart';
 import 'recipes/popover.g.dart';
 import 'recipes/recipe_runtime.dart';
+import 'text_scaling.dart' show RaftChrome;
+import 'page_tokens.dart';
 import 'theme.dart';
+import 'sized_image.dart';
 import 'tooltip.dart' show RaftTooltip;
+
+part 'server_switcher_top_bar.dart';
 
 /// Accepted records and actions are supplied by the application, never the SDK.
 @immutable
@@ -71,9 +87,25 @@ class RaftServerSwitcher extends StatefulWidget {
     required this.actions,
     this.onReorder,
     this.mobile = false,
+    this.topBar = false,
     this.headerActions = const [],
     this.attention = false,
+    this.logo,
+    this.workspaceAvatarUrl,
+    this.publicPageLive = false,
   });
+
+  /// The current server's public page is live: the mobile selector carries a
+  /// globe after the name.
+  final bool publicPageLive;
+
+  /// The current workspace's resolved public avatar (rail trigger); the
+  /// initial shows while absent.
+  final String? workspaceAvatarUrl;
+
+  /// Replaces the rail trigger's visual (the public server rail draws its own
+  /// black logo block); the trigger still toggles the menu.
+  final Widget? logo;
 
   /// LeftRail `hasOtherServerUnread`: the rail item attention dot on the
   /// workspace avatar.
@@ -83,6 +115,9 @@ class RaftServerSwitcher extends StatefulWidget {
   final List<RaftServerMenuRow> rows;
   final List<RaftMenuEntry> actions;
   final void Function(int oldIndex, int newIndex)? onReorder;
+
+  /// Places the existing menu below the browser workspace trigger.
+  final bool topBar;
   final bool mobile;
   final List<Widget> headerActions;
   @override
@@ -151,42 +186,63 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final size = MediaQuery.sizeOf(context);
+    // A rail on the window's right opens its menu toward the content.
+    final onRight = RaftRailEdgeScope.onRightOf(context);
     return TapRegion(
       groupId: this,
-      onTapOutside: (_) => widget.controller.close(),
+      onTapOutside: (event) {
+        final box = anchor.currentContext?.findRenderObject() as RenderBox?;
+        // The bar owns the full 48px touch target around its 36px trigger.
+        if (widget.topBar &&
+            box != null &&
+            RaftDensityScope.of(context) == RaftDensity.touch) {
+          final rect = (box.localToGlobal(Offset.zero) & box.size).inflate(6);
+          if (rect.contains(event.position)) return;
+        }
+        widget.controller.close();
+      },
       child: OverlayPortal(
         controller: portal,
         overlayChildBuilder: (context) {
           final box = anchor.currentContext?.findRenderObject() as RenderBox?;
           if (box == null || !box.hasSize) return const SizedBox.shrink();
           final rect = box.localToGlobal(Offset.zero) & box.size;
-          return CustomSingleChildLayout(
-            delegate: _ServerMenuPlacement(
-              // AppRailRoot's CSS right border is part of its border box;
-              // AppRailHeader's positioned containing block excludes it.
-              widget.mobile
-                  ? Offset(8, rect.bottom - (t.brutal ? 2 : 1) + 4)
-                  : Offset(rect.right - (t.brutal ? 2 : 0) + 8, rect.top + 4),
-              mobileWidth: widget.mobile ? size.width - 16 : null,
-            ),
-            child: TapRegion(
-              groupId: this,
-              child: Focus(
-                focusNode: menuFocus,
-                onKeyEvent: (_, event) {
-                  if (event is KeyDownEvent &&
-                      event.logicalKey == LogicalKeyboardKey.escape) {
-                    widget.controller.close();
-                    return KeyEventResult.handled;
-                  }
-                  return KeyEventResult.ignored;
-                },
-                child: RaftServerMenuPanel(
-                  width: widget.mobile ? size.width - 16 : 256,
-                  rows: widget.rows,
-                  actions: widget.actions,
-                  onActivate: activateAction,
-                  onReorder: widget.onReorder,
+          return RaftBackDismiss(
+            onDismiss: widget.controller.close,
+            child: CustomSingleChildLayout(
+              delegate: _ServerMenuPlacement(
+                // AppRailRoot's CSS right border is part of its border box;
+                // AppRailHeader's positioned containing block excludes it.
+                widget.topBar
+                    ? Offset(rect.left, rect.bottom + 8)
+                    : widget.mobile
+                    ? Offset(8, rect.bottom - (1) + 4)
+                    : onRight
+                    ? Offset(rect.left + (0) - 8, rect.top + 4)
+                    : Offset(rect.right - (0) + 8, rect.top + 4),
+                mobileWidth: widget.mobile ? size.width - 16 : null,
+                horizontalPadding: widget.topBar ? 8 : null,
+                leftOfAnchor: !widget.mobile && !widget.topBar && onRight,
+              ),
+              child: TapRegion(
+                groupId: this,
+                child: Focus(
+                  focusNode: menuFocus,
+                  onKeyEvent: (_, event) {
+                    if (event is KeyDownEvent &&
+                        event.logicalKey == LogicalKeyboardKey.escape) {
+                      widget.controller.close();
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: RaftServerMenuPanel(
+                    width: widget.mobile ? size.width - 16 : 256,
+                    rows: widget.rows,
+                    actions: widget.actions,
+                    onActivate: activateAction,
+                    onReorder: widget.onReorder,
+                  ),
                 ),
               ),
             ),
@@ -194,12 +250,35 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
         },
         child: SizedBox(
           key: anchor,
-          height: RaftLayoutMetrics.shellHeaderHeight(t, size.height),
-          child: widget.mobile
+          height: widget.topBar
+              ? 36
+              : RaftLayoutMetrics.shellHeaderHeight(t, size.height),
+          child: widget.topBar
+              ? _TopBarServerTrigger(
+                  rows: widget.rows,
+                  workspaceName: widget.workspaceName,
+                  avatarUrl: widget.workspaceAvatarUrl,
+                  publicPageLive: widget.publicPageLive,
+                  attention: widget.attention,
+                  focusNode: triggerFocus,
+                  open: widget.controller.isOpen,
+                  onPressed: () => widget.controller.isOpen
+                      ? widget.controller.close()
+                      : widget.controller.open(),
+                  onReorder: widget.onReorder,
+                )
+              : widget.mobile
               ? RaftMobileRootHeader(
+                  workspace: true,
                   leading: RaftMobileServerSelector(
                     key: const Key('mobile-server-selector'),
                     label: widget.workspaceName,
+                    attention: widget.attention,
+                    publicPageLive: widget.publicPageLive,
+                    attentionLabel: raftText(
+                      context,
+                      'Other servers have unread messages',
+                    ),
                     focusNode: triggerFocus,
                     onPressed: () => widget.controller.isOpen
                         ? widget.controller.close()
@@ -210,13 +289,7 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
               : DecoratedBox(
                   // AppRailHeader `border-b-2 border-black` (Brutal): the
                   // border sits inside the 62px box, the avatar centres in 60.
-                  decoration: BoxDecoration(
-                    border: t.brutal
-                        ? const Border(
-                            bottom: BorderSide(color: Colors.black, width: 2),
-                          )
-                        : null,
-                  ),
+                  decoration: BoxDecoration(),
                   child: Center(
                     child: RaftInteractive(
                       key: const Key('rail-workspace'),
@@ -228,6 +301,7 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
                           ? widget.controller.close()
                           : widget.controller.open(),
                       builder: (context, state) {
+                        if (widget.logo != null) return widget.logo!;
                         final slot = RaftAppRailRecipe.resolve(
                           theme: t.recipeTheme,
                           tokens: t.recipeTokens,
@@ -242,6 +316,17 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
                           ),
                         ).item;
                         final extent = size.height <= 600 ? 36.0 : 40.0;
+                        final compact = size.height <= 600;
+                        final avatarExtent = t.size(
+                          widget.controller.isOpen
+                              ? compact
+                                    ? 'size.avatar.workspaceActiveCompact'
+                                    : 'size.avatar.workspaceActive'
+                              : compact
+                              ? 'size.avatar.workspaceCompact'
+                              : 'size.avatar.workspace',
+                          fallback: extent - 4,
+                        );
                         return RaftRecipeBox(
                           style: slot,
                           tokens: t.recipeTokens,
@@ -250,14 +335,15 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
                           padding: EdgeInsets.zero,
                           child: Center(
                             child: SizedBox.square(
-                              dimension: extent - 4,
+                              dimension: avatarExtent,
                               child: Stack(
                                 clipBehavior: Clip.none,
                                 fit: StackFit.expand,
                                 children: [
                                   _ServerAvatar(
                                     name: widget.workspaceName,
-                                    size: extent - 4,
+                                    avatarUrl: widget.workspaceAvatarUrl,
+                                    size: avatarExtent,
                                     initialSize: 14,
                                   ),
                                   if (widget.attention)
@@ -280,14 +366,29 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
 }
 
 class _ServerMenuPlacement extends SingleChildLayoutDelegate {
-  const _ServerMenuPlacement(this.anchored, {this.mobileWidth});
+  const _ServerMenuPlacement(
+    this.anchored, {
+    this.mobileWidth,
+    this.horizontalPadding,
+    this.leftOfAnchor = false,
+  });
   final Offset anchored;
   final double? mobileWidth;
+
+  /// ServerSwitcherMenu.tsx:297 uses Popover collisionPadding={8}; the
+  /// top-bar trigger may reach either viewport edge (including in RTL).
+  final double? horizontalPadding;
+
+  /// [anchored] is the menu's right edge, not its left.
+  final bool leftOfAnchor;
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
       BoxConstraints(
         minWidth: mobileWidth ?? 0,
-        maxWidth: math.min(mobileWidth ?? 256, constraints.maxWidth),
+        maxWidth: math.min(
+          mobileWidth ?? 256,
+          math.max(0, constraints.maxWidth - 2 * (horizontalPadding ?? 0)),
+        ),
         maxHeight: math.max(0, constraints.maxHeight - 16),
       );
   @override
@@ -297,12 +398,25 @@ class _ServerMenuPlacement extends SingleChildLayoutDelegate {
     final shift = overflow > 0
         ? math.min(overflow, math.max(0, anchored.dy - 8))
         : 0.0;
-    return Offset(anchored.dx, anchored.dy - shift);
+    final x = leftOfAnchor ? anchored.dx - childSize.width : anchored.dx;
+    final padding = horizontalPadding;
+    return Offset(
+      padding == null
+          ? x
+          : x.clamp(
+              padding,
+              math.max(padding, size.width - childSize.width - padding),
+            ),
+      anchored.dy - shift,
+    );
   }
 
   @override
   bool shouldRelayout(_ServerMenuPlacement old) =>
-      old.anchored != anchored || old.mobileWidth != mobileWidth;
+      old.anchored != anchored ||
+      old.mobileWidth != mobileWidth ||
+      old.horizontalPadding != horizontalPadding ||
+      old.leftOfAnchor != leftOfAnchor;
 }
 
 /// Public panel makes every server-menu state previewable without an API.
@@ -328,30 +442,28 @@ class RaftServerMenuPanel extends StatelessWidget {
       tokens: t.recipeTokens,
       states: t.recipeStates(),
     ).content;
-    final panel = !t.brutal
-        ? RaftSlotStyle(
-            {
-              ...style.properties,
-              'background-color': const CssVar(
-                '--color-layer-panel',
-                null,
-                'layerPanel',
-              ),
-              for (final side in ['top', 'right', 'bottom', 'left']) ...{
-                'border-$side-width': const CssNum(1, 'px'),
-                'border-$side-style': const CssKeyword('solid'),
-                'border-$side-color': const CssVar(
-                  '--color-line-muted',
-                  null,
-                  'lineMuted',
-                ),
-              },
-            },
-            style.targets,
-            style.classes,
-            style.tokens,
-          )
-        : style;
+    final panel = RaftSlotStyle(
+      {
+        ...style.properties,
+        'background-color': const CssVar(
+          '--color-layer-panel',
+          null,
+          'layerPanel',
+        ),
+        for (final side in ['top', 'right', 'bottom', 'left']) ...{
+          'border-$side-width': const CssNum(1, 'px'),
+          'border-$side-style': const CssKeyword('solid'),
+          'border-$side-color': const CssVar(
+            '--color-line-muted',
+            null,
+            'lineMuted',
+          ),
+        },
+      },
+      style.targets,
+      style.classes,
+      style.tokens,
+    );
     final separator = RaftContextMenuRecipe.resolve(
       theme: t.recipeTheme,
       tokens: t.recipeTokens,
@@ -418,16 +530,28 @@ class RaftServerResolutionBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return ColoredBox(
-      color: t.product.brutalCream,
-      child: Center(
-        child: Text(
-          raftText(context, label),
-          style: RaftTypography.body(
-            t,
-            size: 20,
-            line: 28,
-            weight: FontWeight.w700,
+    // The splash is a page of its own (Material + page text style), never bare
+    // text: outside a Material Flutter paints the debug fallback style (yellow
+    // double underline). `safe-top` pads the status bar like the Web div.
+    // Web v1.21.23 `bg-layer-sidebar` + `text-headline text-foreground-muted`;
+    // the pre-theme looks keep the canvas and the strong 20/28 label
+    // (layer-standalone, type.splash.*, foreground-splash).
+    final canvas = t.standaloneSurface;
+    return RaftStatusBarHost(
+      fallback: canvas,
+      expand: true,
+      child: Material(
+        color: canvas,
+        child: DefaultTextStyle.merge(
+          style: TextStyle(
+            fontFamily: t.headingFont,
+            color: t.semantic.foreground,
+          ),
+          child: Padding(
+            padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+            child: Center(
+              child: Text(raftText(context, label), style: t.splashLabel()),
+            ),
           ),
         ),
       ),
@@ -469,16 +593,10 @@ class _ServerRow extends StatelessWidget {
         },
         builder: (context, state) {
           final active = state.hovered || state.focusVisible;
-          final foreground = active
-              ? t.colors[t.brutal ? 'primary-950' : 'primary-strong']!
-              : t.brutal
-              ? Colors.black
-              : t.strong;
+          final foreground = active ? t.colors['primary-strong']! : t.strong;
           return Container(
             height: 48,
-            color: active
-                ? t.colors[t.brutal ? 'primary-400' : 'primary-soft']!
-                : Colors.transparent,
+            color: active ? t.colors['primary-soft']! : Colors.transparent,
             child: Row(
               children: [
                 const SizedBox(width: 12),
@@ -514,11 +632,7 @@ class _ServerRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: RaftTypography.mono(
                           t,
-                          color: active
-                              ? foreground
-                              : t.brutal
-                              ? Colors.black.withValues(alpha: .4)
-                              : t.muted,
+                          color: active ? foreground : t.muted,
                         ),
                       ),
                     ],
@@ -566,7 +680,7 @@ class _ServerUnreadCount extends StatelessWidget {
             t,
             size: 10,
             line: 10,
-            color: t.brutal ? Colors.black.withValues(alpha: .5) : t.muted,
+            color: t.muted,
           ).copyWith(fontWeight: FontWeight.w500),
         ),
       );
@@ -575,7 +689,6 @@ class _ServerUnreadCount extends StatelessWidget {
       theme: t.recipeTheme,
       tokens: t.recipeTokens,
       variant: RaftBadgeRecipeVariant.accent,
-      uppercase: false,
     ).root;
     final style = RaftSlotStyle(
       {
@@ -616,8 +729,8 @@ class _ServerDragHandle extends StatelessWidget {
     label: label,
     child: Focus(
       child: Listener(
-        onPointerDown: (e) =>
-            SliverReorderableList.of(context).startItemDragReorder(
+        onPointerDown: (e) => SliverReorderableList.of(context)
+            .startItemDragReorder(
               index: index,
               event: e,
               recognizer: e.kind == PointerDeviceKind.touch
@@ -691,15 +804,38 @@ class _ServerAvatar extends StatelessWidget {
       tokens: rt,
     ).fallback.color?.resolve(rt);
     final initial = Center(
-      child: Text(
+      child: RaftSidebarText(
         name.trim().isEmpty ? 'S' : name.trim().characters.first.toUpperCase(),
-        style: RaftTypography.body(
-          t,
-          size: initialSize,
-          line: 16,
-          weight: FontWeight.w700,
-          color: t.brutal ? Colors.black : (fallbackInk ?? t.strong),
-        ),
+        // Initials fill a fixed-size avatar: they grow with the text size only
+        // up to the chrome bound.
+        textScaler: RaftChrome.boundedScalerOf(context),
+        style:
+            RaftTypography.body(
+              t,
+              size: t.size(
+                'type.avatarServerInitial.size',
+                fallback: initialSize,
+              ),
+              line: t.size('type.avatarServerInitial.line', fallback: 16),
+              weight: FontWeight.w700,
+              color:
+                  (t.colors['foreground-avatar-server'] ??
+                          fallbackInk ??
+                          t.strong)
+                      .withValues(
+                        alpha: t.size(
+                          'opacity.avatarServerInitial',
+                          fallback: 1,
+                        ),
+                      ),
+            ).copyWith(
+              letterSpacing:
+                  t.size('type.avatarServerInitial.tracking', fallback: 0) *
+                  t.size(
+                    'type.avatarServerInitial.size',
+                    fallback: initialSize,
+                  ),
+            ),
       ),
     );
     return RaftAvatarSlot(
@@ -710,7 +846,7 @@ class _ServerAvatar extends StatelessWidget {
       sizeOverride: size,
       content: avatarUrl == null
           ? initial
-          : Image.network(
+          : RaftSizedImage.avatar(
               avatarUrl!,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => initial,
@@ -733,25 +869,11 @@ class _ServerAction extends StatelessWidget {
           : () => onActivate(entry.onPressed),
       builder: (context, state) {
         final active = state.hovered || state.focusVisible;
-        final invite =
-            entry is RaftServerMenuAction &&
-            (entry as RaftServerMenuAction).tone ==
-                RaftServerMenuActionTone.invite;
-        final ink = active
-            ? t.colors[t.brutal && !invite ? 'primary-950' : 'primary-strong']!
-            : t.brutal
-            ? Colors.black
-            : t.strong;
+        final ink = active ? t.colors['primary-strong']! : t.strong;
         return Container(
           height: MediaQuery.sizeOf(context).height <= 600 ? 28 : 36,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          color: active
-              ? t.brutal && invite && state.hovered
-                    ? t.product.brutalPink
-                    : t.colors[t.brutal && !invite
-                          ? 'primary-400'
-                          : 'primary-soft']!
-              : null,
+          color: active ? t.colors['primary-soft']! : null,
           child: Row(
             children: [
               if (entry.glyph != null) ...[

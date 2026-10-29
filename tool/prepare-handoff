@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+"""Make a feature branch fast-forwardable onto cindy/integration before handoff.
+
+1. fetch origin and rebase the current branch onto origin/cindy/integration, so
+   the integrator can fast-forward and the integration history stays linear
+   (stops on conflicts so the branch owner resolves them, not the integrator);
+2. run tool/preflight (about a minute: audits, guard tests, analyze/lint/format and the
+   affected tests of the changed files) and stop with its summary if it fails, so a cheap
+   failure does not take the shared gate lock for a full run; --skip-preflight skips it;
+3. run tool/check-project under the shared gate lock (waiting, holder, start,
+   first failure, abort and result are appended to /tmp/raft-flutter-gate-events.log;
+   check-project stops early on compile errors, repeated failures or a stall);
+4. print one line to paste into the handoff message: branch, commit, base,
+   source hash and the gate result.
+
+5. with --pr (after a passing gate only): push the branch to origin and create or
+   update its pull request against cindy/integration with `gh`, using the body file
+   from --pr-body plus the gate result line. The push is a normal push; only when the
+   branch was rebased past what origin has is it force-with-lease, and only for the
+   branch's own ref, never cindy/integration or main. If `gh auth status` fails the
+   script says so and exits non-zero before fetching, rebasing or running anything;
+   it never logs in or uses another credential.
+
+Usage: tool/prepare-handoff [--base origin/cindy/integration] [--no-check] [--skip-preflight] [--all-themes]
+                            [--pr --pr-body FILE [--pr-title TITLE]]
+
+Default gate tests the Raft look only; the legacy looks are tool/theme-suite (run it when the diff touches the
+theme engine: the gate prints a notice). --all-themes (or RAFT_TEST_ALL_THEMES=1) runs every look and variant.
+"""
+import argparse
+import datetime
+import errno
+import json
+import os
+import pathlib
+import re
+import subprocess
+import sys
+import tempfile
+import time
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import gate_events  # noqa: E402
+
+root = pathlib.Path(__file__).resolve().parent.parent
+gate_lock = pathlib.Path('/tmp/raft-flutter-check.lock')
+
+
+def git(*args, check=True):
+    return subprocess.run(['git', *args], cwd=root, check=check, text=True,
+                          capture_output=True).stdout.strip()
+
+
+PR_BASE = 'cindy/integration'
+PROTECTED_BRANCHES = {'cindy/integration', 'main', 'master', ''}
+
+
+def run(args):
+    return subprocess.run(args, cwd=root, text=True, capture_output=True)
+
+
+def gh_authenticated():
+    try:
+        return run(['gh', 'auth', 'status']).returncode == 0
+    except OSError:
+        return False
+
+
+def preflight_pr(args):
+    """Refuse --pr before anything is fetched, rebased or run."""
+    if args.no_check:
+        sys.exit('--pr needs the gate; do not combine it with --no-check.')
+    if not args.pr_body:
+        sys.exit('--pr needs --pr-body <file> with the PR description.')
+    if not pathlib.Path(args.pr_body).is_file():
+        sys.exit(f'--pr-body file not found: {args.pr_body}')
+    if not gh_authenticated():
+        sys.exit('gh is not authenticated (`gh auth status` failed): nothing was fetched, rebased, '
+                 'pushed or run. Log in with gh yourself, then run tool/prepare-handoff --pr again.')
+
+
+def push_branch(branch):
+    """Push only the branch's own ref: normal push, force-with-lease if it was rebased past origin's copy."""
+    if branch in PROTECTED_BRANCHES:
+        sys.exit(f'Refusing to push {branch or "a detached HEAD"}: --pr is for feature branches.')
+    ref = f'refs/heads/{branch}'
+    remote = run(['git', 'rev-parse', '--verify', '-q', f'refs/remotes/origin/{branch}'])
+    remote_sha = remote.stdout.strip() if remote.returncode == 0 else ''
+    command = ['git', 'push', 'origin', f'{ref}:{ref}']
+    if remote_sha and run(['git', 'merge-base', '--is-ancestor', remote_sha, 'HEAD']).returncode != 0:
+        command = ['git', 'push', f'--force-with-lease={ref}:{remote_sha}', 'origin', f'{ref}:{ref}']
+    pushed = run(command)
+    if pushed.returncode != 0:
+        sys.exit(f'Push of {branch} failed:\n{pushed.stdout}{pushed.stderr}')
+
+
+def pr_body_with_gate(body_file, result_line):
+    body = pathlib.Path(body_file).read_text(encoding='utf-8').rstrip()
+    return f'{body}\n\n## 全量检查\n\n```\n{result_line}\n```\n'
+
+
+def publish_pr(branch, body_file, result_line, title=None):
+    """Push the branch, then create or update its PR against cindy/integration."""
+    push_branch(branch)
+    explicit_title = title
+    if not title:
+        subjects = run(['git', 'log', '--format=%s', f'origin/{PR_BASE}..HEAD']).stdout.splitlines()
+        title = subjects[0] if len(subjects) == 1 else branch
+    with tempfile.TemporaryDirectory() as tmp:
+        body = pathlib.Path(tmp) / 'pr-body.md'
+        body.write_text(pr_body_with_gate(body_file, result_line), encoding='utf-8')
+        listed = run(['gh', 'pr', 'list', '--head', branch, '--base', PR_BASE, '--state', 'open', '--json', 'number'])
+        if listed.returncode != 0:
+            sys.exit(f'gh pr list failed:\n{listed.stdout}{listed.stderr}')
+        try:
+            existing = json.loads(listed.stdout or '[]')
+        except json.JSONDecodeError:
+            sys.exit(f'gh pr list returned unreadable output:\n{listed.stdout}')
+        if existing:
+            command = ['gh', 'pr', 'edit', str(existing[0]['number']), '--base', PR_BASE, '--body-file', str(body)]
+            if explicit_title:  # an existing PR keeps its (possibly hand-edited) title otherwise
+                command += ['--title', explicit_title]
+        else:
+            command = ['gh', 'pr', 'create', '--base', PR_BASE, '--head', branch, '--title', title, '--body-file', str(body)]
+        done = run(command)
+        if done.returncode != 0:
+            sys.exit(f'{" ".join(command[:3])} failed:\n{done.stdout}{done.stderr}')
+        print(done.stdout.strip() or f'PR for {branch} updated')
+
+
+def run_preflight(base):
+    """tool/preflight against `base`, output streaming to the terminal; True when it passed."""
+    command = [sys.executable, str(root / 'tool/preflight'), '--base', base]
+    return subprocess.run(command, cwd=root).returncode == 0
+
+
+def holder_text(lock):
+    """What the current lock holder wrote (branch, pid, start), flagged when its pid is gone."""
+    try:
+        lock.seek(0)
+        text = ' '.join(lock.read().decode('utf-8', 'replace').split())
+        pid = re.search(r'pid=(\d+)', text)
+        if pid:
+            os.kill(int(pid[1]), 0)
+    except ProcessLookupError:
+        text += ' (holder pid not running)'
+    except (OSError, ValueError):
+        pass
+    return text or 'unknown'
+
+
+def run_check(command, state):
+    """check-project as a child we can stop: on SIGTERM/SIGINT here it gets SIGTERM, cleans up and logs ERROR itself."""
+    child = subprocess.Popen(command, cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    state['child'] = True
+    try:
+        out, err = child.communicate()
+    except BaseException:
+        child.terminate()  # only the pid we started
+        try:
+            child.wait(60)
+        except subprocess.TimeoutExpired:
+            child.kill()
+        raise
+    return subprocess.CompletedProcess(command, child.returncode, out, err)
+
+
+def run_gate(emit, state, all_themes=False):
+    command = [sys.executable, str(root / 'tool/check-project')] + (['--all-themes'] if all_themes else [])
+    gate_lock.parent.mkdir(parents=True, exist_ok=True)
+    with gate_lock.open('a+b') as lock:
+        if os.name == 'nt':
+            import msvcrt
+            if lock.seek(0, os.SEEK_END) == 0:
+                lock.write(b'0')
+                lock.flush()
+            waiting = False
+            while True:
+                lock.seek(0)
+                try:
+                    msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError as error:
+                    if error.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
+                        raise
+                    if not waiting:  # the holder's note is unreadable under the byte lock
+                        waiting = True
+                        emit('WAITING', holder='unknown')
+                    time.sleep(0.2)
+            try:
+                return run_check(command, state)
+            finally:
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            # Same flock(2) lock on macOS/Linux, including Linux CLI callers.
+            import fcntl
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                emit('WAITING', holder=holder_text(lock))
+                fcntl.flock(lock, fcntl.LOCK_EX)
+            # Who holds the lock, for the next WAITING line.
+            started = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+            lock.truncate(0)
+            lock.write(f'branch={emit.branch} pid={os.getpid()} started={started} wt={root}\n'.encode())
+            lock.flush()
+            try:
+                return run_check(command, state)
+            finally:
+                lock.truncate(0)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--base', default='origin/cindy/integration')
+    parser.add_argument('--all-themes', action='store_true',
+                        help='run the full theme matrix (also set by RAFT_TEST_ALL_THEMES=1)')
+    parser.add_argument('--skip-preflight', action='store_true',
+                        help='go straight to the full check without running tool/preflight first')
+    parser.add_argument('--no-check', action='store_true',
+                        help='merge only (docs-only branches)')
+    parser.add_argument('--pr', action='store_true',
+                        help='after a passing gate: push the branch and create/update its PR against '
+                             'cindy/integration (needs an authenticated gh and --pr-body)')
+    parser.add_argument('--pr-body', metavar='FILE', help='PR description; the gate result line is appended')
+    parser.add_argument('--pr-title', metavar='TITLE', help='PR title (default: the commit subject for a one-commit branch, else the branch name)')
+    args = parser.parse_args()
+    if args.pr:
+        preflight_pr(args)
+    # A machine-local default, so gates started from any shell here report failures
+    # to the same place; check-project inherits it.
+    notify_file = pathlib.Path.home() / '.config/raft-flutter/gate-notify-target'
+    if not os.environ.get('RAFT_GATE_NOTIFY_TARGET') and notify_file.is_file():
+        os.environ['RAFT_GATE_NOTIFY_TARGET'] = notify_file.read_text().strip()
+    emit = gate_events.Events(root)
+    if git('status', '--porcelain'):
+        sys.exit('Working tree is not clean; commit first.')
+    git('fetch', '-q', 'origin')
+    # Rebase, not merge: a merge commit per handoff (and another per catch-up)
+    # buried the integration history in noise.
+    rebased = subprocess.run(['git', 'rebase', args.base], cwd=root,
+                             text=True, capture_output=True)
+    if rebased.returncode != 0:
+        print(rebased.stdout + rebased.stderr)
+        subprocess.run(['git', 'rebase', '--abort'], cwd=root,
+                       text=True, capture_output=True)
+        sys.exit(f'Rebase onto {args.base} has conflicts: run `git rebase {args.base}`, '
+                 'resolve them on this branch, and run tool/prepare-handoff again.')
+    branch = git('branch', '--show-current')
+    head = git('rev-parse', '--short', 'HEAD')
+    base = git('rev-parse', '--short', args.base)
+    if args.no_check:
+        print(f'handoff: {branch} {head} (contains {args.base} {base}); gate skipped')
+        return
+    if not args.skip_preflight and not run_preflight(args.base):
+        sys.exit('preflight failed (summary above): fix it and run tool/prepare-handoff again; '
+                 'the full check was not started. --skip-preflight bypasses this.')
+    emit.branch, emit.sha = gate_events.identity(root)  # after the rebase
+    state = {'child': False}
+    gate_events.raise_on_signals()
+    try:
+        gate = run_gate(emit, state, args.all_themes)
+    except BaseException as error:
+        # Once check-project runs it logs its own terminal event; before that (waiting for the lock) we do.
+        if not state['child'] and not (isinstance(error, SystemExit) and error.code in (0, None)):
+            reason = f'signal {error.name}' if isinstance(error, gate_events.Interrupted) else f'{type(error).__name__}: {error}'
+            emit('ERROR', notify=emit.message(f'prepare-handoff 异常中止（{reason}）'), reason=reason, phase='waiting-for-lock')
+            gate_events.flush_notifications()
+        if isinstance(error, gate_events.Interrupted):
+            sys.exit(128 + error.signum)
+        raise
+    if gate.returncode < 0:  # killed outright: it could not log anything itself
+        emit('ERROR', notify=emit.message(f'check-project 被信号 {-gate.returncode} 杀死'), reason=f'check-project killed by signal {-gate.returncode}')
+        gate_events.flush_notifications()
+    result = gate.stdout.strip().splitlines()[-1] if gate.stdout.strip() else '{}'
+    try:
+        passed = json.loads(result).get('passed')
+    except json.JSONDecodeError:
+        passed = False
+    run_info = json.loads((root / '.local/engineering-run.json').read_text())
+    line = (f'handoff: {branch} {head} (contains {args.base} {base}); '
+            f'check-project {"PASSED" if passed else "FAILED"} (themes: {run_info.get("themes", "?")}); sourceHash {run_info.get("sourceHash", "?")[:12]}')
+    print(line)
+    if passed and args.pr:
+        publish_pr(branch, args.pr_body, line, args.pr_title)
+    sys.exit(0 if passed else 1)
+
+
+if __name__ == '__main__':
+    main()

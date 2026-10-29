@@ -27,6 +27,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../parity_harness.dart';
 import 'thread_composer/fake_workspace.dart';
+import '../../support/app_services_fixture.dart';
 
 Map<String, dynamic> _fx(ParityContext ctx) =>
     ctx.fixtures['ext:channelsettings'] as Map<String, dynamic>;
@@ -110,7 +111,7 @@ WorkspaceController _workspace(ParityContext ctx) {
     ..server = RaftRecord({...base.serverRecord, 'role': role})
     ..channels = channels
     ..dms = dms;
-  w.ledger.switchServer('visual-server');
+  w.messageDomain.ledger.switchServer('visual-server');
   return w;
 }
 
@@ -137,14 +138,22 @@ class _HostState extends State<_Host> {
   }
 
   @override
-  Widget build(BuildContext context) => WorkspaceView(
-    controller: w,
-    appearance: RaftAppearance(
-      mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
-      light: widget.ctx.family,
+  void dispose() {
+    w.dispose();
+    unawaited((w.client as ParityFakeClient).stream.close());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => withAppServices(
+    WorkspaceView(
+      controller: w,
+      appearance: RaftAppearance(
+        mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+      ),
+      onAppearance: (_) async {},
+      onLogout: () async {},
     ),
-    onAppearance: (_) async {},
-    onLogout: () async {},
   );
 }
 

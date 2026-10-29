@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:raft_client/raft_client.dart';
 
-import 'workspace_controller.dart';
+import 'cause_notice.dart';
+import 'user_error.dart';
+import 'workspace_cache.dart';
 
 /// raft-shared `SUPPORTED_TRANSLATION_LANGUAGES` (value → English label).
 const messageTranslationLanguages = <String, String>{
@@ -162,6 +164,35 @@ class MessageTranslationPresentation {
   bool get indicated => entry?.indicated ?? false;
 }
 
+/// A public server being read without membership (Web translationStore
+/// `publicServerProjection`): its gate comes from the public readback, the
+/// requests go to the slug-scoped public route, and for a signed-out visitor
+/// the preferences live in the browser ([preferences]) instead of /auth/me.
+@immutable
+class PublicTranslationScope {
+  const PublicTranslationScope({
+    required this.serverId,
+    required this.slug,
+    required this.enabled,
+    required this.available,
+    this.preferences,
+  });
+  final String serverId, slug;
+  final bool enabled, available;
+
+  /// The visitor's local preference record (signed out); null reads the
+  /// signed-in user's own.
+  final Map<String, dynamic> Function()? preferences;
+
+  PublicTranslationScope withAvailable(bool value) => PublicTranslationScope(
+    serverId: serverId,
+    slug: slug,
+    enabled: enabled,
+    available: value,
+    preferences: preferences,
+  );
+}
+
 class _ServerGate {
   const _ServerGate({
     required this.enabled,
@@ -171,7 +202,21 @@ class _ServerGate {
   final bool enabled, available, canManage;
 }
 
-/// Web `useTranslationStore`, owned by [WorkspaceController.translations]: settings for the
+/// The session and device facts needed by message translations.
+abstract interface class MessageTranslationAuthority {
+  RaftClient get client;
+  RaftRecord? get server;
+  WorkspaceCache? get cache;
+  Future<List<Map<String, dynamic>>> readDeviceTranslations(String serverId);
+  void writeDeviceTranslations(
+    String serverId,
+    List<Map<String, dynamic>> entries,
+  );
+  Future<dynamic> readTranslationGate(String serverId);
+  void saveTranslationGate(String serverId, Map<String, dynamic>? gate);
+}
+
+/// Web `useTranslationStore`, owned by the workspace session: settings for the
 /// selected server, the translation cache keyed by message id, and the
 /// batched `/message-translations:batch` requests. Like Web the cache
 /// survives channel and server switches, an entry is current only for its
@@ -225,7 +270,7 @@ class MessageTranslationStore extends ChangeNotifier {
     'content_invalid',
   };
 
-  final WorkspaceController w;
+  final MessageTranslationAuthority w;
   StreamSubscription<RaftEvent>? _events;
   Object? _identity;
   int _epoch = 0, _batch = 0;
@@ -236,7 +281,23 @@ class MessageTranslationStore extends ChangeNotifier {
   final _timeouts = <int, Timer>{};
   final _queued = <String, RaftMessage>{};
   Timer? _flush;
-  String? settingsError;
+
+  /// The failed settings read of the server in view. Kept per server so a
+  /// read that failed for one server never shows under another, and cleared
+  /// with the account (see [_adopt]) or by the next read of that server.
+  final _settingsErrors = CauseNotices<String>();
+  String? get settingsError {
+    _adopt();
+    final id = _serverId;
+    return id == null ? null : _settingsErrors.messageFor(id);
+  }
+
+  /// Web translationStore: the server's text or `settings.translation.loadFailed`.
+  static String _settingsLoadFailed(Object failure) => userErrorText(
+    failure,
+    fallback: 'Failed to load translation settings',
+    where: 'translation settings',
+  );
 
   /// Servers whose gate was read (or set) in this session; a gate restored
   /// from the device is shown but still read once.
@@ -282,11 +343,51 @@ class MessageTranslationStore extends ChangeNotifier {
       timer.cancel();
     }
     _timeouts.clear();
-    settingsError = null;
+    _settingsErrors.clearAll();
   }
 
-  String? get _serverId => w.server?.id;
-  bool get settingsLoading => _loading.contains(_serverId);
+  PublicTranslationScope? _public;
+  _ServerGate? _publicGate;
+
+  /// Reads [scope]'s public server instead of the selected one until
+  /// [clearPublicServer]. The gate needs no request: it came with the page.
+  void usePublicServer(PublicTranslationScope scope) {
+    _adopt();
+    final same =
+        _public != null &&
+        _public!.serverId == scope.serverId &&
+        _public!.slug == scope.slug &&
+        _public!.enabled == scope.enabled &&
+        _public!.available == scope.available &&
+        _public!.preferences == scope.preferences;
+    if (same) return;
+    _public = scope;
+    _publicGate = _ServerGate(
+      enabled: scope.enabled,
+      available: scope.available,
+      canManage: false,
+    );
+    _memo = null;
+    notifyListeners();
+  }
+
+  void clearPublicServer() {
+    if (_public == null) return;
+    _public = null;
+    _publicGate = null;
+    _memo = null;
+    // Called while the public page is unmounted, in the middle of a frame:
+    // nothing is told; the next read of the settings sees the server again.
+  }
+
+  /// The signed-out visitor's local preferences changed.
+  void publicPreferencesChanged() {
+    _memo = null;
+    notifyListeners();
+  }
+
+  String? get _serverId => _public?.serverId ?? w.server?.id;
+  bool get settingsLoading => _public == null && _loading.contains(_serverId);
 
   MessageTranslationSettings? _memo;
   Object? _memoUser, _memoGate;
@@ -297,8 +398,9 @@ class MessageTranslationStore extends ChangeNotifier {
   /// accepted user record and server gate they derive from.
   MessageTranslationSettings get settings {
     _adopt();
-    final user = w.client.user?.json ?? const {};
-    final gate = _servers[_serverId];
+    final user =
+        _public?.preferences?.call() ?? w.client.user?.json ?? const {};
+    final gate = _public != null ? _publicGate : _servers[_serverId];
     final memo = _memo;
     if (memo != null &&
         identical(user, _memoUser) &&
@@ -355,6 +457,8 @@ class MessageTranslationStore extends ChangeNotifier {
   void ensureSettings({bool force = false}) {
     _adopt();
     final id = _serverId;
+    // A public server's gate came with its page: nothing to read.
+    if (_public != null) return;
     if (_disposed || id == null || _loading.contains(id)) return;
     // Web loads once per server id; a role change keeps the accepted gate.
     // A gate restored from the device is shown while it is read once.
@@ -363,7 +467,7 @@ class MessageTranslationStore extends ChangeNotifier {
     }
     _loading.add(id);
     _failedLoads.remove(id);
-    settingsError = null;
+    _settingsErrors.clear(id);
     final epoch = _epoch, generation = w.client.generation;
     if (force) notifyListeners();
     unawaited(() async {
@@ -380,13 +484,13 @@ class MessageTranslationStore extends ChangeNotifier {
           );
         } else if (generation == w.client.generation) {
           _failedLoads.add(id);
-          settingsError = e.message;
+          _settingsErrors.raise(id, _settingsLoadFailed(e));
         }
       } catch (e) {
         if (epoch != _epoch) return;
         if (generation == w.client.generation) {
           _failedLoads.add(id);
-          settingsError = '$e';
+          _settingsErrors.raise(id, _settingsLoadFailed(e));
         }
       } finally {
         if (epoch == _epoch) {
@@ -441,6 +545,7 @@ class MessageTranslationStore extends ChangeNotifier {
     }
     final own =
         message.string('senderType') == 'user' &&
+        w.client.user?.id != null &&
         message.senderId == w.client.user?.id;
     if (s.mode != MessageTranslationMode.manual && own) {
       return MessageTranslationPresentation.none;
@@ -493,7 +598,7 @@ class MessageTranslationStore extends ChangeNotifier {
   /// (action card, forwarded bundle) have no translatable body.
   bool _translatable(RaftMessage message) {
     if (message.string('messageType') == 'system') return false;
-    if (WorkspaceController.isPendingSend(message)) return false;
+    if (message.json['pendingSend'] == true) return false;
     final metadata = message.json['actionMetadata'];
     return metadata is! Map ||
         !const {'action-card', 'forwarded-bundle'}.contains(metadata['kind']);
@@ -567,7 +672,7 @@ class MessageTranslationStore extends ChangeNotifier {
     final serial = ++_batch, epoch = _epoch;
     final generation = w.client.generation;
     final original = {for (final m in batch) m.id: m.content};
-    final server = _serverId;
+    final server = _public == null ? _serverId : null;
     for (final m in batch) {
       if (server != null) _homes[m.id] = (server, m.channelId);
       _fromDevice.remove(m.id);
@@ -589,8 +694,11 @@ class MessageTranslationStore extends ChangeNotifier {
       }
     }
     try {
+      final scope = _public;
       final data = await w.client.post(
-        '/message-translations:batch',
+        scope == null
+            ? '/message-translations:batch'
+            : '/public/servers/${Uri.encodeComponent(scope.slug)}/message-translations:batch',
         data: {
           'messageIds': ids,
           'targetLanguage': target,
@@ -660,7 +768,15 @@ class MessageTranslationStore extends ChangeNotifier {
       // Web: the API is not mounted here; forget the rows and hide the UI.
       ids.forEach(_entries.remove);
       final id = _serverId;
-      if (id != null) {
+      if (_public != null) {
+        _public = _public!.withAvailable(false);
+        _publicGate = _ServerGate(
+          enabled: _public!.enabled,
+          available: false,
+          canManage: false,
+        );
+        _memo = null;
+      } else if (id != null) {
         _servers[id] = _ServerGate(
           enabled: _servers[id]?.enabled ?? false,
           available: false,
@@ -736,12 +852,14 @@ class MessageTranslationStore extends ChangeNotifier {
   }
 
   /// Restores the selected server's saved gate and entries, once per server
-  /// and session. Entries already in memory are fresher and kept. Awaited by
-  /// [WorkspaceController.selectServer] before the cached channels paint.
+  /// and session. Entries already in memory are fresher and kept. The workspace
+  /// awaits this when selecting the server, before the cached channels paint.
   Future<void> restore() async {
     _adopt();
     final server = _serverId, role = w.server?.string('role');
-    if (_disposed || server == null || w.cache == null) return;
+    if (_disposed || _public != null || server == null || w.cache == null) {
+      return;
+    }
     if (!_restored.add(server)) return;
     final epoch = _epoch;
     final (rows, gate) = await (
@@ -811,7 +929,7 @@ class MessageTranslationStore extends ChangeNotifier {
     _persist ??= Timer(persistDelay, flushDevice);
   }
 
-  /// Writes the changed entries now (see [WorkspaceController.flushCache]).
+  /// Writes the changed entries now, as part of the workspace's cache flush.
   void flushDevice() {
     _persist?.cancel();
     _persist = null;

@@ -104,11 +104,11 @@ class _LabPage extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: lab.send,
-              child: const Text('Send test notification'),
+              child: const Text('Send Test Notification'),
             ),
             ElevatedButton(
               onPressed: lab.service.openSettings,
-              child: const Text('Open notification settings'),
+              child: const Text('Open Notification Settings'),
             ),
           ],
         ),

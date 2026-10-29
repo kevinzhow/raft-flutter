@@ -1,5 +1,13 @@
+import 'navigation_registry.dart';
+import 'phone_stack.dart';
 import 'raft_location.dart';
 import 'raft_navigation_history.dart';
+
+/// What [WorkspaceNavigation.translateForLayout] rewrote.
+class LayoutTranslation {
+  const LayoutTranslation(this.from, this.to);
+  final RaftLocation from, to;
+}
 
 /// One accepted location for the workspace presentation. Message windows,
 /// drafts and authorized entity records remain independent data projections.
@@ -14,6 +22,11 @@ class WorkspaceNavigation {
   int _index = -1;
   int _revision = 0;
   int _taskRevision = 0;
+
+  /// First history entry made under the live phone layout; see
+  /// [phoneReturnSource].
+  int _phoneFloor = 0;
+  int get phoneFloor => _phoneFloor;
   RaftLocation get location => _location;
   int get revision => _revision;
   int get taskRevision => _taskRevision;
@@ -36,6 +49,7 @@ class WorkspaceNavigation {
               .lastIndexWhere((entry) => entry.uri == location.uri);
     _revision = source._revision;
     _taskRevision = source._taskRevision;
+    _phoneFloor = source._phoneFloor;
   }
 
   /// A new principal/server epoch cannot inherit another epoch's history.
@@ -47,6 +61,7 @@ class WorkspaceNavigation {
       ..clear()
       ..add(initial);
     _index = 0;
+    _phoneFloor = 0;
     ++_revision;
     ++_taskRevision;
     return true;
@@ -58,6 +73,29 @@ class WorkspaceNavigation {
       from.uri != to.uri &&
       from.withQuery({'task': null, 'legacyTask': null}).uri ==
           to.withQuery({'task': null, 'legacyTask': null}).uri;
+
+  /// The profile side panel owns its own slot (`profile=` and its agent tab):
+  /// opening, retargeting or closing it never retires an independently
+  /// pending window.
+  static bool profileOnlyTransition(RaftLocation from, RaftLocation to) =>
+      from.uri != to.uri &&
+      from.withQuery(_profileQuery).uri == to.withQuery(_profileQuery).uri;
+
+  static const _profileQuery = <String, String?>{
+    'profile': null,
+    'agentTab': null,
+  };
+
+  /// Navigate the profile slot without bumping the window revision.
+  void navigateProfile(
+    RaftLocation next, {
+    RaftNavigationKind kind = RaftNavigationKind.push,
+  }) {
+    final keep = profileOnlyTransition(location, next);
+    final before = _revision;
+    navigate(next, kind: kind);
+    if (keep) _revision = before;
+  }
 
   /// Source rightPanelUrlSync331–389/475–535: task slots own history without
   /// retiring an independently pending main window or ordinary side thread.
@@ -151,6 +189,68 @@ class WorkspaceNavigation {
     return true;
   }
 
+  /// Translate the accepted location across the layout breakpoint. The
+  /// location is the only navigation state; identities that exist in one
+  /// layout only are rewritten to their equivalent in the other, so Back and
+  /// the visible page stay coherent without a second history. Returns null
+  /// when nothing needed translating. A layout projection keeps the same
+  /// conversation visit: its already loaded thread and pending replies must
+  /// remain current. Location and task revision still reconcile the page stack;
+  /// actual navigation continues to retire the message-request revision.
+  ///
+  /// * phone: a master/detail content slot (`activity|search ?open=`) becomes
+  ///   the conversation page above its list (the list is the Back entry).
+  /// * wide: `channelPage=` is dropped (the caller opens the matching dialog);
+  ///   if the page was pushed in this session its history entry is removed.
+  LayoutTranslation? translateForLayout({required bool compact}) {
+    final from = _location;
+    if (_index < 0) return null;
+    if (compact) {
+      if (!hasContentSlot(from)) return null;
+      final to = locationForPhone(from);
+      if (to.uri == from.uri) return null;
+      _entries[_index] = contentList(from);
+      _entries.removeRange(_index + 1, _entries.length);
+      _entries.add(to);
+      _index = _entries.length - 1;
+      _location = to;
+      ++_taskRevision;
+      return LayoutTranslation(from, to);
+    }
+    if (!hasPhoneOnlyIdentity(from)) return null;
+    final to = locationForWide(from);
+    if (_index > 0 && _entries[_index - 1].uri == to.uri) {
+      _entries.removeRange(_index, _entries.length);
+      _index--;
+    } else {
+      _entries[_index] = to;
+    }
+    _location = _entries[_index];
+    ++_taskRevision;
+    return LayoutTranslation(from, to);
+  }
+
+  /// The layout just changed: whatever history exists was made by the other
+  /// layout. A phone only treats entries made from here on as its own journey
+  /// ([translated] keeps the list a content slot was opened from).
+  void markLayoutCrossing({bool translated = false}) {
+    _phoneFloor = translated && _index > 0 ? _index - 1 : _index;
+  }
+
+  /// Panel close replaces its entry, so a session of opening and closing side
+  /// panels leaves runs of identical entries behind. They carry no
+  /// destination of their own; drop them around the current entry.
+  bool collapseRepeatedEntries() {
+    var changed = false;
+    for (var at = _entries.length - 1; at > 0; at--) {
+      if (_entries[at].uri != _entries[at - 1].uri) continue;
+      _entries.removeAt(at);
+      if (_index >= at) _index--;
+      changed = true;
+    }
+    return changed;
+  }
+
   /// Cold details have no observed predecessor. Close their URL-owned slot or
   /// replace with the route's semantic tab root instead of leaving the server.
   RaftLocation back() {
@@ -161,7 +261,10 @@ class WorkspaceNavigation {
         )) {
       final previous = _location;
       _location = _entries[--_index];
-      if (!taskOnlyTransition(previous, _location)) ++_revision;
+      if (!taskOnlyTransition(previous, _location) &&
+          !profileOnlyTransition(previous, _location)) {
+        ++_revision;
+      }
       ++_taskRevision;
     } else {
       // A task modal, profile and thread own independent slots. Closing one
@@ -197,7 +300,10 @@ class WorkspaceNavigation {
     if (_index + 1 >= _entries.length) return false;
     final previous = _location;
     _location = _entries[++_index];
-    if (!taskOnlyTransition(previous, _location)) ++_revision;
+    if (!taskOnlyTransition(previous, _location) &&
+        !profileOnlyTransition(previous, _location)) {
+      ++_revision;
+    }
     ++_taskRevision;
     return true;
   }
@@ -220,6 +326,23 @@ class WorkspaceNavigation {
   }
 
   static RaftLocation locationForSection(
+    String slug,
+    String section, {
+    String? channelId,
+    bool dm = false,
+  }) {
+    if (!NavigationRegistry.knowsSection(section)) {
+      NavigationRegistry.reportFallback(
+        'section',
+        section,
+        NavigationRegistry.unsupportedSections[section],
+      );
+      section = 'settings';
+    }
+    return _locationForSection(slug, section, channelId: channelId, dm: dm);
+  }
+
+  static RaftLocation _locationForSection(
     String slug,
     String section, {
     String? channelId,
@@ -255,16 +378,15 @@ class WorkspaceNavigation {
     'mcp-servers' => 'mcp',
     'browser' => 'notifications',
     'moderation' => 'administration',
+    'server-labs' => 'labs',
     _ => slug,
   };
 
   static const settingsSections = {
     'workspace-settings',
-    'sidebar-settings',
     'providers',
     'integrations',
     'im-bridges',
-    'joint-channels',
     'administration',
     'billing',
   };
@@ -297,13 +419,16 @@ class WorkspaceNavigation {
 
   /// The semantic root a cold detail returns to: its own tab root when the
   /// bar has one for it, otherwise the route's usual tab.
-  RaftLocation mobileTabHome(RaftLocation location) {
+  RaftLocation mobileTabHome(RaftLocation location) =>
+      tabHomeOf(location, mobileTabs);
+
+  static RaftLocation tabHomeOf(RaftLocation location, Set<String> tabs) {
     final tab = switch (location.route) {
       RaftRoute.computers || RaftRoute.computer => 'computers',
       RaftRoute.activity => 'activity',
       _ => null,
     };
-    return tab == null || !mobileTabs.contains(tab)
+    return tab == null || !tabs.contains(tab)
         ? location.tabHome()
         : RaftLocation.at(
             serverSlug: location.serverSlug,
@@ -313,7 +438,10 @@ class WorkspaceNavigation {
           );
   }
 
-  String? mobileRootTabOf(RaftLocation location) {
+  String? mobileRootTabOf(RaftLocation location) =>
+      rootTabOf(location, mobileTabs);
+
+  static String? rootTabOf(RaftLocation location, Set<String> tabs) {
     if (location.hasOverlay ||
         {RaftRoute.search, RaftRoute.activity}.contains(location.route) &&
             location.content != null) {
@@ -323,8 +451,8 @@ class WorkspaceNavigation {
       RaftRoute.home => 'chat',
       RaftRoute.tasks => 'tasks',
       RaftRoute.members => 'members',
-      RaftRoute.computers when mobileTabs.contains('computers') => 'computers',
-      RaftRoute.activity when mobileTabs.contains('activity') => 'activity',
+      RaftRoute.computers when tabs.contains('computers') => 'computers',
+      RaftRoute.activity when tabs.contains('activity') => 'activity',
       RaftRoute.settings when location.settingsPath.isEmpty => 'settings',
       _ => null,
     };

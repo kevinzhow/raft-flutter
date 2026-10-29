@@ -1,30 +1,1342 @@
 #!/usr/bin/env python3
-"""Run the workspace checks against an identified, unchanged source snapshot."""
+"""Run the workspace checks against an identified, unchanged source snapshot.
+
+Independent checks (host tests, analysis, sharded Dart tests) run concurrently.
+Dart test files are split into balanced shards, one `flutter test` process each.
+The checks test the Raft look only (light and dark; owner decision 2026-10-25). Theme-parametrized Dart tests
+run their Raft variants, and a test file tagged for a legacy look (`@Tags(['look-elegant'])`,
+`@Tags(['look-brutal'])`) is not run. The legacy looks (Elegant, Brutal) have their own on-demand suite,
+`tool/theme-suite`; this run prints a notice when the diff touches the theme engine (tool/theme_looks.py
+THEME_ENGINE_PATHS) and does not run the suite. `--all-themes` (or RAFT_TEST_ALL_THEMES=1) runs everything:
+every look, every variant. `--plan` prints what would run and exits.
+
+Test tiers (RAFT_TEST_TIER, `gate` by default, `full` for the nightly and for `--all-themes`):
+a file that starts with `@Tags(['slow'])` is a long scenario. The gate runs it only when the diff
+against the merge-base with ${RAFT_CHECK_BASE:-origin/cindy/integration} (committed, staged, unstaged,
+untracked) reaches it through the import graph (tool/affected_tests.py), or when a non-Dart input of
+apps/ or packages/ changed, or when the diff cannot be computed. Every other slow file is skipped
+and listed in the summary. `full` runs every slow file, and the tests that cut their matrix on the gate
+(a theme or size subset, see raftFullMatrix in raft_ui/test_themes.dart) run the whole cartesian product.
+A failing or timed-out test is listed in `.local/check-summary.txt`. Knobs:
+RAFT_CHECK_SHARDS, RAFT_CHECK_JOBS (flutter test `-j` per shard),
+RAFT_CHECK_SHARD_TIMEOUT_MINUTES (whole-shard watchdog).
+
+Flaky tests do not force a whole re-run. When the ONLY failing checks are Dart test
+shards (analysis, lints, the structure audit, host tests and pub get are never
+retried), the failed test files plus files that never finished are re-run alone with
+`flutter test <file>`, up to RAFT_CHECK_RETRIES attempts each (default 3, 0 = no
+retry), stopping at the first pass. A file that passes on a retry is a flake: the
+run may pass, and the final JSON lists it as
+"flaky": [{"file", "tests": [failed test names of the first run], "errors": [their first-run failure messages], "attempts": n}]
+(n = retry attempts used) while the summary prints "FLAKY (passed on retry)". A
+file that fails every attempt keeps the run failed. More than 6 files to retry
+(real breakage), an early stop (max failures, compile error, stall, failed static check) or a failure
+without a test file means no retry at all.
+
+An identical code tree is not checked twice. A full pass on a clean worktree
+(`git status --porcelain` empty) is recorded under
+${RAFT_CHECK_CACHE:-~/.cache/raft-check}/passed/<tree>.json, keyed by
+`git rev-parse HEAD^{tree}` (with time, HEAD commit and the final JSON; a pass with
+flakes is recorded too). `--reuse` prints "tree <hash> already passed ..." plus the
+stored JSON with "reused": true and exits 0 without running anything, when the
+worktree is clean and that tree has a recorded pass (an `--all-themes` run only
+reuses an all-themes pass). A dirty worktree never reuses and runs normally.
+
+The gate fails fast so a broken branch does not hold the shared lock for a full
+run: the shards' output is watched while they run, and every process this run
+started is killed on the first compile/load error, once RAFT_CHECK_MAX_FAILURES
+tests have failed (default 3, 0 = never stop early), or when no shard printed
+anything for RAFT_CHECK_STALL_MINUTES (default 10, 0 = off). Each step is appended
+to /tmp/raft-flutter-gate-events.log (tool/gate_events.py), with a terminal
+PASS/FAIL/ERROR line on every path; RAFT_GATE_NOTIFY_TARGET also sends failures.
+
+Usage: tool/check-project [--all-themes] [--reuse] [--plan]
+"""
+import codecs
+import concurrent.futures
 import json
 import os
 import pathlib
+import re
+import shutil
+import signal
 import subprocess
 import sys
+import threading
+import time
+
 if sys.version_info < (3, 11):
     raise SystemExit('Engineering checks require Python 3.11 or newer.')
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))  # also when loaded by the host tests
+import affected_tests  # noqa: E402
+import gate_events  # noqa: E402
+import test_budget  # noqa: E402
+import theme_looks  # noqa: E402
+from test_events import file_durations, parse_test_events  # noqa: E402,F401  (also used through this module by the host tests)
+
 root = pathlib.Path(__file__).resolve().parent.parent
-check_env = dict(os.environ, PYTHONUTF8='1')
-tool_command = lambda name: ([sys.executable] if os.name == 'nt' else []) + [str(root / 'tool' / name)]
-stamp = lambda: subprocess.check_output(tool_command('source-hash'), text=True, env=check_env).strip()
-source_hash = stamp()
-results = {}
-(root / '.local').mkdir(exist_ok=True)
-with (root / '.local/host-collector-tests.txt').open('w') as log:
-    results['host-collector-tests.txt'] = subprocess.run(
-        [sys.executable, '-m', 'unittest', 'discover', '-s', str(root / 'tool/tests'), '-p', 'test_*.py', '-v'],
-        cwd=root, env=check_env, stdout=log, stderr=subprocess.STDOUT).returncode == 0
-checks = [('bindings-generator-pub-get.txt', ['pub', 'get', '--enforce-lockfile'], root / 'apps/raft_flutter/tool/bindings_generator'),
-          ('all-project-tests.txt', ['test', 'test', '../../packages/raft_client/test', '../../packages/raft_sync/test', '../../packages/raft_ui/test', '--no-pub', '--reporter', 'expanded'], root / 'apps/raft_flutter'),
-          ('analyze-all.txt', ['analyze', '--no-pub'], root)]
-for filename, args, cwd in checks:
-    with (root / '.local' / filename).open('w') as log:
-        results[filename] = subprocess.run([*tool_command('flutter'), *args], cwd=cwd, env=check_env, stdout=log, stderr=subprocess.STDOUT).returncode == 0
-changed = stamp() != source_hash
-(root / '.local/engineering-run.json').write_text(json.dumps({'sourceHash': source_hash, 'completed': all(results.values()) and not changed, 'checks': results}, indent=2))
-print(json.dumps({'passed': all(results.values()) and not changed, 'sourceChanged': changed, 'checks': results}))
-sys.exit(0 if all(results.values()) and not changed else 1)
+local = root / '.local'
+app_dir = root / 'apps/raft_flutter'
+# Same suites as the former single invocation. Everything runs from the app
+# directory so package tests keep the app's asset bundle and working directory.
+TEST_DIRS = ['apps/raft_flutter/test', 'packages/raft_client/test', 'packages/raft_sync/test', 'packages/raft_ui/test', 'packages/raft_theme/test', 'packages/flutter_dynamic_icon_plus/test', 'packages/raft_updater/test', 'packages/desktop_drop/test', 'packages/app_badge_plus/test']
+SLOWEST_TESTS = 20
+DEFAULT_SHARD_TIMEOUT_MINUTES = 60
+DEFAULT_MAX_FAILURES = 3
+DEFAULT_STALL_MINUTES = 10
+DEFAULT_RETRIES = 3
+MAX_RETRY_FILES = 6  # more failed files than this is real breakage, not flakiness
+DEFAULT_RETRY_TIMEOUT_MINUTES = 20  # one single-file retry attempt
+STARTUP_TIMEOUT_SECONDS = 180  # longest one shard may hold the startup slot before the next one starts anyway
+STARTUP_POLL_SECONDS = 0.1
+POLL_SECONDS = 0.5
+COMPILE_GRACE_SECONDS = 3.0  # after the first compiler error: let the file name and more diagnostics arrive
+MAX_DIAGNOSTIC_LINES = 8
+TIER_VARIABLE = 'RAFT_TEST_TIER'
+DEFAULT_BASE_REF = 'origin/cindy/integration'
+SLOW_TAG = re.compile(r"""^@Tags\(\s*\[[^\]]*['"]slow['"]""", re.M)
+SLOW_HEAD_BYTES = 16384  # the annotation sits before the first import
+# Inputs a Dart import graph cannot see: a change to one of these may affect any test.
+OPAQUE_INPUT = re.compile(r'^(apps|packages)/(?!.*\.(dart|md)$)')
+
+
+def tool_command(name):
+    return ([sys.executable] if os.name == 'nt' else []) + [str(root / 'tool' / name)]
+
+
+def clear_unit_test_assets(root: pathlib.Path) -> list[pathlib.Path]:
+    """Drop cached test assets so every run compiles shaders for the test backend.
+
+    A device build in the same worktree (an APK, say) leaves
+    build/unit_test_assets with Vulkan-only shader stages; `flutter test` then
+    reuses them and every ink-sparkle widget throws "does not contain
+    appropriate runtime stage data for current backend (SkSL)".
+    """
+    removed = []
+    for build in [root / 'apps/raft_flutter/build', *sorted((root / 'packages').glob('*/build'))]:
+        assets = build / 'unit_test_assets'
+        if assets.is_dir():
+            shutil.rmtree(assets, ignore_errors=True)
+            removed.append(assets)
+    return removed
+
+
+def smallest_app_test(files, sizes):
+    """The smallest app test file (relative to the app dir), to warm the test assets."""
+    app_files = [f for f in files if f.startswith('test/') and f in sizes]
+    return min(app_files, key=lambda f: (sizes[f], f)) if app_files else None
+
+
+def discover_tests(base, dirs=TEST_DIRS):
+    """Test files `flutter test` would find, as paths relative to the app dir."""
+    found = []
+    for directory in dirs:
+        for path in sorted((base / directory).rglob('*_test.dart')):
+            found.append(pathlib.Path(os.path.relpath(path, base / 'apps/raft_flutter')).as_posix())
+    return found
+
+
+def tier_mode(env):
+    """`full` for RAFT_TEST_TIER=full or an all-themes run, else `gate`; anything else is refused."""
+    raw = env.get(TIER_VARIABLE, '').strip().lower()
+    if raw not in ('', 'gate', 'full'):
+        raise SystemExit(f'{TIER_VARIABLE} must be gate or full, got {raw!r}.')
+    return 'full' if raw == 'full' or env.get('RAFT_TEST_ALL_THEMES') == '1' else 'gate'
+
+
+def apply_look_filter(files, base, env):
+    """(files to run, plan): drop the test files tied to a look the run does not select (tool/theme_looks.py).
+
+    The gate selects the Raft look; `--all-themes` selects every look. `files` are relative to `base`.
+    """
+    looks = theme_looks.selected_looks(env)
+    kept, skipped = theme_looks.split_by_looks(files, looks, base)
+    by_look = {look: [f for f in skipped if look in theme_looks.file_looks(base / f)] for look in theme_looks.LEGACY_LOOKS}
+    aware = [f for f in kept if theme_looks.declares_looks(base / f)]
+    return kept, {'looks': list(looks), 'skipped': skipped, 'byLook': {k: v for k, v in by_look.items() if v}, 'lookAware': aware}
+
+
+def look_summary(plan):
+    """Lines that say which looks ran and which legacy-look files were left to tool/theme-suite."""
+    shown = ', '.join(plan['looks'])
+    lines = [f"Looks: {shown}" + (' (light and dark)' if plan['looks'] == list(theme_looks.DEFAULT_LOOKS) else '') + f". Look-aware test files: {len(plan['lookAware'])}; legacy-look files skipped: {len(plan['skipped'])}"
+             + (f" ({theme_looks.SUITE_COMMAND} runs them)." if plan['skipped'] else '.')]
+    lines.extend(f'  legacy look, skipped: {name}' for name in plan['skipped'])
+    return lines
+
+
+def is_slow_test(path):
+    """True when the test file starts with `@Tags(['slow'])` (the annotation precedes the imports)."""
+    try:
+        with open(path, encoding='utf-8', errors='replace') as handle:
+            return bool(SLOW_TAG.search(handle.read(SLOW_HEAD_BYTES)))
+    except OSError:
+        return False
+
+
+def changed_since_base(base_ref=None, cwd=None):
+    """Repo-relative paths changed since the merge-base with `base_ref` (committed, staged, unstaged,
+    untracked), or None when that cannot be computed (the caller then runs everything)."""
+    base_ref = base_ref or os.environ.get('RAFT_CHECK_BASE') or DEFAULT_BASE_REF
+    try:
+        base = git_text('merge-base', 'HEAD', base_ref, cwd=cwd)
+        names = git_text('-c', 'core.quotepath=off', 'diff', '--name-only', '--no-renames', base, cwd=cwd).splitlines()
+        names += git_text('-c', 'core.quotepath=off', 'ls-files', '--others', '--exclude-standard', cwd=cwd).splitlines()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return sorted(set(names))
+
+
+def slow_plan(slow, tier, changed, reach):
+    """Which slow test files (repo-relative) run: {'run', 'skipped', 'why'}.
+
+    `tier` full runs them all. On the gate a slow file runs when `reach(changed)` (the test files that can
+    execute a changed Dart file) names it; a change that cannot be traced through imports (`changed` is
+    None, or a non-Dart input under apps/ or packages/) runs them all, because skipping is only safe
+    when the diff is known.
+    """
+    slow = sorted(slow)
+    if not slow:
+        return {'run': [], 'skipped': [], 'why': 'no slow files'}
+    if tier == 'full':
+        return {'run': slow, 'skipped': [], 'why': f'{TIER_VARIABLE}=full'}
+    if changed is None:
+        return {'run': slow, 'skipped': [], 'why': 'the diff against the base could not be computed'}
+    opaque = [name for name in changed if OPAQUE_INPUT.match(name)]
+    if opaque:
+        return {'run': slow, 'skipped': [], 'why': f'a non-Dart input changed ({opaque[0]})'}
+    reached = set(reach({name for name in changed if name.endswith('.dart')}))
+    return {'run': [f for f in slow if f in reached], 'skipped': [f for f in slow if f not in reached],
+            'why': 'selected by the diff' if reached & set(slow) else 'the diff reaches no slow file'}
+
+
+def reach_by_imports(changed):
+    """Test files that can execute one of the changed Dart files (tool/affected_tests.py)."""
+    if not changed:
+        return set()
+    sources = affected_tests.tracked_dart_sources(root)
+    for name in changed:  # untracked files are not in `git ls-files`
+        if name not in sources and (root / name).is_file():
+            sources[name] = (root / name).read_text(encoding='utf-8', errors='replace')
+    return set(affected_tests.affected_tests(set(changed), sources, affected_tests.workspace_packages(root)))
+
+
+def apply_slow_tier(files, tier, base, changed=None, reach=reach_by_imports):
+    """(files to run, plan) for `files` relative to `base`; `changed` is looked up unless given."""
+    repo = {f: pathlib.Path(os.path.relpath(base / f, root)).as_posix() for f in files}
+    slow = [repo[f] for f in files if is_slow_test(base / f)]
+    if changed is None and slow and tier != 'full':
+        changed = changed_since_base()
+    plan = slow_plan(slow, tier, changed, reach)
+    skipped = set(plan['skipped'])
+    return [f for f in files if repo[f] not in skipped], {**plan, 'tier': tier}
+
+
+def effective_cpus(cpu, load1):
+    """CPUs not already taken by other work on a shared machine."""
+    return max(2, cpu - int(load1 or 0))
+
+
+def plan_parallelism(cpu, load1=0.0, env=None, platform=None):
+    """Return (shards, jobs per shard); environment overrides win.
+
+    macOS defaults to one shard: every `flutter test` process re-links the
+    shared native_assets dylibs with install_name_tool, so two processes race
+    and one loses libsqlite3.dylib. The single shard runs more files at once.
+    """
+    env = os.environ if env is None else env
+    platform = sys.platform if platform is None else platform
+
+    def positive(name):
+        raw = env.get(name, '').strip()
+        if not raw:
+            return None
+        if not raw.isdigit() or int(raw) < 1:
+            raise SystemExit(f'{name} must be a positive integer, got {raw!r}.')
+        return int(raw)
+
+    eff = effective_cpus(cpu, load1)
+    # A busy machine must not fall back to one shard: one shard runs every file
+    # in a row and outlives the shard watchdog. Keep a floor tied to the CPU
+    # count (not the load) and let -j absorb the contention instead.
+    floor = max(1, min(3, cpu // 4))
+    shards = positive('RAFT_CHECK_SHARDS') or (1 if platform == 'darwin' else max(floor, min(8, eff // 3)))
+    jobs = positive('RAFT_CHECK_JOBS') or max(2, min(4 if shards > 1 else 8, eff // shards))
+    return shards, jobs
+
+
+def shard_timeout_seconds(weight, jobs, override=None):
+    """Whole-shard watchdog: the default, or longer for a shard whose measured
+    work (`weight` file-seconds over `jobs` workers) needs more, with 2.5x
+    headroom for a loaded machine. An explicit override always wins."""
+    if override:
+        return float(override) * 60
+    expected = (weight or 0) / max(1, jobs)
+    return max(DEFAULT_SHARD_TIMEOUT_MINUTES * 60, 2.5 * expected)
+
+
+def partition(files, weights, shards, fallback=None):
+    """Greedy longest-first split into `shards` lists of near-equal total weight.
+
+    Each shard lists its files longest first, so `flutter test` starts the heavy files early and a big
+    file never begins when the shard is nearly done.
+
+    `weights` maps file to measured seconds; a file without history gets the mean
+    of the known weights scaled by its `fallback` size when present, so a new or
+    renamed file is neither free nor assumed huge. Deterministic for equal input.
+    """
+    shards = max(1, min(shards, len(files))) if files else 1
+    known = [weights[f] for f in files if weights.get(f, 0) > 0]
+    mean = sum(known) / len(known) if known else 1.0
+    sizes = fallback or {}
+    mean_size = (sum(sizes.get(f, 0) for f in files if f in weights) / len(known)) if known and sizes else 0
+
+    def weight(name):
+        if weights.get(name, 0) > 0:
+            return weights[name]
+        if mean_size and sizes.get(name):
+            return mean * sizes[name] / mean_size
+        return mean
+
+    bins = [[0.0, i, []] for i in range(shards)]
+    for name in sorted(files, key=lambda f: (-weight(f), f)):
+        target = min(bins, key=lambda b: (b[0], b[1]))
+        target[0] += weight(name)
+        target[2].append(name)
+    return [{'files': b[2], 'weight': round(b[0], 2)} for b in sorted(bins, key=lambda b: b[1])]  # longest first: the heavy files start early and the shard has no long tail
+
+
+def summarize_shard(results):
+    """Counts of real tests plus the failures.
+
+    The runner reports bookkeeping entries (`(setUpAll)`, `(tearDownAll)`, ...) with `hidden: true`; they
+    are not tests, so they are counted apart in `hidden` and never in `passed` or `skipped`. A hidden
+    entry that fails is still a failure.
+    """
+    real = [r for r in results if not r['loading'] and not r.get('hidden')]
+    return {'passed': sum(r['status'] == 'passed' for r in real), 'skipped': sum(r['status'] == 'skipped' for r in real),
+            'hidden': sum(r.get('hidden', False) and not r['loading'] and r['status'] in ('passed', 'skipped') for r in results),
+            'failed': [r for r in results if r['status'] in ('failed', 'incomplete')]}
+
+
+PASS_MARKER = 'All tests passed!'
+
+
+def has_pass_marker(log_text):
+    """True only when the reporter printed its final success line.
+
+    A shard that stalled and was killed, or exited 0 without finishing, never
+    prints it, so exit status alone is never enough to pass.
+    """
+    return any(PASS_MARKER in line for line in log_text.splitlines()[-5:])
+
+
+def unfinished_files(planned, results):
+    """Planned test files (repo-relative) that never produced a finished suite.
+
+    A file with a started-but-unfinished test is already reported per test; this
+    adds the files that never loaded at all (shard killed or crashed first).
+    """
+    seen = {r['file'] for r in results if r['file']}
+    return [f for f in planned if f not in seen]
+
+
+def slowest_tests(results, count=SLOWEST_TESTS):
+    real = sorted((r for r in results if not r['loading'] and r['status'] != 'skipped'), key=lambda r: (-r['seconds'], r['file'], r['name']))
+    return [{'name': r['name'], 'file': r['file'], 'seconds': r['seconds']} for r in real[:count]]
+
+
+def slow_summary(plan):
+    """Lines naming the slow files that ran and the ones the gate skipped (nothing when there are none)."""
+    total = len(plan['run']) + len(plan['skipped'])
+    if not total:
+        return []
+    lines = [f"Test tier: {plan['tier']}. Slow files: {len(plan['run'])} of {total} ran ({plan['why']}), {len(plan['skipped'])} skipped."]
+    lines.extend(f'  slow, ran: {name}' for name in plan['run'])
+    lines.extend(f'  slow, skipped (the nightly or {TIER_VARIABLE}=full runs it): {name}' for name in plan['skipped'])
+    return lines
+
+
+def format_summary(shards, failures, totals, slowest, limit=None, themes=None, stop=None, flaky=(), retry_failed=(), slow=None, budget=None, looks=None, guard=()):
+    """Human-readable gate summary; failures are listed by test name (first `limit` if given)."""
+    lines = [f"Dart tests: {totals['passed']} passed, {totals['skipped']} skipped, {len(failures)} failed across {len(shards)} shard(s)" + (f' (themes: {themes}).' if themes else '.')]
+    if totals.get('hidden'):
+        lines.append(f"  ({totals['hidden']} hidden setUpAll/tearDownAll entries are not counted as tests.)")
+    lines.extend(guard)
+    if looks:
+        lines.extend(look_summary(looks))
+    if slow:
+        lines.extend(slow_summary(slow))
+    if budget and (budget['violations'] or budget.get('warnings') or budget['notes']):
+        lines.append(f"Test budget: {len(budget['violations'])} file(s) over budget, {len(budget.get('warnings', ()))} slow warning(s) (tool/test_budget.py).")
+        lines.extend(f'  FAIL {line}' for line in budget['violations'])
+        lines.extend(f'  warn {line}' for line in budget.get('warnings', ()))
+        lines.extend(f'  note {line}' for line in budget['notes'])
+    if stop:
+        lines.append(f"Run stopped early: {stop['message']}")
+        lines.extend(f'  {line}' for line in stop['lines'])
+    for shard in shards:
+        state = 'ok' if shard['passed'] else 'STOPPED' if shard.get('stopped') else 'FAILED'
+        lines.append(f"  shard {shard['index']}: {state} {shard['seconds']:.0f}s, {len(shard['files'])} files (log {shard['log']})")
+    if flaky:
+        lines.append('FLAKY (passed on retry):')
+        for item in flaky:
+            names = '; '.join(item['tests']) or '(file did not finish)'
+            lines.append(f"  {item['file']} (retry attempt {item['attempts']}): {names}")
+            for error in item.get('errors', ()):
+                lines.append(f"    first run: {error}")
+    if retry_failed:
+        lines.append('Still failing after retries:')
+        lines.extend(f"  {item['file']} ({item['attempts']} retry attempt(s))" for item in retry_failed)
+    if failures:
+        lines.append('Failed tests:')
+        for f in failures[:limit]:
+            detail = f['error'] or ('did not finish (shard killed or crashed)' if f['status'] == 'incomplete' else '')
+            lines.append(f"  [{f['shard']}] {f['file']}: {f['name']}" + (f' -- {detail}' if detail else ''))
+        if limit is not None and len(failures) > limit:
+            lines.append(f'  ... and {len(failures) - limit} more in .local/check-summary.txt')
+    lines.append(f'Slowest {len(slowest)} tests:')
+    lines.extend(f"  {s['seconds']:7.1f}s  {s['file']}: {s['name']}" for s in slowest)
+    return '\n'.join(lines) + '\n'
+
+
+def read_json(path):
+    try:
+        return json.loads(pathlib.Path(path).read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def app_relative_weights(weights, repo=None, base=None):
+    """`history_weights` keys (repo-relative, as check-durations.json stores them) as the app-relative
+    paths `discover_tests` returns and `flutter test` receives; without this no file ever matched a weight."""
+    repo, base = repo or root, base or app_dir
+    return {pathlib.Path(os.path.relpath(repo / name, base)).as_posix(): seconds for name, seconds in weights.items()}
+
+
+def history_weights(repo):
+    """Per-file seconds (keyed by repo-relative path) from the previous run here, else the main checkout's."""
+    candidates = [repo / '.local/check-durations.json']
+    try:
+        common = subprocess.check_output(['git', 'rev-parse', '--git-common-dir'], cwd=repo, text=True, stderr=subprocess.DEVNULL).strip()
+        candidates.append((repo / common).resolve().parent / '.local/check-durations.json')
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    for candidate in candidates:
+        files = read_json(candidate).get('files')
+        if isinstance(files, dict) and files:
+            return {name: entry['seconds'] for name, entry in files.items() if isinstance(entry, dict) and entry.get('seconds')}
+    return {}
+
+
+ANSI_RE = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
+PROGRESS_RE = re.compile(r'^\d+:\d+ [+~-]')
+# `00:05 +3 ~1 -1: <test> [E]`; with several suites running the test is `<path>.dart: <name>`.
+TEST_FAILED_RE = re.compile(r'^\d+:\d+ \+\d+(?: ~\d+)?(?: -\d+)?: (?P<name>.*) \[E\]$')
+PREFIXED_RE = re.compile(r'^(?P<file>\S+\.dart): (?P<test>.*)$')
+# Compiler diagnostics print before the `loading <file> [E]` line, e.g.
+# `lib/platform/macos_dock_unread.dart:24:7: Error: Undefined name 'AppBadgePlus'.`
+DIAGNOSTIC_RE = re.compile(r'^(?P<path>\S.*?\.dart):\d+:\d+: Error: ')
+LOAD_FAILED_RE = re.compile(r'Failed to load "(?P<file>[^"]+)"')
+TEST_PATH_RE = re.compile(r'testPath=(?P<file>\S+\.dart)')
+
+
+def to_repo_path(path):
+    return pathlib.Path(os.path.relpath(path, root)).as_posix() if os.path.isabs(path) else path
+
+
+def max_failures_reached(count, limit):
+    """`limit` 0 means never stop early."""
+    return limit > 0 and count >= limit
+
+
+def stalled(now, last_output, minutes):
+    """True when nothing was printed for `minutes` (0 disables the watchdog)."""
+    return minutes > 0 and now - last_output >= minutes * 60
+
+
+class StreamScanner:
+    """Incrementally scans one shard's reporter output (`\\n` or `\\r` progress lines).
+
+    `feed` returns new findings: `{'kind': 'test', file, name}` for a failed test, or
+    `{'kind': 'compile', file, lines, done}` for the first load/compile error. The
+    compile finding is returned once and keeps filling in (`file`, `lines`, `done`).
+    """
+
+    def __init__(self, files=(), to_repo=lambda p: p):
+        self.files, self.to_repo, self.partial, self.compile = list(files), to_repo, '', None
+
+    def feed(self, text):
+        pieces = re.split(r'[\r\n]+', self.partial + text)
+        self.partial = pieces.pop()  # incomplete last line
+        return [f for f in (self.line(ANSI_RE.sub('', piece).rstrip()) for piece in pieces) if f]
+
+    def line(self, line):
+        c = self.compile
+        failed = TEST_FAILED_RE.match(line)
+        if failed and failed['name'].startswith('loading '):
+            file = self.to_repo(failed['name'][len('loading '):])
+            if c is None:  # load failure without compiler output (e.g. file missing)
+                self.compile = {'kind': 'compile', 'file': file, 'lines': [], 'done': True, 'want': 3}
+                return self.compile
+            if not c['done']:  # a broken shared file fails every file loading beside it; the first is the culprit
+                c.update(file=file, done=True)
+            return None
+        if failed:
+            prefixed = PREFIXED_RE.match(failed['name'])
+            file = self.to_repo(prefixed['file']) if prefixed else (self.files[0] if len(self.files) == 1 else '?')
+            return {'kind': 'test', 'file': file, 'name': prefixed['test'] if prefixed else failed['name']}
+        if c is None:
+            diagnostic = DIAGNOSTIC_RE.match(line)
+            if diagnostic:
+                self.compile = {'kind': 'compile', 'file': diagnostic['path'], 'lines': [line], 'done': False, 'want': 0}
+                return self.compile
+            return None
+        named = LOAD_FAILED_RE.search(line) or TEST_PATH_RE.search(line)
+        if named and not c['done']:
+            c.update(file=self.to_repo(named['file']), done=True)
+        if line.strip() and not PROGRESS_RE.match(line) and len(c['lines']) < MAX_DIAGNOSTIC_LINES and (not c['done'] or c['want'] > 0):
+            c['lines'].append(line)
+            c['want'] = max(0, c['want'] - 1)
+        return None
+
+
+class GateWatch:
+    """Decides when the run must stop early; pure apart from the `emit` callback."""
+
+    def __init__(self, shard_files, now, max_failures, stall_minutes, emit=lambda *a, **k: None, to_repo=lambda p: p):
+        self.scanners = [StreamScanner(files, to_repo) for files in shard_files]
+        self.max_failures, self.stall_minutes, self.emit = max_failures, stall_minutes, emit
+        self.failures, self.compile, self.compile_seen, self.last_output, self.announced = [], None, None, now, False
+
+    def touch(self, now):
+        self.last_output = now
+
+    def feed(self, shard, text, now):
+        if text:
+            self.touch(now)
+        for finding in self.scanners[shard].feed(text):
+            if finding['kind'] == 'test':
+                self.failures.append({**finding, 'shard': shard})
+                details = {'file': finding['file'], 'test': finding['name']}
+            elif self.compile is None:
+                self.compile, self.compile_seen = finding, now
+                finding['shard'] = shard
+                details = {'file': finding['file'], 'test': '(load/compile error)', 'error': finding['lines'][0] if finding['lines'] else 'failed to load'}
+            else:
+                continue
+            if not self.announced:  # the moment the first failure is seen, before the run stops
+                self.announced = True
+                self.emit('FAIL-FIRST', **details)
+
+    def verdict(self, now):
+        """None to keep going, else {'reason', 'message', 'lines', 'fields'} to stop the run."""
+        c = self.compile
+        if c is not None and (c['done'] or now - self.compile_seen >= COMPILE_GRACE_SECONDS):
+            first = c['lines'][0] if c['lines'] else 'failed to load'
+            return {'reason': 'compile-error', 'message': f"load/compile error in {c['file']}", 'lines': list(c['lines']),
+                    'fields': {'file': c['file'], 'error': first}}
+        if max_failures_reached(len(self.failures), self.max_failures):
+            return {'reason': 'max-failures', 'lines': [], 'fields': {'failures': len(self.failures), 'limit': self.max_failures},
+                    'message': f'{len(self.failures)} tests failed (RAFT_CHECK_MAX_FAILURES={self.max_failures}); the remaining tests were not run'}
+        if stalled(now, self.last_output, self.stall_minutes):
+            return {'reason': 'stall', 'lines': [], 'fields': {'minutes': self.stall_minutes},
+                    'message': f'no shard printed anything for {self.stall_minutes:g} minutes (RAFT_CHECK_STALL_MINUTES)'}
+        return None
+
+
+class LogTail:
+    """Reads what a child appended to its log since the last call (UTF-8 safe across chunks)."""
+
+    def __init__(self, path):
+        self.path, self.offset, self.decoder = path, 0, codecs.getincrementaldecoder('utf-8')('replace')
+
+    def read(self):
+        try:
+            with open(self.path, 'rb') as f:
+                f.seek(self.offset)
+                data = f.read()
+        except OSError:
+            return ''
+        self.offset += len(data)
+        return self.decoder.decode(data)
+
+
+def file_size(path):
+    try:
+        return os.path.getsize(path)
+    except OSError:
+        return 0
+
+
+def env_number(name, default, env=None):
+    """Non-negative number from the environment (0 is a valid 'off')."""
+    raw = (os.environ if env is None else env).get(name, '').strip()
+    if not raw:
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        value = -1
+    if value < 0:
+        raise SystemExit(f'{name} must be a non-negative number, got {raw!r}.')
+    return value
+
+
+CHILDREN, CHILDREN_LOCK, STOPPED, STOP = {}, threading.Lock(), set(), threading.Event()
+
+
+def kill_group(child):
+    """Kill one child's own process group; never anything this run did not start."""
+    if child.poll() is not None:
+        return False
+    if os.name == 'nt':
+        subprocess.run(['taskkill', '/T', '/F', '/PID', str(child.pid)], capture_output=True)
+    else:
+        try:
+            os.killpg(child.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            return False
+    return True
+
+
+def kill_children():
+    """Stop everything this run started (shards, analyze, host tests, pub get)."""
+    STOP.set()
+    with CHILDREN_LOCK:
+        live = list(CHILDREN.values())
+    for child in live:
+        if kill_group(child):
+            STOPPED.add(child.pid)
+
+
+class StartupGate:
+    """One `flutter test` process at a time passes through its startup.
+
+    Every `flutter test` empties build/native_assets/<os>/ (even with no native
+    assets), writes native_assets.json there, builds the asset bundle, and only
+    then copies the json to build/unit_test_assets/NativeAssetsManifest.json.
+    A second process that starts in between empties the directory and the first
+    fails with PathNotFoundException. The warm-up cannot prevent this: the tool
+    redoes the native-assets step on every invocation. So a shard takes the slot
+    before it starts and gives it back once its JSON event file has content
+    (the test runner writes it after the copy), it exits, or `timeout` passes.
+    """
+
+    def __init__(self, timeout=STARTUP_TIMEOUT_SECONDS, poll=STARTUP_POLL_SECONDS, clock=time.monotonic, sleep=time.sleep):
+        self.timeout, self.poll, self.clock, self.sleep = timeout, poll, clock, sleep
+        self._slot = threading.Lock()
+        self._held = threading.local()
+
+    def enter(self):
+        self._slot.acquire()
+        self._held.value = True
+
+    def leave(self):
+        """Give the slot back; safe to call when this thread no longer holds it."""
+        if getattr(self._held, 'value', False):
+            self._held.value = False
+            self._slot.release()
+
+    def wait_started(self, child, events, stopping=lambda: False):
+        """Hold the slot until the shard's startup is over; returns 'started', 'exited', 'stopped' or 'timeout'."""
+        began = self.clock()
+        while True:
+            if file_size(events) > 0:
+                return 'started'
+            if child.poll() is not None:
+                return 'exited'
+            if stopping():
+                return 'stopped'
+            if self.clock() - began >= self.timeout:
+                return 'timeout'
+            self.sleep(self.poll)
+
+
+def run_logged(args, cwd, log_path, env, timeout=None, outcome=None, after_start=None):
+    """Run to completion with output in `log_path`; a timeout kills only this child's own group.
+
+    `outcome['stopped']` is set when `kill_children` ended the child early.
+    `after_start(child)` runs right after the child is registered.
+    """
+    popen = {'start_new_session': True} if os.name != 'nt' else {}
+    outcome = {} if outcome is None else outcome
+    if STOP.is_set():
+        outcome['stopped'] = True
+        return -9
+    with open(log_path, 'w', encoding='utf-8') as log:
+        child = subprocess.Popen(args, cwd=cwd, env=env, stdout=log, stderr=subprocess.STDOUT, **popen)
+        with CHILDREN_LOCK:
+            CHILDREN[child.pid] = child
+        if STOP.is_set():  # the stop arrived between the check above and registration
+            kill_children()
+        try:
+            if after_start:
+                after_start(child)
+            return child.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            kill_group(child)
+            child.wait()
+            log.write(f'\ncheck-project: killed after {timeout:.0f}s (shard watchdog).\n')
+            return -9
+        finally:
+            with CHILDREN_LOCK:
+                CHILDREN.pop(child.pid, None)
+            if child.pid in STOPPED:
+                outcome['stopped'] = True
+                log.write('\ncheck-project: stopped early (gate fail-fast).\n')
+
+
+def fresh_shard_outputs(count):
+    """Remove the last run's shard logs before any shard is queued.
+
+    A shard waiting for its StartupGate turn has not opened (truncated) its log yet, so the watcher
+    would otherwise read the previous run's failures and stop this run.
+    """
+    logs = [local / f'test-shard-{i}.txt' for i in range(count)]
+    events = [local / f'test-shard-{i}.json' for i in range(count)]
+    for path in [*logs, *events]:
+        path.unlink(missing_ok=True)
+    return logs, events
+
+
+def run_shard(index, files, jobs, env, timeout, gate=None):
+    log = local / f'test-shard-{index}.txt'
+    events = local / f'test-shard-{index}.json'
+    events.unlink(missing_ok=True)
+    args = [*tool_command('flutter'), 'test', *files, '--no-pub', '-j', str(jobs), '--reporter', 'expanded', '--file-reporter', f'json:{events}']
+    gate = gate or StartupGate()
+    outcome = {}
+    queued = time.monotonic()
+
+    def after_start(child):
+        began = time.monotonic()
+        try:
+            how = gate.wait_started(child, events, STOP.is_set)
+        finally:
+            gate.leave()
+        outcome['startup'] = (how, time.monotonic() - began)
+        print(f'check-project: shard {index} startup {how} after {time.monotonic() - began:.1f}s (waited {began - queued:.1f}s for its turn).', file=sys.stderr)
+        if how == 'timeout':
+            print(f'check-project: shard {index} had not finished starting after {gate.timeout:.0f}s; starting the next shard anyway.', file=sys.stderr)
+
+    gate.enter()  # one shard at a time through `flutter test` startup, see StartupGate
+    started = time.monotonic()
+    try:
+        code = run_logged(args, app_dir, log, env, timeout, outcome, after_start)
+    finally:
+        gate.leave()  # also when the child never started
+    return {'index': index, 'files': files, 'code': code, 'seconds': time.monotonic() - started, 'log': log.name, 'events': events,
+            'stopped': bool(outcome.get('stopped')), 'startup': outcome.get('startup')}
+
+
+def repo_path(app_relative):
+    return pathlib.Path(os.path.relpath(app_dir / app_relative, root)).as_posix()
+
+
+def collect_shard(shard):
+    """Parse a finished shard's JSON event file into per-test results."""
+    try:
+        lines = shard['events'].read_text(encoding='utf-8', errors='replace').splitlines()
+    except OSError:
+        lines = []
+    return parse_test_events(lines, to_repo_path)
+
+
+PLACEHOLDER_NAMES = ('(file never ran)', '(load/compile error)')
+
+
+def retry_decision(failures, other_checks_ok, stop, retries, limit=MAX_RETRY_FILES):
+    """Which test files to re-run alone: {'files': [...], 'skip': None} or {'files': [], 'skip': reason}.
+
+    Only a run whose sole failures are Dart test files qualifies: every other check
+    passed, nothing stopped it early, each failure names a real file, and at most
+    `limit` files failed (more is real breakage).
+    """
+    files = []
+    for failure in failures:
+        if failure['file'] not in files:
+            files.append(failure['file'])
+
+    def skip(reason):
+        return {'files': [], 'skip': reason}
+
+    if retries <= 0:
+        return skip('retries are off (RAFT_CHECK_RETRIES=0)')
+    if stop:
+        return skip(f"the run stopped early ({stop['reason']})")
+    if not other_checks_ok:
+        return skip('a check other than the Dart test shards failed')
+    if not failures:
+        return skip('no failed test to retry')
+    if any(not f['file'] or f['file'] == '?' or f['name'] == '(load/compile error)' for f in failures):
+        return skip('a failure is not attributed to a test file')
+    if len(files) > limit:
+        return skip(f'{len(files)} test files failed (more than {limit}); that is breakage, not a flake')
+    return {'files': files, 'skip': None}
+
+
+def failed_test_names(failures, file):
+    """Names of the first run's failed tests in `file` (placeholders for whole-file failures dropped)."""
+    names = []
+    for failure in failures:
+        if failure['file'] == file and failure['name'] not in PLACEHOLDER_NAMES and failure['name'] not in names:
+            names.append(failure['name'])
+    return names
+
+
+def first_run_errors(failures, file, limit=3, width=300):
+    """The first run's failure messages in `file`, so a flake keeps the evidence of how it failed."""
+    errors = []
+    for failure in failures:
+        message = (failure.get('error') or '').strip()
+        if failure['file'] == file and message and message not in errors:
+            errors.append(message if len(message) <= width else message[:width] + '…')
+    return errors[:limit]
+
+
+def retry_files(files, failures, retries, run_once):
+    """Re-run each file alone, up to `retries` attempts, stopping at its first pass.
+
+    `run_once(file, attempt)` returns True when that single-file run passed.
+    Returns (flaky, still_failing): flaky entries are
+    {'file', 'tests' (first run's failed tests), 'attempts' (retry attempts used)}.
+    """
+    flaky, still_failing = [], []
+    for file in files:
+        for attempt in range(1, retries + 1):
+            if run_once(file, attempt):
+                flaky.append({'file': file, 'tests': failed_test_names(failures, file), 'errors': first_run_errors(failures, file), 'attempts': attempt})
+                break
+        else:
+            still_failing.append({'file': file, 'attempts': retries})
+    return flaky, still_failing
+
+
+def retry_passed(code, log_text, parsed, planned):
+    """A single-file retry passed: clean exit, the reporter's success line, no failed or unloaded test."""
+    return code == 0 and has_pass_marker(log_text) and not summarize_shard(parsed)['failed'] and not unfinished_files(planned, parsed)
+
+
+def retry_timeout_seconds(override=None):
+    return float(override) * 60 if override else DEFAULT_RETRY_TIMEOUT_MINUTES * 60
+
+
+def run_retry_once(file, attempt, jobs, env, timeout):
+    """One `flutter test <file>` with the shards' flags and the JSON reporter; True when it passed."""
+    source = root / file
+    if not source.is_file():
+        return False
+    slug = re.sub(r'[^A-Za-z0-9]+', '-', file).strip('-')[-80:]
+    log = local / f'retry-{slug}-{attempt}.txt'
+    events = local / f'retry-{slug}-{attempt}.json'
+    events.unlink(missing_ok=True)
+    relative = pathlib.Path(os.path.relpath(source, app_dir)).as_posix()
+    args = [*tool_command('flutter'), 'test', relative, '--no-pub', '-j', str(jobs), '--reporter', 'expanded', '--file-reporter', f'json:{events}']
+    code = run_logged(args, app_dir, log, env, timeout)
+    try:
+        lines = events.read_text(encoding='utf-8', errors='replace').splitlines()
+    except OSError:
+        lines = []
+    log_text = log.read_text(encoding='utf-8', errors='replace') if log.exists() else ''
+    return retry_passed(code, log_text, parse_test_events(lines, to_repo_path), [file])
+
+
+# ---- reuse of a pass for an identical tree -------------------------------------------------
+
+def cache_root(env=None):
+    env = os.environ if env is None else env
+    return pathlib.Path(env.get('RAFT_CHECK_CACHE') or pathlib.Path.home() / '.cache' / 'raft-check')
+
+
+def git_text(*args, cwd=None):
+    return subprocess.check_output(['git', *args], cwd=cwd or root, text=True, stderr=subprocess.DEVNULL).strip()
+
+
+def clean_tree_hash(cwd=None):
+    """`git rev-parse HEAD^{tree}` when the worktree is clean (nothing in `git status --porcelain`), else None."""
+    try:
+        if git_text('status', '--porcelain', cwd=cwd):
+            return None
+        return git_text('rev-parse', 'HEAD^{tree}', cwd=cwd) or None
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def passed_record_path(tree, env=None):
+    return cache_root(env) / 'passed' / f'{tree}.json'
+
+
+def read_pass_record(tree, env=None):
+    record = read_json(passed_record_path(tree, env))
+    ok = isinstance(record, dict) and record.get('tree') == tree and isinstance(record.get('result'), dict) and record['result'].get('passed') is True
+    return record if ok else None
+
+
+def pass_covers(record, themes, tier='gate'):
+    """A recorded all-themes pass covers a Raft-only request; a Raft-only pass does not cover all themes
+    (records from before the Raft-only rule say `sampled`; they count as Raft-only).
+    Likewise a full-tier pass covers a gate-tier request (a record without a tier ran every file)."""
+    return (record.get('themes', 'raft') == 'all' or themes != 'all') and (record.get('tier', 'full') == 'full' or tier == 'gate')
+
+
+def record_pass(tree, commit, result, themes, engineering_run=None, env=None, now=None, tier='gate'):
+    """Remember a full pass of `tree`; never raises (a cache that cannot be written only costs a re-run)."""
+    try:
+        existing = read_pass_record(tree, env)
+        if existing and not pass_covers({'themes': themes, 'tier': tier}, existing.get('themes', 'raft'), existing.get('tier', 'full')):
+            return None  # keep the stronger all-themes record
+        path = passed_record_path(tree, env)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        stamp = (now or time.gmtime())
+        record = {'tree': tree, 'time': time.strftime('%Y-%m-%dT%H:%M:%SZ', stamp), 'commit': commit, 'themes': themes, 'tier': tier,
+                  'result': result, 'engineeringRun': engineering_run}
+        temporary = path.with_name(f'{path.name}.{os.getpid()}.tmp')
+        temporary.write_text(json.dumps(record, indent=2), encoding='utf-8')
+        os.replace(temporary, path)
+        return path
+    except OSError as error:
+        print(f'check-project: could not record the pass for reuse: {error}', file=sys.stderr)
+        return None
+
+
+def reusable_pass(themes, cwd=None, env=None, tier='gate'):
+    """The recorded pass to reuse for the current clean tree, else None (dirty tree, no record, weaker themes)."""
+    tree = clean_tree_hash(cwd)
+    record = read_pass_record(tree, env) if tree else None
+    return record if record and pass_covers(record, themes, tier) else None
+
+
+def reuse_message(record):
+    return f"check-project: tree {record['tree']} already passed at {record.get('time', '?')} on {record.get('commit', '?')}; reusing"
+
+
+def parse_args(argv):
+    """(all_themes, reuse, plan); --help prints the docstring."""
+    known = {'--all-themes', '--reuse', '--plan'}
+    if '--help' in argv or '-h' in argv:
+        print(__doc__)
+        raise SystemExit(0)
+    if any(arg not in known for arg in argv):
+        raise SystemExit(f'check-project: unknown arguments {argv}; the options are --all-themes, --reuse and --plan.')
+    return '--all-themes' in argv, '--reuse' in argv, '--plan' in argv
+
+
+def write_aggregate_log(shards, summary_text, passed):
+    """`all-project-tests.txt` keeps the marker line downstream tools check for."""
+    with (local / 'all-project-tests.txt').open('w', encoding='utf-8') as out:
+        out.write(summary_text)
+        for shard in shards:
+            tail = (local / shard['log']).read_text(encoding='utf-8', errors='replace').rstrip().splitlines()[-1:] if (local / shard['log']).exists() else []
+            out.write(f"shard {shard['index']}: {tail[0] if tail else '(no output)'}\n")
+        out.write('All tests passed!\n' if passed else 'Some tests failed.\n')
+
+
+def themes_mode(env):
+    """`all` for --all-themes (every look, every variant), else `raft` (the Raft look only)."""
+    return 'all' if env.get('RAFT_TEST_ALL_THEMES') == '1' else 'raft'
+
+
+def abort_message(emit, verdict, failures):
+    """Chinese notification body for an early stop."""
+    summary = f'.local/check-summary.txt: {root / ".local/check-summary.txt"}'
+    if verdict['reason'] == 'compile-error':
+        return emit.message(f"编译/加载错误 {verdict['fields']['file']}（已提前终止）", *verdict['lines'][:3], summary)
+    if verdict['reason'] == 'max-failures':
+        tests = [f"{f['file']}: {f['name']}" for f in failures[:3]]
+        return emit.message(f"失败测试已达 {verdict['fields']['limit']} 个，已提前终止", *tests, summary)
+    if verdict['reason'] == 'static-check':
+        return emit.message(f"{verdict['fields']['check']} 未通过，已提前终止（不等 Dart 测试跑完）", *verdict['lines'][:3], summary)
+    return emit.message(f"超过 {verdict['fields']['minutes']:g} 分钟没有任何输出（疑似卡住），已终止", summary)
+
+
+def static_failure(static):
+    """Verdict for the first finished static check (analysis, lints, host tests) that failed.
+
+    `static` maps a check's log name to its future. Those checks take a few minutes while
+    the Dart shards take ten or more: a gate that cannot pass should stop when they fail,
+    not after every shard has run (two gates on 2026-10-18 spent 13-15 minutes that way).
+    """
+    for name, future in static.items():
+        if future.done() and not future.exception() and future.result() is False:
+            return {'reason': 'static-check', 'message': f'{name} failed',
+                    'lines': [f'see .local/{name}'], 'fields': {'check': name}}
+    return None
+
+
+def supervise(futures, shard_logs, event_files, watch, emit, static=None):
+    """Watch the shards' output until every future is done; stop the run on the first verdict.
+
+    A failed static check (`static`, see `static_failure`) is a verdict too.
+    Returns the verdict that stopped the run (None when it finished by itself).
+    """
+    tails, sizes, stop = [LogTail(p) for p in shard_logs], [0] * len(event_files), None
+    while True:
+        _, pending = concurrent.futures.wait(futures, timeout=POLL_SECONDS)
+        now = time.monotonic()
+        for i, tail in enumerate(tails):
+            watch.feed(i, tail.read(), now)
+            size = file_size(event_files[i])
+            if size != sizes[i]:  # the json reporter also counts as sign of life
+                sizes[i] = size
+                watch.touch(now)
+        if not pending:
+            return stop
+        verdict = None if stop else (static_failure(static or {}) or watch.verdict(now))
+        if verdict:
+            stop = verdict
+            emit('ABORT', notify=abort_message(emit, verdict, watch.failures), reason=verdict['reason'], **verdict['fields'])
+            sys.stderr.write(f"check-project: stopping early: {verdict['message']}\n" + ''.join(f'  {line}\n' for line in verdict['lines']))
+            kill_children()
+
+
+def run_gate(check_env, emit, started):
+    """Run every check; returns {'ok', 'failures', 'stop', 'failed_checks'}. Events: START, FAIL-FIRST, ABORT."""
+    stamp = lambda: subprocess.check_output(tool_command('source-hash'), text=True, env=check_env).strip()
+    source_hash = stamp()
+    local.mkdir(exist_ok=True)
+    results = {}
+    cpu = os.cpu_count() or 2
+    load = os.getloadavg()[0] if hasattr(os, 'getloadavg') else 0.0
+    files, looks = apply_look_filter(discover_tests(root), app_dir, check_env)
+    files, slow = apply_slow_tier(files, tier_mode(check_env), app_dir)
+    guard = theme_looks.guard()  # a notice only: the legacy looks are not part of this run
+    sizes = {f: (app_dir / f).stat().st_size for f in files if (app_dir / f).is_file()}
+    shard_count, jobs = plan_parallelism(cpu, load)
+    plan = partition(files, app_relative_weights(history_weights(root)), shard_count, sizes)
+    timeout_override = os.environ.get('RAFT_CHECK_SHARD_TIMEOUT_MINUTES')
+    max_failures = int(env_number('RAFT_CHECK_MAX_FAILURES', DEFAULT_MAX_FAILURES))
+    stall_minutes = env_number('RAFT_CHECK_STALL_MINUTES', DEFAULT_STALL_MINUTES)
+    print(f'check-project: {len(files)} test files in {len(plan)} shard(s) x -j{jobs} on {cpu} CPUs (load {load:.1f}); themes: {themes_mode(check_env)}; tier: {slow["tier"]}.', file=sys.stderr)
+    for line in guard:
+        print(f'check-project: {line}', file=sys.stderr)
+    print(f"check-project: {look_summary(looks)[0]}", file=sys.stderr)
+    for line in slow_summary(slow):
+        print(f'check-project: {line}', file=sys.stderr)
+    emit('START', shards=len(plan), jobs=jobs, files=len(files), cpus=cpu, load=f'{load:.1f}', themes=themes_mode(check_env), tier=slow['tier'], slow_skipped=len(slow['skipped']), looks=','.join(looks['looks']), look_skipped=len(looks['skipped']), engine_touched=bool(guard))
+
+    # A branch that merged new dependencies without `pub get` would fail every
+    # test file at compile time, slowly; resolve the workspace first and stop.
+    results['workspace-pub-get.txt'] = run_logged(
+        [*tool_command('flutter'), 'pub', 'get', '--enforce-lockfile'], root,
+        local / 'workspace-pub-get.txt', check_env) == 0
+    if not results['workspace-pub-get.txt']:
+        raise SystemExit('check-project: `flutter pub get --enforce-lockfile` failed; see .local/workspace-pub-get.txt.')
+
+    # Fail in seconds on hotspot growth, before warming assets or launching
+    # any Dart test shards. The AST scanner needs only the resolved workspace.
+    results['structure-audit.txt'] = run_logged(
+        [*tool_command('structure-audit'), '--check'], root,
+        local / 'structure-audit.txt', check_env) == 0
+    if not results['structure-audit.txt']:
+        message = 'Hotspot structure audit failed; no Dart tests started. See .local/structure-audit.txt.\n'
+        (local / 'check-summary.txt').write_text(message, encoding='utf-8')
+        (local / 'engineering-run.json').write_text(json.dumps({
+            'sourceHash': source_hash, 'completed': False, 'checks': results,
+            'stoppedEarly': {'reason': 'structure-audit', 'message': message},
+            'shards': [], 'failedTests': [],
+        }), encoding='utf-8')
+        sys.stderr.write(message)
+        return {'ok': False, 'failures': [], 'stop': None, 'changed': False,
+                'failed_checks': ['structure-audit.txt']}
+
+    # The DS command shares one analyzer pass for existing style ratchets and
+    # resolved ownership. A direct full-check caller must not depend on an old
+    # preflight or run an analyzer separately inside each Dart guard test.
+    results['ds-audit.txt'] = run_logged(
+        [*tool_command('ds-audit'), '--check'], root,
+        local / 'ds-audit.txt', check_env) == 0
+    if not results['ds-audit.txt']:
+        message = 'Design-system ownership/style audit failed; no Dart tests started. See .local/ds-audit.txt.\n'
+        (local / 'check-summary.txt').write_text(message, encoding='utf-8')
+        (local / 'engineering-run.json').write_text(json.dumps({
+            'sourceHash': source_hash, 'completed': False, 'checks': results,
+            'stoppedEarly': {'reason': 'ds-audit', 'message': message},
+            'shards': [], 'failedTests': [],
+        }), encoding='utf-8')
+        sys.stderr.write(message)
+        return {'ok': False, 'failures': [], 'stop': None, 'changed': False,
+                'failed_checks': ['ds-audit.txt']}
+
+    clear_unit_test_assets(root)
+    # Rebuild the test assets (shaders, asset bundle) once before the shards
+    # start so no shard has to. This does not stop the native_assets.json race:
+    # every `flutter test` redoes the native-assets step, see StartupGate.
+    warm = smallest_app_test(files, sizes)
+    if warm:
+        run_logged([*tool_command('flutter'), 'test', '--no-pub', warm], app_dir,
+                   local / 'test-assets-warmup.txt', check_env)
+
+    # The bindings generator must be initialised before whole-project analysis.
+    results['bindings-generator-pub-get.txt'] = run_logged(
+        [*tool_command('flutter'), 'pub', 'get', '--enforce-lockfile'], root / 'apps/raft_flutter/tool/bindings_generator',
+        local / 'bindings-generator-pub-get.txt', check_env) == 0
+    # The raft_lints plugin package is outside the workspace (it needs a newer analyzer) and has its own lockfile.
+    results['raft-lints-pub-get.txt'] = run_logged(
+        [*tool_command('flutter'), 'pub', 'get', '--enforce-lockfile'], root / 'tool/raft_lints',
+        local / 'raft-lints-pub-get.txt', check_env) == 0
+
+    def host_tests():
+        return run_logged([sys.executable, '-m', 'unittest', 'discover', '-s', str(root / 'tool/tests'), '-p', 'test_*.py', '-v'],
+                          root, local / 'host-collector-tests.txt', check_env) == 0
+
+    def analyze():
+        return run_logged([*tool_command('flutter'), 'analyze', '--no-pub'], root, local / 'analyze-all.txt', check_env) == 0
+
+    def raft_lints():
+        # Plugin rules (`flutter analyze` may drop plugin results, see tool/raft-lints) and the plugin's own tests.
+        if not results['raft-lints-pub-get.txt']:
+            return False
+        checked = run_logged([*tool_command('raft-lints')], root, local / 'raft-lints.txt', check_env) == 0
+        tested = run_logged([*tool_command('raft-lints'), '--test'], root, local / 'raft-lints-tests.txt', check_env) == 0
+        return checked and tested
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(plan) + 3) as pool:
+        host_future = pool.submit(host_tests)
+        analyze_future = pool.submit(analyze)
+        lints_future = pool.submit(raft_lints)
+        startup_gate = StartupGate()
+        shard_logs, shard_events = fresh_shard_outputs(len(plan))
+        shard_futures = [pool.submit(run_shard, i, bucket['files'], jobs, check_env, shard_timeout_seconds(bucket['weight'], jobs, timeout_override), startup_gate) for i, bucket in enumerate(plan)]
+        watch = GateWatch([[repo_path(f) for f in bucket['files']] for bucket in plan], time.monotonic(), max_failures, stall_minutes, emit, to_repo_path)
+        try:
+            stop = supervise([*shard_futures, host_future, analyze_future, lints_future], shard_logs, shard_events, watch, emit,
+                             static={'analyze-all.txt': analyze_future, 'raft-lints.txt': lints_future,
+                                     'host-collector-tests.txt': host_future})
+        except BaseException:
+            kill_children()  # the pool waits for its threads on the way out
+            raise
+        shards = [future.result() for future in shard_futures]
+        results['host-collector-tests.txt'] = host_future.result()
+        results['analyze-all.txt'] = analyze_future.result()
+        results['raft-lints.txt'] = lints_future.result()
+
+    all_results, failures, totals, durations = [], [], {'passed': 0, 'skipped': 0, 'hidden': 0}, {}
+    for shard in shards:
+        parsed = collect_shard(shard)
+        summary = summarize_shard(parsed)
+        log_path = local / shard['log']
+        log_text = log_path.read_text(encoding='utf-8', errors='replace') if log_path.exists() else ''
+        if stop:  # killed shards leave unfinished tests and unloaded files behind; only real failures count
+            summary['failed'] = [f for f in summary['failed'] if f['status'] == 'failed']
+        never_ran = [] if stop else unfinished_files([repo_path(f) for f in shard['files']], parsed)
+        marker = has_pass_marker(log_text)
+        shard['passed'] = shard['code'] == 0 and marker and not summary['failed'] and not never_ran
+        results[f"test-shard-{shard['index']}.txt"] = shard['passed']
+        totals['passed'] += summary['passed']
+        totals['skipped'] += summary['skipped']
+        totals['hidden'] += summary['hidden']
+        failures += [{**f, 'shard': shard['index']} for f in summary['failed']]
+        failures += [{'name': '(file never ran)', 'file': f, 'status': 'incomplete', 'error': '', 'shard': shard['index']} for f in never_ran]
+        if not shard['passed'] and not summary['failed'] and not never_ran and not stop:
+            reason = f"exit code {shard['code']}" if shard['code'] != 0 else f'no "{PASS_MARKER}" line in the log'
+            failures.append({'name': f"shard stopped without a recorded test failure ({reason}); see {shard['log']}", 'file': '', 'status': 'failed', 'error': '', 'shard': shard['index']})
+        if shard['code'] in (0, 1) and not shard['stopped']:  # a killed or crashed shard has truncated file times
+            durations.update(file_durations(parsed, shard['index']))
+        all_results += parsed
+    # What the live watcher saw that the (possibly truncated) json stream did not.
+    known = {(f['file'], f['name']) for f in failures}
+    failures += [{'name': f['name'], 'file': f['file'], 'status': 'failed', 'error': '', 'shard': f['shard']} for f in watch.failures if (f['file'], f['name']) not in known]
+    if watch.compile and not any(f['file'] == watch.compile['file'] for f in failures):
+        failures.append({'name': '(load/compile error)', 'file': watch.compile['file'], 'status': 'failed', 'shard': watch.compile['shard'],
+                         'error': watch.compile['lines'][0] if watch.compile['lines'] else 'failed to load'})
+    budget = test_budget.check(test_budget.measure(durations), test_budget.load_baseline(), lambda name: test_budget.is_exempt(root / name),
+                               lambda name: (root / name).is_file())
+    flaky, retry_failed = [], []
+    if not all(s['passed'] for s in shards) and shards:
+        retries = int(env_number('RAFT_CHECK_RETRIES', DEFAULT_RETRIES))
+        other_ok = all(ok for key, ok in results.items() if not key.startswith('test-shard-'))
+        decision = retry_decision(failures, other_ok, stop, retries)
+        if decision['files']:
+            retry_timeout = retry_timeout_seconds(timeout_override)
+            print(f"check-project: retrying {len(decision['files'])} failed test file(s) alone, up to {retries} attempt(s) each.", file=sys.stderr)
+            emit('RETRY', files=len(decision['files']), attempts=retries)
+            flaky, retry_failed = retry_files(decision['files'], failures, retries, lambda file, attempt: run_retry_once(file, attempt, jobs, check_env, retry_timeout))
+            for item in flaky:
+                emit('FLAKY', file=item['file'], attempts=item['attempts'])
+            flaky_files = {item['file'] for item in flaky}
+            failures = [f for f in failures if f['file'] not in flaky_files]  # a flake is reported as such, not as a failure
+            for shard in shards:
+                if not shard['passed'] and not any(f['shard'] == shard['index'] for f in failures):
+                    shard['passed'] = True
+                    results[f"test-shard-{shard['index']}.txt"] = True
+        elif failures or not other_ok:
+            print(f"check-project: not retrying: {decision['skip']}.", file=sys.stderr)
+    results['test-budget.txt'] = not budget['violations']  # after the retry decision: a budget failure is not a reason to skip retries
+    tests_passed = all(s['passed'] for s in shards) and bool(shards)
+    results['all-project-tests.txt'] = tests_passed
+    ordered = {key: results[key] for key in ['workspace-pub-get.txt', 'structure-audit.txt', 'ds-audit.txt', 'host-collector-tests.txt', 'bindings-generator-pub-get.txt', 'raft-lints-pub-get.txt', 'all-project-tests.txt', 'analyze-all.txt', 'raft-lints.txt', 'test-budget.txt']}
+    ordered.update({key: value for key, value in results.items() if key.startswith('test-shard-')})
+    results = ordered
+
+    slowest = slowest_tests(all_results)
+    summary_text = format_summary(shards, failures, totals, slowest, themes=themes_mode(check_env), stop=stop, flaky=flaky, retry_failed=retry_failed, slow=slow, budget=budget, looks=looks, guard=guard)
+    (local / 'check-summary.txt').write_text(summary_text, encoding='utf-8')
+    write_aggregate_log(shards, summary_text, tests_passed)
+    previous = read_json(local / 'check-durations.json').get('files', {})
+    merged = {name: entry for name, entry in previous.items() if (root / name).is_file() and name not in durations}
+    merged.update(durations)
+    (local / 'check-durations.json').write_text(json.dumps({
+        'sourceHash': source_hash, 'wallSeconds': round(time.monotonic() - started, 1), 'shards': len(shards), 'jobsPerShard': jobs,
+        'slowestTests': slowest, 'files': dict(sorted(merged.items()))}, indent=2), encoding='utf-8')
+    sys.stderr.write(format_summary(shards, failures, totals, slowest, limit=40, themes=themes_mode(check_env), stop=stop, flaky=flaky, retry_failed=retry_failed, slow=slow, budget=budget, looks=looks, guard=guard))
+
+    changed = stamp() != source_hash
+    ok = all(results.values()) and not changed and not stop
+    run_record = {
+        'sourceHash': source_hash, 'completed': ok, 'themes': themes_mode(check_env), 'tier': slow['tier'],
+        'slowSkipped': slow['skipped'], 'slowRan': slow['run'], 'looks': looks['looks'], 'lookSkipped': looks['skipped'],
+        'themeEngineTouched': bool(guard), 'checks': results,
+        'shards': [{'index': s['index'], 'passed': s['passed'], 'exitCode': s['code'], 'seconds': round(s['seconds'], 1), 'files': len(s['files']), 'log': s['log'],
+                    'startup': {'result': s['startup'][0], 'seconds': round(s['startup'][1], 1)} if s.get('startup') else None} for s in shards],
+        'stoppedEarly': {'reason': stop['reason'], 'message': stop['message'], 'lines': stop['lines']} if stop else None,
+        'failedTests': [{'shard': f['shard'], 'file': f['file'], 'name': f['name']} for f in failures],
+        'flaky': flaky}
+    (local / 'engineering-run.json').write_text(json.dumps(run_record, indent=2))
+    result = {'passed': ok, 'sourceChanged': changed, 'checks': results, **({'flaky': flaky} if flaky else {})}
+    print(json.dumps(result))
+    return {'ok': ok, 'failures': failures, 'stop': stop, 'changed': changed, 'failed_checks': [k for k, v in results.items() if not v],
+            'flaky': flaky, 'result': result, 'run_record': run_record}
+
+
+def finish(emit, started, outcome):
+    """Terminal PASS/FAIL event (and notification for FAIL unless ABORT already sent one)."""
+    seconds = f'{time.monotonic() - started:.0f}s'
+    if outcome['ok']:
+        emit('PASS', duration=seconds, failures=0, **({'flaky': len(outcome['flaky'])} if outcome.get('flaky') else {}))
+        return
+    failures, stop = outcome['failures'], outcome['stop']
+    notify = None
+    if not stop:
+        tests = [f"{f['file']}: {f['name']}" for f in failures[:3]]
+        reason = f'{len(failures)} 个测试失败' if failures else f"检查未通过：{', '.join(outcome['failed_checks']) or '源码在运行期间被修改'}"
+        notify = emit.message(reason, *tests, str(root / '.local/check-summary.txt'))
+    emit('FAIL', notify=notify, duration=seconds, failures=len(failures), **({'aborted': stop['reason']} if stop else {}),
+         **({'failed_checks': ','.join(outcome['failed_checks'])} if outcome['failed_checks'] else {}))
+
+
+def pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True
+    return True
+
+
+def make_run_tmp(local_dir, pid=None):
+    """A per-run temp directory on disk (not the RAM-backed /tmp) for every child.
+
+    `flutter test` leaves 125-625 MB of flutter_tools.* behind in the temp directory when a run is
+    aborted or stalls; on tmpfs that is memory, and a few aborted gates push the machine into swap.
+    Directories of earlier runs whose process is gone are removed here, so a hard-killed gate cannot
+    leave them behind for long either.
+    """
+    local_dir.mkdir(parents=True, exist_ok=True)
+    for old in local_dir.glob('tmp-*'):
+        number = old.name[len('tmp-'):]
+        if number.isdigit() and not pid_alive(int(number)):
+            shutil.rmtree(old, ignore_errors=True)
+    path = local_dir / f'tmp-{os.getpid() if pid is None else pid}'
+    path.mkdir(exist_ok=True)
+    return path
+
+
+def run_tmp_root():
+    """Where per-run temp directories live: on disk and outside every git checkout.
+
+    Inside the worktree (.local/) a test that builds a throwaway git repository in TMPDIR would
+    find the enclosing checkout instead and read its HEAD.
+    """
+    cache = os.environ.get('XDG_CACHE_HOME') or str(pathlib.Path.home() / '.cache')
+    return pathlib.Path(cache) / 'raft-flutter' / 'gate-tmp'
+
+
+def with_run_tmp(env, path):
+    return dict(env, TMPDIR=str(path), TEMP=str(path), TMP=str(path))
+
+
+def plan_report(env, changed=None, reach=reach_by_imports):
+    """What this run would test, without running anything: (lines, numbers)."""
+    tier = tier_mode(env)
+    discovered = discover_tests(root)
+    files, looks = apply_look_filter(discovered, app_dir, env)
+    files, slow = apply_slow_tier(files, tier, app_dir, changed, reach)
+    numbers = {'discovered': len(discovered), 'legacyLookSkipped': len(looks['skipped']), 'slowSkipped': len(slow['skipped']), 'toRun': len(files),
+               'lookAware': len(looks['lookAware']), 'looks': looks['looks'], 'tier': tier, 'themes': themes_mode(env)}
+    lines = [f"check-project plan: themes {numbers['themes']}, looks {','.join(looks['looks'])}, tier {tier}.",
+             f"  test files discovered:             {numbers['discovered']}",
+             f"  skipped, legacy look (theme-suite): {numbers['legacyLookSkipped']}",
+             f"  skipped, slow tier:                 {numbers['slowSkipped']}",
+             f"  test files to run:                  {numbers['toRun']}",
+             f"  look-aware files among them:        {numbers['lookAware']} (Raft variants only unless the looks say otherwise)"]
+    lines.extend(f'    legacy look, skipped: {name}' for name in looks['skipped'])
+    lines.extend(theme_looks.guard())
+    return lines, numbers
+
+
+def main():
+    check_env = dict(os.environ, PYTHONUTF8='1', RAFT_PROJECT_GATE='1')
+    all_themes, reuse, plan = parse_args(sys.argv[1:])
+    if all_themes:
+        check_env['RAFT_TEST_ALL_THEMES'] = '1'
+    # The gate tests the Raft look; the legacy looks are tool/theme-suite's. Only --all-themes widens it.
+    check_env.pop(theme_looks.MODES_VARIABLE, None)
+    check_env[theme_looks.LOOKS_VARIABLE] = 'all' if themes_mode(check_env) == 'all' else 'raft'
+    if plan:
+        lines, _ = plan_report(check_env)
+        print('\n'.join(lines))
+        sys.exit(0)
+    themes = themes_mode(check_env)
+    tier = tier_mode(check_env)
+    check_env[TIER_VARIABLE] = tier  # the Dart tests read it (raftFullMatrix)
+    if reuse:
+        record = reusable_pass(themes, tier=tier)
+        if record:
+            emit, started = gate_events.Events(root), time.monotonic()
+            print(reuse_message(record))
+            if isinstance(record.get('engineeringRun'), dict):  # tool/prepare-handoff reads the run record next to the result line
+                local.mkdir(exist_ok=True)
+                (local / 'engineering-run.json').write_text(json.dumps(record['engineeringRun'], indent=2))
+            emit('PASS', duration='0s', failures=0, reused=record['tree'])
+            gate_events.flush_notifications()
+            print(json.dumps({**record['result'], 'reused': True}))
+            sys.exit(0)
+        print('check-project: --reuse found no recorded pass for this clean tree (or the worktree is dirty); running the checks.', file=sys.stderr)
+    start_tree = clean_tree_hash()
+    emit, started = gate_events.Events(root), time.monotonic()
+    gate_events.raise_on_signals()
+    log = str(root / '.local')
+    run_tmp = make_run_tmp(run_tmp_root())
+    check_env = with_run_tmp(check_env, run_tmp)
+    try:
+        outcome = run_gate(check_env, emit, started)
+        finish(emit, started, outcome)
+        if outcome['ok'] and start_tree and clean_tree_hash() == start_tree:  # only a clean tree that stayed clean is worth remembering
+            record_pass(start_tree, git_text('rev-parse', 'HEAD'), outcome['result'], themes, outcome.get('run_record'), tier=tier)
+    except BaseException as error:  # every other path still ends with a terminal event
+        kill_children()
+        if isinstance(error, SystemExit) and error.code in (0, None):
+            raise
+        if isinstance(error, gate_events.Interrupted):
+            reason, code = f'signal {error.name}', 128 + error.signum
+        elif isinstance(error, SystemExit):
+            reason, code = str(error.code), error.code
+        else:
+            reason, code = f'{type(error).__name__}: {error}', 1
+        emit('ERROR', notify=emit.message(f'check-project 异常中止（{reason}）', f'日志目录：{log}'), reason=reason, duration=f'{time.monotonic() - started:.0f}s')
+        gate_events.flush_notifications()
+        if isinstance(error, (KeyboardInterrupt, SystemExit, gate_events.Interrupted)):
+            sys.exit(code)
+        raise
+    finally:
+        kill_children()
+        shutil.rmtree(run_tmp, ignore_errors=True)  # also on abort, stall and signals
+    gate_events.flush_notifications()
+    sys.exit(0 if outcome['ok'] else 1)
+
+
+if __name__ == '__main__':
+    main()

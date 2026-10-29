@@ -104,7 +104,7 @@ Future<(WorkspaceController, MessageAdapter, _EventClient)> _login() async {
   w.server = RaftRecord({'id': 's1', 'role': 'member'});
   w.channels = [_c1, _c2, _c3, _lobby];
   w.channel = _c1;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return (w, a, client);
 }
 
@@ -142,8 +142,8 @@ Future<void> _openThread(WorkspaceController w, MessageAdapter a) async {
       Completer<Map<String, dynamic>>().future;
   unawaited(w.selectChannel(channel, autoRead: false));
   return (
-    rows: w.messages.map((m) => m.id).toList(),
-    summary: w.threadSummaries['p-${channel.id}'] != null,
+    rows: w.messageDomain.messages.map((m) => m.id).toList(),
+    summary: w.messageDomain.threadSummaries['p-${channel.id}'] != null,
   );
 }
 
@@ -170,7 +170,7 @@ void main() {
         client.emit('channel:members-updated', {'channelId': 'c1'});
         await _drain();
         expect(w.threadIdentity?.parentMessageId, 'p-c1');
-        expect(w.threadSummaries['p-c1'], isNotNull);
+        expect(w.messageDomain.threadSummaries['p-c1'], isNotNull);
 
         // The open thread's cached window survives a close and reopen.
         w.closeThread();
@@ -183,7 +183,7 @@ void main() {
             initialThreadChannelId: 't-c1',
           ),
         );
-        expect(w.threadLoading, isFalse, reason: 'cached thread window');
+        expect(w.messageDomain.state.threadLoading, isFalse, reason: 'cached thread window');
         expect(w.replies.map((m) => m.id), ['t-c1-r']);
         w.closeThread();
 
@@ -250,9 +250,9 @@ void main() {
       await w.selectChannel(_c1, autoRead: false);
       client.emit('channel:removed', {'channelId': 'c2'});
       await _drain();
-      expect(w.threadSummariesFor('c2'), isEmpty);
-      expect(w.visibleIds['c2'], isNull);
-      expect(w.threadSummaries['p-c1'], isNotNull);
+      expect(w.messageDomain.threadSummariesFor('c2'), isEmpty);
+      expect(w.messageDomain.visibleIds['c2'], isNull);
+      expect(w.messageDomain.threadSummaries['p-c1'], isNotNull);
     });
   });
 
@@ -263,9 +263,9 @@ void main() {
         final (w, a, client) = await _login();
         addTearDown(w.dispose);
         await w.selectChannel(_c1, autoRead: false);
-        w.unread = {'c3': 2};
+        w.conversationReads.unread = {'c3': 2};
         await w.prefetchLikelyChannels();
-        expect(w.threadSummariesFor('c3')['p-c3'], isNotNull);
+        expect(w.messageDomain.threadSummariesFor('c3')['p-c3'], isNotNull);
 
         final first = _revisitHeld(w, a, _c3);
         expect(first.rows, ['p-c3']);
@@ -286,13 +286,13 @@ void main() {
             },
           },
         });
-        expect(w.threadSummaries['p-c1'], isNull);
-        expect(w.threadSummariesFor('c1')['p-c1']['replyCount'], 5);
+        expect(w.messageDomain.threadSummaries['p-c1'], isNull);
+        expect(w.messageDomain.threadSummariesFor('c1')['p-c1']['replyCount'], 5);
 
         a.routes['GET /messages/channel/c1'] = (_) =>
             Completer<Map<String, dynamic>>().future;
         unawaited(w.selectChannel(_c1, autoRead: false));
-        expect(w.threadSummaries['p-c1']['replyCount'], 5);
+        expect(w.messageDomain.threadSummaries['p-c1']['replyCount'], 5);
       },
     );
 
@@ -305,35 +305,35 @@ void main() {
         await w.selectChannel(_c1, autoRead: false);
         await w.jumpToMessage('c3', 'p-c3', navigate: false);
         expect(w.channel?.id, 'c3');
-        expect(w.threadSummaries['p-c3'], isNotNull);
+        expect(w.messageDomain.threadSummaries['p-c3'], isNotNull);
       },
     );
   });
 
   group('unread counts move per event', () {
     test(
-      'message:new counts locally; own, duplicate, edits and unjoined do not',
+      '[BP-READ-017][BP-READ-018][BP-READ-019] message:new counts locally; own, duplicate, edits and unjoined do not',
       () async {
         final (w, a, client) = await _login();
         addTearDown(w.dispose);
         await w.selectChannel(_c1, autoRead: false);
-        w.unread = {'c2': 1};
+        w.conversationReads.unread = {'c2': 1};
         final reads = _unreadReads(a);
 
         client.emit('message:new', _row('n1', 'c2', 500));
-        expect(w.unread['c2'], 2);
+        expect(w.conversationReads.unread['c2'], 2);
         client.emit('message:new', _row('n1', 'c2', 500));
-        expect(w.unread['c2'], 2, reason: 'redelivery counts once');
+        expect(w.conversationReads.unread['c2'], 2, reason: 'redelivery counts once');
         client.emit('message:updated', {..._row('n1', 'c2', 500), 'x': 1});
-        expect(w.unread['c2'], 2, reason: 'an edit is not a new message');
+        expect(w.conversationReads.unread['c2'], 2, reason: 'an edit is not a new message');
         client.emit('message:new', _row('mine', 'c2', 501, sender: 'alice'));
-        expect(w.unread['c2'], 2, reason: 'own message');
+        expect(w.conversationReads.unread['c2'], 2, reason: 'own message');
         client.emit('message:new', _row('n2', 'c3', 502));
-        expect(w.unread['c3'], 1);
+        expect(w.conversationReads.unread['c3'], 1);
         client.emit('message:new', _row('n3', 'lobby', 503));
-        expect(w.unread['lobby'], isNull, reason: 'not joined');
+        expect(w.conversationReads.unread['lobby'], isNull, reason: 'not joined');
         client.emit('message:new', _row('n4', 'stranger-thread', 504));
-        expect(w.unread['stranger-thread'], isNull, reason: 'untracked');
+        expect(w.conversationReads.unread['stranger-thread'], isNull, reason: 'untracked');
         await _drain();
         expect(_unreadReads(a), reads, reason: 'no snapshot GET per event');
       },
@@ -345,11 +345,11 @@ void main() {
         final (w, a, client) = await _login();
         addTearDown(w.dispose);
         await w.selectChannel(_c1, autoRead: false);
-        w.unread = {'c2': 0};
+        w.conversationReads.unread = {'c2': 0};
         client.emit('message:new', _row('n1', 'c2', 600));
         client.emit('message:new', _row('n2', 'c2', 610));
         client.emit('message:new', _row('n3', 'c2', 620));
-        expect(w.unread['c2'], 3);
+        expect(w.conversationReads.unread['c2'], 3);
         final reads = _unreadReads(a);
         client.emit('read_state:updated', {
           'serverId': 's1',
@@ -357,14 +357,14 @@ void main() {
           'maxReadSeq': 610,
           'readStateVersion': 1,
         });
-        expect(w.unread['c2'], 1, reason: 'held messages cover the frontier');
+        expect(w.conversationReads.unread['c2'], 1, reason: 'held messages cover the frontier');
         client.emit('read_state:updated_bulk', {
           'serverId': 's1',
           'scopes': [
             {'scopeId': 'c2', 'maxReadSeq': 620, 'readStateVersion': 2},
           ],
         });
-        expect(w.unread['c2'], 0);
+        expect(w.conversationReads.unread['c2'], 0);
         await _drain();
         expect(_unreadReads(a), reads);
       },
@@ -388,7 +388,7 @@ void main() {
       client.emit('rooms:joined', null);
       await _drain();
       expect(_unreadReads(a), reads + 1);
-      expect(w.unread['c3'], 4);
+      expect(w.conversationReads.unread['c3'], 4);
     });
   });
 
@@ -409,7 +409,7 @@ void main() {
 
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(body: RaftChatView(controller: w)),
         ),
       );
@@ -418,7 +418,7 @@ void main() {
         unawaited(w.selectChannel(c, autoRead: false));
         await settle();
       }
-      w.unread = {'c2': 1};
+      w.conversationReads.unread = {'c2': 1};
       await t.runAsync(w.prefetchLikelyChannels);
       await settle();
 
@@ -463,14 +463,14 @@ void main() {
       addTearDown(w.dispose);
       a.routes['POST /channels/c1/read'] = (_) => {};
       await w.selectChannel(_c1, autoRead: false);
-      w.unread = {};
+      w.conversationReads.unread = {};
       int reads() => a.calls.where((c) => c.path == '/channels/c1/read').length;
       final before = reads();
       RaftUserActivity.forget();
       client.emit('message:new', _row('idle-1', 'c1', 900));
       await Future<void>.delayed(Duration.zero);
       expect(reads(), before, reason: 'no interaction: not read');
-      expect(w.unread['c1'], 1);
+      expect(w.conversationReads.unread['c1'], 1);
       RaftUserActivity.mark();
       client.emit('message:new', _row('active-1', 'c1', 901));
       await Future<void>.delayed(const Duration(milliseconds: 10));

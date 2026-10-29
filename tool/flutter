@@ -7,11 +7,19 @@ import subprocess
 import sys
 
 from android_app import SafetyError, flutter_guard
+import gen_l10n_index
+import parity_case_map
+from flutter_launcher import sdk_probe_report, windows_sdk_command
 
 try:
     flutter_guard(sys.argv[1:])
 except SafetyError as error:
     sys.exit(f'STOP: {error}')
+
+# test/parity/case_map.g.dart (git-ignored) is generated from the case files; analyze/test need it.
+parity_case_map.write()
+# packages/raft_ui/lib/src/l10n/zh_index.g.dart (git-ignored) merges the zh catalog files.
+gen_l10n_index.write()
 
 root = Path(__file__).resolve().parent.parent
 version = json.loads((root / '.fvmrc').read_text())['flutter']
@@ -25,12 +33,20 @@ executable = next((p for p in candidates if p.is_file()), None)
 if executable is None:
     sys.exit(f'Install Flutter {version} with FVM, or set RAFT_FLUTTER_BIN to its flutter executable.')
 result = subprocess.run([str(executable), '--version', '--machine'], capture_output=True, text=True)
+if result.returncode:
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    sys.exit(result.returncode)
 try:
     actual = json.loads(result.stdout)['frameworkVersion']
-except (ValueError, KeyError):
+    if not isinstance(actual, str):
+        raise ValueError('The SDK machine version is not a string')
+except (ValueError, KeyError, TypeError):
+    sys.stderr.write(f'Flutter SDK probe: {sdk_probe_report(result)}\n')
     sys.exit('Cannot verify the selected Flutter SDK.')
 if actual != version:
     sys.exit(f'This repository requires Flutter {version}; selected SDK is {actual}.')
 if os.name == 'nt':
-    sys.exit(subprocess.call([str(executable), *sys.argv[1:]]))
+    command, environment = windows_sdk_command(executable, sys.argv[1:], os.environ)
+    sys.exit(subprocess.call(command, env=environment))
 os.execv(str(executable), [str(executable), *sys.argv[1:]])

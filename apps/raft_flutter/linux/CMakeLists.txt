@@ -7,7 +7,20 @@ project(runner LANGUAGES CXX)
 set(BINARY_NAME "raft_flutter")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "app.raft.raft_flutter")
+#
+# An isolated test build sets RAFT_APPLICATION_ID_SUFFIX (for example
+# ".isolated") in the environment of `flutter build linux`. Everything keyed by
+# this id then differs from the real app: the GApplication / D-Bus name, the
+# XDG data and cache directories (path_provider_linux), the libsecret "account"
+# attribute (flutter_secure_storage_linux) and the window class. Unset keeps the
+# real id. The Dart side must receive the same value as
+# --dart-define=RAFT_LINUX_APPLICATION_ID_SUFFIX (tool/release.py does both).
+set(RAFT_APPLICATION_ID_SUFFIX "$ENV{RAFT_APPLICATION_ID_SUFFIX}")
+if(NOT RAFT_APPLICATION_ID_SUFFIX STREQUAL "" AND
+   NOT RAFT_APPLICATION_ID_SUFFIX MATCHES "^(\\.[a-z][a-z0-9_]*)+$")
+  message(FATAL_ERROR "RAFT_APPLICATION_ID_SUFFIX must look like .isolated, not '${RAFT_APPLICATION_ID_SUFFIX}'")
+endif()
+set(APPLICATION_ID "app.raft.raft_flutter${RAFT_APPLICATION_ID_SUFFIX}")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
@@ -148,10 +161,26 @@ endif()
 # Distribution packagers can install this launcher into the user's XDG
 # applications directory and register raft: without changing browser handlers.
 set(RAFT_DESKTOP_EXEC "${CMAKE_INSTALL_PREFIX}/${BINARY_NAME}")
+# An isolated build keeps its own name and never declares the raft: scheme.
+if(RAFT_APPLICATION_ID_SUFFIX STREQUAL "")
+  set(RAFT_DESKTOP_NAME "Raft")
+  set(RAFT_DESKTOP_MIME_LINE "MimeType=x-scheme-handler/raft;\n")
+else()
+  set(RAFT_DESKTOP_NAME "Raft (isolated build)")
+  set(RAFT_DESKTOP_MIME_LINE "")
+endif()
 configure_file(packaging/app.raft.raft_flutter.desktop.in
-  "${CMAKE_BINARY_DIR}/app.raft.raft_flutter.desktop" @ONLY)
-install(FILES "${CMAKE_BINARY_DIR}/app.raft.raft_flutter.desktop"
+  "${CMAKE_BINARY_DIR}/${APPLICATION_ID}.desktop" @ONLY)
+install(FILES "${CMAKE_BINARY_DIR}/${APPLICATION_ID}.desktop"
   DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/applications" COMPONENT Runtime)
+
+# The launcher icon travels with the bundle: Linux notifications reference it
+# and an AppImage copies it into the member's icon theme when it registers
+# raft:// (lib/platform/linux_uri_scheme.dart).
+install(FILES
+  "${CMAKE_CURRENT_SOURCE_DIR}/../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png"
+  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/icons/hicolor/256x256/apps"
+  RENAME "${APPLICATION_ID}.png" COMPONENT Runtime)
 
 # Native media binaries remain generated/ignored; notices travel with the app.
 install(DIRECTORY "${RAFT_MEDIA_BUNDLE}/libs/"

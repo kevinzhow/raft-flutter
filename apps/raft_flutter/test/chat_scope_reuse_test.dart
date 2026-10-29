@@ -8,6 +8,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show fixture;
+import 'support/app_services_fixture.dart';
 
 void main() {
   for (final adaptive in [false, true]) {
@@ -25,7 +26,7 @@ void main() {
         addTearDown(w.dispose);
         final handle = ChatSelectionHandle();
         addTearDown(handle.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final parent = {
           'id': 'parent',
           'channelId': 'c1',
@@ -45,13 +46,13 @@ void main() {
           'senderName': '林',
           'content': 'Reply 中文 日本語',
         };
-        w.ledger.ingest([
+        w.messageDomain.ledger.ingest([
           parent,
           reply,
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'parent'};
-        w.visibleIds['thread'] = {'reply'};
-        w.threadSummaries['parent'] = {
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'parent'};
+        w.messageDomain.visibleIds['thread'] = {'reply'};
+        w.messageDomain.threadSummaries['parent'] = {
           'replyCount': 1,
           'unreadCount': 1,
           'firstUnreadMessageId': 'reply',
@@ -78,17 +79,19 @@ void main() {
         };
         a.routes['POST /channels/thread/read'] = (_) => {};
         await tester.runAsync(
-          () => w.openThread(RaftMessage(parent), focusedMessageId: 'reply'),
+          () => w.messageDomain.threads.openThread(RaftMessage(parent), focusedMessageId: 'reply'),
         );
         Widget application(bool thread) => MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: adaptive
-              ? WorkspaceView(
+              ? withAppServices(
+                WorkspaceView(
                   controller: w,
                   appearance: const RaftAppearance(),
                   onAppearance: (_) async {},
                   onLogout: () async {},
-                )
+                ),
+              )
               : Scaffold(
                   body: RaftChatView(
                     controller: w,
@@ -156,7 +159,7 @@ void main() {
             .onOpen!;
         await tester.runAsync(() async {
           open();
-          for (var i = 0; i < 50 && w.threadLoading; i++) {
+          for (var i = 0; i < 50 && w.messageDomain.state.threadLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 10));
           }
         });
@@ -174,7 +177,7 @@ void main() {
         } else {
           expect(identical(tester.state(chat(true)), original), isTrue);
         }
-        expect(w.highlightedMessageId, 'reply');
+        expect(w.messageDomain.state.highlightedMessageId, 'reply');
         final dynamic state = tester.state(chat(true));
         expect(
           find.byKey(const ValueKey('message-reply')),

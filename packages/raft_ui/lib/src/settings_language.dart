@@ -4,10 +4,12 @@
 // mode, translation target, default view, Save) and a Date & Time card
 // (timezone, time format, Save). The app page owns the draft state, loading
 // and saving.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+
 import 'package:flutter/material.dart';
 
-import 'banner.dart';
-import 'dialog_card.dart';
+import 'error_presentation.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
@@ -100,7 +102,7 @@ class RaftLanguageRegionView extends StatelessWidget {
         value: options.any((o) => o.$1 == value) ? value : null,
         items: [
           for (final (v, text) in options)
-            DropdownMenuItem(value: v, child: Text(raftText(context, text))),
+            RaftSelectItem(value: v, label: raftText(context, text)),
         ],
         onChanged: disabled
             ? null
@@ -120,11 +122,20 @@ class RaftLanguageRegionView extends StatelessWidget {
     Key? key,
   }) => Align(
     alignment: Alignment.centerLeft,
-    child: RaftRecipeSegmentedControl<String>(
+    child: RaftSegmentedControl<String>(
       key: key,
+      legacyStyle: RaftSegmentedStyle.recipe,
       label: raftText(context, label),
       value: value,
-      items: [for (final (v, text) in options) (v, null, text)],
+      // settings.language.modeOff is 关闭; the plain `Off` catalog entry is
+      // 已关闭 (a state), which other Web keys use.
+      items: [
+        for (final (v, text) in options)
+          RaftSegmentedOption(
+            value: v,
+            label: text == 'Off' ? raftTextZh(context, 'Off', '关闭') : text,
+          ),
+      ],
       onChanged: disabled ? null : onChanged,
     ),
   );
@@ -175,8 +186,7 @@ class RaftLanguageRegionView extends StatelessWidget {
               _selectBlock(
                 RaftSettingsPreference(
                   title: 'Display language',
-                  description:
-                      'Choose the language for the app interface. This is separate from message translation.',
+                  description: 'Choose the language for the app interface. This is separate from message translation.',
                   child: _select(
                     context,
                     key: const ValueKey('display-language-select'),
@@ -202,8 +212,7 @@ class RaftLanguageRegionView extends StatelessWidget {
               RaftSettingsPreference(
                 gapBefore: 16,
                 title: 'Translation mode',
-                description:
-                    'Auto translates visible messages. Manual adds Translate to each message menu. Off keeps originals only.',
+                description: 'Auto translates visible messages. Manual adds Translate to each message menu. Off keeps originals only.',
                 notice: translationNotice,
                 child: _segmented(
                   context,
@@ -237,8 +246,7 @@ class RaftLanguageRegionView extends StatelessWidget {
                 RaftSettingsPreference(
                   gapBefore: 16,
                   title: 'Default view',
-                  description:
-                      'Choose whether messages show translation, original, or both.',
+                  description: 'Choose whether messages show translation, original, or both.',
                   child: _segmented(
                     context,
                     key: const ValueKey('translation-display'),
@@ -255,10 +263,8 @@ class RaftLanguageRegionView extends StatelessWidget {
               ],
               if (languageError != null) ...[
                 gap,
-                RaftBanner(
-                  description: languageError!,
-                  size: RaftBannerRecipeSize.sm,
-                ),
+                // `<Banner intent="warning" density="sm" className="font-bold">`
+                RaftErrorBanner(languageError!, small: true, bold: true),
               ],
               gap,
               _save(
@@ -307,10 +313,8 @@ class RaftLanguageRegionView extends StatelessWidget {
               ),
               if (dateTimeError != null) ...[
                 gap,
-                RaftBanner(
-                  description: dateTimeError!,
-                  size: RaftBannerRecipeSize.sm,
-                ),
+                // `<Banner intent="warning" density="sm" className="font-bold">`
+                RaftErrorBanner(dateTimeError!, small: true, bold: true),
               ],
               gap,
               _save(

@@ -47,22 +47,22 @@ void main() {
     final w = WorkspaceController(client, cache: db);
     w.server = RaftRecord({'id': 'private-server', 'role': 'owner'});
     w.servers = [w.server!];
-    w.ledger.switchServer('private-server');
+    w.messageDomain.ledger.switchServer('private-server');
     w.channel = RaftChannel({
       'id': 'private-channel',
       'name': 'private',
       'joined': true,
     });
     w.channels = [w.channel!];
-    w.ledger.ingest([
+    w.messageDomain.ledger.ingest([
       {
         'id': 'm1',
         'channelId': 'private-channel',
         'content': 'private body',
         'seq': '1',
       },
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['private-channel'] = {'m1'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['private-channel'] = {'m1'};
     w.saveDraft('private draft');
     await db.write(
       client.origin,
@@ -76,13 +76,13 @@ void main() {
         ],
       },
     );
-    expect(w.messages, hasLength(1));
+    expect(w.messageDomain.messages, hasLength(1));
     w.revokeServer('private-server');
     expect(w.server, isNull);
     expect(w.channel, isNull);
     expect(client.serverId, isNull);
     expect(w.servers, isEmpty);
-    expect(w.messages, isEmpty);
+    expect(w.messageDomain.messages, isEmpty);
     expect(w.drafts, isEmpty);
     await w.flushCache();
     expect(

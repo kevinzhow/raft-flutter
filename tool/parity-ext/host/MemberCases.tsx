@@ -23,7 +23,6 @@ import "../src/components/member/HumanDetailPanel";
 import "../src/components/profile/ExternalIdentityDetailPanel";
 import parityExtMbActivityFixture from "../../visual-testing/shared/activityResultsFixture.json";
 import parityExtMbFixture from "virtual:parity-ext/members";
-import { useLayoutEffect as parityExtMbUseLayoutEffect } from "react";
 import type { CSSProperties as ParityExtMbCSSProperties } from "react";
 
 type ParityExtMbProps = {
@@ -68,6 +67,9 @@ function parityExtMbRoster(props: ParityExtMbProps): ParityExtMbAgent[] {
 
 function parityExtMbPrimeStores(props: ParityExtMbProps) {
   primeAgentDetailStores("screens.members.agent-detail.profile");
+  // The Activity tab reads its rows from the case route (GET /agents/:id/activity-log) only: the official host's
+  // primed trajectory rows would merge into them and show rows the Flutter fixture never has.
+  useAgentStore.setState({ trajectoryLogs: {}, activityLogs: {} });
   const agents = parityExtMbRoster(props);
   const humans = (parityExtMbFixture.humans as Record<string, unknown>[]);
   const humanKey = props.params.get("humans") ?? "default";
@@ -89,16 +91,7 @@ function parityExtMbPrimeStores(props: ParityExtMbProps) {
 // `[--shell-header-height:62px]` (Brutal) / `56px` (Elegant).
 function parityExtMbShellVars(): ParityExtMbCSSProperties {
   const theme = new URLSearchParams(window.location.search).get("parityTheme");
-  return { ["--shell-header-height" as string]: theme === "brutal-light" ? "62px" : "56px" } as ParityExtMbCSSProperties;
-}
-
-// Web-only entry with no Flutter equivalent (the Members graph view is not ported):
-// hide the "Graph" row so the rows below it are comparable.
-function parityExtMbHideGraphRow(root: HTMLElement | null) {
-  if (!root) return;
-  for (const el of Array.from(root.querySelectorAll('button, a, [data-slot="sidebar-item"]'))) {
-    if ((el.textContent ?? "").trim() === "Graph") (el as HTMLElement).style.display = "none";
-  }
+  return { ["--shell-header-height" as string]: "56px" } as ParityExtMbCSSProperties;
 }
 
 // InviteHumanDialog like the official host: owner (so `inviteMembers` holds) and the
@@ -157,9 +150,6 @@ function ParityExtMbView({ props }: { props: ParityExtMbProps }) {
   if (props.extKind === "invite") return <ParityExtMbInvite props={props} caseId={caseId} />;
   if (props.extKind === "resource") return <ParityExtMbResource props={props} caseId={caseId} />;
   useMemo(() => parityExtMbPrimeStores(props), [props]);
-  parityExtMbUseLayoutEffect(() => {
-    if (props.extKind === "list") parityExtMbHideGraphRow(document.querySelector("[data-visual-case]"));
-  });
   if (props.extKind === "list") {
     // Sidebar column of the desktop shell: 240 x viewport height.
     return (

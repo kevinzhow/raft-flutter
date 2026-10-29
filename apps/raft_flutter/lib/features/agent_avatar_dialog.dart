@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../platform/file_selection.dart';
+
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 
 class AgentAvatarUpload {
@@ -16,14 +19,13 @@ class AgentAvatarUpload {
 }
 
 Future<AgentAvatarUpload?> pickAgentAvatar() async {
-  final f = await openFile(
-    acceptedTypeGroups: [
-      const XTypeGroup(
-        label: 'Images',
-        extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif'],
-        mimeTypes: ['image/*'],
-      ),
-    ],
+  final f = await selectImage(
+    typeGroup: const XTypeGroup(
+      label: 'Images',
+      extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif'],
+      mimeTypes: ['image/*'],
+      uniformTypeIdentifiers: ['public.image'],
+    ),
   );
   if (f == null) return null;
   // Reject before reading potentially large native files into memory.
@@ -65,6 +67,7 @@ class _AgentAvatarDialogState extends State<AgentAvatarDialog> {
   String? preset;
   bool changed = false, busy = false, confirming = false;
   AgentAvatarUpload? upload;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when another avatar is chosen or uploaded, or the next save starts; the dialog state is dropped when it closes.
   String? error;
   int ticket = 0;
   DialogRoute<bool>? discardRoute;
@@ -101,6 +104,7 @@ class _AgentAvatarDialogState extends State<AgentAvatarDialog> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (route!.isActive) route.navigator?.removeRoute(route);
       });
+      // ignore: raft_lints/avoid_unreviewed_idle_work -- Single request after a state change; nothing re-requests from the callback.
       WidgetsBinding.instance.ensureVisualUpdate();
     }
     upload = null;
@@ -114,7 +118,15 @@ class _AgentAvatarDialogState extends State<AgentAvatarDialog> {
       final next = await widget.pickUpload();
       if (!valid || own != ticket || next == null) return;
       if (next.bytes.length > 5 * 1024 * 1024) {
-        throw const RaftApiException('Image must be at most 5 MB.');
+        // Web `isAvatarFileTooLarge` -> `avatar.tooLarge`.
+        setState(
+          () => error = raftFormat(
+            context,
+            'Avatar image must be {maxLabel} or smaller',
+            {'maxLabel': raftText(context, '5 MB')},
+          ),
+        );
+        return;
       }
       setState(() {
         upload = next;
@@ -123,7 +135,15 @@ class _AgentAvatarDialogState extends State<AgentAvatarDialog> {
         error = null;
       });
     } catch (e) {
-      if (valid && own == ticket) setState(() => error = '$e');
+      if (valid && own == ticket) {
+        setState(
+          () => error = userErrorText(
+            e,
+            fallback: 'Failed to upload avatar',
+            where: 'agent avatar pick',
+          ),
+        );
+      }
     }
   }
 
@@ -192,7 +212,19 @@ class _AgentAvatarDialogState extends State<AgentAvatarDialog> {
       changed = false;
       Navigator.pop(context);
     } catch (e) {
-      if (valid && own == ticket) setState(() => error = '$e');
+      if (valid && own == ticket) {
+        // Web: an upload falls back to `uploadAvatarFailed`, a preset change
+        // to `editProfile.saveFailed`.
+        setState(
+          () => error = userErrorText(
+            e,
+            fallback: upload != null
+                ? 'Failed to upload avatar'
+                : 'Could not save changes. Try again.',
+            where: 'agent avatar save',
+          ),
+        );
+      }
     } finally {
       if (valid && own == ticket) setState(() => busy = false);
     }
@@ -217,7 +249,7 @@ class _AgentAvatarDialogState extends State<AgentAvatarDialog> {
         : RaftAvatarSlot(
             name: '${widget.agent['name']}',
             slot: RaftAvatarSlotContext.profileTile,
-            content: Image.memory(
+            content: RaftSizedImage.memory(
               upload!.bytes,
               fit: BoxFit.cover,
               errorBuilder: (_, e, s) =>
@@ -229,29 +261,33 @@ class _AgentAvatarDialogState extends State<AgentAvatarDialog> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) close();
       },
-      child: RaftAgentAvatarPicker(
-        name: '${widget.agent['name']}',
-        preview: preview,
-        selectedKey: current,
-        uploadSelected:
-            upload != null ||
-            !changed && stored != null && !stored.startsWith('pixel:'),
-        dirty: changed,
-        busy: busy,
-        error: error,
-        onChoice: (key) {
-          if (!valid || busy) return;
-          ++ticket;
-          setState(() {
-            changed = true;
-            preset = key;
-            upload = null;
-            error = null;
-          });
-        },
-        onUpload: chooseUpload,
-        onClose: close,
-        onSave: save,
+      // Web `Dialog onOpenChange`: Escape runs the same guarded close.
+      child: RaftDismissScope(
+        onDismiss: close,
+        child: RaftAgentAvatarPicker(
+          name: '${widget.agent['name']}',
+          preview: preview,
+          selectedKey: current,
+          uploadSelected:
+              upload != null ||
+              !changed && stored != null && !stored.startsWith('pixel:'),
+          dirty: changed,
+          busy: busy,
+          error: error,
+          onChoice: (key) {
+            if (!valid || busy) return;
+            ++ticket;
+            setState(() {
+              changed = true;
+              preset = key;
+              upload = null;
+              error = null;
+            });
+          },
+          onUpload: chooseUpload,
+          onClose: close,
+          onSave: save,
+        ),
       ),
     );
   }

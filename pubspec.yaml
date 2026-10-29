@@ -5,7 +5,13 @@ environment:
 workspace:
   - apps/raft_flutter
   - packages/raft_ui
+  - packages/raft_theme
   - packages/raft_client
   - packages/raft_sync
+  - packages/desktop_drop
+  - packages/app_badge_plus
+  - packages/media_kit
   - packages/flutter_chat_ui
+  - packages/flutter_dynamic_icon_plus
+  - packages/raft_updater
   - tool/ds_audit

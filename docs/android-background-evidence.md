@@ -1,5 +1,7 @@
 # Android background inbox: actual native evidence
 
+> Historical. The Android WorkManager fetch this evidence covers was removed on 2026-10-13; see [background inbox](background-inbox.md). The notification, navigation and opt-out checks below that do not depend on the worker still describe the socket path's OS behavior.
+
 Verified on 2026-10-08 UTC against product commit `c598e2c18247e217a4798f6cc65fc785c11cbc3b`, Flutter 3.47.6, and owned Android emulator-5580. This proof uses the debug product `main` APK, the actual app login/settings UI, and isolated local fixture accounts. It does not establish acceptance for subsequent UI changes or iOS.
 
 The installed APK and built APK have the same SHA256 `499698bb8c83bdbaca59e14415b14a12a3da4805c7736a1bdc5a051df4eb7688` (228981677 bytes). The user opted into notifications in the actual UI and accepted Android's permission prompt.

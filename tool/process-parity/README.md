@@ -20,7 +20,7 @@ input is not a completed platform/matrix claim.
 
 ## Run
 
-Use pinned Flutter 3.47.6 and installed pinned Source dependencies. Prepare the
+Use the Flutter SDK pinned in `.fvmrc` and installed pinned Source dependencies. Prepare the
 private Linux media bundle with `./tool/prepare-media-linux` before its first
 build. Coordinate Linux integration ownership with other workers. This runner
 uses private Xvfb; no Android5580, real account/backend or shared native fixture.

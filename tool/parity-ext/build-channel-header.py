@@ -15,7 +15,7 @@ Derivation (raft-source 26f77ef, packages/web/src):
   components/ui/OverflowSheet.tsx       OverflowMenuTrigger (Button icon-sm outline + Tooltip)
   components/message/ThreadPanel.tsx    side thread header (title, parent label,
                                          ThreadOverflowMenu, Close)
-  raft-ui 0.5.27 panel-header / conversation-panel recipes
+  raft-ui 0.5.52 panel-header / conversation-panel recipes
 Ids: components.channelheader.<platform>.<state>.<theme>. Each case captures a
 window at the top of the conversation column (or the side thread column):
 React mounts the real ChatPanel / ThreadPanel in a column-sized box, Flutter
@@ -55,6 +55,12 @@ fixture = {
         channel('channel-colvalley', 'colvalley', SHORT),
         channel('channel-colvalley-long', 'colvalley', LONG),
         channel('channel-colvalley-none', 'colvalley', None),
+        # ChannelDescription: http(s) links in the description are links.
+        channel('channel-colvalley-link', 'colvalley',
+                'Release gates, notes at https://docs.example.com/release-notes (read first).'),
+        # ChatPanel ActivityMutedBadge: the viewer muted this channel's activity.
+        {**channel('channel-colvalley-muted', 'colvalley', SHORT), 'activityMuted': True,
+         'activityMuteSupported': True},
         channel('channel-colvalley-private', 'colvalley-private', SHORT, 'private'),
         # The reported channel: an authored newline inside the description.
         channel('channel-colvalley-newline', 'colvalley', '日语 lost and found 单词 App\n结合了 crowded scene 的特性'),
@@ -68,7 +74,10 @@ fixture = {
          'peerAvatarUrl': None, 'peerGravatarHash': None},
     ],
     # Endpoints the mounted panels read after the first render (both providers).
-    'routes': {'GET /channels/threads/followers': {'threads': []}},
+    'routes': {'GET /channels/threads/followers': {'threads': []},
+               # ChatPanel reads the viewer's mute state from the preferences route.
+               'GET /channels/channel-colvalley-muted/notification-settings': {
+                   'activityMuted': True, 'muteFromSeq': None, 'activityMuteSupported': True, 'prefsVersion': 1}},
     'thread': {'parentChannelId': 'channel-colvalley', 'parentMessageId': 'msg-colvalley-thread-parent',
                'threadChannelId': 'thread-colvalley-1'},
 }
@@ -110,6 +119,9 @@ for platform in ['desktop', 'mobile']:
     add(platform, 'long', 'channel, long description (two-line clamp)', props={'channel': 'channel-colvalley-long'})
     add(platform, 'none', 'channel, no description', props={'channel': 'channel-colvalley-none'})
     add(platform, 'private', 'private channel', props={'channel': 'channel-colvalley-private'})
+    add(platform, 'link', 'channel, description with a link', props={'channel': 'channel-colvalley-link'})
+    add(platform, 'muted', 'channel, activity muted (bell after the title)',
+        props={'channel': 'channel-colvalley-muted'})
     add(platform, 'dm-agent', 'agent DM', props={'channel': 'dm-agent-cindy'})
     add(platform, 'thread', 'side thread panel header', props={'channel': 'channel-colvalley', 'thread': 'true'},
         height=64)

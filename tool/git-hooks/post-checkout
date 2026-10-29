@@ -1,0 +1,12 @@
+#!/bin/sh
+# After a branch checkout ($3 = 1; not a file checkout): re-run `pub get --enforce-lockfile`
+# where a pubspec.lock differs between the previous and the new HEAD ($1..$2).
+# Never fails the checkout. See tool/sync-pub-lock.
+[ "$3" = "1" ] || exit 0
+[ "$1" = "$2" ] && exit 0
+root=$(git rev-parse --show-toplevel) || exit 0
+cd "$root" || exit 0
+python=python3
+command -v python3 >/dev/null 2>&1 || python=python
+"$python" tool/sync-pub-lock "$1" "$2"
+exit 0

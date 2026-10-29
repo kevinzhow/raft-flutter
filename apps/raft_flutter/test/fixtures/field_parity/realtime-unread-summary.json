@@ -1,0 +1,15 @@
+{
+  "_source": "GET /channels/unread?summary=1 -> res.json({ channels: loaded }) at packages/server/src/routes/channels.ts:1153; entry shape from channelService.ts:13249-13270 (getUnreadSummary) and web UnreadSummaryWireEntry (web/src/store/messageStore.ts:919). readState is InboxScopeReadFrontier (shared/src/inboxScopeReadFrontier.ts:31).",
+  "response": {
+    "channels": {
+      "77777777-7777-4777-8777-777777777777": {
+        "unreadCount": 4, "hasMention": true, "hasAnyMention": true,
+        "readState": { "kind": "present", "readStateVersion": 5, "maxReadSeq": "1190", "latestActivity": { "messageId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "seq": "1201" } }
+      },
+      "cccccccc-cccc-4ccc-8ccc-cccccccccccc": {
+        "unreadCount": 0, "hasMention": false, "hasAnyMention": false, "hasNew": true,
+        "readState": { "kind": "absent" }
+      }
+    }
+  }
+}

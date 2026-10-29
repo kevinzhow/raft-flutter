@@ -6,6 +6,32 @@ import 'theme.dart' show RaftTokens;
 
 part 'glyphs.g.dart';
 part 'reaction_sprite.dart';
+part 'emoji_nav_icon.dart';
+part 'emoji_nav_icons.g.dart';
+
+/// Centers square icon artwork without letting a rectangular slot stretch it.
+/// The artwork shrinks uniformly if either available dimension is too small.
+class RaftIconViewport extends StatelessWidget {
+  const RaftIconViewport({super.key, required this.size, required this.child});
+
+  final double size;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    widthFactor: 1,
+    heightFactor: 1,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: size, maxHeight: size),
+      child: AspectRatio(
+        aspectRatio: 1,
+        // Keep the requested intrinsic size as well as the layout cap. Icon
+        // rows measured by IntrinsicWidth must not lose the artwork's width.
+        child: SizedBox.square(dimension: size, child: child),
+      ),
+    ),
+  );
+}
 
 /// A Lucide icon drawn like lucide-react's `<svg>`: 24-unit viewBox scaled to
 /// [size], `stroke="currentColor"`, round caps and joins, `fill="none"` unless
@@ -37,20 +63,18 @@ class RaftIcon extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     label: semanticLabel,
     excludeSemantics: true,
-    child: Center(
-      widthFactor: 1,
-      heightFactor: 1,
-      child: SizedBox.square(
-        dimension: size,
-        child: CustomPaint(
+    child: RaftIconViewport(
+      size: size,
+      child: LayoutBuilder(
+        builder: (context, constraints) => CustomPaint(
           painter: RaftGlyphPainter(
             glyph,
             color:
                 color ??
                 IconTheme.of(context).color ??
                 Theme.of(context).colorScheme.onSurface,
-            strokeWidth: absoluteStrokeWidth
-                ? strokeWidth * 24 / size
+            strokeWidth: absoluteStrokeWidth && constraints.maxWidth > 0
+                ? strokeWidth * 24 / constraints.maxWidth
                 : strokeWidth,
             filled: filled ?? glyph.filled,
           ),
@@ -398,7 +422,7 @@ RaftGlyph? raftGlyphForMaterialIcon(IconData icon) => {
   Icons.done_all: RaftGlyph.checkCheck,
 }[icon];
 
-/// raft-ui 0.5.27 ChatIcon (dist/index.mjs:18975), with its 18-unit artwork.
+/// raft-ui 0.5.52 ChatIcon (dist/index.mjs), with its 18-unit artwork.
 class RaftChatIcon extends StatelessWidget {
   const RaftChatIcon({
     super.key,
@@ -411,8 +435,8 @@ class RaftChatIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-    child: SizedBox.square(
-      dimension: size,
+    child: RaftIconViewport(
+      size: size,
       child: CustomPaint(
         painter: _ChatIconPainter(
           color ??
@@ -470,15 +494,15 @@ class _ChatIconPainter extends CustomPainter {
       old.color != color || old.strokeWidth != strokeWidth;
 }
 
-/// raft-ui0.5.27 DirectMessageIcon (dist/index.mjs19015).
+/// raft-ui 0.5.52 DirectMessageIcon (dist/index.mjs).
 class RaftDirectMessageIcon extends StatelessWidget {
   const RaftDirectMessageIcon({super.key, this.size = 18, this.color});
   final double size;
   final Color? color;
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-    child: SizedBox.square(
-      dimension: size,
+    child: RaftIconViewport(
+      size: size,
       child: CustomPaint(
         painter: _DirectMessageIconPainter(
           color ??
@@ -533,7 +557,7 @@ class _DirectMessageIconPainter extends CustomPainter {
   bool shouldRepaint(_DirectMessageIconPainter old) => old.color != color;
 }
 
-/// raft-ui0.5.27 ThreadIcon (dist/index.mjs19040).
+/// raft-ui 0.5.52 ThreadIcon (dist/index.mjs).
 /// The product uses this 18-unit two-bubble SVG for search thread metadata.
 class RaftThreadIcon extends StatelessWidget {
   const RaftThreadIcon({super.key, this.size = 18, this.color});
@@ -541,8 +565,8 @@ class RaftThreadIcon extends StatelessWidget {
   final Color? color;
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-    child: SizedBox.square(
-      dimension: size,
+    child: RaftIconViewport(
+      size: size,
       child: CustomPaint(
         painter: _ThreadIconPainter(
           color ??

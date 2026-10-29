@@ -1,0 +1,10 @@
+#!/bin/sh
+# After a merge or fast-forward pull: re-run `pub get --enforce-lockfile` where a pubspec.lock changed.
+# Never fails the merge. See tool/sync-pub-lock.
+root=$(git rev-parse --show-toplevel) || exit 0
+cd "$root" || exit 0
+git rev-parse -q --verify ORIG_HEAD >/dev/null || exit 0
+python=python3
+command -v python3 >/dev/null 2>&1 || python=python
+"$python" tool/sync-pub-lock ORIG_HEAD HEAD
+exit 0

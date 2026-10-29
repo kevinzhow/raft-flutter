@@ -1,11 +1,21 @@
+import 'raft/list_row_action.dart';
+import 'hover_region.dart';
+
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
 import 'icons.dart';
 import 'design_primitives.dart';
+import 'indicators.dart' show RaftProgressBar;
+import 'recipes/progress.g.dart' show RaftProgressRecipeSize;
+import 'recipes/spinner.g.dart' show RaftSpinnerRecipeSize;
+import 'attachment_lightbox.dart' show RaftFileTypeBadge;
 import 'attachment_tokens.dart';
+import 'attachment_transfer.dart';
 import 'localization.dart';
-import 'hover_card.dart';
+import 'text_scaling.dart';
 import 'tooltip.dart';
 
 class RaftAttachmentCard extends StatelessWidget {
@@ -13,8 +23,6 @@ class RaftAttachmentCard extends StatelessWidget {
     super.key,
     required this.filename,
     required this.onOpen,
-    this.onDownload,
-    this.onShare,
     this.onCancel,
     this.preview,
     this.imageWidth,
@@ -27,14 +35,26 @@ class RaftAttachmentCard extends StatelessWidget {
     this.error,
     this.onRetry,
     this.summary,
+    this.summaryAdditions,
+    this.summaryDeletions,
+    this.commentCount = 0,
     this.metaLabel,
     this.previewAffordance = false,
     this.previewPending = false,
+    this.downloadFailed = false,
   });
   final String filename, mimeType;
 
   /// Web AttachmentChip summary line (e.g. "Document preview").
   final String? summary;
+
+  /// A diff card's `+N` / `-M` totals after the [summary] (Web
+  /// `MessageAttachmentDiffAddition` / `DiffDeletion`, 6px apart).
+  final int? summaryAdditions, summaryDeletions;
+
+  /// Comments on the attachment (Web `attachment.commentCount`): `· ◻ 3` in
+  /// the meta row; not for images and PDFs (no comment entry there).
+  final int commentCount;
 
   /// Web `AttachmentMetaText` label (mime type, "HTML preview", …); when set,
   /// the meta row reads `label · size` and ends with the decorative
@@ -44,13 +64,18 @@ class RaftAttachmentCard extends StatelessWidget {
   final bool previewAffordance;
 
   /// Image cards only: the preview is still being fetched/decoded. The
-  /// reserved box stays a neutral surface (no spinner, no filename flash).
+  /// reserved box stays a neutral placeholder surface (Web's tinted image box):
+  /// no spinner, no filename flash and no transfer text such as "Connecting…"
+  /// (progress belongs to explicit downloads and previews, not list tiles).
   final bool previewPending;
+
+  /// File cards: the last explicit download failed; tapping the card retries.
+  final bool downloadFailed;
   final int? sizeBytes;
   final double? imageWidth, imageHeight;
   final Size? imageExtent;
   final Widget? preview;
-  final VoidCallback? onOpen, onDownload, onRetry, onShare, onCancel;
+  final VoidCallback? onOpen, onRetry, onCancel;
   final bool busy, exportMode;
   final String? error;
 
@@ -60,8 +85,41 @@ class RaftAttachmentCard extends StatelessWidget {
     return '${(value / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
+  /// `text-[10px]` summary / meta lines: Brutal resolves the utility's 1.4286
+  /// line height (14.29px); Elegant inherits the message content's
+  /// `leading-5.25` (21px).
+  /// `gap-1.5` then the coloured total.
+  static List<InlineSpan> _diffTotal(String text, Color? color) => [
+    const WidgetSpan(child: SizedBox(width: 6)),
+    TextSpan(
+      text: text,
+      style: TextStyle(color: color),
+    ),
+  ];
+
+  bool get _showsCommentCount {
+    final type = mimeType.toLowerCase().split(';').first.trim();
+    return commentCount > 0 &&
+        !type.startsWith('image/') &&
+        type != 'application/pdf';
+  }
+
+  static double metaLineHeight(RaftTokens t) => 21 / 10;
+
   @override
   Widget build(BuildContext context) {
+    if (!RaftScaled.grows(context)) return _card(context, double.infinity);
+    return LayoutBuilder(
+      builder: (context, constraints) => _card(
+        context,
+        constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width,
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context, double availableWidth) {
     final t = RaftTokens.of(context);
     final recipe = RaftAttachmentRecipe(t);
     final component = AttachmentComponentRecipe(t);
@@ -69,25 +127,15 @@ class RaftAttachmentCard extends StatelessWidget {
         mimeType.toLowerCase().split(';').first.trim().startsWith('image/') &&
         mimeType.toLowerCase().split(';').first.trim() != 'image/svg+xml';
     final extension = filename.split('.').last.toUpperCase();
+    final failedColor = RaftTransferRecipe(t).dangerText;
     final badge = component.semantics.badgeBackground(extension);
+    final grows = RaftScaled.grows(context);
     Widget title() => Row(
       children: [
         if (badge != null) ...[
-          Container(
-            width: AttachmentPrimitive.badgeSize.width,
-            height: AttachmentPrimitive.badgeSize.height,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: badge,
-              border: component.badgeBorder,
-              borderRadius: component.badgeRadius,
-              boxShadow: component.badgeShadows,
-            ),
-            child: Text(
-              extension,
-              maxLines: 1,
-              style: component.badgeLabel(extension),
-            ),
+          RaftFileTypeBadge(
+            filename: filename,
+            size: AttachmentPrimitive.badgeSize,
           ),
           const SizedBox(width: AttachmentPrimitive.badgeGap),
         ],
@@ -99,17 +147,40 @@ class RaftAttachmentCard extends StatelessWidget {
             excludeFromSemantics: true,
             child: Text(
               filename,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              // Above the default text size the name wraps instead of
+              // being cut.
+              maxLines: grows ? null : 1,
+              overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
               style: recipe.title.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ),
       ],
     );
-    final content = SizedBox(
-      width: recipe.size.width,
-      height: recipe.size.height,
+    // The 176x80 chip is a minimum above the default text size: its height
+    // follows the text and its width grows with it (capped to the space the
+    // card is given).
+    final cardWidth = grows
+        ? math.min(
+            RaftScaled.extent(context, recipe.size.width, fontSize: 12),
+            math.max(recipe.size.width, availableWidth),
+          )
+        : recipe.size.width;
+    Widget sized({required Widget child}) => grows
+        ? ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: cardWidth,
+              maxWidth: cardWidth,
+              minHeight: recipe.size.height,
+            ),
+            child: child,
+          )
+        : SizedBox(
+            width: recipe.size.width,
+            height: recipe.size.height,
+            child: child,
+          );
+    final content = sized(
       child: Padding(
         padding: component.contentInset,
         child: Column(
@@ -125,57 +196,80 @@ class RaftAttachmentCard extends StatelessWidget {
                   message: summary!,
                   onlyWhenTruncated: true,
                   excludeFromSemantics: true,
-                  child: Text(
-                    summary!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Text.rich(
+                    TextSpan(
+                      text: summary!,
+                      children: [
+                        if (summaryAdditions != null)
+                          ..._diffTotal(
+                            '+$summaryAdditions',
+                            t.colors['success-strong'],
+                          ),
+                        if (summaryDeletions != null)
+                          ..._diffTotal(
+                            '-$summaryDeletions',
+                            t.colors['danger-strong'],
+                          ),
+                      ],
+                    ),
+                    maxLines: grows ? null : 1,
+                    overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
                     style: component.metadata.copyWith(
-                      height: 20 / 14,
+                      height: metaLineHeight(t),
                       fontWeight: FontWeight.w500,
-                      color: t.brutal
-                          ? Colors.black.withValues(alpha: .7)
-                          : t.colors['foreground-muted'],
+                      color: t.colors['foreground-muted'],
                     ),
                   ),
                 ),
               ),
-            if (metaLabel != null) const Spacer(),
+            // The Spacer needs a bounded height; the grown chip has only a
+            // minimum, so it keeps a small gap instead.
+            if (metaLabel != null)
+              if (grows) const SizedBox(height: 4) else const Spacer(),
             if (metaLabel != null)
               _WebMeta(
-                label: metaLabel!,
+                label: downloadFailed
+                    ? raftText(context, 'Download failed · tap to retry')
+                    : metaLabel!,
                 size: sizeBytes == null || sizeBytes! <= 0
                     ? null
                     : formatSize(sizeBytes!),
-                style: component.metadata.copyWith(height: 20 / 14),
-                separator: t.brutal
-                    ? Colors.black.withValues(alpha: .35)
-                    : t.colors['foreground-placeholder']!,
+                commentCount: _showsCommentCount ? commentCount : 0,
+                style: component.metadata.copyWith(
+                  height: metaLineHeight(t),
+                  color: downloadFailed ? failedColor : null,
+                ),
+                separator: t.colors['foreground-placeholder']!,
                 glyph: previewAffordance ? RaftGlyph.eye : RaftGlyph.download,
                 glyphColor: component.actionForeground,
+                wrap: grows,
               )
             else
               Row(
                 children: [
                   Expanded(
                     child: Text(
-                      sizeBytes == null ? '' : formatSize(sizeBytes!),
-                      style: component.metadata,
+                      downloadFailed
+                          ? '${sizeBytes == null ? '' : '${formatSize(sizeBytes!)} · '}${raftText(context, 'Download failed')}'
+                          : (sizeBytes == null ? '' : formatSize(sizeBytes!)),
+                      style: downloadFailed
+                          ? component.metadata.copyWith(color: failedColor)
+                          : component.metadata,
                       maxLines: 1,
                     ),
                   ),
-                  if (onDownload == null && onShare == null)
-                    RaftIcon(
-                      RaftGlyph.eye,
-                      size: 12,
-                      color: component.actionForeground,
-                    ),
+                  RaftIcon(
+                    RaftGlyph.eye,
+                    size: 12,
+                    color: component.actionForeground,
+                  ),
                 ],
               ),
           ],
         ),
       ),
     );
-    if (imageCard)
+    if (imageCard) {
       return LayoutBuilder(
         builder: (context, constraints) {
           final size =
@@ -192,154 +286,74 @@ class RaftAttachmentCard extends StatelessWidget {
             width: size.width,
             height: size.height,
             // RaftTooltip: rows scrolled under a resting pointer stay quiet.
-            child: RaftHoverReveal(
-              alwaysVisible: RaftDensityScope.of(context) == RaftDensity.touch,
-              builder: (context, revealed) => RaftTooltip(
-                message: '${raftText(context, 'Preview')} $filename',
-                child: Material(
-                  color: t.panel,
-                  clipBehavior: Clip.antiAlias,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(
-                      color: t.strong,
-                      width: t.brutal ? t.border : 0,
+            child: RaftTooltip(
+              message: '${raftText(context, 'Preview')} $filename',
+              child: Material(
+                color: t.panel,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(color: t.strong, width: 0),
+                  borderRadius: recipe.radius,
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    RaftListRowAction(
+                      semanticLabel:
+                          '${raftText(context, 'Preview')} $filename',
+                      onPressed: exportMode ? null : onOpen,
+                      child:
+                          preview ??
+                          (previewPending && error == null ||
+                                  error != null && onRetry != null
+                              ? const RaftTransferPlaceholder()
+                              : null) ??
+                          Center(
+                            child: busy
+                                ? const RaftSpinner(
+                                    recipeSize: RaftSpinnerRecipeSize.md,
+                                  )
+                                : Text(error ?? filename, style: recipe.title),
+                          ),
                     ),
-                    borderRadius: recipe.radius,
-                  ),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Semantics(
-                        label: '${raftText(context, 'Preview')} $filename',
-                        button: !exportMode,
-                        child: InkWell(
-                          onTap: exportMode ? null : onOpen,
-                          child:
-                              preview ??
-                              (previewPending && error == null
-                                  ? const SizedBox.expand()
-                                  : null) ??
-                              Center(
-                                child: busy
-                                    ? const CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      )
-                                    : Text(
-                                        error ?? filename,
-                                        style: recipe.title,
-                                      ),
-                              ),
+                    if (!exportMode &&
+                        preview == null &&
+                        error != null &&
+                        onRetry != null)
+                      // Option A: tap the failed chip's band to retry;
+                      // the rest of the tile still opens the viewer,
+                      // which fetches the original itself.
+                      Positioned.fill(
+                        child: RaftImageTransferOverlay.failed(
+                          onRetry: onRetry,
                         ),
                       ),
-                      if (!exportMode)
-                        Positioned(
-                          right: 4,
-                          bottom: 4,
-                          // MessageImageGalleryAction: `hidden
-                          // group-hover/img:flex focus:flex` on pointer
-                          // layouts; touch keeps the actions at rest.
-                          child: Opacity(
-                            key: const ValueKey('image-actions'),
-                            opacity: revealed ? 1 : 0,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (onShare != null)
-                                  RaftIconButton(
-                                    glyph: RaftGlyph.share2,
-                                    tooltip:
-                                        '${raftText(context, 'Share')} $filename',
-                                    onPressed: busy ? null : onShare,
-                                    visualSize: 24,
-                                    minimumTargetSize: 48,
-                                    glyphSize: 12,
-                                  ),
-                                if (onDownload != null)
-                                  RaftIconButton(
-                                    glyph: RaftGlyph.download,
-                                    tooltip:
-                                        '${raftText(context, 'Download')} $filename',
-                                    onPressed: busy ? null : onDownload,
-                                    visualSize: 24,
-                                    minimumTargetSize: 48,
-                                    glyphSize: 12,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      if (error != null && !exportMode && onRetry != null)
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: RaftTextButton(
-                            label: 'Retry preview',
-                            onPressed: onRetry,
-                            variant: RaftControlVariant.ghost,
-                          ),
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),
           );
         },
       );
+    }
     return SizedBox(
-      width: recipe.size.width,
+      width: cardWidth,
       child: _AttachmentSurface(
         recipe: recipe,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              children: [
-                if (exportMode)
-                  content
-                else
-                  TextButton(
-                    onPressed: busy ? null : onOpen,
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      foregroundColor: t.strong,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: const RoundedRectangleBorder(),
-                    ),
-                    child: content,
-                  ),
-                if (!exportMode)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (onShare != null)
-                          RaftIconButton(
-                            glyph: RaftGlyph.share2,
-                            tooltip: '${raftText(context, 'Share')} $filename',
-                            onPressed: busy ? null : onShare,
-                            visualSize: 24,
-                            minimumTargetSize: 48,
-                            glyphSize: 12,
-                          ),
-                        if (onDownload != null && metaLabel == null)
-                          RaftIconButton(
-                            glyph: RaftGlyph.download,
-                            tooltip:
-                                '${raftText(context, 'Download')} $filename',
-                            onPressed: busy ? null : onDownload,
-                            visualSize: 24,
-                            minimumTargetSize: 48,
-                            glyphSize: 12,
-                          ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            if (busy && !exportMode) const LinearProgressIndicator(),
+            if (exportMode)
+              content
+            else
+              RaftListRowAction(
+                onPressed: busy ? null : onOpen,
+                child: content,
+              ),
+            if (busy && !exportMode)
+              const RaftProgressBar(size: RaftProgressRecipeSize.sm),
+            if (downloadFailed && !busy && !exportMode)
+              const RaftTransferBar(failed: true),
             if (!exportMode && busy && onCancel != null)
               RaftTextButton(
                 label: 'Cancel',
@@ -360,7 +374,7 @@ class RaftAttachmentCard extends StatelessWidget {
                     ),
                     if (!exportMode && onRetry != null)
                       RaftTextButton(
-                        label: 'Retry preview',
+                        label: 'Retry Preview',
                         onPressed: onRetry,
                         variant: RaftControlVariant.ghost,
                       ),
@@ -374,8 +388,8 @@ class RaftAttachmentCard extends StatelessWidget {
   }
 }
 
-/// One shared surface state controls the source file border. Descendant open,
-/// download, share and retry controls retain their independent focus/actions.
+/// One shared surface state controls the source file border. The card itself
+/// is the only action (open); Download lives in the viewer it opens.
 class _AttachmentSurface extends StatefulWidget {
   const _AttachmentSurface({required this.recipe, required this.child});
   final RaftAttachmentRecipe recipe;
@@ -387,7 +401,7 @@ class _AttachmentSurface extends StatefulWidget {
 class _AttachmentSurfaceState extends State<_AttachmentSurface> {
   bool hovered = false, focused = false;
   @override
-  Widget build(BuildContext context) => MouseRegion(
+  Widget build(BuildContext context) => RaftHoverRegion(
     onEnter: (_) => setState(() => hovered = true),
     onExit: (_) => setState(() => hovered = false),
     child: Focus(
@@ -416,7 +430,16 @@ class _WebMeta extends StatelessWidget {
     required this.separator,
     required this.glyph,
     required this.glyphColor,
+    this.wrap = false,
+    this.commentCount = 0,
   });
+
+  /// `attachment-comment-count`: separator, MessageSquare 12 and the number
+  /// (`inline-flex items-center gap-1 pl-1`).
+  final int commentCount;
+
+  /// Above the default text size the label wraps instead of being cut.
+  final bool wrap;
   final String label;
   final String? size;
   final TextStyle style;
@@ -430,8 +453,8 @@ class _WebMeta extends StatelessWidget {
       Expanded(
         child: Text(
           label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          maxLines: wrap ? null : 1,
+          overflow: wrap ? TextOverflow.clip : TextOverflow.ellipsis,
           style: style,
         ),
       ),
@@ -440,6 +463,14 @@ class _WebMeta extends StatelessWidget {
         Text('·', style: style.copyWith(color: separator)),
         const SizedBox(width: 6),
         Text(size!, maxLines: 1, style: style),
+      ],
+      if (commentCount > 0) ...[
+        const SizedBox(width: 4),
+        Text('·', style: style.copyWith(color: separator)),
+        const SizedBox(width: 4),
+        RaftIcon(RaftGlyph.messageSquare, size: 12, color: style.color),
+        const SizedBox(width: 4),
+        Text('$commentCount', maxLines: 1, style: style),
       ],
       const SizedBox(width: 6),
       SizedBox.square(

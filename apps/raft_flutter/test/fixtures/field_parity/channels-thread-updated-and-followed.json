@@ -1,0 +1,72 @@
+{
+  "_source": "thread:updated: services/messageService.ts:3045-3079 (threadInfo = channelService.ts:7960-7982 + syncCoreReplyWindow from messageService.ts:146-164 + latestReply via projectThreadLatestReplyPayload :942-957, conversationContext :915-927). GET /channels/threads/followed: routes/channels.ts:1565-1598 -> channelService.ts:8482-8514 FollowedThread. GET /channels/:id/threads/:messageId 404: routes/channels.ts:4590-4596",
+  "thread:updated": {
+    "parentMessageId": "m1000000-0000-4000-8000-0000000000f1",
+    "threadChannelId": "t1000000-0000-4000-8000-0000000000f2",
+    "replyCount": 3,
+    "lastReplyAt": "2026-10-11T12:00:00.000Z",
+    "participantIds": ["u1000000-0000-4000-8000-0000000000c1", "a1000000-0000-4000-8000-0000000000aa"],
+    "syncCoreReplyWindow": {
+      "producer": "message-service.thread-replies-window.v1",
+      "discussion": {
+        "root": { "kind": "message", "serverId": "s0000000-0000-4000-8000-000000000001", "id": "m1000000-0000-4000-8000-0000000000f1" },
+        "relation": { "kind": "replies" },
+        "parentScopeKey": { "serverId": "s0000000-0000-4000-8000-000000000001", "scopeKind": "channel", "scopeId": "c1111111-1111-4111-8111-111111111111" },
+        "backing": "sync-scope"
+      },
+      "window": { "kind": "sync-scope-window", "scopeCursor": null, "epoch": null }
+    },
+    "latestReply": {
+      "id": "m3000000-0000-4000-8000-0000000000f3",
+      "channelId": "t1000000-0000-4000-8000-0000000000f2",
+      "seq": 5521,
+      "content": "Looks good, shipping",
+      "senderType": "agent",
+      "senderId": "a1000000-0000-4000-8000-0000000000aa",
+      "senderName": "cindy",
+      "senderDisplayName": "cindy",
+      "senderAvatarUrl": null,
+      "createdAt": "2026-10-11T12:00:00.000Z",
+      "conversationContext": { "channelType": "thread", "parentMessageId": "m1000000-0000-4000-8000-0000000000f1", "parentChannelId": "c1111111-1111-4111-8111-111111111111", "parentChannelType": "channel" }
+    }
+  },
+  "GET /channels/threads/followed": {
+    "threads": [
+      {
+        "threadChannelId": "t1000000-0000-4000-8000-0000000000f2",
+        "parentMessageId": "m1000000-0000-4000-8000-0000000000f1",
+        "parentChannelId": "c1111111-1111-4111-8111-111111111111",
+        "parentChannelName": "engineering",
+        "parentChannelType": "channel",
+        "parentMessagePreview": "Can someone review the release plan?",
+        "parentMessageSenderType": "user",
+        "parentMessageSenderId": "u1000000-0000-4000-8000-0000000000c1",
+        "latestActivityPreview": "Looks good, shipping",
+        "latestActivitySenderType": "agent",
+        "latestActivitySenderId": "a1000000-0000-4000-8000-0000000000aa",
+        "latestActivitySenderName": "cindy",
+        "latestActivityMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "latestActivitySeq": "5521",
+        "firstUnreadMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "lastActivityAt": "2026-10-11T12:00:00.000Z",
+        "replyCount": 3,
+        "lastReplyAt": "2026-10-11T12:00:00.000Z",
+        "unreadCount": 1,
+        "taskId": null,
+        "taskNumber": null,
+        "taskStatus": null,
+        "taskClaimedByType": null,
+        "taskClaimedById": null,
+        "taskClaimedByName": null,
+        "maxReadSeq": 5500,
+        "readStateVersion": 2,
+        "readState": { "kind": "present", "readStateVersion": 2, "maxReadSeq": "5500", "latestActivity": { "messageId": "m3000000-0000-4000-8000-0000000000f3", "seq": "5521" } },
+        "doneAt": null,
+        "isFollowing": true,
+        "unfollowedAt": null
+      }
+    ]
+  },
+  "GET /channels/:id/threads/:messageId (404 = no thread yet)": { "code": "THREAD_NOT_FOUND", "error": "No thread found for this message" },
+  "GET /channels/:id/threads/:messageId (404 = lookup failure, NOT empty)": { "error": "Channel not found or not visible" }
+}

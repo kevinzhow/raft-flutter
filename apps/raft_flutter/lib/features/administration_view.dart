@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import '../platform/content_links.dart';
@@ -21,6 +20,7 @@ import 'management_support.dart'
         rememberServerFlag,
         writePageSnapshot;
 import 'server_setup_gate.dart' show refreshServerSetup;
+import '../data/feature_flag_client_facts.dart';
 
 /// Settings > Workspace > Administration: SettingsPanel.tsx
 /// AdministrationTabContent. Each section owns its data and requests like the
@@ -95,12 +95,7 @@ class AdministrationView extends StatelessWidget {
 
 /// `err.response?.data?.error || fallback`.
 String _apiError(Object error, String fallback) =>
-    error is RaftApiException &&
-        error.status != null &&
-        error.message.isNotEmpty &&
-        error.message != 'Request failed'
-    ? error.message
-    : fallback;
+    userErrorText(error, fallback: fallback, where: 'administration');
 
 Key _region(String section) => ValueKey('admin-section-$section');
 
@@ -145,7 +140,8 @@ class _AdminsSection extends StatefulWidget {
 
 class _AdminsSectionState extends State<_AdminsSection> {
   WorkspaceController get w => widget.w;
-  WorkspaceEntityDirectory get directory => w.entityDirectory;
+  WorkspaceEntityDirectory get directory => w.services.entityDirectory;
+  // ignore: raft_lints/avoid_imperative_notice_state -- error clears when the next role change starts (Web setError('') in handlePromote/handleDemote); the section is remounted on server/account change.
   String? selectedKey, savingKey, error;
   String selectedRole = 'admin';
 
@@ -305,6 +301,7 @@ class _SystemChannelsState extends State<_SystemChannelsSection>
   WorkspaceController get w => widget.w;
   late bool current = currentHidden, hidden = current;
   bool saving = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Each section's error clears when its next save/action starts, on a successful load, and when the real server state it describes changes (_resync); sections are remounted on server/account change.
   String? error;
 
   bool get currentHidden => !w.channels.any((c) => c.name == 'all');
@@ -430,6 +427,7 @@ Future<bool> _confirm(
   required String title,
   required String message,
   required String confirmLabel,
+  String cancelLabel = 'Cancel',
   required String loadingLabel,
   required Future<void> Function() onConfirm,
 }) async =>
@@ -441,6 +439,7 @@ Future<bool> _confirm(
         title: title,
         message: message,
         confirmLabel: confirmLabel,
+        cancelLabel: cancelLabel,
         loadingLabel: loadingLabel,
         onConfirm: onConfirm,
       ),
@@ -479,8 +478,9 @@ class _InvitesState extends State<_InvitesSection>
     reload();
   }
 
+  /// Revalidates in place: the rows stay (and a restored empty list keeps its
+  /// "No pending invites." line); only a cold first read shows the blank state.
   Future<void> reload() {
-    setState(() => loading = true);
     return load(
       () => w.query('/servers/${w.server!.id}/invites'),
       (value) => invites = managementRows(value),
@@ -498,6 +498,7 @@ class _InvitesState extends State<_InvitesSection>
       {'email': invite['invitedEmail']},
     ),
     confirmLabel: 'Revoke Invite',
+    cancelLabel: 'Cancel',
     loadingLabel: 'Revoking…',
     onConfirm: () async {
       try {
@@ -554,6 +555,7 @@ class _JoinLinksState extends State<_JoinLinksSection>
   String get snapshotKey => 'admin:join-links';
   List<Map<String, dynamic>> links = [];
   bool loading = true, creating = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- createError clears when the next create starts; copiedId expires after 1.5 s; the section is remounted on server/account change.
   String? createError, copiedId;
   DateTime? expiresAt;
   final maxUses = TextEditingController();
@@ -632,6 +634,7 @@ class _JoinLinksState extends State<_JoinLinksSection>
     title: 'Revoke Invite Link',
     message: 'Revoke this invite link? Anyone who still has the URL will stop being able to join with it.',
     confirmLabel: 'Revoke Link',
+    cancelLabel: 'Cancel',
     loadingLabel: 'Revoking…',
     onConfirm: () async {
       try {
@@ -717,6 +720,7 @@ class _AgreementState extends State<_AgreementSection>
   final title = TextEditingController(), body = TextEditingController();
   bool enabled = false, savedEnabled = false, loading = true, saving = false;
   String savedTitle = '', savedBody = '';
+  // ignore: raft_lints/avoid_imperative_notice_state -- Each section's error clears when its next save/action starts, on a successful load, and when the real server state it describes changes (_resync); sections are remounted on server/account change.
   String? error;
 
   @override
@@ -870,6 +874,7 @@ class _OnboardingState extends State<_OnboardingSection>
   bool greeting = true, savedGreeting = true;
   bool loading = true, saving = false, openingSetup = false;
   Map<String, dynamic>? projection;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Each section's error clears when its next save/action starts, on a successful load, and when the real server state it describes changes (_resync); sections are remounted on server/account change.
   String? error;
 
   @override
@@ -895,8 +900,8 @@ class _OnboardingState extends State<_OnboardingSection>
   @override
   void initState() {
     super.initState();
-    w.entityDirectory.addListener(_changed);
-    w.entityDirectory.ensure(const [WorkspaceEntityKind.agents]);
+    w.services.entityDirectory.addListener(_changed);
+    w.services.entityDirectory.ensure(const [WorkspaceEntityKind.agents]);
     final snapshot = readSnapshot();
     if (snapshot != null) {
       agentId = savedAgentId = snapshot['agentId'] as String;
@@ -928,7 +933,7 @@ class _OnboardingState extends State<_OnboardingSection>
 
   @override
   void dispose() {
-    w.entityDirectory.removeListener(_changed);
+    w.services.entityDirectory.removeListener(_changed);
     super.dispose();
   }
 
@@ -994,7 +999,7 @@ class _OnboardingState extends State<_OnboardingSection>
   @override
   Widget build(BuildContext context) {
     final agents = [
-      for (final a in w.entityDirectory.authorAgents)
+      for (final a in w.services.entityDirectory.authorAgents)
         if (a['deletedAt'] == null && a['id'] is String)
           (
             a['id'] as String,
@@ -1045,28 +1050,29 @@ class _TranslationSection extends StatefulWidget {
 
 class _TranslationState extends State<_TranslationSection> with _SavedFlash {
   WorkspaceController get w => widget.w;
-  late bool accepted = w.translations.settings.serverEnabled;
+  late bool accepted = w.services.translations.settings.serverEnabled;
   late bool enabled = accepted;
   bool saving = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Each section's error clears when its next save/action starts, on a successful load, and when the real server state it describes changes (_resync); sections are remounted on server/account change.
   String? error;
 
   @override
   void initState() {
     super.initState();
-    w.translations.addListener(_resync);
-    w.translations.ensureSettings();
+    w.services.translations.addListener(_resync);
+    w.services.translations.ensureSettings();
   }
 
   @override
   void dispose() {
-    w.translations.removeListener(_resync);
+    w.services.translations.removeListener(_resync);
     super.dispose();
   }
 
   /// Re-sync when the accepted server gate changes.
   void _resync() {
     if (!mounted) return;
-    final next = w.translations.settings.serverEnabled;
+    final next = w.services.translations.settings.serverEnabled;
     setState(() {
       if (next != accepted) {
         accepted = next;
@@ -1090,7 +1096,7 @@ class _TranslationState extends State<_TranslationSection> with _SavedFlash {
         data: {'translationEnabled': enabled},
       );
       // Message rows follow the accepted gate without a reload.
-      w.translations.adoptServerSettings(response);
+      w.services.translations.adoptServerSettings(response);
       if (!mounted) return;
       flashSaved(const Duration(seconds: 2));
     } catch (e) {
@@ -1109,7 +1115,7 @@ class _TranslationState extends State<_TranslationSection> with _SavedFlash {
 
   @override
   Widget build(BuildContext context) {
-    final store = w.translations, settings = store.settings;
+    final store = w.services.translations, settings = store.settings;
     final loading = store.settingsLoading;
     final canManage = settings.canManage;
     final failure = error ?? store.settingsError;
@@ -1181,15 +1187,7 @@ class _ProductAnalyticsState extends State<_ProductAnalyticsSection>
       final result = managementMap(
         await w.client.post(
           '/feature-flags/evaluate',
-          data: {
-            'keys': [flag],
-            'serverId': w.server?.id,
-            'platform':
-                defaultTargetPlatform == TargetPlatform.android ||
-                    defaultTargetPlatform == TargetPlatform.iOS
-                ? 'mobile'
-                : 'web',
-          },
+          data: featureFlagEvaluateBody(keys: [flag], serverId: w.server?.id),
         ),
       );
       final enabled = managementRows(result['evaluations'])
@@ -1261,6 +1259,7 @@ class _MemberPermissionsState extends State<_MemberPermissionsSection>
   WorkspaceController get w => widget.w;
   late bool current = currentValue, hidden = current;
   bool saving = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Each section's error clears when its next save/action starts, on a successful load, and when the real server state it describes changes (_resync); sections are remounted on server/account change.
   String? error;
 
   bool get currentValue => w.server?.json['hideHumansFromMembers'] == true;

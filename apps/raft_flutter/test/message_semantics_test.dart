@@ -50,9 +50,12 @@ Future<(WorkspaceController, MessageAdapter)> _mount(
 ) async {
   final (w, transport) = (await t.runAsync(() => fixture('member')))!;
   addTearDown(w.dispose);
-  w.ledger.switchServer('s1');
-  w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
+  w.messageDomain.ledger.switchServer('s1');
+  w.messageDomain.ledger.ingest(
+    rows,
+    expectedGeneration: w.messageDomain.ledger.generation,
+  );
+  w.messageDomain.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
   transport.routes['GET /agents'] = (_) => [];
   transport.routes['GET /servers/s1/members'] = (_) => [
     {'userId': 'cody', 'name': 'cody', 'role': 'member'},
@@ -63,7 +66,8 @@ Future<(WorkspaceController, MessageAdapter)> _mount(
   addTearDown(t.view.reset);
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(RaftFamily.elegant),
+      // A pointer window: touch has no hover bar and adds the inline "+".
+      theme: raftTheme().copyWith(platform: TargetPlatform.linux),
       home: Scaffold(
         body: RaftDensityScope(
           density: RaftDensity.desktop,
@@ -182,18 +186,18 @@ void main() {
     _captureClipboard(t);
     var row = _rowNode(t, 'Act on me');
     expect(_customActions(row), [
-      'Reply in thread',
-      'Add reaction',
-      'Save message',
+      'Reply in Thread',
+      'Add Reaction',
+      'Save Message',
       'Copy Markdown',
-      'Message actions',
+      'Message Actions',
     ]);
 
     _perform(t, row, 'Copy Markdown');
     await t.pump();
     expect(_clipboard, 'Act on me');
 
-    _perform(t, row, 'Save message');
+    _perform(t, row, 'Save Message');
     await t.pump();
     // Optimistic, like the toolbar: the action now offers the inverse.
     expect(SavedCountStore.of(w).isSaved('m1'), isTrue);
@@ -204,7 +208,7 @@ void main() {
     await t.pumpAndSettle();
     row = _rowNode(t, 'Act on me');
 
-    _perform(t, row, 'Add reaction');
+    _perform(t, row, 'Add Reaction');
     await t.pumpAndSettle();
     expect(find.byType(RaftQuickReactionPicker), findsOneWidget);
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -249,7 +253,7 @@ void main() {
     final semantics = t.ensureSemantics();
     await _mount(t, [_row('m1', 0, 'Hover me')]);
     bool toolbarButton(SemanticsNode n) =>
-        n.label == 'Save message' &&
+        n.label == 'Save Message' &&
         n.getSemanticsData().flagsCollection.isButton;
     expect(_allNodes(t).where(toolbarButton), isEmpty);
     final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
@@ -278,7 +282,7 @@ void main() {
     expect(row.label, isNot(contains('Hidden tail sentence')));
     var below = _descendants(row);
     expect(below.where((n) => n.label == 'a tail link'), isEmpty);
-    final toggle = below.singleWhere((n) => n.label == 'Show more');
+    final toggle = below.singleWhere((n) => n.label == 'Show More');
 
     _owner(t).performAction(toggle.id, SemanticsAction.tap);
     await t.pumpAndSettle();

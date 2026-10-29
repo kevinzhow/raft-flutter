@@ -34,6 +34,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart'
+    show
+        ImagePickerPlatform,
+        ImageSource,
+        ImagePickerOptions; // ignore: depend_on_referenced_packages
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -43,7 +48,6 @@ import 'package:raft_flutter/features/managed_agent_launcher.dart';
 import 'package:raft_flutter/features/runtime_form_dialog.dart';
 import 'package:raft_flutter/features/create_agent_dialog.dart';
 import 'package:raft_flutter/features/workspace_settings.dart';
-import 'package:raft_flutter/features/workspace_mode_settings_card.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -144,7 +148,7 @@ Map<String, dynamic>? _staticSource(String runtime, String source) {
 
 // ---------------------------------------------------------------------------
 // Create agent: showManagedAgentForm → CreateAgentDialog, the dialog every
-// "Create agent" entry opens (FleetView, action cards).
+// "Create Agent" entry opens (FleetView, action cards).
 
 /// react-provider.spec.ts visualBillingInfo() for a non-billing case (Free
 /// plan, 2/2 agents): the capacity Banner React shows on every create case.
@@ -204,7 +208,7 @@ ParityCase _createAgent(
             "runtime's v2 fields; Cancel / Create Agent). Served like the "
             'React host: visualBillingInfo, the primed machines '
             '(Jiachengs-MacBook-Pro runtimes ${customProvider ? '[claude, codex]' : '[$runtime, ...]'} + offline studio), '
-            '${customProvider ? 'the scoped claude runtime-options catalog and the claude v2 form' : 'no runtime-options catalog, so RUNTIME stays "Select..." and the declared-Claude pre-admission MODEL picker shows the bundled catalog with the failed machine source'}.'
+            '${customProvider ? 'the scoped claude runtime-options catalog and the claude v2 form' : 'the React HTTP 200 fallback without runtime options, so RUNTIME stays "Select..." and the declared-Claude pre-admission MODEL picker shows the bundled catalog with the failed machine source'}.'
             '$extraNotes',
   settle: const Duration(milliseconds: 600),
   build: (ctx) {
@@ -223,6 +227,13 @@ ParityCase _createAgent(
         'machines': _createAgentMachines(fixture, machineRuntimes),
       },
       base: (_) => form,
+      // Pinned React react-provider.spec.ts:1490 transport fallback.
+      if (!customProvider)
+        'GET $server/computer-mbp/runtime-options': (_) => {
+          'agents': [],
+          'humans': [],
+          'results': [],
+        },
       if (customProvider)
         'GET $server/computer-mbp/runtime-options': (_) => {
           'context': 'new_agent',
@@ -286,7 +297,9 @@ ParityCase _createAgent(
               context,
               w,
               suggestedComputer: 'computer-mbp',
-              initialName: empty ? null : name ?? props['name'] as String?,
+              // Web: `prefilledName=""` for the empty case; only an absent
+              // prefill starts with a suggested name.
+              initialName: empty ? '' : name ?? props['name'] as String?,
               initialDescription: empty
                   ? null
                   : props['description'] as String?,
@@ -299,7 +312,7 @@ ParityCase _createAgent(
 /// react-provider.spec.ts: provider → Custom, fill API URL / API key, open
 /// MORE, fill the Claude command, scroll the modal back to the top.
 Future<void> _fillCustomProvider(WidgetTester t, ParityContext ctx) async {
-  await t.pump(const Duration(milliseconds: 300));
+  await t.pumpAndSettle();
   await t.tap(find.byKey(const ValueKey('runtime-provider')));
   await t.pump(const Duration(milliseconds: 200));
   await t.tap(find.text('Custom').last);
@@ -312,17 +325,17 @@ Future<void> _fillCustomProvider(WidgetTester t, ParityContext ctx) async {
     find.byKey(const ValueKey('runtime-apiKey')),
     'visual-test-key',
   );
-  await t.ensureVisible(find.text('MORE'));
+  await t.ensureVisible(find.text('More'));
   await t.pump(const Duration(milliseconds: 100));
-  await t.tap(find.text('MORE'));
+  await t.tap(find.text('More'));
   await t.pump(const Duration(milliseconds: 100));
   await t.enterText(find.byKey(const ValueKey('runtime-command')), 'claude');
   await t.pump(const Duration(milliseconds: 100));
   FocusManager.instance.primaryFocus?.unfocus();
   await t.pump(const Duration(milliseconds: 100));
   final modal = find
-      .descendant(
-        of: find.byType(SingleChildScrollView).first,
+      .ancestor(
+        of: find.byKey(const ValueKey('runtime-provider')),
         matching: find.byType(Scrollable),
       )
       .first;
@@ -342,7 +355,7 @@ final ParityCase _noComputer = ParityCase(
   notes:
       'showManagedAgentForm with zero computers → CreateAgentDialog '
       'needs-computer branch: DialogCard, info Banner "Connect a computer '
-      'first", Cancel / Connect a Computer.',
+      'first", Cancel / Add Computer.',
   settle: const Duration(milliseconds: 400),
   build: (ctx) {
     final fixture = MsFixture(ctx);
@@ -365,7 +378,7 @@ final ParityCase _noComputer = ParityCase(
 ParityCase _agentDetail({required bool lifecycle}) => agentDetailParityCase(
   'productUx',
   notes: lifecycle
-      ? ' Lifecycle actions = the header "More actions" overflow menu '
+      ? ' Lifecycle actions = the header "More Actions" overflow menu '
             '(Direct Message, Stop Agent, Restart / Reset), opened by the '
             'same mouse click as the React provider, retaining trigger hover.'
       : '',
@@ -511,6 +524,19 @@ final ParityCase _channelAddMember = ParityCase(
 // Settings: RaftSettingsPage with the destination list WorkspaceView.settings()
 // builds for an owner (workspace_view.dart), mobile layout.
 
+class _AvatarPhotoPickerFixture extends ImagePickerPlatform {
+  @override
+  Future<XFile?> getImageFromSource({
+    required ImageSource source,
+    ImagePickerOptions options = const ImagePickerOptions(),
+  }) async => XFile.fromData(
+    Uint8List.fromList(const [0x89, 0x50, 0x4E, 0x47]),
+    name: 'avatar.png',
+    path: 'avatar.png',
+    mimeType: 'image/png',
+  );
+}
+
 class _AvatarPickerFixture extends FileSelectorPlatform {
   @override
   Future<XFile?> openFile({
@@ -579,12 +605,24 @@ ParityCase _settings(
       'GET /servers/visual-server': (_) => fixture.server,
       'GET /servers/visual-server/invites': (_) => [],
       'GET /servers/visual-server/join-links': (_) => [],
-      'POST /auth/me/avatar': (_) =>
-          const RaftApiException('Avatar upload failed: upload_failed'),
+      'POST /auth/me/avatar': (_) => RaftApiException.response(
+        'Avatar upload failed: upload_failed',
+        status: 500,
+        body: const {'error': 'Avatar upload failed: upload_failed'},
+      ),
     });
-    if (uploadError) FileSelectorPlatform.instance = _AvatarPickerFixture();
+    if (uploadError) {
+      final documents = FileSelectorPlatform.instance;
+      final photos = ImagePickerPlatform.instance;
+      FileSelectorPlatform.instance = _AvatarPickerFixture();
+      ImagePickerPlatform.instance = _AvatarPhotoPickerFixture();
+      ctx.onDispose(() {
+        FileSelectorPlatform.instance = documents;
+        ImagePickerPlatform.instance = photos;
+      });
+    }
     return Scaffold(
-      body: _settingsPage(w, tab: tab, root: root),
+      body: _settingsPage(ctx, w, tab: tab, root: root),
     );
   },
   interact: uploadError
@@ -615,18 +653,26 @@ ParityCase _settings(
 );
 
 Widget _settingsPage(
+  ParityContext ctx,
   WorkspaceController w, {
   required String tab,
   required bool root,
-}) => WorkspaceSettings(
-  controller: w,
-  // React fixture state: Light mode, Brutal light theme.
-  appearance: const RaftAppearance(mode: ThemeMode.light),
-  onAppearance: (_) {},
-  presentation: PersonalPresentationStore(),
-  notifications: NativeNotificationService(platform: TargetPlatform.android),
-  onLogout: () async {},
-  initialTab: tab,
-  mobileRoot: root,
-  workspaceModeCard: WorkspaceModeSettingsCard(controller: w),
-);
+}) {
+  final presentation = PersonalPresentationStore();
+  final notifications = NativeNotificationService(
+    platform: TargetPlatform.android,
+  );
+  ctx.onDispose(presentation.dispose);
+  ctx.onDispose(notifications.dispose);
+  return WorkspaceSettings(
+    controller: w,
+    // React fixture state: Light mode, Brutal light theme.
+    appearance: const RaftAppearance(mode: ThemeMode.light),
+    onAppearance: (_) {},
+    presentation: presentation,
+    notifications: notifications,
+    onLogout: () async {},
+    initialTab: tab,
+    mobileRoot: root,
+  );
+}

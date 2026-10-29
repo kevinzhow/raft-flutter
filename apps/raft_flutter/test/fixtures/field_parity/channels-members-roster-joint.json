@@ -1,0 +1,85 @@
+{
+  "_source": "routes/channels.ts:3423-3500 GET /channels/:id/members (non-guest viewer), rows from channelService.ts:3588-3625 (agents), 5394-5440 (humans), 5516-5565 (externalMembers); joint union at 5622-5660",
+  "agents": [
+    {
+      "id": "a1000000-0000-4000-8000-0000000000aa",
+      "serverId": "s0000000-0000-4000-8000-000000000001",
+      "serverName": "Visual Server",
+      "serverSlug": "visual",
+      "name": "cindy",
+      "displayName": "Cindy",
+      "status": "active",
+      "avatarUrl": "pixel:robot",
+      "channelRole": "member",
+      "serverRole": "member",
+      "activity": "working",
+      "activityDetail": "Editing release notes",
+      "effectiveChannelRole": "member",
+      "channelAdminBasis": null,
+      "canChangeChannelRole": true
+    },
+    {
+      "id": "a2000000-0000-4000-8000-0000000000ab",
+      "serverId": "s0000000-0000-4000-8000-000000000002",
+      "serverName": "Acme Partners",
+      "serverSlug": "acme-partners",
+      "name": "acme-bot",
+      "displayName": null,
+      "status": "stopped",
+      "avatarUrl": null,
+      "channelRole": "member",
+      "serverRole": "member",
+      "activity": "offline",
+      "activityDetail": "",
+      "effectiveChannelRole": "member",
+      "channelAdminBasis": null,
+      "canChangeChannelRole": true
+    }
+  ],
+  "humans": [
+    {
+      "id": "u1000000-0000-4000-8000-0000000000c1",
+      "serverId": "s0000000-0000-4000-8000-000000000001",
+      "serverName": "Visual Server",
+      "serverSlug": "visual",
+      "name": "owner",
+      "displayName": "Server Owner",
+      "description": "Founder",
+      "avatarUrl": null,
+      "role": "owner",
+      "serverRole": "owner",
+      "channelRole": "member",
+      "gravatarHash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "effectiveChannelRole": "owner",
+      "channelAdminBasis": "server_role",
+      "canChangeChannelRole": false
+    },
+    {
+      "id": "u2000000-0000-4000-8000-0000000000c2",
+      "serverId": "s0000000-0000-4000-8000-000000000002",
+      "serverName": "Acme Partners",
+      "serverSlug": "acme-partners",
+      "name": "pat",
+      "displayName": "Pat (Acme)",
+      "description": null,
+      "avatarUrl": null,
+      "role": "member",
+      "serverRole": "member",
+      "channelRole": "admin",
+      "gravatarHash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "effectiveChannelRole": "admin",
+      "channelAdminBasis": "channel_role",
+      "canChangeChannelRole": true
+    }
+  ],
+  "externalMembers": [
+    {
+      "id": "e1000000-0000-4000-8000-0000000000e1",
+      "provider": "slack",
+      "displayName": "Dana (Slack)",
+      "handles": ["dana"],
+      "actorKind": "human",
+      "avatarUrl": null
+    }
+  ]
+}

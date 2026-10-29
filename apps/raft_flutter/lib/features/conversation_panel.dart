@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -8,6 +10,7 @@ import '../data/attachment_image_repository.dart';
 import '../data/source_channel_files_store.dart';
 import '../platform/attachment_files.dart';
 import 'chat_view.dart';
+import 'conversation_tab_reorder.dart';
 import 'message_selection.dart';
 import 'resource_view.dart';
 import 'source_channel_files_view.dart';
@@ -23,12 +26,14 @@ class ConversationPanel extends StatefulWidget {
     this.onTask,
     this.onMessageTask,
     this.onViewBilling,
+    this.onOpenChannelSettings,
     this.hideHeader = false,
   });
   final WorkspaceController controller;
 
   /// Forwarded to the timeline's history-limit banner link.
   final VoidCallback? onViewBilling;
+  final VoidCallback? onOpenChannelSettings;
 
   /// Source workspace ChatPanel hides both its channel header and tab controls.
   /// Its URI-selected task/files body and retained editor still belong to it.
@@ -141,7 +146,7 @@ class _ConversationPanelState extends State<ConversationPanel> {
     SourceChannelImageRendition rendition,
   ) {
     if (!authorized()) return null;
-    final lease = w.peekAttachmentImage(
+    final lease = w.attachmentMedia.peekImage(
       _imageKey(file, rendition),
       authorized: authorized,
     );
@@ -166,23 +171,23 @@ class _ConversationPanelState extends State<ConversationPanel> {
     final usesThumbnail = _usesThumbnail(file, rendition);
     final thumbnail = file.metadata['thumbnailUrl'];
     final key = _imageKey(file, rendition);
-    final lease = w.acquireAttachmentImage(
+    final lease = w.attachmentMedia.acquireImage(
       key,
       authorized: authorized,
+      // The 56px row tile takes whichever version is already on disk; a
+      // preview (no decode target) needs its own full-size rendition.
+      bestAvailable: rendition == SourceChannelImageRendition.thumbnail,
       load: (cancel) async {
         String url;
         if (usesThumbnail) {
           url = thumbnail;
         } else {
-          final result = await w.client.get(
-            '/attachments/${Uri.encodeComponent(file.id)}/url',
+          url = await w.attachmentMedia.url(
+            file.id,
+            disposition: null,
+            channelId: file.channelId,
           );
-          if (cancel.isCancelled ||
-              result is! Map ||
-              result['url'] is! String) {
-            throw const StaleAttachmentImage();
-          }
-          url = result['url'];
+          if (cancel.isCancelled) throw const StaleAttachmentImage();
         }
         return files.image(url, cancel: cancel);
       },
@@ -223,6 +228,7 @@ class _ConversationPanelState extends State<ConversationPanel> {
     }
     if (w.server != null) {
       final requested = w.location.chatTab ?? 'chat';
+      // ignore: raft_lints/avoid_render_where_without_or_else -- RaftLocation.chatTab only returns chat, tasks or files, all enum names.
       tab = RaftConversationTabId.values.firstWhere(
         (id) => id.name == requested,
       );
@@ -240,6 +246,10 @@ class _ConversationPanelState extends State<ConversationPanel> {
     for (final id in RaftConversationTabId.values) {
       if (!order.contains(id)) order.add(id);
     }
+    final tokens = RaftTokens.of(context);
+    // raft-ui ConversationPanelContent is `bg-layer-canvas` (the panel role);
+    // in dark the Tasks and Files pages are transparent over it.
+    final surface = tokens.colors['layer-conversation-tab-page']!;
     return Column(
       children: [
         if (hasTabs && !widget.hideHeader)
@@ -258,67 +268,80 @@ class _ConversationPanelState extends State<ConversationPanel> {
             ],
             value: tab,
             onChanged: selectTab,
+            // Web `SortableTabsList`: the new order is saved for every device.
+            reorderWrapper: conversationTabReorder(
+              order: order,
+              touch: RaftInteraction.of(context).touch,
+              onReorder: (next) => unawaited(
+                w.updateSidebarOrder({
+                  'channelPanelTabOrder': [for (final id in next) id.name],
+                }),
+              ),
+            ),
           ),
         Expanded(
-          child: RaftSectionPager<RaftConversationTabId>(
-            key: ValueKey(currentScope),
-            sections: hasTabs ? order : const [RaftConversationTabId.chat],
-            value: tab,
-            initiallyMounted: const [RaftConversationTabId.chat],
-            swipeEnabled:
-                hasTabs &&
-                !widget.hideHeader &&
-                MediaQuery.sizeOf(context).width <
-                    RaftLayoutMetrics.desktopBreakpoint,
-            onChanged: selectTab,
-            // Reuse the same widget for a visited data owner. Changing only
-            // the selected section must not update every page's root widget.
-            // Each page still listens to data, theme and permission changes.
-            builder: (context, id) => sectionBodies.putIfAbsent(
-              id,
-              () => switch (id) {
-                RaftConversationTabId.chat => KeyedSubtree(
-                  key: chatSlot,
-                  // PageView retains the laid-out chat, so swiping back paints
-                  // the cached rows immediately. Pager TickerMode gates its
-                  // presentation; hiding it with Offstage forced relayout.
-                  child: RaftChatView(
-                    controller: w,
-                    selectionHandle: widget.selectionHandle,
-                    onTask: widget.onMessageTask == null
-                        ? null
-                        : openMessageTask,
-                    onViewBilling: widget.onViewBilling == null
-                        ? null
-                        : viewBilling,
+          child: ColoredBox(
+            color: surface,
+            child: RaftSectionPager<RaftConversationTabId>(
+              key: ValueKey(currentScope),
+              sections: hasTabs ? order : const [RaftConversationTabId.chat],
+              value: tab,
+              initiallyMounted: const [RaftConversationTabId.chat],
+              swipeEnabled:
+                  hasTabs &&
+                  !widget.hideHeader &&
+                  RaftInteraction.of(context).touch,
+              onChanged: selectTab,
+              // Reuse the same widget for a visited data owner. Changing only
+              // the selected section must not update every page's root widget.
+              // Each page still listens to data, theme and permission changes.
+              builder: (context, id) => sectionBodies.putIfAbsent(
+                id,
+                () => switch (id) {
+                  RaftConversationTabId.chat => KeyedSubtree(
+                    key: chatSlot,
+                    // PageView retains the laid-out chat, so swiping back paints
+                    // the cached rows immediately. Pager TickerMode gates its
+                    // presentation; hiding it with Offstage forced relayout.
+                    child: RaftChatView(
+                      controller: w,
+                      selectionHandle: widget.selectionHandle,
+                      onTask: widget.onMessageTask == null
+                          ? null
+                          : openMessageTask,
+                      onViewBilling: widget.onViewBilling == null
+                          ? null
+                          : viewBilling,
+                      onOpenChannelSettings: widget.onOpenChannelSettings,
+                    ),
                   ),
-                ),
-                RaftConversationTabId.tasks => ResourceView(
-                  key: ValueKey('channel-tasks-$currentScope'),
-                  controller: w,
-                  section: 'tasks',
-                  channelId: channel!.id,
-                  onTask: widget.onTask == null ? null : openTask,
-                  onMessage: (id, message) async {
-                    setState(() => tab = RaftConversationTabId.chat);
-                    w.setChatTabPresentation(this, true);
-                    await w.jumpToMessage(id, message);
-                  },
-                ),
-                RaftConversationTabId.files => SourceChannelFilesView(
-                  key: ValueKey('channel-files-$currentScope'),
-                  controller: w,
-                  channelId: channel!.id,
-                  formatCreatedAt: formatter(context).shortDateTime,
-                  acquireImage: acquireImage,
-                  peekImage: peekImage,
-                  onOpenSource: (file) async {
-                    setState(() => tab = RaftConversationTabId.chat);
-                    w.setChatTabPresentation(this, true);
-                    await w.jumpToMessage(channel.id, file.messageId);
-                  },
-                ),
-              },
+                  RaftConversationTabId.tasks => ResourceView(
+                    key: ValueKey('channel-tasks-$currentScope'),
+                    controller: w,
+                    section: 'tasks',
+                    channelId: channel!.id,
+                    onTask: widget.onTask == null ? null : openTask,
+                    onMessage: (id, message) async {
+                      setState(() => tab = RaftConversationTabId.chat);
+                      w.setChatTabPresentation(this, true);
+                      await w.jumpToMessage(id, message);
+                    },
+                  ),
+                  RaftConversationTabId.files => SourceChannelFilesView(
+                    key: ValueKey('channel-files-$currentScope'),
+                    controller: w,
+                    channelId: channel!.id,
+                    formatCreatedAt: formatter(context).shortDateTime,
+                    acquireImage: acquireImage,
+                    peekImage: peekImage,
+                    onOpenSource: (file) async {
+                      setState(() => tab = RaftConversationTabId.chat);
+                      w.setChatTabPresentation(this, true);
+                      await w.jumpToMessage(channel.id, file.messageId);
+                    },
+                  ),
+                },
+              ),
             ),
           ),
         ),

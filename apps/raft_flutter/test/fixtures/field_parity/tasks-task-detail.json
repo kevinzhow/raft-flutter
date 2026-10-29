@@ -1,0 +1,41 @@
+{
+  "task": {
+    "id": "2f6b7c1e-3a4d-4e51-9a0b-111111111111",
+    "messageId": "5c0d9e22-7a31-4b6f-8d44-222222222222",
+    "channelId": "a1b2c3d4-0000-4000-8000-000000000001",
+    "channelName": "design",
+    "channelType": "channel",
+    "taskNumber": 12,
+    "title": "Ship the onboarding checklist",
+    "description": "Cover the empty states.",
+    "status": "in_review",
+    "createdByType": "user",
+    "createdById": "u-0000-4000-8000-000000000001",
+    "createdByName": "Alice Chen",
+    "createdByMembershipStatus": "active",
+    "claimedByType": "agent",
+    "claimedById": "ag-0000-4000-8000-000000000002",
+    "claimedByName": "cindy",
+    "claimedAt": "2026-10-10T08:15:00.000Z",
+    "completedAt": null,
+    "requiresResourceReceipt": false,
+    "resourceReceipt": null,
+    "resourceReceiptRecordedAt": null,
+    "resourceTeardownOwnerAgentId": null,
+    "resourceExpiryFollowupId": null,
+    "createdAt": "2026-10-09T10:00:00.000Z",
+    "updatedAt": "2026-10-11T09:30:00.000Z",
+    "revision": 5,
+    "taskCurrentProjection": {
+      "title": "Ship the onboarding checklist v2",
+      "description": "Cover the empty states.",
+      "revision": 5,
+      "superseded": true,
+      "amendedAt": "2026-10-11T09:30:00.000Z",
+      "amendedByType": "user",
+      "amendedByName": "alice",
+      "source": "tasks_current_projection"
+    },
+    "isLegacy": false
+  }
+}

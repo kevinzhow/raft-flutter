@@ -4,15 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark compact menu retains touch and keyboard actions',
+      '${dark ? 'dark' : 'light'} compact menu retains touch and keyboard actions',
       (t) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
@@ -24,7 +21,7 @@ void main() {
         late StateSetter update;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: Center(
                 child: RaftDensityScope(
@@ -57,7 +54,8 @@ void main() {
         await t.pumpAndSettle();
         final row = find.byType(RaftMenuItem);
         final rect = t.getRect(row);
-        expect(rect.height, family == RaftFamily.brutal ? 36 : 31.5);
+        final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
+        expect(rect.height, tokens.isRaftLook ? 36 : 31.5);
         await t.tapAt(Offset(rect.center.dx, rect.bottom + 5));
         await t.pump();
         expect(calls, 1);

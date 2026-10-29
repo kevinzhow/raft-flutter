@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/resource_snapshot_cache.dart';
+import 'package:raft_flutter/data/server_task_window.dart';
 import 'package:raft_flutter/data/task_board_reconcile.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
@@ -79,7 +81,7 @@ void main() {
   });
 
   Widget page() => MaterialApp(
-    theme: raftTheme(RaftFamily.elegant),
+    theme: raftTheme(),
     home: RaftDensityScope(
       density: RaftDensity.desktop,
       child: Scaffold(
@@ -92,11 +94,15 @@ void main() {
     ),
   );
   Widget away() => MaterialApp(
-    theme: raftTheme(RaftFamily.elegant),
+    theme: raftTheme(),
     home: const Scaffold(body: SizedBox.expand()),
   );
   List lane(dynamic state, String status) => state.lanes[status] as List;
-  final spinner = find.byType(CircularProgressIndicator);
+  final spinner = find.byType(RaftSpinner);
+  ServerTaskWindow? window() {
+    final slot = w.resourceSnapshots.serverPage(serverTasksPage);
+    return slot is ServerTaskWindow ? slot : null;
+  }
 
   Future<dynamic> mountBoard(WidgetTester tester) async {
     await tester.pumpWidget(page());
@@ -118,6 +124,9 @@ void main() {
       final cached = lane(state, 'todo')[45];
       await tester.pumpWidget(away());
       await tester.pumpAndSettle();
+      // The workspace page leaves its board on the session, not in the tasks slot.
+      expect(w.resourceSnapshots.read('tasks', state.identityAuthority), isNull);
+      expect(window(), isNotNull);
       final requests = w.taskQueries.length;
       w.hold = Completer<void>();
       await tester.pumpWidget(page());
@@ -250,8 +259,9 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pumpAndSettle();
-    expect(client.posts, contains('PATCH /tasks/t80/status'));
-    expect(client.bodies.last, {'status': 'in_progress'});
+    // Task 80 has no holder: starting it is the claim.
+    expect(client.posts, contains('PATCH /tasks/t80/claim'));
+    expect(client.posts, isNot(contains('PATCH /tasks/t80/status')));
   });
 
   testWidgets(
@@ -294,15 +304,175 @@ void main() {
     await tester.pumpAndSettle();
     expect(lane(state, 'todo'), hasLength(30));
     await tester.pumpWidget(away());
-    expect(
-      w.resourceSnapshots.read('tasks', state.identityAuthority),
-      isNotNull,
-    );
+    expect(w.resourceSnapshots.read('tasks', state.identityAuthority), isNull);
+    expect(window()?.snapshot.identity, state.identityAuthority);
     unawaited(w.selectServer(RaftRecord({'id': 's2', 'role': 'owner'})));
     w.server = RaftRecord({'id': 's1', 'role': 'member'});
     client.selectServer('s1');
     expect(w.resourceSnapshots.read('tasks', state.identityAuthority), isNull);
+    expect(w.resourceSnapshots.serverPage(serverTasksPage), isNull);
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('a task event while the page is away patches one card and does not fetch', (
+    tester,
+  ) async {
+    await mountBoard(tester);
+    await tester.pumpWidget(away());
+    await tester.pumpAndSettle();
+    final requests = w.taskQueries.length;
+    client.emit('task:updated', {
+      'channelId': 'c1',
+      'task': {...taskRow(80, 'todo'), 'title': 'Patched away'},
+    });
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(w.taskQueries, hasLength(requests));
+    expect(window()?.needsRevalidate, isFalse);
+    w.hold = Completer<void>();
+    await tester.pumpWidget(page());
+    expect(find.text('Patched away'), findsOneWidget);
+    expect(spinner, findsNothing);
+    expect(w.taskQueries, hasLength(requests + raftTaskStatuses.length));
+    w.hold!.complete();
+    w.hold = null;
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('reconnect and an unnamed task while away only mark the window', (
+    tester,
+  ) async {
+    await mountBoard(tester);
+    await tester.pumpWidget(away());
+    await tester.pumpAndSettle();
+    final requests = w.taskQueries.length;
+    client.emit('connected', null);
+    client.emit('task:updated', {'channelId': 'c1'});
+    client.emit('task:updated', {
+      'serverId': 'other',
+      'task': {...taskRow(80, 'todo'), 'title': 'Other server'},
+    });
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(w.taskQueries, hasLength(requests));
+    expect(window()?.needsRevalidate, isTrue);
+    expect(find.text('Other server'), findsNothing);
+    w.hold = Completer<void>();
+    await tester.pumpWidget(page());
+    expect(find.text('Task 80'), findsOneWidget);
+    expect(find.text('Other server'), findsNothing);
+    expect(window()?.needsRevalidate, isFalse);
+    expect(w.taskQueries, hasLength(requests + raftTaskStatuses.length));
+    w.hold!.complete();
+    w.hold = null;
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a late revalidation cannot rewrite the board after the page leaves', (
+    tester,
+  ) async {
+    await mountBoard(tester);
+    await tester.pumpWidget(away());
+    await tester.pumpAndSettle();
+    w.hold = Completer<void>();
+    await tester.pumpWidget(page());
+    await tester.pump();
+    w.tasks[0] = {...w.tasks[0], 'title': 'Should not land'};
+    await tester.pumpWidget(away());
+    await tester.pump();
+    w.hold!.complete();
+    w.hold = null;
+    await tester.pumpAndSettle();
+    expect(
+      window()?.snapshot.rows.any((row) => row['title'] == 'Should not land'),
+      isFalse,
+    );
+    w.hold = Completer<void>();
+    await tester.pumpWidget(page());
+    expect(find.text('Task 80'), findsOneWidget);
+    expect(find.text('Should not land'), findsNothing);
+    w.hold!.complete();
+    w.hold = null;
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a channel lost while away is absent on the first frame', (
+    tester,
+  ) async {
+    await mountBoard(tester);
+    await tester.pumpWidget(away());
+    await tester.pumpAndSettle();
+    final requests = w.taskQueries.length;
+    w.channels = [
+      w.channels.first,
+      RaftChannel({
+        'id': 'c2',
+        'name': 'Secret',
+        'joined': false,
+        'isPrivate': true,
+      }),
+    ];
+    w.hold = Completer<void>();
+    await tester.pumpWidget(page());
+    final dynamic state = tester.state(find.byType(ResourceView));
+    expect(lane(state, 'todo'), hasLength(59));
+    expect(lane(state, 'todo').any((row) => row['id'] == 't79'), isFalse);
+    expect(w.taskQueries, hasLength(requests + raftTaskStatuses.length));
+    w.hold!.complete();
+    w.hold = null;
+    await tester.pumpAndSettle();
+    expect(w.taskQueries, hasLength(requests + raftTaskStatuses.length));
+  });
+
+  testWidgets('logout drops the board and a later event cannot recreate it', (
+    tester,
+  ) async {
+    await mountBoard(tester);
+    await tester.pumpWidget(away());
+    await tester.pumpAndSettle();
+    final requests = w.taskQueries.length;
+    w.revokeServer('s1');
+    expect(w.resourceSnapshots.serverPage(serverTasksPage), isNull);
+    client.emit('task:updated', {
+      'task': {...taskRow(80, 'todo'), 'title': 'After logout'},
+    });
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(w.resourceSnapshots.serverPage(serverTasksPage), isNull);
+    expect(w.taskQueries, hasLength(requests));
+    w.server = RaftRecord({'id': 's1', 'role': 'owner'});
+    client.selectServer('s1');
+    w.channels = [
+      RaftChannel({'id': 'c1', 'name': 'General', 'joined': true}),
+      RaftChannel({
+        'id': 'c2',
+        'name': 'Secret',
+        'joined': true,
+        'isPrivate': true,
+      }),
+    ];
+    w.hold = Completer<void>();
+    await tester.pumpWidget(page());
+    expect(find.text('Task 80'), findsNothing);
+    expect(find.text('After logout'), findsNothing);
+    w.hold!.complete();
+    w.hold = null;
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('an account change does not show the previous board', (
+    tester,
+  ) async {
+    await mountBoard(tester);
+    await tester.pumpWidget(away());
+    await tester.pumpAndSettle();
+    client.user = RaftRecord({'id': 'bob'});
+    w.hold = Completer<void>();
+    await tester.pumpWidget(page());
+    await tester.pump();
+    expect(find.text('Task 80'), findsNothing);
+    expect(w.resourceSnapshots.serverPage(serverTasksPage), isNull);
+    w.hold!.complete();
+    w.hold = null;
+    await tester.pumpAndSettle();
+    expect(find.text('Task 80'), findsWidgets);
   });
 
   testWidgets('a mounted role change resets the board', (tester) async {
@@ -314,7 +484,7 @@ void main() {
     expect(state.laneCursors['todo'], '30');
   });
 
-  testWidgets('the task list keeps its loaded pages across a task event', (
+  testWidgets('the task list keeps its loaded lane pages across a task event', (
     tester,
   ) async {
     await tester.pumpWidget(page());
@@ -322,27 +492,65 @@ void main() {
     final dynamic state = tester.state(find.byType(ResourceView));
     await tester.tap(find.text('List'));
     await tester.pumpAndSettle();
-    expect(state.rows, hasLength(50));
-    await state.load(append: true);
+    // Source serverTaskPages: the server-wide list walks one cursor per status
+    // lane (a first page each), exactly like the board.
+    expect(lane(state, 'todo'), hasLength(30));
+    expect(lane(state, 'in_progress'), hasLength(5));
+    expect(state.laneCursors['todo'], '30');
+    expect(state.laneCursors['in_progress'], isNull);
+    await state.moreLane('todo');
     await tester.pumpAndSettle();
-    expect(state.rows, hasLength(85));
+    expect(state.rows, hasLength(65));
     final requests = w.taskQueries.length;
     client.emit('task:updated', {
       'channelId': 'c1',
-      'task': {...taskRow(3, 'done'), 'title': 'Listed 3'},
+      'task': {...taskRow(79, 'in_review'), 'title': 'Listed 79'},
     });
     await tester.pump(const Duration(milliseconds: 300));
-    expect(state.rows, hasLength(85));
+    expect(state.rows, hasLength(65));
     expect(
-      state.rows.firstWhere((t) => t['id'] == 't3')['status'],
-      'done',
+      state.rows.firstWhere((t) => t['id'] == 't78')['status'],
+      'todo',
     );
     expect(w.taskQueries, hasLength(requests));
-    // Revalidation spans the loaded list.
+    // Revalidation spans each lane's loaded window.
     await state.load(keep: true);
     await tester.pumpAndSettle();
-    expect(w.taskQueries.last['limit'], 85);
-    expect(state.rows, hasLength(85));
+    final todoQuery = w.taskQueries.lastWhere((q) => q['status'] == 'todo');
+    // t79 moved to In Review: the Todo window is now 59 tasks.
+    expect(todoQuery['limit'], 59);
+    expect(lane(state, 'in_progress'), hasLength(5));
+  });
+
+  testWidgets('each status lane of the list has its own Load more', (
+    tester,
+  ) async {
+    await tester.pumpWidget(page());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('List'));
+    await tester.pumpAndSettle();
+    final dynamic state = tester.state(find.byType(ResourceView));
+    // Only Todo has another page; in-progress ends at five tasks.
+    final more = find.byKey(const ValueKey('task-load-more-todo'));
+    await tester.dragUntilVisible(
+      more,
+      find.byType(CustomScrollView).first,
+      const Offset(0, -300),
+    );
+    expect(more, findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('task-load-more-in_progress')),
+      findsNothing,
+    );
+    expect(find.text('Load More'), findsOneWidget);
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    expect(lane(state, 'todo'), hasLength(60));
+    expect(
+      w.taskQueries.last,
+      containsPair('cursor', '30'),
+    );
+    expect(w.taskQueries.last['status'], 'todo');
   });
 
   group('task window helpers', () {

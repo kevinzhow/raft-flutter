@@ -6,13 +6,22 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/source_mobile_app_badge.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'workspace_shell_contract_test.dart' show mountShell, openHelp, retire;
 import 'workspace_source_location_contract_test.dart' show pageFixture, frames;
+import 'flutter_test_config.dart' show leakDebt;
 
 Future<void> shellFonts(WidgetTester t) => t.runAsync(() async {
-  for (final family in ['HankenGrotesk', 'Inter', 'Geist', 'GeistMono']) {
+  for (final family in [
+    'SpaceGrotesk',
+    'SpaceMono',
+    'HankenGrotesk',
+    'Inter',
+    'Geist',
+    'GeistMono',
+  ]) {
     final data = await rootBundle.load(
       'packages/raft_ui/assets/fonts/$family.ttf',
     );
@@ -23,32 +32,30 @@ Future<void> shellFonts(WidgetTester t) => t.runAsync(() async {
 });
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  // Leak debt (other): see docs/development.md, Leak tracking.
+  leakDebt(const ['ValueNotifier<bool>']);
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K08b] $family/$dark actual four footer entries retain Source slot geometry and unseen Help lifecycle',
+      '[K08b] ${dark ? 'dark' : 'light'} native bell moves to global row; footer Help/Settings retain geometry and unseen lifecycle',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         api.routes['GET /agents'] = (_) => [];
         api.routes['GET /servers/s1/members'] = (_) => [];
         await shellFonts(t);
-        await mountShell(t, w, family, dark);
+        await mountShell(t, w, dark);
         final help = find.byKey(const Key('rail-help'));
-        final mode = find.byKey(const Key('workspace-mode-toggle'));
         final settings = find.byKey(const Key('rail-settings'));
         final bell = find.byType(RaftMobileNotificationButton);
-        expect(t.getRect(bell).top, 592);
-        expect(t.getRect(help).top, 642);
-        expect(t.getRect(mode).top, 692);
-        expect(t.getRect(settings).top, 742);
-        expect(t.getSize(bell), const Size(40, 40));
-        final glyphs = t.widgetList<RaftIcon>(
-          find.descendant(of: mode, matching: find.byType(RaftIcon)),
+        // Notifications move into the 48px global row. Help and Settings keep
+        // their 40px footer slots, 6px gap and 8px bottom inset.
+        expect(
+          find.ancestor(of: bell, matching: find.byType(RaftWorkspaceTopBar)),
+          findsOneWidget,
         );
-        expect(glyphs.first.size, family == RaftFamily.brutal ? 18 : 16);
+        expect(t.getRect(bell).top, 5.5);
+        expect(t.getRect(help).top, 706);
+        expect(t.getRect(settings).top, 752);
+        expect(t.getSize(bell), const Size(36, 36));
         expect(t.widget<RaftWorkspaceHelpMenu>(help).attention, true);
         final attention = find.descendant(
           of: help,
@@ -92,7 +99,7 @@ void main() {
     );
 
     testWidgets(
-      '[K08d] $family/$dark actual Pinned and Joint groups reserve measured Source empty drag areas',
+      '[K08d] ${dark ? 'dark' : 'light'} actual Pinned and Joint groups reserve measured Source empty drag areas',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         api.routes['GET /agents'] = (_) => [];
@@ -100,7 +107,7 @@ void main() {
         await shellFonts(t);
         final presentation = PersonalPresentationStore(desktop: false);
         addTearDown(presentation.dispose);
-        await mountShell(t, w, family, dark, presentation: presentation);
+        await mountShell(t, w, dark, presentation: presentation);
         final pinned = find.byKey(
           const ValueKey('sidebar-group-system:pinned'),
         );

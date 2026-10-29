@@ -8,7 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/platform/system_bars.dart';
 import 'package:raft_flutter/features/auth_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
+// Full theme matrix on purpose (theme/token/recipe test): never sampled, see
+// package:raft_ui/test_themes.dart.
 void main() {
   testWidgets('Android auth paints header color over opaque page safe area', (
     tester,
@@ -24,9 +27,13 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
     for (final theme in [
-      raftTheme(RaftFamily.brutal),
-      raftTheme(RaftFamily.elegant),
-      raftTheme(RaftFamily.elegant, dark: true),
+      for (final id in raftThemeMatrix([
+        raftThemePackId,
+        elegantThemePackId,
+        brutalThemePackId,
+      ], look: raftLookOf))
+        for (final dark in [false, true])
+          raftTheme(pack: packForThemeId(id), dark: dark),
     ]) {
       await tester.pumpWidget(
         MaterialApp(
@@ -46,13 +53,10 @@ void main() {
       await tester.pumpAndSettle();
       final context = tester.element(find.byType(AuthView));
       final tokens = RaftTokens.of(context);
-      final surface = tester.widget<RaftSystemBarSurface>(
-        find.byType(RaftSystemBarSurface),
+      final stripColor = raftStatusBarResolvedColor(
+        tester.renderObject(find.byType(RaftStatusBarStrip)),
       );
-      expect(
-        surface.statusBarBackground,
-        tokens.brutal ? tokens.product.softSignal : tokens.panel,
-      );
+      expect(stripColor, tokens.colors['layer-auth-header']);
       final boundary =
           boundaryKey.currentContext!.findRenderObject()!
               as RenderRepaintBoundary;
@@ -70,7 +74,7 @@ void main() {
         ).toARGB32();
       }
 
-      expect(pixel(4, 16), surface.statusBarBackground.toARGB32());
+      expect(pixel(4, 16), stripColor.toARGB32());
       expect(pixel(4, 16), pixel(4, 40));
       expect(pixel(4, 903), tokens.canvas.toARGB32());
       image.dispose();
@@ -96,9 +100,13 @@ void main() {
     'theme changes update transparent system bars and icon contrast',
     (tester) async {
       for (final theme in [
-        raftTheme(RaftFamily.brutal),
-        raftTheme(RaftFamily.elegant),
-        raftTheme(RaftFamily.elegant, dark: true),
+        for (final id in raftThemeMatrix([
+          raftThemePackId,
+          elegantThemePackId,
+          brutalThemePackId,
+        ], look: raftLookOf))
+          for (final dark in [false, true])
+            raftTheme(pack: packForThemeId(id), dark: dark),
       ]) {
         await tester.pumpWidget(
           MaterialApp(
@@ -175,33 +183,35 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Android requests edge-to-edge without immersive hiding', (
-    tester,
-  ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    final modes = <String>[];
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      (call) async {
-        if (call.method == 'SystemChrome.setEnabledSystemUIMode') {
-          modes.add(call.arguments as String);
-        }
-        return null;
-      },
-    );
-    addTearDown(() {
-      debugDefaultTargetPlatformOverride = null;
+  for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+    testWidgets('$platform requests edge-to-edge without immersive hiding', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = platform;
+      final modes = <String>[];
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
-        null,
+        (call) async {
+          if (call.method == 'SystemChrome.setEnabledSystemUIMode') {
+            modes.add(call.arguments as String);
+          }
+          return null;
+        },
       );
+      addTearDown(() {
+        debugDefaultTargetPlatformOverride = null;
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        );
+      });
+      await tester.pumpWidget(
+        const MaterialApp(home: RaftSystemBars(child: SizedBox.expand())),
+      );
+      await tester.pump();
+      expect(modes, ['SystemUiMode.edgeToEdge']);
+      expect(tester.takeException(), isNull);
+      debugDefaultTargetPlatformOverride = null;
     });
-    await tester.pumpWidget(
-      const MaterialApp(home: RaftSystemBars(child: SizedBox.expand())),
-    );
-    await tester.pump();
-    expect(modes, ['SystemUiMode.edgeToEdge']);
-    expect(tester.takeException(), isNull);
-    debugDefaultTargetPlatformOverride = null;
-  });
+  }
 }

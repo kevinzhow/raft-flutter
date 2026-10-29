@@ -1,0 +1,77 @@
+{
+  "package": "flutter_markdown_plus",
+  "version": "1.0.12",
+  "archiveSize": 775768,
+  "archiveSha256": "fce641d6c2106cc495de1cd603f97a4f9d615a97a64011928ded380dbdade935",
+  "files": [
+    {
+      "path": "analysis_options.yaml",
+      "size": 1322,
+      "sha256": "0828d05a380f8b1a3be44305d990eb1c80cd4f235c91660dab012f967f608d6c"
+    },
+    {
+      "path": "AUTHORS",
+      "size": 284,
+      "sha256": "2e4233b13952bbe0f15242ef0f79698471ffc2aabd5edad1e4c0255fd6903098"
+    },
+    {
+      "path": "pubspec.yaml",
+      "size": 1169,
+      "sha256": "6891a567abd85a384630061b07ee7328f0ec5c03e742473082585eec0aa3af5b"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size": 16343,
+      "sha256": "89590846bf763407e989f86a447fa05785daad1c811311c5c6c83a68830480b7"
+    },
+    {
+      "path": "lib/flutter_markdown_plus.dart",
+      "size": 308,
+      "sha256": "89c7fcababe71cebcf3941b17cb8be9bbfd6139c689d8a2e943aad3184571eb4"
+    },
+    {
+      "path": "lib/src/widget.dart",
+      "size": 20329,
+      "sha256": "c00bfe6d794c303d1dcc9f85d810c40e09061af3bb1babade14232ce0d6fbd80"
+    },
+    {
+      "path": "lib/src/_functions_io.dart",
+      "size": 3751,
+      "sha256": "ae8674b982278da0bf168a6a5e3f13419c42800f5de9accdd984350a7fc49fe6"
+    },
+    {
+      "path": "lib/src/builder.dart",
+      "size": 34759,
+      "sha256": "f1e276216dcc9715b80bc10a4dbcf16d2520e90dae4db477c8f1b7722b2be64d"
+    },
+    {
+      "path": "lib/src/_functions_web.dart",
+      "size": 3791,
+      "sha256": "dc8d6e3e6f70fff945dccafe616d2491ddc826b3b2f2f7024526ebfe52bcc383"
+    },
+    {
+      "path": "lib/src/style_sheet.dart",
+      "size": 30198,
+      "sha256": "557602085e5da1a9afc7e3fc44a36f3fb4f96d0d0b6bdb7ba66005c6d730d9ce"
+    },
+    {
+      "path": "LICENSE",
+      "size": 1519,
+      "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+    },
+    {
+      "path": "README.md",
+      "size": 12682,
+      "sha256": "80c184879d5954dde0b52fb16e22b78ae9ec64cc1fdfd60d970eb88de784349d"
+    }
+  ],
+  "archiveUrl": "https://pub.dev/api/archives/flutter_markdown_plus-1.0.12.tar.gz",
+  "upstreamRepository": "https://github.com/foresightmobile/flutter_markdown_plus",
+  "sourceCommit": null,
+  "scope": "Runtime library and package metadata only; upstream examples, tests, screenshots and scripts are not vendored.",
+  "localChanges": [
+    "lib/src/builder.dart: optional scrollbar decorator hook; null keeps upstream Scrollbar",
+    "lib/src/widget.dart: expose and forward decorator hook; rebuild if callback changes",
+    "pubspec.yaml: remove publishing-only screenshots metadata because the referenced images are omitted from this runtime subset; dependency versions and SDK constraints are unchanged"
+  ]
+}

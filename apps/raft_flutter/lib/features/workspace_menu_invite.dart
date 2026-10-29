@@ -2,11 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/raft_location.dart';
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
+import '../data/feature_flag_client_facts.dart';
+import 'management_support.dart'
+    show
+        cachedServerFlag,
+        pageIdentity,
+        readPageSnapshot,
+        rememberServerFlag,
+        writePageSnapshot;
 
 /// InviteHumanDialog.tsx: By email (one row per invitee, per-row role when
 /// guest invites are on) and By link (the server's join link with its limits).
@@ -31,8 +40,8 @@ Future<bool> showWorkspaceMenuInvite(
       role == workspace.server?.string('role') &&
       workspace.can('inviteMembers');
   if (!current()) return false;
-  final sent = await showRaftDialog<bool>(
-    context: context,
+  final sent = await showRaftForm<bool>(
+    context,
     builder: (_) => _InviteDialog(
       workspace: workspace,
       serverId: serverId!,
@@ -57,15 +66,76 @@ class _InviteDialog extends StatefulWidget {
 
 class _InviteDialogState extends State<_InviteDialog> {
   WorkspaceController get w => widget.workspace;
-  bool guest = false, loading = true, copied = false, busy = false;
-  Map<String, dynamic>? link;
+  static const _guestFlag = 'server_guest_v0';
+  static const _linkKey = 'invite-dialog:link';
+  static const _billingKey = 'invite-dialog:billing';
+
+  // The last accepted guest gate, seat summary and join link (this session,
+  // in memory; the flag also from the device) paint at the first frame and
+  // are revalidated in place, so the dialog neither waits nor reflows.
+  late bool guest = cachedServerFlag(w, _guestFlag) ?? false;
+  bool copied = false, busy = false;
+  late Map<String, dynamic>? link = _cachedLink;
+  late bool loading = link == null;
   Timer? copiedTimer;
+
+  Map<String, dynamic>? get _cachedLink {
+    final value = readPageSnapshot(w, _linkKey)?['link'];
+    return value is Map ? Map<String, dynamic>.from(value) : null;
+  }
+
+  void _rememberLink() =>
+      writePageSnapshot(w, _linkKey, pageIdentity(w), {'link': link});
 
   @override
   void initState() {
     super.initState();
     unawaited(loadGuestFlag());
     unawaited(loadLink());
+    unawaited(loadBilling());
+  }
+
+  /// Web `loadBilling` (GET /billing/subscription): a failed summary leaves the
+  /// seat banner off.
+  late Map<String, dynamic>? billing = () {
+    final value = readPageSnapshot(w, _billingKey)?['billing'];
+    return value is Map ? Map<String, dynamic>.from(value) : null;
+  }();
+  Future<void> loadBilling() async {
+    final identity = pageIdentity(w);
+    try {
+      final value = await w.query('/billing/subscription');
+      if (mounted && value is Map) {
+        final next = Map<String, dynamic>.from(value);
+        setState(() => billing = next);
+        writePageSnapshot(w, _billingKey, identity, {'billing': next});
+      }
+    } catch (_) {}
+  }
+
+  /// shared getBillingCapacityLimitState(capacity, usage, "human") +
+  /// formatBillingCapacityLimitMessage(..., " Upgrade for more.").
+  String? get seatLimitMessage {
+    final capacity = billing?['capacity'], usage = billing?['usage'];
+    if (capacity is! Map || usage is! Map) return null;
+    String? label;
+    num? used, limit;
+    final maxHumans = capacity['maxHumans'], humans = usage['humans'];
+    final maxSeats = capacity['maxUniversalSeats'],
+        seats = usage['universalSeats'];
+    if (maxHumans is num &&
+        humans is num &&
+        maxHumans != -1 &&
+        humans + 1 > maxHumans) {
+      (label, used, limit) = ('Human seat limit', humans, maxHumans);
+    } else if (maxSeats is num &&
+        seats is num &&
+        maxSeats != -1 &&
+        seats + 1 > maxSeats) {
+      (label, used, limit) = ('Seat limit', seats, maxSeats);
+    }
+    if (label == null) return null;
+    return '${raftText(context, label)} reached ($used/$limit on ${billing?['displayName']} plan).${raftText(context, ' Upgrade for more.')}';
   }
 
   @override
@@ -77,27 +147,42 @@ class _InviteDialogState extends State<_InviteDialog> {
   // useServerFeatureFlag(SERVER_GUEST_FEATURE_FLAG_KEY): a client read of a
   // server-owned gate; it decides what to offer, never what is permitted.
   Future<void> loadGuestFlag() async {
+    final identity = pageIdentity(w);
     try {
       final result = await w.command(
         'POST',
         '/feature-flags/evaluate',
-        data: {
-          'keys': ['server_guest_v0'],
-          'serverId': widget.serverId,
-          'platform': 'web',
-        },
+        data: featureFlagEvaluateBody(
+          keys: ['server_guest_v0'],
+          serverId: widget.serverId,
+        ),
       );
       final on =
           result is Map &&
           (result['evaluations'] as List? ?? []).whereType<Map>().any(
             (f) => f['key'] == 'server_guest_v0' && f['enabled'] == true,
           );
+      rememberServerFlag(w, _guestFlag, on, identity);
       if (mounted) setState(() => guest = on);
     } catch (_) {}
   }
 
+  /// InviteHumanDialog `setError(err.response?.data?.error ||
+  /// "Failed to prepare join link")`. The dialog's own error row belongs to
+  /// the email form, so a join-link failure is reported as a toast rather
+  /// than dropped.
+  void linkFailed(Object e) => showRaftToast(
+    context,
+    userErrorText(
+      e,
+      fallback: 'Failed to prepare join link',
+      where: 'join link',
+    ),
+  );
+
   // The first existing join link, else a fresh unlimited one.
   Future<void> loadLink() async {
+    final identity = pageIdentity(w);
     try {
       final links = await w.query('/servers/${widget.serverId}/join-links');
       var existing = links is List ? links.whereType<Map>().firstOrNull : null;
@@ -114,9 +199,13 @@ class _InviteDialogState extends State<_InviteDialog> {
           link = existing == null ? null : Map<String, dynamic>.from(existing);
           loading = false;
         });
+        if (identity == pageIdentity(w)) _rememberLink();
       }
-    } catch (_) {
-      if (mounted) setState(() => loading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() => loading = false);
+        linkFailed(e);
+      }
     }
   }
 
@@ -167,8 +256,10 @@ class _InviteDialogState extends State<_InviteDialog> {
         setState(
           () => link = next == null ? null : Map<String, dynamic>.from(next),
         );
+        _rememberLink();
       }
-    } catch (_) {
+    } catch (e) {
+      if (mounted) linkFailed(e);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -180,8 +271,12 @@ class _InviteDialogState extends State<_InviteDialog> {
     setState(() => busy = true);
     try {
       await w.command('DELETE', '/servers/${widget.serverId}/join-links/$id');
-      if (mounted) setState(() => link = null);
-    } catch (_) {
+      if (mounted) {
+        setState(() => link = null);
+        _rememberLink();
+      }
+    } catch (e) {
+      if (mounted) linkFailed(e);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -190,22 +285,20 @@ class _InviteDialogState extends State<_InviteDialog> {
   Future<void> send(List<(String, String)> invites) async {
     for (final (email, _) in invites) {
       final error = sourceInviteEmailError(email);
-      if (error != null) throw StateError(error);
+      if (error != null) throw RaftUserError(error);
     }
     if (!widget.current()) {
-      throw StateError('Invitation is unavailable.');
+      throw const RaftUserError('Failed to send invites');
     }
-    try {
-      await Future.wait([
-        for (final (email, role) in invites)
-          w.client.post(
-            '/servers/${widget.serverId}/invites',
-            data: {'email': email, 'role': role},
-          ),
-      ]);
-    } on RaftApiException catch (e) {
-      throw StateError(e.message);
-    }
+    // A failed invite rethrows as caught: the dialog shows the server's text
+    // or `member.invite.failedSend` through the error scope.
+    await Future.wait([
+      for (final (email, role) in invites)
+        w.client.post(
+          '/servers/${widget.serverId}/invites',
+          data: {'email': email, 'role': role},
+        ),
+    ]);
     if (mounted) Navigator.of(context).pop(true);
   }
 
@@ -214,6 +307,18 @@ class _InviteDialogState extends State<_InviteDialog> {
     onClose: () => Navigator.of(context).pop(false),
     onSend: send,
     canOfferGuest: guest,
+    seatLimitMessage: seatLimitMessage,
+    onViewBilling: () {
+      Navigator.of(context).pop(false);
+      w.navigation.navigate(
+        RaftLocation.at(
+          serverSlug: w.location.serverSlug,
+          route: RaftRoute.settings,
+          settingsPath: const ['billing'],
+        ),
+      );
+      w.notifyListeners();
+    },
     link: RaftInviteLink(
       loading: loading || busy,
       url: url,

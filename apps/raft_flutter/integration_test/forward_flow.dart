@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/forward_composer_page.dart';
 import 'package:raft_flutter/features/forward_messages_dialog.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -40,7 +41,7 @@ Future<void> verifyForwardFlow(
     await w.refreshChannels();
     await w.selectChannel(owned.first);
     expect(await w.send('Native forwarded text 中文 日本語 $marker'), true);
-    final source = w.messages.singleWhere((m) => m.content.contains(marker));
+    final source = w.messageDomain.messages.singleWhere((m) => m.content.contains(marker));
     expect(source.string('messageType'), 'chat');
     await tester.pump(const Duration(milliseconds: 500));
     var done = false, accepted = false;
@@ -52,21 +53,21 @@ Future<void> verifyForwardFlow(
         done = true;
       }),
     );
-    await wait(() => find.byType(ForwardMessagesDialog).evaluate().isNotEmpty);
+    await wait(() => find.byType(ForwardComposerPage).evaluate().isNotEmpty);
     await tester.enterText(
-      find.widgetWithText(TextField, 'Search channels or people'),
+      find.widgetWithText(TextField, 'Search targets'),
       'nf-$marker',
     );
-    await wait(() => find.byType(CheckboxListTile).evaluate().isNotEmpty);
+    await wait(() => find.byType(RaftForwardTargetRow).evaluate().isNotEmpty);
     final list = find.descendant(
-      of: find.byType(ForwardMessagesDialog),
+      of: find.byType(ForwardComposerPage),
       matching: find.byType(ListView),
     );
     final scroll = find
         .descendant(of: list, matching: find.byType(Scrollable))
         .first;
     for (final channel in owned.skip(1)) {
-      final target = find.widgetWithText(CheckboxListTile, '#${channel.name}');
+      final target = find.widgetWithText(RaftForwardTargetRow, '#${channel.name}');
       await tester.scrollUntilVisible(target, 100, scrollable: scroll);
       await tester.ensureVisible(target);
       await tester.pump(const Duration(milliseconds: 200));
@@ -74,7 +75,7 @@ Future<void> verifyForwardFlow(
       await tester.pump(const Duration(milliseconds: 200));
     }
     await capture('linux-forward-destinations');
-    await tester.tap(find.widgetWithText(RaftButton, 'Forward'));
+    await tester.tap(find.byKey(const Key('composer-submit')));
     await wait(() => done);
     expect(accepted, true);
     for (final channel in owned.skip(1)) {
@@ -101,7 +102,7 @@ Future<void> verifyForwardFlow(
     }
     await w.selectChannel(owned[1]);
     await wait(
-      () => w.messages.any(
+      () => w.messageDomain.messages.any(
         (m) =>
             m.json['actionMetadata'] is Map &&
             m.json['actionMetadata']['kind'] == 'forwarded-bundle',

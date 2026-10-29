@@ -10,6 +10,7 @@ class NotificationPluginFixture implements FlutterLocalNotificationsPlugin {
   MacOSFlutterLocalNotificationsPlugin? mac;
   IOSFlutterLocalNotificationsPlugin? ios;
   AndroidFlutterLocalNotificationsPlugin? android;
+  LinuxFlutterLocalNotificationsPlugin? linux;
   InitializationSettings? settings;
   DidReceiveNotificationResponseCallback? onResponse;
   NotificationAppLaunchDetails launch = const NotificationAppLaunchDetails(
@@ -23,6 +24,8 @@ class NotificationPluginFixture implements FlutterLocalNotificationsPlugin {
               ? android
               : T == IOSFlutterLocalNotificationsPlugin
               ? ios
+              : T == LinuxFlutterLocalNotificationsPlugin
+              ? linux
               : mac)
           as T?;
   @override
@@ -31,6 +34,8 @@ class NotificationPluginFixture implements FlutterLocalNotificationsPlugin {
   int cancellations = 0;
   final sent = <String?>[];
   final details = <NotificationDetails?>[];
+  final ids = <int>[];
+  final bodies = <String?>[];
   final initialized = Completer<bool?>();
   @override
   Future<bool?> initialize({
@@ -60,6 +65,8 @@ class NotificationPluginFixture implements FlutterLocalNotificationsPlugin {
   }) async {
     sent.add(payload);
     details.add(notificationDetails);
+    ids.add(id);
+    bodies.add(body);
   }
 
   @override
@@ -313,7 +320,9 @@ void main() {
     expect(service.enabled, false);
     expect(service.permitted, false);
     expect(service.error, contains('system settings'));
-    expect(store.values, isEmpty);
+    expect(store.values, {
+      'raft.notifications.initial-permission.macOS.v1': true,
+    });
     mac.allowed = true;
     await service.show(title: 'Raft', body: 'blocked', payload: 'denied');
     expect(service.permitted, true);
@@ -356,7 +365,9 @@ void main() {
     await enabling;
     expect(service.enabled, false);
     expect(plugin.sent, isEmpty);
-    expect(store.values, isEmpty);
+    expect(store.values, {
+      'raft.notifications.initial-permission.macOS.v1': true,
+    });
     await service.refreshPermission();
     expect(service.enabled, true);
     await service.bind('alice');
@@ -366,7 +377,7 @@ void main() {
     final plugin = NotificationPluginFixture()..initialized.complete(true);
     final service = NativeNotificationService(
       plugin: plugin,
-      platform: TargetPlatform.linux,
+      platform: TargetPlatform.fuchsia,
     );
     await service.bind('https://example.test\nalice\nserver-a');
     expect(service.enabled, false);
@@ -399,7 +410,7 @@ void main() {
       final plugin = NotificationPluginFixture();
       final service = NativeNotificationService(
         plugin: plugin,
-        platform: TargetPlatform.linux,
+        platform: TargetPlatform.fuchsia,
       );
       final first = service.bind('alice');
       service.enabled = true;
@@ -422,7 +433,7 @@ void main() {
     () async {
       final store = _Store();
       NativeNotificationService make() => NativeNotificationService(
-        platform: TargetPlatform.linux,
+        platform: TargetPlatform.fuchsia,
         plugin: NotificationPluginFixture()..initialized.complete(true),
         preferences: store,
       );
@@ -449,7 +460,7 @@ void main() {
     () async {
       final store = _Store();
       final service = NativeNotificationService(
-        platform: TargetPlatform.linux,
+        platform: TargetPlatform.fuchsia,
         plugin: NotificationPluginFixture()..initialized.complete(true),
         preferences: store,
       );
@@ -469,7 +480,7 @@ void main() {
   test('stale cached read cannot replace a newer user preference', () async {
     final store = _Store()..delayedRead = Completer<bool?>();
     final service = NativeNotificationService(
-      platform: TargetPlatform.linux,
+      platform: TargetPlatform.fuchsia,
       plugin: NotificationPluginFixture()..initialized.complete(true),
       preferences: store,
     );

@@ -2,14 +2,22 @@
 # Regenerate the raft-ui component recipe layer end to end:
 #   extract.mjs  -> build/recipes/recipes.raw.json
 #   resolve.mjs  -> build/recipes/{recipes,coverage}.json, docs/component-recipes.md
-#   gen_dart.mjs -> packages/raft_ui/lib/src/recipes/*.g.dart (+ parity fixtures)
+#   gen_dart.mjs -> packages/raft_theme/lib/recipes/*.g.dart (+ parity fixtures)
+#   gen_router.mjs -> packages/raft_ui/lib/src/recipes/*.g.dart (routes each recipe class
+#                     to this Raft set or to the frozen legacy set)
+#
+# This produces ONLY the Raft set. The Elegant and Brutal looks keep the frozen
+# raft-ui 0.5.52 output in packages/raft_theme/lib/recipes/legacy/ (see
+# packages/raft_theme/lib/recipes_legacy.dart); raft-ui 0.6.0 removed the `theme`
+# axis it was generated from, so that directory is never regenerated.
 #
 # Usage: tool/recipes/run [--test] [--raft-ui-only]
 #   --test          also run the node tests (incl. determinism) and the Dart recipe tests
 #   --raft-ui-only  compile without the Web client's @theme overrides
 # Environment:
 #   RAFT_UI_SOURCE   raft-ui package root (default /tmp/rui)
-#   RAFT_WEB_CSS     Web client index.css to snapshot @theme from (optional)
+#   RAFT_WEB_CSS     Pinned Web client index.css (required unless RAFT_UI_SOURCE
+#                    names its packages/web/node_modules/@botiverse/raft-ui)
 #   RAFT_PNPM_STORE  pnpm store with the JS dependencies (see link-deps.sh)
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,8 +36,18 @@ export PATH
 while IFS= read -r v; do unset "$v"; done < <(env | grep -o '^npm_config_[^=]*' || true)
 
 export RAFT_UI_SOURCE="${RAFT_UI_SOURCE:-/tmp/rui}"
-default_web_css="/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source/packages/web/src/index.css"
-export RAFT_WEB_CSS="${RAFT_WEB_CSS:-$default_web_css}"
+# The Web source owns product compositions as well as @theme overrides. Do not
+# fall back to a machine-local checkout which may be a different release.
+if [[ -z "${RAFT_WEB_CSS:-}" ]]; then
+  if [[ "$RAFT_UI_SOURCE" == */node_modules/@botiverse/raft-ui ]]; then
+    RAFT_WEB_CSS="${RAFT_UI_SOURCE%/node_modules/@botiverse/raft-ui}/src/index.css"
+  else
+    echo "Set RAFT_WEB_CSS to the pinned Web client's src/index.css; no unrelated checkout is selected automatically." >&2
+    exit 2
+  fi
+fi
+[[ -f "$RAFT_WEB_CSS" ]] || { echo "Pinned Web CSS does not exist: $RAFT_WEB_CSS" >&2; exit 2; }
+export RAFT_WEB_CSS
 
 run_tests=0
 resolve_args=()
@@ -47,6 +65,9 @@ node "$here/sync-web-theme.mjs"
 node "$here/extract.mjs" --source "$RAFT_UI_SOURCE"
 node "$here/resolve.mjs" --source "$RAFT_UI_SOURCE" "${resolve_args[@]}"
 node "$here/gen_dart.mjs"
+node "$here/gen_router.mjs"
+# Steps is published CSS, independent of the tv utility/index registry.
+node "$here/steps-css.mjs" --source "$RAFT_UI_SOURCE" "${resolve_args[@]}" --write
 
 if [[ $run_tests == 1 ]]; then
   node --test "$here"/test/*.test.mjs

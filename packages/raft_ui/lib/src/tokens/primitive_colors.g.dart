@@ -1,5 +1,5 @@
 // GENERATED — do not edit. Regenerate with `tool/gen-tokens`.
-// Source: raft-ui-0.5.27/foundation.css, raft-ui-0.5.27/styles.css
+// Source: raft-ui-0.5.52/foundation.css, raft-ui-0.5.52/styles.css
 // dart format off
 // ignore_for_file: constant_identifier_names, lines_longer_than_80_chars
 

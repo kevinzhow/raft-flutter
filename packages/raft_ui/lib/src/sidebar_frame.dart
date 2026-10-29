@@ -4,6 +4,7 @@ import 'design_primitives.dart';
 import 'icons.dart';
 import 'indicators.dart';
 import 'sidebar_section.dart';
+import 'status_bar.dart';
 import 'theme.dart';
 
 /// Mounted SidebarRoot surface. The host supplies its authorized contents;
@@ -39,19 +40,24 @@ class RaftMountedSidebarFrame extends StatelessWidget {
       ],
     );
     if (!trailingEdge) {
-      return ColoredBox(color: recipe.bodyBackground, child: column);
-    }
-    return Container(
-      decoration: BoxDecoration(
+      // The column colour continues up under the status bar (the shell sidebar
+      // publishes its own column and edge, so it passes through here too).
+      return RaftStatusBarSource(
         color: recipe.bodyBackground,
-        border: Border(
-          right: BorderSide(
-            color: t.brutal ? Colors.black : t.colors['line-muted']!,
-            width: t.brutal ? 2 : 1,
-          ),
-        ),
+        child: ColoredBox(color: recipe.bodyBackground, child: column),
+      );
+    }
+    final border = Border(
+      right: BorderSide(color: t.colors['line-muted']!, width: 1),
+    );
+    // The column colour and its edge continue up under the status bar.
+    return RaftStatusBarSource(
+      color: recipe.bodyBackground,
+      border: border,
+      child: Container(
+        decoration: BoxDecoration(color: recipe.bodyBackground, border: border),
+        child: column,
       ),
-      child: column,
     );
   }
 }
@@ -87,9 +93,7 @@ class RaftSidebarMachineGroup extends StatelessWidget {
       t,
       size: 10,
       line: 15,
-      color: t.brutal
-          ? Colors.black.withValues(alpha: .4)
-          : t.colors['foreground-placeholder'],
+      color: t.colors['foreground-placeholder'],
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -155,15 +159,10 @@ class _MachineGroupRecipe extends RaftControlRecipe {
   @override
   EdgeInsets get padding => const EdgeInsets.symmetric(horizontal: 8);
   @override
-  Color get foreground => tokens.brutal
-      ? Colors.black.withValues(alpha: .4)
-      : tokens.colors['foreground-placeholder']!;
+  Color get foreground => tokens.colors['foreground-placeholder']!;
   @override
-  Color foregroundFor({bool hovered = false}) => hovered
-      ? tokens.brutal
-            ? Colors.black.withValues(alpha: .6)
-            : tokens.muted
-      : foreground;
+  Color foregroundFor({bool hovered = false}) =>
+      hovered ? tokens.muted : foreground;
   @override
   Color get background => Colors.transparent;
   @override
@@ -201,11 +200,7 @@ class RaftSidebarSectionDescription extends StatelessWidget {
           t,
           size: 12,
           line: error == null ? 16.5 : 16,
-          color:
-              error ??
-              (t.brutal
-                  ? Colors.black.withValues(alpha: .5)
-                  : t.colors['foreground-muted']),
+          color: error ?? t.colors['foreground-muted'],
         ),
       ),
     );
@@ -242,18 +237,13 @@ class RaftSidebarTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: t.brutal ? t.colors['color-brutal-cyan'] : t.colors['info-soft'],
+        color: t.colors['info-soft'],
         border: Border.all(
-          color: t.brutal ? Colors.black : t.colors['line-muted']!,
+          color: t.colors['line-muted']!,
           // `border-[1.5px]`: Blink floors a border to whole device pixels.
-          width: t.brutal
-              ? (1.5 * MediaQuery.devicePixelRatioOf(context))
-                        .floorToDouble()
-                        .clamp(1, 99) /
-                    MediaQuery.devicePixelRatioOf(context)
-              : 1,
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(t.brutal ? 0 : 4),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label,
@@ -262,7 +252,7 @@ class RaftSidebarTag extends StatelessWidget {
           t,
           size: 10,
           line: 12,
-          color: t.brutal ? Colors.black : t.strong,
+          color: t.strong,
         ).copyWith(fontWeight: FontWeight.w500),
       ),
     );

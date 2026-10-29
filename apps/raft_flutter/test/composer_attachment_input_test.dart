@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,7 +44,7 @@ List<String> _uploaded(MessageAdapter api) => [
 Future<(WorkspaceController, MessageAdapter)> _chat(WidgetTester tester) async {
   final (w, api) = (await tester.runAsync(() => fixture('member')))!;
   addTearDown(w.dispose);
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   api.routes['GET /attachments/upload-capabilities'] = (_) => {
     'maxBytes': 1 << 20,
   };
@@ -58,13 +59,18 @@ Future<(WorkspaceController, MessageAdapter)> _chat(WidgetTester tester) async {
   };
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(RaftFamily.elegant),
+      theme: raftTheme(),
       home: Scaffold(body: RaftChatView(controller: w)),
     ),
   );
   await tester.pumpAndSettle();
   return (w, api);
 }
+
+/// These tests replay the GTK drop sequence (motion, leave, data). desktop_drop
+/// only accepts data after a leave when the host is Linux, so elsewhere the
+/// events never reach the composer and the tests would prove nothing.
+final _gtkOnly = !Platform.isLinux;
 
 void main() {
   late Directory temp;
@@ -146,7 +152,69 @@ void main() {
     expect(w.composerErrorFor(), isNull);
     expect(find.text('notes.txt'), findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
+  }, skip: _gtkOnly);
+
+  testWidgets('a dead file-portal key falls back to the uri-list; with '
+      'nothing readable the composer says so', (tester) async {
+    final drop = DesktopDrop.instance;
+    final portalCalls = <String>[];
+    drop.inFlatpak = () => false;
+    drop.portalResolver = (key) async {
+      portalCalls.add(key);
+      throw StateError(
+        'org.freedesktop.DBus.Error.AccessDenied: Invalid transfer',
+      );
+    };
+    addTearDown(() {
+      drop.inFlatpak = () => Platform.environment.containsKey('FLATPAK_ID');
+      drop.portalResolver = DesktopDrop.realPortalResolver;
+    });
+    final (w, api) = await _chat(tester);
+    final at = tester.getCenter(find.byType(RaftComposer));
+
+    // KDE/Dolphin style: portal key offered first, uri-list alongside. The
+    // real paths are readable here, so the portal is not even asked.
+    await _gtk('updated', [at.dx, at.dy]);
+    await _gtk('exited', null);
+    await _gtk('performOperation_linux_sources', [
+      Uri.file(notes).toString(),
+      'dead-key',
+      [at.dx, at.dy],
+    ]);
+    await _until(tester, () => w.uploadsReady() && w.uploads().isNotEmpty);
+    await tester.pumpAndSettle();
+    expect(_uploaded(api), ['notes.txt']);
+    expect(portalCalls, isEmpty);
+    expect(w.composerErrorFor(), isNull);
+
+    // Flatpak: the portal is asked first, fails, and the uri-list saves it.
+    drop.inFlatpak = () => true;
+    await _gtk('updated', [at.dx, at.dy]);
+    await _gtk('exited', null);
+    await _gtk('performOperation_linux_sources', [
+      Uri.file(notes).toString(),
+      'dead-key',
+      [at.dx, at.dy],
+    ]);
+    await _until(tester, () => portalCalls.length == 1);
+    await _until(tester, () => _uploaded(api).length == 2);
+    expect(w.composerErrorFor(), isNull);
+    drop.inFlatpak = () => false;
+
+    // Only the dead portal key: nothing to read, so a visible error.
+    await _gtk('updated', [at.dx, at.dy]);
+    await _gtk('exited', null);
+    await _gtk('performOperation_linux_sources', [
+      '',
+      'dead-key',
+      [at.dx, at.dy],
+    ]);
+    await _until(tester, () => w.composerErrorFor() != null);
+    await tester.pumpAndSettle();
+    expect(find.text("Couldn't read dropped files"), findsOneWidget);
+    expect(_uploaded(api), hasLength(2));
+    expect(tester.takeException(), isNull);
+  }, skip: _gtkOnly);
 
   testWidgets('a route covering the chat takes the composer out of drops', (
     tester,
@@ -174,7 +242,7 @@ void main() {
     }
     expect(_uploaded(api), isEmpty);
     expect(w.uploads(), isEmpty);
-  });
+  }, skip: _gtkOnly);
 
   testWidgets('Ctrl+V attaches copied files or an image; text still pastes', (
     tester,

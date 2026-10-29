@@ -80,9 +80,7 @@ class RaftAgentAvatarPicker extends StatelessWidget {
                     children: [
                       Expanded(
                         child: RaftCssText(
-                          t.brutal
-                              ? raftText(context, 'Choose Avatar').toUpperCase()
-                              : raftText(context, 'Choose Avatar'),
+                          raftText(context, 'Change avatar'),
                           style: slots.title.textStyle(rt),
                         ),
                       ),
@@ -120,17 +118,13 @@ class RaftAgentAvatarPicker extends StatelessWidget {
                                   children: [
                                     _AvatarChoice(
                                       key: const ValueKey('avatar-upload'),
-                                      label: raftText(context, 'Upload image'),
+                                      label: raftText(context, 'Upload Image'),
                                       selected: uploadSelected,
                                       onPressed: busy ? null : onUpload,
                                       child: RaftIcon(
                                         RaftGlyph.upload,
                                         size: 16,
-                                        color: raftPanelInk(
-                                          t,
-                                          .6,
-                                          t.colors['foreground-muted']!,
-                                        ),
+                                        color: t.colors['foreground-muted']!,
                                       ),
                                     ),
                                     for (final key in raftAgentAvatarChoices)
@@ -155,10 +149,8 @@ class RaftAgentAvatarPicker extends StatelessWidget {
                           ),
                           if (error != null) ...[
                             const SizedBox(height: 20),
-                            RaftAgentBanner(
-                              status: RaftAgentBannerStatus.warning,
-                              description: error!,
-                            ),
+                            // Web `<Banner status="warning" size="sm" role="alert">`.
+                            RaftErrorBanner(error!, small: true),
                           ],
                         ],
                       ),
@@ -220,15 +212,11 @@ class _AvatarChoiceState extends State<_AvatarChoice> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final color = widget.selected
-        ? (t.brutal ? t.product.brutalPink : t.colors['accent']!)
+        ? (t.colors['accent']!)
         : hovered
         ? t.colors['line-strong']!
         : t.colors['line-muted']!;
-    final fill = widget.selected
-        ? (t.brutal
-              ? t.product.brutalPink.withValues(alpha: .2)
-              : t.colors['accent-soft']!)
-        : null;
+    final fill = widget.selected ? (t.colors['accent-soft']!) : null;
     return RaftTooltip(
       message: widget.label,
       child: FocusableActionDetector(
@@ -247,7 +235,7 @@ class _AvatarChoiceState extends State<_AvatarChoice> {
           button: true,
           selected: widget.selected,
           label: widget.label,
-          child: MouseRegion(
+          child: RaftHoverRegion(
             onEnter: (_) => setState(() => hovered = true),
             onExit: (_) => setState(() => hovered = false),
             child: GestureDetector(
@@ -257,11 +245,8 @@ class _AvatarChoiceState extends State<_AvatarChoice> {
                 height: 40,
                 decoration: RaftCssBoxDecoration(
                   color: fill,
-                  borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
-                  border: Border.all(
-                    color: t.brutal && !widget.selected ? Colors.black : color,
-                    width: t.brutal ? 2 : 1,
-                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: color, width: 1),
                   boxShadow: focused
                       ? [
                           BoxShadow(
@@ -333,18 +318,19 @@ class RaftAvatarDiscardConfirmation extends StatelessWidget {
               RaftRecipeBox(
                 style: s.footer,
                 tokens: rt,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: s.footer.columnGap ?? 12,
+                  runSpacing: 12,
                   children: [
                     RaftButton(
-                      label: raftText(context, 'Keep editing'),
+                      label: raftText(context, 'Keep Editing'),
                       size: RaftButtonRecipeSize.sm,
                       tone: RaftButtonRecipeVariant.outline,
                       onPressed: onKeep,
                     ),
-                    SizedBox(width: s.footer.columnGap ?? 12),
                     RaftButton(
-                      label: raftText(context, 'Discard'),
+                      label: raftText(context, 'Discard Changes'),
                       size: RaftButtonRecipeSize.sm,
                       tone: RaftButtonRecipeVariant.danger,
                       onPressed: onDiscard,

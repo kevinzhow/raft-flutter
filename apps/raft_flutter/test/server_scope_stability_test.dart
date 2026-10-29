@@ -14,8 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show MessageAdapter;
 import 'source_feedback_store_test.dart' as fb;
+import 'support/app_services_fixture.dart';
 
-/// Server-level data (agents, members, Saved total, live activity) belongs to
+/// Server-level data (agents, members, Saved total, working agents) belongs to
 /// the server identity, not the open channel: switching or joining channels
 /// keeps every already-painted row identical frame by frame.
 class _EventClient extends RaftClient {
@@ -98,7 +99,7 @@ Future<(WorkspaceController, MessageAdapter, _EventClient)> _fixture(
   w.channel = c1;
   w.channels = [c1, c2];
   w.loading = false;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.server = RaftRecord({
     'id': 's1',
     'slug': 'demo',
@@ -133,7 +134,7 @@ Future<void> _everyFrame(WidgetTester t, void Function(int) check) async {
 
 void main() {
   testWidgets(
-    'channel switch and join keep the pinned agent, Saved badge and live activity bar identical every frame',
+    'channel switch and join keep the pinned agent, Saved badge and working-agents summary identical every frame',
     (t) async {
       final (w, a, client) = await _fixture(t);
       w.section = 'chat';
@@ -147,12 +148,14 @@ void main() {
       addTearDown(t.view.reset);
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
-          home: WorkspaceView(
-            controller: w,
-            appearance: const RaftAppearance(light: RaftFamily.elegant),
-            onAppearance: (_) async {},
-            onLogout: () async {},
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: const RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
           ),
         ),
       );
@@ -169,7 +172,7 @@ void main() {
       await t.pump();
 
       final pinned = find.byKey(const ValueKey('sidebar-agent:cindy'));
-      final bar = find.byKey(const Key('live-agent-activity-bar'));
+      final summary = find.byKey(const Key('working-agents-summary'));
       final saved = find.byWidgetPredicate(
         (widget) =>
             widget is RaftNavItem && widget.role == RaftNavItemRole.saved,
@@ -177,8 +180,15 @@ void main() {
       List<Object?> facts() => [
         pinned.evaluate().length,
         if (pinned.evaluate().isNotEmpty) t.getRect(pinned),
-        bar.evaluate().length,
-        find.textContaining('Drafting tokens').evaluate().length,
+        summary.evaluate().length,
+        // The pinned agent's row says what it is doing, in place.
+        find
+            .descendant(
+              of: pinned,
+              matching: find.textContaining('Drafting tokens'),
+            )
+            .evaluate()
+            .length,
         t.widget<RaftNavItem>(saved).count,
       ];
       final before = facts();
@@ -219,7 +229,7 @@ void main() {
       w.notifyListeners();
       await t.pump();
       expect(pinned, findsNothing);
-      expect(bar, findsNothing);
+      expect(summary, findsNothing);
       await _settle(t);
 
       await t.pumpWidget(const SizedBox());
@@ -238,7 +248,7 @@ void main() {
       await _settle(t);
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(body: RaftChatView(controller: w)),
         ),
       );
@@ -307,7 +317,7 @@ void main() {
   );
 
   testWidgets(
-    'an @mention opens its dialog at once from the shared directory',
+    'an @mention opens the profile panel without a per-tap directory fetch',
     (t) async {
       final (w, a, client) = await _fixture(t);
       w.entityDirectory.ensureAuthors();
@@ -325,7 +335,7 @@ void main() {
       late BuildContext context;
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: Builder(
               builder: (c) {
@@ -337,26 +347,17 @@ void main() {
         ),
       );
       final calls = a.calls.length;
+      // Web MentionLink: the mention opens the profile side panel (the URL
+      // `profile=` slot), no dialog.
       unawaited(presentation.open(context, 'raft-ref://mention/user/bob'));
       await t.pump();
-      await t.pump();
-      expect(find.widgetWithText(AlertDialog, 'Bob'), findsOneWidget);
-      expect(find.text('member'), findsOneWidget);
-      Navigator.of(context).pop();
-      await t.pumpAndSettle();
-
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(w.location.query('profile'), 'human:bob');
       unawaited(presentation.open(context, 'raft-ref://mention/agent/cindy'));
       await t.pump();
-      await t.pump();
-      expect(find.widgetWithText(AlertDialog, 'Cindy'), findsOneWidget);
-      expect(find.text('Designs the visual system'), findsOneWidget);
-      expect(a.calls.length, calls, reason: 'no per-tap directory fetch');
-
-      // A server-level identity change closes the projection.
-      w.server = RaftRecord({'id': 's1', 'slug': 'demo', 'role': 'guest'});
-      w.notifyListeners();
-      await t.pumpAndSettle();
       expect(find.byType(AlertDialog), findsNothing);
+      expect(w.location.query('profile'), 'agent:cindy');
+      expect(a.calls.length, calls, reason: 'no per-tap directory fetch');
 
       await t.pumpWidget(const SizedBox());
       await t.runAsync(client.stream.close);
@@ -388,7 +389,7 @@ void main() {
       };
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(body: SourceFeedbackView(controller: w)),
         ),
       );
@@ -398,8 +399,8 @@ void main() {
       final reads = _reads(a, '/product-feedback/tickets');
       for (var i = 0; i < 3; i++) {
         w.channel = w.channels[i.isEven ? 1 : 0];
-        w.channelGeneration++;
-        w.threadGeneration++;
+        w.messageWindows.channelGeneration++;
+        w.messageWindows.threadGeneration++;
         w.notifyListeners();
         await _everyFrame(t, (frame) {
           expect(row, findsWidgets, reason: 'switch $i frame $frame');
@@ -437,7 +438,7 @@ void main() {
       };
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(body: SourceFeedbackView(controller: w)),
         ),
       );

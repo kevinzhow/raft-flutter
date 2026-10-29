@@ -55,7 +55,7 @@ void main() {
           ),
         ),
       );
-      final opened = player.open(input);
+      final opened = player.open(AttachmentSource.file(input));
       for (
         var i = 0;
         i < 100 && player.player.state.duration == Duration.zero;
@@ -174,7 +174,7 @@ void main() {
     AttachmentPlayback latest = const AttachmentPlayback();
     final events = player.changes.listen((value) => latest = value);
     try {
-      await player.open(input);
+      await player.open(AttachmentSource.file(input));
       for (var i = 0; i < 50 && !latest.error; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -186,6 +186,84 @@ void main() {
       await events.cancel();
       await player.dispose();
       await input.delete();
+    }
+  });
+
+  testWidgets('native streaming: mpv reads the URL itself and signs again after a 403', (
+    tester,
+  ) async {
+    final bytes = previewVideo();
+    var requests = 0, ranged = 0, refused = 0, sent = 0;
+    var failFirst = true;
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    server.listen((request) async {
+      requests++;
+      final response = request.response;
+      if (failFirst && request.uri.queryParameters['sig'] == '1') {
+        failFirst = false;
+        refused++;
+        response.statusCode = 403;
+        await response.close();
+        return;
+      }
+      final m = RegExp(r'bytes=(\d+)-(\d*)').firstMatch(request.headers.value('range') ?? '');
+      var start = 0, end = bytes.length - 1;
+      response.headers.set('accept-ranges', 'bytes');
+      if (m != null) {
+        ranged++;
+        start = int.parse(m[1]!);
+        if (m[2]!.isNotEmpty) end = int.parse(m[2]!).clamp(0, end);
+        response.statusCode = 206;
+        response.headers.set('content-range', 'bytes $start-$end/${bytes.length}');
+      }
+      response.contentLength = end - start + 1;
+      response.add(bytes.sublist(start, end + 1));
+      sent += end - start + 1;
+      await response.close();
+    });
+    final player = NativeAttachmentPlayer();
+    final boundary = GlobalKey();
+    var signed = 0;
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RepaintBoundary(
+              key: boundary,
+              child: Center(child: SizedBox(width: 320, height: 180, child: player.video())),
+            ),
+          ),
+        ),
+      );
+      Uri url(int sig) => Uri.parse('http://127.0.0.1:${server.port}/clip.webm?sig=$sig');
+      final opened = player.open(
+        AttachmentSource.network(
+          url(1),
+          refresh: () async {
+            signed++;
+            return url(2);
+          },
+        ),
+      );
+      for (var i = 0; i < 150 && player.player.state.duration == Duration.zero; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await opened;
+      expect(refused, 1, reason: 'the first signature was refused');
+      expect(signed, 1, reason: 'one fresh signature');
+      expect(player.player.state.duration, greaterThan(Duration.zero));
+      expect(player.playback.error, isFalse);
+      await player.toggle();
+      for (var i = 0; i < 100 && player.player.state.position < const Duration(milliseconds: 300); i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(player.player.state.position, greaterThan(const Duration(milliseconds: 300)));
+      expect(sent, greaterThan(0));
+      debugPrint('Native streaming: requests=$requests ranged=$ranged refused=$refused sent=$sent of ${bytes.length}');
+    } finally {
+      await player.dispose();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await server.close(force: true);
     }
   });
 }

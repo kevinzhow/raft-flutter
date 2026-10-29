@@ -5,18 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'workspace_source_location_contract_test.dart' show pageFixture, frames;
 import 'workspace_shell_contract_test.dart' show retire;
+import 'support/app_services_fixture.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K08j] $family/$dark actual mouse server reorder PATCH is Source-shaped and stale role handler cannot write',
+      '[K08j] ${dark ? 'dark' : 'light'} actual mouse server reorder PATCH is Source-shaped and stale role handler cannot write',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         w.servers = [
@@ -47,19 +45,21 @@ void main() {
         addTearDown(t.view.reset);
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
-              onChooseServer: () {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+                onChooseServer: () {},
+              ),
             ),
           ),
         );
         await frames(t, () {});
         await t.pumpAndSettle();
-        await t.tap(find.byKey(const Key('rail-workspace')));
+        await t.tap(find.byKey(const Key('topbar-workspace')));
         await t.pumpAndSettle();
         final stale = t
             .widget<RaftServerSwitcher>(find.byType(RaftServerSwitcher))
@@ -71,6 +71,9 @@ void main() {
           start,
           kind: PointerDeviceKind.mouse,
         );
+        await mouse.moveTo(start + const Offset(0, 3));
+        await t.pump();
+        expect(writes, isEmpty);
         final last = t.getRect(
           find.byKey(const ValueKey('server-menu-reorder-s3')),
         );
@@ -83,6 +86,9 @@ void main() {
         await mouse.up();
         await frames(t, () {});
         await t.pumpAndSettle();
+        // Drop animation completes before the asynchronous transport runs.
+        // Settle the real drag first, then drain the actual request.
+        await frames(t, () {});
         expect(writes, [
           {
             'serverOrder': ['s2', 's3', 's1'],
@@ -98,9 +104,10 @@ void main() {
         expect(writes.length, 1);
         await retire(t);
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
     testWidgets(
-      '[K08h] $family/$dark actual WorkspaceView server menu closes current without URI/history and delegates global chooser',
+      '[K08h] ${dark ? 'dark' : 'light'} actual WorkspaceView server menu closes current without URI/history and delegates global chooser',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         w.servers = [w.server!];
@@ -115,38 +122,40 @@ void main() {
         var choose = 0;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
-              onChooseServer: () => choose++,
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+                onChooseServer: () => choose++,
+              ),
             ),
           ),
         );
         await frames(t, () {});
         await t.pumpAndSettle();
         final uri = w.location.toString(), history = w.navigation.index;
-        await t.tap(find.byKey(const Key('rail-workspace')));
+        await t.tap(find.byKey(const Key('topbar-workspace')));
         await frames(t, () {});
         await t.pumpAndSettle();
         expect(find.byKey(const Key('server-switcher-menu')), findsOneWidget);
         expect(find.byType(SimpleDialog), findsNothing);
         expect(find.text('77'), findsNothing);
-        expect(find.text('Invite human'), findsOneWidget);
+        expect(find.text('Invite Human'), findsOneWidget);
         expect(find.text('Join Community'), findsOneWidget);
         await t.tap(find.byKey(const ValueKey('server-menu-row-s1')));
         await t.pumpAndSettle();
         expect(w.location.toString(), uri);
         expect(w.navigation.index, history);
         expect(find.byKey(const Key('server-switcher-menu')), findsNothing);
-        await t.tap(find.byKey(const Key('rail-workspace')));
+        await t.tap(find.byKey(const Key('topbar-workspace')));
         await t.pumpAndSettle();
         await t.sendKeyEvent(LogicalKeyboardKey.escape);
         await t.pumpAndSettle();
         expect(w.location.toString(), uri);
-        await t.tap(find.byKey(const Key('rail-workspace')));
+        await t.tap(find.byKey(const Key('topbar-workspace')));
         await t.pumpAndSettle();
         await t.tap(find.text('Switch or Create Server'));
         await t.pumpAndSettle();
@@ -154,9 +163,10 @@ void main() {
         expect(find.byKey(const Key('server-switcher-menu')), findsNothing);
         await retire(t);
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
     testWidgets(
-      '[K08i] $family/$dark actual server menu Invite is capability gated and sends trimmed member email before Source administration route',
+      '[K08i] ${dark ? 'dark' : 'light'} actual server menu Invite is capability gated and sends trimmed member email before Source administration route',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         w.servers = [w.server!];
@@ -173,21 +183,23 @@ void main() {
         addTearDown(t.view.reset);
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
-              onChooseServer: () {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+                onChooseServer: () {},
+              ),
             ),
           ),
         );
         await frames(t, () {});
         await t.pumpAndSettle();
-        await t.tap(find.byKey(const Key('rail-workspace')));
+        await t.tap(find.byKey(const Key('topbar-workspace')));
         await t.pumpAndSettle();
-        await t.tap(find.text('Invite human'));
+        await t.tap(find.text('Invite Human'));
         await t.pumpAndSettle();
         expect(find.byKey(const Key('server-switcher-menu')), findsNothing);
         expect(find.byKey(const ValueKey('invite-dialog')), findsOneWidget);
@@ -195,7 +207,7 @@ void main() {
           find.byKey(const ValueKey('invite-email-0')),
           ' invalid@.email ',
         );
-        await t.tap(find.text('Send invites'));
+        await t.tap(find.text('Send Invites'));
         await frames(t, () {});
         expect(posted, isEmpty);
         expect(find.text('Enter a valid email address'), findsOneWidget);
@@ -203,7 +215,7 @@ void main() {
           find.byKey(const ValueKey('invite-email-0')),
           ' person@example.com ',
         );
-        await t.tap(find.text('Send invites'));
+        await t.tap(find.text('Send Invites'));
         await frames(t, () {});
         await t.pumpAndSettle();
         expect(posted, [
@@ -213,11 +225,12 @@ void main() {
         w.server = RaftRecord({...w.server!.json, 'role': 'member'});
         w.notifyListeners();
         await frames(t, () {});
-        await t.tap(find.byKey(const Key('rail-workspace')));
+        await t.tap(find.byKey(const Key('topbar-workspace')));
         await t.pumpAndSettle();
-        expect(find.text('Invite human'), findsNothing);
+        expect(find.text('Invite Human'), findsNothing);
         await retire(t);
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
   }
 }

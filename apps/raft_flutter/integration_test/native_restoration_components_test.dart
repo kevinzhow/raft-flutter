@@ -93,10 +93,9 @@ void main() {
           );
     }
 
-    for (final (family, dark, theme) in [
-      (RaftFamily.brutal, false, 'brutal-light'),
-      (RaftFamily.elegant, false, 'elegant-light'),
-      (RaftFamily.elegant, true, 'elegant-dark'),
+    for (final (dark, theme) in [
+      (false, 'elegant-light'),
+      (true, 'elegant-dark'),
     ]) {
       var selected = true, taps = 0;
       late StateSetter update;
@@ -114,7 +113,7 @@ void main() {
               child: child!,
             ),
           ),
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: Align(
               alignment: Alignment.topLeft,
@@ -179,12 +178,7 @@ void main() {
         );
         final decoration = face.decoration! as BoxDecoration;
         final tokens = RaftTokens.of(t.element(row));
-        expect(
-          decoration.color,
-          tokens.brutal
-              ? tokens.colors['color-brutal-pink']
-              : tokens.colors['fill-muted'],
-        );
+        expect(decoration.color, tokens.colors['fill-muted']);
         expect(decoration.gradient, isNull);
         await mouse.removePointer();
       }
@@ -221,7 +215,7 @@ void main() {
               child: child!,
             ),
           ),
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: Align(
               alignment: Alignment.topLeft,

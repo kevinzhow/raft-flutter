@@ -492,6 +492,90 @@
    },
    "selected": "shell-design",
    "loading": false
+  },
+  "mobile-custom": {
+   "channels": [
+    "shell-general",
+    "shell-design",
+    "shell-engineering",
+    "shell-leadership",
+    "shell-random",
+    "shell-support",
+    "shell-ideas",
+    "shell-long"
+   ],
+   "joint": [
+    "shell-partner"
+   ],
+   "dms": [
+    "shell-dm-designer",
+    "shell-dm-cindy",
+    "shell-dm-product",
+    "shell-dm-jiacheng"
+   ],
+   "unread": {
+    "shell-general": 12,
+    "shell-random": 4,
+    "shell-support": 2,
+    "shell-dm-cindy": 2,
+    "shell-dm-jiacheng": 105
+   },
+   "drafts": {
+    "shell-engineering": "Looking at the build",
+    "shell-dm-product": "Can you check"
+   },
+   "mentions": [
+    "shell-support"
+   ],
+   "pinned": [
+    {
+     "kind": "channel",
+     "id": "shell-engineering"
+    },
+    {
+     "kind": "agent",
+     "id": "agent-cindy"
+    }
+   ],
+   "customSections": [
+    {
+     "id": "sec-launch",
+     "name": "Launch",
+     "emoji": "🚀",
+     "sortMode": "manual"
+    },
+    {
+     "id": "sec-backlog",
+     "name": "Backlog",
+     "emoji": null,
+     "sortMode": "az"
+    }
+   ],
+   "sectionOrder": [
+    "system:pinned",
+    "sec-launch",
+    "sec-backlog",
+    "system:joint",
+    "system:channels",
+    "system:dms"
+   ],
+   "placements": [
+    {
+     "kind": "channel",
+     "id": "shell-support",
+     "sectionId": "sec-launch",
+     "position": 0
+    },
+    {
+     "kind": "channel",
+     "id": "shell-dm-product",
+     "sectionId": "sec-launch",
+     "position": 1
+    }
+   ],
+   "sortModes": {},
+   "selected": null,
+   "loading": false
   }
  },
  "primitives": {

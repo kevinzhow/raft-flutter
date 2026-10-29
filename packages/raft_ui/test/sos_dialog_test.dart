@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Finder _button(String key) => find.byKey(ValueKey(key));
 
@@ -10,21 +11,15 @@ VoidCallback? _onPressed(WidgetTester tester, String key) =>
     tester.widget<RaftButton>(_button(key)).onPressed;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('$family/$dark confirm → stopping → stopped → resume', (
-      tester,
-    ) async {
-      final stop = Completer<String?>();
-      final resume = Completer<String?>();
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets('$dark confirm → stopping → stopped → resume', (tester) async {
+      final stop = Completer<RaftSosOutcome?>();
+      final resume = Completer<Object?>();
       final guidance = <String>[];
       var closed = 0;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: Center(
               child: RaftSosDialog(
@@ -40,7 +35,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('STOP ALL AGENTS'), findsOneWidget);
+      expect(find.text('Stop Agents'), findsNWidgets(2));
       expect(
         find.text(
           'All running agents in #release will stop immediately. You can provide new guidance before resuming them.',
@@ -54,7 +49,7 @@ void main() {
       expect(_onPressed(tester, 'sos-stop'), isNull);
       stop.complete(null);
       await tester.pumpAndSettle();
-      expect(find.text('AGENTS STOPPED'), findsOneWidget);
+      expect(find.text('Agents Stopped'), findsOneWidget);
       expect(find.text('All agents have been stopped.'), findsOneWidget);
       // Resume requires non-blank guidance.
       expect(_onPressed(tester, 'sos-resume'), isNull);
@@ -81,17 +76,19 @@ void main() {
     });
   }
 
-  testWidgets('failures keep the phase and show the error', (tester) async {
+  testWidgets('failures keep the phase and show nothing, like Web', (
+    tester,
+  ) async {
     var closed = 0;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: Center(
             child: RaftSosDialog(
               channelName: 'release',
-              onStop: () async => 'Agents could not be stopped. Try again.',
-              onResume: (_) async => 'Server busy',
+              onStop: () async => RaftSosOutcome.retained,
+              onResume: (_) async => RaftSosOutcome.retained,
               onClose: () => closed++,
             ),
           ),
@@ -100,11 +97,8 @@ void main() {
     );
     await tester.tap(_button('sos-stop'));
     await tester.pumpAndSettle();
-    expect(find.text('STOP ALL AGENTS'), findsOneWidget);
-    expect(
-      find.text('Agents could not be stopped. Try again.'),
-      findsOneWidget,
-    );
+    expect(find.text('Stop Agents'), findsNWidgets(2));
+    expect(find.byKey(const ValueKey('sos-error')), findsNothing);
     expect(_onPressed(tester, 'sos-stop'), isNotNull);
     await tester.tap(_button('sos-cancel'));
     expect(closed, 1);
@@ -116,14 +110,14 @@ void main() {
     var closed = 0;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: Center(
             child: RaftSosDialog(
               channelName: 'release',
               initialPhase: RaftSosPhase.stopped,
               onStop: () async => null,
-              onResume: (_) async => 'Server busy',
+              onResume: (_) async => RaftSosOutcome.retained,
               onClose: () => closed++,
             ),
           ),
@@ -138,7 +132,7 @@ void main() {
     await tester.pump();
     await tester.tap(_button('sos-resume'));
     await tester.pumpAndSettle();
-    expect(find.text('Server busy'), findsOneWidget);
+    expect(find.byKey(const ValueKey('sos-error')), findsNothing);
     expect(find.text('Revert the schema change'), findsOneWidget);
     expect(_onPressed(tester, 'sos-resume'), isNotNull);
     expect(closed, 0);
@@ -149,7 +143,7 @@ void main() {
   testWidgets('copy is localized', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: Builder(
             builder: (context) => Localizations.override(
@@ -168,12 +162,11 @@ void main() {
         ),
       ),
     );
-    expect(find.text('停止所有 AGENT'), findsOneWidget);
+    expect(find.text('停止 Agent'), findsNWidgets(2));
     expect(
       find.text('#release 中所有正在运行的 Agent 都会立即停止。恢复前，你可以提供新的指导。'),
       findsOneWidget,
     );
-    expect(find.text('停止'), findsOneWidget);
-    expect(find.text('取消'), findsOneWidget);
+    expect(find.text('继续工作'), findsOneWidget);
   });
 }

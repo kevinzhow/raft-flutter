@@ -1,7 +1,8 @@
 import 'package:flutter/painting.dart';
+import 'package:raft_theme/raft_theme.dart' show RaftModeValues;
+import 'package:raft_theme/recipes.dart' show RaftThemeRecipeTokens;
 
 import '../theme.dart';
-import 'recipe_runtime.dart';
 
 /// Binds generated recipes to the generated foundation tokens of one theme.
 ///
@@ -9,10 +10,25 @@ import 'recipe_runtime.dart';
 /// (`--layer-panel` → `layerPanel`, `--theme-shadow-sm` → `themeShadowSm`);
 /// lookups go through the CSS-keyed maps so both generators stay the single
 /// source of their names.
-class RaftRecipeTokens extends RaftTokenResolver {
-  RaftRecipeTokens(this.tokens);
+class RaftRecipeTokens extends RaftThemeRecipeTokens {
+  RaftRecipeTokens(this.tokens)
+    : super(
+        tokens.themeValues ?? const RaftModeValues(),
+        recipeSet: tokens.recipeSet,
+      );
+
+  /// Frozen source component values with the current foundation lookups.
+  RaftRecipeTokens.source(this.tokens)
+    : super(
+        tokens.themeValues ?? const RaftModeValues(),
+        bindComponents: false,
+        recipeSet: tokens.recipeSet,
+      );
 
   final RaftTokens tokens;
+
+  @override
+  Locale? get textLocale => tokens.textLocale;
 
   static final _cssNames = <String, String>{};
 
@@ -44,11 +60,11 @@ class RaftRecipeTokens extends RaftTokenResolver {
       'theme-shadow-md' || 'shadow-raft-md' => s.md,
       'theme-shadow-lg' || 'shadow-raft-lg' => s.lg,
       'theme-shadow-xl' || 'shadow-raft-xl' => s.xl,
-      final other => throw ArgumentError(
-        'Unknown shadow token "$name" ($other)',
-      ),
+      // Pack-level elevations the Raft recipes name directly
+      // (`elevationFloat`, `elevationSticker`); the frozen set never does.
+      _ => null,
     };
-    return shadow.paintOrder;
+    return shadow == null ? super.shadow(name) : shadow.paintOrder;
   }
 
   @override

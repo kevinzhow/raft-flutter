@@ -1,0 +1,195 @@
+{
+  "_source": "GET /channels/threads/followed?limit=N&cursor=C&unreadOnly=1: packages/server/src/routes/channels.ts (Web v1.21.23). With limit the body is {threads, next} (next = opaque cursor string or null, newest activity first); without limit it stays {threads}. unreadOnly keeps threads with unread replies. A stale-served first page adds stale: true. FollowedThread adds hasMention and parentMessageCreatedAt.",
+  "first page (limit=1)": {
+    "threads": [
+      {
+        "threadChannelId": "t1000000-0000-4000-8000-0000000000f2",
+        "parentMessageId": "m1000000-0000-4000-8000-0000000000f1",
+        "parentChannelId": "c1111111-1111-4111-8111-111111111111",
+        "parentChannelName": "engineering",
+        "parentChannelType": "channel",
+        "parentMessagePreview": "Can someone review the release plan?",
+        "parentMessageSenderType": "user",
+        "parentMessageSenderId": "u1000000-0000-4000-8000-0000000000c1",
+        "latestActivityPreview": "Looks good, shipping",
+        "latestActivitySenderType": "agent",
+        "latestActivitySenderId": "a1000000-0000-4000-8000-0000000000aa",
+        "latestActivitySenderName": "cindy",
+        "latestActivityMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "latestActivitySeq": "5521",
+        "firstUnreadMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "lastActivityAt": "2026-10-11T12:00:00.000Z",
+        "replyCount": 3,
+        "lastReplyAt": "2026-10-11T12:00:00.000Z",
+        "unreadCount": 1,
+        "taskId": null,
+        "taskNumber": null,
+        "taskStatus": null,
+        "taskClaimedByType": null,
+        "taskClaimedById": null,
+        "taskClaimedByName": null,
+        "maxReadSeq": 5500,
+        "readStateVersion": 2,
+        "readState": {
+          "kind": "present",
+          "readStateVersion": 2,
+          "maxReadSeq": "5500",
+          "latestActivity": {
+            "messageId": "m3000000-0000-4000-8000-0000000000f3",
+            "seq": "5521"
+          }
+        },
+        "doneAt": null,
+        "isFollowing": true,
+        "unfollowedAt": null,
+        "hasMention": true,
+        "parentMessageCreatedAt": "2026-10-10T08:00:00.000Z"
+      }
+    ],
+    "next": "eyJzIjoiNTUyMSIsImkiOiJ0MTAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwZjIifQ"
+  },
+  "last page (cursor)": {
+    "threads": [
+      {
+        "threadChannelId": "t1000000-0000-4000-8000-0000000000f4",
+        "parentMessageId": "m1000000-0000-4000-8000-0000000000f5",
+        "parentChannelId": "c1111111-1111-4111-8111-111111111111",
+        "parentChannelName": "engineering",
+        "parentChannelType": "channel",
+        "parentMessagePreview": "Can someone review the release plan?",
+        "parentMessageSenderType": "user",
+        "parentMessageSenderId": "u1000000-0000-4000-8000-0000000000c1",
+        "latestActivityPreview": "Looks good, shipping",
+        "latestActivitySenderType": "agent",
+        "latestActivitySenderId": "a1000000-0000-4000-8000-0000000000aa",
+        "latestActivitySenderName": "cindy",
+        "latestActivityMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "latestActivitySeq": "5521",
+        "firstUnreadMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "lastActivityAt": "2026-10-11T12:00:00.000Z",
+        "replyCount": 3,
+        "lastReplyAt": "2026-10-11T12:00:00.000Z",
+        "unreadCount": 0,
+        "taskId": null,
+        "taskNumber": null,
+        "taskStatus": null,
+        "taskClaimedByType": null,
+        "taskClaimedById": null,
+        "taskClaimedByName": null,
+        "maxReadSeq": 5500,
+        "readStateVersion": 2,
+        "readState": {
+          "kind": "present",
+          "readStateVersion": 2,
+          "maxReadSeq": "5500",
+          "latestActivity": {
+            "messageId": "m3000000-0000-4000-8000-0000000000f3",
+            "seq": "5521"
+          }
+        },
+        "doneAt": null,
+        "isFollowing": true,
+        "unfollowedAt": null,
+        "hasMention": false,
+        "parentMessageCreatedAt": "2026-10-10T08:00:00.000Z"
+      }
+    ],
+    "next": null
+  },
+  "unpaged (no limit)": {
+    "threads": [
+      {
+        "threadChannelId": "t1000000-0000-4000-8000-0000000000f2",
+        "parentMessageId": "m1000000-0000-4000-8000-0000000000f1",
+        "parentChannelId": "c1111111-1111-4111-8111-111111111111",
+        "parentChannelName": "engineering",
+        "parentChannelType": "channel",
+        "parentMessagePreview": "Can someone review the release plan?",
+        "parentMessageSenderType": "user",
+        "parentMessageSenderId": "u1000000-0000-4000-8000-0000000000c1",
+        "latestActivityPreview": "Looks good, shipping",
+        "latestActivitySenderType": "agent",
+        "latestActivitySenderId": "a1000000-0000-4000-8000-0000000000aa",
+        "latestActivitySenderName": "cindy",
+        "latestActivityMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "latestActivitySeq": "5521",
+        "firstUnreadMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "lastActivityAt": "2026-10-11T12:00:00.000Z",
+        "replyCount": 3,
+        "lastReplyAt": "2026-10-11T12:00:00.000Z",
+        "unreadCount": 1,
+        "taskId": null,
+        "taskNumber": null,
+        "taskStatus": null,
+        "taskClaimedByType": null,
+        "taskClaimedById": null,
+        "taskClaimedByName": null,
+        "maxReadSeq": 5500,
+        "readStateVersion": 2,
+        "readState": {
+          "kind": "present",
+          "readStateVersion": 2,
+          "maxReadSeq": "5500",
+          "latestActivity": {
+            "messageId": "m3000000-0000-4000-8000-0000000000f3",
+            "seq": "5521"
+          }
+        },
+        "doneAt": null,
+        "isFollowing": true,
+        "unfollowedAt": null,
+        "hasMention": true,
+        "parentMessageCreatedAt": "2026-10-10T08:00:00.000Z"
+      }
+    ]
+  },
+  "stale first page": {
+    "threads": [
+      {
+        "threadChannelId": "t1000000-0000-4000-8000-0000000000f2",
+        "parentMessageId": "m1000000-0000-4000-8000-0000000000f1",
+        "parentChannelId": "c1111111-1111-4111-8111-111111111111",
+        "parentChannelName": "engineering",
+        "parentChannelType": "channel",
+        "parentMessagePreview": "Can someone review the release plan?",
+        "parentMessageSenderType": "user",
+        "parentMessageSenderId": "u1000000-0000-4000-8000-0000000000c1",
+        "latestActivityPreview": "Looks good, shipping",
+        "latestActivitySenderType": "agent",
+        "latestActivitySenderId": "a1000000-0000-4000-8000-0000000000aa",
+        "latestActivitySenderName": "cindy",
+        "latestActivityMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "latestActivitySeq": "5521",
+        "firstUnreadMessageId": "m3000000-0000-4000-8000-0000000000f3",
+        "lastActivityAt": "2026-10-11T12:00:00.000Z",
+        "replyCount": 3,
+        "lastReplyAt": "2026-10-11T12:00:00.000Z",
+        "unreadCount": 0,
+        "taskId": null,
+        "taskNumber": null,
+        "taskStatus": null,
+        "taskClaimedByType": null,
+        "taskClaimedById": null,
+        "taskClaimedByName": null,
+        "maxReadSeq": 5500,
+        "readStateVersion": 2,
+        "readState": {
+          "kind": "present",
+          "readStateVersion": 2,
+          "maxReadSeq": "5500",
+          "latestActivity": {
+            "messageId": "m3000000-0000-4000-8000-0000000000f3",
+            "seq": "5521"
+          }
+        },
+        "doneAt": null,
+        "isFollowing": true,
+        "unfollowedAt": null,
+        "hasMention": false,
+        "parentMessageCreatedAt": "2026-10-10T08:00:00.000Z"
+      }
+    ],
+    "next": null,
+    "stale": true
+  }
+}

@@ -10,25 +10,64 @@ class AnnouncementPageData {
   final String body;
 }
 
+/// `Announcement.cta`: the primary action beside "Got it". [href] is an
+/// internal path or query (`/...`, `?...`) or an https URL.
+@immutable
+class AnnouncementCta {
+  const AnnouncementCta({required this.label, required this.href});
+  final String label, href;
+
+  /// Web `activate`: a leading `/` or `?` navigates inside the app, anything
+  /// else opens in a new browsing context.
+  bool get internal => href.startsWith('/') || href.startsWith('?');
+}
+
+/// `Announcement.image`: a picture served by `GET /announcements/images/:id`
+/// (public, no credentials) with its localized alt text.
+@immutable
+class AnnouncementImage {
+  const AnnouncementImage({required this.assetId, required this.alt});
+  final String assetId, alt;
+}
+
 /// Web `Announcement` (packages/shared): an account-level popup, shown until
-/// the user explicitly finishes reading it; a new announcement is a new id.
+/// the user dismisses it (OK, CTA or close); a new announcement is a new id.
 @immutable
 class Announcement {
   const Announcement({
     required this.id,
     required this.title,
     required this.pages,
+    this.label,
+    this.cta,
+    this.image,
     this.publishedAt,
     this.startsAt,
     this.endsAt,
     this.locale,
+    this.deliveryVersion,
+    this.deliveryServerId,
   });
 
   final String id, title;
 
-  /// Empty pages are the server's "clear" signal: nothing is presented.
+  /// Eyebrow of the dialog; null reads "Latest updates".
+  final String? label;
+  final AnnouncementCta? cta;
+  final AnnouncementImage? image;
+
+  /// Empty pages are the server's "clear" signal: nothing is presented. Only
+  /// the first page is shown.
   final List<AnnouncementPageData> pages;
   final String? publishedAt, startsAt, endsAt, locale;
+
+  /// Additive `deliveryVersion` (omitted by older servers: version 1).
+  final int? deliveryVersion;
+
+  /// `deliveryScope: { type: 'server', serverId }`: the one server this row
+  /// is delivered for. Null is the account scope (also the omitted legacy
+  /// value).
+  final String? deliveryServerId;
 
   static Announcement? fromJson(Object? raw) {
     if (raw is! Map) return null;
@@ -44,21 +83,58 @@ class Announcement {
             ),
     ];
     String? text(String key) => raw[key] is String ? raw[key] as String : null;
+    final label = text('label')?.trim();
+    final cta = raw['cta'];
+    final image = raw['image'];
+    final scope = raw['deliveryScope'];
     return Announcement(
       id: id,
       title: text('title') ?? '',
       pages: pages,
+      label: label == null || label.isEmpty ? null : label,
+      cta:
+          cta is Map &&
+              cta['label'] is String &&
+              (cta['label'] as String).trim().isNotEmpty &&
+              cta['href'] is String &&
+              (cta['href'] as String).trim().isNotEmpty
+          ? AnnouncementCta(
+              label: (cta['label'] as String).trim(),
+              href: (cta['href'] as String).trim(),
+            )
+          : null,
+      image:
+          image is Map && image['assetId'] is String && image['alt'] is String
+          ? AnnouncementImage(
+              assetId: image['assetId'] as String,
+              alt: image['alt'] as String,
+            )
+          : null,
       publishedAt: text('publishedAt'),
       startsAt: text('startsAt'),
       endsAt: text('endsAt'),
       locale: text('locale'),
+      deliveryVersion: raw['deliveryVersion'] is int
+          ? raw['deliveryVersion'] as int
+          : null,
+      deliveryServerId:
+          scope is Map &&
+              scope['type'] == 'server' &&
+              scope['serverId'] is String
+          ? scope['serverId'] as String
+          : null,
     );
   }
 }
 
-typedef AnnouncementGet =
-    Future<dynamic> Function(String path, {Map<String, dynamic>? query});
-typedef AnnouncementPost = Future<dynamic> Function(String path);
+typedef AnnouncementGet = Future<dynamic> Function(
+  String path, {
+  Map<String, dynamic>? query,
+});
+typedef AnnouncementPost = Future<dynamic> Function(
+  String path, {
+  Map<String, dynamic>? query,
+});
 
 /// Web `useAnnouncementStore` (packages/web/src/store/announcementStore.ts).
 ///
@@ -66,13 +142,19 @@ typedef AnnouncementPost = Future<dynamic> Function(String path);
 ///   user has not finished reading) on workspace entry and on return to the
 ///   foreground. It never runs while a row is presented ([pending] non-empty)
 ///   and shares one in-flight request; a publish event does not trigger it.
-/// * [close] (✕, Escape, backdrop) only hides the row locally; it returns on
-///   the next entry/foreground load.
-/// * [dismiss] (OK / Enter on the last page) hides it and records the
-///   explicit read-complete `POST /announcements/:id/dismiss`. A failed write
-///   lands in [writeFailedIds] (memory only): later loads skip past it with
-///   `?after=<last failed id>` for the rest of this session, and the
-///   presentation raises an error notice.
+/// * [close] only hides the row locally. Web v1.21.12 no longer uses it for
+///   the dialog: ✕, Escape, the scrim, "Got it", the CTA and Enter all
+///   [dismiss].
+/// * [dismiss] hides the row and records `POST /announcements/:id/dismiss`
+///   (closing counts as read since v1.21.12). A failed write
+///   lands in [writeFailedIds] (memory only): later loads of the same context
+///   skip past it with `?after=<last failed id of that context>` for the rest
+///   of this session, and the presentation raises an error notice.
+///
+/// Since Web v1.21.23 both calls carry `server_id=<current server>` whenever
+/// a server is selected: the server delivers a server-targeted announcement
+/// only with it. A switch of server fences the previous server's response,
+/// drops the previous server's rows from [pending] and re-reads.
 ///
 /// Account scoped: [reset] (account change / sign-out) drops everything and
 /// fences responses of the previous account.
@@ -81,6 +163,7 @@ class AnnouncementStore extends ChangeNotifier {
     required this.get,
     required this.post,
     required this.principal,
+    this.serverId,
   }) : _principal = principal();
 
   final AnnouncementGet get;
@@ -90,6 +173,20 @@ class AnnouncementStore extends ChangeNotifier {
   /// authStore does when `user.id` changes.
   final String? Function() principal;
   String? _principal;
+
+  /// The selected server (Web `useServerStore.current?.id`); null reads the
+  /// account context and sends no `server_id`.
+  final String? Function()? serverId;
+  String? _contextKey;
+  bool _contextSynced = false;
+
+  /// Failure frontiers per context (`account` or a server id): the last id is
+  /// the request-only `after` cursor of that context's queue.
+  final Map<String, List<String>> _failedByContext = {};
+
+  /// Bumped only by [reset] (Web `announcementAccountGeneration`): a write
+  /// that fails after an account change records nothing.
+  int _accountGeneration = 0;
 
   List<Announcement> pending = const [];
   bool loaded = false;
@@ -114,23 +211,56 @@ class AnnouncementStore extends ChangeNotifier {
     reset();
   }
 
+  String _context() => serverId?.call() ?? 'account';
+
+  /// The queue was last read (or never read) for another context than the
+  /// selected server.
+  bool get needsReload => !_contextSynced || _contextKey != _context();
+
+  /// Web `syncContext`: a changed context retires the in-flight read and
+  /// drops rows delivered for another server.
+  void _syncContext() {
+    final next = _context();
+    if (_contextSynced && _contextKey == next) return;
+    final first = !_contextSynced;
+    _contextSynced = true;
+    _contextKey = next;
+    if (first) return;
+    _generation++;
+    _inFlight = null;
+    pending = [
+      for (final a in pending)
+        if (a.deliveryServerId == null || a.deliveryServerId == next) a,
+    ];
+    loaded = false;
+    if (!_disposed) notifyListeners();
+  }
+
   Future<void> load() {
     if (_disposed) return Future.value();
     _syncPrincipal();
+    _syncContext();
     // A presented row is owned by this presentation until the user closes
     // it; another device's dismissal must not pull it away.
     if (pending.isNotEmpty) return Future.value();
     final inFlight = _inFlight;
     if (inFlight != null) return inFlight;
     final generation = _generation;
+    final requestContext = _context();
     final completer = Completer<void>();
     _inFlight = completer.future;
     () async {
       try {
-        final after = writeFailedIds.isEmpty ? null : writeFailedIds.last;
+        final skipped = _failedByContext[requestContext] ?? const <String>[];
+        final after = skipped.isEmpty ? null : skipped.last;
         final data = await get(
           '/announcements/active',
-          query: after == null ? null : {'after': after},
+          query: after == null && requestContext == 'account'
+              ? null
+              : {
+                  'after': ?after,
+                  if (requestContext != 'account') 'server_id': requestContext,
+                },
         );
         if (_disposed || generation != _generation) return;
         final rows = data is Map && data['announcements'] is List
@@ -143,7 +273,10 @@ class AnnouncementStore extends ChangeNotifier {
         // A row presented while this request was in flight wins over a late
         // (especially empty) response.
         if (pending.isEmpty) {
-          final hidden = {...writeFailedIds, ...markedReadIds};
+          final hidden = {
+            ...(_failedByContext[requestContext] ?? const <String>[]),
+            ...markedReadIds,
+          };
           pending = [
             for (final row in rows)
               if (!hidden.contains(row.id)) row,
@@ -163,15 +296,24 @@ class AnnouncementStore extends ChangeNotifier {
     return completer.future;
   }
 
-  /// Records an explicit confirmation. Rendering and navigation never do.
+  /// Records explicit confirmation, closing or CTA activation. Rendering
+  /// alone never does.
   Future<void> markRead(String id) async {
     if (_disposed || markedReadIds.contains(id)) return;
-    final generation = _generation;
+    final writeContext = _context();
+    final accountGeneration = _accountGeneration;
     markedReadIds = [...markedReadIds, id];
     try {
-      await post('/announcements/$id/dismiss');
+      await post(
+        '/announcements/$id/dismiss',
+        query: writeContext == 'account' ? null : {'server_id': writeContext},
+      );
     } catch (error) {
-      if (_disposed || generation != _generation) return;
+      if (_disposed || accountGeneration != _accountGeneration) return;
+      final failed = _failedByContext[writeContext] ?? const <String>[];
+      if (!failed.contains(id)) {
+        _failedByContext[writeContext] = [...failed, id];
+      }
       debugPrint('Failed to record announcement as read: $error');
       markedReadIds = [
         for (final marked in markedReadIds)
@@ -184,7 +326,7 @@ class AnnouncementStore extends ChangeNotifier {
     }
   }
 
-  /// Local visibility only (✕ / Escape / backdrop).
+  /// Local visibility only.
   void close(String id) {
     if (_disposed || !pending.any((a) => a.id == id)) return;
     pending = [
@@ -194,7 +336,7 @@ class AnnouncementStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Explicit read-complete + hide (OK / Enter on the last page).
+  /// Account dismissal + local hide, shared by every dismissal action.
   Future<void> dismiss(String id) {
     close(id);
     return markRead(id);
@@ -202,7 +344,11 @@ class AnnouncementStore extends ChangeNotifier {
 
   void reset() {
     _generation++;
+    _accountGeneration++;
     _inFlight = null;
+    _failedByContext.clear();
+    _contextSynced = false;
+    _contextKey = null;
     final changed =
         pending.isNotEmpty ||
         loaded ||

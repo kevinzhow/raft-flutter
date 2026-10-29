@@ -334,7 +334,7 @@ agent_case('agent.mcp-loading', 'Agent detail: MCP tab loading (desktop)', 'mcp'
 
 
 DLG = '[data-slot="dialog-content"]'
-CARD_DLG = '.fixed.inset-0 [data-slot="card"]'
+CARD_DLG = '.fixed.inset-0 [data-slot="dialog-card"]'
 click = lambda sel: {'type': 'click', 'target': sel}
 tap = lambda key: {'type': 'tap', 'key': key}
 

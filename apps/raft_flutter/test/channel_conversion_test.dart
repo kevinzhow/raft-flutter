@@ -7,7 +7,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/features/channel_conversion_section.dart';
 
-import 'joint_channel_views_test.dart' show fixture, host;
+import 'support/joint_channel_fixture.dart' show fixture, host;
 
 Map<String, dynamic> channel({
   String type = 'channel',
@@ -136,7 +136,7 @@ void main() {
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      expect(find.text('Convert to joint channel'), findsNothing);
+      expect(find.text('Convert to Joint Channel'), findsNothing);
       expect(
         a.calls.where(
           (c) => c.method == 'GET' && c.path.startsWith('/channels'),
@@ -175,13 +175,13 @@ void main() {
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      await confirm(t, 'Convert to joint channel');
+      await confirm(t, 'Convert to Joint Channel');
       final call = a.calls.singleWhere(
         (c) => c.path.endsWith('/convert-to-joint'),
       );
       expect(call.data, {'commandId': commandId, 'observeProgress': true});
       expect(find.text('Waiting for server confirmation.'), findsOneWidget);
-      expect(find.text('Convert to joint channel'), findsNothing);
+      expect(find.text('Convert to Joint Channel'), findsNothing);
       a.routes['GET /channels/c1'] = (_) => channel(
         job: job('running'),
         command: {
@@ -191,9 +191,9 @@ void main() {
           'jobId': 'j1',
         },
       );
-      await t.tap(find.text('Check conversion status'));
+      await t.tap(find.text('Check Conversion Status'));
       await flush(t);
-      expect(find.text('Cancel conversion'), findsOneWidget);
+      expect(find.text('Cancel Conversion'), findsOneWidget);
       a.routes['GET /channels/conversion-jobs/j1'] = (_) => {
         'channel': channel(type: 'joint', job: job('done')),
         'conversionJob': job('done'),
@@ -246,10 +246,10 @@ void main() {
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      await confirm(t, 'Convert to joint channel');
+      await confirm(t, 'Convert to Joint Channel');
       expect(find.text('Notes.pdf'), findsOneWidget);
       expect(find.text('u1'), findsNothing);
-      await confirm(t, 'Cancel upload');
+      await confirm(t, 'Cancel Upload');
       expect(find.text('Notes.pdf'), findsNothing);
       expect(
         a.calls.any(
@@ -292,12 +292,12 @@ void main() {
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      expect(find.text('Cancel conversion'), findsNothing);
-      await confirm(t, 'Retry conversion');
+      expect(find.text('Cancel Conversion'), findsNothing);
+      await confirm(t, 'Retry Conversion');
       expect(a.calls.singleWhere((c) => c.path.endsWith('/retry')).data.keys, [
         'commandId',
       ]);
-      expect(find.text('Convert to joint channel'), findsNothing);
+      expect(find.text('Convert to Joint Channel'), findsNothing);
       await t.pumpWidget(const SizedBox());
     },
   );
@@ -338,7 +338,7 @@ void main() {
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      await confirm(t, 'Convert to joint channel');
+      await confirm(t, 'Convert to Joint Channel');
       expect(find.text('Conversion outcome is not confirmed.'), findsOneWidget);
       expect(find.text('Conversion complete'), findsNothing);
       await t.pumpWidget(
@@ -351,7 +351,7 @@ void main() {
         ),
       );
       await flush(t);
-      expect(find.text('Convert to joint channel'), findsNothing);
+      expect(find.text('Convert to Joint Channel'), findsNothing);
       expect(find.text('Conversion complete'), findsNothing);
       expect(
         a.calls.where((c) => c.path.endsWith('/convert-to-joint')).length,
@@ -376,7 +376,7 @@ void main() {
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      await t.tap(find.text('Convert to joint channel'));
+      await t.tap(find.text('Convert to Joint Channel'));
       await flush(t);
       final retained = t.widget<RaftFormDialog>(find.byType(RaftFormDialog));
       w.server = RaftRecord({'id': 's1', 'role': 'member'});
@@ -407,10 +407,10 @@ void main() {
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      await t.tap(find.text('Convert to joint channel'));
+      await t.tap(find.text('Convert to Joint Channel'));
       await flush(t);
       allowed = false;
-      await t.tap(find.text('Convert to joint channel').last);
+      await t.tap(find.text('Convert to Joint Channel').last);
       await flush(t);
       expect(find.byType(RaftFormDialog), findsNothing);
       expect(find.text('Chat with members from other servers'), findsNothing);
@@ -453,7 +453,7 @@ void main() {
       };
       a.routes['POST /channels/conversion-jobs/j1/cancel'] = (_) => canceled;
       a.routes['GET /channels/conversion-jobs/j1'] = (_) => canceled;
-      await confirm(t, 'Cancel conversion');
+      await confirm(t, 'Cancel Conversion');
       expect(find.text('Conversion canceled'), findsOneWidget);
       expect(a.calls.singleWhere((c) => c.path.endsWith('/cancel')).data.keys, [
         'commandId',
@@ -464,7 +464,7 @@ void main() {
       });
       await flush(t);
       expect(find.text('Conversion canceled'), findsOneWidget);
-      expect(find.text('Cancel conversion'), findsNothing);
+      expect(find.text('Cancel Conversion'), findsNothing);
       await t.pumpWidget(const SizedBox());
     },
   );
@@ -488,7 +488,7 @@ void main() {
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      await confirm(t, 'Convert to joint channel');
+      await confirm(t, 'Convert to Joint Channel');
       expect(find.byType(RaftFormDialog), findsOneWidget);
       w.server = RaftRecord({'id': 's1', 'role': 'member'});
       w.notifyListeners();
@@ -501,7 +501,7 @@ void main() {
       expect(find.byType(RaftFormDialog), findsNothing);
       expect(find.text('Private recovery detail'), findsNothing);
       expect(find.text('Private conversion receipt'), findsNothing);
-      expect(find.text('Retry conversion'), findsNothing);
+      expect(find.text('Retry Conversion'), findsNothing);
       await t.pumpWidget(const SizedBox());
     },
   );

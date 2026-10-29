@@ -1,60 +1,318 @@
 #!/usr/bin/env python3
-"""Run the isolated local comparison stack without changing global tools."""
+"""Run an isolated local comparison stack without changing global tools.
+
+Usage: tool/raft-stack [--config PATH] start|stop|status|ports|flags|sync
+
+Each config (default .local/stack.json) describes one source checkout and one
+raftdev environment, so several Raft versions can run side by side from one
+worktree. Config keys (all paths may start with ~):
+  environment, sourceDir, sourceCommit, webUrl, apiUrl      required
+  sourceVersion   e.g. "v1.21.23"; selects <patch>-<version> reference patches
+  patches         patch names to apply (default seed-history, risingwave-memory)
+  toolchain       {"binDir": "<dir with node and pnpm>", "env": {"COREPACK_HOME": ...}}
+                  env is exported by a pnpm wrapper placed first on PATH (tmux windows
+                  only inherit PATH)
+                  default: npx-provided node 24.21.0 / pnpm 10.29.3 (toolchain-paths.txt)
+  risingwaveImage override of the pinned RisingWave image
+  featureFlags    flag keys enabled for the fixture server after start (or via the
+                  flags action): dev stacks seed no raftbench_* rows, so a flag row
+                  plus a server-stage allow rule is written to the environment's
+                  PostgreSQL container
+  fixturePlan     optional: set the fixture server's plan (free|founder|partner|pro) when
+                  flags are applied. Creating a hosted agent counts against the plan's seats
+                  and the fixture server's "pro" plan has one, so hosted-agent work needs
+                  "founder" (unlimited); a plan removed from the config is not reverted
+  serverEnvFile   private (mode 600) KEY=VALUE file for the Raft server, linked as
+                  <sourceDir>/packages/server/.env (the server loads it with dotenv;
+                  raftdev itself only forwards a fixed list of variables). Created on
+                  start/sync with generated keys, see below
+  antiprotonUrl   required with serverEnvFile: http://localhost:<port> of the local
+                  antiproton (tool/antiproton-local); written as
+                  ANTIPROTON_BASE_URL_OVERRIDE
+The sync action re-applies patches, the server env file and flags to a running stack;
+the server (node --watch) is restarted so it re-reads the env file. With
+the antiproton-local-<version> patch the hosted-agent path works locally (RaftBench
+analysis, Cloud agents): RAFTBENCH_LOCAL_SERVER_ID is the fixture server, the provider
+token comes from `tool/antiproton-local mint-token`, and add antiproton_hosted_runtime
+to featureFlags.
+Logs are private files .local/<config stem>-<action>.log (stack-<action>.log for
+the default config).
+"""
+import hashlib
 import json
 import os
 from pathlib import Path
+import re
+import shlex
 import subprocess
 import sys
 
-root = Path(__file__).resolve().parents[1]
-local = root / '.local'
-local.mkdir(mode=0o700, exist_ok=True)
-if len(sys.argv) != 2 or sys.argv[1] not in {'start', 'stop', 'status', 'ports'}:
-    raise SystemExit('Usage: tool/raft-stack start|stop|status|ports')
-config_path = local / 'stack.json'
-if not config_path.exists():
-    raise SystemExit('Create .local/stack.json using docs/local-test-stack.md first.')
-config = json.loads(config_path.read_text())
-source = Path(config['sourceDir'])
-actual = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
-if actual != config['sourceCommit']:
-    raise SystemExit('Source revision differs from the recorded Web reference.')
-paths_file = local / 'toolchain-paths.txt'
-if not paths_file.exists():
-    paths_file.write_text(subprocess.check_output([
-        'npx', '--yes', '--package=node@24.21.0', '--package=pnpm@10.29.3',
-        '-c', 'command -v node; command -v pnpm',
-    ], text=True))
-paths = paths_file.read_text().splitlines()
-env = {k: v for k, v in os.environ.items() if not k.lower().startswith('npm_config_')}
-env['PATH'] = str(Path(paths[0]).parent) + os.pathsep + env.get('PATH', '')
-env.update(SLOCKDEV_TUNNEL='0', SLOCKDEV_IDLE_TTL_SECONDS='0', SLOCKDEV_TRACE_OBSERVE='0', RAFTDEV_RISINGWAVE_IMAGE='mirror.gcr.io/risingwavelabs/risingwave@sha256:ba5915a5e85c938a3ec62d76c63c6e4cb37d4f4e3c5c30886f0d2eff61b70073')
-action = sys.argv[1]
-if action == 'start':
-    import hashlib
-    repair_dir = root / 'tool/reference-patches'
-    # Local RisingWave uses a 2 GiB container limit and a 1.5 GiB internal
-    # budget; the pinned Source launcher patch survives stack recreation.
-    for name in ('verify-inbox-parity', 'seed-history', 'risingwave-memory'):
-        repair = json.loads((repair_dir / (name + '.json')).read_text())
-        target = source / repair['path']
-        digest = hashlib.sha256(target.read_bytes()).hexdigest()
-        if digest == repair['beforeSHA256']:
-            subprocess.run(['git', 'apply', '--check', str(repair_dir / (name + '.patch'))], cwd=source, check=True)
-            subprocess.run(['git', 'apply', str(repair_dir / (name + '.patch'))], cwd=source, check=True)
-        elif digest != repair['afterSHA256']:
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from local_env_file import random_b64, read_env_file, write_env_file  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[1]
+LOCAL = ROOT / '.local'
+PATCH_DIR = ROOT / 'tool/reference-patches'
+ACTIONS = {'start', 'stop', 'status', 'ports', 'flags', 'sync'}
+DEFAULT_PATCHES = ('seed-history', 'risingwave-memory')
+DEFAULT_IMAGE = 'mirror.gcr.io/risingwavelabs/risingwave@sha256:ba5915a5e85c938a3ec62d76c63c6e4cb37d4f4e3c5c30886f0d2eff61b70073'
+USAGE = 'Usage: tool/raft-stack [--config PATH] start|stop|status|ports|flags|sync'
+
+
+def parse_args(argv):
+    args = list(argv)
+    config = LOCAL / 'stack.json'
+    if args[:1] == ['--config'] and len(args) >= 2:
+        config = Path(args[1]).expanduser()
+        args = args[2:]
+    if len(args) != 1 or args[0] not in ACTIONS:
+        raise SystemExit(USAGE)
+    return config, args[0]
+
+
+def select_patches(config, patch_dir=PATCH_DIR):
+    """Return patch base names; a <name>-<sourceVersion> pair wins over <name>."""
+    version = config.get('sourceVersion')
+    names = []
+    for name in config.get('patches', DEFAULT_PATCHES):
+        if version and (patch_dir / f'{name}-{version}.json').exists():
+            name = f'{name}-{version}'
+        names.append(name)
+    return names
+
+
+def apply_patches(source, names, patch_dir=PATCH_DIR):
+    """Apply each reviewed patch whose files still have the recorded before hashes.
+
+    A manifest is either one file ({path, beforeSHA256, afterSHA256}) or several
+    ({files: [...]}). All files must be in the same state: all before (apply), all
+    after (already applied) or the patch is refused. Returns the names applied now.
+    """
+    applied = []
+    for name in names:
+        repair = json.loads((patch_dir / (name + '.json')).read_text())
+        files = repair.get('files') or [repair]
+        digests = [hashlib.sha256((source / item['path']).read_bytes()).hexdigest() for item in files]
+        patch = patch_dir / (name + '.patch')
+        if all(digest == item['beforeSHA256'] for digest, item in zip(digests, files)):
+            subprocess.run(['git', 'apply', '--check', str(patch)], cwd=source, check=True)
+            subprocess.run(['git', 'apply', str(patch)], cwd=source, check=True)
+            applied.append(name)
+        elif not all(digest == item['afterSHA256'] for digest, item in zip(digests, files)):
             raise SystemExit('Reference setup file differs from the reviewed compatibility patch: ' + name)
-args = ['./raftdev', action]
-if action != 'status':
-    args.append(config['environment'])
-if action == 'start':
-    args += ['--description', 'Raft Flutter Web comparison fixtures', '--risingwave=full']
-log = local / f'stack-{action}.log'
-with log.open('w') as output:
-    log.chmod(0o600)
-    result = subprocess.run(args, cwd=source, env=env, stdout=output, stderr=subprocess.STDOUT)
-print(f'raftdev {action}: exit {result.returncode}; private local log: {log}')
-if result.returncode == 0 and action in {'start', 'status', 'ports'}:
-    print('Web: ' + config['webUrl'])
-    print('API: ' + config['apiUrl'])
-raise SystemExit(result.returncode)
+    return applied
+
+
+def toolchain_bin(config):
+    toolchain = config.get('toolchain') or {}
+    if toolchain.get('binDir'):
+        return Path(toolchain['binDir']).expanduser()
+    paths_file = LOCAL / 'toolchain-paths.txt'
+    if not paths_file.exists():
+        paths_file.write_text(subprocess.check_output([
+            'npx', '--yes', '--package=node@24.21.0', '--package=pnpm@10.29.3',
+            '-c', 'command -v node; command -v pnpm',
+        ], text=True))
+    return Path(paths_file.read_text().splitlines()[0]).parent
+
+
+FLAG_KEY_RE = re.compile(r'^[a-z0-9_]{1,80}$')
+UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
+
+
+def feature_flag_sql(keys, server_id):
+    """Idempotent SQL: default-off server-randomised flags with an allow rule for one server."""
+    if not UUID_RE.match(server_id):
+        raise SystemExit('Fixture server id is not a UUID.')
+    statements = ['BEGIN;']
+    for key in keys:
+        if not FLAG_KEY_RE.match(key):
+            raise SystemExit('Invalid feature flag key: ' + key)
+        statements.append(
+            'INSERT INTO feature_flags (key, description, enabled, kill_switch, randomization_unit, default_enabled, salt) '
+            f"VALUES ('{key}', 'Local fixture flag', true, false, 'server', false, '{key}') ON CONFLICT (key) DO NOTHING;")
+        statements.append(
+            'INSERT INTO feature_flag_rules (id, flag_key, stage, priority, decision, "values") '
+            f"SELECT gen_random_uuid(), '{key}', 'server', 0, 'allow', '[\"{server_id}\"]'::jsonb "
+            f"WHERE NOT EXISTS (SELECT 1 FROM feature_flag_rules WHERE flag_key = '{key}' AND stage = 'server');")
+    statements.append('COMMIT;')
+    return '\n'.join(statements) + '\n'
+
+
+FIXTURE_PLANS = ('free', 'founder', 'partner', 'pro')
+
+
+def fixture_plan_sql(plan, server_id):
+    if plan not in FIXTURE_PLANS:
+        raise SystemExit('Invalid fixturePlan: ' + str(plan))
+    if not UUID_RE.match(server_id):
+        raise SystemExit('Fixture server id is not a UUID.')
+    return f"UPDATE servers SET plan = '{plan}' WHERE id = '{server_id}';\n"
+
+
+def run_psql(config, sql):
+    subprocess.run(['docker', 'exec', '-i', f"slock-dev-{config['environment']}-pg",
+                    'psql', '-U', 'postgres', '-d', 'slock', '-v', 'ON_ERROR_STOP=1', '-q'],
+                   input=sql, text=True, check=True, stdout=subprocess.DEVNULL)
+
+
+def apply_feature_flags(config, source):
+    """Flags and (optionally) the fixture server's plan, both written to the environment's PostgreSQL."""
+    keys = config.get('featureFlags') or []
+    plan = config.get('fixturePlan')
+    if not keys and not plan:
+        return
+    fixture = json.loads((source / f".dev-env-{config['environment']}.json").read_text())
+    if keys:
+        run_psql(config, feature_flag_sql(keys, fixture['server']['id']))
+        print('feature flags enabled for the fixture server: ' + ', '.join(keys))
+    if plan:
+        run_psql(config, fixture_plan_sql(plan, fixture['server']['id']))
+        print('fixture server plan set to ' + plan)
+
+
+def fixture_server_id(config, source):
+    path = source / f".dev-env-{config['environment']}.json"
+    return json.loads(path.read_text())['server']['id'] if path.exists() else None
+
+
+def server_env_values(config, existing, server_id):
+    """Env for the local Raft server: loopback antiproton, the fixture server, secrets at rest.
+
+    Keys already in the file win (generated secrets stay stable; the provider tokens
+    written by tool/antiproton-local mint-token are kept); the two derived values are
+    refreshed from the config and fixture.
+    """
+    values = dict(existing)
+    values['ANTIPROTON_BASE_URL_OVERRIDE'] = config['antiprotonUrl'].rstrip('/')
+    # Not the canary setup: a canary server is frozen to canary RaftBench provisions and could
+    # not also host Cloud agents. Drop it (and its token) if an earlier version of this file had it.
+    for stale in ('RAFTBENCH_CANARY_SERVER_ID', 'ANTIPROTON_CANARY_PROVISIONING_TOKEN'):
+        values.pop(stale, None)
+    if server_id:
+        values['RAFTBENCH_LOCAL_SERVER_ID'] = server_id
+    for key in ('SLOCK_PROVIDER_CREDENTIAL_KEY', 'RAFT_APP_WEBHOOK_ENCRYPTION_KEY'):
+        values.setdefault(key, random_b64())
+    return values
+
+
+def prepare_server_env(config, source):
+    """Create/refresh the private server env file and link it as packages/server/.env.
+
+    Returns True when the file content changed. A foreign regular .env is never replaced.
+    """
+    if not config.get('serverEnvFile'):
+        return False
+    if not config.get('antiprotonUrl'):
+        raise SystemExit('antiprotonUrl is required with serverEnvFile.')
+    env_file = Path(config['serverEnvFile']).expanduser()
+    existing = read_env_file(env_file)
+    values = server_env_values(config, existing, fixture_server_id(config, source))
+    changed = values != existing
+    if changed or not env_file.exists():
+        write_env_file(env_file, values)
+    env_file.chmod(0o600)
+    link = source / 'packages/server/.env'
+    if link.is_symlink():
+        if Path(os.readlink(link)) != env_file:
+            link.unlink()
+    elif link.exists():
+        raise SystemExit(f'{link} exists and is not the managed link; move it away first.')
+    if not link.exists():
+        link.symlink_to(env_file)
+    return changed
+
+
+def restart_server_watch(source):
+    """The server runs under node --watch: touching an imported file restarts it, so it re-reads .env."""
+    os.utime(source / 'packages/server/src/server.ts')
+
+
+def toolchain_env(config):
+    values = (config.get('toolchain') or {}).get('env', {})
+    return {k: os.path.expanduser(str(v)) for k, v in values.items()}
+
+
+def write_wrapper_dir(config, directory):
+    """Create a pnpm wrapper that exports toolchain.env.
+
+    raftdev runs server/web/daemon in tmux windows that do not inherit this
+    process's environment (only PATH reaches them), so settings such as
+    COREPACK_HOME must travel inside a wrapper that sits first on PATH.
+    """
+    values = toolchain_env(config)
+    if not values:
+        return None
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    lines = ['#!/bin/sh'] + [f'export {k}={shlex.quote(v)}' for k, v in sorted(values.items())]
+    lines.append(f'exec {shlex.quote(str(toolchain_bin(config) / "pnpm"))} "$@"')
+    wrapper = directory / 'pnpm'
+    wrapper.write_text('\n'.join(lines) + '\n')
+    wrapper.chmod(0o755)
+    return directory
+
+
+def build_env(config, base_env, wrapper_dir=None):
+    env = {k: v for k, v in base_env.items() if not k.lower().startswith('npm_config_')}
+    path = [str(toolchain_bin(config))]
+    if wrapper_dir:
+        path.insert(0, str(wrapper_dir))
+    env['PATH'] = os.pathsep.join(path) + os.pathsep + env.get('PATH', '')
+    env.update(toolchain_env(config))
+    env.update(SLOCKDEV_TUNNEL='0', SLOCKDEV_IDLE_TTL_SECONDS='0', SLOCKDEV_TRACE_OBSERVE='0',
+               RAFTDEV_RISINGWAVE_IMAGE=config.get('risingwaveImage', DEFAULT_IMAGE))
+    return env
+
+
+def main(argv):
+    LOCAL.mkdir(mode=0o700, exist_ok=True)
+    config_path, action = parse_args(argv)
+    if not config_path.exists():
+        raise SystemExit(f'Create {config_path} using docs/local-test-stack.md first.')
+    config = json.loads(config_path.read_text())
+    source = Path(config['sourceDir']).expanduser()
+    actual = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+    if actual != config['sourceCommit']:
+        raise SystemExit('Source revision differs from the recorded Web reference.')
+    stem = 'stack' if config_path.name == 'stack.json' else config_path.stem
+    env = build_env(config, os.environ, write_wrapper_dir(config, LOCAL / f'toolchain-{stem}'))
+    if action == 'start':
+        # Local RisingWave uses a 2 GiB container limit and a 1.5 GiB internal
+        # budget; the pinned Source launcher patch survives stack recreation.
+        apply_patches(source, select_patches(config))
+        prepare_server_env(config, source)
+    if action == 'sync':
+        applied = apply_patches(source, select_patches(config))
+        # Always restart the server (node --watch): it reads the env file only at launch,
+        # and tokens minted into it later do not change its content hash for us to detect.
+        if prepare_server_env(config, source) or config.get('serverEnvFile'):
+            restart_server_watch(source)
+        apply_feature_flags(config, source)
+        print('synced: patches applied now: ' + (', '.join(applied) or 'none'))
+        return 0
+    if action == 'flags':
+        apply_feature_flags(config, source)
+        return 0
+    args = ['./raftdev', action]
+    if action != 'status':
+        args.append(config['environment'])
+    if action == 'start':
+        args += ['--description', 'Raft Flutter Web comparison fixtures', '--risingwave=full']
+    log = LOCAL / f'{stem}-{action}.log'
+    with log.open('w') as output:
+        log.chmod(0o600)
+        result = subprocess.run(args, cwd=source, env=env, stdout=output, stderr=subprocess.STDOUT)
+    print(f'raftdev {action}: exit {result.returncode}; private local log: {log}')
+    if result.returncode == 0 and action == 'start':
+        apply_feature_flags(config, source)
+        # The fixture server id exists only now; the freshly started server needs it.
+        if prepare_server_env(config, source):
+            restart_server_watch(source)
+    if result.returncode == 0 and action in {'start', 'status', 'ports'}:
+        print('Web: ' + config['webUrl'])
+        print('API: ' + config['apiUrl'])
+    return result.returncode
+
+
+if __name__ == '__main__':
+    raise SystemExit(main(sys.argv[1:]))

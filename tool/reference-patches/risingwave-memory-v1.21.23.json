@@ -1,0 +1,6 @@
+{
+  "path": "scripts/dev/raftdev.ts",
+  "beforeSHA256": "b7c61a60e041cb43a977b748973aa13d06a73828f497dba255153286cd4637c3",
+  "afterSHA256": "63d2bd3c5ec09f72a139f5a151b3c2bbb9bf3860c8ee21cb1aa145f14d414840",
+  "reason": "Local fixture RisingWave: 2 GiB container/no swap, 1.5 GiB internal budget, 16 MiB compactor metadata cache, 32 MiB SSTs and one streaming/compaction worker. Source v1.21.23 (same pinned v2.8.0 image): v2.8.0 default compactor allocation cannot start with only the smaller total budget; Web, seed and queries unchanged."
+}

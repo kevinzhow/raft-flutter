@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final height in [915.0, 568.0]) {
       for (final density in RaftDensity.values) {
         testWidgets(
-          '$family/$dark height$height $density source roles retain geometry and callbacks',
+          '${dark ? 'dark' : 'light'} height$height $density a57 Elegant roles retain geometry and callbacks',
           (tester) async {
             var activations = 0;
             final selected = ValueNotifier(false);
@@ -22,7 +19,10 @@ void main() {
             addTearDown(tester.view.resetDevicePixelRatio);
             await tester.pumpWidget(
               MaterialApp(
-                theme: raftTheme(family, dark: dark),
+                theme: raftTheme(
+                  pack: packForThemeId(elegantThemePackId),
+                  dark: dark,
+                ),
                 home: Scaffold(
                   body: RaftDensityScope(
                     density: density,
@@ -87,11 +87,7 @@ void main() {
               final recipe =
                   widget.recipe! as RaftMountedSidebarNavigationRecipe;
               final compact = height <= 600;
-              final expected = family == RaftFamily.brutal
-                  ? compact
-                        ? 32.0
-                        : 40.0
-                  : role == RaftNavItemRole.saved
+              final expected = role == RaftNavItemRole.saved
                   ? compact
                         ? 29.5
                         : 33.5
@@ -102,18 +98,11 @@ void main() {
               expect(widget.visualHeight, expected);
               // Sidebar.tsx row box on every density (no 48dp inflation).
               expect(tester.getSize(nav).height, expected + 4);
-              expect(
-                recipe.textStyle.fontFamily,
-                family == RaftFamily.brutal
-                    ? 'packages/raft_ui/HankenGrotesk'
-                    : 'packages/raft_ui/Inter',
-              );
+              expect(recipe.textStyle.fontFamily, 'packages/raft_ui/Inter');
               expect(recipe.textStyle.fontWeight, FontWeight.w500);
               expect(
                 recipe.textStyle.fontSize,
-                family == RaftFamily.elegant && role == RaftNavItemRole.saved
-                    ? 13
-                    : 14,
+                role == RaftNavItemRole.saved ? 13 : 14,
               );
               final glyph = tester.widget<RaftIcon>(
                 find.descendant(of: nav, matching: find.byType(RaftIcon)),
@@ -169,6 +158,7 @@ void main() {
             await tester.pumpWidget(const SizedBox());
             selected.dispose();
           },
+          skip: raftLookSkip(raftLookElegant),
         );
       }
     }
@@ -179,7 +169,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftDensityScope(
               density: RaftDensity.desktop,

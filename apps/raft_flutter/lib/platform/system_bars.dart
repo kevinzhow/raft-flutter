@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 /// Paints the themed app underneath system bars without hiding system controls.
 ///
@@ -45,47 +46,45 @@ SystemUiOverlayStyle raftSystemOverlayStyle(
 /// background. Nothing is painted under the navigation bar: scroll content runs
 /// under it and bottom-anchored controls extend their own background (see
 /// `RaftBottomInsetSurface`, which also sets the navigation icon contrast).
+///
+/// The status bar always shows the colour of the header directly under it:
+/// top headers publish their background with `RaftStatusBarSource` and the
+/// strip painted here resolves it at paint time (see `status_bar.dart` in
+/// raft_ui). [statusBarFallback] is only the page colour used when no header
+/// is flush with the top of the page.
 class RaftSystemBarSurface extends StatelessWidget {
   const RaftSystemBarSurface({
     super.key,
-    required this.statusBarBackground,
+    required this.statusBarFallback,
     required this.child,
   });
 
-  final Color statusBarBackground;
+  final Color statusBarFallback;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return child;
-    final padding = MediaQuery.paddingOf(context);
+    if (kIsWeb ||
+        (defaultTargetPlatform != TargetPlatform.android &&
+            defaultTargetPlatform != TargetPlatform.iOS)) {
+      return child;
+    }
     // ds-allow: Android system-bar contrast reads the platform theme (no raft_ui equivalent).
     final theme = Theme.of(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: raftSystemOverlayStyle(
         // ds-allow: Android system-bar icon contrast from the bar colour.
-        ThemeData.estimateBrightnessForColor(statusBarBackground),
+        ThemeData.estimateBrightnessForColor(statusBarFallback),
         // ds-allow: Android nav-bar icon contrast; bottom surfaces override it.
         navigationBackground: ThemeData.estimateBrightnessForColor(
           // ds-allow: Android navigation-bar contrast falls back to the scaffold.
           theme.scaffoldBackgroundColor,
         ),
       ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          child,
-          if (padding.top > 0)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: padding.top,
-              child: IgnorePointer(
-                child: ColoredBox(color: statusBarBackground),
-              ),
-            ),
-        ],
+      child: RaftStatusBarHost(
+        fallback: statusBarFallback,
+        expand: true,
+        child: child,
       ),
     );
   }
@@ -95,7 +94,11 @@ class _RaftSystemBarsState extends State<RaftSystemBars> {
   @override
   void initState() {
     super.initState();
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      // iOS also needs the explicit show-home-indicator notification, rather
+      // than relying only on the view controller's default hide preference.
       unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
     }
   }

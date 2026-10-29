@@ -1,8 +1,7 @@
-import 'dart:async';
 import 'dart:collection';
 
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
+import 'package:raft_ui/raft_ui.dart' show RaftIdleTimer;
 
 /// Platform Back progress can be driven without an animation ticker or
 /// Flutter pointer events. Quiet input alone does not make that route idle.
@@ -26,20 +25,23 @@ class MessagePreparation {
   MessagePreparation({
     required this.isIdle,
     void Function(VoidCallback)? scheduleIdle,
-  }) : _scheduleIdle = scheduleIdle ?? _submitIdle;
-  final void Function(VoidCallback) _scheduleIdle;
-
-  static void _submitIdle(VoidCallback task) {
-    SchedulerBinding.instance.scheduleTask<void>(
-      task,
-      Priority.idle,
-      debugLabel: 'Raft message preparation',
+  }) : _scheduleIdle = scheduleIdle ?? ((task) => task()) {
+    // Never `SchedulerBinding.scheduleTask(Priority.idle)`: Flutter retries a
+    // rejected idle task through Timer.run, a zero-delay hot loop while any
+    // animation runs (see RaftIdleWork). The timer's positive-delay poll
+    // yields to the platform loop and waits out animation, frames and
+    // [isIdle]; it backs off to one wake-up a second while a pane stays
+    // hidden.
+    _timer = RaftIdleTimer(
+      maxRetry: const Duration(seconds: 1),
+      canRun: isIdle,
     );
   }
+  final void Function(VoidCallback) _scheduleIdle;
 
   final bool Function() isIdle;
   final _jobs = Queue<VoidCallback>();
-  Timer? _timer;
+  late final RaftIdleTimer _timer;
   int _revision = 0;
   bool _disposed = false;
 
@@ -54,23 +56,17 @@ class MessagePreparation {
   /// Cancels pending work without changing any cache or application state.
   void cancel() {
     ++_revision;
-    _timer?.cancel();
-    _timer = null;
+    _timer.cancel();
     _jobs.clear();
   }
 
   void _arm(Duration delay) {
     if (_disposed || _jobs.isEmpty) return;
-    _timer = Timer(delay, _run);
+    _timer.start(delay, _run);
   }
 
   void _run() {
-    _timer = null;
     if (_disposed || _jobs.isEmpty) return;
-    if (!isIdle()) {
-      _arm(const Duration(milliseconds: 250));
-      return;
-    }
     final revision = _revision;
     _scheduleIdle(() {
       if (_disposed || revision != _revision) return;

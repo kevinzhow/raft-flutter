@@ -62,7 +62,7 @@ void main() {
             canonical = <Map<String, dynamic>>[];
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(RaftFamily.elegant),
+            theme: raftTheme(),
             home: Scaffold(
               body: ResourceView(
                 controller: w,

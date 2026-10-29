@@ -1,43 +1,82 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:raft_theme/raft_theme.dart';
+import 'package:raft_theme/recipes.dart'
+    show RaftRecipeSet, RaftThemePackRecipes;
 
+import 'control_typography.dart';
 import 'tokens/tokens.dart';
 
-enum RaftFamily { brutal, elegant }
-
+/// The appearance setting: which theme to paint with (Raft, Elegant, Brutal or
+/// a user pack) and Light / Dark / System for its two modes.
+///
+/// The theme and the mode are independent: every theme carries both a light and
+/// a dark set of values, so choosing Elegant and Dark is meaningful, and so is
+/// Elegant and System.
 class RaftAppearance {
   const RaftAppearance({
     this.mode = ThemeMode.system,
-    this.light = RaftFamily.brutal,
+    this.themeId = builtInRaftThemeId,
   });
   final ThemeMode mode;
-  final RaftFamily light;
-  RaftAppearance copyWith({ThemeMode? mode, RaftFamily? light}) =>
-      RaftAppearance(mode: mode ?? this.mode, light: light ?? this.light);
+
+  /// The id of the theme pack to paint with. Must name a loadable pack; an
+  /// unknown id is reported by the registry rather than silently ignored.
+  final String themeId;
+
+  RaftAppearance copyWith({ThemeMode? mode, String? themeId}) =>
+      RaftAppearance(mode: mode ?? this.mode, themeId: themeId ?? this.themeId);
+
+  /// The pack this appearance paints with.
+  ///
+  /// An id that no longer names a built-in theme falls back to Raft rather than
+  /// painting nothing: a stored id can outlive the theme it names (a user pack
+  /// removed in a release), and the default look is a better failure than a
+  /// blank window. The stored id itself is not rewritten, so the user's choice
+  /// survives.
+  ///
+  /// Lives here rather than at the call site so the app root keeps only a call.
+  RaftThemePack get pack => packForThemeId(themeId);
 }
 
-/// Generated token set for a family/brightness pair (dark is always elegant).
-RaftThemeId raftThemeId(RaftFamily family, {bool dark = false}) => dark
-    ? RaftThemeId.elegantDark
-    : family == RaftFamily.brutal
-    ? RaftThemeId.brutal
-    : RaftThemeId.elegantLight;
+/// The id of the built-in Raft pack, the default appearance.
+const String builtInRaftThemeId = raftThemePackId;
 
-final Map<RaftThemeId, Map<String, Color>> _colorMaps = {};
+/// The themes offered in the appearance setting, in the order the picker shows
+/// them, with the label each one carries in the UI.
+const List<({String id, String en, String zh})> builtInAppearanceThemes = [
+  (id: raftThemePackId, en: 'Raft', zh: 'Raft'),
+  (id: 'elegant', en: 'Elegant', zh: '雅致'),
+  (id: 'brutal', en: 'Brutal', zh: '粗野'),
+];
+
+/// The token set of a brightness.
+RaftThemeId raftThemeId({bool dark = false}) =>
+    dark ? RaftThemeId.dark : RaftThemeId.light;
+
+// No cache keyed by theme id: two themes can both be "light", and a cached map
+// would hand the second one the first one's colours.
+
+/// The CJK part of the design stack (raft-ui `fonts.css`): PingFang on Apple platforms, YaHei on Windows,
+/// Noto Sans SC elsewhere. Families a platform does not have are skipped by the engine.
+const List<String> _raftCjkChain = [
+  'PingFang SC',
+  'Hiragino Sans GB',
+  'Microsoft YaHei',
+  'Noto Sans SC',
+];
 
 /// String-keyed compatibility view over the generated tokens, keyed by CSS
 /// custom-property name without `--`: primitives (`color-brutal-yellow-400`),
 /// semantic (`foreground-muted`, `ink-8`), product aliases (`color-brutal-cyan`)
 /// and component roles (`button-default-fill`). Prefer the typed tiers.
-Map<String, Color> raftColorMap(RaftTokenSet set) => _colorMaps.putIfAbsent(
-  set.id,
-  () => Map.unmodifiable({
-    for (final e in RaftPrimitiveColors.byCssName.entries)
-      e.key.substring(2): e.value,
-    ...set.colors.toCssMap(),
-    ...set.product.toCssMap(),
-    ...set.components.toCssMap(),
-  }),
-);
+Map<String, Color> raftColorMap(RaftTokenSet set) => Map.unmodifiable({
+  for (final e in RaftPrimitiveColors.byCssName.entries)
+    e.key.substring(2): e.value,
+  ...set.colors.toCssMap(),
+  ...set.product.toCssMap(),
+  ...set.components.toCssMap(),
+});
 
 @immutable
 class RaftFontFamilies {
@@ -52,53 +91,139 @@ class RaftFontFamilies {
   final List<String> fallback;
 }
 
+/// Offset and thickness of the shared underline (see [RaftUnderlines]).
 @immutable
+class RaftUnderlineMetrics {
+  const RaftUnderlineMetrics({required this.offset, required this.thickness});
+
+  /// Gap between the alphabetic baseline and the stroke's top edge.
+  final double offset;
+  final double thickness;
+
+  static RaftUnderlineMetrics of(BuildContext context) =>
+      RaftTokens.of(context).underline;
+
+  @override
+  bool operator ==(Object other) =>
+      other is RaftUnderlineMetrics &&
+      other.offset == offset &&
+      other.thickness == thickness;
+
+  @override
+  int get hashCode => Object.hash(offset, thickness);
+}
+
 class RaftTokens extends ThemeExtension<RaftTokens> {
-  /// [colors] is the string-keyed view; [tokens] defaults to the generated
-  /// set for [family]/[dark].
+  /// [colors] is the string-keyed view; [tokens] defaults to the Raft set for
+  /// [dark].
   const RaftTokens(
-    this.family,
     this.dark,
     this.colors, {
     RaftTokenSet? tokens,
+    RaftModeValues? mode,
+    this.themeOverrides,
     this.systemFonts = false,
     this.systemFontFamilies = const RaftFontFamilies(),
-  }) : _tokens = tokens;
+    this.textLocale,
+    this.recipeSet = RaftRecipeSet.raft,
+  }) : _tokens = tokens,
+       _mode = mode;
 
-  /// Tokens generated from raft-ui CSS for a theme (dark forces elegant).
-  factory RaftTokens.theme(
-    RaftFamily family, {
+  /// The tokens of one mode of [pack] (the built-in Raft theme by default).
+  ///
+  /// Everything a theme can set is read from the pack: colours, shadows, the
+  /// six type metrics and the radii. The value has to equal what the generated
+  /// 0.7.1 statics resolve to for the Raft pack — `theme_pack_parity_test.dart`
+  /// proves it — so switching the source changes no pixel.
+  factory RaftTokens.theme({
     bool dark = false,
+    RaftThemePack? pack,
     bool systemFonts = false,
     RaftFontFamilies systemFontFamilies = const RaftFontFamilies(),
+    Locale? textLocale,
   }) {
-    final set = RaftTokenSet.of(raftThemeId(family, dark: dark));
+    final themePack = pack ?? builtInRaftTheme;
+    // A user pack extends the built-in one; resolve through that chain so the
+    // values it does not set come from Raft rather than from nothing.
+    final mode = themePack.resolve(
+      dark: dark,
+      base: themePack.extendsId == builtInRaftTheme.id
+          ? builtInRaftTheme
+          : null,
+    );
+    final id = raftThemeId(dark: dark);
+    // The built-in theme is the canonical instance the rest of the app compares
+    // against; any other pack is resolved fresh from its values.
+    final set = pack == null
+        ? RaftTokenSet.of(id)
+        : RaftTokenSet.fromPack(id, mode: mode, fonts: mode.fonts);
     return RaftTokens(
-      dark ? RaftFamily.elegant : family,
       dark,
-      raftColorMap(set),
+      // The pack's own names (0.7.1 roles, palette) sit on top of the legacy
+      // compatibility view, so a reader of either vocabulary finds its key.
+      Map.unmodifiable({...raftColorMap(set), ...mode.colors, ...mode.palette}),
       tokens: set,
+      mode: mode,
+      themeOverrides: themePack.builtIn
+          ? null
+          : (dark ? themePack.dark : themePack.light),
       systemFonts: systemFonts,
       systemFontFamilies: systemFontFamilies,
+      textLocale: textLocale,
+      recipeSet: themePack.recipeSet,
     );
   }
-  final RaftFamily family;
   final bool dark;
+
+  /// Which generated recipe set this theme paints with: the Raft set for Raft
+  /// and user packs, the frozen 0.5.52 set for the built-in Elegant and Brutal
+  /// packs (see `RaftThemePackRecipes`). Components never read it directly;
+  /// `recipeTokens` hands it to the recipe router.
+  final RaftRecipeSet recipeSet;
+
+  /// The Raft look (the raft-ui 0.7.0 recipe set), not a frozen Elegant or Brutal.
+  bool get isRaftLook => recipeSet == RaftRecipeSet.raft;
   final bool systemFonts;
   final RaftFontFamilies systemFontFamilies;
+
+  /// Locale for regional glyphs, independently of the UI translation locale.
+  final Locale? textLocale;
   final Map<String, Color> colors;
   final RaftTokenSet? _tokens;
 
+  /// The resolved pack values for this mode; null when the tokens were built
+  /// the old way (tests that construct a bare [RaftTokenSet]).
+  final RaftModeValues? _mode;
+
+  /// Resolved pack data supplied to the independent recipe engine.
+  RaftModeValues? get themeValues => _mode;
+
+  /// Values explicitly declared by a user pack, before built-in defaults are
+  /// merged. Components apply these after source recipes: an explicit default
+  /// value must still win over structural selectors such as `:first-child`.
+  final RaftModeValues? themeOverrides;
+
   /// Every generated tier for this theme.
   RaftTokenSet get tokenSet =>
-      _tokens ?? RaftTokenSet.of(raftThemeId(family, dark: dark));
+      _tokens ?? RaftTokenSet.of(raftThemeId(dark: dark));
   RaftSemanticColors get semantic => tokenSet.colors;
   RaftProductColors get product => tokenSet.product;
   RaftComponentColors get components => tokenSet.components;
   RaftThemeShadows get themeShadows => tokenSet.shadows;
+
+  /// Named component shadow layers from the resolved pack, in CSS paint order.
+  List<RaftCssShadow> shadowLayers(String role) => [
+    for (final layer in _mode?.shadows[role] ?? const <RaftShadowSpec>[])
+      RaftCssShadow(
+        inset: layer.inset,
+        offset: layer.offset,
+        blur: layer.blur,
+        spread: layer.spread,
+        color: layer.color,
+      ),
+  ];
   RaftThemeMetrics get metrics => tokenSet.metrics;
 
-  bool get brutal => family == RaftFamily.brutal;
   Color get ink => colors['foreground']!;
   Color get strong => colors['foreground-strong']!;
   Color get muted => colors['foreground-muted']!;
@@ -107,8 +232,8 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   Color get panel => colors['layer-panel']!;
   Color get card => colors['layer-card']!;
   Color get popover => colors['layer-popover']!;
-  Color get line => colors[brutal ? 'line-strong' : 'line-muted']!;
-  Color get fieldLine => colors[brutal ? 'line-strong' : 'line-field']!;
+  Color get line => colors['line-muted']!;
+  Color get fieldLine => colors['line-field']!;
   Color get accent => colors['accent-strong']!;
   Color get accentSoft => colors['accent-soft']!;
   Color get accentFill => colors['accent']!;
@@ -121,15 +246,120 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       systemFonts ? systemFontFamilies.mono : metrics.monoFont;
   List<String> get fontFallback => systemFonts
       ? systemFontFamilies.fallback
-      : const ['Noto Sans CJK JP', 'Noto Sans CJK SC', 'sans-serif'];
-  double get radius => brutal ? 0 : 8;
-  double get fieldRadius => brutal ? 0 : 6;
-  double get border => brutal ? 2 : 1;
+      : switch (textLocale?.languageCode) {
+          'zh'
+              when textLocale?.scriptCode == 'Hant' ||
+                  textLocale?.scriptCode != 'Hans' &&
+                      const [
+                        'TW',
+                        'HK',
+                        'MO',
+                      ].contains(textLocale?.countryCode) =>
+            const [
+              'Noto Sans CJK TC',
+              'Noto Sans CJK SC',
+              'Noto Sans CJK JP',
+              'sans-serif',
+            ],
+          'zh' => const [
+            ..._raftCjkChain,
+            'Noto Sans CJK SC',
+            'Noto Sans CJK JP',
+            'sans-serif',
+          ],
+          'ko' => const [
+            'Noto Sans CJK KR',
+            'Noto Sans CJK JP',
+            'Noto Sans CJK SC',
+            'sans-serif',
+          ],
+          'ja' => const ['Noto Sans CJK JP', 'Noto Sans CJK SC', 'sans-serif'],
+          _ => const [
+            ..._raftCjkChain,
+            'Noto Sans CJK JP',
+            'Noto Sans CJK SC',
+            'sans-serif',
+          ],
+        };
+
+  /// Radii and stroke widths come from the theme's numeric tokens, so a theme
+  /// that squares the corners reaches every control. The fallbacks are the
+  /// Raft values for a [RaftTokens] built without a pack (tests).
+  double get radius => _mode?.geometry['radius.control'] ?? 8;
+  double get fieldRadius => _mode?.geometry['radius.field'] ?? 6;
+  double get border => _mode?.geometry['stroke.container'] ?? 1;
+
+  /// Applies a theme's display casing without changing the authored string.
+  String displayCase(String slot, String text) =>
+      switch (_mode?.caseTransforms[slot]) {
+        RaftCaseTransform.uppercase => text.toUpperCase(),
+        RaftCaseTransform.lowercase => text.toLowerCase(),
+        _ => text,
+      };
+
+  /// Any other numeric token, by contract name. Components read control sizes
+  /// and stroke widths through this rather than repeating the Raft number as a
+  /// literal, which is what kept two of three themes stuck on Raft's geometry.
+  ///
+  /// [fallback] is the Raft value, used when a theme does not set the token (a
+  /// pack may override only what it cares about).
+  double size(String token, {required double fallback}) =>
+      _mode?.geometry[token] ?? fallback;
+
+  /// A named slot of the type scale (`hero` ... `mono-code`, [RaftTypeScale]) as
+  /// the active pack sets it. A pack that does not set the slot keeps the Raft
+  /// value, so the built-in Elegant and Brutal packs (which carry no slots yet)
+  /// answer with the Raft scale. Only components that already paint the Raft
+  /// scale read this; the pre-theme looks keep their own literals behind their
+  /// own option until their packs carry slots.
+  RaftTypeStyle typeSlot(String slot) {
+    final base = RaftTypeScale.byName[slot]!;
+    final spec = _mode?.type[slot];
+    return spec == null
+        ? base
+        : RaftTypeStyle(
+            spec.size,
+            spec.line,
+            fontWeight: spec.weight.round(),
+            letterSpacingEm: spec.trackingEm,
+          );
+  }
+
+  /// A structural option, by contract name. A component asks how to draw
+  /// itself; it must never ask which theme is current.
+  ///
+  /// The named default is [or] rather than the obvious `fallback` on purpose:
+  /// that word is the app's convention for a user-visible string (as in
+  /// `userErrorText`), and the zh-catalog scanner treats every literal after it
+  /// as translation text. Reusing the name made a theme option value look like
+  /// UI copy and failed the catalog test.
+  String option(String name, {required String or}) =>
+      _mode?.options[name] ?? or;
+
+  /// Resolve a component font reference through the active mode. System font
+  /// preferences apply to the referenced body/heading/mono family as usual.
+  String fontFamily(String token, {String or = 'sans'}) =>
+      switch (_mode?.fontRefs[token] ?? or) {
+        'mono' => monoFont,
+        'heading' => headingFont,
+        _ => bodyFont,
+      };
+
+  List<String> fontFamilyFallback(String token, {String or = 'sans'}) =>
+      systemFonts
+      ? fontFallback
+      : (_mode?.fontRefs[token] ?? or) == 'mono'
+      ? const ['monospace']
+      : fontFallback;
+
+  /// The hyperlink underline every underlined run shares (Web `underline
+  /// decoration-2 underline-offset-2`; no theme overrides it, so Brutal and
+  /// Elegant agree and only the colour differs by recipe).
+  RaftUnderlineMetrics get underline =>
+      const RaftUnderlineMetrics(offset: 2, thickness: 2);
   TextStyle get fieldStyle => TextStyle(
+    locale: textLocale,
     fontFamily: headingFont,
-    fontVariations: brutal || systemFonts
-        ? null
-        : const [FontVariation('opsz', 14)],
     fontFamilyFallback: fontFallback,
     fontSize: metrics.fieldFontSize,
     height: metrics.fieldLineHeight / metrics.fieldFontSize,
@@ -138,90 +368,74 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     color: ink,
   );
 
-  /// `--theme-shadow-sm` outer layers (Brutal, Elegant light). Elegant dark
-  /// keeps the `--theme-shadow-xs` outer pair the ported surfaces were matched
-  /// against. Inset layers are drawn separately by surfaces.
-  List<BoxShadow> get shadows =>
-      !brutal && dark ? themeShadows.xs.outer : themeShadows.sm.outer;
+  /// The control shadow: `theme-shadow-sm`, which the Raft look maps to nothing
+  /// (controls never cast a shadow, so the list is empty). Inset layers are
+  /// drawn separately by surfaces.
+  List<BoxShadow> get shadows => themeShadows.sm.outer;
 
-  /// Brutal focus lift is `--theme-shadow-md` (4px 4px line-strong).
-  List<BoxShadow> get focusShadows => brutal ? themeShadows.md.outer : shadows;
+  /// The keyboard focus ring (`shadow-focus`, the pack's `shadow.focusRing`
+  /// layers, CSS top-first so painted last-first). A pack that sets none keeps
+  /// the control shadow it always had (Brutal's lift).
+  List<BoxShadow> get focusShadows {
+    final ring = shadowLayers('shadow.focusRing');
+    if (ring.isEmpty) return shadows;
+    return [
+      for (final layer in ring.reversed)
+        if (!layer.inset) layer.toBoxShadow(),
+    ];
+  }
+
   static RaftTokens of(BuildContext context) {
     final theme = Theme.of(context);
     return theme.extension<RaftTokens>() ??
-        RaftTokens.theme(
-          RaftFamily.elegant,
-          dark: theme.brightness == Brightness.dark,
-        );
+        RaftTokens.theme(dark: theme.brightness == Brightness.dark);
   }
 
   @override
   RaftTokens copyWith({
-    RaftFamily? family,
     bool? dark,
     Map<String, Color>? colors,
-  }) => family == null && dark == null
+    Locale? textLocale,
+  }) => dark == null
       ? RaftTokens(
-          this.family,
           this.dark,
           colors ?? this.colors,
           tokens: _tokens,
+          mode: _mode,
+          themeOverrides: themeOverrides,
           systemFonts: systemFonts,
           systemFontFamilies: systemFontFamilies,
+          textLocale: textLocale ?? this.textLocale,
+          recipeSet: recipeSet,
         )
-      : RaftTokens(
-          family ?? this.family,
-          dark ?? this.dark,
-          colors ??
-              raftColorMap(
-                RaftTokenSet.of(
-                  raftThemeId(family ?? this.family, dark: dark ?? this.dark),
-                ),
-              ),
+      : RaftTokens.theme(
+          dark: dark,
           systemFonts: systemFonts,
           systemFontFamilies: systemFontFamilies,
+          textLocale: textLocale ?? this.textLocale,
         );
   @override
   RaftTokens lerp(covariant RaftTokens? other, double t) =>
       other == null || t < .5 ? this : other;
 }
 
+/// raft-ui 0.7.1 `Input` colours for the Material-hosted text fields (`RaftFieldSurface` + the input decoration
+/// theme): `bg-layer-card border-line-strong`, disabled `bg-fill-muted border-line-hairline`.
 @immutable
 class RaftFieldRecipe {
   const RaftFieldRecipe(this.tokens);
   final RaftTokens tokens;
-  Color fill({bool disabled = false}) => disabled && !tokens.brutal
-      // `bg-fill-muted/50`: Chromium quantises the alpha to 8 bits first.
-      ? tokens.colors['fill-muted']!.withAlpha(
-          (tokens.colors['fill-muted']!.a * .5 * 255).round(),
-        )
-      : tokens.dark && !tokens.brutal
-      ? tokens.card
-      : tokens.panel;
-  Color placeholder({bool disabled = false}) {
-    final placeholder = tokens.colors['foreground-placeholder'] ?? tokens.muted;
-    if (disabled && !tokens.brutal) {
-      return tokens.colors['foreground-disabled'] ?? placeholder;
-    }
-    return tokens.brutal
-        ? placeholder
-        : placeholder.withValues(alpha: placeholder.a * .7);
-  }
+  Color fill({bool disabled = false}) =>
+      tokens.colors[disabled ? 'fill-muted' : 'layer-card']!;
+  Color placeholder({bool disabled = false}) =>
+      tokens.colors[disabled ? 'foreground-disabled' : 'foreground-hint']!;
 
   Color border({bool disabled = false, bool hovered = false}) =>
-      disabled && !tokens.brutal
-      ? tokens.colors['line-muted']!.withValues(
-          alpha: tokens.colors['line-muted']!.a * .6,
-        )
-      : tokens.dark && !tokens.brutal
-      ? Colors.transparent
-      : hovered && !tokens.brutal
-      ? tokens.colors['line-field-hover']!
-      : tokens.fieldLine;
+      tokens.colors[disabled ? 'line-hairline' : 'line-strong']!;
 }
 
 /// Original dark Input's two inset shadows and outer bottom shadow.
-/// Source: raft-ui 0.5.27 input.recipe, after semantic role resolution.
+/// Source: raft-ui 0.5.52 input.recipe, after semantic role resolution.
 @immutable
 class RaftFieldInsetRecipe {
   const RaftFieldInsetRecipe(this.tokens);
@@ -361,24 +575,37 @@ class RaftFieldBorder extends OutlineInputBorder {
 FontWeight raftFontWeight(double weight) =>
     FontWeight.values[((weight / 100).round() - 1).clamp(0, 8)];
 
-ThemeData raftTheme(
-  RaftFamily family, {
+ThemeData raftTheme({
   bool dark = false,
+
+  /// The theme to paint with. Defaults to the built-in Raft pack, which is
+  /// identical to the look the app had before themes became data.
+  RaftThemePack? pack,
   bool systemFonts = false,
   RaftFontFamilies systemFontFamilies = const RaftFontFamilies(),
+
+  /// The UI locale. With [platform] it selects [RaftControlTypography] for the
+  /// Material control families (buttons, chips, segments, menus, nav labels);
+  /// without it the theme keeps the Web line boxes.
+  Locale? locale,
+
+  /// Locale for font selection and CJK glyphs; the app supplies the device's
+  /// locale without changing [locale], which controls UI copy and line boxes.
+  Locale? textLocale,
+  TargetPlatform? platform,
 }) {
-  if (dark) family = RaftFamily.elegant;
   final t = RaftTokens.theme(
-    family,
     dark: dark,
+    pack: pack,
     systemFonts: systemFonts,
     systemFontFamilies: systemFontFamilies,
+    textLocale: textLocale,
   );
   RoundedRectangleBorder shape(
     double radius, {
     BorderSide side = BorderSide.none,
   }) => RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(t.brutal ? 0 : radius),
+    borderRadius: BorderRadius.circular(radius),
     side: side,
   );
   final scheme = ColorScheme(
@@ -395,8 +622,10 @@ ThemeData raftTheme(
     onTertiary: t.colors['foreground-inverse']!,
     tertiaryContainer: t.colors['info-soft']!,
     onTertiaryContainer: t.colors['info-strong']!,
-    error: t.colors['danger']!,
-    onError: t.colors['danger-foreground']!,
+    // The Raft solid `danger` is a salmon sticker; error text and borders use
+    // the readable `danger-strong`.
+    error: t.colors['danger-strong']!,
+    onError: t.colors['foreground-inverse']!,
     errorContainer: t.colors['danger-soft']!,
     onErrorContainer: t.colors['danger-strong']!,
     surface: t.canvas,
@@ -425,10 +654,8 @@ ThemeData raftTheme(
     bool heading = false,
     Color? color,
   }) => TextStyle(
+    locale: t.textLocale,
     fontFamily: heading ? t.headingFont : t.bodyFont,
-    fontVariations: heading && !t.brutal && !t.systemFonts
-        ? [FontVariation('opsz', size.clamp(14.0, 32.0).toDouble())]
-        : null,
     fontFamilyFallback: t.fontFallback,
     fontSize: size,
     height: line / size,
@@ -469,17 +696,19 @@ ThemeData raftTheme(
     bodyLarge: t.fieldStyle.copyWith(fontFamilyFallback: t.fontFallback),
     bodyMedium: text(16, 24),
     bodySmall: text(12, 16, color: t.muted),
-    labelLarge: text(
-      14,
-      20,
-      heading: t.brutal,
-      weight: t.brutal ? FontWeight.w700 : FontWeight.w500,
-    ),
+    labelLarge: text(14, 20, heading: false, weight: FontWeight.w500),
     labelMedium: text(12, 16, weight: FontWeight.w500),
     labelSmall: text(11, 16, weight: FontWeight.w500),
   );
+  TextStyle? control(TextStyle? style) => style == null || locale == null
+      ? style
+      : RaftControlTypography.resolve(
+          baseStyle: style,
+          platform: platform ?? defaultTargetPlatform,
+          locale: locale,
+        );
   final buttonStyle = ButtonStyle(
-    textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
+    textStyle: WidgetStatePropertyAll(control(textTheme.labelLarge)),
     minimumSize: const WidgetStatePropertyAll(Size(32, 32)),
     padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12)),
     tapTargetSize: MaterialTapTargetSize.padded,
@@ -488,9 +717,7 @@ ThemeData raftTheme(
     elevation: const WidgetStatePropertyAll(0),
     animationDuration: const Duration(milliseconds: 100),
     overlayColor: WidgetStatePropertyAll(
-      t.brutal
-          ? Colors.transparent
-          : t.colors['fill-strong']!.withValues(alpha: .3),
+      t.colors['fill-strong']!.withValues(alpha: .3),
     ),
     foregroundColor: WidgetStateProperty.resolveWith(
       (states) => states.contains(WidgetState.disabled)
@@ -498,11 +725,11 @@ ThemeData raftTheme(
           : t.ink,
     ),
   );
+  // `rounded-control border-[1.5px]`: the 0.7.1 input outline, 8px radius.
   OutlineInputBorder fieldBorder(Color color, [double? width]) =>
       RaftFieldBorder(
-        insets: t.dark && !t.brutal ? RaftFieldInsetRecipe(t) : null,
-        borderRadius: BorderRadius.circular(t.fieldRadius),
-        borderSide: BorderSide(color: color, width: width ?? t.border),
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: color, width: width ?? 1.5),
       );
   return ThemeData(
     useMaterial3: true,
@@ -534,21 +761,17 @@ ThemeData raftTheme(
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: WidgetStateColor.resolveWith(
-        (states) => RaftFieldRecipe(
-          t,
-        ).fill(disabled: states.contains(WidgetState.disabled)),
+        (states) =>
+            RaftFieldRecipe(t)
+                .fill(disabled: states.contains(WidgetState.disabled)),
       ),
       isDense: true,
       // CSS field outer height includes borders; Material outlines paint inside.
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8 + t.border,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       hintStyle: WidgetStateTextStyle.resolveWith(
         (states) => t.fieldStyle.copyWith(
-          color: RaftFieldRecipe(
-            t,
-          ).placeholder(disabled: states.contains(WidgetState.disabled)),
+          color: RaftFieldRecipe(t)
+              .placeholder(disabled: states.contains(WidgetState.disabled)),
         ),
       ),
       labelStyle: textTheme.bodySmall,
@@ -558,12 +781,9 @@ ThemeData raftTheme(
       border: fieldBorder(RaftFieldRecipe(t).border()),
       enabledBorder: fieldBorder(RaftFieldRecipe(t).border()),
       disabledBorder: fieldBorder(RaftFieldRecipe(t).border(disabled: true)),
-      focusedBorder: fieldBorder(
-        t.brutal ? t.strong : t.primaryFill,
-        t.brutal ? 2 : 1,
-      ),
-      errorBorder: fieldBorder(scheme.error),
-      focusedErrorBorder: fieldBorder(scheme.error),
+      focusedBorder: fieldBorder(RaftFieldRecipe(t).border()),
+      errorBorder: fieldBorder(t.colors['danger-strong']!),
+      focusedErrorBorder: fieldBorder(t.colors['danger-strong']!),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: buttonStyle.copyWith(
@@ -572,9 +792,7 @@ ThemeData raftTheme(
             alpha: s.contains(WidgetState.disabled) ? .4 : 1,
           ),
         ),
-        foregroundColor: WidgetStatePropertyAll(
-          t.brutal ? t.strong : t.colors['accent-950']!,
-        ),
+        foregroundColor: WidgetStatePropertyAll(t.colors['accent-950']!),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -585,9 +803,7 @@ ThemeData raftTheme(
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: buttonStyle.copyWith(
-        backgroundColor: WidgetStatePropertyAll(
-          t.brutal ? t.panel : Colors.transparent,
-        ),
+        backgroundColor: WidgetStatePropertyAll(Colors.transparent),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -611,7 +827,7 @@ ThemeData raftTheme(
     ),
     listTileTheme: ListTileThemeData(
       shape: shape(6),
-      selectedTileColor: t.brutal ? t.accentFill : t.card,
+      selectedTileColor: t.card,
       textColor: t.ink,
       iconColor: t.colors['foreground-icon']!,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -627,21 +843,19 @@ ThemeData raftTheme(
         8,
         side: BorderSide(color: t.line, width: t.border),
       ),
-      titleTextStyle: t.brutal
-          ? textTheme.titleLarge
-          : text(14, 20, heading: true, weight: FontWeight.w500),
+      titleTextStyle: text(14, 20, heading: true, weight: FontWeight.w500),
       contentTextStyle: textTheme.bodyMedium,
       elevation: 0,
     ),
     popupMenuTheme: PopupMenuThemeData(
       color: t.popover,
       surfaceTintColor: Colors.transparent,
-      elevation: t.brutal ? 0 : 3,
+      elevation: 3,
       shape: shape(
         6,
         side: BorderSide(color: t.line, width: t.border),
       ),
-      textStyle: textTheme.bodyMedium,
+      textStyle: control(textTheme.bodyMedium),
       menuPadding: const EdgeInsets.all(4),
     ),
     menuTheme: MenuThemeData(
@@ -680,16 +894,16 @@ ThemeData raftTheme(
     ),
     chipTheme: ChipThemeData(
       backgroundColor: t.panel,
-      selectedColor: t.brutal ? t.accentFill : t.accentSoft,
-      labelStyle: textTheme.labelMedium,
-      side: BorderSide(color: t.line, width: t.brutal ? 1 : .5),
+      selectedColor: t.accentSoft,
+      labelStyle: control(textTheme.labelMedium),
+      side: BorderSide(color: t.line, width: .5),
       shape: shape(4),
       padding: const EdgeInsets.symmetric(horizontal: 6),
       showCheckmark: false,
     ),
     checkboxTheme: CheckboxThemeData(
       shape: shape(2),
-      side: BorderSide(color: t.line, width: t.brutal ? 2 : 1),
+      side: BorderSide(color: t.line, width: 1),
       fillColor: WidgetStateProperty.resolveWith(
         (s) => s.contains(WidgetState.selected) ? t.primaryFill : t.panel,
       ),
@@ -713,9 +927,7 @@ ThemeData raftTheme(
       style: buttonStyle.copyWith(
         backgroundColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected)
-              ? t.brutal
-                    ? t.primaryFill
-                    : t.panel
+              ? t.panel
               : t.colors['fill-muted']!,
         ),
       ),
@@ -723,33 +935,32 @@ ThemeData raftTheme(
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: t.canvas,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: t.brutal ? t.accentFill : t.card,
+      indicatorColor: t.card,
       elevation: 0,
       iconTheme: WidgetStatePropertyAll(IconThemeData(size: 18, color: t.ink)),
-      labelTextStyle: WidgetStatePropertyAll(textTheme.labelMedium),
+      labelTextStyle: WidgetStatePropertyAll(control(textTheme.labelMedium)),
     ),
     tooltipTheme: TooltipThemeData(
       waitDuration: const Duration(milliseconds: 600),
       decoration: BoxDecoration(
         color: scheme.inverseSurface,
-        borderRadius: BorderRadius.circular(t.brutal ? 0 : 4),
+        borderRadius: BorderRadius.circular(4),
       ),
       textStyle: textTheme.bodySmall!.copyWith(color: scheme.onInverseSurface),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
+      // LocalizedToastProvider shows a ToastClose unless `hasClose` is false.
+      showCloseIcon: true,
+      closeIconColor: scheme.onInverseSurface,
       shape: shape(6),
       backgroundColor: scheme.inverseSurface,
       contentTextStyle: textTheme.bodyMedium!.copyWith(
         color: scheme.onInverseSurface,
       ),
     ),
-    dividerTheme: DividerThemeData(
-      color: t.line,
-      thickness: t.brutal ? 2 : 1,
-      space: 1,
-    ),
+    dividerTheme: DividerThemeData(color: t.line, thickness: 1, space: 1),
   );
 }
 

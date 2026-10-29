@@ -7,7 +7,10 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/app_services_fixture.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -103,14 +106,10 @@ class _Client extends RaftClient {
 /// tabs, message window or composer, and neither may show the empty-channel
 /// "Start the conversation" copy.
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final resolves in [false, true]) {
       testWidgets(
-        '[L08b][K06b] $family/$dark unresolved channel shows Loading channel, then ${resolves ? 'the full channel page' : 'an explicit unavailable state'}',
+        '[L08b][K06b] ${dark ? 'dark' : 'light'} unresolved channel shows Loading channel, then ${resolves ? 'the full channel page' : 'an explicit unavailable state'}',
         (tester) async {
           SharedPreferences.setMockInitialValues({});
           tester.view.physicalSize = const Size(390, 844);
@@ -130,7 +129,7 @@ void main() {
             })
             ..channels = [...c.channelRows, gone]
             ..channel = c.channelRows.first;
-          w.ledger.switchServer('s');
+          w.messageDomain.ledger.switchServer('s');
           addTearDown(() async {
             w.dispose();
             await c.stream.close();
@@ -144,15 +143,16 @@ void main() {
           c.pendingMetadata['/channels/gone'] = held;
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(
-                  mode: dark ? ThemeMode.dark : ThemeMode.light,
-                  light: family,
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(
+                    mode: dark ? ThemeMode.dark : ThemeMode.light,
+                  ),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
                 ),
-                onAppearance: (_) async {},
-                onLogout: () async {},
               ),
             ),
           );
@@ -168,13 +168,13 @@ void main() {
             expect(c.calls, contains('GET:/channels/gone'));
             expect(w.location.entityId, 'gone');
             // Identity pending: an explicit loading body and no page chrome.
-            expect(find.text('LOADING CHANNEL'), findsOneWidget);
+            expect(find.text('Loading channel'), findsOneWidget);
             expect(find.byType(RaftComposer), findsNothing);
             expect(find.byType(RaftChatView), findsNothing);
             expect(find.byKey(const Key('conversation-tabs')), findsNothing);
-            expect(find.text('Start the conversation'), findsNothing);
-            expect(find.text('SELECT A CHANNEL'), findsNothing);
-            expect(find.text('Loading...'), findsNothing);
+            expect(find.text('No messages yet'), findsNothing);
+            expect(find.text('Select a channel'), findsNothing);
+            expect(find.text('Loading thread…'), findsNothing);
           }
           if (resolves) {
             held.complete({
@@ -184,13 +184,13 @@ void main() {
               'joined': true,
             });
             await tester.pumpAndSettle();
-            expect(find.text('LOADING CHANNEL'), findsNothing);
-            expect(find.text('SELECT A CHANNEL'), findsNothing);
+            expect(find.text('Loading channel'), findsNothing);
+            expect(find.text('Select a channel'), findsNothing);
             expect(find.byType(RaftChatView), findsOneWidget);
             expect(find.byType(RaftComposer), findsOneWidget);
             expect(find.byKey(const Key('conversation-tabs')), findsOneWidget);
             expect(w.channel?.id, 'gone');
-            expect(w.messages.map((m) => m.id), ['m-gone']);
+            expect(w.messageDomain.messages.map((m) => m.id), ['m-gone']);
             expect(
               find.byKey(const ValueKey('message-m-gone')),
               findsOneWidget,
@@ -201,11 +201,11 @@ void main() {
             );
             await tester.pumpAndSettle();
             expect(w.missingConversationChannelId, 'gone');
-            expect(find.text('LOADING CHANNEL'), findsNothing);
-            expect(find.text('SELECT A CHANNEL'), findsOneWidget);
+            expect(find.text('Loading channel'), findsNothing);
+            expect(find.text('Select a channel'), findsOneWidget);
             expect(find.byType(RaftComposer), findsNothing);
             expect(find.byType(RaftChatView), findsNothing);
-            expect(find.text('Start the conversation'), findsNothing);
+            expect(find.text('No messages yet'), findsNothing);
             expect(
               find.descendant(
                 of: find.byType(RaftChannelResolutionBody),

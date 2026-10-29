@@ -7,36 +7,46 @@ import 'recipes/message_system.g.dart';
 import 'theme.dart';
 import 'tooltip.dart';
 
-/// Mounted SystemMessage (raft-ui0.5.27). The adapter supplies formatted receipt
-/// text/time; system rows have no author/avatar, reactions or message toolbar.
+/// Mounted SystemMessage (raft-ui 0.5.52). The adapter supplies formatted
+/// receipt text/time; system rows have no author/avatar, reactions or message
+/// toolbar.
+///
+/// The note owns a short lead-in (`pt-[3px]`, brutal `pt-0`) and no bottom
+/// padding or margin; the message that follows cancels the rest of the seam
+/// with `data-follows-system` (see [RaftMessageRowRecipe]). Inside an expanded
+/// group the host re-asserts the lead: `pt-1` elegant, `pt-1.5` brutal.
 class RaftSystemMessageRecipe {
-  const RaftSystemMessageRecipe(this.tokens);
+  const RaftSystemMessageRecipe(this.tokens, {this.inGroup = false});
   final RaftTokens tokens;
-  EdgeInsets get padding =>
-      const EdgeInsets.symmetric(horizontal: 8, vertical: 6);
+  final bool inGroup;
+  // ignore: raft_lints/off_grid_spacing -- Web SystemMessage pt-[3px].
+  EdgeInsets get padding => EdgeInsets.fromLTRB(8, inGroup ? (4) : 3, 8, 0);
   Color get clockColor =>
       (tokens.dark ? tokens.strong : Colors.black).withValues(alpha: .4);
   Color get contentColor =>
       (tokens.dark ? tokens.strong : Colors.black).withValues(alpha: .5);
   TextStyle get clock =>
-      (tokens.brutal
-              ? RaftTypography.mono(tokens, size: 12, line: 16)
-              : RaftTypography.body(
-                  tokens,
-                  size: 11,
-                  line: 16.5,
-                  weight: FontWeight.w500,
-                ))
-          .copyWith(
-            color: clockColor,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          );
-  TextStyle get content => RaftTypography.body(
-    tokens,
-    size: 12,
-    line: tokens.brutal ? 16 : 18,
-    color: contentColor,
-  );
+      RaftTypography.body(
+        tokens,
+        size: 11,
+        line: 16.5,
+        weight: FontWeight.w500,
+      ).copyWith(
+        color: clockColor,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+  TextStyle get content =>
+      RaftTypography.body(tokens, size: 12, line: 18, color: contentColor);
+}
+
+/// The rows of an expanded [RaftSystemMessageGroup] (Web
+/// `[&_[data-slot=system-message-item]]:pt-1`).
+class _SystemGroupScope extends InheritedWidget {
+  const _SystemGroupScope({required super.child});
+  static bool of(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_SystemGroupScope>() != null;
+  @override
+  bool updateShouldNotify(_SystemGroupScope oldWidget) => false;
 }
 
 class RaftSystemMessage extends StatelessWidget {
@@ -50,31 +60,31 @@ class RaftSystemMessage extends StatelessWidget {
   final String? tooltip;
   @override
   Widget build(BuildContext context) {
-    final recipe = RaftSystemMessageRecipe(RaftTokens.of(context));
+    final recipe = RaftSystemMessageRecipe(
+      RaftTokens.of(context),
+      inGroup: _SystemGroupScope.of(context),
+    );
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Padding(
-        padding: recipe.padding,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(timestamp, style: recipe.clock),
-            const SizedBox(width: 8),
-            Flexible(
-              // The line already says it; the full text only helps when cut.
-              child: RaftTooltip(
-                message: tooltip ?? content,
-                onlyWhenTruncated: tooltip == null,
-                child: Text(
-                  content,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: recipe.content,
-                ),
+      padding: recipe.padding,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(timestamp, style: recipe.clock),
+          const SizedBox(width: 8),
+          Flexible(
+            // The line already says it; the full text only helps when cut.
+            child: RaftTooltip(
+              message: tooltip ?? content,
+              onlyWhenTruncated: tooltip == null,
+              child: Text(
+                content,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: recipe.content,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -165,7 +175,14 @@ class RaftSystemMessageGroup extends StatelessWidget {
               ),
             ),
           ),
-          if (expanded) ...children,
+          if (expanded)
+            _SystemGroupScope(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: children,
+              ),
+            ),
         ],
       ),
     );

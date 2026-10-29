@@ -112,8 +112,8 @@ class ContentTarget {
         host: 'v1',
         path: '/servers/$boundServerId/channels/$channelId/threads/$threadId',
         queryParameters: {
-          'parentMessageId': parentMessageId!,
-          'messageId': messageId!,
+          'parentMessageId': parentMessageId,
+          'messageId': messageId,
         },
       );
     }

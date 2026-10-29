@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Poster / thumbnail cache smoke: requests per kind (poster, thumbnail, original) on a real Android build.
+
+Drives apps/raft_flutter/integration_test/poster_cache_main.dart (the production RaftApp on two channels of video cards
+with a server poster and image messages with a server thumbnail, served by an in-process loopback server that counts
+every request by kind; no accounts, no real server). Build it once per tree to compare:
+
+  tool/flutter build apk --profile --target-platform android-x64 \\
+      --android-project-arg=raftApplicationIdSuffix=.linkperf -t integration_test/poster_cache_main.dart
+
+  tool/poster-cache-smoke/run --serial emulator-5660 --apk <app-profile.apk> --label new --out <dir>
+
+Phases (each prints the app's request counts and writes <out>/<label>.json):
+  browse-cold    scroll channel a and b through twice, switching between them (first visit: requests are expected)
+  browse-warm    the same again, same process
+  switch-warm    a/b/a/b/a without scrolling
+  flood          push 40 x 4 MB decoded images through the shared ImageCache, then switch a/b/a/b
+  cold-start     force-stop, start again: requests from process start until the first channel is on screen
+  cold-switch    scroll both channels again after the restart
+  stripped-*     the same restart, but the messages carry no thumbnailUrl (a message restored without it)
+  clear-cache    Settings > Storage > Clear cache (AttachmentDiskCache.clear), then switch a/b/a/b
+Only the isolated app id app.raft.raft_flutter.linkperf is installed, started or stopped. Pass an emulator YOU
+started; this script never starts or kills one. Stdlib only.
+"""
+import argparse, json, subprocess, sys, time, urllib.request
+from pathlib import Path
+
+PACKAGE = 'app.raft.raft_flutter.linkperf'
+PORT = 18841
+BASE = f'http://127.0.0.1:{PORT}'
+
+
+def get(path, timeout=300):
+    with urllib.request.urlopen(BASE + path, timeout=timeout) as r:
+        return json.load(r)
+
+
+def wait_stats(timeout=120):
+    end = time.time() + timeout
+    while time.time() < end:
+        try:
+            return get('/__stats', 5)
+        except Exception:
+            time.sleep(0.5)
+    raise SystemExit('timeout waiting for the app')
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('--serial', required=True)
+    ap.add_argument('--apk', type=Path, required=True)
+    ap.add_argument('--label', required=True)
+    ap.add_argument('--out', type=Path, required=True)
+    args = ap.parse_args()
+    out = args.out.resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    adb = lambda *a: subprocess.run(['adb', '-s', args.serial, *a], capture_output=True, text=True)
+    result = {'label': args.label}
+    adb('uninstall', PACKAGE)  # clean storage and cache for this isolated package only
+    if adb('install', '-r', str(args.apk)).returncode:
+        sys.exit('install failed')
+    subprocess.run(['adb', '-s', args.serial, 'forward', f'tcp:{PORT}', f'tcp:{PORT}'], check=True)
+    activity = f'{PACKAGE}/app.raft.raft_flutter.MainActivity'
+    start = lambda: adb('shell', 'am', 'start', '-n', activity)
+    stop = lambda: adb('shell', 'am', 'force-stop', PACKAGE)
+    result['device'] = adb('shell', 'getprop', 'ro.product.model').stdout.strip() + ' / ' + adb('shell', 'getprop', 'ro.build.version.release').stdout.strip()
+
+    def show(name, d):
+        r = d['requests']
+        print(f'{args.label} {name}: poster {r.get("poster", 0)} (urls {d["urls"].get("poster", 0)}, max/url '
+              f'{d["maxPerUrl"].get("poster", 0)}), thumbnail {r.get("thumbnail", 0)}, original {r.get("original", 0)}, '
+              f'video {r.get("video", 0)}', flush=True)
+
+    def phase(name, path):
+        t = time.time()
+        data = get(path)
+        data['wallSeconds'] = round(time.time() - t, 1)
+        result[name] = data
+        show(name, data)
+
+    def restart(name):
+        stop()
+        time.sleep(2)
+        start()
+        wait_stats()
+        time.sleep(4)  # first channel on screen and settled
+        result[name] = d = get('/__stats')
+        show(name, d)
+
+    try:
+        start()
+        wait_stats()
+        time.sleep(4)
+        phase('browse-cold', '/__run?name=browse')
+        phase('browse-warm', '/__run?name=browse')
+        phase('switch-warm', '/__run?name=switch')
+        phase('flood', '/__run?name=flood&n=40')
+        phase('disk', '/__run?name=sizes')
+        restart('cold-start')
+        phase('cold-switch', '/__run?name=browse')
+        get('/__strip?on=1')
+        restart('stripped-cold-start')
+        phase('stripped-cold-switch', '/__run?name=browse')
+        get('/__strip?on=0')
+        restart('unstripped-cold-start')
+        phase('clear-cache', '/__run?name=clearcache')
+        phase('disk-after-clear', '/__run?name=sizes')
+        with (out / f'{args.label}-logcat.txt').open('w') as f:
+            subprocess.run(['adb', '-s', args.serial, 'logcat', '-d', '-v', 'time'], stdout=f)
+    finally:
+        (out / f'{args.label}.json').write_text(json.dumps(result, indent=1))
+        subprocess.run(['adb', '-s', args.serial, 'forward', '--remove', f'tcp:{PORT}'], capture_output=True)
+
+
+if __name__ == '__main__':
+    main()

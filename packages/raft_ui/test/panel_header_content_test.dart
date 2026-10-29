@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Future<void> fonts(WidgetTester t) => t.runAsync(() async {
-  for (final family in ['HankenGrotesk', 'Inter', 'Geist', 'GeistMono']) {
+  for (final family in [
+    'SpaceGrotesk',
+    'SpaceMono',
+    'HankenGrotesk',
+    'Inter',
+    'Geist',
+    'GeistMono',
+  ]) {
     ByteData bytes;
     try {
       bytes = await rootBundle.load(
@@ -30,14 +38,53 @@ double baseline(WidgetTester t, Finder finder) {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
+  for (final (bottomRule, profileBody) in [
+    (false, false),
+    (true, false),
+    (false, true),
   ]) {
+    testWidgets(
+      'page surface reaches header and status bar rule=$bottomRule profile=$profileBody',
+      (t) async {
+        const surface = Color(0xff123456);
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(),
+            home: Scaffold(
+              body: RaftPanelHeaderBar(
+                title: 'Activity',
+                background: surface,
+                bottomRule: bottomRule,
+                profileBody: profileBody,
+              ),
+            ),
+          ),
+        );
+        final frame = find
+            .descendant(
+              of: find.byType(RaftPanelHeaderBar),
+              matching: find.byWidgetPredicate(
+                (w) => w is Container && w.decoration is BoxDecoration,
+              ),
+            )
+            .first;
+        expect(
+          (t.widget<Container>(frame).decoration! as BoxDecoration).color,
+          surface,
+        );
+        final status = find.descendant(
+          of: find.byType(RaftPanelHeaderBar),
+          matching: find.byType(RaftStatusBarSource),
+        );
+        expect(t.widget<RaftStatusBarSource>(status).color, surface);
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [390.0, 1280.0]) {
       testWidgets(
-        '$family/$dark width$width actual shared headers consume Source title/meta flow',
+        '${dark ? 'dark' : 'light'} width$width actual shared headers consume Source title/meta flow',
         (t) async {
           t.view.physicalSize = Size(width, 800);
           t.view.devicePixelRatio = 1;
@@ -46,7 +93,7 @@ void main() {
           var searches = 0, closes = 0;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: Column(
                   children: [
@@ -62,7 +109,7 @@ void main() {
                       actions: [
                         RaftPanelIconButton(
                           glyph: RaftGlyph.x,
-                          tooltip: 'Close profile',
+                          tooltip: 'Close Profile',
                           onPressed: () => closes++,
                         ),
                       ],
@@ -84,36 +131,28 @@ void main() {
             expect(heading, findsOneWidget);
             expect(subtitle, findsOneWidget);
             final head = t.getRect(heading), sub = t.getRect(subtitle);
-            final inline = family == RaftFamily.elegant && width >= 768;
-            if (inline) {
-              expect(sub.left - head.right, closeTo(8, .02));
-              expect(
-                baseline(t, heading),
-                closeTo(baseline(t, subtitle), .001),
-              );
-              expect(head.height, 21.25);
-              expect(sub.height, 12);
-            } else {
+            // Profile panels now consume the current Web headline/meta stack;
+            // channel headers still use their independently generated recipe.
+            if (title == 'Designer') {
               expect(sub.left, head.left);
-              expect(
-                sub.top - head.bottom,
-                family == RaftFamily.elegant ? 4 : 0,
-              );
-              expect(sub.height, family == RaftFamily.elegant ? 15 : 16);
+              expect(sub.top - head.bottom, 0);
+              expect(head.height, 22);
+              expect(sub.height, 16);
+              continue;
             }
+            // Current PanelHeadline/PanelMeta are a 22px/16px stack,
+            // with no gap, at desktop and phone widths (raft-ui PanelHeader).
+            expect(sub.left, head.left);
+            expect(sub.top - head.bottom, 0);
+            expect(head.height, 22);
+            expect(sub.height, 16);
           }
           final heading = t.widget<RaftCssText>(css('design'));
           final meta = t.widget<RaftCssText>(css('Product and UI decisions'));
-          expect(
-            heading.style!.fontFamily,
-            'packages/raft_ui/${family == RaftFamily.brutal ? 'HankenGrotesk' : 'Inter'}',
-          );
-          expect(
-            meta.style!.fontFamily,
-            'packages/raft_ui/${family == RaftFamily.brutal ? 'GeistMono' : 'Geist'}',
-          );
-          await t.tap(find.bySemanticsLabel('Search this channel'));
-          await t.tap(find.bySemanticsLabel('Close profile'));
+          expect(heading.style!.fontFamily, 'packages/raft_ui/SpaceGrotesk');
+          expect(meta.style!.fontFamily, 'packages/raft_ui/SpaceGrotesk');
+          await t.tap(find.bySemanticsLabel('Search This Channel'));
+          await t.tap(find.bySemanticsLabel('Close Profile'));
           expect([searches, closes], [1, 1]);
           expect(t.takeException(), isNull);
         },
@@ -121,13 +160,9 @@ void main() {
     }
   }
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark constrained desktop title keeps real caller actions reachable',
+      '${dark ? 'dark' : 'light'} constrained desktop title keeps real caller actions reachable',
       (t) async {
         t.view.physicalSize = const Size(1280, 800);
         t.view.devicePixelRatio = 1;
@@ -135,13 +170,12 @@ void main() {
         var searches = 0;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: SizedBox(
                 width: 260,
                 child: RaftChannelHeader(
-                  name:
-                      'A very long channel title within a constrained desktop panel',
+                  name: 'A very long channel title within a constrained desktop panel',
                   description: 'Accepted channel description',
                   onSearch: () => searches++,
                   onSettings: () {},
@@ -151,7 +185,7 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        await t.tap(find.bySemanticsLabel('Search this channel'));
+        await t.tap(find.bySemanticsLabel('Search This Channel'));
         expect(searches, 1);
         expect(t.takeException(), isNull);
       },
@@ -168,9 +202,9 @@ void main() {
       addTearDown(focus.dispose);
       final input = TextEditingController(text: 'draft');
       addTearDown(input.dispose);
-      Future<void> mount(RaftFamily family) => t.pumpWidget(
+      Future<void> mount({required bool dark}) => t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(family),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: RaftPanelHeaderBar(
               title: 'Designer',
@@ -185,14 +219,14 @@ void main() {
           ),
         ),
       );
-      await mount(RaftFamily.brutal);
+      await mount(dark: false);
       await t.pumpAndSettle();
       focus.requestFocus();
       await t.pump();
       input.selection = const TextSelection(baseOffset: 1, extentOffset: 4);
       final editable = t.state(find.byType(EditableText));
       final titleBox = t.renderObject(css('Designer'));
-      await mount(RaftFamily.elegant);
+      await mount(dark: true);
       await t.pumpAndSettle();
       expect(t.state(find.byType(EditableText)), same(editable));
       expect(t.renderObject(css('Designer')), same(titleBox));
@@ -201,7 +235,7 @@ void main() {
         input.selection,
         const TextSelection(baseOffset: 1, extentOffset: 4),
       );
-      await mount(RaftFamily.brutal);
+      await mount(dark: false);
       await t.pumpAndSettle();
       expect(t.state(find.byType(EditableText)), same(editable));
       expect(t.renderObject(css('Designer')), same(titleBox));

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'chat_focus_receipt_test.dart' show contextRows, paintedMessage;
 import 'message_context_transition_test.dart' show row;
@@ -14,19 +15,15 @@ import 'mounted_message_navigation_test.dart'
 // Driven through the mounted WorkspaceView with a real canonical thread whose
 // URL owns a focused reply; resizing must keep that location and focus.
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[N23] $family/$dark thread splits only at portrait>=1280 or landscape with container>=680; resize keeps location and msg focus',
+      '[N23] ${dark ? 'dark' : 'light'} thread splits only at portrait>=1280 or landscape with container>=680; resize keeps location and msg focus',
       (tester) async {
         final (w, api) = await pageFixture(tester);
-        w.ledger.ingest([
+        w.messageDomain.ledger.ingest([
           row('main', 'c1', 1),
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'main'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'main'};
         w.navigation.navigate(
           w.location.withQuery({
             'thread': 'c1:parent',
@@ -53,7 +50,7 @@ void main() {
             navigate: false,
           ),
         );
-        await mountPage(tester, w, family, dark);
+        await mountPage(tester, w, dark);
         final uri = w.location,
             index = w.navigation.index,
             entries = w.navigation.entries.length;
@@ -128,7 +125,7 @@ void main() {
             reason: '$size',
           );
           expect(tester.widget<RaftMessageTile>(focus).highlighted, true);
-          expect(w.highlightedMessageId, 'reply-40');
+          expect(w.messageDomain.state.highlightedMessageId, 'reply-40');
           expect(tester.state(threadView), same(threadState));
           expect(tester.takeException(), isNull);
         }

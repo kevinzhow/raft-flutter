@@ -8,6 +8,36 @@ import 'read_state.dart';
 class MessageSync {
   MessageSync() : core = _create();
   SyncCore core;
+  Iterable<String> get channelIds => core.scopeIds('messages');
+  Iterable<Map<String, dynamic>> messages(String channel) =>
+      (core.state('messages', channel) as Map?)?.values
+          .cast<Map<String, dynamic>>() ??
+      const [];
+
+  void releaseBodies(String channel, Set<String> ids) => core.projectState(
+    'messages',
+    channel,
+    (state) =>
+        Map<String, Map<String, dynamic>>.from(state as Map)
+          ..removeWhere((id, _) => ids.contains(id)),
+  );
+
+  /// Replace retained body copies after an authoritative read. This does not
+  /// hydrate new scopes or change applied sequences, epochs or repair state.
+  void replaceBodies(String channel, Iterable<Map<String, dynamic>> values) {
+    if (!channelIds.contains(channel)) return;
+    core.projectState('messages', channel, (state) {
+      final rows = Map<String, Map<String, dynamic>>.from(state as Map);
+      for (final row in values) {
+        final id = row['id'];
+        if (row['channelId'] == channel && rows.containsKey(id)) {
+          rows[id as String] = Map<String, dynamic>.from(row);
+        }
+      }
+      return rows;
+    });
+  }
+
   static SyncCore _create() => SyncCore(
     domains: [
       SyncDomain(

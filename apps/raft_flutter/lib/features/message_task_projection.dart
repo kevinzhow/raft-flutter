@@ -22,6 +22,28 @@ enum MessageTaskPresence {
   reserved,
 }
 
+/// A task row built from the message's own live task projection
+/// (messageTaskProjection.ts): `taskNumber`, `taskStatus`, `taskAssigneeName`
+/// (the assignee handle) and `taskCurrentProjection.title`. The message wire
+/// has no task id, title or claimant-name key besides these.
+Map<String, dynamic>? provisionalMessageTask(RaftMessage message) {
+  final json = message.json;
+  final number = json['taskNumber'], status = json['taskStatus'];
+  if (number is! int || !messageTaskStatuses.contains(status)) return null;
+  final claimant = json['taskAssigneeName'];
+  final projection = json['taskCurrentProjection'];
+  final title = projection is Map ? projection['title'] : null;
+  return {
+    'id': message.id,
+    'messageId': message.id,
+    'channelId': json['channelId'],
+    'taskNumber': number,
+    'title': title is String ? title : message.content,
+    'status': status,
+    if (claimant is String) 'claimedByName': claimant,
+  };
+}
+
 /// Channel task references for one mounted chat. Reads the client-level
 /// [MessageTaskCache], so a revisited channel or an opened thread shows its
 /// chips on the first frame; a stale channel is revalidated in the
@@ -116,7 +138,8 @@ class MessageTaskProjection extends ChangeNotifier {
 
   bool owns(RaftMessage message) =>
       permitted &&
-      (message.channelId == w.channel!.id || message.id == w.threadParent?.id);
+      (message.channelId == w.channel!.id ||
+          message.id == w.messageDomain.state.threadParent?.id);
 
   Map<String, dynamic>? taskFor(RaftMessage message) =>
       owns(message) ? byMessage[message.id] : null;
@@ -129,29 +152,20 @@ class MessageTaskProjection extends ChangeNotifier {
     RaftMessage message,
   ) {
     if (!owns(message)) return null;
-    final accepted = byMessage[message.id];
+    // [owns] implies [permitted]: one cache read answers byMessage and loaded.
+    final channelId = w.channel!.id;
+    final tasks = cache.tasks(w, channelId);
+    final loaded = tasks != null;
+    final accepted = tasks?[message.id];
     if (accepted != null) {
       return (presence: MessageTaskPresence.accepted, task: accepted);
     }
-    if (loaded && !cache.needsRevalidation(w, w.channel!.id)) return null;
+    if (loaded && !cache.needsRevalidation(w, channelId)) return null;
     final json = message.json;
     final number = json['taskNumber'], status = json['taskStatus'];
-    if (number is int && messageTaskStatuses.contains(status)) {
-      final claimant = json['taskClaimedByName'] ?? json['claimedByName'];
-      return (
-        presence: MessageTaskPresence.provisional,
-        task: {
-          'id': json['taskId'] is String ? json['taskId'] : message.id,
-          'messageId': message.id,
-          'channelId': json['channelId'],
-          'taskNumber': number,
-          'title': json['taskTitle'] is String
-              ? json['taskTitle']
-              : message.content,
-          'status': status,
-          if (claimant is String) 'claimedByName': claimant,
-        },
-      );
+    final provisional = provisionalMessageTask(message);
+    if (provisional != null) {
+      return (presence: MessageTaskPresence.provisional, task: provisional);
     }
     if (!loaded &&
         ((number is int && number > 0) ||

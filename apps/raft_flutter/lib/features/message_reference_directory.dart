@@ -17,7 +17,7 @@ import 'private_route_guard.dart';
 /// the same identity count as settled data (painted at the first frame and
 /// revalidated in place); see [WorkspaceEntityDirectory].
 class MessageReferenceDirectory extends ChangeNotifier {
-  MessageReferenceDirectory(this.w) : store = w.entityDirectory {
+  MessageReferenceDirectory(this.w) : store = w.services.entityDirectory {
     observed = directoryAuthority(w);
     store.addListener(storeChanged);
     w.addListener(changed);
@@ -97,10 +97,11 @@ class MessageReferenceDirectory extends ChangeNotifier {
     List<Map<String, dynamic>> members,
   ) {
     final result = <String, Map<String, RaftTextReference>>{};
-    void add(String text, String href) {
+    void add(String text, String href, [String? label]) {
       result.putIfAbsent(text, () => {})[href] = RaftTextReference(
         text: text,
         href: href,
+        label: label,
       );
     }
 
@@ -115,7 +116,15 @@ class MessageReferenceDirectory extends ChangeNotifier {
           host: 'mention',
           pathSegments: [kind, id],
         ).toString();
-        add('@$name', href);
+        // Web `mentionAnchor`: the chip reads the display name.
+        final display = row['displayName'];
+        add(
+          '@$name',
+          href,
+          display is String && display.isNotEmpty && display != name
+              ? '@$display'
+              : null,
+        );
         add('@$name~${kind == 'user' ? 'human' : 'agent'}', href);
       }
     }

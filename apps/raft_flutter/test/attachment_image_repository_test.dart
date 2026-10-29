@@ -88,12 +88,20 @@ class _RasterClient extends RaftClient {
     resolutions++;
     return {'url': 'https://storage.example.invalid/owned-public-fixture'};
   }
+
+  // The batch route is not served here: tiles fall back to the single route.
+  @override
+  Future<dynamic> post(String path, {dynamic data}) async => {'urls': []};
 }
 
 class _RasterFiles extends AttachmentFiles {
   int downloads = 0;
   @override
-  Future<Uint8List> image(String url, {required CancelToken cancel}) async {
+  Future<Uint8List> image(
+    String url, {
+    required CancelToken cancel,
+    void Function(int, int)? onProgress,
+  }) async {
     downloads++;
     return base64Decode(
       'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
@@ -102,6 +110,34 @@ class _RasterFiles extends AttachmentFiles {
 }
 
 void main() {
+  test(
+    'rows scrolled away do not hold load slots: visible tiles load at once',
+    () async {
+      // A fast fling builds and drops many tiles. Their loaders may be stuck on
+      // something that cannot be cancelled (a signed-URL request waiting for
+      // the rate limiter); the slot must come back when the row is gone, or the
+      // tiles on screen now would wait behind them for as long as it takes.
+      final h = _Harness(maxConcurrentLoads: 2);
+      addTearDown(h.repository.dispose);
+      final stuck = Completer<Uint8List>();
+      final gone = [
+        for (var i = 0; i < 6; i++)
+          h.acquire(key('gone-$i'), load: (_) => stuck.future),
+      ];
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(h.loads, 2, reason: 'two loaders started, four are queued');
+      for (final lease in gone) {
+        lease.release();
+      }
+      final visible = [for (var i = 0; i < 3; i++) h.acquire(key('now-$i'))];
+      final images = await Future.wait([
+        for (final lease in visible) lease.ready,
+      ]).timeout(const Duration(seconds: 2));
+      expect(images, hasLength(3));
+      expect(stuck.isCompleted, isFalse, reason: 'the stuck loaders never ended');
+    },
+  );
+
   test(
     'simultaneous consumers share one load and stable decoded provider',
     () async {
@@ -480,8 +516,8 @@ void main() {
         ..server = RaftRecord({'id': 'server', 'role': 'owner'})
         ..channel = RaftChannel({'id': 'channel', 'joined': true});
       w.channels = [w.channel!];
-      w.ledger.switchServer('server');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('server');
+      w.messageDomain.ledger.ingest([
         {
           'id': 'host',
           'channelId': 'channel',
@@ -497,11 +533,11 @@ void main() {
             },
           ],
         },
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['channel'] = {'host'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['channel'] = {'host'};
       final files = _RasterFiles();
       Widget mountedView() => MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: AttachmentView(
             controller: w,
@@ -563,8 +599,8 @@ void main() {
               .preview,
           isNull,
         );
-        expect(w.retainedImageCount, 0);
-        expect(w.retainedImageEncodedBytes, 0);
+        expect(w.attachmentMedia.retainedImageCount, 0);
+        expect(w.attachmentMedia.retainedImageEncodedBytes, 0);
         await tester.pumpWidget(const SizedBox());
       } finally {
         w.dispose();
@@ -583,7 +619,7 @@ void main() {
         ..server = RaftRecord({'id': 'server', 'role': 'owner'})
         ..channel = RaftChannel({'id': 'channel', 'joined': true});
       w.channels = [w.channel!];
-      w.ledger.switchServer('server');
+      w.messageDomain.ledger.switchServer('server');
       const metadata = {
         'id': 'file',
         'filename': 'fixture.png',
@@ -591,7 +627,7 @@ void main() {
         'width': 16,
         'height': 16,
       };
-      w.ledger.ingest([
+      w.messageDomain.ledger.ingest([
         {
           'id': 'host',
           'channelId': 'channel',
@@ -599,11 +635,11 @@ void main() {
           'content': 'public diagnostic',
           'attachments': [metadata],
         },
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['channel'] = {'host'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['channel'] = {'host'};
       final files = _RasterFiles();
       Widget mountedView() => MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: AttachmentView(
             controller: w,
@@ -627,7 +663,7 @@ void main() {
         await tester.pumpWidget(mountedView());
         // Cold first visit: neutral reserved box, no spinner, no image yet.
         expect(find.byType(Image), findsNothing);
-        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.byType(RaftSpinner), findsNothing);
         expect(
           tester
               .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
@@ -647,7 +683,7 @@ void main() {
         await tester.pumpWidget(mountedView());
         expect(find.byType(Image), findsOneWidget);
         expect(tester.widget<Image>(find.byType(Image)).image, same(provider));
-        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.byType(RaftSpinner), findsNothing);
         expect(
           tester
               .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
@@ -658,7 +694,7 @@ void main() {
         for (var i = 0; i < 3; i++) {
           await tester.pump(const Duration(milliseconds: 16));
           expect(tester.getRect(find.byType(RaftAttachmentCard)), settled);
-          expect(find.byType(CircularProgressIndicator), findsNothing);
+          expect(find.byType(RaftSpinner), findsNothing);
           expect(
             tester
                 .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))

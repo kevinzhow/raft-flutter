@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show contextRows, paintedMessage;
@@ -14,13 +15,9 @@ import 'message_presentation_test.dart' show fixture;
 /// "not found" from the plan history limit is a separate product gap (see the
 /// L05 defect report), so this proof is intentionally untagged.
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark failed target keeps the painted rows until the latest page lands',
+      '${dark ? 'dark' : 'light'} failed target keeps the painted rows until the latest page lands',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(390, 844);
@@ -28,10 +25,15 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final old = contextRows('old');
-        w.ledger.ingest(old, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = old.map((r) => r['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          old,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = old
+            .map((r) => r['id'] as String)
+            .toSet();
         // The unregistered context route answers the fixture's real 404.
         final latestRequested = Completer<void>.sync();
         final latest = Completer<Map<String, dynamic>>.sync();
@@ -42,7 +44,7 @@ void main() {
         api.routes['POST /channels/c1/read'] = (_) => {};
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: RaftChatView(controller: w)),
           ),
         );
@@ -62,22 +64,25 @@ void main() {
         for (var i = 0; i < 4; i++) {
           await tester.pump(const Duration(milliseconds: 16));
           expect(paintedMessage(tester, 'old-79'), oldRect);
-          expect(find.text('Loading...'), findsNothing);
-          expect(find.text('Start the conversation'), findsNothing);
-          expect(w.messages.map((r) => r.id), old.map((r) => r['id']));
-          expect(w.highlightedMessageId, isNull);
+          expect(find.text('Loading thread…'), findsNothing);
+          expect(find.text('No messages yet'), findsNothing);
+          expect(
+            w.messageDomain.messages.map((r) => r.id),
+            old.map((r) => r['id']),
+          );
+          expect(w.messageDomain.state.highlightedMessageId, isNull);
         }
         await tester.runAsync(() async {
           latest.complete({'messages': contextRows('latest', count: 8)});
-          for (var i = 0; i < 40 && w.channelLoading; i++) {
+          for (var i = 0; i < 40 && w.messageDomain.state.channelLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
         });
         await tester.pumpAndSettle();
-        expect(w.channelLoading, false);
-        expect(w.hasNewer, false);
+        expect(w.messageDomain.state.channelLoading, false);
+        expect(w.messageDomain.state.hasNewer, false);
         expect(paintedMessage(tester, 'latest-7'), isNotNull);
-        expect(find.text('Back to bottom'), findsNothing);
+        expect(find.text('Back to Bottom'), findsNothing);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
         await tester.pump();

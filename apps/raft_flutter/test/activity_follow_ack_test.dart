@@ -7,6 +7,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Map<String, dynamic> thread({bool following = true, int unread = 3}) => {
   'kind': 'thread',
@@ -51,6 +52,10 @@ class Client extends RaftClient {
     bool acceptServerExit = false,
     Duration? receiveTimeout,
   }) {
+    // The rollout flags are read once the page is up; they are not under test.
+    if (path == '/feature-flags/evaluate') {
+      return Future.value({'evaluations': []});
+    }
     posts.add((path: path, data: data));
     final response = Completer<dynamic>();
     pending.add(response);
@@ -80,11 +85,7 @@ class Workspace extends WorkspaceController {
 }
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     late Client client;
     late Workspace workspace;
     final acceptedWindows = <Map?>[];
@@ -105,13 +106,14 @@ void main() {
     Future<dynamic> mount(WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(theme.$1, dark: theme.$2),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: ResourceView(
               controller: workspace,
               section: 'activity',
               onMessage: (_, _) async {},
-              onActivityWindowAccepted: acceptedWindows.add,
+              onActivityWindowAccepted: (window, {firstPage = false}) =>
+                  acceptedWindows.add(window),
             ),
           ),
         ),
@@ -126,12 +128,12 @@ void main() {
         buttons: kSecondaryMouseButton,
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(RaftMenuItem, label));
+      await tester.tap(find.widgetWithText(RaftMenuButtonItem, label));
       await tester.pumpAndSettle();
     }
 
     testWidgets(
-      '[N24g] ${theme.$1}/${theme.$2} Unfollow ACK fences a held prior read and overlays a later stale read until convergence',
+      '[N24g] ${dark ? 'dark' : 'light'} Unfollow ACK fences a held prior read and overlays a later stale read until convergence',
       (tester) async {
         final dynamic state = await mount(tester);
         await action(tester, 'Unfollow');
@@ -168,7 +170,7 @@ void main() {
       },
     );
     testWidgets(
-      '[N24g] ${theme.$1}/${theme.$2} Follow ACK exposes Unfollow without resurrecting cleared unread from a stale response',
+      '[N24g] ${dark ? 'dark' : 'light'} Follow ACK exposes Unfollow without resurrecting cleared unread from a stale response',
       (tester) async {
         final dynamic state = await mount(tester);
         await action(tester, 'Unfollow');
@@ -191,11 +193,11 @@ void main() {
           buttons: kSecondaryMouseButton,
         );
         await tester.pumpAndSettle();
-        expect(find.widgetWithText(RaftMenuItem, 'Unfollow'), findsOneWidget);
+        expect(find.widgetWithText(RaftMenuButtonItem, 'Unfollow'), findsOneWidget);
       },
     );
     testWidgets(
-      '[N24g] ${theme.$1}/${theme.$2} failed Unfollow preserves canonical state and reconciles instead of accepting success',
+      '[N24g] ${dark ? 'dark' : 'light'} failed Unfollow preserves canonical state and reconciles instead of accepting success',
       (tester) async {
         final dynamic state = await mount(tester);
         await action(tester, 'Unfollow');
@@ -209,7 +211,7 @@ void main() {
       },
     );
     testWidgets(
-      '[N24g] ${theme.$1}/${theme.$2} principal change retires late ACK and the old menu handler',
+      '[N24g] ${dark ? 'dark' : 'light'} principal change retires late ACK and the old menu handler',
       (tester) async {
         final dynamic state = await mount(tester);
         await tester.tap(
@@ -218,9 +220,9 @@ void main() {
         );
         await tester.pumpAndSettle();
         final oldHandler = tester
-            .widget<RaftMenuItem>(find.widgetWithText(RaftMenuItem, 'Unfollow'))
+            .widget<RaftMenuButtonItem>(find.widgetWithText(RaftMenuButtonItem, 'Unfollow'))
             .onPressed;
-        await tester.tap(find.widgetWithText(RaftMenuItem, 'Unfollow'));
+        await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Unfollow'));
         await tester.pumpAndSettle();
         client.user = RaftRecord({'id': 'bob'});
         workspace.notifyListeners();
@@ -235,7 +237,7 @@ void main() {
       },
     );
     testWidgets(
-      '[N24g] ${theme.$1}/${theme.$2} denied Unfollow retires accepted Activity rows',
+      '[N24g] ${dark ? 'dark' : 'light'} denied Unfollow retires accepted Activity rows',
       (tester) async {
         final dynamic state = await mount(tester);
         await action(tester, 'Unfollow');
@@ -249,7 +251,7 @@ void main() {
       },
     );
     testWidgets(
-      '[N24g] ${theme.$1}/${theme.$2} Unfollow ACK retains row and exposes Follow before stale inbox read',
+      '[N24g] ${dark ? 'dark' : 'light'} Unfollow ACK retains row and exposes Follow before stale inbox read',
       (tester) async {
         final dynamic state = await mount(tester);
         await action(tester, 'Unfollow');
@@ -280,8 +282,8 @@ void main() {
           buttons: kSecondaryMouseButton,
         );
         await tester.pumpAndSettle();
-        expect(find.widgetWithText(RaftMenuItem, 'Follow'), findsOneWidget);
-        expect(find.widgetWithText(RaftMenuItem, 'Unfollow'), findsNothing);
+        expect(find.widgetWithText(RaftMenuButtonItem, 'Follow'), findsOneWidget);
+        expect(find.widgetWithText(RaftMenuButtonItem, 'Unfollow'), findsNothing);
       },
     );
   }

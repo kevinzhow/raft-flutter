@@ -9,21 +9,19 @@ import 'package:raft_flutter/features/conversation_panel.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_context_transition_test.dart' show row;
 import 'task_surface_test.dart' show modernTask, taskRoutes, flush;
 import 'workspace_source_location_contract_test.dart' show pageFixture;
+import 'support/app_services_fixture.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [390.0, 1280.0]) {
       for (final chip in [false, true]) {
         testWidgets(
-          '[K10b entry] actual ${chip ? 'message footer chip' : 'channel Tasks tab card'} owns task URI $family/$dark/$width',
+          '[K10b entry] actual ${chip ? 'message footer chip' : 'channel Tasks tab card'} owns task URI ${dark ? 'dark' : 'light'}/$width',
           (t) async {
             // Source TasksPanel964–987 and MessageItem3685–3700 distinguish
             // board arbitration from footer task intent; neither steals side.
@@ -42,32 +40,37 @@ void main() {
             };
             final detail = Completer<Map>();
             api.routes['GET /tasks/channel/c1/number/8'] = (_) => detail.future;
-            w.ledger.ingest([
+            w.messageDomain.ledger.ingest([
               row('task-parent', 'c1', 1),
-            ], expectedGeneration: w.ledger.generation);
-            w.visibleIds['c1'] = {'task-parent'};
+            ], expectedGeneration: w.messageDomain.ledger.generation);
+            w.messageDomain.visibleIds['c1'] = {'task-parent'};
             if (width >= 768) {
-              w.threadParent = RaftMessage(row('ordinary-parent', 'c1', 2));
+              w.messageDomain.state.threadParent = RaftMessage(
+                row('ordinary-parent', 'c1', 2),
+              );
               w.threadChannelId = 'ordinary-side';
-              w.threadLoading = false;
+              w.messageDomain.state.threadLoading = false;
               w.drafts[w.draftScope(thread: true)!] = 'Retained side draft';
             }
             w.navigation.navigate(
               w.location.withQuery({
                 if (width >= 768) 'thread': 'c1:ordinary-parent',
-                'profile': 'human:alice',
+                // On a phone an open profile is a page that covers the chat.
+                if (width >= 768) 'profile': 'human:alice',
                 'kept': 'yes',
               }),
               kind: RaftNavigationKind.replace,
             );
             await t.pumpWidget(
               MaterialApp(
-                theme: raftTheme(family, dark: dark),
-                home: WorkspaceView(
-                  controller: w,
-                  appearance: RaftAppearance(light: family),
-                  onAppearance: (_) async {},
-                  onLogout: () async {},
+                theme: raftTheme(dark: dark),
+                home: withAppServices(
+                  WorkspaceView(
+                    controller: w,
+                    appearance: RaftAppearance(),
+                    onAppearance: (_) async {},
+                    onLogout: () async {},
+                  ),
                 ),
               ),
             );
@@ -115,7 +118,9 @@ void main() {
             expect(w.threadChannelId, width >= 768 ? 'ordinary-side' : null);
             expect(
               w.navigationRevision,
-              chip ? mainRevision : mainRevision + 1,
+              // Board activation drops an open profile (a retiring change);
+              // a phone has none (its profile page covers the chat).
+              chip || width < 768 ? mainRevision : mainRevision + 1,
             );
             // Board activation removes profile, so its Source sync replaces;
             // footer-chip activation changes only its independent task slot.
@@ -123,7 +128,10 @@ void main() {
               w.navigation.index,
               chip || width < 768 ? historyIndex + 1 : historyIndex,
             );
-            expect(w.location.query('profile'), chip ? 'human:alice' : null);
+            expect(
+              w.location.query('profile'),
+              chip && width >= 768 ? 'human:alice' : null,
+            );
             expect(w.location.chatTab, chip ? null : 'tasks');
             detail.complete({'task': modernTask});
             await flush(t);
@@ -155,23 +163,13 @@ void main() {
               );
               await flush(t);
             }
-            if (!chip && width < 768) {
-              // Board activation drops `profile`, which is part of the phone
-              // page identity: the REPLACEd route owns a fresh composer, and
-              // the accepted draft text is what carries over.
-              expect(
-                t.widget<TextField>(editor).controller!.text,
-                'Real main task-entry draft',
-              );
-            } else {
-              expect(t.state(mainComposer), same(composerState));
-              expect(
-                t.widget<TextField>(editor).controller,
-                same(field.controller),
-              );
-              expect(field.controller!.text, 'Real main task-entry draft');
-              expect(field.controller!.selection.baseOffset, 7);
-            }
+            expect(t.state(mainComposer), same(composerState));
+            expect(
+              t.widget<TextField>(editor).controller,
+              same(field.controller),
+            );
+            expect(field.controller!.text, 'Real main task-entry draft');
+            expect(field.controller!.selection.baseOffset, 7);
             expect(t.takeException(), isNull);
             await t.pumpWidget(const SizedBox.shrink());
             await t.pump(const Duration(milliseconds: 300));

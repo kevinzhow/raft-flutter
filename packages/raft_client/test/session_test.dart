@@ -53,6 +53,22 @@ class FakeAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+class _DelayedSessionStore implements SessionStore {
+  final memory = MemorySessionStore();
+  Completer<void>? started, complete;
+  @override
+  Future<Session?> read(String origin) => memory.read(origin);
+  @override
+  Future<void> write(String origin, Session? session) async {
+    if (started != null) {
+      started!.complete();
+      await complete!.future;
+      started = null;
+    }
+    await memory.write(origin, session);
+  }
+}
+
 void main() {
   late FakeAdapter adapter;
   late RaftClient client;
@@ -147,5 +163,30 @@ void main() {
     await client.login('fixture', 'fixture');
     adapter.exitGate!.complete();
     await rejected;
+  });
+
+  test('all disposal callers wait for an in-progress credential write before handing off ownership', () async {
+    final store = _DelayedSessionStore();
+    final owned = RaftClient(
+      origin: client.origin,
+      sessionStore: store,
+      transport: Dio()..httpClientAdapter = adapter,
+    );
+    await owned.login('fixture', 'fixture');
+    store.started = Completer<void>();
+    store.complete = Completer<void>();
+    final rotating = owned.refresh();
+    await store.started!.future;
+    var finished = false;
+    final disposing = owned.dispose();
+    expect(identical(disposing, owned.dispose()), true);
+    final settled = disposing.then((_) => finished = true);
+    await Future<void>.delayed(Duration.zero);
+    expect(finished, false);
+    store.complete!.complete();
+    await settled;
+    await rotating;
+    expect(adapter.rotates, 0, reason: 'no rotation starts after disposal');
+    expect(owned.signedIn, false);
   });
 }

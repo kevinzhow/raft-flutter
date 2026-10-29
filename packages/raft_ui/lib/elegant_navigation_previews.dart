@@ -48,7 +48,7 @@ Widget railAttentionPreview() {
     builder: (context, update) => Align(
       alignment: Alignment.topLeft,
       child: SizedBox(
-        width: RaftTokens.of(context).brutal ? 64 : 56,
+        width: 56,
         child: RaftWorkspaceRail(
           destinations: const [
             RaftRailDestination(

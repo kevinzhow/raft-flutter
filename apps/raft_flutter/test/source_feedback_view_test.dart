@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:raft_flutter/data/source_feedback_store.dart';
 import 'package:raft_flutter/features/source_feedback_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'source_feedback_store_test.dart' as fixture;
 
@@ -34,7 +35,8 @@ void main() {
         );
         String format(DateTime value) =>
             '${DateFormat.yMMMd('en').format(value)}, '
-            '${DateFormat.jm('en').format(value)}'.replaceAll('\u202f', ' ');
+                    '${DateFormat.jm('en').format(value)}'
+                .replaceAll('\u202f', ' ');
         expect(find.text(format(updated)), findsOneWidget);
         expect(find.text(format(created)), findsNothing);
         expect(find.text('First line 中文'), findsOneWidget);
@@ -53,13 +55,9 @@ void main() {
       }
     },
   );
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark real ticket action opens GET replies and back preserves inbox',
+      '${dark ? 'dark' : 'light'} real ticket action opens GET replies and back preserves inbox',
       (tester) async {
         final counts = <int>[];
         final store = SourceFeedbackStore(
@@ -75,7 +73,7 @@ void main() {
         await store.loadList();
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: SourceFeedbackProjectionView(store: store)),
           ),
         );
@@ -120,7 +118,7 @@ void main() {
       );
       expect(find.text("Couldn't load feedback. Try again."), findsOneWidget);
       expect(find.byKey(const Key('feedback-empty')), findsNothing);
-      await tester.tap(find.text('Try again'));
+      await tester.tap(find.text('Try Again'));
       await tester.pumpAndSettle();
       expect(find.text('No feedback yet'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());

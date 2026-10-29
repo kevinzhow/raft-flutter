@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+"""Prepare Ubuntu 24.04 release media without changing the development pins."""
+from appimage import prepare_media
+
+prepare_media()

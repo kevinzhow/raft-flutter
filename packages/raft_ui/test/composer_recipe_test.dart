@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Widget host(
   Widget child,
-  RaftFamily family,
   bool dark, {
   double width = 390,
   double inset = 0,
   RaftDensity density = RaftDensity.desktop,
 }) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+  theme: raftTheme(dark: dark),
   home: MediaQuery(
     data: MediaQueryData(
       size: Size(width, 700),
@@ -29,13 +29,9 @@ Widget host(
 );
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final (dark) in raftThemeMatrix([(false), (true)], full: true)) {
     testWidgets(
-      'touch actions keep source flow, disjoint edge hits and editor focus: $family/$dark',
+      'touch actions keep source flow, disjoint edge hits and editor focus: ${dark ? 'dark' : 'light'}',
       (tester) async {
         var images = 0, files = 0, sends = 0;
         await tester.pumpWidget(
@@ -49,7 +45,6 @@ void main() {
                 return false;
               },
             ),
-            family,
             dark,
             density: RaftDensity.touch,
           ),
@@ -59,19 +54,19 @@ void main() {
           of: find.byTooltip(label),
           matching: find.byType(RaftComposerAction),
         );
-        final image = tester.getRect(action('Attach media'));
-        final file = tester.getRect(action('Attach file'));
+        final image = tester.getRect(action('Attach Media'));
+        final file = tester.getRect(action('Attach File'));
         final send = tester.getRect(action('Send'));
-        final size = family == RaftFamily.brutal ? 26.0 : 28.0;
+        final size = 32.0;
         expect(image.size, Size.square(size));
         expect(file.size, Size.square(size));
-        expect(send.size, const Size.square(28));
-        expect(file.left - image.right, family == RaftFamily.brutal ? 8 : 6);
+        expect(send.size, const Size.square(32));
+        expect(file.left - image.right, 8);
         expect(
           tester
               .getSize(find.byKey(const ValueKey('composer-toolbar-slot')))
               .height,
-          family == RaftFamily.brutal ? 28 : 42,
+          32,
         );
         await tester.tap(find.byType(TextField));
         await tester.tapAt(Offset(image.left + 1, image.center.dy));
@@ -83,11 +78,14 @@ void main() {
         await gesture.cancel();
         await tester.pump();
         expect(sends, 0);
-        await tester.tapAt(
-          Offset(image.right + (file.left - image.right) / 2, image.center.dy),
-        );
+        // Touch slop: the gap between the two small buttons is split between
+        // them (nearest button wins), it is not dead space.
+        await tester.tapAt(Offset(image.right + 1, image.center.dy));
         await tester.pump();
-        expect((images, files, sends), (1, 1, 0));
+        expect((images, files, sends), (2, 1, 0));
+        await tester.tapAt(Offset(file.left - 1, file.center.dy));
+        await tester.pump();
+        expect((images, files, sends), (2, 2, 0));
         expect(
           tester
               .widget<EditableText>(find.byType(EditableText))
@@ -105,6 +103,21 @@ void main() {
         await tester.tapAt(Offset(send.center.dx, send.bottom - 1));
         await tester.pump();
         expect(sends, 1);
+        // Source 32dp Send keeps its visual box but accepts a 48dp touch target.
+        // The inside probe stays one pixel within the 8px added on each edge.
+        await tester.tapAt(Offset(send.right + 7, send.center.dy));
+        await tester.pump();
+        expect(sends, 2);
+        await tester.tapAt(Offset(send.center.dx, send.top - 7));
+        await tester.pump();
+        expect(sends, 3);
+        await tester.tapAt(Offset(send.left - 7, send.center.dy));
+        await tester.pump();
+        expect(sends, 4);
+        // Beyond 48dp nothing reroutes to it.
+        await tester.tapAt(Offset(send.center.dx, send.top - 14));
+        await tester.pump();
+        expect(sends, 4);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
         await tester.pump();
@@ -112,12 +125,11 @@ void main() {
     );
 
     testWidgets(
-      'mounted host/editor bounds, safe inset counted once: $family/$dark',
+      'mounted host/editor bounds, safe inset counted once: ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           host(
             RaftComposer(bottomSafeInset: 7, onSend: (_) async => false),
-            family,
             dark,
             inset: 29,
           ),
@@ -128,10 +140,10 @@ void main() {
           desktop: false,
           bottomSafeInset: 7,
         );
-        expect(recipe.hostInset, const EdgeInsets.fromLTRB(12, 12, 12, 23));
-        expect(recipe.editorMinimum, 20);
+        expect(recipe.hostInset, const EdgeInsets.fromLTRB(20, 8, 20, 23));
+        expect(recipe.editorMinimum, 24);
         expect(recipe.editorMaximum, 128);
-        expect(recipe.shellRadius, family == RaftFamily.brutal ? 0 : 8);
+        expect(recipe.shellRadius, 10);
         final actualHost = tester.widget<Container>(
           find.byKey(const ValueKey('composer-host-slot')),
         );
@@ -142,7 +154,7 @@ void main() {
         expect(actualHost.decoration, recipe.hostDecoration);
         final text = tester.widget<TextField>(find.byType(TextField));
         expect(text.style!.fontSize, 16);
-        expect(text.style!.height, 20 / 16);
+        expect(text.style!.height, 24 / 16);
         final decoration =
             tester
                     .widget<Container>(
@@ -150,11 +162,10 @@ void main() {
                     )
                     .decoration!
                 as BoxDecoration;
+        expect(decoration.border!.top.width, 1);
         expect(
-          decoration.border,
-          family == RaftFamily.brutal
-              ? Border.all(color: Colors.black, width: 2)
-              : null,
+          decoration.border!.top.color,
+          dark ? const Color(0xffe5e5e2) : const Color(0xff141111),
         );
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
@@ -163,7 +174,7 @@ void main() {
     );
 
     testWidgets(
-      'Send tap keeps an unfocused composer unfocused: $family/$dark',
+      'Send tap keeps an unfocused composer unfocused: ${dark ? 'dark' : 'light'}',
       (tester) async {
         // Source MessageInput only prevents the Send pointer-down blur; it never
         // focuses the textarea after a send, so no keyboard pops on Android.
@@ -177,7 +188,6 @@ void main() {
                 return true;
               },
             ),
-            family,
             dark,
           ),
         );
@@ -197,7 +207,7 @@ void main() {
     );
 
     testWidgets(
-      'empty disabled, pointer focus, late ACK preserves changed draft: $family/$dark',
+      'empty disabled, pointer focus, late ACK preserves changed draft: ${dark ? 'dark' : 'light'}',
       (tester) async {
         final delivered = Completer<bool>();
         var sends = 0;
@@ -209,7 +219,6 @@ void main() {
                 return delivered.future;
               },
             ),
-            family,
             dark,
           ),
         );
@@ -248,7 +257,7 @@ void main() {
     );
 
     testWidgets(
-      'popup outside shell keeps card height; real option tap retains editor focus: $family/$dark',
+      'popup outside shell keeps card height; real option tap retains editor focus: ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           host(
@@ -258,7 +267,6 @@ void main() {
                 RaftComposerSuggestion(type: 'user', id: 'one', name: 'Alice'),
               ],
             ),
-            family,
             dark,
           ),
         );
@@ -315,7 +323,7 @@ void main() {
       },
     );
     testWidgets(
-      'long mention label shrinks beside badge and handle without changing keyboard insertion: $family/$dark',
+      'long mention label shrinks beside badge and handle without changing keyboard insertion: ${dark ? 'dark' : 'light'}',
       (tester) async {
         const name = 'Android-Developer-4-with-a-long-handle';
         await tester.pumpWidget(
@@ -335,7 +343,6 @@ void main() {
                 ],
               ),
             ),
-            family,
             dark,
           ),
         );
@@ -372,7 +379,7 @@ void main() {
       var images = 0, files = 0, tasks = 0, sends = 0;
       final task = TextButton(
         onPressed: () => tasks++,
-        child: const Text('As task'),
+        child: const Text('As Task'),
       );
       await tester.pumpWidget(
         host(
@@ -386,12 +393,11 @@ void main() {
               return false;
             },
           ),
-          RaftFamily.elegant,
           false,
         ),
       );
       await tester.tap(find.byType(TextField));
-      await tester.tap(find.byTooltip('Attach media'));
+      await tester.tap(find.byTooltip('Attach Media'));
       expect(images, 1);
       expect(files, 0);
       expect(
@@ -401,9 +407,9 @@ void main() {
             .hasFocus,
         isTrue,
       );
-      await tester.tap(find.byTooltip('Attach file'));
+      await tester.tap(find.byTooltip('Attach File'));
       expect(files, 1);
-      await tester.tap(find.text('As task'));
+      await tester.tap(find.text('As Task'));
       expect(tasks, 1);
       expect(sends, 0);
       await tester.pumpWidget(
@@ -417,7 +423,6 @@ void main() {
               return true;
             },
           ),
-          RaftFamily.elegant,
           false,
         ),
       );
@@ -438,7 +443,7 @@ void main() {
   );
 
   testWidgets(
-    'compact host removes normal spacing/actions and desktop editor follows actual product40 override',
+    'compact host removes normal spacing/actions and desktop editor keeps its minimum and current Web body type',
     (tester) async {
       await tester.pumpWidget(
         host(
@@ -447,7 +452,6 @@ void main() {
             onAttach: () {},
             onSend: (_) async => false,
           ),
-          RaftFamily.elegant,
           false,
           width: 900,
         ),
@@ -457,14 +461,14 @@ void main() {
       );
       expect(actual.padding, EdgeInsets.zero);
       expect((actual.decoration! as BoxDecoration).border, isNull);
-      expect(find.byTooltip('Attach file'), findsNothing);
+      expect(find.byTooltip('Attach File'), findsNothing);
       final editor = tester.widget<ConstrainedBox>(
         find.byKey(const ValueKey('composer-editor-slot')),
       );
-      expect(editor.constraints.minHeight, 40);
+      expect(editor.constraints.minHeight, 24);
       expect(
         tester.widget<TextField>(find.byType(TextField)).style!.fontSize,
-        14,
+        16,
       );
       await tester.pumpWidget(const SizedBox());
       await tester.pump();

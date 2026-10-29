@@ -4,17 +4,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/features/conversation_panel.dart';
 import 'package:raft_flutter/features/chat_view.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_presentation_test.dart' show fixture;
+import 'flutter_test_config.dart' show leakDebt;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  // Leak debt (other): see docs/development.md, Leak tracking.
+  leakDebt(const ['SourceChannelFilesStore']);
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark actual tab bodies preserve draft/cursor and reject hidden reads',
+      '${dark ? 'dark' : 'light'} actual tab bodies preserve draft/cursor and reject hidden reads',
       (t) async {
         t.view.physicalSize = const Size(390, 720);
         t.view.devicePixelRatio = 1;
@@ -25,8 +25,8 @@ void main() {
         // isolate inside the widget test's fake clock. Native profile runs
         // keep the actual HTTP/image decoding path.
         w.client.http.transformer = SyncTransformer();
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           {
             'id': 'm1',
             'channelId': 'c1',
@@ -40,8 +40,8 @@ void main() {
             'taskStatus': 'in_progress',
             'taskTitle': 'Public task',
           },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'m1'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'m1'};
         transport.routes['GET /agents'] = (_) => [];
         transport.routes['GET /servers/s1/members'] = (_) => [];
         transport.routes['GET /tasks/channel/c1'] = (_) => {
@@ -65,7 +65,7 @@ void main() {
         var taskOpens = 0;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: ConversationPanel(
                 controller: w,

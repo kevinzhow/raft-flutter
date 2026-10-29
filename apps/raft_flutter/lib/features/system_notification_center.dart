@@ -9,11 +9,15 @@ import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/freshness.dart';
 import '../data/system_notification_projection.dart';
 import '../data/system_notification_store.dart';
+import '../data/usage_limit_attention.dart';
+import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'fleet_views.dart';
+import 'joint_invite_errors.dart';
 import 'source_feedback_view.dart';
 import 'system_notification_copy.dart';
 
@@ -24,12 +28,19 @@ class SystemNotificationBell extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onBilling,
+    this.onFeedback,
     this.mobile = true,
+    this.topBar = false,
     this.store,
   });
   final WorkspaceController controller;
   final VoidCallback onBilling;
+
+  /// Web `nav.toSettings("feedback")`: the workspace opens the Feedback tab of
+  /// Settings. Without it the notice shows the feedback view in a pushed page.
+  final VoidCallback? onFeedback;
   final bool mobile;
+  final bool topBar;
   final SystemNotificationStore? store;
   @override
   State<SystemNotificationBell> createState() => _SystemNotificationBellState();
@@ -44,7 +55,9 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   /// Machines and agents the notices project from. Agent presence patches
   /// (activity, last seen) do not change them.
   WorkspaceEntitySelection? entities;
-  Timer? poll, coalesce, closeDelay;
+  Timer? coalesce, closeDelay;
+  RaftForegroundPeriodic? poll;
+  final resumeRefresh = Freshness(const Duration(seconds: 20));
   OverlayEntry? popup;
   bool popupKeyboard = false;
   bool keyboardInput = false;
@@ -80,12 +93,17 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   void attach() {
     store =
         widget.store ??
-        SystemNotificationStore(get: w.query, entities: directoryEntities);
+        SystemNotificationStore(
+          get: w.query,
+          entities: directoryEntities,
+          post: (path) => w.command('POST', path),
+          usageLimitGate: usageLimitEnabled,
+        );
     unawaited(bind());
     store.addListener(updated);
     w.addListener(changed);
     entities = WorkspaceEntitySelection(
-      w.entityDirectory,
+      w.services.entityDirectory,
       (d) => (
         d.authorRevision,
         d.computerRevision,
@@ -94,9 +112,9 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       ),
     )..addListener(changed);
     events = w.client.events.listen((e) {
-      // High-frequency presence events reach the shared-directory notices
-      // only through the directory facts above.
-      if (!WorkspaceController.presenceEvents.contains(e.name)) changed();
+      // Accepted workspace/directory facts above own projection updates.
+      // Raw chat events carry no notification-center fact and must not rebind
+      // the bell a second time after the workspace already accepted them.
       // agent:*/machine:* revalidate the shared directory in place; only a
       // directory-less store reads them itself.
       if ((store.entities == null &&
@@ -106,8 +124,34 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         coalesce = Timer(const Duration(milliseconds: 150), store.refresh);
       }
     });
-    poll = Timer.periodic(const Duration(seconds: 60), (_) => store.refresh());
+    // Stops while hidden/paused; resume refreshes (didChangeAppLifecycleState).
+    poll = RaftForegroundPeriodic(const Duration(seconds: 60), () {
+      unawaited(store.refresh());
+      unawaited(store.refreshUsageLimit());
+      unawaited(store.refreshJointInvites());
+    });
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// `usage_limit_attention_v0` for the current server. An unresolved
+  /// evaluation throws, which leaves the feed off and is retried on the next
+  /// read (Web `useServerFeatureFlag` fails closed).
+  Future<bool> usageLimitEnabled() async {
+    final result = await w.client.post(
+      '/feature-flags/evaluate',
+      data: featureFlagEvaluateBody(
+        keys: [usageLimitAttentionFlag],
+        serverId: w.server?.id,
+      ),
+    );
+    final evaluations = result is Map ? result['evaluations'] : null;
+    return evaluations is List &&
+        evaluations.any(
+          (f) =>
+              f is Map &&
+              f['key'] == usageLimitAttentionFlag &&
+              f['enabled'] == true,
+        );
   }
 
   Future<void> bind() => store.bind(
@@ -126,7 +170,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   /// Machines and agents from the workspace's shared entity directory, which
   /// is itself fenced by server-level identity.
   SystemNotificationEntities directoryEntities() {
-    final directory = w.entityDirectory;
+    final directory = w.services.entityDirectory;
     final machinesAllowed = w.can('viewMachines'),
         agentsAllowed = machinesAllowed && w.can('viewAgents');
     for (final (kind, allowed) in [
@@ -135,6 +179,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     ]) {
       final state = directory.state(kind);
       if (allowed && !state.loaded && !state.loading && state.error == null) {
+        // ignore: raft_lints/avoid_unreviewed_idle_work -- One-shot deferral out of a build or notification; the callback does not schedule another microtask itself.
         scheduleMicrotask(() {
           if (!disposed) unawaited(directory.refresh(kind));
         });
@@ -176,6 +221,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       close(remove: true);
       unawaited(bind());
       unawaited(store.refresh());
+      unawaited(store.refreshUsageLimit());
     }
   }
 
@@ -185,7 +231,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     entities = null;
     store.removeListener(updated);
     events?.cancel();
-    poll?.cancel();
+    poll?.dispose();
     coalesce?.cancel();
     closeDelay?.cancel();
     WidgetsBinding.instance.removeObserver(this);
@@ -202,7 +248,15 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       changed();
-      unawaited(store.refresh());
+      // Alt-tab many times a minute reads the machines and agents once.
+      // Web also refreshes the pending joint invites on window focus; here they
+      // share the same once-per-window budget, so alt-tabbing does not repeat
+      // the read (the 60 s poll still picks up new invites).
+      if (resumeRefresh.due()) {
+        unawaited(store.refresh());
+        unawaited(store.refreshUsageLimit());
+        unawaited(store.refreshJointInvites());
+      }
     }
   }
 
@@ -265,68 +319,80 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     final maxLeft = math.max(minLeft, size.width - safe.right - width - 8);
     final minTop = safe.top + 8;
     final maxTop = math.max(minTop, size.height - bottom - height - 8);
-    final left = widget.mobile
+    // A rail on the window's right opens toward the content (to its left).
+    final railOnRight = !widget.mobile && RaftRailEdgeScope.onRightOf(context);
+    final left = widget.mobile || widget.topBar
         ? (anchorRect.right - width).clamp(minLeft, maxLeft)
+        : railOnRight
+        ? (anchorRect.left - 8 - width).clamp(minLeft, maxLeft)
         : (anchorRect.right + 8).clamp(minLeft, maxLeft);
-    final top = widget.mobile
+    final top = widget.mobile || widget.topBar
         ? (anchorRect.bottom + 8).clamp(minTop, maxTop)
         : (anchorRect.bottom - height).clamp(minTop, maxTop);
     final themes = InheritedTheme.capture(from: context, to: overlay.context);
     final entry = OverlayEntry(
       builder: (_) => themes.wrap(
-        Stack(
-          children: [
-            Positioned(
-              left: left.toDouble(),
-              top: top.toDouble(),
-              width: width,
-              height: height,
-              child: TapRegion(
-                groupId: this,
-                onTapOutside: (_) => close(),
-                child: MouseRegion(
-                  onEnter: (_) => closeDelay?.cancel(),
-                  onExit: (_) {
-                    if (!widget.mobile) {
-                      closeDelay = Timer(
-                        const Duration(milliseconds: 120),
-                        close,
-                      );
-                    }
-                  },
-                  child: ListenableBuilder(
-                    listenable: store,
-                    builder: (context, _) => !current(captured)
-                        ? const SizedBox.shrink()
-                        : RaftNotificationCenter(
-                            key: const Key('system-notification-center'),
-                            width: width,
-                            height: height,
-                            autofocus: keyboard,
-                            countLabel: store.entries.isEmpty
-                                ? raftText(context, 'all clear')
-                                : raftFormat(
-                                    context,
-                                    store.entries.length == 1
-                                        ? '{count} item'
-                                        : '{count} items',
-                                    {'count': store.entries.length},
-                                  ),
-                            entries: [
-                              for (final entry in store.entries)
-                                display(entry, captured),
-                            ],
-                            onDismiss: close,
-                          ),
+        RaftBackDismiss(
+          // OverlayEntry is above the routes. Register with the opener's
+          // route so the workspace consumes Back before its business history.
+          routeContext: context,
+          onDismiss: close,
+          child: Stack(
+            children: [
+              Positioned(
+                left: left.toDouble(),
+                top: top.toDouble(),
+                width: width,
+                height: height,
+                child: TapRegion(
+                  groupId: this,
+                  onTapOutside: (_) => close(),
+                  child: RaftHoverRegion(
+                    onEnter: (_) => closeDelay?.cancel(),
+                    onExit: (_) {
+                      if (!widget.mobile) {
+                        closeDelay = Timer(
+                          const Duration(milliseconds: 120),
+                          close,
+                        );
+                      }
+                    },
+                    child: ListenableBuilder(
+                      listenable: store,
+                      builder: (context, _) => !current(captured)
+                          ? const SizedBox.shrink()
+                          : RaftNotificationCenter(
+                              key: const Key('system-notification-center'),
+                              width: width,
+                              height: height,
+                              autofocus: keyboard,
+                              countLabel: store.entries.isEmpty
+                                  ? raftText(context, 'all clear')
+                                  : raftFormat(
+                                      context,
+                                      store.entries.length == 1
+                                          ? '{count} item'
+                                          : '{count} items',
+                                      {'count': store.entries.length},
+                                    ),
+                              entries: [
+                                for (final entry in store.entries)
+                                  display(entry, captured),
+                              ],
+                              onDismiss: close,
+                            ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
     popup = entry;
+    // Opening the center is what marks server-backed entries seen.
+    unawaited(store.markUsageLimitsSeen(captured));
     HardwareKeyboard.instance.addHandler(popupKey);
     popupKeyboard = keyboard;
     previousFocus = keyboard ? FocusManager.instance.primaryFocus : null;
@@ -360,10 +426,19 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         'machine-offline' => RaftGlyph.wifiOff,
         'machine-disk-low' => RaftGlyph.hardDrive,
         'feedback-replies' => RaftGlyph.messageSquare,
+        _ when n.destination == SystemNoticeDestination.jointInvite =>
+          RaftGlyph.gitBranch,
         _ => RaftGlyph.triangleAlert,
       },
       actions: [
-        if (n.destination != SystemNoticeDestination.billing ||
+        if (n.destination == SystemNoticeDestination.jointInvite)
+          RaftNotificationAction(
+            label: raftText(context, 'Accept'),
+            primary: true,
+            enabled: acceptingJointInvite == null,
+            onPressed: () => unawaited(acceptJointInvite(n, scope)),
+          )
+        else if (n.destination != SystemNoticeDestination.billing ||
             w.can('viewBilling'))
           RaftNotificationAction(
             label: raftText(
@@ -371,7 +446,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
               n.destination == SystemNoticeDestination.billing
                   ? 'Upgrade'
                   : n.destination == SystemNoticeDestination.feedback
-                  ? 'View feedback'
+                  ? 'View Feedback'
                   : 'View',
             ),
             primary: true,
@@ -383,9 +458,59 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
             onPressed: () {
               if (live(n, scope)) store.dismiss(scope, n.fingerprint!);
             },
+          )
+        else if (n.incidentId != null)
+          RaftNotificationAction(
+            label: raftText(context, 'Dismiss'),
+            onPressed: () {
+              if (live(n, scope)) {
+                unawaited(store.dismissUsageLimit(scope, n.incidentId!));
+              }
+            },
           ),
       ],
     );
+  }
+
+  /// The invite being accepted: one at a time (Web `acceptingJointInviteId`).
+  String? acceptingJointInvite;
+
+  /// Same endpoint as the email link, so accept authority and the server's
+  /// limit checks are identical on both paths. Success opens the channel; a
+  /// failure is a toast with the limit codes' own copy.
+  Future<void> acceptJointInvite(SystemNotice n, String captured) async {
+    final id = n.targetId;
+    if (id == null || acceptingJointInvite != null || !live(n, captured)) {
+      return;
+    }
+    setState(() => acceptingJointInvite = id);
+    try {
+      final reply = await w.command(
+        'POST',
+        '/channels/joint-invites/${Uri.encodeComponent(id)}/accept',
+      );
+      if (current(captured) && reply is Map && reply['id'] is String) {
+        close();
+        await w.refreshChannels();
+        if (current(captured)) {
+          await w.selectChannel(RaftChannel(Map<String, dynamic>.from(reply)));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showRaftToast(
+          context,
+          jointInviteAcceptErrorText(
+            e,
+            (source, values) => raftFormat(context, source, values),
+          ),
+          tone: RaftToastRecipeTone.error,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => acceptingJointInvite = null);
+      if (!disposed) unawaited(store.refreshJointInvites());
+    }
   }
 
   Future<void> navigate(SystemNotice n, String captured) async {
@@ -394,6 +519,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       if (!w.can('viewBilling')) return;
       close();
       if (current(captured)) widget.onBilling();
+      return;
+    }
+    if (n.destination == SystemNoticeDestination.feedback &&
+        widget.onFeedback != null) {
+      close();
+      if (current(captured)) widget.onFeedback!();
       return;
     }
     if (n.destination != SystemNoticeDestination.feedback &&
@@ -405,7 +536,9 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       for (final machine in store.machines) {
         if (machine['id'] == n.targetId) row = machine;
       }
-      if (row == null) return;
+      // Server-backed entries name a Computer the directory may not hold yet
+      // (or no longer): they open the list instead of doing nothing.
+      if (row == null && n.incidentId == null) return;
     }
     close();
     if (!current(captured)) return;
@@ -431,7 +564,11 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
               )
             : row != null
             ? FleetDetail(controller: w, computers: true, initial: row)
-            : FleetView(controller: w, computers: true, attentionOnly: true),
+            : FleetView(
+                controller: w,
+                computers: true,
+                attentionOnly: n.incidentId == null,
+              ),
       ),
     );
     void revoked() {
@@ -458,82 +595,77 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     super.dispose();
   }
 
-  double attentionInset(BuildContext context) {
-    final visualSize = widget.mobile ? 32.0 : 40.0;
-    final glyphSize = widget.mobile ? 16.0 : 18.0;
-    // Source positions the dot relative to the glyph inside the visual box.
-    // RaftInteractive extends touch semantics without inflating that box.
-    return (visualSize - glyphSize) / 2 - 4;
-  }
+  /// The mobile navbar bell (32px box, 16px glyph) puts its Status dot
+  /// relative to the glyph. The rail bell's dot is the rail composite.
+  static const attentionInset = (32.0 - 16.0) / 2 - 4;
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: popup == null,
-    onPopInvokedWithResult: (didPop, _) {
-      if (!didPop && popup != null) close();
-    },
-    child: Listener(
-      onPointerDown: (_) => keyboardInput = false,
-      child: Focus(
-        focusNode: focus,
-        skipTraversal: true,
-        onKeyEvent: (_, event) {
-          if (event is KeyDownEvent &&
-              (event.logicalKey == LogicalKeyboardKey.enter ||
-                  event.logicalKey == LogicalKeyboardKey.space)) {
-            keyboardInput = true;
-          }
-          return KeyEventResult.ignored;
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) => keyboardInput = false,
+    child: Focus(
+      focusNode: focus,
+      skipTraversal: true,
+      onKeyEvent: (_, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+                event.logicalKey == LogicalKeyboardKey.space)) {
+          keyboardInput = true;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: RaftHoverRegion(
+        onEnter: (_) {
+          if (!widget.mobile && !widget.topBar) unawaited(show());
         },
-        child: MouseRegion(
-          onEnter: (_) {
-            if (!widget.mobile) unawaited(show());
-          },
-          onExit: (_) {
-            if (!widget.mobile) {
-              closeDelay = Timer(const Duration(milliseconds: 120), close);
-            }
-          },
-          child: TapRegion(
-            groupId: this,
-            child: Stack(
-              key: anchor,
-              clipBehavior: Clip.none,
-              children: [
-                RaftMobileNotificationButton(
-                  open: popup != null,
-                  semanticLabel: store.entries.isEmpty
-                      ? raftText(context, 'Notification center')
-                      : raftFormat(
-                          context,
-                          'Notification center ({count} active)',
-                          {'count': store.entries.length},
-                        ),
-                  visualSize: widget.mobile ? 32 : 40,
-                  glyphSize: widget.mobile ? 16 : 18,
-                  onPressed: () => popup == null
-                      ? show(
-                          keyboard:
-                              keyboardInput ||
-                              HardwareKeyboard.instance.logicalKeysPressed
-                                  .contains(LogicalKeyboardKey.enter) ||
-                              HardwareKeyboard.instance.logicalKeysPressed
-                                  .contains(LogicalKeyboardKey.space),
-                        )
-                      : close(),
-                ),
-                if (store.entries.isNotEmpty)
-                  Positioned(
-                    right: attentionInset(context),
-                    top: attentionInset(context),
-                    child: IgnorePointer(
-                      child: RaftNotificationAttention(
-                        count: store.entries.length,
+        onExit: (_) {
+          if (!widget.mobile && !widget.topBar) {
+            closeDelay = Timer(const Duration(milliseconds: 120), close);
+          }
+        },
+        child: TapRegion(
+          groupId: this,
+          child: Stack(
+            key: anchor,
+            clipBehavior: Clip.none,
+            children: [
+              RaftMobileNotificationButton(
+                open: popup != null,
+                semanticLabel: store.unreadCount == 0
+                    ? raftText(context, 'Notification Center')
+                    : raftFormat(
+                        context,
+                        'Notification Center ({count} active)',
+                        {'count': store.unreadCount},
                       ),
-                    ),
+                visualSize: widget.mobile ? 32 : 40,
+                glyphSize: 16,
+                // NotificationTrigger: the rail bell is a rail icon with the
+                // shared attention composite. The mobile header chooses its
+                // frame treatment through theme data; SDK defaults stay 32/16.
+                rail: !widget.mobile && !widget.topBar,
+                onFrame: widget.topBar,
+                mobileHeader: widget.mobile,
+                attention: !widget.mobile && store.unreadCount > 0,
+                onPressed: () => popup == null
+                    ? show(
+                        keyboard:
+                            keyboardInput ||
+                            HardwareKeyboard.instance.logicalKeysPressed
+                                .contains(LogicalKeyboardKey.enter) ||
+                            HardwareKeyboard.instance.logicalKeysPressed
+                                .contains(LogicalKeyboardKey.space),
+                      )
+                    : close(),
+              ),
+              if (widget.mobile && store.unreadCount > 0)
+                Positioned(
+                  right: attentionInset,
+                  top: attentionInset,
+                  child: IgnorePointer(
+                    child: RaftNotificationAttention(count: store.unreadCount),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),

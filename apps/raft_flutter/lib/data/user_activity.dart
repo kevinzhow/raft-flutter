@@ -15,6 +15,8 @@ class RaftUserActivity {
   static DateTime? _last;
   static DateTime Function() clock = DateTime.now;
 
+  /// Listens for a pointer or key. Startup and window focus call this.
+  /// Reading [recent] does not.
   static void install() {
     if (_installed) return;
     try {
@@ -37,8 +39,34 @@ class RaftUserActivity {
   static void forget() => _last = null;
 
   static bool get recent {
-    install();
     final last = _last;
     return last != null && clock().difference(last) <= window;
   }
+}
+
+/// Open conversations whose timeline is scrolled above the latest end
+/// (reported by the chat view on the edge only, never per frame).
+class RaftTimelineBottoms {
+  final _away = <String>{};
+
+  void set(String id, bool atBottom) {
+    if (atBottom) {
+      _away.remove(id);
+    } else {
+      _away.add(id);
+    }
+  }
+
+  void reset(String id) => _away.remove(id);
+
+  bool away(String id) => _away.contains(id);
+
+  /// Source `addMessage` / `syncGap`: whether a live arrival in [id] is read
+  /// as it lands. Only while the timeline sits at the latest end
+  /// (`isNearBottom`; a reader scrolled above it keeps the arrival unread),
+  /// and only on recent activity (the 1 s gate). Phone (owner decision
+  /// 2026-10-12, docs/parity.md): a foreground page at the latest end reads
+  /// it with no tap.
+  bool readsLiveArrival(String id, bool phone) =>
+      !away(id) && (RaftUserActivity.recent || phone);
 }

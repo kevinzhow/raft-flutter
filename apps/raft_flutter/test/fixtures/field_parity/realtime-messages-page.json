@@ -1,0 +1,16 @@
+{
+  "_source": "GET /messages/channel/:channelId -> res.json({messages, threadSummariesByParentMessageId, historyLimited, messageWindow}) at packages/server/src/routes/messages.ts:~1200-1213 (sed 1055+145). There is NO hasMore/hasNewer in this envelope; Web derives hasMore = msgs.length >= limit (web/src/store/messageStore.ts:1811). /messages/context/:id additionally carries hasOlder/hasNewer/targetMessageId (messageService.ts:6379-6388).",
+  "response": {
+    "messages": [],
+    "threadSummariesByParentMessageId": {},
+    "historyLimited": false,
+    "messageWindow": {
+      "schemaVersion": 1,
+      "domain": "receiver_visible_messages_v1",
+      "serverId": "66666666-6666-4666-8666-666666666666",
+      "receiverKind": "user",
+      "receiverId": "44444444-4444-4444-8444-444444444444",
+      "scopeId": "77777777-7777-4777-8777-777777777777"
+    }
+  }
+}

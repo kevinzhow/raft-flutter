@@ -51,7 +51,7 @@ Future<void> finishBackTransition(WidgetTester tester) async {
 }
 
 void main() {
-  for (final theme in ['brutal', 'elegant-light']) {
+  for (final theme in ['light']) {
     // mobileBackNavigation.test.ts:110–124 [T9]: a notification cold start at
     // a thread permalink walks thread → parent channel → server root with
     // semantic REPLACE fallbacks; the app never exits on these presses.
@@ -124,7 +124,7 @@ void main() {
     );
   }
 
-  for (final theme in ['brutal', 'elegant-light']) {
+  for (final theme in ['light']) {
     // mobileBackNavigation.test.ts:126–145 [T10]: root → Search (PUSH) →
     // typed query (REPLACE) → result channel (PUSH); Back twice returns to the
     // exact search query and then Home, never looping back into the channel.
@@ -176,7 +176,7 @@ void main() {
         final field = find.byWidgetPredicate(
           (widget) =>
               widget is TextField &&
-              widget.decoration?.hintText == 'Search messages',
+              widget.decoration?.hintText?.startsWith('Search channels, DMs, messages…') == true,
         );
         await t.enterText(field, 'needle');
         await t.pump(const Duration(milliseconds: 250));
@@ -226,7 +226,7 @@ void main() {
     );
   }
 
-  for (final theme in ['brutal', 'elegant-light']) {
+  for (final theme in ['light']) {
     // mobileBackNavigation pure:163–182 [T14] and behavior:438–478,711–802
     // [T15]: after a restart the earlier entries are unknown, so Back takes the
     // semantic parent (REPLACE) instead of popping; one tap records one entry

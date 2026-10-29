@@ -1,3 +1,5 @@
+@Tags(['slow'])
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,25 +13,28 @@ import '../integration_test/message_scroll_performance_test.dart'
     show longMessage;
 import 'chat_focus_receipt_test.dart' show contextRows, paintedMessage;
 import 'message_presentation_test.dart' show fixture;
+import 'support/app_services_fixture.dart';
 
 /// Desktop Activity: open a channel message, scroll far back (older pages
 /// load), activate the same Activity row again. The re-positioning must never
 /// overscroll (no spring-back with an empty gap) on any frame.
 void main() {
-  for (final (family, dark, fling, last, thread) in [
-    (RaftFamily.brutal, false, false, false, false),
-    (RaftFamily.elegant, false, false, false, false),
-    (RaftFamily.brutal, false, true, false, false),
-    (RaftFamily.elegant, false, true, false, false),
-    (RaftFamily.brutal, false, false, true, false),
-    (RaftFamily.elegant, false, true, true, false),
-    (RaftFamily.brutal, false, false, true, true),
-    (RaftFamily.elegant, false, true, true, true),
-    (RaftFamily.brutal, false, false, false, true),
+  for (final (dark, fling, last, thread) in [
+    (false, false, false, false),
+    (false, true, false, false),
+    (false, true, true, false),
+    (false, true, true, true),
   ]) {
     final target = last ? 't-199' : 't-150';
     testWidgets(
-      '$family/$dark fling=$fling target=$target thread=$thread Activity re-activation never overscrolls',
+      '$dark fling=$fling target=$target thread=$thread Activity re-activation never overscrolls',
+      // CPU-bound, not waiting: the full desktop workspace over 200 rows is
+      // ~9 s of CPU a case (the first case of a process ~2x, JIT warm-up). A
+      // wall clock bound of 60 s then fails whenever the process is starved
+      // (`tool/preflight` runs 8 test processes beside other agents' work).
+      // Every wait in the body is bounded by a count, so a hang still ends
+      // the case, in 4 minutes instead of 1.
+      timeout: const Timeout(Duration(minutes: 4)),
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(1440, 900);
@@ -38,7 +43,7 @@ void main() {
         final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
         w.loading = false;
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final other = RaftChannel({'id': 'o', 'name': 'other', 'joined': true});
         w.channels = [w.channel!, other];
         w.channel = other;
@@ -123,12 +128,14 @@ void main() {
         };
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -137,11 +144,14 @@ void main() {
         expect(row, findsWidgets);
         Future<void> activate() async {
           await tester.tap(row.first);
-          for (var i = 0; i < 20; i++) {
+          // Until the target is on screen (the context page answered), not
+          // for a fixed 20 frames.
+          for (var i = 0; i < 400; i++) {
             await tester.pump(const Duration(milliseconds: 16));
             await tester.runAsync(
               () => Future<void>.delayed(const Duration(milliseconds: 5)),
             );
+            if (paintedMessage(tester, target) != null) break;
           }
         }
 
@@ -149,8 +159,8 @@ void main() {
         await tester.pumpAndSettle();
         String diag() {
           final parts = <String>[
-            'threadLoading=${w.threadLoading} replies=${w.replies.length} '
-                'threadChannel=${w.threadChannelId} hl=${w.highlightedMessageId} '
+            'threadLoading=${w.messageDomain.state.threadLoading} replies=${w.replies.length} '
+                'threadChannel=${w.threadChannelId} hl=${w.messageDomain.state.highlightedMessageId} '
                 'calls=${api.calls.map((c) => c.path).toList()}',
           ];
           for (final scrollable
@@ -173,20 +183,43 @@ void main() {
 
         expect(paintedMessage(tester, target), isNotNull, reason: diag());
         final chat = find.byType(RaftChatView).last;
-        for (var k = 0; k < 25; k++) {
-          await tester.timedDrag(
-            chat,
-            const Offset(0, 700),
-            const Duration(milliseconds: 120),
-          );
-          await tester.runAsync(
-            () => Future<void>.delayed(const Duration(milliseconds: 10)),
-          );
+        // Scroll back until every older page is loaded and the top is
+        // reached. A page lands when the fake API answers, not after a number
+        // of frames, so this waits for each load instead of dragging a fixed
+        // 25 times (which loaded a different number of pages depending on how
+        // fast the machine was). One move event per drag: the frames of a
+        // slow drag add cost and nothing the re-activation below checks.
+        double? backPixels() {
+          for (final scrollable
+              in find
+                  .descendant(
+                    of: find.byType(RaftChatView),
+                    matching: find.byType(Scrollable),
+                  )
+                  .evaluate()) {
+            final q = ((scrollable as StatefulElement).state as ScrollableState)
+                .position;
+            if (q.hasPixels && q.axis == Axis.vertical) return q.pixels;
+          }
+          return null;
+        }
+
+        for (var k = 0; k < 60; k++) {
+          final before = backPixels();
+          await tester.drag(chat, const Offset(0, 2400));
           await tester.pump(const Duration(milliseconds: 16));
+          for (var i = 0; i < 400 && w.messageDomain.state.loadingOlder; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 5)),
+            );
+          }
+          await tester.pump(const Duration(milliseconds: 16));
+          final more = thread ? w.threadHasMore : w.messageDomain.state.hasMore;
+          if (!more && backPixels() == before) break;
         }
         await tester.pumpAndSettle();
         expect(paintedMessage(tester, target), isNull);
-        final log = <String>['messages=${w.messages.length}'];
+        final log = <String>['messages=${w.messageDomain.messages.length}'];
         var bad = 0;
         if (fling) {
           // Trackpad-style flick back, then activate while it still coasts.

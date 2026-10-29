@@ -2,25 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
-Widget _host(
-  Widget child, {
-  RaftFamily family = RaftFamily.elegant,
-  bool dark = false,
-}) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+Widget _host(Widget child, {bool dark = false}) => MaterialApp(
+  theme: raftTheme(dark: dark),
   home: Scaffold(
     body: Align(alignment: Alignment.topRight, child: child),
   ),
 );
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    group('$family/$dark', () {
+  for (final dark in raftThemeMatrix([false, true])) {
+    group('${dark ? 'dark' : 'light'}', () {
       testWidgets('split: main chooses the default reason, the caret opens the '
           'menu with the default checked, a reason closes it and is chosen', (
         t,
@@ -32,7 +25,6 @@ void main() {
               defaultReason: RaftFeedbackCloseReason.completed,
               onChoose: chosen.add,
             ),
-            family: family,
             dark: dark,
           ),
         );
@@ -63,7 +55,6 @@ void main() {
               defaultReason: RaftFeedbackCloseReason.noLongerNeeded,
               onChoose: chosen.add,
             ),
-            family: family,
             dark: dark,
           ),
         );
@@ -95,7 +86,6 @@ void main() {
               disabled: true,
               keySuffix: '-t1',
             ),
-            family: family,
             dark: dark,
           ),
         );
@@ -119,7 +109,6 @@ void main() {
                 onCancel: () => cancelled++,
                 onConfirm: () => confirmed++,
               ),
-              family: family,
               dark: dark,
             ),
           );
@@ -151,7 +140,6 @@ void main() {
               busy: true,
               error: "Couldn't load feedback. Try again.",
             ),
-            family: family,
             dark: dark,
           ),
         );
@@ -175,7 +163,7 @@ void main() {
     Brightness? inside, outside;
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant, dark: true),
+        theme: raftTheme(dark: true),
         home: Builder(
           builder: (context) {
             outside = RaftTokens.of(context).dark

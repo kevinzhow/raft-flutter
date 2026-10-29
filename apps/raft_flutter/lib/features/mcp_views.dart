@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
+import 'mcp_server_editor.dart';
 
 class AgentMcpView extends StatefulWidget {
   const AgentMcpView({super.key, required this.controller, this.agentId});
@@ -52,8 +54,48 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
     return true;
   }
 
+  /// AgentMcpTab `messageFor(error, agent.mcp.errorRequestFailed)`: the
+  /// server's `error` text, else the managed-MCP failure message.
+  static const _failed = 'Managed MCP request failed';
+
   @override
-  Future<void> loadData(int request, int generation) async {
+  Future<void> run(
+    Future<void> Function() action, {
+    bool refresh = true,
+    String? fallback,
+  }) => super.run(
+    () => withWebError(fallback ?? _failed, action, where: 'managed mcp'),
+    refresh: refresh,
+    fallback: fallback ?? _failed,
+  );
+
+  @override
+  Future<bool> form(
+    String title,
+    List<RaftFormField> fields,
+    Future<void> Function(Map<String, String>) save, {
+    String submit = 'Save',
+    String cancel = 'Cancel',
+    String? description,
+    bool destructive = false,
+  }) => super.form(
+    title,
+    fields,
+    (values) => withWebError(_failed, () => save(values), where: 'managed mcp'),
+    submit: submit,
+    cancel: cancel,
+    description: description,
+    destructive: destructive,
+  );
+
+  @override
+  Future<void> loadData(int request, int generation) => withWebError(
+    _failed,
+    () => _loadData(request, generation),
+    where: 'managed mcp',
+  );
+
+  Future<void> _loadData(int request, int generation) async {
     final results = await Future.wait([
       w.client.get(
         widget.agentId == null
@@ -70,250 +112,54 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
   }
 
   Future<void> edit([Map<String, dynamic>? server]) async {
-    final creating = server == null || server['id'] == null;
-    await form(
-      creating ? 'Add MCP connection' : 'Edit MCP connection',
-      [
-        RaftFormField(
-          'name',
-          'Connection name',
-          initial: server?['name'] ?? '',
-          required: true,
-        ),
-        RaftFormField(
-          'description',
-          'Description',
-          initial: server?['description'] ?? '',
-          multiline: true,
-        ),
-        RaftFormField(
-          'endpointUrl',
-          'Endpoint URL',
-          initial: server?['endpointUrl'] ?? '',
-          required: true,
-          validator: (v) {
-            final invalid = managementHttpUrl(v);
-            if (invalid != null) return invalid;
-            return Uri.parse(v).hasQuery
-                ? 'Put credentials in encrypted headers, not the URL.'
-                : null;
-          },
-        ),
-        RaftFormField(
-          'provider',
-          'Provider',
-          initial: server?['provider'] ?? 'custom',
-          choices: const {
-            'custom': 'Custom',
-            'notion': 'Notion',
-            'linear': 'Linear',
-          },
-        ),
-        RaftFormField(
-          'authMode',
-          'Authentication',
-          initial: server?['authMode'] ?? 'none',
-          choices: const {
-            'none': 'None',
-            'headers': 'Encrypted headers',
-            'oauth': 'OAuth',
-          },
-        ),
-        const RaftFormField(
-          'headerName',
-          'Credential header name',
-          help: 'For encrypted headers, for example Authorization.',
-        ),
-        const RaftFormField(
-          'headerValue',
-          'Credential header value',
-          obscure: true,
-          trim: false,
-          help: 'Leave empty when editing to keep existing credentials.',
-        ),
-        // The Web editor lists stored headers with a remove control.
-        if (!creating &&
-            managementStrings(server['credentialHeaderNames']).isNotEmpty)
-          RaftFormField(
-            'removeHeader',
-            'Remove a stored header',
-            initial: '',
-            choices: {
-              '': 'Keep all stored headers',
-              for (final name in managementStrings(
-                server['credentialHeaderNames'],
-              ))
-                name: name,
-            },
-          ),
-      ],
-      (v) async {
-        if ((v['headerName']!.isEmpty) != (v['headerValue']!.isEmpty)) {
-          throw StateError('Enter both the credential header name and value.');
+    final generation = w.client.generation, sourceAuthority = authority;
+    Future<V> guarded<V>(
+      BuildContext dialog,
+      Future<V> Function() action,
+    ) async {
+      if (!accepts(generation) ||
+          sourceAuthority != authority ||
+          !w.can('manageIntegrations')) {
+        throw const RaftUserError(
+          'The active server changed. Reopen this form.',
+        );
+      }
+      try {
+        return await withWebError(_failed, action, where: 'managed mcp');
+      } catch (e) {
+        if (accepts(generation) &&
+            sourceAuthority == authority &&
+            invalidateDeniedMutation(e) &&
+            dialog.mounted &&
+            ModalRoute.of(dialog)?.isCurrent == true) {
+          Navigator.of(dialog).pop(false);
         }
-        if (v['authMode'] != 'headers' && v['headerValue']!.isNotEmpty) {
-          throw StateError(
-            'Select encrypted headers to save a header credential.',
+        rethrow;
+      }
+    }
+
+    final saved = await scopedRaftModal<bool>(
+      form: true,
+      dialogMaxWidth: McpServerEditor.dialogMaxWidth,
+      (dialog) => McpServerEditor(
+        server: server,
+        onSave: (data) => guarded(dialog, () async {
+          if (server?['id'] == null) {
+            await w.client.post('/mcp/servers', data: data);
+          } else {
+            await w.client.patch('/mcp/servers/${server!['id']}', data: data);
+          }
+        }),
+        onTest: (data) => guarded(dialog, () async {
+          final result = managementMap(
+            await w.client.post('/mcp/servers/test-configuration', data: data),
           );
-        }
-        final data = <String, dynamic>{
-          for (final f in [
-            'name',
-            'description',
-            'endpointUrl',
-            'provider',
-            'authMode',
-          ])
-            f: v[f],
-          if (creating && v['headerValue']!.isNotEmpty)
-            'headers': {v['headerName']: v['headerValue']}
-          else if (!creating &&
-              (v['headerValue']!.isNotEmpty ||
-                  (v['removeHeader'] ?? '').isNotEmpty))
-            'credentialPatch': {
-              'upsertHeaders': {
-                if (v['headerValue']!.isNotEmpty)
-                  v['headerName']: v['headerValue'],
-              },
-              'removeHeaderNames': [
-                if ((v['removeHeader'] ?? '').isNotEmpty) v['removeHeader'],
-              ],
-            },
-        };
-        if (creating) {
-          await w.client.post('/mcp/servers', data: data);
-        } else {
-          await w.client.patch('/mcp/servers/${server['id']}', data: data);
-        }
-      },
-      submit: creating ? 'Add' : 'Save',
+          return managementRows(result['tools']).length;
+        }),
+      ),
     );
-  }
-
-  Future<void> removeHeader(Map<String, dynamic> server) async {
-    final names = managementStrings(server['credentialHeaderNames']);
-    if (names.isEmpty) return;
-    await form(
-      'Remove encrypted header',
-      [
-        RaftFormField(
-          'header',
-          'Credential header name',
-          choices: {for (final name in names) name: name},
-        ),
-      ],
-      (v) async {
-        await w.client.patch(
-          '/mcp/servers/${server['id']}',
-          data: {
-            'credentialPatch': {
-              'upsertHeaders': <String, String>{},
-              'removeHeaderNames': [v['header']],
-            },
-          },
-        );
-      },
-      submit: 'Remove',
-      destructive: true,
-      description: 'Remove this stored header. Other saved credentials are preserved. To remove every credential, change authentication to None.',
-    );
-  }
-
-  Future<void> testConfiguration([Map<String, dynamic>? server]) async {
-    Map<String, dynamic> result = {};
-    final tested = await form(
-      'Test MCP configuration',
-      [
-        RaftFormField(
-          'endpointUrl',
-          'Endpoint URL',
-          initial: server?['endpointUrl'] ?? '',
-          required: true,
-          validator: (v) =>
-              managementHttpUrl(v) ??
-              (Uri.tryParse(v)?.hasQuery == true
-                  ? 'Put credentials in encrypted headers, not the URL.'
-                  : null),
-        ),
-        RaftFormField(
-          'authMode',
-          'Authentication',
-          initial: server?['authMode'] == 'headers' ? 'headers' : 'none',
-          choices: const {'none': 'None', 'headers': 'Encrypted headers'},
-        ),
-        const RaftFormField('headerName', 'Credential header name'),
-        const RaftFormField(
-          'headerValue',
-          'Credential header value',
-          obscure: true,
-          trim: false,
-          help: 'Leave empty to use the saved credential when testing an existing connection.',
-        ),
-      ],
-      (v) async {
-        if (v['headerName']!.isEmpty != v['headerValue']!.isEmpty) {
-          throw StateError('Enter both the header name and its credential.');
-        }
-        if (v['authMode'] != 'headers' && v['headerValue']!.isNotEmpty) {
-          throw StateError('Select encrypted headers to test a credential.');
-        }
-        result = managementMap(
-          await w.client.post(
-            '/mcp/servers/test-configuration',
-            data: {
-              'endpointUrl': v['endpointUrl'],
-              'authMode': v['authMode'],
-              if (server != null) 'mcpServerId': server['id'],
-              if (v['headerValue']!.isNotEmpty)
-                if (server == null)
-                  'headers': {v['headerName']: v['headerValue']}
-                else
-                  'credentialPatch': {
-                    'upsertHeaders': {v['headerName']: v['headerValue']},
-                    'removeHeaderNames': <String>[],
-                  },
-            },
-          ),
-        );
-      },
-      submit: 'Test',
-      description:
-          'Connect and list tools without saving these configuration changes.',
-    );
-    if (tested) {
-      await scopedDialog<void>(
-        (dialog) => AlertDialog(
-          title: Text(raftText(context, 'Connection test succeeded')),
-          content: SizedBox(
-            width: 480,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final tool in managementRows(result['tools']))
-                    ListTile(
-                      title: Text('${tool['name']}'),
-                      subtitle: Text('${tool['description'] ?? ''}'),
-                    ),
-                  if (managementRows(result['tools']).isEmpty)
-                    Text(
-                      raftText(
-                        context,
-                        'This connection currently exposes no tools.',
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialog),
-              child: Text(raftText(context, 'Close')),
-            ),
-          ],
-        ),
-      );
+    if (saved == true && accepts(generation) && sourceAuthority == authority) {
+      await reload();
     }
   }
 
@@ -373,10 +219,8 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
     return RaftMcpServersSection(
       scrollable: true,
       loading: loading && servers.isEmpty,
-      error: error == null
-          ? null
-          : raftText(context, 'Managed MCP request failed'),
-      onAddServer: manage ? () => run(() => edit()) : null,
+      error: error == null ? null : raftText(context, error!),
+      onAddServer: manage ? () => edit() : null,
       servers: [
         for (final server in servers)
           () {
@@ -429,14 +273,15 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
                               ? null
                               : () => run(() async {
                                   await confirm(
-                                    'Disconnect account?',
+                                    'Disconnect Account',
                                     'This connection will no longer be authorized to access the provider account.',
                                     () async {
                                       await w.client.delete(
                                         '/mcp/servers/${server['id']}/oauth',
                                       );
                                     },
-                                    submit: 'Disconnect',
+                                    submit: 'Disconnect Account',
+                                    cancel: 'Cancel',
                                     destructive: true,
                                   );
                                 }),
@@ -455,7 +300,7 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
                       RaftMcpAction(
                         glyph: RaftGlyph.pencil,
                         tooltip: 'Edit server',
-                        onPressed: busy ? null : () => run(() => edit(server)),
+                        onPressed: busy ? null : () => edit(server),
                       ),
                       RaftMcpAction(
                         glyph: RaftGlyph.trash2,
@@ -465,14 +310,19 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
                             ? null
                             : () => run(() async {
                                 await confirm(
-                                  'Delete $name?',
-                                  'Remove this connection and its agent tool assignments.',
+                                  'Delete MCP server',
+                                  raftFormat(
+                                    context,
+                                    'Delete {name}? This removes it from every Agent runtime and usage view.',
+                                    {'name': name},
+                                  ),
                                   () async {
                                     await w.client.delete(
                                       '/mcp/servers/${server['id']}',
                                     );
                                   },
-                                  submit: 'Delete',
+                                  submit: 'Delete server',
+                                  cancel: 'Cancel',
                                   destructive: true,
                                 );
                               }),
@@ -490,9 +340,7 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
                   name: '${r['name']}',
                   description: '${r['description'] ?? ''}',
                   added: servers.any((s) => s['provider'] == r['provider']),
-                  onAdd: busy
-                      ? null
-                      : () => run(() => edit({...r, 'id': null})),
+                  onAdd: busy ? null : () => edit({...r, 'id': null}),
                 ),
             ],
     );
@@ -519,9 +367,7 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
         RaftMcpServersSection(
           usage: true,
           loading: loading && servers.isEmpty,
-          error: error == null
-              ? null
-              : raftText(context, 'Managed MCP request failed'),
+          error: error == null ? null : raftText(context, error!),
           servers: [
             for (final server in servers)
               if (server['usage'] is Map)
@@ -537,8 +383,9 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
                   description: server['description'] as String?,
                   lastCheckError: server['lastCheckError'] as String?,
                   usageCalls: () {
-                    final n = (server['usage']['invocationCount'] as num)
-                        .toInt();
+                    final n =
+                        (server['usage']['invocationCount'] as num?)?.toInt() ??
+                        0;
                     return '$n ${n == 1 ? 'call' : 'calls'}';
                   }(),
                   usageLastUsed: used(server['usage']['lastInvokedAt']),
@@ -558,7 +405,6 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.agentId == null
-      ? serverCatalog(context)
-      : agentUsage(context);
+  Widget build(BuildContext context) =>
+      widget.agentId == null ? serverCatalog(context) : agentUsage(context);
 }

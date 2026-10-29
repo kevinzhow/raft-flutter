@@ -1,24 +1,40 @@
 {
   "files": {
-    "raft-ui-0.5.27/foundation.css": {
+    "raft-ui-0.5.52/foundation.css": {
       "origin": "raft-ui:dist/foundation.css",
-      "sha256": "da6697018c374a213fbfbd7f201c22ca756a81213a26d61e71c0680a0ed9fc51"
+      "sha256": "ca55eef3ab99b1316e01fe438f1eff3b37c2eae272a5f4c0283b977a92c72cd6"
     },
-    "raft-ui-0.5.27/styles.css": {
+    "raft-ui-0.5.52/styles.css": {
       "origin": "raft-ui:dist/styles.css",
-      "sha256": "1cafe22b9584d802538739e284f1831455b89e80b179b684d9b064afec2951d1"
+      "sha256": "0364ae6684db4e91e27cfafde83f85122fe6afb768770b45e3889ad97d73490d"
     },
-    "raft-ui-0.5.27/fonts.css": {
+    "raft-ui-0.5.52/fonts.css": {
       "origin": "raft-ui:dist/fonts.css",
       "sha256": "2640cf7720c1d0ac5aaeeaa6cfd27958711b4256eb62e7a029a29ce9a7a22137"
     },
-    "tailwindcss-4.2.2/theme.css": {
+    "tailwindcss-4.3.3/theme.css": {
       "origin": "tailwind:theme.css",
-      "sha256": "ce91efc0ca2e741e56fe263662e5282dc0a16f19a8647f0c38b60fcc4e2119b1"
+      "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
     },
-    "raft-web-26f77ef/index.css": {
+    "raft-web-a98ae00/index.css": {
       "origin": "raft-source:packages/web/src/index.css",
-      "sha256": "63aa747750fef8437ad38a1deb2018090c5c3354053f439bec06c80c2aa9d803"
+      "sha256": "e3015311362c000b3354980cd03d59a3fd783f386243889c52c6defe3ce61fcb"
+    },
+    "raft-ui-0.7.1/tokens.json": {
+      "origin": "raft-ui@0.7.1:dist/tokens.json",
+      "sha256": "47e5ed2d0c4867db61f054940189db56010787b9353cbc1babfc048f6efd53fd"
+    },
+    "raft-ui-0.7.1/styles.css": {
+      "origin": "raft-ui@0.7.1:dist/styles.css",
+      "sha256": "03a09bc2cc12b8af610fc1af09d1ecc27144987baa8e19ff8cdcc776e59c1ce6"
+    },
+    "raft-ui-0.7.1/foundation.css": {
+      "origin": "raft-ui@0.7.1:dist/foundation.css",
+      "sha256": "8bea55d645010db8b5064594d1f0f454ed8e48e2a8d523c21946d4300d18c108"
+    },
+    "raft-ui-0.7.1/LICENSE": {
+      "origin": "raft-ui@0.7.1:LICENSE",
+      "sha256": "a1d02f0b3564fef2e7cbe7494377350e531429ef50f787bd824342402916e0e3"
     }
   }
 }

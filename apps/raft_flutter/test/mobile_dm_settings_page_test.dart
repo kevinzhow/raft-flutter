@@ -6,18 +6,16 @@ import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/mobile_workspace_pages.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'workspace_channel_settings_identity_test.dart' show settingsFixture;
 import 'task_surface_test.dart' show flush;
+import 'support/app_services_fixture.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'Mobile DM settings push a page with no metadata editor $family/$dark',
+      'Mobile DM settings push a page with no metadata editor ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
@@ -42,12 +40,14 @@ void main() {
         api.routes['GET /channels/dm'] = (_) => [dm.json];
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -58,7 +58,7 @@ void main() {
         final rosterReads = api.calls
             .where((r) => r.path == '/channels/c1/members')
             .length;
-        await t.tap(find.byTooltip('Channel details and settings'));
+        await t.tap(find.byTooltip('Channel Details and Settings'));
         await t.pump();
         expect(
           ModalRoute.of(t.element(find.byType(ChannelSettings)))
@@ -76,11 +76,12 @@ void main() {
         expect(find.byType(RaftChannelSettingsSheet), findsNothing);
         expect(find.byType(RaftChannelInfoForm), findsNothing);
         expect(find.byType(RaftMembersStrip), findsNothing);
-        // Web's Drawer Back: px-4 + half of the 28px button, inside the
-        // Brutal drawer's `border-l-2` (also on the phone).
+        // Web's Drawer Back: px-4 + half of the `icon-sm` button (raft-ui 0.7.0
+        // `iconMd`, `size-8`: 32px in the Raft look); no left edge line on the
+        // phone (owner decision 2026-10-12).
         expect(
           t.getCenter(find.byKey(const ValueKey('channel-overflow-back'))).dx,
-          16 + 14 + (family == RaftFamily.brutal ? 2 : 0),
+          16 + 16,
         );
         expect(
           api.calls.where((r) => r.path == '/channels/c1/members'),

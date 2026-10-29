@@ -41,6 +41,14 @@
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
+	<!-- Sparkle 2 (docs/auto-update.md). SUPublicEDKey is injected by release CI
+	     from the SPARKLE_ED_PUBLIC_KEY variable; without it the updater is off. -->
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

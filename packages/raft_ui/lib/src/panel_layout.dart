@@ -1,3 +1,4 @@
+import 'recipes/recipe_router.dart';
 // Panel chrome shared by the Web detail panels (AgentDetailPanel,
 // HumanDetailPanel, MachineDetailPanel): the canonical PanelHeader row, its
 // PanelAction buttons, the scrollable underline Tabs strip and the section
@@ -6,10 +7,17 @@
 // Geometry and colour come from the generated raft-ui recipes (panelHeader,
 // panelAction, tabs) and, for classes written directly in Web JSX, from the
 // Tailwind classes cited next to each value (packages/web/src paths).
+import 'interaction.dart';
+import 'hover_region.dart';
+
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'package:flutter/rendering.dart';
 
+import 'raft_underline.dart';
+import 'control_typography.dart';
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'icons.dart';
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
@@ -17,24 +25,77 @@ import 'recipes/recipe_runtime.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/panel_action.g.dart';
 import 'recipes/panel_header.g.dart';
-import 'recipes/tabs.g.dart';
+import 'raft/tabs.dart';
+import 'raft/blink_snap.dart';
+import 'raft/button.dart';
+import 'raft/ui_tokens.dart';
 import 'recipes/token_binding.dart';
-import 'recipe_surface.dart' show raftCssText;
+import 'recipe_surface.dart' show raftCssText, RaftRecipeBinding;
+import 'status_bar.dart';
+import 'text_scaling.dart' show RaftChrome, RaftScaled;
+import 'large_content_viewer.dart';
 import 'theme.dart';
 import 'tooltip.dart';
 
+/// Which generated recipe set a component resolves.
+///
+/// The recipes were generated from two CSS themes (`brutal` and `elegant`), so
+/// the resolver takes a two-valued enum. The contract forbids choosing by theme
+/// name or theme id, so the choice is derived from a **geometry token** the
+/// theme declares:
+///
+///   `radius.control` > 0  -> the elegant recipe set
+///   `radius.control` == 0 -> the brutal recipe set
+///
+/// Verified against the resolved recipes rather than assumed: the elegant set
+/// gives `rounded-md` + `border-0` (a ring drawn outside a transparent border),
+/// the brutal set gives `rounded-none` + `border-2`. The control radius is
+/// exactly the token that distinguishes them — Raft 8, Elegant 6, Brutal 0 — so
+/// Raft and Elegant both take the elegant set (which is what the app painted
+/// before this helper existed, since it was hardcoded to `elegant`) and Brutal
+/// now takes the brutal set.
+///
+/// This is a bridge, not a destination. The generated recipe tables carry radii,
+/// paddings and strokes as compile-time constants; the contract's §10.2 plan is
+/// to regenerate them from tokens instead of picking one of two compiled sets.
+/// Until then this is the honest mapping, and it is the only place the
+/// two-valued choice is made.
 RaftRecipeTheme raftRecipeTheme(RaftTokens t) =>
-    t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant;
+    t.size('radius.control', fallback: 8) > 0
+    ? RaftRecipeTheme.elegant
+    : RaftRecipeTheme.brutal;
 
 /// `theme-brutal:text-black/<n>` overrides used across the Web panels; other
 /// themes keep the semantic token.
-Color raftPanelInk(RaftTokens t, double brutalAlpha, Color elegant) =>
-    t.brutal ? Colors.black.withValues(alpha: brutalAlpha) : elegant;
+Color raftPanelInk(RaftTokens t, double brutalAlpha, Color elegant) => elegant;
 
-/// AgentDetailPanel.tsx InfoRow: `grid grid-cols-[6.5rem_minmax(0,1fr)]
-/// items-start gap-x-4`; the term is `flex min-h-5 items-center gap-1.5
-/// text-xs text-foreground-muted theme-brutal:text-black/50`, the value
-/// `text-sm text-foreground-strong theme-brutal:text-black`.
+/// raft-ui `PanelTitle` as the profile detail block uses it (Web v1.21.12
+/// `<PanelTitle className="min-w-0 text-foreground-muted
+/// theme-brutal:text-black theme-brutal:text-lg">`): the panel-header recipe's
+/// `title` slot (elegant 17 / semibold / heading family, brutal 16 bold) with
+/// the muted ink; brutal is black at `text-lg` (18, the recipe's
+/// `leading-tight` ratio keeps the 22.5px line box).
+TextStyle raftPanelTitleStyle(RaftTokens t) {
+  final rt = RaftRecipeTokens(t);
+  final slot = RaftPanelHeaderRecipe.resolve(
+    theme: raftRecipeTheme(t),
+    states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}, 390),
+    tokens: rt,
+  ).title;
+  final base = RaftTypography.body(t, size: 16, line: 20);
+  final style = raftCssText.merge(
+    base
+        .merge(slot.textStyle(rt))
+        .copyWith(fontFamily: slot.fontFamily == null ? t.bodyFont : null),
+  );
+  return style.copyWith(color: t.colors['foreground-muted']);
+}
+
+/// AgentDetailPanel.tsx InfoRow (Web v1.21.12): `grid
+/// grid-cols-[7.75rem_minmax(0,1fr)] items-start gap-x-4`; the term is `flex
+/// min-h-5 items-center gap-1.5 text-[13px] text-foreground-hint
+/// theme-brutal:text-black/50`, the value `text-sm text-foreground-muted
+/// theme-brutal:text-black`.
 class RaftInfoRow extends StatelessWidget {
   const RaftInfoRow({
     super.key,
@@ -47,12 +108,22 @@ class RaftInfoRow extends StatelessWidget {
   final List<Widget> actions;
 
   static TextStyle valueStyle(RaftTokens t) => raftCssText.merge(
-    RaftTypography.heading(
+    RaftTypography.body(
       t,
       size: 14,
       line: 20,
-      weight: FontWeight.w400,
-    ).copyWith(color: t.brutal ? Colors.black : t.strong),
+    ).copyWith(color: t.colors['foreground-muted']),
+  );
+
+  /// The term: `text-[13px] text-foreground-hint theme-brutal:text-black/50`.
+  /// `text-[13px]` sets no line height, so the body's 1.5 ratio is inherited.
+  static TextStyle labelStyle(RaftTokens t) => raftCssText.merge(
+    RaftTypography.body(
+      t,
+      size: 13,
+      line: 19.5,
+      color: raftPanelInk(t, .5, t.colors['foreground-hint']!),
+    ),
   );
 
   @override
@@ -62,7 +133,7 @@ class RaftInfoRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 104,
+          width: 124,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 20),
             child: Row(
@@ -72,19 +143,7 @@ class RaftInfoRow extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: raftCssText.merge(
-                      RaftTypography.heading(
-                        t,
-                        size: 12,
-                        line: 16,
-                        weight: FontWeight.w400,
-                        color: raftPanelInk(
-                          t,
-                          .5,
-                          t.colors['foreground-muted']!,
-                        ),
-                      ),
-                    ),
+                    style: labelStyle(t),
                   ),
                 ),
                 for (final a in actions) ...[const SizedBox(width: 6), a],
@@ -111,11 +170,15 @@ class RaftInlineIconButton extends StatefulWidget {
     required this.tooltip,
     this.size = 12,
     this.onPressed,
+    this.color,
   });
   final RaftGlyph glyph;
   final String tooltip;
   final double size;
   final VoidCallback? onPressed;
+
+  /// Resting colour (hover keeps the strong ink); null is the placeholder ink.
+  final Color? color;
   @override
   State<RaftInlineIconButton> createState() => _RaftInlineIconButtonState();
 }
@@ -126,15 +189,16 @@ class _RaftInlineIconButtonState extends State<RaftInlineIconButton> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final color = hovered
-        ? (t.brutal ? Colors.black : t.strong)
-        : raftPanelInk(t, .4, t.colors['foreground-placeholder']!);
+        ? (t.strong)
+        : widget.color ??
+              raftPanelInk(t, .4, t.colors['foreground-placeholder']!);
     return RaftTooltip(
       message: widget.tooltip,
       excludeFromSemantics: true,
       child: Semantics(
         button: true,
         label: widget.tooltip,
-        child: MouseRegion(
+        child: RaftHoverRegion(
           cursor: SystemMouseCursors.click,
           onEnter: (_) => setState(() => hovered = true),
           onExit: (_) => setState(() => hovered = false),
@@ -163,21 +227,38 @@ class RaftPanelAction extends StatelessWidget {
   final String tooltip;
   final VoidCallback? onPressed;
 
-  /// Minimum touch target below the md breakpoint. Web's boxed action is
+  /// Minimum touch target for touch input. Web's boxed action is
   /// 24x28 (Brutal) / 32x32 (Elegant); the visual and layout stay as Web
   /// draws them and the hit area is extended around it.
   final double minHitExtent;
   @override
-  Widget build(BuildContext context) => RaftTouchTargetExpander(
-    minSize: Size.square(
-      minHitExtent > 0 &&
-              MediaQuery.sizeOf(context).width <
-                  RaftLayoutMetrics.desktopBreakpoint
-          ? minHitExtent
-          : 0,
-    ),
-    child: _interactive(context),
-  );
+  Widget build(BuildContext context) {
+    final ghost =
+        RaftTokens.of(context).option('panelAction.surface', or: 'outline') ==
+        'ghost';
+    return RaftTouchTargetExpander(
+      minSize: Size.square(
+        minHitExtent > 0 && RaftInteraction.of(context).touch
+            ? minHitExtent
+            : 0,
+      ),
+      child: ghost
+          ? RaftButton(
+              label: '',
+              glyph: glyph,
+              tooltip: tooltip,
+              semanticLabel: tooltip,
+              uiVariant: RaftButtonVariant.ghost,
+              uiSize:
+                  MediaQuery.sizeOf(context).width <
+                      RaftLayoutMetrics.desktopBreakpoint
+                  ? RaftButtonSize.iconLg
+                  : RaftButtonSize.iconMd,
+              onPressed: onPressed,
+            )
+          : _interactive(context),
+    );
+  }
 
   Widget _interactive(BuildContext context) => RaftInteractive(
     onPressed: onPressed,
@@ -231,25 +312,32 @@ class RaftCssFocusOutline extends CustomPainter {
     required this.enabled,
     required this.color,
     this.radius = BorderRadius.zero,
+    this.width = 2,
+    this.offset = 2,
   });
   final bool enabled;
   final Color color;
   final BorderRadius radius;
+  final double width, offset;
   @override
   void paint(Canvas canvas, Size size) {
     if (!enabled) return;
     canvas.drawRRect(
-      radius.toRRect(Offset.zero & size).inflate(3),
+      radius.toRRect(Offset.zero & size).inflate(offset + width / 2),
       Paint()
         ..color = color
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
+        ..strokeWidth = width,
     );
   }
 
   @override
   bool shouldRepaint(RaftCssFocusOutline old) =>
-      old.enabled != enabled || old.color != color || old.radius != radius;
+      old.enabled != enabled ||
+      old.color != color ||
+      old.radius != radius ||
+      old.width != width ||
+      old.offset != offset;
 }
 
 /// Title/meta flow of the real raft-ui PanelHeaderContent slot.
@@ -321,6 +409,25 @@ class RaftPanelHeaderContent extends StatelessWidget {
 /// raft-ui PanelHeader as composed by Web `components/ui/PanelHeader.tsx`
 /// (AppPanelHeader): back action, identity icon slot, title (+ suffix) and
 /// subtitle, right-aligned actions.
+/// Web panelHeadEdges plus PanelActions' overhang, shared by every native head.
+EdgeInsets raftPanelHeaderEdges(
+  BuildContext context, {
+  bool hasBack = false,
+  bool hasActions = false,
+  double? leftPadding,
+}) {
+  final narrow =
+      MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
+  return EdgeInsets.fromLTRB(
+    // ignore: raft_lints/off_grid_spacing -- Web mobile pl-4 plus leading -ml-[13px].
+    narrow && hasBack ? 3 : leftPadding ?? (narrow ? 16 : 20),
+    0,
+    // ignore: raft_lints/off_grid_spacing -- Web pr-1.5 plus mr-[-3px], desktop pr-3 plus md:mr-px.
+    narrow ? (hasActions ? 3 : 6) : 13,
+    0,
+  );
+}
+
 class RaftPanelHeaderBar extends StatelessWidget {
   const RaftPanelHeaderBar({
     super.key,
@@ -336,9 +443,24 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.profileBody = false,
     this.leftPadding,
     this.bottomRule = false,
+    this.titleSuffix,
+    this.profileHandle = false,
+    this.background,
   });
+
+  /// The page surface under this header; null keeps the recipe fill.
+  final Color? background;
   final String title;
   final String? subtitle;
+
+  /// Web `subtitleClassName={PROFILE_HANDLE_SIZE_CLASS}` (agent / human
+  /// profile headers): the `@handle` subtitle reads at 15px mono in elegant;
+  /// brutal keeps its own (already mono) meta.
+  final bool profileHandle;
+
+  /// AppPanelHeader `titleSuffix`: a node inline after the title (outside the
+  /// truncating title), e.g. `Badge.Experimental`.
+  final Widget? titleSuffix;
 
   /// AppPanelHeader `titleSlot`: replaces the title/meta stack (the search
   /// field of MessageSearchPage).
@@ -367,9 +489,123 @@ class RaftPanelHeaderBar extends StatelessWidget {
   final String backTooltip;
   final List<Widget> actions;
 
+  Widget _ghostHeader(BuildContext context, RaftTokens t) {
+    final narrow =
+        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
+    final grows = RaftScaled.grows(context);
+    final height = RaftLayoutMetrics.shellHeaderHeight(
+      t,
+      MediaQuery.sizeOf(context).height,
+    );
+    final gap = narrow ? 8.0 : 12.0;
+    final titleStyle = t.scale(t.typeSlot('headline'));
+    final metaStyle = profileHandle
+        ? t.scale(
+            t.typeSlot('mono-meta'),
+            mono: true,
+            color: t.ui.foregroundHint,
+          )
+        : t.scale(
+            t.typeSlot('caption'),
+            weight: FontWeight.w500,
+            color: t.ui.foregroundHint,
+          );
+    final heading = Row(
+      children: [
+        Flexible(
+          child: Semantics(
+            header: true,
+            child: RaftCssText(
+              title,
+              style: titleStyle,
+              maxLines: grows ? null : 1,
+              overflow: grows ? TextOverflow.visible : TextOverflow.ellipsis,
+              softWrap: grows,
+            ),
+          ),
+        ),
+        if (titleSuffix != null) ...[const SizedBox(width: 8), titleSuffix!],
+      ],
+    );
+    final fill = background ?? t.colors['layer-panel-header']!;
+    return RaftStatusBarSource(
+      color: fill,
+      child: Container(
+        height: grows ? null : height,
+        constraints: BoxConstraints(minHeight: height),
+        padding: raftPanelHeaderEdges(
+          context,
+          hasBack: onBack != null,
+          hasActions: actions.isNotEmpty,
+          leftPadding: leftPadding,
+        ).copyWith(top: grows ? 8 : 0, bottom: grows ? 8 : 0),
+        decoration: BoxDecoration(
+          color: fill,
+          border: Border(bottom: BorderSide(color: t.ui.lineSeam)),
+        ),
+        child: Row(
+          children: [
+            if (onBack != null) ...[
+              RaftPanelAction(
+                key: backKey,
+                glyph: RaftGlyph.arrowLeft,
+                tooltip: backTooltip,
+                onPressed: onBack,
+                minHitExtent: RaftMetrics.touchTarget,
+              ),
+              SizedBox(width: gap),
+            ],
+            if (iconSlot != null && (!narrow || iconAlwaysVisible)) ...[
+              // PanelHeaderIcon[icon-kind=avatar] retains a transparent used 1px edge.
+              Padding(
+                padding: iconAlwaysVisible
+                    // ignore: raft_lints/off_grid_spacing -- Actual Web AvatarSlot header outer 37 encloses a 35px avatar with its transparent used edge.
+                    ? const EdgeInsets.all(1)
+                    : EdgeInsets.zero,
+                child: iconSlot!,
+              ),
+              SizedBox(width: gap),
+            ],
+            Expanded(
+              child:
+                  titleSlot ??
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      heading,
+                      if (subtitle != null)
+                        RaftCssText(
+                          subtitle!,
+                          style: metaStyle,
+                          maxLines: grows ? null : 1,
+                          overflow: grows
+                              ? TextOverflow.visible
+                              : TextOverflow.ellipsis,
+                          softWrap: grows,
+                        ),
+                    ],
+                  ),
+            ),
+            if (actions.isNotEmpty) ...[
+              SizedBox(width: gap),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: narrow ? 2 : 4,
+                children: actions,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.option('panelAction.surface', or: 'outline') == 'ghost')
+      return _ghostHeader(context, t);
     final rt = RaftRecipeTokens(t);
     final width = MediaQuery.sizeOf(context).width;
     final s = RaftPanelHeaderRecipe.resolve(
@@ -388,25 +624,53 @@ class RaftPanelHeaderBar extends StatelessWidget {
     );
     final gap = s.header.columnGap ?? s.header.length('gap') ?? 12;
     final narrow = width < RaftLayoutMetrics.desktopBreakpoint;
+    // Above the default text size the header height is a minimum and the
+    // title / subtitle wrap, so the bar grows with its text.
+    final grows = RaftScaled.grows(context);
+    final lines = grows ? null : 1;
+    final barPadding = leftPadding == null
+        ? s.header.padding
+        : s.header.padding.copyWith(left: leftPadding);
     final header = Container(
-      height: s.header.height,
-      constraints: BoxConstraints(minHeight: s.header.minHeight ?? 0),
-      padding: leftPadding == null
-          ? s.header.padding
-          : s.header.padding.copyWith(left: leftPadding),
+      height: grows ? null : s.header.height,
+      constraints: BoxConstraints(
+        minHeight: math.max(
+          s.header.minHeight ?? 0,
+          grows ? s.header.height ?? 0 : 0,
+        ),
+      ),
+      padding: grows
+          ? barPadding.copyWith(
+              top: math.max(barPadding.top, 8),
+              bottom: math.max(barPadding.bottom, 8),
+            )
+          : barPadding,
       decoration: bottomRule
           ? s.header
                 .decoration(rt)
                 .copyWith(
+                  color: background,
                   border: Border(
                     // Brutal `border-b-2 border-black` (pure black, not ink).
                     bottom: BorderSide(
-                      color: t.brutal ? Colors.black : t.colors['line-muted']!,
-                      width: t.brutal ? 2 : 1,
+                      color: t.colors['line-muted']!,
+                      width: 1,
                     ),
                   ),
                 )
-          : s.header.decoration(rt),
+          : (profileBody)
+          // Web v1.21.12 PROFILE_HEADER_SURFACE_CLASS (elegant only):
+          // `border-b border-line-muted` on the header; the 1px is inside the
+          // header's height. Brutal keeps the recipe's own 2px rule.
+          ? s.header
+                .decoration(rt)
+                .copyWith(
+                  color: background,
+                  border: Border(
+                    bottom: BorderSide(color: t.colors['line-muted']!),
+                  ),
+                )
+          : s.header.decoration(rt).copyWith(color: background),
       child: Row(
         children: [
           if (onBack != null) ...[
@@ -423,7 +687,12 @@ class RaftPanelHeaderBar extends StatelessWidget {
           // identity panel (`iconAlwaysVisible`).
           if (iconSlot != null && (!narrow || iconAlwaysVisible)) ...[
             SizedBox.square(
-              dimension: s.headerIcon.width ?? 36,
+              dimension: iconAlwaysVisible
+                  ? t.size(
+                      'size.avatar.panelHeader',
+                      fallback: s.headerIcon.width ?? 36,
+                    )
+                  : s.headerIcon.width ?? 36,
               child: iconSlot,
             ),
             SizedBox(width: gap),
@@ -433,22 +702,54 @@ class RaftPanelHeaderBar extends StatelessWidget {
                 titleSlot ??
                 RaftPanelHeaderContent(
                   style: s.headerContent,
-                  heading: Semantics(
-                    header: true,
-                    child: RaftCssText(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text(s.title),
-                    ),
-                  ),
+                  heading: titleSuffix == null
+                      ? Semantics(
+                          header: true,
+                          child: RaftCssText(
+                            title,
+                            maxLines: lines,
+                            overflow: lines == null
+                                ? TextOverflow.clip
+                                : TextOverflow.ellipsis,
+                            style: text(s.title),
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing:
+                              s.heading.columnGap ??
+                              s.heading.length('gap') ??
+                              8,
+                          children: [
+                            Flexible(
+                              child: Semantics(
+                                header: true,
+                                child: RaftCssText(
+                                  title,
+                                  maxLines: lines,
+                                  overflow: lines == null
+                                      ? TextOverflow.clip
+                                      : TextOverflow.ellipsis,
+                                  style: text(s.title),
+                                ),
+                              ),
+                            ),
+                            titleSuffix!,
+                          ],
+                        ),
                   meta: subtitle == null
                       ? null
                       : RaftCssText(
                           subtitle!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: text(s.meta),
+                          maxLines: lines,
+                          overflow: lines == null
+                              ? TextOverflow.clip
+                              : TextOverflow.ellipsis,
+                          style: (profileHandle)
+                              ? text(
+                                  s.meta,
+                                ).copyWith(fontFamily: t.monoFont, fontSize: 15)
+                              : text(s.meta),
                         ),
                 ),
           ),
@@ -465,9 +766,20 @@ class RaftPanelHeaderBar extends StatelessWidget {
         ],
       ),
     );
-    return profileBody && t.dark
-        ? ColoredBox(color: t.card, child: header)
-        : header;
+    // The surface the user sees: the recipe's own fill, else (transparent
+    // header) the profile body it sits on.
+    final fill = background ?? s.header.decoration(rt).color;
+    final shown = fill != null && fill.a != 0
+        ? fill
+        : profileBody && t.dark
+        ? t.card
+        : Colors.transparent;
+    return RaftStatusBarSource(
+      color: shown,
+      child: profileBody && t.dark
+          ? ColoredBox(color: t.card, child: header)
+          : header,
+    );
   }
 }
 
@@ -486,7 +798,7 @@ class RaftPanelTab<T> {
   iconBuilder;
 }
 
-/// The detail-panel tab strip: raft-ui Tabs `variant="underline"` inside a
+/// The detail-panel tab strip: raft-ui Tabs `variant="underline"` ([RaftTabButton]) inside a
 /// horizontally scrollable row (AgentDetailPanel.tsx ~3070: Tabs root
 /// `border-b theme-brutal:border-b-2 border-line-muted theme-brutal:border-black
 /// bg-layer-panel`, list `max-w-full theme-brutal:border-0
@@ -498,10 +810,16 @@ class RaftPanelTabBar<T> extends StatefulWidget {
     required this.tabs,
     required this.value,
     required this.onChanged,
+    this.onReorder,
   });
   final List<RaftPanelTab<T>> tabs;
   final T value;
   final ValueChanged<T> onChanged;
+
+  /// `SortableTabsList onReorder`: a tab dragged onto another takes its place;
+  /// receives the whole new order. A pointer drags at once, a finger after a
+  /// long press (so the strip still scrolls). Null keeps the tabs fixed.
+  final ValueChanged<List<T>>? onReorder;
   @override
   State<RaftPanelTabBar<T>> createState() => _RaftPanelTabBarState<T>();
 }
@@ -509,18 +827,36 @@ class RaftPanelTabBar<T> extends StatefulWidget {
 class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
   final scroll = ScrollController();
   final keys = <Object?, GlobalKey>{};
-  T? hovered;
 
   @override
   void initState() {
     super.initState();
+    // Web scrolls the active tab into view on mount and again a frame later
+    // (`scrollActiveTabIntoView` + requestAnimationFrame): a route page that
+    // mounts on a non-default tab has no extent on its first frame, so it also
+    // re-centres while the strip's extent settles (until the user scrolls).
     WidgetsBinding.instance.addPostFrameCallback((_) => center());
+  }
+
+  bool userScrolled = false;
+
+  bool _metricsChanged(ScrollMetricsNotification n) {
+    if (!userScrolled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => center());
+    }
+    return false;
+  }
+
+  bool _scrollStarted(ScrollStartNotification n) {
+    if (n.dragDetails != null) userScrolled = true;
+    return false;
   }
 
   @override
   void didUpdateWidget(RaftPanelTabBar<T> old) {
     super.didUpdateWidget(old);
     if (old.value != widget.value) {
+      userScrolled = false;
       WidgetsBinding.instance.addPostFrameCallback((_) => center());
     }
   }
@@ -543,236 +879,202 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
     scroll.jumpTo(target.clamp(0, scroll.position.maxScrollExtent));
   }
 
+  // Fixed chrome: label text is bounded (RaftChrome) and a long press shows the
+  // tab large (Large Content Viewer) once the bound hides growth.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      RaftChrome(child: RaftLargeContentScope(child: _strip(context)));
+
+  Widget _strip(BuildContext context) {
+    final grows = RaftScaled.grows(context);
     final t = RaftTokens.of(context);
-    final rt = RaftRecipeTokens(t);
-    RaftTabsRecipeStyle style(bool active, bool hover) =>
-        RaftTabsRecipe.resolve(
-          theme: raftRecipeTheme(t),
-          variant: RaftTabsRecipeVariant.underline,
-          states: RaftRecipeStates({
-            if (active) 'data-active',
-            if (hover) RaftRecipeStates.hover,
-            if (t.dark) RaftRecipeStates.dark,
-          }),
-          tokens: rt,
-        );
-    final base = style(false, false);
-    final listBg = t.colors['layer-panel']!;
+    // ConversationPanelTabs (0.7.0): the default TabsList variant is the yellow
+    // sticker row (`px-5 py-2`, `gap-0.5`, h-8 tabs); the pre-theme looks keep
+    // the underline row (panelTabs.style).
+    final sticker = t.option('panelTabs.style', or: 'sticker') == 'sticker';
+    final narrowStrip =
+        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     return Container(
       decoration: BoxDecoration(
-        color: listBg,
-        border: Border(
-          bottom: BorderSide(
-            color: t.brutal ? Colors.black : t.colors['line-muted']!,
-            width: t.brutal ? 2 : 1,
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: t.ui.lineSeam, width: 1)),
       ),
-      child: SingleChildScrollView(
-        controller: scroll,
-        scrollDirection: Axis.horizontal,
-        child: t.brutal
-            ? Row(
-                children: [
-                  for (var i = 0; i < widget.tabs.length; i++)
-                    _tab(widget.tabs[i], i, style, base, rt, t),
-                ],
-              )
-            // Elegant `tabs-list`: `h-12 gap-1 px-4` with a hairline rule; the
-            // `h-7` tabs sit centred and the 2px indicator on the list floor.
-            : Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color:
-                          t.colors['line-hairline'] ?? t.colors['line-muted']!,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    for (var i = 0; i < widget.tabs.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 4),
-                      _elegantTab(widget.tabs[i], style, rt, t),
-                    ],
-                  ],
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _elegantTab(
-    RaftPanelTab<T> tab,
-    RaftTabsRecipeStyle Function(bool, bool) style,
-    RaftRecipeTokens rt,
-    RaftTokens t,
-  ) {
-    final active = tab.id == widget.value;
-    final recipe = style(active, hovered == tab.id);
-    final s = recipe.tab;
-    final svg = s.target('& svg:not([class*=\'size-\'])') ?? s.target('& svg');
-    final iconSize = svg?.width ?? 14;
-    final strokeValue = (s.target('& svg') ?? s)['stroke-width'];
-    final stroke = strokeValue is CssNum ? strokeValue.value : 2.0;
-    final fg = s.color?.resolve(rt) ?? t.strong;
-    final iconColor = s.target('& svg')?.color?.resolve(rt) ?? fg;
-    final label = raftCssText.merge(
-      RaftTypography.heading(
-        t,
-        size: 13,
-        line: 19.5,
-        weight: FontWeight.w500,
-      ).copyWith(color: fg, letterSpacing: -0.065),
-    );
-    return MouseRegion(
-      key: keys.putIfAbsent(tab.id, GlobalKey.new),
-      cursor: SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => hovered = tab.id),
-      onExit: (_) => setState(() => hovered = null),
-      child: Semantics(
-        selected: active,
-        button: true,
-        label: tab.label,
-        excludeSemantics: true,
-        child: GestureDetector(
-          key: ValueKey(
-            'panel-tab-${tab.id is Enum ? (tab.id as Enum).name : tab.id}',
-          ),
-          behavior: HitTestBehavior.opaque,
-          onTap: () => widget.onChanged(tab.id),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 9.5),
-                child: Container(
-                  height: 28,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      tab.iconBuilder?.call(iconSize, iconColor, stroke) ??
-                          RaftIcon(
-                            tab.glyph!,
-                            size: iconSize,
-                            strokeWidth: stroke,
-                            color: iconColor,
-                          ),
-                      const SizedBox(width: 6),
-                      RaftCssText(tab.label, style: label, maxLines: 1),
-                    ],
-                  ),
-                ),
-              ),
-              if (active)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: 2,
-                  child: ColoredBox(
-                    color: recipe.indicator.backgroundColor?.resolve(rt) ?? fg,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _tab(
-    RaftPanelTab<T> tab,
-    int index,
-    RaftTabsRecipeStyle Function(bool, bool) style,
-    RaftTabsRecipeStyle base,
-    RaftRecipeTokens rt,
-    RaftTokens t,
-  ) {
-    final active = tab.id == widget.value;
-    final s = style(active, hovered == tab.id).tab;
-    final svg = s.target('& svg:not([class*=\'size-\'])') ?? s.target('& svg');
-    final iconSize = svg?.width ?? 14;
-    // CSS resolves this dimension as `2.5px`; parsing its printed text as
-    // a bare number used to fall back to 2 and thin every Brutal tab icon.
-    final strokeValue = (s.target('& svg') ?? s)['stroke-width'];
-    final stroke = strokeValue is CssNum ? strokeValue.value : 2.0;
-    final fg = s.color?.resolve(rt) ?? (t.brutal ? Colors.black : t.strong);
-    final iconColor = s.target('& svg')?.color?.resolve(rt) ?? fg;
-    final label = raftCssText.merge(
-      RaftTypography.body(
-        t,
-        size: 12,
-        line: 16,
-      ).merge(s.textStyle(rt).copyWith(color: fg)),
-    );
-    // `[&+&]:before:absolute before:inset-y-0 before:left-0 before:w-0.5
-    // before:bg-line-strong` (brutal): a 2px divider inside every tab that
-    // follows another tab.
-    final divider = index > 0 && t.brutal;
-    return MouseRegion(
-      key: keys.putIfAbsent(tab.id, GlobalKey.new),
-      cursor: SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => hovered = tab.id),
-      onExit: (_) => setState(() => hovered = null),
-      child: Semantics(
-        selected: active,
-        button: true,
-        label: tab.label,
-        excludeSemantics: true,
-        child: GestureDetector(
-          key: ValueKey(
-            'panel-tab-${tab.id is Enum ? (tab.id as Enum).name : tab.id}',
-          ),
-          behavior: HitTestBehavior.opaque,
-          onTap: () => widget.onChanged(tab.id),
-          child: Container(
-            // `h-7` on SortableTabsTab overrides the recipe height.
-            height: 28,
-            padding: EdgeInsets.only(
-              left: s.padding.left,
-              right: s.padding.right,
-            ),
-            color: s.backgroundColor?.resolve(rt),
-            foregroundDecoration: BoxDecoration(
-              border: divider
-                  ? Border(
-                      left: BorderSide(
-                        color: t.colors['line-strong']!,
-                        width: 2,
-                      ),
-                    )
+      child: NotificationListener<ScrollMetricsNotification>(
+        onNotification: _metricsChanged,
+        child: NotificationListener<ScrollStartNotification>(
+          onNotification: _scrollStarted,
+          child: SingleChildScrollView(
+            controller: scroll,
+            scrollDirection: Axis.horizontal,
+            child: Container(
+              height: grows ? null : (sticker ? 48 : 47),
+              constraints: grows
+                  ? BoxConstraints(minHeight: sticker ? 48 : 47)
                   : null,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                tab.iconBuilder?.call(iconSize, iconColor, stroke) ??
-                    RaftIcon(
-                      tab.glyph!,
-                      size: iconSize,
-                      strokeWidth: stroke,
-                      color: iconColor,
-                    ),
-                SizedBox(width: s.columnGap ?? s.length('gap') ?? 6),
-                RaftCssText(tab.label, style: label, maxLines: 1),
-              ],
+              padding: sticker
+                  ? EdgeInsets.symmetric(
+                      horizontal: narrowStrip ? 16 : 20,
+                      vertical: 8,
+                    )
+                  : const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  for (var i = 0; i < widget.tabs.length; i++) ...[
+                    // raft-ui `TabsList variant="underline"`: `gap-5`; the
+                    // default (sticker) list is `gap-0.5`.
+                    if (i > 0) SizedBox(width: sticker ? 2 : 20),
+                    _reorderable(widget.tabs[i], _tab(widget.tabs[i])),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+  Widget _tab(RaftPanelTab<T> tab) {
+    final grows = RaftScaled.grows(context);
+    final active = tab.id == widget.value;
+    return KeyedSubtree(
+      key: keys.putIfAbsent(tab.id, GlobalKey.new),
+      child: _largeContent(
+        tab,
+        child: RaftTabButton(
+          key: ValueKey(
+            'panel-tab-${tab.id is Enum ? (tab.id as Enum).name : tab.id}',
+          ),
+          label: tab.label,
+          glyph: tab.glyph,
+          icon: tab.iconBuilder,
+          variant:
+              RaftTokens.of(context).option('panelTabs.style', or: 'sticker') ==
+                  'sticker'
+              ? RaftTabsVariant.standard
+              : RaftTabsVariant.underline,
+          selected: active,
+          height:
+              RaftTokens.of(context).option('panelTabs.style', or: 'sticker') ==
+                  'sticker'
+              ? 32
+              : 47,
+          growsWithText: grows,
+          onPressed: () => widget.onChanged(tab.id),
+        ),
+      ),
+    );
+  }
+
+  /// The tab being dragged over (its drop side is marked).
+  T? dropTarget;
+
+  List<T> _moved(T moving, T onto) {
+    final ids = [for (final tab in widget.tabs) tab.id];
+    final from = ids.indexOf(moving), to = ids.indexOf(onto);
+    if (from < 0 || to < 0 || from == to) return ids;
+    ids.insert(to, ids.removeAt(from));
+    return ids;
+  }
+
+  Widget _reorderable(RaftPanelTab<T> tab, Widget child) {
+    final onReorder = widget.onReorder;
+    if (onReorder == null) return child;
+    final t = RaftTokens.of(context);
+    final touch = RaftInteraction.of(context).touch;
+    // The lifted tab: its label on a raised chip (the tab itself stays in
+    // place, so its key is never built twice).
+    final feedback = Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: t.colors['layer-panel'],
+          border: Border.all(color: t.colors['line-strong']!),
+          boxShadow: const [BoxShadow(blurRadius: 8, color: Color(0x33000000))],
+        ),
+        child: RaftCssText(
+          tab.label,
+          style: raftCssText.merge(
+            RaftTypography.heading(
+              t,
+              size: 13,
+              line: 19.5,
+              weight: FontWeight.w500,
+              color: t.strong,
+            ),
+          ),
+        ),
+      ),
+    );
+    return DragTarget<Object>(
+      onWillAcceptWithDetails: (details) => details.data != tab.id,
+      onMove: (_) {
+        if (dropTarget != tab.id) setState(() => dropTarget = tab.id);
+      },
+      onLeave: (_) {
+        if (dropTarget == tab.id) setState(() => dropTarget = null);
+      },
+      onAcceptWithDetails: (details) {
+        setState(() => dropTarget = null);
+        onReorder(_moved(details.data as T, tab.id));
+      },
+      builder: (context, candidates, _) {
+        final marked = dropTarget == tab.id && candidates.isNotEmpty;
+        final source = touch
+            ? LongPressDraggable<Object>(
+                data: tab.id as Object,
+                feedback: feedback,
+                child: child,
+              )
+            : Draggable<Object>(
+                data: tab.id as Object,
+                feedback: feedback,
+                child: child,
+              );
+        return DecoratedBox(
+          key: ValueKey(
+            'panel-tab-slot-${tab.id is Enum ? (tab.id as Enum).name : tab.id}',
+          ),
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            border: marked
+                ? Border(left: BorderSide(color: t.strong, width: 2))
+                : null,
+          ),
+          child: source,
+        );
+      },
+    );
+  }
+
+  Widget _largeContent(RaftPanelTab<T> tab, {required Widget child}) =>
+      RaftLargeContentViewer(
+        label: tab.label,
+        onActivate: () => widget.onChanged(tab.id),
+        iconBuilder: (context, size) =>
+            tab.iconBuilder?.call(
+              size,
+              IconTheme.of(context).color ?? RaftTokens.of(context).strong,
+              2,
+            ) ??
+            RaftIcon(tab.glyph!, size: size),
+        child: child,
+      );
 }
 
-/// `<Button size="icon-sm" variant="outline">` as the detail panels use it
-/// for header/section icon actions (AgentProfileOverflowMenu trigger,
-/// CopyableCodeAction, HumanDetailPanel message action). Resolved from the
-/// generated `buttonVariants` recipe.
+/// The header/section icon actions of the detail panels (AgentProfileOverflowMenu
+/// trigger, ThreadOverflowMenu trigger, CopyableCodeAction, HumanDetailPanel
+/// message action, panel close).
+///
+/// `panelAction.surface` picks the drawing. `ghost` is raft-ui 0.7.0
+/// `PanelAction` (`panelActionBase`: `h-11 min-w-11 rounded-control
+/// border-[1.5px] border-transparent bg-transparent text-foreground
+/// hover:bg-fill-pressed active:bg-fill-pressed focus-visible:shadow-focus`,
+/// svg 22px, and `md:h-8 md:min-w-8` with an 18px svg): the shared ghost
+/// Button at `icon-lg` below `md` and `icon-md` from it, so size, glyph,
+/// radius, colours and focus ring all come from the pack. `outline` is the
+/// pre-theme look, `<Button size="icon-sm" variant="outline">` resolved from
+/// the generated `buttonVariants` recipe (a57b9dab).
 class RaftPanelIconButton extends StatelessWidget {
   const RaftPanelIconButton({
     super.key,
@@ -782,6 +1084,7 @@ class RaftPanelIconButton extends StatelessWidget {
     this.onPressed,
     this.iconSize = 14,
     this.anchorLink,
+    this.anchorKey,
     this.focusNode,
     this.onKeyboardActivate,
   });
@@ -797,56 +1100,106 @@ class RaftPanelIconButton extends StatelessWidget {
   /// Overlay anchor at the painted button, including recipe hover/press
   /// translation. CSS menus use the trigger's transformed border box.
   final LayerLink? anchorLink;
+  final GlobalKey? anchorKey;
   final FocusNode? focusNode;
   final VoidCallback? onKeyboardActivate;
   @override
   Widget build(BuildContext context) {
+    // Fixed chrome: at large text sizes a long press shows the icon and label
+    // large (Large Content Viewer).
+    return RaftChrome(
+      child: RaftLargeContentViewer(
+        label: tooltip,
+        enabled: onPressed != null,
+        onActivate: onPressed,
+        iconBuilder: (context, size) => icon != null
+            ? icon!(size, RaftTokens.of(context).strong)
+            : RaftIcon(glyph, size: size),
+        child: _button(context),
+      ),
+    );
+  }
+
+  Widget _button(BuildContext context) {
     final t = RaftTokens.of(context);
-    final rt = RaftRecipeTokens(t);
-    return RaftInteractive(
+    final touch = RaftInteraction.of(context).touch;
+    final size = touch ? RaftButtonSize.iconLg : RaftButtonSize.iconMd;
+    final source = RaftButtonMetrics.of(size, RaftButtonVariant.ghost, t);
+    final extent = t.size(
+      'size.control.${touch ? 'lg' : 'md'}',
+      fallback: source.height,
+    );
+    return RaftButton(
+      glyph: icon == null ? glyph : null,
+      iconBuilder: icon,
+      uiVariant: RaftButtonVariant.ghost,
+      uiSize: size,
+      physicalHeight: extent,
+      visualWidth: extent,
+      glyphSize: t.size('size.buttonGlyph.${size.name}', fallback: source.icon),
       onPressed: onPressed,
-      focusNode: focusNode,
       onKeyboardActivate: onKeyboardActivate,
+      focusNode: focusNode,
       semanticLabel: tooltip,
       tooltip: tooltip,
-      builder: (context, state) {
-        final s = RaftButtonRecipe.resolve(
-          theme: raftRecipeTheme(t),
-          variant: RaftButtonRecipeVariant.outline,
-          size: RaftButtonRecipeSize.iconSm,
-          states: RaftRecipeStates({
-            if (state.hovered) RaftRecipeStates.hover,
-            if (state.pressed) RaftRecipeStates.active,
-            if (state.focusVisible) RaftRecipeStates.focusVisible,
-            if (onPressed == null) RaftRecipeStates.disabled,
-            if (t.dark) RaftRecipeStates.dark,
-          }),
-          tokens: rt,
-        ).root;
-        Widget button = Container(
-          width: s.width,
-          height: s.height,
-          alignment: Alignment.center,
-          decoration: s.decoration(rt),
-          child: icon != null
-              ? icon!(iconSize, s.color?.resolve(rt) ?? t.strong)
-              : RaftIcon(
-                  glyph,
-                  size: iconSize,
-                  color: s.color?.resolve(rt) ?? t.strong,
-                ),
-        );
-        if (anchorLink != null) {
-          button = CompositedTransformTarget(link: anchorLink!, child: button);
-        }
-        return Opacity(
-          opacity: s.opacity ?? 1,
-          child: Transform.translate(
-            offset: s.translate ?? Offset.zero,
+      legacyBuilder: _paintLegacy,
+      surfaceBuilder: (context, surface) {
+        if (usesLegacyRecipes(RaftTokens.of(context).recipeTokens))
+          return surface;
+        Widget button = RaftBlinkSnap(child: surface);
+        if (anchorLink != null)
+          button = CompositedTransformTarget(
+            key: anchorKey,
+            link: anchorLink!,
             child: button,
-          ),
-        );
+          );
+        return button;
       },
+    );
+  }
+
+  Widget _paintLegacy(BuildContext context, RaftInteractionState state) {
+    final t = RaftTokens.of(context);
+    final rt = RaftRecipeTokens(t);
+    final s = RaftButtonRecipe.resolve(
+      theme: raftRecipeTheme(t),
+      variant: RaftButtonRecipeVariant.outline,
+      size: RaftButtonRecipeSize.iconSm,
+      states: RaftRecipeStates({
+        if (state.hovered) RaftRecipeStates.hover,
+        if (state.pressed) RaftRecipeStates.active,
+        if (state.focusVisible) RaftRecipeStates.focusVisible,
+        if (onPressed == null) RaftRecipeStates.disabled,
+        if (t.dark) RaftRecipeStates.dark,
+      }),
+      tokens: rt,
+    ).root;
+    Widget button = Container(
+      width: s.width,
+      height: s.height,
+      alignment: Alignment.center,
+      decoration: s.decoration(rt),
+      child: icon != null
+          ? icon!(iconSize, s.color?.resolve(rt) ?? t.strong)
+          : RaftIcon(
+              glyph,
+              size: iconSize,
+              color: s.color?.resolve(rt) ?? t.strong,
+            ),
+    );
+    if (anchorLink != null) {
+      button = CompositedTransformTarget(
+        key: anchorKey,
+        link: anchorLink!,
+        child: button,
+      );
+    }
+    return Opacity(
+      opacity: s.opacity ?? 1,
+      child: Transform.translate(
+        offset: s.translate ?? Offset.zero,
+        child: button,
+      ),
     );
   }
 }
@@ -896,10 +1249,16 @@ class RaftCssInlineBox extends StatelessWidget {
     required this.childText,
     required this.height,
     required this.child,
+    this.minHeight = false,
   });
   final TextStyle lineText, childText;
   final double height;
   final Widget child;
+
+  /// [height] is the child's minimum (CSS `min-height` / `height: auto`): a
+  /// taller child (a larger text scale, a taller control line box) grows the
+  /// box instead of being squeezed into it.
+  final bool minHeight;
   @override
   Widget build(BuildContext context) {
     final lineHeight = (lineText.height ?? 1.2) * (lineText.fontSize ?? 14);
@@ -907,19 +1266,28 @@ class RaftCssInlineBox extends StatelessWidget {
     final childBaseline = (height - childLine) / 2 + raftCssBaseline(childText);
     final top = raftCssBaseline(lineText) - childBaseline;
     final shift = top < 0 ? -top : 0.0;
-    return SizedBox(
-      height: [
-        lineHeight + shift,
-        top + shift + height,
-      ].reduce((a, b) => a > b ? a : b),
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: Padding(
-          padding: EdgeInsets.only(top: top + shift),
-          child: SizedBox(height: height, child: child),
-        ),
+    final boxHeight = [
+      lineHeight + shift,
+      top + shift + height,
+    ].reduce((a, b) => a > b ? a : b);
+    final inner = Align(
+      alignment: Alignment.topLeft,
+      child: Padding(
+        padding: EdgeInsets.only(top: top + shift),
+        child: minHeight
+            ? ConstrainedBox(
+                constraints: BoxConstraints(minHeight: height),
+                child: child,
+              )
+            : SizedBox(height: height, child: child),
       ),
     );
+    return minHeight
+        ? ConstrainedBox(
+            constraints: BoxConstraints(minHeight: boxHeight),
+            child: inner,
+          )
+        : SizedBox(height: boxHeight, child: inner);
   }
 }
 
@@ -946,6 +1314,9 @@ class RaftCssText extends StatelessWidget {
     this.textAlign,
     this.softWrap,
     this.strutStyle,
+    this.controlLabel = false,
+    this.underline = false,
+    this.underlineColor,
   }) : span = null;
 
   const RaftCssText.rich(
@@ -957,6 +1328,9 @@ class RaftCssText extends StatelessWidget {
     this.textAlign,
     this.softWrap,
     this.strutStyle,
+    this.controlLabel = false,
+    this.underline = false,
+    this.underlineColor,
   }) : data = null;
 
   final String? data;
@@ -968,19 +1342,48 @@ class RaftCssText extends StatelessWidget {
   final bool? softWrap;
   final StrutStyle? strutStyle;
 
+  /// A single-line control label: on Android/Windows + Chinese it takes
+  /// [RaftControlTypography], and its optical line box replaces the CSS
+  /// baseline snap (which would undo the correction).
+  final bool controlLabel;
+
+  /// Paints the shared hyperlink underline ([RaftUnderlines]). With a plain
+  /// string the whole label is underlined in [underlineColor] (default: the
+  /// text colour); with [RaftCssText.rich] it only enables painting of the
+  /// [RaftUnderlineSpan]s the caller put in [span].
+  final bool underline;
+  final Color? underlineColor;
+
   @override
   Widget build(BuildContext context) {
+    var style = this.style;
+    if (controlLabel && RaftControlTypography.appliesIn(context)) {
+      style = RaftControlTypography.of(
+        context,
+        DefaultTextStyle.of(context).style.merge(style),
+      );
+    }
     final effective = DefaultTextStyle.of(context).style.merge(style);
     final text = span == null
-        ? Text(
-            data!,
-            style: style,
-            maxLines: maxLines,
-            overflow: overflow,
-            textAlign: textAlign,
-            softWrap: softWrap,
-            strutStyle: strutStyle,
-          )
+        ? (underline
+              ? Text.rich(
+                  RaftUnderlineSpan(text: data!, color: underlineColor),
+                  style: style,
+                  maxLines: maxLines,
+                  overflow: overflow,
+                  textAlign: textAlign,
+                  softWrap: softWrap,
+                  strutStyle: strutStyle,
+                )
+              : Text(
+                  data!,
+                  style: style,
+                  maxLines: maxLines,
+                  overflow: overflow,
+                  textAlign: textAlign,
+                  softWrap: softWrap,
+                  strutStyle: strutStyle,
+                ))
         : Text.rich(
             span!,
             style: style,
@@ -993,7 +1396,8 @@ class RaftCssText extends StatelessWidget {
     return RaftCssLineBox(
       style: effective,
       textScaler: MediaQuery.textScalerOf(context),
-      child: text,
+      // Inside the line box, so the stroke shares the baseline snap shift.
+      child: underline ? RaftUnderlines(child: text) : text,
     );
   }
 }
@@ -1012,14 +1416,18 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
   });
   final TextStyle style;
   final TextScaler textScaler;
+  bool _windowsChinese(BuildContext context) =>
+      Theme.of(context).platform == TargetPlatform.windows &&
+      RaftControlTypography.appliesIn(context);
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _RenderCssLineBox(style, textScaler);
+      _RenderCssLineBox(style, textScaler, _windowsChinese(context));
   @override
   void updateRenderObject(BuildContext context, _RenderCssLineBox r) {
     r
       ..style = style
-      ..textScaler = textScaler;
+      ..textScaler = textScaler
+      ..windowsChinese = _windowsChinese(context);
   }
 }
 
@@ -1063,9 +1471,16 @@ double _laidOutGlobalTop(RenderBox box) {
 }
 
 class _RenderCssLineBox extends RenderProxyBox {
-  _RenderCssLineBox(this._style, this._textScaler);
+  _RenderCssLineBox(this._style, this._textScaler, this._windowsChinese);
   TextStyle _style;
   TextScaler _textScaler;
+  bool _windowsChinese;
+  set windowsChinese(bool value) {
+    if (value == _windowsChinese) return;
+    _windowsChinese = value;
+    markNeedsLayout();
+  }
+
   double _flutterBaseline = 0;
   set style(TextStyle v) {
     if (v == _style) return;
@@ -1080,6 +1495,14 @@ class _RenderCssLineBox extends RenderProxyBox {
   }
 
   _BlinkMetrics get _metrics => _BlinkMetrics.of(_style, _textScaler);
+
+  /// A control label on a Chinese platform profile keeps Flutter's own
+  /// proportional baseline: the Blink even-leading baseline (and its snap)
+  /// would move the ink back to where the font draws it too high.
+  bool get _optical =>
+      RaftControlTypography.isControlStyle(_style) &&
+      (_style.height == RaftControlTypography.androidChineseLineHeight ||
+          _windowsChinese);
 
   int get _lines {
     final c = child;
@@ -1104,17 +1527,24 @@ class _RenderCssLineBox extends RenderProxyBox {
     _flutterBaseline = (reported + 0.5).floorToDouble();
   }
 
+  // Inside a baseline query the child is asked with getDistanceToActualBaseline;
+  // getDistanceToBaseline would re-enter the baseline assertion when an ancestor
+  // (an inline line box, a baseline Row) is measuring this label.
   @override
-  double? computeDistanceToActualBaseline(TextBaseline baseline) =>
-      _metrics.baseline;
+  double? computeDistanceToActualBaseline(TextBaseline baseline) => _optical
+      ? child?.getDistanceToActualBaseline(baseline)
+      : _metrics.baseline;
 
   @override
   double? computeDryBaseline(
     BoxConstraints constraints,
     TextBaseline baseline,
-  ) => _metrics.baseline;
+  ) => _optical
+      ? child?.getDryBaseline(constraints.loosen(), baseline)
+      : _metrics.baseline;
 
   double get _shift {
+    if (_optical) return 0;
     final flutter = _flutterBaseline;
     final top = _laidOutGlobalTop(this);
     // Kept-alive sliver children can paint their own repaint boundary while

@@ -52,3 +52,22 @@ Set<String> reconcileTailWindow(
     for (final row in fresh) row['id'] as String,
   };
 }
+
+/// Boundary facts for one accepted window. A null contextNewer is a tail.
+class AcceptedMessageWindow {
+  AcceptedMessageWindow(
+    this.authority,
+    this.hasMore,
+    this.token,
+    this.historyLimited,
+    this.contextNewer,
+  );
+  final String authority, token;
+  final bool hasMore, historyLimited;
+  final bool? contextNewer;
+  AcceptedMessageWindow withContext(bool? value) =>
+      AcceptedMessageWindow(authority, hasMore, token, historyLimited, value);
+
+  bool matches(String? authority, String? token) =>
+      this.authority == authority && this.token == token;
+}

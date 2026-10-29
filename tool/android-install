@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verified, data-preserving Android update; has no first-install/clear/uninstall path."""
+"""Verified Android deployment; updates preserve data, first installs require an explicit flag."""
 import argparse
 import datetime
 import json
@@ -13,6 +13,7 @@ parser.add_argument('--device', required=True, help='explicit ADB serial')
 parser.add_argument('--apk', type=Path, required=True, help='built ARM64 release APK')
 parser.add_argument('--check-only', action='store_true', help='read-only preflight; do not install or launch')
 parser.add_argument('--launch', action='store_true', help='launch only after all preservation checks pass')
+parser.add_argument('--first-install', action='store_true', help='explicit first installation; reject any existing or retained package')
 args = parser.parse_args()
 stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
 receipt = ROOT / '.local/android-installs' / (stamp + '.json')
@@ -28,7 +29,7 @@ def record(report):
 try:
     with update_lock(args.device):
         result = update(args.apk.resolve(), args.device, sdk_tools(), record,
-                        check_only=args.check_only, launch=args.launch)
+                        check_only=args.check_only, launch=args.launch, first_install=args.first_install)
 except (SafetyError, OSError, ValueError) as error:
     report = json.loads(receipt.read_text()) if receipt.exists() else {}
     if report.get('status') != 'failed':

@@ -5,7 +5,9 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/panel_caches.dart';
+import '../data/task_discussion_read.dart';
 import '../data/workspace_controller.dart';
+import 'task_status_request.dart';
 
 /// Source taskModal owns a separate discussion identity, never the main or
 /// side-thread window. Its borrowed controller cannot tear down the session.
@@ -52,6 +54,7 @@ class TaskSurfaceController extends ChangeNotifier {
         unawaited(refresh());
       }
     });
+    parent.addListener(_parentChanged);
   }
   final WorkspaceController parent;
   final bool Function() valid;
@@ -89,6 +92,15 @@ class TaskSurfaceController extends ChangeNotifier {
   late final StreamSubscription<RaftEvent> events;
   final presentationOwner = Object();
   bool get current => !closed && valid();
+
+  void _parentChanged() {
+    if (current) return;
+    // Retire queued editor callbacks as soon as their task visit loses its
+    // authority, before the host's next frame removes the old widget tree.
+    discussion?.dispose();
+    discussion = null;
+  }
+
   bool get legacy => task['isLegacy'] == true;
   bool get hydrated => task['id'] is String;
   bool get joined =>
@@ -151,7 +163,7 @@ class TaskSurfaceController extends ChangeNotifier {
   void seedKnown() {
     if (hydrated) loading = false;
     if (legacy || !hydrated) return;
-    final cached = parent.taskHistoryCache.peek('${task['id']}');
+    final cached = parent.services.taskHistoryCache.peek('${task['id']}');
     if (cached == null) return;
     final channel = parentChannel;
     // Cold URL: the parent is not resolved yet; judge the cache on a later open.
@@ -161,7 +173,7 @@ class TaskSurfaceController extends ChangeNotifier {
         cleanup ||
         parentRemoved ||
         !parent.can('viewChannel', resource: channel)) {
-      parent.taskHistoryCache.remove('${task['id']}');
+      parent.services.taskHistoryCache.remove('${task['id']}');
       return;
     }
     history = cached.events;
@@ -177,7 +189,7 @@ class TaskSurfaceController extends ChangeNotifier {
     resolvedParent = null;
     parentError = failure;
     historyKnown = false;
-    parent.taskHistoryCache.removeWhere(
+    parent.services.taskHistoryCache.removeWhere(
       (_, value) => value.channelId == task['channelId'],
     );
     loading = historyLoading = true;
@@ -274,10 +286,13 @@ class TaskSurfaceController extends ChangeNotifier {
     }
     final c = WorkspaceController(
       parent.client,
-      cache: parent.cache,
+      cache: parent.deviceStore.cache,
       ownsClient: false,
-      entityDirectory: parent.entityDirectory,
-      followedThreads: parent.followedThreads,
+      entityDirectory: parent.services.entityDirectory,
+      followedThreads: parent.services.followedThreads,
+      // Task surfaces remount when a side panel becomes a phone page. Their
+      // thread draft belongs to the session through each layout projection.
+      composer: parent.composer,
     );
     c.server = parent.server;
     c.servers = [...parent.servers];
@@ -295,13 +310,14 @@ class TaskSurfaceController extends ChangeNotifier {
       ...c.channels,
       ...c.dms,
     ].where((row) => row.id == task['channelId']).firstOrNull;
-    c.ledger.switchServer(parent.server!.id);
+    c.messageDomain.ledger.switchServer(parent.server!.id);
     c.foreground = false;
     c.setConversationPresentation(
       presentationOwner,
       main: false,
       thread: false,
     );
+    admitTaskDiscussion(c);
     discussion = c;
     unawaited(
       c.openThreadIdentity(
@@ -366,7 +382,7 @@ class TaskSurfaceController extends ChangeNotifier {
       ];
       historyKnown = true;
       if (!cleanup && task['id'] is String && task['channelId'] is String) {
-        parent.taskHistoryCache.put(
+        parent.services.taskHistoryCache.put(
           '${task['id']}',
           TaskHistorySnapshot('${task['channelId']}', history),
         );
@@ -375,7 +391,7 @@ class TaskSurfaceController extends ChangeNotifier {
       if (!current || request != historyRevision) return;
       historyKnown = false;
       if (task['id'] is String) {
-        parent.taskHistoryCache.remove('${task['id']}');
+        parent.services.taskHistoryCache.remove('${task['id']}');
       }
       historyError = e;
       onFailure?.call(e);
@@ -417,14 +433,20 @@ class TaskSurfaceController extends ChangeNotifier {
     error = null;
     changed();
     try {
+      final move = field == 'status'
+          ? taskStatusRequest(task, value)
+          : (
+              path: '/tasks/${task['id']}/assignee',
+              data: <String, dynamic>{
+                'assignee': value,
+                if (task['revision'] is num)
+                  'expectedRevision': task['revision'],
+              },
+            );
       final data = await parent.client.request(
         'PATCH',
-        '/tasks/${task['id']}/$field',
-        data: {
-          field == 'status' ? 'status' : 'assignee': value,
-          if (field == 'assignee' && task['revision'] is num)
-            'expectedRevision': task['revision'],
-        },
+        move.path,
+        data: move.data,
       );
       if (!accepts()) return;
       if (data is Map && data['task'] is Map) {
@@ -450,6 +472,7 @@ class TaskSurfaceController extends ChangeNotifier {
   @override
   void dispose() {
     closed = true;
+    parent.removeListener(_parentChanged);
     revision++;
     historyRevision++;
     parentRevision++;

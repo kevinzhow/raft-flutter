@@ -131,11 +131,18 @@ class _AnchoredScrollPosition extends ScrollPositionWithSingleContext {
       final offset = RaftReadingAnchorController.scrollOffsetOf(row);
       if (offset != null) {
         final delta = (offset - pixels) - gap;
-        final target = (pixels + delta).clamp(minScrollExtent, maxScrollExtent);
-        if ((target - pixels).abs() >= .5) {
-          _rounds++;
-          correctPixels(target);
-          return false; // The viewport lays out again in this pass.
+        // The user's elastic overscroll is already included in gap. Correct
+        // only a content shift; clamping an unchanged gap snaps the bounce
+        // to its edge. A real shift must preserve an existing overscroll too.
+        if (delta.abs() >= .5) {
+          final target = hasContentDimensions && outOfRange
+              ? pixels + delta
+              : (pixels + delta).clamp(minScrollExtent, maxScrollExtent);
+          if ((target - pixels).abs() >= .5) {
+            _rounds++;
+            correctPixels(target);
+            return false; // The viewport lays out again in this pass.
+          }
         }
       }
     }

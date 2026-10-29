@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launch canvas = the page body of the first Flutter frame: the mobile
+     home/sidebar paints `layer-canvas-muted` (docs/theme-tokens/*.json), not the
+     scaffold `layer-canvas`. Checked by
+     tool/tests/test_launch_theme.py. `system` follows the device day/night
+     setting through the -night qualifier; the app's own light/dark choice is
+     applied by LaunchTheme.kt (Android 13+). -->
+<resources>
+    <color name="raft_canvas_brutal_light">#FFFFFF</color>
+    <color name="raft_canvas_elegant_light">#F8F8F7</color>
+    <color name="raft_canvas_elegant_dark">#0D0D0B</color>
+    <color name="raft_canvas_system_brutal">@color/raft_canvas_brutal_light</color>
+    <color name="raft_canvas_system_elegant">@color/raft_canvas_elegant_light</color>
+    <bool name="raft_launch_light_bars">true</bool>
+</resources>

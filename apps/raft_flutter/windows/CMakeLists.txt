@@ -57,6 +57,12 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# Plugin libraries Raft never loads on Windows, each importing a DLL no user
+# machine has: package:jni's dartjni.dll needs jvm.dll, and media_kit's
+# prebuilt ANGLE zlib.dll links the debug CRT. tool/windows_dependencies.py
+# rejects them at release time.
+list(FILTER PLUGIN_BUNDLED_LIBRARIES EXCLUDE REGEX "(/zlib\\.dll|TARGET_FILE:jni>)$")
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can
@@ -71,14 +77,6 @@ endif()
 
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../../docs/licenses/Microsoft-Windows-App-SDK-1.7-license.txt"
-  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/licenses/windows-app-sdk"
-  RENAME "license.txt" COMPONENT Runtime)
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../../docs/licenses/Microsoft-Windows-App-SDK-1.7-NOTICE.txt"
-  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/licenses/windows-app-sdk"
-  RENAME "NOTICE.txt" COMPONENT Runtime)
-install(FILES "${RAFT_WINDOWS_BOOTSTRAP_DLL}"
-  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime)
 install(FILES "runner/resources/app_icon.ico"
   DESTINATION "${CMAKE_INSTALL_PREFIX}" RENAME "raft.ico" COMPONENT Runtime)
 install(FILES "runner/resources/notification_icon.png"
@@ -98,6 +96,18 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+# Ship the MSVC C++ runtime (msvcp140, vcruntime140, vcruntime140_1, ...) next
+# to the executable, so machines without the Visual C++ Redistributable start
+# the app. Windows 10+ already provides the UCRT.
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+include(InstallRequiredSystemLibraries)
+if(NOT CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+  message(FATAL_ERROR "MSVC redistributable runtime not found; install the Visual C++ build tools")
+endif()
+install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
 
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")

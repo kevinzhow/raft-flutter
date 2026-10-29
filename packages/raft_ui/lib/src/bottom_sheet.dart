@@ -7,7 +7,6 @@ import 'recipes/recipe_runtime.dart' show RaftRecipeStates;
 import 'recipes/token_binding.dart';
 import 'system_inset.dart';
 import 'theme.dart';
-import 'tokens/shadows.g.dart' show RaftProductShadows;
 
 /// ui/BottomSheet.tsx: a `fixed inset-x-0 bottom-0 p-3` root holding a raft-ui
 /// Card (`mx-auto max-w-md`, Elegant `shadow-raft-xl`, Brutal `border-2
@@ -54,10 +53,8 @@ class RaftBottomSheet extends StatelessWidget {
             padding: contentPadding,
             applyText: false,
             decorationOverride: (d) => d.copyWith(
-              color: t.brutal ? Colors.white : d.color,
-              boxShadow: t.brutal
-                  ? RaftProductShadows.shadowBrutalLg.paintOrder
-                  : t.themeShadows.xl.paintOrder,
+              color: d.color,
+              boxShadow: t.themeShadows.xl.paintOrder,
             ),
             child: DefaultTextStyle.merge(
               style: root.textStyle(rt),

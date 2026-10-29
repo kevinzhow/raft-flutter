@@ -1,0 +1,31 @@
+[
+  {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "serverId": "99999999-9999-4999-8999-999999999999",
+    "name": "outpost",
+    "displayName": "Outpost",
+    "avatarUrl": null,
+    "description": "External agent on my laptop",
+    "status": "inactive",
+    "sessionId": null,
+    "model": "external",
+    "runtime": "external",
+    "reasoningEffort": null,
+    "executionMode": "byoc",
+    "creatorType": "user",
+    "creatorId": "22222222-2222-4222-8222-222222222222",
+    "machineId": null,
+    "deletedAt": null,
+    "createdAt": "2026-10-01T10:00:00.000Z",
+    "updatedAt": "2026-10-12T07:00:00.000Z",
+    "external": true,
+    "serverRole": "member",
+    "activity": "offline",
+    "activityDetail": "",
+    "runtimeProfile": null,
+    "lastSeenAt": "2026-10-12T09:55:00.000Z",
+    "creator": { "type": "human", "id": "22222222-2222-4222-8222-222222222222", "name": "kai", "displayName": "Kai", "avatarUrl": null },
+    "createdAgents": [],
+    "hostedRuntime": { "provider": "antiproton", "state": "failed", "providerAgentId": null, "syncPending": false, "push": null, "lastError": { "code": "provider_4xx", "message": "refused", "httpStatus": 422, "at": "2026-10-12T07:00:00.000Z" }, "attemptCount": 2, "nextAttemptAt": null, "activatedAt": null }
+  }
+]

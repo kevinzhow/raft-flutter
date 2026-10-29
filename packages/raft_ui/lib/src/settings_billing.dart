@@ -3,11 +3,13 @@
 // PlanSection, PlanBillingLoadingSection, DowngradeWarningCard and the
 // BillingTabContent permission card. The app computes every label, value and
 // gate (billing projection); this file resolves only the class lists.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption;
+
 import 'package:flutter/material.dart';
 
 import 'flex_shrink_row.dart';
-import 'design_primitives.dart'
-    show RaftSegmentedControl, RaftSegmentedOption, RaftTypography;
+import 'design_primitives.dart' show RaftTypography;
 import 'icons.dart';
 import 'indicators.dart' show RaftWebPalette;
 import 'localization.dart';
@@ -16,13 +18,15 @@ import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'recipes/card.g.dart';
 import 'recipes/progress.g.dart';
-import 'recipes/recipe_utilities.g.dart';
+import 'recipes/recipe_router.dart'
+    show resolveRecipeClasses, usesLegacyRecipes;
 import 'recipes/skeleton.g.dart';
 import 'recipes/status.g.dart';
 import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
-import 'tokens/shadows.g.dart' show RaftProductShadows;
+import 'raft/ui_tokens.dart' show RaftTokensUi;
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'tooltip.dart';
 import 'viewport_breakpoints.dart';
 
@@ -203,8 +207,13 @@ class RaftPlanBillingSection extends StatelessWidget {
     this.limitStats = const [],
     this.portalActions,
     this.manage,
+    this.afterPlan,
   });
   final String planName, planDescription;
+
+  /// Content between the plan card and the manage card (Web: the cloud agent
+  /// spend card, for who may read the billing summary).
+  final Widget? afterPlan;
   final List<RaftBillingNotice> notices;
   final List<String> included, notIncluded;
   final RaftBillingSeatUsage? seatUsage;
@@ -234,6 +243,11 @@ class RaftPlanBillingSection extends StatelessWidget {
             ),
             for (final notice in notices) _BillingNoticeCard(notice),
             _PlanCard(section: this),
+            if (afterPlan != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: afterPlan,
+              ),
             if (manage != null) ...[
               RaftSettingsSectionHeader(
                 label: manage!.title,
@@ -339,9 +353,7 @@ class RaftPlanBillingLoading extends StatelessWidget {
                   size: 12,
                   line: 16,
                   weight: FontWeight.w700,
-                  color: t.brutal
-                      ? Colors.black.withValues(alpha: .45)
-                      : t.muted,
+                  color: t.muted,
                 ),
               ),
             ),
@@ -451,7 +463,7 @@ class RaftPlanBillingLoading extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: divider.headerFill,
-                  border: Border.all(color: text.edge, width: t.brutal ? 2 : 1),
+                  border: Border.all(color: text.edge, width: 1),
                   boxShadow: _shadowSm(t),
                 ),
                 child: Column(
@@ -481,9 +493,7 @@ class RaftPlanBillingLoading extends StatelessWidget {
   }
 }
 
-List<BoxShadow> _shadowSm(RaftTokens t) => t.brutal
-    ? RaftProductShadows.shadowBrutalSm.outer
-    : t.themeShadows.sm.outer;
+List<BoxShadow> _shadowSm(RaftTokens t) => t.themeShadows.sm.outer;
 
 /// Card section rules: the header's `border-b-2 border-line-muted
 /// theme-brutal:border-black` and the strips' `border-t-2 border-line-muted
@@ -491,15 +501,21 @@ List<BoxShadow> _shadowSm(RaftTokens t) => t.brutal
 class _BillingLines {
   _BillingLines(this.t);
   final RaftTokens t;
-  Color get header => t.brutal ? Colors.black : t.colors['line-muted']!;
-  Color get strip =>
-      t.brutal ? Colors.black.withValues(alpha: .1) : t.colors['line-muted']!;
+
+  /// raft-ui 0.7.0: the plan card's header and sections are separated by 1px
+  /// `border-line-hairline` rules on the plain card fill; the frozen looks keep
+  /// their 2px `line-muted` rules and the cream header.
+  bool get raft => t.isRaftLook;
+  Color get header => t.colors[raft ? 'line-hairline' : 'line-muted']!;
+  Color get strip => t.colors[raft ? 'line-hairline' : 'line-muted']!;
+  double get ruleWidth => raft ? 1 : 2;
 
   /// `bg-layer-canvas-muted theme-brutal:bg-brutal-cream`.
-  Color get headerFill =>
-      t.brutal ? t.product.brutalCream : t.colors['layer-canvas-muted']!;
+  Color? get headerFill => raft ? null : t.colors['layer-canvas-muted']!;
   BoxDecoration get top => BoxDecoration(
-    border: Border(top: BorderSide(color: strip, width: 2)),
+    border: Border(
+      top: BorderSide(color: strip, width: ruleWidth),
+    ),
   );
 }
 
@@ -536,12 +552,7 @@ class _BillingSkeleton extends StatelessWidget {
         applyOpacity: false,
         decorationOverride: outlined
             ? (base) => base.copyWith(
-                border: Border.all(
-                  color: t.brutal
-                      ? Colors.black.withValues(alpha: .2)
-                      : t.colors['line-muted']!,
-                  width: t.brutal ? 2 : 1,
-                ),
+                border: Border.all(color: t.colors['line-muted']!, width: 1),
               )
             : null,
       ),
@@ -640,15 +651,12 @@ class _BillingNoticeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
-    final white = t.brutal ? Colors.white : t.panel;
+    final white = t.panel;
     final fill = switch (notice.tone) {
-      RaftBillingNoticeTone.trial =>
-        t.brutal
-            ? Color.alphaBlend(
-                t.product.softSignal.withValues(alpha: .3),
-                white,
-              )
-            : Color.alphaBlend(t.colors['primary-soft']!, white),
+      RaftBillingNoticeTone.trial => Color.alphaBlend(
+        t.colors['primary-soft']!,
+        white,
+      ),
       RaftBillingNoticeTone.downgrade => Color.alphaBlend(
         t.product.brutalOrange.withValues(alpha: .2),
         white,
@@ -669,7 +677,7 @@ class _BillingNoticeCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: fill,
-        border: Border.all(color: text.edge, width: t.brutal ? 2 : 1),
+        border: Border.all(color: text.edge, width: 1),
         boxShadow: _shadowSm(t),
       ),
       child: Column(
@@ -722,7 +730,14 @@ class _PlanCard extends StatelessWidget {
           children: [
             Text(
               raftText(context, title),
-              style: text.title.copyWith(color: yes ? null : text.muted),
+              style: lines.raft
+                  // `SectionEyebrow`: `text-footnote font-bold text-foreground-hint`.
+                  ? t.scale(
+                      RaftTypeScale.footnote,
+                      weight: FontWeight.w700,
+                      color: t.colors['foreground-hint'],
+                    )
+                  : text.title.copyWith(color: yes ? null : text.muted),
             ),
             const SizedBox(height: 12),
             for (final (i, item) in items.indexed) ...[
@@ -735,7 +750,12 @@ class _PlanCard extends StatelessWidget {
                     child: RaftIcon(
                       yes ? RaftGlyph.check : RaftGlyph.x,
                       size: 16,
-                      color: yes
+                      color: lines.raft
+                          // `text-foreground` / `text-foreground-hint`.
+                          ? (yes
+                                ? t.colors['foreground']
+                                : t.colors['foreground-hint'])
+                          : yes
                           ? RaftWebPalette.green700
                           : t.product.brutalRed,
                     ),
@@ -748,7 +768,7 @@ class _PlanCard extends StatelessWidget {
                         t,
                         size: 14,
                         line: 20,
-                        color: text.strong,
+                        color: lines.raft && !yes ? text.muted : text.strong,
                       ),
                     ),
                   ),
@@ -783,6 +803,10 @@ class _PlanCard extends StatelessWidget {
       child: Container(
         key: const ValueKey('billing-current-plan-card'),
         decoration: RaftSettingsCard.decoration(t),
+        // `overflow-hidden`: the header fill stops at the rounded padding box.
+        clipBehavior: usesLegacyRecipes(t.recipeTokens)
+            ? Clip.none
+            : Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -791,22 +815,45 @@ class _PlanCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: lines.headerFill,
                 border: Border(
-                  bottom: BorderSide(color: lines.header, width: 2),
+                  bottom: BorderSide(
+                    color: lines.header,
+                    width: lines.ruleWidth,
+                  ),
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    s.planName,
-                    style: RaftTypography.inherited(
-                      t,
-                      size: 18,
-                      line: 28,
-                      weight: FontWeight.w700,
-                      color: text.strong,
+                  if (lines.raft)
+                    // `text-headline` plus the 22px sticker check of the current plan.
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            s.planName,
+                            style: t.scale(
+                              RaftTypeScale.headline,
+                              color: text.strong,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _CurrentPlanCheck(t),
+                      ],
+                    )
+                  else
+                    Text(
+                      s.planName,
+                      style: RaftTypography.inherited(
+                        t,
+                        size: 18,
+                        line: 28,
+                        weight: FontWeight.w700,
+                        color: text.strong,
+                      ),
                     ),
-                  ),
+                  if (lines.raft) const SizedBox(height: 2),
                   Text(s.planDescription, style: text.bodyMuted),
                 ],
               ),
@@ -869,6 +916,31 @@ class _PlanCard extends StatelessWidget {
   }
 }
 
+/// The 22px sticker check beside the current plan's name (`rounded-chip
+/// border-[1.5px] border-sticker-ink bg-brand`).
+class _CurrentPlanCheck extends StatelessWidget {
+  const _CurrentPlanCheck(this.t);
+  final RaftTokens t;
+  double get chipRadius => t.size('radius.chip', fallback: 0);
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 22,
+    height: 22,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: t.colors['brand-400'] ?? t.colors['brand'],
+      borderRadius: BorderRadius.all(Radius.circular(chipRadius)),
+      border: Border.all(color: t.colors['sticker-ink'] ?? t.ink, width: 1.5),
+    ),
+    child: RaftIcon(
+      RaftGlyph.check,
+      size: 14,
+      strokeWidth: 2.5,
+      color: t.colors['sticker-ink'] ?? t.ink,
+    ),
+  );
+}
+
 class _StatRow extends StatelessWidget {
   const _StatRow(this.stat);
   final RaftBillingStat stat;
@@ -881,11 +953,12 @@ class _StatRow extends StatelessWidget {
         Expanded(
           child: Text(
             stat.label,
+            // Raft: `text-footnote font-semibold`; the frozen looks `text-xs font-bold`.
             style: RaftTypography.inherited(
               t,
-              size: 12,
-              line: 16,
-              weight: FontWeight.w700,
+              size: t.isRaftLook ? 13 : 12,
+              line: t.isRaftLook ? 18 : 16,
+              weight: t.isRaftLook ? FontWeight.w600 : FontWeight.w700,
               color: text.strong,
             ),
           ),
@@ -921,11 +994,8 @@ class _SeatUsage extends StatelessWidget {
     );
     // The track inherits Progress's local CSS variables (see RaftProgressBar);
     // the callsite adds `flex !overflow-hidden`.
-    final track = raftRecipeEngine.resolveSlot(
-      [
-        for (final name in {...p.root.classes, ...p.track.classes})
-          raftRecipeUtilities.indexWhere((u) => u.name == name),
-      ],
+    final track = resolveRecipeClasses(
+      {...p.root.classes, ...p.track.classes},
       states,
       rt,
     );
@@ -983,9 +1053,7 @@ class _SeatUsage extends StatelessWidget {
                     width: box.maxWidth * usage.humanPercent / 100,
                     child: segment(
                       usage.humanPercent,
-                      t.brutal
-                          ? t.product.softSignal
-                          : t.colors['primary-strong']!,
+                      t.colors['primary-strong']!,
                       usage.humanTooltip,
                     ),
                   ),
@@ -993,9 +1061,7 @@ class _SeatUsage extends StatelessWidget {
                     width: box.maxWidth * usage.agentPercent / 100,
                     child: segment(
                       usage.agentPercent,
-                      t.brutal
-                          ? t.product.brutalPink
-                          : t.colors['accent-strong']!,
+                      t.colors['accent-strong']!,
                       usage.agentTooltip,
                     ),
                   ),
@@ -1140,7 +1206,7 @@ class _ManagePlanCard extends StatelessWidget {
               t,
               size: 11,
               line: 11 * 1.5,
-              color: t.brutal ? Colors.black.withValues(alpha: .5) : t.muted,
+              color: t.muted,
             ),
           ),
         ],
@@ -1148,7 +1214,7 @@ class _ManagePlanCard extends StatelessWidget {
         Text(m.help, style: mono),
         if (m.draftError != null) ...[
           const SizedBox(height: 12),
-          Text(m.draftError!, style: red),
+          Text(raftText(context, m.draftError!), style: red),
         ],
         if (m.actions.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -1165,7 +1231,10 @@ class _ManagePlanCard extends StatelessWidget {
         ])
           if (copy != null && copy.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Semantics(liveRegion: true, child: Text(copy, style: style)),
+            Semantics(
+              liveRegion: true,
+              child: Text(raftText(context, copy), style: style),
+            ),
           ],
       ],
     );
@@ -1208,25 +1277,21 @@ class _SummaryCard extends StatelessWidget {
       tokens: rt,
       padding: const EdgeInsets.all(16),
       applyText: false,
-      decorationOverride: (base) => base.copyWith(
-        color: t.brutal
-            ? t.product.brutalCream
-            : t.colors['layer-canvas-muted'],
-        border: t.brutal ? Border.all(color: Colors.black, width: 2) : null,
-      ),
+      decorationOverride: (base) =>
+          base.copyWith(color: t.colors['layer-canvas-muted']),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            raftText(context, m.summaryTitle).toUpperCase(),
+            raftText(context, m.summaryTitle),
             style: RaftTypography.inherited(
               t,
               size: 12,
               line: 16,
               weight: FontWeight.w700,
-              color: t.brutal ? Colors.black.withValues(alpha: .5) : t.muted,
-            ).copyWith(letterSpacing: 1.2),
+              color: t.muted,
+            ),
           ),
           const SizedBox(height: 12),
           for (final (i, row) in m.summaryRows.indexed) ...[
@@ -1245,13 +1310,9 @@ class _SummaryCard extends StatelessWidget {
                       Text(
                         row.struck!,
                         style: value.copyWith(
-                          color: t.brutal
-                              ? Colors.black.withValues(alpha: .4)
-                              : t.muted,
+                          color: t.muted,
                           decoration: TextDecoration.lineThrough,
-                          decorationColor: t.brutal
-                              ? Colors.black.withValues(alpha: .4)
-                              : t.muted,
+                          decorationColor: t.muted,
                         ),
                       ),
                     for (final v in row.values) Text(v, style: value),
@@ -1354,9 +1415,14 @@ class RaftBillingConfirmMessage extends StatelessWidget {
     required this.lead,
     required this.lines,
     required this.closing,
+    this.note,
   });
   final String lead;
   final List<String> lines, closing;
+
+  /// A muted line right after [lead] (`text-footnote text-foreground-muted`,
+  /// breaks anywhere: the checkout's promotion code review).
+  final String? note;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -1371,6 +1437,17 @@ class RaftBillingConfirmMessage extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(lead),
+        if (note != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            note!,
+            style: base.copyWith(
+              fontSize: 12,
+              height: 16 / 12,
+              color: RaftSettingsText(t).muted,
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
         for (final line in lines) Text(line, style: mono),
         for (final paragraph in closing) ...[

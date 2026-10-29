@@ -14,7 +14,6 @@ import 'design_primitives.dart';
 import 'localization.dart';
 import 'message_body.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart';
 
 @immutable
 class RaftAttachmentCommentView {
@@ -55,17 +54,12 @@ class RaftCommentAnchorChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final ink = t.brutal ? RaftPrimitiveColors.black : t.strong;
-    final stone = t.product.brutalStone;
+    final ink = t.strong;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: t.brutal
-            ? stone.withValues(alpha: stone.a * .25)
-            : t.colors['layer-canvas-muted'],
-        border: Border.all(
-          color: t.brutal ? RaftPrimitiveColors.black : t.colors['line-muted']!,
-        ),
+        color: t.colors['layer-canvas-muted'],
+        border: Border.all(color: t.colors['line-muted']!),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -96,15 +90,13 @@ class RaftCommentAnchorChip extends StatelessWidget {
               child: RaftInteractive(
                 onPressed: onRemove,
                 semanticLabel:
-                    removeLabel ?? raftText(context, 'Remove anchor'),
-                tooltip: removeLabel ?? raftText(context, 'Remove anchor'),
+                    removeLabel ?? raftText(context, 'Remove Anchor'),
+                tooltip: removeLabel ?? raftText(context, 'Remove Anchor'),
                 builder: (_, state) => RaftIcon(
                   RaftGlyph.x,
                   size: 9,
                   color: state.hovered || state.focusVisible
                       ? ink
-                      : t.brutal
-                      ? RaftPrimitiveColors.black.withValues(alpha: .5)
                       : t.colors['foreground-muted'],
                 ),
               ),
@@ -148,18 +140,15 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final rule = BorderSide(
-      color: t.brutal ? RaftPrimitiveColors.black : t.colors['line-muted']!,
-      width: 2,
-    );
-    final strong = t.brutal ? RaftPrimitiveColors.black : t.strong;
+    final rule = BorderSide(color: t.colors['line-muted']!, width: 2);
+    final strong = t.strong;
     final muted = t.colors['foreground-muted']!;
     final list = comments;
     return DefaultTextHeightBehavior(
       textHeightBehavior: raftCssTextHeightBehavior,
       child: ColoredBox(
         // `bg-layer-panel theme-brutal:bg-white`.
-        color: t.brutal ? Colors.white : t.colors['layer-panel']!,
+        color: t.colors['layer-panel']!,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -204,8 +193,8 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
                           : RaftGlyph.chevronUp,
                       glyphSize: 10,
                       tooltip: sheet!.expanded
-                          ? 'Collapse comments'
-                          : 'Expand comments',
+                          ? 'Collapse Comments'
+                          : 'Expand Comments',
                       onPressed: sheet!.onToggle,
                     ),
                   ],
@@ -236,11 +225,7 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
                             fontFamily: t.headingFont,
                             fontSize: 11,
                             height: 1.625,
-                            color: t.brutal
-                                ? RaftPrimitiveColors.black.withValues(
-                                    alpha: .45,
-                                  )
-                                : muted,
+                            color: muted,
                           ),
                         ),
                       )
@@ -263,9 +248,8 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
               Container(
                 // The panel background reaches the screen bottom; the composer
                 // clears the system bar (0 while the keyboard is up).
-                padding: const EdgeInsets.all(
-                  8,
-                ).copyWith(bottom: 8 + raftBottomInset(context)),
+                padding: const EdgeInsets.all(8)
+                    .copyWith(bottom: 8 + raftBottomInset(context)),
                 decoration: BoxDecoration(border: Border(top: rule)),
                 child: blockedMessage != null
                     ? Padding(
@@ -279,11 +263,7 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
                             fontFamily: t.headingFont,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: t.brutal
-                                ? RaftPrimitiveColors.black.withValues(
-                                    alpha: .45,
-                                  )
-                                : muted,
+                            color: muted,
                           ),
                         ),
                       )
@@ -305,21 +285,15 @@ class _CommentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final strong = t.brutal ? RaftPrimitiveColors.black : t.strong;
+    final strong = t.strong;
     final c = comment;
     Widget card({bool hovered = false}) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: hovered
             ? t.product.brutalStone.withValues(alpha: .1)
-            : t.brutal
-            ? Colors.white
             : t.colors['layer-panel'],
-        border: Border.all(
-          color: t.brutal
-              ? RaftPrimitiveColors.black.withValues(alpha: hovered ? .4 : .15)
-              : t.colors['line-muted']!,
-        ),
+        border: Border.all(color: t.colors['line-muted']!),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -352,9 +326,7 @@ class _CommentCard extends StatelessWidget {
                     fontFamily: t.headingFont,
                     fontSize: 10,
                     height: 1.5,
-                    color: t.brutal
-                        ? RaftPrimitiveColors.black.withValues(alpha: .4)
-                        : t.colors['foreground-muted'],
+                    color: t.colors['foreground-muted'],
                   ),
                 ),
               ],
@@ -373,12 +345,7 @@ class _CommentCard extends StatelessWidget {
               padding: const EdgeInsets.only(left: 8),
               decoration: BoxDecoration(
                 border: Border(
-                  left: BorderSide(
-                    width: 2,
-                    color: t.brutal
-                        ? RaftPrimitiveColors.black.withValues(alpha: .2)
-                        : t.colors['line-muted']!,
-                  ),
+                  left: BorderSide(width: 2, color: t.colors['line-muted']!),
                 ),
               ),
               child: Text(
@@ -387,9 +354,7 @@ class _CommentCard extends StatelessWidget {
                   fontFamily: t.headingFont,
                   fontSize: 11,
                   fontStyle: FontStyle.italic,
-                  color: t.brutal
-                      ? RaftPrimitiveColors.black.withValues(alpha: .5)
-                      : t.colors['foreground-muted'],
+                  color: t.colors['foreground-muted'],
                 ),
               ),
             ),
@@ -403,9 +368,7 @@ class _CommentCard extends StatelessWidget {
             enableProseSelection: c.onJump == null,
             fontSize: 12,
             lineHeight: 19.5,
-            foregroundColor: t.brutal
-                ? RaftPrimitiveColors.black.withValues(alpha: .8)
-                : t.colors['foreground-muted'],
+            foregroundColor: t.colors['foreground-muted'],
           ),
         ],
       ),
@@ -415,7 +378,7 @@ class _CommentCard extends StatelessWidget {
       onPressed: c.onJump,
       tooltip: c.quote?.isNotEmpty == true
           ? c.quote
-          : raftText(context, 'Jump to location'),
+          : raftText(context, 'Jump to Location'),
       builder: (_, state) => card(hovered: state.hovered),
     );
   }
@@ -431,9 +394,7 @@ class RaftAttachmentCommentsPage extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) {
-    final color = RaftTokens.of(context).brutal
-        ? Colors.white
-        : RaftTokens.of(context).colors['layer-panel']!;
+    final color = RaftTokens.of(context).colors['layer-panel']!;
     return RaftNavigationBarStyle(
       background: color,
       child: Material(

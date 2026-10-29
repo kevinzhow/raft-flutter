@@ -4,6 +4,8 @@
 
 ## 当前证据
 
+> 以下“当前证据”是 2026-10-08 的历史快照（26f77ef、Web 1.17.5、raft-ui 0.5.27）。客户端正在对齐 Web v1.21.12（raft-ui 0.5.52）；当前固定的上游版本以 `docs/upstream-sync.md` 为准。
+
 - raft-source main 快照 26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6；Web 1.17.5，使用 raft-ui 0.5.27、Socket.IO 4.8.3、Zustand、React Markdown、Mermaid、FlexLayout。
 - 真正的基础设计系统在独立 npm 包 raft-ui，不只在 Web CSS。下载并检查了版本匹配的包，包元数据标记 MIT，包含 foundation.css、fonts.css、React 组件声明和行为。产品 Web 还覆写部分 tokens；ui-inventory 导入真实产品组件，但例子包含历史硬编码，不能把全部例子自动视为最新规范。
 - appTheme.ts 将 family 与 mode 分离。Brutal 仅 light；Elegant light/dark；偏好 mode + lightThemeId + darkThemeId，默认 system、白天 brutal、夜间 elegant。Flutter 要照搬解析/兼容规则，而非额外发明 Brutal Dark。
@@ -15,10 +17,11 @@
 ## 拆分
 
 1. contracts：全功能清单按用户场景、平台、角色/能力、现有 Web 行为、API/events、测试、进度列出；取已挂载协议，生成可生成的 Dart 模型，对空缺保留审计过的手写适配。建立主题/token、消息/同步、权限三套共享 fixture。
-2. raft_ui：分 primitive tokens、semantic tokens、组件 recipes；导出 Web 对应主题的 computed values 与源版本摘要，OKLCH/alpha/shadow/font metrics 转换经验证，生成 Dart ThemeExtension。基础控件到产品组合组件分层；包含 hover/focus/pressed/disabled/loading/error、键盘和语义。组件展示 app/golden 对照。无网络/领域依赖。
-3. raft_client：纯 Dart human auth/HTTP/socket，安全存储接口、refresh single-flight、server/account 隔离、typed errors、分页/上传、日志脱敏。未来可独立 SDK，不放 UI 状态。模型和通信分开。
-4. raft_sync：移植已启用的 snapshot/difference/event reducer、seq/epoch/去重/补偿、撤权清理、read state；共用 TS/Dart fixtures。Repository + Drift 落库并投影给 Riverpod。缓存离线读；离线写只按服务端幂等合同支持，失败发送显式重试。不能把 Riverpod 或数据库当同步算法。
-5. app/features：登录入驻、server/channel/DM、消息/thread、搜索/saved、Activity/read、tasks、agents/computers、settings/admin/integrations；每 feature 垂直实现 model/repository/controller/view，领域 reducer 尽量纯 Dart。共享实体和权限，避免页面独立重复 stores。
+2. raft_theme：独立主题包与配方引擎，提供解析、继承、校验、生成槽位、CSS状态层叠、包属性绑定和缓存，只依赖Flutter。`raft_ui` 通过适配器绑定平台字体和兼容颜色别名，旧recipe导入路径只转发；独立包测试不依赖App。生成表的迁移保留原来源，未绑定的属性仍是待迁移项。
+3. raft_ui：分 primitive tokens、semantic tokens、组件 recipes；导出 Web 对应主题的 computed values 与源版本摘要，OKLCH/alpha/shadow/font metrics 转换经验证，生成 Dart ThemeExtension。基础控件到产品组合组件分层；包含 hover/focus/pressed/disabled/loading/error、键盘和语义。组件展示 app/golden 对照。无网络/领域依赖。
+4. raft_client：纯 Dart human auth/HTTP/socket，安全存储接口、refresh single-flight、server/account 隔离、typed errors、分页/上传、日志脱敏。未来可独立 SDK，不放 UI 状态。模型和通信分开。
+5. raft_sync：移植已启用的 snapshot/difference/event reducer、seq/epoch/去重/补偿、撤权清理、read state；共用 TS/Dart fixtures。Repository + Drift 落库并投影给 Riverpod。缓存离线读；离线写只按服务端幂等合同支持，失败发送显式重试。不能把 Riverpod 或数据库当同步算法。
+6. app/features：登录入驻、server/channel/DM、消息/thread、搜索/saved、Activity/read、tasks、agents/computers、settings/admin/integrations；每 feature 垂直实现 model/repository/controller/view，领域 reducer 尽量纯 Dart。共享实体和权限，避免页面独立重复 stores。
 6. raft_platform + adaptive shell：Linux 侧栏/消息/线程多栏、调整栏宽/键盘/右键/拖拽/多窗口、通知和 URI；Android 单栏栈、sheet、返回、IME/分享/后台恢复/推送。宽度和输入决定布局，OS 控制系统服务。各宿主按 interface/capability 提供能力。Linux Wayland/X11、keyring缺失、通知激活；Android冷启/deeplink/token续期/后台推送都是实机验收。
 7. qa/tooling：主题/组件 golden、跨语言 sync vectors、角色与撤权、Web/Flutter相同任务回放、长消息和数万条历史、长时间掉线、多服务器、多窗口、Android生命周期、Linux窗口/发行打包。按协议、行为、视觉、平台四种证据定义完成。
 
@@ -76,7 +79,15 @@ UI、纯Dart协议/同步、平台适配在 P0 合同后可并行，feature任�
 - Drift 缓存按账户与工作区隔离，保存真实离线消息、草稿与 read frontier；撤权立即清 UI 并串行清缓存。签名附件地址及凭据不进入缓存。
 - 冷启动缓存优先：会话带有上次确认的账号记录时，先用本机服务器目录、频道列表、未读、上次选择的消息窗口（及访问过的消息串窗口）绘制首帧，再在后台依次校验 /auth/me、/servers、频道列表与当前页，原地替换。缓存不设过期时间，始终后台重验；它不是授权：窗口只在保存时相同的角色与频道权限下采用，新事实撤销频道 / 服务器成员身份或改变角色时立即从界面和磁盘移除。未经重验的磁盘窗口不发送已读回执。每个服务器的消息 / 消息串窗口按最近写入保留（默认 120 个，每个最多 500 行）；登出、会话被拒或账号变化清空该账号数据。服务器级实体目录（Agent 含已删除墓碑、成员、电脑）同样按 (origin, 账号, 服务器) 每类一条记录落盘并记录保存时的角色：选择服务器时先于网络绘制（Agent 状态徽章、模型、成员角色、电脑列表首帧即有），标记为重验中并由本次读取原地替换；只在角色相同且该角色可查看此类时采用，角色 / 权限变化、401/403、服务器撤销与账号清空时删除。已接受的读取与实时补丁去抖写回；登出先停止写入再清空。消息翻译（Web translationStore 只在内存，按消息 ID 保存，仅对请求时的目标语言与原文有效）额外落盘（schema v2 的 message_translations 表，按 (origin, 账号, 服务器, 消息 ID) 一行，带频道 ID）：只保存稳定结果（已翻译，以及只取决于内容的跳过原因），等待中、失败、配额 / 服务端跳过不保存；连同服务器翻译开关（记录保存时角色，角色不同不采用并删除）在选择服务器时先于频道首帧恢复，因此重启后缓存的翻译首帧即显示、不再请求，开关本会话仍重验一次。原文被编辑或目标语言 / 模式变化时旧条目不匹配，按 Web 规则重新请求。写入去抖批量进行；每个服务器按最近使用保留（默认 2000 条，再次显示的恢复条目视为使用）；频道 / 服务器撤销与账号清空时删除，登出先停止写入再清空。
 - 管理页面使用现网挂载路径与能力校验：providers、MCP、Apps、Slack、analytics、billing、setup、agents 和 Computers。未配置的第三方 OAuth、计费和 Slack provisioning 不产生模拟成功状态。
-- go_router 尚未作为路由权威接线；本地 URI 与通知由 NativeContentCoordinator 校验服务器成员资格并获取真实消息上下文。Android 原生 share/通知 bridge 和 Linux 单实例 URI 使用平台 facade。Android 周期后台收件箱兜底已有独立冷进程、去重和系统点击证据；iOS 仅源码接入。FCM/APNs 注册、Linux 服务端消息推送及独立桌面多窗口不属于当前已验证能力。
+- go_router 尚未作为路由权威接线；本地 URI 与通知由 NativeContentCoordinator 校验服务器成员资格并获取真实消息上下文。Android 原生 share/通知 bridge 和 Linux 单实例 URI 使用平台 facade。Android 周期后台收件箱兜底（WorkManager）已于 2026-10-13 按业主决定移除，Android 后台通知只依赖在线 socket；其历史证据保留但不再适用。iOS 仅源码接入。FCM/APNs 注册、Linux 服务端消息推送及独立桌面多窗口不属于当前已验证能力。
+
+### 前台启动与后台会话交接
+
+前台先只读本机已确认的账号与工作区缓存，不等待后台通知 worker 或 `/auth/me`。原生启动画面只保留到本地页面就绪；没有账号记录、服务器目录或频道缓存时，立即交给相应的首次加载界面，不用网络等待延长启动画面。正常恢复的第一个应用帧直接是缓存页面，网络重验原地更新。
+
+凭据所有权见 [session-ownership.md](session-ownership.md)：前台（UI engine）是所有者，后台 worker 是访客。前台 `claim()` 同步、永不等待、永不失败，直接替换活跃访客或已死亡 isolate 留下的注册；HTTP、缓存读取和 Socket.IO 连接都不等待后台。只有凭据旋转会在访客确认停止（上限 1 秒）后，重读最新完整凭据并沿用其已持久化的刷新重试绑定。访客被抢占时立即关闭网络、屏蔽后续凭据写入；其写入按读取时的记录做比较后写入，绝不覆盖前台已改变的会话。交接发现会话被删除或变成另一账号时，退休旧客户端与旧账号缓存，不覆盖另一账号的会话。退出登录立即使旧请求失效，将凭据清理排在后续登录写入之前，并用后台最后保存的凭据撤销旧会话。
+
+定向覆盖由 `cached_restore_test`、`session_test`、`session_persistence_test`、`background_inbox_test` 和 `restart_cache_first_frame_test` 提供：包含 Android 布局下后台访客存在时的首帧与全部启动网络读取、缓存页面交互、凭据轮换/刷新重试、撤权、退出与重新登录并发、连接启动以及等待中的 owner 释放。这些组件和逻辑回归不替代 Android/iOS 真机冷启动、系统后台调度或启动耗时采集。
 
 ## 当前共享组件与领域边界
 
@@ -135,7 +146,7 @@ The released APK smoke used an owned 16KiB Android emulator and synthetic input 
 
 ## 移动导航呈现（2026-10-10）
 
-窄屏工作区由 `MobileWorkspacePages` 将既有 `WorkspaceNavigation` 历史投影为平台 `MaterialPage`，不建立第二份业务导航权威。历史页面保留实际 widget 子树及借用的呈现 controller，共享工作区已接受的数据；不再保存路由截图，并明确关闭路由快照。账号、服务器或权限范围变化会撤销旧页面。Tab 根页面与减少动态效果直接切换，层级页面采用 Flutter 平台默认进入、返回和返回手势。宽屏继续直接投影分栏内容。导航与后台数据更新的性能证据及剩余问题见 [移动路由性能调查](mobile-route-performance-investigation.md)。
+窄屏工作区由 `MobileWorkspacePages` 将既有 `WorkspaceNavigation` 历史投影为平台 `MaterialPage`，不建立第二份业务导航权威。历史页面保留实际 widget 子树及借用的呈现 controller，共享工作区已接受的数据；不再保存路由截图，并明确关闭路由快照。账号、服务器或权限范围变化会撤销旧页面。Tab 根页面与减少动态效果直接切换，层级页面采用 Flutter 平台默认进入、返回和返回手势。宽屏继续直接投影分栏内容。
 
 移动任务槽现在拥有独立 MaterialPage，桌面继续使用 modal / docked 呈现。频道设置与成员通过客户端 `channelPage=settings:<channelId>|members:<channelId>` 槽投影为页面；底层频道、消息串与任务 URI 合同仍保留。冷链接先补入底层目的地，系统返回与顶部返回消费同一份业务历史；页面身份与进入实例分离，退出动画中的旧实例不会与快速重入的新实例共享帧 key。宽窄切换保留活动子树和任务 owner；呈现实例只由既有业务历史派生，不维护额外业务位置。隐藏的工作区保留草稿与列表状态，排除焦点、语义并暂停动画。
 
@@ -153,4 +164,84 @@ NativeContentCoordinator 为 macOS 绑定 DesktopInboxNotifications，直接消�
 
 ### Windows 通知平台补充（2026-10-11）
 
-Windows 使用同一 DesktopInboxNotifications 权威与生命周期。WindowsNotifications／原生宿主提供稳定身份、官方 Windows App SDK 投递、ToastNotifier.Setting 及窗口恢复；业务授权与导航仍在 NativeContentCoordinator。系统权限在每次投递时重新读取，桌面不保存私有 opt-in。ETW 确认本机在显示前拒绝默认 foreground 激活（0x80070032），官方 SDK 的 protocol 对照已由用户确认在通知中心显示。因此产品使用 raft-notification 协议：暖点击转交同 exe 的现有窗口，冷点击经参数启动后等待回调初始化，仍保留全部账户／授权检查。主应用设置按钮发送已确认显示；本机另经用户授权登记机器级 Raft 协议后，用户确认品牌图标和暖点击返回正常。冷点击仍待实测，不以接口接受、历史、fixture 或旧 COM 探针代替。当前 x64 bundle 需要 Windows App Runtime 1.7。具体矩阵、独立身份和边界见 [Windows 通知](windows-notifications.md)。
+Windows 使用同一 DesktopInboxNotifications 权威与生命周期。WindowsNotifications／原生宿主直接调用系统 Windows.UI.Notifications，提供固定 AUMID、当前用户 DisplayName／IconUri 登记、ToastNotifier.Setting 及窗口恢复；不依赖 Windows App SDK／App Runtime、开始菜单快捷方式或 COM 激活器。业务授权与导航仍在 NativeContentCoordinator，系统权限每次投递时重新读取，桌面不保存私有 opt-in。通知使用 raft-notification 协议：暖点击转交同 exe 的现有窗口，冷点击经参数启动后等待回调初始化，仍保留全部账户／授权检查。接口接受、历史记录和协议探针不能替代通知气泡显示及真实点击验收。历史对照与独立身份边界见 [Windows 通知](windows-notifications.md)。
+
+## 附件磁盘缓存的清理（2026-10-14）
+
+`AttachmentDiskCache` 的 `attachments` 命名空间（按账号 / 服务器 / 频道）除 1 GiB 的 LRU 外还有四项清理，全部只在启动或访问时做，没有定时器（见 `docs/idle-cpu.md`）：
+
+- 闲置过期：条目 30 天没被打开就删除。访问时惰性检查（过期按未命中处理并删除，正在被预览持有的文件不算过期），启动建索引后再整体扫一遍；打开条目会重新计时。`public` 命名空间不适用（它按服务器声明的有效期）。时钟可注入（测试）。
+- 预览文档（`preview` JSON、`html` 静态页）通过 `readPreview` / `writePreview` 读写，条目头里带客户端预览格式版本（`attachmentPreviewFormatVersion`）和写入时间：版本不同、缺头、或写入超过 14 天都按未命中处理并删除；14 天从写入算起，打开不续期。
+- 孤儿账号：启动时 `runStartupCacheHygiene` 用 `SecureSessionStore.readAll()`（钥匙串里 `raft.session.<base64url(origin)>` 的全部会话）取得 `(origin, cachedUser.id)`，删除 `raft-attachments/v2/` 下不属于任何已保存会话的账号目录（目录名即 `hash(jsonEncode([origin, principal]))`）。读取失败、或任一会话没有 `cachedUser.id` 时什么都不删。
+- 临时 staging 清扫：启动时删除超过 1 小时的 `raft-previews/*`、`raft-share/*`、`raft-attachment-*`、`raft-export-*`、`raft-gallery-*`（按文件夹或其中文件的最新修改时间），只按这些名字匹配，**不碰 `raft-incoming`**（收到的分享是用户数据）。桌面平台的 staging 位于 `<应用缓存>/staging/`（Linux 的 `/tmp` 常是内存盘），并顺带清理旧版本留在系统临时目录里的同名目录；Android / iOS 的临时目录本来就是缓存目录，且原生桥（FileProvider、`ShareInboxWriter.exportFile`、`NativePdfPreviewBridge`）按 `cacheDir/raft-share`、`raft-previews` 放行，所以保持在缓存目录顶层。
+- 设置 > 存储 的“清除缓存”只经过 `CacheClear`（`lib/data/cache_clear.dart`，按注册顺序依次运行的具名 hook，后加的层自行注册，设置页不认识任何一层；某个 hook 抛错只记录，其余照常运行，对话框保持打开并提示重试）。当前的 hook：`disk`（两个命名空间，打开中的预览文件被固定，不删；头像内存层由 `public` 清除监听一并忘掉，包括重验证用的校验头和时间）、`staging`（`clearStaging`：与启动清扫同一份位置和名字匹配，但窗口为 5 分钟，并跳过仍被 `SharedFileLease` 持有的文件夹；永远不碰 `raft-incoming`）、`image-cache`（框架 `ImageCache`）、`workspace-memory`（每个 `WorkspaceController` 注册：没有 widget 持有的已解码附件图片、已解析的签名 URL（进行中的请求不动）、空闲的视频静帧（`PlayerSessions.trimStills`，正在播放或被查看器持有的不动））。登录、草稿、设置、`workspace.sqlite`、用户另存的文件和收到的分享都不在其中。
+- 索引总量在 OS 于运行期间删除文件时保持一致：读取、`contains` / `containsFile`、打开发现文件已不在时，从索引和总量中扣除，下一次访问即恢复正确。
+
+## 头像与图标图片缓存（2026-10-14）
+
+头像 / 图标（用户、Agent、服务器、应用）走独立于附件的缓存，目标是和 Web 一样“加载过一次就即时出现”：`RaftSizedImage.avatar`（`RaftAvatarContent` 与 `RaftAvatar(imageUrl:)` 都用它）→ 已解码位图 → 编码字节 → 磁盘 → 网络。
+
+- 缓存键是 `raftStableImageKey(url)`：忽略签名 / 过期类 query（`X-Amz-*`、`Signature`、`Expires`、`token` 等），请求仍使用原始 URL；显示尺寸不进入网络键，20 / 36 / 64 dp 共用一次下载。
+- 已解码位图由 `RaftHotImages`（最多 384 个、估算 24 MB 的 LRU）持有，框架 `ImageCache` 的 LRU（预算见下节“内存预算”）被附件图片冲掉后重新挂载仍同步命中；解码尺寸取 12 px 的倍数（高于 144 取 48 的倍数），常见的 1x / 2x / 3x 尺寸保持精确。
+- 编码字节：内存 8 MB LRU，加磁盘：放进 Settings > 存储 显示并清理的附件磁盘缓存（`AttachmentDiskCache`）的 `public` 命名空间。同一个根目录和索引、同一份 1 GB 预算、同一个大小统计与“清除缓存”（清除时内存中的已解码头像和字节也一并忘掉，下次挂载只重新请求一次）；`attachments` 命名空间（按账号 / 服务器 / 频道，退出登录即清）行为不变。`public` 条目以稳定键的哈希为名、所有账号共用、退出登录不清（公开图片），有自己的上限（`min(64 MiB, 预算 / 8)`）和 LRU，附件超预算时不会被淘汰。条目头部（`RIV1` 标记、8 字节到期时间、`ETag` 与 `Last-Modified`）之后是图片字节：到期时间取服务器 `Cache-Control` 的有效期，上限 14 天，没给就 1 小时；`no-store` 不落盘，`no-cache` 或已过期但带 `ETag` / `Last-Modified` 的条目作为“过期条目”保留 30 天，没有校验头的过期条目当作未命中并删除（旧格式条目照常读取）。`/api/avatars/**`、`/api/external-avatars/**` 与 `/api/integration-logos/**` 在服务器侧是无需鉴权的公开路由（URL 即能力，`/api/avatars` 为 `immutable` 一年；`external-avatars` 为 `no-cache`）。
+- 过期条目走条件重验证（stale-while-revalidate，`RaftImageBytes`）：外部头像（`/api/external-avatars/:id.webp`，服务器为 `public, no-cache, must-revalidate` + 强 `ETag`，同一 URL 的内容可能变）与已过期的条目先立即显示存着的字节，再发一次 `If-None-Match` / `If-Modified-Since`。304：不传输正文、不重新解码，已解码位图和内存字节原样保留，只续期（`touch`）；200 且字节不同：换掉内存和磁盘条目、放掉旧的已解码位图，屏幕上的头像预解码新图后无缝替换（解码键带 `revision`，`RaftSizedImage` 监听变更）；200 但字节相同只更新 `ETag`；网络错误 / 错误响应保留存着的图片，不记失败。每个稳定键每个进程最多每 10 分钟重验证一次（整份下载也算一次验证），一屏很多行不会各发一个 304；已解码位图命中时（不经过字节层）由 `resolveStreamForKey` 触发同一检查。请求经 `fetchAvatarImage`（`SystemProxy`，无凭据），`/api/avatars/**` 为 `immutable` 一年，不会重验证。
+- 请求按稳定键合并，失败会被记住：4xx 10 分钟、网络错误 / 5xx 1 分钟，没有 Gravatar 的用户不会在每次挂载时重新请求。请求经 `SystemProxy`（`fetchAvatarImage`），不带任何凭据。
+- 内存压力（Android 把应用退到后台也会报一次）只把头像缓存收缩到小底线（最近 64 个已解码头像 / 4 MB，内存字节 1 MB，`trimAvatarImages`）；“后台 30 秒”的清理不动它们：它们有上限，且让应用切回时头像即时呈现。
+- 视频封面等非头像图片仍用 `RaftSizedImage.network`，走框架 `ImageCache`。
+
+## 内存预算（2026-10-14）
+
+所有可重建的内存层集中在 `apps/raft_flutter/lib/platform/memory_budgets.dart` 的 `RaftMemoryBudgets`（Android / iOS 为 phone，其余为 desktop）。附件图片另按设备总内存分档，区分闲置缓存目标与查看图片时的临时额度；其他层保持按设备类别取值。里面没有唯一副本：被释放的位图、静帧、验证结果都会在需要时重新解码或读取。`RaftMemoryRelease` 在应用隐藏 30 秒和系统内存压力时回收无人使用的缓存；`RaftMemoryRelease.install()` 同时设置框架 `ImageCache` 的上限。`RaftMemoryRelease.snapshot()` 列出各层当前用量。
+
+| 层 | 持有者 | phone | desktop |
+|---|---|---|---|
+| 框架 `ImageCache`（已解码的 `Image` provider：尺寸化图片、头像重新挂载、封面、表情） | `PaintingBinding` | 200 张 / 64 MiB | 500 张 / 128 MiB |
+| 附件图片，已解码（低档闲置目标 / 临时总额度） | `AttachmentImageRepository` | 64 张 / 64 / 192 MiB | 64 张 / 96 / 384 MiB |
+| 附件图片，已编码（解码来源） | `AttachmentImageRepository` | 32 MiB | 64 MiB |
+| 头像位图，已解码 | `RaftHotImages` | 384 个 / 24 MiB | 同 phone |
+| 头像编码字节 | `RaftImageBytes` | 8 MiB | 同 phone |
+| 视频静帧 | `PlayerSessions` | 24 张 / 16 MiB | 同 phone |
+| 视频 / 音频播放器 | `PlayerSessions` | 最多 2 个存活（原生 demuxer 每个 32 或 64 MiB + 8 MiB 回看） | 同 phone |
+| HDR 判定、已准备集合、续播位置 | `PlayerSessions` | 各 256 条 LRU | 同 phone |
+| 签名附件 URL | `AttachmentUrlCache` | 256 条、4 分钟 | 同 phone |
+
+- 附件图片的位图与 `ImageCache` 条目共享同一个 `ui.Image`；附件仓库单独拥有其生命周期，不要求与框架 LRU 使用相同上限。用户查看原图时可以临时超过闲置目标，优先清理闲置图片和邻图预加载；只有临时总额度的剩余空间不够时才降采样。解码与入账串行，网络传输保持并发；空闲位图在新位图分配前释放，已释放的大图不会留在超额缓存中。
+- 启动时读取设备总内存：Android `ActivityManager.MemoryInfo`（低内存设备标记强制低档），Apple `ProcessInfo.physicalMemory`，Windows `GlobalMemoryStatusEx`，Linux `/proc/meminfo`。这不是可用内存保证；读取失败或超过 500 ms 使用低档。
+
+| 类别与总内存 | 闲置目标 | 临时总额度 |
+|---|---:|---:|
+| phone ≤3 GiB 或未知 | 64 MiB | 192 MiB |
+| phone >3–6 GiB | 128 MiB | 384 MiB |
+| phone >6 GiB | 256 MiB | 768 MiB |
+| desktop ≤8 GiB 或未知 | 96 MiB | 384 MiB |
+| desktop >8–16 GiB | 192 MiB | 768 MiB |
+| desktop >16 GiB | 256 MiB | 1024 MiB |
+
+关闭预览会释放其大位图。系统内存告警保留当前图片、清理闲置项并停止该查看器的邻图预加载；后续 30 秒新解码最多使用本档的闲置目标，仍须扣除其他在用图片。没有后台轮询或自动重新下载。原始下载字节不因预览降采样而改变。
+- `PlayerSessions` 注册了内存 trimmer：隐藏 30 秒或内存压力时释放没有在播放、没有全屏播放页持有的静帧（卡片自己持有一份拷贝，不受影响；正在播放或被查看器持有的会话不动，播放器本身不动）。静帧按数量（24）和估算字节（16 MiB）双重限制，最旧的先释放。`hdrVerdicts` / `prepared` / `resumeAt` 是有界 LRU（`BoundedLruMap` / `BoundedLruSet`）；被挤出的附件下次建卡片时重新判定 / 重新准备。
+- 守卫：`test/image_cache_ban_guard_test.dart` 禁止应用代码使用 `cross_cache` 和 flutter_chat_ui 自带的头像 / 图片构建（它们走一份没有上限、设置页看不到也清不掉的磁盘目录和绕过预算的位图）。图片只走 `RaftSizedImage`、`RaftAvatarContent` 和 `AttachmentImageRepository`。
+
+## 稳定规则（原审计文档的结论）
+
+- **登出策略。** 会话只在服务器明确判定凭据无效时结束：`/auth/refresh`，或刷新成功后的 `/auth/me`，返回带服务器 JSON 错误体的 401。无 JSON 体的 401、任何 403、400/404/408/429/5xx、超时、连接错误、无法解析的 200 一律保留会话与凭据，显示非破坏性状态并退避重试；启动恢复失败（不是“没有已存凭据”）显示恢复页，不显示登录表单。实现在 `packages/raft_client/lib/src/session_policy.dart`，由 `logout_policy_test.dart` 固定。
+- **Android 边到边。** 背景绘制到系统栏下方，页面自己拥有底部内容边界：滚动页用 `raftScrollPadding`，底部栏用 `RaftBottomInsetSurface`，锚定菜单和弹层按所属 overlay 的 metrics 放置并限高；不加通用 SafeArea，嵌套滚动不重复加。回归在 `edge_to_edge_audit_test.dart`。
+- **保留但不活动的页面。** 用回调内部守卫排除输入、焦点和语义，不要传 `null` 回调：`null` 会套用控件的禁用透明度（0.6），页面滑动时表现为颜色闪变。
+
+## Live entity and recovery ownership
+
+`WorkspaceEntityDirectory` admits and orders Agent activity and Computer status
+once per workspace authority. Directory views, profile headers and message
+avatar adapters read those accepted rows; a newly mounted view shares the same
+sequence baseline. REST reconciliation replaces the common projection and
+therefore reaches every existing view. Message avatar adapters notify only the
+affected Agent's consumers. The separate recent-work ticker and trajectory log
+retain their own bounded history; they do not override ambient presence.
+
+The root `WorkspaceServices` owns `LiveConnectionState`. The native content
+coordinator binds one `LiveSessionRecovery` timer for that root, using
+`RaftForegroundPeriodic` so hidden windows and background apps stop ticking.
+Ten-second checks reconnect a connected socket only after both 90 seconds
+without a heartbeat and 120 seconds without inbound events. Visible, connected
+sessions also reconcile Agents and Computers every ten minutes. Reconnect and
+foreground recovery enter the shared directory, rather than rebuilding pages.
+Borrowed presentations do not own another connection watchdog.

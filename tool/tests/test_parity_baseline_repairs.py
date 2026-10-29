@@ -16,12 +16,17 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 class BaselineRepairsTest(unittest.TestCase):
     def test_fixture_repair_changes_only_the_broken_task_projection(self):
         repair = repair_definition(ROOT)
+        synthetic = repair['additionalRepairs'][2]
+        source_message = ('const THREAD_MESSAGE_MD_WRAP_SLICE1: Message = {\n  content:\n    '
+                          + json.dumps(synthetic['message']['content']) + ',\n  mentions: [],\n};')
         original = ('product-before\n' + TASKS_ANCHOR + '\n' + NOTIFICATION_IMPORT
-                    + '\n' + NOTIFICATION_ANCHOR + '\n' + HEADER_ANCHOR + '\nproduct-after')
+                    + '\n' + NOTIFICATION_ANCHOR + '\n' + HEADER_ANCHOR
+                    + '\n' + source_message + '\nproduct-after')
         patched = repair_cases(original, repair, repair['sourceCommit'])
         self.assertTrue(patched.startswith('product-before\n'))
         self.assertTrue(patched.endswith('\nproduct-after'))
-        self.assertEqual(patched.count('"status": "in_progress"'), 5)
+        self.assertEqual(patched.count('"status": "in_progress"'), 6)
+        self.assertIn(source_message, patched)
         self.assertIn('NotificationTrigger flavor="mobile-navbar"', patched)
         self.assertIn('"kind": "warning"', patched)
         self.assertIn('"kind": "info"', patched)
@@ -36,6 +41,9 @@ class BaselineRepairsTest(unittest.TestCase):
             repair_cases(original + NOTIFICATION_ANCHOR, repair, repair['sourceCommit'])
         with self.assertRaises(ValueError):
             repair_cases(original + HEADER_ANCHOR, repair, repair['sourceCommit'])
+        with self.assertRaises(ValueError):
+            repair_cases(original.replace('Synthetic slice is ready', 'Different source body'),
+                         repair, repair['sourceCommit'])
 
     def test_header_reference_requires_verified_unchanged_crop_and_real_viewport(self):
         repair = repair_definition(ROOT)
@@ -44,11 +52,28 @@ class BaselineRepairsTest(unittest.TestCase):
             metadata = pathlib.Path(temp) / f"{header['cases'][0]}.metadata.json"
             valid = {'fixtureSha256': header['fixtureSha256'], 'renderVerified': True,
                      'captureVerified': True, 'frame': header['frame'],
-                     'panelViewport': header['panelViewport'], 'footerInCrop': False}
+                     'panelViewport': header['panelViewport'], 'footerInCrop': False,
+                     'header': {'y': 0, 'height': 56}, 'tabs': {'y': 56, 'height': 49}}
             metadata.write_text(json.dumps({'baselineRepair': valid}))
             self.assertTrue(capture_is_current(metadata, repair))
             for changed in [{'captureVerified': False}, {'frame': {'width': 390, 'height': 92}},
-                            {'panelViewport': {'width': 390, 'height': 120}}, {'footerInCrop': True}]:
+                            {'panelViewport': {'width': 390, 'height': 120}}, {'footerInCrop': True},
+                            {'header': {'y': 0, 'height': 62}}, {'tabs': {'y': 62, 'height': 30}}]:
+                metadata.write_text(json.dumps({'baselineRepair': {**valid, **changed}}))
+                self.assertFalse(capture_is_current(metadata, repair))
+
+    def test_synthetic_reference_requires_the_actual_body_and_known_task(self):
+        repair = {'repairId': 'markdown-synthetic-slice1-v1', 'fixtureSha256': 'new',
+                  'contentSHA256': 'public-body', 'task': {'taskNumber': 101, 'status': 'in_progress'}}
+        valid = {'fixtureSha256': 'new', 'renderVerified': True, 'captureVerified': True,
+                 'contentSHA256': 'public-body', 'taskRefs': [{'text': '#101', 'status': 'in_progress'}]}
+        with tempfile.TemporaryDirectory() as temp:
+            metadata = pathlib.Path(temp) / 'case.metadata.json'
+            metadata.write_text(json.dumps({'baselineRepair': valid}))
+            self.assertTrue(capture_is_current(metadata, repair))
+            for changed in [{'captureVerified': False}, {'contentSHA256': 'old-body'},
+                            {'taskRefs': []}, {'taskRefs': [{'text': '#787', 'status': 'in_progress'}]},
+                            {'taskRefs': [{'text': '#101', 'status': 'todo'}]}]:
                 metadata.write_text(json.dumps({'baselineRepair': {**valid, **changed}}))
                 self.assertFalse(capture_is_current(metadata, repair))
 
@@ -57,7 +82,7 @@ class BaselineRepairsTest(unittest.TestCase):
         notification = repair['additionalRepairs'][0]
         with tempfile.TemporaryDirectory() as temp:
             root = pathlib.Path(temp)
-            task_meta = root / f"{repair['markdownCases'][0]}.metadata.json"
+            task_meta = root / f"{repair['markdownCases'][1]}.metadata.json"
             task_meta.write_text(json.dumps({'baselineRepair': {
                 'fixtureSha256': repair['fixtureSha256'], 'renderVerified': True}}))
             notification_meta = root / f"{notification['cases'][0]}.metadata.json"

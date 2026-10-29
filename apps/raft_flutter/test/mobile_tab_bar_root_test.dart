@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
@@ -19,7 +22,7 @@ Future<void> settleRoute(WidgetTester t) async {
 }
 
 void main() {
-  for (final theme in ['brutal', 'elegant-light']) {
+  for (final theme in ['light']) {
     // tab-bar-sidebar.spec.ts:155–204 [T18] and useMobileNav.ts:89–109: every
     // tab tap, active or inactive, PUSHes that tab's root and drops its
     // previously visited sub-page. Intended difference from Web (owner
@@ -115,7 +118,7 @@ void main() {
     );
   }
 
-  for (final theme in ['brutal', 'elegant-light']) {
+  for (final theme in ['light']) {
     // MainLayout.tsx:227–330 [S34]: the bar shows only on the four tab roots;
     // channel/DM, member details/graph, Search, Activity, Saved, Computers,
     // computer detail, settings sub-pages, release notes, an open thread and an

@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 Widget _host(Widget child) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant),
+  theme: raftTheme(),
   home: Scaffold(body: SingleChildScrollView(child: child)),
 );
 
@@ -45,8 +45,8 @@ void main() {
         ),
       ),
     );
-    expect(find.text('LINEAR'), findsOneWidget);
-    expect(find.text('OAUTH CONNECTED'), findsOneWidget);
+    expect(find.text('Linear'), findsOneWidget);
+    expect(find.text('OAuth connected'), findsOneWidget);
     expect(find.text('List issues'), findsNothing);
     await t.tap(find.byKey(const ValueKey('mcp-tools-toggle-linear')));
     await t.pump();
@@ -84,8 +84,9 @@ void main() {
         ),
       ),
     );
-    expect(find.text('LABS'), findsNothing);
-    expect(find.textContaining('LABS'), findsOneWidget);
+    // The header keeps its sentence case (decision 0002: no all caps).
+    expect(find.textContaining('LABS'), findsNothing);
+    expect(find.textContaining('Labs'), findsNWidgets(3));
     expect(
       find.text('Only server owners can change the master gate.'),
       findsOneWidget,
@@ -107,7 +108,7 @@ void main() {
       ),
     );
     expect(find.text('No provider connections yet.'), findsOneWidget);
-    expect(find.text('Add connection'), findsOneWidget);
+    expect(find.text('Add provider connection'), findsOneWidget);
   });
 
   testWidgets('Messaging bridges: failure banner replaces the body', (t) async {

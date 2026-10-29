@@ -5,14 +5,18 @@
 // passes them in as plain values and callbacks.
 import 'package:flutter/material.dart';
 
+import 'interaction.dart';
 import 'system_inset.dart';
+import 'panel_edge.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftPanelHeaderBar;
 import 'recipes/button_variants.g.dart';
-import 'switch.dart';
+import 'raft/switch.dart';
+import 'page_tokens.dart';
+import 'error_presentation.dart' show RaftErrorBanner;
 import 'theme.dart';
 
 /// One `py-3` preference row: title `text-sm font-medium`, description
@@ -123,15 +127,11 @@ class RaftChannelSettingsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     // theme-brutal:bg-brutal-cream / bg-layer-canvas-muted.
-    final paper = t.brutal
-        ? t.colors['color-brutal-cream']!
-        : t.colors['layer-canvas-muted']!;
-    final strongEdge = t.brutal ? Colors.black : t.colors['line-muted']!;
-    final edgeWidth = t.brutal ? 2.0 : 1.0;
+    final paper = t.colors['layer-canvas-muted']!;
+    final strongEdge = t.colors['line-muted']!;
+    final edgeWidth = 1.0;
     final muted = t.colors['foreground-muted']!;
-    final hairline = t.brutal
-        ? Colors.black.withValues(alpha: .1)
-        : t.colors['line-muted']!;
+    final hairline = t.colors['line-muted']!;
     final width = MediaQuery.sizeOf(context).width;
     // px-4 py-2 on the sm action/footer buttons.
     const buttonPadding = EdgeInsets.symmetric(horizontal: 16, vertical: 8);
@@ -139,9 +139,7 @@ class RaftChannelSettingsSheet extends StatelessWidget {
     final header = Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: t.brutal
-            ? t.colors['color-soft-signal']
-            : t.colors['primary-soft'],
+        color: t.colors['primary-soft'],
         border: Border(
           bottom: BorderSide(color: strongEdge, width: edgeWidth),
         ),
@@ -159,9 +157,7 @@ class RaftChannelSettingsSheet extends StatelessWidget {
                     family: t.headingFont,
                     step: (10, 15),
                     weight: FontWeight.w700,
-                    color: t.brutal
-                        ? Colors.black.withValues(alpha: .55)
-                        : muted,
+                    color: muted,
                     trackingEm: .025,
                   ),
                 ),
@@ -175,7 +171,7 @@ class RaftChannelSettingsSheet extends StatelessWidget {
                       family: t.headingFont,
                       step: RaftTextSteps.xl,
                       weight: FontWeight.w700,
-                      color: t.brutal ? Colors.black : t.strong,
+                      color: t.strong,
                     ),
                   ),
                 ),
@@ -186,9 +182,7 @@ class RaftChannelSettingsSheet extends StatelessWidget {
                   style: raftCssTextStyle(
                     family: t.monoFont,
                     step: RaftTextSteps.xs,
-                    color: t.brutal
-                        ? Colors.black.withValues(alpha: .6)
-                        : muted,
+                    color: muted,
                   ),
                 ),
               ],
@@ -200,7 +194,7 @@ class RaftChannelSettingsSheet extends StatelessWidget {
             variant: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.sm,
             padding: const EdgeInsets.all(4), // p-1
-            tooltip: raftText(context, 'Close channel settings'),
+            tooltip: raftText(context, 'Close Channel Settings'),
             onPressed: onClose,
           ),
         ],
@@ -240,7 +234,7 @@ class RaftChannelSettingsSheet extends StatelessWidget {
         ],
       ],
       if (error != null) ...[
-        RaftWarningBanner(error!),
+        RaftErrorBanner(error!),
         const SizedBox(height: 20),
       ],
       ?lead,
@@ -256,14 +250,13 @@ class RaftChannelSettingsSheet extends StatelessWidget {
             children: [
               RaftProductFormField(
                 label: 'Name',
-                uppercase: false,
                 required: true,
                 labelWeight: FontWeight.w500,
                 hint: nameHint,
                 child: RaftDialogTextInput(
                   controller: nameController!,
                   placeholder: 'e.g. ai-research',
-                  autofocus: !page,
+                  autofocus: !page && RaftInteraction.of(context).pointer,
                   enabled: nameEnabled && !busy,
                   onSubmitted: onSubmitName,
                 ),
@@ -272,7 +265,6 @@ class RaftChannelSettingsSheet extends StatelessWidget {
               if (descriptionController != null)
                 RaftProductFormField(
                   label: 'Description',
-                  uppercase: false,
                   optional: true,
                   labelWeight: FontWeight.w500,
                   child: RaftDialogTextInput(
@@ -414,14 +406,9 @@ class RaftChannelSettingsSheet extends StatelessWidget {
           // like the CSS border box.
           child: Container(
             decoration: BoxDecoration(
-              border: t.brutal
-                  ? Border(
-                      left: BorderSide(
-                        color: t.colors['line-strong']!,
-                        width: 2,
-                      ),
-                    )
-                  : null,
+              // The shared rule (RaftPanelEdge): only the full-width phone
+              // page draws no `theme-brutal:border-l-2`.
+              border: RaftPanelEdge.left(context, RaftPanelEdgeStyle.drawer),
             ),
             child: DefaultTextStyle.merge(
               style: TextStyle(fontFamily: t.headingFont, color: t.strong),
@@ -515,9 +502,7 @@ Widget raftSheetSection(
   bool busy = false,
   String? family,
 }) {
-  final divider = t.brutal
-      ? Colors.black.withValues(alpha: .1)
-      : t.colors['line-muted']!;
+  final divider = t.colors['line-muted']!;
   final muted = t.colors['foreground-muted'];
   return Padding(
     key: s.key,
@@ -527,21 +512,25 @@ Widget raftSheetSection(
       children: [
         Text(
           raftText(context, s.title),
-          style: raftCssTextStyle(
-            family: family ?? t.headingFont,
-            step: RaftTextSteps.base,
-            weight: FontWeight.w700,
-            color: t.strong,
+          style: t.formSectionTitle(
+            raftCssTextStyle(
+              family: family ?? t.headingFont,
+              step: RaftTextSteps.base,
+              weight: FontWeight.w700,
+              color: t.strong,
+            ),
           ),
         ),
         if (s.description != null) ...[
           const SizedBox(height: 4),
           Text(
             raftText(context, s.description!),
-            style: raftCssTextStyle(
-              family: family ?? t.headingFont,
-              step: RaftTextSteps.xs,
-              color: muted,
+            style: t.formSectionDescription(
+              raftCssTextStyle(
+                family: family ?? t.headingFont,
+                step: RaftTextSteps.xs,
+                color: muted,
+              ),
             ),
           ),
         ],

@@ -1,3 +1,5 @@
+import 'hover_region.dart';
+
 import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
@@ -103,8 +105,9 @@ class _RaftEditorGroupsState extends State<RaftEditorGroups> {
               ![
                 LogicalKeyboardKey.arrowRight,
                 LogicalKeyboardKey.arrowLeft,
-              ].contains(event.logicalKey))
+              ].contains(event.logicalKey)) {
             return KeyEventResult.ignored;
+          }
           final step = event.logicalKey == LogicalKeyboardKey.arrowRight
               ? 1
               : -1;
@@ -291,7 +294,7 @@ class _RaftEditorGroupsState extends State<RaftEditorGroups> {
               ),
             ),
             if (i < count - 1)
-              MouseRegion(
+              RaftHoverRegion(
                 cursor: SystemMouseCursors.resizeLeftRight,
                 child: RaftTouchTargetExpander(
                   minSize: const Size(8, 0),

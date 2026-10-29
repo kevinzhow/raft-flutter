@@ -3,16 +3,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [390.0, 1280.0]) {
       testWidgets(
-        'mounted group $family/$dark/$width surface, geometry and keyboard',
+        'mounted group ${dark ? 'dark' : 'light'}/$width surface, geometry and keyboard',
         (t) async {
           t.view.physicalSize = Size(width, 844);
           t.view.devicePixelRatio = 1;
@@ -20,7 +17,7 @@ void main() {
           var expanded = true;
           var selected = 0;
           const disclosure = ValueKey('computer-disclosure');
-          final theme = raftTheme(family, dark: dark);
+          final theme = raftTheme(dark: dark);
           final semantics = t.ensureSemantics();
           try {
             await t.pumpWidget(
@@ -98,12 +95,7 @@ void main() {
             await mouse.addPointer(location: t.getCenter(toggle));
             await mouse.moveTo(t.getCenter(toggle));
             await t.pumpAndSettle();
-            expect(
-              t.widget<Text>(name).style!.color,
-              family == RaftFamily.brutal
-                  ? Colors.black.withValues(alpha: .6)
-                  : tokens.muted,
-            );
+            expect(t.widget<Text>(name).style!.color, tokens.muted);
             await mouse.removePointer();
             await t.pumpAndSettle();
             final row = find.byType(RaftNavItem);

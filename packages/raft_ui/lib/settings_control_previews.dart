@@ -32,3 +32,29 @@ class _SettingsControlsState extends State<_SettingsControls> {
     ),
   );
 }
+
+@RaftPreviews('Confirmation inline identifier')
+Widget confirmSlugPreview() => Builder(
+  builder: (context) {
+    final t = RaftTokens.of(context);
+    return Center(
+      child: Text.rich(
+        TextSpan(
+          style: TextStyle(fontFamily: t.bodyFont, color: t.strong),
+          children: [
+            const TextSpan(text: 'Type '),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.baseline,
+              baseline: TextBaseline.alphabetic,
+              child: RaftConfirmSlug(
+                text: 'workspace',
+                style: TextStyle(fontFamily: t.monoFont, color: t.strong),
+              ),
+            ),
+            const TextSpan(text: ' to confirm.'),
+          ],
+        ),
+      ),
+    );
+  },
+);

@@ -2,7 +2,7 @@
 """Append the auth & onboarding extension cases to the run-time manifest
 ($PARITY_EXT_MANIFEST) and write tool/parity-ext/fixtures/auth-ext.json.
 
-Run after every other build-*.py (registered last in builders.txt; build-cases.py creates
+Replaces only its own cases, so it needs no particular slot (build-cases.py creates
 the manifest from scratch each run). Idempotent: every `components.auth-ext.*` case is
 replaced, all other cases are kept in place (append-only for the others).
 

@@ -20,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../parity_harness.dart';
 import 'thread_composer/fake_workspace.dart';
+import '../../support/app_services_fixture.dart';
 
 Map<String, dynamic> _fx(ParityContext ctx) =>
     ctx.fixtures['ext:channelheader'] as Map<String, dynamic>;
@@ -75,7 +76,7 @@ WorkspaceController _workspace(ParityContext ctx) {
     ..server = RaftRecord(base.serverRecord)
     ..channels = channels
     ..dms = dms;
-  w.ledger.switchServer('visual-server');
+  w.messageDomain.ledger.switchServer('visual-server');
   return w;
 }
 
@@ -85,9 +86,7 @@ Rect _window(ParityContext ctx) {
   if (ctx.props['platform'] == 'mobile') {
     return Rect.fromLTWH(0, 0, ctx.width, height);
   }
-  final width = ctx.props['thread'] == 'true'
-      ? 400.0
-      : ctx.width - (ctx.family == RaftFamily.brutal ? 64 : 56) - 240;
+  final width = ctx.props['thread'] == 'true' ? 400.0 : ctx.width - (56) - 240;
   return Rect.fromLTWH(ctx.width - width, 0, width, height);
 }
 
@@ -123,14 +122,15 @@ class _HostState extends State<_Host> {
   }
 
   @override
-  Widget build(BuildContext context) => WorkspaceView(
-    controller: w,
-    appearance: RaftAppearance(
-      mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
-      light: widget.ctx.family,
+  Widget build(BuildContext context) => withAppServices(
+    WorkspaceView(
+      controller: w,
+      appearance: RaftAppearance(
+        mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+      ),
+      onAppearance: (_) async {},
+      onLogout: () async {},
     ),
-    onAppearance: (_) async {},
-    onLogout: () async {},
   );
 }
 
@@ -177,6 +177,8 @@ const _states = {
     'long',
     'none',
     'private',
+    'link',
+    'muted',
     'dm-agent',
     'dm-human',
     'thread',
@@ -188,6 +190,8 @@ const _states = {
     'long',
     'none',
     'private',
+    'link',
+    'muted',
     'dm-agent',
     'thread',
     'newline',

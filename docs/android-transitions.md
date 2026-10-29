@@ -58,7 +58,7 @@ Themes: `brutal-light` and `elegant-light`. Default semantics mode `platform` (A
 |---|---|---|
 | Tab switches keep the page that hosts the live workspace (a new page moved the live subtree and rebuilt every element in it, including the hidden retained conversation) | `mobile_workspace_pages.dart` | none |
 | Hidden conversation page and the folded directory master are handed the widget they last built; hidden chat views ignore selection/reference notifications | `workspace_view.dart`, `desktop_master_detail.dart`, `chat_view.dart` | none |
-| Phones no longer build the desktop sidebar/rail eagerly and the drawer builds its sidebar when opened (the per-channel activity cache is the merged `latestCreatedAt`, see `docs/sidebar-activity-performance.md`) | `workspace_view.dart` | none |
+| Phones no longer build the desktop sidebar/rail eagerly and the drawer builds its sidebar when opened (the per-channel activity cache is the merged `latestCreatedAt`) | `workspace_view.dart` | none |
 | Semantics of the live page are not recomputed while its route animates (included again when it settles) | `mobile_workspace_pages.dart` | `--define RAFT_NAV_DEFER_SEMANTICS=false` restores |
 | The live page is drawn from a snapshot during the fade (live subtree stays mounted and tappable, fully transparent) and the outgoing page is a single image draw | `mobile_workspace_pages.dart` | `--define RAFT_NAV_FADE_SNAPSHOTS=false` restores |
 

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../data/device_preferences.dart';
 import '../data/resource_snapshot_cache.dart';
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 
 Map<String, dynamic> managementMap(dynamic value) =>
@@ -102,6 +103,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     with WidgetsBindingObserver {
   WorkspaceController get w;
   bool loading = true, busy = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when a load succeeds, an action starts, the account or workspace authority changes; a load failure keeps the accepted data and stays until the next reload.
   String? error;
   int _request = 0;
   String? _authority;
@@ -269,7 +271,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
         // Any other failure keeps the accepted projection and its snapshot.
         setState(() {
           loading = false;
-          error = '$e';
+          error = userErrorText(e, where: 'management load');
         });
       }
     } finally {
@@ -286,6 +288,10 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   Future<void> run(
     Future<void> Function() action, {
     bool refresh = true,
+
+    /// The surface's Web fallback message (`err.response?.data?.error ||
+    /// formatMessage(fallback)`).
+    String? fallback,
   }) async {
     if (busy) return;
     final generation = w.client.generation, sourceAuthority = authority;
@@ -306,7 +312,13 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     } catch (e) {
       if (accepts(generation) && authority == sourceAuthority) {
         invalidateDeniedMutation(e);
-        setState(() => error = '$e');
+        setState(
+          () => error = userErrorText(
+            e,
+            fallback: fallback,
+            where: 'management action',
+          ),
+        );
       }
     } finally {
       _operationAuthority = null;
@@ -324,23 +336,39 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     if (mounted) {
       setState(() {
         loading = false;
-        this.error = '$error';
+        this.error = userErrorText(error, where: 'management denied');
       });
     }
     return true;
   }
 
-  Future<V?> scopedDialog<V>(Widget Function(BuildContext) builder) =>
-      _scopedRoute<V>(builder, raft: false);
+  /// [form] opens a form with inputs as a bottom sheet on a phone and a
+  /// dialog from 768 (`RaftPresentationPolicy.form`); otherwise a dialog.
+  Future<V?> scopedDialog<V>(
+    Widget Function(BuildContext) builder, {
+    bool form = false,
+  }) => _scopedRoute<V>(builder, raft: false, form: form);
 
   /// [scopedDialog] on the Web `Modal` layer ([showRaftModal]) for product
   /// dialogs that paint their own backdrop.
-  Future<V?> scopedRaftModal<V>(Widget Function(BuildContext) builder) =>
-      _scopedRoute<V>(builder, raft: true);
+  ///
+  /// [form]: a form with inputs, shown as a bottom sheet on a phone.
+  Future<V?> scopedRaftModal<V>(
+    Widget Function(BuildContext) builder, {
+    bool form = false,
+    double dialogMaxWidth = 560,
+  }) => _scopedRoute<V>(
+    builder,
+    raft: true,
+    form: form,
+    dialogMaxWidth: dialogMaxWidth,
+  );
 
   Future<V?> _scopedRoute<V>(
     Widget Function(BuildContext) builder, {
     required bool raft,
+    required bool form,
+    double dialogMaxWidth = 560,
   }) async {
     final sourceAuthority = _operationAuthority ?? authority;
     if (!mounted || sourceAuthority != authority) return null;
@@ -369,9 +397,23 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
         return builder(context);
       }
 
+      if (form) {
+        // Esc, Back, a scrim press, a drag and the X ask; a changed form asks
+        // before it discards.
+        return await showRaftForm<V>(
+          context,
+          builder: scoped,
+          dialogMaxWidth: dialogMaxWidth,
+        );
+      }
       return await (raft
-          ? showRaftModal<V>(context, builder: scoped)
-          : showDialog<V>(context: context, builder: scoped));
+          ? showRaftDialog<V>(context: context, modal: true, builder: scoped)
+          : showRaftDialog<V>(
+              context: context,
+              // Web `DialogCard` / `ConfirmDialog`: no scrim close.
+              barrierDismissible: false,
+              builder: scoped,
+            ));
     } finally {
       w.removeListener(dismissOnScopeChange);
     }
@@ -390,18 +432,20 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     List<RaftFormField> fields,
     Future<void> Function(Map<String, String>) save, {
     String submit = 'Save',
+    String cancel = 'Cancel',
     String? description,
     bool destructive = false,
   }) async {
     final generation = w.client.generation, sourceAuthority = authority;
     return await scopedDialog<bool>(
+          form: fields.isNotEmpty,
           (dialogContext) => RaftFormDialog(
             title: title,
             fields: fields,
             onSubmit: (values) async {
               if (!accepts(generation) || sourceAuthority != authority) {
                 throw StateError(
-                  'The active workspace changed. Reopen this form.',
+                  'The active server changed. Reopen this form.',
                 );
               }
               try {
@@ -417,6 +461,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
               }
             },
             submitLabel: submit,
+            cancelLabel: cancel,
             description: description,
             destructive: destructive,
           ),
@@ -429,12 +474,14 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     String description,
     Future<void> Function() save, {
     String submit = 'Confirm',
+    String cancel = 'Cancel',
     bool destructive = false,
   }) => form(
     title,
     [],
     (_) => save(),
     submit: submit,
+    cancel: cancel,
     description: description,
     destructive: destructive,
   );
@@ -444,7 +491,8 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   }) async {
     if (!mounted) return;
     await scopedDialog<void>(
-      (context) => AlertDialog(
+      (context) => RaftAlertDialog(
+        legacy: RaftLegacyAlert.material,
         title: Text(raftText(context, label)),
         content: SizedBox(
           width: 480,
@@ -455,7 +503,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
           ),
         ),
         actions: [
-          TextButton(
+          RaftButton.text(
             onPressed: () => Navigator.pop(context),
             child: Text(raftText(context, 'Close')),
           ),
@@ -480,7 +528,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
             );
             final refresh = RaftTooltip(
               message: raftText(context, 'Refresh'),
-              child: IconButton(
+              child: RaftButton.iconAction(
                 onPressed: busy ? null : reload,
                 icon: const Icon(Icons.refresh),
               ),
@@ -513,15 +561,9 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
       if (error != null)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Semantics(
-            liveRegion: true,
-            child: Text(
-              error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
+          child: RaftErrorBanner(error!, small: true),
         ),
-      if (loading) const LinearProgressIndicator(),
+      if (loading) const RaftProgressBar(),
       Expanded(
         child: ListView(
           key: PageStorageKey((widget.runtimeType, title)),
@@ -547,7 +589,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     IconData? icon,
     RaftGlyph? glyph,
     double glyphSize = 14,
-  }) => TextButton.icon(
+  }) => RaftButton.text(
     onPressed: busy ? null : callback,
     icon: glyph != null
         ? RaftIcon(glyph, size: glyphSize)

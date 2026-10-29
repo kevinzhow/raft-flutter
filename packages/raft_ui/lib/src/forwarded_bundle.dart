@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'attachment_card.dart';
 import 'collapsible.dart';
+import 'design_primitives.dart' show RaftInteractive;
 import 'icons.dart';
 import 'theme.dart';
 import 'rich_card_tokens.dart';
 import 'localization.dart';
 import 'message_body.dart';
+import 'message_row_recipe.dart' show RaftMessageBodyMargin;
+import 'tooltip.dart' show RaftTooltip;
 
 /// Only recipient-projected fields are retained. Source pointers, capability
 /// URLs and internal attachment projection IDs never become displayed text.
@@ -21,7 +24,15 @@ class RaftForwardedItem {
     this.thread = false,
     this.parent = false,
     this.attachments = const [],
+    this.openable = false,
+    this.item = const {},
   });
+
+  /// Web `canOpenSourceLabel`: the source message is public and still has a
+  /// place to open. [item] holds the ids that open it; it only ever feeds the
+  /// open callback, never the display.
+  final bool openable;
+  final Map<String, dynamic> item;
   final String content, author;
   final int index;
   final DateTime? createdAt;
@@ -31,11 +42,31 @@ class RaftForwardedItem {
   final List<Map<String, dynamic>> attachments;
 }
 
+/// Web `canOpenSourceLabel` (ForwardedBundleCard.tsx).
+bool _canOpenSource(Map item) {
+  if (item['provenanceState'] == 'original_unavailable') return false;
+  final id = item['sourceMessageId'];
+  if (id is! String || id.isEmpty) return false;
+  final target = item['sourceTargetSnapshot'];
+  if (target is! Map ||
+      target['type'] == 'dm' ||
+      target['labelVisibility'] != 'public') {
+    return false;
+  }
+  bool has(String key) =>
+      item[key] is String && (item[key] as String).isNotEmpty;
+  if (target['type'] == 'thread') {
+    return has('sourceThreadId') && has('parentChannelId');
+  }
+  return has('sourceTargetId');
+}
+
 List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
   if (metadata['kind'] != 'forwarded-bundle' ||
       metadata['version'] != 1 ||
-      metadata['forwardedItems'] is! List)
+      metadata['forwardedItems'] is! List) {
     return [];
+  }
   final raw = metadata['forwardedItems'] as List;
   if (raw.isEmpty || raw.length > 20) return [];
   final result = <RaftForwardedItem>[];
@@ -46,8 +77,9 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
         ![
           'available',
           'original_unavailable',
-        ].contains(item['provenanceState']))
+        ].contains(item['provenanceState'])) {
       continue;
+    }
     final target = item['sourceTargetSnapshot'];
     final author = item['sourceAuthorSnapshot'];
     var name = '';
@@ -104,6 +136,18 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
         thread: thread,
         parent: item['sourceIsThreadParent'] == true,
         attachments: attachments,
+        openable: _canOpenSource(item),
+        item: {
+          // Only what opening the source needs: no attachment pointers.
+          for (final key in const [
+            'sourceMessageId',
+            'sourceTargetId',
+            'sourceThreadId',
+            'parentChannelId',
+          ])
+            if (item[key] is String) key: item[key],
+          if (target is Map) 'sourceTargetSnapshot': {'type': target['type']},
+        },
       ),
     );
   }
@@ -124,8 +168,9 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
   final isThread = result.any((r) => r.thread);
   if (isThread &&
       !raw.every((r) => r is Map && r['sourceIsThreadParent'] is bool) &&
-      !result.any((r) => r.parent))
+      !result.any((r) => r.parent)) {
     return result;
+  }
   result.sort(
     (a, b) => isThread && a.parent != b.parent
         ? a.parent
@@ -145,8 +190,20 @@ class RaftForwardedBundle extends StatefulWidget {
     this.attachmentBuilder,
     this.formatTimestamp,
     this.exportMode = false,
+    this.headerLine,
+    this.onOpenSource,
   });
   final Map<String, dynamic> metadata;
+
+  /// Web `onOpenSource`: the source label of the first item opens the message
+  /// it was forwarded from. Receives [RaftForwardedItem.item].
+  final void Function(Map<String, dynamic> item)? onOpenSource;
+
+  /// Line box of the header's count and source text. Null keeps the in-feed
+  /// 20px (the message row's leading); the note page mounts the card outside a
+  /// message, where the Web header inherits the root `leading-normal` (11px
+  /// x 1.5 = 16.5px).
+  final double? headerLine;
   final Widget Function(Map<String, dynamic>)? attachmentBuilder;
   final String Function(DateTime)? formatTimestamp;
   final bool exportMode;
@@ -167,16 +224,67 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
     }
   }
 
+  // The CSS line box is a minimum: a taller line (larger text, the Android
+  // Chinese control line) grows the row instead of clipping the text.
+  static Widget metaLine(TextStyle style, String text) => ConstrainedBox(
+    constraints: BoxConstraints(minHeight: style.fontSize! * style.height!),
+    child: Text(text, style: style),
+  );
+
+  /// The "from #channel" text; a button that opens the source message when it
+  /// can (Web `MessageForwardedBundleSource` inside an `AttachmentTooltip`).
+  Widget _source(
+    BuildContext context,
+    RaftForwardedItem first,
+    ForwardedSnapshotRecipe recipe,
+  ) {
+    final style = widget.headerLine == null
+        ? recipe.source
+        : recipe.source.copyWith(height: widget.headerLine! / 11);
+    final label = raftFormat(
+      context,
+      first.thread && !first.sourceLabel!.endsWith(' · thread')
+          ? 'from {target} · thread'
+          : 'from {target}',
+      {'target': first.sourceLabel!},
+    );
+    Text text(TextStyle style) => Text(
+      label,
+      style: style,
+      textAlign: TextAlign.right,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    final open = widget.onOpenSource;
+    if (open == null || !first.openable || widget.exportMode) {
+      return text(style);
+    }
+    final hint = raftText(context, 'Open source message');
+    return RaftTooltip(
+      message: hint,
+      child: RaftInteractive(
+        key: const Key('forwarded-bundle-source'),
+        onPressed: () => open(first.item),
+        semanticLabel: hint,
+        builder: (_, state) => text(
+          state.hovered
+              ? style.copyWith(decoration: TextDecoration.underline)
+              : style,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context),
-        recipe = ForwardedSnapshotRecipe(
-          RaftTokens.of(context),
-          devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-        );
+    final recipe = ForwardedSnapshotRecipe(
+      RaftTokens.of(context),
+      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+    );
     final items = raftForwardedItems(widget.metadata);
-    if (items.isEmpty)
+    if (items.isEmpty) {
       return Text(raftText(context, 'Forwarded messages unavailable.'));
+    }
     final foldable =
         bodyHeights.length == items.length &&
         bodyHeights.values.fold<double>(0, (a, b) => a + b) >
@@ -200,20 +308,22 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                       spacing: 6,
                       runSpacing: 2,
                       children: [
-                        Text(
+                        // A Text rounds a fractional line (15.71px) up; the
+                        // box keeps Web's exact height.
+                        metaLine(
+                          recipe.author,
                           item.author.isEmpty
                               ? raftText(context, 'Unknown author')
                               : item.author,
-                          style: recipe.author,
                         ),
                         if (item.createdAt != null) ...[
-                          Text('·', style: recipe.metadata),
-                          Text(
+                          metaLine(recipe.metadata, '·'),
+                          metaLine(
+                            recipe.metadata,
                             widget.formatTimestamp?.call(item.createdAt!) ??
                                 TimeOfDay.fromDateTime(
                                   item.createdAt!.toLocal(),
                                 ).format(context),
-                            style: recipe.metadata,
                           ),
                         ],
                       ],
@@ -280,9 +390,9 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
       decoration: recipe.contentDecoration,
       child: collapsed
           ? ClipRRect(
-              borderRadius: t.brutal
-                  ? BorderRadius.zero
-                  : BorderRadius.circular(RichCardPrimitive.contentRadius),
+              borderRadius: BorderRadius.circular(
+                RichCardPrimitive.contentRadius,
+              ),
               child: Stack(
                 children: [
                   ConstrainedBox(
@@ -322,7 +432,8 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
           : contents,
     );
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      // `mt-1` collapses with the message body's own margin.
+      padding: EdgeInsets.only(top: RaftMessageBodyMargin.collapse(context, 4)),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: recipe.maxWidth),
         child: Container(
@@ -354,14 +465,18 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              raftFormat(
-                                context,
-                                items.length == 1
-                                    ? '{count} message'
-                                    : '{count} messages',
-                                {'count': items.length},
-                              ),
-                              style: recipe.count,
+                              // message.forward.bundleCount: `one {message}`
+                              // (no number), `other {# messages}`.
+                              items.length == 1
+                                  ? raftText(context, 'message')
+                                  : raftFormat(context, '{count} messages', {
+                                      'count': items.length,
+                                    }),
+                              style: widget.headerLine == null
+                                  ? recipe.count
+                                  : recipe.count.copyWith(
+                                      height: widget.headerLine! / 11,
+                                    ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -370,17 +485,7 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                     ),
                     if (first.sourceLabel != null) ...[
                       const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          raftFormat(context, 'from {target}', {
-                            'target': first.sourceLabel!,
-                          }),
-                          style: recipe.source,
-                          textAlign: TextAlign.right,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      Flexible(child: _source(context, first, recipe)),
                     ],
                   ],
                 ),
@@ -390,27 +495,35 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                 Container(
                   decoration: recipe.footerDecoration,
                   padding: recipe.footerInset(viewportWidth),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: RaftShowMoreToggle(
-                      label: expanded
-                          ? raftText(context, 'Collapse')
-                          : raftFormat(
-                              context,
-                              items.length == 1
-                                  ? 'View all {count} message'
-                                  : 'View all {count} messages',
-                              {'count': items.length},
-                            ),
-                      onPressed: () => setState(() {
-                        touched = true;
-                        expanded = !expanded;
-                      }),
-                      style: recipe.showMore,
-                      visualHeight: 20,
-                      icon: RaftIcon(
-                        expanded ? RaftGlyph.chevronUp : RaftGlyph.chevronRight,
-                        size: 12,
+                  // The footer is a block whose 24px line box holds the
+                  // inline-flex 11px button.
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 24),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: RaftShowMoreToggle(
+                        label: expanded
+                            ? raftText(context, 'Collapse')
+                            : raftFormat(
+                                context,
+                                items.length == 1
+                                    ? 'View All {count} Message'
+                                    : 'View All {count} Messages',
+                                {'count': items.length},
+                              ),
+                        onPressed: () => setState(() {
+                          touched = true;
+                          expanded = !expanded;
+                        }),
+                        style: recipe.showMore,
+                        underline: recipe.showMoreUnderlined,
+                        visualHeight: 20,
+                        icon: RaftIcon(
+                          expanded
+                              ? RaftGlyph.chevronUp
+                              : RaftGlyph.chevronRight,
+                          size: 12,
+                        ),
                       ),
                     ),
                   ),

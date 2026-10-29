@@ -1,0 +1,7 @@
+{
+  "_comment": "AUTHORED in this repository (not vendored, not from the Web CSS). Flutter-only typography policy for single-line control labels, read by tool/gen-tokens into tokens/typography.g.dart. See docs/android-cjk-control-typography.md.",
+  "control": {
+    "androidChineseLineHeight": 1.3,
+    "windowsChineseLineHeight": 1.2
+  }
+}

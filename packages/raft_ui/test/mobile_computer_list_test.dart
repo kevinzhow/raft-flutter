@@ -6,17 +6,14 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'task_typography_test.dart' show loadTaskFonts;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'mobile computer cards preserve cached states and activate $family/$dark',
+      'mobile computer cards preserve cached states and activate ${dark ? 'dark' : 'light'}',
       (t) async {
         await loadTaskFonts(t);
         t.view.physicalSize = const Size(390, 844);
@@ -33,11 +30,10 @@ void main() {
             double scale = 1,
           }) => t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: TextScaler.linear(scale)),
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(scale)),
                 child: child!,
               ),
               home: Scaffold(
@@ -52,8 +48,8 @@ void main() {
                           error: error,
                           emptyTitle: 'No computers yet',
                           emptyDetail:
-                              'Add a computer to run agents in this workspace.',
-                          addLabel: 'Add computer',
+                              'Add a computer to run agents in this server.',
+                          addLabel: 'Add Computer',
                           retryLabel: 'Retry',
                           onAdd: () => added++,
                           onRetry: () => retried++,
@@ -106,7 +102,7 @@ void main() {
               final bytes = await image.toByteData(
                 format: ui.ImageByteFormat.png,
               );
-              final file = File('$evidence/${family.name}-$dark.png');
+              final file = File('$evidence/${dark ? 'dark' : 'light'}.png');
               await file.parent.create(recursive: true);
               await file.writeAsBytes(bytes!.buffer.asUint8List());
               image.dispose();

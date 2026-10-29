@@ -8,17 +8,24 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:raft_theme/recipes.dart' show RaftOuterShadowPainter;
+export 'package:raft_theme/recipes.dart' show RaftOuterShadowPainter;
+
+import 'control_typography.dart';
 import 'css_opacity.dart';
 import 'recipes/recipe_runtime.dart';
+import 'text_scaling.dart' show RaftScaled;
 import 'recipes/token_binding.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
 extension RaftRecipeBinding on RaftTokens {
-  RaftRecipeTheme get recipeTheme =>
-      brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant;
+  RaftRecipeTheme get recipeTheme => RaftRecipeTheme.elegant;
 
   RaftRecipeTokens get recipeTokens => RaftRecipeTokens(this);
+
+  /// Frozen recipe geometry for references in an already themed renderer.
+  RaftRecipeTokens get recipeSourceTokens => RaftRecipeTokens.source(this);
 
   /// CSS interaction states for a recipe cascade; `dark` follows the theme.
   RaftRecipeStates recipeStates({
@@ -110,7 +117,7 @@ extension RaftSlotPaint on RaftSlotStyle {
         case RaftTokenShadow(:final token):
           final resolver = tokens;
           if (resolver is RaftRecipeTokens) {
-            out.addAll(_themeShadow(resolver.tokens, token.name).layers);
+            out.addAll(_themeShadow(resolver.tokens, token.name));
           } else {
             for (final s in tokens.shadow(token.name).reversed) {
               out.add(
@@ -140,16 +147,24 @@ extension RaftSlotPaint on RaftSlotStyle {
   }
 }
 
-RaftShadow _themeShadow(RaftTokens t, String name) {
+List<RaftCssShadow> _themeShadow(RaftTokens t, String name) {
   final s = t.themeShadows;
-  return switch (RaftRecipeTokens.cssName(name)) {
+  final css = RaftRecipeTokens.cssName(name);
+  final shadow = switch (css) {
     'theme-shadow-xs' || 'shadow-raft-xs' => s.xs,
     'theme-shadow-sm' || 'shadow-raft-sm' => s.sm,
     'theme-shadow-md' || 'shadow-raft-md' => s.md,
     'theme-shadow-lg' || 'shadow-raft-lg' => s.lg,
     'theme-shadow-xl' || 'shadow-raft-xl' => s.xl,
-    final other => throw ArgumentError('Unknown shadow token $other'),
+    _ => null,
   };
+  if (shadow != null) return shadow.layers;
+  // Pack-level shadows the Raft recipes name directly (`elevation-float`,
+  // `elevation-sticker`, `focus-ring`); the frozen set never does.
+  if (t.themeValues?.shadows.containsKey(css) ?? false) {
+    return t.shadowLayers(css);
+  }
+  throw ArgumentError('Unknown shadow token $css');
 }
 
 /// Flutter [BoxShadow.blurRadius] whose sigma equals the CSS sigma
@@ -303,12 +318,18 @@ class RaftRecipeBox extends StatelessWidget {
     this.alignment,
     this.clip = false,
     this.applyText = true,
+    this.growWithText,
     this.applyOpacity = true,
     this.opacityCompositing = RaftOpacityCompositing.layer,
     this.applyTransform = true,
     this.decorationOverride,
     this.overflowCenter = false,
+    this.controlLabel = false,
   });
+
+  /// The box is a single-line control label (badge, chip, button, tab,
+  /// segment): its text takes [RaftControlTypography] (Android + Chinese).
+  final bool controlLabel;
 
   /// Inline-flex controls with a fixed height (Button): content taller than
   /// the content box overflows centred instead of being squeezed.
@@ -324,17 +345,33 @@ class RaftRecipeBox extends StatelessWidget {
   final AlignmentGeometry? alignment;
   final bool clip;
   final bool applyText, applyOpacity, applyTransform;
+
+  /// Whether a fixed height becomes a minimum when text grows. Defaults to
+  /// [applyText]; editors that style their own text can opt in separately.
+  final bool? growWithText;
   final RaftOpacityCompositing opacityCompositing;
   final BoxDecoration Function(BoxDecoration)? decorationOverride;
 
   @override
   Widget build(BuildContext context) {
     final inherited = DefaultTextStyle.of(context).style;
-    final textStyle = style.text(tokens, base: inherited);
+    var textStyle = style.text(tokens, base: inherited);
+    if (controlLabel) textStyle = RaftControlTypography.of(context, textStyle);
     final current = textStyle.color;
     final layers = style.cssShadows(tokens, currentColor: current);
+    final cssGeometry = tokens.recipeSet == RaftRecipeSet.raft;
+    final background = style.backgroundColor?.resolve(
+      tokens,
+      currentColor: current,
+    );
+    final overlay = cssGeometry
+        ? _uniformBackgroundImage(style['background-image'], tokens, current)
+        : null;
     BoxDecoration decoration = RaftRecipeDecoration(
-      color: style.backgroundColor?.resolve(tokens, currentColor: current),
+      cssGeometry: cssGeometry,
+      color: background == null || overlay == null
+          ? overlay ?? background
+          : Color.alphaBlend(overlay, background),
       border: style.border(tokens, currentColor: current),
       borderRadius: style.borderRadius,
       boxShadow: [
@@ -348,12 +385,14 @@ class RaftRecipeBox extends StatelessWidget {
             ),
       ],
     );
-    if (decorationOverride != null)
+    if (decorationOverride != null) {
       decoration = decorationOverride!(decoration);
+    }
     // CSS outer box-shadows never paint under the border box (a translucent
     // background must not reveal them), unlike Flutter's BoxDecoration.
     final outerShadows = decoration.boxShadow ?? const <BoxShadow>[];
     decoration = RaftRecipeDecoration(
+      cssGeometry: cssGeometry,
       color: decoration.color,
       border: decoration.border,
       borderRadius: decoration.borderRadius,
@@ -385,15 +424,22 @@ class RaftRecipeBox extends StatelessWidget {
     final h = height ?? style.height;
     // A fixed CSS height smaller than padding + content lets the content
     // overflow, centred (flex `align-items: center`), instead of clipping.
-    if (content != null && h != null && overflowCenter) {
+    //
+    // Above the default text size the recipe height is a minimum instead (CSS
+    // `min-height`): the box grows with its text and nothing overflows.
+    final grows =
+        h != null && (growWithText ?? applyText) && RaftScaled.grows(context);
+    if (content != null && h != null && overflowCenter && !grows) {
       content = RaftCssOverflowY(child: content);
     }
     Widget box = Container(
       width: w,
-      height: h,
+      height: grows ? null : h,
       constraints: BoxConstraints(
         minWidth: style.minWidth ?? 0,
-        minHeight: style.minHeight ?? 0,
+        minHeight: grows
+            ? math.max(style.minHeight ?? 0, h)
+            : style.minHeight ?? 0,
         maxWidth: style.maxWidth ?? double.infinity,
         maxHeight: style.maxHeight ?? double.infinity,
       ),
@@ -423,6 +469,7 @@ class RaftRecipeBox extends StatelessWidget {
           decoration.borderRadius?.resolve(TextDirection.ltr) ??
               BorderRadius.zero,
           circle: decoration.shape == BoxShape.circle,
+          cssGeometry: cssGeometry,
         ),
         child: box,
       );
@@ -455,6 +502,30 @@ class RaftRecipeBox extends StatelessWidget {
     }
     return box;
   }
+}
+
+/// The published `press-overlay` utilities use a linear gradient whose two
+/// stops are the same token. Keep it above the resting background and below
+/// the border and content, as CSS does. Hover and active share this one image;
+/// the cascade decides its value before paint, so they never double the wash.
+/// Other gradient forms are not interpreted as uniform overlays.
+Color? _uniformBackgroundImage(
+  CssValue? image,
+  RaftTokenResolver tokens,
+  Color? currentColor,
+) {
+  if (image case CssFunction(name: 'linear-gradient', :final args)
+      when args.length == 2) {
+    final first = RaftColorRef.fromCss(args[0]);
+    final second = RaftColorRef.fromCss(args[1]);
+    if (first == null || second == null) return null;
+    final color = first.resolve(tokens, currentColor: currentColor);
+    if (color != second.resolve(tokens, currentColor: currentColor)) {
+      return null;
+    }
+    return color;
+  }
+  return null;
 }
 
 /// Vertical `linear-gradient(in oklab 180deg, oklab(L 0 0 / a%) p%, ...)`
@@ -600,44 +671,6 @@ class _InsetPainter extends BoxPainter {
       borderRadius: d.base.borderRadius == null ? null : radius,
     );
   }
-}
-
-/// Paints outer box-shadows clipped to the outside of the border box (CSS
-/// semantics); use behind a translucent box.
-class RaftOuterShadowPainter extends CustomPainter {
-  const RaftOuterShadowPainter(
-    this.shadows,
-    this.radius, {
-    this.circle = false,
-  });
-  final List<BoxShadow> shadows;
-  final BorderRadius radius;
-  final bool circle;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (shadows.isEmpty) return;
-    final rect = Offset.zero & size;
-    final box = circle
-        ? RRect.fromRectAndRadius(rect, Radius.circular(size.shortestSide / 2))
-        : radius.toRRect(rect).scaleRadii();
-    canvas.save();
-    canvas.clipPath(
-      Path()
-        ..fillType = PathFillType.evenOdd
-        ..addRect(rect.inflate(1e4))
-        ..addRRect(box),
-    );
-    for (final s in shadows) {
-      final shape = box.shift(s.offset).inflate(s.spreadRadius);
-      canvas.drawRRect(shape, s.toPaint());
-    }
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(RaftOuterShadowPainter old) =>
-      old.shadows != shadows || old.radius != radius || old.circle != circle;
 }
 
 /// Lays its child out with unbounded height and centres it vertically in

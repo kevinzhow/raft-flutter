@@ -36,9 +36,18 @@ SenderAvatarProjection projectSenderAvatar({
   Map<String, dynamic>? currentUser,
   Map<String, dynamic>? externalAuthor,
   double requestSize = 80,
+  // TasksPanel IdentityOption carries the already-authorized member email.
+  // Other consumers retain the historical own-user-only fallback by default.
+  bool allowMemberEmailFallback = false,
   // Message-carried `senderAvatarUrl`: the first-paint source when the
   // directory has no row for this sender yet (never overrides a directory row).
   String? carriedAvatarUrl,
+  // The open channel's roster (`GET /channels/:id/members`): the only place a
+  // joint-peer sender (another server's human or agent) is listed, since the
+  // server directory holds this server's people only. Web `ChatPanel` overlays
+  // it on the directory (`memberById` / `agentById`), so it is searched first.
+  List<Map<String, dynamic>> channelAgents = const [],
+  List<Map<String, dynamic>> channelMembers = const [],
 }) {
   if (senderType == 'external_projection') {
     return SenderAvatarProjection(
@@ -51,13 +60,16 @@ SenderAvatarProjection projectSenderAvatar({
     );
   }
   final isAgent = senderType == 'agent';
-  final rows = isAgent ? agents : members;
   Map<String, dynamic>? resolved;
-  for (final row in rows) {
-    if ((isAgent ? row['id'] : row['userId'] ?? row['id']) == senderId) {
-      resolved = row;
-      break;
+  for (final rows
+      in isAgent ? [channelAgents, agents] : [channelMembers, members]) {
+    for (final row in rows) {
+      if ((isAgent ? row['id'] : row['userId'] ?? row['id']) == senderId) {
+        resolved = row;
+        break;
+      }
     }
+    if (resolved != null) break;
   }
   final rawUrl = resolved == null ? carriedAvatarUrl : resolved['avatarUrl'];
   if (isAgent) {
@@ -74,14 +86,16 @@ SenderAvatarProjection projectSenderAvatar({
     );
   }
   var hash = resolved?['gravatarHash'];
+  dynamic email = allowMemberEmailFallback ? (resolved?['email']) : null;
   if (currentUser?['id'] == senderId) {
     // Own identity is permitted even before the member directory arrives.
     resolved ??= currentUser;
     hash ??= resolved?['gravatarHash'];
-    final email = currentUser?['email'];
-    if (hash == null && email is String && email.trim().isNotEmpty) {
-      hash = sha256.convert(utf8.encode(email.trim().toLowerCase())).toString();
-    }
+    email = currentUser?['email'];
+  }
+  if (allowMemberEmailFallback && hash == '') hash = null;
+  if (hash == null && email is String && email.trim().isNotEmpty) {
+    hash = sha256.convert(utf8.encode(email.trim().toLowerCase())).toString();
   }
   final humanUrl = resolved == null ? carriedAvatarUrl : resolved['avatarUrl'];
   return SenderAvatarProjection(
@@ -100,3 +114,26 @@ SenderAvatarProjection projectSenderAvatar({
         : null,
   );
 }
+
+/// TasksPanel's typed option keys project only the authorized directory's art.
+/// Selection, membership and request authority remain with the resource owner.
+Map<String, SenderAvatarProjection> projectTaskFilterAvatars({
+  required String origin,
+  required Iterable<String> identityKeys,
+  required List<Map<String, dynamic>> agents,
+  required List<Map<String, dynamic>> members,
+  Map<String, dynamic>? currentUser,
+}) => {
+  for (final key in identityKeys)
+    if (key.startsWith('user:') || key.startsWith('agent:'))
+      key: projectSenderAvatar(
+        origin: origin,
+        senderId: key.substring(key.indexOf(':') + 1),
+        senderType: key.substring(0, key.indexOf(':')),
+        agents: agents,
+        members: members,
+        currentUser: currentUser,
+        requestSize: 16,
+        allowMemberEmailFallback: true,
+      ),
+};

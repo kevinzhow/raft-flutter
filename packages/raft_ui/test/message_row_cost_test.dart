@@ -8,7 +8,7 @@ const _code = '```dart\nfinal answer = 42;\nString greet() => "hi";\n```';
 const _body = 'First prose paragraph.\n\n$_code\n\nLast prose paragraph.';
 
 Widget _host(Widget child, {bool dark = false}) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant, dark: dark),
+  theme: raftTheme(dark: dark),
   home: Scaffold(
     body: SingleChildScrollView(child: SizedBox(width: 600, child: child)),
   ),
@@ -26,8 +26,12 @@ void main() {
     await tester.pumpWidget(_host(const RaftMessageBody(content: _body)));
     expect(raftCodeSpanCache.misses, 1);
     expect(raftMarkdownAstCache.misses, 2);
-    final text = find.byType(SelectableText);
-    final span = tester.widget<SelectableText>(text).textSpan;
+    // The message's code text joins its selection area: a plain Text.
+    final text = find.descendant(
+      of: find.byKey(const ValueKey('code-container')),
+      matching: find.byType(Text),
+    );
+    final span = tester.widget<Text>(text).textSpan;
 
     // Hover and focus feedback rebuild the copy control, not the tokens.
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
@@ -37,7 +41,7 @@ void main() {
     await tester.pump();
     await mouse.moveTo(Offset.zero);
     await tester.pump();
-    expect(tester.widget<SelectableText>(text).textSpan, same(span));
+    expect(tester.widget<Text>(text).textSpan, same(span));
     expect(raftCodeSpanCache.misses + raftCodeSpanCache.hits, 1);
 
     // Remounting the same message (scrolled away and back) reuses both.
@@ -46,7 +50,7 @@ void main() {
     expect(raftCodeSpanCache.misses, 1);
     expect(raftMarkdownAstCache.misses, 2);
     expect(raftMarkdownAstCache.hits, 2);
-    expect(tester.widget<SelectableText>(text).textSpan, same(span));
+    expect(tester.widget<Text>(text).textSpan, same(span));
 
     // A different token theme is a different highlight input.
     await tester.pumpWidget(
@@ -119,7 +123,7 @@ void main() {
     expect(copied, startsWith('First prose paragraph.'));
     expect(copied, endsWith('Last prose paragraph.'));
     // Code-block controls never join the prose selection.
-    expect(copied, isNot(contains('Copy code')));
+    expect(copied, isNot(contains('Copy Code')));
     expect(tester.takeException(), isNull);
   });
 
@@ -131,8 +135,8 @@ void main() {
       _host(RaftCollapsible(child: RaftMessageBody(content: content))),
     );
     // No second pump: the toggle and the capped viewport are final at once.
-    expect(find.text('Show more'), findsOneWidget);
-    final firstToggle = tester.getRect(find.text('Show more'));
+    expect(find.text('Show More'), findsOneWidget);
+    final firstToggle = tester.getRect(find.text('Show More'));
     final firstSize = tester.getSize(find.byType(RaftCollapsible));
     expect(
       tester
@@ -150,7 +154,7 @@ void main() {
     for (var i = 0; i < 3; i++) {
       await tester.pump(const Duration(milliseconds: 16));
     }
-    expect(tester.getRect(find.text('Show more')), firstToggle);
+    expect(tester.getRect(find.text('Show More')), firstToggle);
     expect(tester.getSize(find.byType(RaftCollapsible)), firstSize);
     expect(tester.takeException(), isNull);
   });
@@ -194,7 +198,7 @@ void main() {
       );
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(body: Column(children: [row(0), row(1)])),
         ),
       );

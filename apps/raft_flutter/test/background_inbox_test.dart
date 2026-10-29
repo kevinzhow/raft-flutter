@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:isolate';
-import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/platform/background_inbox.dart';
-import 'package:raft_flutter/platform/background_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Client extends RaftClient {
@@ -18,23 +15,37 @@ class _Client extends RaftClient {
     selectServer('s');
   }
   @override
+  Future<dynamic> accountUnreadSummary() async => summaryRead != null
+      ? await summaryRead!()
+      : summary ?? await get('/servers/unread-summary');
+  @override
   bool get signedIn => user != null;
   bool muted = false;
   String mode = 'all';
   Completer<dynamic>? page;
   List<Map<String, dynamic>> rows = [];
+  List<RaftRecord>? memberships, accountMemberships;
+  Object? summary;
+  Future<dynamic> Function()? summaryRead;
+  int? inboxTotal;
   final reads = <String>[];
   @override
-  Future<List<RaftRecord>> servers() async => [
-    RaftRecord({'id': 's', 'serverPushMuted': muted}),
-  ];
+  Future<List<RaftRecord>> accountServers() async =>
+      accountMemberships ?? await servers();
+  @override
+  Future<List<RaftRecord>> servers() async =>
+      memberships ??
+      [
+        RaftRecord({'id': 's', 'serverPushMuted': muted}),
+      ];
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
     reads.add(path);
     if (path.endsWith('/notification-settings')) {
       return {'serverPushMode': mode};
     }
-    return page?.future ?? {'items': rows};
+    return page?.future ??
+        {'items': rows, if (inboxTotal != null) 'totalUnreadCount': inboxTotal};
   }
 }
 
@@ -83,6 +94,124 @@ void main() {
     );
   });
   tearDown(() => client.dispose());
+  test(
+    'background badge sums memberships and keeps unknown on summary failure',
+    () async {
+      client.memberships = [
+        RaftRecord({'id': 's'}),
+        RaftRecord({'id': 'other'}),
+      ];
+      client.rows = [row('new', unread: 2)];
+      client.inboxTotal = 2;
+      client.summary = [
+        {'serverId': 's', 'activityUnreadCount': 8},
+        {'serverId': 'other', 'activityUnreadCount': 4},
+      ];
+      await poller.run();
+      expect(poller.totalUnread, 6);
+      client.summary = [
+        {'serverId': 's', 'activityUnreadCount': 8},
+        {'serverId': 'other', 'activityUnreadCount': 0},
+      ];
+      await poller.run();
+      expect(poller.totalUnread, 2);
+      client.summaryRead = () async => throw StateError('unavailable');
+      await poller.run();
+      expect(
+        poller.totalUnread,
+        isNull,
+        reason: 'The delivery leaves a known OS badge unchanged, never replacing it with 2.',
+      );
+    },
+  );
+
+  test('background badge does not replace a global badge with a partial member count', () async {
+    client.memberships = [
+      RaftRecord({'id': 's'}),
+      RaftRecord({'id': 'other'}),
+    ];
+    client.rows = [row('new', unread: 2)];
+    client.inboxTotal = 2;
+    for (final summary in [
+      [
+        {'serverId': 's', 'activityUnreadCount': 2},
+      ],
+      [
+        {'serverId': 's', 'activityUnreadCount': 2},
+        {'serverId': 'other'},
+      ],
+      [
+        {'serverId': 's', 'activityUnreadCount': 2},
+        {'serverId': 'other', 'activityUnreadCount': '4'},
+      ],
+      <Object>[],
+    ]) {
+      client.summary = summary;
+      await poller.run();
+      expect(poller.totalUnread, isNull);
+    }
+    client.memberships = [
+      RaftRecord({'id': 's'}),
+    ];
+    client.summary = [
+      {'serverId': 's', 'activityUnreadCount': 2},
+    ];
+    await poller.run();
+    expect(
+      poller.totalUnread,
+      2,
+      reason: 'Removed membership is not an unknown count.',
+    );
+  });
+
+  test('headless badge confirms current membership after the summary, not the pre-inbox snapshot', () async {
+    client.rows = [row('new', unread: 2)];
+    client.inboxTotal = 2;
+    client.memberships = [
+      RaftRecord({'id': 's'}),
+      RaftRecord({'id': 'other'}),
+    ];
+    client.accountMemberships = [
+      RaftRecord({'id': 's'}),
+    ];
+    client.summary = [
+      {'serverId': 's', 'activityUnreadCount': 2},
+      {'serverId': 'other', 'activityUnreadCount': 88},
+    ];
+    await poller.run();
+    expect(poller.totalUnread, 2);
+    client.memberships = [
+      RaftRecord({'id': 's'}),
+    ];
+    client.accountMemberships = [
+      RaftRecord({'id': 's'}),
+      RaftRecord({'id': 'other'}),
+    ];
+    client.summary = [
+      {'serverId': 's', 'activityUnreadCount': 2},
+      {'serverId': 'other', 'activityUnreadCount': 4},
+    ];
+    await poller.run();
+    expect(poller.totalUnread, 6);
+  });
+
+  test(
+    'a late background global summary cannot deliver after account retirement',
+    () async {
+      client.rows = [row('new')];
+      final delayed = Completer<dynamic>();
+      client.summaryRead = () => delayed.future;
+      final running = poller.run();
+      await Future<void>.delayed(Duration.zero);
+      client.user = null;
+      delayed.complete([
+        {'serverId': 's', 'activityUnreadCount': 88},
+      ]);
+      await running;
+      expect(sent, isEmpty);
+    },
+  );
+
   test('new unread activity delivers once across subsequent headless instances; old backlog and read rows do not', () async {
     client.rows = [
       row('old', at: '2026-10-07T00:00:00Z'),
@@ -95,12 +224,15 @@ void main() {
     expect(await BackgroundInboxStore().seen(scope, 'new'), true);
     expect(
       client.reads.every(
-        (p) => p == '/channels/inbox' || p.endsWith('/notification-settings'),
+        (p) =>
+            p == '/channels/inbox' ||
+            p == '/servers/unread-summary' ||
+            p.endsWith('/notification-settings'),
       ),
       true,
     );
   });
-  test('server mentions-only never promotes an ordinary latest message or incomplete mention evidence', () async {
+  test('server mentions-only alerts on hasMention with unread, not on firstMentionMessageId equality', () async {
     client.mode = 'mentions';
     client.rows = [
       row('ordinary'),
@@ -112,7 +244,9 @@ void main() {
       },
     ];
     await poller.run();
-    expect(sent, ['personal']);
+    // `later`: firstMentionMessageId is the OLDEST unread mention, so it
+    // legitimately differs from the latest message id.
+    expect(sent, unorderedEquals(['later', 'personal']));
   });
   test('workspace change during fetch cannot alert', () async {
     client.page = Completer();
@@ -234,30 +368,58 @@ void main() {
       isNot(messageNotificationId('$scope-other', 'm')),
     );
   });
-  test('UI startup waits for existing worker session owner and delegates subsequent polling to one owner', () async {
-    final worker = NativeSessionOwner(supported: true);
-    await worker.acquire();
-    final calls = <String>[];
-    final ui = NativeSessionOwner(
-      supported: true,
-      poll: () async {
-        calls.add('ui');
-        return true;
+  test('notification copy identifies channel, DM sender and thread without exposing IDs', () {
+    final since = DateTime.utc(2026, 10, 8, 1);
+    final channel = BackgroundInboxAlert.fromRow(
+      {...row('m'), 'lastMessageSenderName': 'Alice'},
+      's',
+      since,
+    )!;
+    expect(channel.title, '#general');
+    expect(channel.body, 'Alice: New message');
+    final dm = BackgroundInboxAlert.fromRow(
+      {
+        ...row('m'),
+        'kind': 'dm',
+        'channelName': 'Internal conversation label',
+        'lastMessageSenderName': '陈小明',
       },
-    );
-    var acquired = false;
-    final waiting = ui.acquire().then((_) => acquired = true);
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    expect(acquired, false);
-    worker.release();
-    await waiting;
-    expect(acquired, true);
-    final port = ReceivePort();
-    IsolateNameServer.lookupPortByName('raft.native.session-owner.v1')!
-        .send(['poll', port.sendPort]);
-    expect(await port.first, true);
-    expect(calls, ['ui']);
-    port.close();
-    ui.release();
+      's',
+      since,
+    )!;
+    expect(dm.title, '陈小明');
+    expect(dm.body, 'New message');
+    final thread = BackgroundInboxAlert.fromRow(
+      {
+        'kind': 'thread',
+        'threadChannelId': 't',
+        'parentChannelId': 'c',
+        'parentChannelName': 'general',
+        'parentMessageId': 'p',
+        'latestActivityMessageId': 'm',
+        'latestActivityPreview': 'A reply',
+        'latestActivitySenderName': 'Bob',
+        'lastActivityAt': '2026-10-08T01:00:01Z',
+        'unreadCount': 1,
+        'isFollowing': true,
+      },
+      's',
+      since,
+    )!;
+    expect(thread.title, '#general · Thread');
+    expect(thread.body, 'Bob: A reply');
+    expect(thread.target.threadId, 't');
+    final unnamed = BackgroundInboxAlert.fromRow(
+      {...row('m'), 'kind': 'dm', 'channelName': '  '},
+      's',
+      since,
+    )!;
+    expect(unnamed.title, 'Direct message');
+    final unicode = BackgroundInboxAlert.fromRow(
+      {...row('m'), 'kind': 'dm', 'lastMessageSenderName': '😀' * 161},
+      's',
+      since,
+    )!;
+    expect(unicode.title, '😀' * 160);
   });
 }

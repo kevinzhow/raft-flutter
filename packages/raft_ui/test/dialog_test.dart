@@ -4,15 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'dialog parts and bounded scroll preserve callbacks ${theme.$1}/${theme.$2}',
+      'dialog parts and bounded scroll preserve callbacks ${dark ? 'dark' : 'light'}',
       (tester) async {
         tester.view.physicalSize = const Size(390, 500);
         tester.view.devicePixelRatio = 1;
@@ -21,7 +18,7 @@ void main() {
         var confirmed = false;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(theme.$1, dark: theme.$2),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: Builder(
                 builder: (context) => RaftButton(
@@ -54,7 +51,7 @@ void main() {
         );
         await tester.tap(find.text('Open'));
         await tester.pumpAndSettle();
-        expect(find.text('REVIEW CHANGES'), findsOneWidget);
+        expect(find.text('Review changes'), findsOneWidget);
         final box = tester.getRect(find.byType(RaftDialog));
         expect(
           box.width,
@@ -88,7 +85,7 @@ void main() {
     final trigger = FocusNode();
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -124,7 +121,7 @@ void main() {
     bool? result;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: Builder(
             builder: (context) => RaftButton(
@@ -163,7 +160,7 @@ void main() {
       try {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(RaftFamily.elegant),
+            theme: raftTheme(),
             home: Scaffold(
               body: Builder(
                 builder: (context) => RaftButton(

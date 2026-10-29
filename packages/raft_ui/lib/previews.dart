@@ -10,23 +10,16 @@ Widget accessiblePreview(Widget child) {
   return child;
 }
 
-Widget brutalWrapper(Widget child) => accessiblePreview(
+Widget lightWrapper(Widget child) => accessiblePreview(
   MaterialApp(
-    theme: raftTheme(RaftFamily.brutal),
-    debugShowCheckedModeBanner: false,
-    home: Scaffold(body: child),
-  ),
-);
-Widget elegantWrapper(Widget child) => accessiblePreview(
-  MaterialApp(
-    theme: raftTheme(RaftFamily.elegant),
+    theme: raftTheme(),
     debugShowCheckedModeBanner: false,
     home: Scaffold(body: child),
   ),
 );
 Widget darkWrapper(Widget child) => accessiblePreview(
   MaterialApp(
-    theme: raftTheme(RaftFamily.elegant, dark: true),
+    theme: raftTheme(dark: true),
     debugShowCheckedModeBanner: false,
     home: Scaffold(body: child),
   ),
@@ -40,19 +33,13 @@ final class RaftPreviews extends MultiPreview {
   List<Preview> get previews => [
     Preview(
       group: component,
-      name: '$component · Brutal light',
-      wrapper: brutalWrapper,
+      name: '$component · Light',
+      wrapper: lightWrapper,
       size: size,
     ),
     Preview(
       group: component,
-      name: '$component · Elegant light',
-      wrapper: elegantWrapper,
-      size: size,
-    ),
-    Preview(
-      group: component,
-      name: '$component · Elegant dark',
+      name: '$component · Dark',
       wrapper: darkWrapper,
       size: size,
     ),
@@ -92,7 +79,7 @@ Widget composerPreview() => const _InteractivePreview('Composer');
 Widget emptyPreview() => const RaftEmptyState(
   title: 'No unread messages',
   detail: 'You are up to date with your workspace.',
-  icon: Icons.done_all,
+  glyph: RaftGlyph.checkCheck,
 );
 @RaftPreviews('Upload')
 Widget uploadPreview() => const _InteractivePreview('Upload');
@@ -183,8 +170,7 @@ class _InteractivePreviewState extends State<_InteractivePreview> {
         author: 'Cody',
         timestamp: '10:42',
         badge: 'Agent',
-        content:
-            '**Raft Flutter** is ready for review.\n\n- Linux and Android\n- 日本語 / 中文\n\n```dart\nawait client.send(channel, content);\n```',
+        content: '**Raft Flutter** is ready for review.\n\n- Linux and Android\n- 日本語 / 中文\n\n```dart\nawait client.send(channel, content);\n```',
         onThread: () => record('Thread opened'),
         onActions: () => record('Actions opened'),
         onLink: (href) => record('Link: $href'),
@@ -203,10 +189,16 @@ class _InteractivePreviewState extends State<_InteractivePreview> {
       ),
       'Composer' => Column(
         children: [
-          SwitchListTile(
-            title: const Text('Fail next delivery'),
-            value: failDelivery,
-            onChanged: (value) => setState(() => failDelivery = value),
+          Row(
+            spacing: 12,
+            children: [
+              RaftSwitch(
+                value: failDelivery,
+                onChanged: (value) => setState(() => failDelivery = value),
+                semanticLabel: 'Fail next delivery',
+              ),
+              Flexible(child: Text('Fail next delivery')),
+            ],
           ),
           RaftComposer(
             onSend: (text) async {
@@ -256,25 +248,33 @@ class _InteractivePreviewState extends State<_InteractivePreview> {
       ),
       'Form' => Column(
         children: [
-          SwitchListTile(
-            title: const Text('Fail next submission'),
-            value: failDelivery,
-            onChanged: (value) => setState(() => failDelivery = value),
+          Row(
+            spacing: 12,
+            children: [
+              RaftSwitch(
+                value: failDelivery,
+                onChanged: (value) => setState(() => failDelivery = value),
+                semanticLabel: 'Fail next submission',
+              ),
+              Flexible(child: Text('Fail next submission')),
+            ],
           ),
           RaftButton(
-            label: 'Open form',
-            onPressed: () => showDialog(
+            label: 'Open Form',
+            onPressed: () => showRaftDialog(
+              legacyMaterial: true,
               context: context,
               builder: (_) => RaftFormDialog(
-                title: 'Create task',
+                title: 'Create Task',
                 submitLabel: 'Create',
                 fields: const [
                   RaftFormField('title', 'Title', required: true),
                   RaftFormField('description', 'Description', multiline: true),
                 ],
                 onSubmit: (values) async {
-                  if (failDelivery)
+                  if (failDelivery) {
                     throw StateError('Submission failed; keep your changes.');
+                  }
                   record('Created: ${values['title']}');
                 },
               ),
@@ -346,9 +346,8 @@ final class RaftWorkspacePreviews extends MultiPreview {
   @override
   List<Preview> get previews => [
     for (final configuration in [
-      ('Brutal light', brutalWrapper),
-      ('Elegant light', elegantWrapper),
-      ('Elegant dark', darkWrapper),
+      ('Light', lightWrapper),
+      ('Dark', darkWrapper),
     ]) ...[
       Preview(
         group: 'Adaptive workspace',
@@ -474,7 +473,7 @@ class _WorkspacePreviewState extends State<_WorkspacePreview> {
             ),
             const SizedBox(height: 16),
             RaftButton(
-              label: 'Open thread',
+              label: 'Open Thread',
               onPressed: () => setState(() => thread = true),
             ),
             const SizedBox(height: 16),
@@ -497,8 +496,8 @@ class _WorkspacePreviewState extends State<_WorkspacePreview> {
                 ListTile(
                   title: const Text('Thread'),
                   trailing: RaftTooltip(
-                    message: 'Close thread',
-                    child: IconButton(
+                    message: 'Close Thread',
+                    child: RaftButton.iconAction(
                       icon: const Icon(Icons.close),
                       onPressed: () => setState(() => thread = false),
                     ),
@@ -532,8 +531,7 @@ class _RichMessagePreviewState extends State<_RichMessagePreview> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           RaftMessageBody(
-            content:
-                '### Delivery plan\nAsk @Cody in #design about task #27.\n\n- **Draft** the change\n- Review the evidence\n\n```mermaid\nflowchart LR\n A[Draft] --> B[Review]\n B --> C[Ship]\n```\n\n`@Cody` stays code.',
+            content: '### Delivery plan\nAsk @Cody in #design about task #27.\n\n- **Draft** the change\n- Review the evidence\n\n```mermaid\nflowchart LR\n A[Draft] --> B[Review]\n B --> C[Ship]\n```\n\n`@Cody` stays code.',
             references: const [
               RaftTextReference(
                 text: '@Cody',
@@ -581,14 +579,14 @@ class _ActionCardPreviewState extends State<_ActionCardPreview> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           RaftActionCard(
-            title: 'Create channel',
+            title: 'Create Channel',
             state: state,
             details: const [
               (label: 'Channel name', value: 'design'),
               (label: 'Visibility', value: 'Private channel'),
             ],
             hint: 'Review the draft before creating this channel.',
-            confirmLabel: 'Create channel',
+            confirmLabel: 'Create Channel',
             completedBy: state == 'executed' ? 'Kevin' : null,
             onConfirm: () => setState(() {
               state = 'executed';
@@ -597,7 +595,7 @@ class _ActionCardPreviewState extends State<_ActionCardPreview> {
           ),
           const SizedBox(height: 12),
           const RaftActionCard(
-            title: 'Install app',
+            title: 'Install App',
             state: 'frozen',
             blockedReason:
                 'This action was frozen after the workspace changed.',
@@ -640,8 +638,7 @@ class _MessageExportPreviewState extends State<_MessageExportPreview> {
         content: '',
         collapseLongMessages: false,
         body: RaftMessageBody(
-          content:
-              '**中文输入、日本語確認**\n\n```mermaid\nflowchart LR\n A[Draft] --> B[Review]\n```',
+          content: '**中文输入、日本語確認**\n\n```mermaid\nflowchart LR\n A[Draft] --> B[Review]\n```',
           exportMode: true,
         ),
       ),
@@ -756,8 +753,7 @@ Widget forwardedBundlePreview() => SingleChildScrollView(
                   'type': 'user',
                   'name': 'Former member',
                 },
-                'contentSnapshot':
-                    'The copied message remains available without a source link.',
+                'contentSnapshot': 'The copied message remains available without a source link.',
                 'attachmentPolicy': 'excluded',
               },
             ],
@@ -784,14 +780,21 @@ class _ComposerSuggestionsPreviewState
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      const Padding(
-        padding: EdgeInsets.all(16),
-        child: Text(
-          'Type @same or #design. Arrow keys, Tab and Enter accept a suggestion. Ctrl+Enter sends.',
+      Expanded(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Type @same or #design. Arrow keys, Tab and Enter accept a suggestion. Ctrl+Enter sends.',
+                ),
+              ),
+              Text(result),
+            ],
+          ),
         ),
       ),
-      Text(result),
-      const Spacer(),
       RaftComposer(
         initialDraft: '',
         onSend: (_) async => false,
@@ -837,7 +840,7 @@ Widget timelineBottomButtonPreview() => Stack(
   fit: StackFit.expand,
   children: [
     const Center(child: Text('History window')),
-    RaftTimelineBottomButton(label: '3 new messages', onPressed: () {}),
+    RaftTimelineBottomButton(label: '3 New Messages', onPressed: () {}),
   ],
 );
 
@@ -846,7 +849,7 @@ Widget newUpdatesButtonPreview() => Stack(
   fit: StackFit.expand,
   children: [
     const Center(child: Text('Activity list scrolled down')),
-    RaftNewUpdatesButton(label: '3 new updates', onPressed: () {}),
+    RaftNewUpdatesButton(label: '3 New Updates', onPressed: () {}),
   ],
 );
 
@@ -858,8 +861,7 @@ Widget threadResolutionPreview() =>
 Widget threadResolutionRetryPreview() => RaftThreadResolutionBody(
   loadingLabel: 'Loading...',
   errorTitle: "Couldn't load this thread",
-  errorBody:
-      "The thread couldn't be opened. If this channel just became public, retrying usually fixes it.",
+  errorBody: "The thread couldn't be opened. If this channel recently became public, try again.",
   onRetry: () {},
 );
 
@@ -879,6 +881,132 @@ Widget mobileServerSwitcherPreview() =>
 @RaftPreviews('Server URI resolution', size: Size(390, 360))
 Widget serverResolutionPreview() =>
     const RaftServerResolutionBody(label: 'Loading...');
+
+@RaftPreviews('Root error fallback', size: Size(390, 700))
+Widget rootErrorFallbackPreview() => RaftRootErrorFallback(
+  message: "Cannot read properties of undefined (reading 'name')",
+  stack: "TypeError: Cannot read properties of undefined\n    at ChannelHeader",
+  componentStack: '\n    at ChannelHeader\n    at MainLayout\n    at App',
+  onReload: () {},
+);
+
+@RaftPreviews('Server not found', size: Size(390, 420))
+Widget serverAccessDeniedPreview() =>
+    RaftServerAccessDeniedPage(serverName: 'Raft Design', onContinue: () {});
+
+@RaftPreviews('Archived channels', size: Size(640, 420))
+Widget archivedChannelsPreview() => Padding(
+  padding: const EdgeInsets.all(16),
+  child: RaftArchivedChannelsSection(
+    rows: const [
+      RaftArchivedChannelRow(
+        id: 'a',
+        name: 'launch-retro',
+        type: 'channel',
+        metadata: 'Public channel · Archived Jun 10, 2026, 17:00',
+      ),
+      RaftArchivedChannelRow(
+        id: 'b',
+        name: 'design-private',
+        type: 'private',
+        metadata: 'Private channel · Archived Jun 2, 2026, 23:30',
+      ),
+    ],
+    onOpen: (_) {},
+    onUnarchive: (_) {},
+  ),
+);
+
+@RaftPreviews('Runtime error banner', size: Size(520, 120))
+Widget runtimeErrorBannerPreview() => Column(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    RaftRuntimeErrorBanner(
+      message: 'Runtime authentication failed.',
+      onCopy: () {},
+      onViewLogs: () {},
+    ),
+    const RaftRuntimeErrorBanner(message: 'Agent encountered an error'),
+  ],
+);
+
+@RaftPreviews('Archived agents', size: Size(640, 360))
+Widget archivedAgentsPreview() => Padding(
+  padding: const EdgeInsets.all(16),
+  child: RaftArchivedAgentsSection(
+    rows: const [
+      RaftArchivedAgentRow(
+        id: 'a',
+        name: 'Cindy',
+        metadata: 'Archived Oct 20, 2026, 17:00 · Workspace on Studio Mac',
+        canViewWorkspace: true,
+      ),
+      RaftArchivedAgentRow(
+        id: 'b',
+        name: 'Scout',
+        metadata: 'Archived Oct 2, 2026, 23:30 · Workspace deleted',
+      ),
+    ],
+    onOpen: (_) {},
+    onViewWorkspace: (_) {},
+  ),
+);
+
+@RaftPreviews('Archive agent dialog', size: Size(480, 460))
+Widget archiveAgentDialogPreview() => RaftAgentArchiveDialog(
+  agentName: 'Cindy',
+  computer: 'Studio Mac',
+  hasComputerWorkspace: true,
+  onConfirm: (_) async {},
+);
+
+@RaftPreviews('Setup resume bar', size: Size(390, 160))
+Widget setupResumeBarPreview() => Align(
+  alignment: Alignment.bottomCenter,
+  child: RaftSetupResumeBar(onResume: () {}),
+);
+
+@RaftPreviews('Setup resume bar opening', size: Size(390, 160))
+Widget setupResumeBarOpeningPreview() => Align(
+  alignment: Alignment.bottomCenter,
+  child: RaftSetupResumeBar(onResume: () {}, loading: true),
+);
+
+@RaftPreviews('Community agreement', size: Size(560, 640))
+Widget communityAgreementPreview() => RaftCommunityAgreementDialog(
+  title: 'Community agreement',
+  version: 3,
+  bodyMarkdown: 'Welcome to the Raft community.\n\n1. Be kind and assume good intent.\n2. No spam.\n\nModerators may remove content that breaks these rules.',
+  onClose: () {},
+  onAgree: () async {},
+  errorMessage: (_, _) => 'Failed to join community server',
+);
+
+@RaftPreviews('Invite accept signed out', size: Size(390, 700))
+Widget inviteAcceptSignedOutPreview() => RaftInviteAcceptPage(
+  stage: RaftInviteStage.ready,
+  info: const RaftInviteInfo(
+    serverName: 'Raft Design',
+    inviterName: 'Wenyi',
+    memberCount: 12,
+    agentCount: 5,
+  ),
+  onSignIn: () {},
+  onCreateAccount: () {},
+);
+
+@RaftPreviews('Invite accept signed in', size: Size(390, 700))
+Widget inviteAcceptSignedInPreview() => RaftInviteAcceptPage(
+  stage: RaftInviteStage.ready,
+  signedIn: true,
+  info: const RaftInviteInfo(
+    serverName: 'Raft Design',
+    inviterName: 'Wenyi',
+    memberCount: 12,
+    agentCount: 5,
+  ),
+  onJoin: () {},
+);
 
 class _ServerSwitcherPreview extends StatefulWidget {
   const _ServerSwitcherPreview({this.mobile = false});
@@ -904,7 +1032,7 @@ class _ServerSwitcherPreviewState extends State<_ServerSwitcherPreview> {
         mobile: widget.mobile,
         controller: controller,
         workspaceName: 'Visual Server',
-        label: 'Switch server',
+        label: 'Switch Server',
         rows: [
           RaftServerMenuRow(
             id: 'visual',
@@ -934,7 +1062,7 @@ class _ServerSwitcherPreviewState extends State<_ServerSwitcherPreview> {
           ),
           RaftServerMenuAction(
             tone: RaftServerMenuActionTone.invite,
-            label: 'Invite human',
+            label: 'Invite Human',
             glyph: RaftGlyph.userPlus,
             onPressed: () {},
           ),

@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -15,7 +18,7 @@ void main() {
       });
     }
     final f = fixture();
-    await f.mount(t, 'brutal', 390, uri: Uri.parse('/s/alpha/computers'));
+    await f.mount(t, 'light', 390, uri: Uri.parse('/s/alpha/computers'));
     final w = f.workspace(t);
     final card = find.byKey(const ValueKey('fleet-computer-a'));
     await finishPageAnimation(t, card);

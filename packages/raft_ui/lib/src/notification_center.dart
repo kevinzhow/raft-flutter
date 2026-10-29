@@ -8,9 +8,10 @@ import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/notification_center.g.dart';
+import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'theme.dart';
 
-/// Pure status roles from raft-ui 0.5.27; the mounted app emits the first three.
+/// Pure status roles from raft-ui 0.5.52; the mounted app emits the first three.
 enum RaftNotificationKind { error, warning, info, success }
 
 @immutable
@@ -85,23 +86,10 @@ abstract final class _NotificationPrimitives {
 class _NotificationSemantics {
   const _NotificationSemantics(this.tokens);
   final RaftTokens tokens;
-  Color get surface => tokens.brutal ? tokens.panel : tokens.popover;
-  Color get header => tokens.brutal
-      ? tokens.colors['brutal-cream']!
-      : tokens.dark
-      ? Colors.transparent
-      : tokens.panel;
-  Color get line =>
-      tokens.colors[tokens.brutal ? 'line-strong' : 'line-hairline']!;
+  Color get surface => tokens.popover;
+  Color get header => tokens.dark ? Colors.transparent : tokens.panel;
+  Color get line => tokens.colors['line-hairline']!;
   Color iconFill(RaftNotificationKind kind) {
-    if (tokens.brutal) {
-      return tokens.colors[switch (kind) {
-        RaftNotificationKind.error ||
-        RaftNotificationKind.warning => 'color-brutal-orange',
-        RaftNotificationKind.info => 'color-brutal-yellow',
-        RaftNotificationKind.success => 'color-brutal-lime',
-      }]!;
-    }
     if (!tokens.dark) {
       return tokens
           .colors[switch (kind) {
@@ -125,14 +113,13 @@ class _NotificationSemantics {
     };
   }
 
-  Color iconForeground(RaftNotificationKind kind) => tokens.brutal
-      ? tokens.ink
-      : tokens.colors[switch (kind) {
-          RaftNotificationKind.error => 'danger-strong',
-          RaftNotificationKind.warning => 'warning-strong',
-          RaftNotificationKind.info => 'info-strong',
-          RaftNotificationKind.success => 'success-strong',
-        }]!;
+  Color iconForeground(RaftNotificationKind kind) =>
+      tokens.colors[switch (kind) {
+        RaftNotificationKind.error => 'danger-strong',
+        RaftNotificationKind.warning => 'warning-strong',
+        RaftNotificationKind.info => 'info-strong',
+        RaftNotificationKind.success => 'success-strong',
+      }]!;
 }
 
 /// Tier 3: mounted notification recipe, distinct from generic menu geometry.
@@ -142,14 +129,12 @@ class RaftNotificationRecipe {
   _NotificationSemantics get _semantic => _NotificationSemantics(tokens);
   double get width => _NotificationPrimitives.width;
   double get height => _NotificationPrimitives.height;
-  EdgeInsets get headerInset =>
-      EdgeInsets.fromLTRB(12, tokens.brutal ? 8 : 10, 12, 8);
+  EdgeInsets get headerInset => EdgeInsets.fromLTRB(12, 10, 12, 8);
   EdgeInsets get itemInset =>
       const EdgeInsets.all(_NotificationPrimitives.itemInset);
-  double get rowGap => tokens.brutal ? 8 : 10;
-  BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 6);
-  BorderSide get divider =>
-      BorderSide(color: _semantic.line, width: tokens.brutal ? 2 : 1);
+  double get rowGap => 10;
+  BorderRadius get radius => BorderRadius.circular(6);
+  BorderSide get divider => BorderSide(color: _semantic.line, width: 1);
   Color get background => _semantic.surface;
   Color get headerBackground => _semantic.header;
   Color iconFill(RaftNotificationKind kind) => _semantic.iconFill(kind);
@@ -157,38 +142,27 @@ class RaftNotificationRecipe {
       _semantic.iconForeground(kind);
   TextStyle get title => RaftTypography.body(
     tokens,
-    size: tokens.brutal ? 12 : 14,
-    line: tokens.brutal ? 16 : 20,
-    weight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
-    color: tokens.brutal ? tokens.strong.withValues(alpha: .6) : tokens.ink,
-  ).copyWith(letterSpacing: tokens.brutal ? 1.2 : 0);
-  TextStyle get count => tokens.brutal
-      ? RaftTypography.mono(
-          tokens,
-          size: 12,
-          line: 16,
-          color: tokens.strong.withValues(alpha: .4),
-        )
-      : RaftTypography.body(
-          tokens,
-          size: 11,
-          line: 16.5,
-          weight: FontWeight.w500,
-          color: tokens.colors['foreground-placeholder']!,
-        );
+    size: 14,
+    line: 20,
+    weight: FontWeight.w500,
+    color: tokens.ink,
+  );
+  TextStyle get count => RaftTypography.body(
+    tokens,
+    size: 11,
+    line: 16.5,
+    weight: FontWeight.w500,
+    color: tokens.colors['foreground-placeholder']!,
+  );
   TextStyle get itemTitle => RaftTypography.body(
     tokens,
     size: 14,
     line: 20,
-    weight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
+    weight: FontWeight.w500,
     color: tokens.ink,
   );
-  TextStyle get body => RaftTypography.body(
-    tokens,
-    size: 14,
-    line: 20,
-    color: tokens.brutal ? tokens.ink : tokens.muted,
-  );
+  TextStyle get body =>
+      RaftTypography.body(tokens, size: 14, line: 20, color: tokens.muted);
 }
 
 /// Controlled, noninteractive attention mark. The bell owns its count semantics.
@@ -200,7 +174,7 @@ class RaftNotificationAttention extends StatelessWidget {
   Widget build(BuildContext context) {
     if (count <= 0) return const SizedBox.shrink();
     final t = RaftTokens.of(context);
-    final fill = t.colors[t.brutal ? 'accent-400' : 'primary-400']!;
+    final fill = t.colors['primary-400']!;
     return ExcludeSemantics(
       child: Container(
         width: _NotificationPrimitives.badge,
@@ -208,17 +182,11 @@ class RaftNotificationAttention extends StatelessWidget {
         decoration: BoxDecoration(
           color: fill,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: t.brutal
-                ? t.colors['line-strong']!
-                : fill.withValues(alpha: .58),
-          ),
+          border: Border.all(color: fill.withValues(alpha: .58)),
         ),
-        child: t.brutal
-            ? null
-            : const CustomPaint(
-                foregroundPainter: _NotificationAttentionInsetPainter(),
-              ),
+        child: const CustomPaint(
+          foregroundPainter: _NotificationAttentionInsetPainter(),
+        ),
       ),
     );
   }
@@ -233,7 +201,7 @@ class RaftNotificationCenter extends StatefulWidget {
     this.countLabel,
     this.emptyTitle = 'No notifications right now',
     this.emptyBody = "You'll see things here that need your attention.",
-    this.semanticLabel = 'Notification center',
+    this.semanticLabel = 'Notification Center',
     this.listLabel = 'Notifications',
     this.width = _NotificationPrimitives.width,
     this.height = _NotificationPrimitives.height,
@@ -330,7 +298,12 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
               width: widget.width,
               height: widget.height,
               child: ClipRRect(
-                borderRadius: r.radius,
+                // The surface's own corner (`rounded-container`): a smaller clip
+                // lets the opaque rows paint over the ring at the corners. The
+                // frozen looks keep their authored 6px.
+                borderRadius: usesLegacyRecipes(t.recipeTokens)
+                    ? r.radius
+                    : (popup.borderRadius ?? r.radius),
                 child: Column(
                   children: [
                     Container(
@@ -347,12 +320,7 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
                               child: Semantics(
                                 header: true,
                                 child: Text(
-                                  t.brutal
-                                      ? raftText(
-                                          context,
-                                          widget.title,
-                                        ).toUpperCase()
-                                      : raftText(context, widget.title),
+                                  raftText(context, widget.title),
                                   style: r.title,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -462,11 +430,7 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
           Text(
             raftText(context, widget.emptyBody),
             textAlign: TextAlign.center,
-            style: r.body.copyWith(
-              color: r.tokens.brutal
-                  ? r.tokens.strong.withValues(alpha: .6)
-                  : r.tokens.muted,
-            ),
+            style: r.body.copyWith(color: r.tokens.muted),
           ),
         ],
       ),
@@ -488,15 +452,15 @@ class _NotificationRow extends StatelessWidget {
   final String? openingActionLabel;
   @override
   Widget build(BuildContext context) {
-    final t = recipe.tokens;
-    // raft-ui DEFAULT_STATUS_ICON (dist/index.mjs:15045), its lucide 1.48.0.
+    // raft-ui DEFAULT_STATUS_ICON (0.5.52 dist/index.mjs:14438); its lucide-react
+    // 1.55.0 is the same build the Web imports, so one geometry serves both.
     final glyph =
         entry.glyph ??
         switch (entry.kind) {
           RaftNotificationKind.error ||
           RaftNotificationKind.warning => RaftGlyph.triangleAlert,
           RaftNotificationKind.info => RaftGlyph.info,
-          RaftNotificationKind.success => RaftGlyph.checkCircle2RaftUi,
+          RaftNotificationKind.success => RaftGlyph.checkCircle2,
         };
     return Semantics(
       container: true,
@@ -524,11 +488,9 @@ class _NotificationRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: recipe.iconFill(entry.kind),
                       borderRadius: BorderRadius.circular(
-                        t.brutal ? 0 : _NotificationPrimitives.iconRadius,
+                        _NotificationPrimitives.iconRadius,
                       ),
-                      border: t.brutal
-                          ? Border.fromBorderSide(recipe.divider)
-                          : null,
+                      border: null,
                     ),
                     child: Center(
                       child: RaftIcon(
@@ -584,9 +546,8 @@ class _NotificationRow extends StatelessWidget {
 
   Widget _action(BuildContext context, RaftNotificationAction action) {
     final scale =
-        MediaQuery.textScalerOf(
-          context,
-        ).scale(_NotificationPrimitives.actionFont) /
+        MediaQuery.textScalerOf(context)
+            .scale(_NotificationPrimitives.actionFont) /
         _NotificationPrimitives.actionFont;
     final buttonRecipe = _NotificationActionRecipe(
       recipe.tokens,
@@ -607,20 +568,12 @@ class _NotificationRow extends StatelessWidget {
         action.label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style:
-            (recipe.tokens.brutal
-                    ? RaftTypography.heading(
-                        recipe.tokens,
-                        size: _NotificationPrimitives.actionFont,
-                        line: _NotificationPrimitives.actionLine,
-                      )
-                    : RaftTypography.body(
-                        recipe.tokens,
-                        size: _NotificationPrimitives.actionFont,
-                        line: _NotificationPrimitives.actionLine,
-                        weight: FontWeight.w500,
-                      ))
-                .copyWith(color: buttonRecipe.foreground),
+        style: (RaftTypography.body(
+          recipe.tokens,
+          size: _NotificationPrimitives.actionFont,
+          line: _NotificationPrimitives.actionLine,
+          weight: FontWeight.w500,
+        )).copyWith(color: buttonRecipe.foreground),
       ),
     );
   }
@@ -637,13 +590,10 @@ class _NotificationActionRecipe extends RaftControlRecipe {
       );
   final bool primary;
   @override
-  Color get background => primary && tokens.brutal
-      ? tokens.colors['color-brutal-pink']!
-      : super.background;
+  Color get background => super.background;
   @override
-  Color backgroundFor({bool hovered = false}) => tokens.brutal && primary
-      ? background
-      : super.backgroundFor(hovered: hovered);
+  Color backgroundFor({bool hovered = false}) =>
+      super.backgroundFor(hovered: hovered);
 }
 
 // Native drawing of Status's inset 0 .5px 1px white/55% shadow.

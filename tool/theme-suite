@@ -1,0 +1,346 @@
+#!/usr/bin/env python3
+"""The on-demand suite for the legacy looks (Elegant, Brutal; frozen at a57b9dab).
+
+The regular checks (tool/check-project, tool/preflight, the pre-gate pass) test the Raft look only. This suite tests
+the other looks. It runs
+
+  1. the Dart tests of the legacy looks: the test files tagged `look-elegant` / `look-brutal` (their whole content is
+     about that look) and the files that declare per-look cases (a look-aware `raftThemeMatrix`, `raftLookSkip`),
+     with RAFT_TEST_LOOKS / RAFT_TEST_MODES set so those files declare the legacy cases; and
+  2. the frozen-baseline visual regression for each look: `tool/parity-ext/run regress --theme <look>` (the Flutter
+     render against the frozen a57b9dab original). It needs the pinned Web source checkout (PARITY_RAFT_SOURCE,
+     RAFT_PARITY_SOURCE, or ~/.cache/raft-flutter/raft-source-23) and the Node toolchain the parity tools use.
+
+Run it when a change touches the theme engine, packages/raft_theme, the theme adapters or packs, recipes or recipe
+binding, or a legacy-look file (the list is THEME_ENGINE_PATHS in tool/theme_looks.py; check-project, preflight
+and the pre-gate script print a notice when a diff touches it). The nightly (tool/nightly-quality) runs it for both looks.
+
+  3. the theme engine package on its own (`engine` step): `flutter test` in packages/raft_theme with no Raft app and no
+     raft_ui, every test file there, including the ones tied to a legacy look. `--look all` includes it;
+     `tool/theme-suite engine` runs only it. The Raft gate skips the files there that carry a look tag.
+
+  tool/theme-suite engine [--plan] [--out DIR] [--jobs N] [--timeout-minutes M]
+  tool/theme-suite --look elegant|brutal|all [--mode light|dark|all]
+                   [--tests-only | --visual-only] [--plan]
+                   [--files FILE ...]        only these Dart test files (repo-relative), still run for the looks
+                   [--cases GLOB[,GLOB]]     visual: only these case ids
+                   [--baseline SUMMARY.json] visual: fail when a case lost >= 1 point against this earlier
+                                             regress-summary.json (without it the scores are reported, not judged)
+                   [--out DIR] [--jobs N] [--timeout-minutes M] [--coverage-path LCOV]
+
+`--plan` prints what would run and exits 0. The summary at the end names every step; the exit code is 0 only when
+every step that ran passed (Dart tests: no failure and at least one test ran; visual: the regress run completed, and
+no case dropped when `--baseline` is given). A step that cannot run (no Web source) fails the suite unless it was
+switched off with `--tests-only`. Results and logs go to .local/theme-suite/ (or --out).
+"""
+import argparse
+import json
+import os
+import pathlib
+import signal
+import subprocess
+import sys
+import time
+
+TOOL = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(TOOL))
+import test_events  # noqa: E402
+import theme_looks  # noqa: E402
+
+root = TOOL.parent
+app_dir = root / 'apps/raft_flutter'
+TEST_DIRS = ['apps/raft_flutter/test', 'packages/raft_client/test', 'packages/raft_sync/test', 'packages/raft_ui/test', 'packages/raft_theme/test',
+             'packages/flutter_dynamic_icon_plus/test', 'packages/raft_updater/test', 'packages/desktop_drop/test']
+DEFAULT_OUT = '.local/theme-suite'
+ENGINE_DIR = 'packages/raft_theme'
+DROP = 0.01  # a visual case that lost this much since the baseline is a regression
+PASS_LINE = 0.96
+COVERAGE_PACKAGES = r'^(raft_flutter|raft_ui|raft_client|raft_sync|raft_updater|flutter_dynamic_icon_plus)$'
+children = []
+
+
+# ---------------------------------------------------------------- pure parts
+
+def looks_for(choice):
+    """`all` is every legacy look; the Raft look is never part of this suite."""
+    return theme_looks.LEGACY_LOOKS if choice == 'all' else (choice,)
+
+
+def select_files(looks, explicit=None, base=None):
+    """Dart test files (repo-relative) the suite runs for `looks`."""
+    base = pathlib.Path(base or root)
+    if explicit:
+        return sorted(explicit)
+    # packages/raft_theme runs as its own package in the engine step, not from the app directory.
+    found = [f for f in theme_looks.discover(TEST_DIRS, base) if not f.startswith(f'{ENGINE_DIR}/')]
+    return sorted(theme_looks.suite_files(found, looks, base))
+
+
+def dart_env(looks, mode, env=None):
+    """The environment the Dart tests see: only the legacy looks, the whole size matrix."""
+    env = dict(os.environ if env is None else env)
+    env.pop(theme_looks.ALL_THEMES_VARIABLE, None)
+    env[theme_looks.LOOKS_VARIABLE] = ','.join(looks)
+    env[theme_looks.MODES_VARIABLE] = mode
+    env['RAFT_TEST_TIER'] = 'full'
+    env['PYTHONUTF8'] = '1'
+    return env
+
+
+def dart_command(files, events, jobs, coverage_path=None):
+    """`flutter test` from apps/raft_flutter: the same invocation shape check-project uses."""
+    relative = [pathlib.Path(os.path.relpath(root / f, app_dir)).as_posix() for f in files]
+    command = [sys.executable, str(root / 'tool/flutter'), 'test', '--no-pub', '-j', str(jobs), '--reporter', 'failures-only',
+               '--file-reporter', f'json:{events}']
+    if coverage_path:
+        command += ['--coverage', '--coverage-path', str(coverage_path), '--coverage-package', COVERAGE_PACKAGES]
+    return command + relative
+
+
+def summarize_events(lines):
+    """Counts and failures of a JSON event stream. Bookkeeping entries (loading a file, setUpAll, tearDownAll) are not
+    tests, but a failing one is a failure (a file that does not compile fails that way)."""
+    results = test_events.parse_test_events(lines)
+    real = [r for r in results if not r['loading'] and not r['hidden']]
+    failed = [r for r in results if r['status'] in ('failed', 'incomplete')]
+    return {'passed': sum(r['status'] == 'passed' for r in real), 'skipped': sum(r['status'] == 'skipped' for r in real),
+            'failed': [{'file': r['file'], 'name': r['name'], 'error': r['error']} for r in failed],
+            'files': len({r['file'] for r in results if r['file']})}
+
+
+def tests_verdict(code, counts, timed_out=False):
+    """(ok, why) of the Dart step."""
+    if timed_out:
+        return False, 'timed out'
+    if counts['failed']:
+        return False, f"{len(counts['failed'])} failed"
+    if code != 0:
+        return False, f'flutter test exited {code}'
+    if counts['passed'] == 0:
+        return False, 'no test ran (the selection is empty)'
+    return True, ''
+
+
+def web_source(env=None, home=None):
+    """The pinned Web source checkout the visual regression needs, or None."""
+    env = os.environ if env is None else env
+    value = env.get('PARITY_RAFT_SOURCE') or env.get('RAFT_PARITY_SOURCE')
+    path = pathlib.Path(value) if value else pathlib.Path(home or pathlib.Path.home()) / '.cache/raft-flutter/raft-source-23'
+    return path if (path / 'packages/visual-testing/shared/sharedCases.json').is_file() else None
+
+
+def visual_command(look, mode, out, cases=None):
+    command = [sys.executable, str(root / 'tool/parity-ext/run'), 'regress', '--theme', look, '--mode', mode, '--out', str(out)]
+    return command + (['--cases', cases] if cases else [])
+
+
+def scores_of(rows):
+    return {f"{r['look']}/{r['mode']}/{r['id']}": r['score'] for r in rows if r.get('score') is not None}
+
+
+def visual_verdict(rows, baseline_rows=None):
+    """(ok, detail, drops): rows are regress-summary rows. Without a baseline the scores are reported, not judged."""
+    scores = scores_of(rows)
+    below = sum(1 for s in scores.values() if s <= PASS_LINE)
+    unscored = sum(1 for r in rows if r.get('score') is None)
+    detail = f'{len(rows)} cases, {below} at or below the {PASS_LINE:.0%} line, {unscored} without a score'
+    if not rows:
+        return False, 'the regress run produced no rows', []
+    if baseline_rows is None:
+        return True, detail + ' (no --baseline: reported, not judged)', []
+    before = scores_of(baseline_rows)
+    drops = sorted(((before[k] - s, k) for k, s in scores.items() if k in before and before[k] - s >= DROP), reverse=True)
+    return (not drops), detail + f', {len(drops)} dropped against the baseline', [f'{k}: {before[k]:.3f} -> {scores[k]:.3f}' for _, k in drops]
+
+
+def format_summary(steps, looks, mode):
+    lines = [f"theme-suite: looks {', '.join(looks)}; mode {mode}"]
+    width = max([len(s['name']) for s in steps] + [4])
+    for step in steps:
+        lines.append(f"  {step['name'].ljust(width)}  {step['status']:<4}  {step['detail']}")
+        lines.extend(f'      {line}' for line in step.get('lines', ()))
+    failed = [s['name'] for s in steps if s['status'] != 'PASS']
+    lines.append('theme-suite: ' + ('PASSED' if not failed else f"FAILED ({', '.join(failed)})"))
+    return lines
+
+
+# ---------------------------------------------------------------- running
+
+def run(command, cwd, log_path, env, timeout=None):
+    """Run a child in its own process group, logging to `log_path`; returns (exit code, timed_out, seconds)."""
+    started = time.monotonic()
+    with open(log_path, 'w', encoding='utf-8') as log:
+        child = subprocess.Popen(command, cwd=cwd, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        children.append(child)
+        try:
+            code = child.wait(timeout=timeout)
+            timed_out = False
+        except subprocess.TimeoutExpired:
+            stop(child)
+            code, timed_out = 124, True
+        finally:
+            if child in children:
+                children.remove(child)
+    return code, timed_out, time.monotonic() - started
+
+
+def stop(child):
+    """Stop a child this process started (its own process group only)."""
+    if child.poll() is not None:
+        return
+    try:
+        os.killpg(child.pid, signal.SIGTERM)
+        child.wait(timeout=20)
+    except (ProcessLookupError, subprocess.TimeoutExpired):
+        try:
+            os.killpg(child.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+def tests_step(args, looks, files, out):
+    if not files:
+        return {'name': 'dart-tests', 'status': 'FAIL', 'detail': 'no test file is tied to these looks'}
+    events = out / 'dart-tests.events.json'
+    events.unlink(missing_ok=True)
+    log = out / 'dart-tests.log'
+    command = dart_command(files, events, args.jobs, args.coverage_path)
+    code, timed_out, seconds = run(command, app_dir, log, dart_env(looks, args.mode),
+                                   args.timeout_minutes * 60 if args.timeout_minutes else None)
+    lines = events.read_text(encoding='utf-8', errors='replace').splitlines() if events.is_file() else []
+    counts = summarize_events(lines)
+    ok, why = tests_verdict(code, counts, timed_out)
+    detail = f"{counts['passed']} passed, {counts['skipped']} skipped, {len(counts['failed'])} failed in {counts['files']} of {len(files)} files, {seconds:.0f}s (log {log})"
+    shown = [f"{f['file']}: {f['name']}" + (f" -- {f['error']}" if f['error'] else '') for f in counts['failed'][:20]]
+    if len(counts['failed']) > 20:
+        shown.append(f"... and {len(counts['failed']) - 20} more in {log}")
+    return {'name': 'dart-tests', 'status': 'PASS' if ok else 'FAIL', 'detail': detail + ('' if ok else f'; {why}'), 'lines': shown}
+
+
+def engine_step(args, out):
+    """`flutter test` inside packages/raft_theme: whatever tests the package has, nothing filtered."""
+    package = root / ENGINE_DIR
+    if not (package / 'test').is_dir():
+        return {'name': 'engine', 'status': 'FAIL', 'detail': f'{ENGINE_DIR}/test does not exist'}
+    events = out / 'engine.events.json'
+    events.unlink(missing_ok=True)
+    log = out / 'engine.log'
+    env = dict(os.environ, PYTHONUTF8='1', RAFT_TEST_TIER='full')
+    for name in (theme_looks.ALL_THEMES_VARIABLE, theme_looks.LOOKS_VARIABLE, theme_looks.MODES_VARIABLE):
+        env.pop(name, None)
+    command = [sys.executable, str(root / 'tool/flutter'), 'test', '--no-pub', '-j', str(args.jobs), '--reporter', 'failures-only',
+               '--file-reporter', f'json:{events}']
+    code, timed_out, seconds = run(command, package, log, env, args.timeout_minutes * 60 if args.timeout_minutes else None)
+    lines = events.read_text(encoding='utf-8', errors='replace').splitlines() if events.is_file() else []
+    counts = summarize_events(lines)
+    ok, why = tests_verdict(code, counts, timed_out)
+    shown = [f"{f['file']}: {f['name']}" + (f" -- {f['error']}" if f['error'] else '') for f in counts['failed'][:20]]
+    detail = f"{counts['passed']} passed, {counts['skipped']} skipped, {len(counts['failed'])} failed in {counts['files']} files, {seconds:.0f}s (log {log})"
+    return {'name': 'engine', 'status': 'PASS' if ok else 'FAIL', 'detail': detail + ('' if ok else f'; {why}'), 'lines': shown}
+
+
+def visual_steps(args, looks, out):
+    source = web_source()
+    if source is None:
+        return [{'name': 'visual', 'status': 'FAIL', 'detail': 'not run: the pinned Web source checkout is missing; set PARITY_RAFT_SOURCE '
+                 '(or RAFT_PARITY_SOURCE, or ~/.cache/raft-flutter/raft-source-23), or pass --tests-only'}]
+    env = dict(os.environ, PARITY_RAFT_SOURCE=str(source), PYTHONUTF8='1')
+    baseline = json.loads(pathlib.Path(args.baseline).read_text()).get('rows') if args.baseline else None
+    steps = []
+    for look in looks:
+        directory = out / f'visual-{look}'
+        log = out / f'visual-{look}.log'
+        code, timed_out, seconds = run(visual_command(look, args.mode, directory, args.cases), root, log, env,
+                                       args.timeout_minutes * 60 if args.timeout_minutes else None)
+        summary = directory / 'regress-summary.json'
+        name = f'visual-{look}'
+        if timed_out or code != 0 or not summary.is_file():
+            why = 'timed out' if timed_out else f'regress exited {code}' if code else 'no regress-summary.json'
+            steps.append({'name': name, 'status': 'FAIL', 'detail': f'{why} (log {log})'})
+            continue
+        rows = json.loads(summary.read_text()).get('rows', [])
+        ok, detail, drops = visual_verdict(rows, baseline)
+        steps.append({'name': name, 'status': 'PASS' if ok else 'FAIL', 'detail': f'{detail}, {seconds:.0f}s (report {directory / "regress-summary.md"})', 'lines': drops[:20]})
+    return steps
+
+
+def parse_args(argv):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('target', nargs='?', choices=['engine'], help='`engine`: only the packages/raft_theme tests')
+    parser.add_argument('--look', choices=[*theme_looks.LEGACY_LOOKS, 'all'], default=None)
+    parser.add_argument('--mode', choices=theme_looks.MODES, default='all')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--tests-only', action='store_true', help='skip the visual regression')
+    group.add_argument('--visual-only', action='store_true', help='skip the Dart tests')
+    parser.add_argument('--plan', action='store_true', help='print what would run and exit 0')
+    parser.add_argument('--files', nargs='+', default=None, metavar='FILE', help='only these Dart test files (repo-relative)')
+    parser.add_argument('--cases', default=None, help='visual: only these case ids (comma list of globs)')
+    parser.add_argument('--baseline', default=None, help='visual: an earlier regress-summary.json to compare against')
+    parser.add_argument('--out', default=DEFAULT_OUT)
+    parser.add_argument('--jobs', type=int, default=max(2, min(4, (os.cpu_count() or 2) // 2)))
+    parser.add_argument('--timeout-minutes', type=float, default=None)
+    parser.add_argument('--coverage-path', default=None, help='also write an lcov file for the Dart tests')
+    args = parser.parse_args(argv)
+    if args.target == 'engine':
+        if args.look or args.tests_only or args.visual_only or args.files:
+            parser.error('`engine` takes no --look, --tests-only, --visual-only or --files')
+        args.look = 'all'
+    elif not args.look:
+        parser.error('--look is required (or use the `engine` target)')
+    return args
+
+
+def main(argv=None):
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    looks = looks_for(args.look)
+    engine_only = args.target == 'engine'
+    with_engine = engine_only or (args.look == 'all' and not args.visual_only and not args.files)
+    files = [] if engine_only else select_files(looks, args.files)
+    if args.plan:
+        print(f"theme-suite plan: {'engine only' if engine_only else 'looks ' + ', '.join(looks) + '; mode ' + args.mode}")
+        if with_engine:
+            tests = sorted((root / ENGINE_DIR / 'test').rglob('*_test.dart'))
+            print(f'  engine: flutter test in {ENGINE_DIR}, {len(tests)} test files')
+        if engine_only:
+            return 0
+        if not args.visual_only:
+            print(f'  dart tests: {len(files)} files, {theme_looks.LOOKS_VARIABLE}={",".join(looks)} {theme_looks.MODES_VARIABLE}={args.mode}')
+            tagged = [f for f in files if theme_looks.file_looks(root / f)]
+            print(f'    {len(tagged)} tied to a look by tag, {len(files) - len(tagged)} declare per-look cases')
+            for name in files:
+                print(f'    {name}')
+        if not args.tests_only:
+            source = web_source()
+            print(f"  visual: {' '.join(shlex_quote(c) for c in visual_command('<look>', args.mode, '<out>', args.cases))}")
+            print(f"    Web source: {source if source else 'MISSING (set PARITY_RAFT_SOURCE)'}")
+        return 0
+    out = pathlib.Path(args.out)
+    out = out if out.is_absolute() else root / out
+    out.mkdir(parents=True, exist_ok=True)
+    steps = []
+    try:
+        if with_engine:
+            steps.append(engine_step(args, out))
+        if not engine_only and not args.visual_only:
+            steps.append(tests_step(args, looks, files, out))
+        if not engine_only and not args.tests_only:
+            steps.extend(visual_steps(args, looks, out))
+    except KeyboardInterrupt:
+        for child in list(children):
+            stop(child)
+        print('theme-suite: interrupted', file=sys.stderr)
+        return 130
+    summary = format_summary(steps, looks if not engine_only else ('engine',), args.mode)
+    (out / 'summary.txt').write_text('\n'.join(summary) + '\n', encoding='utf-8')
+    print('\n'.join(summary))
+    return 0 if all(s['status'] == 'PASS' for s in steps) else 1
+
+
+def shlex_quote(text):
+    import shlex
+    return shlex.quote(str(text))
+
+
+if __name__ == '__main__':
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+    sys.exit(main())

@@ -1,9 +1,12 @@
+import 'card.dart' show RaftCard;
+
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'interaction.dart';
 import 'system_inset.dart';
 import 'auth_page.dart';
 import 'agent_profile.dart' show RaftPanelSection, raftPanelRuleColor;
@@ -11,11 +14,16 @@ import 'indicators.dart' show RaftSkeleton;
 import 'panel_layout.dart' show RaftCssText;
 import 'recipes/button_variants.g.dart';
 import 'recipes/card.g.dart';
-import 'recipes/recipe_utilities.g.dart';
+
+import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
+
+import 'recipes/recipe_router.dart'
+    show raftPopoverSurfaceClasses, resolveRecipeClasses;
 import 'components.dart' show RaftAvatar, RaftAvatarKind;
 import 'list_items.dart';
 import 'mounted_avatar_recipe.dart';
 import 'recipes/recipe_runtime.dart' show RaftSlotStyle;
+import 'panel_edge.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
 import 'icons.dart';
@@ -23,15 +31,23 @@ import 'inline_badge_editor.dart';
 import 'localization.dart';
 import 'css_recipe_decoration.dart';
 import 'recipe_surface.dart';
+import 'mounted_task_chip.dart' show RaftMessageTaskStatus;
 import 'task.dart';
+import 'task_status_badge.dart';
 import 'task_timeline.dart';
+import 'page_tokens.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 import 'thread_composition.dart';
-import 'tokens/shadows.g.dart';
+import 'thread_resolution_body.dart';
+import 'status_bar.dart';
 
 /// LegacyTaskPanel's container is selected by MainLayout, independently of
 /// the modern task modal and of the task's accepted metadata.
+/// Web v1.21.23 TaskProperties look (the Raft pack) or the a57b9dab one.
+bool _webHead(RaftTokens t) =>
+    t.option('taskModal.head', or: 'web23') == 'web23';
+
 enum RaftLegacyTaskPresentation { side, modal, mobileModal }
 
 /// Mounted Source TaskModalBar/TaskModalHead/TaskProperties and the separate
@@ -64,7 +80,13 @@ class RaftTaskSurface extends StatefulWidget {
     this.legacyPresentation = RaftLegacyTaskPresentation.modal,
     this.page = false,
     this.displayNameFor,
+    this.onViewInThread,
   });
+
+  /// Leaves the task for the ordinary thread of its message (Web TaskModalBar
+  /// "View in thread"); null when the task has no thread to show (legacy tasks,
+  /// or a task whose message is itself a thread reply).
+  final VoidCallback? onViewInThread;
 
   /// Display name of a known person (`type` is `user` or `agent`), as Web
   /// resolves it from the channel members; null falls back to `@handle`.
@@ -130,8 +152,8 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     // borders take space and outer shadows never paint over the box, so the
     // frame is a bordered container whose shadow is painted underneath.
     final bordered = !(overlay || mobile);
-    final borderWidth = bordered ? (t.brutal ? 2.0 : 1.0) : 0.0;
-    final radius = BorderRadius.circular(t.brutal || legacy ? 0 : 8);
+    final borderWidth = bordered ? (1.0) : 0.0;
+    final radius = BorderRadius.circular(legacy ? 0 : 8);
     final frameKey = ValueKey(
       legacy ? 'legacy-task-panel' : 'task-thread-modal',
     );
@@ -157,20 +179,14 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               // The modern ThreadPanel is a raft-ui `Panel edge="attached"`
               // (`border-l-2 border-black`, elegant `border-l border-line-muted`):
               // its column starts 2px / 1px inside the modal frame, in the
-              // modal and on the phone alike. LegacyTaskPanel keeps its own
+              // modal. The shared rule (RaftPanelEdge) leaves the full-width
+              // phone page without it. LegacyTaskPanel keeps its own
               // side-presentation border (`framed` below).
               child: legacy
                   ? body
                   : Container(
                       decoration: BoxDecoration(
-                        border: Border(
-                          left: BorderSide(
-                            color: t.brutal
-                                ? Colors.black
-                                : t.colors['line-muted']!,
-                            width: t.brutal ? 2 : 1,
-                          ),
-                        ),
+                        border: RaftPanelEdge.left(context),
                       ),
                       child: body,
                     ),
@@ -179,42 +195,35 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         ),
       ),
     );
+    final edge = side && size.width >= 1024
+        ? Border(left: BorderSide(color: t.colors['line-hairline']!, width: 1))
+        : null;
     final framed = overlay || mobile
-        ? DecoratedBox(
-            position: DecorationPosition.foreground,
-            decoration: BoxDecoration(
-              border: side && size.width >= 1024
-                  ? Border(
-                      left: BorderSide(
-                        color: t.brutal ? t.ink : t.colors['line-hairline']!,
-                        width: t.brutal ? 2 : 1,
-                      ),
-                    )
-                  : null,
+        // A full-height panel is a column under the status bar: its surface
+        // and edge continue up through the band.
+        ? RaftStatusBarSource(
+            color: legacy ? t.canvas : t.panel,
+            border: edge,
+            child: DecoratedBox(
+              position: DecorationPosition.foreground,
+              decoration: BoxDecoration(border: edge),
+              child: panel,
             ),
-            child: panel,
           )
         : RaftModalBackdrop(
             child: GestureDetector(
               onTap: () {},
               child: CustomPaint(
                 painter: RaftOuterShadowPainter(
-                  t.brutal
-                      ? RaftProductShadows.shadowBrutal.paintOrder
-                      : (legacy ? t.themeShadows.md : t.themeShadows.xl)
-                            .paintOrder,
+                  (legacy ? t.themeShadows.md : t.themeShadows.xl).paintOrder,
                   radius,
                 ),
                 child: Container(
                   key: frameKey,
                   decoration: RaftRecipeDecoration(
-                    color: t.brutal
-                        ? Colors.white
-                        : legacy
-                        ? t.canvas
-                        : t.popover,
+                    color: legacy ? t.canvas : t.popover,
                     border: Border.all(
-                      color: t.brutal ? Colors.black : t.colors['line-muted']!,
+                      color: t.colors['line-muted']!,
                       width: borderWidth,
                     ),
                     borderRadius: radius,
@@ -272,9 +281,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             ? RaftThreadPresentation.mobileModal
             : RaftThreadPresentation.modal,
         threadLabel: raftText(context, 'Thread'),
-        backLabel: raftText(context, 'Close task'),
-        closeLabel: raftText(context, 'Close task'),
-        jumpLabel: raftText(context, 'Jump to beginning'),
+        backLabel: raftText(context, 'Close Task'),
+        closeLabel: raftText(context, 'Close Task'),
+        jumpLabel: raftText(context, 'Jump to Beginning'),
         onBack: widget.onBack ?? widget.onClose,
         onClose: widget.onClose,
       );
@@ -283,17 +292,17 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       key: const ValueKey('task-modal-bar'),
       // TaskModalBar px-4 py-2 with 16+20 line boxes and a 1/2px border.
       // LegacyTaskPanel uses the separate h-panel-header recipe.
-      height: widget.legacy
-          ? (t.brutal ? RaftMetrics.brutalPanelHeader : RaftMetrics.panelHeader)
-          : (t.brutal ? 54 : 53),
+      // The height is a minimum: larger text grows the bar, whose two-line
+      // title would otherwise spill out of it.
+      constraints: BoxConstraints(
+        minHeight: widget.legacy ? RaftMetrics.panelHeader : (53),
+      ),
       padding: EdgeInsets.symmetric(horizontal: widget.legacy ? 20 : 16),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: t.brutal
-                ? t.ink
-                : t.colors[widget.legacy ? 'line-hairline' : 'line-muted']!,
-            width: t.brutal ? 2 : 1,
+            color: t.colors[widget.legacy ? 'line-hairline' : 'line-muted']!,
+            width: 1,
           ),
         ),
       ),
@@ -307,10 +316,12 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             // the tooltip, whose own box would otherwise clip the hit test).
             RaftTouchTargetExpander(
               minSize: Size.square(
-                mobile || widget.page ? RaftMetrics.touchTarget : 0,
+                RaftInteraction.of(context).touch || mobile || widget.page
+                    ? RaftMetrics.touchTarget
+                    : 0,
               ),
               child: RaftTooltip(
-                message: raftText(context, 'Close task'),
+                message: raftText(context, 'Close Task'),
                 excludeFromSemantics: true,
                 child: RaftRecipeButton(
                   key: const ValueKey('task-back'),
@@ -320,7 +331,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                   size: RaftButtonRecipeSize.iconSm,
                   glyph: RaftGlyph.arrowLeft,
                   glyphSize: 14,
-                  tooltip: 'Close task',
+                  tooltip: 'Close Task',
                   onPressed: widget.legacy
                       ? widget.onClose
                       : widget.onBack ?? widget.onClose,
@@ -347,7 +358,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                   raftFormat(
                     context,
                     widget.legacy
-                        ? 'Task #{taskNumber} · LEGACY'
+                        ? 'Task #{taskNumber} · Legacy'
                         : 'Task #{taskNumber}',
                     {'taskNumber': task['taskNumber'] ?? ''},
                   ),
@@ -362,15 +373,25 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               ],
             ),
           ),
+          if (widget.onViewInThread != null && !widget.legacy)
+            RaftTooltip(
+              message: raftText(context, 'View in thread'),
+              excludeFromSemantics: true,
+              child: RaftThreadViewButton(
+                key: const ValueKey('task-modal-view-in-thread'),
+                tooltip: 'View in thread',
+                onPressed: widget.onViewInThread,
+              ),
+            ),
           if (showClose)
             // Web `CloseButton` (brutal: bordered, white, shadow-brutal-sm);
             // icon-only, so it carries its name as a tooltip.
             RaftTooltip(
-              message: raftText(context, 'Close task'),
+              message: raftText(context, 'Close Task'),
               excludeFromSemantics: true,
               child: RaftCloseButton(
                 key: const ValueKey('task-close'),
-                tooltip: 'Close task',
+                tooltip: 'Close Task',
                 onPressed: widget.onClose,
               ),
             ),
@@ -381,18 +402,22 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
 
   Widget modernBody(BuildContext context) {
     final head = properties(context);
-    if (widget.error != null && widget.loading == false)
+    if (widget.error != null && widget.loading == false) {
+      // ThreadPanel `resolveFailed`: title, body and an outline Retry; the
+      // exception itself is never shown.
       return SingleChildScrollView(
-        child: Column(
-          children: [
-            RaftAuthBanner(text: '${widget.error}'),
-            RaftTextButton(
-              label: 'Retry',
-              onPressed: () => unawaited(widget.onRetry()),
-            ),
-          ],
+        child: RaftThreadResolutionBody(
+          loadingLabel: raftText(context, 'Loading thread…'),
+          errorTitle: raftText(context, "Couldn't load this thread"),
+          errorBody: raftText(
+            context,
+            "The thread couldn't be opened. If this channel recently became public, try again.",
+          ),
+          retryLabel: raftText(context, 'Retry'),
+          onRetry: () => unawaited(widget.onRetry()),
         ),
       );
+    }
     final buildDiscussion = widget.discussionBuilder;
     if (buildDiscussion == null) {
       return SingleChildScrollView(
@@ -423,7 +448,16 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             key: const ValueKey('task-modal-title'),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: RaftTypography.heading(t, size: 18, line: 24.75),
+            // v1.21.23 PanelHeading is a bare flex slot: the title inherits the
+            // body text (16/24 regular); a57b9dab drew it 18px bold.
+            style: _webHead(t)
+                ? RaftTypography.body(
+                    t,
+                    size: 16,
+                    line: 24,
+                    color: t.colors['foreground'],
+                  ).copyWith(fontFamily: t.headingFont)
+                : RaftTypography.heading(t, size: 18, line: 24.75),
           ),
         ),
         if (description.isNotEmpty)
@@ -458,7 +492,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                     ),
                     if (long)
                       RaftTextButton(
-                        label: descriptionExpanded ? 'Collapse' : 'Show more',
+                        label: descriptionExpanded ? 'Collapse' : 'Show More',
                         onPressed: () => setState(
                           () => descriptionExpanded = !descriptionExpanded,
                         ),
@@ -468,7 +502,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               },
             ),
           ),
-        historyBlock(context),
+        // v1.21.23 TaskProperties: the facts row first, History folds under it
+        // (`pt-4` section eyebrow); a57b9dab put the History block above.
+        if (!_webHead(t)) historyBlock(context),
         Wrap(
           key: const ValueKey('task-properties'),
           spacing: 24,
@@ -484,13 +520,14 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             ),
           ],
         ),
+        if (_webHead(t)) historyBlock(context),
         if (task['readOnlyReason'] != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               raftText(
                 context,
-                'This task predates the channel conversion. Only the source workspace can change it.',
+                'This task predates the channel conversion. Only the source server can change it.',
               ),
               style: RaftTypography.body(
                 t,
@@ -501,7 +538,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             ),
           ),
         if (widget.canCleanupDelete && widget.onCleanupDelete != null)
-          RaftTextButton(label: 'Delete', onPressed: widget.onCleanupDelete),
+          RaftTextButton(
+            label: 'Delete Task',
+            onPressed: widget.onCleanupDelete,
+          ),
       ],
     );
     // `PanelSection bg-layer-panel theme-brutal:bg-white` then `<Separator />`
@@ -510,10 +550,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ColoredBox(color: t.brutal ? Colors.white : t.panel, child: section),
+        ColoredBox(color: t.panel, child: section),
         ColoredBox(
-          color: t.colors[t.brutal ? 'line-strong' : 'line-hairline']!,
-          child: SizedBox(height: t.brutal ? 2 : 1),
+          color: t.colors['line-hairline']!,
+          child: SizedBox(height: t.border),
         ),
       ],
     );
@@ -524,13 +564,20 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   /// text-left text-xs font-bold` + 14px chevron) and, open, `mt-3` content.
   Widget historyBlock(BuildContext context) {
     final t = RaftTokens.of(context);
+    final web = _webHead(t);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: web
+          ? const EdgeInsets.only(top: 16)
+          : const EdgeInsets.only(bottom: 16),
       child: Container(
-        padding: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: raftPanelRuleColor(t))),
-        ),
+        padding: web ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
+        decoration: web
+            ? null
+            : BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: raftPanelRuleColor(t)),
+                ),
+              ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -541,26 +588,29 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               builder: (context, state) => Semantics(
                 expanded: historyOpen,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: EdgeInsets.only(bottom: web ? 0 : 4),
                   child: Row(
                     spacing: 4,
                     children: [
                       RaftCssText(
                         raftText(context, 'History'),
-                        style: RaftTypography.body(
-                          t,
-                          size: 12,
-                          line: 16,
-                          weight: FontWeight.w700,
-                          color: t.brutal ? Colors.black : t.strong,
-                        ),
+                        // SectionEyebrow: 13/18 bold hint (v1.21.23).
+                        style: web
+                            ? t.sectionEyebrow()
+                            : RaftTypography.body(
+                                t,
+                                size: 12,
+                                line: 16,
+                                weight: FontWeight.w700,
+                                color: t.strong,
+                              ),
                       ),
                       RaftIcon(
                         historyOpen
                             ? RaftGlyph.chevronDown
                             : RaftGlyph.chevronRight,
                         size: 14,
-                        color: t.brutal ? Colors.black : t.strong,
+                        color: web ? t.colors['foreground-eyebrow'] : t.strong,
                       ),
                       const Spacer(),
                     ],
@@ -585,17 +635,18 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     t,
     size: 14,
     line: 20,
-    color: t.brutal ? t.ink : t.muted,
+    color: _webHead(t) ? t.colors['foreground'] : t.muted,
   );
 
   /// raft-ui `DescriptionTerm`: elegant `text-[11px] font-medium leading-none
   /// text-foreground-placeholder`, brutal `text-xs text-foreground-strong/50`.
-  TextStyle termStyle(RaftTokens t) => t.brutal
+  TextStyle termStyle(RaftTokens t) => _webHead(t)
       ? RaftTypography.body(
           t,
-          size: 12,
-          line: 16,
-          color: t.strong.withValues(alpha: .5),
+          size: 13,
+          line: 18,
+          weight: FontWeight.w500,
+          color: t.colors['foreground-hint'],
         )
       : RaftTypography.body(
           t,
@@ -630,7 +681,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   }
 
   Widget status(BuildContext context) {
-    final t = RaftTokens.of(context), value = '${widget.task['status']}';
+    final value = '${widget.task['status']}';
     if (!raftTaskStatuses.contains(value)) return Text(value);
     final label = raftText(context, raftTaskStatusLabel(value));
     // Web: editor when the viewer may edit (or the row is read-only with a
@@ -641,12 +692,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         status: value,
       );
     }
-    final (bg, fg) = raftTaskStatusBadgeColors(t, value);
     return RaftInlineBadgeEditor(
       key: const ValueKey('task-properties-status'),
-      // Web InlineBadgeEditor keeps its `uppercase` default for status (only
-      // the assignee passes `uppercase={false}`).
-      uppercase: true,
+      // Web `badgeStatus`: the trigger is the TaskStatusBadge, so `uppercase`
+      // does not apply.
       label: label,
       selectedId: value,
       options: [
@@ -666,11 +715,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           ? null
           : raftText(
               context,
-              'This task predates the channel conversion. Only the source workspace can change it.',
+              'This task predates the channel conversion. Only the source server can change it.',
             ),
       onSelect: (next) => unawaited(widget.onUpdate('status', next)),
-      background: bg,
-      foreground: fg,
+      taskStatus: raftTaskStatusOf(value),
     );
   }
 
@@ -702,7 +750,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       tooltip: task['readOnlyReason'] != null
           ? raftText(
               context,
-              'This task predates the channel conversion. Only the source workspace can change it.',
+              'This task predates the channel conversion. Only the source server can change it.',
             )
           : done
           ? raftText(
@@ -710,8 +758,8 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               'Completed tasks cannot change assignees. Reopen the task first.',
             )
           : null,
-      background: t.brutal ? Colors.white : t.panel,
-      foreground: t.brutal ? Colors.black : t.strong,
+      background: t.panel,
+      foreground: t.strong,
       onSelect: (_) {},
       onOpenChanged: (open) {
         if (!open) return;
@@ -763,8 +811,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     return RaftSelectionPopover(
       title: raftText(context, 'Assignee'),
       width: 240,
-      brutalProductShadow: true,
-      surfaceStyle: assigneeSurface(t),
+      surfaceStyle: taskAssigneeSurface(t),
       searchController: assigneeSearch,
       searchPlaceholder: raftText(context, 'Search people and agents'),
       onSearchChanged: (_) {},
@@ -807,47 +854,6 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     );
   }
 
-  /// `w-[240px] border border-line-muted bg-layer-popover text-foreground-strong
-  /// shadow-raft-md` (theme-brutal: `border-2 border-black bg-white text-black
-  /// shadow-brutal`) over the Card recipe.
-  RaftSlotStyle assigneeSurface(RaftTokens t) {
-    final card = RaftCardRecipe.resolve(
-      theme: t.recipeTheme,
-      states: t.recipeStates(),
-      tokens: t.recipeTokens,
-    ).root;
-    final classes = [
-      ...card.classes.where(
-        (name) => !const {
-          'min-w-0',
-          'border-2',
-          'border-[0.5px]',
-          'border-line-muted',
-          'border-line-strong',
-          'border-black',
-          'bg-white',
-          'bg-layer-panel',
-          'shadow-raft-md',
-          'shadow-raft-xs',
-          'shadow-raft-sm',
-        }.contains(name),
-      ),
-      t.brutal ? 'border-2' : 'border',
-      t.brutal ? 'border-black' : 'border-line-muted',
-      t.brutal ? 'bg-white' : 'bg-layer-popover',
-      t.brutal ? 'text-black' : 'text-foreground-strong',
-      if (!t.brutal) 'shadow-raft-md',
-    ];
-    return raftRecipeEngine.resolveSlot(
-      [
-        for (final name in classes)
-          raftRecipeUtilities.indexWhere((utility) => utility.name == name),
-      ],
-      t.recipeStates(),
-      t.recipeTokens,
-    );
-  }
-
   /// Web `TaskProperties` history: `Timeline size="sm"` of the visible events
   /// (resource receipts are CLI-only), an error line or the empty line.
   Widget history(BuildContext context) {
@@ -877,27 +883,17 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     if (events.isEmpty) {
       return Text(
         raftText(context, 'No history yet.'),
-        style: RaftTypography.body(
-          t,
-          size: 12,
-          line: 16,
-          color: t.brutal ? Colors.black.withValues(alpha: .5) : t.muted,
-        ),
+        style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
       );
     }
-    final detail = RaftTypography.body(
-      t,
-      size: 12,
-      line: 16,
-      color: t.brutal ? Colors.black.withValues(alpha: .6) : t.muted,
-    );
+    final detail = RaftTypography.body(t, size: 12, line: 16, color: t.muted);
     String label(dynamic status) =>
         raftText(context, raftTaskStatusLabel('$status'));
     return RaftTimelineSm(
       entries: [
         for (final event in events)
           RaftTimelineEntry(
-            variant: historyVariant(event),
+            status: historyStatus(event),
             title: raftText(context, switch (event['eventType']) {
               'created' => 'Created task',
               'amended' => 'Updated task',
@@ -915,7 +911,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     );
   }
 
-  RaftTimelineVariant historyVariant(Map<String, dynamic> event) {
+  /// Web `HistoryTimeline.historyStatus`: the status the event is about, so
+  /// the marker paints from that status's own token. A closed event is
+  /// `closed` and a reopened one `in_progress` when the payload names none.
+  RaftMessageTaskStatus? historyStatus(Map<String, dynamic> event) {
     final payload = event['payload'] is Map
         ? event['payload'] as Map
         : const {};
@@ -929,13 +928,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           'reopened' => 'in_progress',
           _ => null,
         };
-    return switch (status) {
-      'todo' => RaftTimelineVariant.warning,
-      'in_progress' => RaftTimelineVariant.information,
-      'in_review' => RaftTimelineVariant.accent,
-      'done' => RaftTimelineVariant.success,
-      _ => RaftTimelineVariant.neutral,
-    };
+    return status == null ? null : raftTaskStatusOf('$status');
   }
 
   Widget? _historyDetail(
@@ -944,22 +937,15 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     TextStyle style,
     String Function(dynamic) label,
   ) {
-    final t = RaftTokens.of(context);
     final type = '${event['eventType']}';
     final p = event['payload'] is Map ? event['payload'] as Map : const {};
     if (const ['status_changed', 'closed', 'reopened'].contains(type) &&
         p['from'] != null &&
         p['to'] != null) {
-      Widget badge(dynamic status) {
-        final (bg, fg) = raftTaskStatuses.contains('$status')
-            ? raftTaskStatusBadgeColors(t, '$status')
-            : raftTaskStatusBadgeColors(t, 'todo');
-        return RaftSoftBadge(
-          label: label(status),
-          background: bg,
-          foreground: fg,
-        );
-      }
+      Widget badge(dynamic status) => RaftTaskStatusBadge(
+        status: raftTaskStatusOf('$status'),
+        label: label(status),
+      );
 
       return Row(
         spacing: 4,
@@ -1036,7 +1022,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         spacing: 16,
         children: [
           RaftTaskStatus(status: '${task['status']}'),
-          RaftRecipeCard(
+          RaftCard(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1068,7 +1054,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               ],
             ),
           ),
-          RaftRecipeCard(
+          RaftCard(
             padding: const EdgeInsets.all(16),
             child: Column(
               spacing: 8,
@@ -1127,4 +1113,43 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   }
 
   String taskTime(dynamic value) => widget.formatTime(value);
+}
+
+/// `w-[240px] border border-line-muted bg-layer-popover text-foreground-strong
+/// shadow-raft-md` (theme-brutal: `border-2 border-black bg-white text-black
+/// shadow-brutal`) over the Card recipe.
+@visibleForTesting
+RaftSlotStyle taskAssigneeSurface(RaftTokens t) {
+  final card = RaftCardRecipe.resolve(
+    theme: t.recipeTheme,
+    states: t.recipeStates(),
+    tokens: t.recipeTokens,
+  ).root;
+  // Raft look: the Card classes of the current set with the Popover content
+  // treatment. Frozen looks: their Card classes plus the authored 0.5.52 list.
+  final classes = t.recipeSet == RaftRecipeSet.raft
+      ? raftPopoverSurfaceClasses(card.classes)
+      : [
+          ...card.classes.where(
+            (name) => !const {
+              'min-w-0',
+              'border-2',
+              'border-[0.5px]',
+              'border-line-muted',
+              'border-line-strong',
+              'border-black',
+              'bg-white',
+              'bg-layer-panel',
+              'shadow-raft-md',
+              'shadow-raft-xs',
+              'shadow-raft-sm',
+            }.contains(name),
+          ),
+          'border',
+          'border-line-muted',
+          'bg-layer-popover',
+          'text-foreground-strong',
+          'shadow-raft-md',
+        ];
+  return resolveRecipeClasses(classes, t.recipeStates(), t.recipeTokens);
 }

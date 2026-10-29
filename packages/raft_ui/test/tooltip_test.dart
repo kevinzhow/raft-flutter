@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Widget host(
   Widget child, {
-  RaftFamily family = RaftFamily.elegant,
   bool dark = false,
   Duration delay = const Duration(milliseconds: 600),
 }) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+  theme: raftTheme(dark: dark),
   home: Scaffold(
     body: RaftTooltipProvider(
       delay: delay,
@@ -20,61 +20,54 @@ Widget host(
 );
 
 void main() {
-  final themes = [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ];
-  for (final (family, dark) in themes) {
-    testWidgets('Product hover waits600ms with unchanged flow $family/$dark', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        host(
-          RaftTooltip(
-            message: 'Delayed help',
-            child: SizedBox(
-              width: 80,
-              height: 32,
-              child: TextButton(onPressed: () {}, child: const Text('A')),
+  final themes = [(false), (true)];
+  for (final (dark) in raftThemeMatrix(themes)) {
+    testWidgets(
+      'Product hover waits600ms with unchanged flow ${dark ? 'dark' : 'light'}',
+      (tester) async {
+        await tester.pumpWidget(
+          host(
+            RaftTooltip(
+              message: 'Delayed help',
+              child: SizedBox(
+                width: 80,
+                height: 32,
+                child: TextButton(onPressed: () {}, child: const Text('A')),
+              ),
             ),
+            dark: dark,
           ),
-          family: family,
-          dark: dark,
-        ),
-      );
-      final before = tester.getRect(find.text('A'));
-      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await mouse.addPointer(location: Offset.zero);
-      await mouse.moveTo(before.center);
-      await tester.pump(const Duration(milliseconds: 599));
-      expect(find.text('Delayed help'), findsNothing);
-      await tester.pump(const Duration(milliseconds: 1));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 150));
-      expect(find.text('Delayed help'), findsOneWidget);
-      expect(tester.getRect(find.text('A')), before);
-      for (var frame = 0; frame < 20; frame++) {
-        await tester.pump(const Duration(milliseconds: 16));
-      }
-      expect(tester.binding.transientCallbackCount, 0);
-      final tokens = RaftTokens.of(tester.element(find.text('A')));
-      final recipe = RaftTooltipRecipe(tokens);
-      expect(recipe.sideOffset, family == RaftFamily.brutal ? 6 : 8);
-      expect(recipe.text.fontSize, 13);
-      expect(recipe.text.height, 18 / 13);
-      expect(
-        recipe.text.fontWeight,
-        family == RaftFamily.brutal ? FontWeight.w700 : FontWeight.w500,
-      );
-      final box = tester.widget<DecoratedBox>(
-        find.byKey(const ValueKey('raft-tooltip-surface')),
-      );
-      expect((box.decoration as BoxDecoration).color, recipe.background);
-      await mouse.removePointer();
-      await tester.pumpWidget(const SizedBox());
-      await tester.pump(const Duration(seconds: 1));
-    });
+        );
+        final before = tester.getRect(find.text('A'));
+        final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(location: Offset.zero);
+        await mouse.moveTo(before.center);
+        await tester.pump(const Duration(milliseconds: 599));
+        expect(find.text('Delayed help'), findsNothing);
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 150));
+        expect(find.text('Delayed help'), findsOneWidget);
+        expect(tester.getRect(find.text('A')), before);
+        for (var frame = 0; frame < 20; frame++) {
+          await tester.pump(const Duration(milliseconds: 16));
+        }
+        expect(tester.binding.transientCallbackCount, 0);
+        final tokens = RaftTokens.of(tester.element(find.text('A')));
+        final recipe = RaftTooltipRecipe(tokens);
+        expect(recipe.sideOffset, 8);
+        expect(recipe.text.fontSize, 13);
+        expect(recipe.text.height, 18 / 13);
+        expect(recipe.text.fontWeight, FontWeight.w500);
+        final box = tester.widget<DecoratedBox>(
+          find.byKey(const ValueKey('raft-tooltip-surface')),
+        );
+        expect((box.decoration as BoxDecoration).color, recipe.background);
+        await mouse.removePointer();
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
   }
 
   testWidgets('Member strip override250 and hover exit cancels pending', (

@@ -8,6 +8,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/data/workspace_entity_directory.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'workspace_entity_directory_test.dart' show agent, computer, member;
 
@@ -18,6 +19,18 @@ class _Client extends RaftClient {
   int disposed = 0;
   @override
   Stream<RaftEvent> get events => stream.stream;
+  @override
+  Future<dynamic> post(String path, {dynamic data}) async {
+    if (path == '/feature-flags/evaluate') {
+      return {
+        'evaluations': [
+          {'key': 'bulk_change_model_web_v0', 'enabled': false},
+        ],
+      };
+    }
+    throw StateError('Unexpected POST $path');
+  }
+
   @override
   Future<void> dispose() async {
     disposed++;
@@ -64,22 +77,13 @@ void main() {
     w.dispose();
     await client.stream.close();
   });
-  Future<void> host(
-    WidgetTester t,
-    Widget child,
-    RaftFamily family,
-    bool dark,
-  ) => t.pumpWidget(
+  Future<void> host(WidgetTester t, Widget child, bool dark) => t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
+      theme: raftTheme(dark: dark),
       home: Scaffold(body: child),
     ),
   );
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final kind in ['agent', 'computer', 'human']) {
       Widget detail(VoidCallback onBack) => kind == 'human'
           ? MemberProfileView(
@@ -100,13 +104,13 @@ void main() {
           ? 'Source Computer'
           : 'Source Human';
       testWidgets(
-        '$family/$dark $kind shows accepted real directory on first frame while HTTP waits',
+        '${dark ? 'dark' : 'light'} $kind shows accepted real directory on first frame while HTTP waits',
         (t) async {
           await w.entityDirectory.preload();
           w.hold = true;
-          await host(t, detail(() {}), family, dark);
+          await host(t, detail(() {}), dark);
           expect(find.text(expected), findsWidgets);
-          expect(find.text('Loading...'), findsNothing);
+          expect(find.text('Loading profile…'), findsNothing);
           expect(find.text('null'), findsNothing);
           // A revisit never re-reads the shared lists; only detail-only
           // fields (agent runtime profile and, like Web's embedded
@@ -121,12 +125,12 @@ void main() {
         },
       );
       testWidgets(
-        '[K05] $family/$dark cold $kind uses Source loading shell with working back and no invented facts',
+        '[K05] ${dark ? 'dark' : 'light'} cold $kind uses Source loading shell with working back and no invented facts',
         (t) async {
           w.hold = true;
           var back = 0;
-          await host(t, detail(() => back++), family, dark);
-          expect(find.text('Loading...'), findsOneWidget);
+          await host(t, detail(() => back++), dark);
+          expect(find.text('Loading profile…'), findsOneWidget);
           expect(find.text(expected), findsNothing);
           expect(find.byType(RaftProfileIdentity), findsNothing);
           for (final invented in ['Default', 'offline', 'Unassigned', 'null']) {
@@ -161,7 +165,6 @@ void main() {
       await host(
         t,
         MemberProfileView(controller: w, userId: 'u', onClose: () {}),
-        RaftFamily.brutal,
         false,
       );
       w.pending['/servers/s/members/u/profile']!.single.complete({
@@ -184,7 +187,6 @@ void main() {
       await host(
         t,
         MemberProfileView(controller: w, userId: 'u', onClose: () {}),
-        RaftFamily.brutal,
         false,
       );
       w.pending['/servers/s/members/u/profile']!.single.completeError(
@@ -200,7 +202,6 @@ void main() {
       await host(
         t,
         MemberProfileView(controller: w, userId: 'u', onClose: () {}),
-        RaftFamily.brutal,
         false,
       );
       w.pending['/servers/s/members/u/profile']!.last.completeError(
@@ -220,7 +221,6 @@ void main() {
       await host(
         t,
         MemberProfileView(controller: w, userId: 'u', onClose: () {}),
-        RaftFamily.brutal,
         false,
       );
       expect(find.text('Source Human'), findsWidgets);
@@ -247,7 +247,6 @@ void main() {
       await host(
         t,
         MemberProfileView(controller: w, userId: 'u', onClose: () {}),
-        RaftFamily.brutal,
         false,
       );
       expect(find.text('Source Human'), findsWidgets);
@@ -284,7 +283,6 @@ void main() {
         computers: false,
         onOpenDetail: (row) => opened = row,
       ),
-      RaftFamily.brutal,
       false,
     );
     await t.pump();
@@ -314,7 +312,6 @@ void main() {
             ),
           ],
         ),
-        RaftFamily.elegant,
         true,
       );
       await t.tap(find.text('Activity'));
@@ -352,7 +349,6 @@ void main() {
       await host(
         t,
         MemberProfileView(controller: w, userId: 'u', onClose: () {}),
-        RaftFamily.brutal,
         false,
       );
       final oldDetail = w.pending['/servers/s/members/u/profile']!.single;

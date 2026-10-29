@@ -7,6 +7,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/desktop_directory_view.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'activity_incremental_refresh_test.dart'
@@ -82,13 +83,9 @@ Future<void> pull(WidgetTester t) async {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark Home pull refreshes channels, DMs and unread without bootstrap or losing drafts',
+      '${dark ? 'dark' : 'light'} Home pull refreshes channels, DMs and unread without bootstrap or losing drafts',
       (t) async {
         SharedPreferences.setMockInitialValues({});
         final api = _RefreshClient()..selectServer('s1');
@@ -97,7 +94,7 @@ void main() {
           ..channel = RaftChannel({'id': 'c1', 'name': 'test', 'joined': true})
           ..loading = false;
         w.channels = [w.channel!];
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         addTearDown(() async {
           w.dispose();
           await api.dispose();
@@ -123,7 +120,7 @@ void main() {
         };
         api.routes['/announcements/active'] = () => {'announcements': []};
         api.routes['/servers/s1/sidebar-order'] = () => {};
-        await mountPage(t, w, family, dark, width: 390);
+        await mountPage(t, w, dark, width: 390);
         expect(find.byType(RefreshIndicator), findsOneWidget);
         final before = api.reads.length;
         final location = w.location.uri;
@@ -145,7 +142,7 @@ void main() {
         gate.complete();
         await t.pumpAndSettle();
         expect(find.text('Updated channel'), findsOneWidget);
-        expect(w.unread['c1'], 3);
+        expect(w.conversationReads.unread['c1'], 3);
         expect(w.drafts['c1'], 'Unsent draft');
         expect(w.location.uri, location);
         expect(t.takeException(), isNull);
@@ -156,7 +153,7 @@ void main() {
 
     for (final empty in [false, true]) {
       testWidgets(
-        '$family/$dark Members empty=$empty refreshes shared directory in place and survives failure',
+        '${dark ? 'dark' : 'light'} Members empty=$empty refreshes shared directory in place and survives failure',
         (t) async {
           mobile(t);
           final client = _RefreshClient()..empty = empty;
@@ -168,10 +165,8 @@ void main() {
           });
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(
-                family,
-                dark: dark,
-              ).copyWith(platform: TargetPlatform.android),
+              theme: raftTheme(dark: dark)
+                  .copyWith(platform: TargetPlatform.android),
               home: Scaffold(
                 body: DesktopDirectoryView(
                   controller: w,
@@ -239,7 +234,7 @@ void main() {
 
     for (final enabled in [false, true]) {
       testWidgets(
-        '$family/$dark Activity enabled=$enabled refreshes populated and empty pager sections',
+        '${dark ? 'dark' : 'light'} Activity enabled=$enabled refreshes populated and empty pager sections',
         (t) async {
           mobile(t);
           final (client, w) = activityFixture();
@@ -252,10 +247,8 @@ void main() {
           ];
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(
-                family,
-                dark: dark,
-              ).copyWith(platform: TargetPlatform.android),
+              theme: raftTheme(dark: dark)
+                  .copyWith(platform: TargetPlatform.android),
               home: Scaffold(
                 body: ResourceView(
                   controller: w,
@@ -333,5 +326,62 @@ void main() {
         },
       );
     }
+  }
+
+  // Pull to refresh is a finger gesture: it follows the input, not the width.
+  for (final (label, size, platform, pulls) in [
+    (
+      'foldable 856x944, touch',
+      const Size(856, 944),
+      TargetPlatform.android,
+      true,
+    ),
+    (
+      'landscape 944x856, touch',
+      const Size(944, 856),
+      TargetPlatform.android,
+      true,
+    ),
+    (
+      'narrow 390x844, desktop',
+      const Size(390, 844),
+      TargetPlatform.linux,
+      false,
+    ),
+  ]) {
+    testWidgets('Activity pull refresh on $label', (t) async {
+      t.view.physicalSize = size;
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      final (client, w) = activityFixture();
+      addTearDown(() async {
+        w.dispose();
+        await client.dispose();
+      });
+      w.inbox = [
+        {...channelRow(3, unread: 2), 'channelName': 'Held conversation'},
+      ];
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme().copyWith(platform: platform),
+          home: Scaffold(
+            body: ResourceView(
+              controller: w,
+              section: 'activity',
+              activitySidebarEnabled: true,
+              onMessage: (_, _) async {},
+            ),
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      expect(shown('Held conversation'), findsOneWidget);
+      expect(find.byType(RefreshIndicator).evaluate().isNotEmpty, pulls);
+      if (!pulls) return;
+      final reads = w.inboxQueries.length;
+      await pull(t);
+      await t.pumpAndSettle();
+      expect(w.inboxQueries.length, reads + 1);
+    });
   }
 }

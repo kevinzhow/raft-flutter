@@ -18,9 +18,8 @@ void main() {
     t.view.viewInsets = FakeViewPadding(bottom: keyboard);
   }
 
-  Future<void> pump(WidgetTester t, Widget child) => t.pumpWidget(
-    MaterialApp(theme: raftTheme(RaftFamily.elegant), home: child),
-  );
+  Future<void> pump(WidgetTester t, Widget child) =>
+      t.pumpWidget(MaterialApp(theme: raftTheme(), home: child));
 
   tearDown(() {});
 
@@ -66,7 +65,6 @@ void main() {
       ),
     );
     expect(padding, const EdgeInsets.fromLTRB(16, 16, 16, 16 + 68 + 24));
-    expect(raftTabBarClearance(liveActivity: true), 116);
   });
 
   testWidgets('RaftBottomInsetSurface reaches the edge and pads by the inset', (

@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark successful send releases the old insertion handle',
+      '${dark ? 'dark' : 'light'} successful send releases the old insertion handle',
       (tester) async {
         tester.view.physicalSize = const Size(412, 900);
         tester.view.devicePixelRatio = 1;
@@ -18,10 +15,8 @@ void main() {
         final sent = <String>[];
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(
-              family,
-              dark: dark,
-            ).copyWith(platform: TargetPlatform.android),
+            theme: raftTheme(dark: dark)
+                .copyWith(platform: TargetPlatform.android),
             home: Scaffold(
               body: Align(
                 alignment: Alignment.bottomCenter,
@@ -66,7 +61,7 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark typed draft releases old caret handle and remains selectable',
+      '${dark ? 'dark' : 'light'} typed draft releases old caret handle and remains selectable',
       (tester) async {
         tester.view.physicalSize = const Size(412, 900);
         tester.view.devicePixelRatio = 1;
@@ -75,10 +70,8 @@ void main() {
         final sent = <String>[];
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(
-              family,
-              dark: dark,
-            ).copyWith(platform: TargetPlatform.android),
+            theme: raftTheme(dark: dark)
+                .copyWith(platform: TargetPlatform.android),
             home: Scaffold(
               body: Align(
                 alignment: Alignment.bottomCenter,

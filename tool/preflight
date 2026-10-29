@@ -1,0 +1,658 @@
+#!/usr/bin/env python3
+"""A fast local check to run before asking for the ~15 minute full check (tool/check-project).
+
+It runs the cheap checks that have already cost full-check rounds, about a minute
+on a typical branch, and reports every result (it never stops at the first failure):
+
+  structure-audit       tool/structure-audit --check (a hotspot module grew in lines or tokens)
+  ds-audit              tool/ds-audit --check (apps/raft_flutter/lib style literals and packages/raft_ui/lib theme-contract
+                        literals; counts above the baseline)
+  docs-index            tool/tests/test_docs_index.py (every docs/ file is listed in docs/README.md)
+  tool-tests            every tool/tests suite, only when a file under tool/ changed (a hook or script
+                        change that breaks another tool's tests otherwise only fails in the full check)
+  theme-values          tool/tests/test_theme_values.py (the theme contract's value appendix matches its sources)
+  guard-tests           the structural Dart guard tests, see GUARD_TESTS
+  analyze               flutter analyze on the changed Dart files (pinned SDK via tool/flutter)
+  raft-lints            tool/raft-lints on the changed lib files
+  format                dart format --set-exit-if-changed on the changed Dart files
+  affected-tests        flutter test --no-pub on the test files that can execute a changed Dart file
+                        (tool/affected_tests.py); at most --max-tests, the closest first
+  test-budget           the cases declared by the changed test files (and the part files of a suite spread
+                        with support/test_parts.dart) against tool/test_budget.py: a file over 60 cases that is
+                        not exempt or listed, or a listed file that grew; counted from the affected-tests run
+                        (an extra `flutter test` only for files it did not run)
+  portability           changed or added test lines with hard-coded tool paths (/usr/bin/x,
+                        /usr/local/bin/x, /opt/homebrew/...) or Process.run/start of a system CLI
+
+  tool/preflight [--base origin/cindy/integration] [--max-tests 40] [--out .local/preflight.json]
+
+"Changed" means committed since the merge-base with --base, staged, unstaged and
+untracked files. A branch that is not rebased on the base only gets a warning.
+The summary table and a final `preflight: ...` line (paste it into the PR) go to
+stdout; the result is also written as JSON, with the HEAD tree hash, to
+.local/preflight.json so the full check or a reviewer can see a preflight ran;
+each step's full output is in .local/preflight/<check>.txt. Exit code 1 if any check failed.
+Every heavy child runs under `nice -n 10`.
+
+The checks test the Raft look only. A legacy-look test file (`@Tags(['look-elegant'])`, `@Tags(['look-brutal'])`) is
+not among the affected tests; when the diff touches the theme engine (tool/theme_looks.py THEME_ENGINE_PATHS) or such a
+file, preflight prints a loud notice, before the table and again after the summary line, to run
+`tool/theme-suite --look all` before landing. The notice does not fail the run and does not start the suite.
+
+A portability finding that is intended can carry `// preflight-allow: <reason>` on the
+same line or the line above. Preflight passing does not replace the full check.
+"""
+import argparse
+import concurrent.futures
+import datetime
+import json
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import affected_tests  # noqa: E402
+import test_budget  # noqa: E402
+import theme_looks  # noqa: E402
+
+root = pathlib.Path(__file__).resolve().parent.parent
+app_dir = root / 'apps/raft_flutter'
+DEFAULT_BASE = 'origin/cindy/integration'
+DEFAULT_MAX_TESTS = 40
+NICE = ['nice', '-n', '10']
+OUT_DIR = '.local/preflight'
+RESULT_FILE = '.local/preflight.json'
+TAIL_LINES = 15
+
+# Same suites check-project runs (a unit test keeps the two lists equal).
+TEST_DIRS = ['apps/raft_flutter/test', 'packages/raft_client/test', 'packages/raft_sync/test', 'packages/raft_ui/test', 'packages/raft_theme/test', 'packages/flutter_dynamic_icon_plus/test', 'packages/raft_updater/test', 'packages/desktop_drop/test', 'packages/app_badge_plus/test']
+
+# The Dart guard tests that read source or docs and need no device or rendering: each one fails
+# when a refactor moves something a document or rule pins. All are offline, well under a second
+# of test time. keyboard_inset_guard_test (a widget behaviour test) and the *_audit tests that
+# render pages are left to the affected-test selection and the full check.
+GUARD_TESTS = [
+    'apps/raft_flutter/test/capability_parity_guard_test.dart',  # docs/capability-parity.json needles still match the code
+    'apps/raft_flutter/test/state_parity_guard_test.dart',       # docs/state-parity.json entries are well formed and resolve
+    'apps/raft_flutter/test/image_cache_ban_guard_test.dart',    # no second image/disk cache path in app sources
+    'apps/raft_flutter/test/proxy_hook_guard_test.dart',         # network paths still go through the proxy hook
+    'apps/raft_flutter/test/workspace_domain_boundary_guard_test.dart',  # typed domains cannot grow a controller dependency
+    'apps/raft_flutter/test/media_controls_guard_test.dart',     # media rails components still exist
+    'apps/raft_flutter/test/close_registry_test.dart',           # every dialog/popup/sheet is in the close registry
+]
+DOCS_INDEX_TEST = 'tool/tests/test_docs_index.py'
+TOOL_FILE = re.compile(r'^tool/')
+THEME_VALUES_TEST = 'tool/tests/test_theme_values.py'
+
+WORKSPACE_DART = re.compile(r'^(apps|packages)/')
+TEST_FILE = re.compile(r'(^|/)(test|integration_test|test_driver)/')
+LINT_TARGET = re.compile(r'^(?:apps/raft_flutter|packages/[^/]+)/lib/.+\.dart$')  # as tool/raft-lints
+
+# `/usr/bin/sqlite3`: a path to a tool. A bare `/usr/bin` (a PATH entry) is not flagged.
+ABSOLUTE_TOOL = re.compile(r'/(?:usr/bin|usr/local/bin)/[A-Za-z_][\w.+-]*|/opt/homebrew/\S*')
+PROCESS_CALL = re.compile(r'''\bProcess\.(?:run|runSync|start|startSync)\s*\(\s*(['"])([^'"$\\]+)\1''')
+# Present on every Mac, Linux and CI image we use; everything else must not be assumed.
+CORE_TOOLS = frozenset({'git', 'sh', 'bash', 'chmod', 'touch', 'true', 'false', 'sleep', 'cat', 'echo', 'ls', 'mkdir', 'rm', 'cp', 'mv', 'kill', 'ln', 'env', 'uname', 'ps', 'pwd', 'date', 'head', 'tail', 'wc', 'sort', 'tr'})
+ALLOW_MARKER = 'preflight-allow'
+
+
+class PreflightError(RuntimeError):
+    pass
+
+
+def clock():
+    return time.monotonic()
+
+
+def tool_command(name):
+    return ([sys.executable] if os.name == 'nt' else []) + [str(root / 'tool' / name)]
+
+
+# ---------------------------------------------------------------- processes
+
+def with_nice(command):
+    return command if os.name == 'nt' or not shutil.which('nice') else [*NICE, *command]
+
+
+def execute(command, cwd, env):
+    """Run a heavy child at nice 10; returns (exit code, stdout+stderr). Never raises for a missing tool."""
+    try:
+        done = subprocess.run(with_nice(command), cwd=cwd, env=env, text=True, errors='replace', stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    except OSError as error:
+        return 127, f'cannot run {command[0]}: {error}\n'
+    return done.returncode, done.stdout or ''
+
+
+def git(*args):
+    done = subprocess.run(['git', *args], cwd=root, text=True, capture_output=True)
+    if done.returncode != 0:
+        raise PreflightError(f"git {' '.join(args)} failed: {done.stderr.strip() or done.stdout.strip()}")
+    return done.stdout
+
+
+def git_names(*args):
+    return [name for name in git(*args).split('\0') if name]
+
+
+def run_env(tmp):
+    """The check-project environment: UTF-8, temp files on disk (not a RAM-backed /tmp), and the gate test tier
+    (the theme matrix the full check runs, which is what the test budget counts)."""
+    env = dict(os.environ, PYTHONUTF8='1', RAFT_PREFLIGHT='1', RAFT_TEST_TIER='gate', TMPDIR=str(tmp), TEMP=str(tmp), TMP=str(tmp))
+    env.pop('RAFT_TEST_ALL_THEMES', None)
+    env.pop(theme_looks.MODES_VARIABLE, None)
+    env[theme_looks.LOOKS_VARIABLE] = 'raft'  # the checks test the Raft look; tool/theme-suite owns the legacy looks
+    return env
+
+
+def run_tmp():
+    cache = os.environ.get('XDG_CACHE_HOME') or str(pathlib.Path.home() / '.cache')
+    path = pathlib.Path(cache) / 'raft-flutter' / 'gate-tmp' / f'preflight-{os.getpid()}'
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+# ---------------------------------------------------------------- changes
+
+class Changes:
+    """Files changed relative to the base (committed since the merge-base, staged, unstaged, untracked)."""
+
+    def __init__(self, merge_base, files, new):
+        self.merge_base = merge_base
+        self.files = files  # existing, repo-relative, sorted
+        self.new = new      # subset with no counterpart at the merge-base (added or untracked)
+
+    @property
+    def dart(self):
+        return [f for f in self.files if f.endswith('.dart')]
+
+    @property
+    def test_files(self):
+        return [f for f in self.dart if TEST_FILE.search(f)]
+
+
+def collect_changes(base):
+    merge_base = git('merge-base', 'HEAD', base).strip()
+    tracked = git_names('diff', '--no-renames', '--name-only', '--diff-filter=d', '-z', merge_base)
+    added = git_names('diff', '--no-renames', '--name-only', '--diff-filter=A', '-z', merge_base)
+    untracked = git_names('ls-files', '--others', '--exclude-standard', '-z')
+    files = sorted(name for name in {*tracked, *untracked} if (root / name).is_file())
+    return Changes(merge_base, files, {*added, *untracked})
+
+
+def dart_format_clean(dart_exe, path, text):
+    """True when `text` (the content of repo file `path`) is already `dart format`ted."""
+    try:
+        proc = subprocess.run([dart_exe, 'format', '--output=none', '--set-exit-if-changed', '--stdin-name', path],
+                              input=text, text=True, capture_output=True, cwd=root)
+    except OSError:
+        return False
+    return proc.returncode == 0
+
+
+def format_regressions(dart_exe, changes, files):
+    """(files this change left unformatted, files that were already unformatted at the merge-base).
+
+    A file that was unformatted before the change is format debt the change did not
+    introduce, so it is reported but does not fail; a new file must be formatted."""
+    regressed, inherited = [], []
+    for path in files:
+        if dart_format_clean(dart_exe, path, (root / path).read_text(encoding='utf-8')):
+            continue
+        if path not in changes.new:
+            try:
+                before = git('show', f'{changes.merge_base}:{path}')
+            except PreflightError:
+                before = None
+            if before is not None and not dart_format_clean(dart_exe, path, before):
+                inherited.append(path)
+                continue
+        regressed.append(path)
+    return regressed, inherited
+
+
+HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@', re.M)
+
+
+def added_lines(changes, path):
+    """Line numbers added or edited in `path` since the merge-base; None means every line (a new file)."""
+    if path in changes.new:
+        return None
+    diff = git('diff', '--no-renames', '-U0', changes.merge_base, '--', path)
+    lines = set()
+    for match in HUNK.finditer(diff):
+        start, count = int(match.group(1)), int(match.group(2) if match.group(2) is not None else 1)
+        lines.update(range(start, start + count))
+    return lines
+
+
+# ---------------------------------------------------------------- portability
+
+def line_of(text, offset):
+    return text.count('\n', 0, offset) + 1
+
+
+def scan_portability(path, text, lines=None):
+    """Findings `(path, line, message)` for hard-coded tool paths and system-CLI processes.
+
+    `lines` limits the report to those line numbers (None = all). A line, or the one above it,
+    carrying `preflight-allow` is accepted.
+    """
+    source = text.splitlines()
+
+    def allowed(number):
+        return any(ALLOW_MARKER in source[i] for i in (number - 1, number - 2) if 0 <= i < len(source))
+
+    found = {}
+    for number, line in enumerate(source, 1):
+        if line.lstrip().startswith('//'):
+            continue
+        for match in ABSOLUTE_TOOL.finditer(line):
+            found.setdefault(number, f'hard-coded tool path {match.group(0)}; resolve it from PATH or skip when absent')
+    for match in PROCESS_CALL.finditer(text):
+        executable = match.group(2).strip()
+        name = executable.rsplit('/', 1)[-1]
+        number = line_of(text, match.start())
+        if source[number - 1].lstrip().startswith('//') or name in CORE_TOOLS:
+            continue
+        found.setdefault(number, f"Process of system CLI '{executable}'; the Linux check machine may not have it")
+    return [(path, number, message) for number, message in sorted(found.items())
+            if (lines is None or number in lines) and not allowed(number)]
+
+
+# ---------------------------------------------------------------- results
+
+class Result:
+    def __init__(self, name, status, seconds=0.0, detail='', log=None, tail=()):
+        self.name, self.status, self.seconds, self.detail, self.log, self.tail = name, status, seconds, detail, log, list(tail)
+        self.selected = self.total = self.skipped = 0  # affected-tests only
+
+    @property
+    def failed(self):
+        return self.status == 'fail'
+
+    def as_json(self):
+        return {'name': self.name, 'status': self.status, 'seconds': round(self.seconds, 1), 'detail': self.detail, 'log': self.log}
+
+
+def tail_of(output, count=TAIL_LINES):
+    """The lines worth showing for a failed step: the test reporter's failure list when there is one, else the last few."""
+    lines = [line for line in output.splitlines() if line.strip()]
+    marked = [i for i, line in enumerate(lines) if line.strip() == 'Failing tests:']
+    return lines[marked[-1]:][:count * 2] if marked else lines[-count:]
+
+
+class Runner:
+    def __init__(self, env, out_dir):
+        self.env, self.out_dir = env, out_dir
+        self.resolved = True  # flipped to False when `pub get` fails
+
+    def command(self, name, command, cwd=root, ok_detail='', fail_detail='', requires_workspace=True):
+        """Run one child as the whole check; its exit code is the verdict."""
+        started = clock()
+        if requires_workspace and not self.resolved:
+            return Result(name, 'fail', 0.0, 'workspace is not resolved (pub get failed above)')
+        code, output = execute(command, cwd, self.env)
+        return self.outcome(name, code == 0, started, output, command, ok_detail, fail_detail or f'exit {code}')
+
+    def outcome(self, name, ok, started, output, command=None, ok_detail='', fail_detail=''):
+        log = self.out_dir / f'{name}.txt'
+        try:
+            log.parent.mkdir(parents=True, exist_ok=True)
+            log.write_text(('$ ' + ' '.join(command) + '\n' if command else '') + output, encoding='utf-8')
+            log_text = str(log.relative_to(root)) if log.is_relative_to(root) else str(log)
+        except OSError:
+            log_text = None
+        return Result(name, 'pass' if ok else 'fail', clock() - started, ok_detail if ok else fail_detail, log_text, [] if ok else tail_of(output))
+
+    def skip(self, name, why):
+        return Result(name, 'skip', 0.0, why)
+
+
+# ---------------------------------------------------------------- steps
+
+def dart_executable():
+    """The pinned SDK's dart (the same discovery as tool/ds-audit)."""
+    code, output = execute([*tool_command('flutter'), '--version', '--machine'], root, dict(os.environ))
+    if code != 0:
+        raise PreflightError(f'tool/flutter --version failed: {tail_of(output, 3)}')
+    try:
+        flutter_root = json.loads(output[output.index('{'):])['flutterRoot']
+    except (ValueError, KeyError) as error:
+        raise PreflightError(f'cannot read flutterRoot from tool/flutter: {error}')
+    return str(pathlib.Path(flutter_root) / 'bin' / ('dart.bat' if os.name == 'nt' else 'dart'))
+
+
+def workspace_resolved():
+    config = root / '.dart_tool/package_config.json'
+    return config.is_file() and '"ds_audit"' in config.read_text(encoding='utf-8')
+
+
+def lints_resolved():
+    return (root / 'tool/raft_lints/.dart_tool/package_config.json').is_file()
+
+
+def ensure_resolved(runner, need_lints):
+    """`pub get` where the checks need it and it was never run in this checkout (a fresh worktree)."""
+    pub_get = [*tool_command('flutter'), 'pub', 'get', '--enforce-lockfile']
+    results = []
+    if not workspace_resolved():
+        results.append(runner.command('pub-get', pub_get, root, ok_detail='workspace resolved', requires_workspace=False))
+        runner.resolved = results[-1].status == 'pass'
+    if need_lints and not lints_resolved():
+        results.append(runner.command('pub-get-lints', pub_get, root / 'tool/raft_lints', ok_detail='raft_lints resolved', requires_workspace=False))
+    return results
+
+
+def dart_sources(changes):
+    """`{path: text}` of every tracked Dart file plus the changed ones (untracked files are not in `git ls-files`)."""
+    sources = affected_tests.tracked_dart_sources(root)
+    for name in changes.dart:
+        if name not in sources:
+            sources[name] = (root / name).read_text(encoding='utf-8', errors='replace')
+    return sources
+
+
+def rank_tests(changes, max_tests):
+    """(selected, skipped count, total) test files for `flutter test`, as app-dir relative paths."""
+    sources = dart_sources(changes)
+    ranked = affected_tests.ranked_affected_tests(set(changes.dart), sources, affected_tests.workspace_packages(root))
+    guarded = set(GUARD_TESTS)
+    runnable = [path for _, path in ranked if path not in guarded and any(path.startswith(d + '/') for d in TEST_DIRS)
+                and theme_looks.runs_by_default(root / path)]  # a legacy-look file is tool/theme-suite's
+    chosen = runnable[:max_tests]
+    return [os.path.relpath(path, app_dir).replace('\\', '/') for path in chosen], len(runnable) - len(chosen), len(runnable)
+
+
+def flutter_test_command(files, events=None):
+    """`flutter test` printing the expanded log; `events` also writes the JSON event stream there (the test budget counts from it)."""
+    jobs = max(2, min(8, (os.cpu_count() or 2) // 2))
+    return [*tool_command('flutter'), 'test', '--no-pub', '-j', str(jobs), '--reporter', 'expanded',
+            *(['--file-reporter', f'json:{events}'] if events else []), *files]
+
+
+def app_relative(path):
+    return os.path.relpath(root / path, app_dir).replace('\\', '/')
+
+
+def repo_relative(path):
+    """Repo path of a suite path from the JSON reporter (absolute, or relative to the app directory)."""
+    return pathlib.Path(os.path.relpath(path if os.path.isabs(path) else app_dir / path, root)).as_posix()
+
+
+# ---------------------------------------------------------------- test budget
+
+def read_events(path):
+    try:
+        return pathlib.Path(path).read_text(encoding='utf-8', errors='replace').splitlines()
+    except OSError:
+        return []
+
+
+def budget_step(runner, changes, event_files):
+    """Judge the changed test files against tool/test_budget.py, as the full check does at the end.
+
+    The cases come from the JSON event files of the guard and affected-test runs; the budget files
+    those runs did not cover (over --max-tests, outside the affected selection) run once more.
+    """
+    started = clock()
+    name = 'test-budget'
+    if not any(f.startswith(d + '/') for f in changes.dart for d in TEST_DIRS):
+        return runner.skip(name, 'no changed test file')
+    candidates = test_budget.budget_files(changes.dart, dart_sources(changes), affected_tests.workspace_packages(root), TEST_DIRS)
+    # Exempt files (slow tag or marker) are not budgeted: do not run them for it.
+    candidates = [f for f in candidates if not test_budget.is_exempt(root / f)]
+    if not candidates:
+        return runner.skip(name, 'no changed test file is budgeted')
+    if not runner.resolved:
+        return Result(name, 'fail', 0.0, 'workspace is not resolved (pub get failed above)')
+    measured = {}
+    for events in event_files:
+        measured.update(test_budget.measure_events(read_events(events), repo_relative))
+    missing = [f for f in candidates if f not in measured]
+    output, extra = '', ''
+    if missing:
+        events = runner.out_dir / 'test-budget.events.json'
+        events.parent.mkdir(parents=True, exist_ok=True)
+        command = flutter_test_command([app_relative(f) for f in missing], events)
+        code, extra = execute(command, app_dir, runner.env)
+        output += f"$ {' '.join(command)}\n{extra}\n"
+        measured.update(test_budget.measure_events(read_events(events), repo_relative))
+        if code != 0:
+            return runner.outcome(name, False, started, output, None, '', f'{len(missing)} test file(s) not covered by the affected tests failed to run')
+    counted = {f: measured[f] for f in candidates if f in measured}
+    result = test_budget.check_measured(counted, test_budget.load_baseline(), lambda f: test_budget.is_exempt(root / f), lambda f: (root / f).is_file())
+    lines = test_budget.report_lines(result, len(counted))
+    output += '\n'.join(lines) + '\n'
+    ran = f"; {len(missing)} ran separately" if missing else ''
+    outcome = runner.outcome(name, not result['violations'], started, output, None, f'{len(counted)} test files counted{ran}',
+                             f"{len(result['violations'])} over budget")
+    outcome.tail = [line for line in lines if ': FAIL ' in line or ': warning: ' in line]
+    return outcome
+
+
+def run_steps(runner, changes, max_tests):
+    """Every check, concurrently (they are independent); returns (results in table order, portability findings)."""
+    dart = changes.dart
+    workspace_dart = [f for f in dart if WORKSPACE_DART.match(f)]
+    lib_files = [f for f in dart if LINT_TARGET.match(f) and not f.endswith('.g.dart')]
+    format_files = [f for f in dart if not f.endswith('.g.dart')]
+    results = ensure_resolved(runner, bool(lib_files))
+    findings = []
+
+    def structure():
+        return runner.command('structure-audit', [*tool_command('structure-audit'), '--check'], ok_detail='no hotspot grew',
+                              fail_detail='a hotspot module grew; see the log')
+
+    def design_system():
+        return runner.command('ds-audit', [*tool_command('ds-audit'), '--check'], ok_detail='at or below the baseline',
+                              fail_detail='style or theme-contract literals above the baseline; see the log')
+
+    def docs_index():
+        return runner.command('docs-index', [sys.executable, '-m', 'unittest', '-q', DOCS_INDEX_TEST], ok_detail='docs/README.md lists every doc',
+                              requires_workspace=False)
+
+    def tool_tests():
+        if not any(TOOL_FILE.match(f) for f in changes.files):
+            return runner.skip('tool-tests', 'no changed file under tool/')
+        return runner.command('tool-tests', [sys.executable, '-m', 'unittest', 'discover', '-q', '-s', 'tool/tests'],
+                              ok_detail='tool/tests pass', fail_detail='a tool test failed; see the log', requires_workspace=False)
+    def theme_values():
+        return runner.command('theme-values', [sys.executable, '-m', 'unittest', '-q', THEME_VALUES_TEST],
+                              ok_detail='value appendix matches its sources', requires_workspace=False)
+
+    def analyze():
+        if not workspace_dart:
+            return runner.skip('analyze', 'no changed Dart files in apps/ or packages/')
+        return runner.command('analyze', [*tool_command('flutter'), 'analyze', '--no-pub', *workspace_dart],
+                              ok_detail=f'{len(workspace_dart)} files', fail_detail='analyzer findings')
+
+    def lints():
+        if not lib_files:
+            return runner.skip('raft-lints', 'no changed lib/ Dart files')
+        if not lints_resolved():
+            return Result('raft-lints', 'fail', 0.0, 'tool/raft_lints is not resolved (pub get failed)')
+        return runner.command('raft-lints', [*tool_command('raft-lints'), *lib_files], ok_detail=f'{len(lib_files)} lib files',
+                              fail_detail='lint findings', requires_workspace=False)
+
+    def formatting():
+        if not format_files:
+            return runner.skip('format', 'no changed Dart files')
+        if dart_exe is None:
+            return Result('format', 'fail', 0.0, dart_error)
+        result = runner.command('format', [dart_exe, 'format', '--output=none', '--set-exit-if-changed', *format_files],
+                                ok_detail=f'{len(format_files)} files', fail_detail='files need `dart format`', requires_workspace=False)
+        if result.status != 'fail':
+            return result
+        # Only what this change left unformatted counts; debt from the base is reported.
+        regressed, inherited = format_regressions(dart_exe, changes, format_files)
+        result.tail = [f'needs dart format: {f}' for f in regressed] + [f'already unformatted at the base (not counted): {f}' for f in inherited]
+        if not regressed:
+            result.status = 'pass'
+            result.detail = f'{len(format_files)} files; {len(inherited)} already unformatted at the base'
+        else:
+            result.detail = f'{len(regressed)} files need `dart format`' + (f' ({len(inherited)} more were unformatted at the base)' if inherited else '')
+        return result
+
+    def tests():
+        """One lane, not two: guard tests, the affected tests, then the test budget from their event streams (two `flutter test` at once only fight over the build)."""
+        events = [runner.out_dir / 'guard-tests.events.json', runner.out_dir / 'affected-tests.events.json']
+        for stale in events:  # a leftover stream of an earlier run must not be counted
+            stale.unlink(missing_ok=True)
+        guards = runner.command('guard-tests', flutter_test_command([app_relative(t) for t in GUARD_TESTS], events[0]), app_dir,
+                                ok_detail=f'{len(GUARD_TESTS)} guard files', fail_detail='a guard test failed; see the log')
+        if not dart:
+            return [guards, runner.skip('affected-tests', 'no changed Dart files'), runner.skip('test-budget', 'no changed test file')]
+        if not runner.resolved:
+            return [guards, Result('affected-tests', 'fail', 0.0, 'workspace is not resolved (pub get failed above)'),
+                    runner.skip('test-budget', 'workspace is not resolved')]
+        files, skipped, total = rank_tests(changes, max_tests)
+        if not files:
+            return [guards, runner.skip('affected-tests', 'no test file reaches a changed Dart file'), budget_step(runner, changes, events)]
+        note = f'{len(files)} of {total} test files' + (f'; {skipped} farthest skipped (--max-tests {max_tests})' if skipped else '')
+        affected = runner.command('affected-tests', flutter_test_command(files, events[1]), app_dir, ok_detail=note, fail_detail='test failures; ' + note)
+        affected.selected, affected.total, affected.skipped = len(files), total, skipped
+        return [guards, affected, budget_step(runner, changes, events)]
+
+    def portability():
+        found, result = portability_step(runner, changes)
+        findings.extend(found)
+        return result
+
+    # The pinned dart is found through tool/flutter, which regenerates files other children read: do it before they start.
+    dart_exe, dart_error = None, ''
+    if format_files:
+        try:
+            dart_exe = dart_executable()
+        except PreflightError as error:
+            dart_error = str(error)
+    order = ['structure-audit', 'ds-audit', 'docs-index', 'tool-tests', 'theme-values', 'guard-tests', 'analyze', 'raft-lints', 'format', 'affected-tests', 'test-budget', 'portability']
+    steps = [structure, design_system, docs_index, tool_tests, theme_values, tests, analyze, lints, formatting, portability]
+    table = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(steps)) as pool:
+        for future in [pool.submit(step) for step in steps]:
+            outcome = future.result()
+            table.extend(outcome if isinstance(outcome, list) else [outcome])
+    return results + sorted(table, key=lambda r: order.index(r.name)), findings
+
+
+def portability_step(runner, changes):
+    started = clock()
+    tests = changes.test_files
+    if not tests:
+        return [], runner.skip('portability', 'no changed test files')
+    findings = []
+    for path in tests:
+        text = (root / path).read_text(encoding='utf-8', errors='replace')
+        findings += scan_portability(path, text, added_lines(changes, path))
+    output = ''.join(f'{p}:{n}: {m}\n' for p, n, m in findings)
+    result = runner.outcome('portability', not findings, started, output, None, f'{len(tests)} test files', f'{len(findings)} finding(s)')
+    result.tail = [f'{p}:{n}: {m}' for p, n, m in findings]
+    return findings, result
+
+
+# ---------------------------------------------------------------- report
+
+def format_table(results):
+    width = max([len(r.name) for r in results] + [5])
+    lines = [f"{'check'.ljust(width)}  result  {'sec':>5}  detail"]
+    for r in results:
+        lines.append(f'{r.name.ljust(width)}  {r.status.upper():<6}  {r.seconds:5.1f}  {r.detail}'.rstrip())
+    return lines
+
+
+def summary_line(results, seconds, tree, base_label, behind):
+    failed = [r.name for r in results if r.failed]
+    ran = [r for r in results if r.status != 'skip']
+    verdict = 'PASSED' if not failed else f"FAILED ({', '.join(failed)})"
+    stale = f'; {behind} behind base' if behind else ''
+    return f'preflight: {verdict} {len(ran) - len(failed)}/{len(ran)} checks, {seconds:.0f}s, tree {tree[:12]}, base {base_label}{stale}'
+
+
+def build_json(args, changes, results, findings, tree, head, base_sha, behind, seconds, dirty):
+    affected = next((r for r in results if r.name == 'affected-tests'), None)
+    return {
+        'version': 1, 'passed': not any(r.failed for r in results), 'tree': tree, 'head': head, 'dirty': dirty,
+        'base': args.base, 'baseSha': base_sha, 'mergeBase': changes.merge_base, 'behindBase': behind,
+        'startedAt': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'seconds': round(seconds, 1),
+        'changedFiles': len(changes.files), 'changedDart': len(changes.dart),
+        'affectedTests': {'maxTests': args.max_tests, 'selected': getattr(affected, 'selected', 0),
+                          'total': getattr(affected, 'total', 0), 'skipped': getattr(affected, 'skipped', 0)},
+        'checks': [r.as_json() for r in results],
+        'findings': [{'file': p, 'line': n, 'message': m} for p, n, m in findings],
+    }
+
+
+def positive_int(text):
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError('must be a positive integer')
+    return value
+
+
+def parse_args(argv):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--base', default=DEFAULT_BASE, help=f'compare against this ref (default {DEFAULT_BASE})')
+    parser.add_argument('--max-tests', type=positive_int, default=DEFAULT_MAX_TESTS,
+                        help=f'run at most this many affected test files, the closest first (default {DEFAULT_MAX_TESTS})')
+    parser.add_argument('--out', default=RESULT_FILE, help=f'JSON result path (default {RESULT_FILE})')
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    started = clock()
+    try:
+        git('rev-parse', '--verify', '-q', f'{args.base}^{{commit}}')
+    except PreflightError:
+        print(f'preflight: base {args.base} not found; run `git fetch origin` or pass --base REF', file=sys.stderr)
+        return 2
+    try:
+        changes = collect_changes(args.base)
+        base_sha = git('rev-parse', args.base).strip()
+        behind = int(git('rev-list', '--count', f'HEAD..{args.base}').strip()) if changes.merge_base != base_sha else 0
+        tree = git('rev-parse', 'HEAD^{tree}').strip()
+        head = git('rev-parse', 'HEAD').strip()
+        dirty = bool(git('status', '--porcelain').strip())
+    except PreflightError as error:
+        print(f'preflight: {error}', file=sys.stderr)
+        return 2
+    if behind:
+        print(f'warning: this branch is {behind} commit(s) behind {args.base}; rebase before handoff (tool/prepare-handoff does it). Checking anyway.')
+    print(f'preflight: {len(changes.files)} changed file(s), {len(changes.dart)} Dart, against {args.base}.', flush=True)
+    engine_notice = theme_looks.notice_lines(theme_looks.touched(changes.files, root))
+    print('\n'.join(engine_notice), flush=True) if engine_notice else None
+
+    tmp = run_tmp()
+    runner = Runner(run_env(tmp), root / OUT_DIR)
+    try:
+        results, findings = run_steps(runner, changes, args.max_tests)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    seconds = clock() - started
+
+    print()
+    print('\n'.join(format_table(results)))
+    for r in results:
+        if r.failed and r.tail:
+            print(f'\n{r.name}: {r.detail}' + (f'  (full output: {r.log})' if r.log else ''))
+            print('\n'.join(f'  {line}' for line in r.tail))
+    print()
+    print(summary_line(results, seconds, tree, f'{args.base}@{base_sha[:8]}', behind))
+    if engine_notice:
+        print('\n'.join(engine_notice))
+
+    document = build_json(args, changes, results, findings, tree, head, base_sha, behind, seconds, dirty)
+    document['themeEngineTouched'] = bool(engine_notice)
+    out = pathlib.Path(args.out)
+    out = out if out.is_absolute() else root / out
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(document, indent=2) + '\n', encoding='utf-8')
+    return 0 if document['passed'] else 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

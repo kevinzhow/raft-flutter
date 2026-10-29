@@ -1,5 +1,7 @@
 # Linux attachment media runtime
 
+Only Windows and Linux play media through this libmpv runtime; Android, iOS and macOS use the system player (see [media playback](media-playback.md)).
+
 Run `tool/prepare-media-linux` before a Linux build. This downloads seven pinned Ubuntu amd64 packages into `.local/media-linux`, extracts them locally, and copies libmpv's resolved codec dependency closure together with every package's distribution copyright notice. It does not install or upgrade system packages. CMake puts these generated libraries under the application's `lib` directory and notices under `data/notices/raft-media`; its relative RPATH applies to transitive decoder dependencies.
 
 The prepared bundle currently contains 208 libraries. `manifest.json` records each library's provider/version/SHA-256 and downloaded package hashes. `ldd-bundle.txt` confirms no unresolved library on this build host. This is a host-matched Ubuntu resolute amd64 runtime: the OS still supplies glibc, its loader, audio/display devices and device drivers. Portability to another distribution or older glibc has not been proven. Binary artifacts stay ignored; rebuild the bundle on its supported build environment.
@@ -8,7 +10,7 @@ Downloaded packages are pinned to `libmpv2 0.41.0-2ubuntu4`, `libmpv-dev 0.41.0-
 
 PDF page rendering uses Android's `PdfRenderer` and Linux's installed Poppler `pdfinfo`/`pdftoppm` utilities. Linux requires `poppler-utils` from its distribution; it is a separate OS dependency, not silently downloaded during a preview.
 
-Media is downloaded once into a private, bounded local lease; the decoder receives its local file path through `loadfile`. The player permits only the file protocol, disables network references, automatic extra audio/subtitle files, scripts, yt-dlp, and disk media caching, and does not autoplay. Closing, logout, authority loss and backgrounding stop playback; closing/revocation releases the private input. No signed URL enters the persistent application cache.
+Video is streamed: the decoder receives the attachment's signed `http(s)` URL through `loadfile` and reads it itself (bounded in-memory read-ahead, `cache-on-disk=no`; nothing is saved except by the Download action), through the app's proxy decision (`http-proxy`, set at run time). The protocol whitelist is the fixed `file, http, https, tcp, tls, crypto` (`proxy_hook_guard_test`); network references, automatic extra audio/subtitle files, scripts and yt-dlp stay disabled, and the player does not autoplay. A 401/403/410 from the host triggers one fresh signature (`AttachmentSource.refresh`). Closing, logout, authority loss and backgrounding stop playback; the player is disposed with its last holder ([streaming and sessions](media-playback.md#streaming-and-sessions)). No signed URL enters the persistent application cache. A local file (the audio viewer's cached copy) is still opened with the `file` protocol.
 
 Pinned download SHA-256 records (no binary artifacts are committed):
 

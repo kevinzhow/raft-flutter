@@ -76,7 +76,7 @@ Future<(WorkspaceController, _Adapter)> _fixture(String role) async {
 Widget _host(Widget child, {double width = 1280}) => MediaQuery(
   data: MediaQueryData(size: Size(width, 2000)),
   child: MaterialApp(
-    theme: raftTheme(RaftFamily.elegant),
+    theme: raftTheme(),
     home: Scaffold(
       body: ListView(padding: const EdgeInsets.all(20), children: [child]),
     ),
@@ -91,7 +91,7 @@ void _surface(WidgetTester t, [double width = 1280]) {
 
 final _now = DateTime.utc(2026, 6, 19, 12, 30);
 
-Map<String, dynamic> _free({bool manage = true}) => {
+Map<String, dynamic> _free({bool manage = true, bool stripe = true}) => {
   'plan': 'free',
   'displayName': 'Free',
   'capacity': {'maxHumans': 1, 'maxAgents': 2, 'maxUniversalSeats': -1},
@@ -104,11 +104,14 @@ Map<String, dynamic> _free({bool manage = true}) => {
   },
   'price': null,
   'subscription': null,
-  'stripeConfigured': true,
+  'stripeConfigured': stripe,
   'permissions': {'canReadBillingSummary': true, 'canManageBilling': manage},
 };
 
-Map<String, dynamic> _pro({bool cancelAtPeriodEnd = false}) => {
+Map<String, dynamic> _pro({
+  bool cancelAtPeriodEnd = false,
+  String status = 'active',
+}) => {
   'plan': 'pro',
   'displayName': 'Pro',
   'capacity': {'maxHumans': -1, 'maxAgents': -1, 'maxUniversalSeats': 3},
@@ -120,7 +123,7 @@ Map<String, dynamic> _pro({bool cancelAtPeriodEnd = false}) => {
     'annualUsd': 316.8,
   },
   'subscription': {
-    'status': 'active',
+    'status': status,
     'billingInterval': 'annual',
     'cancelAtPeriodEnd': cancelAtPeriodEnd,
   },
@@ -135,6 +138,7 @@ void main() {
       Map<String, dynamic> billing, {
       String role = 'owner',
       double width = 1280,
+      Map<String, Object?> server = const {},
     }) async {
       final (w, a) = (await t.runAsync(() => _fixture(role)))!;
       addTearDown(w.dispose);
@@ -144,6 +148,17 @@ void main() {
         'machines': 1,
         'channels': 4,
       };
+      if (server.isNotEmpty) {
+        w.server = RaftRecord({
+          'id': 's1',
+          'name': 'Test workspace',
+          'slug': 'test',
+          'plan': 'free',
+          'role': role,
+          ...server,
+        });
+        w.servers = [w.server!];
+      }
       final opened = <Uri>[];
       _surface(t, width);
       await t.pumpWidget(
@@ -167,7 +182,7 @@ void main() {
       'Free plan: trial notice, features, usage and checkout summary',
       (t) async {
         await mount(t, _free());
-        expect(find.text('CURRENT PLAN'), findsOneWidget);
+        expect(find.text('Current Plan'), findsOneWidget);
         expect(find.text('Final Trial Period'), findsOneWidget);
         expect(
           find.textContaining('remains active through Jun 22, 2026'),
@@ -177,7 +192,7 @@ void main() {
         expect(find.text('Unlimited message history'), findsOneWidget);
         expect(find.text('180 MB / 500 MB this month'), findsOneWidget);
         expect(find.text('30 days'), findsOneWidget);
-        expect(find.text('UPGRADE TO PRO'), findsOneWidget);
+        expect(find.text('Upgrade to Pro'), findsNWidgets(2));
         expect(find.text(r'$105.60 / year'), findsOneWidget);
         expect(find.text(r'$120 / year'), findsOneWidget);
         expect(find.text('up to 1 Human'), findsOneWidget);
@@ -217,7 +232,7 @@ void main() {
       };
       await t.tap(find.byKey(const ValueKey('billing-upgrade')));
       await t.pumpAndSettle();
-      expect(find.text('CONFIRM PRO CHECKOUT'), findsOneWidget);
+      expect(find.text('Upgrade to Pro'), findsWidgets);
       expect(find.text(r'Total: $105.60 / year'), findsOneWidget);
       await t.tap(find.byKey(const ValueKey('billing-confirm')));
       await t.pumpAndSettle();
@@ -252,7 +267,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('2.5 / 3 used'), findsOneWidget);
-      expect(find.text('MANAGE SEATS'), findsOneWidget);
+      expect(find.text('Manage Seats'), findsOneWidget);
       expect(find.text('Billing interval: Yearly'), findsOneWidget);
       expect(find.text(r'$316.80 / year'), findsWidgets);
       a.routes['POST /billing/portal'] = (_) => {
@@ -318,7 +333,10 @@ void main() {
       a.routes['POST /billing/cancel'] = (_) => {'ok': true};
       await t.tap(find.byKey(const ValueKey('billing-cancel')));
       await t.pumpAndSettle();
-      expect(find.text('CANCEL SUBSCRIPTION'), findsOneWidget);
+      // Dialog title keeps Web's `Cancel Subscription`; the button and the
+      // confirm label are Web's `Cancel subscription`.
+      expect(find.text('Cancel Subscription'), findsOneWidget);
+      expect(find.text('Cancel subscription'), findsNWidgets(2));
       await t.tap(find.byKey(const ValueKey('billing-confirm')));
       await t.pumpAndSettle();
       expect(a.posts('/billing/cancel'), hasLength(1));
@@ -343,6 +361,91 @@ void main() {
     testWidgets('without canManageBilling the controls are inert', (t) async {
       final (_, a, _) = await mount(t, _free(manage: false), role: 'admin');
       expect(find.text('Only server owners can change billing.'), findsWidgets);
+      await t.tap(find.byKey(const ValueKey('billing-upgrade')));
+      await t.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('billing-confirm-dialog')),
+        findsNothing,
+      );
+      expect(
+        a.calls.where(
+          (c) => c.method == 'POST' && c.path.startsWith('/billing'),
+        ),
+        isEmpty,
+      );
+    });
+
+    testWidgets('a downgrade inside the grace period matches the Web card', (
+      t,
+    ) async {
+      // Web DowngradeWarningCard: planDowngradedAt plus the 7-day grace.
+      // The frozen clock is 2026-06-19 12:30Z, so this stamp leaves 7 days.
+      await mount(
+        t,
+        _free(),
+        server: {'planDowngradedAt': '2026-06-19T12:30:00.000Z'},
+      );
+      expect(find.text('Plan Downgraded'), findsOneWidget);
+      expect(
+        find.text(
+          '7 days remaining in grace period. All resources are within free limits.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('over limit'), findsNothing);
+    });
+
+    testWidgets('an ended grace period matches the Web card', (t) async {
+      await mount(
+        t,
+        _free(),
+        server: {'planDowngradedAt': '2026-06-11T12:30:00.000Z'},
+      );
+      expect(find.text('Grace Period Expired'), findsOneWidget);
+      expect(
+        find.text(
+          'The grace period has ended. Excess agents have been stopped. Upgrade to reactivate them.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Plan Downgraded'), findsNothing);
+    });
+
+    test('past_due Pro keeps the active billing controls', () {
+      final pastDue = billingControls('pro', 'past_due');
+      expect(pastDue, billingControls('pro', 'active'));
+      expect(pastDue.canOpenPortal, isTrue);
+      expect(pastDue.canUpdatePacks, isTrue);
+      expect(pastDue.canCheckout, isFalse);
+    });
+
+    testWidgets('past_due Pro opens the portal and seat update, not checkout', (
+      t,
+    ) async {
+      final (_, a, opened) = await mount(t, _pro(status: 'past_due'));
+      expect(find.byKey(const ValueKey('billing-upgrade')), findsNothing);
+      expect(find.text('Manage Seats'), findsOneWidget);
+      a.routes['POST /billing/portal'] = (_) => {
+        'url': 'https://billing.stripe.invalid/p',
+      };
+      await t.tap(find.byKey(const ValueKey('billing-portal')));
+      await t.pumpAndSettle();
+      expect(opened.single.host, 'billing.stripe.invalid');
+      await t.enterText(find.byKey(const ValueKey('billing-seat-input')), '4');
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('billing-update-seats')));
+      await t.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('billing-confirm-dialog')),
+        findsOneWidget,
+      );
+      expect(a.posts('/billing/checkout'), isEmpty);
+    });
+
+    testWidgets('without Stripe the billing controls stay disabled', (t) async {
+      final (_, a, _) = await mount(t, _free(stripe: false));
+      expect(find.text('Paid plans are not available yet.'), findsWidgets);
+      expect(find.text('Stripe billing is not configured'), findsNothing);
       await t.tap(find.byKey(const ValueKey('billing-upgrade')));
       await t.pumpAndSettle();
       expect(
@@ -387,6 +490,27 @@ void main() {
       a.gate = null;
       await t.pumpAndSettle();
       expect(t.getRect(plan), rect);
+    });
+
+    testWidgets('phone-width billing reloads when the plan revision bumps', (
+      t,
+    ) async {
+      final (w, a) = (await t.runAsync(() => _fixture('owner')))!;
+      addTearDown(w.dispose);
+      a.routes['GET /billing/subscription'] = (_) => _free();
+      a.routes['GET /servers/s1/usage'] = (_) => {'agents': 2};
+      _surface(t, 600);
+      await t.pumpWidget(
+        _host(BillingView(controller: w, now: () => _now), width: 600),
+      );
+      await t.pumpAndSettle();
+      int reads() =>
+          a.calls.where((c) => c.path == '/billing/subscription').length;
+      final before = reads();
+      w.planRevision++;
+      w.notifyListeners();
+      await t.pumpAndSettle();
+      expect(reads(), before + 1);
     });
 
     testWidgets('mobile width stacks the features and the summary', (t) async {
@@ -487,7 +611,7 @@ void main() {
       t,
     ) async {
       await mount(t);
-      expect(find.text('APPLICATIONS'), findsOneWidget);
+      expect(find.text('Applications'), findsOneWidget);
       expect(find.text('Third-party apps for this server'), findsOneWidget);
       // Private-shared listings stay out of the marketplace; Installed holds
       // the installed listing plus the server-local client.
@@ -536,7 +660,7 @@ void main() {
         find.byKey(const ValueKey('connected-app-detail')),
         findsOneWidget,
       );
-      expect(find.text('APP DETAIL'), findsOneWidget);
+      expect(find.text('App detail'), findsOneWidget);
       expect(find.text('example.com'), findsOneWidget);
       expect(find.text('Install to this server'), findsOneWidget);
       final before = a.calls
@@ -562,7 +686,7 @@ void main() {
       expect(find.text('This server'), findsOneWidget);
       await t.tap(find.byKey(const ValueKey('connected-app-installed-github')));
       await t.pumpAndSettle();
-      expect(find.text('INSTALLED APP'), findsOneWidget);
+      expect(find.text('Installed app'), findsOneWidget);
       expect(find.text('No data access'), findsOneWidget);
       await t.tap(find.text('Close').last);
       await t.pumpAndSettle();
@@ -571,7 +695,7 @@ void main() {
       };
       await t.tap(find.byKey(const ValueKey('connected-app-action-github')));
       await t.pumpAndSettle();
-      expect(find.text('UNINSTALL GITHUB ISSUES?'), findsOneWidget);
+      expect(find.text('Uninstall GitHub Issues?'), findsOneWidget);
       await t.tap(
         find.byKey(const ValueKey('connected-app-uninstall-confirm-button')),
       );

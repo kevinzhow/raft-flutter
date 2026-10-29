@@ -38,15 +38,57 @@ Widget designTypographyPreview() => Builder(
 );
 
 @RaftPreviews('Design icons', size: Size(640, 440))
-Widget designIconsPreview() => Padding(
-  padding: const EdgeInsets.all(24),
-  child: Wrap(
-    spacing: 20,
-    runSpacing: 20,
-    children: [
-      for (final glyph in RaftGlyph.values)
-        RaftTooltip(message: glyph.name, child: RaftIcon(glyph, size: 24)),
-    ],
+Widget designIconsPreview() => SingleChildScrollView(
+  child: Padding(
+    padding: const EdgeInsets.all(24),
+    child: Wrap(
+      spacing: 20,
+      runSpacing: 20,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Square artwork in rectangular slots'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 20,
+                runSpacing: 12,
+                children: [
+                  for (final slot in [
+                    const Size(64, 24),
+                    const Size(24, 8),
+                    const Size(8, 24),
+                  ])
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('${slot.width.toInt()} × ${slot.height.toInt()}'),
+                        const SizedBox(height: 8),
+                        Builder(
+                          builder: (context) => Container(
+                            width: slot.width,
+                            height: slot.height,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: RaftTokens.of(context).line,
+                              ),
+                            ),
+                            child: const RaftThreadIcon(),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        for (final glyph in RaftGlyph.values)
+          RaftTooltip(message: glyph.name, child: RaftIcon(glyph, size: 24)),
+      ],
+    ),
   ),
 );
 
@@ -94,6 +136,12 @@ class _DesignControlsState extends State<_DesignControls> {
         Wrap(
           spacing: 12,
           children: [
+            RaftIconButton(
+              glyph: RaftGlyph.plus,
+              visualSize: RaftMetrics.buttonXs,
+              tooltip: 'Add',
+              onPressed: () => setState(() => clicks++),
+            ),
             const RaftButton(label: 'Disabled'),
             RaftButton(label: 'Loading', busy: true, onPressed: () {}),
             RaftIconButton(
@@ -159,21 +207,16 @@ class _DesignFieldsState extends State<_DesignFields> {
       children: [
         const Text('Name'),
         const SizedBox(height: 4),
-        const RaftFieldSurface(
-          child: TextField(
-            autofillHints: null,
-            decoration: InputDecoration(hintText: 'Workspace name'),
-          ),
-        ),
+        const RaftTextInput(hintText: 'Server name'),
         const SizedBox(height: 16),
         const Text('Channel'),
         RaftSelectField<String>(
           label: 'Channel',
           value: value,
           items: const [
-            DropdownMenuItem(value: 'all', child: Text('All channels')),
-            DropdownMenuItem(value: 'design', child: Text('#design')),
-            DropdownMenuItem(value: 'general', child: Text('#general')),
+            RaftSelectItem(value: 'all', label: 'All channels'),
+            RaftSelectItem(value: 'design', label: '#design'),
+            RaftSelectItem(value: 'general', label: '#general'),
           ],
           onChanged: (next) => setState(() => value = next!),
         ),
@@ -181,12 +224,13 @@ class _DesignFieldsState extends State<_DesignFields> {
         Text('Selected $value'),
         const SizedBox(height: 16),
         RaftButton(
-          label: 'Open form',
+          label: 'Open Form',
           secondary: true,
-          onPressed: () => showDialog<void>(
+          onPressed: () => showRaftDialog<void>(
+            legacyMaterial: true,
             context: context,
             builder: (_) => RaftFormDialog(
-              title: 'Create channel',
+              title: 'Create Channel',
               fields: const [
                 RaftFormField('name', 'Name', required: true),
                 RaftFormField('description', 'Description', multiline: true),
@@ -279,32 +323,15 @@ Widget sourceInputsPreview() => Padding(
     children: [
       Text('Name'),
       SizedBox(height: 4),
-      RaftFieldSurface(
-        child: TextField(
-          autofillHints: null,
-          decoration: InputDecoration(hintText: 'Workspace name'),
-        ),
-      ),
+      RaftTextInput(hintText: 'Server name'),
       SizedBox(height: 16),
       Text('Email'),
       SizedBox(height: 4),
-      RaftFieldSurface(
-        child: TextFormField(
-          autofillHints: null,
-          initialValue: 'hello@example.invalid',
-          readOnly: true,
-        ),
-      ),
+      RaftTextInput(initialValue: 'hello@example.invalid', readOnly: true),
       SizedBox(height: 16),
       Text('Disabled'),
       SizedBox(height: 4),
-      RaftFieldSurface(
-        child: TextField(
-          autofillHints: null,
-          enabled: false,
-          decoration: InputDecoration(hintText: 'Unavailable'),
-        ),
-      ),
+      RaftTextInput(enabled: false, hintText: 'Unavailable'),
     ],
   ),
 );
@@ -331,11 +358,11 @@ class _SourceMenus extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(24),
     child: RaftDropdownMenu(
-      label: 'Message actions',
+      label: 'Message Actions',
       defaultOpen: true,
       entries: [
         RaftMenuEntry(
-          label: 'Copy link',
+          label: 'Copy Link',
           glyph: RaftGlyph.copy,
           onPressed: () {},
         ),

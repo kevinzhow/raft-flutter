@@ -28,14 +28,13 @@ class RaftCindySetupScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), size = MediaQuery.sizeOf(context);
     final desktop = size.width >= 768, wide = size.width >= 640;
-    final border = t.brutal ? Colors.black : t.colors['line-muted']!;
+    final border = t.colors['line-muted']!;
     TextStyle style(
       double font,
       double line,
       FontWeight weight, {
       Color? color,
       String? family,
-      double tracking = 0,
     }) => TextStyle(
       fontFamily: family ?? t.bodyFont,
       fontSize: font,
@@ -43,7 +42,6 @@ class RaftCindySetupScreen extends StatelessWidget {
       // CSS font-black keeps computed 900 but the served face stops at 700.
       fontWeight: weight == FontWeight.w900 ? RaftTypography.black(t) : weight,
       color: color ?? t.strong,
-      letterSpacing: tracking,
     );
     final muted = t.colors['foreground-muted'];
     final header = Container(
@@ -59,14 +57,13 @@ class RaftCindySetupScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 RaftCssText(
-                  raftText(context, 'Set up your server').toUpperCase(),
+                  raftText(context, 'Set up your server'),
                   style: style(
                     10,
                     15,
                     FontWeight.w700,
                     color: muted,
                     family: t.monoFont,
-                    tracking: .25,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -110,11 +107,7 @@ class RaftCindySetupScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               DecoratedBox(
-                decoration: RaftCssBoxDecoration(
-                  boxShadow: t.brutal
-                      ? RaftProductShadows.shadowBrutalLg.outer
-                      : null,
-                ),
+                decoration: RaftCssBoxDecoration(boxShadow: null),
                 child: RaftAvatarSlot(
                   name: 'Cindy',
                   avatarUrl: 'pixel:mug',
@@ -233,13 +226,8 @@ class RaftCindySetupScreen extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: t.colors['layer-panel'],
-            border: Border.all(
-              color: t.colors[t.brutal ? 'line-strong' : 'line-muted']!,
-              width: t.brutal ? 2 : 1,
-            ),
-            boxShadow: t.brutal
-                ? RaftProductShadows.shadowBrutal.outer
-                : t.themeShadows.md.outer,
+            border: Border.all(color: t.colors['line-muted']!, width: 1),
+            boxShadow: t.themeShadows.md.outer,
           ),
           child: body,
         ),
@@ -250,13 +238,18 @@ class RaftCindySetupScreen extends StatelessWidget {
 
 /// SetupSessionFooter.tsx + the product muted TextLink (no button box).
 class RaftCindySessionLink extends StatelessWidget {
-  const RaftCindySessionLink({super.key, required this.onPressed});
+  const RaftCindySessionLink({
+    super.key,
+    required this.onPressed,
+    this.label = 'Switch Server',
+  });
   final VoidCallback? onPressed;
+  final String label;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return RaftInteractive(
-      semanticLabel: raftText(context, 'Switch server'),
+      semanticLabel: raftText(context, label),
       onPressed: onPressed,
       builder: (context, state) => CustomPaint(
         foregroundPainter: RaftCssFocusOutline(
@@ -266,18 +259,52 @@ class RaftCindySessionLink extends StatelessWidget {
         child: Opacity(
           opacity: state.enabled ? 1 : .5,
           child: RaftCssText(
-            raftText(context, 'Switch server'),
+            raftText(context, label),
+            underline: true,
             style: TextStyle(
               fontFamily: t.bodyFont,
               fontSize: 14,
               height: 20 / 14,
               color: state.hovered ? t.strong : t.colors['foreground-muted'],
               fontWeight: FontWeight.w400,
-              decoration: TextDecoration.underline,
             ),
           ),
         ),
       ),
     );
   }
+}
+
+/// SetupSessionFooter.tsx: `flex items-center gap-4 text-sm` with the muted
+/// "Switch server" link and, for the server's owner, "Delete this server".
+/// Setup may make you finish before chatting, but it must never lock the
+/// owner out of abandoning the server (Settings is covered by the blocking
+/// setup surface). [showDeleteServer] defaults to `onDeleteServer != null`; a
+/// busy step passes a null callback with it true so the link stays, dimmed.
+class RaftCindySessionFooter extends StatelessWidget {
+  const RaftCindySessionFooter({
+    super.key,
+    this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
+  });
+  final VoidCallback? onSwitchServer, onDeleteServer;
+  final bool? showDeleteServer;
+  @override
+  Widget build(BuildContext context) => Wrap(
+    // `gap-4`; the links wrap under each other when a narrow card or a large
+    // text size leaves no room for both.
+    spacing: 16,
+    runSpacing: 4,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      RaftCindySessionLink(onPressed: onSwitchServer),
+      if (showDeleteServer ?? onDeleteServer != null)
+        RaftCindySessionLink(
+          key: const ValueKey('setup-delete-server'),
+          label: 'Delete this server',
+          onPressed: onDeleteServer,
+        ),
+    ],
+  );
 }

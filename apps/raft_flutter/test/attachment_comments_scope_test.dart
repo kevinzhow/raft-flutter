@@ -72,7 +72,7 @@ void main() {
     bool Function()? authorized,
     WorkspaceController? owner,
   }) => MaterialApp(
-    theme: raftTheme(RaftFamily.elegant),
+    theme: raftTheme(),
     home: Scaffold(
       body: AttachmentCommentsView(
         key: const Key('same-comments-slot'),

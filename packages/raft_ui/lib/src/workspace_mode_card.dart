@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'indicators.dart';
+import 'raft/checkbox.dart' show RaftCheckbox;
 import 'localization.dart';
 import 'theme.dart';
-import 'tokens/shadows.g.dart';
 
 /// SettingsPanel.tsx WorkspaceModeSettingsCard (7844–7875). Availability is
 /// app-owned: the host must only mount this card when the actual mode exists.
@@ -26,16 +25,9 @@ class RaftWorkspaceModeCard extends StatelessWidget {
         key: const ValueKey('workspace-mode-card'),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: t.brutal
-              ? t.colors['brutal-cream']
-              : t.colors['layer-canvas-muted'],
-          border: Border.all(
-            color: t.brutal ? Colors.black : t.colors['line-muted']!,
-            width: t.brutal ? 2 : 1,
-          ),
-          boxShadow: t.brutal
-              ? RaftProductShadows.shadowBrutalSm.outer.reversed.toList()
-              : t.themeShadows.sm.outer.reversed.toList(),
+          color: t.colors['layer-canvas-muted'],
+          border: Border.all(color: t.colors['line-muted']!, width: 1),
+          boxShadow: t.themeShadows.sm.outer.reversed.toList(),
         ),
         child: Row(
           children: [
@@ -44,7 +36,7 @@ class RaftWorkspaceModeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    raftText(context, 'Workspace mode'),
+                    raftText(context, 'Server mode'),
                     style: inherited.copyWith(
                       fontSize: 14,
                       height: 20 / 14,
@@ -61,9 +53,7 @@ class RaftWorkspaceModeCard extends StatelessWidget {
                     style: inherited.copyWith(
                       fontSize: 12,
                       height: 20 / 12,
-                      color: t.brutal
-                          ? Colors.black.withValues(alpha: .6)
-                          : t.colors['foreground-muted'],
+                      color: t.colors['foreground-muted'],
                     ),
                   ),
                 ],
@@ -73,7 +63,7 @@ class RaftWorkspaceModeCard extends StatelessWidget {
             RaftCheckbox(
               value: enabled,
               onChanged: onChanged,
-              semanticLabel: raftText(context, 'Workspace mode'),
+              semanticLabel: raftText(context, 'Server mode'),
             ),
           ],
         ),

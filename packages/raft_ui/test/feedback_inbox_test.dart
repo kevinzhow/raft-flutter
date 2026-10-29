@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-Widget _host(Widget child, {RaftFamily family = RaftFamily.elegant}) =>
-    MaterialApp(
-      theme: raftTheme(family),
-      home: Scaffold(body: child),
-    );
+Widget _host(Widget child) => MaterialApp(
+  theme: raftTheme(),
+  home: Scaffold(body: child),
+);
 
 const _ticket = RaftFeedbackTicketRow(
   id: 't1',
@@ -19,31 +18,28 @@ const _ticket = RaftFeedbackTicketRow(
 );
 
 void main() {
-  for (final family in RaftFamily.values) {
-    testWidgets('$family inbox: tabs, card chips, open and filter', (t) async {
-      final opened = <String>[];
-      final filters = <RaftFeedbackFilter>[];
-      await t.pumpWidget(
-        _host(
-          RaftFeedbackInbox(
-            tickets: const [_ticket],
-            filter: RaftFeedbackFilter.all,
-            onFilter: filters.add,
-            onOpen: opened.add,
-          ),
-          family: family,
+  testWidgets('inbox: tabs, card chips, open and filter', (t) async {
+    final opened = <String>[];
+    final filters = <RaftFeedbackFilter>[];
+    await t.pumpWidget(
+      _host(
+        RaftFeedbackInbox(
+          tickets: const [_ticket],
+          filter: RaftFeedbackFilter.all,
+          onFilter: filters.add,
+          onOpen: opened.add,
         ),
-      );
-      expect(find.text('All'), findsOneWidget);
-      expect(find.text('Idea'), findsOneWidget);
-      expect(find.text('In progress'), findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
-      await t.tap(find.byKey(const ValueKey('feedback-ticket-t1')));
-      expect(opened, ['t1']);
-      await t.tap(find.text('Ended'));
-      expect(filters, [RaftFeedbackFilter.ended]);
-    });
-  }
+      ),
+    );
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Idea'), findsOneWidget);
+    expect(find.text('In progress'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+    await t.tap(find.byKey(const ValueKey('feedback-ticket-t1')));
+    expect(opened, ['t1']);
+    await t.tap(find.text('Ended'));
+    expect(filters, [RaftFeedbackFilter.ended]);
+  });
 
   testWidgets('no tickets: no tabs, the dashed empty state', (t) async {
     await t.pumpWidget(
@@ -89,7 +85,7 @@ void main() {
         ),
       ),
     );
-    await t.tap(find.text('Try again'));
+    await t.tap(find.text('Try Again'));
     expect(retried, 1);
     expect(find.text('No feedback yet'), findsNothing);
   });

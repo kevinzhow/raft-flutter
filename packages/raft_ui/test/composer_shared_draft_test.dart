@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'shared draft updates a focused editor without losing selection or IME $family/$dark',
+      'shared draft updates a focused editor without losing selection or IME ${dark ? 'dark' : 'light'}',
       (t) async {
         final edits = <String>[];
         Widget host(String draft, int revision) => MaterialApp(
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: Align(
               alignment: Alignment.bottomCenter,
@@ -41,12 +38,28 @@ void main() {
         edits.clear();
         await t.pumpWidget(host('existing 中文\nshared file caption', 1));
         await t.pump();
-        expect(controller.text, 'existing 中文\nshared file caption');
+        expect(controller.text, 'existing 中文');
         expect(controller.selection, before.selection);
         expect(controller.value.composing, before.composing);
         expect(t.widget<TextField>(field).focusNode!.hasFocus, isTrue);
-        expect(edits, isEmpty);
-        // Ordinary rebuilds/persistence do not overwrite ongoing native input.
+        expect(edits.last, 'existing 中文\nshared file caption');
+        // Native input continues immediately while projected drafts persist.
+        controller.value = const TextEditingValue(
+          text: 'existing 中文继续',
+          selection: TextSelection.collapsed(offset: 13),
+          composing: TextRange(start: 9, end: 13),
+        );
+        await t.pump();
+        expect(controller.text, 'existing 中文继续');
+        expect(edits.last, 'existing 中文继续\nshared file caption');
+        controller.value = controller.value.copyWith(
+          composing: TextRange.empty,
+        );
+        await t.pump();
+        await t.pump();
+        expect(controller.text, 'existing 中文继续\nshared file caption');
+        expect(controller.selection.baseOffset, 13);
+        // Ordinary rebuilds/persistence do not overwrite committed input.
         await t.enterText(field, 'user continues editing');
         await t.pumpWidget(host('existing 中文\nshared file caption', 1));
         expect(controller.text, 'user continues editing');

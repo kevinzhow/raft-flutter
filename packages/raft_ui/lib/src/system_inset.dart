@@ -21,8 +21,7 @@ double raftSystemBottomInset(BuildContext context) =>
 
 /// Web `.mobile-nav-clearance` (index.css): scroll surfaces on elegant tab
 /// roots keep this much room under the floating capsule, plus the system inset.
-double raftTabBarClearance({bool liveActivity = false}) =>
-    liveActivity ? 116 : 68;
+double raftTabBarClearance() => 68;
 
 /// Scroll padding that lets the last item scroll clear of the system bar (and,
 /// on elegant tab roots, of the floating capsule via [clearance]).

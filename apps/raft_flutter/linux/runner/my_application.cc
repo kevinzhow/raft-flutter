@@ -4,13 +4,51 @@
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
+#ifdef GDK_WINDOWING_WAYLAND
+#include <gdk/gdkwayland.h>
+#endif
 
 #include "flutter/generated_plugin_registrant.h"
+#include "vsync_driver.h"
+#include "desktop_caption_bar.h"
 
 struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
 };
+
+// Channel state is owned by its handler. The window outlives its Flutter view.
+struct TitleBar {
+  GtkWindow* window;
+  DesktopCaptionBar* caption;
+  FlMethodChannel* channel;
+  gulong window_state_handler;
+  gulong active_handler;
+};
+
+static FlValue* title_bar_state(TitleBar* bar) {
+  FlValue* state = fl_value_new_map();
+  fl_value_set_string_take(state, "height", fl_value_new_float(bar->caption->custom() ? 48 : 0));
+  fl_value_set_string_take(state, "fullscreen", fl_value_new_bool(bar->caption->fullscreen()));
+  fl_value_set_string_take(state, "customControls", fl_value_new_bool(bar->caption->custom()));
+  fl_value_set_string_take(state, "maximized", fl_value_new_bool(bar->caption->maximized()));
+  fl_value_set_string_take(state, "active", fl_value_new_bool(bar->caption->active()));
+  fl_value_set_string_take(state, "buttonLayout", fl_value_new_string(bar->caption->layout().c_str()));
+  return state;
+}
+
+static void title_bar_report(TitleBar* bar) {
+  g_autoptr(FlValue) state = title_bar_state(bar);
+  fl_method_channel_invoke_method(bar->channel, "state", state, nullptr, nullptr, nullptr);
+}
+
+static void title_bar_free(gpointer data) {
+  auto* bar = static_cast<TitleBar*>(data);
+  g_signal_handler_disconnect(bar->window, bar->window_state_handler);
+  g_signal_handler_disconnect(bar->window, bar->active_handler);
+  delete bar->caption;
+  g_free(bar);
+}
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
@@ -30,40 +68,35 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
-  // Use a header bar when running in GNOME as this is the common style used
-  // by applications and is the setup most users will be using (e.g. Ubuntu
-  // desktop).
-  // If running on X and not using GNOME then just use a traditional title bar
-  // in case the window manager does more exotic layout, e.g. tiling.
-  // If running on Wayland assume the header bar will work (may need changing
-  // if future cases occur).
-  gboolean use_header_bar = TRUE;
-#ifdef GDK_WINDOWING_X11
-  GdkScreen* screen = gtk_window_get_screen(window);
-  if (GDK_IS_X11_SCREEN(screen)) {
-    const gchar* wm_name = gdk_x11_screen_get_window_manager_name(screen);
-    if (g_strcmp0(wm_name, "GNOME Shell") != 0) {
-      use_header_bar = FALSE;
-    }
-  }
-#endif
-  if (use_header_bar) {
-    GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
-    gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, "raft_flutter");
-    gtk_header_bar_set_show_close_button(header_bar, TRUE);
-    gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
-  } else {
-    gtk_window_set_title(window, "raft_flutter");
-  }
+  TitleBar* title_bar = g_new0(TitleBar, 1);
+  title_bar->window = window;
+  title_bar->caption = new DesktopCaptionBar(window);
+  gtk_window_set_title(window, "Raft");
 
   gtk_window_set_default_size(window, 1280, 720);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
       project, self->dart_entrypoint_arguments);
+  // The Dart UI isolate runs on its own thread (RAFT_LINUX_UI_THREAD=platform
+  // restores the engine default, which runs it on the GTK main thread). With
+  // the default every frame's build waits behind the GTK paint of the previous
+  // frame on the same thread, which takes several ms at 2x scale and turned a
+  // 3 ms frame into a missed 120 Hz refresh; see docs/idle-cpu.md.
+  const gchar* ui_thread = g_getenv("RAFT_LINUX_UI_THREAD");
+  fl_dart_project_set_ui_thread_policy(
+      project, g_strcmp0(ui_thread, "platform") == 0
+                   ? FL_UI_THREAD_POLICY_RUN_ON_PLATFORM_THREAD
+                   : FL_UI_THREAD_POLICY_RUN_ON_SEPARATE_THREAD);
+  // RAFT_LINUX_IMPELLER=0 renders with Skia and =1 with Impeller; unset keeps
+  // the engine's default (Impeller in Flutter 3.47). For A/B measurements.
+  const gchar* impeller = g_getenv("RAFT_LINUX_IMPELLER");
+  if (g_strcmp0(impeller, "0") == 0) fl_dart_project_set_enable_impeller(project, FALSE);
+  if (g_strcmp0(impeller, "1") == 0) fl_dart_project_set_enable_impeller(project, TRUE);
 
   FlView* view = fl_view_new(project);
+  // Before the view is realized (that starts the engine); see vsync_driver.h.
+  raft_vsync_install(view);
   GdkRGBA background_color;
   // Background defaults to black, override it here if necessary, e.g. #00000000
   // for transparent.
@@ -85,13 +118,107 @@ static void my_application_activate(GApplication* application) {
       "app.raft/window", FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(window_channel,
       [](FlMethodChannel*, FlMethodCall* call, gpointer data) {
-        if (g_strcmp0(fl_method_call_get_name(call), "present") == 0) {
-          gtk_window_present(GTK_WINDOW(data));
+        if (g_strcmp0(fl_method_call_get_name(call), "isActive") == 0) {
+          g_autoptr(FlValue) active =
+              fl_value_new_bool(gtk_window_is_active(GTK_WINDOW(data)));
+          fl_method_call_respond_success(call, active, nullptr);
+        } else if (g_strcmp0(fl_method_call_get_name(call), "present") == 0) {
+          GtkWindow* target = GTK_WINDOW(data);
+          // A notification click carries the desktop's activation token
+          // (org.freedesktop.Notifications ActivationToken). Wayland
+          // compositors and KWin only raise and focus a window that presents
+          // itself with it; without one this is a plain present.
+          FlValue* args = fl_method_call_get_args(call);
+          FlValue* token = args != nullptr &&
+                                   fl_value_get_type(args) == FL_VALUE_TYPE_MAP
+                               ? fl_value_lookup_string(args, "token")
+                               : nullptr;
+          if (token != nullptr &&
+              fl_value_get_type(token) == FL_VALUE_TYPE_STRING &&
+              fl_value_get_string(token)[0] != '\0') {
+            const gchar* startup_id = fl_value_get_string(token);
+            GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET(target));
+#ifdef GDK_WINDOWING_WAYLAND
+            if (GDK_IS_WAYLAND_DISPLAY(display)) {
+              gdk_wayland_display_set_startup_notification_id(display,
+                                                              startup_id);
+            }
+#endif
+            gtk_window_set_startup_id(target, startup_id);
+          }
+          gtk_window_present(target);
           fl_method_call_respond_success(call, nullptr, nullptr);
         } else {
           fl_method_call_respond_not_implemented(call, nullptr);
         }
       }, g_object_ref(window), g_object_unref);
+
+  g_autoptr(FlMethodChannel) title_bar_channel = fl_method_channel_new(
+      fl_engine_get_binary_messenger(fl_view_get_engine(view)),
+      "app.raft/titlebar", FL_METHOD_CODEC(codec));
+  title_bar->channel = title_bar_channel;
+  title_bar->window_state_handler = g_signal_connect(window, "window-state-event",
+      G_CALLBACK(+[](GtkWidget*, GdkEventWindowState*, gpointer data) -> gboolean {
+        title_bar_report(static_cast<TitleBar*>(data));
+        return FALSE;
+      }), title_bar);
+  title_bar->active_handler = g_signal_connect(window, "notify::is-active",
+      G_CALLBACK(+[](GObject*, GParamSpec*, gpointer data) {
+        title_bar_report(static_cast<TitleBar*>(data));
+      }), title_bar);
+  fl_method_channel_set_method_call_handler(
+      title_bar_channel,
+      [](FlMethodChannel*, FlMethodCall* call, gpointer data) {
+        TitleBar* bar = static_cast<TitleBar*>(data);
+        const gchar* method = fl_method_call_get_name(call);
+        if (g_strcmp0(method, "status") == 0 ||
+            g_strcmp0(method, "setIntegrated") == 0) {
+          g_autoptr(FlValue) state = title_bar_state(bar);
+          fl_method_call_respond_success(call, state, nullptr);
+        } else if (g_strcmp0(method, "startDragging") == 0) {
+          bar->caption->StartDragging();
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "doubleClick") == 0) {
+          bar->caption->DoubleClick();
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "minimize") == 0) {
+          bar->caption->Minimize();
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "toggleMaximize") == 0) {
+          bar->caption->ToggleMaximize();
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "close") == 0) {
+          fl_method_call_respond_success(call, nullptr, nullptr);
+          bar->caption->Close();
+        } else if (g_strcmp0(method, "setStyle") == 0) {
+          FlValue* args = fl_method_call_get_args(call);
+          FlValue* dark = args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP
+                              ? fl_value_lookup_string(args, "dark") : nullptr;
+          if (dark != nullptr && fl_value_get_type(dark) == FL_VALUE_TYPE_BOOL) {
+            bar->caption->SetDark(fl_value_get_bool(dark));
+          }
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "setCaptionButtonRects") == 0) {
+          // GTK's normal widget hit testing owns these controls.
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "setTitle") == 0) {
+          // The window's name for the task switcher and window lists (the
+          // Web document title); the header bar keeps its empty title.
+          FlValue* args = fl_method_call_get_args(call);
+          FlValue* title = args != nullptr &&
+                                   fl_value_get_type(args) == FL_VALUE_TYPE_MAP
+                               ? fl_value_lookup_string(args, "title")
+                               : nullptr;
+          if (title != nullptr &&
+              fl_value_get_type(title) == FL_VALUE_TYPE_STRING) {
+            gtk_window_set_title(bar->window, fl_value_get_string(title));
+          }
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else {
+          fl_method_call_respond_not_implemented(call, nullptr);
+        }
+      },
+      title_bar, title_bar_free);
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }

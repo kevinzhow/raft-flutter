@@ -16,19 +16,13 @@ final class RichVisualPreviews extends MultiPreview {
   List<Preview> get previews => [
     Preview(
       group: 'Visual rich',
-      name: '$component · Brutal light',
+      name: '$component · Light',
       size: const Size(640, 480),
-      wrapper: _brutal,
+      wrapper: _light,
     ),
     Preview(
       group: 'Visual rich',
-      name: '$component · Elegant light',
-      size: const Size(640, 480),
-      wrapper: _elegant,
-    ),
-    Preview(
-      group: 'Visual rich',
-      name: '$component · Elegant dark',
+      name: '$component · Dark',
       size: const Size(640, 480),
       wrapper: _dark,
     ),
@@ -39,8 +33,7 @@ Widget _viewport(Widget child) => MediaQuery(
   data: const MediaQueryData(size: Size(640, 480)),
   child: child,
 );
-Widget _brutal(Widget child) => brutalWrapper(_viewport(child));
-Widget _elegant(Widget child) => elegantWrapper(_viewport(child));
+Widget _light(Widget child) => lightWrapper(_viewport(child));
 Widget _dark(Widget child) => darkWrapper(_viewport(child));
 
 @RichVisualPreviews('Flowchart')
@@ -94,7 +87,7 @@ class _RichFixtureState extends State<_RichFixture> {
     final origin = host is RenderBox
         ? host.localToGlobal(Offset.zero)
         : Offset.zero;
-    if (host is RenderBox && host.hasSize)
+    if (host is RenderBox && host.hasSize) {
       geometry.add({
         'name': 'DIV',
         'flutter': {
@@ -104,6 +97,7 @@ class _RichFixtureState extends State<_RichFixture> {
           'height': host.size.height,
         },
       });
+    }
     void visit(Element element) {
       final widget = element.widget;
       String? name;
@@ -153,20 +147,16 @@ class _RichFixtureState extends State<_RichFixture> {
     (hostKey.currentContext as Element?)?.visitChildren(visit);
     final t = RaftTokens.of(context);
     debugPrint(
-      'RICH_VISUAL_GEOMETRY ${jsonEncode({'kind': widget.kind, 'theme': '${t.brutal ? 'brutal' : 'elegant'}-${t.dark ? 'dark' : 'light'}', 'geometry': geometry})}',
+      'RICH_VISUAL_GEOMETRY ${jsonEncode({'kind': widget.kind, 'theme': '${'elegant'}-${t.dark ? 'dark' : 'light'}', 'geometry': geometry})}',
     );
   }
 
   static const inputs = {
-    'flowchart':
-        'flowchart LR\n  A[Draft] --> B{Review}\n  B -->|Approved| C[Ship]\n  B -->|Changes| A',
-    'sequence':
-        'sequenceDiagram\n  participant Alice\n  participant Bob\n  Alice->>Bob: Review draft\n  Bob-->>Alice: Approved',
+    'flowchart': 'flowchart LR\n  A[Draft] --> B{Review}\n  B -->|Approved| C[Ship]\n  B -->|Changes| A',
+    'sequence': 'sequenceDiagram\n  participant Alice\n  participant Bob\n  Alice->>Bob: Review draft\n  Bob-->>Alice: Approved',
     'pie': 'pie title Work\n  "Draft" : 3\n  "Review" : 2\n  "Ship" : 5',
-    'code':
-        '```typescript\nconst count = 3;\nfunction greet(name: string) {\n  return `Hello \${name}`;\n}\n```',
-    'markdown':
-        '# Release notes\n\nA **bold** plan with `inline code` and a [link](https://example.com).\n\n[Quest Machine 官方手册](https://example.com/manual) · [Smart Variables](https://example.com/variables)\n\n> Review before shipping.\n\n- Draft\n- Ship\n\n| Status | Count |\n| --- | --- |\n| Ready | 3 |',
+    'code': '```typescript\nconst count = 3;\nfunction greet(name: string) {\n  return `Hello \${name}`;\n}\n```',
+    'markdown': '# Release notes\n\nA **bold** plan with `inline code` and a [link](https://example.com).\n\n[Quest Machine 官方手册](https://example.com/manual) · [Smart Variables](https://example.com/variables)\n\n> Review before shipping.\n\n- Draft\n- Ship\n\n| Status | Count |\n| --- | --- |\n| Ready | 3 |',
   };
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -184,6 +174,7 @@ class _RichFixtureState extends State<_RichFixture> {
         else
           RaftMessageBody(
             content: ['code', 'markdown'].contains(widget.kind)
+                // ignore: raft_lints/avoid_render_index_assertion -- Preview-only widget; inputs has an entry for every kind.
                 ? inputs[widget.kind]!
                 : '```mermaid\n${inputs[widget.kind]}\n```',
             onCopyCode: (source) async =>

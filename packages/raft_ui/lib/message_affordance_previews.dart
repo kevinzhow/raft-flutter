@@ -18,44 +18,46 @@ class _AffordancesState extends State<_Affordances> {
   int count = 2;
   String result = 'Ready';
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(40),
-    child: Column(
-      children: [
-        RaftMessageRow(
-          author: 'Cindy',
-          timestamp: '14:30',
-          content: const Text(
-            'Hover or Tab to the exact source toolbar glyphs.',
+  Widget build(BuildContext context) => SingleChildScrollView(
+    child: Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        children: [
+          RaftMessageRow(
+            author: 'Cindy',
+            timestamp: '14:30',
+            content: const Text(
+              'Hover or Tab to the exact source toolbar glyphs.',
+            ),
+            toolbar: RaftMessageToolbar(
+              children: [
+                RaftMessageToolbarAction(
+                  label: 'Reply in Thread',
+                  icon: const RaftMessageThreadGlyph(),
+                  onPressed: () => setState(() => result = 'Thread callback'),
+                ),
+                RaftMessageToolbarAction(
+                  label: 'Add Reaction',
+                  icon: const RaftMessageAddReactionGlyph(),
+                  onPressed: () =>
+                      setState(() => result = 'Reaction picker callback'),
+                ),
+              ],
+            ),
           ),
-          toolbar: RaftMessageToolbar(
-            children: [
-              RaftMessageToolbarAction(
-                label: 'Reply in thread',
-                icon: const RaftMessageThreadGlyph(),
-                onPressed: () => setState(() => result = 'Thread callback'),
-              ),
-              RaftMessageToolbarAction(
-                label: 'Add reaction',
-                icon: const RaftMessageAddReactionGlyph(),
-                onPressed: () =>
-                    setState(() => result = 'Reaction picker callback'),
-              ),
-            ],
+          const SizedBox(height: 24),
+          const Text(
+            'Controlled reaction glyph slot (source sprite registration pending)',
           ),
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'Controlled reaction glyph slot (source sprite registration pending)',
-        ),
-        RaftMountedReaction(
-          label: 'Public reaction count',
-          glyph: const SizedBox(),
-          count: count,
-          onPressed: () => setState(() => count++),
-        ),
-        Text(result),
-      ],
+          RaftMountedReaction(
+            label: 'Public reaction count',
+            glyph: const SizedBox(),
+            count: count,
+            onPressed: () => setState(() => count++),
+          ),
+          Text(result),
+        ],
+      ),
     ),
   );
 }

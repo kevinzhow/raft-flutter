@@ -7,7 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 // only as children (links, code, toggles, reactions).
 
 Widget _host(Widget child) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant),
+  theme: raftTheme(),
   home: Scaffold(body: SingleChildScrollView(child: child)),
 );
 
@@ -42,7 +42,7 @@ void main() {
           onActions: () => menu++,
           onAuthor: () => invoked.add('mention'),
           semanticsActions: [
-            RaftMessageSemanticsAction('Save message', (_) {
+            RaftMessageSemanticsAction('Save Message', (_) {
               invoked.add('save');
             }),
           ],
@@ -60,7 +60,7 @@ void main() {
         for (final id in data.customSemanticsActionIds!)
           CustomSemanticsAction.getAction(id)!.label,
       ],
-      ['Save message', 'Mention Alice'],
+      ['Save Message', 'Mention Alice'],
     );
     expect(_below(row).map((n) => n.label), ['the spec', '👍: 1']);
 
@@ -153,9 +153,9 @@ void main() {
   testWidgets('show more toggle announces its label once', (t) async {
     final semantics = t.ensureSemantics();
     await t.pumpWidget(
-      _host(RaftShowMoreToggle(label: 'Show more', onPressed: () {})),
+      _host(RaftShowMoreToggle(label: 'Show More', onPressed: () {})),
     );
-    expect(find.bySemanticsLabel(RegExp(r'^Show more$')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'^Show More$')), findsOneWidget);
     semantics.dispose();
   });
 

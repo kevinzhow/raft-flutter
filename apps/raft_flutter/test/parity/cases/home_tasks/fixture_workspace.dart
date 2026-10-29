@@ -93,17 +93,16 @@ ParityFixtureWorkspace parityWorkspace(
   final server = _map(fx['server']);
   final owner = _map(_map(fx['humans'])['owner']);
   final channels = _map(fx['channels']);
-  final client = RaftClient(
-    origin: parityOrigin,
-    sessionStore: MemorySessionStore(),
-  )..user = RaftRecord({
-      'id': owner['id'],
-      'name': owner['name'],
-      'displayName': owner['displayName'],
-      'email': owner['email'],
-    });
+  final client =
+      RaftClient(origin: parityOrigin, sessionStore: MemorySessionStore())
+        ..user = RaftRecord({
+          'id': owner['id'],
+          'name': owner['name'],
+          'displayName': owner['displayName'],
+          'email': owner['email'],
+        });
   client.selectServer(server['id'] as String);
-  return ParityFixtureWorkspace(client, ctx)
+  final w = ParityFixtureWorkspace(client, ctx)
     ..server = RaftRecord({
       'id': server['id'],
       'name': serverName ?? server['name'],
@@ -124,6 +123,8 @@ ParityFixtureWorkspace parityWorkspace(
         }),
     ]
     ..section = section;
+  ctx.onDispose(w.dispose);
+  return w;
 }
 
 DateTime parityNow(ParityContext ctx) => DateTime.fromMillisecondsSinceEpoch(

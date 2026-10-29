@@ -69,7 +69,7 @@ Future<(WorkspaceController, _Adapter)> _fixture(String role) async {
 }
 
 Widget host(Widget child) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant),
+  theme: raftTheme(),
   home: Scaffold(body: child),
 );
 void _appRoutes(
@@ -82,13 +82,13 @@ void _appRoutes(
 }
 
 Future<void> register(WidgetTester tester) async {
-  await tester.tap(find.text('Register app'));
+  await tester.tap(find.text('Register App'));
   await tester.pumpAndSettle();
   await tester.enterText(
-    find.byKey(const ValueKey('field-name')),
+    find.byKey(const ValueKey('connected-app-name')),
     'Native fixture app',
   );
-  await tester.tap(find.text('Register'));
+  await tester.tap(find.byKey(const ValueKey('connected-app-editor-submit')));
   await tester.pumpAndSettle();
 }
 
@@ -157,7 +157,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Private owned app'), findsOneWidget);
       await register(tester);
-      expect(find.byType(RaftFormDialog), findsNothing);
+      expect(find.byKey(const ValueKey('connected-app-editor')), findsNothing);
       expect(find.text('Private owned app'), findsNothing);
       expect(find.textContaining('Permission changed'), findsOneWidget);
     },
@@ -225,9 +225,9 @@ void main() {
         host(SingleChildScrollView(child: AccountSettings(controller: w))),
       );
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Edit profile'));
+      await tester.ensureVisible(find.text('Edit Profile'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Edit profile'));
+      await tester.tap(find.text('Edit Profile'));
       await tester.pumpAndSettle();
       expect(find.byType(RaftFormDialog), findsOneWidget);
       w.client.user = RaftRecord({'id': 'bob', 'name': 'newaccount'});
@@ -273,7 +273,7 @@ void main() {
         a.calls.where((c) => c.path.endsWith('/forgot-password')),
         isEmpty,
       );
-      await tester.tap(find.widgetWithText(RaftButton, 'Send email'));
+      await tester.tap(find.widgetWithText(RaftButton, 'Send Email'));
       await tester.pumpAndSettle();
       expect(
         a.calls.where((c) => c.path.endsWith('/forgot-password')),
@@ -355,7 +355,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Verify and finish setup'));
     await tester.pumpAndSettle();
-    expect(find.text('FAILED'), findsOneWidget);
+    expect(find.text('Failed'), findsOneWidget);
     expect(
       find.text('Preflight has not passed. The bridge cannot be enabled.'),
       findsOneWidget,
@@ -397,9 +397,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Manage channel mappings'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const ValueKey('slack-bridge-remove-pair-0')));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('slack-bridge-remove-pair-0')),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('slack-bridge-remove-pair-0')));
+      await tester.tap(
+        find.byKey(const ValueKey('slack-bridge-remove-pair-0')),
+      );
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Apply mapping changes'));
       await tester.pumpAndSettle();
@@ -410,9 +414,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Disconnect Slack workspace'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Confirm disconnect'));
+      await tester.ensureVisible(find.text('Disconnect Slack workspace'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Confirm disconnect'));
+      await tester.tap(find.text('Disconnect Slack workspace'));
       await tester.pumpAndSettle();
       expect(
         a.calls.where((c) => c.path.endsWith('/disconnect')),
@@ -431,7 +435,7 @@ void main() {
   );
 
   testWidgets(
-    'same-generation role downgrade removes private agent events before the next HTTP response',
+    'same-generation role downgrade drops the manager data before the next HTTP response; the events reload for a member',
     (tester) async {
       final (w, a) = (await tester.runAsync(() => _fixture('owner')))!;
       addTearDown(w.dispose);
@@ -473,7 +477,9 @@ void main() {
         'creatorId': 'someone-else',
       });
       await tester.pumpAndSettle();
-      expect(find.text('Private agent event fixture'), findsNothing);
+      // Web shows the events to every member who can open the Apps tab.
+      expect(find.text('Private agent event fixture'), findsOneWidget);
+      expect(find.text('Grant app access'), findsNothing);
     },
   );
   testWidgets('management header actions wrap at narrow phone width', (
@@ -490,7 +496,7 @@ void main() {
       host(SingleChildScrollView(child: IntegrationsView(controller: w))),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Register app'), findsOneWidget);
+    expect(find.text('Register App'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('connected-apps-tab-my-apps')),
       findsOneWidget,
@@ -554,21 +560,21 @@ void main() {
       };
       await tester.pumpWidget(host(ProviderConnectionsView(controller: w)));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Verify on computer'));
+      await tester.ensureVisible(find.text('Verify on Computer'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Verify on computer'));
+      await tester.tap(find.text('Verify on Computer'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Verify'));
+      await tester.tap(find.text('Verify Connection'));
       await tester.pumpAndSettle();
       expect(find.text('Provider verified'), findsNothing);
       expect(
-        find.textContaining(
-          'The verification receipt does not match this request. Refresh and retry.',
-        ),
+        // Web `settings.providers.verifyError`: a failed verification never
+        // shows the internal receipt check.
+        find.textContaining('Verification could not be started.'),
         findsOneWidget,
       );
       mismatch = false;
-      await tester.tap(find.text('Verify'));
+      await tester.tap(find.text('Verify Connection'));
       await tester.pumpAndSettle();
       expect(find.text('Provider verified'), findsOneWidget);
       final probes = a.calls
@@ -611,9 +617,9 @@ void main() {
       a.routes['GET /provider-connections/p1/probes'] = (_) => pending.future;
       await tester.pumpWidget(host(ProviderConnectionsView(controller: w)));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Verification history'));
+      await tester.ensureVisible(find.text('Verification History'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Verification history'));
+      await tester.tap(find.text('Verification History'));
       await tester.pump();
       w.server = RaftRecord({'id': 's1', 'role': 'member'});
       w.setError(null);
@@ -680,11 +686,11 @@ void main() {
       await tester.pumpWidget(host(AccountConnectionsView(controller: w)));
       await tester.pumpAndSettle();
       expect(find.text('Google'), findsOneWidget);
-      final disconnect = tester.widget<TextButton>(
+      final disconnect = tester.widget<RaftButton>(
         find
             .ancestor(
               of: find.text('Disconnect'),
-              matching: find.byWidgetPredicate((w) => w is TextButton),
+              matching: find.byType(RaftButton),
             )
             .first,
       );
@@ -812,7 +818,7 @@ void main() {
       await tester.pumpAndSettle();
       // ProviderConnectionsSettings renders nothing while the flag is off.
       expect(find.byType(RaftProviderConnectionsFrame), findsNothing);
-      expect(find.text('Add connection'), findsNothing);
+      expect(find.text('Add provider connection'), findsNothing);
       expect(a.calls.any((c) => c.path == '/provider-connections'), false);
       expect(a.calls.any((c) => c.path == '/feature-flags/evaluate'), true);
     },
@@ -887,6 +893,34 @@ void main() {
     await tester.pumpWidget(host(LabsView(controller: w)));
     await tester.pumpAndSettle();
     expect(find.text('Labs settings unavailable'), findsOneWidget);
+    expect(
+      find.byKey(const Key('mobile-settings-direct-switch')),
+      findsNothing,
+    );
+  });
+  testWidgets('a compact debug Labs page has no phone settings switch', (
+    tester,
+  ) async {
+    final (w, _) = (await tester.runAsync(() => _fixture('owner')))!;
+    addTearDown(w.dispose);
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(host(LabsView(controller: w)));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('mobile-settings-direct-switch')),
+      findsNothing,
+    );
+    expect(find.text('Labs settings unavailable'), findsOneWidget);
+    tester.view.physicalSize = const Size(1280, 900);
+    await tester.pumpWidget(host(LabsView(controller: w)));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('mobile-settings-direct-switch')),
+      findsNothing,
+    );
   });
   testWidgets('admin can read Stripe billing but cannot purchase or cancel', (
     tester,
@@ -921,7 +955,7 @@ void main() {
     );
   });
   testWidgets(
-    'app registration declares scopes and masks the one-time secret',
+    'app registration declares scopes and shows the one-time secret under the filters',
     (tester) async {
       final (w, a) = (await tester.runAsync(() => _fixture('owner')))!;
       addTearDown(w.dispose);
@@ -942,8 +976,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       await register(tester);
-      expect(find.text('Credential hidden'), findsOneWidget);
-      expect(find.text('never-render-without-reveal'), findsNothing);
+      // The editor closed; the one-time secret strip sits under the filters.
+      expect(find.byKey(const ValueKey('connected-app-editor')), findsNothing);
+      expect(find.text('never-render-without-reveal'), findsOneWidget);
       expect(
         a.calls
             .singleWhere(
@@ -952,12 +987,10 @@ void main() {
             .data['allowedScopes'],
         ['openid', 'profile', 'identity'],
       );
-      await tester.tap(find.text('Close'));
-      await tester.pumpAndSettle();
       expect(find.text('Native fixture app'), findsOneWidget);
     },
   );
-  testWidgets('workspace change dismisses the private credential modal', (
+  testWidgets('workspace change drops the one-time client secret', (
     tester,
   ) async {
     final (w, a) = (await tester.runAsync(() => _fixture('owner')))!;
@@ -972,13 +1005,13 @@ void main() {
     );
     await tester.pumpAndSettle();
     await register(tester);
-    expect(find.byType(RaftSecretView), findsOneWidget);
+    expect(find.text('private-one-time'), findsOneWidget);
     w.client.selectServer('s2');
     w.server = RaftRecord({'id': 's2', 'role': 'owner'});
     w.setError(null);
     await tester.pumpAndSettle();
-    expect(find.byType(RaftSecretView), findsNothing);
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('private-one-time'), findsNothing);
+    expect(find.byKey(const ValueKey('connected-app-editor')), findsNothing);
   });
   testWidgets(
     'role change dismisses private credentials without changing workspace generation',
@@ -996,13 +1029,13 @@ void main() {
       await tester.pumpAndSettle();
       await register(tester);
       final generation = w.client.generation;
-      expect(find.byType(RaftSecretView), findsOneWidget);
+      expect(find.text('private-one-time'), findsOneWidget);
       w.server = RaftRecord({'id': 's1', 'role': 'member'});
       w.setError(null);
       await tester.pumpAndSettle();
       expect(w.client.generation, generation);
-      expect(find.byType(RaftSecretView), findsNothing);
-      expect(find.text('Register app'), findsNothing);
+      expect(find.text('private-one-time'), findsNothing);
+      expect(find.text('Register App'), findsNothing);
     },
   );
   testWidgets(

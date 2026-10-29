@@ -7,7 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 /// Web `MessageInput.handleKeyDown` parity on every desktop platform, and the
 /// mobile exception (Enter stays a newline; the Send button submits).
 Widget _host(Widget child) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant, dark: false),
+  theme: raftTheme(dark: false),
   home: Scaffold(body: Column(children: [const Spacer(), child])),
 );
 

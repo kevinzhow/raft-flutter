@@ -13,8 +13,7 @@ import '../raft_ui.dart';
 import 'recipes/input.g.dart' show RaftInputRecipe;
 
 /// `text-foreground-muted theme-brutal:text-black/40`.
-Color _quiet(RaftTokens t) =>
-    t.brutal ? Colors.black.withValues(alpha: .4) : t.muted;
+Color _quiet(RaftTokens t) => t.muted;
 
 /// The `sm:` breakpoint (640px viewport).
 bool _sm(BuildContext context) => raftBreakpointWidth(context) >= 640;
@@ -70,12 +69,8 @@ class RaftAdminWarning extends StatelessWidget {
   const RaftAdminWarning(this.message, {super.key});
   final String message;
   @override
-  Widget build(BuildContext context) => RaftBanner(
-    status: RaftBannerRecipeStatus.warning,
-    size: RaftBannerRecipeSize.sm,
-    description: message,
-    descriptionWeight: FontWeight.w700,
-  );
+  Widget build(BuildContext context) =>
+      RaftErrorBanner(message, small: true, bold: true);
 }
 
 /// `Button variant="accent" size="sm"` Save / Saving… / (Check) Saved.
@@ -142,7 +137,6 @@ class RaftAdminCheckboxRow extends StatelessWidget {
           child: RaftCheckbox(
             key: checkboxKey,
             value: checked,
-            size: RaftCheckboxRecipeSize.md,
             semanticLabel: raftText(context, title),
             onChanged: onChanged,
           ),
@@ -311,7 +305,9 @@ class RaftAdminsCard extends StatelessWidget {
     final t = RaftTokens.of(context), text = RaftSettingsText(t);
     final selected = candidates.where((c) => c.key == selectedKey).firstOrNull;
     final canPromote = selected != null && roleOptions.isNotEmpty && !saving;
-    final wide = _sm(context);
+    // The picker, role and action stack when text is scaled up: they no longer
+    // fit one row.
+    final wide = _sm(context) && !RaftScaled.grows(context);
     final picker = RaftAdminPrincipalPicker(
       candidates: candidates,
       selectedKey: selected?.key,
@@ -328,10 +324,11 @@ class RaftAdminsCard extends StatelessWidget {
           ('owner', 'Owner'),
           ('admin', 'Admin'),
         ])
-          DropdownMenuItem(
+          RaftSelectItem(
             value: value,
             enabled: roleOptions.contains(value),
-            child: RaftCssText(raftText(context, label)),
+            label: raftText(context, label),
+            cssText: true,
           ),
       ],
       onChanged: canPromote
@@ -519,6 +516,7 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
         .where((c) => c.key == widget.selectedKey)
         .firstOrNull;
     final open = portal.isShowing;
+    final grows = RaftScaled.grows(context);
     // Agents read their plain label on the trigger; humans `Label · email`.
     final label =
         (selected != null && !selected.agent ? selected.optionLabel : null) ??
@@ -537,38 +535,36 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
         final hover = state.hovered && state.enabled;
         final box = RaftSettingsCard.box(
           t,
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          color: hover
-              ? (t.brutal
-                    ? t.colors['color-soft-signal']!.withValues(alpha: .3)
-                    : t.colors['primary-soft'])
-              : null,
+          height: grows ? null : 40,
+          minHeight: grows ? 40 : null,
+          padding: grows
+              ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
+              : const EdgeInsets.symmetric(horizontal: 12),
+          color: hover ? t.colors['primary-soft'] : null,
           child: Row(
             children: [
               Expanded(
                 child: RaftCssText(
                   label,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: grows ? null : 1,
+                  softWrap: grows,
+                  overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
                   style: raftSettingsBody(
                     t,
                     size: 12,
                     line: 16,
                     weight: FontWeight.w700,
-                    color: selected != null
-                        ? text.strong
-                        : t.brutal
-                        ? Colors.black.withValues(alpha: .45)
-                        : t.muted,
+                    color: selected != null ? text.strong : t.muted,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               AnimatedRotation(
                 turns: open ? .25 : 0,
-                duration: const Duration(milliseconds: 150),
+                duration: raftMotionDuration(
+                  context,
+                  const Duration(milliseconds: 150),
+                ),
                 child: RaftIcon(
                   RaftGlyph.chevronRight,
                   size: 14,
@@ -584,13 +580,13 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
     return KeyedSubtree(
       key: const ValueKey('admin-principal-picker-region'),
       child: CompositedTransformTarget(
+        key: region,
         link: link,
         child: OverlayPortal(
           controller: portal,
-          overlayChildBuilder: (context) {
+          overlayChildBuilder: raftBackDismissed(close, (context) {
             final box = this.context.findRenderObject() as RenderBox?;
             final width = box?.size.width ?? 240;
-            final height = box?.size.height ?? 40;
             final needle = search.text.trim().toLowerCase();
             final options = [
               for (final c in widget.candidates)
@@ -613,57 +609,51 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
                       onPointerDown: (_) => close(),
                     ),
                   ),
-                  CompositedTransformFollower(
-                    link: link,
-                    showWhenUnlinked: false,
-                    offset: Offset(0, height + 8),
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: RaftSelectionPopover(
-                        key: const ValueKey('admin-principal-popover'),
-                        title: raftText(context, 'Members'),
-                        width: width,
-                        searchController: search,
-                        searchPlaceholder: raftText(
-                          context,
-                          'Search members...',
-                        ),
-                        onSearchChanged: (_) => setState(() {}),
-                        emptyLabel: raftText(context, 'No matching members'),
-                        clearLabel: raftText(context, 'Clear'),
-                        onClear: selected == null
-                            ? null
-                            : () {
-                                widget.onSelect(null);
-                                close();
-                              },
-                        options: [
-                          for (final c in options)
-                            RaftSelectionOption(
-                              rowKey: ValueKey('admin-candidate-${c.key}'),
-                              label: c.optionLabel ?? c.label,
-                              checked: c.key == widget.selectedKey,
-                              reserveLeadingSlot: true,
-                              leading: RaftAvatarSlot(
-                                name: c.label,
-                                slot: RaftAvatarSlotContext.compactList,
-                                agent: c.agent,
-                                avatarUrl: c.avatarUrl,
-                              ),
-                              onTap: () {
-                                widget.onSelect(c.key);
-                                search.clear();
-                                close();
-                              },
+                  RaftAnchoredPopup(
+                    anchorKey: region,
+                    movement: Scrollable.maybeOf(this.context)?.position,
+                    gap: 8,
+                    child: RaftSelectionPopover(
+                      key: const ValueKey('admin-principal-popover'),
+                      title: raftText(context, 'Members'),
+                      width: width,
+                      searchController: search,
+                      searchPlaceholder: raftText(context, 'Search members...'),
+                      onSearchChanged: (_) => setState(() {}),
+                      emptyLabel: raftText(context, 'No matching members'),
+                      clearLabel: raftText(context, 'Clear'),
+                      onClear: selected == null
+                          ? null
+                          : () {
+                              widget.onSelect(null);
+                              close();
+                            },
+                      options: [
+                        for (final c in options)
+                          RaftSelectionOption(
+                            rowKey: ValueKey('admin-candidate-${c.key}'),
+                            label: c.optionLabel ?? c.label,
+                            checked: c.key == widget.selectedKey,
+                            reserveLeadingSlot: true,
+                            leading: RaftAvatarSlot(
+                              name: c.label,
+                              slot: RaftAvatarSlotContext.compactList,
+                              agent: c.agent,
+                              avatarUrl: c.avatarUrl,
                             ),
-                        ],
-                      ),
+                            onTap: () {
+                              widget.onSelect(c.key);
+                              search.clear();
+                              close();
+                            },
+                          ),
+                      ],
                     ),
                   ),
                 ],
               ),
             );
-          },
+          }),
           child: Shortcuts(
             shortcuts: const {
               SingleActivator(LogicalKeyboardKey.escape): DismissIntent(),
@@ -727,10 +717,7 @@ class RaftAdminInvitesCard extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      border: Border.all(
-                        color: text.softEdge,
-                        width: t.brutal ? 2 : 1,
-                      ),
+                      border: Border.all(color: text.softEdge, width: 1),
                     ),
                     child: Row(
                       children: [
@@ -955,7 +942,7 @@ class _JoinLinkRow extends StatelessWidget {
       key: ValueKey('admin-join-link-${link.id}'),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        border: Border.all(color: text.softEdge, width: t.brutal ? 2 : 1),
+        border: Border.all(color: text.softEdge, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -965,15 +952,17 @@ class _JoinLinkRow extends StatelessWidget {
           // each to whole pixels; Flutter would paint the half pixel.
           Builder(
             builder: (context) {
-              final urlHeight = 8 + 16.5 + (t.brutal ? 4.0 : 2.0);
+              final urlHeight = 8 + 16.5 + (2.0);
               final rowHeight = urlHeight > 28 ? urlHeight : 28.0;
               double snapped(double h) => ((rowHeight - h) / 2).roundToDouble();
               Widget top(double h, Widget child) => Padding(
                 padding: EdgeInsets.only(top: snapped(h)),
                 child: child,
               );
-              return SizedBox(
-                height: rowHeight,
+              return ConstrainedBox(
+                // The row height is a minimum: a taller URL line (larger text,
+                // Android Chinese control line) grows the row.
+                constraints: BoxConstraints(minHeight: rowHeight),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -987,15 +976,13 @@ class _JoinLinkRow extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: text.panel,
-                            border: Border.all(
-                              color: text.edge,
-                              width: t.brutal ? 2 : 1,
-                            ),
+                            border: Border.all(color: text.edge, width: 1),
                           ),
-                          child: SizedBox(
+                          child: ConstrainedBox(
                             // Blink's 16.5px line box (Flutter rounds a
-                            // paragraph's line to whole pixels).
-                            height: 16.5,
+                            // paragraph's line to whole pixels); a minimum, so
+                            // a taller line box grows the field.
+                            constraints: const BoxConstraints(minHeight: 16.5),
                             child: SelectableText(
                               link.url,
                               maxLines: 1,
@@ -1111,8 +1098,13 @@ class RaftAdminDateTimeField extends StatelessWidget {
             .text(tokens, base: DefaultTextStyle.of(context).style)
             .copyWith(fontSize: 14, height: 20 / 14);
         return Container(
+          height: s.height,
+          constraints: s.minHeight == null
+              ? null
+              : BoxConstraints(minHeight: s.minHeight!),
           decoration: s.decoration(tokens),
           padding: s.padding,
+          alignment: s.height == null ? null : Alignment.centerLeft,
           child: Row(
             children: [
               Expanded(
@@ -1278,8 +1270,7 @@ class RaftAdminAgreementCard extends StatelessWidget {
           RaftAdminCheckboxRow(
             checkboxKey: const ValueKey('admin-agreement-enabled'),
             title: 'Require agreement before joining',
-            description:
-                'New invite-link and community joins must accept the current version before membership is created.',
+            description: 'New invite-link and community joins must accept the current version before membership is created.',
             checked: enabled,
             dimmed: busy,
             onChanged: busy ? null : onEnabled,
@@ -1320,7 +1311,8 @@ class RaftAdminAgreementCard extends StatelessWidget {
                   ),
                   // `mt-1` plus the inline-block textarea's baseline gap
                   // (the 20px strut's descent) under it.
-                  SizedBox(height: t.brutal ? 7 : 10),
+                  // ds-allow: Web SettingsPanel.tsx agreement textarea `mt-1` plus inline-block baseline gap (computed, no class)
+                  SizedBox(height: 10),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1338,9 +1330,7 @@ class RaftAdminAgreementCard extends StatelessWidget {
                                     t,
                                     size: 12,
                                     line: 16,
-                                    color: t.brutal
-                                        ? t.colors['color-brutal-red']
-                                        : t.colors['danger'],
+                                    color: t.colors['danger'],
                                   ),
                                 ),
                               )
@@ -1360,26 +1350,21 @@ class RaftAdminAgreementCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: t.brutal
-                    ? t.colors['color-brutal-cream']
-                    : t.colors['layer-canvas-muted'],
-                border: Border.all(
-                  color: text.softEdge,
-                  width: t.brutal ? 2 : 1,
-                ),
+                color: t.colors['layer-canvas-muted'],
+                border: Border.all(color: text.softEdge, width: 1),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   RaftCssText(
-                    raftText(context, 'Preview').toUpperCase(),
+                    raftText(context, 'Preview'),
                     style: raftSettingsBody(
                       t,
                       size: 11,
                       line: 16.5,
                       weight: FontWeight.w700,
                       color: text.faint,
-                    ).copyWith(letterSpacing: 1.1),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   RaftAgreementBody(
@@ -1508,14 +1493,16 @@ class RaftAdminOnboardingCard extends StatelessWidget {
               placeholder: 'Onboarding agent',
               value: agentId,
               items: [
-                DropdownMenuItem(
+                RaftSelectItem(
                   value: '',
-                  child: RaftCssText(
-                    raftText(context, 'Disabled (no automatic onboarding)'),
+                  label: raftText(
+                    context,
+                    'Disabled (no automatic onboarding)',
                   ),
+                  cssText: true,
                 ),
                 for (final (id, label) in agents)
-                  DropdownMenuItem(value: id, child: RaftCssText(label)),
+                  RaftSelectItem(value: id, label: label, cssText: true),
               ],
               onChanged: disabled
                   ? null
@@ -1535,13 +1522,15 @@ class RaftAdminOnboardingCard extends StatelessWidget {
               placeholder: 'Greeting',
               value: greeting ? 'yes' : 'no',
               items: [
-                DropdownMenuItem(
+                RaftSelectItem(
                   value: 'yes',
-                  child: RaftCssText(raftText(context, 'Yes')),
+                  label: raftText(context, 'Yes'),
+                  cssText: true,
                 ),
-                DropdownMenuItem(
+                RaftSelectItem(
                   value: 'no',
-                  child: RaftCssText(raftText(context, 'No')),
+                  label: raftText(context, 'No'),
+                  cssText: true,
                 ),
               ],
               onChanged: disabled
@@ -1707,13 +1696,10 @@ class RaftAdminSwitchCard extends StatelessWidget {
                                   child: GestureDetector(
                                     behavior: HitTestBehavior.opaque,
                                     onTap: onDescriptionLink,
-                                    child: Text(
+                                    child: RaftUnderlinedText(
                                       raftText(context, link),
                                       style: body.copyWith(
                                         fontWeight: FontWeight.w700,
-                                        decoration: TextDecoration.underline,
-                                        decorationColor: body.color,
-                                        color: body.color,
                                       ),
                                     ),
                                   ),
@@ -1773,23 +1759,16 @@ class RaftPublicChannelList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), text = RaftSettingsText(t);
-    final radius = BorderRadius.circular(t.brutal ? 0 : 6);
+    final radius = BorderRadius.circular(6);
     if (channels.isEmpty) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         decoration: BoxDecoration(
-          color: t.brutal
-              ? const Color(0xFFF9FAFB)
-              : t.colors['fill-muted']!.withValues(
-                  alpha: t.colors['fill-muted']!.a * .4,
-                ),
-          borderRadius: radius,
-          border: Border.all(
-            color: t.brutal
-                ? Colors.black.withValues(alpha: .25)
-                : t.colors['line-muted']!,
-            width: t.brutal ? 2 : 1,
+          color: t.colors['fill-muted']!.withValues(
+            alpha: t.colors['fill-muted']!.a * .4,
           ),
+          borderRadius: radius,
+          border: Border.all(color: t.colors['line-muted']!, width: 1),
         ),
         child: RaftCssText(
           raftText(
@@ -1797,12 +1776,7 @@ class RaftPublicChannelList extends StatelessWidget {
             'No channels are currently marked visible to Guests.',
           ),
           textAlign: TextAlign.center,
-          style: raftSettingsBody(
-            t,
-            size: 12,
-            line: 16,
-            color: t.brutal ? Colors.black.withValues(alpha: .55) : t.muted,
-          ),
+          style: raftSettingsBody(t, size: 12, line: 16, color: t.muted),
         ),
       );
     }
@@ -1812,7 +1786,7 @@ class RaftPublicChannelList extends StatelessWidget {
       decoration: BoxDecoration(
         color: text.panel,
         borderRadius: radius,
-        border: Border.all(color: text.edge, width: t.brutal ? 2 : 1),
+        border: Border.all(color: text.edge, width: 1),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -1839,15 +1813,9 @@ class RaftPublicChannelList extends StatelessWidget {
                       height: 28,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: t.brutal
-                            ? t.colors['color-brutal-cream']
-                            : t.colors['layer-inset'],
+                        color: t.colors['layer-inset'],
                         borderRadius: radius,
-                        border: Border.all(
-                          color: t.brutal
-                              ? Colors.black
-                              : t.colors['line-muted']!,
-                        ),
+                        border: Border.all(color: t.colors['line-muted']!),
                       ),
                       child: RaftIcon(
                         RaftGlyph.hash,
@@ -1910,6 +1878,8 @@ class RaftPublicVisibilityCard extends StatelessWidget {
     this.onCopy,
     this.guestJoin,
     this.onGuestJoin,
+    this.searchEngines = false,
+    this.onSearchEngines,
     this.loading = false,
     this.error,
   });
@@ -1925,6 +1895,12 @@ class RaftPublicVisibilityCard extends StatelessWidget {
   /// Null hides the Guest-join row (`server_guest_v0` off).
   final bool? guestJoin;
   final ValueChanged<bool>? onGuestJoin;
+
+  /// Allow search engines to list the public channels
+  /// (`publicSearchEnabled`); only meaningful while the server is public.
+  /// A null [onSearchEngines] disables the switch.
+  final bool searchEngines;
+  final ValueChanged<bool>? onSearchEngines;
   final bool loading;
   final String? error;
 
@@ -1937,7 +1913,7 @@ class RaftPublicVisibilityCard extends StatelessWidget {
       line: 16,
       weight: FontWeight.w700,
       color: t.muted,
-    ).copyWith(letterSpacing: .3);
+    );
     Widget switchRow(
       String title,
       String description,
@@ -1979,10 +1955,21 @@ class RaftPublicVisibilityCard extends StatelessWidget {
         ),
       ],
     );
+    final hairline = t.colors['line-hairline'] ?? t.colors['line-muted']!;
+    Widget secondLevel(Key key, Widget child) => Padding(
+      key: key,
+      padding: const EdgeInsets.only(left: 4),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: hairline)),
+        ),
+        child: Padding(padding: const EdgeInsets.only(left: 16), child: child),
+      ),
+    );
     return RaftSettingsCard.box(
       t,
       padding: const EdgeInsets.all(16),
-      radius: t.brutal ? null : BorderRadius.circular(8),
+      radius: BorderRadius.circular(8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1995,10 +1982,7 @@ class RaftPublicVisibilityCard extends StatelessWidget {
           ),
           if (publicUrl case final url?) ...[
             const SizedBox(height: 16),
-            RaftCssText(
-              raftText(context, 'Public page').toUpperCase(),
-              style: eyebrow,
-            ),
+            RaftCssText(raftText(context, 'Public page'), style: eyebrow),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -2015,36 +1999,60 @@ class RaftPublicVisibilityCard extends StatelessWidget {
               ],
             ),
           ],
+          // Second level: indented under the setting it depends on, with a
+          // guide line (`ml-1 border-l border-line-hairline pl-4`).
           if (guestJoin case final guest?) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.only(top: 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: t.colors['line-hairline'] ?? t.colors['line-muted']!,
-                  ),
-                ),
-              ),
-              child: switchRow(
+            secondLevel(
+              const ValueKey('public-guest-join-setting'),
+              switchRow(
                 'Allow visitors to join as Guest',
-                'Signed-in visitors can choose to join. Public reading never adds membership automatically.',
+                'Signed-in visitors can join the server as read-only Guests, follow channels open to Guests, and be invited into other channels.',
                 guest,
                 onGuestJoin,
                 const ValueKey('public-guest-join-switch'),
               ),
             ),
           ],
+          // Public server SEO: also second level. It never makes anything
+          // readable; it only decides whether public content may be indexed.
           const SizedBox(height: 16),
-          RaftCssText(
-            raftText(context, 'Channels visible to anyone').toUpperCase(),
-            style: eyebrow,
+          secondLevel(
+            const ValueKey('public-search-setting'),
+            switchRow(
+              'Allow search engines',
+              'Search engines can show the channels visible to anyone, and their threads, in search results. Turning it off stops this, though results already listed can take a while to drop out. The channels stay public.',
+              publiclyVisible && searchEngines,
+              onSearchEngines,
+              const ValueKey('public-search-switch'),
+            ),
           ),
-          const SizedBox(height: 8),
-          if (loading)
-            const RaftUiSkeleton(height: 64)
-          else
-            RaftPublicChannelList(channels: channels),
+          const SizedBox(height: 16),
+          Container(
+            key: const ValueKey('public-visibility-channels'),
+            padding: const EdgeInsets.only(top: 16),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: hairline)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                RaftCssText(
+                  raftText(context, 'Channels visible to anyone'),
+                  style: eyebrow,
+                ),
+                const SizedBox(height: 8),
+                if (loading)
+                  RaftSkeleton(
+                    fromRecipe: true,
+                    width: double.infinity,
+                    height: 64,
+                  )
+                else
+                  RaftPublicChannelList(channels: channels),
+              ],
+            ),
+          ),
           if (error case final error?) ...[
             const SizedBox(height: 16),
             RaftAdminWarning(error),

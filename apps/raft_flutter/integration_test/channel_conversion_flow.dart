@@ -70,7 +70,7 @@ Future<void> verifyChannelConversionFlow(
     final enabled = evaluations.any(
       (f) => f['key'] == channelConversionFlag && f['enabled'] == true,
     );
-    await _tap(tester, find.byTooltip('Channel settings'));
+    await _tap(tester, find.byTooltip('Channel Settings'));
     await _until(
       tester,
       () =>
@@ -79,13 +79,13 @@ Future<void> verifyChannelConversionFlow(
     );
     await tester.pump(const Duration(milliseconds: 300));
     if (!enabled) {
-      expect(find.text('Convert to joint channel'), findsNothing);
+      expect(find.text('Convert to Joint Channel'), findsNothing);
       await capture('channel-conversion-disabled');
     } else {
-      await _tap(tester, find.text('Convert to joint channel'));
+      await _tap(tester, find.text('Convert to Joint Channel'));
       await _tap(
         tester,
-        find.widgetWithText(RaftButton, 'Convert to joint channel'),
+        find.widgetWithText(RaftButton, 'Convert to Joint Channel'),
       );
       await _until(
         tester,

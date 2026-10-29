@@ -25,6 +25,10 @@ class _Client extends RaftClient {
     resolutions++;
     return {'url': 'https://storage.example.invalid/owned-public-fixture'};
   }
+
+  // The batch route is not served here: tiles fall back to the single route.
+  @override
+  Future<dynamic> post(String path, {dynamic data}) async => {'urls': []};
 }
 
 class _Files extends AttachmentFiles {
@@ -32,7 +36,11 @@ class _Files extends AttachmentFiles {
   final Uint8List bytes;
   int downloads = 0;
   @override
-  Future<Uint8List> image(String url, {required CancelToken cancel}) async {
+  Future<Uint8List> image(
+    String url, {
+    required CancelToken cancel,
+    void Function(int, int)? onProgress,
+  }) async {
     downloads++;
     return bytes;
   }
@@ -69,17 +77,23 @@ Future<Uint8List> largePng() async {
     Paint()..color = const Color(0xff3366cc),
   );
   canvas.drawCircle(const Offset(2000, 1500), 900, Paint());
-  final image = await recorder.endRecording().toImage(4000, 3000);
+  final picture = recorder.endRecording();
+  final image = await picture.toImage(4000, 3000);
+  picture.dispose();
   final data = await image.toByteData(format: ui.ImageByteFormat.png);
   image.dispose();
   return data!.buffer.asUint8List();
 }
 
-Future<(int, int)> resolvedSize(ImageProvider provider) {
+Future<(int, int)> resolvedSize(
+  ImageProvider provider, {
+  void Function(ui.Image)? observeImage,
+}) {
   final done = Completer<(int, int)>();
   final stream = provider.resolve(ImageConfiguration.empty);
   late ImageStreamListener listener;
   listener = ImageStreamListener((info, _) {
+    observeImage?.call(info.image);
     done.complete((info.image.width, info.image.height));
     info.dispose();
     stream.removeListener(listener);
@@ -103,8 +117,8 @@ const metadata = <String, dynamic>{
     ..server = RaftRecord({'id': 'server', 'role': 'owner'})
     ..channel = RaftChannel({'id': 'channel', 'joined': true});
   w.channels = [w.channel!];
-  w.ledger.switchServer('server');
-  w.ledger.ingest([
+  w.messageDomain.ledger.switchServer('server');
+  w.messageDomain.ledger.ingest([
     {
       'id': 'host',
       'channelId': 'channel',
@@ -112,13 +126,13 @@ const metadata = <String, dynamic>{
       'content': 'photo',
       'attachments': [metadata],
     },
-  ], expectedGeneration: w.ledger.generation);
-  w.visibleIds['channel'] = {'host'};
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['channel'] = {'host'};
   return (client, w);
 }
 
 Widget view(WorkspaceController w, AttachmentFiles files) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant),
+  theme: raftTheme().copyWith(platform: TargetPlatform.linux),
   home: Scaffold(
     body: Align(
       alignment: Alignment.topLeft,
@@ -192,12 +206,21 @@ void main() {
     (tester) async {
       final (client, w) = workspace(null);
       final files = _Files(original);
+      // Borrow a disposed Image reference only to inspect all bitmap handles.
+      ui.Image? previewImage;
       addTearDown(() async {
         w.dispose();
         await client.dispose();
+        if (previewImage case final image?) {
+          expect(
+            image.debugGetOpenHandleStackTraces(),
+            isEmpty,
+            reason: 'The disposed workspace must release every preview bitmap handle.',
+          );
+        }
       });
       await tester.pumpWidget(view(w, files));
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(RaftSpinner), findsNothing);
       expect(card(tester).previewPending, isTrue);
       final reserved = tester.getRect(find.byType(RaftAttachmentCard));
       expect(reserved.size, const Size(384, 288));
@@ -205,15 +228,21 @@ void main() {
       expect(tester.getRect(find.byType(RaftAttachmentCard)), reserved);
       final listProvider = tester.widget<Image>(find.byType(Image)).image;
       final listSize = (await tester.runAsync(
-        () => resolvedSize(listProvider),
+        () => resolvedSize(
+          listProvider,
+          observeImage: (image) => previewImage = image,
+        ),
       ))!;
       // 384x288 logical at the test view's 3x.
       expect(listSize, (1152, 864));
-      expect(w.retainedImageDecodedBytes, 1152 * 864 * 4);
-      expect(w.retainedImageEncodedBytes, 0);
+      expect(w.attachmentMedia.retainedImageDecodedBytes, 1152 * 864 * 4);
+      expect(w.attachmentMedia.retainedImageEncodedBytes, 0);
 
       await tester.tap(find.byTooltip('Preview photo.png'));
       await tester.pump();
+      // The card's picture flies to the stage first (the stage's own picture
+      // is built once the flight lands).
+      await tester.pump(const Duration(milliseconds: 400));
       final lightbox = find.byKey(const ValueKey('attachment-image-photo'));
       expect(lightbox, findsOneWidget);
       for (
@@ -233,12 +262,22 @@ void main() {
         4000,
         3000,
       ));
-      await tester.tap(find.byTooltip('Close preview'));
+      await tester.tap(find.byTooltip('Close Preview'));
       await tester.pumpAndSettle();
       // Closing the lightbox frees the full bitmap; the preview stays.
-      expect(w.retainedImageDecodedBytes, 1152 * 864 * 4);
-      expect(w.retainedImageCount, 1);
+      expect(w.attachmentMedia.retainedImageDecodedBytes, 1152 * 864 * 4);
+      expect(w.attachmentMedia.retainedImageCount, 1);
       await tester.pumpWidget(const SizedBox());
+      // Evict while the widget test can still finish the release frame.
+      // ImageCache defers its keep-alive handle disposal to that frame;
+      // addTearDown runs after the binding has already stopped pumping.
+      // Client shutdown does real asynchronous I/O, outside the fake clock.
+      await tester.runAsync(() async {
+        w.dispose();
+        await client.dispose();
+      });
+      tester.binding.scheduleFrame();
+      await tester.pump();
     },
   );
 
@@ -252,7 +291,7 @@ void main() {
       Future<Directory> root() async => directory;
 
       // First launch: cold network load, persisted after a good decode.
-      final (firstClient, first) = workspace(AttachmentImageDiskCache(root));
+      final (firstClient, first) = workspace(AttachmentDiskCache(root));
       final firstFiles = _Files(original);
       await tester.pumpWidget(view(first, firstFiles));
       await waitPreview(tester);
@@ -269,7 +308,7 @@ void main() {
         stored = (await tester.runAsync(
           () => directory
               .list(recursive: true)
-              .where((e) => e is File && !e.path.endsWith('.part'))
+              .where((e) => e is File && !e.path.endsWith('.raft-part'))
               .length,
         ))!;
       }
@@ -278,12 +317,12 @@ void main() {
       await firstClient.dispose();
 
       // Second launch: new process-level store, controller and client.
-      final store = _CountingStore(AttachmentImageDiskCache(root));
+      final store = _CountingStore(AttachmentDiskCache(root));
       final (client, w) = workspace(store);
       final files = _Files(original);
       await tester.pumpWidget(view(w, files));
       final reserved = tester.getRect(find.byType(RaftAttachmentCard));
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(RaftSpinner), findsNothing);
       final frames = await waitPreview(tester);
       expect(tester.getRect(find.byType(RaftAttachmentCard)), reserved);
       expect(files.downloads, 0);
@@ -295,7 +334,7 @@ void main() {
       expect(
         (await tester.runAsync(
           () => resolvedSize(tester.widget<Image>(find.byType(Image)).image),
-        ))!,
+        )),
         (1152, 864),
       );
       await tester.pumpWidget(const SizedBox());
@@ -323,7 +362,7 @@ void main() {
   test('repository never reads persisted bytes without authority; revocation purges them', () async {
     final directory = await Directory.systemTemp.createTemp('raft-image-cache');
     addTearDown(() => directory.delete(recursive: true));
-    final disk = AttachmentImageDiskCache(() async => directory);
+    final disk = AttachmentDiskCache(() async => directory);
     final store = _CountingStore(disk);
     const scope = AttachmentImageScope(
       origin: 'https://example.invalid',
@@ -396,10 +435,7 @@ void main() {
         'raft-image-cache',
       );
       addTearDown(() => directory.delete(recursive: true));
-      final disk = AttachmentImageDiskCache(
-        () async => directory,
-        maxBytes: 3000,
-      );
+      final disk = AttachmentDiskCache(() async => directory, maxBytes: 3000);
       AttachmentImageStoreKey entry(int i) => AttachmentImageStoreKey(
         identity: 'identity',
         channelId: 'channel',

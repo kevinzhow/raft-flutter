@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Map<String, dynamic> bundle() => {
   'kind': 'forwarded-bundle',
@@ -40,46 +41,39 @@ Map<String, dynamic> bundle() => {
   ],
 };
 void main() {
-  test(
-    'projection strips private pointers and excluded attachments; parent precedes chronologically sorted replies',
-    () {
-      final rows = raftForwardedItems(bundle());
-      expect(rows.map((r) => r.index), [0, 2, 1]);
-      expect(rows.first.sourceLabel, isNull);
-      expect(rows.first.attachments, isEmpty);
-      expect(rows[1].attachments.single.keys, [
-        'id',
-        'filename',
-        'mimeType',
-        'sizeBytes',
-      ]);
-      expect(
-        rows[1].attachments.single.toString(),
-        isNot(contains('secret.invalid')),
-      );
-      expect(raftForwardedItems({...bundle(), 'version': 2}), isEmpty);
-      expect(
-        raftForwardedItems({
-          ...bundle(),
-          'forwardedItems': [
-            {'contentSnapshot': 'untrusted'},
-          ],
-        }),
-        isEmpty,
-      );
-    },
-  );
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  test('projection strips private pointers and excluded attachments; parent precedes chronologically sorted replies', () {
+    final rows = raftForwardedItems(bundle());
+    expect(rows.map((r) => r.index), [0, 2, 1]);
+    expect(rows.first.sourceLabel, isNull);
+    expect(rows.first.attachments, isEmpty);
+    expect(rows[1].attachments.single.keys, [
+      'id',
+      'filename',
+      'mimeType',
+      'sizeBytes',
+    ]);
+    expect(
+      rows[1].attachments.single.toString(),
+      isNot(contains('secret.invalid')),
+    );
+    expect(raftForwardedItems({...bundle(), 'version': 2}), isEmpty);
+    expect(
+      raftForwardedItems({
+        ...bundle(),
+        'forwardedItems': [
+          {'contentSnapshot': 'untrusted'},
+        ],
+      }),
+      isEmpty,
+    );
+  });
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'recipient snapshot expands without exposing restricted source: $family/$dark',
+      'recipient snapshot expands without exposing restricted source: ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: SingleChildScrollView(
                 child: SizedBox(
@@ -94,8 +88,8 @@ void main() {
         expect(find.textContaining('private-secret-label'), findsNothing);
         expect(find.text('report0.txt'), findsNothing);
         expect(find.text('report1.txt').hitTestable(), findsNothing);
-        await tester.ensureVisible(find.text('View all 3 messages'));
-        await tester.tap(find.text('View all 3 messages'));
+        await tester.ensureVisible(find.text('View All 3 Messages'));
+        await tester.tap(find.text('View All 3 Messages'));
         await tester.pump();
         await tester.ensureVisible(find.text('report1.txt'));
         expect(find.text('report1.txt').hitTestable(), findsOneWidget);

@@ -137,15 +137,15 @@ RaftRuntimeUsageData _usage(String? state) => RaftRuntimeUsageData(
 );
 
 @RaftPreviews('Hover card: runtime account usage', size: Size(900, 520))
-Widget runtimeUsageCardPreview() => Padding(
-  padding: const EdgeInsets.all(16),
-  child: Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      for (final state in ['fresh', 'stale', 'missing'])
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: SizedBox(
+Widget runtimeUsageCardPreview() => SingleChildScrollView(
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        for (final state in ['fresh', 'stale', 'missing'])
+          SizedBox(
             width: 280,
             child: RaftRuntimeUsageSurface(
               data: _usage(state),
@@ -153,7 +153,7 @@ Widget runtimeUsageCardPreview() => Padding(
               onClose: () {},
             ),
           ),
-        ),
-    ],
+      ],
+    ),
   ),
 );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/navigation_registry.dart';
+
 /// SettingsPanel / Sidebar(mobileInline) SettingsSidebarList composition.
 /// Account transport and platform notification ownership are supplied by the
 /// caller, never by this UI shell.
@@ -16,9 +18,11 @@ class RaftSettingsDestination {
     this.onOpen,
     this.mobileOnly = false,
     this.attention = false,
+    this.attentionDanger = false,
     this.attached = true,
     this.ownHeader = false,
     this.contentColor,
+    this.headerIcon = false,
   }) : assert(builder != null || onOpen != null);
 
   /// A row that leaves the Settings page (external link or another route),
@@ -32,10 +36,12 @@ class RaftSettingsDestination {
     this.mobileOnly = false,
     this.attention = false,
   }) : builder = null,
+       attentionDanger = false,
        scroll = false,
        title = null,
        attached = true,
        ownHeader = false,
+       headerIcon = false,
        contentColor = null;
   final String id, label, group;
 
@@ -46,12 +52,19 @@ class RaftSettingsDestination {
   /// Trailing attention dot (Feedback's unread replies).
   final bool attention;
 
+  /// Paint [attention] in the `--danger` red ("update available").
+  final bool attentionDanger;
+
   /// Rendered inside SettingsPanel's `Panel edge="attached"` (false for the
   /// /release-notes route, which is a plain column).
   final bool attached;
 
   /// The panel header sits inside the content surface (AboutFeedbackPanel).
   final bool ownHeader;
+
+  /// The page passes an `icon` to its PanelHeader (RaftBench); Settings tabs
+  /// do not, so their head carries no tile in the Raft look.
+  final bool headerIcon;
 
   /// Content surface override (RaftSettingsPanelFrame.contentColor).
   final Color Function(RaftTokens)? contentColor;
@@ -117,14 +130,23 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
     final t = RaftTokens.of(context);
     final mobile =
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
+    // Phone-only rows configure or stand in for the bottom bar; the left rail
+    // (like the desktop layout) has neither, so they are hidden with it.
+    final bottomBar = mobile && !RaftAdaptiveWorkspace.phoneRailOf(context);
     final available = [
       for (final d in widget.destinations)
-        if (mobile || !d.mobileOnly) d,
+        if (bottomBar || !d.mobileOnly) d,
     ];
     final pages = available.where((d) => d.builder != null).toList();
     if (pages.isEmpty) return const SizedBox.shrink();
-    final active =
-        pages.where((d) => d.id == selected).firstOrNull ?? pages.first;
+    final shown = pages.where((d) => d.id == selected).firstOrNull;
+    // A tab the registry knows but this role, flag or layout hides resolves
+    // to the first page like Web's denied tab (SettingsPanel). A tab nobody
+    // registered is a broken link: loud in debug, the same fallback in release.
+    if (shown == null && !NavigationRegistry.knowsSettingsTab(selected)) {
+      NavigationRegistry.reportFallback('settings tab', selected);
+    }
+    final active = shown ?? pages.first;
     void open(RaftSettingsDestination destination) {
       if (destination.onOpen != null) {
         destination.onOpen!();
@@ -151,6 +173,7 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
               glyph: d.glyph,
               onTap: () => open(d),
               attention: d.attention,
+              attentionDanger: d.attentionDanger,
             ),
         ]),
     ];
@@ -183,6 +206,7 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
     Widget header() => RaftSettingsPanelHeader(
       title: active.title ?? active.label,
       glyph: active.glyph,
+      iconTile: active.headerIcon,
       mobile: mobile,
       backKey: const Key('mobile-settings-back'),
       backTooltip: 'Back',

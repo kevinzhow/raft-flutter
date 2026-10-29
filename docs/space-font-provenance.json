@@ -1,0 +1,43 @@
+{
+  "families": [
+    "Space Grotesk",
+    "Space Mono"
+  ],
+  "upstream": "google/fonts",
+  "revision": "47d54ca1ebb14fd864695f1d39dc734f39017c33",
+  "reference": "raft-ui@0.7.1 dist/fonts.css: Google Fonts Space Grotesk wght@300..700 and Space Mono 400/700",
+  "note": "Unmodified upstream files (variable wght 300-700 for Space Grotesk). tool/parity-ui/fonts caches the woff2 subsets Google serves to the Web reference.",
+  "records": [
+    {
+      "asset": "packages/raft_ui/assets/fonts/SpaceGrotesk.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf",
+      "sha256": "acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72",
+      "bytes": 136676
+    },
+    {
+      "asset": "packages/raft_ui/assets/fonts/SpaceGrotesk-OFL.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/spacegrotesk/OFL.txt",
+      "sha256": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72",
+      "bytes": 4495
+    },
+    {
+      "asset": "packages/raft_ui/assets/fonts/SpaceMono.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/spacemono/SpaceMono-Regular.ttf",
+      "sha256": "95837e182baeeada83368f7748db28357f0a1b75c6b84ff7065b5edf933c8e18",
+      "bytes": 99356,
+      "note": "SpaceMono-Regular.ttf upstream, renamed to the family file name so test font loaders (`assets/fonts/<Family>.ttf`) find it"
+    },
+    {
+      "asset": "packages/raft_ui/assets/fonts/SpaceMono-Bold.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/spacemono/SpaceMono-Bold.ttf",
+      "sha256": "405e73d41afb7e5906efce206a326af5c956f38e255f35421c260e861e599c59",
+      "bytes": 98232
+    },
+    {
+      "asset": "packages/raft_ui/assets/fonts/SpaceMono-OFL.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/spacemono/OFL.txt",
+      "sha256": "8e4ee42b2553e1e01504e61cb0d46d148cd8c9e5eacaa3622a7df2d4f2955b9f",
+      "bytes": 4392
+    }
+  ]
+}

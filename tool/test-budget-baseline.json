@@ -1,0 +1,134 @@
+{
+ "about": "Ratchet for tool/test_budget.py. Files over the budget when it started; entries only shrink or go. Feature branches never edit this file; the integration owner runs `tool/test_budget.py --update-baseline` after merges.",
+ "files": {
+  "apps/raft_flutter/test/activity_fold_widths_test.dart": {
+   "cases": 28,
+   "seconds": 31.9
+  },
+  "apps/raft_flutter/test/activity_unread_agent_expansion_test.dart": {
+   "cases": 24,
+   "seconds": 33.8
+  },
+  "apps/raft_flutter/test/app_global_server_selector_test.dart": {
+   "cases": 26,
+   "seconds": 45.4
+  },
+  "apps/raft_flutter/test/app_window_commands_test.dart": {
+   "cases": 19,
+   "seconds": 34.9
+  },
+  "apps/raft_flutter/test/channel_sos_test.dart": {
+   "cases": 14,
+   "seconds": 31.7
+  },
+  "apps/raft_flutter/test/close_dialogs_part2_test.dart": {
+   "cases": 24,
+   "seconds": 42.8
+  },
+  "apps/raft_flutter/test/close_dialogs_part3_test.dart": {
+   "cases": 25,
+   "seconds": 38.9
+  },
+  "apps/raft_flutter/test/close_dialogs_part4_test.dart": {
+   "cases": 24,
+   "seconds": 40.2
+  },
+  "apps/raft_flutter/test/close_dialogs_part5_test.dart": {
+   "cases": 27,
+   "seconds": 31.5
+  },
+  "apps/raft_flutter/test/close_dialogs_part6_test.dart": {
+   "cases": 24,
+   "seconds": 34.0
+  },
+  "apps/raft_flutter/test/close_dialogs_test.dart": {
+   "cases": 36,
+   "seconds": 41.5
+  },
+  "apps/raft_flutter/test/close_panels_test.dart": {
+   "cases": 35,
+   "seconds": 89.6
+  },
+  "apps/raft_flutter/test/close_popups_test.dart": {
+   "cases": 75,
+   "seconds": 80.9
+  },
+  "apps/raft_flutter/test/close_viewers_part2_test.dart": {
+   "cases": 24,
+   "seconds": 43.8
+  },
+  "apps/raft_flutter/test/close_viewers_part3_test.dart": {
+   "cases": 24,
+   "seconds": 42.7
+  },
+  "apps/raft_flutter/test/close_viewers_test.dart": {
+   "cases": 29,
+   "seconds": 42.7
+  },
+  "apps/raft_flutter/test/data/source_time_formatter_test.dart": {
+   "cases": 170,
+   "seconds": 1.2
+  },
+  "apps/raft_flutter/test/form_windows_part2_test.dart": {
+   "cases": 42,
+   "seconds": 40.1
+  },
+  "apps/raft_flutter/test/form_windows_test.dart": {
+   "cases": 53,
+   "seconds": 47.4
+  },
+  "apps/raft_flutter/test/image_viewer_part2_test.dart": {
+   "cases": 51,
+   "seconds": 42.9
+  },
+  "apps/raft_flutter/test/image_viewer_test.dart": {
+   "cases": 40,
+   "seconds": 35.6
+  },
+  "apps/raft_flutter/test/login_flow_states_test.dart": {
+   "cases": 85,
+   "seconds": 30.9
+  },
+  "apps/raft_flutter/test/mobile_tabbar_config_test.dart": {
+   "cases": 33,
+   "seconds": 32.0
+  },
+  "apps/raft_flutter/test/navigation_registry_test.dart": {
+   "cases": 23,
+   "seconds": 51.1
+  },
+  "apps/raft_flutter/test/panel_edge_matrix_test.dart": {
+   "cases": 120,
+   "seconds": 20.2
+  },
+  "apps/raft_flutter/test/phone_navigation_placement_test.dart": {
+   "cases": 94,
+   "seconds": 72.5
+  },
+  "apps/raft_flutter/test/quick_switcher_workspace_test.dart": {
+   "cases": 28,
+   "seconds": 31.7
+  },
+  "apps/raft_flutter/test/restart_cache_first_frame_test.dart": {
+   "cases": 26,
+   "seconds": 39.7
+  },
+  "apps/raft_flutter/test/tap_target_matrix_test.dart": {
+   "cases": 71,
+   "seconds": 82.3
+  },
+  "apps/raft_flutter/test/workspace_source_location_contract_test.dart": {
+   "cases": 26,
+   "seconds": 30.2
+  },
+  "packages/raft_client/test/logout_policy_test.dart": {
+   "cases": 96,
+   "seconds": 38.1
+  }
+ },
+ "limits": {
+  "cases": 60,
+  "seconds": 30.0
+ },
+ "version": 1
+}

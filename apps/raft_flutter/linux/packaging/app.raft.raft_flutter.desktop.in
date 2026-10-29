@@ -1,11 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=Raft
+Name=@RAFT_DESKTOP_NAME@
 Comment=Raft collaboration client
 Exec="@RAFT_DESKTOP_EXEC@" %u
 Icon=application-x-executable
 Terminal=false
 Categories=Network;InstantMessaging;
-MimeType=x-scheme-handler/raft;
-StartupNotify=true
-StartupWMClass=app.raft.raft_flutter
+@RAFT_DESKTOP_MIME_LINE@StartupNotify=true
+StartupWMClass=@APPLICATION_ID@

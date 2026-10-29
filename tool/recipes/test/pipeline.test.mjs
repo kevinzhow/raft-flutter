@@ -2,6 +2,7 @@
 //  - every tv$1(...) call in raft-ui is extracted with literal options;
 //  - every class is resolved by Tailwind or listed in unresolved.json;
 //  - Button spot values;
+//  - the raft_ui router (gen_router.mjs) matches the committed files;
 //  - the pipeline is deterministic and the committed outputs are up to date.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -11,6 +12,7 @@ import { join, relative, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import * as acorn from 'acorn';
+import { loadBundle } from '../lib/bundle.mjs';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const tool = resolve(here, '..');
@@ -21,11 +23,12 @@ const raw = JSON.parse(readFileSync(join(build, 'recipes.raw.json'), 'utf8'));
 const model = JSON.parse(readFileSync(join(build, 'recipes.json'), 'utf8'));
 
 test('every tv$1 call is extracted with literal options', () => {
-  const code = readFileSync(join(source, 'dist/index.mjs'), 'utf8');
+  const { code, aliasToLocal } = loadBundle(source);
+  const callees = new Set(['tv$1', ...[...aliasToLocal].filter(([, l]) => l === 'tv$1').map(([a]) => a)]);
   let calls = 0;
   const walk = (n) => {
     if (!n || typeof n.type !== 'string') return;
-    if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === 'tv$1') calls++;
+    if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && callees.has(n.callee.name)) calls++;
     for (const [k, v] of Object.entries(n)) {
       if (k === 'loc') continue;
       if (Array.isArray(v)) v.forEach(walk);
@@ -33,11 +36,17 @@ test('every tv$1 call is extracted with literal options', () => {
     }
   };
   walk(acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module' }));
-  assert.equal(raw.recipes.length, calls);
+  const products = raw.recipes.filter((r) => r.region?.startsWith('Web '));
+  assert.equal(products.length, raw.productRecipeCount ?? 0);
+  assert.equal(raw.recipes.length - products.length, calls);
   assert.equal(raw.rawCallCount, calls);
-  assert.equal(model.recipes.length, calls);
+  assert.equal(model.recipes.length, calls + products.length);
+  for (const product of products) {
+    assert.match(product.region, /^Web src\/.+\.tsx sha256:[a-f0-9]{64}$/);
+    assert.ok(model.recipes.some((r) => r.name === product.name), product.name);
+  }
   assert.deepEqual(raw.recipes.filter((r) => r.nonLiteral.length).map((r) => r.name), []);
-  assert.equal(new Set(raw.recipes.map((r) => r.name)).size, calls);
+  assert.equal(new Set(raw.recipes.map((r) => r.name)).size, calls + products.length);
 });
 
 test('every class is resolved, descendant, a marker, or explicitly unresolved', () => {
@@ -53,35 +62,42 @@ test('every class is resolved, descendant, a marker, or explicitly unresolved', 
 });
 
 test('condition atoms follow the documented grammar', () => {
-  const re = /^(not:)?([a-z-]+(\*|\^|\$|~|\|)?=[^ ]+|[a-z-]+|(width|height|container-width)(>=|<=|<|>)[\d.]+|has:.+|(group|peer)(\/[\w-]+)?:.+|ancestor:.+|in:.+)$/;
+  const re = /^(not:)?([a-z-]+(\*|\^|\$|~|\|)?=[^ ]+|[a-z-]+|(width|height|container-width)(>=|<=|<|>)[\d.]+|is\([a-z,]+\)|has:.+|(group|peer)(\/[\w-]+)?:.+|ancestor:.+|in:.+)$/;
   const bad = new Set();
   for (const u of model.utilities) for (const l of u.layers) for (const a of l.atoms) if (!re.test(a)) bad.add(a);
   assert.deepEqual([...bad], []);
 });
 
-test('Button spot values', () => {
+test('Button spot values (raft-ui 0.7.0, no theme axis)', () => {
   const r = model.recipes.find((x) => x.name === 'buttonVariants');
+  assert.deepEqual(Object.keys(r.definition.variants), ['variant', 'size']);
   const combo = (props) => r.combos.find((c) => Object.entries(props).every(([k, v]) => c.props[k] === v));
   const self = (props) => model.resolved[combo(props).slots.root].self;
-  for (const theme of ['brutal', 'elegant']) {
-    const md = self({ theme, variant: 'default', size: 'md' });
-    assert.equal(md.base.height, 32);
-    assert.deepEqual(md.base.padding, { top: 0, right: 12, bottom: 0, left: 12 });
-    assert.equal(md.base['font-size'], 14);
-    const xs = self({ theme, variant: 'default', size: 'xs' });
-    assert.equal(xs.base.height, 24);
-    assert.equal(xs.base['font-size'], 11);
-    assert.equal(md.states.disabled.opacity, '40%');
-  }
-  assert.equal(self({ theme: 'brutal', variant: 'default', size: 'md' }).base['border-width'], 2);
-  assert.equal(self({ theme: 'elegant', variant: 'default', size: 'md' }).states.active.scale, 0.985);
-  // Base variant classes (before theme compounds) are primary-400 / hover primary-500.
-  assert.ok(r.definition.variants.variant.primary.root.join(' ').includes('bg-primary-400'));
-  assert.ok(r.definition.variants.variant.primary.root.join(' ').includes('hover:bg-primary-500'));
-  const bg = model.utilities.find((u) => u.name === 'bg-primary-400').layers[0].decls[0].value;
-  assert.equal(bg.token, 'primary400');
-  const hover = model.utilities.find((u) => u.name === 'hover:bg-primary-500').layers[0];
-  assert.deepEqual([hover.atoms, hover.decls[0].value.token], [['hover'], 'primary500']);
+  const md = self({ variant: 'default', size: 'md' });
+  assert.equal(md.base.height, 32);
+  assert.deepEqual(md.base.padding, { top: 0, right: 12, bottom: 0, left: 12 });
+  assert.equal(md.base['font-size'], 13);
+  assert.equal(md.base['font-weight'], 700);
+  assert.equal(md.base['border-width'], 1.5);
+  assert.equal(md.base['border-radius'], 8);
+  assert.deepEqual(md.base['background-color'], { token: 'layerCard' });
+  // xs, sm and md share one geometry in 0.7.0; lg is the only taller button.
+  for (const size of ['xs', 'sm']) assert.deepEqual(self({ variant: 'default', size }).base.height, 32);
+  const lg = self({ variant: 'default', size: 'lg' });
+  assert.equal(lg.base.height, 44);
+  assert.equal(lg.base['font-size'], 15);
+  // Disabled swaps to the muted fill; it no longer fades to 40%.
+  assert.equal(md.states['aria-disabled=true']['opacity'], '100%');
+  assert.deepEqual(md.states['aria-disabled=true']['background-color'], { token: 'fillMuted' });
+  // Primary is a sticker: attention fill, sticker-ink border, press overlay.
+  const primary = r.definition.variants.variant.primary.root.join(' ');
+  assert.ok(primary.includes('bg-attention-400'));
+  assert.ok(primary.includes('border-sticker-ink'));
+  assert.ok(primary.includes('hover:press-overlay-sticker'));
+  const bg = model.utilities.find((u) => u.name === 'bg-attention-400').layers[0].decls[0].value;
+  assert.equal(bg.token, 'attention400');
+  const hover = model.utilities.find((u) => u.name === 'hover:press-overlay-sticker').layers[0];
+  assert.deepEqual(hover.atoms, ['hover']);
 });
 
 function files(dir) {
@@ -111,7 +127,7 @@ test('pipeline is deterministic and committed outputs are current', { timeout: 1
       ['docs/component-recipes.md', 'docs/component-recipes.md'],
       ...files(join(runs[0], 'pkg')).map((f) => {
         const rel = relative(join(runs[0], 'pkg'), f);
-        return [join('pkg', rel), join('packages/raft_ui', rel)];
+        return [join('pkg', rel), join('packages/raft_theme', rel)];
       }),
     ];
     for (const [fresh, repoPath] of committed) {
@@ -120,4 +136,15 @@ test('pipeline is deterministic and committed outputs are current', { timeout: 1
   } finally {
     for (const d of runs) rmSync(d, { recursive: true, force: true });
   }
+});
+
+test('the raft_ui recipe router is current', () => {
+  execFileSync(process.execPath, [join(tool, 'gen_router.mjs'), '--check'], { stdio: 'pipe' });
+});
+
+test('the frozen legacy recipe set is untouched by the pipeline', () => {
+  // lib/recipes/legacy holds raft-ui 0.5.52 output; the pipeline only reads it.
+  const legacy = join(repo, 'packages/raft_theme/lib/recipes/legacy');
+  assert.equal(readdirSync(legacy).filter((f) => f.endsWith('.g.dart')).length, 123);
+  assert.match(readFileSync(join(legacy, 'badge.g.dart'), 'utf8'), /raft-ui 0\.5\.52 dist\/index\.mjs/);
 });

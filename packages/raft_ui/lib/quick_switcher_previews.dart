@@ -40,7 +40,7 @@ class _QuickSwitcherPreviewState extends State<_QuickSwitcherPreview> {
                 controller: controller,
                 focusNode: focus,
                 hint: 'Channels, people, messages…',
-                clearLabel: 'Clear search',
+                clearLabel: 'Clear Search',
                 onClear: controller.clear,
               ),
               body: RaftQuickSwitcherList(
@@ -96,6 +96,7 @@ Widget quickSwitcherResultsPreview() => Builder(
             RaftQuickSwitcherHit(
               where: '#product',
               threadLabel: 'thread',
+              warnings: const ['Archived', 'Upgrade to view'],
               sender: who,
               time: '1 hour ago',
               snippet: const Text('Parity captures for the overlay'),

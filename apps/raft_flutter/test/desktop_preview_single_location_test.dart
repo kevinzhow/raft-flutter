@@ -11,7 +11,10 @@ import 'package:raft_flutter/features/quick_switcher.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/app_services_fixture.dart';
 
 // Activity/Search channel preview contract: one location owns the detail
 // title, rail highlight, master list, detail body and Back, and read admission
@@ -149,11 +152,7 @@ class _Client extends RaftClient {
   }
 }
 
-Future<(WorkspaceController, _Client)> _mount(
-  WidgetTester t,
-  RaftFamily family,
-  bool dark,
-) async {
+Future<(WorkspaceController, _Client)> _mount(WidgetTester t, bool dark) async {
   SharedPreferences.setMockInitialValues({});
   t.view.physicalSize = const Size(1440, 900);
   t.view.devicePixelRatio = 1;
@@ -169,22 +168,23 @@ Future<(WorkspaceController, _Client)> _mount(
     ..channels = client.channelRows
     ..channel = client.channelRows.first
     ..section = 'chat';
-  w.ledger.switchServer('s');
+  w.messageDomain.ledger.switchServer('s');
   addTearDown(() async {
     w.dispose();
     await client.stream.close();
   });
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
-      home: WorkspaceView(
-        controller: w,
-        appearance: RaftAppearance(
-          mode: dark ? ThemeMode.dark : ThemeMode.light,
-          light: family,
+      theme: raftTheme(dark: dark),
+      home: withAppServices(
+        WorkspaceView(
+          controller: w,
+          appearance: RaftAppearance(
+            mode: dark ? ThemeMode.dark : ThemeMode.light,
+          ),
+          onAppearance: (_) async {},
+          onLogout: () async {},
         ),
-        onAppearance: (_) async {},
-        onLogout: () async {},
       ),
     ),
   );
@@ -196,21 +196,22 @@ String _selectedRail(WidgetTester t) =>
     t.widget<RaftWorkspaceRail>(find.byType(RaftWorkspaceRail)).selected;
 
 Future<void> _rail(WidgetTester t, String id) async {
-  await t.tap(find.byKey(Key('rail-$id')));
+  // Search left the rail: the top bar's `topbar-search` trigger
+  // (workspace_top_bar.dart:104) calls the same openSearchFromRail
+  // (workspace_view.dart:654-659) the old rail item did.
+  final target = find.byKey(Key(id == 'search' ? 'topbar-search' : 'rail-$id'));
+  expect(target.hitTestable(), findsOneWidget);
+  await t.tap(target);
   await t.pumpAndSettle();
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[N27] $family/$dark Activity/Search channel preview: title, rail, master, detail and Back follow one location; hidden channel stays unread',
+      '[N27] ${dark ? 'dark' : 'light'} Activity/Search channel preview: title, rail, master, detail and Back follow one location; hidden channel stays unread',
       (t) async {
         final semantics = t.ensureSemantics();
-        final (w, client) = await _mount(t, family, dark);
+        final (w, client) = await _mount(t, dark);
         w.setForeground(true);
         await t.tap(
           find.descendant(
@@ -258,10 +259,28 @@ void main() {
           expect(w.section, surface);
           // Rail highlight and sidebar follow the location's surface.
           expect(_selectedRail(t), surface);
-          expect(
-            t.getSemantics(find.byKey(Key('rail-$surface'))),
-            isSemantics(isSelected: true),
-          );
+          if (surface == 'search') {
+            // The top bar owns Search: the rail drops the item while the bar
+            // shows (workspace_view.dart:2794) and the trigger has no selected
+            // state, so the rail's own selected mode (above) is the highlight.
+            expect(find.byKey(const Key('rail-search')), findsNothing);
+            expect(find.byKey(const Key('topbar-search')), findsOneWidget);
+          } else {
+            expect(
+              // RaftInteractive owns the selected semantics node, a
+              // descendant of the keyed rail action; the keyed element has no
+              // node of its own (getSemantics would return an ancestor).
+              t.getSemantics(
+                find.descendant(
+                  of: find.byKey(Key('rail-$surface')),
+                  matching: find.byWidgetPredicate(
+                    (w) => w is Semantics && w.properties.selected != null,
+                  ),
+                ),
+              ),
+              isSemantics(isSelected: true),
+            );
+          }
           expect(
             find.byKey(const Key('workspace-sidebar-panel')),
             findsNothing,
@@ -349,7 +368,7 @@ void main() {
         final visiblePreview = reads('c');
         await live('live-visible-preview', 'c', 5);
         expect(reads('c'), greaterThan(visiblePreview));
-        await t.tap(find.byTooltip('Close detail'));
+        await t.tap(find.byTooltip('Close Detail'));
         await t.pumpAndSettle();
         expectPreview('activity', null, null);
         final hiddenActivity = reads('c');

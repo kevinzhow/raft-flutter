@@ -7,80 +7,79 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/section_pager_previews.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('preview paging retains editor and scroll $family/$dark', (
-      t,
-    ) async {
-      t.view.physicalSize = const Size(390, 600);
-      t.view.devicePixelRatio = 1;
-      addTearDown(t.view.reset);
-      final capture = GlobalKey();
-      await t.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(family, dark: dark),
-          home: Scaffold(
-            body: RepaintBoundary(key: capture, child: sectionPagerPreview()),
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      'preview paging retains editor and scroll ${dark ? 'dark' : 'light'}',
+      (t) async {
+        t.view.physicalSize = const Size(390, 600);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.reset);
+        final capture = GlobalKey();
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(dark: dark),
+            home: Scaffold(
+              body: RepaintBoundary(key: capture, child: sectionPagerPreview()),
+            ),
           ),
-        ),
-      );
-      await t.pumpAndSettle();
-      final editor = find.byKey(const Key('section-preview-draft'));
-      await t.enterText(editor, '中文 draft');
-      final state = t.state(editor);
-      await t.drag(find.byType(PageView), const Offset(-300, 0));
-      await t.pumpAndSettle();
-      final pager = find.byType(RaftSectionPager<String>);
-      expect(t.widget<RaftSectionPager<String>>(pager).value, 'Tasks');
-      final tasks = find.byKey(const PageStorageKey('Tasks'));
-      await t.drag(tasks, const Offset(0, -300));
-      await t.pumpAndSettle();
-      final taskScroll = t
-          .state<ScrollableState>(
-            find.descendant(of: tasks, matching: find.byType(Scrollable)).first,
-          )
-          .position
-          .pixels;
-      expect(taskScroll, greaterThan(100));
-      final tabs = find.byType(RaftPanelTabBar<String>);
-      await t.tap(find.descendant(of: tabs, matching: find.text('Chat')));
-      await t.pumpAndSettle();
-      expect(t.state(editor), same(state));
-      expect(t.widget<TextField>(editor).controller, isNull);
-      expect(find.text('中文 draft'), findsOneWidget);
-      await t.tap(find.descendant(of: tabs, matching: find.text('Tasks')));
-      await t.pumpAndSettle();
-      expect(
-        t
+        );
+        await t.pumpAndSettle();
+        final editor = find.byKey(const Key('section-preview-draft'));
+        await t.enterText(editor, '中文 draft');
+        final state = t.state(editor);
+        await t.drag(find.byType(PageView), const Offset(-300, 0));
+        await t.pumpAndSettle();
+        final pager = find.byType(RaftSectionPager<String>);
+        expect(t.widget<RaftSectionPager<String>>(pager).value, 'Tasks');
+        final tasks = find.byKey(const PageStorageKey('Tasks'));
+        await t.drag(tasks, const Offset(0, -300));
+        await t.pumpAndSettle();
+        final taskScroll = t
             .state<ScrollableState>(
               find
                   .descendant(of: tasks, matching: find.byType(Scrollable))
                   .first,
             )
             .position
-            .pixels,
-        taskScroll,
-      );
-      await t.runAsync(() async {
-        final boundary =
-            capture.currentContext!.findRenderObject()!
-                as RenderRepaintBoundary;
-        final picture = await boundary.toImage();
-        final png = await picture.toByteData(format: ui.ImageByteFormat.png);
-        final file = File(
-          '../../.local/section-pager/${family.name}-$dark.png',
+            .pixels;
+        expect(taskScroll, greaterThan(100));
+        final tabs = find.byType(RaftPanelTabBar<String>);
+        await t.tap(find.descendant(of: tabs, matching: find.text('Chat')));
+        await t.pumpAndSettle();
+        expect(t.state(editor), same(state));
+        expect(find.text('中文 draft'), findsOneWidget);
+        await t.tap(find.descendant(of: tabs, matching: find.text('Tasks')));
+        await t.pumpAndSettle();
+        expect(
+          t
+              .state<ScrollableState>(
+                find
+                    .descendant(of: tasks, matching: find.byType(Scrollable))
+                    .first,
+              )
+              .position
+              .pixels,
+          taskScroll,
         );
-        await file.parent.create(recursive: true);
-        await file.writeAsBytes(png!.buffer.asUint8List());
-        picture.dispose();
-      });
-      expect(t.takeException(), isNull);
-    });
+        await t.runAsync(() async {
+          final boundary =
+              capture.currentContext!.findRenderObject()!
+                  as RenderRepaintBoundary;
+          final picture = await boundary.toImage();
+          final png = await picture.toByteData(format: ui.ImageByteFormat.png);
+          final file = File(
+            '../../.local/section-pager/${dark ? 'dark' : 'light'}.png',
+          );
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes(png!.buffer.asUint8List());
+          picture.dispose();
+        });
+        expect(t.takeException(), isNull);
+      },
+    );
   }
 
   testWidgets(

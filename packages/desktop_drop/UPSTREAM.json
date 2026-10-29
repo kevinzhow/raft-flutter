@@ -1,0 +1,170 @@
+{
+  "name": "desktop_drop",
+  "version": "0.8.4",
+  "published": "2026-09-01T13:39:54.345147Z",
+  "archive": "https://pub.dev/api/archives/desktop_drop-0.8.4.tar.gz",
+  "sha256": "47ded09c85909edfed644fd4cbb5051b040d0aed5c79e7e062ea4b3b7156dbe4",
+  "upstreamRepository": "https://github.com/MixinNetwork/flutter-plugins/tree/main/packages/desktop_drop",
+  "sourceCommit": "UNKNOWN; not inferred from package version",
+  "files": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "fa00cbb240f32b2bce98c1a7ef6f3182fc832d58116f24f3b7404b6a7ad68e72"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "54bb187c3c4d8d9e74475f69b63a70798fb80581c334b2da487d1c4c70f68155"
+    },
+    {
+      "path": "README.md",
+      "sha256": "4d050d29fca1e4e558c1983d48b1648567acdc2c58e4b8805eecdd97ba2b6da4"
+    },
+    {
+      "path": "analysis_options.yaml",
+      "sha256": "df692318073ecc5f3b8a759a1f9338eb21995900d3c2bc1fbcd2c7780a1c7c6e"
+    },
+    {
+      "path": "android/build.gradle",
+      "sha256": "bab02db0fb811878bc007a6df1e59bb5217fbfe26f9a75123f7ceabe5e1cc324"
+    },
+    {
+      "path": "android/settings.gradle",
+      "sha256": "771622d213186e99ec875e0a269aa8c30b0d310221bd33fbdd9d31c51e9a6a0b"
+    },
+    {
+      "path": "android/src/main/AndroidManifest.xml",
+      "sha256": "571f2735faf5e857752ee057ac8ef63425576a721616c60b86ee5d4c0a2d682f"
+    },
+    {
+      "path": "android/src/main/kotlin/one/mixin/desktop/drop/DesktopDropPlugin.kt",
+      "sha256": "013bf0c1dc2796d033126808948bd5d6d2a207d2a5215037567f61395a7b996b"
+    },
+    {
+      "path": "lib/desktop_drop.dart",
+      "sha256": "fd09ff010d8490a75b5441cbde73c3f0c56de1e092c9127c4dbabdc342a362d1"
+    },
+    {
+      "path": "lib/desktop_drop_web.dart",
+      "sha256": "4b247c50867be79f8fe861d1b2d80d3998cc504e3dd0800684fbdc2240b3c760"
+    },
+    {
+      "path": "lib/src/channel.dart",
+      "sha256": "a5ed9ab3e05c215697519a587353f70eab05b7ba49c667bae0bf7bdd90f17f14"
+    },
+    {
+      "path": "lib/src/drop_item.dart",
+      "sha256": "86d5d28348bbec44e7545ff02ae7b2a127ccd0d67b40bf9139f54b785ba6f51c"
+    },
+    {
+      "path": "lib/src/drop_target.dart",
+      "sha256": "b2e24e7edf2baadd33bffe3a0e9c1eaaf50d4aa600c5e2c11d91164105c1ced5"
+    },
+    {
+      "path": "lib/src/events.dart",
+      "sha256": "57d6b04eb45db7095982a428d0d4244b7c9fe099dd464038a971780cac2473aa"
+    },
+    {
+      "path": "lib/src/web_drop_item.dart",
+      "sha256": "8f956bdd8a0f7bb2f7e284516ef423bad5bb6de297be594b6436f1d7e56159e4"
+    },
+    {
+      "path": "linux/CMakeLists.txt",
+      "sha256": "40324866fb072dd5307674932015289549752ee05f8d6fbc995637a028efb073"
+    },
+    {
+      "path": "linux/desktop_drop_plugin.cc",
+      "sha256": "4873bd632649d2e03e23cd45ec9daa1402eae3f9efd21fb8016e039b5e5f0f44"
+    },
+    {
+      "path": "linux/include/desktop_drop/desktop_drop_plugin.h",
+      "sha256": "7ed947d2c6475fb8983f22bcb8e2512071ae433ba7c603f16566e34a6531b515"
+    },
+    {
+      "path": "macos/desktop_drop/Package.swift",
+      "sha256": "9ecea01bd180791e5f25ad39b043ec7654537479b8664c683618f1ecc77d19ce"
+    },
+    {
+      "path": "macos/desktop_drop/Sources/desktop_drop/DesktopDropPlugin.swift",
+      "sha256": "939f69297b726fe3496cb30d479eb73a947808692366003c37101a2f7110c053"
+    },
+    {
+      "path": "macos/desktop_drop/Sources/desktop_drop/PrivacyInfo.xcprivacy",
+      "sha256": "204d035a88eab2281b3d914f46c796766ae78e3cb82537711928dca9e28dbbb8"
+    },
+    {
+      "path": "macos/desktop_drop.podspec",
+      "sha256": "3d3692eda67f86fc2205c2e1ffa5c3fa19421f05c8fc249fcc3b066b92122751"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "6a21bde1699efeeb4dc227fe16c1282706bc7181be123d7ab74449da6e3ffd3b"
+    },
+    {
+      "path": "test/channel_linux_test.dart",
+      "sha256": "9bef088e560b4392562f055506943727a04d6e73de153f6ba33be34d74cf8cd2"
+    },
+    {
+      "path": "windows/CMakeLists.txt",
+      "sha256": "dbfab72ac038f3e55fdb380e194ec061110ffb194ec2839607ae815a4f8fd6ee"
+    },
+    {
+      "path": "windows/desktop_drop_plugin.cpp",
+      "sha256": "3c30e832a5a17ca182d085ea5322ffab6290dc0c56a0d166c0c5c6b225691f89"
+    },
+    {
+      "path": "windows/include/desktop_drop/desktop_drop_plugin.h",
+      "sha256": "b2d23cdd5b5351dbf7588e112a08c29ce58b52288f75173d31df5698aecfa6c4"
+    }
+  ],
+  "localModifications": {
+    "scope": "RAFT_PATCHES.md",
+    "files": [
+      {
+        "path": "analysis_options.yaml",
+        "status": "modified",
+        "sha256": "d78ce19e221626d074f6f9ccf78ab0202a7c02bd86267d0f07bfd424eeedc870"
+      },
+      {
+        "path": "lib/src/channel.dart",
+        "status": "modified",
+        "sha256": "40dcd09c269dbbe44ffef0d45d9bde80b2beaeb185f3c56d802058df012c3696"
+      },
+      {
+        "path": "lib/src/drop_target.dart",
+        "status": "modified",
+        "sha256": "b213c031d6c904cd56e034d5dcee0b6f4470d98f6df4beb1a1329b3872e31fc5"
+      },
+      {
+        "path": "lib/src/events.dart",
+        "status": "modified",
+        "sha256": "5753babb59af986aedd89fa65610f88a580f897397d05ad94666c5eb74243877"
+      },
+      {
+        "path": "linux/desktop_drop_plugin.cc",
+        "status": "modified",
+        "sha256": "e95e3bbfc0433688153feef1d5ead47a9cffc6fc411df1895e615faef0665e8b"
+      },
+      {
+        "path": "pubspec.yaml",
+        "status": "modified",
+        "sha256": "7b2e548d045743a6e0c2c1493f2583b0dbb33537005910ea06aedb3a0fb76413"
+      },
+      {
+        "path": "test/channel_linux_test.dart",
+        "status": "modified",
+        "sha256": "dce488c135ba7b5b520820035403e34d3ec969f2abb69021d018fc951dc7da3a"
+      }
+    ],
+    "added": [
+      "RAFT_PATCHES.md",
+      "UPSTREAM.json",
+      "e2e/bus.conf",
+      "e2e/probe_main.dart",
+      "e2e/run.sh",
+      "e2e/source.py"
+    ],
+    "omittedUpstreamDirectories": [
+      "example"
+    ]
+  }
+}

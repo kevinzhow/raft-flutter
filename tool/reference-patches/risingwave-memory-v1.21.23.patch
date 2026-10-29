@@ -1,0 +1,19 @@
+--- a/scripts/dev/raftdev.ts
++++ b/scripts/dev/raftdev.ts
+@@ -373,11 +373,15 @@
+   return [
+     "run", "-d", "--pull=always", "--name", e.RISINGWAVE_CONTAINER,
+     "--label", RAFTDEV_MANAGED_LABEL_ARG,
++    "--memory=2g", "--memory-swap=2g",
++    "-e", "RW_COMPACTOR_META_CACHE_MEMORY_BYTES=16777216",
++    "-e", "RW_SSTABLE_SIZE_MB=32",
+     ...(network ? ["--network", network] : []),
+     "-p", `127.0.0.1:${e.RISINGWAVE_PORT}:4566`,
+     "-p", `127.0.0.1:${e.RISINGWAVE_DASHBOARD_PORT}:5691`,
+     image,
+-    "single_node",
++    "single_node", "--total-memory-bytes", "1610612736",
++    "--parallelism", "1", "--compaction-worker-threads-number", "1",
+   ];
+ }
+ 

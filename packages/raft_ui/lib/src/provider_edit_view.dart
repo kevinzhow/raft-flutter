@@ -1,15 +1,19 @@
+import 'overlays/dialog.dart' show RaftDialog;
+
 // Presentation of the Web EditProviderConnectionModal
 // (packages/web/src/components/settings/EditProviderConnectionModal.tsx):
 // DialogCard `Edit {name}` over a `space-y-4` form: Connection name, (gateway)
 // Base URL, API key with the write-only hint, (gateway) the image-input
 // checkbox, an error line and Cancel / Save changes. The app adapter owns the
 // controllers and the PATCH.
+import 'raft/checkbox.dart' show RaftCheckbox;
+
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
 import 'dialog_card.dart';
+import 'form_presentation.dart';
 import 'icons.dart';
-import 'indicators.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
 import 'theme.dart';
@@ -43,7 +47,7 @@ class RaftEditProviderDialogView extends StatelessWidget {
     final t = RaftTokens.of(context);
     const gap = SizedBox(height: 16); // `space-y-4`
     return RaftModalBackdrop(
-      child: RaftDialogCard(
+      child: RaftDialog.card(
         key: const ValueKey('provider-connection-edit-dialog'),
         title: raftFormat(context, 'Edit {name}', {'name': connectionName}),
         onClose: onClose,
@@ -72,8 +76,7 @@ class RaftEditProviderDialogView extends StatelessWidget {
             gap,
             RaftProductFormField(
               label: 'API key',
-              hint:
-                  'Leave blank to keep current key. Write-only; Raft encrypts this value and will not return it.',
+              hint: 'Leave blank to keep current key. Write-only; Raft encrypts this value and will not return it.',
               child: RaftDialogTextInput(
                 fieldKey: const ValueKey('provider-edit-key'),
                 controller: apiKey,
@@ -123,31 +126,30 @@ class RaftEditProviderDialogView extends StatelessWidget {
                 ),
               ),
             ],
-            gap,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              spacing: 8, // gap-2
-              children: [
-                RaftRecipeButton(
-                  key: const ValueKey('provider-edit-cancel'),
-                  label: 'Cancel',
-                  onPressed: onClose,
-                ),
-                RaftRecipeButton(
-                  key: const ValueKey('provider-edit-save'),
-                  label: 'Save changes',
-                  glyph: submitting ? null : RaftGlyph.pencil,
-                  child: submitting
-                      ? const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [RaftSpinner()],
-                        )
-                      : null,
-                  variant: RaftButtonRecipeVariant.default_,
-                  disabled: !canSubmit || submitting,
-                  onPressed: onSubmit,
-                ),
-              ],
+          ],
+        ),
+        footer: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          spacing: 8, // gap-2
+          children: [
+            RaftRecipeButton(
+              key: const ValueKey('provider-edit-cancel'),
+              label: 'Cancel',
+              onPressed: raftExplicitClose(context, onClose),
+            ),
+            RaftRecipeButton(
+              key: const ValueKey('provider-edit-save'),
+              label: 'Save changes',
+              glyph: submitting ? null : RaftGlyph.pencil,
+              child: submitting
+                  ? const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [RaftSpinner()],
+                    )
+                  : null,
+              variant: RaftButtonRecipeVariant.default_,
+              disabled: !canSubmit || submitting,
+              onPressed: onSubmit,
             ),
           ],
         ),

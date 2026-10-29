@@ -10,7 +10,19 @@ class RaftRecord {
   String string(String key, [String fallback = '']) =>
       json[key]?.toString() ?? fallback;
   String get id => string('id');
-  String get name => string('displayName', string('name'));
+
+  /// First non-empty string among [keys] (Web's `a || b || c`). A null and an
+  /// empty string both mean "missing"; `string(k, fallback)` only skips null.
+  String firstNonEmpty(Iterable<String> keys, [String fallback = '']) {
+    for (final key in keys) {
+      final value = json[key]?.toString();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return fallback;
+  }
+
+  /// Web shows `displayName || name`; a stored empty displayName must not blank the title.
+  String get name => firstNonEmpty(const ['displayName', 'name']);
   bool flag(String key) => json[key] == true;
 }
 
@@ -19,6 +31,20 @@ class RaftChannel extends RaftRecord {
   String get type => string('type', 'channel');
   String get description => string('description');
   bool get archived => json['archivedAt'] != null;
+
+  /// DM label as Web shows it: `peerDisplayName || peerName || name`.
+  String get peerLabel => firstNonEmpty(const [
+    'peerDisplayName',
+    'peerName',
+    'displayName',
+    'name',
+  ]);
+
+  /// `bridge.provider` of a bridged channel (`slack`), else null.
+  String? get bridgeProvider => switch (json['bridge']) {
+    {'provider': final String provider} => provider,
+    _ => null,
+  };
   bool get joined =>
       json['joined'] == true ||
       json['isJoined'] == true ||

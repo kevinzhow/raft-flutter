@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:raft_ui/workspace_shell_previews.dart';
 
 import 'task_typography_test.dart' show loadTaskFonts;
@@ -9,24 +10,20 @@ import 'task_typography_test.dart' show loadTaskFonts;
 // Source26f77ef Sidebar335–371/460–513/4092–4100/4203, LeftRail1012–1098.
 // Real DOM DPR1: two-line Pinned body45+mb4; Joint empty drag bucket28.
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final (dark) in raftThemeMatrix([(false), (true)], full: true)) {
     testWidgets(
-      '$family/$dark actual empty sidebar wrappers retain Source boxes and collapse',
+      '${dark ? 'dark' : 'light'} actual empty sidebar wrappers retain Source boxes and collapse',
       (t) async {
         await loadTaskFonts(t);
         var expanded = true;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: Align(
                 alignment: Alignment.topLeft,
                 child: SizedBox(
-                  width: family == RaftFamily.brutal ? 222 : 223,
+                  width: 223,
                   child: StatefulBuilder(
                     builder: (context, update) => Column(
                       mainAxisSize: MainAxisSize.min,
@@ -77,12 +74,12 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark footer honors the real SVG descendant size and keyboard activation',
+      '${dark ? 'dark' : 'light'} footer honors the real SVG descendant size and keyboard activation',
       (t) async {
         var calls = 0;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: RaftWorkspaceRailAction(
                 label: 'Enter Workspace',
@@ -94,7 +91,7 @@ void main() {
         );
         await t.pump();
         final glyph = t.widget<RaftIcon>(find.byType(RaftIcon));
-        expect(glyph.size, family == RaftFamily.brutal ? 18 : 16);
+        expect(glyph.size, 20);
         await t.sendKeyEvent(LogicalKeyboardKey.tab);
         await t.sendKeyEvent(LogicalKeyboardKey.enter);
         await t.pump();
@@ -103,11 +100,11 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark interactive footer Preview keeps the unseen mask until actual Mobile App selection',
+      '${dark ? 'dark' : 'light'} interactive footer Preview keeps the unseen mask until actual Mobile App selection',
       (t) async {
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(body: workspaceRailFooterPreview()),
           ),
         );
@@ -135,7 +132,7 @@ void main() {
         expect(t.widget<RaftWorkspaceHelpMenu>(help).attention, true);
         await t.tap(help);
         await t.pumpAndSettle();
-        await t.tap(find.text('Mobile app'));
+        await t.tap(find.text('Mobile App'));
         await t.pumpAndSettle();
         expect(t.widget<RaftWorkspaceHelpMenu>(help).attention, false);
         expect(mask, findsNothing);

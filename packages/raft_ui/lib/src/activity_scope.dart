@@ -1,6 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+import 'control_typography.dart';
 import 'form_controls.dart';
 
 import 'design_primitives.dart';
@@ -8,15 +12,17 @@ import 'icons.dart';
 import 'indicators.dart';
 import 'localization.dart';
 import 'select_field.dart';
+import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 import 'recipe_surface.dart' show RaftCssBoxDecoration;
 
-/// Mounted ThreadsInbox views; Saved and Done are independent result sources.
+/// Mounted ThreadsInbox views; the application owns each accepted result scope.
 enum RaftActivityView {
   all('All', RaftGlyph.inbox),
   unread('Unread', RaftGlyph.mail),
   mentions('Mentions', RaftGlyph.atSign),
   saved('Saved', RaftGlyph.bookmark),
+  dms('DMs', RaftGlyph.messageCircle),
   done('Done', RaftGlyph.checkCircle2);
 
   const RaftActivityView(this.label, this.glyph);
@@ -74,10 +80,7 @@ class RaftActivityScopeToolbar extends StatelessWidget {
       decoration: BoxDecoration(
         color: t.panel,
         border: Border(
-          bottom: BorderSide(
-            color: t.brutal ? Colors.black : t.line,
-            width: t.border,
-          ),
+          bottom: BorderSide(color: t.line, width: t.border),
         ),
       ),
       child: compact
@@ -112,14 +115,14 @@ class RaftActivityScopeToolbar extends StatelessWidget {
                     ],
                   ),
                 ),
-                Row(
-                  spacing: 8,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (search != null) Expanded(child: search!),
-                    SizedBox(
-                      width: 116,
-                      height: 32,
+                LayoutBuilder(
+                  builder: (context, constraints) => _ActivityToolbarControls(
+                    width: constraints.maxWidth,
+                    direction: Directionality.of(context),
+                    search: search,
+                    read: markAllRead,
+                    sort: SizedBox(
+                      height: RaftScaled.extent(context, 32),
                       child: RaftSelectField<String>(
                         value: sort,
                         label: raftText(context, 'Sort Activity'),
@@ -130,9 +133,9 @@ class RaftActivityScopeToolbar extends StatelessWidget {
                             'desc': 'Newest',
                             'asc': 'Oldest',
                           }.entries)
-                            DropdownMenuItem(
+                            RaftSelectItem(
                               value: entry.key,
-                              child: Text(raftText(context, entry.value)),
+                              label: raftText(context, entry.value),
                             ),
                         ],
                         onChanged: (value) {
@@ -140,8 +143,7 @@ class RaftActivityScopeToolbar extends StatelessWidget {
                         },
                       ),
                     ),
-                    ?markAllRead,
-                  ],
+                  ),
                 ),
               ],
             )
@@ -156,6 +158,152 @@ class RaftActivityScopeToolbar extends StatelessWidget {
             ),
     );
   }
+}
+
+// Measure the action itself: its localized label, recipe padding and text
+// scaling determine the space available for search and sort. A render layout
+// keeps the same input element when it moves between one and two rows.
+class _ActivityToolbarControls extends MultiChildRenderObjectWidget {
+  _ActivityToolbarControls({
+    required this.width,
+    required this.direction,
+    required Widget sort,
+    Widget? search,
+    Widget? read,
+  }) : hasSearch = search != null,
+       hasRead = read != null,
+       super(
+         children: [
+           search ?? const SizedBox.shrink(),
+           sort,
+           read ?? const SizedBox.shrink(),
+         ],
+       );
+
+  final double width;
+  final TextDirection direction;
+  final bool hasSearch, hasRead;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderActivityToolbarControls(this);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderActivityToolbarControls renderObject,
+  ) {
+    renderObject.config = this;
+    renderObject.markNeedsLayout();
+  }
+}
+
+class _ActivityToolbarParentData extends ContainerBoxParentData<RenderBox> {}
+
+class _RenderActivityToolbarControls extends RenderBox
+    with
+        ContainerRenderObjectMixin<RenderBox, _ActivityToolbarParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _ActivityToolbarParentData> {
+  _RenderActivityToolbarControls(this.config);
+  _ActivityToolbarControls config;
+  static const _gap = 8.0, _minimumSearch = 64.0, _minimumSort = 64.0;
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! _ActivityToolbarParentData) {
+      child.parentData = _ActivityToolbarParentData();
+    }
+  }
+
+  Size _layout(
+    BoxConstraints constraints,
+    ChildLayouter layoutChild, {
+    bool position = false,
+  }) {
+    final search = firstChild!, sort = childAfter(search)!, read = lastChild!;
+    final width = constraints.constrainWidth(config.width);
+    final readSize = layoutChild(read, BoxConstraints(maxWidth: width));
+    final available = math.max(
+      0.0,
+      width - readSize.width - (config.hasRead ? _gap : 0),
+    );
+    final wrapped =
+        config.hasSearch && available < _minimumSearch + _gap + _minimumSort;
+    final sortWidth = math.min(
+      116.0,
+      config.hasSearch && !wrapped
+          ? available - _minimumSearch - _gap
+          : available,
+    );
+    final sortSize = layoutChild(
+      sort,
+      BoxConstraints.tightFor(width: sortWidth),
+    );
+    final searchSize = layoutChild(
+      search,
+      BoxConstraints.tightFor(
+        width: config.hasSearch
+            ? wrapped
+                  ? width
+                  : available - sortWidth - _gap
+            : 0,
+      ),
+    );
+    final controlsHeight = math.max(readSize.height, sortSize.height);
+    final height = config.hasSearch
+        ? wrapped
+              ? searchSize.height + _gap + controlsHeight
+              : math.max(searchSize.height, controlsHeight)
+        : controlsHeight;
+    if (position) {
+      void place(RenderBox child, Size size, double x, double y) {
+        (child.parentData! as _ActivityToolbarParentData).offset = Offset(
+          config.direction == TextDirection.rtl ? width - x - size.width : x,
+          y,
+        );
+      }
+
+      final top = wrapped
+          ? searchSize.height + _gap
+          : (height - controlsHeight) / 2;
+      place(
+        search,
+        searchSize,
+        0,
+        wrapped ? 0 : (height - searchSize.height) / 2,
+      );
+      place(
+        sort,
+        sortSize,
+        available - sortSize.width,
+        top + (controlsHeight - sortSize.height) / 2,
+      );
+      place(
+        read,
+        readSize,
+        width - readSize.width,
+        top + (controlsHeight - readSize.height) / 2,
+      );
+    }
+    return constraints.constrain(Size(width, height));
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) =>
+      _layout(constraints, ChildLayoutHelper.dryLayoutChild);
+
+  @override
+  void performLayout() {
+    size = _layout(constraints, ChildLayoutHelper.layoutChild, position: true);
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) =>
+      defaultPaint(context, offset);
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      defaultHitTestChildren(result, position: position);
 }
 
 class _ActivityViewStrip extends StatefulWidget {
@@ -249,8 +397,11 @@ class RaftActivityScopePicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final hiddenCounts =
-        view == RaftActivityView.saved || view == RaftActivityView.done;
+    final hiddenCounts = [
+      RaftActivityView.saved,
+      RaftActivityView.dms,
+      RaftActivityView.done,
+    ].contains(view);
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height * .68,
@@ -302,7 +453,7 @@ class RaftActivityScopePicker extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      raftText(context, 'DM and Channels').toUpperCase(),
+                      raftText(context, 'DM and Channels'),
                       style: RaftTypography.body(
                         t,
                         size: 12,
@@ -315,11 +466,11 @@ class RaftActivityScopePicker extends StatelessWidget {
                   if (selectedGroup != null)
                     _ActivityButton(
                       key: const ValueKey('activity-clear-channel-filter'),
-                      label: raftText(context, 'Clear filters'),
+                      label: raftText(context, 'Clear Filters'),
                       onPressed: onClearGroup,
                       fontSize: 10,
                       padding: const EdgeInsets.all(4),
-                      child: Text(raftText(context, 'Clear filters')),
+                      child: Text(raftText(context, 'Clear Filters')),
                     ),
                 ],
               ),
@@ -403,7 +554,6 @@ class _ActivityButton extends StatelessWidget {
       selected: selected,
       onPressed: onPressed,
       builder: (context, state) {
-        final black = t.colors['color-black']!;
         final fill = dialog
             ? (selected
                   ? t.colors['fill-muted']!
@@ -413,25 +563,24 @@ class _ActivityButton extends StatelessWidget {
             : selected
             ? t.colors['primary-soft']!
             : t.panel;
+        // Larger text: the pinned height is a minimum.
+        final grows = height != null && RaftScaled.grows(context);
         return Container(
-          height: height,
+          height: grows ? null : height,
+          constraints: grows ? BoxConstraints(minHeight: height!) : null,
           foregroundDecoration: !border && state.focusVisible
               ? BoxDecoration(border: Border.all(color: t.ink, width: 2))
               : null,
           padding: padding,
           decoration: RaftCssBoxDecoration(
-            color: t.brutal && group && selected
-                ? black.withValues(alpha: .08)
-                : fill,
+            color: fill,
             boxShadow: shadowed ? t.themeShadows.sm.paintOrder : null,
             border: border
                 ? Border.all(
                     color: state.focusVisible || selected || strongBorder
-                        ? (t.brutal ? black : t.colors['line-strong']!)
+                        ? (t.colors['line-strong']!)
                         : group
                         ? Colors.transparent
-                        : t.brutal
-                        ? black.withValues(alpha: .2)
                         : t.line,
                     width: t.border,
                   )
@@ -439,16 +588,19 @@ class _ActivityButton extends StatelessWidget {
           ),
           alignment: Alignment.centerLeft,
           child: DefaultTextStyle(
-            style: RaftTypography.body(
-              t,
-              size: fontSize ?? (dialog ? 14 : 12),
-              line: fontSize == 10
-                  ? 15
-                  : dialog
-                  ? 20
-                  : 16,
-              weight: FontWeight.w700,
-              color: t.brutal ? black : t.ink,
+            style: RaftControlTypography.of(
+              context,
+              RaftTypography.body(
+                t,
+                size: fontSize ?? (dialog ? 14 : 12),
+                line: fontSize == 10
+                    ? 15
+                    : dialog
+                    ? 20
+                    : 16,
+                weight: FontWeight.w700,
+                color: t.ink,
+              ),
             ),
             child: ExcludeSemantics(child: child),
           ),
@@ -471,12 +623,7 @@ class RaftActivityGroupIcon extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: dm ? t.colors['primary-soft'] : t.colors['fill-muted'],
-        border: Border.all(
-          color: t.brutal
-              ? t.colors['color-black']!.withValues(alpha: .2)
-              : t.line,
-          width: t.border,
-        ),
+        border: Border.all(color: t.line, width: t.border),
       ),
       child: dm
           ? const RaftDirectMessageIcon(size: 12)
@@ -512,7 +659,7 @@ class RaftActivitySearchInput extends StatelessWidget {
         return KeyEventResult.ignored;
       },
       child: SizedBox(
-        height: 32,
+        height: RaftScaled.extent(context, 32),
         child: RaftTextInput(
           controller: controller,
           focusNode: focusNode,
@@ -541,19 +688,24 @@ class RaftActivityLoadingList extends StatelessWidget {
     return Semantics(
       label: raftText(context, 'Loading Activity'),
       child: ListView.separated(
-        padding: const EdgeInsets.all(16),
+        // v1.21.23: the cards sit in the `py-1` scroller edge to edge; the
+        // pre-theme looks inset them 16. Both are component geometry data.
+        padding: EdgeInsets.symmetric(
+          horizontal: t.size('space.activityLoadingInline', fallback: 0),
+          vertical: t.size('space.activityLoadingBlock', fallback: 4),
+        ),
         itemCount: 6,
         separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemBuilder: (_, _) => Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: t.panel,
-            // `border border-line-muted theme-brutal:border-2`: the muted rule
-            // colour stays in Brutal, only the width grows.
-            border: Border.all(
-              color: t.colors['line-muted']!,
-              width: t.brutal ? 2 : 1,
+            borderRadius: BorderRadius.circular(
+              t.size('radius.activityLoadingCard', fallback: 10),
             ),
+            // The rule colour varies independently of padding and corners;
+            // this list retains its existing 1px rule in every mode.
+            border: Border.all(color: t.colors['line-loading-card']!, width: 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

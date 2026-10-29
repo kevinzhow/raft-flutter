@@ -70,7 +70,7 @@ void main() {
   Future<dynamic> mount(WidgetTester tester, String section) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: ResourceView(
             controller: w,
@@ -170,13 +170,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: const Scaffold(body: SizedBox.expand()),
       ),
     );
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: ResourceView(
             controller: w,

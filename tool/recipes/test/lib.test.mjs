@@ -78,3 +78,11 @@ test('cascade: specificity, order, !important and state atoms', () => {
   assert.equal(atomMatches('width<768', { flags: new Set(), width: 500 }), true);
   assert.equal(atomMatches('width<768', { flags: new Set() }), false);
 });
+
+test('enabled requires an eligible form control, not merely absence of disabled', () => {
+  const atoms = analyzeSelector('.x:enabled:hover', '.x').atoms;
+  assert.deepEqual(atoms, ['enabled', 'hover']);
+  assert.equal(atoms.every((atom) => atomMatches(atom, { flags: new Set(['enabled', 'hover']) })), true);
+  assert.equal(atoms.every((atom) => atomMatches(atom, { flags: new Set(['hover']) })), false);
+  assert.equal(atoms.every((atom) => atomMatches(atom, { flags: new Set(['hover', 'disabled']) })), false);
+});

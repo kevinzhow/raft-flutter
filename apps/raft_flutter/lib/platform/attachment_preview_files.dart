@@ -5,39 +5,37 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
+import '../data/attachment_disk_cache.dart';
+import '../data/attachment_image_store.dart';
 import 'attachment_files.dart';
+import 'attachment_http.dart';
+import 'cache_staging.dart';
 import 'native_sharing.dart';
 
 /// Private local inputs prevent native decoders retaining signed URL handles.
 class AttachmentPreviewFiles {
   AttachmentPreviewFiles({
     Dio? dio,
-    Future<Directory> Function()? temporaryDirectory,
-  }) : dio =
-           dio ??
-           Dio(
-             BaseOptions(
-               connectTimeout: const Duration(seconds: 15),
-               receiveTimeout: const Duration(seconds: 45),
-             ),
-           ),
-       temporaryDirectory = temporaryDirectory ?? getTemporaryDirectory;
+    Future<Directory> Function()? stagingDirectory,
+  }) : dio = dio ?? AttachmentHttp.shared,
+       stagingDirectory = stagingDirectory ?? cacheStagingDirectory;
   final Dio dio;
-  final Future<Directory> Function() temporaryDirectory;
+  final Future<Directory> Function() stagingDirectory;
   static const maxBytes = 50 * 1024 * 1024;
   Future<SharedFileLease?> load(
     String url,
     String filename, {
     required CancelToken cancel,
     required bool Function() authorized,
+    void Function(int received, int total)? onProgress,
   }) async {
     if (!authorized() || cancel.isCancelled) return null;
-    final root = await temporaryDirectory();
+    final root = await stagingDirectory();
     if (!authorized() || cancel.isCancelled) return null;
-    final previews = await Directory(p.join(root.path, 'raft-previews'))
-        .create(recursive: true);
+    final previews = await Directory(
+      p.join(root.path, 'raft-previews'),
+    ).create(recursive: true);
     final folder = await previews.createTemp('preview-');
     final file = File(
       p.join(folder.path, AttachmentFiles.safeFilename(filename)),
@@ -53,16 +51,7 @@ class AttachmentPreviewFiles {
         }
       }
       if (!authorized() || cancel.isCancelled) return null;
-      await dio.download(
-        AttachmentFiles.attachmentUri(url).toString(),
-        file.path,
-        cancelToken: cancel,
-        onReceiveProgress: (received, total) {
-          if (!authorized() || received > maxBytes || total > maxBytes) {
-            cancel.cancel();
-          }
-        },
-      );
+      await _download(url, file, cancel, authorized, onProgress);
       if (!authorized() ||
           cancel.isCancelled ||
           await file.length() > maxBytes) {
@@ -77,6 +66,142 @@ class AttachmentPreviewFiles {
       }
     }
   }
+
+  Future<void> _download(
+    String url,
+    File file,
+    CancelToken cancel,
+    bool Function() authorized,
+    void Function(int received, int total)? onProgress,
+  ) => dio.download(
+    AttachmentFiles.attachmentUri(url).toString(),
+    file.path,
+    cancelToken: cancel,
+    options: Options(receiveTimeout: const Duration(seconds: 45)),
+    onReceiveProgress: (received, total) {
+      if (!authorized() || received > maxBytes || total > maxBytes) {
+        cancel.cancel();
+        return;
+      }
+      onProgress?.call(received, total);
+    },
+  );
+
+  /// The preview input of one attachment, from the persistent cache when it
+  /// holds the file (no request at all: [resolveUrl] is not even called),
+  /// otherwise downloaded once into the cache (concurrent callers for the
+  /// same entry share that download) and kept for the next open. Without a
+  /// cache this is [load]. The lease never deletes a cached file; disposing
+  /// it only releases the cache's hold.
+  Future<SharedFileLease?> loadCached({
+    required AttachmentDiskCache? cache,
+    required AttachmentImageStoreKey key,
+    required Future<String> Function() resolveUrl,
+    Future<String> Function()? refreshUrl,
+    required String filename,
+    int? expectedBytes,
+    required CancelToken cancel,
+    required bool Function() authorized,
+    void Function(int received, int total)? onProgress,
+  }) async {
+    if (!authorized() || cancel.isCancelled) return null;
+    // The storage host refused the signature (it lapsed early, clock skew):
+    // [refreshUrl] signs once more and the transfer is tried once again.
+    Future<void> download(
+      String url,
+      File destination,
+      CancelToken token,
+      bool Function() allowed,
+      void Function(int, int)? progress,
+    ) async {
+      try {
+        await _download(url, destination, token, allowed, progress);
+      } on DioException catch (error) {
+        final status = _httpStatus(error);
+        if (refreshUrl == null ||
+            token.isCancelled ||
+            (status != 401 && status != 403)) {
+          rethrow;
+        }
+        await _download(
+          await refreshUrl(),
+          destination,
+          token,
+          allowed,
+          progress,
+        );
+      }
+    }
+
+    // Without a usable cache this is [load], signed again once on a refusal.
+    Future<SharedFileLease?> uncached() async {
+      Future<SharedFileLease?> attempt(String url) => load(
+        url,
+        filename,
+        cancel: cancel,
+        authorized: authorized,
+        onProgress: onProgress,
+      );
+      try {
+        return await attempt(await resolveUrl());
+      } on DioException catch (error) {
+        final status = _httpStatus(error);
+        if (refreshUrl == null ||
+            cancel.isCancelled ||
+            (status != 401 && status != 403)) {
+          rethrow;
+        }
+        return attempt(await refreshUrl());
+      }
+    }
+
+    if (cache == null) return uncached();
+    final AttachmentCachedFile? cached;
+    try {
+      cached = await cache.fetchFile(
+        key,
+        filename: filename,
+        expectedBytes: expectedBytes,
+        cancel: cancel,
+        onProgress: onProgress,
+        download: (destination, shared, progress) async {
+          final url = await resolveUrl();
+          if (shared.isCancelled) throw const FileSystemException('cancelled');
+          // The download is shared: each caller's own cancel token detaches it,
+          // so one caller's authority must not abort the others'.
+          await download(
+            url,
+            destination,
+            shared,
+            () => !shared.isCancelled,
+            progress,
+          );
+          if (await destination.length() > maxBytes) {
+            throw const FileSystemException('The preview input is too large.');
+          }
+        },
+      );
+    } on AttachmentCacheUnavailable {
+      return uncached();
+    }
+    if (cached == null) return null;
+    if (!authorized() || cancel.isCancelled) {
+      cached.release();
+      return null;
+    }
+    return CachedFileLease(cached);
+  }
+}
+
+/// A [SharedFileLease] on a file the attachment cache owns: disposing it ends
+/// the hold (the cache may evict the file again), it never deletes anything.
+class CachedFileLease extends SharedFileLease {
+  CachedFileLease(this._cached) : super(_cached.file, staged: false) {
+    cancelExpiry();
+  }
+  final AttachmentCachedFile _cached;
+  @override
+  Future<void> dispose() async => _cached.release();
 }
 
 class NativePdfPage {
@@ -194,3 +319,5 @@ class NativePdfRenderer {
     }
   }
 }
+
+int? _httpStatus(DioException failure) => failure.response?.statusCode;

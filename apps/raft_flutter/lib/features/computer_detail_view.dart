@@ -9,12 +9,28 @@ import 'package:intl/intl.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/computer_upgrade_in_flight.dart';
+import '../data/raft_location.dart' show RaftProfileKind;
+import '../data/user_error.dart';
+import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
-import 'agent_detail_view.dart' show sourceRuntimeDisplayNames;
-import 'agent_metadata_catalog.dart';
+import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
+import 'agent_metadata_projection.dart';
+import 'computer_runtime_detection.dart';
 import 'computer_setup_commands.dart';
+import 'model_label_catalog.dart';
+import 'computer_upgrade_outcome.dart';
 import 'runtime_usage_chip.dart';
+import 'bulk_agent_model_change.dart';
+import 'bulk_agent_model_dialog.dart';
+import 'management_support.dart'
+    show
+        cachedServerFlag,
+        rememberServerFlag,
+        pageIdentity,
+        readPageSnapshot,
+        writePageSnapshot;
 import '../data/runtime_account_usage.dart';
 
 // ------------------------------------------------------------------ model
@@ -27,7 +43,6 @@ const computerRuntimeOptions = <(String, String, bool)>[
   ('grok', 'Grok Build', false),
   ('builtin', 'Built-in Pi', true),
   ('kimi-sdk', 'Kimi Code', true),
-  ('copilot', 'Copilot CLI', false),
   ('cursor', 'Cursor CLI', false),
   ('opencode', 'OpenCode', false),
   ('pi', 'Pi', false),
@@ -134,6 +149,32 @@ String? computerAvailableVersion(Map m, String? latest) {
   return ('$kind online', false);
 }
 
+/// Sidebar `ComputerRowBody` status: offline while its upgrade restarts reads
+/// "Upgrading…" with a cyan dot (the detail page says the same), not "offline".
+({String label, bool offline, RaftComputerDot dot}) computerRowStatus(
+  Map m,
+  String? available,
+  ComputerUpgradeReconnect reconnect,
+) {
+  if (reconnect.reconnecting) {
+    return (
+      label: 'Upgrading…',
+      offline: false,
+      dot: RaftComputerDot.upgrading,
+    );
+  }
+  final (label, offline) = computerRunLabel(m);
+  return (
+    label: label,
+    offline: offline,
+    dot: available != null
+        ? RaftComputerDot.upgrade
+        : m['status'] == 'online'
+        ? RaftComputerDot.online
+        : RaftComputerDot.offline,
+  );
+}
+
 /// utils/fileSizePresentation.ts formatFileSizeBytes (en).
 String computerFileSize(num bytes) {
   if (bytes <= 0) return '0 B';
@@ -161,20 +202,27 @@ String computerFileSize(num bytes) {
 String _pct(double v) =>
     v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 
-/// The Web agent row status text (utils/activity.ts formatActivityText).
-String computerAgentActivityText(Map a) {
-  final activity = '${a['activity'] ?? 'offline'}';
-  final detail = a['activityDetail'];
-  if (detail is String && detail.isNotEmpty && activity != 'offline') {
-    return detail;
-  }
-  return switch (activity) {
-    'online' => 'Online',
-    'thinking' => 'Thinking',
-    'working' => 'Working',
-    'error' => 'Error',
-    _ => 'Offline',
-  };
+/// The Web agent row status text (utils/activity.ts formatActivityText via
+/// resolveAgentDisplayState): [agentActivityText] over the row's ambient
+/// display, so typed detail kinds and external presence apply.
+String computerAgentActivityText(
+  Map a, {
+  DateTime? now,
+  String Function(String source, Map<String, Object?> values)? translate,
+  String Function(DateTime seen)? relativeTime,
+}) {
+  final display = agentRowAmbientDisplay(a, now: now);
+  final seen = a['lastSeenAt'] is String
+      ? DateTime.tryParse(a['lastSeenAt'] as String)
+      : null;
+  return translate == null
+      ? agentDisplayText(display, lastSeenAt: seen, relativeTime: relativeTime)
+      : agentDisplayText(
+          display,
+          lastSeenAt: seen,
+          relativeTime: relativeTime,
+          translate: translate,
+        );
 }
 
 // ------------------------------------------------------------------ panel
@@ -192,6 +240,7 @@ class ComputerDetailPanel extends StatefulWidget {
     this.onOpenAgent,
     this.onCreateAgent,
     this.remoteUpgradeV2,
+    this.now,
     this.deployment = const String.fromEnvironment(
       'RAFT_DEPLOYMENT_ENV',
       defaultValue: 'production',
@@ -206,6 +255,7 @@ class ComputerDetailPanel extends StatefulWidget {
 
   /// `remote_computer_upgrade_v2` override; null = the controller's flag.
   final bool? remoteUpgradeV2;
+  final DateTime Function()? now;
 
   /// VITE_DEPLOYMENT_ENV equivalent for the command bundle.
   final String deployment;
@@ -219,23 +269,55 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   Map<String, dynamic> get m => widget.machine;
   String get id => m['id'] as String;
   String get serverId => w.server?.id ?? '';
+  DateTime _now() => widget.now?.call() ?? DateTime.now();
   bool get online => m['status'] == 'online';
   bool get isComputer => m['isComputer'] == true;
 
   /// A refused one-click upgrade (Web upgradeRefusalFromCode), held until
   /// the machine changes.
   String? upgradeRefusal;
+  late String bulkScope;
+  bool bulkModelEnabled = false;
+  final receiptTimer = RaftIdleTimer(yieldToAnimation: false);
+  String get receiptKey => 'bulk-model-receipt:$id';
+  BulkModelReceipt? get receipt =>
+      readPageSnapshot(w, receiptKey)?['receipt'] as BulkModelReceipt?;
 
   @override
   void initState() {
     super.initState();
-    w.entityDirectory.addListener(_changed);
-    w.entityDirectory.ensure([WorkspaceEntityKind.agents]);
+    w.services.entityDirectory.addListener(_changed);
+    w.addListener(_authorityChanged);
+    w.services.entityDirectory.ensure([WorkspaceEntityKind.agents]);
+    // The agent rows name their models from the server's catalog, which the
+    // session loads once (Web watchModelLabelCatalog); this page only reads.
+    modelLabels = ModelLabelCatalogStore.of(w)..addListener(_changed);
+    bulkScope = pageIdentity(w);
+    bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
+    unawaited(_evaluateBulkModel());
+    _scheduleReceipt();
   }
+
+  late ModelLabelCatalogStore modelLabels;
 
   @override
   void didUpdateWidget(ComputerDetailPanel old) {
     super.didUpdateWidget(old);
+    if (!identical(old.controller, w)) {
+      old.controller.services.entityDirectory.removeListener(_changed);
+      old.controller.removeListener(_authorityChanged);
+      modelLabels.removeListener(_changed);
+      w.services.entityDirectory.addListener(_changed);
+      w.addListener(_authorityChanged);
+      w.services.entityDirectory.ensure([WorkspaceEntityKind.agents]);
+      modelLabels = ModelLabelCatalogStore.of(w)..addListener(_changed);
+    }
+    if (pageIdentity(w) != bulkScope || !identical(old.controller, w)) {
+      bulkScope = pageIdentity(w);
+      bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
+      unawaited(_evaluateBulkModel());
+    }
+    _scheduleReceipt();
     if (old.machine['id'] != id ||
         old.machine['computerVersion'] != m['computerVersion']) {
       upgradeRefusal = null;
@@ -244,12 +326,160 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
 
   @override
   void dispose() {
-    w.entityDirectory.removeListener(_changed);
+    w.services.entityDirectory.removeListener(_changed);
+    w.removeListener(_authorityChanged);
+    modelLabels.removeListener(_changed);
+    receiptTimer.cancel();
     super.dispose();
   }
 
   void _changed() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    if (bulkScope != pageIdentity(w)) {
+      bulkScope = pageIdentity(w);
+      bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
+      unawaited(_evaluateBulkModel());
+    }
+    _scheduleReceipt();
+    setState(() {});
+  }
+
+  void _authorityChanged() {
+    if (mounted && bulkScope != pageIdentity(w)) _changed();
+  }
+
+  Future<void> _evaluateBulkModel() async {
+    final identity = pageIdentity(w), controller = w;
+    try {
+      final value = await controller.client.post(
+        '/feature-flags/evaluate',
+        data: featureFlagEvaluateBody(
+          keys: [bulkModelFlag],
+          serverId: w.server?.id,
+        ),
+      );
+      if (!mounted ||
+          !identical(w, controller) ||
+          identity != pageIdentity(w)) {
+        return;
+      }
+      final evaluations = value is Map ? value['evaluations'] : null;
+      final enabled =
+          evaluations is List &&
+          evaluations.any(
+            (v) =>
+                v is Map && v['key'] == bulkModelFlag && v['enabled'] == true,
+          );
+      rememberServerFlag(w, bulkModelFlag, enabled, identity);
+      if (enabled != bulkModelEnabled) {
+        setState(() => bulkModelEnabled = enabled);
+      }
+    } catch (_) {
+      // A never-evaluated flag fails closed; an accepted cached value survives.
+    }
+  }
+
+  void _scheduleReceipt() {
+    receiptTimer.cancel();
+    final value = receipt;
+    if (value == null) return;
+    final now = _now();
+    final deadlines = [
+      if (value.highlightUntil.isAfter(now)) value.highlightUntil,
+      if (value.success && value.bannerUntil.isAfter(now)) value.bannerUntil,
+    ]..sort();
+    if (deadlines.isNotEmpty) {
+      receiptTimer.start(deadlines.first.difference(now), () {
+        if (mounted) {
+          setState(() {});
+          _scheduleReceipt();
+        }
+      });
+    }
+  }
+
+  Future<bool> _changeModels(
+    List<String> selected, {
+    BulkModelReceipt? retry,
+  }) async {
+    final controller = w, machineId = id, identity = pageIdentity(w);
+    bool authorized() =>
+        mounted &&
+        identical(w, controller) &&
+        id == machineId &&
+        identity == pageIdentity(w) &&
+        bulkModelEnabled &&
+        canManage;
+    if (!authorized()) return false;
+    final selectedIds = selected.toSet();
+    final targets = [
+      for (final agent in agents)
+        if (selectedIds.contains(agent['id'])) agent['id'] as String,
+    ];
+    if (targets.isEmpty) return false;
+    final result = await showBulkAgentModelDialog(
+      context,
+      controller: w,
+      machine: m,
+      agentIds: targets,
+      authorized: authorized,
+      onOpenAgent: widget.onOpenAgent,
+      retry: retry,
+      now: _now,
+    );
+    if (!authorized() || result == null) return false;
+    writePageSnapshot(w, receiptKey, identity, {'receipt': result});
+    _changed();
+    return true;
+  }
+
+  Widget? _modelNotice() {
+    final value = receipt;
+    if (!bulkModelEnabled || value == null || !value.visibleAt(_now())) {
+      return null;
+    }
+    final count = value.changed.length;
+    final description = value.success
+        ? '${raftFormat(context, count == 1 ? '{count} agent now uses {target}.' : '{count} agents now use {target}.', {'count': count, 'target': bulkModelLabel(value.target.runtime, value.target.model, withRuntime: true)})}${value.skipped.isEmpty ? '' : ' ${raftFormat(context, '{count} skipped.', {'count': value.skipped.length})}'}'
+        : raftFormat(context, "{failed} of {total} changes didn't finish.", {
+            'failed': value.unfinished.length,
+            'total': value.total,
+          });
+    return RaftBanner(
+      key: ValueKey(
+        value.success
+            ? 'bulk-model-success-banner'
+            : 'bulk-model-partial-banner',
+      ),
+      status: value.success
+          ? RaftBannerRecipeStatus.success
+          : RaftBannerRecipeStatus.warning,
+      size: RaftBannerRecipeSize.sm,
+      description: description,
+      descriptionWeight: FontWeight.w700,
+      action: Wrap(
+        spacing: RaftSpace.x1_5,
+        children: [
+          if (!value.success && canManage)
+            RaftAgentDialogButton(
+              key: const ValueKey('bulk-model-try-again'),
+              label: raftTextZh(context, 'Try Again', '重试'),
+              size: RaftButtonRecipeSize.sm,
+              onPressed: () =>
+                  _changeModels(value.unfinished.keys.toList(), retry: value),
+            ),
+          RaftAgentDialogButton(
+            key: const ValueKey('bulk-model-dismiss'),
+            label: raftText(context, 'Dismiss'),
+            size: RaftButtonRecipeSize.sm,
+            onPressed: () {
+              w.resourceSnapshots.remove('page:$receiptKey');
+              _changed();
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   bool get canManage {
@@ -268,7 +498,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   }
 
   List<Map<String, dynamic>> get agents => [
-    for (final a in w.entityDirectory.rows(WorkspaceEntityKind.agents))
+    for (final a in w.services.entityDirectory.rows(WorkspaceEntityKind.agents))
       if (a['deletedAt'] == null && a['machineId'] == id) a,
   ];
 
@@ -295,7 +525,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   }
 
   /// MachineDetailPanel CardState: one status sentence + next step.
-  RaftComputerService service(ComputerVersionFact fact) {
+  RaftComputerService service(
+    ComputerVersionFact fact,
+    ComputerUpgradeReconnect reconnect,
+  ) {
     final policy = m['computerBroadcastPolicy'];
     final target = policy is Map ? policy['targetVersion'] as String? : null;
     final gated =
@@ -311,8 +544,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
             target != null
         ? target
         : null;
-    final request = m['upgradeRequest'];
-    final pending = request is Map && request['state'] == 'pending';
+    // The server's pending row, else the request this client saw accepted
+    // (Web computerUpgradeInFlight), else a click whose POST has not settled.
+    final inFlight = reconnect.inFlight;
+    final submitting = w.services.entityDirectory.upgradeSubmitting(id);
     final supported =
         (m['remoteUpgradeSupported'] ??
             isComputerSemver('${m['computerVersion'] ?? ''}')) ==
@@ -326,6 +561,16 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       sentence: sentence,
       version: version,
       webUpgradeOn: webUpgradeOn,
+      // A refused click wins; else the server's settled verdict on the last
+      // request while it is still true (not while upgrading or up to date).
+      outcome:
+          kind == RaftComputerServiceKind.oneClick &&
+              upgradeRefusal == 'unknown'
+          ? RaftComputerUpgradeOutcome.refusedUnknown
+          : kind == RaftComputerServiceKind.upgrading ||
+                kind == RaftComputerServiceKind.upToDate
+          ? RaftComputerUpgradeOutcome.none
+          : computerUpgradeRequestOutcome(m),
     );
     return switch (fact) {
       ComputerVersionUnknown() => card(
@@ -340,10 +585,15 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         RaftComputerServiceKind.upToDate,
         'Up to date.',
       ),
-      ComputerVersionOutdated(:final available) when pending => card(
+      ComputerVersionOutdated(:final available) when inFlight != null => card(
         RaftComputerServiceKind.upgrading,
-        'Upgrading to v${request['targetVersion'] ?? available}. The Computer will disconnect briefly.',
-        '${request['targetVersion'] ?? available}',
+        'Upgrading to v${inFlight['targetVersion'] ?? available}. The Computer will disconnect briefly.',
+        '${inFlight['targetVersion'] ?? available}',
+      ),
+      ComputerVersionOutdated() when submitting != null => card(
+        RaftComputerServiceKind.upgrading,
+        'Upgrading to v$submitting. The Computer will disconnect briefly.',
+        submitting,
       ),
       ComputerVersionOutdated(:final available)
           when upgradeRefusal == 'not_allowed' =>
@@ -365,16 +615,17 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         ),
       ComputerVersionOutdated(:final available) => card(
         RaftComputerServiceKind.commands,
-        'v$available is available. Run these two commands on that machine to upgrade:',
+        'v$available is available. Run these two commands on that computer to upgrade:',
         available,
       ),
     };
   }
 
   RaftComputerDetailData data() {
+    final reconnect = w.services.entityDirectory.upgradeReconnect(m);
     final fact = computerVersionFact(
       m,
-      w.entityDirectory.latestComputerVersion,
+      w.services.entityDirectory.latestComputerVersion,
     );
     final runtimes = [
       for (final r in (m['runtimes'] as List? ?? const [])) '$r',
@@ -383,7 +634,14 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     final creator = m['creator'];
     final disk = computerDiskLow(m);
     final version = m['computerVersion'];
+    final detection = computerRuntimeDetection(
+      m,
+      (rid) => runtimeLabelWithStatus(context, rid),
+    );
     return RaftComputerDetailData(
+      runtimeDetection: detection,
+      canRescanRuntimes: canRescanComputerRuntimes(w, m),
+      releaseNotes: _releaseNotes(fact),
       id: id,
       name: '${m['name'] ?? ''}',
       description: m['description'] as String?,
@@ -415,7 +673,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           : DateFormat.yMMMd('en').format(created.toUtc()),
       creator: creator is Map
           ? RaftComputerCreator(
-              name: '${creator['displayName'] ?? creator['name']}',
+              name: nonEmptyOr(creator['displayName'], creator['name']),
               handle: '${creator['name']}',
               avatarUrl: creator['avatarUrl'] as String?,
             )
@@ -427,30 +685,74 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         for (final a in agents)
           RaftComputerAgent(
             id: a['id'] as String,
-            name: '${a['displayName'] ?? a['name'] ?? ''}',
+            name: agentRowName(a),
             avatarUrl: a['avatarUrl'] as String?,
-            subtitle: _agentSubtitle(a),
-            activity: '${a['activity'] ?? 'offline'}',
+            subtitle: _agentSubtitle(context, a),
+            activity: agentRowAmbientDisplay(a).activity,
             activityText: computerAgentActivityText(a),
           ),
       ],
       canManage: canManage,
       commands: commands,
-      service: isComputer && online ? service(fact) : null,
+      service: isComputer && online ? service(fact, reconnect) : null,
+      upgradeLink: reconnect.reconnecting
+          ? RaftComputerUpgradeLink.reconnecting
+          : reconnect.overdue
+          ? RaftComputerUpgradeLink.overdue
+          : RaftComputerUpgradeLink.none,
+      upgradeVersion: reconnect.targetVersion,
+      requestOutcome: computerUpgradeRequestOutcome(m),
+      highlightedAgentIds: bulkModelEnabled
+          ? receipt?.highlightsAt(_now()) ?? const {}
+          : const {},
     );
   }
 
-  static String _agentSubtitle(Map a) {
+  /// The notes of the version this Computer can upgrade to, in the UI
+  /// language; only when the server sent them for exactly that version (Web
+  /// releaseNotesForUpdate).
+  RaftComputerReleaseNotes? _releaseNotes(ComputerVersionFact fact) {
+    final notes = w.services.entityDirectory.latestComputerReleaseNotes;
+    if (notes == null ||
+        fact is! ComputerVersionOutdated ||
+        notes.version != fact.available) {
+      return null;
+    }
+    final text = notes.text(
+      chinese: Localizations.maybeLocaleOf(context)?.languageCode == 'zh',
+    );
+    return text == null
+        ? null
+        : RaftComputerReleaseNotes(version: notes.version, text: text);
+  }
+
+  String _agentSubtitle(BuildContext context, Map a) {
     final runtime = '${a['runtime'] ?? ''}';
     final model = '${a['model'] ?? ''}';
     return [
-      sourceRuntimeDisplayNames[runtime] ?? runtime,
-      if (model.isNotEmpty) sourceRuntimeModelLabels[runtime]?[model] ?? model,
+      runtimeLabelWithStatus(context, runtime),
+      if (model.isNotEmpty)
+        modelDisplayLabel(
+          w,
+          machineId: a['machineId'] as String?,
+          runtime: runtime,
+          model: model,
+        ),
     ].where((s) => s.isNotEmpty).join(' · ');
   }
 
-  Future<void> _refreshComputers() =>
-      w.entityDirectory.refresh(WorkspaceEntityKind.computers, force: true);
+  /// The daemon answers a rescan by re-emitting its capabilities (a
+  /// `machine:capabilities` push); the catalog is read again after a live
+  /// detect (Web modelLabelCatalogStore).
+  Future<void> _rescanRuntimes() async {
+    await rescanComputerRuntimes(w, id);
+    modelLabels.load(force: true);
+  }
+
+  Future<void> _refreshComputers() => w.services.entityDirectory.refresh(
+    WorkspaceEntityKind.computers,
+    force: true,
+  );
 
   Future<void> _patch(Map<String, dynamic> body) async {
     await w.command('PATCH', '/servers/$serverId/machines/$id', data: body);
@@ -469,6 +771,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
             sizeLabel: computerFileSize(e['totalSizeBytes'] as num? ?? 0),
             filesLabel:
                 '${e['fileCount'] ?? 0} ${e['fileCount'] == 1 ? 'file' : 'files'}',
+            displayPath: e['displayPath'] as String?,
             modifiedLabel: switch (DateTime.tryParse(
               '${e['lastModified'] ?? ''}',
             )) {
@@ -486,45 +789,86 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         'POST',
         '/servers/$serverId/machines/$id/computer/restart',
       );
-    } on RaftApiException catch (e) {
+    } catch (e) {
+      // Web handleComputerRestart: the server's `error` text, else the restart
+      // message; the `computer_offline` code gets its own copy.
       throw RaftComputerActionError(
-        '$e'.contains('computer_offline')
-            ? 'The Computer is offline.'
-            : 'Failed to request restart. The Computer must be online.',
+        userErrorText(
+          e,
+          fallback: 'Failed to request restart. The Computer must be online.',
+          codeText: const {'computer_offline': 'The Computer is offline.'},
+          where: 'computer restart',
+        ),
       );
     }
   }
 
   Future<void> _upgrade(String target) async {
+    final directory = w.services.entityDirectory;
+    final controller = w, machineId = id;
+    if (directory.upgradeSubmitting(machineId) != null) return;
+    // Click, POST, refreshed row: the card says "upgrading" the whole time
+    // (Web computerUpgradeSubmitting), also after this page is closed.
+    directory.setUpgradeSubmitting(machineId, target);
     setState(() => upgradeRefusal = null);
     try {
-      await w.command(
+      final data = await w.command(
         'POST',
         '/servers/$serverId/machines/$id/computer/upgrade',
         data: {'targetVersion': target},
       );
-    } catch (e) {
-      final code = e is RaftApiException ? '$e' : '';
-      if (mounted) {
-        setState(
-          () => upgradeRefusal = code.contains('remote_upgrade_disabled')
-              ? 'web_upgrade_off'
-              : code.contains('computer_remote_upgrade_unsupported')
-              ? 'too_old'
-              : code.contains('computer_broadcast_not_eligible')
-              ? 'not_allowed'
-              : 'unknown',
+      // Keep the accepted request: the page says "upgrading" from this
+      // answer, not from whichever later refresh carries the pending row.
+      final request = data is Map ? data['upgradeRequest'] : null;
+      if (request is Map && identical(controller, w)) {
+        directory.acceptComputerUpgrade(
+          machineId,
+          Map<String, dynamic>.from(request),
         );
       }
-    } finally {
+      try {
+        await _refreshComputers();
+      } catch (_) {
+        // The accepted request already answers; a later refresh settles it.
+      }
+    } catch (e) {
+      // Web upgradeRefusalFromCode: the server's `code`, never its text.
+      final code = e is RaftApiException ? e.details['code'] : null;
+      logUserError(e, where: 'computer upgrade');
+      if (mounted) {
+        setState(
+          () => upgradeRefusal = switch (code) {
+            'remote_upgrade_disabled' => 'web_upgrade_off',
+            'computer_remote_upgrade_unsupported' => 'too_old',
+            'computer_broadcast_not_eligible' => 'not_allowed',
+            _ => 'unknown',
+          },
+        );
+      }
       unawaited(_refreshComputers());
+    } finally {
+      directory.setUpgradeSubmitting(machineId, null);
     }
   }
 
-  Future<void> _delete() async {
-    await w.command('DELETE', '/servers/$serverId/machines/$id');
-    await _refreshComputers();
-    widget.onClose?.call();
+  Future<void> Function() _deleteAction() {
+    final controller = w, authority = pageIdentity(w);
+    final machineId = id, server = serverId;
+    bool current() =>
+        mounted &&
+        identical(w, controller) &&
+        pageIdentity(controller) == authority &&
+        id == machineId;
+    return () async {
+      if (!current()) throw const RaftApiException('Fleet access changed.');
+      await controller.command(
+        'DELETE',
+        '/servers/$server/machines/$machineId',
+      );
+      if (!current()) return;
+      await _refreshComputers();
+      if (current()) widget.onClose?.call();
+    };
   }
 
   Future<int> _bulk(RaftComputerBulk mode, List<String> ids) async {
@@ -552,6 +896,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
 
   @override
   Widget build(BuildContext context) => RaftComputerDetailView(
+    agentNotice: _modelNotice(),
     headerKey:
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint
         ? const Key('computer-mobile-header')
@@ -572,11 +917,20 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       ),
       restart: _restart,
       upgrade: _upgrade,
-      deleteComputer: _delete,
+      deleteComputer: _deleteAction(),
       bulk: _bulk,
       openAgent: widget.onOpenAgent,
       createAgent: widget.onCreateAgent,
       runtimeChip: _runtimeChip,
+      changeModel: bulkModelEnabled && canManage ? _changeModels : null,
+      rescanRuntimes: _rescanRuntimes,
+      openCreator: switch (m['creator']) {
+        {'id': final String creator} => () => w.openProfile(
+          RaftProfileKind.human,
+          creator,
+        ),
+        _ => null,
+      },
     ),
   );
 

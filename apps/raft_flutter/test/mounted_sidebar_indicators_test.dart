@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'mounted_message_navigation_test.dart' show pageFixture, mountPage;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark actual sidebar reflects mute, membership and drafts',
+      '${dark ? 'dark' : 'light'} actual sidebar reflects mute, membership and drafts',
       (t) async {
         final (w, api) = await pageFixture(t);
         w.channels.addAll([
@@ -36,9 +33,9 @@ void main() {
             'peerId': 'human',
           }),
         ]);
-        w.unread.addAll({'quiet': 104, 'public': 3});
+        w.conversationReads.unread.addAll({'quiet': 104, 'public': 3});
         w.drafts.addAll({'draft': 'unsent channel', 'dm': 'unsent DM'});
-        await mountPage(t, w, family, dark);
+        await mountPage(t, w, dark);
         expect(find.byType(RaftSidebarQuietUnreadCount), findsNWidgets(2));
         expect(find.byType(RaftSidebarMutedIcon), findsOneWidget);
         expect(find.byType(RaftSidebarDraftIcon), findsNWidgets(2));
@@ -77,7 +74,11 @@ void main() {
         // A dimmed unjoined row stays actionable, as in Source ChannelRow.
         await t.runAsync(() async {
           await t.tap(unjoined);
-          for (var frame = 0; frame < 40 && w.channelLoading; frame++) {
+          for (
+            var frame = 0;
+            frame < 40 && w.messageDomain.state.channelLoading;
+            frame++
+          ) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
         });

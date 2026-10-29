@@ -72,8 +72,11 @@ function ParityExtApSettings({ p }: { p: ParityExtApP }) {
     }
     if (p.patch === "archived") {
       const channels = parityExtApChannelStore.getState().channels;
+      // Idempotent: the layout effect runs twice under StrictMode, and a second append would
+      // list every archived channel twice (duplicate React keys).
+      const known = new Set(channels.map((c: any) => c.id));
       parityExtApChannelStore.setState({
-        channels: [...channels, ...fx.archivedChannels.map((c: any) => ({
+        channels: [...channels, ...fx.archivedChannels.filter((c: any) => !known.has(c.id)).map((c: any) => ({
           ...channels[0], ...c, joined: true, serverId: channels[0]?.serverId,
         }))],
       } as never);
@@ -128,10 +131,11 @@ function ParityExtApView({ p }: { p: ParityExtApP }) {
     page = <ParityExtApServerSelection />;
   } else if (p.view === "joining-community") {
     // ServerResolver renders this splash inline (App.tsx `joiningCommunity` branch); the markup is the
-    // same cream box as AuthBootstrapStatus with the pages.app.joiningCommunity copy.
+    // same box as AuthBootstrapStatus (v1.21.23: bg-layer-sidebar, text-headline text-foreground-muted)
+    // with the pages.app.joiningCommunity copy.
     page = (
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-brutal-cream font-display safe-top">
-        <div className="text-xl font-bold">Joining community…</div>
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-layer-sidebar font-display safe-top">
+        <div className="text-headline text-foreground-muted">Joining community…</div>
       </div>
     );
   } else if (p.view === "access-denied") {
@@ -169,7 +173,7 @@ function ParityExtApView({ p }: { p: ParityExtApP }) {
     } else {
       // Dedicated native surface: App.tsx wraps the gate in this <main>.
       page = (
-        <main className="relative flex min-h-0 flex-1 bg-brutal-cream font-display safe-top safe-bottom" data-testid="native-onboarding-web-surface">
+        <main className="relative flex min-h-0 flex-1 bg-layer-sidebar font-display safe-top safe-bottom" data-testid="native-onboarding-web-surface">
           <ParityExtApSetupGate
             serverId="srv-1"
             serverSlug="raft-design"

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="raft_canvas_system_brutal">@color/raft_canvas_elegant_dark</color>
+    <color name="raft_canvas_system_elegant">@color/raft_canvas_elegant_dark</color>
+    <bool name="raft_launch_light_bars">false</bool>
+</resources>

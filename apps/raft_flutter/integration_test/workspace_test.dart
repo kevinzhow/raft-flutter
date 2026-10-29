@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/main.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
@@ -34,7 +35,6 @@ import 'forward_flow.dart';
 import 'message_selection_flow.dart';
 import 'native_message_menu.dart';
 import 'resource_flow.dart';
-import 'joint_channel_flow.dart';
 import 'composer_suggestions_flow.dart';
 import 'action_card_flow.dart';
 import 'channel_conversion_flow.dart';
@@ -165,7 +165,7 @@ Future<void> mobileHome(WidgetTester tester) async {
     // HumanDetailPanel returns with its Source Close profile action.
     final profileClose = find.descendant(
       of: find.byType(MemberProfileView),
-      matching: find.byTooltip('Close profile'),
+      matching: find.byTooltip('Close Profile'),
     );
     // Actual metadata resolution can still be pending after settled frames.
     // Wait for its real unavailable Back action, rather than clicking a
@@ -220,7 +220,7 @@ Future<void> captureMobileThemes(WidgetTester tester) async {
   final initial = tester
       .widget<WorkspaceView>(find.byType(WorkspaceView))
       .appearance;
-  Future<void> choose(ThemeMode mode, RaftFamily family) async {
+  Future<void> choose(ThemeMode mode) async {
     await section(tester, 'settings');
     await settingsTab(tester, 'appearance');
     final modeControl = find.byKey(const Key('appearance-mode'));
@@ -236,28 +236,19 @@ Future<void> captureMobileThemes(WidgetTester tester) async {
     await tester.ensureVisible(modeButton);
     await tester.tap(modeButton);
     await tester.pumpAndSettle();
-    if (mode != ThemeMode.dark) {
-      final familyButton = find.byKey(
-        ValueKey('appearance-light-theme-${family.name}'),
-      );
-      await tester.ensureVisible(familyButton);
-      await tester.tap(familyButton);
-      await tester.pumpAndSettle();
-    }
     await mobileHome(tester);
   }
 
   try {
     for (final entry in [
-      (ThemeMode.light, RaftFamily.brutal, 'brutal-light'),
-      (ThemeMode.light, RaftFamily.elegant, 'elegant-light'),
-      (ThemeMode.dark, RaftFamily.elegant, 'elegant-dark'),
+      (ThemeMode.light, 'elegant-light'),
+      (ThemeMode.dark, 'elegant-dark'),
     ]) {
-      await choose(entry.$1, entry.$2);
+      await choose(entry.$1);
       final t = RaftTokens.of(
         tester.element(find.byKey(const Key('workspace-mobile-home'))),
       );
-      expect(t.family, entry.$2);
+      expect(t.dark, entry.$1 == ThemeMode.dark);
       expect(t.dark, entry.$1 == ThemeMode.dark);
       expect(
         find.byKey(const Key('workspace-mobile-navigation')),
@@ -281,10 +272,8 @@ Future<void> captureMobileThemes(WidgetTester tester) async {
         final faceRect = tester.getRect(face);
         final glyphRect = tester.getRect(glyph);
         expect(glyphRect.center.dx, closeTo(faceRect.center.dx, .1));
-        if (!t.brutal) {
-          expect(faceRect.size, const Size(44, 44));
-          expect(glyphRect.center.dy, closeTo(faceRect.center.dy, .1));
-        }
+        expect(faceRect.size, const Size(44, 44));
+        expect(glyphRect.center.dy, closeTo(faceRect.center.dy, .1));
         Map<String, double> rect(Rect r) => {
           'x': r.left,
           'y': r.top,
@@ -301,13 +290,13 @@ Future<void> captureMobileThemes(WidgetTester tester) async {
       final logicalSize =
           tester.view.physicalSize / tester.view.devicePixelRatio;
       await File(
-        '$nativeReportFolder/$nativePlatform-mobile-home-${entry.$3}.geometry.json',
+        '$nativeReportFolder/$nativePlatform-mobile-home-${entry.$2}.geometry.json',
       ).writeAsString(
         jsonEncode({
           'runId': nativeRunId,
           'sourceHash': const String.fromEnvironment('RAFT_TEST_SOURCE_HASH'),
           'platform': nativePlatform,
-          'theme': entry.$3,
+          'theme': entry.$2,
           'logicalViewport': {
             'width': logicalSize.width,
             'height': logicalSize.height,
@@ -317,7 +306,7 @@ Future<void> captureMobileThemes(WidgetTester tester) async {
           'nav': navGeometry,
         }),
       );
-      await screenshot(tester, 'linux-mobile-home-${entry.$3}');
+      await screenshot(tester, 'linux-mobile-home-${entry.$2}');
       // The mounted Bell is a system NotificationCenter, distinct from Activity.
       final bell = find.byKey(const Key('mobile-home-notifications'));
       expect(bell, findsOneWidget);
@@ -335,7 +324,7 @@ Future<void> captureMobileThemes(WidgetTester tester) async {
           .widget<WorkspaceView>(find.byType(WorkspaceView))
           .controller;
       expect(workspace.section, 'home');
-      await screenshot(tester, 'linux-mobile-notifications-${entry.$3}');
+      await screenshot(tester, 'linux-mobile-notifications-${entry.$2}');
       // Source outside interaction dismisses without intercepting the actual tab.
       await tester.tap(find.byKey(const Key('mobile-tab-home')));
       await until(
@@ -349,7 +338,7 @@ Future<void> captureMobileThemes(WidgetTester tester) async {
       );
     }
   } finally {
-    await choose(initial.mode, initial.light);
+    await choose(initial.mode);
   }
 }
 
@@ -358,7 +347,7 @@ Future<void> captureDesktopNotificationThemes(WidgetTester tester) async {
   final initial = workspace.appearance;
   final controller = workspace.controller;
   final channelId = controller.channel?.id;
-  Future<void> choose(ThemeMode mode, RaftFamily family) async {
+  Future<void> choose(ThemeMode mode) async {
     await openAccountSettings(tester);
     await settingsTab(tester, 'appearance');
     final modeControl = find.byKey(const Key('appearance-mode'));
@@ -374,14 +363,6 @@ Future<void> captureDesktopNotificationThemes(WidgetTester tester) async {
     await tester.ensureVisible(modeButton);
     await tester.tap(modeButton);
     await tester.pumpAndSettle();
-    if (mode != ThemeMode.dark) {
-      final familyButton = find.byKey(
-        ValueKey('appearance-light-theme-${family.name}'),
-      );
-      await tester.ensureVisible(familyButton);
-      await tester.tap(familyButton);
-      await tester.pumpAndSettle();
-    }
     await section(tester, 'chat');
   }
 
@@ -389,17 +370,15 @@ Future<void> captureDesktopNotificationThemes(WidgetTester tester) async {
   await mouse.addPointer(location: Offset.zero);
   try {
     for (final entry in [
-      (ThemeMode.light, RaftFamily.brutal, 'brutal-light'),
-      (ThemeMode.light, RaftFamily.elegant, 'elegant-light'),
-      (ThemeMode.dark, RaftFamily.elegant, 'elegant-dark'),
+      (ThemeMode.light, 'elegant-light'),
+      (ThemeMode.dark, 'elegant-dark'),
     ]) {
-      await choose(entry.$1, entry.$2);
+      await choose(entry.$1);
       final bell = find.byWidgetPredicate(
         (widget) => widget is SystemNotificationBell && !widget.mobile,
       );
       expect(bell, findsOneWidget);
       final tokens = RaftTokens.of(tester.element(bell));
-      expect(tokens.family, entry.$2);
       expect(tokens.dark, entry.$1 == ThemeMode.dark);
       await mouse.moveTo(tester.getCenter(bell));
       await until(
@@ -413,13 +392,13 @@ Future<void> captureDesktopNotificationThemes(WidgetTester tester) async {
       final logicalSize =
           tester.view.physicalSize / tester.view.devicePixelRatio;
       await File(
-        '$nativeReportFolder/$nativePlatform-desktop-notifications-${entry.$3}.geometry.json',
+        '$nativeReportFolder/$nativePlatform-desktop-notifications-${entry.$2}.geometry.json',
       ).writeAsString(
         jsonEncode({
           'runId': nativeRunId,
           'sourceHash': const String.fromEnvironment('RAFT_TEST_SOURCE_HASH'),
           'platform': nativePlatform,
-          'theme': entry.$3,
+          'theme': entry.$2,
           'logicalViewport': {
             'width': logicalSize.width,
             'height': logicalSize.height,
@@ -438,7 +417,7 @@ Future<void> captureDesktopNotificationThemes(WidgetTester tester) async {
       );
       expect(controller.section, 'chat');
       expect(controller.channel?.id, channelId);
-      await screenshot(tester, 'linux-desktop-notifications-${entry.$3}');
+      await screenshot(tester, 'linux-desktop-notifications-${entry.$2}');
       // Real hover opening must support Escape without a manual focus transfer.
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await until(
@@ -450,7 +429,7 @@ Future<void> captureDesktopNotificationThemes(WidgetTester tester) async {
     }
   } finally {
     await mouse.removePointer();
-    await choose(initial.mode, initial.light);
+    await choose(initial.mode);
   }
 }
 
@@ -529,7 +508,7 @@ Future<WorkspaceController> openNativeChat(
       () =>
           find.byType(RaftChatView).evaluate().isNotEmpty &&
           w.channel?.id == channel.id &&
-          !w.channelLoading,
+          !w.messageDomain.state.channelLoading,
     );
     expect(find.byKey(const Key('workspace-mobile-navigation')), findsNothing);
     expect(find.byKey(const Key('mobile-detail-back')), findsOneWidget);
@@ -544,7 +523,7 @@ Future<WorkspaceController> openNativeChat(
         tester,
         () =>
             w.section == 'chat' &&
-            !w.channelLoading &&
+            !w.messageDomain.state.channelLoading &&
             find.byType(RaftChatView).evaluate().isNotEmpty,
       );
     }
@@ -672,7 +651,9 @@ void main() {
       );
       await storage.write('test-native-session', null);
       await storage.write(fixture['origin'], null);
-      await tester.pumpWidget(RaftApp(sessionStore: storage));
+      await tester.pumpWidget(RaftApp(
+        services: const AppServices.updatesDisabledForTestOrPreview(),
+      sessionStore: storage));
       await until(
         tester,
         () => find.byKey(const Key('login-email')).evaluate().isNotEmpty,
@@ -730,7 +711,7 @@ void main() {
       }
       await until(
         tester,
-        () => w.messages.isNotEmpty && !w.channelLoading && !w.loading,
+        () => w.messageDomain.messages.isNotEmpty && !w.messageDomain.state.channelLoading && !w.loading,
       );
       expect(w.client.user, isNotNull);
       final initialComposer = find.descendant(
@@ -744,12 +725,14 @@ void main() {
       expect(await storage.read(fixture['origin']), isNotNull);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpWidget(
-        RaftApp(key: const Key('restored-app'), sessionStore: storage),
+        RaftApp(
+          services: const AppServices.updatesDisabledForTestOrPreview(),
+        key: const Key('restored-app'), sessionStore: storage),
       );
       w = await openNativeChat(tester);
       await until(
         tester,
-        () => w.messages.isNotEmpty && !w.channelLoading && !w.loading,
+        () => w.messageDomain.messages.isNotEmpty && !w.messageDomain.state.channelLoading && !w.loading,
       );
       expect(w.client.user!.id, principal);
       final restoredComposer = find.descendant(
@@ -900,9 +883,9 @@ void main() {
       await tester.tap(generalNavigation);
       await until(
         tester,
-        () => w.channel?.id == general.id && !w.channelLoading,
+        () => w.channel?.id == general.id && !w.messageDomain.state.channelLoading,
       );
-      expect(w.messages.length, greaterThanOrEqualTo(50));
+      expect(w.messageDomain.messages.length, greaterThanOrEqualTo(50));
       await screenshot(tester, 'linux-chat-history');
       final composer = find.descendant(
         of: find.byType(RaftComposer).first,
@@ -1015,20 +998,20 @@ void main() {
       );
       await until(
         tester,
-        () => w.messages.any((m) => m.content == text) || w.error != null,
+        () => w.messageDomain.messages.any((m) => m.content == text) || w.error != null,
       );
       expect(w.error, isNull);
-      expect(w.messages.where((m) => m.content == text), hasLength(1));
-      final sent = w.messages.firstWhere((m) => m.content == text);
+      expect(w.messageDomain.messages.where((m) => m.content == text), hasLength(1));
+      final sent = w.messageDomain.messages.firstWhere((m) => m.content == text);
       final messageRow = find.byKey(ValueKey('message-${sent.id}'));
       final replyButton = find.byKey(const ValueKey('message-menu-thread'));
       await openNativeMessageMenu(tester, messageRow, entry: replyButton);
       await tester.tap(replyButton);
       await until(
         tester,
-        () => w.threadParent?.id == sent.id && !w.threadLoading,
+        () => w.messageDomain.state.threadParent?.id == sent.id && !w.messageDomain.state.threadLoading,
       );
-      expect(w.threadParent?.id, sent.id);
+      expect(w.messageDomain.state.threadParent?.id, sent.id);
       final replyText =
           'Thread from Flutter 中文 日本語 ${DateTime.now().millisecondsSinceEpoch}';
       final threadComposer = find.byType(RaftComposer).last;
@@ -1105,8 +1088,8 @@ void main() {
       );
       await screenshot(tester, 'linux-thread');
       final nativeReply = w.replies.singleWhere((m) => m.content == replyText);
-      await tester.tap(find.byTooltip('Close thread'));
-      await until(tester, () => w.threadParent == null);
+      await tester.tap(find.byTooltip('Close Thread'));
+      await until(tester, () => w.messageDomain.state.threadParent == null);
       final inlineReply = find.byKey(
         ValueKey('inline-reply-${nativeReply.id}'),
       );
@@ -1120,7 +1103,7 @@ void main() {
       await screenshot(tester, 'linux-thread-inline-preview');
       // Source InlineThreadReplies is one parent-thread button. Its unread
       // projection selects the target; an individual preview is not a route.
-      final liveSummary = w.threadSummaries[sent.id];
+      final liveSummary = w.messageDomain.threadSummaries[sent.id];
       final expectedUnread = liveSummary is Map
           ? liveSummary['firstUnreadMessageId'] as String?
           : null;
@@ -1128,9 +1111,9 @@ void main() {
       await until(
         tester,
         () =>
-            w.threadParent?.id == sent.id &&
-            !w.threadLoading &&
-            w.highlightedMessageId == expectedUnread &&
+            w.messageDomain.state.threadParent?.id == sent.id &&
+            !w.messageDomain.state.threadLoading &&
+            w.messageDomain.state.highlightedMessageId == expectedUnread &&
             find
                 .byKey(ValueKey('message-${nativeReply.id}'))
                 .evaluate()
@@ -1184,13 +1167,13 @@ void main() {
       final offlineText =
           'Reconnect native ${DateTime.now().millisecondsSinceEpoch}';
       await author.send(syncChannel.id, offlineText);
-      expect(w.messages.where((m) => m.content == offlineText), isEmpty);
-      w.client.recoverConnection(w.ledger.watermark);
+      expect(w.messageDomain.messages.where((m) => m.content == offlineText), isEmpty);
+      w.client.recoverConnection(w.messageDomain.ledger.watermark);
       await until(
         tester,
-        () => w.connected && w.messages.any((m) => m.content == offlineText),
+        () => w.connected && w.messageDomain.messages.any((m) => m.content == offlineText),
       );
-      expect(w.messages.where((m) => m.content == offlineText), hasLength(1));
+      expect(w.messageDomain.messages.where((m) => m.content == offlineText), hasLength(1));
       w.closeThread();
       await w.markRead(syncChannel.id);
       final backgroundRead = w.readState.state(
@@ -1204,7 +1187,7 @@ void main() {
       await author.send(syncChannel.id, backgroundText);
       await until(
         tester,
-        () => w.messages.any((m) => m.content == backgroundText),
+        () => w.messageDomain.messages.any((m) => m.content == backgroundText),
       );
       await tester.pump(const Duration(milliseconds: 500));
       expect(
@@ -1347,7 +1330,7 @@ void main() {
       expect(acceptedAssignment['task']['claimedById'], w.client.user!.id);
       expect(acceptedAssignment['task']['claimedByType'], 'user');
       await screenshot(tester, 'linux-task-assignee');
-      await tester.tap(find.byTooltip('Close task'));
+      await tester.tap(find.byTooltip('Close Task'));
       await until(
         tester,
         () => find.byKey(const ValueKey('task-thread-modal')).evaluate().isEmpty,
@@ -1532,7 +1515,7 @@ void main() {
         isTrue,
       );
       await screenshot(tester, 'linux-task-history');
-      await tester.tap(find.byTooltip('Close task'));
+      await tester.tap(find.byTooltip('Close Task'));
       await until(
         tester,
         () => find.byKey(const ValueKey('task-thread-modal')).evaluate().isEmpty,
@@ -1566,8 +1549,8 @@ void main() {
         tester,
         () =>
             w.section == (mobileViewport(tester) ? 'chat' : 'search') &&
-            w.highlightedMessageId == sent.id &&
-            !w.channelLoading,
+            w.messageDomain.state.highlightedMessageId == sent.id &&
+            !w.messageDomain.state.channelLoading,
       );
       if (!mobileViewport(tester)) {
         expect(w.location.route, RaftRoute.search);
@@ -1590,7 +1573,7 @@ void main() {
             mainChat.evaluate().length == 1 &&
             (tester.state(mainChat) as dynamic).scrolledHighlight == sent.id &&
             (tester.state(mainChat) as dynamic).scrolledWindow ==
-                w.channelGeneration &&
+                w.messageDomain.channelGeneration &&
             (tester.state(mainChat) as dynamic).focusReceiptVisible(sent.id) ==
                 true,
       );
@@ -1600,8 +1583,8 @@ void main() {
       // Open Chat through the actual rail before using its channel header.
       await section(tester, 'chat');
       await until(tester, () => w.section == 'chat' &&
-          find.bySemanticsLabel('Search this channel').evaluate().isNotEmpty);
-      await tester.tap(find.bySemanticsLabel('Search this channel'));
+          find.bySemanticsLabel('Search This Channel').evaluate().isNotEmpty);
+      await tester.tap(find.bySemanticsLabel('Search This Channel'));
       await tester.pumpAndSettle();
       final channelSearch = tester.widget<ResourceView>(
         find.byType(ResourceView),
@@ -1622,7 +1605,7 @@ void main() {
         () =>
             w.section == (mobileViewport(tester) ? 'chat' : 'search') &&
             w.channel?.id == general.id &&
-            w.highlightedMessageId == sent.id &&
+            w.messageDomain.state.highlightedMessageId == sent.id &&
             mainChat.evaluate().length == 1 &&
             (tester.state(mainChat) as dynamic).focusReceiptVisible(sent.id) ==
                 true,
@@ -1638,7 +1621,7 @@ void main() {
       await tester.tap(find.text(text).first);
       await until(
         tester,
-        () => w.section == 'chat' && w.highlightedMessageId == sent.id,
+        () => w.section == 'chat' && w.messageDomain.state.highlightedMessageId == sent.id,
       );
       await verifyAdvancedResources(
         tester,
@@ -1664,8 +1647,8 @@ void main() {
       await w.selectChannel(general);
       await tester.pumpAndSettle();
       await mobileHome(tester);
-      await revealSidebar(tester, find.byTooltip('Create channel'));
-      await tester.tap(find.byTooltip('Create channel'));
+      await revealSidebar(tester, find.byTooltip('Create Channel'));
+      await tester.tap(find.byTooltip('Create Channel'));
       await tester.pumpAndSettle();
       final createdName = 'native-ui-${DateTime.now().millisecondsSinceEpoch}';
       await tester.enterText(field('Name'), createdName);
@@ -1679,17 +1662,17 @@ void main() {
         () =>
             find.byType(RaftCreateChannelDialogView).evaluate().isEmpty &&
             w.channel?.name == createdName &&
-            !w.channelLoading,
+            !w.messageDomain.state.channelLoading,
       );
       await tester.pumpAndSettle();
       final createdId = w.channel!.id;
       await verifyAttachmentFlow(tester, w, (name) => screenshot(tester, name));
       Future<void> openSettings() async {
-        await tester.tap(find.byTooltip('Channel settings'));
+        await tester.tap(find.byTooltip('Channel Settings'));
         await tester.pumpAndSettle();
         await until(
           tester,
-          () => find.text('Pin channel').evaluate().isNotEmpty,
+          () => find.text('Pin Channel').evaluate().isNotEmpty,
         );
       }
 
@@ -1721,7 +1704,7 @@ void main() {
       }
 
       await openSettings();
-      await setting('Pin channel');
+      await setting('Pin Channel');
       await until(
         tester,
         () => (w.sidebarOrder['pinned'] as List? ?? []).any(
@@ -1770,7 +1753,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byType(RaftConfirmDialog),
-          matching: find.text('Archive'),
+          matching: find.text('Archive Channel'),
         ),
       );
       await until(
@@ -1780,8 +1763,8 @@ void main() {
             w.channel?.archived == true,
       );
       await tester.pumpAndSettle();
-      if (find.byTooltip('Close channel settings').evaluate().isNotEmpty) {
-        await tester.tap(find.byTooltip('Close channel settings'));
+      if (find.byTooltip('Close Channel Settings').evaluate().isNotEmpty) {
+        await tester.tap(find.byTooltip('Close Channel Settings'));
       }
       await tester.pumpAndSettle();
       expect(
@@ -1839,7 +1822,7 @@ void main() {
       );
       await tester.enterText(selectorField('global-server-name'), workspaceName);
       await tester.enterText(selectorField('global-server-slug'), workspaceName);
-      final createServer = find.widgetWithText(RaftAuthSubmit, 'Create server');
+      final createServer = find.widgetWithText(RaftAuthSubmit, 'Create Server');
       await tester.ensureVisible(createServer);
       await tester.pumpAndSettle();
       await tester.tap(createServer);
@@ -1885,7 +1868,7 @@ void main() {
       await tester.tap(find.text('Create invitation link'));
       await tester.pumpAndSettle();
       await tester.enterText(field('Maximum uses'), '1');
-      await tester.tap(find.widgetWithText(RaftButton, 'Create link'));
+      await tester.tap(find.widgetWithText(RaftButton, 'Create Link'));
       await until(
         tester,
         () => find.text('Invitation link').evaluate().isNotEmpty,
@@ -1923,7 +1906,7 @@ void main() {
         await tester.pumpAndSettle();
         await until(tester, () => memberRow.hitTestable().evaluate().isNotEmpty);
         await tester.tap(memberRow);
-        final editRole = find.byTooltip('Edit role');
+        final editRole = find.byTooltip('Edit Role');
         await until(tester, () => editRole.hitTestable().evaluate().isNotEmpty);
         await screenshot(tester, 'linux-workspace-member-profile');
         await tester.tap(editRole);
@@ -1954,7 +1937,7 @@ void main() {
           final add = find.byKey(const ValueKey('desktop-directory-add-agent'));
           await until(tester, () => add.hitTestable().evaluate().isNotEmpty);
           await tester.tap(add);
-          final create = find.widgetWithText(RaftMenuItem, 'Create external agent');
+          final create = find.widgetWithText(RaftMenuItem, 'Create External Agent');
           await until(tester, () => create.hitTestable().evaluate().isNotEmpty);
           await tester.tap(create);
         } else if (!mobileViewport(tester)) {
@@ -1962,14 +1945,14 @@ void main() {
           await until(tester, () => add.hitTestable().evaluate().isNotEmpty);
           await tester.tap(add);
         } else {
-          final add = find.widgetWithText(RaftButton, 'Register computer');
+          final add = find.widgetWithText(RaftButton, 'Register Computer');
           await until(tester, () => add.hitTestable().evaluate().isNotEmpty);
           await tester.tap(add);
         }
         await tester.pumpAndSettle();
         await tester.enterText(field('Name'), name);
         await tester.tap(
-          find.widgetWithText(RaftButton, computers ? 'Register' : 'Create'),
+          find.widgetWithText(RaftButton, computers ? 'Register Computer' : 'Create External Agent'),
         );
         await until(
           tester,
@@ -1980,7 +1963,7 @@ void main() {
             tester,
             () => find.text('Credential hidden').evaluate().isNotEmpty,
           );
-          expect(find.text('Reveal credential'), findsOneWidget);
+          expect(find.text('Reveal Credential'), findsOneWidget);
           // Do not reveal/copy the real key during automated tests.
           await tester.tap(find.text('Close'));
         }
@@ -1989,7 +1972,7 @@ void main() {
         final created = createdRows.singleWhere((row) => row['name'] == name) as Map;
         final directoryRow = computers && mobileViewport(tester)
             ? find.descendant(of: find.byKey(const Key('fleet-directory')),
-                matching: find.widgetWithText(ListTile, name))
+                matching: find.widgetWithText(RaftListRow, name))
             : find.byKey(ValueKey('desktop-directory-${computers ? 'computer' : 'agent'}-${created['id']}'));
         await until(tester, () => directoryRow.evaluate().isNotEmpty);
         await tester.ensureVisible(directoryRow);
@@ -2006,7 +1989,7 @@ void main() {
         Future<void> detailAction(String title) async {
           final action = find.descendant(
             of: find.byKey(const Key('fleet-detail')),
-            matching: find.widgetWithText(ListTile, title),
+            matching: find.widgetWithText(RaftListRow, title),
           );
           tester.state<ScrollableState>(detailScroll).position.jumpTo(0);
           await tester.pumpAndSettle();
@@ -2022,9 +2005,9 @@ void main() {
         }
 
         if (computers) {
-          await detailAction('Edit computer');
+          await detailAction('Edit Computer');
         } else {
-          final edit = find.byTooltip('Edit display name');
+          final edit = find.byTooltip('Edit Display Name');
           await tester.ensureVisible(edit);
           await tester.tap(edit);
           await tester.pumpAndSettle();
@@ -2064,7 +2047,7 @@ void main() {
           computers ? 'linux-computer-details' : 'linux-agent-details',
         );
         if (!computers) {
-          final editRole = find.byTooltip('Edit role');
+          final editRole = find.byTooltip('Edit Role');
           await tester.ensureVisible(editRole);
           await tester.tap(editRole);
           await tester.pumpAndSettle();
@@ -2089,12 +2072,12 @@ void main() {
           await tester.pumpAndSettle();
           await tester.tap(permissions);
           await tester.scrollUntilVisible(
-            find.widgetWithText(RaftButton, 'Save permissions'),
+            find.widgetWithText(RaftButton, 'Save Permissions'),
             180,
             scrollable: scopeScroll,
           );
           await tester.pumpAndSettle();
-          await tester.tap(find.widgetWithText(RaftButton, 'Save permissions'));
+          await tester.tap(find.widgetWithText(RaftButton, 'Save Permissions'));
           await until(
             tester,
             () => find.text('Agent permissions saved').evaluate().isNotEmpty,
@@ -2118,9 +2101,9 @@ void main() {
           await until(tester, () => dismissToast.evaluate().isNotEmpty);
           await tester.tap(dismissToast);
           await tester.pumpAndSettle();
-          await tester.ensureVisible(find.text('Restore default permissions'));
+          await tester.ensureVisible(find.text('Restore Default Permissions'));
           await tester.pumpAndSettle();
-          await tester.tap(find.text('Restore default permissions'));
+          await tester.tap(find.text('Restore Default Permissions'));
           tester.state<ScrollableState>(scopeScroll).position.jumpTo(0);
           await tester.pump(const Duration(milliseconds: 500));
           await until(
@@ -2142,19 +2125,19 @@ void main() {
           await tester.pumpAndSettle();
           await until(
             tester,
-            () => find.byType(CircularProgressIndicator).evaluate().isEmpty,
+            () => find.byType(RaftSpinner).evaluate().isEmpty,
           );
-          // Native pointer diagnosis confirms Source's eyebrow is uppercase.
-          expect(find.text('ACTIVITY DIAGNOSTICS'), findsOneWidget);
+          // Native pointer diagnosis confirms the eyebrow reads in title case.
+          expect(find.text('Activity Diagnostics'), findsOneWidget);
           expect(find.byType(RaftActivityLogView), findsOneWidget);
           await screenshot(tester, 'linux-agent-activity-tab');
           await tester.tap(find.bySemanticsLabel('Profile'));
           await tester.pumpAndSettle();
         }
         if (computers) {
-          await detailAction('Delete computer');
+          await detailAction('Delete Computer');
         } else {
-          final delete = find.widgetWithText(RaftButton, 'Delete Agent');
+          final delete = find.widgetWithText(RaftButton, 'Archive Agent');
           await tester.ensureVisible(delete);
           await tester.tap(delete);
           await tester.pumpAndSettle();
@@ -2284,13 +2267,6 @@ void main() {
         w,
         capture: (name) => screenshot(tester, 'linux-$name'),
       );
-      await verifyJointChannelFlow(
-        tester,
-        w,
-        section: (name) => section(tester, name),
-        capture: (name) => screenshot(tester, 'linux-$name'),
-        fixtureEmailDisabled: true,
-      );
       await w.selectChannel(general);
       await tester.pumpAndSettle();
       if (w.dms.isEmpty) {
@@ -2306,8 +2282,8 @@ void main() {
       await w.selectChannel(general);
       await tester.pumpAndSettle();
 
-      if (find.byTooltip('Close thread').evaluate().isNotEmpty) {
-        await tester.tap(find.byTooltip('Close thread').first);
+      if (find.byTooltip('Close Thread').evaluate().isNotEmpty) {
+        await tester.tap(find.byTooltip('Close Thread').first);
       }
       await tester.pump();
       await openAccountSettings(tester);
@@ -2319,9 +2295,9 @@ void main() {
           key: w.client.user!.json[key],
       };
       try {
-        await tester.ensureVisible(find.text('Reading preferences'));
+        await tester.ensureVisible(find.text('Reading Preferences'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Reading preferences'));
+        await tester.tap(find.text('Reading Preferences'));
         await tester.pumpAndSettle();
         await tester.tap(
           find.byKey(const ValueKey('field-preferredTimeFormat')),
@@ -2410,17 +2386,10 @@ void main() {
       await screenshot(tester, 'linux-elegant-dark');
       await tester.tap(find.text('Light'));
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('appearance-light-theme-elegant')),
-      );
-      await tester.tap(
-        find.byKey(const ValueKey('appearance-light-theme-elegant')),
-      );
-      await tester.pump(const Duration(milliseconds: 300));
       expect(
         RaftTokens.of(tester.element(find.byKey(const Key('appearance-mode'))))
-            .family,
-        RaftFamily.elegant,
+            .dark,
+        false,
       );
       await screenshot(tester, 'linux-elegant-light');
       await settingsTab(tester, 'account');

@@ -13,7 +13,7 @@ void main() {
             var clicks = 0;
             await t.pumpWidget(
               MaterialApp(
-                theme: raftTheme(RaftFamily.brutal),
+                theme: raftTheme(),
                 home: Scaffold(
                   body: RaftDensityScope(
                     density: density,

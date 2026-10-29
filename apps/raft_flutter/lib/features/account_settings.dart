@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_client/raft_client.dart';
 
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/personal_presentation.dart';
 import 'account_onboarding.dart';
@@ -9,16 +10,11 @@ import 'account_connections_view.dart';
 import 'management_support.dart';
 import 'public_avatar_url.dart';
 import 'usage_data_card.dart';
+import 'sign_in_diagnostics_card.dart';
 
 class AccountSettings extends StatefulWidget {
-  const AccountSettings({
-    super.key,
-    required this.controller,
-    this.onLogout,
-    this.workspaceModeCard,
-  });
+  const AccountSettings({super.key, required this.controller, this.onLogout});
   final WorkspaceController controller;
-  final Widget? workspaceModeCard;
 
   /// AccountSignOutSection; the host owns the session teardown.
   final Future<void> Function()? onLogout;
@@ -61,6 +57,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
   final profileName = TextEditingController();
   String? profileAccount, savedProfileName;
   bool profileBusy = false, profileSaved = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the next save starts and on account change (clearData/hydrateProfile).
   String? profileError;
   @override
   void dispose() {
@@ -111,13 +108,22 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
         profileSaved = profileName.text.trim() == name;
       });
     } catch (e) {
-      if (mounted && scope == authority) setState(() => profileError = '$e');
+      if (mounted && scope == authority) {
+        setState(
+          () => profileError = userErrorText(
+            e,
+            fallback: 'Failed to update profile',
+            where: 'account profile',
+          ),
+        );
+      }
     } finally {
       if (mounted && scope == authority) setState(() => profileBusy = false);
     }
   }
 
   bool mediaBusy = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the next avatar action starts and on account change (clearData).
   String? mediaError;
 
   Future<void> image({bool remove = false}) async {
@@ -125,8 +131,9 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     final sourceScope = authority;
     if (remove) {
       final accepted = await scopedDialog<bool>(
-        (context) => AlertDialog(
-          title: Text(raftText(context, 'Remove profile image?')),
+        (context) => RaftAlertDialog(
+          legacy: RaftLegacyAlert.material,
+          title: Text(raftText(context, 'Remove Profile Image')),
           content: Text(
             raftText(
               context,
@@ -134,12 +141,12 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
             ),
           ),
           actions: [
-            TextButton(
+            RaftButton.text(
               onPressed: () => Navigator.pop(context, false),
-              child: Text(raftText(context, 'Cancel')),
+              child: Text(raftText(context, 'Keep Image')),
             ),
             RaftButton(
-              label: raftText(context, 'Remove'),
+              label: raftText(context, 'Remove Profile Image'),
               destructive: true,
               onPressed: () => Navigator.pop(context, true),
             ),
@@ -160,7 +167,13 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
       }
     } catch (error) {
       if (mounted && sourceScope == authority) {
-        setState(() => mediaError = '$error');
+        setState(
+          () => mediaError = userErrorText(
+            error,
+            fallback: 'Failed to upload avatar',
+            where: 'account avatar',
+          ),
+        );
       }
     } finally {
       if (mounted && sourceScope == authority) {
@@ -173,13 +186,14 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     final sourceScope = authority;
     final user = controller.client.user!;
     await scopedDialog<void>(
+      form: true,
       (_) => RaftFormDialog(
-        title: raftText(context, 'Edit profile'),
+        title: raftText(context, 'Edit Profile'),
         fields: [
           RaftFormField(
             'displayName',
             'Display name',
-            initial: user.string('displayName', user.string('name')),
+            initial: user.firstNonEmpty(const ['displayName', 'name']),
             required: true,
           ),
           RaftFormField(
@@ -205,8 +219,9 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     final sourceScope = authority;
     final user = controller.client.user!;
     await scopedDialog<void>(
+      form: true,
       (_) => RaftFormDialog(
-        title: raftText(context, 'Reading preferences'),
+        title: raftText(context, 'Reading Preferences'),
         fields: [
           RaftFormField(
             'preferredTimeFormat',
@@ -253,8 +268,9 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     final sourceScope = authority;
     final user = controller.client.user!;
     await scopedDialog<void>(
+      form: true,
       (_) => RaftFormDialog(
-        title: raftText(context, 'Display language'),
+        title: raftText(context, 'Display Language'),
         fields: [
           RaftFormField(
             'displayLanguage',
@@ -295,21 +311,32 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     final divider = Container(height: 2, color: RaftSettingsText(t).edge);
     final card = RaftSettingsProfileCard(
       avatar: RaftTooltip(
-        message: raftText(context, 'Change profile image'),
-        child: InkWell(
+        message: raftText(context, 'Change Profile Image'),
+        child: RaftListRowAction(
           key: const Key('account-profile-image'),
-          onTap: mediaBusy ? null : () => image(),
+          onPressed: mediaBusy ? null : () => image(),
           child: Opacity(
             opacity: mediaBusy ? .7 : 1,
-            child: RaftAvatar(
-              key: const Key('account-profile-avatar'),
-              name: user?.name ?? '',
-              size: RaftSettingsProfileRecipe.avatarSize,
-              imageUrl: raftPublicAvatarUrl(
-                controller.client.origin,
-                user?.string('avatarUrl'),
-              ),
-            ),
+            child: t.option('sticker.ring', or: 'none') == 'dieCut'
+                ? RaftAvatarSlot(
+                    key: const Key('account-profile-avatar'),
+                    name: user?.name ?? '',
+                    agent: false,
+                    slot: RaftAvatarSlotContext.profileTile,
+                    avatarUrl: raftPublicAvatarUrl(
+                      controller.client.origin,
+                      user?.string('avatarUrl'),
+                    ),
+                  )
+                : RaftAvatar(
+                    key: const Key('account-profile-avatar'),
+                    name: user?.name ?? '',
+                    size: RaftSettingsProfileRecipe.avatarSize,
+                    imageUrl: raftPublicAvatarUrl(
+                      controller.client.origin,
+                      user?.string('avatarUrl'),
+                    ),
+                  ),
           ),
         ),
       ),
@@ -319,13 +346,23 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (mediaError != null) ...[
+            // `<p className="text-xs font-bold text-brutal-red" role="alert">`
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                raftText(context, mediaError!),
+                style: RaftSettingsText(t).alert,
+              ),
+            ),
+            const SizedBox(height: RaftSpace.x3),
+          ],
           RaftSettingsField(
             label: 'Display Name',
             child: RaftRecipeInput(
               fieldKey: const Key('account-profile-display-name'),
               controller: profileName,
               // `theme-brutal:p-2`
-              padding: t.brutal ? const EdgeInsets.all(8) : null,
               onChanged: (_) => setState(() => profileSaved = false),
               onSubmitted: (_) => saveProfile(),
             ),
@@ -359,7 +396,9 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                     maxLines: 1,
                     style: RaftTypography.mono(
                       t,
-                      size: 14,
+                      // `text-mono-code`: 13/20 in the Raft look (the frozen
+                      // looks keep their `text-sm`).
+                      size: t.isRaftLook ? 13 : 14,
                       line: 20,
                       color: RaftSettingsText(t).strong,
                     ),
@@ -371,26 +410,22 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                         label: 'Verified',
                         variant: RaftBadgeRecipeVariant.success,
                         appearance: RaftBadgeRecipeAppearance.soft,
-                        uppercase: true,
                         glyph: RaftGlyph.shield,
                       )
                     : const RaftSettingsRecipeBadge(
                         label: 'Unverified',
                         variant: RaftBadgeRecipeVariant.warning,
                         appearance: RaftBadgeRecipeAppearance.soft,
-                        uppercase: true,
                       ),
               ],
             ),
           ),
-          if (profileError != null || mediaError != null) ...[
+          if (profileError != null) ...[
             const SizedBox(height: RaftSpace.x3),
-            // AccountSection puts both profile and avatar failures in the
-            // same warning Banner after Email, before the save control.
-            RaftBanner(
-              description: profileError ?? mediaError!,
-              size: RaftBannerRecipeSize.sm,
-            ),
+            // `<Banner intent="warning" density="sm" className="font-bold">`
+            // after Email, before the save control; the avatar failure is its
+            // own `text-xs` alert above the form.
+            RaftErrorBanner(profileError!, small: true, bold: true),
           ],
           const SizedBox(height: RaftSpace.x3),
           Align(
@@ -437,23 +472,23 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
             children: [
               if (user?.string('avatarUrl').isNotEmpty == true)
                 RaftButton(
-                  label: raftText(context, 'Remove profile image'),
+                  label: raftText(context, 'Remove Profile Image'),
                   secondary: true,
                   onPressed: mediaBusy ? null : () => image(remove: true),
                 ),
               RaftButton(
                 key: const Key('account-display-language'),
-                label: raftText(context, 'Display language'),
+                label: raftText(context, 'Display Language'),
                 secondary: true,
                 onPressed: () => language(context),
               ),
               RaftButton(
-                label: raftText(context, 'Edit profile'),
+                label: raftText(context, 'Edit Profile'),
                 secondary: true,
                 onPressed: () => edit(context),
               ),
               RaftButton(
-                label: raftText(context, 'Reading preferences'),
+                label: raftText(context, 'Reading Preferences'),
                 secondary: true,
                 onPressed: () => preferences(context),
               ),
@@ -467,7 +502,6 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.workspaceModeCard != null) widget.workspaceModeCard!,
         const RaftSettingsSectionHeader(
           label: 'Account',
           glyph: RaftGlyph.user,
@@ -492,6 +526,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
           ),
         ),
         UsageDataSettingsCard(controller: controller),
+        const SignInDiagnosticsCard(),
         const SizedBox(height: RaftSpace.x6),
       ],
     );
@@ -504,6 +539,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
         title: 'Log out',
         message: 'Log out of this browser? Your account and data are kept; you can log back in any time.',
         confirmLabel: 'Log out',
+        cancelLabel: 'Cancel',
         surfaceKey: ValueKey('account-logout-dialog'),
         // confirmColor="bg-brutal-orange" -> warning tone.
         confirmVariant: RaftButtonRecipeVariant.warning,

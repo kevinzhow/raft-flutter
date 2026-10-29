@@ -38,7 +38,7 @@ class _TranslationState extends State<_Translation> {
           content: Text(original ? '你好，世界' : 'Hello, world'),
           translation: RaftMessageTranslationStatus(
             tone: RaftMessageTranslationTone.normal,
-            actionLabel: original ? 'Show translation' : 'Show original',
+            actionLabel: original ? 'Show Translation' : 'Show Original',
             tooltip: original
                 ? 'Original shown. Show translation'
                 : 'Translated. Show original',

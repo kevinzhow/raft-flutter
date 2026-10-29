@@ -80,6 +80,14 @@ bool raftCan(
     'owner' => true,
     'admin' => capability != 'manageBilling',
     'member' => _memberCapabilities.contains(capability),
+    // The shared matrix gives a guest nothing server-wide, but `viewChannel`
+    // is not a gate on Web (no Web component reads it): whether a guest may
+    // read a channel or thread is decided by the server
+    // (`canUserAccessChannel` / `canGuestReadChannel`: guest-visible, joined
+    // or guest-joinable, feature gate on) and the channel list a guest
+    // receives is already filtered to those. Gating on it locally kept guests
+    // from loading any channel or thread messages.
+    'guest' => capability == 'viewChannel',
     _ => false,
   };
 }

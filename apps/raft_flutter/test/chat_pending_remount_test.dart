@@ -5,20 +5,17 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show contextRows, paintedMessage;
 import 'message_presentation_test.dart' show fixture;
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final count in [1, 80]) {
       testWidgets(
-        '$family/$dark/$count new preview paints accepted same-channel window while context waits',
+        '${dark ? 'dark' : 'light'}/$count new preview paints accepted same-channel window while context waits',
         (tester) async {
           SharedPreferences.setMockInitialValues({});
           tester.view.physicalSize = const Size(390, 844);
@@ -26,11 +23,14 @@ void main() {
           addTearDown(tester.view.reset);
           final (w, api) = (await tester.runAsync(() => fixture('member')))!;
           addTearDown(w.dispose);
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           final accepted = contextRows('accepted', count: count),
               next = contextRows('target');
-          w.ledger.ingest(accepted, expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = accepted
+          w.messageDomain.ledger.ingest(
+            accepted,
+            expectedGeneration: w.messageDomain.ledger.generation,
+          );
+          w.messageDomain.visibleIds['c1'] = accepted
               .map((row) => row['id'] as String)
               .toSet();
           w.setSection('activity');
@@ -47,14 +47,14 @@ void main() {
             unawaited(w.jumpToMessage('c1', 'target-40', navigate: false));
             await started.future;
           });
-          expect(w.channelLoading, true);
+          expect(w.messageDomain.state.channelLoading, true);
           expect(
-            w.messages.map((row) => row.id),
+            w.messageDomain.messages.map((row) => row.id),
             accepted.map((row) => row['id']),
           );
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(body: RaftChatView(controller: w)),
             ),
           );
@@ -92,18 +92,22 @@ void main() {
             expect(paintedMessage(tester, 'target-40'), isNull);
           }
           expect(acceptedRect, isNotNull);
-          expect(w.channelLoading, true);
-          expect(find.text('Loading...'), findsNothing);
+          expect(w.messageDomain.state.channelLoading, true);
+          expect(find.text('Loading thread…'), findsNothing);
           await tester.runAsync(() async {
             response.complete({
               'messages': next,
               'hasOlder': true,
               'hasNewer': true,
             });
-            for (var i = 0; i < 40 && w.channelLoading; i++) {
+            for (
+              var i = 0;
+              i < 40 && w.messageDomain.state.channelLoading;
+              i++
+            ) {
               await Future<void>.delayed(const Duration(milliseconds: 5));
             }
-            expect(w.channelLoading, false);
+            expect(w.messageDomain.state.channelLoading, false);
           });
           Rect? targetRect;
           for (var i = 0; i < 12; i++) {

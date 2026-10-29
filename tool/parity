@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 import urllib.request
+import parity_case_map
 from parity_reference_defects import admitted_defects, annotate_site
 from parity_baseline_repairs import (repair_definition,
                                     capture_is_current, preserve_capture, repair_annotations, prepare_cases)
@@ -29,7 +30,7 @@ from parity_baseline_repairs import (repair_definition,
 root = pathlib.Path(__file__).resolve().parent.parent
 RAFT_SOURCE = pathlib.Path(os.environ.get(
     'PARITY_RAFT_SOURCE',
-    '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'))
+    '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source')).resolve()
 VT = RAFT_SOURCE / 'packages/visual-testing'
 SHARED = VT / 'shared'
 OUT = pathlib.Path(os.environ.get('PARITY_OUT', root / 'build/parity'))
@@ -44,12 +45,15 @@ BASE_URL = os.environ.get('PARITY_BASE_URL', 'http://100.109.192.23:18931')
 WEB_PORT = os.environ.get('PARITY_WEB_PORT', '4391')
 PAIR = 'react__android'
 FONT_CACHE = root / 'tool/parity-fonts'
-RAFT_UI_FONT_CSS_URL = ('https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@300..700'
-                        '&family=Hanken+Grotesk:wght@300..700&family=Inter:wght@400;500;600;700&display=swap')
-# UA of the pinned Playwright Chromium (headless shell 147); Google serves the
-# same woff2 + unicode-range CSS to the headed Chrome 147 UA (checked).
+# raft-ui 0.7.0 (Web v1.21.23) imports Space Grotesk and Space Mono; 0.5.52 (v1.21.12) imported
+# Geist, Geist Mono, Hanken Grotesk and Inter.
+RAFT_UI_FONT_CSS_URL = ('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700'
+                        '&family=Space+Mono:wght@400;700&display=swap')
+# UA of the pinned Playwright Chromium headless shell (156 for @playwright/test 1.64, the
+# version of the v1.21.12 and v1.21.23 references; 147 under 1.59). The cache was refreshed
+# for it on 2026-10-23 when raft-ui moved to Space Grotesk / Space Mono.
 FONT_FETCH_UA = ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                 'HeadlessChrome/147.0.7727.15 Safari/537.36')
+                 'HeadlessChrome/156.0.8078.4 Safari/537.36')
 PASS_STATUSES = {'same', 'pass', 'basic-pass'}
 
 
@@ -97,18 +101,24 @@ def git(cwd, *args):
 
 # --- React provider with production fonts --------------------------------
 # Owner decision: the React baseline must render what the production Web
-# renders. The upstream spec fulfils raft-ui's Google Fonts URL with a local
-# Space Grotesk/Space Mono stub, so raft-ui's Hanken Grotesk/Geist/Geist
-# Mono/Inter fall back to Chromium's system-ui. We run a GENERATED copy of the
-# official spec + Playwright config (raft-source stays untouched) whose only
-# changes are: path wiring, the documented owner-authorized task fixture
-# repair, serving the cached production Google Fonts
-# response for raft-ui's URL, font assertions retargeted to the production
-# families, and font provenance (document.fonts + CDP platform fonts) added to
-# each capture's metadata. Every patch anchor must match exactly once.
+# renders. The upstream spec fulfils raft-ui's Google Fonts URL with local
+# Space Grotesk/Space Mono TTF subsets (an offline copy of an older response), not
+# the bytes Google serves. We run a GENERATED copy of the official spec + Playwright
+# config (raft-source stays untouched) whose only changes are: path wiring, the
+# documented owner-authorized task fixture repair, serving the cached production
+# Google Fonts response for raft-ui's URL, and font provenance (document.fonts + CDP
+# platform fonts) added to each capture's metadata. Every patch anchor must match
+# exactly once.
 REACT_GEN = OUT / 'react-provider'
 
 SPEC_PATCHES = [
+    ('async function assertVisualFontsReady(page: Page, visualFonts: VisualFontRouteState) {',
+     'async function assertVisualFontsReady(page: Page, visualFonts: VisualFontRouteState) {\n'
+     '  // Vite may mount the first case after load. Wait for the actual CSS\n'
+     '  // font definitions before probing; document.fonts.load resolves with\n'
+     '  // an empty list when a family has not been registered yet.\n'
+     '  await page.waitForFunction(() => ["Space Grotesk", "Space Mono", "Raft Quote Glyphs"]\n'
+     '    .every(family => [...document.fonts].some(face => face.family === family)));'),
     ('const require = createRequire(import.meta.url);',
      'const require = createRequire(resolve(process.env.SLOCK_REACT_REPO_DIR!, "packages/web/package.json"));'),
     ('const packageRoot = resolve(testDir, "..");',
@@ -146,23 +156,11 @@ const webFontRoot = resolve(packageRoot, "../web/src/assets/fonts");"""),
       return;
     }
     if (GOOGLE_FONT_CSS_URLS.has(requestUrl)) {"""),
-    ("""      { family: "Space Grotesk", descriptor: "400 16px 'Space Grotesk'", text: "Raft" },
-      { family: "Space Grotesk", descriptor: "700 16px 'Space Grotesk'", text: "Raft" },
-      { family: "Space Mono", descriptor: "400 16px 'Space Mono'", text: "Raft" },
-      { family: "Space Mono", descriptor: "700 16px 'Space Mono'", text: "Raft" },""",
-     """      { family: "Hanken Grotesk", descriptor: "400 16px 'Hanken Grotesk'", text: "Raft" },
-      { family: "Hanken Grotesk", descriptor: "700 16px 'Hanken Grotesk'", text: "Raft" },
-      { family: "Geist", descriptor: "400 16px 'Geist'", text: "Raft" },
-      { family: "Geist", descriptor: "700 16px 'Geist'", text: "Raft" },
-      { family: "Geist Mono", descriptor: "400 16px 'Geist Mono'", text: "Raft" },
-      { family: "Geist Mono", descriptor: "700 16px 'Geist Mono'", text: "Raft" },
-      { family: "Inter", descriptor: "400 16px 'Inter'", text: "Raft" },
-      { family: "Inter", descriptor: "700 16px 'Inter'", text: "Raft" },"""),
     ('  expect(visualFonts.unexpectedExternalUrls).toEqual([]);',
      """  (globalThis as any).__parityFontFaces = faces;
   expect(visualFonts.unexpectedExternalUrls).toEqual([]);
   // raft-flutter parity: every production family's latin subset must be served.
-  for (const family of ["geist/", "geistmono/", "hankengrotesk/", "inter/"]) {
+  for (const family of ["spacegrotesk/", "spacemono/"]) {
     expect([...visualFonts.served].some((url) => url.startsWith(`https://fonts.gstatic.com/s/${family}`))).toBe(true);
   }"""),
     ('  for (const assetUrl of VISUAL_FONT_ASSETS.keys()) {',
@@ -279,9 +277,11 @@ async function parityVerifyRepairedMarkdown(page: Page, caseId: string, selector
     });
     expect(rendered.frame).toEqual(headerRepair.frame);
     expect(rendered.panelViewport).toEqual(headerRepair.panelViewport);
-    // The original fixture is Brutal. Supplemental Elegant mounts the same
-    // product with its real 56px shell header and 40px tabs + 1px border.
-    const geometry = headerRepair.themeGeometry[process.env.PARITY_THEME_OVERRIDE ?? "brutal-light"];
+    // The normal reference is the current Web; legacy frozen runs retain
+    // their separately declared geometry and do not render the current Web.
+    const legacyTheme = process.env.PARITY_THEME_OVERRIDE;
+    const geometry = legacyTheme && headerRepair.themeGeometry[legacyTheme]
+      ? headerRepair.themeGeometry[legacyTheme] : headerRepair.webGeometry;
     expect(rendered.header.y).toBe(0);
     expect(rendered.header.height).toBe(geometry.headerHeight);
     expect(rendered.tabs.y).toBe(geometry.headerHeight);
@@ -320,6 +320,9 @@ async function parityVerifyRepairedMarkdown(page: Page, caseId: string, selector
       sourceCommit: notificationRepair.sourceCommit,
       renderVerified: true, captureVerified: true, triggerClickedBeforeCapture: true, ...rendered };
   }
+  const syntheticRepair = (PARITY_BASELINE_REPAIR.additionalRepairs ?? [])
+    .find((repair: { repairId: string; cases: string[] }) => repair.repairId === "markdown-synthetic-slice1-v1" && repair.cases.includes(caseId));
+  const markdownRepair = syntheticRepair ?? PARITY_BASELINE_REPAIR;
   expect(parityRenderErrors.get(page) ?? [], "Repaired baseline must render without fallback/errors").toEqual([]);
   const rendered = await page.locator(selector).evaluate(root => ({
     rawTaskMarkup: (root.textContent ?? "").includes("<a data-task-ref="),
@@ -331,9 +334,17 @@ async function parityVerifyRepairedMarkdown(page: Page, caseId: string, selector
   expect(rendered.rawTaskMarkup).toBe(false);
   expect(rendered.taskRefs.length).toBeGreaterThan(0);
   for (const ref of rendered.taskRefs) expect(ref.status).toBe("in_progress");
-  return { repairId: PARITY_BASELINE_REPAIR.repairId,
-    fixtureSha256: PARITY_BASELINE_REPAIR.fixtureSha256,
-    sourceCommit: PARITY_BASELINE_REPAIR.sourceCommit,
+  if (syntheticRepair) {
+    expect(rendered.taskRefs).toEqual([{ text: `#${syntheticRepair.task.taskNumber}`, status: syntheticRepair.task.status }]);
+    const text = await page.locator(selector).innerText();
+    expect(text).toContain(syntheticRepair.message.content.split("\n")[0].replaceAll("**", ""));
+    expect(text).toContain("@DemoUser");
+    expect(text).toContain("#demo-visual-testing");
+  }
+  return { repairId: markdownRepair.repairId,
+    fixtureSha256: markdownRepair.fixtureSha256,
+    sourceCommit: markdownRepair.sourceCommit,
+    ...(syntheticRepair ? { captureVerified: true, contentSHA256: syntheticRepair.contentSHA256 } : {}),
     renderVerified: true, ...rendered };
 }
 '''
@@ -461,6 +472,7 @@ def react_capture(cases, refresh, fonts='production', text_render='android'):
 
 
 def flutter_capture(cases, patterns, shards):
+    parity_case_map.write()  # test/parity/case_map.g.dart: every cases/**/*.dart case map
     android = RESULTS / 'android'
     android.mkdir(parents=True, exist_ok=True)
     for c in cases:  # stale captures must never survive a failed run
@@ -491,12 +503,18 @@ def flutter_capture(cases, patterns, shards):
         failed += proc.wait() != 0
         log.close()
     print(f'flutter: {shards} shard(s), {failed} with failing cases; logs {log_dir}')
+    return failed
 
 
 def summarize():
     diff = json.loads((RESULTS / 'diff' / f'{PAIR}.json').read_text())
     case_map_file = RESULTS / 'android-case-map.json'
     case_map = json.loads(case_map_file.read_text()) if case_map_file.is_file() else {}
+    # The extension manifest can contain thousands of rows. Read it once,
+    # preserving the original first matching case for each variant lookup.
+    cases_by_id = {}
+    for case in manifest_cases():
+        cases_by_id.setdefault(case['id'], case)
     rows = []
     for r in diff['results']:
         m = case_map.get(r['id'], {'status': 'harnessTodo', 'reason': 'No Flutter builder mapped yet.'})
@@ -516,7 +534,7 @@ def summarize():
         rows.append({
             'id': r['id'], 'captureType': r.get('captureType'),
             'theme': 'elegant-light' if r['id'].endswith('.elegant') else 'brutal-light',
-            'variant': next((c['variants'][0]['id'] for c in manifest_cases() if c['id'] == r['id']), None),
+            'variant': cases_by_id[r['id']]['variants'][0]['id'] if r['id'] in cases_by_id else None,
             'react': react, 'flutter': flutter, 'officialStatus': r['status'],
             'pixelPerfectSimilarity': pixel, 'verdict': verdict,
             'flutterMapping': m,
@@ -602,9 +620,18 @@ def cmd_run(a):
     chosen = select(cases, a.cases)
     if not chosen:
         sys.exit(f'no default cases match {a.cases!r}')
-    react_capture(chosen, a.refresh_react, a.react_fonts, a.react_text_render)
+    if a.frozen:
+        # Elegant / Brutal: the reference is the frozen a57b9dab render of that look (tool/parity-ext/frozen_ref.py).
+        sys.path.insert(0, str(root / 'tool/parity-ext'))
+        import frozen_ref
+        found, missing = frozen_ref.install(RESULTS, [c['id'] for c in chosen], frozen_ref.search_dirs('official', a.frozen))
+        print(f'frozen references ({a.frozen}): {len(found)} found, {len(missing)} without a frozen image', flush=True)
+        (OUT / 'frozen-missing.json').write_text(json.dumps(missing, indent=1))
+    else:
+        react_capture(chosen, a.refresh_react, a.react_fonts, a.react_text_render)
+    flutter_failed = 0
     if not a.skip_flutter:
-        flutter_capture(chosen, a.cases, a.shards)
+        flutter_failed = flutter_capture(chosen, a.cases, a.shards) or 0
     log = OUT / 'cli.log'
     log.write_text('')
     # diff/site always cover the full default selection so totals stay honest.
@@ -622,6 +649,18 @@ def cmd_run(a):
     annotate_site(SITE, {**defects, **repairs})
     shutil.copy(OUT / 'summary.json', SITE / 'flutter-parity-summary.json')
     shutil.copy(OUT / 'summary.md', SITE / 'flutter-parity-summary.md')
+    reported = {row['id']: row for row in summary.get('cases', [])}
+    missing = set()
+    for case in chosen:
+        row = reported.get(case['id'])
+        if (row is None or row.get('verdict') == 'flutter-capture-failed'
+                or (a.cases and (not row.get('react') or not row.get('flutter')
+                                 or row.get('verdict') == 'not-covered'))):
+            missing.add(case['id'])
+    if flutter_failed or missing:
+        print(f'official capture failed: {flutter_failed} failing Flutter shard(s), '
+              f'{len(missing)} required capture(s) missing; report retained', file=sys.stderr)
+        raise SystemExit(1)
     return summary
 
 
@@ -629,6 +668,7 @@ def cmd_probe(a):
     """Capture a few Flutter cases into a private dir and score them against
     the cached React captures with the official image-diff script. Does not
     touch build/parity results, the site or the summary."""
+    parity_case_map.write()
     out = pathlib.Path(a.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     results = out / 'visual-testing-results'
@@ -802,6 +842,9 @@ def main():
     r.add_argument('--react-text-render', choices=['android', 'desktop'], default='android',
                    help='android: grayscale AA + subpixel positioning (default); desktop: Linux Chromium default')
     r.add_argument('--skip-flutter', action='store_true', help='reuse existing Flutter captures')
+    r.add_argument('--frozen', choices=['brutal-light', 'elegant-light', 'elegant-dark'],
+                   help='compare against the frozen a57b9dab render of that look instead of the Web (also set '
+                        'PARITY_THEME_OVERRIDE to the same value for the Flutter side)')
     r.set_defaults(fn=cmd_run)
     pub = sub.add_parser('publish')
     pub.add_argument('--no-verify', action='store_true')

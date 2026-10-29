@@ -17,9 +17,12 @@ class _PreviewState extends State<_Preview> {
   Duration position = Duration.zero;
   double volume = 100;
   @override
-  Widget build(BuildContext context) => Column(
+  // This gallery combines independently scrollable media demos. The gallery
+  // itself must also scroll when the audio controls grow with the text.
+  Widget build(BuildContext context) => ListView(
     children: [
-      Expanded(
+      SizedBox(
+        height: 160,
         child: RaftDocumentPreview(
           data: const {
             'kind': 'xlsx',
@@ -47,19 +50,31 @@ class _PreviewState extends State<_Preview> {
           },
         ),
       ),
-      RaftMediaControls(
+      SizedBox(
+        height: 260,
+        child: RaftVideoViewer(
+          filename: 'walkthrough.mp4',
+          videoSize: const Size(720, 1280),
+          video: const ColoredBox(color: Color(0xFF3D5A79)),
+          playing: playing,
+          position: position,
+          duration: const Duration(minutes: 2),
+          volume: volume,
+          onTogglePlay: () => setState(() => playing = !playing),
+          onSeek: (v) => setState(() => position = v),
+          onVolume: (v) => setState(() => volume = v),
+          onDownload: () {},
+        ),
+      ),
+      RaftAudioPreview(
+        filename: 'standup.mp3',
         playing: playing,
         position: position,
         duration: const Duration(minutes: 2),
-        volume: volume,
-        onPlayPause: () => setState(() => playing = !playing),
+        volume: volume / 100,
+        onTogglePlay: () => setState(() => playing = !playing),
         onSeek: (v) => setState(() => position = v),
-        onVolume: (v) => setState(() => volume = v),
-      ),
-      const RaftMediaControls(
-        playing: false,
-        position: Duration.zero,
-        duration: Duration.zero,
+        onVolume: (v) => setState(() => volume = v * 100),
       ),
     ],
   );

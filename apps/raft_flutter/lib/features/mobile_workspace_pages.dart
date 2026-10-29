@@ -1,11 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../data/phone_stack.dart';
 import '../data/raft_location.dart';
+import '../data/raft_navigation_history.dart';
 import '../data/workspace_navigation.dart';
-
-/// The underlying destination of a cold task/channel-management page.
-RaftLocation _mobilePageBaseLocation(RaftLocation location) =>
-    location.withQuery({'task': null, 'legacyTask': null, 'channelPage': null});
+import 'route_transition_gate.dart';
 
 /// Focus/search edits stay on a page; task and channel-management identities
 /// own platform pages while retaining the workspace's existing data owners.
@@ -21,9 +22,60 @@ String mobilePageIdentity(RaftLocation location) {
   ].join('|');
 }
 
-/// Back follows visual pages, consuming focus/query entries within that page.
-/// The workspace still owns and validates every history step.
+/// The pages a phone shows for the accepted location. Derived from the
+/// location (root tab -> list -> conversation -> thread -> profile / task /
+/// channel page), never from raw history: wide panel open/close and sidebar
+/// switches leave history entries that are not phone pages.
+List<RaftLocation> mobilePageStack(WorkspaceNavigation navigation) {
+  final tabs = navigation.mobileTabs;
+  final location = navigation.location;
+  return phoneStackFor(
+    location,
+    tabs,
+    source: phoneReturnSource(
+      navigation.entries,
+      navigation.index,
+      location,
+      tabs,
+      floor: navigation.phoneFloor,
+    ),
+    sibling: channelPageSibling(navigation.entries, navigation.index, location),
+    direct: openedDirectly(navigation.entries, navigation.index, location),
+  );
+}
+
+/// Back pops one level of [mobilePageStack]. History only locates the entry to
+/// return to (so Forward and revisions stay coherent); a level that history
+/// never saw (cold link, translated layout) is reached by replacing.
 RaftLocation backMobilePage(WorkspaceNavigation navigation) {
+  final stack = mobilePageStack(navigation);
+  if (stack.length < 2) return _backThroughHistory(navigation);
+  final target = stack[stack.length - 2];
+  final identity = mobilePageIdentity(target);
+  for (var at = navigation.index - 1; at >= 0; at--) {
+    final entry = navigation.entries[at];
+    if (mobilePageIdentity(entry) != identity) continue;
+    while (navigation.index > at) {
+      final before = navigation.index;
+      navigation.back();
+      if (navigation.index == before) break;
+    }
+    return navigation.location;
+  }
+  if (target.task != null ||
+      target.legacyTask != null ||
+      navigation.location.task != null ||
+      navigation.location.legacyTask != null) {
+    navigation.navigateTask(target, kind: RaftNavigationKind.replace);
+  } else {
+    navigation.navigate(target, kind: RaftNavigationKind.replace);
+  }
+  return navigation.location;
+}
+
+/// Root pages have no phone parent: keep stepping the observed history until
+/// the visual page changes, then fall back to the semantic tab root.
+RaftLocation _backThroughHistory(WorkspaceNavigation navigation) {
   final identity = mobilePageIdentity(navigation.location);
   final limit = navigation.entries.length + 1;
   for (var step = 0; step < limit; step++) {
@@ -38,36 +90,12 @@ RaftLocation backMobilePage(WorkspaceNavigation navigation) {
   return navigation.location;
 }
 
-/// Project the accepted history into a single-column stack. Tab roots start a
-/// new visual stack; focus/query edits do not manufacture pages.
-List<String> mobilePageEntries(WorkspaceNavigation navigation) {
-  final result = <String>[];
-  final entries = navigation.entries.take(navigation.index + 1).toList();
-  if (entries.isEmpty || entries.last != navigation.location) {
-    entries.add(navigation.location);
-  }
-  for (var index = 0; index < entries.length; index++) {
-    final location = entries[index];
-    final base = _mobilePageBaseLocation(location);
-    if (result.isEmpty && base != location) {
-      final root = navigation.mobileRootTabOf(base) != null;
-      result.add('${root ? 'root' : index}::${mobilePageIdentity(base)}');
-    }
-    final identity = mobilePageIdentity(location);
-    final root = navigation.mobileRootTabOf(location) != null;
-    if (root) result.clear();
-    if (result.isNotEmpty && result.last.endsWith('::$identity')) continue;
-    result.add('${root ? 'root' : index}::$identity');
-  }
-  // A cold detail still has a semantic back destination.
-  if (!result.first.startsWith('root::')) {
-    result.insert(
-      0,
-      'root::${mobilePageIdentity(navigation.mobileTabHome(entries.first))}',
-    );
-  }
-  return result.length > 8 ? result.sublist(result.length - 8) : result;
-}
+/// Project the location into a single-column stack of page identities.
+List<String> mobilePageEntries(WorkspaceNavigation navigation) => [
+  for (final location in mobilePageStack(navigation))
+    '${navigation.mobileRootTabOf(location) != null ? 'root' : 'page'}::'
+        '${mobilePageIdentity(location)}',
+];
 
 /// Each platform route owns its live page widgets. History stores locations,
 /// never rasterized frames; the workspace remains the data/navigation owner.
@@ -93,35 +121,61 @@ class MobileWorkspacePages extends StatefulWidget {
 
 class _MobileWorkspacePagesState extends State<MobileWorkspacePages> {
   final navigator = GlobalKey<NavigatorState>();
+  final transitions = RouteTransitionGate();
+  late final transitionObserver = RouteTransitionObserver(transitions);
   final pageStorage = PageStorageBucket();
   int nextInstance = 0;
   late List<_MobilePageEntry> entries = reconcile(const []);
-  bool rootChanged = false;
+  bool rootChanged = false, profileHandoff = false;
 
-  RaftLocation resolveLocation(String identity) {
-    for (final location
-        in widget.navigation.entries
-            .take(widget.navigation.index + 1)
-            .toList()
-            .reversed) {
-      if (identity.endsWith('::${mobilePageIdentity(location)}')) {
-        return location;
-      }
+  /// Set while the first frames of a workspace that mounted behind another
+  /// route settle (the window was narrowed behind the expanded composer
+  /// editor). A Navigator takes the focus when it mounts; excluding its
+  /// subtree makes that a no-op so the route in front keeps its focus, and
+  /// the exclusion lifts once the mount-time requests are over.
+  bool mountedCovered = false, mountChecked = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (mountChecked) return;
+    mountChecked = true;
+    if (!(ModalRoute.isCurrentOf(context) ?? true)) {
+      mountedCovered = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // ignore: raft_lints/avoid_unreviewed_idle_work -- Runs once per mount, only when the workspace mounted behind another route; it lifts the exclusion and schedules nothing else.
+        scheduleMicrotask(() {
+          if (mounted) setState(() => mountedCovered = false);
+        });
+      });
     }
-    final base = _mobilePageBaseLocation(widget.navigation.location);
-    if (identity.endsWith('::${mobilePageIdentity(base)}')) return base;
-    return widget.navigation.mobileTabHome(widget.navigation.location);
   }
 
-  List<_MobilePageEntry> reconcile(List<_MobilePageEntry> previous) => [
-    for (final identity in mobilePageEntries(widget.navigation))
-      _MobilePageEntry(
-        identity,
-        previous.where((entry) => entry.identity == identity).firstOrNull?.id ??
-            '${nextInstance++}::$identity',
-        resolveLocation(identity),
-      ),
-  ];
+  List<_MobilePageEntry> reconcile(List<_MobilePageEntry> previous) {
+    final stack = mobilePageStack(widget.navigation);
+    final root = widget.navigation.mobileRootTabOf(stack.first) != null;
+    return [
+      for (final (index, page) in stack.indexed)
+        () {
+          final identity =
+              '${index == 0 && root ? 'root' : 'page'}::'
+              '${mobilePageIdentity(page)}';
+          return _MobilePageEntry(
+            identity,
+            previous
+                    .where((entry) => entry.identity == identity)
+                    .firstOrNull
+                    ?.id ??
+                '${nextInstance++}::$identity',
+            index == stack.length - 1 &&
+                    mobilePageIdentity(widget.navigation.location) ==
+                        mobilePageIdentity(page)
+                ? widget.navigation.location
+                : page,
+          );
+        }(),
+    ];
+  }
 
   @override
   void didUpdateWidget(MobileWorkspacePages oldWidget) {
@@ -132,6 +186,14 @@ class _MobileWorkspacePagesState extends State<MobileWorkspacePages> {
         !entries.any(
           (entry) => next.any((item) => item.identity == entry.identity),
         );
+    // The profile panel is one element for the whole workspace (a shared
+    // GlobalKey, so it survives the 768 dp cut). Two pages that both show it
+    // must not be on stage together, so no page-to-page animation is run
+    // between them: the outgoing page leaves in the frame the new one arrives.
+    profileHandoff =
+        entries.last.identity != next.last.identity &&
+        entries.last.location.profile != null &&
+        next.last.location.profile != null;
     entries = next;
   }
 
@@ -141,30 +203,46 @@ class _MobileWorkspacePagesState extends State<MobileWorkspacePages> {
   );
 
   @override
+  void dispose() {
+    transitions.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (!widget.enabled) return page(context, widget.navigation.location);
     final parentCurrent = ModalRoute.isCurrentOf(context) ?? true;
     return NavigatorPopHandler<void>(
       onPopWithResult: (_) => navigator.currentState?.maybePop(),
-      child: Navigator(
-        key: navigator,
-        transitionDelegate: _MobileTransitionDelegate(
-          skip: rootChanged || MediaQuery.disableAnimationsOf(context),
-        ),
-        pages: [
-          for (final entry in entries)
-            MaterialPage<void>(
-              key: ValueKey(entry.id),
-              canPop: parentCurrent,
-              allowSnapshotting: false,
-              child: Builder(
-                builder: (context) => page(context, entry.location),
+      child: ExcludeFocus(
+        excluding: mountedCovered,
+        child: Navigator(
+          key: navigator,
+          observers: [transitionObserver],
+          // Pages pushed while a route covers the whole workspace must not take
+          // the focus from that route.
+          requestFocus: parentCurrent,
+          transitionDelegate: _MobileTransitionDelegate(
+            skip:
+                rootChanged ||
+                profileHandoff ||
+                MediaQuery.disableAnimationsOf(context),
+          ),
+          pages: [
+            for (final entry in entries)
+              MaterialPage<void>(
+                key: ValueKey(entry.id),
+                canPop: parentCurrent,
+                allowSnapshotting: false,
+                child: Builder(
+                  builder: (context) => page(context, entry.location),
+                ),
               ),
-            ),
-        ],
-        onDidRemovePage: (page) {
-          if (page.key == ValueKey(entries.last.id)) widget.onBack();
-        },
+          ],
+          onDidRemovePage: (page) {
+            if (page.key == ValueKey(entries.last.id)) widget.onBack();
+          },
+        ),
       ),
     );
   }

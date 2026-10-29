@@ -1,0 +1,5 @@
+{"results": [
+  {"messageId": "aaaaaaaa-0000-4000-8000-000000000002", "status": "translated", "contentHash": "h1", "sourceLanguage": "en", "sourceConfidence": 0.98, "targetLanguage": "zh-CN", "translatedContent": "已捕获 Android 产物。", "provider": "bedrock", "providerVersion": "1", "placeholderPolicyVersion": "1"},
+  {"messageId": "aaaaaaaa-0000-4000-8000-000000000003", "status": "skipped", "contentHash": "h2", "sourceLanguage": "zh", "sourceConfidence": 0.9, "targetLanguage": "zh-CN", "skipReason": "same_language", "provider": "bedrock", "providerVersion": "1", "placeholderPolicyVersion": "1"},
+  {"messageId": "aaaaaaaa-0000-4000-8000-000000000099", "status": "not_found", "targetLanguage": "zh-CN"}
+]}

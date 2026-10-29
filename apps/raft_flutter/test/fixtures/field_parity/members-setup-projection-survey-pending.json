@@ -1,0 +1,15 @@
+{
+  "surface": "complete",
+  "phase": "complete",
+  "currentStep": null,
+  "blocksChat": false,
+  "allowedExits": ["return_to_server"],
+  "sideEffectState": { "transitions": "disabled", "completion": "disabled" },
+  "gateReason": "setup_complete",
+  "computerStatus": "online",
+  "runtimeStatus": "ready_recommended",
+  "runtimeOptions": [],
+  "hasConnectedComputer": true,
+  "offlineComputers": [],
+  "postSetup": { "surveyPending": true, "handoffPending": false }
+}

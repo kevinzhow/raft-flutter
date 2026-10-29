@@ -54,12 +54,12 @@ void main() {
             'messageType': 'chat',
           },
         ];
-        w.ledger.switchServer('s1');
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'parent', 'later'};
-        w.visibleIds['t1'] = {'reply'};
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
+        w.messageDomain.visibleIds['t1'] = {'reply'};
         if (thread) {
-          w.threadParent = w.messages.first;
+          w.messageDomain.state.threadParent = w.messageDomain.messages.first;
           w.threadChannelId = 't1';
         }
         a.routes['GET /servers/s1/setup-projection'] = (_) => {
@@ -94,7 +94,7 @@ void main() {
         );
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(RaftFamily.elegant),
+            theme: raftTheme(),
             home: Scaffold(
               body: RaftChatView(
                 controller: w,
@@ -183,6 +183,8 @@ void main() {
         expect(writes, hasLength(1));
         expect(find.byType(RaftToast), findsOneWidget);
         expect(find.text('Copied Markdown'), findsWidgets);
+        // Web SELECTION_TOAST_OPTIONS (`dismissible: false`): no close button.
+        expect(t.widget<RaftToast>(find.byType(RaftToast)).onClose, isNull);
         expect(find.byType(SnackBar), findsNothing);
         expect(writes.single, contains('Public selected parent'));
         expect(
@@ -196,7 +198,7 @@ void main() {
           find.byType(RaftSelectionToolbar),
         );
         final before = a.calls.length;
-        w.server = RaftRecord({'id': 's1', 'role': 'guest'});
+        w.server = RaftRecord({'id': 's1', 'role': 'removed'});
         w.setError(null);
         await t.pumpAndSettle();
         expect(handle.active, isFalse);

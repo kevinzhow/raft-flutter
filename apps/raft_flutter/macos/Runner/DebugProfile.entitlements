@@ -14,5 +14,10 @@
 	<true/>
 	<key>com.apple.security.get-task-allow</key>
 	<true/>
+	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
+	<array>
+		<string>app.raft.raftFlutter-spks</string>
+		<string>app.raft.raftFlutter-spki</string>
+	</array>
 </dict>
 </plist>

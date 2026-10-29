@@ -12,8 +12,19 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../platform/file_selection.dart';
+
 import '../data/source_feedback_store.dart';
 import '../data/workspace_controller.dart';
+import 'feedback_attachment_preview.dart';
+import 'management_support.dart'
+    show pageIdentity, readPageSnapshot, writePageSnapshot;
+
+/// `GET /product-feedback/tickets/:id/attachments/:id`.
+typedef FeedbackAttachmentLoader = Future<Uint8List> Function(
+  String ticketId,
+  String attachmentId,
+);
 
 /// Picks image attachments (the Web `<input type=file accept=...>`).
 typedef FeedbackFilePicker = Future<List<SourceFeedbackFile>> Function();
@@ -29,14 +40,13 @@ const _imageTypes = {
 /// The host picker restricted to FEEDBACK_ATTACHMENT_TYPES. Files over the
 /// size limit are not read; the store reports them by name.
 Future<List<SourceFeedbackFile>> pickFeedbackImages() async {
-  final files = await openFiles(
-    acceptedTypeGroups: [
-      XTypeGroup(
-        label: 'Images',
-        extensions: _imageTypes.keys.toList(),
-        mimeTypes: _imageTypes.values.toSet().toList(),
-      ),
-    ],
+  final files = await selectImages(
+    typeGroup: XTypeGroup(
+      label: 'Images',
+      extensions: _imageTypes.keys.toList(),
+      mimeTypes: _imageTypes.values.toSet().toList(),
+      uniformTypeIdentifiers: ['public.image'],
+    ),
   );
   final picked = <SourceFeedbackFile>[];
   for (final file in files) {
@@ -64,9 +74,14 @@ class SourceFeedbackView extends StatefulWidget {
     super.key,
     required this.controller,
     this.onUnreadChanged,
+    this.initialTicketId,
   });
   final WorkspaceController controller;
   final ValueChanged<int>? onUnreadChanged;
+
+  /// `/settings/feedback/ticket/:id` deep link (the Report Issue dialog's
+  /// "View ticket"): the ticket opens once the inbox is read.
+  final String? initialTicketId;
   @override
   State<SourceFeedbackView> createState() => _SourceFeedbackViewState();
 }
@@ -74,6 +89,34 @@ class SourceFeedbackView extends StatefulWidget {
 class _SourceFeedbackViewState extends State<SourceFeedbackView> {
   late SourceFeedbackStore store;
   StreamSubscription<RaftEvent>? session;
+
+  /// The inbox's first page as the last visit accepted it (this session, in
+  /// memory): painted at the first frame while the store's own read runs, so
+  /// a revisit shows rows instead of a skeleton.
+  static const _inboxKey = 'feedback:inbox';
+  List<SourceFeedbackTicket> seed = const [];
+  List<SourceFeedbackTicket> _remembered = const [];
+
+  void rememberInbox() {
+    if (!store.authorized || store.listLoading || store.listError != null) {
+      return;
+    }
+    final rows = store.tickets.take(20).toList(growable: false);
+    if (rows.length == _remembered.length &&
+        [
+          for (var i = 0; i < rows.length; i++)
+            identical(rows[i], _remembered[i]),
+        ].every((same) => same)) {
+      return;
+    }
+    _remembered = rows;
+    writePageSnapshot(
+      widget.controller,
+      _inboxKey,
+      pageIdentity(widget.controller),
+      {'tickets': rows},
+    );
+  }
 
   /// Account/server identity only: the inbox survives channel switches and
   /// thread opens (Source feedback store is account-owned).
@@ -164,14 +207,28 @@ class _SourceFeedbackViewState extends State<SourceFeedbackView> {
         if (mounted && store.authorized) widget.onUnreadChanged?.call(count);
       },
     );
+    final cached = readPageSnapshot(widget.controller, _inboxKey)?['tickets'];
+    seed = cached is List<SourceFeedbackTicket> ? cached : const [];
+    _remembered = seed;
+    store.addListener(rememberInbox);
     widget.controller.addListener(changed);
     session = widget.controller.client.events.listen((_) => changed());
-    unawaited(store.loadList());
+    final ticket = widget.initialTicketId;
+    unawaited(
+      store.loadList().then((_) {
+        if (mounted && ticket != null) return store.openTicket(ticket);
+      }),
+    );
   }
 
   void changed() {
     if (!mounted) return;
-    if (store.syncAuthority()) unawaited(store.loadList());
+    if (store.syncAuthority()) {
+      // Another account/server/role: the previous page is not its inbox.
+      setState(() => seed = const []);
+      _remembered = const [];
+      unawaited(store.loadList());
+    }
   }
 
   @override
@@ -186,6 +243,7 @@ class _SourceFeedbackViewState extends State<SourceFeedbackView> {
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(changed);
       unawaited(session?.cancel());
+      store.removeListener(rememberInbox);
       store.dispose();
       bind();
     }
@@ -195,13 +253,22 @@ class _SourceFeedbackViewState extends State<SourceFeedbackView> {
   void dispose() {
     widget.controller.removeListener(changed);
     unawaited(session?.cancel());
+    store.removeListener(rememberInbox);
     store.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) =>
-      SourceFeedbackProjectionView(store: store, pickFiles: pickFeedbackImages);
+  Widget build(BuildContext context) => SourceFeedbackProjectionView(
+    store: store,
+    pickFiles: pickFeedbackImages,
+    inboxSeed: seed,
+    loadAttachment: (ticketId, attachmentId) =>
+        widget.controller.client.getBytes(
+          '/product-feedback/tickets/${Uri.encodeComponent(ticketId)}'
+          '/attachments/${Uri.encodeComponent(attachmentId)}',
+        ),
+  );
 }
 
 String _status(String status, String? closure) => switch (status) {
@@ -227,7 +294,8 @@ String _errorCopy(SourceFeedbackError error) => switch (error) {
   SourceFeedbackError.unavailable => "Couldn't load feedback. Try again.",
   SourceFeedbackError.unauthorized =>
     'Your feedback session expired. Reopen feedback and try again.',
-  SourceFeedbackError.notFound => 'This feedback ticket is no longer available.',
+  SourceFeedbackError.notFound =>
+    'This feedback ticket is no longer available.',
   SourceFeedbackError.rateLimited =>
     'Too many feedback requests. Try again later.',
   SourceFeedbackError.conflict =>
@@ -322,9 +390,19 @@ class SourceFeedbackProjectionView extends StatefulWidget {
     super.key,
     required this.store,
     this.pickFiles,
+    this.inboxSeed = const [],
+    this.loadAttachment,
   });
   final SourceFeedbackStore store;
   final FeedbackFilePicker? pickFiles;
+
+  /// Reads a ticket's attachment with the session (Web `openAttachment`);
+  /// without it the sent attachments stay plain rows.
+  final FeedbackAttachmentLoader? loadAttachment;
+
+  /// The previous visit's first inbox page, shown instead of the skeleton
+  /// until the store's own read lands.
+  final List<SourceFeedbackTicket> inboxSeed;
 
   @override
   State<SourceFeedbackProjectionView> createState() =>
@@ -464,6 +542,50 @@ class _SourceFeedbackProjectionViewState
     );
   }
 
+  int _previewRequest = 0;
+
+  /// Web `openAttachment`: the screenshot is read with the session, then
+  /// shown in the lightbox; a failure says so and shows nothing. The latest
+  /// tap wins, and an answer for another account or screen is dropped.
+  Future<void> _openSent(String ticketId, SourceFeedbackAttachment file) async {
+    final request = ++_previewRequest;
+    try {
+      if (file.id.isEmpty) throw const RaftApiException('No attachment id');
+      final bytes = await widget.loadAttachment!(ticketId, file.id);
+      if (!mounted || request != _previewRequest || !store.authorized) return;
+      await showFeedbackImage(
+        context,
+        filename: file.filename,
+        contentType: file.contentType,
+        bytes: bytes,
+      );
+    } catch (_) {
+      if (mounted && request == _previewRequest && store.authorized) {
+        showRaftToast(
+          context,
+          'The attachment could not be opened. Try again.',
+        );
+      }
+    }
+  }
+
+  /// Web `openPendingAttachment`: a picked screenshot, before it is sent.
+  void _openPending(String id) {
+    _previewRequest++;
+    for (final item in [...store.newAttachments, ...store.replyAttachments]) {
+      if (item.id != id || item.file.bytes.isEmpty) continue;
+      unawaited(
+        showFeedbackImage(
+          context,
+          filename: item.file.name,
+          contentType: item.file.contentType,
+          bytes: item.file.bytes,
+        ),
+      );
+      return;
+    }
+  }
+
   Future<void> _attach({required bool reply}) async {
     final picker = widget.pickFiles;
     if (picker == null) return;
@@ -509,14 +631,36 @@ class _SourceFeedbackProjectionViewState
     },
   );
 
+  bool _matches(SourceFeedbackTicket t, SourceFeedbackFilter filter) =>
+      switch (filter) {
+        SourceFeedbackFilter.all => true,
+        SourceFeedbackFilter.open =>
+          t.status == 'open' || t.status == 'in_progress',
+        SourceFeedbackFilter.resolved =>
+          t.status == 'resolved' || t.status == 'closed',
+      };
+
   Widget _inbox(BuildContext context) {
-    final rows = store.visibleTickets;
+    // Nothing accepted yet but the previous visit's page is known: show it
+    // while the first read runs (no skeleton, no jump when rows are replaced).
+    final seeded =
+        store.tickets.isEmpty &&
+        store.listLoading &&
+        store.listError == null &&
+        widget.inboxSeed.isNotEmpty;
+    List<SourceFeedbackTicket> ticketsFor(SourceFeedbackFilter filter) => seeded
+        ? [
+            for (final t in widget.inboxSeed)
+              if (_matches(t, filter)) t,
+          ]
+        : store.ticketsForFilter(filter);
+    final rows = ticketsFor(store.filter);
     return RaftFeedbackInbox(
       key: ValueKey((store, store.authority())),
       headerAction: store.canWrite
           ? RaftFeedbackHeaderButton(
               key: const ValueKey('feedback-new'),
-              label: 'New feedback',
+              label: 'New Feedback',
               onPressed: store.startNew,
             )
           : RaftIconButton(
@@ -526,7 +670,7 @@ class _SourceFeedbackProjectionViewState
                   ? null
                   : () => unawaited(store.loadList()),
             ),
-      anyTickets: store.tickets.isNotEmpty,
+      anyTickets: seeded || store.tickets.isNotEmpty,
       filter: switch (store.filter) {
         SourceFeedbackFilter.all => RaftFeedbackFilter.all,
         SourceFeedbackFilter.open => RaftFeedbackFilter.active,
@@ -537,7 +681,7 @@ class _SourceFeedbackProjectionViewState
         RaftFeedbackFilter.active => SourceFeedbackFilter.open,
         RaftFeedbackFilter.ended => SourceFeedbackFilter.resolved,
       }),
-      loading: store.listLoading,
+      loading: store.listLoading && !seeded,
       error: store.listError == null
           ? null
           : raftText(context, _errorCopy(store.listError!)),
@@ -552,7 +696,7 @@ class _SourceFeedbackProjectionViewState
       closeDisabled: store.closing,
       ticketsForFilter: (value) => feedbackRows(
         context,
-        store.ticketsForFilter(switch (value) {
+        ticketsFor(switch (value) {
           RaftFeedbackFilter.all => SourceFeedbackFilter.all,
           RaftFeedbackFilter.active => SourceFeedbackFilter.open,
           RaftFeedbackFilter.ended => SourceFeedbackFilter.resolved,
@@ -610,6 +754,7 @@ class _SourceFeedbackProjectionViewState
         onChanged: store.setNewMessage,
         attachments: _pending(store.newAttachments),
         onRemoveAttachment: store.removeNewAttachment,
+        onOpenAttachment: _openPending,
         onAttachImage: () => unawaited(_attach(reply: false)),
         onAttachFile: () => unawaited(_attach(reply: false)),
         busy: sending,
@@ -630,7 +775,7 @@ class _SourceFeedbackProjectionViewState
             label: sending
                 ? 'Submitting…'
                 : failed
-                ? 'Retry upload'
+                ? 'Retry Upload'
                 : 'Submit',
             variant: RaftButtonRecipeVariant.accent,
             size: RaftButtonRecipeSize.sm,
@@ -680,6 +825,10 @@ class _SourceFeedbackProjectionViewState
               for (final attachment in store.attachments)
                 (attachment.filename, _size(attachment.size)),
             ],
+            onOpenAttachment: widget.loadAttachment == null
+                ? null
+                : (index) =>
+                      unawaited(_openSent(ticket.id, store.attachments[index])),
             footer: [
               RaftFeedbackKindChip(problem: ticket.kind != 'feedback'),
               RaftFeedbackStatusBadge(
@@ -723,6 +872,7 @@ class _SourceFeedbackProjectionViewState
               onSubmit: () => unawaited(store.sendReply()),
               attachments: _pending(store.replyAttachments),
               onRemoveAttachment: store.removeReplyAttachment,
+              onOpenAttachment: _openPending,
               onAttachImage: () => unawaited(_attach(reply: true)),
               onAttachFile: () => unawaited(_attach(reply: true)),
               busy: sending,
@@ -736,7 +886,7 @@ class _SourceFeedbackProjectionViewState
                   glyphSize: 14,
                   tooltip: raftText(
                     context,
-                    sending ? 'Sending…' : 'Send reply',
+                    sending ? 'Sending…' : 'Send Reply',
                   ),
                   variant: RaftButtonRecipeVariant.accent,
                   size: RaftButtonRecipeSize.iconSm,

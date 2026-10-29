@@ -27,6 +27,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../parity_harness.dart';
 import 'thread_composer/fake_workspace.dart';
+import '../../support/app_services_fixture.dart';
 
 Map<String, dynamic> _fx(ParityContext ctx) =>
     ctx.fixtures['ext:taskdetail'] as Map<String, dynamic>;
@@ -105,6 +106,19 @@ WorkspaceController _workspace(ParityContext ctx, {List<dynamic>? board}) {
           {'task': detail['task']},
     'GET /servers/visual-server/members': [
       ...base.serverMembers,
+      // The creator of the fixture tasks (Web resolves it from the channel's
+      // `humans`, fixture `GET /channels/*/members`).
+      {
+        'id': 'visual-user',
+        'userId': 'visual-user',
+        'serverId': 'visual-server',
+        'name': 'artin',
+        'displayName': 'artin',
+        'description': 'Owner',
+        'avatarUrl': null,
+        'email': 'artin@example.test',
+        'role': 'owner',
+      },
       {
         'id': designer['id'],
         'userId': designer['id'],
@@ -131,7 +145,7 @@ WorkspaceController _workspace(ParityContext ctx, {List<dynamic>? board}) {
     ]
     ..dms = const []
     ..section = 'tasks';
-  w.ledger.switchServer('visual-server');
+  w.messageDomain.ledger.switchServer('visual-server');
   if (detail != null) {
     final task = detail['task'] as Map;
     w.navigation.navigateTask(
@@ -154,14 +168,15 @@ class _HostState extends State<_Host> {
   late final WorkspaceController w = _workspace(widget.ctx, board: widget.board);
 
   @override
-  Widget build(BuildContext context) => WorkspaceView(
-    controller: w,
-    appearance: RaftAppearance(
-      mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
-      light: widget.ctx.family,
+  Widget build(BuildContext context) => withAppServices(
+    WorkspaceView(
+      controller: w,
+      appearance: RaftAppearance(
+        mode: widget.ctx.dark ? ThemeMode.dark : ThemeMode.light,
+      ),
+      onAppearance: (_) async {},
+      onLogout: () async {},
     ),
-    onAppearance: (_) async {},
-    onLogout: () async {},
   );
 }
 
@@ -174,7 +189,7 @@ Rect? _window(ParityContext ctx) {
   if (!page || ctx.props['platform'] == 'mobile') {
     return null;
   }
-  final rail = ctx.family == RaftFamily.brutal ? 64.0 : 56.0;
+  final rail = 56.0;
   return Rect.fromLTWH(rail, 0, ctx.width - rail, ctx.height);
 }
 

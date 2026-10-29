@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'review and selection controls work at mobile width: $family/$dark',
+      'review and selection controls work at mobile width: ${dark ? 'dark' : 'light'}',
       (tester) async {
         var selected = 1, copied = 0, saved = 0;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: Align(
                 alignment: Alignment.bottomLeft,
@@ -57,12 +54,12 @@ void main() {
         expect(copied, 1);
         await tester.tap(find.byTooltip('More'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Generate image'));
+        await tester.tap(find.text('Generate Image'));
         await tester.pumpAndSettle();
         expect(find.text('Actual content'), findsOneWidget);
-        await tester.tap(find.text('Save image'));
+        await tester.tap(find.text('Save Image'));
         expect(saved, 1);
-        await tester.tap(find.byTooltip('Close preview'));
+        await tester.tap(find.byTooltip('Close Preview'));
         await tester.pumpAndSettle();
         expect(selected, 3);
         await tester.tap(find.byTooltip('Cancel'));

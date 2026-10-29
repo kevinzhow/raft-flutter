@@ -1,3 +1,6 @@
+@Tags(['look-elegant'])
+library;
+
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -5,15 +8,12 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K09e] $family/$dark actual rail attention paints Source indicator/mask, suppresses active',
+      '[K09e] ${dark ? 'dark' : 'light'} frozen Elegant attention paints Source indicator/mask, suppresses active',
       (tester) async {
         tester.view.physicalSize = const Size(1280, 900);
         tester.view.devicePixelRatio = 1;
@@ -22,7 +22,10 @@ void main() {
         var selected = 'search';
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: Scaffold(
               body: StatefulBuilder(
                 builder: (context, update) => Align(
@@ -68,10 +71,7 @@ void main() {
         );
         expect(tester.getSize(indicator), const Size.square(8));
         final mask = find.byKey(const ValueKey('rail-attention-mask'));
-        expect(
-          mask,
-          family == RaftFamily.brutal ? findsNothing : findsOneWidget,
-        );
+        expect(mask, findsOneWidget);
         final glyphBounds = tester.getRect(attention);
         final indicatorBounds = tester.getRect(indicator);
         expect(indicatorBounds.top, glyphBounds.top - 2);
@@ -82,9 +82,7 @@ void main() {
           theme: tokens.recipeTheme,
           size: RaftStatusRecipeSize.sm,
           attention: true,
-          variant: family == RaftFamily.brutal
-              ? RaftStatusRecipeVariant.accent
-              : RaftStatusRecipeVariant.primary,
+          variant: RaftStatusRecipeVariant.primary,
           states: tokens.recipeStates(),
           tokens: tokens.recipeTokens,
         ).root;
@@ -113,41 +111,35 @@ void main() {
           expect(bytes.getUint8(offset + 1), color >> 8 & 255);
           expect(bytes.getUint8(offset + 2), color & 255);
           // Pinned Chromium147 painted the actual Source recipe expression:
-          // Br [254,125,168], El-light [239,199,61], El-dark [254,218,116].
+          // light [239,199,61], dark [254,218,116].
           // Theme token bytes are already quantized before this local mix;
           // Chrome mixes the original float colours. Retain the one-byte
           // light-green quantization difference, with no colour patch.
-          final source = family == RaftFamily.brutal
-              ? [254, 125, 168]
-              : dark
-              ? [254, 218, 116]
-              : [239, 199, 61];
+          final source = dark ? [254, 218, 116] : [239, 199, 61];
           for (var channel = 0; channel < 3; channel++) {
             expect(
               bytes.getUint8(offset + channel),
               closeTo(source[channel], 1),
             );
           }
-          if (family == RaftFamily.elegant) {
-            // Below the upper-right dot, the real SVG stroke must also gain
-            // the recipe's warm attention tint through the radial mask.
-            final origin =
-                glyphBounds.topLeft - tester.getTopLeft(find.byKey(boundary));
-            var tinted = 0;
-            for (var y = 7; y < glyphBounds.height.floor(); y++) {
-              for (var x = 0; x < glyphBounds.width.floor(); x++) {
-                final pixel =
-                    ((origin.dy.floor() + y) * image.width +
-                        origin.dx.floor() +
-                        x) *
-                    4;
-                if (bytes.getUint8(pixel) - bytes.getUint8(pixel + 2) > 40)
-                  tinted++;
-              }
+          // Below the upper-right dot, the real SVG stroke must also gain
+          // the recipe's warm attention tint through the radial mask.
+          final origin =
+              glyphBounds.topLeft - tester.getTopLeft(find.byKey(boundary));
+          var tinted = 0;
+          for (var y = 7; y < glyphBounds.height.floor(); y++) {
+            for (var x = 0; x < glyphBounds.width.floor(); x++) {
+              final pixel =
+                  ((origin.dy.floor() + y) * image.width +
+                      origin.dx.floor() +
+                      x) *
+                  4;
+              if (bytes.getUint8(pixel) - bytes.getUint8(pixel + 2) > 40)
+                tinted++;
             }
-            expect(tinted, greaterThan(0));
-            expect(find.byType(ImageFiltered), findsOneWidget);
           }
+          expect(tinted, greaterThan(0));
+          expect(find.byType(ImageFiltered), findsOneWidget);
           image.dispose();
         });
         await tester.tap(find.byKey(const ValueKey('rail-chat')));

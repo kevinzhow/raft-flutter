@@ -1,5 +1,5 @@
 {
-  "description": "Account-level announcements both providers render (tool/parity-ext/build-announcements.py). React primes useAnnouncementStore.pending; Flutter serves them from GET /announcements/active.",
+  "description": "Account-level announcements both providers render (tool/parity-ext/build-announcements.py). React primes useAnnouncementStore.pending; Flutter serves them from GET /announcements/active. Web v1.21.12 shows pages[0] only, with an optional label, image and CTA.",
   "announcements": {
     "single": {
       "id": "8d1c2f7e-0001-4b6a-9d7e-000000000001",
@@ -19,7 +19,6 @@
       "title": "What's new in Raft",
       "pages": [
         {
-          "title": "Workspace mode",
           "body": "Open channels, threads and tasks side by side in editor groups.\n\n- Drag a tab to split the view\n- Threads open next to their channel\n- Your layout is restored on the next visit"
         },
         {
@@ -40,7 +39,7 @@
       "title": "Agent upgrades",
       "pages": [
         {
-          "body": "## Faster runtimes\n\nAgents now start in under a second on a warm computer. *No action needed.*\n\n### How to update\n\n1. Open **Computers**\n2. Pick the computer\n3. Press `Upgrade` when it is idle\n\nQuestions? Ask in [#support](https://raft.build/support)."
+          "body": "# Agent upgrades\n\n## Faster runtimes\n\nAgents now start in under a second on a warm computer. *No action needed.*\n\n### How to update\n\n1. Open **Computers**\n2. Pick the computer\n3. Press `Upgrade` when it is idle\n\nQuestions? Ask in [#support](https://raft.build/support)."
         }
       ],
       "publishedAt": "2026-10-03T00:00:00.000Z",
@@ -53,7 +52,6 @@
       "title": "Terms of service update",
       "pages": [
         {
-          "title": "Summary of changes",
           "body": "We are updating our terms of service to describe how agents, computers and integrations act on behalf of your workspace.\n\nThe new terms take effect on November 1. Continuing to use Raft after that date means you accept them.\n\n- Agents act only within the channels they are added to\n- Computer owners stay responsible for the machines they connect\n- Integrations follow the permissions you grant during setup\n- Workspace owners can export and delete workspace data at any time\n\nWe also clarified how billing works for shared computers, how long deleted messages are retained, and how to contact us about privacy requests.\n\nRetention: deleted messages are removed from backups within 30 days. Audit logs are kept for one year for workspaces on paid plans.\n\nPrivacy requests can be sent from Settings, and we answer them within 30 days. If you have questions about these changes, reply in the support channel and a member of the team will get back to you.\n\nThank you for building with Raft."
         }
       ],
@@ -74,6 +72,86 @@
       "startsAt": "2026-10-05T00:00:00.000Z",
       "endsAt": null,
       "locale": "en"
+    },
+    "cta": {
+      "id": "8d1c2f7e-0011-4b6a-9d7e-000000000011",
+      "title": "Joint channels are here",
+      "pages": [
+        {
+          "body": "Connect a channel with another server and talk in one place.\n\n- Invite a server by its slug\n- Both sides keep their own members"
+        }
+      ],
+      "publishedAt": "2026-10-06T00:00:00.000Z",
+      "startsAt": "2026-10-06T00:00:00.000Z",
+      "endsAt": null,
+      "locale": "en",
+      "label": "Release",
+      "cta": {
+        "label": "Create a joint channel",
+        "href": "?dialog=create-joint-channel"
+      }
+    },
+    "cta-long": {
+      "id": "8d1c2f7e-0012-4b6a-9d7e-000000000012",
+      "title": "Migration window",
+      "pages": [
+        {
+          "body": "Your computers move to the new runtime this week."
+        }
+      ],
+      "publishedAt": "2026-10-06T00:00:00.000Z",
+      "startsAt": "2026-10-06T00:00:00.000Z",
+      "endsAt": null,
+      "locale": "en",
+      "cta": {
+        "label": "Read the full migration guide and the list of changes for every runtime",
+        "href": "https://docs.raft.build/migration"
+      }
+    },
+    "image": {
+      "id": "8d1c2f7e-0013-4b6a-9d7e-000000000013",
+      "title": "A new look for channels",
+      "pages": [
+        {
+          "body": "Channels now show a picture next to the update so you can see the change at a glance.\n\nOpen **Settings** to try it."
+        }
+      ],
+      "publishedAt": "2026-10-06T00:00:00.000Z",
+      "startsAt": "2026-10-06T00:00:00.000Z",
+      "endsAt": null,
+      "locale": "en",
+      "label": "Feature",
+      "image": {
+        "assetId": "8d1c2f7e-00a1-4b6a-9d7e-0000000000a1",
+        "alt": "Channel picture"
+      },
+      "cta": {
+        "label": "Read more",
+        "href": "https://raft.build/changelog"
+      }
+    },
+    "image-only": {
+      "id": "8d1c2f7e-0014-4b6a-9d7e-000000000014",
+      "title": "Picture without a button",
+      "pages": [
+        {
+          "body": "A plain update with a picture."
+        }
+      ],
+      "publishedAt": "2026-10-06T00:00:00.000Z",
+      "startsAt": "2026-10-06T00:00:00.000Z",
+      "endsAt": null,
+      "locale": "en",
+      "image": {
+        "assetId": "8d1c2f7e-00a1-4b6a-9d7e-0000000000a1",
+        "alt": "Channel picture"
+      }
+    }
+  },
+  "routes": {
+    "GET /announcements/images/8d1c2f7e-00a1-4b6a-9d7e-0000000000a1": {
+      "$file": "announcement-picture.png",
+      "$contentType": "image/png"
     }
   }
 }

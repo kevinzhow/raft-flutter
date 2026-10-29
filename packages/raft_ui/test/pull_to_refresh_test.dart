@@ -4,26 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final empty in [false, true]) {
       testWidgets(
-        '$family/$dark empty=$empty pulls once and retains content while busy',
+        '${dark ? 'dark' : 'light'} empty=$empty pulls once and retains content while busy',
         (t) async {
           final gate = Completer<void>();
           var reads = 0;
           final semantics = t.ensureSemantics();
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(
-                family,
-                dark: dark,
-              ).copyWith(platform: TargetPlatform.android),
+              theme: raftTheme(dark: dark)
+                  .copyWith(platform: TargetPlatform.android),
               home: Scaffold(
                 body: RaftPullToRefresh(
                   onRefresh: () {
@@ -72,7 +67,7 @@ void main() {
       var reads = 0;
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: Column(
               children: [

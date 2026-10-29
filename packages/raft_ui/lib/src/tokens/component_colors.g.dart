@@ -1,5 +1,5 @@
 // GENERATED — do not edit. Regenerate with `tool/gen-tokens`.
-// Source: component-roles.css over raft-ui-0.5.27/foundation.css, raft-ui-0.5.27/styles.css, raft-web-26f77ef/index.css
+// Source: component-roles.css over raft-ui-0.5.52/foundation.css, raft-ui-0.5.52/styles.css, raft-web-a98ae00/index.css
 // dart format off
 // ignore_for_file: constant_identifier_names, lines_longer_than_80_chars
 
@@ -10,7 +10,8 @@ import 'package:flutter/foundation.dart';
 /// Tier 3: component colour roles from tool/design-source/component-roles.css.
 ///
 /// Each role is the CSS a raft-ui recipe class resolves to (see the comment
-/// on each role in the .css file); values resolve through the same cascade.
+/// on each role in the .css file). Values: see [RaftSemanticColors] and
+/// raft_token_mapping.dart.
 @immutable
 class RaftComponentColors {
   const RaftComponentColors({
@@ -38,6 +39,37 @@ class RaftComponentColors {
     required this.switchThumbCheckedDisabled,
     required this.switchShadowBottom,
   });
+
+  /// Builds the tier from a map keyed by CSS custom-property name (without `--`); throws
+  /// a [StateError] naming the first missing key, so no field can be left unmapped.
+  factory RaftComponentColors.fromCssMap(Map<String, Color> map) {
+    Color of(String key) => map[key] ?? (throw StateError('RaftComponentColors: no value for $key'));
+    return RaftComponentColors(
+      primary: of('primary'),
+      accent: of('accent'),
+      brutalCream: of('brutal-cream'),
+      buttonDefaultFill: of('button-default-fill'),
+      buttonDefaultHover: of('button-default-hover'),
+      buttonPrimaryHover: of('button-primary-hover'),
+      buttonAccentHover: of('button-accent-hover'),
+      buttonAccentEdge: of('button-accent-edge'),
+      buttonDangerFill: of('button-danger-fill'),
+      buttonDangerHover: of('button-danger-hover'),
+      buttonDangerForeground: of('button-danger-foreground'),
+      buttonDangerHighContrast: of('button-danger-high-contrast'),
+      buttonDangerHighContrastForeground: of('button-danger-high-contrast-foreground'),
+      taskSectionFill: of('task-section-fill'),
+      codeBorder: of('code-border'),
+      fieldInsetLine: of('field-inset-line'),
+      fieldInsetTop: of('field-inset-top'),
+      fieldInsetBottom: of('field-inset-bottom'),
+      switchThumb: of('switch-thumb'),
+      switchThumbChecked: of('switch-thumb-checked'),
+      switchThumbDisabled: of('switch-thumb-disabled'),
+      switchThumbCheckedDisabled: of('switch-thumb-checked-disabled'),
+      switchShadowBottom: of('switch-shadow-bottom'),
+    );
+  }
 
   /// `--primary`
   final Color primary;
@@ -86,6 +118,33 @@ class RaftComponentColors {
   /// `--switch-shadow-bottom`
   final Color switchShadowBottom;
 
+  /// Every CSS name of this tier, in field order (without the leading `--`).
+  static const List<String> cssNames = [
+    'primary',
+    'accent',
+    'brutal-cream',
+    'button-default-fill',
+    'button-default-hover',
+    'button-primary-hover',
+    'button-accent-hover',
+    'button-accent-edge',
+    'button-danger-fill',
+    'button-danger-hover',
+    'button-danger-foreground',
+    'button-danger-high-contrast',
+    'button-danger-high-contrast-foreground',
+    'task-section-fill',
+    'code-border',
+    'field-inset-line',
+    'field-inset-top',
+    'field-inset-bottom',
+    'switch-thumb',
+    'switch-thumb-checked',
+    'switch-thumb-disabled',
+    'switch-thumb-checked-disabled',
+    'switch-shadow-bottom',
+  ];
+
   /// All tokens keyed by CSS custom-property name (without the leading `--`).
   Map<String, Color> toCssMap() => {
     'primary': primary,
@@ -112,162 +171,4 @@ class RaftComponentColors {
     'switch-thumb-checked-disabled': switchThumbCheckedDisabled,
     'switch-shadow-bottom': switchShadowBottom,
   };
-
-  /// `brutal-light` resolved values.
-  static const brutal = RaftComponentColors(
-    // var(--color-brutal-yellow)
-    primary: Color(0xffffd440),
-    // var(--color-brutal-pink)
-    accent: Color(0xfffe7da8),
-    // var(--color-brutal-cream)
-    brutalCream: Color(0xfffffaef),
-    // var(--foreground)
-    buttonDefaultFill: Color(0xff141110),
-    // oklch(0.31 0.006 106.42)
-    buttonDefaultHover: Color(0xff31312d),
-    // var(--primary-hover)
-    buttonPrimaryHover: Color(0xfff6cc3e),
-    // var(--accent-hover)
-    buttonAccentHover: Color(0xfff578a2),
-    // color-mix(in srgb-linear, var(--accent-strong) 28%, transparent)
-    // Chrome-composite fit, CSS alpha 0.28 (see docs/design-tokens.md)
-    buttonAccentEdge: Color.from(alpha: 0.280000, red: 0.757003, green: 0.001751, blue: 0.393585),
-    // var(--danger)
-    buttonDangerFill: Color(0xfff70720),
-    // var(--danger-hover)
-    buttonDangerHover: Color(0xffe5061d),
-    // var(--danger-foreground)
-    buttonDangerForeground: Color(0xffffffff),
-    // var(--color-brutal-red-700)
-    buttonDangerHighContrast: Color(0xff8e2510),
-    // var(--color-white)
-    buttonDangerHighContrastForeground: Color(0xffffffff),
-    // transparent
-    taskSectionFill: Color(0x00000000),
-    // var(--color-black)
-    codeBorder: Color(0xff000000),
-    // transparent
-    fieldInsetLine: Color(0x00000000),
-    // transparent
-    fieldInsetTop: Color(0x00000000),
-    // transparent
-    fieldInsetBottom: Color(0x00000000),
-    // var(--line-strong)
-    switchThumb: Color(0xff141110),
-    // var(--line-strong)
-    switchThumbChecked: Color(0xff141110),
-    // var(--line)
-    switchThumbDisabled: Color(0xff141110),
-    // var(--line)
-    switchThumbCheckedDisabled: Color(0xff141110),
-    // transparent
-    switchShadowBottom: Color(0x00000000),
-  );
-  /// `elegant-light` resolved values.
-  static const elegantLight = RaftComponentColors(
-    // var(--primary-400)
-    primary: Color(0xffffd441),
-    // var(--accent-400)
-    accent: Color(0xfffe7da8),
-    // var(--color-brutal-cream)
-    brutalCream: Color(0xfffffaef),
-    // var(--foreground)
-    buttonDefaultFill: Color(0xff191815),
-    // oklch(0.31 0.006 106.42)
-    buttonDefaultHover: Color(0xff31312d),
-    // var(--primary-hover)
-    buttonPrimaryHover: Color(0xfff3e4b3),
-    // var(--accent-hover)
-    buttonAccentHover: Color(0xfff8cad8),
-    // color-mix(in srgb-linear, var(--accent-strong) 28%, transparent)
-    // Chrome-composite fit, CSS alpha 0.28 (see docs/design-tokens.md)
-    buttonAccentEdge: Color.from(alpha: 0.280000, red: 0.757423, green: 0.001751, blue: 0.393585),
-    // var(--danger)
-    buttonDangerFill: Color(0xfff70720),
-    // var(--danger-hover)
-    buttonDangerHover: Color(0xffe50b1e),
-    // var(--danger-foreground)
-    buttonDangerForeground: Color(0xffffffff),
-    // var(--color-brutal-red-700)
-    buttonDangerHighContrast: Color(0xff8e2510),
-    // var(--color-white)
-    buttonDangerHighContrastForeground: Color(0xffffffff),
-    // color-mix(in oklch, var(--ink-4), var(--layer-panel))
-    // Chrome-composite fit, CSS alpha 0.52 (see docs/design-tokens.md)
-    taskSectionFill: Color.from(alpha: 0.520000, red: 0.962519, green: 0.962670, blue: 0.962368),
-    // var(--line)
-    codeBorder: Color(0xffcbcbc6),
-    // transparent
-    fieldInsetLine: Color(0x00000000),
-    // transparent
-    fieldInsetTop: Color(0x00000000),
-    // transparent
-    fieldInsetBottom: Color(0x00000000),
-    // var(--layer-popover)
-    switchThumb: Color(0xffffffff),
-    // var(--layer-popover)
-    switchThumbChecked: Color(0xffffffff),
-    // oklch(0.88 0.004 106.42)
-    switchThumbDisabled: Color(0xffd8d8d5),
-    // oklch(0.88 0.004 106.42)
-    switchThumbCheckedDisabled: Color(0xffd8d8d5),
-    // transparent
-    switchShadowBottom: Color(0x00000000),
-  );
-  /// `elegant-dark` resolved values.
-  static const elegantDark = RaftComponentColors(
-    // var(--primary-400)
-    primary: Color(0xffffd441),
-    // var(--accent-400)
-    accent: Color(0xfffe7da8),
-    // var(--color-brutal-cream)
-    brutalCream: Color(0xfffffaef),
-    // var(--ink)
-    buttonDefaultFill: Color(0xfffafaf7),
-    // var(--foreground-strong)
-    buttonDefaultHover: Color(0xffe5e5e2),
-    // var(--primary-hover)
-    // Chrome-composite fit, CSS alpha 0.3448 (see docs/design-tokens.md)
-    buttonPrimaryHover: Color.from(alpha: 0.345106, red: 0.836486, green: 0.711489, blue: 0.348307),
-    // var(--accent-hover)
-    // Chrome-composite fit, CSS alpha 0.3448 (see docs/design-tokens.md)
-    buttonAccentHover: Color.from(alpha: 0.345106, red: 0.950120, green: 0.563765, blue: 0.691403),
-    // color-mix(in srgb-linear, var(--accent-strong) 28%, transparent)
-    // Chrome-composite fit, CSS alpha 0.28 (see docs/design-tokens.md)
-    buttonAccentEdge: Color.from(alpha: 0.280000, red: 0.998249, green: 0.675490, blue: 0.781793),
-    // oklch(0.58 0.21 27)
-    buttonDangerFill: Color(0xffdb2c2b),
-    // oklch(0.61 0.21 27)
-    buttonDangerHover: Color(0xffe63935),
-    // oklch(0.985 0.004 106.42)
-    buttonDangerForeground: Color(0xfffafaf7),
-    // var(--color-brutal-red-700)
-    buttonDangerHighContrast: Color(0xff8e2510),
-    // var(--color-white)
-    buttonDangerHighContrastForeground: Color(0xffffffff),
-    // var(--layer-card)
-    taskSectionFill: Color(0xff1b1b19),
-    // var(--line)
-    codeBorder: Color(0xff757571),
-    // oklch(0 0 0 / 0.35)
-    // Chrome-composite fit, CSS alpha 0.35 (see docs/design-tokens.md)
-    fieldInsetLine: Color.from(alpha: 0.350980, red: 0.000175, green: 0.000175, blue: 0.000526),
-    // oklch(0 0 0 / 0.3)
-    // Chrome-composite fit, CSS alpha 0.3 (see docs/design-tokens.md)
-    fieldInsetTop: Color.from(alpha: 0.303922, red: 0.001423, green: 0.001423, blue: 0.000316),
-    // oklch(0.985 0.004 106.42 / 0.04)
-    // Chrome-composite fit, CSS alpha 0.04 (see docs/design-tokens.md)
-    fieldInsetBottom: Color.from(alpha: 0.039203, red: 0.954685, green: 0.954685, blue: 0.969524),
-    // oklch(0.45 0.006 106.42)
-    switchThumb: Color(0xff555552),
-    // oklch(0.205 0.004 106.42)
-    switchThumbChecked: Color(0xff171715),
-    // oklch(0.38 0.002 106.42)
-    switchThumbDisabled: Color(0xff424241),
-    // oklch(0.28 0.002 106.42)
-    switchThumbCheckedDisabled: Color(0xff292928),
-    // oklch(0.985 0.004 106.42 / 0.04)
-    // Chrome-composite fit, CSS alpha 0.04 (see docs/design-tokens.md)
-    switchShadowBottom: Color.from(alpha: 0.039203, red: 0.954685, green: 0.954685, blue: 0.969524),
-  );
 }

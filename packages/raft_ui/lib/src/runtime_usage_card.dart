@@ -1,3 +1,6 @@
+import 'interaction.dart';
+import 'hover_region.dart';
+
 import 'package:flutter/material.dart';
 
 import 'agent_profile.dart' show RaftRecipeBadge, RaftRecipeTextButton;
@@ -5,9 +8,8 @@ import 'design_primitives.dart';
 import 'dialog_card.dart' show RaftCloseButton;
 import 'hover_card.dart';
 import 'icons.dart';
-import 'indicators.dart' show RaftProgressBar, RaftWebPalette;
+import 'indicators.dart' show RaftProgressBar;
 import 'localization.dart';
-import 'panel_layout.dart' show raftPanelInk;
 import 'recipe_surface.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart';
@@ -109,10 +111,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final ink = _UsageInk(t);
-    final rule = BorderSide(
-      color: t.brutal ? Colors.black : t.colors['line-muted']!,
-      width: 2,
-    );
+    final rule = BorderSide(color: t.colors['line-muted']!, width: 2);
     return Column(
       key: ValueKey('runtime-usage-surface-${data.provider.toLowerCase()}'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -135,21 +134,20 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
                       style: ink.sans(14, 20, ink.strong, FontWeight.w900),
                     ),
                     Text(
-                      (data.version?.trim().isNotEmpty == true
-                              ? raftFormat(context, 'Version {version}', {
-                                  'version': data.version!.trim(),
-                                })
-                              : raftText(context, 'Version unavailable'))
-                          .toUpperCase(),
+                      data.version?.trim().isNotEmpty == true
+                          ? raftFormat(context, 'Version {version}', {
+                              'version': data.version!.trim(),
+                            })
+                          : raftText(context, 'Version unavailable'),
                       key: const ValueKey('runtime-usage-version'),
-                      style: ink.eyebrow(ink.muted(.55)),
+                      style: ink.eyebrow(ink.muted),
                     ),
                     Text(
                       raftText(
                         context,
-                        'Visible with Computer edit permission or to the person who attached this Computer',
-                      ).toUpperCase(),
-                      style: ink.eyebrow(ink.muted(.45)),
+                        'Visible with computer edit permission or to the person who attached this computer',
+                      ),
+                      style: ink.eyebrow(ink.muted),
                     ),
                   ],
                 ),
@@ -157,7 +155,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
               const SizedBox(width: 12),
               RaftCloseButton(
                 onPressed: onClose,
-                tooltip: 'Close runtime usage',
+                tooltip: 'Close Runtime Usage',
               ),
             ],
           ),
@@ -172,7 +170,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
                 child: Text(
                   data.footer,
                   key: const ValueKey('runtime-usage-footer'),
-                  style: ink.sans(11, 16.5, ink.muted(.5)),
+                  style: ink.sans(11, 16.5, ink.muted),
                 ),
               ),
               const SizedBox(width: 12),
@@ -204,7 +202,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
         padding: pad,
         child: Text(
           raftText(context, 'Reading cached snapshot…'),
-          style: ink.sans(14, 20, ink.muted(.5)),
+          style: ink.sans(14, 20, ink.muted),
         ),
       );
     }
@@ -247,25 +245,18 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
             Text(
               raftText(
                 context,
-                'A bounded refresh was requested from this Computer. Provider credentials never leave it.',
+                'A bounded refresh was requested from this computer. Provider credentials never leave it.',
               ),
-              style: ink.sans(12, 20, ink.muted(.55)),
+              style: ink.sans(12, 20, ink.muted),
             ),
           ],
         ),
       );
     }
     final stale = data.state == 'stale';
-    final divider = BorderSide(
-      color: t.brutal
-          ? Colors.black.withValues(alpha: .15)
-          : t.colors['line-muted']!,
-      width: t.brutal ? 2 : 1,
-    );
+    final divider = BorderSide(color: t.colors['line-muted']!, width: 1);
     return ColoredBox(
-      color: stale
-          ? (t.brutal ? RaftWebPalette.gray50 : t.colors['layer-inset']!)
-          : (t.brutal ? Colors.white : t.colors['layer-panel']!),
+      color: stale ? (t.colors['layer-inset']!) : (t.colors['layer-panel']!),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -273,14 +264,9 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: t.brutal
-                    ? t.product.brutalOrange.withValues(alpha: .2)
-                    : t.colors['warning-soft'],
+                color: t.colors['warning-soft'],
                 border: Border(
-                  bottom: BorderSide(
-                    color: t.brutal ? Colors.black : t.colors['line-muted']!,
-                    width: 2,
-                  ),
+                  bottom: BorderSide(color: t.colors['line-muted']!, width: 2),
                 ),
               ),
               child: Text(
@@ -291,7 +277,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
                 style: ink.sans(
                   12,
                   16,
-                  t.brutal ? Colors.black : t.colors['warning-strong']!,
+                  t.colors['warning-strong']!,
                   FontWeight.w700,
                 ),
               ),
@@ -311,19 +297,14 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(
-                  color: t.brutal
-                      ? Colors.black.withValues(alpha: .15)
-                      : t.colors['line-muted']!,
-                  width: 2,
-                ),
+                top: BorderSide(color: t.colors['line-muted']!, width: 2),
               ),
             ),
             child: Text(
               raftFormat(context, 'Account-wide · updated {updated}', {
                 'updated': data.updated ?? raftText(context, 'recently'),
               }),
-              style: ink.sans(11, 16.5, ink.muted(.5)),
+              style: ink.sans(11, 16.5, ink.muted),
             ),
           ),
         ],
@@ -340,8 +321,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
       'unsupported' =>
         'Account usage is unavailable for this runtime or sign-in method.',
       'error' => 'Cached usage could not be read.',
-      'reauth_required' =>
-        'Sign in again on this Computer. Last-known percentages are hidden until the provider authenticates.',
+      'reauth_required' => 'Sign in again on this computer. Last-known percentages are hidden until the provider authenticates.',
       _ => null,
     };
     return Column(
@@ -367,7 +347,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
                         account.identity!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: ink.sans(12, 16, ink.muted(.5)),
+                        style: ink.sans(12, 16, ink.muted),
                       ),
                     ),
                 ],
@@ -380,7 +360,6 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
               variant: account.health == 'ok'
                   ? RaftBadgeRecipeVariant.success
                   : RaftBadgeRecipeVariant.warning,
-              uppercase: true,
             ),
           ],
         ),
@@ -389,7 +368,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
             padding: const EdgeInsets.only(top: 12),
             child: Text(
               raftText(context, note),
-              style: ink.sans(12, 20, ink.muted(.6)),
+              style: ink.sans(12, 20, ink.muted),
             ),
           )
         else
@@ -430,7 +409,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
                             16,
                             window.status == 'parse_unavailable'
                                 ? ink.t.product.brutalOrange
-                                : ink.muted(.55),
+                                : ink.muted,
                           ),
                         ),
                       ),
@@ -461,9 +440,8 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
 class _UsageInk {
   _UsageInk(this.t);
   final RaftTokens t;
-  Color get strong => t.brutal ? Colors.black : t.colors['foreground-strong']!;
-  Color muted(double brutal) =>
-      raftPanelInk(t, brutal, t.colors['foreground-muted']!);
+  Color get strong => t.colors['foreground-strong']!;
+  Color get muted => t.colors['foreground-muted']!;
   TextStyle sans(double size, double line, Color color, [FontWeight? w]) =>
       raftCssText.merge(
         RaftTypography.body(
@@ -475,9 +453,8 @@ class _UsageInk {
         ),
       );
 
-  /// `text-[10px] font-bold uppercase tracking-wide`.
-  TextStyle eyebrow(Color color) =>
-      sans(10, 15, color, FontWeight.w700).copyWith(letterSpacing: .25);
+  /// `text-[10px] font-bold`.
+  TextStyle eyebrow(Color color) => sans(10, 15, color, FontWeight.w700);
 }
 
 /// Web RuntimeAccountUsageChip trigger + hover card: the runtime Badge as a
@@ -520,8 +497,9 @@ class _RaftRuntimeUsageChipState extends State<RaftRuntimeUsageChip> {
     super.dispose();
   }
 
-  /// Web `useMediaQuery("(max-width: 767px)")`.
-  bool get mobile => MediaQuery.sizeOf(context).width < 768;
+  /// Web `useMediaQuery("(max-width: 767px)")` stands in for "no hover" there.
+  /// A finger taps a sheet; a pointer hovers a card, at any window width.
+  bool get mobile => RaftInteraction.of(context).touch;
 
   @override
   Widget build(BuildContext context) {
@@ -581,7 +559,7 @@ class _RaftRuntimeUsageChipState extends State<RaftRuntimeUsageChip> {
             card.open(pinned: true);
           }
         },
-        builder: (context, state) => MouseRegion(
+        builder: (context, state) => RaftHoverRegion(
           cursor: SystemMouseCursors.help,
           child: DecoratedBox(
             position: DecorationPosition.foreground,

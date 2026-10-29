@@ -28,11 +28,14 @@ class NativeSharingBridge(private val activity: Activity, engine: FlutterEngine,
                     val raw = call.argument<String>("uri") ?: ""
                     val path = call.argument<String>("path") ?: ""
                     val limit = call.argument<Number>("limit")?.toLong() ?: 0L
+                    val progressId = call.argument<Number>("id")?.toInt()
                     val uri = Uri.parse(raw)
                     if (uri.scheme != "content" || uri.authority.isNullOrEmpty() || limit <= 0 || limit > 25L * 1024 * 1024) {
                         result.error("invalid", "Invalid shared file.", null)
                     } else io.execute {
                         var destination: File? = null
+                        // Failure kinds the share page tells apart: too_large, permission, unreadable.
+                        var code = "copy_failed"
                         try {
                             val root = File(activity.noBackupFilesDir, "raft-incoming").canonicalFile
                             val file = File(path).canonicalFile
@@ -41,25 +44,45 @@ class NativeSharingBridge(private val activity: Activity, engine: FlutterEngine,
                                 file.name.matches(Regex("item-[0-8]")) && !file.exists())
                             destination = file
                             var count = 0L
-                            activity.contentResolver.openInputStream(uri)?.use { input ->
+                            var reported = 0L
+                            var reportedAt = 0L
+                            // Byte progress for the share page: at most ~10 updates per second.
+                            fun report(force: Boolean) {
+                                val now = android.os.SystemClock.uptimeMillis()
+                                if (progressId == null || count == reported || (!force && now - reportedAt < 100)) return
+                                reported = count
+                                reportedAt = now
+                                val bytes = count
+                                activity.runOnUiThread {
+                                    if (!disposed) channel.invokeMethod("copyProgress", mapOf("id" to progressId, "bytes" to bytes))
+                                }
+                            }
+                            val input = try { activity.contentResolver.openInputStream(uri) }
+                                catch (e: SecurityException) { code = "permission"; throw e }
+                                catch (e: java.io.FileNotFoundException) { code = "unreadable"; throw e }
+                            (input ?: run { code = "unreadable"; error("Shared file unavailable") }).use { stream ->
                                 file.outputStream().use { output ->
                                     val buffer = ByteArray(64 * 1024)
                                     while (true) {
                                         check(!Thread.currentThread().isInterrupted)
-                                        val read = input.read(buffer)
+                                        val read = try { stream.read(buffer) }
+                                            catch (e: SecurityException) { code = "permission"; throw e }
+                                            catch (e: java.io.IOException) { code = "unreadable"; throw e }
                                         if (read < 0) break
                                         count += read
-                                        require(count <= limit)
+                                        if (count > limit) { code = "too_large"; throw IllegalArgumentException("limit") }
                                         output.write(buffer, 0, read)
+                                        report(false)
                                     }
                                     output.fd.sync()
                                 }
-                            } ?: error("Shared file unavailable")
-                            require(count > 0)
+                            }
+                            if (count <= 0) { code = "empty"; throw IllegalStateException("empty") }
+                            report(true)
                             activity.runOnUiThread { if (!disposed) result.success(count) }
                         } catch (_: Exception) {
                             destination?.delete()
-                            activity.runOnUiThread { if (!disposed) result.error("copy_failed", "The shared file could not be copied.", null) }
+                            activity.runOnUiThread { if (!disposed) result.error(code, "The shared file could not be copied.", null) }
                         }
                     }
                 }

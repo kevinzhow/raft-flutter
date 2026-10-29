@@ -14,7 +14,7 @@
 ///     if (pressed) RaftRecipeStates.active,
 ///     if (focused) RaftRecipeStates.focusVisible,
 ///     if (!enabled) RaftRecipeStates.disabled,
-///     if (isElegantDark) RaftRecipeStates.dark,
+///     if (isDark) RaftRecipeStates.dark,
 ///   }),
 ///   tokens: tokens,
 /// );

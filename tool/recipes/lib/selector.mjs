@@ -6,6 +6,8 @@
 //   'aria-disabled=true' 'data-loading=true' 'data-open'  attribute selectors on the element
 //   'dark'                                                raft-ui `dark` custom variant
 //   'not:disabled'                                        negated atom
+//   'is(a,button)'                                        element-type alternatives (raft-ui `[a,button]:` variant);
+//                                                         inert in Flutter, like the bare type atoms 'a' / 'button'
 //   'has:data-icon=inline-start' 'has:>data-slot=x'       :has() relative selector
 //   'group:hover' 'group/name:data-open'                  ancestor group state
 //   'peer:checked'                                        preceding sibling peer state
@@ -232,7 +234,11 @@ function attrAtom(raw) {
   return op === '=' ? `${name}=${value}` : `${name}${op}${value}`;
 }
 
-const isDarkWhere = (args) => /data-theme="elegant"/.test(args) && /\.(dark|light)\b/.test(args);
+// raft-ui <= 0.5 scoped `dark` to `[data-theme="elegant"]`; 0.6+ defines it as the nearest
+// explicit `.dark` ancestor (a `.light` island re-enters light) or, with no mode class on
+// the root, the system preference (`@media (prefers-color-scheme: dark)` -> also 'dark').
+const isDarkWhere = (args) =>
+  (/data-theme="elegant"/.test(args) && /\.(dark|light)\b/.test(args)) || (/\.dark\b/.test(args) && /\.light\b/.test(args));
 
 // Atoms for a list of simples (excluding the element's own class / '*').
 function atomsOf(simples, ctx) {

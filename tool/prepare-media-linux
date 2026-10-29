@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Prepare a host-matched media runtime locally; never install host packages."""
 import hashlib, json, os, pathlib, re, shutil, subprocess
+from media_linux_sources import download_pinned
 R = pathlib.Path(__file__).resolve().parent.parent
 work = R / '.local/media-linux'
 downloads, extracted, bundle = work / 'downloads', work / 'root', work / 'bundle'
@@ -22,10 +23,11 @@ for folder in (downloads, extracted, bundle / 'libs', bundle / 'notices'):
     folder.mkdir(parents=True, exist_ok=True)
 packages = []
 for name, version in pins.items():
-    debs = list(downloads.glob(f'{name}_*.deb'))
-    if not any(run(['dpkg-deb', '-f', str(d), 'Version']) == version for d in debs):
-        subprocess.check_call(['apt-get', 'download', f'{name}={version}'], cwd=downloads)
-    deb = next(d for d in downloads.glob(f'{name}_*.deb') if run(['dpkg-deb', '-f', str(d), 'Version']) == version)
+    # Ubuntu 26.04 also serves amd64v3 builds with the same package/version.
+    # Fetch the exact generic binary whose hash was already approved.
+    deb = download_pinned(name, version, hashes[name], downloads)
+    if run(['dpkg-deb', '-f', str(deb), 'Version']) != version:
+        raise SystemExit(f'Pinned package version does not match: {name}')
     if hashlib.sha256(deb.read_bytes()).hexdigest() != hashes[name]:
         raise SystemExit(f'Pinned package SHA-256 does not match: {name}')
     subprocess.check_call(['dpkg-deb', '-x', str(deb), str(extracted)])

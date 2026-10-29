@@ -4,6 +4,8 @@
 // card of the current stage (connect, OAuth, channel pairs, preflight, enable,
 // health), plus the disconnect action. The app adapter owns the provisioning
 // requests, the draft channel pairs and every transition.
+import 'steps.dart';
+
 import 'package:flutter/material.dart';
 
 import 'banner.dart';
@@ -17,7 +19,6 @@ import 'select_field.dart';
 import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
-import 'tokens/shadows.g.dart';
 
 /// `settings.slackBridge.*` option of a channel select.
 typedef RaftSlackOption = ({String value, String label, bool enabled});
@@ -70,6 +71,8 @@ class RaftSlackWizardView extends StatelessWidget {
     this.failingSurface,
     this.recoveryTitle,
     this.recoveryDescription,
+    this.mentionSyncTitle,
+    this.mentionSyncDescription,
     this.inviteStepsOpen = false,
     this.onToggleInviteSteps,
     this.onManage,
@@ -79,6 +82,7 @@ class RaftSlackWizardView extends StatelessWidget {
     this.onDisconnect,
     this.onDisconnectCancel,
     this.onDisconnectConfirm,
+    this.onReauthorize,
   });
 
   final RaftSlackStage stage;
@@ -103,11 +107,19 @@ class RaftSlackWizardView extends StatelessWidget {
   final String healthState, healthReason, healthAction;
   final String? lastVerified, failingSurface;
   final String? recoveryTitle, recoveryDescription;
+
+  /// `agentMentionSync` hint: Raft members that Slack's @ menu could not list
+  /// (a Slack-side limit; delivery by typed @name still works).
+  final String? mentionSyncTitle, mentionSyncDescription;
   final bool inviteStepsOpen;
   final VoidCallback? onToggleInviteSteps, onManage;
 
   final bool canDisconnect, disconnectConfirming;
   final VoidCallback? onDisconnect, onDisconnectCancel, onDisconnectConfirm;
+
+  /// `canReauthorize`: re-runs Slack OAuth for the connected workspace (the
+  /// server keeps its channel pairs). Offered next to Disconnect, null hides it.
+  final VoidCallback? onReauthorize;
 
   /// `fg/alpha` over [bg] as Chromium composites it. Brutal fills match a
   /// premultiplied model (alpha quantised to 8 bits, half-way rounding down,
@@ -133,28 +145,24 @@ class RaftSlackWizardView extends StatelessWidget {
     double? line,
     FontWeight weight = FontWeight.w400,
     Color? color,
-    double tracking = 0,
   }) => RaftTypography.heading(
     t,
     size: size,
     line: line ?? size * 1.5,
     weight: weight,
-  ).copyWith(color: color ?? t.strong, letterSpacing: tracking);
+  ).copyWith(color: color ?? t.strong);
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final s = RaftSettingsText(t);
-    final strong = s.strong,
-        muted = t.brutal ? Colors.black.withValues(alpha: .6) : t.muted;
+    final strong = s.strong, muted = t.muted;
     return RaftSnappedDecoratedBox(
       key: const ValueKey('slack-bridge-wizard'),
       padding: const EdgeInsets.all(16),
       decoration: RaftSettingsCard.decoration(t).copyWith(
-        color: t.brutal
-            ? t.colors['brutal-cream']
-            : t.colors['layer-canvas-muted'],
-        borderRadius: BorderRadius.circular(t.brutal ? 0 : 8),
+        color: t.colors['layer-canvas-muted'],
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -174,15 +182,28 @@ class RaftSlackWizardView extends StatelessWidget {
           _stageCard(context, t, s, strong, muted),
           if (canDisconnect && !disconnectConfirming) ...[
             const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: RaftSettingsRecipeButton(
-                key: const ValueKey('slack-bridge-disconnect'),
-                label: 'Disconnect Slack workspace',
-                variant: RaftButtonRecipeVariant.danger,
-                size: RaftButtonRecipeSize.sm,
-                onPressed: busy ? null : onDisconnect,
-              ),
+            // `flex flex-wrap justify-end gap-2`
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (onReauthorize != null)
+                  RaftSettingsRecipeButton(
+                    key: const ValueKey('slack-bridge-reauthorize'),
+                    label: 'Update Slack authorization',
+                    variant: RaftButtonRecipeVariant.default_,
+                    size: RaftButtonRecipeSize.sm,
+                    onPressed: busy ? null : onReauthorize,
+                  ),
+                RaftSettingsRecipeButton(
+                  key: const ValueKey('slack-bridge-disconnect'),
+                  label: 'Disconnect Slack workspace',
+                  variant: RaftButtonRecipeVariant.danger,
+                  size: RaftButtonRecipeSize.sm,
+                  onPressed: busy ? null : onDisconnect,
+                ),
+              ],
             ),
           ],
           if (canDisconnect && disconnectConfirming) ...[
@@ -270,11 +291,8 @@ class RaftSlackWizardView extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
       color: s.panel,
-      border: Border.all(
-        color: t.brutal ? Colors.black : t.colors['line-muted']!,
-        width: 1,
-      ),
-      borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+      border: Border.all(color: t.colors['line-muted']!, width: 1),
+      borderRadius: BorderRadius.circular(6),
     ),
     child: RaftCssText(
       raftText(context, label),
@@ -297,40 +315,35 @@ class RaftSlackWizardView extends StatelessWidget {
       _ => 1,
     };
     const labels = ['Connect', 'Channels', 'Health'];
+    // Raft look: raft-ui `Steps` (Web `SlackBridgeProgress`); the frozen looks keep the three pills.
+    if (t.isRaftLook) {
+      return RaftSteps(
+        semanticLabel: 'Slack bridge setup progress',
+        current: active,
+        steps: [for (final label in labels) RaftStep(title: label)],
+      );
+    }
     Widget step(int i) {
       final done = i < active, current = i == active;
       final Color fill = done
-          ? (t.brutal
-                ? _over(
-                    t.colors['color-brutal-lime']!,
-                    .4,
-                    t.colors['brutal-cream']!,
-                    brutal: true,
-                  )
-                : t.colors['success-soft']!)
+          ? (t.colors['success-soft']!)
           : current
-          ? (t.brutal
-                ? t.colors['color-brutal-pink']!
-                : t.colors['accent-soft']!)
-          : (t.brutal ? Colors.white : t.panel);
+          ? (t.colors['accent-soft']!)
+          : (t.panel);
       final Color ink = done
           ? t.strong
           : current
-          ? (t.brutal ? Colors.black : t.colors['accent-strong']!)
-          : (t.brutal
-                ? Colors.black.withValues(alpha: .45)
-                : t.colors['foreground-hint']!);
+          ? (t.colors['accent-strong']!)
+          : (t.colors['foreground-hint']!);
       return RaftSnappedDecoratedBox(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: fill,
-          border: Border.all(
-            color: t.brutal ? Colors.black : t.colors['line-muted']!,
-          ),
-          borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+          border: Border.all(color: t.colors['line-muted']!),
+          borderRadius: BorderRadius.circular(6),
         ),
         child: RaftCssText(
-          raftText(context, labels[i]).toUpperCase(),
+          raftText(context, labels[i]),
           textAlign: TextAlign.center,
           style: _text(
             t,
@@ -338,7 +351,6 @@ class RaftSlackWizardView extends StatelessWidget {
             line: 15,
             weight: FontWeight.w700,
             color: ink,
-            tracking: .25,
           ),
         ),
       );
@@ -356,12 +368,9 @@ class RaftSlackWizardView extends StatelessWidget {
   // ------------------------------------------------------------- cards
 
   BoxDecoration _cardDecoration(RaftTokens t) => BoxDecoration(
-    color: t.brutal ? Colors.white : t.panel,
-    border: Border.all(
-      color: t.brutal ? Colors.black : t.colors['line-muted']!,
-      width: t.brutal ? 2 : 1,
-    ),
-    borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+    color: t.panel,
+    border: Border.all(color: t.colors['line-muted']!, width: 1),
+    borderRadius: BorderRadius.circular(6),
   );
 
   Widget _titleDesc(
@@ -407,8 +416,7 @@ class RaftSlackWizardView extends StatelessWidget {
           s,
           muted,
           title: 'Connect a Slack workspace',
-          description:
-              'Continue to Slack once; Raft creates the connection and starts authorization automatically.',
+          description: 'Continue to Slack once; Raft creates the connection and starts authorization automatically.',
           action: canManage
               ? _accent(
                   'Connect with Slack',
@@ -573,10 +581,11 @@ class RaftSlackWizardView extends StatelessWidget {
         value: options.any((o) => o.value == value) ? value : null,
         items: [
           for (final o in options)
-            DropdownMenuItem(
+            RaftSelectItem(
               value: o.value,
               enabled: o.enabled,
-              child: RaftCssText(raftText(context, o.label)),
+              label: raftText(context, o.label),
+              cssText: true,
             ),
         ],
         onChanged: onChanged == null
@@ -735,11 +744,9 @@ class RaftSlackWizardView extends StatelessWidget {
   }) => RaftSnappedDecoratedBox(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     decoration: BoxDecoration(
-      color: t.brutal ? t.colors['brutal-cream'] : t.colors['layer-inset'],
-      border: Border.all(
-        color: t.brutal ? Colors.black : t.colors['line-muted']!,
-      ),
-      borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+      color: t.colors['layer-inset'],
+      border: Border.all(color: t.colors['line-muted']!),
+      borderRadius: BorderRadius.circular(6),
     ),
     child: Row(
       spacing: 12,
@@ -772,13 +779,9 @@ class RaftSlackWizardView extends StatelessWidget {
         RaftSnappedDecoratedBox(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: t.brutal
-                ? t.colors['brutal-cream']
-                : t.colors['layer-inset'],
-            border: Border.all(
-              color: t.brutal ? Colors.black : t.colors['line-muted']!,
-            ),
-            borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+            color: t.colors['layer-inset'],
+            border: Border.all(color: t.colors['line-muted']!),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -798,7 +801,7 @@ class RaftSlackWizardView extends StatelessWidget {
                   'passed' => 'Passed',
                   'failed' => 'Failed',
                   _ => 'Unverified',
-                }).toUpperCase(),
+                }),
                 style: _text(t, size: 12, line: 16, color: s.strong),
               ),
             ],
@@ -868,45 +871,17 @@ class RaftSlackWizardView extends StatelessWidget {
   ) {
     // The translucent tone is composited over the section fill: Flutter would
     // paint the (brutal) outer shadow underneath it.
-    final sectionFill = t.brutal
-        ? t.colors['brutal-cream']!
-        : t.colors['layer-canvas-muted']!;
+    final sectionFill = t.colors['layer-canvas-muted']!;
     final Color tone = _flat(switch (healthState) {
-      'connected' =>
-        t.brutal
-            ? _over(
-                t.colors['color-brutal-lime']!,
-                .3,
-                sectionFill,
-                brutal: true,
-              )
-            : t.colors['success-soft']!,
-      'degraded' =>
-        t.brutal
-            ? _over(
-                t.colors['color-brutal-orange']!,
-                .25,
-                sectionFill,
-                brutal: true,
-              )
-            : t.colors['warning-soft']!,
+      'connected' => t.colors['success-soft']!,
+      'degraded' => t.colors['warning-soft']!,
       // `bg-soft-signal/30` / `dark:bg-fill-muted/50`: the measured Blink
       // composites over the section fill (the blends differ by one level).
       'unverified' =>
-        t.brutal
-            ? const Color(0xFFFFEFBB)
-            : t.dark
+        t.dark
             ? const Color(0xFF1F1F1D)
             : _over(t.colors['fill-muted']!, .5, sectionFill),
-      _ =>
-        t.brutal
-            ? _over(
-                t.colors['color-brutal-red']!,
-                .2,
-                sectionFill,
-                brutal: true,
-              )
-            : t.colors['danger-soft']!,
+      _ => t.colors['danger-soft']!,
     }, sectionFill);
     Widget cell(String label, String value) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -982,14 +957,9 @@ class RaftSlackWizardView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: tone,
-        border: Border.all(
-          color: t.brutal ? Colors.black : t.colors['line-muted']!,
-          width: t.brutal ? 2 : 1,
-        ),
-        borderRadius: BorderRadius.circular(t.brutal ? 0 : 8),
-        boxShadow: t.brutal
-            ? RaftProductShadows.shadowBrutalSm.outer
-            : t.themeShadows.sm.outer,
+        border: Border.all(color: t.colors['line-muted']!, width: 1),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: t.themeShadows.sm.outer,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1004,11 +974,23 @@ class RaftSlackWizardView extends StatelessWidget {
               if (workspaceName != null) _pill(context, t, s, workspaceName!),
             ],
           ),
+          if (mentionSyncTitle != null) ...[
+            const SizedBox(height: 16),
+            RaftBanner(
+              key: const ValueKey('slack-mention-sync-hint'),
+              title: mentionSyncTitle,
+              titleGap: 4,
+              description: mentionSyncDescription ?? '',
+              status: RaftBannerRecipeStatus.info,
+              size: RaftBannerRecipeSize.sm,
+              glyph: RaftGlyph.info,
+            ),
+          ],
           if (recoveryTitle != null) ...[
             const SizedBox(height: 16),
             RaftBanner(
               title: recoveryTitle,
-              titleGap: t.brutal ? null : 4,
+              titleGap: 4,
               description: recoveryDescription ?? '',
               status: RaftBannerRecipeStatus.warning,
               size: RaftBannerRecipeSize.sm,
@@ -1102,14 +1084,13 @@ class RaftSlackWizardView extends StatelessWidget {
                   spacing: 8,
                   children: [
                     RaftCssText(
-                      raftText(context, 'Selected channel pairs').toUpperCase(),
+                      raftText(context, 'Selected channel pairs'),
                       style: _text(
                         t,
                         size: 12,
                         line: 16,
                         weight: FontWeight.w700,
                         color: muted,
-                        tracking: .3,
                       ),
                     ),
                     if (canManage)
@@ -1135,12 +1116,8 @@ class RaftSlackWizardView extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: s.panel,
-                          border: Border.all(
-                            color: t.brutal
-                                ? Colors.black
-                                : t.colors['line-muted']!,
-                          ),
-                          borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+                          border: Border.all(color: t.colors['line-muted']!),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: _pairText(t, s, label),
                       ),
@@ -1162,14 +1139,9 @@ class RaftSlackWizardView extends StatelessWidget {
     key: const ValueKey('slack-bridge-disconnect-confirmation'),
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: t.brutal
-          ? t.colors['color-brutal-red']!.withValues(alpha: .2)
-          : t.colors['danger-soft'],
-      border: Border.all(
-        color: t.brutal ? Colors.black : t.colors['line-muted']!,
-        width: t.brutal ? 2 : 1,
-      ),
-      borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+      color: t.colors['danger-soft'],
+      border: Border.all(color: t.colors['line-muted']!, width: 1),
+      borderRadius: BorderRadius.circular(6),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1193,14 +1165,14 @@ class RaftSlackWizardView extends StatelessWidget {
           spacing: 8,
           children: [
             RaftSettingsRecipeButton(
-              label: 'Cancel',
+              label: 'Stay Connected',
               variant: RaftButtonRecipeVariant.default_,
               size: RaftButtonRecipeSize.sm,
               onPressed: busy ? null : onDisconnectCancel,
             ),
             RaftSettingsRecipeButton(
               key: const ValueKey('slack-bridge-disconnect-confirm'),
-              label: 'Confirm disconnect',
+              label: 'Disconnect Slack workspace',
               variant: RaftButtonRecipeVariant.danger,
               size: RaftButtonRecipeSize.sm,
               onPressed: busy ? null : onDisconnectConfirm,

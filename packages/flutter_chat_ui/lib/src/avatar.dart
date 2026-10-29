@@ -141,6 +141,7 @@ class _AvatarContentState extends State<AvatarContent> {
     final crossCache = context.read<CrossCache>();
 
     _cachedNetworkImage = widget.user?.imageSource != null
+        // ignore: raft_lints/avoid_raw_image_decode -- Vendored upstream Avatar (cross_cache provider); not referenced by the app, whose rows use RaftAvatarContent.
         ? CachedNetworkImage(
             widget.user!.imageSource!,
             crossCache,
@@ -156,6 +157,7 @@ class _AvatarContentState extends State<AvatarContent> {
         oldWidget.headers != widget.headers) {
       if (widget.user?.imageSource != null) {
         final crossCache = context.read<CrossCache>();
+        // ignore: raft_lints/avoid_raw_image_decode -- Vendored upstream Avatar (cross_cache provider); not referenced by the app, whose rows use RaftAvatarContent.
         final newImage = CachedNetworkImage(
           widget.user!.imageSource!,
           crossCache,
@@ -183,6 +185,7 @@ class _AvatarContentState extends State<AvatarContent> {
       return Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
+          // ignore: raft_lints/avoid_raw_image_decode -- Vendored upstream Avatar (cross_cache provider); not referenced by the app, whose rows use RaftAvatarContent.
           image: DecorationImage(
             image: _cachedNetworkImage!,
             fit: BoxFit.cover,

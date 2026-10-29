@@ -175,7 +175,7 @@ class _Fixture {
     final f = _Fixture(t);
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant).copyWith(platform: platform),
+        theme: raftTheme().copyWith(platform: platform),
         home: Scaffold(
           body: Align(
             alignment: Alignment.topCenter,

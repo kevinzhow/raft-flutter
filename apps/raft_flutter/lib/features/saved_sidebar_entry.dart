@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'route_transition_gate.dart';
 
 /// Server-scoped Saved state shared by every mounted Saved entry, message
 /// menu and Saved page of one workspace: the numeric global total and the
@@ -73,6 +74,9 @@ class SavedCountStore extends ChangeNotifier {
     return _ids.contains(messageId);
   }
 
+  /// Ids known to be saved. A copy, so a caller cannot edit the store's set.
+  Set<String> get savedIds => Set<String>.of(_ids);
+
   /// Message ids a loaded Saved result discloses (Source `loadSaved` adds
   /// every entry to `savedIds`).
   void know(Iterable<String> messageIds) {
@@ -81,6 +85,56 @@ class SavedCountStore extends ChangeNotifier {
     _ids.addAll(messageIds);
     if (_ids.length != before) notifyListeners();
   }
+
+  /// Source `savedStore.checkSaved`: which of [messageIds] the member has
+  /// saved, in requests of at most 200 (the server's limit). Only ids that
+  /// were not known are added; a failure changes nothing. Activity asks for
+  /// the rows it lists, so a message older than the first Saved page still
+  /// offers "Remove from Saved" once it is open.
+  Future<void> check(Iterable<String> messageIds) async {
+    _adopt();
+    final scope = _scope;
+    final wanted = {
+      for (final id in messageIds)
+        if (id.isNotEmpty) id,
+    }.toList();
+    for (var at = 0; at < wanted.length; at += 200) {
+      final chunk = wanted.sublist(at, (at + 200).clamp(0, wanted.length));
+      try {
+        final value = await w.command(
+          'POST',
+          '/channels/saved/check',
+          data: {'messageIds': chunk},
+        );
+        if (_scope != authority || _scope != scope) return;
+        final ids = value is Map ? value['savedIds'] : null;
+        if (ids is! List) continue;
+        final fresh = [
+          for (final id in ids)
+            if (id is String && !_tickets.containsKey(id) && !_ids.contains(id))
+              id,
+        ];
+        if (fresh.isEmpty) continue;
+        know(fresh);
+        // Message rows read the saved state through the workspace listener.
+        w.notifyListeners();
+      } catch (_) {
+        // Best effort, like Source: the ids stay as they were.
+      }
+    }
+  }
+
+  /// Activity's rows by the message each one stands for (ThreadsInbox
+  /// `activityItemMessageId`): a thread's latest activity, a mention action's
+  /// message, otherwise the conversation's last message.
+  Future<void> checkActivityRows(Iterable<Map<String, dynamic>> rows) => check([
+    for (final row in rows)
+      switch (row['kind']) {
+        'thread' => '${row['latestActivityMessageId'] ?? ''}',
+        'mention_action' => '${row['messageId'] ?? ''}',
+        _ => '${row['lastMessageId'] ?? ''}',
+      },
+  ]);
 
   /// Source `saveMessage` / `unsaveMessage`: the saved state and the badge
   /// change before the request; a failure restores both and rethrows.
@@ -189,9 +243,11 @@ class SavedSidebarEntry extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onTap,
+    this.precededByEntry = false,
   });
   final WorkspaceController controller;
   final VoidCallback onTap;
+  final bool precededByEntry;
   @override
   State<SavedSidebarEntry> createState() => _SavedSidebarEntryState();
 }
@@ -230,10 +286,20 @@ class _SavedSidebarEntryState extends State<SavedSidebarEntry> {
     if (mounted) setState(() {});
   }
 
+  Route<dynamic>? route;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    route = ModalRoute.of(context);
+  }
+
   void changed() {
     if (!mounted) return;
     saved.sync();
-    setState(() {});
+    if (!RouteTransitionGate.defer(route, changed)) {
+      setState(() {});
+    }
   }
 
   @override
@@ -247,6 +313,7 @@ class _SavedSidebarEntryState extends State<SavedSidebarEntry> {
     label: raftText(context, 'Saved'),
     glyph: RaftGlyph.bookmark,
     role: RaftNavItemRole.saved,
+    precededByEntry: widget.precededByEntry,
     viewportHeight: MediaQuery.sizeOf(context).height,
     count: saved.count,
     selected: w.section == 'saved',

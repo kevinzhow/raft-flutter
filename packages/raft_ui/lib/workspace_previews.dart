@@ -3,7 +3,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'previews.dart';
 
-@RaftPreviews('Workspace mode', size: Size(390, 160))
+@RaftPreviews('Server mode', size: Size(390, 160))
 Widget workspaceModePreview() => const _Mode();
 
 class _Mode extends StatefulWidget {
@@ -46,10 +46,9 @@ class _EditorsState extends State<_Editors> {
           label: '#$id',
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              autofillHints: null,
-              key: ValueKey(id),
-              decoration: InputDecoration(hintText: 'Draft for $id'),
+            child: RaftTextInput(
+              fieldKey: ValueKey(id),
+              hintText: 'Draft for $id',
             ),
           ),
         ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:ui' show Display, FlutterView;
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
@@ -109,6 +110,26 @@ class _AndroidHintBackend implements PerformanceHintBackend {
 
 /// Owns one short-lived CPU session; unsupported devices and service failures
 /// permanently fall back to ordinary scheduling for this binding's lifetime.
+/// The refresh rate of the display the first of [views] is on, 60 when there
+/// is none to ask: a view has no display while the computer sleeps or a
+/// screen is being unplugged (`FlutterView.display` then throws), and frames
+/// are still scheduled then.
+@visibleForTesting
+double displayRefreshRateOf(
+  Iterable<FlutterView> views,
+  Iterable<Display> displays,
+) {
+  if (views.isEmpty || displays.isEmpty) return 60;
+  double sane(double rate) => rate > 0 ? rate : 60;
+  try {
+    // ignore: raft_lints/avoid_view_display -- the one guarded read: a view without a display throws, caught below.
+    return sane(views.first.display.refreshRate);
+    // ignore: avoid_catching_errors -- FlutterView.display has no nullable form; a view without a display (sleep, unplugged screen) throws a null-check error, and a frame must never fail on it.
+  } on Error {
+    return sane(displays.first.refreshRate);
+  }
+}
+
 class PerformanceHintController {
   PerformanceHintController(this.backend);
   final PerformanceHintBackend? backend;
@@ -257,20 +278,30 @@ mixin AndroidPerformanceHintBinding on WidgetsBinding {
     );
   }
 
-  double get _displayRefreshRate => platformDispatcher.views.isEmpty
-      ? 60
-      : platformDispatcher.views.first.display.refreshRate;
+  double get _displayRefreshRate => displayRefreshRateOf(
+    platformDispatcher.views,
+    platformDispatcher.displays,
+  );
+
+  /// Starts the hint session for a frame. Only where hints are on (Android):
+  /// elsewhere the display is not asked at all.
+  void _beginHint() {
+    final hints = _hints;
+    if (hints == null || hints.backend == null) return;
+    hints.begin(_displayRefreshRate);
+  }
 
   @override
   void scheduleFrame() {
-    _hints?.begin(_displayRefreshRate);
+    _beginHint();
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- Binding override that observes scheduleFrame to open a performance-hint session; it forwards to super and requests none.
     super.scheduleFrame();
   }
 
   @override
   void handleBeginFrame(Duration? rawTimeStamp) {
     if (RouteFrameDiagnostics.enabled) RouteFrameDiagnostics.begin();
-    _hints?.begin(_displayRefreshRate);
+    _beginHint();
     if (_hints?.active == true) _frameClock = Stopwatch()..start();
     super.handleBeginFrame(rawTimeStamp);
   }

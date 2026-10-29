@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../data/message_translation_store.dart';
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
 
@@ -25,7 +25,7 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
   WorkspaceController get w => widget.controller;
   @override
   String get authority => '${w.client.generation}|${w.client.user?.id}';
-  late MessageTranslationStore translations = w.translations;
+  late MessageTranslationStore translations = w.services.translations;
   @override
   void initState() {
     super.initState();
@@ -43,9 +43,9 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
   @override
   void didUpdateWidget(covariant LocaleSettingsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(translations, w.translations)) {
+    if (!identical(translations, w.services.translations)) {
       translations.removeListener(translationChanged);
-      translations = w.translations..addListener(translationChanged);
+      translations = w.services.translations..addListener(translationChanged);
       translations.ensureSettings();
     }
   }
@@ -79,17 +79,33 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
       draftTimezone,
       draftTimeFormat;
   final savedTimers = <bool, Timer>{};
+  // ignore: raft_lints/avoid_imperative_notice_state -- Each clears when its form is edited, when its save starts, and on account change (clearData).
   String? languageError, dateTimeError;
   bool savingLanguage = false, savingDateTime = false;
   bool languageSaved = false, dateTimeSaved = false;
 
   String get savedMode => translations.settings.mode.name;
-  String get savedTarget => translations.settings.preferredLanguage ?? 'browser';
+  String get savedTarget =>
+      translations.settings.preferredLanguage ?? 'browser';
   String get savedDisplay => translations.settings.display.name;
   String get savedTimezone =>
       w.client.user?.string('preferredTimezone').trim() ?? '';
-  String get savedTimeFormat =>
-      w.client.user?.string('preferredTimeFormat') == '24h' ? '24h' : '12h';
+
+  /// `effectiveTimeFormat = preferred ?? detectBrowserTimeFormat()`
+  /// (translationStore.ts:271): a null / `auto` preference follows the device.
+  String get savedTimeFormat => effectiveTimeFormat(
+    w.client.user?.json['preferredTimeFormat'],
+    device24Hour: device24Hour,
+  );
+
+  /// The device's 24-hour clock setting; refreshed with the MediaQuery.
+  bool device24Hour = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    device24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
+  }
 
   /// The live UI locale in Web's `Locale` ids.
   String liveLocale(BuildContext context) =>
@@ -123,10 +139,15 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
     if (fields.isEmpty) return;
     final scope = authority;
     setState(() {
+      // Web handleSave*: the previous attempt's error and "saved" end here.
       if (language) {
         savingLanguage = true;
+        languageSaved = false;
+        languageError = null;
       } else {
         savingDateTime = true;
+        dateTimeSaved = false;
+        dateTimeError = null;
       }
     });
     try {
@@ -158,9 +179,11 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
     } catch (e) {
       if (mounted && scope == authority) {
         setState(() {
-          final message = e is RaftApiException && e.message.isNotEmpty
-              ? e.message
-              : raftText(context, failure);
+          final message = userErrorText(
+            e,
+            fallback: failure,
+            where: 'locale settings',
+          );
           if (language) {
             languageError = message;
           } else {
@@ -267,6 +290,15 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
   }
 }
 
+/// Web `effectiveTimeFormat`: an explicit `12h` / `24h` preference, else the
+/// device default (`normalizeTimeFormatPreference` drops anything else).
+String effectiveTimeFormat(Object? preferred, {required bool device24Hour}) =>
+    switch (preferred) {
+      '12h' => '12h',
+      '24h' => '24h',
+      _ => device24Hour ? '24h' : '12h',
+    };
+
 // ------------------------------------------------------------- timezones
 
 /// Web `COMMON_TIMEZONE_IDS` (translationStore.ts).
@@ -360,4 +392,11 @@ List<RaftLanguageOption> _timezoneOptions(String preferred) {
     ('', _timezoneLabel(effective, now)),
     for (final id in ids) (id, _timezoneLabel(id, now)),
   ];
+}
+
+/// The timezone choices of Language & Region for a [preferred] zone ('' = the
+/// device's), for the signed-out public page's own preferences form.
+List<RaftLanguageOption> localeTimezoneOptions(String preferred) {
+  _initializeTimezones();
+  return _timezoneOptions(preferred);
 }

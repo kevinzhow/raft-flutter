@@ -103,7 +103,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant, dark: true),
+          theme: raftTheme(dark: true),
           home: Scaffold(
             body: SearchHighlight(
               text: 'first [a.*] then [a.*]',

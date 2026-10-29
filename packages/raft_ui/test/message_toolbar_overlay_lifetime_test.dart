@@ -36,7 +36,7 @@ void main() {
           builder: (context, setState) {
             update = setState;
             return MaterialApp(
-              theme: raftTheme(RaftFamily.brutal),
+              theme: raftTheme(),
               home: Scaffold(
                 body: Align(
                   alignment: Alignment.topLeft,
@@ -76,7 +76,7 @@ void main() {
 
       await reopen();
       final after = tester.getRect(find.byKey(const Key('owned-action')));
-      expect(after.top, before.top - 40);
+      expect(after.top, closeTo(before.top - 40, 1e-6));
       scroll.jumpTo(220);
       await tester.pump();
       await tester.pump();
@@ -101,7 +101,7 @@ void main() {
       late StateSetter update;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: StatefulBuilder(
             builder: (context, setState) {
               update = setState;

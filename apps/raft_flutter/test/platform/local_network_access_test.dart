@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -115,5 +116,77 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
     await const LocalNetworkAccess().ensure('http://10.1.2.3', request: true);
     expect(calls, isEmpty);
+  });
+
+  test(
+    'fixture DNS supplies public addresses without a permission request',
+    () async {
+      final hosts = <String>[];
+      final access = LocalNetworkAccess(
+        lookup: (host) async {
+          hosts.add(host);
+          return [InternetAddress('203.0.113.1')];
+        },
+      );
+      await access.ensure('https://fixture.invalid', request: true);
+      expect(hosts, ['fixture.invalid']);
+      expect(calls, isEmpty);
+    },
+  );
+
+  test('a private DNS answer still requires the native permission', () async {
+    final access = LocalNetworkAccess(
+      lookup: (_) async => [
+        InternetAddress('203.0.113.1'),
+        InternetAddress('10.1.2.3'),
+      ],
+    );
+    granted = false;
+    await expectLater(
+      access.ensure('https://fixture.invalid', request: true),
+      throwsA(
+        isA<RaftApiException>().having(
+          (e) => e.message,
+          'message',
+          localNetworkPermissionError,
+        ),
+      ),
+    );
+    expect(calls.single.arguments, {'request': true});
+    granted = true;
+    await access.ensure('https://fixture.invalid', request: true);
+    expect(calls, hasLength(2));
+  });
+
+  test('a failed DNS lookup leaves connection errors to the client', () async {
+    final access = LocalNetworkAccess(
+      lookup: (_) async => throw const SocketException('fixture lookup failed'),
+    );
+    await access.ensure('https://fixture.invalid', request: true);
+    expect(calls, isEmpty);
+  });
+
+  testWidgets('a pending lookup keeps the existing five-second bound', (
+    t,
+  ) async {
+    try {
+      final held = Completer<List<InternetAddress>>();
+      final access = LocalNetworkAccess(lookup: (_) => held.future);
+      var complete = false;
+      final checking = access
+          .ensure('https://fixture.invalid', request: true)
+          .then((_) => complete = true);
+      await t.pump(const Duration(seconds: 4));
+      expect(complete, isFalse);
+      await t.pump(const Duration(seconds: 1));
+      await checking;
+      expect(complete, isTrue);
+      expect(calls, isEmpty);
+      held.complete([]);
+      await t.pump();
+    } finally {
+      // testWidgets checks debug globals before the plain-test tearDown runs.
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 }

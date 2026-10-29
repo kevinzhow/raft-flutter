@@ -14,15 +14,28 @@ class SourceTaskSurface extends StatefulWidget {
     super.key,
     required this.owner,
     required this.onClose,
+    required this.onTask,
+    required this.onViewBilling,
     this.onCleanupDelete,
     this.onBack,
+    this.onViewInThread,
     this.legacyPresentation = RaftLegacyTaskPresentation.modal,
     this.page = false,
   });
   final TaskSurfaceController owner;
   final VoidCallback onClose;
+
+  /// Opens another task from an in-body `#N` reference of the discussion (Web
+  /// swaps the modal's task); null when the host has no task slot.
+  final ChatTaskOpener? onTask;
+
+  /// The discussion's plan banner "View Billing" link; null hides it.
+  final VoidCallback? onViewBilling;
   final VoidCallback? onCleanupDelete;
   final VoidCallback? onBack;
+
+  /// "View in thread" of the task bar; null when the task has no thread.
+  final VoidCallback? onViewInThread;
   final RaftLegacyTaskPresentation legacyPresentation;
   final bool page;
   @override
@@ -69,7 +82,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
   /// Web TaskProperties resolves creator/assignee display names from the
   /// channel members; the workspace directory carries the same names.
   String? displayName(String type, String id) {
-    final directory = o.parent.entityDirectory;
+    final directory = o.parent.services.entityDirectory;
     final row = type == 'agent'
         ? directory
               .rows(WorkspaceEntityKind.agents)
@@ -126,6 +139,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         historyError: o.historyError,
         onClose: widget.onClose,
         onBack: widget.onBack,
+        onViewInThread: widget.onViewInThread,
         onRetry: o.parentReady ? o.refresh : o.start,
         onLoadAssignees: o.loadAssignees,
         onUpdate: o.update,
@@ -137,16 +151,23 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
             ? null
             : o.discussion == null
             ? RaftThreadResolutionBody(
-                loadingLabel: raftText(context, 'Loading...'),
-                errorTitle: o.parentError != null
-                    ? '${o.parentError}'
-                    : o.error == null
+                loadingLabel: raftText(context, 'Loading thread…'),
+                errorTitle: o.parentError == null && o.error == null
                     ? null
-                    : '${o.error}',
+                    : raftText(context, "Couldn't load this thread"),
+                errorBody: raftText(
+                  context,
+                  "The thread couldn't be opened. If this channel recently became public, try again.",
+                ),
                 retryLabel: raftText(context, 'Retry'),
                 onRetry: o.parentRemoved ? null : o.start,
               )
-            : RaftChatView(controller: o.discussion!, thread: true),
+            : RaftChatView(
+                controller: o.discussion!,
+                thread: true,
+                onTask: widget.onTask,
+                onViewBilling: widget.onViewBilling,
+              ),
         discussionBuilder: o.discussion == null
             ? null
             : (head) => RaftChatView(
@@ -154,6 +175,8 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
                 thread: true,
                 hideThreadParent: true,
                 threadParentSlot: head,
+                onTask: widget.onTask,
+                onViewBilling: widget.onViewBilling,
               ),
       );
     },

@@ -22,6 +22,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/process_artifact_handoff.dart';
+import '../test/support/app_services_fixture.dart';
 
 class ProcessFixtureClient extends RaftClient {
   ProcessFixtureClient(String base, Map<String, dynamic> fixture)
@@ -269,7 +270,7 @@ void main() {
           'focusRect': focus == null ? null : rect(focus),
           'view': view == null ? null : rect(view),
           'inView': view?.overlaps(card) == true,
-          'highlighted': w.highlightedMessageId == id,
+          'highlighted': w.messageDomain.state.highlightedMessageId == id,
         };
       }
 
@@ -280,12 +281,12 @@ void main() {
         'stage': stageName,
         'url': '${w.location.uri}',
         'channelId': w.channel?.id,
-        'loading': w.channelLoading,
-        'pendingChannelId': w.pendingMessageContextChannelId,
+        'loading': w.messageDomain.state.channelLoading,
+        'pendingChannelId': w.messageDomain.pendingMessageContextChannelId,
         'threadChannelId': w.threadChannelId,
-        'threadParentId': w.threadParentMessageId,
-        'threadParentLoading': w.threadParentLoading,
-        'threadLoading': w.threadLoading,
+        'threadParentId': w.messageDomain.threadParentMessageId,
+        'threadParentLoading': w.messageDomain.threadParentLoading,
+        'threadLoading': w.messageDomain.state.threadLoading,
         'replyIds': w.replies.map((row) => row.id).toList(),
         'threadParentAccepted': w.presentedThreadParent?.id,
         'channelScroller':
@@ -293,10 +294,10 @@ void main() {
             null,
         'threadScroller':
             visibleRect(find.byKey(const ValueKey('chat-list-thread'))) != null,
-        'acceptedIds': w.messages.map((row) => row.id).toList(),
-        'highlight': w.highlightedMessageId,
-        'older': w.hasMore,
-        'newer': w.hasNewer,
+        'acceptedIds': w.messageDomain.messages.map((row) => row.id).toList(),
+        'highlight': w.messageDomain.state.highlightedMessageId,
+        'older': w.messageDomain.state.hasMore,
+        'newer': w.messageDomain.state.hasNewer,
         'headers': [
           find.byType(RaftChannelHeader),
           find.byType(RaftPageHeader),
@@ -642,7 +643,7 @@ void main() {
           await t.pump(const Duration(milliseconds: 2100));
           await snapshot('thread-highlight-expired');
           check(
-            w.highlightedMessageId,
+            w.messageDomain.state.highlightedMessageId,
             isNull,
             'thread highlight expires after two seconds',
           );
@@ -686,15 +687,16 @@ void main() {
           }
           await until(
             () =>
-                w.channelLoading &&
-                w.pendingMessageContextChannelId == flow['channelId'],
+                w.messageDomain.state.channelLoading &&
+                w.messageDomain.pendingMessageContextChannelId ==
+                    flow['channelId'],
             'owned pending context',
           );
           await snapshot('pending-context');
           final pending = stages.last['frame'] as Map;
           if (flow['threadChannelId'] != null) {
             check(
-              w.threadParentMessageId,
+              w.messageDomain.threadParentMessageId,
               isNull,
               'channel selection closes previous thread identity',
             );
@@ -758,7 +760,7 @@ void main() {
           await t.pump(const Duration(milliseconds: 2100));
           await snapshot('highlight-expired');
           check(
-            w.highlightedMessageId,
+            w.messageDomain.state.highlightedMessageId,
             isNull,
             'highlight expires after two seconds',
           );
@@ -767,15 +769,15 @@ void main() {
 
       try {
         await t.binding.setSurfaceSize(size);
-        final elegant = theme != 'brutal', dark = theme == 'elegant-dark';
+        final dark = theme == 'elegant-dark';
         await t.pumpWidget(
           MaterialApp(
             debugShowCheckedModeBanner: false,
             locale: const Locale('en'),
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
             supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
-            theme: raftTheme(elegant ? RaftFamily.elegant : RaftFamily.brutal),
-            darkTheme: raftTheme(RaftFamily.elegant, dark: true),
+            theme: raftTheme(),
+            darkTheme: raftTheme(dark: true),
             themeMode: dark ? ThemeMode.dark : ThemeMode.light,
             builder: (context, child) => Align(
               alignment: Alignment.topLeft,
@@ -792,14 +794,15 @@ void main() {
                 ),
               ),
             ),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(
-                mode: dark ? ThemeMode.dark : ThemeMode.light,
-                light: elegant ? RaftFamily.elegant : RaftFamily.brutal,
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(
+                  mode: dark ? ThemeMode.dark : ThemeMode.light,
+                ),
+                onAppearance: (_) async {},
+                onLogout: () async {},
               ),
-              onAppearance: (_) async {},
-              onLogout: () async {},
             ),
           ),
         );

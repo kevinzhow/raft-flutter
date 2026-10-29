@@ -6,25 +6,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final (dark) in raftThemeMatrix([(false), (true)], full: true)) {
     Future<void> mount(
       WidgetTester tester,
       Widget child, {
       double height = 900,
       double width = 1280,
+      RaftThemePack? pack,
     }) async {
       tester.view.physicalSize = Size(width, height);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(dark: dark, pack: pack),
           home: Scaffold(
             body: RaftDensityScope(density: RaftDensity.desktop, child: child),
           ),
@@ -34,14 +32,14 @@ void main() {
     }
 
     testWidgets(
-      '[K09b] $family/$dark rail server uses actual AvatarSlot shape at tall and compact heights',
+      '[K09b] ${dark ? 'dark' : 'light'} rail server uses actual AvatarSlot shape at tall and compact heights',
       (tester) async {
         var workspaceCalls = 0;
         for (final height in [900.0, 568.0]) {
           await mount(
             tester,
             SizedBox(
-              width: family == RaftFamily.brutal ? 64 : 56,
+              width: 56,
               child: RaftWorkspaceRail(
                 destinations: const [
                   RaftRailDestination(
@@ -61,21 +59,18 @@ void main() {
           final frame = find.byType(RaftMountedAvatarFrame);
           final extent = height <= 600 ? 32.0 : 36.0;
           expect(tester.getSize(frame), Size.square(extent));
-          final decorated = tester.widget<DecoratedBox>(
+          // raft-ui 0.7.1 sticker avatar: 4px square, 1.5px ink border (1px at this test's 1.0 device ratio).
+          final sticker = tester.widget<RaftCssBox>(
             find.byKey(const ValueKey('mounted-avatar-frame')),
           );
-          final decoration = decorated.decoration as BoxDecoration;
+          expect(sticker.radius, 4);
+          expect(sticker.borderWidth, 1);
           expect(
-            decoration.borderRadius,
-            BorderRadius.circular(family == RaftFamily.brutal ? 0 : extent / 2),
-          );
-          expect(decoration.border!.top.width, 2);
-          expect(
-            decoration.border!.top.color,
-            family == RaftFamily.brutal ? Colors.black : Colors.transparent,
+            sticker.borderColor,
+            RaftTokens.of(tester.element(frame)).ui.stickerInk,
           );
           final initial = tester.widget<Text>(find.text('V'));
-          expect(initial.style!.fontSize, 14);
+          expect(initial.style!.fontSize, 15);
           expect(initial.style!.fontWeight, FontWeight.w700);
           await tester.tap(find.byKey(const Key('rail-workspace')));
           await tester.pump();
@@ -86,12 +81,12 @@ void main() {
     );
 
     testWidgets(
-      '[K09c] $family/$dark explicit rail numeric unread uses AppRailItemBadge recipe',
+      '[K09c] ${dark ? 'dark' : 'light'} explicit rail numeric unread uses AppRailItemBadge recipe',
       (tester) async {
         await mount(
           tester,
           SizedBox(
-            width: family == RaftFamily.brutal ? 64 : 56,
+            width: 56,
             child: RaftWorkspaceRail(
               destinations: const [
                 RaftRailDestination(
@@ -147,12 +142,19 @@ void main() {
           find.byKey(const ValueKey('rail-activity')),
         );
         // Absolute CSS offsets use the button's padding box, inside its border.
-        final border = family == RaftFamily.brutal ? 2 : 1;
+        final border = 1;
         expect(counter.right, surface.right - border + 4);
         expect(counter.top, surface.top + border - 4);
         expect(
           tester
-              .getSemantics(find.byKey(const ValueKey('rail-activity')))
+              .getSemantics(
+                find.descendant(
+                  of: find.byKey(const ValueKey('rail-activity')),
+                  matching: find.byWidgetPredicate(
+                    (w) => w is Semantics && w.properties.selected != null,
+                  ),
+                ),
+              )
               .toString(),
           contains('12'),
         );
@@ -161,7 +163,7 @@ void main() {
     );
 
     testWidgets(
-      '[K09d] $family/$dark actual conversation tabs retain Source heights and painted underline through keyboard selection',
+      '[K09d] ${dark ? 'dark' : 'light'} actual conversation tabs retain Source heights and painted underline through keyboard selection',
       (tester) async {
         for (final width in [390.0, 1280.0]) {
           final boundary = GlobalKey();
@@ -192,70 +194,51 @@ void main() {
               ],
             ),
             width: width,
+            pack: packForThemeId(elegantThemePackId),
           );
           final strip = find.byType(RaftConversationTabs);
           final mobile = width < 768;
-          expect(
-            tester.getSize(strip).height,
-            family == RaftFamily.brutal
-                ? 30
-                : mobile
-                ? 41
-                : 48,
-          );
+          expect(tester.getSize(strip).height, mobile ? 41 : 48);
           final chat = find.byKey(const ValueKey('panel-tab-chat'));
-          expect(
-            tester.getSize(chat).height,
-            family == RaftFamily.brutal
-                ? 28
-                : mobile
-                ? 40
-                : 28,
-          );
-          if (family == RaftFamily.elegant) {
-            final primary = RaftTokens.of(
-              tester.element(strip),
-            ).colors['primary-400']!.toARGB32();
-            final render =
-                boundary.currentContext!.findRenderObject()!
-                    as RenderRepaintBoundary;
-            final x = tester.getRect(chat).center.dx.toInt();
-            await tester.runAsync(() async {
-              final image = await render.toImage();
-              final bytes = (await image.toByteData(
-                format: ui.ImageByteFormat.rawRgba,
-              ))!;
-              final border = mobile ? 1 : 0;
-              final height = mobile ? 1 : 2;
-              for (
-                var row = image.height - border - height;
-                row < image.height - border;
-                row++
-              ) {
-                final p = (row * image.width + x) * 4;
-                expect(bytes.getUint8(p), primary >> 16 & 255);
-                expect(bytes.getUint8(p + 1), primary >> 8 & 255);
-                expect(bytes.getUint8(p + 2), primary & 255);
-              }
-              image.dispose();
-            });
-          }
+          // raft-ui 0.7.1 underline tab: as tall as the strip.
+          expect(tester.getSize(chat).height, mobile ? 40 : 48);
+          // The selected underline tab's 2px bar is `foreground`.
+          final primary = RaftTokens.of(tester.element(strip)).ui.foreground
+              .toARGB32();
+          final render =
+              boundary.currentContext!.findRenderObject()!
+                  as RenderRepaintBoundary;
+          final x = tester.getRect(chat).center.dx.toInt();
+          await tester.runAsync(() async {
+            final image = await render.toImage();
+            final bytes = (await image.toByteData(
+              format: ui.ImageByteFormat.rawRgba,
+            ))!;
+            final border = mobile ? 1 : 0;
+            const height = 2;
+            for (
+              var row = image.height - border - height;
+              row < image.height - border;
+              row++
+            ) {
+              final p = (row * image.width + x) * 4;
+              expect(bytes.getUint8(p), primary >> 16 & 255);
+              expect(bytes.getUint8(p + 1), primary >> 8 & 255);
+              expect(bytes.getUint8(p + 2), primary & 255);
+            }
+            image.dispose();
+          });
+
           await tester.tap(chat);
           await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
           await tester.pumpAndSettle();
           expect(selected, RaftConversationTabId.files);
-          expect(
-            tester.getSize(strip).height,
-            family == RaftFamily.brutal
-                ? 30
-                : mobile
-                ? 41
-                : 48,
-          );
+          expect(tester.getSize(strip).height, mobile ? 41 : 48);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
         }
       },
+      skip: raftLookSkip(raftLookElegant),
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:raft_flutter/data/recent_conversations.dart';
 import 'package:raft_flutter/features/quick_switcher.dart';
 import 'package:raft_flutter/features/quick_switcher_model.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Map<String, dynamic> channel(
   String id,
@@ -86,15 +87,14 @@ Widget host(
   Opened log, {
   Future<List<Map<String, dynamic>>> Function(String)? messages,
   ValueNotifier<int>? changes,
-  RaftFamily family = RaftFamily.elegant,
   bool dark = false,
 }) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+  theme: raftTheme(dark: dark),
   home: Scaffold(
     body: Material(
       type: MaterialType.transparency,
       child: QuickSwitcher(
-        listenable: changes ?? ValueNotifier(0),
+        listenable: changes ?? _ownedNotifier(),
         data: read,
         onClose: () => log.closed++,
         onOpenEntity: (e, q) {
@@ -114,6 +114,12 @@ Widget host(
 Future<void> key(WidgetTester t, LogicalKeyboardKey k) async {
   await t.sendKeyEvent(k);
   await t.pump();
+}
+
+ValueNotifier<int> _ownedNotifier() {
+  final notifier = ValueNotifier(0);
+  addTearDown(notifier.dispose);
+  return notifier;
 }
 
 void main() {
@@ -162,11 +168,10 @@ void main() {
     addTearDown(t.view.resetDevicePixelRatio);
   }
 
-  for (final theme in [
-    (name: 'Brutal', family: RaftFamily.brutal, dark: false),
-    (name: 'Elegant', family: RaftFamily.elegant, dark: false),
-    (name: 'Elegant dark', family: RaftFamily.elegant, dark: true),
-  ]) {
+  for (final theme in raftThemeMatrix([
+    (name: 'Light', dark: false),
+    (name: 'Dark', dark: true),
+  ])) {
     testWidgets(
       '[N26] ${theme.name} recent conversations are in the first frame, newest visit first, current excluded',
       (t) async {
@@ -185,12 +190,11 @@ void main() {
               exclude: 'c-general',
             ),
             log,
-            family: theme.family,
             dark: theme.dark,
           ),
         );
         // No pump after the first frame: the rows are already final.
-        expect(find.text('RECENT CONVERSATIONS'), findsOneWidget);
+        expect(find.text('Recent conversations'), findsOneWidget);
         final titles = [
           for (final w in t.widgetList<Text>(
             find.descendant(
@@ -204,7 +208,8 @@ void main() {
         expect(titles.indexOf('Cindy') < titles.indexOf('design'), isTrue);
         expect(titles, isNot(contains('general')));
         expect(find.byKey(const Key('quick-switcher-footer')), findsOneWidget);
-        expect(find.text('ESC'), findsOneWidget);
+        // The Web's `<Kbd>Esc</Kbd>`, in the case it is written in.
+        expect(find.text('Esc'), findsOneWidget);
         expect(t.takeException(), isNull);
       },
     );
@@ -292,7 +297,7 @@ void main() {
       await t.pump();
       await t.enterText(find.byType(TextField), 'design');
       await t.pump();
-      expect(find.text('RECENT CONVERSATIONS'), findsNothing);
+      expect(find.text('Recent conversations'), findsNothing);
       final order = t
           .widgetList<Widget>(
             find.byWidgetPredicate(
@@ -480,6 +485,7 @@ void main() {
       size(t);
       final log = Opened();
       final changes = ValueNotifier(0);
+      addTearDown(changes.dispose);
       var channels = ['design'];
       await t.pumpWidget(
         host(

@@ -10,7 +10,9 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/notification_settings_view.dart';
+import 'package:raft_flutter/platform/battery_optimization.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'native_notifications_test.dart' show deferredMacNotifications;
 
@@ -78,6 +80,19 @@ class Service extends NativeNotificationService {
   }
 }
 
+class _Battery extends BatteryOptimization {
+  _Battery(this.value) : super(supported: true);
+  bool? value;
+  int opened = 0;
+  @override
+  Future<bool?> exempt() async => value;
+  @override
+  Future<bool> openSettings() async {
+    opened++;
+    return true;
+  }
+}
+
 Future<(WorkspaceController, Adapter, Service)> fixture() async {
   final a = Adapter();
   final c = RaftClient(
@@ -98,16 +113,20 @@ Widget host(
   WorkspaceController w,
   NativeNotificationService s, {
   bool dark = false,
-  RaftFamily family = RaftFamily.elegant,
   Locale? locale,
+  BatteryOptimization? battery,
 }) => MaterialApp(
   locale: locale,
   localizationsDelegates: GlobalMaterialLocalizations.delegates,
   supportedLocales: const [Locale('en'), Locale('zh')],
-  theme: raftTheme(family, dark: dark),
+  theme: raftTheme(dark: dark),
   home: Scaffold(
     body: SingleChildScrollView(
-      child: NotificationSettingsView(controller: w, service: s),
+      child: NotificationSettingsView(
+        controller: w,
+        service: s,
+        battery: battery,
+      ),
     ),
   ),
 );
@@ -119,47 +138,46 @@ Future<void> drain(WidgetTester t) async {
 }
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('member mute real checkbox/keyboard/save $theme', (t) async {
-      final f = (await t.runAsync(fixture))!;
-      final (w, a, s) = f;
-      addTearDown(w.dispose);
-      addTearDown(s.dispose);
-      await t.pumpWidget(host(w, s, family: theme.$1, dark: theme.$2));
-      await t.pumpAndSettle();
-      expect(card(t).onSave, isNull);
-      expect(card(t).muted, isFalse);
-      await t.tap(find.byType(RaftCheckbox));
-      await drain(t);
-      expect(card(t).onSave, isNotNull);
-      a.settings = (o) {
-        expect(o.method, 'PATCH');
-        expect(o.data, {'serverPushMuted': true});
-        return {'serverPushMuted': true, 'prefsVersion': 2};
-      };
-      await t.ensureVisible(
-        find.byKey(const ValueKey('notification-settings-save')),
-      );
-      await t.tap(find.byKey(const ValueKey('notification-settings-save')));
-      await t.pumpAndSettle();
-      expect(w.server!.json['serverPushMuted'], true);
-      expect(card(t).onSave, isNull);
-      expect(
-        find.text('Notifications from Fixture are muted.'),
-        findsOneWidget,
-      );
-      expect(a.calls.where((o) => o.method == 'PATCH').length, 1);
-      // Keyboard traversal uses the actual recipe controls, not direct callbacks.
-      await t.sendKeyEvent(LogicalKeyboardKey.tab);
-      await t.pump();
-      await t.sendKeyEvent(LogicalKeyboardKey.space);
-      await drain(t);
-      expect(t.takeException(), isNull);
-    });
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      'member mute real checkbox/keyboard/save ${dark ? 'dark' : 'light'}',
+      (t) async {
+        final f = (await t.runAsync(fixture))!;
+        final (w, a, s) = f;
+        addTearDown(w.dispose);
+        addTearDown(s.dispose);
+        await t.pumpWidget(host(w, s, dark: dark));
+        await t.pumpAndSettle();
+        expect(card(t).onSave, isNull);
+        expect(card(t).muted, isFalse);
+        await t.tap(find.byType(RaftCheckbox));
+        await drain(t);
+        expect(card(t).onSave, isNotNull);
+        a.settings = (o) {
+          expect(o.method, 'PATCH');
+          expect(o.data, {'serverPushMuted': true});
+          return {'serverPushMuted': true, 'prefsVersion': 2};
+        };
+        await t.ensureVisible(
+          find.byKey(const ValueKey('notification-settings-save')),
+        );
+        await t.tap(find.byKey(const ValueKey('notification-settings-save')));
+        await t.pumpAndSettle();
+        expect(w.server!.json['serverPushMuted'], true);
+        expect(card(t).onSave, isNull);
+        expect(
+          find.text('Notifications from Fixture are muted.'),
+          findsOneWidget,
+        );
+        expect(a.calls.where((o) => o.method == 'PATCH').length, 1);
+        // Keyboard traversal uses the actual recipe controls, not direct callbacks.
+        await t.sendKeyEvent(LogicalKeyboardKey.tab);
+        await t.pump();
+        await t.sendKeyEvent(LogicalKeyboardKey.space);
+        await drain(t);
+        expect(t.takeException(), isNull);
+      },
+    );
   }
   testWidgets(
     'server projection seeds the first frame; channel switches keep it without reloading',
@@ -186,8 +204,8 @@ void main() {
       final before = reads();
       for (var i = 0; i < 3; i++) {
         w.channel = RaftChannel({'id': 'c$i', 'name': 'c$i', 'joined': true});
-        w.channelGeneration++;
-        w.threadGeneration++;
+        w.messageWindows.channelGeneration++;
+        w.messageWindows.threadGeneration++;
         w.notifyListeners();
         await t.pump();
         expect(card(t).muted, true, reason: 'switch $i');
@@ -298,11 +316,11 @@ void main() {
     await t.pumpAndSettle();
     expect(card(t).title, 'Phone notifications');
     expect(card(t).status, 'Not enabled');
-    expect(card(t).actionLabel, 'Enable notifications');
+    expect(card(t).actionLabel, 'Enable Notifications');
     expect(card(t).hint, contains('on Android, Settings → Apps → Raft'));
     expect(card(t).hint, isNot(contains('iOS')));
     s.gate = Completer<void>();
-    await t.tap(find.text('Enable notifications'));
+    await t.tap(find.text('Enable Notifications'));
     await t.pump();
     expect(s.enables, 1);
     expect(card(t).onAction, isNull);
@@ -311,12 +329,81 @@ void main() {
     await t.pumpAndSettle();
     expect(s.settings, 0);
     expect(card(t).status, 'Enabled');
-    expect(card(t).actionLabel, 'Send test notification');
-    await t.tap(find.text('Send test notification'));
+    expect(card(t).actionLabel, 'Send Test Notification');
+    await t.tap(find.text('Send Test Notification'));
     await t.pumpAndSettle();
     expect(s.tests, 1);
     expect(card(t).message, contains('Test notification sent'));
     expect(card(t).error, isNull);
+  });
+  testWidgets(
+    'Android: battery optimised shows the notice and opens settings',
+    (t) async {
+      final (w, a, s) = (await t.runAsync(fixture))!;
+      addTearDown(w.dispose);
+      addTearDown(s.dispose);
+      final battery = _Battery(false);
+      await t.pumpWidget(host(w, s, battery: battery));
+      await t.pumpAndSettle();
+      expect(
+        card(t).description,
+        isNot(contains('checks for new messages periodically')),
+      );
+      expect(
+        card(t).notice,
+        'To receive notifications in the background, turn off battery optimization for Raft.',
+      );
+      expect(
+        find.byKey(const ValueKey('notification-settings-notice')),
+        findsOneWidget,
+      );
+      await t.tap(find.text('Open Battery Settings'));
+      await t.pump();
+      expect(battery.opened, 1);
+      // Returning from the system screen with the app now exempt hides it.
+      battery.value = true;
+      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await t.pumpAndSettle();
+      expect(card(t).notice, isNull);
+      expect(find.text('Open Battery Settings'), findsNothing);
+    },
+  );
+  testWidgets('Android: exempt or unknown battery status shows no notice', (
+    t,
+  ) async {
+    final (w, a, s) = (await t.runAsync(fixture))!;
+    addTearDown(w.dispose);
+    addTearDown(s.dispose);
+    for (final value in [true, null]) {
+      await t.pumpWidget(host(w, s, battery: _Battery(value)));
+      await t.pumpAndSettle();
+      expect(card(t).notice, isNull);
+    }
+  });
+  testWidgets('iOS never asks about battery optimisation; zh notice wording', (
+    t,
+  ) async {
+    final (w, a, unused) = (await t.runAsync(fixture))!;
+    final ios = Service(platform: TargetPlatform.iOS);
+    addTearDown(w.dispose);
+    addTearDown(unused.dispose);
+    addTearDown(ios.dispose);
+    await t.pumpWidget(host(w, ios, battery: _Battery(false)));
+    await t.pumpAndSettle();
+    expect(card(t).notice, isNull);
+    expect(
+      card(t).description,
+      contains('checks for new messages periodically'),
+    );
+    final android = Service();
+    addTearDown(android.dispose);
+    await t.pumpWidget(
+      host(w, android, battery: _Battery(false), locale: const Locale('zh')),
+    );
+    await t.pumpAndSettle();
+    expect(find.text('要在后台接收通知，请为 Raft 关闭电池优化。'), findsOneWidget);
+    expect(find.text('打开电池设置'), findsOneWidget);
   });
   testWidgets(
     'phone: a permission the system stops asking about opens settings',
@@ -327,12 +414,12 @@ void main() {
       s.grant = false;
       await t.pumpWidget(host(w, s));
       await t.pumpAndSettle();
-      await t.tap(find.text('Enable notifications'));
+      await t.tap(find.text('Enable Notifications'));
       await t.pumpAndSettle();
       expect(s.enables, 1);
       expect(s.settings, 1);
       expect(card(t).status, 'Not enabled');
-      expect(card(t).actionLabel, 'Enable notifications');
+      expect(card(t).actionLabel, 'Enable Notifications');
     },
   );
   testWidgets('phone: a prompt the person declined does not open settings', (
@@ -350,7 +437,7 @@ void main() {
     addTearDown(declining.dispose);
     await t.pumpWidget(host(w, declining));
     await t.pumpAndSettle();
-    await t.tap(find.text('Enable notifications'));
+    await t.tap(find.text('Enable Notifications'));
     await t.pumpAndSettle();
     expect(declining.settings, 0);
   });
@@ -372,7 +459,7 @@ void main() {
     s.enabled = false;
     s.notifyListeners();
     await t.pump();
-    expect(find.text('未开启'), findsOneWidget);
+    expect(find.text('未启用'), findsOneWidget);
     expect(find.text('开启通知'), findsOneWidget);
   });
   testWidgets('phone: unavailable disables the action and says why', (t) async {
@@ -434,7 +521,7 @@ void main() {
       await t.pumpAndSettle();
       expect(s.tests, 1);
       expect(s.enables, 0);
-      expect(s.testTitle, 'Raft Desktop');
+      expect(s.testTitle, 'Test notification');
       expect(
         s.testBody,
         'Test notification — desktop notifications are working.',
@@ -450,7 +537,7 @@ void main() {
       expect(card(t).message, isNull);
       expect(card(t).error, 'Could not post a test notification.');
       if (platform == TargetPlatform.windows) {
-        await t.tap(find.text('Open notification settings'));
+        await t.tap(find.text('Open Notification Settings'));
         await t.pumpAndSettle();
         expect(s.settings, 1);
         expect(s.enables, 0);

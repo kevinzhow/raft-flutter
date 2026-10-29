@@ -1,9 +1,6 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/rendering.dart';
 
 /// Controlled section paging. The owner supplies the accepted selection;
 /// neighboring pages do not mount their content until first selected.
@@ -82,6 +79,27 @@ class _RaftSectionPagerState<T extends Object>
     }
   }
 
+  /// Pointers that went down inside the display's system Back edges.
+  final edgePointers = <int>{};
+
+  void _pointerDown(PointerDownEvent event) {
+    // A non-swiping host has no competing drag to guard.
+    if (!widget.swipeEnabled ||
+        Theme.of(context).platform != TargetPlatform.android) {
+      return;
+    }
+    final insets = MediaQuery.systemGestureInsetsOf(context);
+    if (insets.left <= 0 && insets.right <= 0) return;
+    // Insets are physical display edges, not logical start/end or the local
+    // bounds of a panel. Flutter pointer coordinates are in logical pixels.
+    final view = View.of(context);
+    final displayWidth = view.physicalSize.width / view.devicePixelRatio;
+    final x = event.position.dx;
+    if (x < insets.left || x >= displayWidth - insets.right) {
+      edgePointers.add(event.pointer);
+    }
+  }
+
   void select(int next) {
     if (next < 0 || next >= widget.sections.length) return;
     final value = widget.sections[next];
@@ -128,19 +146,20 @@ class _RaftSectionPagerState<T extends Object>
           }
           return false;
         },
-        child: _SystemBackEdgeBoundary(
-          view: View.of(context),
-          // A non-swiping host has no competing drag recognizer. Reserving
-          // its edges would also swallow ordinary controls such as Home's bell.
-          insets:
-              widget.swipeEnabled &&
-                  Theme.of(context).platform == TargetPlatform.android
-              ? MediaQuery.systemGestureInsetsOf(context)
-              : EdgeInsets.zero,
+        child: Listener(
+          // Records where a pointer went down so the pager's own drag can
+          // ignore gestures that start in the system Back edges. Content
+          // still receives the pointer: a plain tap on a control in the edge
+          // strip (composer attach / send) must work, and Android cancels
+          // the pointer itself when its Back swipe takes over.
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: _pointerDown,
+          onPointerUp: (e) => edgePointers.remove(e.pointer),
+          onPointerCancel: (e) => edgePointers.remove(e.pointer),
           child: PageView.builder(
             controller: controller,
             physics: widget.swipeEnabled
-                ? const PageScrollPhysics()
+                ? _EdgeGuardPhysics(() => edgePointers.isNotEmpty)
                 : const NeverScrollableScrollPhysics(),
             itemCount: widget.sections.length,
             findChildIndexCallback: (key) {
@@ -210,50 +229,27 @@ class _RetainedSectionState<T extends Object> extends State<_RetainedSection<T>>
   }
 }
 
-// System back owns gestures which *start* in the display's side insets. Do
-// not let the PageView or its content enter their gesture arenas at all: a
-// late drag cancellation can already have scrolled a page or started a child
-// action. This changes hit testing only; content still paints edge to edge.
-class _SystemBackEdgeBoundary extends SingleChildRenderObjectWidget {
-  const _SystemBackEdgeBoundary({
-    required this.view,
-    required this.insets,
-    required super.child,
-  });
+// System back owns gestures which *start* in the display's side insets. The
+// pager's own drag must not scroll a page for them: a late cancellation from
+// the system can already have moved a page. Only the pager's drag is ignored;
+// controls inside the page still get ordinary taps in the edge strips, which
+// the system passes through (it takes over only once the finger swipes).
+class _EdgeGuardPhysics extends PageScrollPhysics {
+  const _EdgeGuardPhysics(this.blocked, {super.parent});
 
-  final ui.FlutterView view;
-  final EdgeInsets insets;
+  final bool Function() blocked;
 
   @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderSystemBackEdgeBoundary(view, insets);
+  _EdgeGuardPhysics applyTo(ScrollPhysics? ancestor) =>
+      _EdgeGuardPhysics(blocked, parent: buildParent(ancestor));
 
   @override
-  void updateRenderObject(
-    BuildContext context,
-    _RenderSystemBackEdgeBoundary renderObject,
-  ) {
-    renderObject
-      ..view = view
-      ..insets = insets;
-  }
-}
-
-class _RenderSystemBackEdgeBoundary extends RenderProxyBox {
-  _RenderSystemBackEdgeBoundary(this.view, this.insets);
-
-  ui.FlutterView view;
-  EdgeInsets insets;
+  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) =>
+      blocked() ? 0 : super.applyPhysicsToUserOffset(position, offset);
 
   @override
-  bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    if (size.contains(position) && (insets.left > 0 || insets.right > 0)) {
-      // Insets are physical display edges, not logical start/end or the local
-      // bounds of a panel. Flutter pointer coordinates are in logical pixels.
-      final x = localToGlobal(position).dx;
-      final displayWidth = view.physicalSize.width / view.devicePixelRatio;
-      if (x < insets.left || x >= displayWidth - insets.right) return true;
-    }
-    return super.hitTest(result, position: position);
-  }
+  Simulation? createBallisticSimulation(
+    ScrollMetrics position,
+    double velocity,
+  ) => super.createBallisticSimulation(position, blocked() ? 0 : velocity);
 }

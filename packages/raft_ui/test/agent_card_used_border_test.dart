@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'agent_surface_cascade_test.dart' as cascade;
 
-// Actual Source DialogCard and CreateAgent No Computer Card both specify
-// border-[0.5px] in Elegant. Chromium's measured normal-zoom DPR3 used box is
-// 1 CSS pixel; source recipes themselves must remain specified at 0.5px.
+// The generic Card keeps its 1px used border. The migrated agent dialog uses
+// Web DialogSurface instead: one 1px seam ring and 20px inner padding.
+// The dark float shadow also contains its own separate 1px layer.
 void main() {
   test('Source normal-zoom used borders preserve specified recipe values', () {
     for (final (specified, used) in [
@@ -34,20 +35,16 @@ void main() {
     }
   });
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark actual Card consumers use the measured Source box',
+      '${dark ? 'dark' : 'light'} Card and agent dialog use their source box',
       (tester) async {
         tester.view.devicePixelRatio = 3;
         tester.view.physicalSize = const Size(1170, 2532);
         addTearDown(tester.view.resetDevicePixelRatio);
         addTearDown(tester.view.resetPhysicalSize);
         await cascade.loadFonts(tester);
-        final theme = raftTheme(family, dark: dark);
+        final theme = raftTheme(dark: dark);
         final t = theme.extension<RaftTokens>()!;
         final resolver = RaftRecipeTokens(t);
         final specified = RaftCardRecipe.resolve(
@@ -55,8 +52,8 @@ void main() {
           states: t.recipeStates(),
           tokens: resolver,
         ).root;
-        final specifiedWidth = t.brutal ? 2.0 : 0.5;
-        final usedWidth = t.brutal ? 2.0 : 1.0;
+        final specifiedWidth = 1.0; // raft-ui 0.7.0 Card: 1px hairline
+        final usedWidth = 1.0;
         expect(specified.borderWidth, EdgeInsets.all(specifiedWidth));
 
         const probeKey = ValueKey('card-child');
@@ -75,7 +72,7 @@ void main() {
                   : const Center(
                       child: SizedBox(
                         width: 358,
-                        child: RaftRecipeCard(
+                        child: RaftCard(
                           padding: EdgeInsets.all(24),
                           child: SizedBox(key: probeKey, width: 10, height: 10),
                         ),
@@ -84,14 +81,37 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          final root = find.byType(RaftRecipeBox).first;
+          final root = agentCard
+              ? find
+                    .descendant(
+                      of: find.byType(RaftDialogSurface),
+                      matching: find.byType(RaftRecipeBox),
+                    )
+                    .first
+              : find.byType(RaftRecipeBox).first;
           final box = tester.widget<RaftRecipeBox>(root);
-          expect(box.style.borderWidth, EdgeInsets.all(usedWidth));
+          expect(
+            box.style.borderWidth,
+            agentCard ? EdgeInsets.zero : EdgeInsets.all(usedWidth),
+          );
+          if (agentCard) {
+            final rings = box.style
+                .cssShadows(t.recipeTokens)
+                .where(
+                  (s) =>
+                      !s.inset &&
+                      s.blur == 0 &&
+                      s.spread == 1 &&
+                      s.color == t.colors['line-seam'],
+                );
+            expect(rings.length, 1);
+            expect(box.style.padding, const EdgeInsets.all(20));
+          }
           expect(tester.getSize(root).width, 358);
           expect(
             tester.getTopLeft(find.byKey(probeKey)).dx -
                 tester.getTopLeft(root).dx,
-            24 + usedWidth,
+            agentCard ? 20 : 24 + usedWidth,
           );
           // The retained specified style is never mutated by component paint.
           expect(specified.borderWidth, EdgeInsets.all(specifiedWidth));

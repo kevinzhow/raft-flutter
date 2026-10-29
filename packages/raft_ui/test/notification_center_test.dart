@@ -4,21 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
-const _themes = [
-  (RaftFamily.brutal, false),
-  (RaftFamily.elegant, false),
-  (RaftFamily.elegant, true),
-];
+const _themes = [(false), (true)];
 
 Widget _host(
   Widget child, {
-  RaftFamily family = RaftFamily.elegant,
   bool dark = false,
   RaftDensity density = RaftDensity.desktop,
   double textScale = 1,
 }) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+  theme: raftTheme(dark: dark),
   home: Scaffold(
     body: MediaQuery(
       data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
@@ -34,28 +30,19 @@ Finder _action(String id, String label) =>
     find.byKey(ValueKey('notification-action-$id-$label'));
 
 void main() {
-  for (final (family, dark) in _themes) {
-    final themeName = '$family/$dark';
+  for (final (dark) in raftThemeMatrix(_themes)) {
+    final themeName = '${dark ? 'dark' : 'light'}';
     testWidgets('empty center retains mounted 320x288 composition $themeName', (
       tester,
     ) async {
       await tester.pumpWidget(
-        _host(
-          const RaftNotificationCenter(entries: []),
-          family: family,
-          dark: dark,
-        ),
+        _host(const RaftNotificationCenter(entries: []), dark: dark),
       );
       expect(
         tester.getSize(find.byKey(const Key('notification-center-surface'))),
         const Size(320, 288),
       );
-      expect(
-        find.text(
-          family == RaftFamily.brutal ? 'NOTIFICATIONS' : 'Notifications',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('Notifications'), findsOneWidget);
       expect(find.text('all clear'), findsOneWidget);
       expect(find.text('No notifications right now'), findsOneWidget);
       expect(
@@ -139,11 +126,7 @@ void main() {
           ),
         ];
         await tester.pumpWidget(
-          _host(
-            RaftNotificationCenter(entries: entries),
-            family: family,
-            dark: dark,
-          ),
+          _host(RaftNotificationCenter(entries: entries), dark: dark),
         );
         expect(
           tester.getTopLeft(find.text('Plan notice')).dy,
@@ -155,7 +138,7 @@ void main() {
         final separator = find.byWidgetPredicate(
           (widget) =>
               widget is SizedBox &&
-              widget.height == (family == RaftFamily.brutal ? 2 : 1) &&
+              widget.height == (1) &&
               widget.child is ColoredBox,
         );
         expect(separator, findsOneWidget);
@@ -205,10 +188,10 @@ void main() {
             ),
           ],
         );
-        await tester.pumpWidget(_host(center, family: family, dark: dark));
+        await tester.pumpWidget(_host(center, dark: dark));
         expect(tester.getSize(_action('computer', 'View')).height, 24);
         await tester.pumpWidget(
-          _host(center, family: family, dark: dark, density: RaftDensity.touch),
+          _host(center, dark: dark, density: RaftDensity.touch),
         );
         final bounds = tester.getSize(_action('computer', 'View'));
         expect(bounds.height, greaterThanOrEqualTo(48));
@@ -226,9 +209,7 @@ void main() {
         );
         expect(
           control.recipe!.background,
-          family == RaftFamily.brutal
-              ? control.recipe!.tokens.colors['color-brutal-pink']
-              : control.recipe!.tokens.colors['primary-soft'],
+          control.recipe!.tokens.colors['primary-soft'],
         );
         expect(tester.takeException(), isNull);
       },
@@ -258,7 +239,6 @@ void main() {
               ),
             ],
           ),
-          family: family,
           dark: dark,
         ),
       );
@@ -285,30 +265,16 @@ void main() {
       'source status/header roles stay distinct from generic menus $themeName',
       (tester) async {
         await tester.pumpWidget(
-          _host(
-            const RaftNotificationCenter(entries: []),
-            family: family,
-            dark: dark,
-          ),
+          _host(const RaftNotificationCenter(entries: []), dark: dark),
         );
         final t = RaftTokens.of(
           tester.element(find.byType(RaftNotificationCenter)),
         );
         final r = RaftNotificationRecipe(t);
-        expect(
-          r.radius,
-          BorderRadius.circular(family == RaftFamily.brutal ? 0 : 6),
-        );
-        expect(r.divider.width, family == RaftFamily.brutal ? 2 : 1);
-        expect(r.background, family == RaftFamily.brutal ? t.panel : t.popover);
-        expect(
-          r.headerBackground,
-          family == RaftFamily.brutal
-              ? t.colors['brutal-cream']
-              : dark
-              ? Colors.transparent
-              : t.panel,
-        );
+        expect(r.radius, BorderRadius.circular(6));
+        expect(r.divider.width, 1);
+        expect(r.background, t.popover);
+        expect(r.headerBackground, dark ? Colors.transparent : t.panel);
         if (dark) {
           expect(
             r.iconFill(RaftNotificationKind.error),
@@ -326,21 +292,12 @@ void main() {
             r.iconFill(RaftNotificationKind.success),
             const Color(0xff0c7d43).withValues(alpha: .28),
           );
-        } else if (family == RaftFamily.brutal) {
-          expect(
-            r.iconFill(RaftNotificationKind.error),
-            t.colors['color-brutal-orange'],
-          );
-          expect(
-            r.iconFill(RaftNotificationKind.info),
-            t.colors['color-brutal-yellow'],
-          );
-        } else {
+        } else
           expect(
             r.iconFill(RaftNotificationKind.info),
             t.colors['info']!.withValues(alpha: .8),
           );
-        }
+
         expect(tester.takeException(), isNull);
       },
     );
@@ -366,15 +323,12 @@ void main() {
                       kind: RaftNotificationKind.warning,
                       glyph: RaftGlyph.monitor,
                       title: 'Mounted warning',
-                      iconForeground: family == RaftFamily.brutal
-                          ? t.ink
-                          : t.strong,
+                      iconForeground: t.strong,
                     ),
                   ],
                 );
               },
             ),
-            family: family,
             dark: dark,
           ),
         );
@@ -391,8 +345,6 @@ void main() {
             glyph.color,
             id == 'generic'
                 ? r.iconForeground(RaftNotificationKind.warning)
-                : family == RaftFamily.brutal
-                ? t.ink
                 : t.strong,
           );
           final fill = tester
@@ -445,7 +397,6 @@ void main() {
                   ),
                 ),
               ),
-              family: family,
               dark: dark,
               textScale: scale,
               density: RaftDensity.touch,
@@ -485,13 +436,13 @@ void main() {
       try {
         // The full app suite bundles dependency assets under the package prefix.
         bytes = await rootBundle.load(
-          'packages/raft_ui/assets/fonts/Geist.ttf',
+          'packages/raft_ui/assets/fonts/SpaceGrotesk.ttf',
         );
       } on FlutterError {
         // Running this package alone uses its local asset manifest instead.
-        bytes = await rootBundle.load('assets/fonts/Geist.ttf');
+        bytes = await rootBundle.load('assets/fonts/SpaceGrotesk.ttf');
       }
-      final font = FontLoader('packages/raft_ui/Geist')
+      final font = FontLoader('packages/raft_ui/SpaceGrotesk')
         ..addFont(Future.value(bytes));
       await font.load();
     });
@@ -615,24 +566,16 @@ void main() {
   testWidgets(
     'attention mark is count controlled and uses theme attention color',
     (tester) async {
-      for (final (family, dark) in _themes) {
+      for (final (dark) in _themes) {
         await tester.pumpWidget(
-          _host(
-            const RaftNotificationAttention(count: 0),
-            family: family,
-            dark: dark,
-          ),
+          _host(const RaftNotificationAttention(count: 0), dark: dark),
         );
         expect(
           tester.getSize(find.byType(RaftNotificationAttention)),
           Size.zero,
         );
         await tester.pumpWidget(
-          _host(
-            const RaftNotificationAttention(count: 4),
-            family: family,
-            dark: dark,
-          ),
+          _host(const RaftNotificationAttention(count: 4), dark: dark),
         );
         // Complete AnimatedTheme transitions before comparing final roles.
         await tester.pumpAndSettle();
@@ -644,7 +587,7 @@ void main() {
         );
         expect(
           (container.decoration! as BoxDecoration).color,
-          t.colors[family == RaftFamily.brutal ? 'accent-400' : 'primary-400'],
+          t.colors['primary-400'],
         );
         expect(
           find.descendant(of: mark, matching: find.byType(GestureDetector)),

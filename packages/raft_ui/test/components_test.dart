@@ -4,54 +4,52 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final family in RaftFamily.values) {
-    testWidgets(
-      '${family.name} composer retains draft on failure and clears only on success',
-      (tester) async {
-        var success = false;
-        final sent = <String>[];
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: raftTheme(family),
-            home: Scaffold(
-              body: Column(
-                children: [
-                  RaftComposer(
-                    onSend: (text) async {
-                      sent.add(text);
-                      return success;
-                    },
-                  ),
-                ],
+  testWidgets('composer retains draft on failure and clears only on success', (
+    tester,
+  ) async {
+    var success = false;
+    final sent = <String>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: Column(
+            children: [
+              RaftComposer(
+                onSend: (text) async {
+                  sent.add(text);
+                  return success;
+                },
               ),
-            ),
+            ],
           ),
-        );
-        await tester.enterText(find.byType(TextField), '你好 · 日本語');
-        await tester.pump();
-        await tester.tap(find.byTooltip('Send'));
-        await tester.pump();
-        expect(sent, ['你好 · 日本語']);
-        expect(find.text('你好 · 日本語'), findsOneWidget);
-        success = true;
-        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
-        await tester.pump();
-        expect(sent, hasLength(2));
-        expect(find.text('你好 · 日本語'), findsNothing);
-      },
+        ),
+      ),
     );
-  }
+    await tester.enterText(find.byType(TextField), '你好 · 日本語');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send'));
+    await tester.pump();
+    expect(sent, ['你好 · 日本語']);
+    expect(find.text('你好 · 日本語'), findsOneWidget);
+    success = true;
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+    expect(sent, hasLength(2));
+    expect(find.text('你好 · 日本語'), findsNothing);
+  });
   testWidgets('typing the next draft while sending never loses that draft', (
     tester,
   ) async {
     final delivery = Completer<bool>();
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(body: RaftComposer(onSend: (_) => delivery.future)),
       ),
     );
@@ -71,7 +69,7 @@ void main() {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant, dark: true),
+        theme: raftTheme(dark: true),
         home: Scaffold(
           body: RaftNavItem(
             label: 'general',
@@ -101,7 +99,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: RaftButton(label: 'Send', onPressed: () {}),
         ),
@@ -118,7 +116,7 @@ void main() {
     final sent = <String>[];
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: RaftComposer(
             onSend: (text) async {
@@ -157,13 +155,9 @@ void main() {
     await tester.pump();
     expect(sent, ['日本語']);
   });
-  for (final theme in [
-    raftTheme(RaftFamily.brutal),
-    raftTheme(RaftFamily.elegant),
-    raftTheme(RaftFamily.elegant, dark: true),
-  ]) {
+  for (final theme in raftThemeMatrix([raftTheme(), raftTheme(dark: true)])) {
     testWidgets(
-      'task statuses and reaction controls retain accessible targets ${theme.brightness} ${theme.extension<RaftTokens>()!.family}',
+      'task statuses and reaction controls retain accessible targets ${theme.brightness}',
       (tester) async {
         final handle = tester.ensureSemantics();
         await tester.pumpWidget(
@@ -194,13 +188,9 @@ void main() {
       },
     );
   }
-  for (final theme in [
-    raftTheme(RaftFamily.brutal),
-    raftTheme(RaftFamily.elegant),
-    raftTheme(RaftFamily.elegant, dark: true),
-  ]) {
+  for (final theme in raftThemeMatrix([raftTheme(), raftTheme(dark: true)])) {
     testWidgets(
-      'destructive high-contrast button target and contrast ${theme.brightness} ${theme.extension<RaftTokens>()!.family}',
+      'destructive high-contrast button target and contrast ${theme.brightness}',
       (tester) async {
         final handle = tester.ensureSemantics();
         await tester.pumpWidget(

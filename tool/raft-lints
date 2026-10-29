@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+"""Run the raft_lints analyzer-plugin rules (tool/raft_lints) deterministically.
+
+The rules are an analyzer plugin (enabled in the root analysis_options.yaml, so
+the IDE shows them), but `dart analyze` / `flutter analyze` print plugin results
+only if the plugin finishes before the main analysis first goes idle, which a
+warm, fast analysis often wins. This wrapper resolves the sources in-process with
+the pinned SDK and runs the very same check functions, so the gate cannot skip
+them.
+
+  tool/raft-lints                       scan every lib/ (apps/raft_flutter and packages/*); exit 1 on findings
+  tool/raft-lints PATH...               scan the given files (resolved one by one) and directories (recursively)
+  tool/raft-lints --changed [--base REF]
+                                        scan only lib/ Dart files changed since the merge-base with REF
+                                        (default origin/cindy/integration): committed, staged, unstaged and untracked
+  tool/raft-lints --staged              scan only the staged lib/ Dart files (used by tool/git-hooks/pre-commit)
+  tool/raft-lints --test                run the plugin's unit tests (dart test in tool/raft_lints)
+
+Run `--changed` after each round of edits; it takes a few seconds. The full scan
+is the gate (tool/check-project): a change in one file can in principle alter
+findings in files that import it, which `--changed` does not re-check.
+
+The runner is compiled once to an AOT snapshot in .local/raft-lints-bin (keyed by
+SDK version and the package sources; rebuilt automatically when they change), so
+startup is well under a second instead of the ~10 s `dart run` spends compiling
+the analyzer. If the snapshot cannot be built it falls back to `dart run`.
+
+Suppress one finding with `// ignore: raft_lints/<rule> -- <reason>` on the line
+above it (or at the end of the line); docs/development.md ("Lint rules").
+"""
+import hashlib
+import json
+import os
+import pathlib
+import re
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+PACKAGE = ROOT / 'tool/raft_lints'
+SNAPSHOT_DIR = ROOT / '.local/raft-lints-bin'
+DEFAULT_BASE = 'origin/cindy/integration'
+# The directories the full scan covers, and the files check.dart skips.
+LINT_TARGET = re.compile(r'^(?:apps/raft_flutter|packages/[^/]+)/lib/.+\.dart$')
+
+
+def is_lint_target(path):
+    """True for a repo-relative path the full scan would lint."""
+    return bool(LINT_TARGET.match(path.replace('\\', '/'))) and not path.endswith('.g.dart')
+
+
+def git(root, *args):
+    out = subprocess.run(['git', '-C', str(root), *args], capture_output=True, text=True)
+    if out.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)} failed: {out.stderr.strip() or out.stdout.strip()}")
+    return out.stdout
+
+
+def git_paths(root, *args):
+    return [name for name in git(root, *args).split('\0') if name]
+
+
+def staged_files(root):
+    """Staged lib/ Dart files (added, copied, modified, renamed; not deleted)."""
+    names = git_paths(root, 'diff', '--cached', '--name-only', '--diff-filter=d', '-z')
+    return sorted(name for name in names if is_lint_target(name))
+
+
+def changed_files(root, base=DEFAULT_BASE):
+    """lib/ Dart files changed since the merge-base of HEAD and `base`.
+
+    Covers committed, staged and unstaged changes (one diff of the merge-base
+    against the working tree) plus untracked, non-ignored files. Deleted files
+    are dropped.
+    """
+    try:
+        merge_base = git(root, 'merge-base', 'HEAD', base).strip()
+    except RuntimeError as error:
+        raise RuntimeError(f'cannot find the merge-base with {base} ({error}); run `git fetch origin` or pass --base REF')
+    tracked = git_paths(root, 'diff', '--name-only', '--diff-filter=d', '-z', merge_base)
+    untracked = git_paths(root, 'ls-files', '--others', '--exclude-standard', '-z')
+    names = sorted({name for name in [*tracked, *untracked] if is_lint_target(name)})
+    return [name for name in names if (pathlib.Path(root) / name).is_file()]
+
+
+def without_git_env():
+    """Environment for tool/flutter: git hooks export GIT_DIR / GIT_INDEX_FILE / ..., which make the
+    Flutter SDK's own `git` calls look at the project repository ("selected SDK is 0.0.0-unknown")."""
+    return {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
+
+
+def dart_sdk_root():
+    command = ([sys.executable] if os.name == 'nt' else []) + [str(ROOT / 'tool/flutter')]
+    out = subprocess.run([*command, '--version', '--machine'], capture_output=True, text=True, env=without_git_env())
+    if out.returncode != 0:
+        sys.exit(out.stderr.strip() or out.stdout.strip() or 'tool/flutter failed')
+    try:
+        flutter_root = json.loads(out.stdout)['flutterRoot']
+    except (ValueError, KeyError) as error:
+        sys.exit(f'cannot read flutterRoot from tool/flutter: {error}')
+    sdk = pathlib.Path(flutter_root) / 'bin/cache/dart-sdk'
+    if not pathlib.Path(dart_executable(sdk)).is_file():
+        sys.exit(f'Dart SDK not found at {sdk}; run `tool/flutter precache` or `tool/flutter --version` once')
+    return sdk
+
+
+def dart_executable(sdk):
+    return str(sdk / 'bin' / ('dart.exe' if os.name == 'nt' else 'dart'))
+
+
+def snapshot_key(sdk, package=PACKAGE):
+    """Hash of everything the compiled runner depends on."""
+    digest = hashlib.sha256()
+    version = sdk / 'version'
+    digest.update(version.read_bytes() if version.is_file() else str(sdk).encode())
+    sources = [package / 'pubspec.yaml', package / 'pubspec.lock', *sorted((package / 'bin').rglob('*.dart')), *sorted((package / 'lib').rglob('*.dart'))]
+    for source in sources:
+        digest.update(str(source.relative_to(package)).encode() + b'\0' + source.read_bytes() + b'\0')
+    return digest.hexdigest()[:16]
+
+
+def ensure_snapshot(sdk):
+    """Path of the AOT snapshot of bin/check.dart, building it when missing; None on failure."""
+    snapshot = SNAPSHOT_DIR / f'check-{snapshot_key(sdk)}.aot'
+    if snapshot.is_file():
+        return snapshot
+    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    temporary = snapshot.with_name(f'{snapshot.name}.{os.getpid()}.tmp')
+    sys.stderr.write('raft-lints: compiling the runner (once per SDK/source change, ~30 s)...\n')
+    build = subprocess.run([dart_executable(sdk), 'compile', 'aot-snapshot', 'bin/check.dart', '-o', str(temporary)], cwd=PACKAGE, capture_output=True, text=True)
+    if build.returncode != 0 or not temporary.is_file():
+        temporary.unlink(missing_ok=True)
+        sys.stderr.write(f'raft-lints: snapshot build failed, falling back to `dart run`: {(build.stderr or build.stdout).strip()[-400:]}\n')
+        return None
+    os.replace(temporary, snapshot)
+    for old in SNAPSHOT_DIR.glob('check-*.aot'):
+        if old != snapshot:
+            old.unlink(missing_ok=True)
+    return snapshot
+
+
+def run_check(sdk, paths):
+    env = {**os.environ, 'RAFT_LINTS_REPO': str(ROOT)}
+    snapshot = ensure_snapshot(sdk)
+    if snapshot is not None:
+        runtime = sdk / 'bin' / ('dartaotruntime.exe' if os.name == 'nt' else 'dartaotruntime')
+        if runtime.is_file():
+            return subprocess.call([str(runtime), str(snapshot), *paths], cwd=PACKAGE, env=env)
+    return subprocess.call([dart_executable(sdk), 'run', 'bin/check.dart', *paths], cwd=PACKAGE, env=env)
+
+
+def parse(argv):
+    """Returns (mode, base, paths): mode is full, paths, changed, staged or test."""
+    if argv[:1] == ['--test']:
+        return 'test', None, argv[1:]
+    base = DEFAULT_BASE
+    mode = None
+    paths = []
+    rest = list(argv)
+    while rest:
+        arg = rest.pop(0)
+        if arg in ('--changed', '--staged'):
+            if mode:
+                raise ValueError(f'{arg} cannot be combined with {mode}')
+            mode = arg[2:]
+        elif arg == '--base' or arg.startswith('--base='):
+            if arg == '--base':
+                if not rest:
+                    raise ValueError('--base needs a ref')
+                base = rest.pop(0)
+            else:
+                base = arg.split('=', 1)[1]
+        elif arg.startswith('--'):
+            raise ValueError(f'unknown option {arg}')
+        else:
+            paths.append(arg)
+    if paths and mode:
+        raise ValueError(f'--{mode} does not take paths')
+    if base != DEFAULT_BASE and mode != 'changed':
+        raise ValueError('--base only applies to --changed')
+    return (mode or ('paths' if paths else 'full')), base, paths
+
+
+def main(argv):
+    try:
+        mode, base, paths = parse(argv)
+    except ValueError as error:
+        sys.exit(f'raft-lints: {error}\n{__doc__.split("Run `--changed`")[0]}')
+    if not (PACKAGE / '.dart_tool/package_config.json').is_file():
+        sys.exit('raft_lints is not resolved; run `tool/flutter pub get --enforce-lockfile` in tool/raft_lints')
+    sdk = dart_sdk_root()
+    if mode == 'test':
+        return subprocess.call([dart_executable(sdk), 'test', *paths], cwd=PACKAGE)
+    if mode in ('changed', 'staged'):
+        try:
+            names = changed_files(ROOT, base) if mode == 'changed' else staged_files(ROOT)
+        except RuntimeError as error:
+            sys.exit(f'raft-lints: {error}')
+        if not names:
+            print(f'raft_lints: no {mode} lib/ Dart files.')
+            return 0
+        paths = [str(ROOT / name) for name in names]
+        if mode == 'staged':
+            partial = sorted(set(names) & set(git_paths(ROOT, 'diff', '--name-only', '-z')))
+            if partial:
+                sys.stderr.write(f'raft-lints: note: {", ".join(partial)} also has unstaged edits; linting the working-tree contents.\n')
+    return run_check(sdk, [os.path.abspath(path) for path in paths])
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))

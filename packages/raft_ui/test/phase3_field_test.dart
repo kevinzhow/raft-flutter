@@ -4,18 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
   testWidgets(
-    'dark source inset paints inside field and survives border tween',
+    'dark 0.7.1 field paints a layer-card fill inside an ink border and survives border tween',
     (tester) async {
-      final theme = raftTheme(RaftFamily.elegant, dark: true);
+      final theme = raftTheme(dark: true);
       final normal =
           theme.inputDecorationTheme.enabledBorder! as RaftFieldBorder;
       final focused =
           theme.inputDecorationTheme.focusedBorder! as RaftFieldBorder;
       final mid = ShapeBorder.lerp(normal, focused, .5)! as RaftFieldBorder;
-      expect(mid.insets, isNotNull);
+      // 0.7.1 fields have no inset shadows (controls never cast shadows): the border is a plain 1.5px outline.
+      expect(mid.insets, isNull);
+      expect(mid.borderSide.width, 1.5);
       final key = GlobalKey();
       await tester.pumpWidget(
         MaterialApp(
@@ -49,56 +52,56 @@ void main() {
         }
       });
       expect(data, isNotNull);
-      // A transparent 1px CSS border retains the fill at the border edge;
-      // the black inset ring begins inside it, at the padding edge.
-      final interior = data!.getUint8((19 * 300 + 150) * 4);
-      expect(data.getUint8(150 * 4), interior);
-      expect(data.getUint8((300 + 150) * 4), lessThan(interior));
-      expect(data.getUint8((19 * 300) * 4), interior);
-      expect(data.getUint8((19 * 300 + 1) * 4), lessThan(interior));
-      expect(boundary.size, const Size(300, 38));
+      final ui = RaftUiColors.of(true);
+      int px(int x, int y) => (y * 300 + x) * 4;
+      Color at(int x, int y) => Color.fromARGB(
+        data!.getUint8(px(x, y) + 3),
+        data.getUint8(px(x, y)),
+        data.getUint8(px(x, y) + 1),
+        data.getUint8(px(x, y) + 2),
+      );
+      // The fill is `layer-card`, the outline `line-strong` (the 1.5px border covers pixels 0 and 1).
+      expect(at(150, 22), ui.layerCard);
+      expect(at(150, 0), ui.lineStrong);
+      expect(at(150, 1).a, 1);
+      expect(boundary.size, const Size(300, 44));
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('$family dark=$dark disabled field renders named hint safely', (
-      tester,
-    ) async {
-      final theme = raftTheme(family, dark: dark);
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: theme,
-          home: const Scaffold(
-            body: TextField(
-              enabled: false,
-              decoration: InputDecoration(
-                labelText: 'Channel name',
-                hintText: 'Disabled field',
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      '${dark ? 'dark' : 'light'} disabled field renders named hint safely',
+      (tester) async {
+        final theme = raftTheme(dark: dark);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: const Scaffold(
+              body: TextField(
+                enabled: false,
+                decoration: InputDecoration(
+                  labelText: 'Channel name',
+                  hintText: 'Disabled field',
+                ),
               ),
             ),
           ),
-        ),
-      );
-      expect(tester.takeException(), isNull);
-      expect(find.text('Disabled field'), findsOneWidget);
-      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
-      final tokens = theme.extension<RaftTokens>()!;
-      final style = WidgetStateProperty.resolveAs<TextStyle>(
-        theme.inputDecorationTheme.hintStyle!,
-        {WidgetState.disabled},
-      );
-      expect(
-        style.color,
-        family == RaftFamily.brutal
-            ? tokens.colors['foreground-placeholder']
-            : tokens.colors['foreground-disabled'],
-      );
-      await tester.pumpWidget(const SizedBox.shrink());
-    });
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text('Disabled field'), findsOneWidget);
+        expect(
+          tester.widget<TextField>(find.byType(TextField)).enabled,
+          isFalse,
+        );
+        final tokens = theme.extension<RaftTokens>()!;
+        final style = WidgetStateProperty.resolveAs<TextStyle>(
+          theme.inputDecorationTheme.hintStyle!,
+          {WidgetState.disabled},
+        );
+        expect(style.color, tokens.colors['foreground-disabled']);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
   }
 }

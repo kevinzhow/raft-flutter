@@ -7,8 +7,13 @@
 // react > android > ios > ohos); metadata records `source: "flutter"`.
 import 'dart:convert';
 import 'dart:io';
+
+import '../../../../tool/testing/system_fonts.dart';
+import '../support/glyph_clip_scan.dart';
+
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -24,8 +29,10 @@ import 'geometry_dump.dart';
 typedef ParityBuilder = Widget Function(ParityContext ctx);
 
 /// Optional post-pump interaction (tap a trigger, open a menu, type text).
-typedef ParityInteraction =
-    Future<void> Function(WidgetTester t, ParityContext ctx);
+typedef ParityInteraction = Future<void> Function(
+  WidgetTester t,
+  ParityContext ctx,
+);
 
 /// One mapped case: the real widget path the Flutter app uses for the
 /// surface the React render host shows under the same case id.
@@ -74,20 +81,37 @@ class ParityContext {
   ParityContext({
     required this.caseJson,
     required this.fixtures,
-    required this.family,
     required this.dark,
+    this.againstWeb = false,
   });
 
   final Map<String, dynamic> caseJson;
 
+  /// The capture is compared with the Web render (the Raft look), not with the
+  /// frozen a57b9dab image of Elegant / Brutal. Only for fixes of a case's own
+  /// defects that the frozen reference shares (it was captured with the same
+  /// harness), which would otherwise move those looks away from it.
+  final bool againstWeb;
+
   /// shared/*.json keyed by file stem, e.g. `fixtureData`, `tasksFixture`.
   final Map<String, dynamic> fixtures;
-  final RaftFamily family;
   final bool dark;
+
+  /// Observed input/state for a case that opts into capture qualification.
+  final captureEvidence = <String, dynamic>{};
 
   /// The capture target. Builders wrap the element that corresponds to the
   /// React `capture.selector` with [target]; when they do not, the whole
   /// viewport is captured (correct for `body` selectors).
+  final _cleanup = <VoidCallback>[];
+  void onDispose(VoidCallback callback) => _cleanup.add(callback);
+  void dispose() {
+    for (final callback in _cleanup.reversed) {
+      callback();
+    }
+    _cleanup.clear();
+  }
+
   final GlobalKey targetKey = GlobalKey(debugLabel: 'parity-target');
   bool targetUsed = false;
 
@@ -103,11 +127,7 @@ class ParityContext {
   double get width => (viewport['width'] as num).toDouble();
   double get height => (viewport['height'] as num).toDouble();
   double get density => (viewport['density'] as num? ?? 1).toDouble();
-  String get themeId => dark
-      ? 'elegant-dark'
-      : family == RaftFamily.brutal
-      ? 'brutal-light'
-      : 'elegant-light';
+  String get themeId => dark ? 'elegant-dark' : 'elegant-light';
 
   Widget target(Widget child) {
     targetUsed = true;
@@ -139,47 +159,87 @@ class ParityContext {
   );
 }
 
-/// Theme the React render host uses for a case id: `.elegant` suffix →
-/// elegant-light, otherwise brutal (light). No official case declares dark.
-(RaftFamily, bool) parityThemeFor(
+/// Which theme pack and mode a case renders with.
+///
+/// This used to return only a `dark` bool, after the single-look rewrite dropped
+/// the family. The effect was silent and total: every case rendered the built-in
+/// Raft pack, so a "brutal" or "elegant" capture differed from Raft only by
+/// darkness. The P2 baseline at a57b9dab passed the family through, which is why
+/// those images really are Brutal and Elegant.
+///
+/// An official case renders Raft unless a supplemental run overrides it; the
+/// extension suite names its theme explicitly in `props.parityTheme`.
+({String pack, bool dark}) parityThemeFor(
   Map<String, dynamic> visualCase, {
   String? override,
 }) {
-  // Supplemental theme runs preserve each original case/fixture identity.
-  // The official run leaves this unset and retains its original 99-case matrix.
-  if (override != null && override.isNotEmpty) {
-    return switch (override) {
-      'brutal-light' => (RaftFamily.brutal, false),
-      'elegant-light' => (RaftFamily.elegant, false),
-      'elegant-dark' => (RaftFamily.elegant, true),
-      _ => throw ArgumentError.value(
-        override,
-        'override',
-        'Unknown parity theme',
-      ),
-    };
-  }
-  final id = visualCase['id'] as String;
+  ({String pack, bool dark}) named(String name) => switch (name) {
+    'brutal-light' || 'brutal' => (pack: brutalThemePackId, dark: false),
+    'brutal-dark' => (pack: brutalThemePackId, dark: true),
+    'elegant-light' || 'elegant' => (pack: elegantThemePackId, dark: false),
+    'elegant-dark' || 'dark' => (pack: elegantThemePackId, dark: true),
+    'light' || 'raft' || 'raft-light' => (pack: raftThemePackId, dark: false),
+    'raft-dark' => (pack: raftThemePackId, dark: true),
+    _ => throw ArgumentError.value(name, 'override', 'Unknown parity theme'),
+  };
   final props =
       ((visualCase['variants'] as List?)?.firstOrNull as Map?)?['props']
           as Map?;
-  // Extension suite cases name their theme explicitly (tool/parity-ext).
   final extTheme = props?['parityTheme'];
-  if (extTheme is String) return parityThemeFor(visualCase, override: extTheme);
-  final propsTheme = props?['theme'];
-  if (id.endsWith('.elegant') || propsTheme == 'elegant') {
-    return (RaftFamily.elegant, false);
+  // `<look>-case` (raft-case, elegant-case, brutal-case): the look is forced,
+  // the brightness still follows the case's own `parityTheme` (a name that ends
+  // in `dark` renders dark). The coverage runner uses it to render one case
+  // list in every look (tool/parity-ext/run --theme).
+  if (override != null && override.endsWith('-case')) {
+    final look = override.substring(0, override.length - '-case'.length);
+    final dark = extTheme is String && extTheme.endsWith('dark');
+    return named('$look-${dark ? 'dark' : 'light'}');
   }
-  return (RaftFamily.brutal, false);
+  if (override != null && override.isNotEmpty) return named(override);
+  if (extTheme is String) return named(extTheme);
+  return (pack: raftThemePackId, dark: false);
 }
 
+/// The selected pack and brightness recorded beside the captured image.
+String parityThemeLabel(({String pack, bool dark}) selection) =>
+    '${selection.pack}-${selection.dark ? 'dark' : 'light'}';
+
+Map<String, List<String>> paritySystemFonts() => {
+  'Noto Sans CJK JP': [
+    systemTestFont('opentype/noto/NotoSansCJK-Regular.ttc').path,
+    systemTestFont('opentype/noto/NotoSansCJK-Bold.ttc').path,
+  ],
+  'Noto Sans CJK SC': [
+    systemTestFont('opentype/noto/NotoSansCJK-Regular.ttc').path,
+    systemTestFont('opentype/noto/NotoSansCJK-Bold.ttc').path,
+  ],
+  'Noto Color Emoji': [systemTestFont('truetype/noto/NotoColorEmoji.ttf').path],
+  // `ui-sans-serif, system-ui` (the hands-feedback Feedback workspace):
+  // Chromium resolves it through fontconfig, which is Noto Sans on the
+  // capture host; product code names `system-ui` (raftSystemUiFont), which
+  // a device resolves to its own UI face.
+  'system-ui': [
+    systemTestFont('truetype/noto/NotoSans-Regular.ttf').path,
+    systemTestFont('truetype/noto/NotoSans-Bold.ttf').path,
+  ],
+  // flutter_test has no OS fallback chain. On Android the system resolves
+  // emoji through its own fallback; here the theme's trailing `sans-serif`
+  // fallback family stands in for it so emoji do not render as tofu.
+  'sans-serif': [systemTestFont('truetype/noto/NotoColorEmoji.ttf').path],
+};
+
+String? missingParityFontReason() => missingTestFontReason(
+  paritySystemFonts().values.expand((paths) => paths).toSet().map(File.new),
+);
+
 bool _fontsLoaded = false;
+final _loadedFontFamilies = <String>{};
 
 /// Loads every font the app bundles (FontManifest.json: raft_ui families and
 /// MaterialIcons) plus the system CJK/emoji families the theme names as
 /// fallbacks, so text is never rendered with the Ahem test font.
 Future<List<String>> loadParityFonts() async {
-  if (_fontsLoaded) return const [];
+  if (_fontsLoaded) return List.unmodifiable(_loadedFontFamilies);
   final loaded = <String>[];
   final manifest =
       json.decode(await rootBundle.loadString('FontManifest.json')) as List;
@@ -202,31 +262,10 @@ Future<List<String>> loadParityFonts() async {
         alias.addFont(rootBundle.load(font['asset'] as String));
       }
       await alias.load();
+      loaded.add(bare);
     }
   }
-  const systemFallbacks = {
-    'Noto Sans CJK JP': [
-      '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
-      '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc',
-    ],
-    'Noto Sans CJK SC': [
-      '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
-      '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc',
-    ],
-    'Noto Color Emoji': ['/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf'],
-    // `ui-sans-serif, system-ui` (the hands-feedback Feedback workspace):
-    // Chromium resolves it through fontconfig, which is Noto Sans on the
-    // capture host; product code names `system-ui` (raftSystemUiFont), which
-    // a device resolves to its own UI face.
-    'system-ui': [
-      '/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf',
-      '/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf',
-    ],
-    // flutter_test has no OS fallback chain. On Android the system resolves
-    // emoji through its own fallback; here the theme's trailing `sans-serif`
-    // fallback family stands in for it so emoji do not render as tofu.
-    'sans-serif': ['/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf'],
-  };
+  final systemFallbacks = paritySystemFonts();
   for (final MapEntry(key: family, value: paths) in systemFallbacks.entries) {
     final files = paths.map(File.new).where((f) => f.existsSync()).toList();
     if (files.isEmpty) continue;
@@ -237,8 +276,9 @@ Future<List<String>> loadParityFonts() async {
     await loader.load();
     loaded.add(family);
   }
+  _loadedFontFamilies.addAll(loaded);
   _fontsLoaded = true;
-  return loaded;
+  return List.unmodifiable(_loadedFontFamilies);
 }
 
 /// Pumps one case at its official viewport/density, captures the target rect
@@ -253,206 +293,264 @@ Future<Map<String, dynamic>> captureParityCase(
   required Directory outputDir,
   required Map<String, dynamic> runInfo,
 }) async {
-  final (family, dark) = parityThemeFor(
+  // The React provider uses Playwright's emulated deviceScaleFactor for every
+  // capture. Keep the CSS paint policy local to a case, including solo runs.
+  final previousBorderSnap = RaftBorderSnap.emulatedDeviceScaleFactor;
+  RaftBorderSnap.emulatedDeviceScaleFactor = true;
+  addTearDown(
+    () => RaftBorderSnap.emulatedDeviceScaleFactor = previousBorderSnap,
+  );
+  final selection = parityThemeFor(
     visualCase,
     override: Platform.environment['PARITY_THEME_OVERRIDE'],
   );
+  final dark = selection.dark;
   final ctx = ParityContext(
     caseJson: visualCase,
     fixtures: fixtures,
-    family: family,
     dark: dark,
+    // The Raft look is the one scored against the Web render.
+    againstWeb: selection.pack == raftThemePackId,
   );
-  final size = Size(ctx.width, ctx.height);
-  t.view.physicalSize = size * ctx.density;
-  t.view.devicePixelRatio = ctx.density;
-  addTearDown(t.view.reset);
+  try {
+    final size = Size(ctx.width, ctx.height);
+    t.view.physicalSize = size * ctx.density;
+    t.view.devicePixelRatio = ctx.density;
+    addTearDown(t.view.reset);
 
-  final rootKey = GlobalKey(debugLabel: 'parity-root');
-  final raft = raftTheme(family, dark: dark);
-  // Playwright screenshots default to caret: "hide"; hide Flutter's text
-  // caret the same way so a focused field is not a spurious diff.
-  final theme = raft.copyWith(
-    textSelectionTheme: raft.textSelectionTheme.copyWith(
-      cursorColor: const Color(0x00000000),
-    ),
-  );
-  await t.pumpWidget(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      locale: const Locale('en'),
-      supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: theme,
-      builder: (context, child) => MediaQuery(
-        // React uses Playwright animations:"disabled": infinite pulses are
-        // captured at their initial frame, finite transitions at rest. Use
-        // the product's reduced-motion contract for the same Flutter state.
-        data: MediaQuery.of(context).copyWith(disableAnimations: true),
-        child: RepaintBoundary(
-          key: rootKey,
-          child: RaftTooltipProvider(
-            delay: const Duration(milliseconds: 600),
-            child: ColoredBox(color: Colors.white, child: child!),
+    final rootKey = GlobalKey(debugLabel: 'parity-root');
+    final raft = raftTheme(dark: dark, pack: packForThemeId(selection.pack));
+    final tokens = raft.extension<RaftTokens>()!;
+    final selectedFonts = {
+      'heading': tokens.headingFont,
+      'sans': tokens.bodyFont,
+      'mono': tokens.monoFont,
+    };
+    final missingFonts = selectedFonts.values.toSet().difference(
+      _loadedFontFamilies,
+    );
+    if (missingFonts.isNotEmpty) {
+      throw StateError(
+        'Parity theme fonts were not loaded: ${missingFonts.join(', ')}',
+      );
+    }
+    // Playwright screenshots default to caret: "hide"; hide Flutter's text
+    // caret the same way so a focused field is not a spurious diff.
+    final theme = raft.copyWith(
+      textSelectionTheme: raft.textSelectionTheme.copyWith(
+        cursorColor: const Color(0x00000000),
+      ),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        locale: const Locale('en'),
+        supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        theme: theme,
+        builder: (context, child) => MediaQuery(
+          // React uses Playwright animations:"disabled": infinite pulses are
+          // captured at their initial frame, finite transitions at rest. Use
+          // the product's reduced-motion contract for the same Flutter state.
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: RepaintBoundary(
+            key: rootKey,
+            child: RaftTooltipProvider(
+              delay: const Duration(milliseconds: 600),
+              child: ColoredBox(color: Colors.white, child: child),
+            ),
           ),
         ),
+        home: Builder(builder: (context) => mapping.build(ctx)),
       ),
-      home: Builder(builder: (context) => mapping.build(ctx)),
-    ),
-  );
-  await t.pump(const Duration(milliseconds: 50));
-  await _androidInteractions(t, visualCase);
-  if (mapping.interact != null) await mapping.interact!(t, ctx);
-  await t.pump(mapping.settle);
-  await t.pump(const Duration(milliseconds: 16));
-  // SVG compilation uses a real isolate. Advancing the test's fake clock
-  // cannot finish it; await the renderer's actual decode before capturing.
-  await t.runAsync(
-    () => vg.waitForPendingDecodes().timeout(const Duration(seconds: 10)),
-  );
-  await t.pump();
-  // Never write a capture of a build/layout error screen.
-  final error = t.takeException();
-  if (error != null) {
-    throw StateError('case ${ctx.id} threw while rendering: $error');
-  }
-
-  final rootBox =
-      rootKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-  // Playwright captures with caret: "hide". Product fields may set their own
-  // cursorColor (bypassing the theme override above), so hide every caret on
-  // the render objects for this frame only; the zero-duration pump repaints
-  // without advancing the blink timer or rebuilding the fields.
-  void hideCarets(RenderObject node) {
-    if (node is RenderEditable) node.cursorColor = const Color(0x00000000);
-    node.visitChildren(hideCarets);
-  }
-
-  hideCarets(rootBox);
-  await t.pump();
-  Rect rect = Offset.zero & size;
-  String? targetNote;
-  // Extension cases name the Flutter widget that corresponds to the React
-  // capture.selector (`capture.androidKey`, a ValueKey<String>).
-  final androidKey = (visualCase['capture'] as Map?)?['androidKey'] as String?;
-  final keyed = androidKey == null
-      ? null
-      : find.byKey(ValueKey(androidKey)).evaluate().firstOrNull;
-  if (androidKey != null && keyed == null) {
-    throw StateError('case ${ctx.id}: capture.androidKey $androidKey missing');
-  }
-  final targetContext = keyed ?? ctx.targetKey.currentContext;
-  if ((keyed != null || ctx.targetUsed) && targetContext != null) {
-    final box = targetContext.findRenderObject()! as RenderBox;
-    final origin = box.localToGlobal(Offset.zero, ancestor: rootBox);
-    final raw = origin & box.size;
-    rect = raw.intersect(Offset.zero & size);
-    if (rect != raw) targetNote = 'target clamped to viewport like React';
-  }
-  // Extension element crops (`capture.androidKey`) follow Playwright's
-  // element screenshot, which captures the CSS-pixel rect enclosing a
-  // fractional box (floor / ceil in CSS px, then scaled: a card at
-  // y = 296.5 on a 3x page starts at device row 888, not 889); official
-  // crops keep their rounding.
-  final enclose = keyed != null;
-  final d = ctx.density;
-  final pixelRect = enclose
-      ? Rect.fromLTRB(
-          rect.left.floorToDouble() * d,
-          rect.top.floorToDouble() * d,
-          rect.right.ceilToDouble() * d,
-          rect.bottom.ceilToDouble() * d,
-        )
-      : Rect.fromLTRB(
-          (rect.left * d).roundToDouble(),
-          (rect.top * d).roundToDouble(),
-          (rect.right * d).roundToDouble(),
-          (rect.bottom * d).roundToDouble(),
+    );
+    await t.pump(const Duration(milliseconds: 50));
+    await _androidInteractions(t, visualCase);
+    if (mapping.interact != null) await mapping.interact!(t, ctx);
+    await t.pump(mapping.settle);
+    await t.pump(const Duration(milliseconds: 16));
+    // Opt-in audit (see support/glyph_clip_scan.dart): append every clip that
+    // sits inside a paragraph's glyph ink to this JSON-lines file.
+    final scanFile = Platform.environment['PARITY_GLYPH_CLIP_SCAN'];
+    if (scanFile != null) {
+      for (final f in scanGlyphClips(t)) {
+        File(scanFile).writeAsStringSync(
+          '${json.encode({'case': visualCase['id'], ...f.toJson()})}\n',
+          mode: FileMode.append,
         );
-
-  final png = await t.runAsync(() async {
-    final full = await rootBox.toImage(pixelRatio: ctx.density);
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    canvas.drawRect(
-      Offset.zero & pixelRect.size,
-      Paint()..color = Colors.white,
-    );
-    canvas.drawImageRect(
-      full,
-      pixelRect,
-      Offset.zero & pixelRect.size,
-      Paint()..filterQuality = FilterQuality.none,
-    );
-    final cropped = await recorder.endRecording().toImage(
-      pixelRect.width.toInt(),
-      pixelRect.height.toInt(),
-    );
-    final bytes = await cropped.toByteData(format: ui.ImageByteFormat.png);
-    full.dispose();
-    cropped.dispose();
-    return bytes!.buffer.asUint8List();
-  });
-
-  final id = ctx.id;
-  final imageFile = File('${outputDir.path}/$id.png');
-  final roundedRect = {
-    'x': rect.left.round(),
-    'y': rect.top.round(),
-    'width': rect.width.round(),
-    'height': rect.height.round(),
-  };
-  final metadata = <String, dynamic>{
-    'provider': 'android',
-    'providerType': 'flutter-widget-test',
-    'source': 'flutter',
-    'caseId': id,
-    'variantId': ctx.variant['id'],
-    'theme': ctx.themeId,
-    'image': 'visual-testing-results/android/$id.png',
-    'viewport': ctx.viewport,
-    'selector': (visualCase['capture'] as Map?)?['selector'],
-    'crop': {
-      'mode': (visualCase['capture'] as Map?)?['crop'] ?? 'element',
-      'contract':
-          (visualCase['capture'] as Map?)?['contract'] ?? 'component-bounds',
-      'rect': roundedRect,
-      'targetRect': roundedRect,
-      'outset': null,
-      'note': ?targetNote,
-    },
-    'flutter': {
-      'widgets': mapping.widgets,
-      if (mapping.notes.isNotEmpty) 'notes': mapping.notes,
-      'targetPlatform': 'android',
-      'density': 'touch',
-      'renderer': 'flutter_test host raster (not a device screenshot)',
-      'animationPolicy':
-          'reduced-motion at rest; matches React animations:disabled',
-      'vectorDecodePolicy':
-          'await actual pending vector decodes before capture',
-      ...runInfo,
-    },
-    'typography': _typographyProbes(
-      ctx.targetUsed ? ctx.targetKey.currentContext : rootKey.currentContext,
-    ),
-    'styleTokens': _styleTokenProbes(
-      ctx.targetUsed ? ctx.targetKey.currentContext : rootKey.currentContext,
-    ),
-    'capturedAt': DateTime.now().toUtc().toIso8601String(),
-  };
-  await t.runAsync(() async {
-    await imageFile.writeAsBytes(png!);
-    await File(
-      '${outputDir.path}/$id.metadata.json',
-    ).writeAsString(const JsonEncoder.withIndent('  ').convert(metadata));
-    if (parityGeometryDumpEnabled) {
-      await File(
-        '${outputDir.path}/$id.geometry.txt',
-      ).writeAsString(parityGeometryDump(rootBox, rect, rootBox));
+      }
     }
-  });
-  return metadata;
+    // SVG compilation uses a real isolate. Advancing the test's fake clock
+    // cannot finish it; await the renderer's actual decode before capturing.
+    await t.runAsync(
+      () => vg.waitForPendingDecodes().timeout(const Duration(seconds: 10)),
+    );
+    await t.pump();
+    // Never write a capture of a build/layout error screen.
+    final error = t.takeException();
+    if (error != null) {
+      throw StateError('case ${ctx.id} threw while rendering: $error');
+    }
+
+    final rootBox =
+        rootKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    // Playwright captures with caret: "hide". Product fields may set their own
+    // cursorColor (bypassing the theme override above), so hide every caret on
+    // the render objects for this frame only; the zero-duration pump repaints
+    // without advancing the blink timer or rebuilding the fields.
+    void hideCarets(RenderObject node) {
+      if (node is RenderEditable) node.cursorColor = const Color(0x00000000);
+      node.visitChildren(hideCarets);
+    }
+
+    hideCarets(rootBox);
+    await t.pump();
+    Rect rect = Offset.zero & size;
+    String? targetNote;
+    // Extension cases name the Flutter widget that corresponds to the React
+    // capture.selector (`capture.androidKey`, a ValueKey<String>).
+    final androidKey =
+        (visualCase['capture'] as Map?)?['androidKey'] as String?;
+    final keyed = androidKey == null
+        ? null
+        : find.byKey(ValueKey(androidKey)).evaluate().firstOrNull;
+    if (androidKey != null && keyed == null) {
+      throw StateError(
+        'case ${ctx.id}: capture.androidKey $androidKey missing',
+      );
+    }
+    final targetContext = keyed ?? ctx.targetKey.currentContext;
+    if ((keyed != null || ctx.targetUsed) && targetContext != null) {
+      final box = targetContext.findRenderObject()! as RenderBox;
+      final origin = box.localToGlobal(Offset.zero, ancestor: rootBox);
+      final raw = origin & box.size;
+      rect = raw.intersect(Offset.zero & size);
+      if (rect != raw) targetNote = 'target clamped to viewport like React';
+    }
+    // Extension element crops (`capture.androidKey`) follow Playwright's
+    // element screenshot, which captures the CSS-pixel rect enclosing a
+    // fractional box (floor / ceil in CSS px, then scaled: a card at
+    // y = 296.5 on a 3x page starts at device row 888, not 889); official
+    // crops keep their rounding.
+    final enclose = keyed != null;
+    final d = ctx.density;
+    final pixelRect = enclose
+        ? Rect.fromLTRB(
+            rect.left.floorToDouble() * d,
+            rect.top.floorToDouble() * d,
+            rect.right.ceilToDouble() * d,
+            rect.bottom.ceilToDouble() * d,
+          )
+        : Rect.fromLTRB(
+            (rect.left * d).roundToDouble(),
+            (rect.top * d).roundToDouble(),
+            (rect.right * d).roundToDouble(),
+            (rect.bottom * d).roundToDouble(),
+          );
+
+    final png = await t.runAsync(() async {
+      final full = await rootBox.toImage(pixelRatio: ctx.density);
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      canvas.drawRect(
+        Offset.zero & pixelRect.size,
+        Paint()..color = Colors.white,
+      );
+      canvas.drawImageRect(
+        full,
+        pixelRect,
+        Offset.zero & pixelRect.size,
+        Paint()..filterQuality = FilterQuality.none,
+      );
+      final picture = recorder.endRecording();
+      final cropped = await picture.toImage(
+        pixelRect.width.toInt(),
+        pixelRect.height.toInt(),
+      );
+      picture.dispose();
+      final bytes = await cropped.toByteData(format: ui.ImageByteFormat.png);
+      full.dispose();
+      cropped.dispose();
+      return bytes!.buffer.asUint8List();
+    });
+
+    final id = ctx.id;
+    final imageFile = File('${outputDir.path}/$id.png');
+    final roundedRect = {
+      'x': rect.left.round(),
+      'y': rect.top.round(),
+      'width': rect.width.round(),
+      'height': rect.height.round(),
+    };
+    final metadata = <String, dynamic>{
+      'provider': 'android',
+      'providerType': 'flutter-widget-test',
+      'source': 'flutter',
+      'caseId': id,
+      'variantId': ctx.variant['id'],
+      'theme': parityThemeLabel(selection),
+      'image': 'visual-testing-results/android/$id.png',
+      'viewport': ctx.viewport,
+      'selector': (visualCase['capture'] as Map?)?['selector'],
+      'crop': {
+        'mode': (visualCase['capture'] as Map?)?['crop'] ?? 'element',
+        'contract':
+            (visualCase['capture'] as Map?)?['contract'] ?? 'component-bounds',
+        'rect': roundedRect,
+        'targetRect': roundedRect,
+        'outset': null,
+        'note': ?targetNote,
+      },
+      'flutter': {
+        'widgets': mapping.widgets,
+        if (mapping.notes.isNotEmpty) 'notes': mapping.notes,
+        'targetPlatform': defaultTargetPlatform.name,
+        // A touch host is a platform property, not a pixel-density one: phone
+        // cases can be density 1 and must still report touch.
+        'density': switch (defaultTargetPlatform) {
+          TargetPlatform.android || TargetPlatform.iOS => 'touch',
+          _ => 'desktop',
+        },
+        'renderer': 'flutter_test host raster (not a device screenshot)',
+        'animationPolicy':
+            'reduced-motion at rest; matches React animations:disabled',
+        'vectorDecodePolicy':
+            'await actual pending vector decodes before capture',
+        ...runInfo,
+      },
+      'fontLoading': {
+        'selected': selectedFonts,
+        'registered': _loadedFontFamilies.toList()..sort(),
+      },
+      'typography': _typographyProbes(targetContext ?? rootKey.currentContext),
+      'styleTokens': _styleTokenProbes(targetContext ?? rootKey.currentContext),
+      if (ctx.captureEvidence.isNotEmpty) 'fixtureState': ctx.captureEvidence,
+      'capturedAt': DateTime.now().toUtc().toIso8601String(),
+    };
+    await t.runAsync(() async {
+      await imageFile.writeAsBytes(png!);
+      await File('${outputDir.path}/$id.metadata.json')
+          .writeAsString(const JsonEncoder.withIndent('  ').convert(metadata));
+      if (parityGeometryDumpEnabled) {
+        await File('${outputDir.path}/$id.geometry.txt')
+            .writeAsString(parityGeometryDump(rootBox, rect, rootBox));
+      }
+    });
+    return metadata;
+  } finally {
+    try {
+      // Complete modal route futures before removing their owners.
+      for (final nav in t.stateList<NavigatorState>(find.byType(Navigator))) {
+        nav.popUntil((route) => route.isFirst);
+      }
+      await t.pump(const Duration(seconds: 1));
+      await t.pump();
+      await t.pumpWidget(const SizedBox.shrink());
+      await t.pump();
+    } finally {
+      ctx.dispose();
+    }
+  }
 }
 
 /// Generic `capture.androidInteractions` of extension cases, the Flutter
@@ -467,7 +565,23 @@ Future<void> _androidInteractions(
   TestGesture? mouse;
   for (final raw in steps.cast<Map>()) {
     final key = raw['type'] == 'key' ? null : raw['key'] as String?;
-    final target = key == null ? null : find.byKey(ValueKey(key));
+    // `finder`: a control that carries no ValueKey (control-state cases,
+    // tool/parity-ext/build-states-cases.py): {text|tooltip|label|key, nth?, in?}.
+    final finderSpec = raw['finder'] as Map?;
+    Finder? locate({bool skipOffstage = true}) => finderSpec != null
+        ? parityFinder(finderSpec, skipOffstage: skipOffstage)
+        : key == null
+        ? null
+        : find.byKey(ValueKey<String>(key), skipOffstage: skipOffstage);
+    final visibleTarget = locate();
+    // A built sliver child outside the viewport is omitted by the default
+    // finder. Playwright scrolls that action into view before clicking it.
+    final offscreenTap =
+        raw['type'] == 'tap' &&
+        raw['scroll'] != false &&
+        visibleTarget != null &&
+        visibleTarget.evaluate().isEmpty;
+    final target = offscreenTap ? locate(skipOffstage: false) : visibleTarget;
     // Like Playwright's actionability wait: the target may appear after the
     // fixture reads settle (up to 2s of fake time).
     for (
@@ -489,7 +603,52 @@ Future<void> _androidInteractions(
         // does not scroll either (ensureVisible would align it to the top).
         if (raw['scroll'] != false) await t.ensureVisible(target!.first);
         await t.pump();
-        await t.tap(target!.first, warnIfMissed: false);
+        // Finding an offstage widget does not authorize a capture of it: the
+        // scroll must make this real action reachable by pointer input.
+        if (offscreenTap && target!.hitTestable().evaluate().isEmpty) {
+          throw StateError(
+            'androidInteractions target $key is not hittable after scrolling',
+          );
+        }
+        if (raw['mouse'] == true) {
+          // Playwright clicks with a mouse: a touch tap would also raise the
+          // text-selection handles of a field the dialog focuses.
+          await t.tapAt(
+            t.getCenter(target!.first),
+            kind: PointerDeviceKind.mouse,
+          );
+        } else {
+          await t.tap(target!.first, warnIfMissed: false);
+        }
+      case 'tapText':
+        // Taps the first widget showing exactly this text (menu items and
+        // buttons that carry no key), scrolled into view like a click.
+        final byText = find.text(raw['text'] as String);
+        for (var i = 0; i < 40 && byText.evaluate().isEmpty; i++) {
+          await t.pump(const Duration(milliseconds: 50));
+        }
+        // A lazy list builds only what is near the viewport: scroll the list
+        // keyed `in` until the text exists (Playwright scrolls to the element).
+        final list = raw['in'] as String?;
+        if (byText.evaluate().isEmpty && list != null) {
+          await t.scrollUntilVisible(
+            byText,
+            300,
+            scrollable: find
+                .descendant(
+                  of: find.byKey(ValueKey(list)),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+        }
+        if (byText.evaluate().isEmpty) {
+          throw StateError('androidInteractions text ${raw['text']} missing');
+        }
+        await t.pump(const Duration(milliseconds: 300));
+        await t.ensureVisible(byText.first);
+        await t.pump();
+        await t.tap(byText.first, warnIfMissed: false);
       case 'secondaryTap':
         // Native right click at the element centre, or at (x, y) from its
         // top-left like Playwright's `position`.
@@ -515,6 +674,27 @@ Future<void> _androidInteractions(
           at,
           kind: PointerDeviceKind.mouse,
           buttons: kSecondaryMouseButton,
+        );
+      case 'longPress':
+        // Native touch long press (the phone's way to open a row menu),
+        // at the element centre or at (x, y) from its top-left.
+        await t.pump(const Duration(milliseconds: 300));
+        final lpBox = t.getRect(target!.first);
+        final lpMargin = raw['row'] == true
+            ? ((visualCase['variants'] as List).first
+                          as Map)['props']['parityTheme'] ==
+                      'brutal-light'
+                  ? 2.0
+                  : 1.0
+            : 0.0;
+        await t.longPressAt(
+          raw['x'] == null
+              ? lpBox.center - Offset(0, lpMargin)
+              : lpBox.topLeft +
+                    Offset(
+                      (raw['x'] as num).toDouble(),
+                      (raw['y'] as num? ?? 0).toDouble(),
+                    ),
         );
       case 'reveal':
         // Playwright's element screenshot scrolls the element into view
@@ -547,6 +727,94 @@ Future<void> _androidInteractions(
               .first,
           raw['text'] as String,
         );
+      case 'hold':
+        // Pointer down on the control and no release: the pressed state.
+        mouse ??= await t.createGesture(kind: PointerDeviceKind.mouse);
+        try {
+          await mouse.addPointer(location: Offset.zero);
+        } on AssertionError {
+          // The mouse device is already added.
+        }
+        await mouse.moveTo(t.getCenter(target!.first));
+        await mouse.down(t.getCenter(target.first));
+        addTearDown(() async {
+          try {
+            await mouse?.up();
+          } on Object {
+            // Already released.
+          }
+        });
+      case 'focus':
+        // Keyboard focus ring on the control (the Web case calls locator.focus() after no pointer use).
+        final previousHighlight = FocusManager.instance.highlightStrategy;
+        addTearDown(
+          () => FocusManager.instance.highlightStrategy = previousHighlight,
+        );
+        FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.alwaysTraditional;
+        FocusNode? node;
+        // A keyed control can wrap its button in a keyboard listener Focus.
+        // Prefer the interactive detector, not that listener's focus node.
+        for (final e
+            in find
+                .descendant(
+                  of: target!.first,
+                  matching: find.byType(FocusableActionDetector),
+                  matchRoot: true,
+                )
+                .evaluate()) {
+          final detector = e.widget as FocusableActionDetector;
+          final n = detector.focusNode;
+          if (detector.enabled && n != null && n.canRequestFocus) {
+            node = n;
+            break;
+          }
+        }
+        for (final e
+            in find
+                .descendant(of: target.first, matching: find.byType(Focus))
+                .evaluate()) {
+          if (node != null) break;
+          final n = (e.widget as Focus).focusNode ?? Focus.maybeOf(e);
+          if (n != null && n.canRequestFocus) {
+            node = n;
+            break;
+          }
+        }
+        node ??= Focus.maybeOf(t.element(target.first));
+        // Exercise keyboard modality as the focus-state case promises. A
+        // prior editor tap is pointer modality; changing Flutter's highlight
+        // strategy alone does not make it a keyboard interaction.
+        await t.sendKeyEvent(LogicalKeyboardKey.tab);
+        node?.requestFocus();
+        await t.pump();
+      case 'tab':
+        // Keyboard focus: Tab `count` times (the Web case presses Tab the same number of times).
+        for (var i = 0; i < ((raw['count'] as num?) ?? 1).toInt(); i++) {
+          await t.sendKeyEvent(LogicalKeyboardKey.tab);
+          await t.pump(const Duration(milliseconds: 50));
+        }
+      case 'mark':
+        // Crop marker over the control (plus `pad`), the counterpart of the
+        // Web `mark` interaction: the capture selector / androidKey is `states-crop`.
+        await t.pump(const Duration(milliseconds: 300));
+        final markPad = ((raw['pad'] as num?) ?? 6).toDouble();
+        final markRect = t.getRect(target!.first).inflate(markPad);
+        final overlay = t.state<OverlayState>(find.byType(Overlay).first);
+        final marker = OverlayEntry(
+          builder: (_) => Positioned.fromRect(
+            rect: markRect,
+            child: const IgnorePointer(
+              child: SizedBox.expand(key: ValueKey('states-crop')),
+            ),
+          ),
+        );
+        overlay.insert(marker);
+        addTearDown(() {
+          // Unmounting the widget does not remove the entry's overlay ownership.
+          marker.remove();
+          marker.dispose();
+        });
       case 'key':
         final name = raw['key'] as String;
         final logical = switch (name) {
@@ -554,6 +822,7 @@ Future<void> _androidInteractions(
           'arrowUp' => LogicalKeyboardKey.arrowUp,
           'enter' => LogicalKeyboardKey.enter,
           'escape' => LogicalKeyboardKey.escape,
+          'tab' => LogicalKeyboardKey.tab,
           _ => throw StateError('unknown androidInteraction key $name'),
         };
         await t.sendKeyEvent(logical);
@@ -565,6 +834,32 @@ Future<void> _androidInteractions(
     await t.pump(const Duration(milliseconds: 50));
     await t.pump(const Duration(milliseconds: 300));
   }
+}
+
+/// The widget a control-state interaction names without a ValueKey:
+/// `{text}`, `{tooltip}`, `{label}` (semantics label), `{key}`; `in` scopes it under a keyed
+/// ancestor, `nth` picks one of several matches.
+Finder parityFinder(Map spec, {bool skipOffstage = true}) {
+  Finder base = spec['text'] != null
+      ? find.text(spec['text'] as String, skipOffstage: skipOffstage)
+      : spec['tooltip'] != null
+      ? find.byTooltip(spec['tooltip'] as String, skipOffstage: skipOffstage)
+      : spec['label'] != null
+      ? find.bySemanticsLabel(
+          spec['label'] as String,
+          skipOffstage: skipOffstage,
+        )
+      : find.byKey(ValueKey(spec['key'] as String), skipOffstage: skipOffstage);
+  final scope = spec['in'] as String?;
+  if (scope != null) {
+    base = find.descendant(
+      of: find.byKey(ValueKey(scope), skipOffstage: skipOffstage),
+      matching: base,
+      skipOffstage: skipOffstage,
+    );
+  }
+  final nth = (spec['nth'] as num?)?.toInt();
+  return nth == null ? base : base.at(nth);
 }
 
 String _hex(Color? c) {
@@ -598,6 +893,11 @@ List<Map<String, dynamic>> _typographyProbes(BuildContext? context) {
           ),
           'fontSize': fontSize,
           'fontWeight': (style.fontWeight ?? FontWeight.w400).value,
+          'fontVariations': [
+            for (final variation
+                in style.fontVariations ?? const <FontVariation>[])
+              {'axis': variation.axis, 'value': variation.value},
+          ],
           'lineHeight': style.height == null
               ? null
               : double.parse((style.height! * fontSize).toStringAsFixed(2)),

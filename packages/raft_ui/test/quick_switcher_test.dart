@@ -1,76 +1,75 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
-Widget frame(
-  RaftFamily family,
-  bool dark, {
-  bool selected = true,
-  VoidCallback? onTap,
-}) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
-  home: RaftQuickSwitcherLayer(
-    child: Align(
-      child: SizedBox(
-        width: 720,
-        height: 480,
-        child: RaftQuickSwitcherFrame(
-          semanticLabel: 'Search',
-          selectLabel: 'Select',
-          openLabel: 'Open',
-          field: RaftQuickSwitcherField(
-            controller: TextEditingController(),
-            focusNode: FocusNode(),
-            hint: 'Channels, people, messages…',
-            clearLabel: 'Clear search',
-            onClear: () {},
-          ),
-          body: RaftQuickSwitcherList(
-            controller: ScrollController(),
-            children: [
-              RaftQuickSwitcherHead(
+/// Owned by the running test: disposed when it ends.
+T _own<T extends ChangeNotifier>(T value) {
+  addTearDown(value.dispose);
+  return value;
+}
+
+Widget frame(bool dark, {bool selected = true, VoidCallback? onTap}) =>
+    MaterialApp(
+      theme: raftTheme(dark: dark),
+      home: RaftQuickSwitcherLayer(
+        child: Align(
+          child: SizedBox(
+            width: 720,
+            height: 480,
+            child: RaftQuickSwitcherFrame(
+              semanticLabel: 'Search',
+              selectLabel: 'Select',
+              openLabel: 'Open',
+              field: RaftQuickSwitcherField(
+                controller: _own(TextEditingController()),
+                focusNode: _own(FocusNode()),
+                hint: 'Channels, people, messages…',
+                clearLabel: 'Clear Search',
+                onClear: () {},
+              ),
+              body: RaftQuickSwitcherList(
+                controller: _own(ScrollController()),
                 children: [
-                  RaftQuickSwitcherActionRow(
-                    glyph: RaftGlyph.search,
-                    title: 'Search for “x”',
-                    subtitle: 'Open the full results page',
-                    selected: false,
-                    onPressed: () {},
+                  RaftQuickSwitcherHead(
+                    children: [
+                      RaftQuickSwitcherActionRow(
+                        glyph: RaftGlyph.search,
+                        title: 'Search for “x”',
+                        subtitle: 'Open the full results page',
+                        selected: false,
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                  RaftQuickSwitcherSection(
+                    heading: 'Server entities',
+                    children: [
+                      RaftQuickSwitcherRow(
+                        leading: const RaftQuickSwitcherIconBox(RaftGlyph.hash),
+                        title: 'design',
+                        subtitle: 'Channel',
+                        badges: const ['Channel', '!Archived'],
+                        selected: selected,
+                        returnHint: true,
+                        onPressed: onTap ?? () {},
+                      ),
+                    ],
                   ),
                 ],
               ),
-              RaftQuickSwitcherSection(
-                heading: 'Server entities',
-                children: [
-                  RaftQuickSwitcherRow(
-                    leading: const RaftQuickSwitcherIconBox(RaftGlyph.hash),
-                    title: 'design',
-                    subtitle: 'Channel',
-                    badges: const ['Channel', '!Archived'],
-                    selected: selected,
-                    returnHint: true,
-                    onPressed: onTap ?? () {},
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  ),
-);
+    );
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'quick switcher frame renders field, rows and footer in ${theme.$1}/${theme.$2}',
+      'quick switcher frame renders field, rows and footer in ${dark ? 'dark' : 'light'}',
       (t) async {
-        await t.pumpWidget(frame(theme.$1, theme.$2));
+        await t.pumpWidget(frame(dark));
         expect(find.byKey(const Key('quick-switcher-input')), findsOneWidget);
         expect(find.byKey(const Key('quick-switcher-footer')), findsOneWidget);
         expect(find.text('Select'), findsOneWidget);
@@ -92,9 +91,7 @@ void main() {
     'only the cursor row shows the Return hint and rows are pressable',
     (t) async {
       var taps = 0;
-      await t.pumpWidget(
-        frame(RaftFamily.elegant, false, selected: false, onTap: () => taps++),
-      );
+      await t.pumpWidget(frame(false, selected: false, onTap: () => taps++));
       expect(find.text('↵'), findsNWidgets(2));
       await t.tap(find.text('design'));
       expect(taps, 1);
@@ -103,7 +100,7 @@ void main() {
 
   testWidgets('frame exposes a named route scope', (t) async {
     final handle = t.ensureSemantics();
-    await t.pumpWidget(frame(RaftFamily.elegant, false));
+    await t.pumpWidget(frame(false));
     expect(find.bySemanticsLabel('Search'), findsWidgets);
     handle.dispose();
   });

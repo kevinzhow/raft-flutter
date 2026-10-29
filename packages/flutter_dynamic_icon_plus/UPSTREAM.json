@@ -1,0 +1,175 @@
+{
+  "name": "flutter_dynamic_icon_plus",
+  "version": "1.4.1",
+  "published": "2026-06-02T07:28:26.540250Z",
+  "archive": "https://pub.dev/api/archives/flutter_dynamic_icon_plus-1.4.1.tar.gz",
+  "sha256": "2611607982af70c5cec138ec0ec16a6f632899307145557a31dd17f0ba21004a",
+  "upstreamRepository": "https://github.com/chandrabezzo/flutter_dynamic_icon_plus",
+  "sourceCommit": "852b1c5b84d31132ec2067c3421d7d0884e2bf28",
+  "commitVerification": "pubspec.yaml and the Dart/iOS/Android core implementation match the published package byte-for-byte",
+  "files": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "968ec955b1ef4977183b4615c7d1d2d288ab8acad615c72a3a7c1a6d24cfbfcb"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "197bf8a55a833135176e12020b1a02cf6a907c57f88ec6f4f08a9a03a715711e"
+    },
+    {
+      "path": "README.md",
+      "sha256": "e6d91665042438e8d2210167ec73e6bd4d044bb9e667f4d7935b2326d06f32f5"
+    },
+    {
+      "path": "analysis_options.yaml",
+      "sha256": "df692318073ecc5f3b8a759a1f9338eb21995900d3c2bc1fbcd2c7780a1c7c6e"
+    },
+    {
+      "path": "android/build.gradle",
+      "sha256": "0e8129dd74def99ef8a5d90bdc2f3a26665f6c2afc5292a7ac93d01a322c2abf"
+    },
+    {
+      "path": "android/settings.gradle",
+      "sha256": "5f284a993b99e3af12d70b41a0dd64e50742cc8d76452f6be4830affc8df261f"
+    },
+    {
+      "path": "android/src/main/AndroidManifest.xml",
+      "sha256": "523190fa89a5b88c8c4bdc2d40e64971a3b3d1867ced77cf48e8b211cd67dc9a"
+    },
+    {
+      "path": "android/src/main/kotlin/com/solusibejo/flutter_dynamic_icon_plus/Arguments.kt",
+      "sha256": "79cec67129493cce460aba35d517c07a6510deafe797668355780b4ad800f9a9"
+    },
+    {
+      "path": "android/src/main/kotlin/com/solusibejo/flutter_dynamic_icon_plus/ComponentUtil.kt",
+      "sha256": "92c4c9005e5b093224e33a97a9a259e7df987b1e6be26767b596cb06a6db6d64"
+    },
+    {
+      "path": "android/src/main/kotlin/com/solusibejo/flutter_dynamic_icon_plus/FlutterDynamicIconPlusPlugin.kt",
+      "sha256": "ea022383bdcba1f8aa6a52c0fed1042b3860d8388578d8f10575d2dcf98b61d1"
+    },
+    {
+      "path": "android/src/main/kotlin/com/solusibejo/flutter_dynamic_icon_plus/FlutterDynamicIconPlusService.kt",
+      "sha256": "d8f6d6e2d0d45ac69a993cdcf8d6c710ea1518b04eb671e5f545bcd378155a5e"
+    },
+    {
+      "path": "android/src/main/kotlin/com/solusibejo/flutter_dynamic_icon_plus/MethodNames.kt",
+      "sha256": "deb4a92504bfec85e52d69f606914e0b97eae66802d4a9f1880ae7f231ae651f"
+    },
+    {
+      "path": "android/src/test/kotlin/com/solusibejo/flutter_dynamic_icon_plus/FlutterDynamicIconPlusPluginTest.kt",
+      "sha256": "ae85f16d3b72f0dbc7d5a5dc94b3b7be84c724553578ce8999c3eae6606cca7f"
+    },
+    {
+      "path": "ios/Classes/Arguments.swift",
+      "sha256": "58156fd046e92865a7fa440ec8dd55ce40018c290ad8acf8875d9752f3ff33f8"
+    },
+    {
+      "path": "ios/Classes/FlutterDynamicIconPlusPlugin.swift",
+      "sha256": "9623916348a6161e036c1ac33db756ed62731c6d3f268a94c844cc20caba295a"
+    },
+    {
+      "path": "ios/Classes/MethodNames.swift",
+      "sha256": "d4bd33c30e6918972a5cb70ea0586469d7997bd2a98d786ea736651e68185e3c"
+    },
+    {
+      "path": "ios/flutter_dynamic_icon_plus.podspec",
+      "sha256": "86b9e6433a68b0434cc593524372396250fc44381a60b6a6c42f9af9e2d3f05d"
+    },
+    {
+      "path": "lib/flutter_dynamic_icon_plus.dart",
+      "sha256": "c1b99d8ddeb59d81d2c3094b8477c6760b5730e86942de674c279a1d3a3e0297"
+    },
+    {
+      "path": "lib/flutter_dynamic_icon_plus_method_channel.dart",
+      "sha256": "e9d81275e82507a97fd02a4bd6709f118e1199fa1774d863b3e379e422020c86"
+    },
+    {
+      "path": "lib/flutter_dynamic_icon_plus_platform_interface.dart",
+      "sha256": "acc3cf614543d2ecc6ef1268150b0c27046ad0d1e49eb7422561c2747e8626b9"
+    },
+    {
+      "path": "lib/src/consts/arguments.dart",
+      "sha256": "07306bae0d1ed7aad4e3fcf1af1b156b34c660a0059e7ff66ebb7cd711207215"
+    },
+    {
+      "path": "lib/src/consts/method_names.dart",
+      "sha256": "dc2860e83eaabf9749092af1158b42dc9e733464ef9374b3a992b1be620cc3ba"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "50af8972e726a3d066bc6e8cd7d10e8d8799f898846596b71b98453145caaa4f"
+    },
+    {
+      "path": "test/flutter_dynamic_icon_plus_method_channel_test.dart",
+      "sha256": "9e6f24dd67911489fc1075793b29c2f932eafc9884ceb052f2e00af1c5a7c2f6"
+    },
+    {
+      "path": "test/flutter_dynamic_icon_plus_test.dart",
+      "sha256": "d083d99caac8caebfc84971a8c30764dbf25105f96664f9cc0dc2c80641bce9a"
+    }
+  ],
+  "localModifications": {
+    "scope": "RAFT_PATCHES.md",
+    "files": [
+      {
+        "path": "analysis_options.yaml",
+        "status": "modified",
+        "sha256": "8d5b7d9feb5364635c13d3eadf8cd6a9fe700634be63be44bbd71a72389c89d4"
+      },
+      {
+        "path": "android/build.gradle",
+        "status": "modified",
+        "sha256": "65f553cef9583311159e3d4b3ecefcaaa991c81819503562e8073f4da2e17bb7"
+      },
+      {
+        "path": "android/src/main/kotlin/com/solusibejo/flutter_dynamic_icon_plus/ComponentUtil.kt",
+        "status": "modified",
+        "sha256": "56c0d416bb38ff15595431d188bb2c467e898ca8025036d6011d4f8994d35f89"
+      },
+      {
+        "path": "android/src/main/kotlin/com/solusibejo/flutter_dynamic_icon_plus/FlutterDynamicIconPlusPlugin.kt",
+        "status": "modified",
+        "sha256": "95ceb2e42de42eb3f0aa3b1da2cdba2bd070927b999ae0cf7eae425037efdb53"
+      },
+      {
+        "path": "android/src/main/kotlin/com/solusibejo/flutter_dynamic_icon_plus/FlutterDynamicIconPlusService.kt",
+        "status": "deleted",
+        "sha256": null
+      },
+      {
+        "path": "android/src/test/kotlin/com/solusibejo/flutter_dynamic_icon_plus/FlutterDynamicIconPlusPluginTest.kt",
+        "status": "modified",
+        "sha256": "90bfce18e4a34bb4d22cc5d0ed47dd30113928f16bde8b8f2b4a7de4e2eaf2c9"
+      },
+      {
+        "path": "ios/Classes/FlutterDynamicIconPlusPlugin.swift",
+        "status": "modified",
+        "sha256": "321091f7bbb30189853370de2f345e1e71f5ba69adf50475cf6e209adc2a6a48"
+      },
+      {
+        "path": "lib/flutter_dynamic_icon_plus.dart",
+        "status": "modified",
+        "sha256": "09a236e997601feb604a34c3eab09bb3d4cc3f8061927ec9271d1111478a5fb0"
+      },
+      {
+        "path": "pubspec.yaml",
+        "status": "modified",
+        "sha256": "a962ea2b9d0e4520ba8b8dbf607e8d20cf7f7975921e1f474f6a76abf5c5174f"
+      },
+      {
+        "path": "test/flutter_dynamic_icon_plus_method_channel_test.dart",
+        "status": "modified",
+        "sha256": "62e778d5265e221a74f73d26c8fc2757713483b1b33a6b064b22e55ee4f59398"
+      }
+    ],
+    "added": [
+      "RAFT_PATCHES.md",
+      "UPSTREAM.json"
+    ],
+    "omittedUpstreamDirectories": [
+      "example",
+      ".github"
+    ]
+  }
+}

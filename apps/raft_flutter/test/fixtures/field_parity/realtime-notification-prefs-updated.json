@@ -1,0 +1,23 @@
+{
+  "_source": "server scope: packages/server/src/routes/servers.ts:217-229 (prefs from serializeServerNotificationPrefs, servers.ts:~205-214); channel scope: packages/server/src/routes/channels.ts:304-327. Both emitted to room user:<userId> (spans every server the user has open).",
+  "events": [
+    {
+      "event": "notification_prefs:updated",
+      "payload": {
+        "serverId": "66666666-6666-4666-8666-666666666666",
+        "scopeId": "66666666-6666-4666-8666-666666666666",
+        "prefs": { "serverPushMuted": false, "serverPushMentionsOnly": true, "serverPushMode": "mentions" },
+        "prefsVersion": 7
+      }
+    },
+    {
+      "event": "notification_prefs:updated",
+      "payload": {
+        "serverId": "66666666-6666-4666-8666-666666666666",
+        "scopeId": "77777777-7777-4777-8777-777777777777",
+        "prefs": { "activityMuted": true, "muteFromSeq": "1200" },
+        "prefsVersion": 3
+      }
+    }
+  ]
+}

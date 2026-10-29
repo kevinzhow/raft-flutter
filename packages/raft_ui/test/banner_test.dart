@@ -1,21 +1,24 @@
+@Tags(['look-elegant'])
+library;
+
 import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'Banner description keeps Source small density and announces errors $theme',
+      'Banner description keeps Source small density and announces errors ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(theme.$1, dark: theme.$2),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: const Scaffold(
               body: DefaultTextStyle(
                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -46,14 +49,17 @@ void main() {
       },
     );
     testWidgets(
-      'Banner can change status and density without losing its message $theme',
+      'Banner can change status and density without losing its message ${dark ? 'dark' : 'light'}',
       (tester) async {
         Future<void> pump(
           RaftBannerRecipeSize size,
           RaftBannerRecipeStatus status,
         ) => tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(theme.$1, dark: theme.$2),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: Scaffold(
               body: SizedBox(
                 width: 300,

@@ -96,10 +96,9 @@ void main() {
     final sizes = NativeSizeObserver();
     binding.addObserver(sizes);
     addTearDown(() => binding.removeObserver(sizes));
-    for (final (name, family, dark) in [
-      ('brutal-light', RaftFamily.brutal, false),
-      ('elegant-light', RaftFamily.elegant, false),
-      ('elegant-dark', RaftFamily.elegant, true),
+    for (final (name, dark) in [
+      ('elegant-light', false),
+      ('elegant-dark', true),
     ]) {
       if (only.isNotEmpty && only != name) continue;
       await Process.run('python3', [Platform.environment['RAFT_PERF_RESIZER']!, '$pid', '0']);
@@ -135,13 +134,13 @@ void main() {
       api.routes['GET /messages/context/perf-300'] = (_) => {
         'messages': rows.sublist(250, 350), 'hasOlder': false, 'hasNewer': false,
       };
-      w.ledger.switchServer('s1');
-      w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
       final shot = GlobalKey();
       final setupClock = Stopwatch()..start();
       await t.pumpWidget(MaterialApp(
-        theme: raftTheme(family, dark: dark),
+        theme: raftTheme(dark: dark),
         home: Scaffold(body: RepaintBoundary(key: shot, child: RaftChatView(controller: w))),
       ));
       await t.pump(const Duration(milliseconds: 100));
@@ -149,7 +148,7 @@ void main() {
       dynamic state = t.state(find.byType(RaftChatView));
       final ScrollController scroll = state.viewport;
       expect(scroll.hasClients, true);
-      expect(w.messages.length, 500);
+      expect(w.messageDomain.messages.length, 500);
       // Wait for the latest end: maximum offset for a top-anchored list,
       // minimum for a bottom-anchored (reversed) one.
       double latest() => scroll.position.axisDirection == AxisDirection.up ? scroll.position.minScrollExtent : scroll.position.maxScrollExtent;
@@ -303,9 +302,9 @@ void main() {
         });
         contexts.add({'x':rect.left,'y':rect.top,'width':rect.width,'height':rect.height,'layers':layers});
       }
-      File('$out/$name-context-diagnostic.json').writeAsStringSync(jsonEncode({'targetCopies':contexts,'visibleRichText':targetText.evaluate().length,'controllerRows':w.messages.length,'error':w.error,'offset':(state.viewport as ScrollController).offset,'maxScrollExtent':(state.viewport as ScrollController).position.maxScrollExtent}));
+      File('$out/$name-context-diagnostic.json').writeAsStringSync(jsonEncode({'targetCopies':contexts,'visibleRichText':targetText.evaluate().length,'controllerRows':w.messageDomain.messages.length,'error':w.error,'offset':(state.viewport as ScrollController).offset,'maxScrollExtent':(state.viewport as ScrollController).position.maxScrollExtent}));
       expect(targetText.evaluate(), isNotEmpty, reason: 'A real text node in the accepted context target must be visible before sampling.');
-      File('$out/$name-context-load.json').writeAsStringSync(jsonEncode({'elapsedSeconds': contextClock.elapsedMicroseconds / 1e6, 'contextMessages': w.messages.length, 'mountedRows': find.byType(RaftMessageTile, skipOffstage: false).evaluate().length, 'rssBytes': ProcessInfo.currentRss}));
+      File('$out/$name-context-load.json').writeAsStringSync(jsonEncode({'elapsedSeconds': contextClock.elapsedMicroseconds / 1e6, 'contextMessages': w.messageDomain.messages.length, 'mountedRows': find.byType(RaftMessageTile, skipOffstage: false).evaluate().length, 'rssBytes': ProcessInfo.currentRss}));
       await sample('context-scroll', scrollForTenSeconds);
       // Resize the same content in every build: the latest messages.
       {

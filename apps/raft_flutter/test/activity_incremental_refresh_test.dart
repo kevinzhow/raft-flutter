@@ -34,6 +34,7 @@ class ActivityClient extends RaftClient {
   final ingress = StreamController<RaftEvent>.broadcast(sync: true);
   final posts = <String>[];
   final bodies = <dynamic>[];
+  final responses = <String, Object>{};
   @override
   Stream<RaftEvent> get events => ingress.stream;
   @override
@@ -57,8 +58,13 @@ class ActivityClient extends RaftClient {
         'user': {'id': 'alice'},
       };
     }
+    // The rollout flags are read with the page; they are not under test.
+    if (path == '/feature-flags/evaluate') {
+      return responses['$method $path'] ?? {'evaluations': []};
+    }
     posts.add('$method $path');
     bodies.add(data);
+    if (responses.containsKey('$method $path')) return responses['$method $path'];
     return <String, dynamic>{};
   }
 
@@ -184,7 +190,7 @@ Finder shown(String text) => find.textContaining(
 
 Finder get skeleton => find.byWidgetPredicate(
   (widget) =>
-      widget is RaftActivityLoadingList || widget is CircularProgressIndicator,
+      widget is RaftActivityLoadingList || widget is RaftSpinner,
 );
 
 ScrollableState activityScroll(WidgetTester tester) => tester.state(
@@ -207,7 +213,7 @@ void main() {
     Future<dynamic> mount(WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: ResourceView(
               controller: w,
@@ -371,7 +377,7 @@ void main() {
         });
         await tester.pump();
         expect(state.rows.first['lastMessagePreview'], 'Newer');
-        await tester.tap(find.widgetWithText(RaftMenuItem, 'Done'));
+        await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Done'));
         await tester.pumpAndSettle();
         final done = client.posts.indexOf('POST /channels/inbox/done');
         expect(done, isNot(-1));

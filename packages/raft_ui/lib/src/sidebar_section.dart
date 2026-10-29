@@ -1,3 +1,5 @@
+import 'sidebar_text.dart';
+
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
@@ -23,30 +25,49 @@ class RaftSidebarSectionRecipe {
   final RaftTokens tokens;
   final RaftDensity density;
 
-  /// Sidebar.tsx section header geometry (24px row, 24px actions) on every
-  /// density: the Web mobile sidebar uses the same boxes, and the exact-replica
-  /// policy keeps the layout identical (listed platform decision: no 48dp
-  /// layout inflation inside the sidebar).
-  double get targetSize => RaftSidebarSectionMetrics.headerHeight;
-  EdgeInsets get inset => const EdgeInsets.fromLTRB(8, 12, 8, 4);
-  Color get foreground => tokens.brutal ? Colors.black : tokens.strong;
-  Color get hoverForeground =>
-      tokens.brutal ? Colors.black.withValues(alpha: .7) : tokens.muted;
+  /// The title line and action face are distinct boxes in Sidebar.tsx.
+  /// The host preserves their CSS centers without shrinking the action hit box.
+  /// The last conversation keeps the section's trailing CSS margin.
+  static EdgeInsets listEndInset(RaftTokens tokens) =>
+      EdgeInsets.only(bottom: tokens.size('space.sidebarListEnd', fallback: 0));
+
+  double get targetSize => tokens.size('size.sidebarSectionLine', fallback: 24);
+  EdgeInsets get inset => EdgeInsets.fromLTRB(
+    8,
+    tokens.size('space.sidebarSectionTop', fallback: 12),
+    8,
+    tokens.size('space.sidebarSectionBottom', fallback: 4),
+  );
+  Color get foreground =>
+      tokens.colors['foreground-sidebar-section'] ?? tokens.strong;
+  Color get hoverForeground => tokens.muted;
   // The row inherits the host's heading face (Inter in Elegant, Hanken in
   // Brutal): `button { font: inherit }` under `main.font-display`.
-  TextStyle get title => RaftTypography.heading(
-    tokens,
-    size: 12,
-    line: 16,
-  ).copyWith(letterSpacing: 1.2);
-  TextStyle get count => RaftTypography.mono(
-    tokens,
-    size: 12,
-    line: 16,
-    color: tokens.brutal
-        ? Colors.black.withValues(alpha: .4)
-        : tokens.colors['foreground-placeholder'],
-  ).copyWith(fontWeight: FontWeight.w700);
+  TextStyle get title =>
+      RaftTypography.heading(
+        tokens,
+        size: tokens.size('type.sidebarSection.size', fallback: 12),
+        line: tokens.size('type.sidebarSection.line', fallback: 16),
+        weight: raftFontWeight(
+          tokens.size('type.sidebarSection.weight', fallback: 400),
+        ),
+        color: foreground,
+      ).copyWith(
+        letterSpacing: tokens.size('type.sidebarSection.tracking', fallback: 0),
+      );
+  TextStyle get count =>
+      RaftTypography.mono(
+        tokens,
+        size: 12,
+        line: 16,
+        color:
+            tokens.colors['foreground-sidebar-section-count'] ??
+            tokens.colors['foreground-placeholder'],
+      ).copyWith(
+        fontWeight: raftFontWeight(
+          tokens.size('type.sidebarSectionCount.weight', fallback: 700),
+        ),
+      );
 }
 
 @immutable
@@ -82,12 +103,17 @@ class RaftSidebarSectionHeader extends StatelessWidget {
     this.actions = const [],
     this.trailing,
     this.onContextMenu,
+    this.contextMenuOnLongPress = true,
     this.topInset,
   });
 
   /// Sidebar.tsx `SidebarSectionHeader onContextMenu`: right click / long press
   /// anywhere on the header row, at the global pointer position.
   final ValueChanged<Offset>? onContextMenu;
+
+  /// False when a long press belongs to the host instead (a draggable header
+  /// lifts on long press); right click still opens [onContextMenu].
+  final bool contextMenuOnLongPress;
   final String label;
 
   /// Overrides the `mt-3` top inset when the row's margin collapses with the
@@ -114,25 +140,31 @@ class RaftSidebarSectionHeader extends StatelessWidget {
                 ? Duration.zero
                 : RaftSidebarSectionMetrics.disclosureDuration,
             curve: RaftSidebarSectionMetrics.disclosureCurve,
-            child: const RaftIcon(RaftGlyph.chevronRight, size: 12),
+            child: RaftIcon(
+              RaftGlyph.chevronRight,
+              size: t.size('size.sidebarSectionGlyph', fallback: 12),
+            ),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: t.size('space.sidebarSectionGap', fallback: 4)),
         ],
         if (emoji != null && emoji!.isNotEmpty) ...[
-          Text(emoji!, style: TextStyle(fontFamilyFallback: t.fontFallback)),
-          const SizedBox(width: 4),
+          RaftSidebarText(
+            emoji!,
+            style: TextStyle(fontFamilyFallback: t.fontFallback),
+          ),
+          SizedBox(width: t.size('space.sidebarSectionGap', fallback: 4)),
         ],
         Flexible(
-          child: Text(
-            label.toUpperCase(),
+          child: RaftSidebarText(
+            label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: recipe.title,
           ),
         ),
         if (count != null) ...[
-          const SizedBox(width: 4),
-          Text('$count', style: recipe.count),
+          SizedBox(width: t.size('space.sidebarSectionCountGap', fallback: 4)),
+          RaftSidebarText('$count', style: recipe.count),
         ],
         if (!expanded && attention != null) ...[
           const SizedBox(width: 4),
@@ -140,10 +172,19 @@ class RaftSidebarSectionHeader extends StatelessWidget {
         ],
       ],
     );
+    // CSS gives the larger action faces negative vertical margins. Allocate
+    // their full hit boxes inside the header instead: reduce the surrounding
+    // padding by the same amount, keeping both centers and the total height.
+    final actionSize = t.size('size.sidebarSectionAction', fallback: 24);
+    final overhang = actions.isEmpty
+        ? 0.0
+        : ((actionSize - recipe.targetSize) / 2).clamp(0.0, double.infinity);
+    final inset = recipe.inset;
     final header = Padding(
-      padding: topInset == null
-          ? recipe.inset
-          : recipe.inset.copyWith(top: topInset),
+      padding: inset.copyWith(
+        top: ((topInset ?? inset.top) - overhang).clamp(0.0, double.infinity),
+        bottom: (inset.bottom - overhang).clamp(0.0, double.infinity),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -168,7 +209,7 @@ class RaftSidebarSectionHeader extends StatelessWidget {
                     child: RaftControl(
                       key: disclosureKey,
                       semanticLabel: count == null ? label : '$label, $count',
-                      visualHeight: RaftSidebarSectionMetrics.headerHeight,
+                      visualHeight: recipe.targetSize,
                       minimumTargetSize: recipe.targetSize,
                       recipe: _DisclosureRecipe(t),
                       onPressed: () => onExpandedChanged!(!expanded),
@@ -176,9 +217,13 @@ class RaftSidebarSectionHeader extends StatelessWidget {
                     ),
                   ),
           ),
-          for (final action in actions) ...[
-            const SizedBox(width: 4),
-            _SectionAction(action: action, targetSize: recipe.targetSize),
+          for (var i = 0; i < actions.length; i++) ...[
+            SizedBox(
+              width: i == 0
+                  ? t.size('space.sidebarSectionActions', fallback: 4)
+                  : 4,
+            ),
+            _SectionAction(action: actions[i], targetSize: recipe.targetSize),
           ],
           if (trailing != null) ...[const SizedBox(width: 4), trailing!],
         ],
@@ -187,8 +232,12 @@ class RaftSidebarSectionHeader extends StatelessWidget {
     if (onContextMenu == null) return header;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
+      // Sidebar.tsx SidebarSectionHeader `onContextMenu`: right click, and on
+      // touch the browser's long-press `contextmenu`.
       onSecondaryTapDown: (d) => onContextMenu!(d.globalPosition),
-      onLongPressStart: (d) => onContextMenu!(d.globalPosition),
+      onLongPressStart: contextMenuOnLongPress
+          ? (d) => onContextMenu!(d.globalPosition)
+          : null,
       child: header,
     );
   }
@@ -199,12 +248,11 @@ class _DisclosureRecipe extends RaftControlRecipe {
   @override
   bool get transformsOnInteraction => false;
   @override
-  Color get foreground => tokens.brutal ? Colors.black : tokens.strong;
+  Color get foreground =>
+      tokens.colors['foreground-sidebar-section'] ?? tokens.strong;
   @override
   Color foregroundFor({bool hovered = false}) => hovered
-      ? tokens.brutal
-            ? Colors.black.withValues(alpha: .7)
-            : tokens.muted
+      ? tokens.colors['foreground-sidebar-section-hover'] ?? tokens.muted
       : foreground;
   @override
   Color get background => Colors.transparent;
@@ -225,14 +273,7 @@ class _DisclosureRecipe extends RaftControlRecipe {
     bool hovered = false,
     bool pressed = false,
     bool focused = false,
-  }) => focused
-      ? [
-          BoxShadow(
-            color: tokens.brutal ? Colors.black : tokens.line,
-            spreadRadius: 2,
-          ),
-        ]
-      : const [];
+  }) => focused ? [BoxShadow(color: tokens.line, spreadRadius: 2)] : const [];
 }
 
 /// Product btn-flat-sm: no border, shadow or transform; visible keyboard focus.
@@ -243,7 +284,9 @@ class RaftSidebarSectionActionRecipe extends _DisclosureRecipe {
   });
   final bool keyboardFocused;
   @override
-  Color get foreground => keyboardFocused ? tokens.strong : tokens.muted;
+  Color get foreground => keyboardFocused
+      ? tokens.strong
+      : tokens.colors['foreground-sidebar-section-control'] ?? tokens.muted;
   @override
   Color foregroundFor({bool hovered = false}) =>
       hovered ? tokens.strong : foreground;
@@ -286,8 +329,10 @@ class _SectionActionState extends State<_SectionAction> {
         semanticLabel: widget.action.label,
         tooltip: widget.action.label,
         onPressed: widget.action.onPressed,
-        visualHeight: 24,
-        visualWidth: 24,
+        visualHeight: RaftTokens.of(context)
+            .size('size.sidebarSectionAction', fallback: 24),
+        visualWidth: RaftTokens.of(context)
+            .size('size.sidebarSectionAction', fallback: 24),
         minimumTargetSize: widget.targetSize,
         recipe: RaftSidebarSectionActionRecipe(
           RaftTokens.of(context),
@@ -296,7 +341,11 @@ class _SectionActionState extends State<_SectionAction> {
               FocusManager.instance.highlightMode ==
                   FocusHighlightMode.traditional,
         ),
-        child: RaftIcon(widget.action.glyph, size: 14),
+        child: RaftIcon(
+          widget.action.glyph,
+          size: RaftTokens.of(context)
+              .size('size.sidebarSectionActionGlyph', fallback: 14),
+        ),
       ),
     ),
   );

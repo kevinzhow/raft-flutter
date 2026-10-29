@@ -6,17 +6,16 @@ import 'design_primitives.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
 
-/// Exact pinned raft-ui 0.5.27 messageEmbed/messageForwardedBundle and solid
+/// Exact pinned raft-ui 0.5.52 messageEmbed/messageForwardedBundle and solid
 /// success Badge primitives. See dist/index.mjs; colors resolve through the
 /// shared semantic palette rather than duplicating sampled PNG literals.
 abstract final class RichCardPrimitive {
-  static const badgeBrutalHeight = 20.0, badgeElegantHeight = 18.0;
-  static const badgeBrutalInset = EdgeInsets.symmetric(horizontal: 6);
+  static const badgeElegantHeight = 18.0;
   static const badgeElegantInset = EdgeInsets.symmetric(
     horizontal: 8,
     vertical: 2,
   );
-  static const badgeGapBrutal = 4.0, badgeGapElegant = 6.0;
+  static const badgeGapElegant = 6.0;
   static const embedRadius = 8.0, contentRadius = 5.5;
   static const embedInset = 2.0, fineBorder = .5;
   static const headerVerticalInset = 6.0, footerVerticalInset = 6.0;
@@ -25,19 +24,14 @@ abstract final class RichCardPrimitive {
 class RichCardSemantic {
   const RichCardSemantic(this.tokens);
   final RaftTokens tokens;
-  Color get success =>
-      tokens.colors[tokens.brutal ? 'color-brutal-lime' : 'success']!;
-  Color get successText => tokens.brutal
-      ? tokens.strong
-      : tokens.colors[tokens.dark
-            ? 'foreground-inverse'
-            : 'success-foreground']!;
+  Color get success => tokens.colors['success']!;
+  Color get successText =>
+      tokens.colors[tokens.dark ? 'foreground-inverse' : 'success-foreground']!;
   // messageEmbed extends messageBlock's bg-layer-card. Header/footer are
   // transparent over that card; layer-canvas-muted belongs to the sidebar.
-  Color get embedCanvas =>
-      tokens.brutal ? RaftPrimitiveColors.white : tokens.card;
-  Color get content => tokens.brutal ? RaftPrimitiveColors.white : tokens.panel;
-  Color get prose => tokens.brutal ? RaftPrimitiveColors.black : tokens.strong;
+  Color get embedCanvas => tokens.card;
+  Color get content => tokens.panel;
+  Color get prose => tokens.strong;
   Color get divider => RaftPrimitiveColors.black.withValues(alpha: .1);
 }
 
@@ -51,19 +45,14 @@ class ForwardedSnapshotRecipe extends RaftMessageEmbedRecipe {
   RichCardSemantic get semantic => RichCardSemantic(tokens);
   @override
   BorderRadius get radius =>
-      BorderRadius.circular(tokens.brutal ? 0 : RichCardPrimitive.embedRadius);
+      BorderRadius.circular(RichCardPrimitive.embedRadius);
   @override
   BorderSide get border => BorderSide(
-    color: tokens.brutal
-        ? RaftPrimitiveColors.black.withValues(alpha: .2)
-        : tokens.dark
-        ? Colors.transparent
-        : tokens.colors['line-muted']!,
-    width: tokens.brutal ? 1 : fine,
+    color: tokens.dark ? Colors.transparent : tokens.colors['line-muted']!,
+    width: fine,
   );
   @override
-  EdgeInsets get inset =>
-      EdgeInsets.all(tokens.brutal ? 0 : RichCardPrimitive.embedInset);
+  EdgeInsets get inset => EdgeInsets.all(RichCardPrimitive.embedInset);
   @override
   BoxDecoration get decoration => BoxDecoration(
     color: semantic.embedCanvas,
@@ -71,78 +60,50 @@ class ForwardedSnapshotRecipe extends RaftMessageEmbedRecipe {
     border: Border.fromBorderSide(border),
   );
   EdgeInsets headerInset(double width) => EdgeInsets.symmetric(
-    horizontal: tokens.brutal
-        ? 10
-        : width >= 640
-        ? 14
-        : 12,
+    horizontal: width >= 640 ? 14 : 12,
     vertical: RichCardPrimitive.headerVerticalInset,
   );
   EdgeInsets footerInset(double width) => EdgeInsets.symmetric(
-    horizontal: tokens.brutal
-        ? 12
-        : width >= 640
-        ? 14
-        : 12,
+    horizontal: width >= 640 ? 14 : 12,
     vertical: RichCardPrimitive.footerVerticalInset,
   );
-  BoxDecoration get headerDecoration => tokens.brutal
-      ? BoxDecoration(
-          color: semantic.content,
-          border: Border(bottom: BorderSide(color: semantic.divider)),
-        )
-      : const BoxDecoration();
-  BoxDecoration get footerDecoration => tokens.brutal
-      ? BoxDecoration(
-          color: semantic.content,
-          border: Border(top: BorderSide(color: semantic.divider)),
-        )
-      : const BoxDecoration();
+  BoxDecoration get headerDecoration => const BoxDecoration();
+  BoxDecoration get footerDecoration => const BoxDecoration();
   BoxDecoration get contentDecoration => BoxDecoration(
     color: semantic.content,
-    borderRadius: tokens.brutal
-        ? null
-        : BorderRadius.circular(RichCardPrimitive.contentRadius),
-    border: tokens.brutal
-        ? null
-        : Border.all(
-            color: tokens.dark
-                ? RaftPrimitiveColors.black.withValues(alpha: .35)
-                : tokens.colors['line-muted']!,
-            width: fine,
-          ),
+    borderRadius: BorderRadius.circular(RichCardPrimitive.contentRadius),
+    border: Border.all(
+      color: tokens.dark
+          ? RaftPrimitiveColors.black.withValues(alpha: .35)
+          : tokens.colors['line-muted']!,
+      width: fine,
+    ),
   );
   @override
   TextStyle get header => super.header.copyWith(
     height: 1,
-    fontWeight: tokens.brutal ? RaftTypography.black(tokens) : FontWeight.w500,
-    color: tokens.brutal
-        ? RaftPrimitiveColors.black.withValues(alpha: .7)
-        : tokens.muted,
+    fontWeight: FontWeight.w500,
+    color: tokens.muted,
   );
   @override
-  TextStyle get metadata =>
-      (tokens.brutal
-              ? RaftTypography.mono(tokens, size: 11, line: 110 / 7)
-              : RaftTypography.body(tokens, size: 11, line: 20))
-          .copyWith(
-            color: tokens.brutal
-                ? RaftPrimitiveColors.black.withValues(alpha: .55)
-                : tokens.colors['foreground-placeholder'],
-          );
+  TextStyle get metadata => RaftTypography.body(
+    tokens,
+    size: 11,
+    line: 20,
+  ).copyWith(color: tokens.colors['foreground-placeholder']);
   @override
-  TextStyle get count => super.count.copyWith(height: 20 / 11);
+  // `text-[11px]` default line height (1.5 = 16.5px).
+  TextStyle get count => super.count.copyWith(height: 1.5);
   @override
-  TextStyle get source => super.source.copyWith(height: 20 / 11);
+  TextStyle get source => super.source.copyWith(height: 1.5);
   @override
   TextStyle get showMore => super.header.copyWith(
     height: 20 / 11,
-    fontWeight: tokens.brutal ? RaftTypography.black(tokens) : FontWeight.w500,
-    color: tokens.brutal
-        ? RaftPrimitiveColors.black.withValues(alpha: .6)
-        : tokens.colors['foreground-placeholder'],
-    decoration: tokens.brutal ? TextDecoration.underline : TextDecoration.none,
+    fontWeight: FontWeight.w500,
+    color: tokens.colors['foreground-placeholder'],
   );
+  @override
+  bool get showMoreUnderlined => false;
 }
 
 class ActionSnapshotRecipe extends RaftActionCardRecipe {
@@ -153,25 +114,17 @@ class ActionSnapshotRecipe extends RaftActionCardRecipe {
   TextStyle get committedName => summary.copyWith(fontWeight: FontWeight.w700);
   TextStyle get badge => RaftTypography.body(
     tokens,
-    size: tokens.brutal ? 10 : 11,
-    line: tokens.brutal ? 10 : 12,
-    weight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
+    size: 11,
+    line: 12,
+    weight: FontWeight.w500,
     color: semantic.successText,
-  ).copyWith(letterSpacing: tokens.brutal ? .5 : .22);
+  ).copyWith(letterSpacing: .22);
   BoxDecoration get badgeDecoration => BoxDecoration(
     color: semantic.success,
-    border: Border.all(
-      color: tokens.brutal ? tokens.colors['line-strong']! : Colors.transparent,
-    ),
-    borderRadius: BorderRadius.circular(tokens.brutal ? 0 : 999),
+    border: Border.all(color: Colors.transparent),
+    borderRadius: BorderRadius.circular(999),
   );
-  double get badgeHeight => tokens.brutal
-      ? RichCardPrimitive.badgeBrutalHeight
-      : RichCardPrimitive.badgeElegantHeight;
-  EdgeInsets get badgeInset => tokens.brutal
-      ? RichCardPrimitive.badgeBrutalInset
-      : RichCardPrimitive.badgeElegantInset;
-  double get badgeGap => tokens.brutal
-      ? RichCardPrimitive.badgeGapBrutal
-      : RichCardPrimitive.badgeGapElegant;
+  double get badgeHeight => RichCardPrimitive.badgeElegantHeight;
+  EdgeInsets get badgeInset => RichCardPrimitive.badgeElegantInset;
+  double get badgeGap => RichCardPrimitive.badgeGapElegant;
 }

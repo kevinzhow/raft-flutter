@@ -1,0 +1,17 @@
+{
+  "_source": "packages/server/src/services/agentOrchestrator.ts:15066-15094 (publicPayload), emitted to room server:<serverId> at :15106 and to channel:<id> joint projection rooms at :15131",
+  "event": "agent:activity",
+  "payload": {
+    "agentId": "11111111-1111-4111-8111-111111111111",
+    "activity": "working",
+    "activityKind": "working",
+    "detail": "Running tests",
+    "detailKind": "running_command",
+    "timestamp": 1760000000000,
+    "serverSeq": 1760000000123,
+    "launchId": "launch-0001",
+    "clientSeq": 42,
+    "isHeartbeat": false,
+    "isRefreshOnly": false
+  }
+}

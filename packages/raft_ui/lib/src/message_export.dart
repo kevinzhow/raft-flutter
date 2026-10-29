@@ -1,13 +1,17 @@
+import 'raft/button.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'components.dart';
 import 'design_primitives.dart';
+import 'error_presentation.dart' show RaftErrorBanner;
 import 'icons.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
 import 'selection_toolbar_recipe.dart';
 import 'system_inset.dart';
+import 'separator.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 
@@ -127,7 +131,7 @@ class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
       'count': widget.selected,
     });
     final canAct = widget.selected > 0 && !widget.busy;
-    final copyLabel = widget.copied ? 'Copied' : 'Copy link';
+    final copyLabel = widget.copied ? 'Copied' : 'Copy Link';
     final forward = widget.onForward != null;
     final copy = widget.onCopyLinks != null;
     final all = widget.onSelectAll != null;
@@ -166,8 +170,9 @@ class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
                               (copy ? 1 : 0) +
                               (forward ? 1 : 0) +
                               (all ? 1 : 0);
-                          if (bounds.maxWidth > lastActionsWidth + 8)
+                          if (bounds.maxWidth > lastActionsWidth + 8) {
                             compactLevel = 0;
+                          }
                           lastActionsWidth = bounds.maxWidth;
                           compactLevel = compactLevel.clamp(0, maxLevel);
                           bool isCopy(int n) => n >= 1;
@@ -221,13 +226,13 @@ class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
                                       ? null
                                       : widget.onCopyLinks,
                                   compact: isCopy(compactLevel),
-                                  tooltip: raftText(context, 'Copy link'),
-                                  semanticLabel: raftText(context, 'Copy link'),
+                                  tooltip: raftText(context, 'Copy Link'),
+                                  semanticLabel: raftText(context, 'Copy Link'),
                                 ),
                               RaftDropdownMenu(
                                 label: raftText(
                                   context,
-                                  'More selected message actions',
+                                  'More Selected Message Actions',
                                 ),
                                 enabled: widget.selected > 0,
                                 side: RaftDropdownSide.top,
@@ -236,7 +241,7 @@ class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
                                 triggerBuilder: (context, node, pressed) =>
                                     action(
                                       context,
-                                      'More selected message actions',
+                                      'More Selected Message Actions',
                                       RaftGlyph.ellipsis,
                                       pressed,
                                       compact: true,
@@ -249,7 +254,7 @@ class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
                                       context,
                                       widget.busy
                                           ? 'Rendering...'
-                                          : 'Generate image',
+                                          : 'Generate Image',
                                     ),
                                     leading: widget.busy
                                         ? Semantics(
@@ -287,14 +292,12 @@ class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
                   ],
                 ),
                 if (widget.error != null)
-                  Semantics(
-                    liveRegion: true,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        widget.error!,
-                        style: TextStyle(color: t.colors['danger-strong']),
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: RaftErrorBanner(
+                      widget.error!,
+                      small: true,
+                      bold: true,
                     ),
                   ),
               ],
@@ -338,12 +341,22 @@ class RaftImageReview extends StatelessWidget {
     required this.onClose,
     this.onSave,
     this.onShare,
+    this.onCopy,
+    this.onShareLink,
+    this.copying = false,
+    this.copied = false,
+    this.sharingLink = false,
     this.busy = false,
     this.error,
   });
   final Widget preview;
   final VoidCallback onClose;
   final VoidCallback? onSave, onShare;
+
+  /// Web SelectShareLightbox "Copy image" (only where the clipboard takes a
+  /// PNG) and "Share to X" (uploads a public share page for the image).
+  final VoidCallback? onCopy, onShareLink;
+  final bool copying, copied, sharingLink;
   final bool busy;
   final String? error;
   @override
@@ -362,8 +375,8 @@ class RaftImageReview extends StatelessWidget {
                 ),
               ),
               RaftTooltip(
-                message: raftText(context, 'Close preview'),
-                child: IconButton(
+                message: raftText(context, 'Close Preview'),
+                child: RaftButton.iconAction(
                   onPressed: busy ? null : onClose,
                   icon: const Icon(Icons.close),
                 ),
@@ -371,7 +384,7 @@ class RaftImageReview extends StatelessWidget {
             ],
           ),
         ),
-        const Divider(height: 1),
+        const RaftSeparator(),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -379,14 +392,11 @@ class RaftImageReview extends StatelessWidget {
           ),
         ),
         if (error != null)
-          Semantics(
-            liveRegion: true,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(error!),
-            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: RaftErrorBanner(error!, small: true, bold: true),
           ),
-        const Divider(height: 1),
+        const RaftSeparator(),
         Padding(
           padding: const EdgeInsets.all(12),
           child: Wrap(
@@ -398,19 +408,40 @@ class RaftImageReview extends StatelessWidget {
                 secondary: true,
                 onPressed: busy ? null : onClose,
               ),
+              if (onCopy != null)
+                RaftButton(
+                  key: const ValueKey('image-review-copy'),
+                  label: copying
+                      ? 'Copying…'
+                      : copied
+                      ? 'Copied'
+                      : 'Copy image',
+                  icon: copied ? Icons.check : Icons.copy_outlined,
+                  secondary: true,
+                  busy: copying,
+                  onPressed: busy ? null : onCopy,
+                ),
               if (onSave != null)
                 RaftButton(
-                  label: 'Save image',
+                  label: 'Save Image',
                   icon: Icons.download_outlined,
-                  busy: busy,
+                  busy: busy && !copying && !sharingLink,
                   onPressed: onSave,
                 ),
               if (onShare != null)
                 RaftButton(
-                  label: 'Share image',
+                  label: 'Share Image',
                   icon: Icons.share_outlined,
                   secondary: true,
                   onPressed: busy ? null : onShare,
+                ),
+              if (onShareLink != null)
+                RaftButton(
+                  key: const ValueKey('image-review-share-link'),
+                  label: sharingLink ? 'Sharing…' : 'Share to X',
+                  icon: Icons.ios_share,
+                  busy: sharingLink,
+                  onPressed: busy ? null : onShareLink,
                 ),
             ],
           ),

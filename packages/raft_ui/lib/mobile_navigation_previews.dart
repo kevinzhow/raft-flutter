@@ -43,6 +43,7 @@ class _NavigationState extends State<_Navigation> {
     child: Column(
       children: [
         RaftMobileRootHeader(
+          workspace: selected == 'chat',
           viewportHeight: widget.height,
           leading: selected == 'chat'
               ? RaftMobileServerSelector(
@@ -54,6 +55,7 @@ class _NavigationState extends State<_Navigation> {
               : null,
           actions: [
             RaftMobileNotificationButton(
+              mobileHeader: selected == 'chat',
               onPressed: () => setState(() => notificationsOpened++),
             ),
           ],

@@ -89,8 +89,8 @@ class LabAdapter implements HttpClientAdapter {
 
 /// A client whose realtime events the lab drives.
 class LabClient extends RaftClient {
-  LabClient(LabAdapter adapter)
-    : super(origin: 'https://example.invalid', sessionStore: MemorySessionStore(), transport: Dio()..httpClientAdapter = adapter) {
+  LabClient(LabAdapter adapter, {super.origin = 'https://example.invalid'})
+    : super( sessionStore: MemorySessionStore(), transport: Dio()..httpClientAdapter = adapter) {
     _accountEvents = super.events.listen(stream.add);
   }
   final stream = StreamController<RaftEvent>.broadcast(sync: true);
@@ -296,15 +296,19 @@ class LabChannel {
 
   Future<Map<String, dynamic>> page(RequestOptions o) async {
     final before = BigInt.tryParse('${o.queryParameters['before'] ?? ''}');
+    // Match the real transport's requested page size. Returning all 600
+    // history rows in one response exceeds the product's accepted-window cap.
+    final limit = (int.tryParse('${o.queryParameters['limit'] ?? 50}') ?? 50).clamp(1, 500).toInt();
     if (pageDelay > Duration.zero) await Future<void>.delayed(pageDelay);
     if (before != null) {
       final older = rows.where((r) => BigInt.parse(r['seq']) < before).toList();
-      final slice = older.sublist(math.max(0, older.length - 50));
+      final slice = older.sublist(math.max(0, older.length - limit));
       if (slice.isNotEmpty) olderPagesServed++;
-      return {'messages': slice, 'hasMore': older.length > 50, 'threadSummariesByParentMessageId': summaries};
+      return {'messages': slice, 'hasMore': older.length > slice.length, 'threadSummariesByParentMessageId': summaries};
     }
-    final first = firstPage == null ? rows : rows.sublist(rows.length - firstPage!);
-    return {'messages': first, 'hasMore': firstPage != null, 'threadSummariesByParentMessageId': summaries};
+    final count = math.min(rows.length, math.min(firstPage ?? limit, limit));
+    final first = rows.sublist(rows.length - count);
+    return {'messages': first, 'hasMore': rows.length > first.length, 'threadSummariesByParentMessageId': summaries};
   }
 
   void install(LabAdapter api) {
@@ -318,8 +322,8 @@ List<String> mixKinds(int count) => [for (var i = 0; i < count; i++) mixCycle[i 
 
 /// Signs in a fixture workspace with the lab's routes. Every channel's rows
 /// arrive through the product's own network page path.
-Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(List<LabChannel> channels, LabImages images, {bool mobile = false, bool ownsClient = true}) async {
-  final api = LabAdapter();
+Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(List<LabChannel> channels, LabImages images, {bool mobile = false, bool ownsClient = true, String origin = 'https://example.invalid', LabAdapter? adapter}) async {
+  final api = adapter ?? LabAdapter();
   api.routes['POST /auth/login'] = (_) => {'accessToken': 'fixture-only', 'refreshToken': 'fixture-only', 'user': {
     'id': 'alice', 'name': 'Alice Zhang', 'email': 'alice@example.invalid', 'emailVerified': true, 'displayLanguage': 'en',
   }};
@@ -331,6 +335,7 @@ Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(List<LabChanne
   api.routes['GET /channels/saved'] = (_) => {'globalTotal': 0, 'saved': []};
   api.routes['GET /tasks'] = (_) => [];
   api.routes['GET /channels/unread'] = (_) => {'channels': {}};
+  api.routes['GET /servers/unread-summary'] = (_) => <dynamic>[];
   // The workspace's one-time reads, answered as a server without these features
   // would (same state the product reaches from a 404, without a fixture miss).
   api.routes['GET /servers/s1/translation-settings'] = (_) => {'translationEnabled': false, 'translationAvailable': false, 'canManageTranslation': false};
@@ -375,12 +380,21 @@ Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(List<LabChanne
   for (final c in channels) {
     c.install(api);
   }
-  final client = LabClient(api);
+  api.routes['POST /attachments/urls'] = (o) async {
+    final urls = <Map<String, dynamic>>[];
+    for (final id in (o.data as Map)['attachmentIds'] as List) {
+      final single = RequestOptions(path: '/attachments/$id/url', method: 'GET');
+      final response = await api.patterns.firstWhere((entry) => entry.$1(single)).$2(single);
+      urls.add({'id': id, ...Map<String, dynamic>.from(response as Map)});
+    }
+    return {'urls': urls};
+  };
+  final client = LabClient(api, origin: origin);
   await client.login('fixture', 'fixture');
   client.selectServer('s1');
   final w = WorkspaceController(client, mobileNavigation: mobile, ownsClient: ownsClient);
   w.server = RaftRecord({'id': 's1', 'name': 'Lab', 'role': mobile ? 'owner' : 'member'});
   w.channels = [for (final c in channels) c.record];
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return (w, api, client);
 }

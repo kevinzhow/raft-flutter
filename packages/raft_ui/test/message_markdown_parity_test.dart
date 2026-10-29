@@ -4,62 +4,52 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/message_content_tokens.dart';
+import 'package:raft_ui/test_themes.dart';
 
 /// Web MarkdownContent / raft-ui InlineCode appearance="message" colours,
 /// checked against the official React captures (visual parity cases
 /// components.thread.message-row.*).
 void main() {
   _badgeShadowTests();
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('message markdown inline code and link colours $family/$dark', (
-      t,
-    ) async {
-      late MarkdownStyleSheetLike sheet;
-      final theme = raftTheme(family, dark: dark);
-      final tokens = theme.extension<RaftTokens>()!;
-      await t.pumpWidget(
-        MaterialApp(
-          theme: theme,
-          home: Builder(
-            builder: (context) {
-              final s = MessageContentRecipe(
-                tokens,
-                mountedMessage: true,
-              ).stylesheet(context);
-              sheet = (code: s.code!, link: s.a!);
-              return const SizedBox();
-            },
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      'message markdown inline code and link colours ${dark ? 'dark' : 'light'}',
+      (t) async {
+        late MarkdownStyleSheetLike sheet;
+        final theme = raftTheme(dark: dark);
+        final tokens = theme.extension<RaftTokens>()!;
+        await t.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Builder(
+              builder: (context) {
+                final s = MessageContentRecipe(
+                  tokens,
+                  mountedMessage: true,
+                ).stylesheet(context);
+                sheet = (code: s.code!, link: s.a!);
+                return const SizedBox();
+              },
+            ),
           ),
-        ),
-      );
-      if (family == RaftFamily.brutal) {
-        // `bg-black/5 text-black`: #f2f2f2 on white, pure black ink.
-        expect(sheet.code.color, const Color(0xff000000));
-        expect(
-          Color.alphaBlend(sheet.code.backgroundColor!, Colors.white),
-          isSameColorAs(const Color(0xfff2f2f2)),
         );
-      } else {
         // `bg-fill-muted text-foreground-strong`.
         expect(sheet.code.color, tokens.strong);
         expect(sheet.code.backgroundColor, tokens.colors['fill-muted']);
-      }
-      // Tailwind 4 `text-blue-700` / `dark:text-blue-300`.
-      expect(
-        sheet.link.color,
-        dark ? const Color(0xff8ec5ff) : const Color(0xff1447e6),
-      );
-    });
+
+        // Tailwind 4 `text-blue-700` / `dark:text-blue-300`.
+        expect(
+          sheet.link.color,
+          dark ? const Color(0xff8ec5ff) : const Color(0xff1447e6),
+        );
+      },
+    );
   }
 
   testWidgets('reference chip label sits on the Blink line-box baseline', (
     t,
   ) async {
-    final theme = raftTheme(RaftFamily.brutal);
+    final theme = raftTheme();
     final tokens = theme.extension<RaftTokens>()!;
     // Real face metrics: the test font's whole-pixel ascent would hide the
     // rounding difference.
@@ -116,17 +106,12 @@ void main() {
 }
 
 void _badgeShadowTests() {
-  for (final family in RaftFamily.values) {
-    test('attachment type badge shadow follows FilePreviewBadge $family', () {
-      final tokens = raftTheme(family).extension<RaftTokens>()!;
-      final recipe = AttachmentComponentRecipe(tokens);
-      // brutal `border-2 border-black shadow-raft-sm`; elegant `px-1` only.
-      expect(
-        recipe.badgeShadows,
-        family == RaftFamily.brutal ? tokens.themeShadows.sm.outer : isNull,
-      );
-    });
-  }
+  test('attachment type badge shadow follows FilePreviewBadge', () {
+    final tokens = raftTheme().extension<RaftTokens>()!;
+    final recipe = AttachmentComponentRecipe(tokens);
+    // brutal `border-2 border-black shadow-raft-sm`; elegant `px-1` only.
+    expect(recipe.badgeShadows, isNull);
+  });
 }
 
 typedef MarkdownStyleSheetLike = ({TextStyle code, TextStyle link});

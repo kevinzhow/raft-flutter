@@ -1,5 +1,5 @@
 /* Component colour roles — AUTHORED in this repository (not vendored).
-   Each value is the CSS a raft-ui 0.5.27 recipe (dist/index.mjs) or a Web
+   Each value is the CSS a raft-ui 0.5.52 recipe (dist/index.mjs) or a Web
    product callsite applies, translated from its Tailwind class to plain CSS,
    so tool/gen-tokens resolves it through the same var()/color-mix() engine as
    the foundation tokens. Same cascade as foundation.css: the root/brutal block

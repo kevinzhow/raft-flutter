@@ -204,8 +204,9 @@ class _ComposingIndicator extends RenderEditablePainter {
         !renderEditable.hasFocus ||
         renderEditable.readOnly ||
         !value.isComposingRangeValid ||
-        range.isCollapsed)
+        range.isCollapsed) {
       return;
+    }
 
     final paint = Paint()..color = _color;
     const thickness = 1.0;

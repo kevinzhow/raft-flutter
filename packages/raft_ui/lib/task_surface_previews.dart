@@ -60,7 +60,7 @@ class _TaskPreviewState extends State<_TaskPreview> {
   Widget surface(BuildContext context) => closed
       ? Center(
           child: RaftTextButton(
-            label: 'Reopen preview',
+            label: 'Reopen Preview',
             onPressed: () => setState(() => closed = false),
           ),
         )

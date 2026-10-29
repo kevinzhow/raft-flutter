@@ -4,34 +4,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 const options = [
   RaftInlineBadgeOption(id: 'todo', label: 'To do'),
   RaftInlineBadgeOption(id: 'blocked', label: 'Unavailable', disabled: true),
   RaftInlineBadgeOption(id: 'done', label: 'Done'),
 ];
-Widget host(Widget child, RaftFamily family, {bool dark = false}) =>
-    MaterialApp(
-      theme: raftTheme(family, dark: dark),
-      home: Scaffold(
-        body: RaftDensityScope(
-          density: RaftDensity.desktop,
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: DefaultTextStyle(
-                style: const TextStyle(
-                  fontFamily: 'InheritedDisplay',
-                  fontSize: 16,
-                ),
-                child: child,
-              ),
+Widget host(Widget child, {bool dark = false}) => MaterialApp(
+  theme: raftTheme(dark: dark),
+  home: Scaffold(
+    body: RaftDensityScope(
+      density: RaftDensity.desktop,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: DefaultTextStyle(
+            style: const TextStyle(
+              fontFamily: 'InheritedDisplay',
+              fontSize: 16,
             ),
+            child: child,
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
 RaftInlineBadgeEditor editor({
   ValueChanged<String>? onSelect,
   bool enabled = true,
@@ -54,24 +54,22 @@ FocusNode node(WidgetTester tester, String label) => tester
     .focusNode!;
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    final (family, dark) = theme;
+  for (final theme in raftThemeMatrix([(false), (true)])) {
+    final (dark) = theme;
     testWidgets(
-      '$family/$dark keyboard selects, skips disabled and restores trigger',
+      '${dark ? 'dark' : 'light'} keyboard selects, skips disabled and restores trigger',
       (tester) async {
         final semantics = tester.ensureSemantics();
         try {
           final selections = <String>[];
           await tester.pumpWidget(
-            host(editor(onSelect: selections.add), family, dark: dark),
+            host(editor(onSelect: selections.add), dark: dark),
           );
           expect(
             tester.widget<Text>(find.text('Status')).style!.fontFamily,
-            'InheritedDisplay',
+            // raft-ui 0.7.0's Badge sets the heading family itself instead of
+            // inheriting the mounted shell's.
+            raftTheme(dark: dark).extension<RaftTokens>()!.headingFont,
           );
           await tester.sendKeyEvent(LogicalKeyboardKey.tab);
           await tester.pump();
@@ -121,9 +119,7 @@ void main() {
     tester,
   ) async {
     final selections = <String>[];
-    await tester.pumpWidget(
-      host(editor(onSelect: selections.add), RaftFamily.elegant),
-    );
+    await tester.pumpWidget(host(editor(onSelect: selections.add)));
     await tester.tap(find.text('Status'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Unavailable'));
@@ -162,7 +158,6 @@ void main() {
               );
             },
           ),
-          RaftFamily.elegant,
         ),
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -194,7 +189,6 @@ void main() {
             return editor(enabled: enabled, onSelect: selections.add);
           },
         ),
-        RaftFamily.elegant,
       ),
     );
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -212,16 +206,16 @@ void main() {
   testWidgets('open popup revocation and disposal cancel pending focus', (
     tester,
   ) async {
-    await tester.pumpWidget(host(editor(), RaftFamily.elegant));
+    await tester.pumpWidget(host(editor()));
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
     expect(node(tester, 'To do').hasFocus, isTrue);
-    await tester.pumpWidget(host(editor(enabled: false), RaftFamily.elegant));
+    await tester.pumpWidget(host(editor(enabled: false)));
     await tester.pumpAndSettle();
     expect(find.byType(RaftInlineBadgeMenu), findsNothing);
     expect(tester.takeException(), isNull);
-    await tester.pumpWidget(host(editor(), RaftFamily.elegant));
+    await tester.pumpWidget(host(editor()));
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -249,7 +243,6 @@ void main() {
                   );
           },
         ),
-        RaftFamily.elegant,
       ),
     );
     await tester.tap(find.text('Status'));
@@ -281,7 +274,6 @@ void main() {
               );
             },
           ),
-          RaftFamily.elegant,
         ),
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -329,7 +321,6 @@ void main() {
             );
           },
         ),
-        RaftFamily.elegant,
       ),
     );
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -362,7 +353,6 @@ void main() {
           background: Colors.yellow,
           foreground: Colors.black,
         ),
-        RaftFamily.brutal,
       ),
     );
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);

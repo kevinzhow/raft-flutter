@@ -1,5 +1,85 @@
 # Design-system migration map (apps/raft_flutter/lib → raft_ui)
 
+`tool/ds-audit` also guards `packages/raft_ui/lib` and the independent recipe engine in `packages/raft_theme/lib/recipes` plus its CSS decoration, outer-shadow painter and cache helpers against the theme contract; see "Contract rules" below. The numbers in this document describe the app scope only.
+
+## Ownership and applicable-state registration
+
+`tool/ds-audit-families.json` is the canonical family authority. Its existing
+`canonical` and `deprecated` decisions remain authoritative;
+`canonicalBindings` adds exact declaring element identities and part roles.
+`recipes` registers every generated recipe key and its axes. Several recipes
+may belong to one family. An unresolved owner is recorded explicitly instead
+of inventing a second public component. Preserve pending/uncertain decisions;
+in particular, `RaftSegmentedControl` remains the public segmented API.
+
+`docs/state-parity.json.designSystemCoverage` extends the existing lifecycle
+ledger. Its own schemaVersion is1; the surrounding lifecycle version1 is
+unchanged. It records declarations, entry compositions, applicable requirements,
+known recipe-state atoms/uses and evidence. New resolved widgets, private render
+owners, builders, surface factories, generated axes and known state uses must
+be registered. Local named builders use their resolved lexical fragment chain
+and real source offsets, so equal names in nested or sibling scopes remain
+distinct. These source-scoped identities change when their positions change;
+new identities require an explicit UNKNOWN or reviewed registration.
+An internal wrapper/part names its exact canonical owner and must have a
+resolved constructor or function call to it. Type annotations and identifier
+mentions remain indexed references and do not prove delegation.
+Frozen-only and unused classifications need
+source-bound review; no direct recipe hit is not unused-code proof.
+
+The analyzer emits these identities in its existing pass, including tracked
+runtime path dependencies. This inventory does not enlarge the existing
+literal/bypass/duplicate style scopes or allowlists. Static references are not
+mounted-entry proof. Dynamic delegation, unresolved ownership, pending states
+and historical screenshots never count as current visual acceptance. Private
+widgets/State painters and Future-returning surface factories remain in scope.
+
+Requirements use the real source contract: theme/look, light/dark, layout,
+platform/input, variant and action/state as applicable. Static text does not
+automatically need hover/press/selected/disabled. A touch long press may open a
+menu or viewer; register that action and the resulting state. `unknown` records
+pending work. `not_applicable` needs a reason and exact source bindings. Existing
+loading/empty/error/partial checks and their case-id typo guard retain their
+documented limits.
+
+`evidence` retains immutable historical receipts. Only explicit `currentClaims`
+can claim acceptance; they require exact case/entry/state/mount bindings and
+the capture runner's `.local/design-system-execution.json`, original frames and
+metadata. Input and reference digests must be computed from exact bound files,
+not copied arbitrary strings. The captured Git commit/tree and source bytes
+must agree. Current claims also provide a bundled `referenceGitProof`: public
+raw commit/tree object bodies and the reference runner's source bytes, encoded
+as base64. The checker verifies the Git object chain from the exact commit in
+`docs/source-reference.json` to every `webSourceFiles` blob, including the real
+Web package manifest. A matching HEAD label cannot excuse different working
+files. The proof is offline and needs no private path, clone or network. It is
+not required for UNKNOWN/FAIL history or unrelated functional changes; no visual
+claims are seeded by this ledger. Keep raw capture/proof payloads with the
+verification artifacts; registration data is not permission to commit private
+screenshots or user data.
+
+This first structural slice conservatively binds all runtime Dart
+inputs, render assets, dependency manifests and SDK selection; smaller closures
+require a reviewed dependency boundary. A later commit may reuse evidence when
+all responsible bytes and inputs remain identical. General prose and transient
+reports stay outside `tool/source-hash`; the DS reducer, registry and state
+ledger are verification inputs, and the hash algorithm binds itself.
+
+Keep earlier evidence historical when its scope is no longer current. Stale
+history and the registered UNKNOWN backlog do not reject an unrelated
+functional fix; a mismatched explicit current claim fails. Style/component
+changes still require affected real Web/Flutter comparisons under AGENTS.md.
+Metadata validation is not screenshot or native acceptance, and this ledger
+does not certify a family merely because all its names are listed.
+
+`tool/preflight` keeps its existing DS step. Direct `tool/check-project` calls
+also run one DS check after workspace resolution and before Dart tests. Offline
+state guard tests check schema/navigation relationships without launching
+another analyzer. Feature branches never change the style ratchet baseline.
+
+The snapshot below is historical and is not the ownership or visual-coverage
+count of the current source.
+
 Snapshot: branch `cindy/ds-guard` on top of `3f3c72f`, measured with `tool/ds-audit`.
 The snapshot covers 125 Dart files. It found **1118 enforced violations in 65 files**
 (widget 492, style 626) and **0 allowlisted**. The ratchet baseline is
@@ -11,14 +91,14 @@ change as work lands.
 
 | Command | Effect |
 |---|---|
-| `tool/ds-audit` | Prints totals per category, the top 15 files and the comparison with the baseline. Writes `.local/ds-audit.json`, which holds every finding with file, line, column, category, name and argument shape. |
-| `tool/ds-audit --check` | Exits 1 if any file/category count is above the baseline (new files and new categories count from 0), or if a `ds-allow` comment has no reason. |
-| `tool/ds-audit --update-baseline` | Writes the current counts after you remove violations. It refuses to raise any count unless you also pass `--accept-increase`, and a raised count must be reviewed. |
+| `tool/ds-audit` | Scans the App, raft_ui components and independent recipe-engine code; theme-pack value definitions are excluded. Prints totals per category, the top 20 files per scope and the comparison with the baseline. Writes `.local/ds-audit.json`, which holds every finding with file, line, column, category, name and argument shape. |
+| `tool/ds-audit --check` | Exits 1 if any file/category count is above the baseline (new files and new categories count from 0), or if a `ds-allow` comment has no reason. Counts below the baseline pass ("baseline can lower"). |
+| `tool/ds-audit --update-baseline` | Integration owner only, after merges: writes the current counts as a separate small commit. It refuses to raise any count unless you also pass `--accept-increase`, and a raised count must be reviewed. |
 | `tool/ds-audit --json <path>…` | Prints the aggregated report for arbitrary paths. The tests use this. |
 
 - **Ratchet test:** `tool/tests/test_ds_audit.py` runs in `tool/check-project`. It runs the
-  scanner over `apps/raft_flutter/lib` and fails on any per-file, per-category increase. When
-  counts go down, it prints the `--update-baseline` hint. The same file also pins the scanner
+  scanner over both scopes and fails on any per-file, per-category increase. When
+  counts go down, it passes and prints a "baseline can lower" note (a decrease never fails). The same file also pins the scanner
   semantics with exact counts on `apps/raft_flutter/test/fixtures/ds_audit_sample.dart`, which
   includes negative cases.
 - **Scanner:** `tool/ds_audit/` is a Dart program that uses the analyzer's **resolved** AST.
@@ -53,6 +133,58 @@ change as work lands.
 SizedBox(height: _gap)`) is not counted. Reviewers should reject new private size or color
 constants in feature files.
 
+### Bypass rules (`apps/raft_flutter/lib` and `packages/raft_ui/lib`)
+
+`bypass.<family>` counts raw Material/Cupertino controls and overlays that should be a Raft component, in both scopes (previews and demos count like any other file). It runs next to the `widget.*` and `contract.*` rules, so one site can appear in both (`widget.dialog` and `bypass.dialog`); migrating it lowers both. A finding is a constructor call (including named constructors such as `Dialog.fullscreen`), constructor tear-off, `X.styleFrom()`, call or tear-off of a listed function, or an `extends` clause naming a listed class, whose resolved declaration is in the Flutter material, cupertino or (for `showGeneralDialog`, `EditableText`, `OverlayEntry`, `OverlayPortal`) widgets library. A Raft or app class with the same name does not count. Type arguments and annotations (`DropdownMenuItem<T>` in a signature) do not count.
+
+| Category | Counts | Use instead |
+|---|---|---|
+| `bypass.dialog` | `AlertDialog`, `SimpleDialog(Option)`, `Dialog`, `AboutDialog`, Cupertino alert dialogs, `showDialog`, `showAdaptiveDialog`, `showCupertinoDialog`, `showAboutDialog`, `showGeneralDialog` | `RaftDialog` / `showRaftDialog`, `showRaftAlertDialog`, `RaftFormDialog`, `showRaftModal` |
+| `bypass.bottom_sheet` | `BottomSheet`, `showModalBottomSheet`, `showBottomSheet`, Cupertino action sheets/popups | `RaftBottomSheet` / `RaftSheet`, `showRaftOverflowSheet` |
+| `bypass.menu` | `PopupMenuButton` and items, `MenuAnchor`, `MenuItemButton`, `SubmenuButton`, `MenuBar`, `showMenu`, Cupertino context menus | `RaftDropdownMenu` (`RaftMenuItem`, `RaftMenuEntry`) |
+| `bypass.select` | `DropdownButton`, `DropdownButtonFormField`, `DropdownMenuItem(...)`, `DropdownMenu` | `RaftSelectField` |
+| `bypass.tooltip` | `Tooltip` | `RaftTooltip` |
+| `bypass.button` / `bypass.icon_button` | `TextButton`, `OutlinedButton`, `ElevatedButton`, `FilledButton`, `MaterialButton`, `FloatingActionButton`, `CupertinoButton`, `.styleFrom` / `IconButton`, `BackButton`, `CloseButton` | `RaftButton`, `RaftTextButton` / `RaftIconButton`, `RaftBackButton` |
+| `bypass.toggle` | `Checkbox`, `Switch`, `Radio`, their `*ListTile` forms and Cupertino variants | `RaftCheckbox`, `RaftSwitch` |
+| `bypass.chip` | `Chip`, `ActionChip`, `FilterChip`, `ChoiceChip`, `InputChip`, `RawChip` | `RaftBadge`, `RaftSegmentedControl`, `RaftPickerTriggerButton` |
+| `bypass.list_tile` | `ListTile`, `ExpansionTile`, `CupertinoListTile` | `RaftListRow` |
+| `bypass.progress` / `bypass.refresh` | `CircularProgressIndicator`, `LinearProgressIndicator`, `CupertinoActivityIndicator` / `RefreshIndicator` | `RaftSpinner`, `RaftProgressBar` / `RaftPullToRefresh` |
+| `bypass.divider` | `Divider`, `VerticalDivider` | the Raft separator recipe, `RaftMenuEntry.separator()` |
+| `bypass.text_field` | `TextField`, `TextFormField`, `EditableText`, `CupertinoTextField`, `SearchBar` | `RaftTextInput`, `RaftTextarea`, `RaftInputGroup` (`RaftPrefixedInput`, `RaftSlugInput`, `RaftSearchInput`), `RaftBareInput` for the text inside another component's chrome; a text field of a composer stays `TextField` until the Composer family |
+| `bypass.picker` | `showDatePicker`, `showTimePicker`, `showDateRangePicker`, date/time picker widgets | no Raft date picker yet |
+| `bypass.snackbar` | `SnackBar`, `MaterialBanner`, `showSnackBar`, `showMaterialBanner` | `showRaftToast` / `RaftToast` |
+| `bypass.overlay` | `OverlayEntry`, `OverlayPortal` (hand-built popovers) | `RaftAnchoredPopup`, `RaftPopoverSurface`, `showRaftToast` |
+
+**Wrapper allowlist.** `BYPASS_ALLOWLIST` in `tool/ds-audit` names the raft_ui files that implement a Raft primitive on a Material one (the file behind `RaftTextInput` may use `TextField`, `RaftTooltip` may use `Tooltip`, ...). It maps file to family with the reason; those findings are reported as allowlisted and never counted. The allowlist stays explicit and small, never covers the app, and a new entry is reviewed like an API change. Genuinely platform-only code elsewhere uses `// ds-allow: <reason>`.
+
+**Duplicate rules (`duplicate.<family>`).** One implementation per design-system family. `tool/ds-audit-families.json` maps each family to its `canonical` component(s) and to the `deprecated` duplicate widgets or functions, each with the file that declares it. Both scopes are scanned; every reference to a deprecated name outside its own declaring file counts (constructor call, type annotation, `extends`, static member, tear-off; imports, comments and strings do not). The check is by resolved declaration, so a same-named class elsewhere does not count. The failure message names the canonical component. Families with deprecated names today: `button`, `dialog`, `segmented`, `banner`, `list_row`. `spinner`, `card` and `popover` are registered with their canonical component only (P6 left no duplicate; RaftPixelSpinner is RaftSpinner's internal painter, RaftAnchoredPopup and RaftPopoverSurface are layers of one popover), and `menu` is `pending` until P2 chooses the single menu implementation. A family whose canonical choice is still open carries an `uncertain` or `pending` field in the registry; change the registry in the same PR that decides it, and add a name only once its canonical replacement exists.
+
+### Contract rules (`packages/raft_ui/lib`)
+
+Scope: every `*.dart` under `packages/raft_ui/lib` except generated `*.g.dart`, which are never
+scanned for the literal categories. Components read only the theme pack
+(docs/theme-contract.md 7.3); these categories count what bypasses it. All use the same resolved
+AST, the same `// ds-allow: <reason>` hatch and the same baseline file as the app scope. A literal
+passes when it is only geometry arithmetic: `/ 2`, `* 2`, `+ 1`, `- 1` or `-1` next to a
+non-literal (`radius - 1`, `size / 2`). Media chrome, brand artwork and Chromium blend helpers
+carry a `ds-allow` with the reason.
+
+| Category | Counted when |
+|---|---|
+| `contract.color_literal` | A `dart:ui` `Color(...)`/`Color.fromARGB`/`fromRGBO`/`Color.from` whose arguments contain a numeric literal, or any use of `Colors.*` from the Material library except `Colors.transparent`. `Color(value)` with a computed `value` does not count. |
+| `contract.font_size_literal` | A `fontSize:` argument containing a numeric literal in any call (`TextStyle(fontSize: 14)`, `copyWith(fontSize: 12)`, a raft_ui API). `fontSize: t.size * 1.1` counts; `fontSize: t.size` does not. |
+| `contract.radius_literal` | `BorderRadius.circular`/`BorderRadiusDirectional.circular`/`Radius.circular`/`Radius.elliptical` with a numeric literal in the arguments (`BorderRadius.all(Radius.circular(4))` counts once). `BorderRadius.circular(t.radius)` and `BorderRadius.zero` do not. |
+| `contract.stroke_width_literal` | A numeric literal in the `width:` argument of `BorderSide(...)`, `Border.all(...)` or `BorderSide.copyWith(...)`, in any `strokeWidth:` argument, or on the right of `..strokeWidth =`. |
+| `contract.theme_name_branch` | Any reference to a type or value named `RaftFamily`; any use of a member named `isElegant` or `isBrutal`; a `==`/`!=` or `switch` on a theme name, meaning a `RaftFamily` value, `themeId`, `packId`, `raftThemePackId`, `builtInRaftThemeId`, or the `id`/`name` of a `RaftThemePack`, `RaftTokenSet`, `RaftTokens` or `RaftTheme`. Light/dark checks (`Brightness`, `RaftThemeId`) are modes, not theme names, and do not count. |
+| `contract.legacy_recipe_theme` | A reference to the enum constants `RaftRecipeTheme.elegant` or `.brutal`, except inside `lib/src/recipes/` (the recipe runtime) and inside the single adapter function `raftRecipeTheme` in `panel_layout.dart`. Every other file should go through the adapter or, better, read the theme pack. |
+| `generated.recipe_constants` | Informational only, never checked and never part of the ratchet. Per `*.g.dart` file under a `recipes/` directory: the number of top-level `const` variables plus `static const` fields (enum constants are not counted). It shows how much of the recipe tables is still compiled in. |
+
+Rules are keyed by resolved declarations and by the names above, so a file that declares its own
+`RaftFamily` or `RaftTheme` stand-in is counted too (the fixture relies on this).
+`packages/raft_ui/test/fixtures/ds_audit_contract/` pins every category with negative cases, the
+allowlist, a malformed allow and a generated file; the exact counts live in
+`tool/tests/test_ds_audit.py`.
+
 ## 2. What raft_ui already exports
 
 From `packages/raft_ui/lib/raft_ui.dart`:
@@ -65,7 +197,7 @@ From `packages/raft_ui/lib/raft_ui.dart`:
   - `RaftLayoutMetrics`: `panelInset 20`, `panelGap 12`, `toolbarInset`, breakpoints.
   - `RaftPrimitives`: `controlDuration 100ms`, `switchDuration 180ms`, `radii [0,2,4,6,8]`, and `spacing [0,2,4,…,64]`. **The spacing scale is an unnamed list.**
 - **Controls:** `RaftButton`, `RaftTextButton`, `RaftTextLink`, `RaftIconButton`, `RaftBackButton`, `RaftSavedActionButton`, `RaftControl` (+ `RaftControlRecipe`, `RaftControlVariant surface/primary/accent/outline/ghost/danger`), `RaftSegmentedControl<T>`, `RaftPickerTriggerButton`, `RaftSwitch`.
-- **Menus and select:** `RaftDropdownMenu`, `RaftMenuPanel`, `RaftMenuItem`, `RaftMenuEntry` (incl. `.separator()`), `RaftMenuController`, `RaftSelectField<T>`. `RaftSelectField` still takes Material `DropdownMenuItem<T>` items.
+- **Menus and select:** `RaftDropdownMenu`, `RaftMenuPanel`, `RaftMenuItem`, `RaftMenuEntry` (incl. `.separator()`), `RaftMenuController`, `RaftSelectField<T>` with `RaftSelectItem<T>` items (and `RaftLabeledSelect<T>` for a select under a label).
 - **Fields and forms:** `RaftFieldSurface`, `RaftFieldRecipe`, `RaftFieldBorder`, `RaftFormDialog` + `RaftFormField`, `RaftSecretView`.
 - **Feedback:** `RaftSpinner`, `RaftTooltip` + `RaftTooltipProvider`, `RaftEmptyState`, `RaftNotificationCenter`, `RaftSystemMessage`.
 - **Surfaces and layout:**
@@ -108,7 +240,7 @@ to the component package in §4.
 
 ### 3.2 Material icons — 113 uses → 45 (C6 done)
 
-- `RaftGlyph` is now generated from every lucide-react import of the Web and raft-ui (`tool/gen-glyphs`, 175 values). No glyph needs to be added by hand.
+- `RaftGlyph` is now generated from every lucide-react import of the Web and raft-ui (`tool/gen-glyphs`, 185 values). No glyph needs to be added by hand.
 - docs/glyph-mapping.md traces each of the 113 original uses to the Web element (file:line) and the lucide icon it renders. 68 are replaced with `RaftIcon(RaftGlyph.x)`.
 - The 45 left are TODO. In those places, Web shows no icon, a non-Lucide icon, or no such element. Resolve each against the TODO groups listed in that doc, not by icon name.
 
@@ -247,7 +379,7 @@ those.
 ### 3.18 Selects — 14 (C4: API change)
 
 - **Counts:** `DropdownMenuItem` 10, `DropdownButtonFormField` 4.
-- **Existing:** `RaftSelectField<T>`, but it takes Material `DropdownMenuItem<T>`, so the `DropdownMenuItem` constructions survive a migration.
+- **Existing:** `RaftSelectField<T>` takes `RaftSelectItem<T>` (value, label, enabled), so a migrated site carries no Material item type.
 - **C4 change:** give it a `RaftSelectOption<T>` item type. This mirrors raft-ui `SelectItem`/`SelectItemText`; Web `components/agent/StableField.tsx` (`FieldSelectTrigger`).
 
 ### 3.19 Dividers — 12 (C4)
@@ -324,7 +456,7 @@ WP1–WP7 plus the C5 app files cover all 65 files and all 1118 violations.
 3. App packages then pick up the rest as each C package lands.
 
 **After every package:**
-1. Run `tool/ds-audit --update-baseline` and commit the lowered baseline in the same commit as the migration.
+1. Run `tool/ds-audit --check` (a lower count passes). Do not edit `tool/ds-audit-baseline.json` on the package branch: parallel branches would conflict on it. After a batch is merged, the integration owner runs `tool/ds-audit --update-baseline` and commits the lowered baseline separately.
 2. Run `tool/check-project`.
 3. Compare against Web with the existing parity evidence flow. The audit proves only that the
    raw Material/style usage is gone; it does not prove visual parity.

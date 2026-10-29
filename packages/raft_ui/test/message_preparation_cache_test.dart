@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'prepared prose and code render from the same caches $family/$dark',
+      'prepared prose and code render from the same caches ${dark ? 'dark' : 'light'}',
       (tester) async {
         raftMarkdownAstCache.clear();
         raftCodeSpanCache.clear();
-        final tokens = RaftTokens.theme(family, dark: dark);
+        final tokens = RaftTokens.theme(dark: dark);
         const content =
             'Hello **中文** @alice\n\n```dart\nfinal value = 42;\n```';
         const refs = [
@@ -34,7 +31,7 @@ void main() {
         expect(codeMisses, 1);
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: const RaftMessageBody(
                 content: content,

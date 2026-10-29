@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
   test(
@@ -22,11 +23,7 @@ void main() {
     },
   );
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     Future<void> mount(
       WidgetTester tester,
       Widget child, {
@@ -40,7 +37,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: RaftDensityScope(density: density, child: child),
           ),
@@ -49,47 +46,48 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
     }
 
-    test('$family/$dark side/modal/mobile-modal exact width predicates', () {
-      final t = raftTheme(family, dark: dark).extension<RaftTokens>()!;
-      for (final presentation in RaftThreadPresentation.values) {
-        for (final width in [767.0, 768.0, 1023.0, 1024.0]) {
-          final r = RaftThreadCompositionRecipe(
-            t,
-            viewportWidth: width,
-            viewportHeight: 800,
-            presentation: presentation,
-          );
-          expect(
-            r.showBack,
-            width < (presentation == RaftThreadPresentation.side ? 1024 : 768),
-          );
-          expect(
-            r.showClose,
-            presentation == RaftThreadPresentation.modal ||
-                presentation == RaftThreadPresentation.side && width >= 1024,
-          );
-          expect(r.headerHeight, family == RaftFamily.brutal ? 62 : 56);
-          expect(r.parentInset, const EdgeInsets.all(12));
-          expect(r.parentBorder.width, family == RaftFamily.brutal ? 2 : 1);
-          expect(r.headerBorder.width, family == RaftFamily.brutal ? 2 : 1);
-          expect(r.headerBorder.style, BorderStyle.solid);
-          expect(
-            r.headerBorder.color,
-            family == RaftFamily.brutal ? Colors.black : t.colors['line-muted'],
-          );
+    test(
+      '${dark ? 'dark' : 'light'} side/modal/mobile-modal exact width predicates',
+      () {
+        final t = raftTheme(dark: dark).extension<RaftTokens>()!;
+        for (final presentation in RaftThreadPresentation.values) {
+          for (final width in [767.0, 768.0, 1023.0, 1024.0]) {
+            final r = RaftThreadCompositionRecipe(
+              t,
+              viewportWidth: width,
+              viewportHeight: 800,
+              presentation: presentation,
+            );
+            expect(
+              r.showBack,
+              width <
+                  (presentation == RaftThreadPresentation.side ? 1024 : 768),
+            );
+            expect(
+              r.showClose,
+              presentation == RaftThreadPresentation.modal ||
+                  presentation == RaftThreadPresentation.side && width >= 1024,
+            );
+            expect(r.headerHeight, 56);
+            expect(r.parentInset, const EdgeInsets.all(12));
+            expect(r.parentBorder.width, 1);
+            expect(r.headerBorder.width, 1);
+            expect(r.headerBorder.style, BorderStyle.solid);
+            expect(r.headerBorder.color, t.colors['line-muted']);
+          }
         }
-      }
-      final compact = RaftThreadCompositionRecipe(
-        t,
-        viewportWidth: 390,
-        viewportHeight: 600,
-        presentation: RaftThreadPresentation.side,
-      );
-      expect(compact.headerHeight, 48);
-    });
+        final compact = RaftThreadCompositionRecipe(
+          t,
+          viewportWidth: 390,
+          viewportHeight: 600,
+          presentation: RaftThreadPresentation.side,
+        );
+        expect(compact.headerHeight, 48);
+      },
+    );
 
     testWidgets(
-      '$family/$dark folded header title/back/menu callbacks independent',
+      '${dark ? 'dark' : 'light'} folded header title/back/menu callbacks independent',
       (tester) async {
         var back = 0, close = 0, jump = 0, overflow = 0;
         Widget header(RaftThreadPresentation presentation, double width) =>
@@ -101,9 +99,9 @@ void main() {
                 viewportHeight: 800,
                 threadLabel: 'Thread',
                 parentLabel: '#公开中文 日本語',
-                jumpLabel: 'Scroll thread to first message',
+                jumpLabel: 'Scroll Thread to First Message',
                 backLabel: 'Back',
-                closeLabel: 'Close thread',
+                closeLabel: 'Close Thread',
                 onBack: () => back++,
                 onClose: () => close++,
                 onJumpToStart: () => jump++,
@@ -113,7 +111,7 @@ void main() {
                 actions: [
                   RaftThreadOverflowAction(
                     key: const ValueKey('thread-menu'),
-                    label: 'Thread actions',
+                    label: 'Thread Actions',
                     onPressed: () => overflow++,
                   ),
                 ],
@@ -126,13 +124,16 @@ void main() {
         );
         expect(find.byKey(const ValueKey('thread-back')), findsOneWidget);
         expect(find.byKey(const ValueKey('thread-close')), findsNothing);
-        expect(find.text('Thread— #公开中文 日本語'), findsOneWidget);
+        expect(
+          find.text('Thread\uFFFC— #公开中文 日本語', findRichText: true),
+          findsOneWidget,
+        );
         final semantics = tester.ensureSemantics();
         try {
           final node = tester.getSemantics(
-            find.bySemanticsLabel('Scroll thread to first message'),
+            find.bySemanticsLabel('Scroll Thread to First Message'),
           );
-          expect(node.label, 'Scroll thread to first message');
+          expect(node.label, 'Scroll Thread to First Message');
           expect(node.flagsCollection.isButton, true);
         } finally {
           semantics.dispose();
@@ -163,7 +164,7 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark single parent sliver retains natural height and scrolls with replies',
+      '${dark ? 'dark' : 'light'} single parent sliver retains natural height and scrolls with replies',
       (tester) async {
         final scroll = ScrollController();
         addTearDown(scroll.dispose);
@@ -201,7 +202,7 @@ void main() {
           tester
               .getSize(find.byKey(const ValueKey('source-parent-region')))
               .height,
-          624 + (family == RaftFamily.brutal ? 2 : 1),
+          624 + (1),
         );
         expect(find.byType(Scrollable), findsOneWidget);
         expect(find.byType(SingleChildScrollView), findsNothing);
@@ -229,7 +230,7 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark full localized history transitions without extra fetch control',
+      '${dark ? 'dark' : 'light'} full localized history transitions without extra fetch control',
       (tester) async {
         Widget history(bool hasMore, bool limited, bool busy) =>
             RaftThreadHistoryTopState(
@@ -259,7 +260,7 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark native touch slots remain separate and keyboard title activates',
+      '${dark ? 'dark' : 'light'} native touch slots remain separate and keyboard title activates',
       (tester) async {
         var jumps = 0;
         await mount(
@@ -270,9 +271,9 @@ void main() {
               presentation: RaftThreadPresentation.mobileModal,
               threadLabel: 'Thread',
               parentLabel: '@公开用户',
-              jumpLabel: 'Scroll thread to first message',
+              jumpLabel: 'Scroll Thread to First Message',
               backLabel: 'Back',
-              closeLabel: 'Close thread',
+              closeLabel: 'Close Thread',
               onBack: () {},
               onClose: () {},
               onJumpToStart: () => jumps++,
@@ -294,10 +295,7 @@ void main() {
         );
         // Back is Web's boxed PanelAction (26x28 brutal / 32x32 elegant); its
         // touch target is extended to 48 without moving the title.
-        expect(
-          backRect.size,
-          family == RaftFamily.brutal ? const Size(26, 28) : const Size(32, 32),
-        );
+        expect(backRect.size, const Size(44, 44));
         expect(titleRect.height, greaterThanOrEqualTo(48));
         expect(backRect.overlaps(titleRect), false);
         final semantics = tester.ensureSemantics();

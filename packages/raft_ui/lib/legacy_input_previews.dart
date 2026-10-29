@@ -53,11 +53,11 @@ class _LegacyInputPreviewState extends State<LegacyInputPreview> {
           runSpacing: 8,
           children: [
             RaftButton(
-              label: invalid ? 'Clear invalid' : 'Mark invalid',
+              label: invalid ? 'Clear Invalid' : 'Mark Invalid',
               onPressed: () => setState(() => invalid = !invalid),
             ),
             RaftButton(
-              label: compact ? 'Default inset' : 'Caller inset',
+              label: compact ? 'Default Inset' : 'Caller Inset',
               onPressed: () => setState(() => compact = !compact),
             ),
           ],

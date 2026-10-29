@@ -235,7 +235,7 @@ add('mobile', 'banner', 'notification activation banner', props={'state': 'banne
     notes='Flutter has no production surface (Web Push opt-in); the closest real widgets are mounted.')
 
 # ---- SOS dialog ----
-SOS_CARD = '[data-slot="modal-backdrop"] [data-slot="card"]'
+SOS_CARD = '[data-slot="modal-backdrop"] [data-slot="dialog-card"]'
 STOP_BTN = '>> role=button[name="Stop"]'
 add('desktop', 'sos-confirm', 'SOS dialog, confirm phase', props={'state': 'sos'}, height=None,
     selector=SOS_CARD, android_key='sos-dialog-card')

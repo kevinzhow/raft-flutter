@@ -15,12 +15,14 @@ import 'package:raft_flutter/platform/content_coordinator.dart';
 import 'package:raft_flutter/platform/content_target.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show paintedMessage;
 import 'message_presentation_test.dart' show MessageAdapter;
 import 'workspace_activity_activation_test.dart'
     show channelRow, threadRow, message;
+import 'support/app_services_fixture.dart';
 
 // Mounted Source 26f77ef contract ports. Every case uses the actual WorkspaceView,
 // its ResourceView/headers and local held transport. Model-only ports remain in
@@ -66,7 +68,7 @@ Future<(WorkspaceController, MessageAdapter)> pageFixture(
   w.channels = [w.channel!];
   addTearDown(w.dispose);
   w.loading = false;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.server = RaftRecord({
     'id': 's1',
     'slug': serverSlug,
@@ -91,7 +93,6 @@ Future<(WorkspaceController, MessageAdapter)> pageFixture(
 Future<void> mountPage(
   WidgetTester tester,
   WorkspaceController w,
-  RaftFamily family,
   bool dark, {
   double width = 1440,
 }) async {
@@ -100,12 +101,14 @@ Future<void> mountPage(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
-      home: WorkspaceView(
-        controller: w,
-        appearance: RaftAppearance(light: family),
-        onAppearance: (_) async {},
-        onLogout: () async {},
+      theme: raftTheme(dark: dark),
+      home: withAppServices(
+        WorkspaceView(
+          controller: w,
+          appearance: RaftAppearance(),
+          onAppearance: (_) async {},
+          onLogout: () async {},
+        ),
       ),
     ),
   );
@@ -134,17 +137,13 @@ Future<void> waitForPainted(WidgetTester tester, String id) async {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     // useAppNavigate.ts:446–464: routeKind is a separate permalink identity.
     // Two accepted-record scenarios deliberately share the same ID. Each actual
     // Activity row publishes its own route kind and preserves slug/msg encoding.
     for (final dm in [false, true]) {
       testWidgets(
-        '[N01] $family/$dark actual ${dm ? 'DM' : 'channel'} with shared ID preserves route and focus',
+        '[N01] ${dark ? 'dark' : 'light'} actual ${dm ? 'DM' : 'channel'} with shared ID preserves route and focus',
         (tester) async {
           final (w, api) = await pageFixture(tester, serverSlug: 'team space');
           const id = 'same:conversation', focus = 'target:one';
@@ -177,7 +176,7 @@ void main() {
           };
           api.routes['GET /messages/context/$focus'] = (_) => response.future;
           api.routes['POST /channels/$id/read'] = (_) => {};
-          await mountPage(tester, w, family, dark, width: 390);
+          await mountPage(tester, w, dark, width: 390);
           final before = w.navigation.entries.length;
           await tester.tap(
             find.byKey(ValueKey('activity-${dm ? 'dm' : 'channel'}-$id')),
@@ -231,7 +230,7 @@ void main() {
           });
           await frames(tester, () {});
           expect(paintedMessage(tester, focus), isNotNull);
-          expect(w.highlightedMessageId, focus);
+          expect(w.messageDomain.state.highlightedMessageId, focus);
           await tester.tap(find.byKey(const Key('mobile-detail-back')));
           await tester.pump();
           expect(w.location.route, RaftRoute.activity);
@@ -249,7 +248,7 @@ void main() {
     // jump handler while the actual page is mounted; no OS plugin is simulated.
     for (final dm in [false, true]) {
       testWidgets(
-        '[N01] $family/$dark bounded native ${dm ? 'DM' : 'channel'} link with shared ID retains typed route and message',
+        '[N01] ${dark ? 'dark' : 'light'} bounded native ${dm ? 'DM' : 'channel'} link with shared ID retains typed route and message',
         (tester) async {
           final (w, api) = await pageFixture(tester);
           const id = 'shared-id', focus = 'target-1';
@@ -274,7 +273,7 @@ void main() {
           );
           coordinator.bindWorkspace(w);
           addTearDown(coordinator.dispose);
-          await mountPage(tester, w, family, dark, width: 390);
+          await mountPage(tester, w, dark, width: 390);
           final uri = Uri.parse(
             'https://example.invalid/s/demo/${dm ? 'dm' : 'channel'}/$id?msg=$focus',
           );
@@ -324,13 +323,13 @@ void main() {
     // branch (MessageSearchPage1318–1333), search input and replace history.
     for (final dm in [false, true]) {
       testWidgets(
-        '[N01] $family/$dark actual Search ${dm ? 'DM' : 'channel'} result keeps ordinary typed content and query',
+        '[N01] ${dark ? 'dark' : 'light'} actual Search ${dm ? 'DM' : 'channel'} result keeps ordinary typed content and query',
         (tester) async {
           final (w, api) = await pageFixture(tester, section: 'search');
           const id = 'shared-id', focus = 'target-1';
           final accepted = RaftChannel({
             'id': id,
-            'name': dm ? 'Search peer' : 'Search channel',
+            'name': dm ? 'Search peer' : 'Search Channel',
             'type': dm ? 'dm' : 'channel',
             'joined': true,
           });
@@ -354,7 +353,7 @@ void main() {
           };
           api.routes['GET /messages/context/$focus'] = (_) => context.future;
           api.routes['POST /channels/$id/read'] = (_) => {};
-          await mountPage(tester, w, family, dark);
+          await mountPage(tester, w, dark);
           await tester.enterText(find.byType(TextField).first, 'Actual');
           await tester.pump(const Duration(milliseconds: 210));
           await frames(tester, () {});
@@ -395,7 +394,7 @@ void main() {
             await Future<void>.delayed(const Duration(milliseconds: 20));
           });
           await waitForPainted(tester, focus);
-          expect(w.highlightedMessageId, focus);
+          expect(w.messageDomain.state.highlightedMessageId, focus);
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -408,7 +407,7 @@ void main() {
     // Parent metadata, thread resolution and reply context are independent.
     for (final activity in [false, true]) {
       testWidgets(
-        '[N02a] $family/$dark actual ${activity ? 'Activity' : 'Search'} click separates thread, parent and focused reply',
+        '[N02a] ${dark ? 'dark' : 'light'} actual ${activity ? 'Activity' : 'Search'} click separates thread, parent and focused reply',
         (tester) async {
           final (w, api) = await pageFixture(
             tester,
@@ -446,7 +445,7 @@ void main() {
             ],
             'hasMore': false,
           };
-          await mountPage(tester, w, family, dark);
+          await mountPage(tester, w, dark);
           if (activity) {
             await tester.tap(find.byKey(const ValueKey('activity-thread-t1')));
             await tester.pump(const Duration(milliseconds: 220));
@@ -475,7 +474,7 @@ void main() {
               );
             }
             expect(w.presentedThreadParent, isNull);
-            expect(w.threadParentLoading, isTrue);
+            expect(w.messageDomain.threadParentLoading, isTrue);
             expect(
               find.byKey(const Key('workspace-channel-header')),
               findsNothing,
@@ -519,7 +518,10 @@ void main() {
           await tester.pumpAndSettle();
           expect(w.presentedThreadParent?.id, 'parent');
           expect(w.replies.map((r) => r.id), ['reply']);
-          expect(w.messages.any((r) => r.id == 'parent'), isFalse);
+          expect(
+            w.messageDomain.messages.any((r) => r.id == 'parent'),
+            isFalse,
+          );
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -530,7 +532,7 @@ void main() {
     // MessageSearchPage1319–1331 closes the old thread when selecting a real
     // parent-channel hit. The parent focus belongs to the channel surface only.
     testWidgets(
-      '[N02b] $family/$dark actual Search parent click never requests or highlights parent as a reply',
+      '[N02b] ${dark ? 'dark' : 'light'} actual Search parent click never requests or highlights parent as a reply',
       (tester) async {
         final (w, api) = await pageFixture(tester, section: 'search');
         final heldReply = Completer<Map<String, dynamic>>();
@@ -558,7 +560,7 @@ void main() {
           ],
           'hasMore': false,
         };
-        await mountPage(tester, w, family, dark);
+        await mountPage(tester, w, dark);
         await tester.enterText(find.byType(TextField).first, 'Accepted');
         await tester.pump(const Duration(milliseconds: 210));
         await frames(tester, () {});
@@ -581,7 +583,7 @@ void main() {
           );
         });
         await waitForPainted(tester, 'parent');
-        expect(w.highlightedMessageId, 'parent');
+        expect(w.messageDomain.state.highlightedMessageId, 'parent');
         expect(
           api.calls.where(
             (r) =>
@@ -606,7 +608,7 @@ void main() {
     // the real replies badge opens a side thread without a reply focus, as in
     // rightPanelUrlSync283–310; the accepted parent cannot become a reply target.
     testWidgets(
-      '[N02b] $family/$dark actual Activity parent then replies badge retains parent focus outside reply window',
+      '[N02b] ${dark ? 'dark' : 'light'} actual Activity parent then replies badge retains parent focus outside reply window',
       (tester) async {
         final (w, api) = await pageFixture(tester);
         final resolution = Completer<Map<String, dynamic>>(),
@@ -640,7 +642,7 @@ void main() {
         api.routes['GET /channels/c1/threads/parent'] = (_) =>
             resolution.future;
         api.routes['GET /messages/channel/t1'] = (_) => replies.future;
-        await mountPage(tester, w, family, dark, width: 390);
+        await mountPage(tester, w, dark, width: 390);
         await tester.tap(find.byKey(const ValueKey('activity-channel-c1')));
         await frames(tester, () {});
         expect(w.location.messageId, 'parent');
@@ -654,8 +656,8 @@ void main() {
           expect(w.threadIdentity?.parentMessageId, 'parent');
           expect(w.threadIdentity?.focusedMessageId, isNull);
           expect(w.location.messageId, 'parent');
-          expect(w.highlightedMessageId, isNot('parent'));
-          expect(w.threadResolutionLoading, isTrue);
+          expect(w.messageDomain.state.highlightedMessageId, isNot('parent'));
+          expect(w.messageDomain.threadResolutionLoading, isTrue);
         });
         await tester.runAsync(() async {
           resolution.complete({'threadChannelId': 't1'});
@@ -683,7 +685,7 @@ void main() {
         await frames(tester, () {});
         expect(paintedMessage(tester, 'reply'), isNotNull);
         expect(w.replies.map((row) => row.id), ['reply']);
-        expect(w.highlightedMessageId, isNot('parent'));
+        expect(w.messageDomain.state.highlightedMessageId, isNot('parent'));
         expect(w.location.messageId, 'parent');
         await tester.pumpWidget(const SizedBox());
         await tester.pumpAndSettle();
@@ -695,20 +697,20 @@ void main() {
     // page is mounted, with a retained channel window that must remain hidden.
     for (final activity in [false, true]) {
       testWidgets(
-        '[N03] $family/$dark actual ${activity ? 'Activity' : 'Search'} ignores malformed and missing content parameters',
+        '[N03] ${dark ? 'dark' : 'light'} actual ${activity ? 'Activity' : 'Search'} ignores malformed and missing content parameters',
         (tester) async {
           final (w, api) = await pageFixture(
             tester,
             section: activity ? 'activity' : 'search',
           );
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {
               ...message('hidden', 'c1'),
               'content': 'Hidden accepted channel message',
             },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'hidden'};
-          await mountPage(tester, w, family, dark);
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'hidden'};
+          await mountPage(tester, w, dark);
           for (final open in ['wrong:x', ':x', 'channel:', 'channel', null]) {
             w.navigation.navigate(
               w.location.withQuery({'open': open, 'msg': 'must-not-open'}),
@@ -745,7 +747,7 @@ void main() {
     // authority reset clears the foreign observed history; mounted Back applies
     // the current server's cold semantic parent, never the retired server.
     testWidgets(
-      '[N13] $family/$dark actual server switch then cold mobile Back stays inside the new server',
+      '[N13] ${dark ? 'dark' : 'light'} actual server switch then cold mobile Back stays inside the new server',
       (tester) async {
         final (w, api) = await pageFixture(tester, section: 'home');
         final alpha = w.server!,
@@ -788,7 +790,7 @@ void main() {
           'surface': 'complete',
           'blocksChat': false,
         };
-        await mountPage(tester, w, family, dark, width: 390);
+        await mountPage(tester, w, dark, width: 390);
         await tester.tap(find.byKey(const Key('mobile-server-selector')));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Bravo'));
@@ -837,6 +839,9 @@ void main() {
         );
         await frames(tester, () {});
         await tester.pumpWidget(const SizedBox());
+        // The fixture owns the session, which now outlives its last page.
+        // Retire it before the widget test checks for pending timers.
+        w.dispose();
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       },

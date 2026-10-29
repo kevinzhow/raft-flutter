@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart';
 
 /// Mounted Source ServerSelector.tsx. The app root owns authorized discovery,
 /// selection, creation and stale-result fences; this page owns only form input.
@@ -202,7 +201,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           RaftAuthIntro(
-            title: tr(create ? 'Create server' : 'Choose server'),
+            title: tr(create ? 'Create Server' : 'Choose server'),
             descriptionSpan: create
                 ? null
                 : raftAuthSignedInAsSpan(context, widget.user.string('email')),
@@ -252,21 +251,35 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
             )
           else ...[
             if (widget.servers.isNotEmpty) ...[
-              Column(
-                key: const ValueKey('server-selector-list'),
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (i, server) in widget.servers.indexed) ...[
-                    if (i > 0) const SizedBox(height: RaftSpace.x2),
-                    _ServerOption(
-                      server: server,
-                      onPressed: widget.loading
-                          ? null
-                          : () => widget.onSelect(server),
-                    ),
+              if (RaftTokens.of(context).isRaftLook)
+                RaftListRowGroup(
+                  key: const ValueKey('server-selector-list'),
+                  children: [
+                    for (final server in widget.servers)
+                      _serverListRow(
+                        server: server,
+                        onPressed: widget.loading
+                            ? null
+                            : () => widget.onSelect(server),
+                      ),
                   ],
-                ],
-              ),
+                )
+              else
+                Column(
+                  key: const ValueKey('server-selector-list'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final (i, server) in widget.servers.indexed) ...[
+                      if (i > 0) const SizedBox(height: RaftSpace.x2),
+                      _ServerOption(
+                        server: server,
+                        onPressed: widget.loading
+                            ? null
+                            : () => widget.onSelect(server),
+                      ),
+                    ],
+                  ],
+                ),
               const SizedBox(height: RaftSpace.x6), // mb-6
             ],
             if (widget.error != null) ...[
@@ -296,6 +309,40 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
   }
 }
 
+// Current ServerOptionCard.tsx is a navigation ListRow, not an option card.
+// Direct children let its canonical group own the inset surface and rules.
+RaftListRow _serverListRow({
+  required RaftRecord server,
+  required VoidCallback? onPressed,
+}) => RaftListRow(
+  key: ValueKey('global-server-${server.id}'),
+  onPressed: onPressed,
+  disabled: onPressed == null,
+  semanticLabel: server.string('name'),
+  children: [
+    ExcludeSemantics(
+      child: RaftAvatarSlot(
+        name: server.string('name'),
+        slot: RaftAvatarSlotContext.surfaceList,
+        agent: false,
+        server: true,
+        content: RaftAvatarContent(
+          name: server.string('name'),
+          kind: RaftAvatarContentKind.server,
+          uploadedUrl: server.json['avatarUrl'] as String?,
+        ),
+      ),
+    ),
+    RaftListRowBody(
+      children: [
+        RaftListRowTitle(server.string('name')),
+        RaftListRowMeta('/${server.string('slug')}'),
+      ],
+    ),
+    const RaftListRowChevron(),
+  ],
+);
+
 /// ServerSelector option: `Card variant="option" gap-0 p-3` with the server
 /// name (`font-bold text-foreground-strong`) over `/slug` (`text-sm
 /// font-normal text-foreground-muted`).
@@ -307,44 +354,30 @@ class _ServerOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return RaftInteractive(
+    return RaftCard(
+      variant: RaftCardRecipeVariant.option,
       key: ValueKey('global-server-${server.id}'),
-      onPressed: onPressed,
+      onTap: onPressed,
       semanticLabel: server.string('name'),
-      builder: (context, state) => RaftRecipeBox(
-        style: RaftCardRecipe.resolve(
-          theme: t.recipeTheme,
-          variant: RaftCardRecipeVariant.option,
-          states: t.recipeStates(
-            hovered: state.hovered,
-            pressed: state.pressed,
-            focusVisible: state.focusVisible,
-            disabled: !state.enabled,
-          ),
-          tokens: t.recipeTokens,
-        ).root,
-        tokens: t.recipeTokens,
-        padding: const EdgeInsets.all(RaftSpace.x3),
-        child: SizedBox(
-          width: double.infinity,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                server.string('name'),
-                style: RaftTypography.heading(t, size: 16, line: 24),
-              ),
-              Text(
-                '/${server.string('slug')}',
-                style: RaftTypography.heading(
-                  t,
-                  size: 14,
-                  line: 20,
-                  weight: FontWeight.w400,
-                ).copyWith(color: t.muted),
-              ),
-            ],
-          ),
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              server.string('name'),
+              style: RaftTypography.heading(t, size: 16, line: 24),
+            ),
+            Text(
+              '/${server.string('slug')}',
+              style: RaftTypography.heading(
+                t,
+                size: 14,
+                line: 20,
+                weight: FontWeight.w400,
+              ).copyWith(color: t.muted),
+            ),
+          ],
         ),
       ),
     );

@@ -3,6 +3,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
+import '../features/agent_metadata_catalog.dart';
+import 'computer_release_notes.dart';
+import 'computer_upgrade_in_flight.dart';
+import 'migration_error.dart' show migrationPhase;
+import 'runtime_error.dart' show spawnFailureCarrier, spawnLookupReason;
+import 'workspace_agent_presence.dart';
+
 enum WorkspaceEntityKind { agents, computers, members }
 
 /// An accepted entity belongs to the owning authenticated workspace projection.
@@ -55,8 +62,8 @@ class WorkspaceEntityLoadState {
 /// Source agentDetailAvailability.ts:21–42, including deliberate public
 /// channel/remote projections. An id-only route is never an entity snapshot.
 bool canRenderWorkspaceAgent(Map<String, dynamic>? row, String? serverId) {
+  // An archived (deleted) agent still has a read-only profile.
   if (row == null ||
-      row['deletedAt'] != null ||
       row['id'] is! String ||
       row['name'] is! String ||
       row['status'] is! String) {
@@ -128,7 +135,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     this.readDevice,
     this.writeDevice,
   }) : _readScope = scope {
-    _subscription = events?.listen(_event);
+    _subscription = events?.listen(receive);
   }
   final WorkspaceEntityScope? Function() _readScope;
   final Future<dynamic> Function(String path) query;
@@ -145,8 +152,15 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   final _rows = <WorkspaceEntityKind, Map<String, Map<String, dynamic>>>{};
   final _states = <WorkspaceEntityKind, WorkspaceEntityLoadState>{};
   final _pending = <WorkspaceEntityKind, Future<void>>{};
+  // Command responses accepted during a list read win over that older read.
+  // Each buffer lives only as long as its request; later reads are authoritative.
+  final _agentReadUpdates = <Map<String, Map<String, dynamic>>>{};
   final _activityVersions = <String, int>{};
   final _activity = <String, Map<String, dynamic>>{};
+
+  /// Highest accepted `agent:activity` serverSeq per agent (Web
+  /// agentActivitySeq); cleared on scope change and reconnect (`reset-seq`).
+  final _activitySeq = <String, BigInt>{};
   final _tickets = <WorkspaceEntityKind, int>{};
 
   /// Authorized agent tombstones. They are not live entities (lookups and
@@ -174,8 +188,23 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   int _epoch = 0;
   bool _disposed = false;
   bool started = false;
+  bool _connectedBefore = false;
   Timer? _refresh;
+
+  /// Client clock for the upgrade grace windows (tests move it).
+  DateTime Function() clock = DateTime.now;
+
+  /// Client-only copies of facts the server row does not carry (Web
+  /// `machineStore`): the upgrade request this client saw accepted, an
+  /// Upgrade click whose POST has not settled, and when a live online to
+  /// offline transition was seen. Never persisted; cleared with the scope.
+  final _upgradeAccepted = <String, AcceptedComputerUpgrade>{};
+  final _upgradeSubmitting = <String, String>{};
+  final _offlineObservedAt = <String, int>{};
+  final _upgradeDeadlines = <String, int>{};
+  Timer? _upgradeTimer;
   final _dirty = <WorkspaceEntityKind>{}, _queued = <WorkspaceEntityKind>{};
+  final _presence = WorkspaceAgentPresenceCache();
   StreamSubscription<RaftEvent>? _subscription;
 
   /// Window in which catalog events (created/deleted/updated, machine
@@ -188,15 +217,26 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     final next = _readScope();
     if (next == _scope) return false;
     _scope = next;
+    _presence.invalidate();
+    _connectedBefore = false;
     ++_epoch;
     _pending.clear();
+    _agentReadUpdates.clear();
     _rows.clear();
     _states.clear();
     _activityVersions.clear();
     _activity.clear();
+    _activitySeq.clear();
     _tombstones.clear();
     _settled.clear();
     _latestComputerVersion = null;
+    _latestComputerReleaseNotes = null;
+    _upgradeAccepted.clear();
+    _upgradeSubmitting.clear();
+    _offlineObservedAt.clear();
+    _upgradeDeadlines.clear();
+    _upgradeTimer?.cancel();
+    _upgradeTimer = null;
     _fromDevice.clear();
     _denied.clear();
     _requested.clear();
@@ -215,6 +255,85 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _queued.clear();
     _restoring = next == null ? Future.value() : _restore(next, _epoch);
     return true;
+  }
+
+  /// Whether [machine] is restarting for an upgrade (see
+  /// [computerUpgradeReconnect]). The one answer for the sidebar rows and the
+  /// detail page. The directory rebuilds its listeners when a grace window
+  /// ends, so a reader needs no timer of its own.
+  ComputerUpgradeReconnect upgradeReconnect(Map<String, dynamic> machine) {
+    synchronize();
+    final id = machine['id'];
+    if (id is! String) return ComputerUpgradeReconnect.none;
+    final nowMs = clock().millisecondsSinceEpoch;
+    final accepted = _upgradeAccepted[id];
+    final result = computerUpgradeReconnect(
+      machine,
+      accepted: accepted,
+      offlineObservedAtMs: _offlineObservedAt[id],
+      nowMs: nowMs,
+    );
+    final deadline = [
+      ?result.graceEndsAtMs,
+      if (accepted != null && result.inFlight != null)
+        accepted.acceptedAtMs + computerUpgradeRequestDeadline.inMilliseconds,
+    ].fold<int?>(null, (a, b) => a == null || b < a ? b : a);
+    if (deadline == null) {
+      _upgradeDeadlines.remove(id);
+    } else if (_upgradeDeadlines[id] != deadline) {
+      _upgradeDeadlines[id] = deadline;
+      _armUpgradeTimer();
+    }
+    return result;
+  }
+
+  void _armUpgradeTimer() {
+    if (_disposed || _upgradeDeadlines.isEmpty) return;
+    final next = _upgradeDeadlines.values.reduce((a, b) => a < b ? a : b);
+    final wait = Duration(
+      milliseconds: next - clock().millisecondsSinceEpoch + 1,
+    );
+    _upgradeTimer?.cancel();
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- One-shot at the earliest upgrade grace end; it re-arms only for a deadline still in the future and stops with the last one.
+    _upgradeTimer = Timer(wait.isNegative ? Duration.zero : wait, () {
+      _upgradeTimer = null;
+      final now = clock().millisecondsSinceEpoch;
+      _upgradeDeadlines.removeWhere((_, at) => at <= now);
+      _computerRevision++;
+      notifyListeners();
+      _armUpgradeTimer();
+    });
+  }
+
+  /// The server accepted this client's Upgrade click (Web
+  /// `setComputerUpgradeAccepted`): the page says "upgrading" from this
+  /// answer, not from whichever later refresh carries the pending row.
+  void acceptComputerUpgrade(String id, Map<String, dynamic> request) {
+    synchronize();
+    _upgradeAccepted[id] = AcceptedComputerUpgrade(
+      Map<String, dynamic>.from(request),
+      clock().millisecondsSinceEpoch,
+    );
+    _computerRevision++;
+    notifyListeners();
+  }
+
+  /// Target version of an Upgrade click whose POST has not settled.
+  String? upgradeSubmitting(String id) {
+    synchronize();
+    return _upgradeSubmitting[id];
+  }
+
+  void setUpgradeSubmitting(String id, String? targetVersion) {
+    synchronize();
+    if (_upgradeSubmitting[id] == targetVersion) return;
+    if (targetVersion == null) {
+      _upgradeSubmitting.remove(id);
+    } else {
+      _upgradeSubmitting[id] = targetVersion;
+    }
+    _computerRevision++;
+    notifyListeners();
   }
 
   /// Completes once the device records of the current scope were read and,
@@ -275,6 +394,10 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     if (kind == WorkspaceEntityKind.computers) {
       final latest = value['latestComputerVersion'];
       _latestComputerVersion = latest is String ? latest : null;
+      final notes = value['latestComputerReleaseNotes'];
+      _latestComputerReleaseNotes = notes is Map
+          ? normalizeComputerReleaseNotes(notes['version'], notes)
+          : null;
     }
     _fromDevice.add(kind);
     _settled.add(kind);
@@ -363,6 +486,9 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
                   ],
                 if (kind == WorkspaceEntityKind.computers)
                   'latestComputerVersion': _latestComputerVersion,
+                if (kind == WorkspaceEntityKind.computers)
+                  'latestComputerReleaseNotes': _latestComputerReleaseNotes
+                      ?.toJson(),
               },
       );
     }
@@ -482,10 +608,29 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     }
   }
 
-  void _authorsChanged(WorkspaceEntityKind kind) {
+  /// Reconnect and foreground recovery share one list authority, including
+  /// Computers whose edge events may have been missed while disconnected.
+  void revalidateLive() {
+    for (final kind in WorkspaceEntityKind.values) {
+      unawaited(refresh(kind, force: true));
+    }
+  }
+
+  /// Bounded status reconciliation; ordinary presence remains push-driven.
+  void revalidateStatus() {
+    for (final kind in [
+      WorkspaceEntityKind.agents,
+      WorkspaceEntityKind.computers,
+    ]) {
+      unawaited(refresh(kind));
+    }
+  }
+
+  void _authorsChanged(WorkspaceEntityKind kind, [String? id]) {
     if (kind == WorkspaceEntityKind.computers) {
       _computerRevision++;
     } else if (kind == WorkspaceEntityKind.agents) {
+      _presence.invalidate(id);
       _authorAgents = null;
       _agentRevision++;
       _authorRevision++;
@@ -504,6 +649,25 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
 
   Map<String, dynamic>? agent(String id) =>
       _lookup(WorkspaceEntityKind.agents, id);
+
+  /// The most recent admitted presence change. A null id replaces the catalog;
+  /// a reader that missed several revisions must recheck its observed senders.
+  ({int revision, String? id}) get agentPresenceChange {
+    synchronize();
+    return _presence.change;
+  }
+
+  /// Shared immutable sender fields, including historical deleted authors.
+  /// Permission checks precede every lookup, including a cached one.
+  WorkspaceAgentPresence? agentPresence(String id) {
+    synchronize();
+    if (_disposed || _scope?.allows(WorkspaceEntityKind.agents) != true) {
+      return null;
+    }
+    final row = _rows[WorkspaceEntityKind.agents]?[id] ?? _tombstones[id];
+    return row == null ? null : _presence.read(id, row);
+  }
+
   Map<String, dynamic>? computer(String id) =>
       _lookup(WorkspaceEntityKind.computers, id);
 
@@ -518,6 +682,17 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   }
 
   String? _latestComputerVersion;
+
+  /// Release notes of that latest version (`latestComputerReleaseNotes` on the
+  /// same read, Web machineStore.ts:339); null when the server sent none.
+  ComputerReleaseNotes? get latestComputerReleaseNotes {
+    synchronize();
+    return _scope?.allows(WorkspaceEntityKind.computers) == true
+        ? _latestComputerReleaseNotes
+        : null;
+  }
+
+  ComputerReleaseNotes? _latestComputerReleaseNotes;
   Map<String, dynamic>? member(String userId) =>
       _lookup(WorkspaceEntityKind.members, userId);
   List<Map<String, dynamic>> rows(WorkspaceEntityKind kind) {
@@ -557,12 +732,17 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     if (kind == WorkspaceEntityKind.agents) _agentRequests++;
     bool current() => _accepts(scope, epoch) && _tickets[kind] == ticket;
     final versions = Map<String, int>.of(_activityVersions);
+    final commandUpdates = <String, Map<String, dynamic>>{};
+    if (kind == WorkspaceEntityKind.agents) {
+      _agentReadUpdates.add(commandUpdates);
+    }
     _states[kind] = WorkspaceEntityLoadState(
       loading: true,
       loaded: _states[kind]?.loaded == true,
     );
     // Defer notification: a mounted panel can start loading in initState while
     // the workspace is building. Its first frame reads state synchronously.
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- One-shot deferral out of a build or notification; the callback does not schedule another microtask itself.
     scheduleMicrotask(() {
       if (_accepts(scope, epoch)) notifyListeners();
     });
@@ -599,6 +779,9 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           if (id == null) {
             throw const FormatException('Invalid workspace entity record.');
           }
+          if (kind == WorkspaceEntityKind.agents) {
+            row.addAll(commandUpdates[id] ?? {});
+          }
           if (kind == WorkspaceEntityKind.agents &&
               (_activityVersions[id] ?? 0) > (versions[id] ?? 0)) {
             row.addAll(_activity[id] ?? {});
@@ -621,6 +804,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         if (kind == WorkspaceEntityKind.computers) {
           final latest = value is Map ? value['latestComputerVersion'] : null;
           _latestComputerVersion = latest is String ? latest : null;
+          _latestComputerReleaseNotes = computerReleaseNotesOf(value);
         }
         if (kind == WorkspaceEntityKind.agents) {
           _tombstones
@@ -648,6 +832,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         );
         _settled.add(kind);
       } finally {
+        _agentReadUpdates.remove(commandUpdates);
         if (current() && identical(_pending[kind], pending)) {
           _pending.remove(kind);
           notifyListeners();
@@ -665,13 +850,31 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     return id is String && id.isNotEmpty && row['name'] is String ? id : null;
   }
 
-  void _event(RaftEvent event) {
+  /// Accept one transport frame into the shared, scope-fenced directory.
+  void receive(RaftEvent event) {
     synchronize();
     final scope = _scope;
     if (_disposed || scope == null) return;
     final payload = event.payload is Map
         ? Map<String, dynamic>.from(event.payload as Map)
         : const <String, dynamic>{};
+    if (payload['serverId'] != null && payload['serverId'] != scope.serverId) {
+      return;
+    }
+    if (event.name == 'connected') {
+      _activitySeq.clear();
+      if (started) {
+        if (_connectedBefore) {
+          revalidateLive();
+        } else {
+          // Initial selection may still be loading; share those reads.
+          for (final kind in WorkspaceEntityKind.values) {
+            unawaited(refresh(kind));
+          }
+        }
+      }
+      _connectedBefore = true;
+    }
     final agents = scope.allows(WorkspaceEntityKind.agents);
     final computers = scope.allows(WorkspaceEntityKind.computers);
     switch (event.name) {
@@ -679,9 +882,40 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
       case 'agent:activity' when agents:
         final id = payload['agentId'];
         if (id is! String) return;
+        // Web applySocketActivity: activityKind ?? activity must be a known
+        // activity, and a serverSeq at or below the held one is stale.
+        final kind = payload['activityKind'] ?? payload['activity'];
+        if (!sourceAgentActivities.contains(kind)) return;
+        final seq = BigInt.tryParse('${payload['serverSeq'] ?? ''}');
+        final last = _activitySeq[id];
+        if (seq != null && last != null && seq <= last) return;
+        if (seq != null) _activitySeq[id] = seq;
+        final detailKind =
+            sourceAgentDetailKinds.contains(payload['detailKind'])
+            ? payload['detailKind']
+            : 'other';
         final patch = <String, dynamic>{
-          if (payload['activity'] is String) 'activity': payload['activity'],
-          if (payload['detail'] is String) 'activityDetail': payload['detail'],
+          'activity': kind,
+          'activityKind': kind,
+          'activityDetail': payload['detail'] is String
+              ? payload['detail']
+              : '',
+          // Same key as the REST row's `activityDetailKind`.
+          'activityDetailKind': detailKind,
+          'detailKind': detailKind,
+          // Web agentStore keeps the typed `spawnFailure` carrier only while
+          // the state is the runtime_unavailable frame; the lookup reason it
+          // carries decides the "not installed" wording.
+          'spawnLookupReason': spawnLookupReason(
+            detailKind,
+            payload['spawnFailure'],
+          ),
+          // The whole carrier: the failed-start text is chosen by its
+          // `reason`, `model` and `autoRestartPaused`.
+          'spawnFailure': spawnFailureCarrier(
+            detailKind,
+            payload['spawnFailure'],
+          ),
         };
         _activityVersions[id] = (_activityVersions[id] ?? 0) + 1;
         _activity[id] = patch;
@@ -692,6 +926,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           return;
         }
         row.addAll(patch);
+        _presence.invalidate(id);
         _persist(WorkspaceEntityKind.agents);
         notifyListeners();
       // Source agentStore.applyAgentSeen: monotonic, no request.
@@ -739,7 +974,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
               accepted != null &&
               !accepted.containsKey(id)) {
             accepted[id] = _copy(value);
-            _authorsChanged(WorkspaceEntityKind.agents);
+            _authorsChanged(WorkspaceEntityKind.agents, id);
             _persist(WorkspaceEntityKind.agents);
             notifyListeners();
           }
@@ -757,23 +992,34 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
             ...row,
             'deletedAt': DateTime.now().toUtc().toIso8601String(),
           };
-          _authorsChanged(WorkspaceEntityKind.agents);
+          _authorsChanged(WorkspaceEntityKind.agents, id);
           _persist(WorkspaceEntityKind.agents);
           notifyListeners();
         }
         _scheduleReload(const {WorkspaceEntityKind.agents});
       case 'agent:updated' when agents:
         _scheduleReload(const {WorkspaceEntityKind.agents});
+      // A finished migration changes the agent's computer but broadcasts no
+      // agent:updated; Web re-reads agents (loadAgents) when its migration
+      // section watches the run end. Done here for every terminal state so
+      // memory and the device record follow it whether or not the page is open.
+      case 'agent:migration-updated' when agents:
+        final phase = migrationPhase(payload['state'] as String?);
+        if (phase == 'completed' || phase == 'failed' || phase == 'canceled') {
+          _scheduleReload(const {WorkspaceEntityKind.agents});
+        }
       // Source machineEvents applyStatus: statusVersion-gated patch. A stale or
       // duplicate frame is a no-op; an accepted transition (or an unknown
       // machine coming online) asks for the machines-and-agents recovery read.
-      case 'machine:status' when computers:
-        final id = payload['machineId'], status = payload['status'];
+      case 'machine:status' || 'daemon:status' when computers:
+        final daemonAlias = event.name == 'daemon:status';
+        final id = payload[daemonAlias ? 'daemonId' : 'machineId'];
+        final status = payload['status'];
         if (id is! String || status is! String) return;
         final version = payload['statusVersion'];
         final row = _rows[WorkspaceEntityKind.computers]?[id];
         if (row == null) {
-          if (status == 'online') {
+          if (status == 'online' && !daemonAlias) {
             _scheduleReload(const {
               WorkspaceEntityKind.computers,
               WorkspaceEntityKind.agents,
@@ -787,15 +1033,23 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
             (version is! int || version == current)) {
           return;
         }
+        final wasOnline = row['status'] == 'online';
         row['status'] = status;
         if (version is int) row['statusVersion'] = version;
+        if (status == 'offline' && wasOnline) {
+          _offlineObservedAt[id] = clock().millisecondsSinceEpoch;
+        } else if (status == 'online') {
+          _offlineObservedAt.remove(id);
+        }
         _computerRevision++;
         _persist(WorkspaceEntityKind.computers);
         notifyListeners();
-        _scheduleReload(const {
-          WorkspaceEntityKind.computers,
-          WorkspaceEntityKind.agents,
-        });
+        if (!daemonAlias) {
+          _scheduleReload(const {
+            WorkspaceEntityKind.computers,
+            WorkspaceEntityKind.agents,
+          });
+        }
       // Source machineEvents applyCapabilities: patch only.
       case 'machine:capabilities' when computers:
         final id = payload['machineId'];
@@ -805,6 +1059,16 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         final patch = <String, dynamic>{
           if (payload['runtimes'] is List)
             'runtimes': List<dynamic>.from(payload['runtimes'] as List),
+          // Source applyCapabilities (task #1268): an explicit detection
+          // state wins; an event that carries an inventory but no state is a
+          // synchronous, authoritative inventory and ends an earlier
+          // detecting / did-not-finish state; one without an inventory never
+          // touches the list.
+          if (payload.containsKey('runtimeDetection'))
+            'runtimeDetection': _copyValue(payload['runtimeDetection'])
+          else if (payload['runtimes'] is List &&
+              row['runtimeDetection'] != null)
+            'runtimeDetection': null,
           for (final key in const [
             'runtimeVersions',
             'hostname',
@@ -844,21 +1108,45 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         final server = payload['serverId'];
         if (server is String && server != scope.serverId) return;
         _scheduleReload(const {WorkspaceEntityKind.members});
-      // Source loadConnectSnapshotSet re-reads machines on (re)connect. Agents
-      // are revalidated by the author directory's own reconnect path.
-      case 'connected' when computers:
-        if (_settled.contains(WorkspaceEntityKind.computers)) {
-          _scheduleReload(const {WorkspaceEntityKind.computers});
-        }
     }
   }
 
   void _patchAgent(String id, bool Function(Map<String, dynamic> row) patch) {
     final row = _rows[WorkspaceEntityKind.agents]?[id];
     if (row != null && patch(row)) {
+      _presence.invalidate(id);
       _persist(WorkspaceEntityKind.agents);
       notifyListeners();
     }
+  }
+
+  /// Accept a command response incrementally in the scope that issued it.
+  /// The captured epoch also rejects a response after leaving and returning
+  /// to an otherwise identical account/server/role.
+  void Function(Map<String, dynamic>) agentUpdateReceiver() {
+    synchronize();
+    final scope = _scope, epoch = _epoch;
+    final activityVersions = Map<String, int>.of(_activityVersions);
+    return (update) {
+      if (scope == null || !_accepts(scope, epoch)) return;
+      final id = update['id'];
+      final rows = _rows[WorkspaceEntityKind.agents];
+      final old = rows?[id];
+      if (old == null) return;
+      final patch = _copy(update);
+      if ((_activityVersions[id] ?? 0) > (activityVersions[id] ?? 0)) {
+        patch.addAll(_activity[id] ?? {});
+      }
+      for (final read in _agentReadUpdates) {
+        read[id as String] = {...?read[id], ...patch};
+      }
+      final next = {...old, ...patch};
+      if (_sameValue(old, next)) return;
+      rows![id as String] = next;
+      _authorsChanged(WorkspaceEntityKind.agents, id);
+      _persist(WorkspaceEntityKind.agents);
+      notifyListeners();
+    };
   }
 
   static bool _sameValue(dynamic a, dynamic b) {
@@ -875,6 +1163,12 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     }
     return a == b;
   }
+
+  /// Re-reads the agent list through the same coalesced path as
+  /// `agent:updated` (memory and device record both follow). For changes the
+  /// server makes without broadcasting an agent update, such as a migration
+  /// moving an agent to another computer.
+  void reloadAgents() => _scheduleReload(const {WorkspaceEntityKind.agents});
 
   /// Coalesces a burst of catalog events into one read per affected kind.
   /// Nothing is read before the directory has been started by a surface.
@@ -914,12 +1208,15 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _presence.invalidate();
     ++_epoch;
     _rows.clear();
     _tombstones.clear();
     _authorAgents = _authorMembers = null;
     _pending.clear();
+    _agentReadUpdates.clear();
     _refresh?.cancel();
+    _upgradeTimer?.cancel();
     _dirty.clear();
     _queued.clear();
     // Unflushed device writes are dropped: the owner flushes before closing.

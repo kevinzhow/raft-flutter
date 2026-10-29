@@ -31,6 +31,7 @@ class _Client extends RaftClient {
     String filename, {
     UploadCancellation? cancellation,
     void Function(int, int)? onProgress,
+    String? mimeType,
   }) => (uploads[filename] = Completer()).future;
 }
 

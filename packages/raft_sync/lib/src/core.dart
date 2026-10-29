@@ -316,6 +316,20 @@ class SyncCore {
       .map((e) => Map<String, dynamic>.unmodifiable(e))
       .toList(growable: false);
   dynamic state(String domain, String scope) => _scopes[domain]?[scope]?.state;
+  Iterable<String> scopeIds(String domain) =>
+      List.unmodifiable(_scopes[domain]?.keys ?? const <String>[]);
+
+  /// Changes retained projection data only. Replay/repair state and pending
+  /// transport requests are independent of the amount of body data in RAM.
+  void projectState(
+    String domain,
+    String scope,
+    dynamic Function(dynamic) project,
+  ) {
+    final entry = _scopes[domain]?[scope];
+    if (entry != null) entry.state = project(entry.state);
+  }
+
   Map<String, dynamic>? scopeSyncState(String domain, String scope) {
     final e = _scopes[domain]?[scope];
     return e == null

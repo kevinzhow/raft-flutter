@@ -5,15 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-Widget _host(Widget child, {RaftFamily family = RaftFamily.elegant}) =>
-    MaterialApp(
-      theme: raftTheme(family),
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: Padding(padding: const EdgeInsets.all(16), child: child),
-        ),
-      ),
-    );
+Widget _host(Widget child) => MaterialApp(
+  theme: raftTheme(),
+  home: Scaffold(
+    body: SingleChildScrollView(
+      child: Padding(padding: const EdgeInsets.all(16), child: child),
+    ),
+  ),
+);
 
 void main() {
   test('AgreementBody parsing (paragraphs, lists, line joins)', () {
@@ -58,7 +57,7 @@ void main() {
     expect(find.text('Search members...'), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('admin-principal-picker')));
     await t.pumpAndSettle();
-    expect(find.text('MEMBERS'), findsOneWidget);
+    expect(find.text('Members'), findsOneWidget);
     await t.enterText(find.byType(EditableText).last, 'help');
     await t.pumpAndSettle();
     expect(find.text('Dana · dana@raft.test'), findsNothing);
@@ -145,7 +144,7 @@ void main() {
                 title: 'Make public?',
                 message: 'Sure?',
                 confirmKey: const ValueKey('confirm'),
-                onConfirm: () async => throw StateError('Nope'),
+                onConfirm: () async => throw const RaftUserError('Nope'),
               ),
             ),
             child: const Text('open'),
@@ -161,80 +160,77 @@ void main() {
     expect(find.text('Sure?'), findsOneWidget);
   });
 
-  for (final family in RaftFamily.values) {
-    testWidgets('sections render in ${family.name}', (t) async {
-      final maxUses = TextEditingController();
-      final title = TextEditingController(text: 'Rules');
-      final body = TextEditingController(text: 'Be kind.');
-      addTearDown(maxUses.dispose);
-      addTearDown(title.dispose);
-      addTearDown(body.dispose);
-      await t.pumpWidget(
-        _host(
-          family: family,
-          Column(
-            children: [
-              RaftAdminCheckboxForm(
-                title: 'Hide #all channel',
-                description: 'd',
-                checked: true,
-                save: RaftAdminSaveState.saved,
-                warnings: const ['Translation is enabled'],
-              ),
-              RaftAdminInvitesCard(
-                invites: [
-                  RaftAdminInvite(
-                    id: 'i',
-                    email: 'a@b.c',
-                    date: 'Jun 18',
-                    onRevoke: () {},
-                  ),
-                ],
-              ),
-              RaftAdminJoinLinksCard(
-                maxUses: maxUses,
-                expiresAt: DateTime(2026, 6, 19, 20, 24),
-                onExpiresAt: (_) {},
-                onCreate: () {},
-                links: const [],
-              ),
-              RaftAdminAgreementCard(
-                enabled: true,
-                onEnabled: (_) {},
-                title: title,
-                body: body,
-                save: RaftAdminSaveState.idle,
-                onSave: null,
-              ),
-              RaftAdminOnboardingCard(
-                agentId: '',
-                agents: const [('a', '@a (A)')],
-                onAgent: (_) {},
-                greeting: true,
-                onGreeting: (_) {},
-                save: RaftAdminSaveState.idle,
-                onSave: null,
-                showSetup: true,
-              ),
-              const RaftPublicVisibilityCard(
-                publiclyVisible: true,
-                onPublic: null,
-                publicUrl: 'https://raft.test/s/x',
-                guestJoin: false,
-                channels: [RaftPublicChannel(name: 'general')],
-              ),
-            ],
-          ),
+  testWidgets('sections render in', (t) async {
+    final maxUses = TextEditingController();
+    final title = TextEditingController(text: 'Rules');
+    final body = TextEditingController(text: 'Be kind.');
+    addTearDown(maxUses.dispose);
+    addTearDown(title.dispose);
+    addTearDown(body.dispose);
+    await t.pumpWidget(
+      _host(
+        Column(
+          children: [
+            RaftAdminCheckboxForm(
+              title: 'Hide #all channel',
+              description: 'd',
+              checked: true,
+              save: RaftAdminSaveState.saved,
+              warnings: const ['Translation is enabled'],
+            ),
+            RaftAdminInvitesCard(
+              invites: [
+                RaftAdminInvite(
+                  id: 'i',
+                  email: 'a@b.c',
+                  date: 'Jun 18',
+                  onRevoke: () {},
+                ),
+              ],
+            ),
+            RaftAdminJoinLinksCard(
+              maxUses: maxUses,
+              expiresAt: DateTime(2026, 6, 19, 20, 24),
+              onExpiresAt: (_) {},
+              onCreate: () {},
+              links: const [],
+            ),
+            RaftAdminAgreementCard(
+              enabled: true,
+              onEnabled: (_) {},
+              title: title,
+              body: body,
+              save: RaftAdminSaveState.idle,
+              onSave: null,
+            ),
+            RaftAdminOnboardingCard(
+              agentId: '',
+              agents: const [('a', '@a (A)')],
+              onAgent: (_) {},
+              greeting: true,
+              onGreeting: (_) {},
+              save: RaftAdminSaveState.idle,
+              onSave: null,
+              showSetup: true,
+            ),
+            const RaftPublicVisibilityCard(
+              publiclyVisible: true,
+              onPublic: null,
+              publicUrl: 'https://raft.test/s/x',
+              guestJoin: false,
+              channels: [RaftPublicChannel(name: 'general')],
+            ),
+          ],
         ),
-      );
-      expect(t.takeException(), isNull);
-      expect(find.text('Saved'), findsOneWidget);
-      expect(find.text('No active invite links.'), findsOneWidget);
-      expect(find.text('06/19/2026, 08:24 PM'), findsOneWidget);
-      expect(find.text('Finish setup'), findsOneWidget);
-      expect(find.text('8/5000'), findsOneWidget);
-    });
-  }
+      ),
+    );
+    expect(t.takeException(), isNull);
+    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('No active invite links.'), findsOneWidget);
+    expect(find.text('06/19/2026, 08:24 PM'), findsOneWidget);
+    expect(find.text('Finish setup'), findsOneWidget);
+    expect(find.text('8/5000'), findsOneWidget);
+  });
 
   testWidgets('RaftCssPixelSnap paints a fractional box on whole pixels', (
     t,
@@ -268,7 +264,7 @@ void main() {
   ) async {
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant, dark: true),
+        theme: raftTheme(dark: true),
         home: const Scaffold(
           body: Align(
             alignment: Alignment.topLeft,

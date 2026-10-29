@@ -70,6 +70,7 @@ void main() {
             },
           ];
         }
+        if (path == '/channels/joint-invites') return {'invites': []};
         expect(query, {'limit': 1});
         return {'unread_total': 2};
       },
@@ -80,6 +81,8 @@ void main() {
       '/servers/s/machines',
       '/agents',
       '/product-feedback/tickets',
+      // An owner can be invited to joint channels (RFC 075 section 4.5).
+      '/channels/joint-invites',
     ]);
     expect(store.entries.map((n) => n.id), [
       'computer-attention',

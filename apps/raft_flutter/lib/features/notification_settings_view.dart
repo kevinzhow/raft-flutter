@@ -5,33 +5,68 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../platform/battery_optimization.dart';
 import '../platform/native_notifications.dart';
+import 'management_support.dart';
+import 'windows_tray_settings.dart';
 
 /// Mounted NotificationsSection. Desktop (macOS / Linux / Windows) mirrors
-/// Web's DesktopNativeNotificationsCard: the system owns the switch, the card
-/// says so and offers one real test. Phones (Android / iOS) keep the same card
-/// but can read and request the permission, and add the member-owned server
+/// Web's DesktopNativeNotificationsCard: the system owns the switch. macOS
+/// and phones show the checked permission and link to system settings; Windows
+/// and Linux retain their system-managed guidance. Phones add the member-owned server
 /// mute form. Neither describes a browser permission or web-push subscription.
 class NotificationSettingsView extends StatefulWidget {
   const NotificationSettingsView({
     super.key,
     required this.service,
     this.controller,
+    this.battery,
   });
   final NativeNotificationService service;
+
+  /// Android battery optimisation; the default reads the real device.
+  final BatteryOptimization? battery;
   final WorkspaceController? controller;
   @override
   State<NotificationSettingsView> createState() => _NotificationSettingsState();
 }
 
-class _NotificationSettingsState extends State<NotificationSettingsView> {
+class _NotificationSettingsState extends State<NotificationSettingsView>
+    with WidgetsBindingObserver {
   Object? scope;
   int ticket = 0, version = -1;
   bool loading = false, busy = false, muted = false, savedMuted = false;
   bool verified = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Both clear on the next save/native action, on a mute edit, on a pushed prefs update, on retry success and on server/account/service change (clear()).
   String? error, message;
   bool testPosted = false, nativeBusy = false;
   WorkspaceController? get w => widget.controller;
+  late BatteryOptimization battery = widget.battery ?? BatteryOptimization();
+
+  /// Android only: null until known, false while the app is battery optimised.
+  bool? batteryExempt;
+  int batteryTicket = 0;
+
+  /// Without push, a background notification needs the app exempt from
+  /// battery optimisation; the notice shows only once the system says it is not.
+  bool get showBatteryNotice =>
+      widget.service.platform == TargetPlatform.android &&
+      batteryExempt == false;
+
+  Future<void> refreshBattery() async {
+    if (widget.service.platform != TargetPlatform.android) return;
+    final request = ++batteryTicket;
+    final exempt = await battery.exempt();
+    if (mounted && request == batteryTicket && exempt != batteryExempt) {
+      setState(() => batteryExempt = exempt);
+    }
+  }
+
+  /// The person returns from the system screen: read the status again.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(refreshBattery());
+  }
 
   /// Phones own the member mute form; desktop authorization belongs to the OS.
   bool get phone =>
@@ -59,6 +94,8 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(refreshBattery());
     widget.service.addListener(serviceChanged);
     w?.addListener(workspaceChanged);
     scope = authority;
@@ -69,10 +106,15 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
   @override
   void didUpdateWidget(NotificationSettingsView old) {
     super.didUpdateWidget(old);
+    if (old.battery != widget.battery) {
+      battery = widget.battery ?? BatteryOptimization();
+    }
     if (old.service != widget.service) {
       old.service.removeListener(serviceChanged);
       widget.service.addListener(serviceChanged);
       clear();
+      batteryExempt = null;
+      unawaited(refreshBattery());
     }
     if (old.controller != w) {
       old.controller?.removeListener(workspaceChanged);
@@ -87,6 +129,8 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
   @override
   void dispose() {
     ++ticket;
+    ++batteryTicket;
+    WidgetsBinding.instance.removeObserver(this);
     widget.service.removeListener(serviceChanged);
     w?.removeListener(workspaceChanged);
     super.dispose();
@@ -115,8 +159,21 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
       version = incoming;
       muted = savedMuted = row!['serverPushMuted'] as bool;
       verified = true;
+      return;
+    }
+    // Else the settings this page last accepted for the server.
+    final c = w;
+    final seen = hasServer && phone && c != null
+        ? readPageSnapshot(c, _snapshotKey)
+        : null;
+    if (seen != null && seen['muted'] is bool && seen['version'] is int) {
+      version = seen['version'] as int;
+      muted = savedMuted = seen['muted'] as bool;
+      verified = true;
     }
   }
+
+  static const _snapshotKey = 'notification-settings';
 
   void workspaceChanged() {
     if (!mounted) return;
@@ -157,6 +214,12 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
     muted = savedMuted = response['serverPushMuted'] == true;
     verified = true;
     final controller = w;
+    if (controller != null) {
+      writePageSnapshot(controller, _snapshotKey, pageIdentity(controller), {
+        'muted': savedMuted,
+        'version': version,
+      });
+    }
     final server = controller?.server;
     if (controller != null && server != null) {
       final patch = RaftRecord({
@@ -319,6 +382,8 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
       context,
       platform == TargetPlatform.windows
           ? 'Manage notifications for Raft in {path}. Do Not Disturb may send notifications directly to the notification center without showing a banner.'
+          : platform == TargetPlatform.macOS
+          ? 'Whether these notifications appear is decided by the system, not by Raft: {path}. A Focus mode or Do Not Disturb may delay or silence banners.'
           : 'Whether these notifications appear is decided by the system, not by Raft: {path}. The system may ask for permission the first time a notification is posted. A Focus mode or Do Not Disturb may delay or silence banners.',
       {'path': path},
     );
@@ -364,13 +429,17 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
         key: const ValueKey('notification-settings-card'),
         title: 'Desktop notifications',
         description: 'Raft Desktop shows system notifications for new DMs, direct mentions, and followed thread replies while the window is in the background. Web push is not used on desktop.',
-        status: unavailable ? 'Unavailable' : 'Managed by the system',
+        status: unavailable
+            ? 'Unavailable'
+            : platform == TargetPlatform.macOS && service.initialized
+            ? service.permitted
+                  ? 'Enabled'
+                  : 'Off in system settings'
+            : 'Managed by the system',
         hint: unavailable
             ? 'This desktop build cannot show system notifications.'
             : desktopHint(context, platform),
-        error:
-            error ??
-            (platform == TargetPlatform.windows ? service.error : null),
+        error: error ?? (service.canOpenSettings ? service.error : null),
         message: testPosted ? testSentMessage(context, platform) : null,
         actionLabel: 'Send a test notification',
         actionTone: RaftButtonRecipeVariant.success,
@@ -378,7 +447,7 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
             ? null
             : () => nativeAction(
                 () => sendTest(
-                  raftText(context, 'Raft Desktop'),
+                  raftText(context, 'Test notification'),
                   raftText(
                     context,
                     'Test notification — desktop notifications are working.',
@@ -387,7 +456,7 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
               ),
         muted: false,
       );
-      if (platform != TargetPlatform.windows) return card;
+      if (!service.canOpenSettings) return card;
       return RaftGapColumn(
         gap: RaftSpace.x3,
         children: [
@@ -395,7 +464,7 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: RaftButton(
-              label: 'Open notification settings',
+              label: 'Open Notification Settings',
               tone: RaftButtonRecipeVariant.outline,
               size: RaftButtonRecipeSize.sm,
               onPressed: blocked
@@ -403,22 +472,32 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
                   : () => nativeAction(service.openSettings),
             ),
           ),
+          if (platform == TargetPlatform.windows) const WindowsTraySettings(),
         ],
       );
     }
     final chinese = Localizations.maybeLocaleOf(context)?.languageCode == 'zh';
-    return RaftNotificationSettingsCard(
+    final card = RaftNotificationSettingsCard(
       key: const ValueKey('notification-settings-card'),
       title: 'Phone notifications',
-      description: 'While Raft is connected, new DMs, direct mentions and replies in followed threads show a system notification. In the background Raft checks for new messages periodically, so some may arrive later.',
+      description: platform == TargetPlatform.android
+          ? 'While Raft is connected, new DMs, direct mentions and replies in followed threads show a system notification.'
+          : 'While Raft is connected, new DMs, direct mentions and replies in followed threads show a system notification. In the background Raft checks for new messages periodically, so some may arrive later.',
       status: unavailable
           ? 'Unavailable'
           : service.enabled
           ? (chinese ? '已开启' : 'Enabled')
+          : service.initialized && !service.permitted
+          ? 'Off in system settings'
           : 'Not enabled',
       hint: unavailable
           ? 'System notifications are unavailable on this device.'
           : phoneHint(context, platform),
+      notice: showBatteryNotice
+          ? 'To receive notifications in the background, turn off battery optimization for Raft.'
+          : null,
+      noticeActionLabel: 'Open Battery Settings',
+      onNoticeAction: () => unawaited(battery.openSettings()),
       error: error ?? service.backgroundError ?? service.error,
       message: testPosted
           ? testSentMessage(context, platform)
@@ -431,8 +510,8 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
           ? () => unawaited(load())
           : null,
       actionLabel: service.enabled
-          ? 'Send test notification'
-          : 'Enable notifications',
+          ? 'Send Test Notification'
+          : 'Enable Notifications',
       actionTone: service.enabled
           ? RaftButtonRecipeVariant.success
           : RaftButtonRecipeVariant.accent,
@@ -441,7 +520,7 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
           : service.enabled
           ? () => nativeAction(
               () => sendTest(
-                'Raft',
+                raftText(context, 'Test notification'),
                 raftText(
                   context,
                   'System notifications are enabled. Tap to return to Raft.',
@@ -466,6 +545,24 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
             }),
       saveLabel: busy && !nativeBusy ? 'Saving…' : 'Save',
       onSave: blocked || !verified || muted == savedMuted ? null : save,
+    );
+    if (!service.initialized || service.permitted) return card;
+    return RaftGapColumn(
+      gap: RaftSpace.x3,
+      children: [
+        card,
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: RaftButton(
+            label: 'Open Notification Settings',
+            tone: RaftButtonRecipeVariant.outline,
+            size: RaftButtonRecipeSize.sm,
+            onPressed: blocked || unavailable
+                ? null
+                : () => nativeAction(service.openSettings),
+          ),
+        ),
+      ],
     );
   }
 }

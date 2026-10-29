@@ -147,11 +147,15 @@ Map<String, dynamic> _task(
 ParityCase _rowCase({
   required ChatStage Function(ParityContext ctx) stage,
   String notes = '',
+  void Function(WidgetTester, ParityContext)? afterAlign,
 }) => ParityCase(
   widgets: _rowWidgets,
   notes: [_clockNote, if (notes.isNotEmpty) notes].join(' '),
   build: (ctx) => stageFor(ctx, () => stage(ctx)).build(),
-  interact: (t, ctx) => stageFor(ctx, () => stage(ctx)).alignRow(t),
+  interact: (t, ctx) async {
+    await stageFor(ctx, () => stage(ctx)).alignRow(t);
+    afterAlign?.call(t, ctx);
+  },
 );
 
 const _noRepliesChip =
@@ -243,15 +247,13 @@ ChatStage _menuStage(ParityContext ctx) {
   );
 }
 
-/// Long-press on the row's avatar gutter: the body sits in a SelectionArea,
-/// so a long-press on text starts text selection (product behavior) instead
-/// of RaftMessageRow.onLongPress → actions sheet.
+/// Long-press on the row's right edge: the body sits in a SelectionArea, so a
+/// long-press on text starts text selection (product behavior) instead of
+/// RaftMessageRow.onLongPress → actions sheet, and one on the avatar mentions
+/// the sender.
 Future<void> _longPressRow(WidgetTester t, int index) async {
-  final avatar = find.descendant(
-    of: find.byType(RaftMessageRow).at(index),
-    matching: find.byType(RaftAvatar),
-  );
-  await t.longPress(avatar.first, warnIfMissed: false);
+  final row = find.byType(RaftMessageRow).at(index);
+  await t.longPressAt(t.getTopRight(row) + const Offset(-6, 6));
   for (var i = 0; i < 12; i++) {
     await t.pump(const Duration(milliseconds: 50));
   }
@@ -357,11 +359,18 @@ final ParityCase _shareSelection = ParityCase(
     for (var i = 0; i < 12; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }
+    // Selection changes row height; update the visible window before tapping.
+    await stage.alignRow(t);
     await t.tap(find.byType(RaftMessageRow).at(1));
     for (var i = 0; i < 6; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }
     await stage.alignRow(t);
+    expect(
+      find.byWidgetPredicate((w) => w is RaftCheckbox && w.value == true),
+      findsNWidgets(2),
+      reason: 'Both visible message rows must actually be selected.',
+    );
   },
 );
 
@@ -418,7 +427,7 @@ final ParityCase _forward = ParityCase(
     final stage = stageFor(ctx, () => _forwardStage(ctx));
     await stage.settle(t, rows: 2);
     final context = t.element(find.byType(RaftChatView));
-    forwardMessages(context, stage.w, stage.w.messages);
+    forwardMessages(context, stage.w, stage.w.messageDomain.messages);
     for (var i = 0; i < 12; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }
@@ -631,6 +640,7 @@ final Map<String, ParityCase> threadMessageCases = {
         '我撤掉 PR #318 这套 rolling-share 设计，改做 app latest landing page，并复用现有 share 页的版本信息/下载体验。',
   ),
   'components.thread.message-row.md-wrap-slice1': _mdCase(
+    currentWebFixture: 'markdownSyntheticSlice1Fixture',
     id: 'msg_md_wrap_slice1_visual',
     width: 260,
     createdAt: '2026-07-13T05:55:00.000Z',
@@ -775,7 +785,7 @@ final _linkedTaskCase = ParityCase(
               avatar: RaftAvatar(
                 name: ids.cindy['displayName'],
                 kind: RaftAvatarKind.agent,
-                mountedContext: RaftMountedAvatarContext.panelHeader,
+                mountedContext: RaftMountedAvatarContext.messageRow,
                 presence: const RaftAvatarPresence(
                   activity: RaftAvatarActivity.working,
                 ),
@@ -815,38 +825,72 @@ ParityCase _mdCase({
   required double width,
   required String createdAt,
   required String content,
+  String? currentWebFixture,
   ({String id, String name, String desc})? extra,
   List<Map<String, dynamic>> Function(ParityContext ctx)? mentions,
 }) => _rowCase(
   notes:
-      'Both providers receive the complete owner-authorized public task '
-      'fixture (787/31/521/607/606), replacing the reference host\'s '
-      'invalid number-only records. Original message bodies and widths '
-      'remain unchanged; prior defective React captures are archived.',
-  stage: (ctx) => ChatStage(
-    ctx,
-    rowWidth: width,
-    channelId: _markdownChannel.id,
-    extraChannels: [
-      _extra(ctx, _markdownChannel),
-      if (extra != null) _extra(ctx, extra),
-    ],
-    tasks: [
-      for (final task in ctx.fixtures['markdownTasksFixture']['tasks'] as List)
-        Map<String, dynamic>.from(task as Map),
-    ],
-    messages: [
-      _cindyMessage(
-        ctx,
-        id: id,
-        channelId: _markdownChannel.id,
-        content: content,
-        mentions: mentions?.call(ctx) ?? const [],
-        threadId: 'thread-${id.replaceAll('_', '-')}',
-        createdAt: createdAt,
-      ),
-    ],
-  ),
+      'Both providers receive the complete public task projection. '
+      'A current-Web-only correction uses its separately declared public '
+      'fixture; legacy message bodies and widths remain frozen.',
+  afterAlign: (t, ctx) {
+    if (ctx.againstWeb && currentWebFixture != null) {
+      final toggle = find.byType(RaftShowMoreToggle);
+      expect(toggle, findsOneWidget);
+      expect(t.widget<RaftShowMoreToggle>(toggle).expanded, isFalse);
+    }
+  },
+  stage: (ctx) {
+    final synthetic = ctx.againstWeb && currentWebFixture != null
+        ? ctx.fixtures[currentWebFixture] as Map<String, dynamic>
+        : null;
+    final webMessage = synthetic?['message'] as Map?;
+    final webChannel = synthetic?['extraChannel'] as Map?;
+    final display = synthetic?['messageDisplaySettings'] as Map?;
+    return ChatStage(
+      ctx,
+      rowWidth: width,
+      channelId: _markdownChannel.id,
+      collapseLongMessages: display?['collapseLongMessages'] as bool?,
+      initialReadState: synthetic?['readState'] == null
+          ? null
+          : Map<String, dynamic>.from(synthetic!['readState'] as Map),
+      extraChannels: [
+        _extra(ctx, _markdownChannel),
+        if (webChannel != null)
+          _extra(ctx, (
+            id: webChannel['id'] as String,
+            name: webChannel['name'] as String,
+            desc: webChannel['description'] as String,
+          ))
+        else if (extra != null)
+          _extra(ctx, extra),
+      ],
+      tasks: [
+        for (final task
+            in ctx.fixtures['markdownTasksFixture']['tasks'] as List)
+          Map<String, dynamic>.from(task as Map),
+        if (synthetic != null)
+          Map<String, dynamic>.from(synthetic['task'] as Map),
+      ],
+      messages: [
+        _cindyMessage(
+          ctx,
+          id: id,
+          channelId: _markdownChannel.id,
+          content: webMessage?['content'] as String? ?? content,
+          mentions: webMessage != null
+              ? [
+                  for (final mention in webMessage['mentions'] as List)
+                    Map<String, dynamic>.from(mention as Map),
+                ]
+              : mentions?.call(ctx) ?? const [],
+          threadId: 'thread-${id.replaceAll('_', '-')}',
+          createdAt: createdAt,
+        ),
+      ],
+    );
+  },
 );
 
 final Map<String, ParityUncovered> threadMessageUncovered = {};
@@ -895,6 +939,7 @@ final ParityCase _commentAnchor = ParityCase(
     final w = WorkspaceController(client)
       ..server = RaftRecord(ids.server)
       ..channels = [RaftChannel(ids.channel('design'))];
+    ctx.onDispose(w.dispose);
     return Scaffold(
       body: ctx.target(
         SizedBox(

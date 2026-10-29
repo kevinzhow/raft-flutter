@@ -6,11 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../tool/testing/system_fonts.dart';
+
 import 'package:raft_ui/activity_selected_previews.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Future<void> loadFonts(WidgetTester t) => t.runAsync(() async {
-  for (final family in ['HankenGrotesk', 'Inter', 'Geist', 'GeistMono']) {
+  for (final family in [
+    'SpaceGrotesk',
+    'SpaceMono',
+    'HankenGrotesk',
+    'Inter',
+    'Geist',
+    'GeistMono',
+  ]) {
     ByteData bytes;
     try {
       bytes = await rootBundle.load(
@@ -24,7 +35,7 @@ Future<void> loadFonts(WidgetTester t) => t.runAsync(() async {
     )..addFont(Future.value(bytes))).load();
   }
   final icons = File(
-    '${Platform.environment['FLUTTER_ROOT'] ?? '/home/kevinzhow/flutter-sdks/versions/3.47.6'}'
+    '${Platform.environment['FLUTTER_ROOT'] ?? '/home/kevinzhow/flutter-sdks/versions/3.47.8'}'
     '/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
   );
   if (icons.existsSync()) {
@@ -34,13 +45,11 @@ Future<void> loadFonts(WidgetTester t) => t.runAsync(() async {
         .load();
   }
   // The theme's CJK fallback: load the system font so zh renders.
-  const dir = '/usr/share/fonts/opentype/noto';
   final loader = FontLoader('Noto Sans CJK JP');
   // Badge text inherits the generic `sans-serif` fallback.
   final generic = FontLoader('sans-serif');
   var any = false;
-  for (final f in ['NotoSansCJK-Regular.ttc', 'NotoSansCJK-Bold.ttc']) {
-    final file = File('$dir/$f');
+  for (final file in cjkTestFonts()) {
     if (file.existsSync()) {
       final data = ByteData.sublistView(file.readAsBytesSync());
       loader.addFont(Future.value(data));
@@ -74,24 +83,23 @@ final _delegates = <LocalizationsDelegate<dynamic>>[
   ),
 ];
 
-Widget host(RaftFamily family, bool dark, GlobalKey capture, Widget child) =>
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: raftTheme(family, dark: dark),
-      home: Scaffold(
-        body: RepaintBoundary(
-          key: capture,
-          child: Builder(
-            builder: (context) => Localizations.override(
-              context: context,
-              locale: const Locale('zh'),
-              delegates: _delegates,
-              child: child,
-            ),
-          ),
+Widget host(bool dark, GlobalKey capture, Widget child) => MaterialApp(
+  debugShowCheckedModeBanner: false,
+  theme: raftTheme(dark: dark),
+  home: Scaffold(
+    body: RepaintBoundary(
+      key: capture,
+      child: Builder(
+        builder: (context) => Localizations.override(
+          context: context,
+          locale: const Locale('zh'),
+          delegates: _delegates,
+          child: child,
         ),
       ),
-    );
+    ),
+  ),
+);
 
 Future<void> shot(WidgetTester t, GlobalKey capture, String name) =>
     t.runAsync(() async {
@@ -106,23 +114,23 @@ Future<void> shot(WidgetTester t, GlobalKey capture, String name) =>
       await file.writeAsBytes(data!.buffer.asUint8List());
     });
 
-final _themes = [
-  ('brutal-light', RaftFamily.brutal, false),
-  ('elegant-light', RaftFamily.elegant, false),
-  ('elegant-dark', RaftFamily.elegant, true),
-];
+final _themes = [('elegant-light', false), ('elegant-dark', true)];
 
 void main() {
-  for (final (name, family, dark) in _themes) {
+  for (final (name, dark) in raftThemeMatrix(_themes)) {
     testWidgets('selected Activity row states $name', (t) async {
+      final missingFonts = missingTestFontReason(cjkTestFonts());
+      if (missingFonts != null) {
+        markTestSkipped(missingFonts);
+        return;
+      }
+
       t.view.physicalSize = const Size(480 * 2, 640 * 2);
       t.view.devicePixelRatio = 2;
       addTearDown(t.view.reset);
       await loadFonts(t);
       final capture = GlobalKey();
-      await t.pumpWidget(
-        host(family, dark, capture, const ActivitySelectedRows()),
-      );
+      await t.pumpWidget(host(dark, capture, const ActivitySelectedRows()));
       await t.pumpAndSettle();
       Finder row(int i) => find.byKey(ValueKey('activity-selected-row-$i'));
       expect(

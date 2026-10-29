@@ -33,7 +33,7 @@ bool _same(Uri actual, String expected) {
 }
 
 void main() {
-  for (final theme in ['brutal', 'elegant-light']) {
+  for (final theme in ['light']) {
     for (final (legacy, expected) in _cases) {
       testWidgets('[N10] $theme cold start $legacy is replaced by $expected', (
         t,

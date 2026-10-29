@@ -52,6 +52,55 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  testWidgets('a swiping pager still passes taps on Android edge controls', (
+    t,
+  ) async {
+    t.view.physicalSize = const Size(390, 600);
+    t.view.devicePixelRatio = 1;
+    t.view.systemGestureInsets = const FakeViewPadding(left: 40, right: 40);
+    addTearDown(t.view.reset);
+    var taps = 0;
+    await t.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.android),
+        home: Scaffold(
+          body: RaftSectionPager<String>(
+            sections: const ['a', 'b'],
+            value: 'a',
+            onChanged: (_) {},
+            builder: (_, _) => Stack(
+              children: [
+                for (final left in [0.0, 358.0])
+                  Positioned(
+                    left: left,
+                    top: 100,
+                    width: 32,
+                    height: 48,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => taps++,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    await t.tapAt(const Offset(10, 120));
+    await t.tapAt(const Offset(380, 120));
+    expect(taps, 2);
+    // A swipe starting on the same edge control still belongs to system Back.
+    final position = t.state<ScrollableState>(find.byType(Scrollable)).position;
+    final gesture = await t.startGesture(const Offset(10, 120));
+    await gesture.moveBy(const Offset(270, 0));
+    await gesture.up();
+    await t.pumpAndSettle();
+    expect(position.pixels, 0);
+    expect(taps, 2);
+  });
+
   for (final direction in TextDirection.values) {
     for (final right in [false, true]) {
       testWidgets(
@@ -60,7 +109,8 @@ void main() {
           final fixture = _Fixture();
           await fixture.mount(t, direction: direction);
           final gesture = await t.startGesture(Offset(right ? 389 : 1, 300));
-          expect(fixture.pointerDowns, 0);
+          // Content still sees the pointer (a tap on an edge control works);
+          // only the pager's own drag ignores it.
           final position = t
               .state<ScrollableState>(find.byType(Scrollable))
               .position;
@@ -124,7 +174,6 @@ void main() {
       expect(find.text('previous page'), findsOneWidget);
       expect(fixture.changes, isEmpty);
       expect(fixture.mounted, {'b'});
-      expect(fixture.pointerDowns, 0);
       expect(t.takeException(), isNull);
     },
   );

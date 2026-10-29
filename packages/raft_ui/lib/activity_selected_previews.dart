@@ -12,6 +12,65 @@ Widget activitySelectedRowsPreview() => const ActivitySelectedRows();
 Widget activitySelectedMasterDetailPreview() =>
     const ActivitySelectedMasterDetail();
 
+@RaftPreviews('Resource toolbar', size: Size(390, 240))
+Widget resourceToolbarPreview() => const _ResourceToolbarPreview();
+
+class _ResourceToolbarPreview extends StatefulWidget {
+  const _ResourceToolbarPreview();
+  @override
+  State<_ResourceToolbarPreview> createState() =>
+      _ResourceToolbarPreviewState();
+}
+
+class _ResourceToolbarPreviewState extends State<_ResourceToolbarPreview> {
+  String filter = 'all';
+  int marked = 0;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: RaftResourceFilterViewport(
+                child: RaftSegmentedControl<String>(
+                  value: filter,
+                  shrinkFrame:
+                      RaftTokens.of(context)
+                          .option('resource.rows', or: 'cards') ==
+                      'flat',
+                  minimumTargetSize: 32,
+                  items: const [
+                    RaftSegmentedOption(value: 'all', label: 'All'),
+                    RaftSegmentedOption(value: 'unread', label: 'Unread'),
+                    RaftSegmentedOption(value: 'mentions', label: 'Mentions'),
+                  ],
+                  onChanged: (value) => setState(() => filter = value),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (RaftScaled.grows(context))
+              Flexible(
+                child: RaftResourceMarkReadButton(
+                  onPressed: () => setState(() => marked++),
+                ),
+              )
+            else
+              RaftResourceMarkReadButton(
+                onPressed: () => setState(() => marked++),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        RaftCssText('Filter: $filter; read actions: $marked'),
+      ],
+    ),
+  );
+}
+
 class _Sample {
   const _Sample(
     this.channel,
@@ -194,7 +253,7 @@ class ActivitySelectedRows extends StatelessWidget {
     return RaftDensityScope(
       density: RaftDensity.desktop,
       child: ColoredBox(
-        color: t.colors[t.brutal ? 'color-white' : 'layer-canvas-muted']!,
+        color: t.colors['layer-canvas-muted']!,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -234,7 +293,7 @@ class ActivitySelectedMasterDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final recipe = RaftConversationCardRecipe(t);
-    final line = t.colors[t.brutal ? 'color-black' : 'line-muted']!;
+    final line = t.colors['line-muted']!;
     return RaftDensityScope(
       density: RaftDensity.desktop,
       child: Row(
@@ -242,7 +301,7 @@ class ActivitySelectedMasterDetail extends StatelessWidget {
           SizedBox(
             width: listWidth,
             child: ColoredBox(
-              color: t.colors[t.brutal ? 'color-white' : 'layer-canvas-muted']!,
+              color: t.colors['layer-canvas-muted']!,
               child: ListView(
                 padding: const EdgeInsets.all(12),
                 children: [

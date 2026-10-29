@@ -8,22 +8,29 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show MessageAdapter, fixture;
+import 'support/app_services_fixture.dart';
 
 /// Sidebar.tsx context menus: channel / DM rows, section headers, the sidebar
 /// surface and the section dialog, with the Source actions
 /// (PATCH /servers/:id/sidebar-order, POST /channels/:id/read-all|unread).
 void main() {
   Future<(WorkspaceController, MessageAdapter, List<Object?>)> setup(
-    WidgetTester tester,
-  ) async {
+    WidgetTester tester, {
+    Size size = const Size(1440, 900),
+    bool dark = false,
+  }) async {
     SharedPreferences.setMockInitialValues({});
-    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
     addTearDown(w.dispose);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
     w.loading = false;
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     w.channels = [
       RaftChannel({'id': 'c1', 'name': 'general', 'joined': true}),
       RaftChannel({'id': 'c2', 'name': 'random', 'joined': true}),
@@ -58,12 +65,14 @@ void main() {
     };
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
-        home: WorkspaceView(
-          controller: w,
-          appearance: RaftAppearance(light: RaftFamily.elegant),
-          onAppearance: (_) async {},
-          onLogout: () async {},
+        theme: raftTheme(dark: dark),
+        home: withAppServices(
+          WorkspaceView(
+            controller: w,
+            appearance: RaftAppearance(),
+            onAppearance: (_) async {},
+            onLogout: () async {},
+          ),
         ),
       ),
     );
@@ -86,21 +95,21 @@ void main() {
     final (_, _, patches) = await setup(tester);
     await rightClick(tester, find.byKey(const ValueKey('sidebar-channel-c1')));
     for (final label in [
-      'Move to section',
+      'Move to Section',
       'Mark as Unread',
       'Pin',
       'Mute',
-      'Archive',
+      'Archive Channel',
     ]) {
       expect(find.text(label), findsOneWidget, reason: label);
     }
     await tester.tap(find.text('Pin'));
     await tester.pumpAndSettle();
+    // Source togglePinnedRef: no section write when no placement is dropped.
     expect(patches.single, {
       'pinned': [
         {'kind': 'channel', 'id': 'c1'},
       ],
-      'sectionPlacements': <Object?>[],
     });
     expect(find.text('Pin'), findsNothing, reason: 'the menu closed');
   });
@@ -110,17 +119,18 @@ void main() {
   ) async {
     await setup(tester);
     await rightClick(tester, find.byKey(const ValueKey('sidebar-channel-c1')));
-    expect(find.text('Pinned'), findsNothing);
+    // The Pinned group heading is the only match until the submenu opens.
+    expect(find.text('Pinned'), findsOneWidget);
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
     try {
       await mouse.addPointer(location: Offset.zero);
     } on AssertionError {
       // The right click already added the mouse device.
     }
-    await mouse.moveTo(tester.getCenter(find.text('Move to section')));
+    await mouse.moveTo(tester.getCenter(find.text('Move to Section')));
     await tester.pumpAndSettle();
-    expect(find.text('Pinned'), findsOneWidget);
-    expect(find.text('New section…'), findsOneWidget);
+    expect(find.text('Pinned'), findsNWidgets(2));
+    expect(find.text('New Section…'), findsOneWidget);
   });
 
   testWidgets('[WP1] DM row: Close Chat hides the DM', (tester) async {
@@ -142,16 +152,21 @@ void main() {
       tester,
       find.byKey(const ValueKey('sidebar-section-system:channels')),
     );
+    // Fixed Sidebar.tsx:4608 mounts the section popup with w-60.
+    expect(
+      tester.getSize(find.byType(RaftSidebarContextMenu)),
+      const Size(240, 359),
+    );
     for (final label in [
       'Create Channel',
-      'SORT',
+      'Sort',
       'Manual',
       'Recent',
       'A-Z',
-      'DISPLAY',
-      'Show joined channels only',
-      'Hide empty sections',
-      'New section…',
+      'Display',
+      'Show Joined Channels Only',
+      'Hide Empty Sections',
+      'New Section…',
     ]) {
       expect(find.text(label), findsOneWidget, reason: label);
     }
@@ -172,17 +187,47 @@ void main() {
       buttons: kSecondaryMouseButton,
     );
     await tester.pumpAndSettle();
-    expect(find.text('New section…'), findsOneWidget);
-    await tester.tap(find.text('New section…'));
+    expect(find.text('New Section…'), findsOneWidget);
+    // Fixed Sidebar.tsx:4717 uses the same w-60 for the empty surface.
+    expect(tester.getSize(find.byType(RaftSidebarContextMenu)).width, 240);
+    await tester.tap(find.text('New Section…'));
     await tester.pumpAndSettle();
-    expect(find.text('NEW SECTION'), findsOneWidget);
+    expect(find.text('New Section'), findsOneWidget);
     await tester.enterText(find.byType(EditableText).last, 'Launch');
     await tester.pump();
-    await tester.tap(find.text('Create section'));
+    await tester.tap(find.text('Create Section'));
     await tester.pumpAndSettle();
     final sections = (patches.single as Map)['customSections'] as List;
     expect((sections.single as Map)['name'], 'Launch');
     expect((sections.single as Map)['sortMode'], 'manual');
-    expect(find.text('NEW SECTION'), findsNothing);
+    expect(find.text('New Section'), findsNothing);
   });
+
+  for (final section in [true, false]) {
+    testWidgets('narrow dark sidebar ${section ? 'section' : 'surface'} '
+        'menu keeps the source fixed width', (tester) async {
+      await setup(tester, size: const Size(900, 900), dark: true);
+      if (section) {
+        await rightClick(
+          tester,
+          find.byKey(const ValueKey('sidebar-section-system:channels')),
+        );
+        expect(find.text('Sort'), findsOneWidget);
+      } else {
+        final list = find.byKey(const Key('workspace-sidebar'));
+        await tester.tapAt(
+          tester.getBottomLeft(list) + const Offset(60, -40),
+          kind: PointerDeviceKind.mouse,
+          buttons: kSecondaryMouseButton,
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('New Section…'), findsOneWidget);
+      }
+      final menu = tester.getRect(find.byType(RaftSidebarContextMenu));
+      expect(menu.width, 240);
+      if (section) expect(menu.height, 359);
+      expect(menu.left, greaterThanOrEqualTo(8));
+      expect(menu.right, lessThanOrEqualTo(900 - 8));
+    });
+  }
 }

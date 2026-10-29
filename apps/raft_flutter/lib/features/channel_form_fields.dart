@@ -7,6 +7,14 @@ import 'package:raft_ui/raft_ui.dart';
 import 'create_channel_dialog.dart';
 import 'public_avatar_url.dart';
 
+/// The avatar of a roster / follower agent row: the workspace directory's
+/// copy (kept current by `agent:created` / `agent:updated`) over the roster
+/// snapshot, which is only as new as the read that produced it.
+String? agentAvatarWithDirectory(Map? directory, String? rosterAvatarUrl) {
+  final live = directory?['avatarUrl'];
+  return live is String && live.isNotEmpty ? live : rosterAvatarUrl;
+}
+
 /// `AvatarSlot` for a picker candidate: agents paint their pixel artwork or
 /// public upload; humans use the `humanPlaceholder` User glyph when asked.
 class ChannelCandidateAvatar extends StatelessWidget {
@@ -40,7 +48,9 @@ class ChannelCandidateAvatar extends StatelessWidget {
           ? RaftMountedAvatarIdentity.agent
           : RaftMountedAvatarIdentity.human,
       presence: presence,
-      child: agent && (pixel != null || uploaded != null)
+      // An agent with no avatar (or one that does not resolve) shows the
+      // default pixel avatar, as in every message row; never an empty frame.
+      child: agent
           ? RaftAvatarContent(
               name: candidate.label,
               kind: RaftAvatarContentKind.agent,

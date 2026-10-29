@@ -34,7 +34,9 @@ Future<void> verifyHtmlPreview(
   final attachmentId = attachments.single['id'] as String;
   final body = 'Native HTML attachment $marker';
   expect(await w.send(body, attachments: [attachmentId]), isTrue);
-  final message = w.messages.singleWhere((m) => m.content == body);
+  final message = w.messageDomain.messages.singleWhere(
+    (m) => m.content == body,
+  );
   await w.jumpToMessage(channelId, message.id);
   final tile = find.byKey(ValueKey('message-${message.id}'));
   final target = find.descendant(of: tile, matching: find.text(filename));
@@ -56,11 +58,11 @@ Future<void> verifyHtmlPreview(
     find.text('[Image: Interactive diagram]', findRichText: true),
     findsOneWidget,
   );
-  expect(find.text('Open interactive preview in browser'), findsOneWidget);
+  expect(find.text('Open Interactive Preview in Browser'), findsOneWidget);
   expect(tester.takeException(), isNull);
   await capture('linux-html-native-preview');
   await tester.tap(
-    find.descendant(of: viewer, matching: find.byTooltip('Close preview')),
+    find.descendant(of: viewer, matching: find.byTooltip('Close Preview')),
   );
   await tester.pump(const Duration(milliseconds: 400));
   expect(viewer, findsNothing);

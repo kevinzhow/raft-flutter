@@ -3,19 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/message_list_marker.dart';
 import 'package:raft_ui/src/rich_card_tokens.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final (dark) in raftThemeMatrix([(false), (true)], full: true)) {
     testWidgets(
-      'forwarded outer inherits card surface while body retains panel $family/$dark',
+      'forwarded outer inherits card surface while body retains panel ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: RaftForwardedBundle(
                 metadata: {
@@ -44,15 +41,9 @@ void main() {
               box.decoration is BoxDecoration &&
               (box.decoration! as BoxDecoration).borderRadius != null,
         );
-        expect(
-          (outer.decoration! as BoxDecoration).color,
-          family == RaftFamily.brutal ? Colors.white : tokens.card,
-        );
+        expect((outer.decoration! as BoxDecoration).color, tokens.card);
         final recipe = ForwardedSnapshotRecipe(tokens);
-        expect(
-          recipe.semantic.content,
-          family == RaftFamily.brutal ? Colors.white : tokens.panel,
-        );
+        expect(recipe.semantic.content, tokens.panel);
         final surfaces = tester.widgetList<DecoratedBox>(
           find.descendant(of: bundle, matching: find.byType(DecoratedBox)),
         );
@@ -75,11 +66,11 @@ void main() {
     );
 
     testWidgets(
-      'disc marker follows content baseline and ordinal counter stays one line $family/$dark',
+      'disc marker follows content baseline and ordinal counter stays one line ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: const Scaffold(
               body: Column(
                 children: [

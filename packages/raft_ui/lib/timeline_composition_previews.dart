@@ -1,3 +1,5 @@
+import 'src/raft/button.dart';
+
 import 'package:flutter/material.dart';
 
 import 'previews.dart';
@@ -29,9 +31,9 @@ class _TimelinePreviewState extends State<_TimelinePreview> {
     role: widget.role,
     child: Column(
       children: [
-        TextButton(
+        RaftButton.text(
           onPressed: () => setState(() => long = !long),
-          child: Text(long ? 'Show sparse rows' : 'Show long rows'),
+          child: Text(long ? 'Show Sparse Rows' : 'Show Long Rows'),
         ),
         Expanded(
           child: CustomScrollView(

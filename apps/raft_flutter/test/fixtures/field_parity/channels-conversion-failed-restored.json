@@ -1,0 +1,16 @@
+{
+  "_source": "services/channelConversionService.ts:620-669 attachLatestChannelConversionJobs (conversionJob only carries ACTIVE jobs; a failed job with progress.rollbackState==='restored' is not active so conversionJob is null while conversionState still carries it); shared/src/channelConversionState.ts:46-63 projectConversionState",
+  "id": "c1111111-1111-4111-8111-111111111111",
+  "serverId": "s0000000-0000-4000-8000-000000000001",
+  "name": "engineering",
+  "type": "channel",
+  "joined": true,
+  "archivedAt": null,
+  "conversionJob": null,
+  "conversionCommand": { "id": "k7777777-7777-4777-8777-777777777777", "kind": "start", "status": "completed", "jobId": "b8888888-8888-4888-8888-888888888888", "error": null, "createdAt": "2026-10-10T07:59:00.000Z" },
+  "conversionState": {
+    "status": "failed",
+    "command": { "id": "k7777777-7777-4777-8777-777777777777", "kind": "start", "status": "completed", "jobId": "b8888888-8888-4888-8888-888888888888", "error": null, "createdAt": "2026-10-10T07:59:00.000Z" },
+    "job": { "id": "b8888888-8888-4888-8888-888888888888", "status": "failed", "phase": "prepare", "progress": { "rollbackState": "restored" }, "error": "copy_failed", "canCancel": false }
+  }
+}

@@ -14,6 +14,8 @@ import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/app_services_fixture.dart';
+
 class _Client extends RaftClient {
   _Client()
     : super(
@@ -26,6 +28,7 @@ class _Client extends RaftClient {
   final calls = <String>[];
   final searchQueries = <Map<String, dynamic>>[];
   bool failSearch = false;
+  List<Map<String, dynamic>>? results;
   final channelRows = [
     RaftChannel({
       'id': 'c-general',
@@ -102,11 +105,47 @@ class _Client extends RaftClient {
     if (path.endsWith('/members')) return people;
     if (path == '/agents') return agents;
     if (path.endsWith('/machines')) return {'machines': []};
+    // Mounted GET /messages/context/:messageId returns a context object,
+    // including for a thread reply whose channel is supplied by the result.
+    if (path.startsWith('/messages/context/')) {
+      final id = path.split('/').last;
+      final (channelId, content) = switch (id) {
+        'hit' => ('c-ops', 'quarterly plan'),
+        'parent' => ('c-design', 'parent text'),
+        'reply' => ('th-design', 'quarterly review reply loaded'),
+        _ => throw const RaftApiException('Message not found', status: 404),
+      };
+      if (query?['channelId'] != channelId) {
+        throw const RaftApiException('Message not found', status: 404);
+      }
+      return {
+        'channelId': channelId,
+        'targetMessageId': id,
+        'hasOlder': false,
+        'hasNewer': false,
+        'messages': [
+          {
+            'id': id,
+            'channelId': channelId,
+            'seq': '1',
+            'senderId': 'bob',
+            'senderName': 'Bob',
+            'senderType': 'user',
+            'content': content,
+            'createdAt': '2026-10-08T00:00:00Z',
+          },
+        ],
+        'threadSummariesByParentMessageId': {},
+        'historyLimited': false,
+        'channelArchived': false,
+      };
+    }
     if (path == '/messages/search') {
       searchQueries.add(Map<String, dynamic>.from(query ?? const {}));
       if (failSearch) {
         throw const RaftApiException('Search failed', status: 500);
       }
+      if (results != null) return {'results': results};
       return {
         'results': [
           {
@@ -182,7 +221,6 @@ class _Client extends RaftClient {
 Future<(_Client, WorkspaceController)> mount(
   WidgetTester t, {
   Size size = const Size(1280, 900),
-  RaftFamily family = RaftFamily.elegant,
   bool dark = false,
   String section = 'chat',
 }) async {
@@ -205,19 +243,21 @@ Future<(_Client, WorkspaceController)> mount(
     ..dms = client.dmRows
     ..channel = client.channelRows.first
     ..section = section;
-  w.ledger.switchServer('s');
+  w.messageDomain.ledger.switchServer('s');
   addTearDown(() async {
     w.dispose();
     await client.stream.close();
   });
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
-      home: WorkspaceView(
-        controller: w,
-        appearance: const RaftAppearance(),
-        onAppearance: (_) async {},
-        onLogout: () async {},
+      theme: raftTheme(dark: dark),
+      home: withAppServices(
+        WorkspaceView(
+          controller: w,
+          appearance: const RaftAppearance(),
+          onAppearance: (_) async {},
+          onLogout: () async {},
+        ),
       ),
     ),
   );
@@ -236,9 +276,11 @@ Future<void> chord(
 }
 
 void main() {
+  // Unqualified cases exercise the native desktop workspace and its global
+  // search button. Set the platform explicitly for desktop keyboard behavior.
   for (final modifier in [
-    ('Ctrl', LogicalKeyboardKey.controlLeft),
-    ('Cmd', LogicalKeyboardKey.metaLeft),
+    ('Ctrl', LogicalKeyboardKey.controlLeft, TargetPlatform.linux),
+    ('Cmd', LogicalKeyboardKey.metaLeft, TargetPlatform.macOS),
   ]) {
     testWidgets(
       '[N26] ${modifier.$1}+K floats the switcher over the current conversation with cached results in its first frame',
@@ -271,6 +313,7 @@ void main() {
         expect(find.byType(QuickSwitcher), findsNothing);
         expect(w.channel!.id, 'c-general');
       },
+      variant: TargetPlatformVariant.only(modifier.$3),
     );
   }
 
@@ -294,12 +337,12 @@ void main() {
         'c-ops',
         'c-general',
       ]);
-      // Cmd/Ctrl+K restores the saved query; the rail starts fresh.
+      // Cmd/Ctrl+K restores the saved query; the global button starts fresh.
       await chord(t, LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyK);
       await t.pump();
       expect(find.byKey(const Key('quick-switcher-recent')), findsNothing);
       await key(t, LogicalKeyboardKey.escape);
-      await t.tap(find.byKey(const ValueKey('rail-search')));
+      await t.tap(find.byKey(const ValueKey('topbar-search')));
       await t.pump();
       // The conversation behind the overlay is never listed.
       expect(
@@ -321,6 +364,7 @@ void main() {
         ),
       );
     },
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
   );
 
   testWidgets('[N26] a person without a DM creates one and opens it', (
@@ -336,7 +380,7 @@ void main() {
     expect(client.calls, contains('POST:/channels/dm'));
     expect(w.channel!.id, 'dm-new');
     expect(find.byType(QuickSwitcher), findsNothing);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('[N26] a person with a DM opens it without a request', (t) async {
     final (client, w) = await mount(t);
@@ -349,7 +393,7 @@ void main() {
     await t.pumpAndSettle();
     expect(posts, isEmpty);
     expect(w.channel!.id, 'dm-bob');
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('[N26] the Search for row opens the full page with the query', (
     t,
@@ -365,25 +409,87 @@ void main() {
     expect(w.section, 'search');
     expect(find.byType(ResourceView), findsOneWidget);
     expect(w.location.query('q'), 'quarterly');
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('[N26] a message preview hit jumps to the message', (t) async {
     final (client, w) = await mount(t);
-    await chord(t, LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyK);
-    await t.pump();
-    await t.enterText(find.byType(TextField).last, 'quarterly');
-    await t.pump(const Duration(milliseconds: 300));
-    await t.pump();
-    expect(
-      find.textContaining('quarterly plan', findRichText: true),
-      findsOneWidget,
-    );
-    await key(t, LogicalKeyboardKey.arrowDown);
-    await key(t, LogicalKeyboardKey.enter);
-    await t.pumpAndSettle();
-    expect(w.channel!.id, 'c-ops');
-    expect(find.byType(QuickSwitcher), findsNothing);
-  });
+    try {
+      await chord(t, LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyK);
+      await t.pump();
+      await t.enterText(find.byType(TextField).last, 'quarterly');
+      await t.pump(const Duration(milliseconds: 300));
+      await t.pump();
+      expect(
+        find.textContaining('quarterly plan', findRichText: true),
+        findsOneWidget,
+      );
+      await key(t, LogicalKeyboardKey.arrowDown);
+      await key(t, LogicalKeyboardKey.enter);
+      await t.pumpAndSettle();
+      expect(w.channel!.id, 'c-ops');
+      expect(find.byType(QuickSwitcher), findsNothing);
+
+      // Web openResultInChat: a thread hit opens in its parent conversation,
+      // not over the one that is showing.
+      client.results = [
+        {
+          'id': 'reply',
+          'channelId': 'th-design',
+          'channelName': 'design',
+          'channelType': 'thread',
+          'threadId': 'th-design',
+          'parentMessageId': 'parent',
+          'parentChannelId': 'c-design',
+          'parentChannelName': 'design',
+          'parentMessageContent': 'parent text',
+          'senderId': 'bob',
+          'senderName': 'Bob',
+          'senderType': 'user',
+          'snippet': 'quarterly review',
+          'createdAt': '2026-10-08T00:00:00Z',
+        },
+      ];
+      await chord(t, LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyK);
+      await t.pump();
+      await t.enterText(find.byType(TextField).last, 'quarterly review');
+      await t.pump(const Duration(milliseconds: 300));
+      await t.pump();
+      await t.tap(find.byKey(const ValueKey('quick-switcher-message:reply')));
+      await t.pumpAndSettle();
+      expect(find.byType(QuickSwitcher), findsNothing);
+      expect(w.channel!.id, 'c-design');
+      final thread = w.messageDomain.state.threadIdentity;
+      expect(thread?.parentChannelId, 'c-design');
+      expect(thread?.parentMessageId, 'parent');
+      expect(thread?.focusedMessageId, 'reply');
+      expect(
+        client.calls,
+        containsAll([
+          'GET:/messages/context/parent',
+          'GET:/messages/context/reply',
+        ]),
+      );
+      expect(
+        client.calls,
+        isNot(contains('GET:/channels/c-design/threads/parent')),
+      );
+      // Navigation identity alone can pass even when opening the thread failed.
+      expect(w.messageDomain.threadResolutionError, isNull);
+      expect(w.messageDomain.state.threadLoading, isFalse);
+      expect(w.messageDomain.threadParentLoading, isFalse);
+      expect(w.presentedThreadParent?.id, 'parent');
+      expect(w.messageDomain.replies.map((m) => m.id), contains('reply'));
+      expect(find.byKey(const ValueKey('message-reply')), findsOneWidget);
+      expect(find.text('parent text', findRichText: true), findsOneWidget);
+      expect(
+        find.text('quarterly review reply loaded', findRichText: true),
+        findsOneWidget,
+      );
+    } finally {
+      await t.pumpWidget(const SizedBox());
+      await t.pump(const Duration(seconds: 1));
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('[N26] clicking outside the card closes the switcher', (t) async {
     final (_, w) = await mount(t);
@@ -393,7 +499,7 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byType(QuickSwitcher), findsNothing);
     expect(w.channel!.id, 'c-general');
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('[N26] a narrow window keeps the full Search page', (t) async {
     final (_, w) = await mount(t, size: const Size(390, 844));
@@ -401,7 +507,72 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byType(QuickSwitcher), findsNothing);
     expect(w.section, 'search');
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
+  // Source isGlobalSearchShortcut: Cmd alone on Apple platforms, Ctrl alone
+  // elsewhere. Ctrl+K on macOS is the text field's "delete to end of line".
+  for (final platform in [
+    (
+      TargetPlatform.macOS,
+      'Cmd',
+      LogicalKeyboardKey.metaLeft,
+      'Ctrl',
+      LogicalKeyboardKey.controlLeft,
+    ),
+    (
+      TargetPlatform.linux,
+      'Ctrl',
+      LogicalKeyboardKey.controlLeft,
+      'Cmd/Super',
+      LogicalKeyboardKey.metaLeft,
+    ),
+    (
+      TargetPlatform.windows,
+      'Ctrl',
+      LogicalKeyboardKey.controlLeft,
+      'Win',
+      LogicalKeyboardKey.metaLeft,
+    ),
+  ]) {
+    testWidgets(
+      '[shortcut] ${platform.$1.name}: ${platform.$2}+K opens search, ${platform.$4}+K does not',
+      (t) async {
+        await mount(t);
+        await chord(t, platform.$5, LogicalKeyboardKey.keyK);
+        await t.pump();
+        expect(find.byType(QuickSwitcher), findsNothing);
+        await chord(t, platform.$3, LogicalKeyboardKey.keyK);
+        await t.pump();
+        expect(find.byType(QuickSwitcher), findsOneWidget);
+      },
+      variant: TargetPlatformVariant.only(platform.$1),
+    );
+
+    testWidgets(
+      '[shortcut] ${platform.$1.name}: ${platform.$2}+K on the Search page focuses and selects its field instead of floating the overlay',
+      (t) async {
+        final (_, w) = await mount(t, section: 'search');
+        expect(w.section, 'search');
+        final field = find.byType(TextField).first;
+        await t.enterText(field, 'ops');
+        await t.pump();
+        // Focus leaves the field (a click on the page background).
+        FocusManager.instance.primaryFocus?.unfocus();
+        await t.pump();
+        expect(t.widget<TextField>(field).focusNode!.hasFocus, isFalse);
+        await chord(t, platform.$3, LogicalKeyboardKey.keyK);
+        await t.pump();
+        expect(find.byType(QuickSwitcher), findsNothing);
+        final input = t.widget<TextField>(field);
+        expect(input.focusNode!.hasFocus, isTrue);
+        expect(
+          input.controller!.selection,
+          const TextSelection(baseOffset: 0, extentOffset: 3),
+        );
+      },
+      variant: TargetPlatformVariant.only(platform.$1),
+    );
+  }
 
   testWidgets('Cmd+, still opens settings and Escape still dismisses panels', (
     t,
@@ -411,7 +582,7 @@ void main() {
     await t.pumpAndSettle();
     expect(w.section, 'settings');
     expect(find.byType(QuickSwitcher), findsNothing);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
 
   testWidgets('[N26] the switcher closes when the workspace scope changes', (
     t,
@@ -429,7 +600,7 @@ void main() {
     w.notifyListeners();
     await t.pumpAndSettle();
     expect(find.byType(QuickSwitcher), findsNothing);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets(
     '[N26] the shortcut works from inside the composer, not with extra modifiers, and not under a dialog',
@@ -453,17 +624,18 @@ void main() {
       expect(find.byType(QuickSwitcher), findsOneWidget);
       expect(w.section, 'chat');
     },
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
   );
 
-  group('rail Search opens the desktop overlay', () {
+  group('global Search opens the desktop overlay', () {
     final scope = SearchMemoryScope(
       'https://public-fixture.invalid',
       's',
       'alice',
     );
     SearchStateSnapshot saved() => SearchMemoryStore().loadSync(scope).state;
-    Future<void> railSearch(WidgetTester t) async {
-      await t.tap(find.byKey(const ValueKey('rail-search')));
+    Future<void> globalSearch(WidgetTester t) async {
+      await t.tap(find.byKey(const ValueKey('topbar-search')));
       await t.pump();
     }
 
@@ -473,11 +645,11 @@ void main() {
     }
 
     testWidgets(
-      '[N27] the rail Search button floats the switcher with a focused field, not the Search page',
+      '[N27] the global Search button floats the switcher with a focused field, not the Search page',
       (t) async {
         final (client, w) = await mount(t);
         final calls = client.calls.length;
-        await railSearch(t);
+        await globalSearch(t);
         expect(find.byType(QuickSwitcher), findsOneWidget);
         expect(find.byType(ResourceView), findsNothing);
         expect(find.byKey(const Key('quick-switcher-recent')), findsOneWidget);
@@ -492,35 +664,46 @@ void main() {
           ),
         );
         expect(editable.widget.focusNode.hasPrimaryFocus, isTrue);
-        // Escape dismisses; the page and its rail are untouched.
+        // Escape dismisses; the page and its global button are untouched.
         await key(t, LogicalKeyboardKey.escape);
         expect(find.byType(QuickSwitcher), findsNothing);
         expect(w.channel!.id, 'c-general');
-        expect(find.byKey(const ValueKey('rail-search')), findsOneWidget);
+        expect(find.byKey(const ValueKey('topbar-search')), findsOneWidget);
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
 
     testWidgets(
-      '[N27] a second click on the rail while open does not stack another switcher; the backdrop click closes it',
+      '[N27] a second click on the global search button while open does not stack another switcher; the backdrop click closes it',
       (t) async {
         await mount(t);
-        await railSearch(t);
+        await globalSearch(t);
         await chord(t, LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyK);
         await t.pump();
         expect(find.byType(QuickSwitcher), findsOneWidget);
-        // The rail sits under the transparent backdrop: a click there is a
-        // click outside the card.
+        // The anchored card covers the global trigger. A second click there
+        // stays inside the existing search rather than creating another one.
         await t.tap(
-          find.byKey(const ValueKey('rail-search')),
+          find.byKey(const ValueKey('topbar-search')),
           warnIfMissed: false,
         );
         await t.pumpAndSettle();
+        expect(find.byType(QuickSwitcher), findsOneWidget);
+        // Dismiss using a point on the actual backdrop, outside the card.
+        final card = t.getRect(
+          find.byKey(const ValueKey('search-overlay-card')),
+        );
+        const outside = Offset(8, 800);
+        expect(card.contains(outside), isFalse);
+        await t.tapAt(outside);
+        await t.pumpAndSettle();
         expect(find.byType(QuickSwitcher), findsNothing);
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
 
     testWidgets(
-      '[N27] Cmd/Ctrl+K restores the last query selected; the rail always starts empty and resets the saved state',
+      '[N27] Cmd/Ctrl+K restores the last query selected; the global button always starts empty and resets the saved state',
       (t) async {
         await mount(t);
         await chord(t, LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.keyK);
@@ -538,8 +721,8 @@ void main() {
           const TextSelection(baseOffset: 0, extentOffset: 3),
         );
         await key(t, LogicalKeyboardKey.escape);
-        // The rail entry does not restore, and replaces the saved state.
-        await railSearch(t);
+        // The global entry does not restore, and replaces the saved state.
+        await globalSearch(t);
         expect(
           t.widget<TextField>(find.byType(TextField).last).controller!.text,
           isEmpty,
@@ -554,13 +737,14 @@ void main() {
           isEmpty,
         );
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
 
     testWidgets(
       '[N27] filters appear with a query, narrow the preview request, persist, and travel to the full page',
       (t) async {
         final (client, w) = await mount(t);
-        await railSearch(t);
+        await globalSearch(t);
         expect(find.byKey(const Key('quick-switcher-filters')), findsNothing);
         await type(t, 'quarterly');
         expect(find.byKey(const Key('quick-switcher-filters')), findsOneWidget);
@@ -585,13 +769,14 @@ void main() {
         expect(find.text('Last 7 Days'), findsOneWidget);
         expect(w.location.query('q'), 'quarterly');
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
 
     testWidgets(
       '[N27] Escape closes the open filter menu first, then the switcher',
       (t) async {
         await mount(t);
-        await railSearch(t);
+        await globalSearch(t);
         await type(t, 'quarterly');
         await t.tap(find.text('Any Time'));
         await t.pumpAndSettle();
@@ -603,13 +788,14 @@ void main() {
         await key(t, LogicalKeyboardKey.escape);
         expect(find.byType(QuickSwitcher), findsNothing);
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
 
     testWidgets(
       '[N27] the cursor starts on the first row, follows the arrows, and Return opens that row',
       (t) async {
         final (_, w) = await mount(t);
-        await railSearch(t);
+        await globalSearch(t);
         await key(t, LogicalKeyboardKey.arrowDown);
         await key(t, LogicalKeyboardKey.arrowDown); // stops at the last row
         await key(t, LogicalKeyboardKey.arrowUp);
@@ -620,6 +806,7 @@ void main() {
         // Recent rows: design, ops (general is the current page).
         expect(w.channel!.id, 'c-ops');
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
 
     testWidgets(
@@ -627,7 +814,7 @@ void main() {
       (t) async {
         final (client, _) = await mount(t);
         client.failSearch = true;
-        await railSearch(t);
+        await globalSearch(t);
         await type(t, 'zq roadmap');
         await t.pump(const Duration(milliseconds: 300));
         await t.pump();
@@ -639,6 +826,7 @@ void main() {
         await t.pump();
         expect(find.byKey(const Key('quick-switcher-error')), findsNothing);
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
 
     testWidgets(
@@ -665,13 +853,14 @@ void main() {
         await t.pump(const Duration(milliseconds: 300));
         expect(client.searchQueries.length, requests);
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
 
     testWidgets(
-      '[N27] "Search this channel" opens the overlay with that channel as the filter and waits for a query',
+      '[N27] "Search This Channel" opens the overlay with that channel as the filter and waits for a query',
       (t) async {
         final (client, w) = await mount(t);
-        await t.tap(find.byTooltip('Search this channel'));
+        await t.tap(find.byTooltip('Search This Channel'));
         await t.pump();
         expect(find.byType(QuickSwitcher), findsOneWidget);
         expect(find.byKey(const Key('quick-switcher-recent')), findsOneWidget);
@@ -683,16 +872,17 @@ void main() {
         expect(client.searchQueries.last['channelId'], 'c-general');
         expect(w.section, 'chat');
       },
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
     );
 
-    testWidgets(
-      '[N27] a narrow window keeps the rail Search on the full page',
-      (t) async {
-        final (_, w) = await mount(t, size: const Size(390, 844));
-        expect(find.byKey(const ValueKey('rail-search')), findsNothing);
-        expect(w.section, 'chat');
-      },
-    );
+    testWidgets('[N27] a narrow window keeps Search on the full page', (
+      t,
+    ) async {
+      final (_, w) = await mount(t, size: const Size(390, 844));
+      expect(find.byKey(const ValueKey('topbar-search')), findsNothing);
+      expect(find.byKey(const ValueKey('rail-search')), findsNothing);
+      expect(w.section, 'chat');
+    }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
   });
 }
 

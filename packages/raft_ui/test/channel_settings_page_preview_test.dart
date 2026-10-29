@@ -6,18 +6,17 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/channel_management_previews.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final (name, preview, title) in [
       ('channel', channelSettingsPagePreview, '#general'),
       ('dm', dmSettingsPagePreview, 'Alice'),
     ]) {
-      testWidgets('current settings preview $name $family/$dark', (t) async {
+      testWidgets('current settings preview $name ${dark ? 'dark' : 'light'}', (
+        t,
+      ) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
         addTearDown(t.view.reset);
@@ -25,7 +24,7 @@ void main() {
         final capture = GlobalKey();
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: RepaintBoundary(key: capture, child: preview()),
             ),
@@ -35,20 +34,14 @@ void main() {
         expect(find.byType(RaftOverflowSheet), findsOneWidget);
         expect(find.byType(RaftChannelSettingsSheet), findsNothing);
         // Web's Drawer header below md: `h-panel-header` (62px fallback) with
-        // px-4 and the 28px outline Back, its touch area extended to 48.
+        // px-4 and the icon-sm Back, `size-8` in raft-ui 0.7.0 (32px).
         expect(find.byType(RaftMobilePageHeader), findsNothing);
         final back = find.byKey(const ValueKey('channel-overflow-back'));
-        expect(t.getSize(back), const Size.square(28));
-        // ... inside the Brutal drawer's `border-l-2`, which the phone keeps.
-        expect(
-          t.getCenter(back).dx,
-          16 + 14 + (family == RaftFamily.brutal ? 2 : 0),
-        );
-        // Centred in the border-box less its bottom edge (2px brutal, 1px).
-        expect(
-          t.getTopLeft(back).dy,
-          (62 - (family == RaftFamily.brutal ? 2 : 1) - 28) / 2,
-        );
+        expect(t.getSize(back), const Size.square(32));
+        // No left edge line on the phone (owner decision 2026-10-12).
+        expect(t.getCenter(back).dx, 16 + 16);
+        // Centred in the border-box less its bottom edge (1px).
+        expect(t.getTopLeft(back).dy, (62 - 1 - 32) / 2);
         expect(
           t.getSemantics(find.text(title)).flagsCollection.isHeader,
           isTrue,
@@ -67,7 +60,7 @@ void main() {
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
           image.dispose();
           final file = File(
-            '../../.local/settings-page-previews/$name-${family.name}-$dark.png',
+            '../../.local/settings-page-previews/$name-${dark ? 'dark' : 'light'}.png',
           );
           await file.parent.create(recursive: true);
           await file.writeAsBytes(bytes!.buffer.asUint8List());

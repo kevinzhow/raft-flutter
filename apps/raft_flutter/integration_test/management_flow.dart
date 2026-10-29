@@ -89,72 +89,77 @@ Future<void> verifyManagementFlow(
       tester,
       () =>
           find.byType(IntegrationsView).evaluate().isNotEmpty &&
-          find.text('Register app').evaluate().isNotEmpty,
+          find.text('Register App').evaluate().isNotEmpty,
     );
-    await _tap(tester, find.text('Register app'));
-    await _formText(tester, 'name', 'Native app $marker');
-    await _formText(tester, 'description', '中文 日本語 native app');
-    await _tap(tester, find.text('Register'));
+    await _tap(tester, find.text('Register App'));
+    await tester.enterText(
+      find.byKey(const ValueKey('connected-app-name')),
+      'Native app $marker',
+    );
+    await _tap(
+      tester,
+      find.byKey(const ValueKey('connected-app-editor-submit')),
+    );
+    // Registration closes the editor and shows the one-time client secret
+    // under the filters (copy is excluded from this flow).
     await _until(
       tester,
-      () => find.byType(RaftSecretView).evaluate().isNotEmpty,
+      () => find
+          .byKey(const ValueKey('connected-app-secret-copy-button'))
+          .evaluate()
+          .isNotEmpty,
     );
-    expect(find.byKey(const Key('credential-hidden')), findsOneWidget);
-    expect(find.text('Reveal credential'), findsOneWidget);
-    await _tap(tester, find.text('Close'));
     final ownApps = await w.client.get('/integrations/clients') as List;
     appId = ownApps.cast<Map>().singleWhere(
       (a) => a['name'] == 'Native app $marker',
     )['id'];
-    await _tap(tester, find.text('Native app $marker'));
+    await _tap(tester, find.byKey(ValueKey('connected-app-action-$appId')));
     await _until(
       tester,
-      () => find.byType(AppManagementView).evaluate().isNotEmpty,
+      () => find
+          .byKey(const ValueKey('connected-app-editor'))
+          .evaluate()
+          .isNotEmpty,
     );
-    await _tap(tester, find.text('Edit app'));
-    await _formText(tester, 'description', 'Native app metadata updated');
-    await _tap(tester, find.text('Save'));
+    await tester.enterText(
+      find.byType(RaftRecipeTextarea).first,
+      'Native app metadata updated',
+    );
+    await _tap(
+      tester,
+      find.byKey(const ValueKey('connected-app-editor-submit')),
+    );
     await _until(
       tester,
-      () => find.text('Native app metadata updated').evaluate().isNotEmpty,
+      () =>
+          find.byKey(const ValueKey('connected-app-editor')).evaluate().isEmpty,
     );
-    await _tap(tester, find.text('Edit notification permissions'));
-    await _formText(tester, 'groups', 'agent');
-    await _formText(tester, 'events', 'agent.status_changed');
-    await _tap(tester, find.text('Save'));
-    await _until(
-      tester,
-      () => find.text('Permission groups: agent').evaluate().isNotEmpty,
-    );
-    final permissions = await w.client.get(
-      '/integrations/clients/$appId/app-notifications',
-    );
-    expect(permissions['current_groups'], contains('agent'));
-    expect(permissions['current_events'], contains('agent.status_changed'));
-    await _tap(tester, find.text('Create sharing link'));
-    await _until(
-      tester,
-      () => find.byType(RaftSecretView).evaluate().isNotEmpty,
-    );
-    expect(find.byKey(const Key('credential-hidden')), findsOneWidget);
-    await _tap(tester, find.text('Close'));
-    await _tap(tester, find.text('Revoke sharing link'));
-    await _tap(tester, find.text('Revoke'));
-    await _until(
-      tester,
-      () => find.text('No active sharing link.').evaluate().isNotEmpty,
-    );
+    final saved = (await w.client.get('/integrations/clients') as List)
+        .cast<Map>()
+        .singleWhere((a) => a['id'] == appId);
+    expect(saved['description'], 'Native app metadata updated');
     await capture('linux-app-management');
-    await _tap(tester, find.text('Delete app').last);
-    await _tap(tester, find.text('Delete'));
+    await _tap(tester, find.byKey(ValueKey('connected-app-action-$appId')));
+    await _tap(
+      tester,
+      find.descendant(
+        of: find.byKey(const ValueKey('connected-app-delete-card')),
+        matching: find.text('Delete'),
+      ),
+    );
+    await _tap(
+      tester,
+      find.byKey(const ValueKey('connected-app-delete-confirm-button')),
+    );
     await _until(
       tester,
-      () => find.byType(AppManagementView).evaluate().isEmpty,
+      () =>
+          find.byKey(const ValueKey('connected-app-editor')).evaluate().isEmpty,
     );
     appId = null;
     await _tap(tester, find.text('MCP'));
     await _until(tester, () => find.byType(AgentMcpView).evaluate().isNotEmpty);
-    await _tap(tester, find.text('Add connection'));
+    await _tap(tester, find.text('Add provider connection'));
     await _formText(tester, 'name', 'Native MCP $marker');
     await _formText(tester, 'endpointUrl', 'https://example.com/mcp');
     await _tap(tester, find.text('Add'));

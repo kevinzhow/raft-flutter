@@ -1,0 +1,4 @@
+/* Setup exactly as https://raft-design.botiverse.build/about/use-raft-ui.md ("With React and Tailwind CSS v4"). */
+@import "tailwindcss";
+@import "@botiverse/raft-ui/styles.css";
+@source "../node_modules/@botiverse/raft-ui/dist/**/*.{js,mjs}";

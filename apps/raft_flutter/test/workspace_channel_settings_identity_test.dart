@@ -8,9 +8,11 @@ import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/private_route_guard.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_presentation_test.dart' show MessageAdapter;
 import 'workspace_source_location_contract_test.dart' show pageFixture, frames;
+import 'support/app_services_fixture.dart';
 
 // Source ChannelOverflowMenu.tsx:568–581 owns an explicit channelId; a
 // confirmation can update/remove the selected channel before that overlay exits.
@@ -41,7 +43,6 @@ Future<(WorkspaceController, MessageAdapter)> settingsFixture(
 Future<void> mountSettingsWorkspace(
   WidgetTester t,
   WorkspaceController w,
-  RaftFamily family,
   bool dark,
   PrivateRouteGuard guard,
 ) async {
@@ -50,25 +51,27 @@ Future<void> mountSettingsWorkspace(
   addTearDown(t.view.reset);
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
+      theme: raftTheme(dark: dark),
       navigatorObservers: [guard],
-      home: WorkspaceView(
-        controller: w,
-        appearance: RaftAppearance(light: family),
-        onAppearance: (_) async {},
-        onLogout: () async {},
+      home: withAppServices(
+        WorkspaceView(
+          controller: w,
+          appearance: RaftAppearance(),
+          onAppearance: (_) async {},
+          onLogout: () async {},
+        ),
       ),
     ),
   );
   await frames(t, () {});
   await t.pumpAndSettle();
-  await t.tap(
-    find.byWidgetPredicate(
-      (widget) =>
-          widget is RaftPanelIconButton &&
-          widget.tooltip == 'Channel details and settings',
-    ),
-  );
+  // The real header action: raftConversationHeaderActions keys the Settings
+  // trigger `channel-overflow-trigger` (channel_header.dart:315); the tooltip
+  // is no longer on a RaftPanelIconButton.
+  final trigger = find.byKey(const ValueKey('channel-overflow-trigger'));
+  expect(trigger, findsOneWidget);
+  expect(trigger.hitTestable(), findsOneWidget);
+  await t.tap(trigger);
   await frames(t, () {});
   await t.pumpAndSettle();
   expect(find.byType(ChannelSettings), findsOneWidget);
@@ -80,7 +83,7 @@ Future<void> mountSettingsWorkspace(
   expect(t.takeException(), isNull);
 }
 
-Future<void> rebuildOverlay(WidgetTester t) async {
+Future<void> rebuildOverlay(WidgetTester t, {bool confirming = false}) async {
   // Rebuilding the real root app updates Navigator's widget; Navigator calls
   // changedExternalState on its routes, rebuilding the DialogRoute page. Keep
   // the same home widget/observer, so the existing WorkspaceView and guard live
@@ -95,7 +98,14 @@ Future<void> rebuildOverlay(WidgetTester t) async {
     ),
   );
   expect(t.takeException(), isNull);
-  await t.pumpAndSettle();
+  if (confirming) {
+    // The archive request is intentionally held open. Its visible loading
+    // indicator keeps scheduling frames, so wait for the route transition only.
+    await t.pump(const Duration(milliseconds: 300));
+    expect(find.byType(RaftSpinner), findsOneWidget);
+  } else {
+    await t.pumpAndSettle();
+  }
   expect(t.takeException(), isNull);
 }
 
@@ -117,26 +127,24 @@ TextEditingController nameField(WidgetTester t) => t
 
 Future<void> submitConfirmation(WidgetTester t, String label) async {
   await t.tap(
-    find.descendant(
-      of: find.byType(RaftConfirmDialog),
-      matching: find.text(label),
-    ),
+    find
+        .descendant(
+          of: find.byType(RaftConfirmDialog),
+          matching: find.text(label),
+        )
+        .last,
   );
   await frames(t, () {});
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark actual settings keeps opening identity and draft after selection clears or changes',
+      '${dark ? 'dark' : 'light'} actual settings keeps opening identity and draft after selection clears or changes',
       (t) async {
         final (w, api) = await settingsFixture(t);
         final opening = w.channel!;
-        await mountSettingsWorkspace(t, w, family, dark, PrivateRouteGuard());
+        await mountSettingsWorkspace(t, w, dark, PrivateRouteGuard());
         final nameController = nameField(t);
         nameController.value = const TextEditingValue(
           text: 'Unsubmitted opening draft',
@@ -177,7 +185,9 @@ void main() {
           find.byKey(const ValueKey('channel-overflow-unsaved-prompt')),
           findsOneWidget,
         );
-        await t.tap(find.text('Discard changes'));
+        await t.tap(
+          find.byKey(const ValueKey('channel-overflow-unsaved-discard')),
+        );
         await t.pumpAndSettle();
         expect(find.byType(ChannelSettings), findsNothing);
         expect(find.byType(WorkspaceView), findsOneWidget);
@@ -187,7 +197,7 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark actual archive refresh preserves settings identity through a Navigator rebuild',
+      '${dark ? 'dark' : 'light'} actual archive refresh preserves settings identity through a Navigator rebuild',
       (t) async {
         final (w, api) = await settingsFixture(t);
         var row = w.channel!.json;
@@ -201,10 +211,10 @@ void main() {
           row = {...row, 'archivedAt': '2026-10-10T00:00:00Z'};
           return row;
         };
-        await mountSettingsWorkspace(t, w, family, dark, PrivateRouteGuard());
+        await mountSettingsWorkspace(t, w, dark, PrivateRouteGuard());
         final openingState = t.state(find.byType(ChannelSettings));
         await tapSheetAction(t, 'Archive Channel');
-        await submitConfirmation(t, 'Archive');
+        await submitConfirmation(t, 'Archive Channel');
         expect(
           api.calls.where((r) => r.path == '/channels/c1/archive'),
           hasLength(1),
@@ -212,7 +222,7 @@ void main() {
         expect(w.channel!.archived, false);
         // The confirmation is in flight: a Navigator rebuild keeps the very
         // same drawer state behind it.
-        await rebuildOverlay(t);
+        await rebuildOverlay(t, confirming: true);
         expect(find.byType(ChannelSettings), findsOneWidget);
         expect(t.state(find.byType(ChannelSettings)), same(openingState));
         expect(find.byType(RaftConfirmDialog), findsOneWidget);
@@ -231,7 +241,7 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark actual delete clears selection and retires both overlays without route-builder crash',
+      '${dark ? 'dark' : 'light'} actual delete clears selection and retires both overlays without route-builder crash',
       (t) async {
         final (w, api) = await settingsFixture(t);
         var deleted = false;
@@ -246,7 +256,7 @@ void main() {
           deleted = true;
           return {};
         };
-        await mountSettingsWorkspace(t, w, family, dark, PrivateRouteGuard());
+        await mountSettingsWorkspace(t, w, dark, PrivateRouteGuard());
         await tapSheetAction(t, 'Delete Channel');
         await submitConfirmation(t, 'Delete');
         expect(w.channel?.id, 'c1');
@@ -273,10 +283,10 @@ void main() {
 
     for (final authority in ['membership', 'principal', 'workspace']) {
       testWidgets(
-        '$family/$dark actual channel settings still retires on $authority reduction',
+        '${dark ? 'dark' : 'light'} actual channel settings still retires on $authority reduction',
         (t) async {
           final (w, api) = await settingsFixture(t);
-          await mountSettingsWorkspace(t, w, family, dark, PrivateRouteGuard());
+          await mountSettingsWorkspace(t, w, dark, PrivateRouteGuard());
           switch (authority) {
             case 'membership':
               w.channel = RaftChannel({...w.channel!.json, 'joined': false});

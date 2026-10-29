@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Point this clone's git hooks at tool/git-hooks (once per clone).
+
+  tool/install-git-hooks              git config core.hooksPath tool/git-hooks
+  tool/install-git-hooks --uninstall  git config --unset core.hooksPath
+  tool/install-git-hooks --status     show what is configured
+
+The setting is stored in the clone's shared .git/config, so it applies to every
+worktree of the clone (the path is relative, so each worktree runs the hooks of
+its own checkout; a branch without tool/git-hooks simply has no hooks). Hooks:
+
+  pre-commit                          raft-lints --changed on the staged lib/ Dart files (skip: git commit --no-verify)
+  post-merge / post-checkout /        re-run `pub get --enforce-lockfile` where a pubspec.lock changed
+  post-rewrite (rebase)               (tool/sync-pub-lock); they never fail the git operation
+
+Refuses to replace a different existing core.hooksPath unless --force.
+"""
+import pathlib
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+HOOKS_PATH = 'tool/git-hooks'
+
+
+def git_config(root, *args):
+    out = subprocess.run(['git', '-C', str(root), 'config', '--local', *args], capture_output=True, text=True)
+    return out.returncode, out.stdout.strip()
+
+
+def main(argv, root=ROOT):
+    unknown = [a for a in argv if a not in ('--uninstall', '--status', '--force')]
+    if unknown:
+        print(__doc__, file=sys.stderr)
+        return 2
+    _, current = git_config(root, '--get', 'core.hooksPath')
+    if '--status' in argv:
+        print(f'core.hooksPath = {current or "(unset)"}' + ('  [raft-flutter hooks active]' if current == HOOKS_PATH else ''))
+        return 0
+    if '--uninstall' in argv:
+        if current == HOOKS_PATH:
+            git_config(root, '--unset', 'core.hooksPath')
+            print('Removed core.hooksPath; git hooks are back to .git/hooks.')
+        else:
+            print(f'core.hooksPath is {current or "unset"}, not {HOOKS_PATH}; nothing changed.')
+        return 0
+    if current and current != HOOKS_PATH and '--force' not in argv:
+        print(f'core.hooksPath is already {current!r}; rerun with --force to replace it.', file=sys.stderr)
+        return 1
+    missing = [name for name in ('pre-commit', 'post-merge', 'post-checkout', 'post-rewrite') if not (root / HOOKS_PATH / name).is_file()]
+    if missing:
+        print(f'{HOOKS_PATH} lacks {", ".join(missing)}; is this the right checkout?', file=sys.stderr)
+        return 1
+    code, _ = git_config(root, 'core.hooksPath', HOOKS_PATH)
+    if code != 0:
+        print('git config failed', file=sys.stderr)
+        return 1
+    print(f'core.hooksPath = {HOOKS_PATH} (shared by all worktrees of this clone). '
+          'Skip the pre-commit lint with `git commit --no-verify`; undo with `tool/install-git-hooks --uninstall`.')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))

@@ -8,48 +8,15 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/runtime_config.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
-import 'agent_metadata_catalog.dart';
+import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'agent_trajectory_log.dart';
-import 'computer_detail_view.dart' show computerAgentActivityText;
-
-/// shared runtimeCatalog display names, with the deprecated status suffix
-/// (formatRuntimeLabelWithStatus).
-const _runtimeNames = <String, String>{
-  'claude': 'Claude Code',
-  'codex': 'Codex CLI',
-  'grok': 'Grok Build',
-  'builtin': 'Built-in Pi',
-  'antigravity': 'Antigravity CLI',
-  'kimi-sdk': 'Kimi Code',
-  'kimi': 'Kimi CLI',
-  'copilot': 'Copilot CLI',
-  'cursor': 'Cursor CLI',
-  'gemini': 'Gemini CLI',
-  'opencode': 'OpenCode',
-  'pi': 'Pi',
-};
-const _deprecatedRuntimes = {'antigravity', 'kimi', 'gemini'};
-
-/// shared REASONING_EFFORT_RUNTIMES.
-const _reasoningRuntimes = {
-  'builtin',
-  'claude',
-  'codex',
-  'grok',
-  'copilot',
-  'pi',
-  'kimi-sdk',
-};
-
-String runtimeLabelWithStatus(BuildContext context, String runtime) {
-  final name = _runtimeNames[runtime] ?? runtime;
-  return _deprecatedRuntimes.contains(runtime)
-      ? '$name${raftText(context, ' (deprecated)')}'
-      : name;
-}
+import 'model_label_catalog.dart';
+import 'agent_metadata_projection.dart';
+import 'resource_cards.dart' show resourceRelativeTime;
 
 RaftActivityTone activityTone(Object? activity) => switch (activity) {
   'online' => RaftActivityTone.online,
@@ -290,6 +257,7 @@ class ProfilePreviewContent extends StatefulWidget {
 class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
   WorkspaceController get w => widget.controller;
   StreamSubscription<RaftEvent>? events;
+  late final ModelLabelCatalogStore modelLabels;
   Map<String, dynamic>? fetched;
   bool fetching = false;
   _HoverActivity? activity;
@@ -297,8 +265,14 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
   @override
   void initState() {
     super.initState();
-    w.entityDirectory.addListener(changed);
+    w.services.entityDirectory.addListener(changed);
+    modelLabels = ModelLabelCatalogStore.of(w)..addListener(changed);
     events = w.client.events.listen(event);
+    // A revisited card shows the activity it already read at its first frame.
+    if (widget.agent && private) {
+      final cached = w.agentTabCache.peek('hover-activity/${widget.id}');
+      if (cached is _HoverActivity) activity = cached;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) load();
     });
@@ -307,7 +281,8 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
   @override
   void dispose() {
     events?.cancel();
-    w.entityDirectory.removeListener(changed);
+    w.services.entityDirectory.removeListener(changed);
+    modelLabels.removeListener(changed);
     super.dispose();
   }
 
@@ -316,8 +291,10 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
   }
 
   Map<String, dynamic>? get profile => widget.agent
-      ? w.entityDirectory.agent(widget.id) ?? fetched ?? widget.fallback
-      : w.entityDirectory.member(widget.id) ?? widget.fallback;
+      ? w.services.entityDirectory.agent(widget.id) ??
+            fetched ??
+            widget.fallback
+      : w.services.entityDirectory.member(widget.id) ?? widget.fallback;
 
   /// canViewAgentPrivateSurfaces: agent editors, or the human creator.
   bool get private {
@@ -437,25 +414,38 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
     if (!widget.agent) {
       return RaftProfilePreviewCard(
         avatar: avatar(row),
+        avatarTopInset: 2,
         name: name,
         subtitle: '@${row['name'] ?? ''}',
         description: description,
       );
     }
+    // Web ProfilePreviewCardContent: hydrate only when the projection carried
+    // a private `runtimeConfig`; otherwise the public flat columns. The
+    // structured `model` is an object ({kind, id|name}), never a string.
     final config = row['runtimeConfig'] is Map
-        ? row['runtimeConfig'] as Map
+        ? RuntimeConfig.fromAgent(row)
         : null;
-    final runtime = '${config?['runtime'] ?? row['runtime'] ?? 'unknown'}';
-    final model = '${config?['model'] ?? row['model'] ?? ''}';
+    final runtime = config?.runtime ?? '${row['runtime'] ?? 'unknown'}';
+    final model = config?.model ?? '${row['model'] ?? ''}';
     final external = row['external'] == true || runtime == 'external';
-    final activityValue = '${row['activity'] ?? 'offline'}';
-    final statusText = private
-        ? computerAgentActivityText(row)
-        : computerAgentActivityText({'activity': activityValue});
+    final display = agentRowAmbientDisplay(row);
+    final statusText = agentDisplayText(
+      display,
+      lastSeenAt: DateTime.tryParse('${row['lastSeenAt']}'),
+      withDetail: private,
+      relativeTime: (seen) => resourceRelativeTime(
+        seen.toIso8601String(),
+        chinese: Localizations.localeOf(context).languageCode == 'zh',
+      ),
+      translate: (source, values) => raftFormat(context, source, values),
+    );
     final machineId = row['machineId'];
-    final computers = w.entityDirectory.state(WorkspaceEntityKind.computers);
+    final computers = w.services.entityDirectory.state(
+      WorkspaceEntityKind.computers,
+    );
     final machine = machineId is String
-        ? w.entityDirectory.computer(machineId)
+        ? w.services.entityDirectory.computer(machineId)
         : null;
     final String? computer = external
         ? raftText(context, 'External runtime')
@@ -464,20 +454,20 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
         : machineId is String && !computers.loaded
         ? null
         : raftText(context, 'No computer assigned');
-    final reasoning = _reasoningRuntimes.contains(runtime)
-        ? (config?['reasoningEffort'] is String &&
-                  (config!['reasoningEffort'] as String).isNotEmpty
-              ? config['reasoningEffort'] as String
+    final reasoning = runtimeSupportsReasoning(runtime)
+        ? (config?.reasoningEffort?.isNotEmpty == true
+              ? config!.reasoningEffort!
               : raftText(context, 'Default'))
         : null;
     return RaftProfilePreviewCard(
       avatar: avatar(row),
+      avatarTopInset: 2,
       name: name,
       subtitle: '@${row['name'] ?? ''}',
       status: RaftProfilePreviewStatus(
-        activity: activityTone(activityValue),
+        activity: activityTone(display.activity),
         external: external && row['online'] != true,
-        text: raftText(context, statusText),
+        text: statusText,
       ),
       facts: row['profileProjection'] == 'channel_summary'
           ? null
@@ -492,7 +482,12 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
                 raftText(context, 'Model'),
                 model.isEmpty || model == 'default'
                     ? raftText(context, 'Default')
-                    : sourceRuntimeModelLabels[runtime]?[model] ?? model,
+                    : modelDisplayLabel(
+                        w,
+                        machineId: machineId is String ? machineId : null,
+                        runtime: runtime,
+                        model: model,
+                      ),
               ),
               if (reasoning != null)
                 RaftProfilePreviewFact(
@@ -530,30 +525,44 @@ class ExternalIdentityHoverCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RaftHoverCard(
-    card: (context) {
-      final kind = raftText(context, switch (actorKind) {
-        'human' => 'Human',
-        'guest' => 'Guest',
-        'remote' => 'Remote participant',
-        'bot' => 'Bot',
-        _ => 'External participant',
-      });
-      final providerLabel = provider == 'slack' ? 'Slack' : null;
-      return RaftProfilePreviewCard(
-        key: const ValueKey('external-identity-preview'),
-        avatar: avatar,
-        name: displayName,
-        subtitle: providerLabel == null ? kind : '$providerLabel · $kind',
-        notes: [
-          if (workspaceName != null && workspaceName!.isNotEmpty)
-            raftFormat(context, 'From {workspace}', {
-              'workspace': workspaceName!,
-            }),
-          raftText(context, 'External identity'),
-        ],
-      );
-    },
+    card: (context) => externalIdentityPreviewBody(
+      context,
+      displayName: displayName,
+      avatar: avatar,
+      provider: provider,
+      workspaceName: workspaceName,
+      actorKind: actorKind,
+    ),
     child: child,
+  );
+}
+
+/// Shared Web ExternalIdentityPreviewBody for authors and inline mentions.
+Widget externalIdentityPreviewBody(
+  BuildContext context, {
+  required String displayName,
+  required Widget avatar,
+  String? provider,
+  String? workspaceName,
+  String? actorKind,
+}) {
+  final kind = raftText(context, switch (actorKind) {
+    'human' => 'Human',
+    'guest' => 'Guest',
+    'remote' => 'Remote participant',
+    'bot' => 'Bot',
+    _ => 'External participant',
+  });
+  return RaftProfilePreviewCard(
+    key: const ValueKey('external-identity-preview'),
+    avatar: avatar,
+    name: displayName,
+    subtitle: provider == 'slack' ? 'Slack · $kind' : kind,
+    notes: [
+      if (workspaceName != null && workspaceName.isNotEmpty)
+        raftFormat(context, 'From {workspace}', {'workspace': workspaceName}),
+      raftText(context, 'External identity'),
+    ],
   );
 }
 
@@ -566,6 +575,7 @@ Widget senderProfileHoverCard({
   required RaftMessage message,
   required RaftAvatarContent content,
   required Widget child,
+  ValueChanged<String>? onOpenActivity,
 }) {
   final type = message.string('senderType');
   final id = message.string('senderId');
@@ -578,10 +588,12 @@ Widget senderProfileHoverCard({
       provider: author['provider'] as String?,
       workspaceName: author['workspaceName'] as String?,
       actorKind: author['actorKind'] as String?,
+      // AvatarSlot type="app": initials on the soft-signal fill (Brutal).
       avatar: RaftAvatarSlot(
         name: message.author,
         slot: RaftAvatarSlotContext.mentionCard,
         agent: false,
+        server: true,
         content: content,
       ),
       child: child,
@@ -593,6 +605,7 @@ Widget senderProfileHoverCard({
     agent: type == 'agent',
     id: id,
     fallbackLabel: message.string('senderName'),
+    onOpenActivity: onOpenActivity,
     avatar: RaftAvatarSlot(
       name: message.author,
       slot: RaftAvatarSlotContext.mentionCard,

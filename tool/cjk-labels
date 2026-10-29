@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+"""Measure the vertical centring of single-line control labels on a device.
+
+Drives the debug entrypoint apps/raft_flutter/integration_test/cjk_labels_main.dart
+(installed as the isolated package app.raft.raft_flutter.linkperf only), and for
+every small single-line label compares
+
+  * the control box the app paints around it (border box minus border), taken
+    from the render tree, with
+  * the ink bounding box of the glyphs, taken from a real screenshot,
+
+and reports the vertical offset of the ink centre from the control centre.
+Positive = ink sits low. Target for CJK labels: |offset| <= 0.5 dp.
+
+  tool/cjk-labels --serial emulator-5580 --out /tmp/cjk-labels/before-brutal \
+      --page activity --page computer:m1 [--scroll 2]
+
+Pages: activity | computers | computer:<id> (loopback control server, see
+the entrypoint header). Writes <out>/<page>[-scrollN].png (annotated),
+.json (rows) and prints a table. Needs Pillow + numpy.
+"""
+import argparse
+import io
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import urllib.request
+
+import numpy as np
+from PIL import Image, ImageDraw
+
+ADB = os.path.expanduser('~/android-sdk/platform-tools/adb')
+PACKAGE = 'app.raft.raft_flutter.linkperf'
+CJK = re.compile(r'[぀-ヿ㐀-鿿＀-￯]')
+PAGES = {
+    'activity': '/s/lab/activity',
+    'computers': '/s/lab/computers',
+}
+
+
+def adb(serial, *args, binary=False, check=True):
+    out = subprocess.run([ADB, '-s', serial, *args], capture_output=True, check=check).stdout
+    return out if binary else out.decode()
+
+
+def get(port, path):
+    with urllib.request.urlopen(f'http://127.0.0.1:{port}{path}', timeout=20) as r:
+        return r.read()
+
+
+def mode_color(arr):
+    flat = arr.reshape(-1, arr.shape[-1])
+    keys = (flat[:, 0].astype(np.int64) << 16) | (flat[:, 1].astype(np.int64) << 8) | flat[:, 2]
+    values, counts = np.unique(keys, return_counts=True)
+    k = values[counts.argmax()]
+    return np.array([(k >> 16) & 255, (k >> 8) & 255, k & 255], dtype=np.int16)
+
+
+def measure(image, dump):
+    dpr = dump['dpr']
+    pix = np.asarray(image.convert('RGB'))
+    h, w, _ = pix.shape
+    rows = []
+    for label in dump['labels']:
+        control = label.get('control')
+        if control is None:
+            continue
+        cl, ct, cr, cb = (v * dpr for v in control)
+        bl, bt, br, bb = (v * dpr for v in label['border'])
+        # Interior of the control: border box minus border, rounded inward.
+        x0, y0 = int(np.ceil(cl + bl)), int(np.ceil(ct + bt))
+        x1, y1 = int(np.floor(cr - br)), int(np.floor(cb - bb))
+        # Small controls only: labels, not cards/rows/headers.
+        if (y1 - y0) / dpr > 40 or y1 - y0 < 6 or x1 - x0 < 6 or y0 < 0 or y1 > h or x0 < 0 or x1 > w:
+            continue
+        # Horizontal extent: the label text only (icons next to it are not ink
+        # of the label); vertical: the whole interior.
+        tl, tt, tr, tb = (v * dpr for v in label['rect'])
+        tx0, tx1 = max(x0, int(np.floor(tl))), min(x1, int(np.ceil(tr)))
+        if tx1 - tx0 < 3:
+            continue
+        # One pixel inward so antialiased border edges never count as ink.
+        region = pix[y0 + 1:y1 - 1, tx0:tx1].astype(np.int16)
+        if region.size == 0:
+            continue
+        bg = mode_color(region)
+        diff = np.abs(region - bg).max(axis=2)
+        mask = diff > 60
+        ys = np.where(mask.any(axis=1))[0]
+        xs = np.where(mask.any(axis=0))[0]
+        if len(ys) == 0:
+            continue
+        ink_top, ink_bottom = y0 + 1 + ys[0], y0 + 1 + ys[-1] + 1
+        ink_left, ink_right = tx0 + xs[0], tx0 + xs[-1] + 1
+        # Exact (unrounded) centre of the control interior, device pixels.
+        center = (ct + bt + cb - bb) / 2
+        offset = (ink_top + ink_bottom) / 2 - center
+        # Dense band: rows holding at least half of the densest row's ink (the
+        # x-height band of Latin text; descenders and ascenders drop out).
+        density = mask.sum(axis=1)
+        dense = np.where(density >= density.max() * 0.5)[0]
+        core_offset = y0 + 1 + (dense[0] + dense[-1] + 1) / 2 - center
+        rows.append({
+            'text': label['text'],
+            'cjk': bool(CJK.search(label['text'])),
+            'controlDp': [round((x1 - x0) / dpr, 2), round((y1 - y0) / dpr, 2)],
+            'inkPx': [int(ink_left), int(ink_top), int(ink_right), int(ink_bottom)],
+            'interiorPx': [x0, y0, x1, y1],
+            'offsetPx': round(float(offset), 2),
+            'offsetDp': round(float(offset) / dpr, 3),
+            'coreOffsetPx': round(float(core_offset), 2),
+            'coreOffsetDp': round(float(core_offset) / dpr, 3),
+            'font': label.get('font'),
+            'size': label.get('size'),
+            'height': label.get('height'),
+            'leading': label.get('leading'),
+        })
+    return rows
+
+
+def annotate(image, rows, path):
+    img = image.convert('RGB')
+    draw = ImageDraw.Draw(img)
+    for r in rows:
+        draw.rectangle(r['interiorPx'], outline=(0, 90, 255))
+        draw.rectangle(r['inkPx'], outline=(255, 0, 0))
+    img.save(path)
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('--serial', default='emulator-5580')
+    p.add_argument('--out', required=True)
+    p.add_argument('--page', action='append', default=[])
+    p.add_argument('--scroll', type=int, default=0, help='extra screens to scroll down per page')
+    p.add_argument('--port', type=int, default=8765)
+    p.add_argument('--settle', type=float, default=2.5)
+    p.add_argument('--height', type=str, help='override the control line-height token at runtime (sweep); "off" disables the profile')
+    p.add_argument('--launch', action='store_true', help='force-stop and start the package first')
+    args = p.parse_args()
+    os.makedirs(args.out, exist_ok=True)
+    if args.launch:
+        adb(args.serial, 'shell', 'am', 'force-stop', PACKAGE)
+        adb(args.serial, 'shell', 'monkey', '-p', PACKAGE, '-c', 'android.intent.category.LAUNCHER', '1')
+        time.sleep(8)
+    adb(args.serial, 'forward', f'tcp:{args.port}', f'tcp:{args.port}')
+    summary = {}
+    if args.height is not None:
+        get(args.port, f'/height?value={args.height}')
+        time.sleep(1.5)
+    for page in args.page or ['activity']:
+        path = PAGES.get(page) or f"/s/lab/{page.replace(':', '/')}"
+        get(args.port, f'/goto?path={path}')
+        time.sleep(args.settle + 1.5)
+        for step in range(args.scroll + 1):
+            if step:
+                adb(args.serial, 'shell', 'input', 'swipe', '540', '1700', '540', '1100', '600')
+                time.sleep(args.settle)
+            png = adb(args.serial, 'exec-out', 'screencap', '-p', binary=True)
+            time.sleep(0.5)
+            dump = json.loads(get(args.port, '/dump'))
+            image = Image.open(io.BytesIO(png))
+            rows = measure(image, dump)
+            stem = f"{page.replace(':', '-')}{'' if step == 0 else f'-scroll{step}'}"
+            Image.open(io.BytesIO(png)).save(os.path.join(args.out, stem + '-raw.png'))
+            annotate(image, rows, os.path.join(args.out, stem + '.png'))
+            json.dump({'dpr': dump['dpr'], 'rows': rows}, open(os.path.join(args.out, stem + '.json'), 'w'),
+                      ensure_ascii=False, indent=1)
+            summary[stem] = rows
+            print(f'== {stem}  dpr={dump["dpr"]}  labels={len(rows)}')
+            for r in rows:
+                flag = '' if abs(r['offsetDp']) <= 0.5 else '  <-- off'
+                print(f"  {r['text'][:28]:30} {'CJK' if r['cjk'] else 'lat'} ctl={r['controlDp'][0]:>6}x{r['controlDp'][1]:<5}"
+                      f" off={r['offsetPx']:>6}px {r['offsetDp']:>7}dp core={r['coreOffsetDp']:>6}dp  h={r['height']} {r['leading']}{flag}")
+    json.dump(summary, open(os.path.join(args.out, 'summary.json'), 'w'), ensure_ascii=False, indent=1)
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -326,9 +326,9 @@ class _NumericLiteralFinder extends RecursiveAstVisitor<void> {
   }
 }
 
-/// Collects findings from one resolved compilation unit.
-class DsAuditVisitor extends RecursiveAstVisitor<void> {
-  DsAuditVisitor(this.relativePath, ResolvedUnitResult unit)
+/// Shared finding collection: location, `// ds-allow: <reason>` lookup.
+abstract class AuditVisitorBase extends RecursiveAstVisitor<void> {
+  AuditVisitorBase(this.relativePath, ResolvedUnitResult unit)
     : _lineInfo = unit.lineInfo,
       _lines = const LineSplitter().convert(unit.content);
 
@@ -337,12 +337,19 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
   final List<String> _lines;
   final List<Finding> findings = [];
 
-  void _add(AstNode node, String category, String name, {List<String>? shape}) {
+  void add(
+    AstNode node,
+    String category,
+    String name, {
+    List<String>? shape,
+    String? forcedAllow,
+  }) {
     final location = _lineInfo.getLocation(node.offset);
     final line = location.lineNumber;
-    String? reason;
+    String? reason = forcedAllow;
     String? error;
     for (final candidate in [line, line - 1]) {
+      if (forcedAllow != null) break;
       if (candidate < 1 || candidate > _lines.length) continue;
       final text = _lines[candidate - 1];
       if (candidate == line - 1 && !text.trimLeft().startsWith('//')) continue;
@@ -369,6 +376,11 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
       ),
     );
   }
+}
+
+/// Collects findings from one resolved compilation unit of the app.
+class DsAuditVisitor extends AuditVisitorBase {
+  DsAuditVisitor(super.relativePath, super.unit);
 
   @override
   void visitInstanceCreationExpression(InstanceCreationExpression node) {
@@ -387,15 +399,15 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
     if (_isMaterialLike(cls)) {
       final group = materialGroups[name];
       if (group != null) {
-        _add(node, 'widget.$group', display, shape: _shape(node.argumentList));
+        add(node, 'widget.$group', display, shape: _shape(node.argumentList));
       } else if (name == 'Theme' ||
           name == 'ColorScheme' ||
           name == 'TextTheme' ||
           name.endsWith('ThemeData') ||
           name.endsWith('Theme')) {
-        _add(node, 'style.material_theme', display);
+        add(node, 'style.material_theme', display);
       } else if (!ignoredMaterialClasses.contains(name) && _isWidget(cls)) {
-        _add(node, 'widget.other', display, shape: _shape(node.argumentList));
+        add(node, 'widget.other', display, shape: _shape(node.argumentList));
       }
     }
 
@@ -403,7 +415,7 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
     if (library == 'package:flutter/src/painting/edge_insets.dart' &&
         (name == 'EdgeInsets' || name == 'EdgeInsetsDirectional')) {
       if (args.any(containsNumericLiteral)) {
-        _add(node, 'style.edge_insets', display);
+        add(node, 'style.edge_insets', display);
       }
       return;
     }
@@ -419,17 +431,17 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
             }.contains(a.name.label.name) &&
             containsNumericLiteral(a.expression),
       );
-      if (sized) _add(node, 'style.sized_box', display);
+      if (sized) add(node, 'style.sized_box', display);
       return;
     }
     if (name == 'TextStyle' &&
         library == 'package:flutter/src/painting/text_style.dart') {
-      _add(node, 'style.text_style', display);
+      add(node, 'style.text_style', display);
       return;
     }
     if (name == 'StrutStyle') return;
     if (name == 'Color' && library == 'dart:ui') {
-      _add(node, 'style.color_literal', display);
+      add(node, 'style.color_literal', display);
       return;
     }
     if (const {
@@ -449,13 +461,13 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
       }
 
       if (args.any((a) => containsNumericLiteral(a, skip: nestedRadius))) {
-        _add(node, 'style.border_radius', display);
+        add(node, 'style.border_radius', display);
       }
       return;
     }
     if (name == 'Duration' && library == 'dart:core') {
       if (args.any(containsNumericLiteral) && _isAnimationDuration(node)) {
-        _add(node, 'style.duration', display);
+        add(node, 'style.duration', display);
       }
       return;
     }
@@ -464,7 +476,7 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
         final label = arg.name.label.name;
         if (dimensionArguments.contains(label) &&
             containsNumericLiteral(arg.expression)) {
-          _add(arg, 'style.dimension', '$name($label:)');
+          add(arg, 'style.dimension', '$name($label:)');
         }
       }
     }
@@ -499,13 +511,13 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
   void visitNamedExpression(NamedExpression node) {
     final label = node.name.label.name;
     if (label == 'fontSize' && containsNumericLiteral(node.expression)) {
-      _add(node, 'style.font_size', 'fontSize:');
+      add(node, 'style.font_size', 'fontSize:');
     } else if (label == 'fontWeight' && _mentionsFontWeight(node.expression)) {
-      _add(node, 'style.font_weight', 'fontWeight:');
+      add(node, 'style.font_weight', 'fontWeight:');
     } else if (textMetricArguments.contains(label) &&
         _isTextStyleInvocation(node) &&
         containsNumericLiteral(node.expression)) {
-      _add(node, 'style.text_metrics', '$label:');
+      add(node, 'style.text_metrics', '$label:');
     }
     super.visitNamedExpression(node);
   }
@@ -543,10 +555,10 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
     final name = node.methodName.name;
     if (element is TopLevelFunctionElement) {
       if (_isMaterialLike(element)) {
-        _add(node, 'widget.${materialGroups[name] ?? 'other'}', '$name()');
+        add(node, 'widget.${materialGroups[name] ?? 'other'}', '$name()');
       } else if (_isFlutterLib(element, 'widgets') &&
           widgetsFunctionGroups.containsKey(name)) {
-        _add(node, 'widget.${widgetsFunctionGroups[name]}', '$name()');
+        add(node, 'widget.${widgetsFunctionGroups[name]}', '$name()');
       }
     } else if (element is MethodElement) {
       final owner = element.enclosingElement;
@@ -554,12 +566,12 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
         final ownerName = owner.name ?? '';
         final group = materialGroups[ownerName];
         if (name == 'styleFrom' && group != null) {
-          _add(node, 'widget.$group', '$ownerName.styleFrom()');
+          add(node, 'widget.$group', '$ownerName.styleFrom()');
         } else if (materialStateMethods[ownerName]?.contains(name) ?? false) {
-          _add(node, 'widget.${materialGroups[name]}', '$name()');
+          add(node, 'widget.${materialGroups[name]}', '$name()');
         } else if (name == 'of' &&
             const {'ColorScheme', 'TextTheme'}.contains(ownerName)) {
-          _add(node, 'style.material_theme', '$ownerName.of()');
+          add(node, 'style.material_theme', '$ownerName.of()');
         }
       }
     }
@@ -576,25 +588,25 @@ class DsAuditVisitor extends RecursiveAstVisitor<void> {
         if ((ownerName == 'Colors' && _isFlutterLib(owner, 'material')) ||
             (ownerName == 'CupertinoColors' &&
                 _isFlutterLib(owner, 'cupertino'))) {
-          _add(node, 'style.material_colors', '$ownerName.${node.name}');
+          add(node, 'style.material_colors', '$ownerName.${node.name}');
         } else if ((ownerName == 'Icons' && _isFlutterLib(owner, 'material')) ||
             (ownerName == 'CupertinoIcons' &&
                 _isFlutterLib(owner, 'cupertino'))) {
-          _add(node, 'style.material_icons', '$ownerName.${node.name}');
+          add(node, 'style.material_icons', '$ownerName.${node.name}');
         } else if (ownerName == 'Durations' &&
             _isFlutterLib(owner, 'material')) {
-          _add(node, 'style.duration', 'Durations.${node.name}');
+          add(node, 'style.duration', 'Durations.${node.name}');
         } else if (ownerName == 'ThemeData' &&
             _isFlutterLib(owner, 'material') &&
             !const {'extensions', 'platform'}.contains(node.name)) {
-          _add(node, 'style.material_theme', 'ThemeData.${node.name}');
+          add(node, 'style.material_theme', 'ThemeData.${node.name}');
         }
       }
     } else if (element is MethodElement &&
         element.enclosingElement?.name == 'ThemeData' &&
         _isFlutterLib(element, 'material') &&
         node.name != 'extension') {
-      _add(node, 'style.material_theme', 'ThemeData.${node.name}()');
+      add(node, 'style.material_theme', 'ThemeData.${node.name}()');
     }
     super.visitSimpleIdentifier(node);
   }

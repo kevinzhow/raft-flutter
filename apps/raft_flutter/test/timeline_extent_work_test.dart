@@ -135,15 +135,19 @@ void main() {
       );
       idle = false;
       final beforeUpdate = RaftMessageTimeline.debugRowBuilds;
+      final warmBeforeUpdate = find
+          .textContaining('row-', skipOffstage: false)
+          .evaluate()
+          .length;
       await tester.pumpWidget(view(true));
       expect(
         find.textContaining('row-', skipOffstage: false).evaluate().length,
-        lessThanOrEqualTo(12),
+        warmBeforeUpdate,
       );
       expect(
         RaftMessageTimeline.debugRowBuilds - beforeUpdate,
         lessThanOrEqualTo(24),
-        reason: 'Foreground updates rebuild a bounded window before layout retires old cache rows.',
+        reason: 'Foreground updates keep the already bounded warm window.',
       );
       final beforeHide = RaftMessageTimeline.debugRowBuilds;
       await tester.pumpWidget(view(false));
@@ -190,7 +194,7 @@ void main() {
       final updates = <int, StateSetter>{};
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftMessageTimeline(
               controller: controller,

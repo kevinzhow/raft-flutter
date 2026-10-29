@@ -3,19 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final pointerKind in [
       PointerDeviceKind.mouse,
       PointerDeviceKind.touch,
     ]) {
       testWidgets(
-        'Tooltip requires genuine keyboard focus entry $family/$dark/$pointerKind',
+        'Tooltip requires genuine keyboard focus entry ${dark ? 'dark' : 'light'}/$pointerKind',
         (tester) async {
           final opener = FocusNode();
           final before = FocusNode();
@@ -24,7 +21,7 @@ void main() {
           var presses = 0;
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: RaftTooltipProvider(
                   delay: const Duration(milliseconds: 600),
@@ -40,7 +37,7 @@ void main() {
                         RaftControl(
                           key: const Key('opener'),
                           focusNode: opener,
-                          tooltip: 'Add reaction',
+                          tooltip: 'Add Reaction',
                           onPressed: () => presses++,
                           child: const Text('Plus'),
                         ),

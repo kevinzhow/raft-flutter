@@ -1,3 +1,5 @@
+// Frozen a57b9dab Elegant contract. Current Raft source geometry is covered
+// by framework_navigation_contract_test and framework_sidebar_phone_contract_test.
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -5,21 +7,24 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final density in RaftDensity.values) {
       testWidgets(
-        '$family/$dark/$density channel slot and count stay source-specific',
+        '${dark ? 'dark' : 'light'}/$density channel slot and count stay source-specific',
         (tester) async {
+          tester.view.physicalSize = const Size(1280, 800);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
           var activations = 0;
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(
+                pack: packForThemeId(elegantThemePackId),
+                dark: dark,
+              ),
               home: Scaffold(
                 body: RaftDensityScope(
                   density: density,
@@ -70,7 +75,10 @@ void main() {
               ),
             ),
           );
-          final tokens = raftTheme(family, dark: dark).extension<RaftTokens>()!;
+          final tokens = raftTheme(
+            pack: packForThemeId(elegantThemePackId),
+            dark: dark,
+          ).extension<RaftTokens>()!;
           final channel = find.byKey(const ValueKey('channel'));
           final iconFinder = find.descendant(
             of: channel,
@@ -101,22 +109,25 @@ void main() {
             of: channel,
             matching: find.byType(RaftControl),
           );
-          expect(
-            tester.widget<RaftControl>(control).visualHeight,
-            tokens.brutal ? 32 : 30,
-          );
+          // The row height is a contract token. The default (Raft) pack keeps one
+          // height at every viewport and density, so read it rather than assuming
+          // the 30 this asserted while the value was a single literal.
+          final rowHeight = raftTheme(
+            pack: packForThemeId(elegantThemePackId),
+            dark: dark,
+          ).extension<RaftTokens>()!.size('size.navRow', fallback: 34);
+          expect(tester.widget<RaftControl>(control).visualHeight, rowHeight);
           // The row box is Web's in every density; touch only widens the hit
           // and semantics rectangle to 48dp (RaftTouchTarget).
-          expect(tester.getSize(control).height, tokens.brutal ? 32 : 30);
+          expect(tester.getSize(control).height, rowHeight);
           if (density == RaftDensity.touch) {
             expect(find.byType(RaftTouchTarget), findsWidgets);
           }
           final dm = find.byKey(const ValueKey('dm'));
           expect(
             tester.getRect(dm).top - tester.getRect(control).bottom,
-            tokens.brutal ? 4 : 2,
-            reason:
-                'Mounted SidebarItem bottom margin is separate from the row box.',
+            2,
+            reason: 'Mounted SidebarItem bottom margin is separate from the row box.',
           );
           final badge = find.descendant(
             of: channel,
@@ -131,33 +142,17 @@ void main() {
             find.descendant(of: badge, matching: find.byType(Container)),
           );
           final decoration = container.decoration! as BoxDecoration;
-          expect(
-            decoration.color,
-            family == RaftFamily.brutal
-                ? tokens.colors['color-brutal-pink']
-                : tokens.colors['accent-soft'],
-          );
+          expect(decoration.color, tokens.colors['accent-soft']);
           expect(decoration.borderRadius, BorderRadius.circular(4));
           expect(
             container.padding,
-            EdgeInsets.symmetric(
-              horizontal: family == RaftFamily.brutal ? 6 : 4,
-              vertical: family == RaftFamily.brutal ? 2 : 0,
-            ),
+            EdgeInsets.symmetric(horizontal: 4, vertical: 0),
           );
           final count = tester.widget<Text>(
             find.descendant(of: badge, matching: find.text('99+')),
           );
-          expect(
-            count.style!.color,
-            family == RaftFamily.brutal
-                ? Colors.white
-                : tokens.colors['accent-strong'],
-          );
-          expect(
-            count.style!.fontWeight,
-            family == RaftFamily.brutal ? FontWeight.w700 : FontWeight.w400,
-          );
+          expect(count.style!.color, tokens.colors['accent-strong']);
+          expect(count.style!.fontWeight, FontWeight.w400);
           expect(count.style!.fontFeatures, const [
             FontFeature.tabularFigures(),
           ]);
@@ -167,7 +162,7 @@ void main() {
               matching: find.byType(RaftIcon),
             ),
           );
-          expect(dmIcon.size, family == RaftFamily.brutal ? 12 : 18);
+          expect(dmIcon.size, 18);
           final generic = find.byKey(const ValueKey('generic'));
           expect(
             find.descendant(
@@ -179,7 +174,7 @@ void main() {
           final genericIcon = tester.widget<RaftIcon>(
             find.descendant(of: generic, matching: find.byType(RaftIcon)),
           );
-          expect(genericIcon.size, family == RaftFamily.brutal ? 12 : 18);
+          expect(genericIcon.size, 18);
           final activity = tester.widget<RaftControl>(
             find.descendant(
               of: find.byKey(const ValueKey('activity')),
@@ -196,14 +191,18 @@ void main() {
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
         },
+        skip: raftLookSkip(raftLookElegant),
       );
     }
     testWidgets(
-      '$family/$dark unmounted generic channel slot is distinct and zero badge is absent',
+      '${dark ? 'dark' : 'light'} unmounted generic channel slot is distinct and zero badge is absent',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: Scaffold(
               body: SizedBox(
                 width: 300,
@@ -219,10 +218,13 @@ void main() {
           ),
         );
         final icon = tester.widget<RaftIcon>(find.byType(RaftIcon));
-        expect(icon.size, family == RaftFamily.brutal ? 12 : 14);
+        expect(icon.size, 14);
         expect(icon.strokeWidth, 1.5);
         expect(find.byType(RaftConversationUnreadCount), findsNothing);
-        final tokens = raftTheme(family, dark: dark).extension<RaftTokens>()!;
+        final tokens = raftTheme(
+          pack: packForThemeId(elegantThemePackId),
+          dark: dark,
+        ).extension<RaftTokens>()!;
         expect(
           RaftConversationNavigationRecipe(
             tokens,
@@ -232,20 +234,20 @@ void main() {
         );
         await tester.pumpWidget(const SizedBox());
       },
+      skip: raftLookSkip(raftLookElegant),
     );
   }
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark selected channel does not manufacture unread emphasis',
+      '${dark ? 'dark' : 'light'} selected channel does not manufacture unread emphasis',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: Scaffold(
               body: SizedBox(
                 width: 300,
@@ -295,89 +297,101 @@ void main() {
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       },
+      skip: raftLookSkip(raftLookElegant),
     );
   }
 
   // Actual compiled source CSS measurements, not inferred utility order:
   // short mobile, tall mobile, and wide desktop vary independently.
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final viewport in [
       const Size(390, 480),
       const Size(390, 720),
       const Size(1280, 720),
     ]) {
-      testWidgets('$family/$dark compiled channel cadence $viewport', (
-        tester,
-      ) async {
-        final expected = family == RaftFamily.brutal
-            ? (viewport.width < 768 && viewport.height > 600 ? 40.0 : 32.0)
-            : (viewport.height <= 600 ? 30.0 : 34.0);
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: MediaQuery(
-              data: MediaQueryData(size: viewport),
-              child: Scaffold(
-                body: RaftDensityScope(
-                  density: RaftDensity.desktop,
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: SizedBox(
-                      width: 300,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          for (var index = 0; index < 2; index++)
-                            RaftNavItem(
-                              key: ValueKey('row-$index'),
-                              label: 'general $index',
-                              glyph: RaftGlyph.hash,
-                              conversationKind: RaftConversationNavKind.channel,
-                              unread: 24,
-                              onTap: () {},
-                            ),
-                        ],
+      testWidgets(
+        '${dark ? 'dark' : 'light'} compiled channel cadence $viewport',
+        (tester) async {
+          // Read the expectation from the theme rather than a literal: the row
+          // height is a contract token now, and the default (Raft) pack keeps one
+          // height at every viewport and density.
+          final rowTokens = raftTheme(
+            pack: packForThemeId(elegantThemePackId),
+            dark: dark,
+          ).extension<RaftTokens>()!;
+          final expected = viewport.height <= 600
+              ? rowTokens.size('size.navRowCompact', fallback: 30)
+              : rowTokens.size('size.navRow', fallback: 34);
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: raftTheme(
+                pack: packForThemeId(elegantThemePackId),
+                dark: dark,
+              ),
+              home: MediaQuery(
+                data: MediaQueryData(size: viewport),
+                child: Scaffold(
+                  body: RaftDensityScope(
+                    density: RaftDensity.desktop,
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: SizedBox(
+                        width: 300,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (var index = 0; index < 2; index++)
+                              RaftNavItem(
+                                key: ValueKey('row-$index'),
+                                label: 'general $index',
+                                glyph: RaftGlyph.hash,
+                                conversationKind:
+                                    RaftConversationNavKind.channel,
+                                unread: 24,
+                                onTap: () {},
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-        final a = tester.getRect(find.byKey(const ValueKey('row-0')));
-        final b = tester.getRect(find.byKey(const ValueKey('row-1')));
-        final margin = family == RaftFamily.brutal ? 4.0 : 2.0;
-        expect(a.height, expected + margin);
-        expect(b.top - a.top, expected + margin);
-        expect(
-          tester
-              .getSize(
-                find.descendant(
-                  of: find.byKey(const ValueKey('row-0')),
-                  matching: find.byType(RaftControl),
-                ),
-              )
-              .height,
-          expected,
-        );
-        expect(
-          tester.getSize(find.byType(RaftConversationUnreadCount).first).height,
-          16,
-        );
-        final count = tester.widget<Text>(find.text('24').first);
-        expect(
-          count.style!.fontFamily,
-          RaftTokens.of(tester.element(find.text('24').first)).bodyFont,
-        );
-        expect(count.style!.fontSize, 10);
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox());
-      });
+          );
+          final a = tester.getRect(find.byKey(const ValueKey('row-0')));
+          final b = tester.getRect(find.byKey(const ValueKey('row-1')));
+          final margin = 2.0;
+          expect(a.height, expected + margin);
+          expect(b.top - a.top, expected + margin);
+          expect(
+            tester
+                .getSize(
+                  find.descendant(
+                    of: find.byKey(const ValueKey('row-0')),
+                    matching: find.byType(RaftControl),
+                  ),
+                )
+                .height,
+            expected,
+          );
+          expect(
+            tester
+                .getSize(find.byType(RaftConversationUnreadCount).first)
+                .height,
+            16,
+          );
+          final count = tester.widget<Text>(find.text('24').first);
+          expect(
+            count.style!.fontFamily,
+            RaftTokens.of(tester.element(find.text('24').first)).bodyFont,
+          );
+          expect(count.style!.fontSize, 10);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+        },
+        skip: raftLookSkip(raftLookElegant),
+      );
     }
   }
 

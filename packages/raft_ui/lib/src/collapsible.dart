@@ -1,8 +1,11 @@
+import 'hover_region.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import 'localization.dart';
+import 'raft_underline.dart';
 import 'design_primitives.dart';
 import 'message_content_tokens.dart';
 import 'message_semantics.dart';
@@ -13,9 +16,22 @@ import 'package:flutter/rendering.dart';
 /// Measures rendered content, including images and Markdown, against the
 /// reference Web's 320 logical pixel limit. Width changes are remeasured.
 class RaftCollapsible extends StatefulWidget {
-  const RaftCollapsible({super.key, required this.child, this.enabled = true});
+  const RaftCollapsible({
+    super.key,
+    required this.child,
+    this.enabled = true,
+    this.initiallyExpanded = false,
+    this.onExpandedChanged,
+  });
   final Widget child;
   final bool enabled;
+
+  /// Applied when the row is first mounted. A later value does not move a
+  /// message the reader is already looking at.
+  final bool initiallyExpanded;
+
+  /// A manual toggle or a focus reveal. The initial value does not call this.
+  final void Function(bool expanded, BuildContext context)? onExpandedChanged;
   @override
   State<RaftCollapsible> createState() => _RaftCollapsibleState();
 }
@@ -33,6 +49,7 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
   @override
   void initState() {
     super.initState();
+    expanded = widget.initiallyExpanded;
     FocusManager.instance.addListener(focusChanged);
   }
 
@@ -57,8 +74,9 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
         focus is! RenderBox ||
         content is! RenderBox ||
         !focus.hasSize ||
-        !content.hasSize)
+        !content.hasSize) {
       return;
+    }
     // Only focus inside this message may reveal its hidden content.
     var ancestor = focus.parent;
     var owned = identical(focus, content);
@@ -71,13 +89,19 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
     final clippedBottom =
         content.localToGlobal(Offset.zero).dy +
         MessageContentPrimitive.collapseHeight;
-    if (bottom > clippedBottom) setState(() => expanded = true);
+    if (bottom > clippedBottom) hold(true);
   }
 
   // Stable tear-offs: a new closure per build would relayout the message.
   void measured(Size size) => natural = size.height;
   bool currentOverflow() => widget.enabled && overflow;
-  void toggle() => setState(() => expanded = !expanded);
+  void hold(bool value) {
+    if (expanded == value) return;
+    setState(() => expanded = value);
+    widget.onExpandedChanged?.call(expanded, context);
+  }
+
+  void toggle() => hold(!expanded);
 
   /// Visible share of the content while collapsed, for a compact message
   /// row's label; null when everything is shown.
@@ -86,12 +110,16 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
 
   @override
   Widget build(BuildContext context) {
-    final label = raftText(context, expanded ? 'Collapse' : 'Show more');
+    final label = raftText(context, expanded ? 'Collapse' : 'Show More');
     if (toggleLabel != label) {
       toggleLabel = label;
       toggleWidget = Padding(
         padding: const EdgeInsets.only(top: MessageContentPrimitive.toggleGap),
-        child: RaftShowMoreToggle(label: label, onPressed: toggle),
+        child: RaftShowMoreToggle(
+          label: label,
+          onPressed: toggle,
+          expanded: expanded,
+        ),
       );
     }
     final fade = MessageContentSemantic(RaftTokens.of(context)).collapseFade;
@@ -315,7 +343,9 @@ class _RenderCollapsibleLayout extends RenderBox {
   Color? _fadeColor;
   set fadeColor(Color? value) {
     if (value == _fadeColor) return;
+    final masking = _fadeColor != null;
     _fadeColor = value;
+    if (masking != (value != null)) markNeedsCompositingBitsUpdate();
     markNeedsPaint();
     // Expanding or collapsing changes which children are announced.
     markNeedsSemanticsUpdate();
@@ -466,31 +496,55 @@ class _RenderCollapsibleLayout extends RenderBox {
     transform.translateByDouble(offset.dx, offset.dy, 0, 1);
   }
 
+  final _maskLayer = LayerHandle<ShaderMaskLayer>();
+
+  @override
+  bool get alwaysNeedsCompositing => _fadeColor != null;
+
+  @override
+  void dispose() {
+    _maskLayer.layer = null;
+    super.dispose();
+  }
+
   @override
   void paint(PaintingContext context, Offset offset) {
     final content = _content!;
     final origin = offset + (content.parentData! as BoxParentData).offset;
-    context.paintChild(content, origin);
-    final fade = _fadeColor;
-    if (fade != null && _builtFor == true) {
-      // The source fade: an inert gradient over the clipped bottom edge.
-      final rect = Rect.fromLTWH(
-        origin.dx,
-        origin.dy +
-            content.size.height -
-            MessageContentPrimitive.collapseFadeHeight,
-        content.size.width,
-        MessageContentPrimitive.collapseFadeHeight,
+    if (_fadeColor != null && _builtFor == true) {
+      // The source fade (Web: a 48px gradient from the row background to
+      // transparent over the clipped bottom edge), painted as an alpha mask
+      // on the content instead of a coloured overlay: identical on the
+      // ordinary row background, and correct on any other one (highlighted
+      // or hovered rows), where a fixed-colour overlay shows as a band.
+      final size = content.size;
+      final fadeStart = math.max(
+        0.0,
+        (size.height - MessageContentPrimitive.collapseFadeHeight) /
+            size.height,
       );
-      context.canvas.drawRect(
-        rect,
-        Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [fade, fade.withValues(alpha: 0)],
-          ).createShader(rect),
+      final layer = _maskLayer.layer ??= ShaderMaskLayer();
+      layer
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: const [
+            Color(0xFFFFFFFF),
+            Color(0xFFFFFFFF),
+            Color(0x00FFFFFF),
+          ],
+          stops: [0, fadeStart, 1],
+        ).createShader(Offset.zero & size)
+        ..maskRect = origin & size
+        ..blendMode = BlendMode.dstIn;
+      context.pushLayer(
+        layer,
+        (context, offset) => context.paintChild(content, offset),
+        origin,
       );
+    } else {
+      _maskLayer.layer = null;
+      context.paintChild(content, origin);
     }
     final toggle = _toggle;
     if (toggle != null) {
@@ -606,8 +660,9 @@ class _SizeReporter extends RenderProxyBox {
       if (!attached ||
           revision != _receiptRevision ||
           _pending != next ||
-          _natural != next)
+          _natural != next) {
         return;
+      }
       _pending = null;
       _delivered = next;
       callback?.call(next);
@@ -632,12 +687,22 @@ class RaftShowMoreToggle extends StatefulWidget {
     required this.onPressed,
     this.icon,
     this.style,
+    this.underline = true,
     this.visualHeight = 16,
+    this.expanded,
   });
   final String label;
+
+  /// Web `aria-expanded`: whether the content the toggle controls is open.
+  /// Null for a toggle that does not control a disclosure.
+  final bool? expanded;
   final VoidCallback onPressed;
   final Widget? icon;
   final TextStyle? style;
+
+  /// Web ShowMoreToggle is underlined; one themed recipe (Brutal rich cards)
+  /// keeps the label plain.
+  final bool underline;
   final double visualHeight;
   @override
   State<RaftShowMoreToggle> createState() => _RaftShowMoreToggleState();
@@ -652,34 +717,38 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
     final color = hovered
         ? MessageContentSemantic(tokens).toggleHover
         : style.color;
-    return MouseRegion(
+    return RaftHoverRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
-      child: RaftControl(
-        kind: RaftControlKind.textLink,
-        shadow: true,
-        visualHeight: widget.visualHeight,
-        // Web ShowMoreToggle is the bare 11px text on touch too: no
-        // touch-target expansion that would push the content below it.
-        minimumTargetSize: widget.visualHeight,
-        padding: EdgeInsets.zero,
-        semanticLabel: widget.label,
-        onPressed: widget.onPressed,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.icon != null) ...[
-              widget.icon!,
-              const SizedBox(width: 4),
-            ],
-            // The control's semantic label already announces it once.
-            ExcludeSemantics(
-              child: Text(
-                widget.label,
-                style: style.copyWith(color: color, decorationColor: color),
+      child: Semantics(
+        expanded: widget.expanded,
+        child: RaftControl(
+          kind: RaftControlKind.textLink,
+          shadow: true,
+          visualHeight: widget.visualHeight,
+          // Web ShowMoreToggle is the bare 11px text on touch too: no
+          // touch-target expansion that would push the content below it.
+          minimumTargetSize: widget.visualHeight,
+          padding: EdgeInsets.zero,
+          semanticLabel: widget.label,
+          onPressed: widget.onPressed,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.icon != null) ...[
+                widget.icon!,
+                const SizedBox(width: 4),
+              ],
+              // The control's semantic label already announces it once.
+              ExcludeSemantics(
+                child: RaftUnderlinedText(
+                  widget.label,
+                  underline: widget.underline,
+                  style: style.copyWith(color: color),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

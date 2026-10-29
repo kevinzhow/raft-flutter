@@ -1,8 +1,8 @@
 #Requires -RunAsAdministrator
 <#!
 Collect a bounded, local ETW trace while a notification is sent by a separate
-non-elevated process. This script does not send notifications: Windows App SDK
-notifications must not be tested from the administrator process.
+non-elevated process. This script does not send notifications: desktop Toast
+notifications must be tested with the application's normal user identity.
 
 Does not change notification preferences, registry registrations, services,
 event-log configuration, app data, or existing trace sessions. Raw trace data is

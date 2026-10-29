@@ -4,11 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-Widget hoverHost(Widget child, {RaftFamily family = RaftFamily.elegant}) =>
-    MaterialApp(
-      theme: raftTheme(family),
-      home: Scaffold(body: Center(child: child)),
-    );
+Widget hoverHost(Widget child) => MaterialApp(
+  theme: raftTheme(),
+  home: Scaffold(body: Center(child: child)),
+);
 
 Widget card(String label, {RaftHoverCardController? controller}) =>
     RaftHoverCard(
@@ -202,7 +201,7 @@ void main() {
   testWidgets('flips above when there is no room below', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: Align(
             alignment: Alignment.bottomLeft,

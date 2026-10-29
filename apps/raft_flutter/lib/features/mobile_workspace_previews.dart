@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/previews.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../platform/app_services.dart';
 import '../data/personal_presentation.dart';
 import '../data/search_memory.dart';
 import '../data/workspace_controller.dart';
@@ -84,12 +85,15 @@ class _MobileWorkspacePreviewState extends State<_MobileWorkspacePreview> {
   @override
   Widget build(BuildContext context) => RaftDensityScope(
     density: RaftDensity.touch,
-    child: WorkspaceView(
-      controller: workspace,
-      presentation: presentation,
-      appearance: const RaftAppearance(),
-      onAppearance: (_) async {},
-      onLogout: () async {},
+    child: AppServicesScope(
+      services: const AppServices.updatesDisabledForTestOrPreview(),
+      child: WorkspaceView(
+        controller: workspace,
+        presentation: presentation,
+        appearance: const RaftAppearance(),
+        onAppearance: (_) async {},
+        onLogout: () async {},
+      ),
     ),
   );
 }

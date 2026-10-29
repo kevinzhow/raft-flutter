@@ -1,0 +1,444 @@
+@import "./components/combobox-select/combobox-select.css";
+@import "./foundation.css";
+@import "./components/float-button/float-button.css";
+@import "./components/timeline/timeline.css";
+@import "./components/steps/steps.css";
+@import "./components/steps/otter-indicator.css";
+
+/* `dark:` follows the nearest explicit mode class, and before hydration the
+   system preference. A `.light` island inside a dark page re-enters light
+   context for its subtree (one level of nesting). */
+@custom-variant dark {
+  &:where(:is(.dark, .dark *):not(:where(.dark .light, .dark .light *))) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(
+      :is(:root:not(.light):not(.dark), :root:not(.light):not(.dark) *):not(
+        :where(:root:not(.light):not(.dark) .light, :root:not(.light):not(.dark) .light *)
+      )
+    ) {
+      @slot;
+    }
+  }
+}
+
+@theme {
+  --color-black: oklch(0 0 0);
+  --color-white: oklch(1 0 0);
+
+  /* Bare palette utilities (`bg-palette-yellow`). The numbered ramps
+     (`--palette-yellow-400`) are plain variables in foundation.css and
+     deliberately not utilities; reach for semantic tokens first. */
+  --color-palette-yellow: var(--palette-yellow-400);
+  --color-palette-lavender: var(--palette-lavender-400);
+  --color-palette-pink: var(--palette-pink-400);
+  --color-palette-cyan: var(--palette-cyan-400);
+  --color-palette-orange: var(--palette-orange-400);
+  --color-palette-lime: var(--palette-lime-400);
+  --color-palette-red: var(--palette-red-400);
+  --color-palette-stone: var(--palette-stone-400);
+  --color-palette-cream: var(--palette-cream-200);
+
+  --ease-slide: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Raft Design System shape scale: pixels are hard, containers are soft.
+     sticker = avatars, channel tiles, checkboxes, counts, inline marks;
+     chip = 22px tags and status chips; control = buttons, fields, rows, menu
+     items; container = cards, menus, composer, banners; dialog = dialogs and
+     sheet tops. Round (rounded-full) is only for switches and radios. */
+  --radius-sticker: 4px;
+  --radius-chip: 6px;
+  --radius-control: 8px;
+  --radius-container: 10px;
+  --radius-dialog: 16px;
+
+  /* Raft Design System type styles (size / line-height / weight). Grotesk is
+     what people say; pair the mono styles with `font-mono` for what machines
+     write (ids, times, counts, events, code). */
+  --text-hero: 40px;
+  --text-hero--line-height: 44px;
+  --text-hero--font-weight: 700;
+  --text-hero--letter-spacing: -0.03em;
+  --text-display: 34px;
+  --text-display--line-height: 40px;
+  --text-display--font-weight: 700;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 22px;
+  --text-title--line-height: 28px;
+  --text-title--font-weight: 700;
+  --text-title--letter-spacing: -0.01em;
+  --text-headline: 17px;
+  --text-headline--line-height: 22px;
+  --text-headline--font-weight: 700;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-subhead: 15px;
+  --text-subhead--line-height: 20px;
+  --text-callout: 14px;
+  --text-callout--line-height: 20px;
+  --text-footnote: 13px;
+  --text-footnote--line-height: 18px;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-caption--font-weight: 500;
+  --text-label: 11px;
+  --text-label--line-height: 13px;
+  --text-label--font-weight: 600;
+  --text-mono-meta: 12px;
+  --text-mono-meta--line-height: 16px;
+  --text-mono-code: 13px;
+  --text-mono-code--line-height: 20px;
+
+  /* Deprecated utility names, kept until raft-ui 1.0 (see codemods/token-names.mjs). */
+  --color-brutal-yellow: var(--palette-yellow-400);
+  --color-soft-signal: var(--palette-yellow-400);
+  --color-brutal-lavender: var(--palette-lavender-400);
+  --color-brutal-pink: var(--palette-pink-400);
+  --color-brutal-cyan: var(--palette-cyan-400);
+  --color-brutal-orange: var(--palette-orange-400);
+  --color-brutal-lime: var(--palette-lime-400);
+  --color-brutal-red: var(--palette-red-400);
+  --color-brutal-stone: var(--palette-stone-400);
+  --color-brutal-cream: var(--palette-cream-200);
+}
+
+@theme inline {
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-hint: var(--foreground-hint);
+  --color-foreground-disabled: var(--foreground-disabled);
+  --color-foreground-inverse: var(--foreground-inverse);
+  --color-foreground-active: var(--foreground-active);
+  --color-foreground-hover: var(--foreground-hover);
+
+  --color-layer-canvas: var(--layer-canvas);
+  --color-layer-sidebar: var(--layer-sidebar);
+  --color-layer-popover: var(--layer-popover);
+  --color-layer-backdrop: var(--layer-backdrop);
+  --color-layer-card: var(--layer-card);
+  --color-layer-hud: var(--layer-hud);
+  --color-foreground-on-hud: var(--foreground-on-hud);
+  --color-foreground-on-hud-muted: var(--foreground-on-hud-muted);
+
+  --color-fill-muted: var(--fill-muted);
+  --color-fill-strong: var(--fill-strong);
+
+  --color-line-strong: var(--line-strong);
+  --color-line-hairline: var(--line-hairline);
+  --color-line-field: var(--line-field);
+  --color-line-field-hover: var(--line-field-hover);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-4: var(--ink-4);
+  --color-ink-6: var(--ink-6);
+  --color-ink-8: var(--ink-8);
+  --color-ink-10: var(--ink-10);
+  --color-ink-16: var(--ink-16);
+  --color-ink-20: var(--ink-20);
+  --color-ink-30: var(--ink-30);
+  --color-ink-40: var(--ink-40);
+
+  --color-brand: var(--brand-400);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-active: var(--brand-active);
+
+  --color-attention: var(--attention-400);
+  --color-attention-50: var(--attention-50);
+  --color-attention-100: var(--attention-100);
+  --color-attention-200: var(--attention-200);
+  --color-attention-300: var(--attention-300);
+  --color-attention-400: var(--attention-400);
+  --color-attention-500: var(--attention-500);
+  --color-attention-600: var(--attention-600);
+  --color-attention-700: var(--attention-700);
+  --color-attention-800: var(--attention-800);
+  --color-attention-900: var(--attention-900);
+  --color-attention-950: var(--attention-950);
+  --color-attention-strong: var(--attention-strong);
+  --color-attention-soft: var(--attention-soft);
+  --color-attention-hover: var(--attention-hover);
+  --color-attention-active: var(--attention-active);
+
+  --color-info: var(--info);
+  --color-info-strong: var(--info-strong);
+  --color-info-muted: var(--info-muted);
+  --color-info-soft: var(--info-soft);
+  --color-info-hover: var(--info-hover);
+  --color-info-active: var(--info-active);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-strong: var(--success-strong);
+  --color-success-muted: var(--success-muted);
+  --color-success-soft: var(--success-soft);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-strong: var(--warning-strong);
+  --color-warning-muted: var(--warning-muted);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-hover: var(--warning-hover);
+  --color-warning-active: var(--warning-active);
+
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-strong: var(--danger-strong);
+  --color-danger-muted: var(--danger-muted);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-active: var(--danger-active);
+
+  --color-inactive: var(--inactive);
+  --color-inactive-foreground: var(--inactive-foreground);
+  --color-inactive-soft: var(--inactive-soft);
+
+  /* Raft Design System roles (stamped by every theme scope). */
+  --color-line-seam: var(--line-seam);
+  --color-layer-frame: var(--layer-frame);
+  --color-layer-frame-active: var(--layer-frame-active);
+  --color-line-frame-active: var(--line-frame-active);
+  --color-foreground-on-frame: var(--foreground-on-frame);
+  --color-foreground-on-frame-muted: var(--foreground-on-frame-muted);
+  --color-foreground-on-frame-active: var(--foreground-on-frame-active);
+  --color-fill-frame-pressed: var(--fill-frame-pressed);
+  --color-fill-pressed: var(--fill-pressed);
+  --color-layer-code: var(--layer-code);
+  --color-foreground-link: var(--foreground-link);
+  --color-sticker-ink: var(--sticker-ink);
+  --color-sticker-paper: var(--sticker-paper);
+  --color-sticker-edge: var(--sticker-edge);
+  --color-sticker-pressed: var(--sticker-pressed);
+  --color-presence-online: var(--presence-online);
+  --color-presence-busy: var(--presence-busy);
+  --color-presence-error: var(--presence-error);
+  --color-presence-offline: var(--presence-offline);
+  --color-presence-external: var(--presence-external);
+
+  /* Task-status scale for Tailwind (`bg-task-status-todo`, `text-task-status-*`,
+     …). One slot per state plus its soft wash / strong ink; all four theme
+     scopes in foundation.css define the underlying values. */
+  --color-task-status-todo: var(--task-status-todo);
+  --color-task-status-todo-soft: var(--task-status-todo-soft);
+  --color-task-status-todo-strong: var(--task-status-todo-strong);
+  --color-task-status-in-progress: var(--task-status-in-progress);
+  --color-task-status-in-progress-soft: var(--task-status-in-progress-soft);
+  --color-task-status-in-progress-strong: var(--task-status-in-progress-strong);
+  --color-task-status-in-review: var(--task-status-in-review);
+  --color-task-status-in-review-soft: var(--task-status-in-review-soft);
+  --color-task-status-in-review-strong: var(--task-status-in-review-strong);
+  --color-task-status-done: var(--task-status-done);
+  --color-task-status-done-soft: var(--task-status-done-soft);
+  --color-task-status-done-strong: var(--task-status-done-strong);
+  --color-task-status-closed: var(--task-status-closed);
+  --color-task-status-closed-soft: var(--task-status-closed-soft);
+  --color-task-status-closed-strong: var(--task-status-closed-strong);
+
+  --shadow-float: var(--elevation-float);
+  --shadow-sticker: var(--elevation-sticker);
+  --shadow-focus: var(--focus-ring);
+
+  --font-heading: var(--heading-font, system-ui, sans-serif);
+  --font-sans: var(--sans-font, system-ui, sans-serif);
+  --font-mono: var(--mono-font, ui-monospace, monospace);
+  /* ─── Field metric axis ─────────────────────────────────────────────────────
+     The first non-colour token axis in this file. It exists because a form
+     field had no declared metrics at all: `Input` got its height from `py-2`
+     plus inherited line-height, `SelectTrigger` borrowed the Button size scale
+     because it is built on Button, and a Select popup declared its own
+     typography with no relation to the field it belongs to. Three components,
+     three different sizes for the same value.
+
+     Consumers: `Input`, `Textarea`, the field variant of `SelectTrigger`, and
+     Select popup options. Textarea shares the Input typography contract while
+     retaining its independent min-height and resize behavior. Options share
+     font-size/weight/line-height with the trigger so a value does not change
+     size when the list opens; their height and padding stay independent,
+     because a list row is not a control and must not be stretched to the
+     field's height.
+
+     Raft's Select contract, not an industry rule — both conventions exist. */
+  --text-field: var(--field-font-size);
+  --text-field--line-height: var(--field-line-height);
+  --font-weight-field: var(--field-font-weight);
+  /* ─── Card-title metric axis ────────────────────────────────────────────────
+     Same pattern as the field axis, for CardTitle. Consumers that vertically
+     align a control (radio, checkbox) with a card title need the title's
+     line-height to size the alignment container — without it, the value must
+     be hard-coded per theme and drifts when the title recipe changes.
+
+     Consumers: `CardTitle`, plus any composition that lays a control beside a
+     card title (radio-card and checkbox-card patterns in the Raft web app). */
+  --text-card-title: var(--card-title-font-size);
+  --text-card-title--line-height: var(--card-title-line-height);
+  --font-weight-card-title: var(--card-title-font-weight);
+
+  /* Deprecated utility names, kept until raft-ui 1.0 (see codemods/token-names.mjs). */
+  --color-foreground-strong: var(--foreground);
+  --color-foreground-icon: var(--foreground-muted);
+  --color-foreground-placeholder: var(--foreground-hint);
+  --color-layer-canvas-muted: var(--layer-sidebar);
+  --color-layer-panel: var(--layer-canvas);
+  --color-layer-inset: var(--fill-muted);
+  --color-layer-hud-foreground: var(--foreground-on-hud);
+  --color-line: var(--line-seam);
+  --color-line-muted: var(--line-hairline);
+  --color-primary: var(--brand-400);
+  --color-primary-50: var(--brand-50);
+  --color-primary-100: var(--brand-100);
+  --color-primary-200: var(--brand-200);
+  --color-primary-300: var(--brand-300);
+  --color-primary-400: var(--brand-400);
+  --color-primary-500: var(--brand-500);
+  --color-primary-600: var(--brand-600);
+  --color-primary-700: var(--brand-700);
+  --color-primary-800: var(--brand-800);
+  --color-primary-900: var(--brand-900);
+  --color-primary-950: var(--brand-950);
+  --color-primary-strong: var(--brand-strong);
+  --color-primary-soft: var(--brand-soft);
+  --color-primary-hover: var(--brand-hover);
+  --color-primary-active: var(--brand-active);
+  --color-accent: var(--attention-400);
+  --color-accent-50: var(--attention-50);
+  --color-accent-100: var(--attention-100);
+  --color-accent-200: var(--attention-200);
+  --color-accent-300: var(--attention-300);
+  --color-accent-400: var(--attention-400);
+  --color-accent-500: var(--attention-500);
+  --color-accent-600: var(--attention-600);
+  --color-accent-700: var(--attention-700);
+  --color-accent-800: var(--attention-800);
+  --color-accent-900: var(--attention-900);
+  --color-accent-950: var(--attention-950);
+  --color-accent-strong: var(--attention-strong);
+  --color-accent-soft: var(--attention-soft);
+  --color-accent-hover: var(--attention-hover);
+  --color-accent-active: var(--attention-active);
+  --color-secondary: var(--secondary-400);
+  --color-secondary-50: var(--secondary-50);
+  --color-secondary-100: var(--secondary-100);
+  --color-secondary-200: var(--secondary-200);
+  --color-secondary-300: var(--secondary-300);
+  --color-secondary-400: var(--secondary-400);
+  --color-secondary-500: var(--secondary-500);
+  --color-secondary-600: var(--secondary-600);
+  --color-secondary-700: var(--secondary-700);
+  --color-secondary-800: var(--secondary-800);
+  --color-secondary-900: var(--secondary-900);
+  --color-secondary-950: var(--secondary-950);
+  --shadow-raft-xs: var(--theme-shadow-xs);
+  --shadow-raft-sm: var(--theme-shadow-sm);
+  --shadow-raft-md: var(--theme-shadow-md);
+  --shadow-raft-lg: var(--elevation-float);
+  --shadow-raft-xl: var(--elevation-float);
+  --shadow-raft-float: var(--elevation-float);
+  --shadow-raft-sticker: var(--elevation-sticker);
+  --shadow-raft-focus: var(--focus-ring);
+}
+
+*,
+::before,
+::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  position: relative;
+}
+
+@utility image-transparency-bg {
+  --checker-cell: light-dark(oklch(0.1813 0.00497 17.62 / 0.12), oklch(1 0 0 / 0.1));
+  background-color: light-dark(oklch(1 0 0), oklch(0.23 0 0));
+  background-image:
+    linear-gradient(45deg, var(--checker-cell) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-cell) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-cell) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-cell) 75%);
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+  background-size: 16px 16px;
+}
+
+/* Raft Design System press feedback: hover and press lay one overlay over the
+   resting colour instead of swapping it, so a control keeps its identity.
+   Paper controls take the 8% ink wash (fill-pressed); colour stickers take
+   sticker-pressed (12% ink in both modes). */
+@utility press-overlay {
+  background-image: linear-gradient(var(--fill-pressed), var(--fill-pressed));
+}
+
+@utility press-overlay-sticker {
+  background-image: linear-gradient(var(--sticker-pressed), var(--sticker-pressed));
+}
+
+/* Space and rules between siblings: stack-y-* / stack-x-* and rule-y / rule-x
+   / rule-<colour>. Use these, never Tailwind's space-* and divide-*.
+
+   Tailwind v4 compiles space-* and divide-* to `:where(.x > :not(:last-child))`.
+   Its rightmost part has no class, so WebKit (every iOS browser) tests it
+   against every element and marks every parent as depending on which child is
+   last. Appending or removing a last child anywhere then restyles the previous
+   last child's whole subtree: 180-430ms when a chat's bottom controls mount
+   after its timeline. Chromium does not pay this, so it only shows on iOS.
+   The owl `> * + *` depends only on the previous sibling, so appending at the
+   end restyles nothing. Zero specificity, like Tailwind's, so a child's own
+   margin or border class still wins. */
+@utility stack-y-* {
+  :where(& > * + *) {
+    margin-block-start: calc(var(--spacing) * --value(number));
+    margin-block-start: --value([length]);
+  }
+}
+@utility stack-y-px {
+  :where(& > * + *) {
+    margin-block-start: 1px;
+  }
+}
+@utility stack-x-* {
+  :where(& > * + *) {
+    margin-inline-start: calc(var(--spacing) * --value(number));
+    margin-inline-start: --value([length]);
+  }
+}
+@utility -stack-x-* {
+  :where(& > * + *) {
+    margin-inline-start: calc(var(--spacing) * --value(number) * -1);
+    margin-inline-start: calc(--value([length]) * -1);
+  }
+}
+@utility rule-y {
+  :where(& > * + *) {
+    border-block-start-width: 1px;
+    border-block-start-style: solid;
+  }
+}
+@utility rule-x {
+  :where(& > * + *) {
+    border-inline-start-width: 1px;
+    border-inline-start-style: solid;
+  }
+}
+@utility rule-* {
+  :where(& > * + *) {
+    border-color: --value(--color-*, [color]);
+  }
+}

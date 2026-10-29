@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
-Widget host(RaftFamily family, bool dark, Widget child) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+Widget host(bool dark, Widget child) => MaterialApp(
+  theme: raftTheme(dark: dark),
   home: Material(
     child: SingleChildScrollView(
       child: Padding(padding: const EdgeInsets.all(16), child: child),
@@ -12,19 +13,14 @@ Widget host(RaftFamily family, bool dark, Widget child) => MaterialApp(
 );
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('overlay result pieces render in ${theme.$1}/${theme.$2}', (
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets('overlay result pieces render in ${dark ? 'dark' : 'light'}', (
       t,
     ) async {
       var retried = 0, opened = 0;
       await t.pumpWidget(
         host(
-          theme.$1,
-          theme.$2,
+          dark,
           Column(
             children: [
               const RaftQuickSwitcherFilterRow(
@@ -81,9 +77,7 @@ void main() {
   }
 
   testWidgets('the skeleton shows five placeholder cards', (t) async {
-    await t.pumpWidget(
-      host(RaftFamily.elegant, false, const RaftQuickSwitcherSkeleton()),
-    );
+    await t.pumpWidget(host(false, const RaftQuickSwitcherSkeleton()));
     expect(find.byType(RaftSkeleton), findsNWidgets(5 * 5));
     await t.pumpWidget(const SizedBox.shrink());
   });

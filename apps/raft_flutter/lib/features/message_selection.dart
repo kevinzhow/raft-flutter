@@ -27,6 +27,7 @@ class MessageSelection extends ChangeNotifier {
   final Set<String> ids = {};
   bool active = false;
   int revision = 0;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Selection-limit notice: cleared on a successful select, a deselect, select all, exit and any scope/authority change.
   String? _scope, error;
   Map<String, dynamic>? _channelAuthority;
   String get scope => jsonEncode([
@@ -35,13 +36,16 @@ class MessageSelection extends ChangeNotifier {
     w.server?.id,
     w.server?.string('role'),
     w.channel?.id,
-    if (thread) w.threadParent?.id,
+    if (thread) w.messageDomain.state.threadParent?.id,
     if (thread) w.threadChannelId,
   ]);
   List<SelectedMessageRow> get available {
     final roots = thread
-        ? [if (w.threadParent != null) w.threadParent!]
-        : w.messages;
+        ? [
+            if (w.messageDomain.state.threadParent != null)
+              w.messageDomain.state.threadParent!,
+          ]
+        : w.messageDomain.messages;
     final result = <SelectedMessageRow>[];
     for (final root in roots) {
       if (root.string('messageType') == 'system') continue;
@@ -62,6 +66,7 @@ class MessageSelection extends ChangeNotifier {
       : available.where((r) => ids.contains(r.message.id)).toList();
   void changed() {
     final previousIds = ids.toSet(), previousActive = active;
+    final previousError = error;
     final next = scope;
     final authority = w.channel == null
         ? null
@@ -85,8 +90,11 @@ class MessageSelection extends ChangeNotifier {
       ids.removeWhere((id) => !visible.contains(id));
     }
     if (active && ids.isEmpty) active = false;
-    if (previousActive != active || !setEquals(previousIds, ids)) revision++;
-    notifyListeners();
+    final changed = previousActive != active || !setEquals(previousIds, ids);
+    if (changed) revision++;
+    // Active exports also observe edits/deletions of selected messages. An
+    // inactive empty selection has no row state to publish on workspace events.
+    if (active || changed || previousError != error) notifyListeners();
   }
 
   void enter(String id) {
@@ -112,6 +120,8 @@ class MessageSelection extends ChangeNotifier {
     final group = [id];
     if (ids.contains(id)) {
       ids.removeAll(group);
+      // Dropping a row answers the "too many selected" notice.
+      error = null;
     } else if (ids.length + group.where((v) => !ids.contains(v)).length >
         limit) {
       error = 'Select up to 30 messages.';

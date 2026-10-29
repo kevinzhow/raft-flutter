@@ -11,6 +11,12 @@ Widget activityCompactScopePreview() => RaftActivityScopeToolbar(
   onView: (_) {},
   onOpenSwitcher: () {},
   onSort: (_) {},
+  markAllRead: RaftTextButton(
+    label: 'Mark All Read',
+    visualHeight: 32,
+    minimumTargetSize: 32,
+    onPressed: () {},
+  ),
 );
 
 @RaftPreviews('Activity mobile views', size: Size(390, 70))
@@ -34,6 +40,29 @@ Widget activityScopePickerPreview() => RaftActivityScopePicker(
     RaftActivityGroup(id: 'general', label: 'general', count: 4),
   ],
   counts: const {RaftActivityView.all: 6, RaftActivityView.unread: 2},
+);
+
+@RaftPreviews('Activity DMs mobile', size: Size(390, 70))
+Widget activityDirectMessagesMobilePreview() => RaftActivityScopeToolbar(
+  view: RaftActivityView.dms,
+  compact: false,
+  sort: 'desc',
+  onView: (_) {},
+  onOpenSwitcher: () {},
+  onSort: (_) {},
+);
+
+@RaftPreviews('Activity DMs picker', size: Size(440, 590))
+Widget activityDirectMessagesPickerPreview() => RaftActivityScopePicker(
+  view: RaftActivityView.dms,
+  onView: (_) {},
+  onGroup: (_) {},
+  onClearGroup: () {},
+  groups: const [
+    RaftActivityGroup(id: 'alice', label: 'Alice', count: 2, dm: true),
+    RaftActivityGroup(id: 'general', label: 'general', count: 4),
+  ],
+  counts: const {RaftActivityView.all: 6, RaftActivityView.dms: 2},
 );
 
 @RaftPreviews('Activity pending results', size: Size(440, 600))

@@ -1,0 +1,10 @@
+{
+  "_source": "channel:updated: routes/channels.ts:426 ({channel:{...,joined:true}} to user:<id>), :521/:540 ({channel}), :3047 (id-only {channelId} to server:<id>); channel:members-updated routes/channels.ts:429/432 ({channelId}); dm:new messageService.ts:3039 ({channelId}); channel:authority-updated routes/channels.ts:3875-3881. Web reader: web/src/store/channelRealtimeSync.ts:78-125. NOTE: the server never emits 'channel:removed' or 'server:updated' (grep of packages/server/src).",
+  "events": [
+    { "event": "channel:updated", "payload": { "channel": { "id": "77777777-7777-4777-8777-777777777777", "serverId": "66666666-6666-4666-8666-666666666666", "name": "general", "type": "channel", "joined": true, "archivedAt": null } } },
+    { "event": "channel:updated", "payload": { "channelId": "77777777-7777-4777-8777-777777777777" } },
+    { "event": "channel:members-updated", "payload": { "channelId": "77777777-7777-4777-8777-777777777777" } },
+    { "event": "dm:new", "payload": { "channelId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd" } },
+    { "event": "channel:authority-updated", "payload": { "channelId": "77777777-7777-4777-8777-777777777777", "channelRole": "admin", "authorityRevision": 4 } }
+  ]
+}

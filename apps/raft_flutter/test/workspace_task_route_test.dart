@@ -8,20 +8,18 @@ import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'message_context_transition_test.dart' show row;
 import 'task_surface_test.dart' show modernTask, taskRoutes, flush;
 import 'workspace_source_location_contract_test.dart' show pageFixture;
+import 'support/app_services_fixture.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [390.0, 1280.0]) {
       testWidgets(
-        '[K10b URL] cold modern real bucket, independent side and narrow Back $family/$dark/$width',
+        '[K10b URL] cold modern real bucket, independent side and narrow Back ${dark ? 'dark' : 'light'}/$width',
         (t) async {
           t.view.physicalSize = Size(width, 844);
           t.view.devicePixelRatio = 1;
@@ -39,9 +37,11 @@ void main() {
               parent.future;
           api.routes['GET /messages/channel/task-thread'] = (_) =>
               replies.future;
-          w.threadParent = RaftMessage(row('old-parent', 'c1', 1));
+          w.messageDomain.state.threadParent = RaftMessage(
+            row('old-parent', 'c1', 1),
+          );
           w.threadChannelId = 'old-side';
-          w.threadLoading = false;
+          w.messageDomain.state.threadLoading = false;
           w.drafts[w.draftScope()!] = 'Main draft survives';
           w.drafts[w.draftScope(thread: true)!] = 'Side draft survives';
           final origin = w.location.withQuery({
@@ -56,12 +56,14 @@ void main() {
           final mainRevision = w.navigationRevision;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );
@@ -93,7 +95,7 @@ void main() {
           expect(w.threadChannelId, 'old-side');
           expect(w.navigationRevision, mainRevision);
           if (width < 768) {
-            await t.tap(find.byTooltip('Close task'));
+            await t.tap(find.byTooltip('Close Task'));
           } else {
             await t.sendKeyEvent(LogicalKeyboardKey.escape);
           }
@@ -126,7 +128,7 @@ void main() {
       );
     }
     testWidgets(
-      '[K10b URL] pending legacy preserves URI, hydrates only explicit legacy and never requests a thread $family/$dark',
+      '[K10b URL] pending legacy preserves URI, hydrates only explicit legacy and never requests a thread ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
@@ -141,12 +143,14 @@ void main() {
         );
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -168,7 +172,7 @@ void main() {
         });
         await flush(t);
         expect(find.byKey(const ValueKey('legacy-task-panel')), findsOneWidget);
-        expect(find.text('Task #8 · LEGACY'), findsOneWidget);
+        expect(find.text('Task #8 · Legacy'), findsOneWidget);
         expect(
           api.calls.where(
             (r) =>
@@ -178,7 +182,7 @@ void main() {
           ),
           isEmpty,
         );
-        await t.tap(find.byTooltip('Close task'));
+        await t.tap(find.byTooltip('Close Task'));
         await flush(t);
         // The closed task page stays live for the platform pop transition.
         await t.pump(const Duration(milliseconds: 500));
@@ -188,7 +192,7 @@ void main() {
       },
     );
     testWidgets(
-      '[K10b URL] role revocation retires real cold task and rejects late bucket $family/$dark',
+      '[K10b URL] role revocation retires real cold task and rejects late bucket ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
@@ -203,12 +207,14 @@ void main() {
         );
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -216,7 +222,7 @@ void main() {
         final retired = t
             .widget<SourceTaskSurface>(find.byType(SourceTaskSurface))
             .owner;
-        w.server = RaftRecord({...w.server!.json, 'role': 'guest'});
+        w.server = RaftRecord({...w.server!.json, 'role': 'removed'});
         w.notifyListeners();
         await flush(t);
         expect(retired.closed, isTrue);
@@ -242,7 +248,7 @@ void main() {
     );
     for (final lateFails in [false, true]) {
       testWidgets(
-        '[K10b URL] actual board activation then Back/new task rejects old ${lateFails ? 'error' : 'success'} without retiring main pending context $family/$dark',
+        '[K10b URL] actual board activation then Back/new task rejects old ${lateFails ? 'error' : 'success'} without retiring main pending context ${dark ? 'dark' : 'light'}',
         (t) async {
           t.view.physicalSize = const Size(390, 844);
           t.view.devicePixelRatio = 1;
@@ -284,12 +290,14 @@ void main() {
           );
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );
@@ -304,7 +312,7 @@ void main() {
           final retired = t
               .widget<SourceTaskSurface>(find.byType(SourceTaskSurface))
               .owner;
-          await t.tap(find.byTooltip('Close task'));
+          await t.tap(find.byTooltip('Close Task'));
           await flush(t);
           // The owner retires with its page once the pop transition ends.
           await t.pump(const Duration(milliseconds: 500));
@@ -330,9 +338,12 @@ void main() {
           await t.runAsync(() => pending);
           await flush(t);
           expect(current.task['id'], 'task-2');
-          expect(w.messages.map((m) => m.id), contains('pending-main'));
+          expect(
+            w.messageDomain.messages.map((m) => m.id),
+            contains('pending-main'),
+          );
           expect(w.navigationRevision, mainRevision);
-          await t.tap(find.byTooltip('Close task'));
+          await t.tap(find.byTooltip('Close Task'));
           await flush(t);
           expect(t.takeException(), isNull);
           await t.pumpWidget(const SizedBox.shrink());

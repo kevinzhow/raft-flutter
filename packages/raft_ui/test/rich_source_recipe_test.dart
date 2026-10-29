@@ -4,6 +4,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/message_content_tokens.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
   test('original gallery mixed-wide and four-normal row contracts', () {
@@ -67,7 +68,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftForwardedBundle(
               metadata: {
@@ -96,23 +97,18 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final (dark) in raftThemeMatrix([(false), (true)], full: true)) {
     testWidgets(
-      'intrinsic Markdown table, left headers and source link role $family/$dark',
+      'intrinsic Markdown table, left headers and source link role ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: const Scaffold(
               body: SizedBox(
                 width: 640,
                 child: RaftMessageBody(
-                  content:
-                      '| Status | Count |\n|---|---|\n|Ready|3|\n\n[link](https://example.com)',
+                  content: '| Status | Count |\n|---|---|\n|Ready|3|\n\n[link](https://example.com)',
                 ),
               ),
             ),
@@ -150,11 +146,11 @@ void main() {
       },
     );
     testWidgets(
-      'raw SVG remains file affordance; raster images keep preview $family/$dark',
+      'raw SVG remains file affordance; raster images keep preview ${dark ? 'dark' : 'light'}',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: Column(
                 children: [
@@ -186,7 +182,7 @@ void main() {
       var closed = 0;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: MediaQuery(
             data: const MediaQueryData(
               size: Size(800, 600),
@@ -202,7 +198,7 @@ void main() {
       );
       await tester.pump();
       expect(
-        tester.getTopLeft(find.byTooltip('Close preview')).dy,
+        tester.getTopLeft(find.byTooltip('Close Preview')).dy,
         greaterThanOrEqualTo(32),
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);

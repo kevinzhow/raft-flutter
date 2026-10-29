@@ -4,7 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'previews.dart';
 
 @RaftPreviews('Banner', size: Size(390, 360))
-Widget bannerPreview() => const Padding(
+Widget bannerPreview() => const SingleChildScrollView(
   padding: EdgeInsets.all(16),
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -39,9 +39,9 @@ class _SectionPagerPreviewState extends State<SectionPagerPreview> {
             children: [
               Text(section),
               if (section == 'Chat')
-                const TextField(
-                  key: Key('section-preview-draft'),
-                  decoration: InputDecoration(labelText: 'Draft'),
+                const RaftTextInput(
+                  fieldKey: Key('section-preview-draft'),
+                  hintText: 'Draft',
                 ),
               for (var i = 1; i <= 30; i++)
                 ListTile(

@@ -1,0 +1,37 @@
+{
+  "id": "aaaaaaaa-0000-4000-8000-000000000050",
+  "seq": 1340,
+  "channelId": "33333333-3333-4333-8333-333333333333",
+  "senderType": "user",
+  "senderId": "11111111-1111-4111-8111-111111111111",
+  "messageType": "chat",
+  "content": "FYI",
+  "senderName": "Ada Lovelace",
+  "createdAt": "2026-10-12T09:40:00.000Z",
+  "actionMetadata": {
+    "kind": "forwarded-bundle",
+    "version": 1,
+    "sourceAuthorityChannelIds": ["33333333-3333-4333-8333-333333333333"],
+    "forwardedBy": {"type": "user", "id": "11111111-1111-4111-8111-111111111111", "name": "Ada Lovelace", "uniqueName": "ada"},
+    "forwardedAt": "2026-10-12T09:40:00.000Z",
+    "forwardedItems": [
+      {
+        "index": 0,
+        "sourceIsThreadParent": false,
+        "sourceHostMessageId": "aaaaaaaa-0000-4000-8000-000000000002",
+        "sourceServerId": "55555555-5555-4555-8555-555555555555",
+        "sourceTargetId": "33333333-3333-4333-8333-333333333333",
+        "sourceMessageId": "aaaaaaaa-0000-4000-8000-000000000002",
+        "sourceMessageSeq": 1202,
+        "sourceTargetSnapshot": {"id": "33333333-3333-4333-8333-333333333333", "type": "channel", "label": "#general", "labelVisibility": "public"},
+        "sourceAuthorSnapshot": {"type": "agent", "id": "22222222-2222-4222-8222-222222222222", "name": "Product UX Designer", "uniqueName": "Product-UX-Designer"},
+        "sourceCreatedAt": "2026-10-12T07:59:00.000Z",
+        "contentSnapshot": "Captured the Android artifact.",
+        "attachmentSnapshots": [{"id": "bbbbbbbb-0000-4000-8000-000000000011", "sourceProjectionId": "bbbbbbbb-0000-4000-8000-000000000001", "filename": "shot.png", "mimeType": "image/png", "sizeBytes": 12345, "width": 800, "height": 600}],
+        "attachmentPolicy": "projected",
+        "provenanceState": "available"
+      }
+    ]
+  },
+  "reactions": [], "mentions": [], "attachments": []
+}

@@ -1,18 +1,20 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'attachment_tokens.dart';
 import 'theme.dart';
 
-/// Pure row allocation ported from raft-ui 0.5.27 message-image-gallery-rows.
+/// Pure row allocation ported from raft-ui 0.5.52 message-image-gallery-rows.
 /// Media bytes, capabilities and preview operations belong to the app adapter.
 List<List<int>> raftImageGalleryRows(
   List<({double? width, double? height})> images,
 ) {
-  if (images.length == 1)
+  if (images.length == 1) {
     return [
       [0],
     ];
+  }
   final rows = <List<int>>[], buffered = <int>[];
   void flush() {
     final chunk = buffered.length == 4 ? 2 : 3;
@@ -57,6 +59,7 @@ class RaftAttachmentGallery extends StatelessWidget {
           ? constraints.maxWidth
           : viewport;
       if (dimensions.length == 1) {
+        // ignore: raft_lints/avoid_render_single -- Inside the `dimensions.length == 1` branch.
         final d = dimensions.single;
         final size = recipe.imageSize(
           viewportWidth: viewport,

@@ -2,6 +2,8 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Saving an image into the public Pictures folder before Android 10. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
     <application
         android:label="Raft"
         android:allowBackup="false"
@@ -13,6 +15,12 @@
         android:roundIcon="@mipmap/ic_launcher">
         <!-- External shares, OAuth and notifications reuse the same Flutter
              Activity/session owner through onNewIntent across sender tasks. -->
+        <!-- Vendor plugin may toggle only these launcher aliases. MainActivity
+             stays enabled for all external intents. -->
+        <meta-data android:name="flutter_dynamic_icon_plus.default_alias"
+            android:value="app.raft.raft_flutter.IconYellow" />
+        <meta-data android:name="flutter_dynamic_icon_plus.allowed_aliases"
+            android:value="app.raft.raft_flutter.IconYellow,app.raft.raft_flutter.IconBlue,app.raft.raft_flutter.IconGreen,app.raft.raft_flutter.IconWhite,app.raft.raft_flutter.IconPink" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -21,6 +29,12 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+            <!-- getLaunchIntentForPackage prefers CATEGORY_INFO. Notifications
+                 must retain this permanent target when a launcher alias changes. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.INFO" />
+            </intent-filter>
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues
@@ -43,16 +57,80 @@
                 <data android:scheme="raft" android:host="v1" android:pathPrefix="/servers/" />
             </intent-filter>
             <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="raft" android:host="v1" android:pathPrefix="/join/" />
+            </intent-filter>
+            <!-- Raft https links open the app (Android App Links): NOT enabled.
+                 It needs https://app.raft.build/.well-known/assetlinks.json for
+                 this package and the release key, and the dart define RAFT_APP_LINKS=true
+                 (lib/platform/raft_app_links.dart, docs/deployment.md). Then:
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="app.raft.build" android:pathPrefix="/s/" />
+                <data android:scheme="https" android:host="app.raft.build" android:pathPrefix="/join/" />
+            </intent-filter>
+            -->
+            <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
         </activity>
+        <activity android:name=".YellowIconEntry" android:exported="false"
+            android:theme="@style/IconLaunchYellow" />
+        <activity-alias android:name=".IconYellow" android:targetActivity=".YellowIconEntry"
+            android:enabled="true" android:exported="true" android:label="Raft"
+            android:icon="@mipmap/ic_launcher_yellow" android:roundIcon="@mipmap/ic_launcher_yellow">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity android:name=".BlueIconEntry" android:exported="false"
+            android:theme="@style/IconLaunchBlue" />
+        <activity-alias android:name=".IconBlue" android:targetActivity=".BlueIconEntry"
+            android:enabled="false" android:exported="true" android:label="Raft"
+            android:icon="@mipmap/ic_launcher_blue" android:roundIcon="@mipmap/ic_launcher_blue">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity android:name=".GreenIconEntry" android:exported="false"
+            android:theme="@style/IconLaunchGreen" />
+        <activity-alias android:name=".IconGreen" android:targetActivity=".GreenIconEntry"
+            android:enabled="false" android:exported="true" android:label="Raft"
+            android:icon="@mipmap/ic_launcher_green" android:roundIcon="@mipmap/ic_launcher_green">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity android:name=".WhiteIconEntry" android:exported="false"
+            android:theme="@style/IconLaunchWhite" />
+        <activity-alias android:name=".IconWhite" android:targetActivity=".WhiteIconEntry"
+            android:enabled="false" android:exported="true" android:label="Raft"
+            android:icon="@mipmap/ic_launcher_white" android:roundIcon="@mipmap/ic_launcher_white">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity android:name=".PinkIconEntry" android:exported="false"
+            android:theme="@style/IconLaunchPink" />
+        <activity-alias android:name=".IconPink" android:targetActivity=".PinkIconEntry"
+            android:enabled="false" android:exported="true" android:label="Raft"
+            android:icon="@mipmap/ic_launcher_pink" android:roundIcon="@mipmap/ic_launcher_pink">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.shared-files"

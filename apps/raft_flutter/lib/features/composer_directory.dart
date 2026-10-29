@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -12,13 +11,16 @@ import 'agent_metadata_projection.dart';
 import 'message_agent_presentation.dart';
 import 'private_route_guard.dart';
 import 'sender_avatar_projection.dart';
+import 'external_mentions.dart';
+import '../data/feature_flag_client_facts.dart';
+import 'route_transition_gate.dart';
 
 /// One channel roster as returned by `/channels/:id/members`, together with
 /// the channel authority it was read under.
 class _ComposerRoster {
-  const _ComposerRoster(this.channel, this.humans, this.agents);
+  const _ComposerRoster(this.channel, this.humans, this.agents, this.externals);
   final Map<String, dynamic> channel;
-  final List<Map<String, dynamic>> humans, agents;
+  final List<Map<String, dynamic>> humans, agents, externals;
 }
 
 Map<String, dynamic> _channelAuthority(RaftChannel channel) => {
@@ -97,9 +99,11 @@ class _ComposerShared extends ChangeNotifier {
       try {
         final roster = await w.query('/channels/$id/members');
         if (!current()) return;
-        final live = w.channel?.id == id
-            ? w.channel
-            : w.channels.where((c) => c.id == id).firstOrNull;
+        final live = [
+          ?w.channel,
+          ...w.channels,
+          ...w.dms,
+        ].where((c) => c.id == id).firstOrNull;
         if (live != null &&
             channelAuthorityReduced(readUnder, _channelAuthority(live))) {
           return;
@@ -112,6 +116,7 @@ class _ComposerShared extends ChangeNotifier {
           readUnder,
           rows(roster is Map ? roster['humans'] : null),
           rows(roster is Map ? roster['agents'] : null),
+          rows(roster is Map ? roster['externalMembers'] : null),
         );
         _changed();
       } catch (error) {
@@ -142,13 +147,10 @@ class _ComposerShared extends ChangeNotifier {
       try {
         final flags = await w.client.post(
           '/feature-flags/evaluate',
-          data: {
-            'keys': ['composer_resource_references_v0'],
-            'serverId': server.id,
-            'platform': defaultTargetPlatform == TargetPlatform.android
-                ? 'mobile'
-                : 'web',
-          },
+          data: featureFlagEvaluateBody(
+            keys: ['composer_resource_references_v0'],
+            serverId: server.id,
+          ),
         );
         if (!current()) return;
         final enabled =
@@ -165,11 +167,13 @@ class _ComposerShared extends ChangeNotifier {
           return;
         }
         if (w.can('viewMachines')) {
-          final computers = w.entityDirectory.state(
+          final computers = w.services.entityDirectory.state(
             WorkspaceEntityKind.computers,
           );
           if (!computers.loaded) {
-            await w.entityDirectory.refresh(WorkspaceEntityKind.computers);
+            await w.services.entityDirectory.refresh(
+              WorkspaceEntityKind.computers,
+            );
             if (!current()) return;
           }
         }
@@ -198,8 +202,69 @@ final _sharedComposerData = Expando<_ComposerShared>('composer directory');
 /// first frame (the settings drawer's members strip). Null until read.
 ({List<Map<String, dynamic>> humans, List<Map<String, dynamic>> agents})?
 cachedChannelRoster(WorkspaceController w, String channelId) {
-  final roster = _sharedComposerData[w.entityDirectory]?.rosters[channelId];
+  final roster =
+      _sharedComposerData[w.services.entityDirectory]?.rosters[channelId];
   return roster == null ? null : (humans: roster.humans, agents: roster.agents);
+}
+
+/// The Slack participants of the roster [cachedChannelRoster] returns (empty
+/// until that roster is read), for the settings drawer's members strip.
+List<Map<String, dynamic>> cachedChannelRosterExternals(
+  WorkspaceController w,
+  String channelId,
+) =>
+    _sharedComposerData[w.services.entityDirectory]
+        ?.rosters[channelId]
+        ?.externals ??
+    const [];
+
+/// Notifies when a channel roster is read, replaced or dropped, for surfaces
+/// that derive from [cachedChannelRoster] (the channel header's working line).
+Listenable channelRosterChanges(WorkspaceController w) =>
+    _sharedComposerData[w.services.entityDirectory] ??= _ComposerShared();
+
+/// Accepted channel-scoped provider members. Never uses the server directory.
+List<Map<String, dynamic>> cachedExternalMembers(
+  WorkspaceController w,
+  String id,
+) {
+  if (w.server == null || w.server!.string('role') == 'guest') return const [];
+  final shared = _sharedComposerData[w.services.entityDirectory];
+  if (shared == null || shared.authority != directoryAuthority(w)) {
+    return const [];
+  }
+  final source = w.threadChannelId == id
+      ? w.messageDomain.threadSourceChannel?.id
+      : id;
+  final channel = w.channel?.id == source
+      ? w.channel
+      : w.channels.where((c) => c.id == source).firstOrNull ??
+            w.dms.where((c) => c.id == source).firstOrNull;
+  if (channel == null || shared.validate(channel)) return const [];
+  return shared.rosters[channel.id]?.externals ?? const [];
+}
+
+/// Keeps a roster another surface just read (the channel members page) as the
+/// shared per-channel copy, so the next surface that shows it (the members
+/// page, the settings strip, the composer) paints it at its first frame.
+/// Ignored when the channel is not in the workspace or its authority moved.
+void rememberChannelRoster(
+  WorkspaceController w,
+  RaftChannel channel, {
+  required List<Map<String, dynamic>> humans,
+  required List<Map<String, dynamic>> agents,
+  List<Map<String, dynamic>> externalMembers = const [],
+}) {
+  final shared = _sharedComposerData[w.services.entityDirectory] ??=
+      _ComposerShared();
+  shared.sync(directoryAuthority(w));
+  shared.rosters[channel.id] = _ComposerRoster(
+    _channelAuthority(channel),
+    humans,
+    agents,
+    externalMembers,
+  );
+  shared._changed();
 }
 
 /// Autocomplete projection. People come from the shared, server-scoped entity
@@ -211,10 +276,11 @@ cachedChannelRoster(WorkspaceController w, String channelId) {
 /// use only their current membership projection; resource references require
 /// the real server flag before either computers or installed apps are shown.
 class ComposerDirectory extends ChangeNotifier {
-  ComposerDirectory(this.w, {this.agentPresentation})
-    : _shared = _sharedComposerData[w.entityDirectory] ??= _ComposerShared() {
+  ComposerDirectory(this.w, {this.agentPresentation, this.thread = false})
+    : _shared = _sharedComposerData[w.services.entityDirectory] ??=
+          _ComposerShared() {
     w.addListener(changed);
-    w.entityDirectory.addListener(changed);
+    w.services.entityDirectory.addListener(changed);
     _shared.addListener(changed);
     events = w.client.events.listen(event);
     changed();
@@ -222,6 +288,16 @@ class ComposerDirectory extends ChangeNotifier {
   final WorkspaceController w;
   final _ComposerShared _shared;
   StreamSubscription<RaftEvent>? events;
+
+  /// Web ThreadPanel `mentionChannelId={parentChannelId}`: a thread composer
+  /// suggests from the thread's SOURCE channel (roster, private/joint
+  /// eligibility, in-channel grouping), not from the channel the main pane
+  /// has open, and ranks the thread's recent speakers first.
+  final bool thread;
+
+  /// The channel whose roster scopes these suggestions.
+  RaftChannel? get scopeChannel =>
+      thread ? w.messageDomain.threadSourceChannel : w.channel;
 
   /// Borrow the chat's existing authorized activity adapter; never owns it.
   final MessageAgentPresentation? agentPresentation;
@@ -232,11 +308,14 @@ class ComposerDirectory extends ChangeNotifier {
   List<RaftComposerSuggestion> get suggestions => [
     ...people,
     for (final c in w.channels)
-      if (!c.archived && ['channel', 'private', 'joint'].contains(c.type))
+      // Web `channelAutocompleteCandidates`: archived channels stay listed
+      // (`GET /channels?archived=include`) with an `archived` Badge.
+      if (['channel', 'private', 'joint'].contains(c.type))
         RaftComposerSuggestion(
           type: 'channel',
           id: c.id,
           name: c.name,
+          archived: c.archived,
           detail: c.description.isEmpty ? null : c.description,
         ),
   ];
@@ -246,21 +325,24 @@ class ComposerDirectory extends ChangeNotifier {
     final authority = directoryAuthority(w);
     _shared.sync(authority);
     scope = authority;
-    final channel = w.server == null ? null : w.channel;
+    final channel = w.server == null ? null : scopeChannel;
     if (channel != null) _shared.validate(channel);
     if (channel?.id != channelId) {
       channelId = channel?.id;
       // Source MessageInput/ChatPanel read the roster when the channel opens;
       // a visited channel shows its cached roster and revalidates in place.
       if (channel != null) {
+        // ignore: raft_lints/avoid_unreviewed_idle_work -- One-shot roster load after the channel changes; the callback starts a request and never re-arms.
         Timer.run(() {
-          if (!ended && w.channel?.id == channel.id) {
-            unawaited(_shared.loadRoster(w, w.channel!));
+          final current = scopeChannel;
+          if (!ended && current?.id == channel.id) {
+            unawaited(_shared.loadRoster(w, current!));
           }
         });
       }
     }
     final resources = _shared.resources == true;
+    final recency = threadRecency(channel);
     // Agent presence patches leave every input below unchanged; skip copying
     // the computer rows for them.
     final inputs = (
@@ -268,32 +350,63 @@ class ComposerDirectory extends ChangeNotifier {
       channel?.id,
       channel?.type,
       w.client.user?.json['name'],
-      w.entityDirectory.authorRevision,
-      w.entityDirectory.computerRevision,
+      w.services.entityDirectory.authorRevision,
+      w.services.entityDirectory.computerRevision,
       _shared.revision,
       resources,
       w.can('viewMachines'),
+      recency,
     );
     if (inputs == checked) return;
     checked = inputs;
     final computers = resources && w.can('viewMachines')
-        ? w.entityDirectory.rows(WorkspaceEntityKind.computers)
+        ? w.services.entityDirectory.rows(WorkspaceEntityKind.computers)
         : const <Map<String, dynamic>>[];
     final next = (
       authority,
       channel?.id,
       channel?.type,
       w.client.user?.json['name'],
-      w.entityDirectory.authorRevision,
+      w.services.entityDirectory.authorRevision,
       _shared.revision,
       resources,
       Object.hashAll([for (final c in computers) '${c['id']}:${c['name']}']),
+      recency,
     );
     if (next == stamp) return;
     stamp = next;
-    people = channel == null ? [] : build(authority, channel, computers);
+    people = channel == null
+        ? []
+        : build(authority, channel, computers, recent: _recent);
     notifyListeners();
   }
+
+  /// Web `buildRecentParticipantRanks`: sender ids of the thread's messages,
+  /// newest speaker first. Only a thread over a non-DM channel prioritises
+  /// them (ThreadPanel `isChannelThreadInput`). Returns a cheap change token.
+  Object? threadRecency(RaftChannel? channel) {
+    final id = w.threadChannelId;
+    if (!thread || channel == null || channel.type == 'dm' || id == null) {
+      _recent = const {};
+      return null;
+    }
+    final token = (id, w.messageDomain.ledger.revision);
+    if (token == _recencyToken) return token;
+    _recencyToken = token;
+    final ranks = <String, int>{};
+    final rows = w.messageDomain.ledger.messages(id);
+    for (var i = rows.length - 1; i >= 0; i--) {
+      final sender = rows[i]['senderId'];
+      if (sender is String && sender.isNotEmpty && !ranks.containsKey(sender)) {
+        ranks[sender] = ranks.length;
+      }
+    }
+    _recent = ranks;
+    return token;
+  }
+
+  Map<String, int> _recent = const {};
+  (String, int)? _recencyToken;
 
   void event(RaftEvent event) {
     if (ended) return;
@@ -303,10 +416,10 @@ class ComposerDirectory extends ChangeNotifier {
     final payload = event.payload;
     final id = payload is Map && payload['channelId'] is String
         ? payload['channelId'] as String
-        : w.channel?.id;
+        : scopeChannel?.id;
     if (id == null) return;
     if (event.name == 'channel:removed') return _shared.drop(id);
-    final channel = w.channel;
+    final channel = scopeChannel;
     if (channel?.id == id) unawaited(_shared.loadRoster(w, channel!));
     // Another cached channel revalidates when it is opened again.
   }
@@ -316,8 +429,9 @@ class ComposerDirectory extends ChangeNotifier {
   List<RaftComposerSuggestion> build(
     String authority,
     RaftChannel channel,
-    List<Map<String, dynamic>> computers,
-  ) {
+    List<Map<String, dynamic>> computers, {
+    Map<String, int> recent = const {},
+  }) {
     final entries = <String, RaftComposerSuggestion>{};
     final memberIds = <String>{};
     // Source MessageInput lists server humans without a description; only the
@@ -326,6 +440,7 @@ class ComposerDirectory extends ChangeNotifier {
       Iterable<Map<String, dynamic>> raw,
       String type, {
       bool describe = true,
+      bool roster = false,
     }) {
       for (final value in raw) {
         final id = type == 'user'
@@ -361,7 +476,14 @@ class ComposerDirectory extends ChangeNotifier {
           detail: describe
               ? value['description'] as String? ?? previous?.detail
               : previous?.detail,
+          serverLabel: mentionServerLabel(
+            value,
+            currentServerId: w.server?.id,
+            roster: roster,
+            agent: type == 'agent',
+          ),
           inChannel: memberIds.contains(key),
+          threadRank: recent[id],
           avatar: _ComposerCandidateAvatar(
             directory: this,
             authority: authority,
@@ -404,12 +526,16 @@ class ComposerDirectory extends ChangeNotifier {
           describe: false,
         );
       }
-      add(w.entityDirectory.authorMembers, 'user', describe: false);
-      add(w.entityDirectory.authorAgents, 'agent');
+      add(w.services.entityDirectory.authorMembers, 'user', describe: false);
+      add(w.services.entityDirectory.authorAgents, 'agent');
     }
     if (roster != null) {
-      add(roster.humans, 'user');
-      add(roster.agents, 'agent');
+      add(roster.humans, 'user', roster: true);
+      add(roster.agents, 'agent', roster: true);
+      for (final member in cachedExternalMembers(w, channel.id)) {
+        final candidate = externalMentionSuggestion(w.client.origin, member);
+        if (candidate != null) entries['external:${candidate.id}'] = candidate;
+      }
     }
     if (_shared.resources == true) {
       for (final row in computers) {
@@ -443,10 +569,10 @@ class ComposerDirectory extends ChangeNotifier {
   }
 
   void request(String prefix) {
-    if (ended || prefix != '@' || w.channel == null || w.server == null) {
+    final channel = scopeChannel;
+    if (ended || prefix != '@' || channel == null || w.server == null) {
       return;
     }
-    final channel = w.channel!;
     if (!_shared.rosters.containsKey(channel.id)) {
       unawaited(_shared.loadRoster(w, channel));
     }
@@ -461,7 +587,7 @@ class ComposerDirectory extends ChangeNotifier {
     people = [];
     events?.cancel();
     w.removeListener(changed);
-    w.entityDirectory.removeListener(changed);
+    w.services.entityDirectory.removeListener(changed);
     _shared.removeListener(changed);
     super.dispose();
   }
@@ -505,7 +631,7 @@ class _ComposerCandidateAvatar extends StatelessWidget {
         status: status,
         activity: row['activity'] as String?,
         activityKind: row['activityKind'] as String?,
-        detailKind: row['detailKind'] as String?,
+        detailKind: agentRowDetailKind(row),
         detail: row['activityDetail'] is String
             ? row['activityDetail'] as String
             : '',
@@ -514,7 +640,7 @@ class _ComposerCandidateAvatar extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
+  Widget build(BuildContext context) => QuietListenableBuilder(
     // Live presence is signalled per agent; the presentation itself notifies
     // only whole-directory changes.
     listenable: switch (directory.agentPresentation) {
@@ -578,4 +704,28 @@ Widget _avatar(
     ),
   );
   return avatar;
+}
+
+/// Web `getMentionCandidateServerLabel` input: a roster row names its source
+/// server (`serverName || serverSlug`) only when it belongs to another server
+/// than the viewed one; directory agents carry theirs as given. A later row
+/// replaces an earlier one entirely, so a local roster row clears the label.
+String? mentionServerLabel(
+  Map<String, dynamic> row, {
+  required String? currentServerId,
+  required bool roster,
+  required bool agent,
+}) {
+  final serverId = row['serverId'];
+  final remote =
+      currentServerId != null &&
+      serverId is String &&
+      serverId.isNotEmpty &&
+      serverId != currentServerId;
+  if (roster ? !remote : !agent) return null;
+  for (final key in const ['serverName', 'serverSlug']) {
+    final value = row[key];
+    if (value is String && value.isNotEmpty) return value;
+  }
+  return null;
 }

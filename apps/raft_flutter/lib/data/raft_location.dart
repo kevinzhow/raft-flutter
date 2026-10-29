@@ -93,10 +93,31 @@ class RaftContentLocation {
 }
 
 class RaftProfileLocation {
-  const RaftProfileLocation(this.kind, this.id, {this.channelId});
+  const RaftProfileLocation(
+    this.kind,
+    this.id, {
+    this.channelId,
+    this.isMention = false,
+  });
+
+  /// The `profile=` value for an opened profile. Web
+  /// `openExternalProfile(..., isMention)`: a mention opens the profile keyed
+  /// by projection id (`external-mention:`), an author by message id.
+  static String query(
+    RaftProfileKind kind,
+    String id,
+    String? channelId,
+    Map<String, dynamic>? author,
+  ) => RaftProfileLocation(
+    kind,
+    id,
+    channelId: channelId,
+    isMention: author?['isMention'] == true,
+  ).toString();
   final RaftProfileKind kind;
   final String id;
   final String? channelId;
+  final bool isMention;
   static RaftProfileLocation? parse(String? value) {
     if (value == null) return null;
     final split = value.indexOf(':');
@@ -108,19 +129,20 @@ class RaftProfileLocation {
         id,
       );
     }
-    if (prefix != 'external') return null;
+    if (prefix != 'external' && prefix != 'external-mention') return null;
     final parts = id.split(':');
     if (parts.length != 2 || parts.any((part) => part.isEmpty)) return null;
     return RaftProfileLocation(
       RaftProfileKind.external,
       parts[1],
       channelId: parts[0],
+      isMention: prefix == 'external-mention',
     );
   }
 
   @override
   String toString() => kind == RaftProfileKind.external
-      ? 'external:$channelId:$id'
+      ? '${isMention ? 'external-mention' : 'external'}:$channelId:$id'
       : '${kind.name}:$id';
 }
 
@@ -196,6 +218,8 @@ class RaftLocation {
       'computers' when rest.length == 1 => RaftRoute.computers,
       'search' when rest.length == 1 => RaftRoute.search,
       'settings' => RaftRoute.settings,
+      // Web's /raftbench route: a Settings page here.
+      'raftbench' when rest.length == 1 => RaftRoute.settings,
       'activity' when rest.length == 1 => RaftRoute.activity,
       'inbox' when rest.length == 1 => RaftRoute.activity,
       'threads' when rest.length == 1 => RaftRoute.activity,
@@ -218,7 +242,9 @@ class RaftLocation {
           ? entity
           : null,
       List.unmodifiable(
-        route == RaftRoute.settings ? rest.skip(1) : <String>[],
+        route == RaftRoute.settings
+            ? (kind == 'raftbench' ? const ['raftbench'] : rest.skip(1))
+            : <String>[],
       ),
     );
   }

@@ -239,7 +239,7 @@ void main() {
     });
   });
 
-  for (final theme in ['brutal', 'elegant-light']) {
+  for (final theme in ['light']) {
     Future<void> tapTab(RootFixture f, WidgetTester t, String id) async {
       await t.tap(find.byKey(Key('mobile-tab-$id')));
       await f.flush(t);
@@ -555,7 +555,7 @@ void main() {
       );
       expect(stored.visible, ['chat', 'tasks', 'members', 'activity']);
       // Reset restores the default and removes the stored choice.
-      await t.tap(find.text('Reset to default'));
+      await t.tap(find.text('Reset to Default'));
       await f.flush(t);
       expect(
         DevicePreferences.current!.containsKey(MobileTabbarStore.preferenceKey),
@@ -588,7 +588,8 @@ void main() {
       );
       final w = f.workspace(t);
       await tapTab(f, t, 'computers');
-      final state = t.state(find.byType(WorkspaceView)) as dynamic;
+      final state =
+          t.state(find.byType(WorkspaceView)) as dynamic;
       final store = state.mobileTabbar as MobileTabbarStore;
       store.update(MobileTabbarSettings.defaults);
       await f.flush(t);

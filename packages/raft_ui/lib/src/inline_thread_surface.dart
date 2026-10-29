@@ -1,9 +1,13 @@
+import 'hover_region.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'message_row_recipe.dart' show RaftMessageSizeScope, RaftMessageSizeTier;
 import 'theme.dart';
 import 'recipe_surface.dart';
+import 'text_scaling.dart' show RaftScaled;
 
 /// Plain recipient-projected fields. Avatar resolution and clock formatting are
 /// owned by the authorized adapter; this widget never looks up an identity.
@@ -25,47 +29,63 @@ class RaftInlineReply {
 /// messageBlock. These geometry/type overrides are separate from generic cards.
 @immutable
 class RaftInlineThreadRecipe {
-  const RaftInlineThreadRecipe(this.tokens);
+  const RaftInlineThreadRecipe(
+    this.tokens, {
+    this.sizeTier = RaftMessageSizeTier.md,
+  });
   final RaftTokens tokens;
+
+  /// The reader's message size: the sender, preview and time classes
+  /// (`getMessagePreviewSizeClass`, `getMessagePreviewTimeSizeClass`).
+  final RaftMessageSizeTier sizeTier;
   EdgeInsets get padding =>
       const EdgeInsets.symmetric(horizontal: 10, vertical: 8);
   double get topGap => 6;
   double get rowGap => 4;
-  double get summaryBottomGap => tokens.brutal ? 0 : 6;
-  BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 6);
-  BorderSide get border => tokens.brutal
-      ? BorderSide.none
-      : BorderSide(
-          color: tokens.dark
-              ? Colors.transparent
-              : tokens.colors['line-muted']!,
-          width: .5,
-        );
-  Color get normal =>
-      tokens.brutal ? Colors.black.withValues(alpha: .03) : tokens.card;
+  double get summaryBottomGap => 6;
+  BorderRadius get radius => BorderRadius.circular(6);
+  BorderSide get border => BorderSide(
+    color: tokens.dark ? Colors.transparent : tokens.colors['line-muted']!,
+    width: .5,
+  );
+  Color get normal => tokens.card;
   Color get muted => tokens.muted;
+
+  /// `messageReplies.summary`: brutal 12.5/700 black/55; elegant 12/500
+  /// foreground-muted on a 1.3333 line.
   TextStyle get summary => TextStyle(
     fontFamily: tokens.bodyFont,
     fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
-    fontSize: 12.5,
-    height: tokens.brutal ? 20 / 14 : 21 / 12.5,
-    fontWeight: FontWeight.w700,
+    fontSize: 12,
+    height: 16 / 12,
+    fontWeight: FontWeight.w500,
     color: muted,
   );
   TextStyle get sender => TextStyle(
     fontFamily: tokens.bodyFont,
     fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
-    fontSize: 12.5,
+    fontSize: sizeTier.previewFor(tokens),
     height: 1.25,
     fontWeight: FontWeight.w600,
+    // `messageReplies.sender`: brutal black/70, elegant foreground-muted.
     color: muted,
   );
-  TextStyle get preview => sender.copyWith(fontWeight: FontWeight.w400);
+  TextStyle get preview => sender.copyWith(
+    fontWeight: FontWeight.w400,
+    // `messageReplies.content`: brutal black/60, elegant muted at 80%.
+    color: muted.withValues(alpha: muted.a * .8),
+  );
+
+  /// `messageReplies.time` (raft-ui 0.5.45: elegant sans, brutal mono) with
+  /// the host's colour: elegant light `oklch(0.52 0 0)`, dark placeholder,
+  /// brutal black/40.
   TextStyle get clock => TextStyle(
-    fontFamily: tokens.brutal ? tokens.bodyFont : tokens.monoFont,
-    fontSize: 11.5,
+    fontFamily: tokens.bodyFont,
+    fontSize: sizeTier.previewTimeFor(tokens),
     height: 1.25,
-    color: tokens.colors['foreground-placeholder'],
+    color: tokens.dark
+        ? tokens.colors['foreground-placeholder']
+        : const Color(0xFF696969),
     fontFeatures: const [FontFeature.tabularFigures()],
   );
 }
@@ -120,10 +140,14 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
         .where((r) => r.senderType != 'system')
         .take(3)
         .toList();
-    if (widget.replyCount <= 0 || visible.isEmpty)
+    if (widget.replyCount <= 0 || visible.isEmpty) {
       return const SizedBox.shrink();
+    }
     final t = RaftTokens.of(context);
-    final recipe = RaftInlineThreadRecipe(t);
+    final recipe = RaftInlineThreadRecipe(
+      t,
+      sizeTier: RaftMessageSizeScope.of(context),
+    );
     final enabled = widget.onOpen != null;
     final content = AnimatedContainer(
       duration: MediaQuery.disableAnimationsOf(context)
@@ -132,18 +156,14 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
       padding: recipe.padding,
       decoration: RaftCssBoxDecoration(
         color: hovered
-            ? t.brutal
-                  ? Colors.black.withValues(alpha: .08)
-                  : widget.hoverBackground ?? recipe.normal
+            ? widget.hoverBackground ?? recipe.normal
             : recipe.normal,
         border: Border.fromBorderSide(recipe.border),
         borderRadius: recipe.radius,
         boxShadow: hovered ? widget.hoverShadows : widget.normalShadows,
       ),
       child: DefaultTextStyle(
-        style: recipe.summary.copyWith(
-          color: hovered ? t.strong : recipe.muted,
-        ),
+        style: recipe.summary.copyWith(color: recipe.summary.color),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -188,7 +208,7 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
               },
             ),
           },
-          child: MouseRegion(
+          child: RaftHoverRegion(
             cursor: enabled
                 ? SystemMouseCursors.click
                 : SystemMouseCursors.basic,
@@ -240,58 +260,84 @@ class _ReplyRow extends StatelessWidget {
     return width;
   }
 
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      // Mirrors sender shrink/truncate + content flex:1 + fixed clock. Flexible
-      // sender retains intrinsic width whenever space is available, not a 3:5 grid.
-      final clockWidth = reply.timestamp.isEmpty
-          ? 0.0
-          : textWidth(context, reply.timestamp, recipe.clock);
-      final budget = math.max(
-        0.0,
-        constraints.maxWidth -
-            20 -
-            6 -
-            6 -
-            (clockWidth > 0 ? clockWidth + 6 : 0),
-      );
-      final authorWidth = math.min(
-        budget,
-        textWidth(context, reply.author, recipe.sender),
-      );
-      return Row(
+  // Larger text: author and time sit on one wrapping line and the preview wraps
+  // below them, instead of the preview being squeezed out of a single row.
+  Widget stacked() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 2,
         children: [
           ExcludeSemantics(
             child: SizedBox.square(dimension: 20, child: reply.avatar),
           ),
-          const SizedBox(width: 6),
-          SizedBox(
-            width: authorWidth,
-            child: Text(
-              reply.author,
-              style: recipe.sender,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              reply.preview,
-              style: recipe.preview,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (clockWidth > 0) ...[
-            const SizedBox(width: 6),
+          Text(reply.author, style: recipe.sender),
+          if (reply.timestamp.isNotEmpty)
             Text(reply.timestamp, style: recipe.clock),
-          ],
         ],
-      );
-    },
+      ),
+      const SizedBox(height: 2),
+      // `clip`: an ellipsis without maxLines keeps a single line in Flutter.
+      Text(reply.preview, style: recipe.preview, overflow: TextOverflow.clip),
+    ],
   );
+
+  @override
+  Widget build(BuildContext context) => RaftScaled.grows(context)
+      ? stacked()
+      : LayoutBuilder(
+          builder: (context, constraints) {
+            // Mirrors sender shrink/truncate + content flex:1 + fixed clock. Flexible
+            // sender retains intrinsic width whenever space is available, not a 3:5 grid.
+            final clockWidth = reply.timestamp.isEmpty
+                ? 0.0
+                : textWidth(context, reply.timestamp, recipe.clock);
+            final budget = math.max(
+              0.0,
+              constraints.maxWidth -
+                  20 -
+                  6 -
+                  6 -
+                  (clockWidth > 0 ? clockWidth + 6 : 0),
+            );
+            final authorWidth = math.min(
+              budget,
+              textWidth(context, reply.author, recipe.sender),
+            );
+            return Row(
+              children: [
+                ExcludeSemantics(
+                  child: SizedBox.square(dimension: 20, child: reply.avatar),
+                ),
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: authorWidth,
+                  child: Text(
+                    reply.author,
+                    style: recipe.sender,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    reply.preview,
+                    style: recipe.preview,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (clockWidth > 0) ...[
+                  const SizedBox(width: 6),
+                  Text(reply.timestamp, style: recipe.clock),
+                ],
+              ],
+            );
+          },
+        );
 }
 
 /// Mounted AvatarSlot compact-list frame: 20px, one-pixel border. The host
@@ -313,17 +359,8 @@ class RaftInlineReplyAvatar extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: t.colors['fill-muted'],
-        border: Border.all(
-          color: t.brutal ? Colors.black : t.colors['line-muted']!,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(
-          t.brutal
-              ? 0
-              : circular
-              ? 10
-              : 4,
-        ),
+        border: Border.all(color: t.colors['line-muted']!, width: 1),
+        borderRadius: BorderRadius.circular(circular ? 10 : 4),
       ),
       child: child,
     );

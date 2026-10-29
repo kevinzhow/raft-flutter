@@ -2,7 +2,7 @@
 """Append the Settings -> Notifications desktop card cases to
 the run-time manifest ($PARITY_EXT_MANIFEST).
 
-Run after build-cases.py and build-live-activity.py (build-cases.py rewrites
+Run after build-cases.py (build-cases.py rewrites
 the manifest from scratch); idempotent: every `components.notifications.*` case
 is replaced, all other cases are kept, and new ids are appended after them.
 

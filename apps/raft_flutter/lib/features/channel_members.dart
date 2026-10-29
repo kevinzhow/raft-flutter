@@ -4,32 +4,110 @@
 // roster and the staged multi-select "Add Member" view (search, AGENTS /
 // HUMANS candidates with CheckMarker + AvatarSlot compact-list, pinned
 // "Create a New Agent" entry, "Add selected (N)").
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/cause_notice.dart';
+import '../data/user_error.dart';
+
 import '../data/workspace_controller.dart';
 import '../data/raft_location.dart';
+import '../data/workspace_entity_directory.dart';
 import 'channel_form_fields.dart';
+import 'channel_member_servers.dart';
+import 'composer_directory.dart'
+    show cachedChannelRoster, rememberChannelRoster;
 import 'create_channel_dialog.dart';
+import 'fleet_views.dart';
+import 'management_support.dart'
+    show cachedServerFlag, pageIdentity, rememberServerFlag;
+import 'managed_agent_launcher.dart';
+import 'member_profile_view.dart';
+import 'agent_metadata_catalog.dart' show sourceAgentActivities;
+import 'agent_metadata_projection.dart';
+import 'resource_cards.dart' show resourceRelativeTime;
+import '../data/feature_flag_client_facts.dart';
 
-/// Agent activity for the compact-list badge: the row's `activity` when the
-/// payload carries one, else `agentStatusFallbackActivity(status)`.
-RaftAvatarPresence? channelMemberPresence(Map<String, dynamic> json) {
-  final activity = json['activity'];
-  final value = switch (activity) {
-    'online' => RaftAvatarActivity.online,
-    'thinking' => RaftAvatarActivity.thinking,
-    'working' => RaftAvatarActivity.working,
-    'error' => RaftAvatarActivity.error,
-    'offline' => RaftAvatarActivity.offline,
-    _ =>
-      json['status'] == 'active'
-          ? RaftAvatarActivity.online
-          : RaftAvatarActivity.offline,
-  };
-  return RaftAvatarPresence(activity: value);
+/// Web `ChannelMembers` participant count: agents + humans + Slack bridge
+/// participants (`externalMembers`).
+int channelRosterCount(dynamic roster) {
+  int length(String key) =>
+      roster is Map && roster[key] is List ? (roster[key] as List).length : 0;
+  return length('humans') + length('agents') + length('externalMembers');
 }
+
+/// Web `isLocalMember`: a roster row belongs to this server unless it names
+/// another `serverId` than the channel's.
+bool isLocalChannelMember(Map<String, dynamic> member, RaftChannel channel) {
+  final channelServer = channel.json['serverId'];
+  final memberServer = member['serverId'];
+  return channelServer is! String ||
+      channelServer.isEmpty ||
+      memberServer is! String ||
+      memberServer.isEmpty ||
+      memberServer == channelServer;
+}
+
+/// Web `useChannelMembers` + `useAgentDisplayState`: the roster snapshot with
+/// the canonical directory row (live activity, `lastSeenAt`) laid over it,
+/// resolved by [resolveAgentAmbientDisplay]. Without a live activity a
+/// managed stopped agent reads "Stopped" and an external agent silent for more
+/// than 120 s reads offline.
+AgentAmbientDisplay channelMemberAgentDisplay(
+  Map<String, dynamic> roster, {
+  Map? directory,
+  DateTime? now,
+}) {
+  final row = <String, dynamic>{
+    ...roster,
+    if (directory != null) ...Map<String, dynamic>.from(directory),
+  };
+  final activity = row['activityKind'] ?? row['activity'];
+  final status = row['status'] is String ? row['status'] as String : 'offline';
+  final external = row['external'] == true || row['runtime'] == 'external';
+  // A snapshot `offline` of a stopped agent is the absence of activity.
+  final live =
+      sourceAgentActivities.contains(activity) &&
+      !(status == 'stopped' && !external && activity == 'offline');
+  return resolveAgentAmbientDisplay(
+    identity: AgentPresentationIdentity(
+      id: '${row['id']}',
+      status: status,
+      runtime: row['runtime'] as String?,
+      external: external,
+      deleted: row['deletedAt'] != null,
+      lastSeenAt: row['lastSeenAt'] is String
+          ? DateTime.tryParse(row['lastSeenAt'] as String)
+          : null,
+    ),
+    now: now ?? DateTime.now(),
+    current: live ? agentRowActivity(row) : null,
+  );
+}
+
+RaftAvatarPresence channelMemberDisplayPresence(AgentAmbientDisplay display) =>
+    RaftAvatarPresence(
+      activity: switch (display.activity) {
+        'thinking' => RaftAvatarActivity.thinking,
+        'working' => RaftAvatarActivity.working,
+        'error' => RaftAvatarActivity.error,
+        'offline' => RaftAvatarActivity.offline,
+        _ => RaftAvatarActivity.online,
+      },
+    );
+
+/// Agent activity for the compact-list badge: the live directory row over the
+/// roster snapshot, else `agentStatusFallbackActivity(status)`.
+RaftAvatarPresence? channelMemberPresence(
+  Map<String, dynamic> json, {
+  Map? directory,
+  DateTime? now,
+}) => channelMemberDisplayPresence(
+  channelMemberAgentDisplay(json, directory: directory, now: now),
+);
 
 /// Header trigger: `Button size="sm" className="min-w-7 gap-1 px-1.5"` with
 /// `Users size={14}` and the mono participant count.
@@ -50,6 +128,9 @@ class _ChannelMembersButtonState extends State<ChannelMembersButton> {
   @override
   void initState() {
     super.initState();
+    // The roster the composer read when the channel opened is shown at once.
+    final roster = cachedChannelRoster(widget.controller, widget.channel.id);
+    if (roster != null) count = roster.humans.length + roster.agents.length;
     refresh();
   }
 
@@ -59,11 +140,7 @@ class _ChannelMembersButtonState extends State<ChannelMembersButton> {
         '/channels/${widget.channel.id}/members',
       );
       if (!mounted) return;
-      setState(
-        () => count =
-            ((roster['humans'] as List?)?.length ?? 0) +
-            ((roster['agents'] as List?)?.length ?? 0),
-      );
+      setState(() => count = channelRosterCount(roster));
     } catch (_) {
       if (mounted) setState(() => count = 0);
     }
@@ -93,10 +170,20 @@ class ChannelMembers extends StatefulWidget {
     this.embedded = false,
     this.onClose,
     this.startInAdd = false,
+    this.createAgentForm = showManagedAgentForm,
   });
   final WorkspaceController controller;
   final RaftChannel channel;
   final bool page;
+
+  /// Opens the create-agent dialog (the existing one); returns the created
+  /// agent row, or null when the dialog was dismissed.
+  final Future<Map<String, dynamic>?> Function(
+    BuildContext context,
+    WorkspaceController w, {
+    String? initialName,
+  })
+  createAgentForm;
 
   /// The page is mounted inside the desktop settings drawer (Web `OverflowSheet
   /// bare`), so back from the roster returns to the drawer root.
@@ -118,13 +205,16 @@ class ChannelMembers extends StatefulWidget {
       controller.navigation.navigate(
         controller.location.withQuery({
           'channelPage': '${RaftChannelPage.members.name}:${channel.id}',
+          // The drawer's dashed + tile lands straight in the add view.
+          if (startInAdd) 'channelPageAdd': '1',
         }),
       );
       controller.notifyListeners();
       return;
     }
-    await showRaftModal<void>(
-      context,
+    await showRaftDialog<void>(
+      context: context,
+      modal: true,
       builder: (_) => ChannelMembers(
         controller: controller,
         channel: channel,
@@ -145,33 +235,129 @@ class _ChannelMembersState extends State<ChannelMembers> {
         ...w.dms,
       ].where((channel) => channel.id == widget.channel.id).firstOrNull ??
       widget.channel;
-  List<Map<String, dynamic>> humans = [], agents = [];
-  List<ChannelMemberCandidate> candidates = [];
-  final Map<String, Map<String, dynamic>> agentRows = {};
-  bool loading = true, adding = false;
+  List<Map<String, dynamic>> humans = [], agents = [], externalMembers = [];
+  late final ChannelCandidateFeed _feed = ChannelCandidateFeed(w);
+  List<ChannelMemberCandidate> get candidates => [
+    for (final c in _feed.value)
+      if (!_inChannel.contains('${c.kind}:${c.id}')) c,
+  ];
+
+  /// Agent rows (presence, profile seed) from the workspace directory.
+  Map<String, Map<String, dynamic>> get agentRows => {
+    for (final a in w.services.entityDirectory.rows(WorkspaceEntityKind.agents))
+      '${a['id']}': a,
+  };
+  Set<String> get _inChannel => {
+    for (final h in humans) 'human:${h['userId'] ?? h['id']}',
+    for (final a in agents) 'agent:${a['id']}',
+  };
+
+  /// The channel roster is the only per-channel read: it shows from the
+  /// composer's prefetched copy at the first frame (loading only on a true
+  /// cold open). Candidates and agent rows come from the workspace directory
+  /// and never hold the roster back.
+  bool rosterKnown = false, adding = false;
+  bool get loading => !rosterKnown || (addView && !_feed.ready);
   late bool addView = widget.startInAdd;
+
+  /// A failed add / role change (cleared by the next attempt, by a change to
+  /// the selection and by leaving the add view).
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next add or role change starts, the add selection changes or the add view is left.
   String? error;
+
+  /// A failed roster read: it ends with the next roster that loads.
+  final loadError = CauseNotice();
   final selected = <String>{};
   final search = TextEditingController();
+
+  /// `useServerFeatureFlag(channel_manager_role_actions_v0)`: the hover
+  /// `Make admin` / `Demote` actions only exist behind it.
+  late bool roleActionsEnabled = cachedServerFlag(w, _roleActionsFlag) ?? false;
+  static const _roleActionsFlag = 'channel_manager_role_actions_v0';
+  String? roleChanging;
+
+  /// The members page's profile stack top (`kind:id`): a row opens its member's
+  /// profile as the page's second level (`ProfilePanel presentation="embedded"`).
+  ({String kind, String id})? profile;
 
   @override
   void initState() {
     super.initState();
     search.addListener(() => setState(() {}));
+    final roster = cachedChannelRoster(w, widget.channel.id);
+    if (roster != null) {
+      humans = roster.humans;
+      agents = roster.agents;
+      rosterKnown = true;
+    }
+    _feed.addListener(_directoryChanged);
+    w.services.entityDirectory.addListener(_directoryChanged);
+    // Source useChannelMembers: a member change in this channel re-reads the
+    // roster in place, so a newly joined agent appears while the view is open.
+    _events = w.client.events.listen(_event);
     load();
+    loadRoleActionsFlag();
+  }
+
+  void _directoryChanged() {
+    if (mounted) setState(() {});
+  }
+
+  StreamSubscription<RaftEvent>? _events;
+  Timer? _reload;
+
+  void _event(RaftEvent event) {
+    if (event.name != 'channel:members-updated') return;
+    final payload = event.payload;
+    final id = payload is Map ? payload['channelId'] : null;
+    if (id is String && id != widget.channel.id) return;
+    _reload?.cancel();
+    _reload = Timer(const Duration(milliseconds: 150), () {
+      if (mounted) unawaited(load());
+    });
+  }
+
+  Future<void> loadRoleActionsFlag() async {
+    final server = w.server?.id;
+    if (server == null) return;
+    final identity = pageIdentity(w);
+    try {
+      final result = await w.command(
+        'POST',
+        '/feature-flags/evaluate',
+        data: featureFlagEvaluateBody(
+          keys: [_roleActionsFlag],
+          serverId: server,
+        ),
+      );
+      final on =
+          result is Map &&
+          (result['evaluations'] as List? ?? []).whereType<Map>().any(
+            (f) => f['key'] == _roleActionsFlag && f['enabled'] == true,
+          );
+      rememberServerFlag(w, _roleActionsFlag, on, identity);
+      if (mounted && on != roleActionsEnabled) {
+        setState(() => roleActionsEnabled = on);
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    unawaited(_events?.cancel());
+    _reload?.cancel();
+    _feed.removeListener(_directoryChanged);
+    _feed.dispose();
+    w.services.entityDirectory.removeListener(_directoryChanged);
     search.dispose();
     super.dispose();
   }
 
   Future<void> load() async {
+    // The authority the roster is read under (a later reduction drops it).
+    final readUnder = channel;
     try {
-      final roster = await w.query('/channels/${channel.id}/members');
-      final pool = await loadChannelMemberCandidates(w);
-      final rawAgents = await w.query('/agents');
+      final roster = await w.query('/channels/${readUnder.id}/members');
       if (!mounted) return;
       setState(() {
         humans = [
@@ -182,25 +368,28 @@ class _ChannelMembersState extends State<ChannelMembers> {
           for (final a in (roster['agents'] as List? ?? []).whereType<Map>())
             Map<String, dynamic>.from(a),
         ];
-        for (final a in (rawAgents as List? ?? const []).whereType<Map>()) {
-          agentRows['${a['id']}'] = Map<String, dynamic>.from(a);
-        }
-        final inChannel = {
-          for (final h in humans) 'human:${h['userId'] ?? h['id']}',
-          for (final a in agents) 'agent:${a['id']}',
-        };
-        // The add view also lists the signed-in user's server peers only.
-        candidates = [
-          for (final c in pool)
-            if (!inChannel.contains('${c.kind}:${c.id}')) c,
+        externalMembers = [
+          for (final e
+              in (roster['externalMembers'] as List? ?? []).whereType<Map>())
+            Map<String, dynamic>.from(e),
         ];
-        loading = false;
+        rosterKnown = true;
+        loadError.clear();
       });
+      rememberChannelRoster(
+        w,
+        readUnder,
+        humans: humans,
+        agents: agents,
+        externalMembers: externalMembers,
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
-          loading = false;
-          error = '$e';
+          rosterKnown = true;
+          loadError.raise(
+            raftText(context, userErrorText(e, where: 'channel members')),
+          );
         });
       }
     }
@@ -208,6 +397,71 @@ class _ChannelMembersState extends State<ChannelMembers> {
 
   bool get canAdd =>
       w.can('addChannelMembers', resource: channel) && !channel.archived;
+
+  /// The created agent that could not join this channel (Web
+  /// `pendingJoinAgent`): the banner stays until the roster holds it.
+  ({String id, String name})? pendingJoin;
+  bool retryingJoin = false;
+
+  /// The search text doubles as the new agent's suggested name; the leading
+  /// "@" is display notation, so it is dropped (Web `createAgentPrefillName`).
+  String get createAgentName => search.text.trim().replaceFirst('@', '');
+
+  /// The name carries over only from the promoted (no-hit) entry: a generic
+  /// "Create Agent" row never smuggles the search text into the dialog.
+  bool get createPromoted =>
+      createAgentName.isNotEmpty &&
+      !candidates.any((c) => c.matches(search.text));
+
+  /// "Create Agent": the existing create-agent dialog, then the new agent
+  /// joins this channel.
+  Future<void> createAgent() async {
+    if (adding || !w.can('createAgents') || !canAdd) return;
+    final created = await widget.createAgentForm(
+      context,
+      w,
+      initialName: createPromoted ? createAgentName : null,
+    );
+    final id = created?['id'];
+    if (created == null || id is! String || !mounted) return;
+    await joinCreatedAgent(
+      id,
+      '${created['name'] ?? created['displayName'] ?? id}',
+    );
+  }
+
+  /// The same atomic batch as "Add selected" for every way a created agent
+  /// reaches this channel. A failure stages it in the selection too, so the
+  /// banner's retry and "Add selected" both finish the join.
+  Future<void> joinCreatedAgent(String id, String name) async {
+    setState(() => retryingJoin = true);
+    try {
+      await w.command(
+        'POST',
+        '/channels/${channel.id}/members/batch',
+        data: {
+          'userIds': <String>[],
+          'agentIds': [id],
+        },
+      );
+      if (!mounted) return;
+      setState(() {
+        pendingJoin = null;
+        selected.remove('agent:$id');
+        search.clear();
+      });
+      await load();
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          pendingJoin = (id: id, name: name);
+          selected.add('agent:$id');
+        });
+      }
+    } finally {
+      if (mounted) setState(() => retryingJoin = false);
+    }
+  }
 
   Future<void> confirmAdd() async {
     if (adding || selected.isEmpty || !canAdd) return;
@@ -238,7 +492,10 @@ class _ChannelMembersState extends State<ChannelMembers> {
         setState(
           () => error = raftText(
             context,
-            'Some selected members could not be added. They remain selected — press Add again to retry.',
+            // The server batch is atomic, so a rejection (a personal assistant
+            // is refused with 403 `assistant_channel_forbidden`) leaves every
+            // selected row unresolved: Web's one "none" banner.
+            'None of the selected members could be added.',
           ),
         );
       }
@@ -247,20 +504,123 @@ class _ChannelMembersState extends State<ChannelMembers> {
     }
   }
 
-  Future<void> remove(String kind, String id) async {
+  /// `useChannelMemberRemoval`: stage the target, then the destructive
+  /// ConfirmDialog runs the same DELETE.
+  Future<void> requestRemove(String kind, String id, String name) async {
     if (channel.archived || !w.can('removeChannelMembers', resource: channel)) {
       return;
     }
+    await RaftConfirmDialog.show(
+      context,
+      RaftConfirmDialog(
+        surfaceKey: const ValueKey('channel-member-remove-dialog'),
+        title: raftText(context, 'Remove Member'),
+        message: raftFormat(
+          context,
+          '{name} will stop receiving ordinary delivery from #{channel} and cannot send messages until they rejoin. Existing followed threads are not automatically unfollowed; followed public threads can still notify them until they unfollow or manage those threads. Private content remains gated by current access.',
+          {'name': name, 'channel': channel.name},
+        ),
+        confirmLabel: raftText(context, 'Remove Member'),
+        cancelLabel: raftText(context, 'Keep Member'),
+        loadingLabel: raftText(context, 'Removing…'),
+        actionSize: RaftButtonRecipeSize.xs,
+        onConfirm: () => removeNow(kind, id),
+      ),
+      // Web opens it from the members Modal: its scrim stacks on that one's.
+      overModal: true,
+    );
+  }
+
+  Future<void> removeNow(String kind, String id) async {
+    await w.command(
+      'DELETE',
+      '/channels/${channel.id}/members/${kind == 'agent' ? 'agent' : 'user'}/$id',
+    );
+    await load();
+  }
+
+  /// `changeMemberRole`: PATCH the member's channel role, then reload.
+  Future<void> changeRole(String kind, String id, String role) async {
+    final key = '$kind:$id';
+    setState(() {
+      error = null;
+      roleChanging = key;
+    });
     try {
       await w.command(
-        'DELETE',
-        '/channels/${channel.id}/members/${kind == 'agent' ? 'agent' : 'user'}/$id',
+        'PATCH',
+        '/channels/${channel.id}/members/${kind == 'agent' ? 'agent' : 'user'}/$id/role',
+        data: {'role': role},
       );
       await load();
-    } catch (e) {
-      if (mounted) setState(() => error = '$e');
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => error = raftText(
+            context,
+            "Could not update this member's channel role. Try again.",
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => roleChanging = null);
     }
   }
+
+  bool get isAllChannel => channel.name == 'all' && channel.type == 'channel';
+
+  /// `renderMemberActions` role action: shown behind the flag for a member
+  /// whose channel role the viewer may change (`canChangeChannelRole`), or to
+  /// explain why a server owner/admin cannot be demoted.
+  ({String nextRole, bool protectedDemote})? _roleAction(
+    String kind,
+    String id,
+    Map<String, dynamic> m,
+    String effectiveRole,
+    String serverRole,
+  ) {
+    final effective =
+        m['effectiveChannelRole'] ??
+        (serverRole == 'owner' ||
+                serverRole == 'admin' ||
+                m['channelRole'] == 'admin'
+            ? 'admin'
+            : 'member');
+    final protectedServerAdmin = serverRole == 'owner' || serverRole == 'admin';
+    final self = id == w.client.user?.id;
+    final canExplain =
+        !channel.archived &&
+        !isAllChannel &&
+        channel.json['channelCapabilities'] is Map &&
+        (channel.json['channelCapabilities']
+                as Map)['changeChannelMemberRoles'] ==
+            true &&
+        !self &&
+        protectedServerAdmin &&
+        effective != 'member';
+    final canChange =
+        !channel.archived && !isAllChannel && m['canChangeChannelRole'] == true;
+    if (!roleActionsEnabled || !(canChange || canExplain)) return null;
+    return (
+      nextRole: effective == 'member' ? 'admin' : 'member',
+      protectedDemote: canExplain,
+    );
+  }
+
+  Future<void> protectedDemote(String name) => RaftConfirmDialog.show(
+    context,
+    RaftConfirmDialog(
+      title: raftText(context, "Can't demote server admins"),
+      message: raftFormat(
+        context,
+        '{name} is a server owner or admin, so they remain a Channel Admin in every channel. Change their server role in Server Administration first.',
+        {'name': name},
+      ),
+      confirmLabel: raftText(context, 'Got It'),
+      confirmVariant: RaftButtonRecipeVariant.outline,
+      showCancel: false,
+    ),
+  );
 
   void close() => widget.onClose != null
       ? widget.onClose!()
@@ -271,6 +631,36 @@ class _ChannelMembersState extends State<ChannelMembers> {
     final origin = w.client.origin;
     final canRemove =
         w.can('removeChannelMembers', resource: channel) && !channel.archived;
+    // Web `renderExternalRow`: a Slack bridge participant is read-only (no
+    // profile, no actions) with the provider tag and `@handle`.
+    RaftMemberRowData externalRow(Map<String, dynamic> m) {
+      final id = '${m['id']}';
+      final candidate = ChannelMemberCandidate(
+        kind: 'human',
+        id: id,
+        name: '${m['displayName'] ?? ''}',
+        avatarUrl: m['avatarUrl'] as String?,
+      );
+      final handles = m['handles'];
+      final handle = handles is List && handles.isNotEmpty
+          ? '${handles.first}'
+          : '';
+      return RaftMemberRowData(
+        testId: 'member-page-row-external-$id',
+        human: true,
+        secondary: handle.isEmpty ? null : '@$handle',
+        roleLabel: raftText(context, 'Slack'),
+        label: '${m['displayName'] ?? ''}',
+        avatar: ChannelCandidateAvatar(
+          candidate: candidate,
+          avatarContext: widget.page
+              ? RaftMountedAvatarContext.membersRow
+              : RaftMountedAvatarContext.compactList,
+          origin: origin,
+        ),
+      );
+    }
+
     RaftMemberRowData row(String kind, Map<String, dynamic> m) {
       final id = '${kind == 'agent' ? m['id'] : (m['userId'] ?? m['id'])}';
       final candidate = ChannelMemberCandidate(
@@ -278,9 +668,24 @@ class _ChannelMembersState extends State<ChannelMembers> {
         id: id,
         name: '${m['name'] ?? ''}',
         displayName: m['displayName'] as String?,
-        avatarUrl: m['avatarUrl'] as String?,
+        avatarUrl: kind == 'agent'
+            ? agentAvatarWithDirectory(
+                w.services.entityDirectory.agent(id),
+                m['avatarUrl'] as String?,
+              )
+            : m['avatarUrl'] as String?,
       );
-      final presence = kind == 'agent' ? channelMemberPresence(m) : null;
+      final display = kind == 'agent'
+          ? channelMemberAgentDisplay(
+              m,
+              directory: w.services.entityDirectory.agent(id),
+            )
+          : null;
+      final presence = display == null
+          ? null
+          : channelMemberDisplayPresence(display);
+      // Web: a joint partner's member can't be removed from this server.
+      final local = isLocalChannelMember(m, channel);
       // `effectiveChannelRole ?? serverRole`: owner / admin inheritance and an
       // explicit channel grant share the one user-facing Channel Admin label
       // (MemberRoleTag); a plain member shows nothing.
@@ -288,22 +693,30 @@ class _ChannelMembersState extends State<ChannelMembers> {
       final role =
           '${m['effectiveChannelRole'] ?? (kind == 'agent' ? serverRole : m['role'] ?? 'member')}';
       final description = '${m['description'] ?? ''}'.trim();
+      final roleAction = _roleAction(kind, id, m, role, serverRole);
       return RaftMemberRowData(
+        testId: 'member-page-row-$kind-$id',
         human: kind != 'agent',
-        secondary:
-            kind == 'agent' &&
-                (presence?.activity == RaftAvatarActivity.working ||
-                    presence?.activity == RaftAvatarActivity.thinking) &&
-                '${m['activityDetail'] ?? ''}'.trim().isNotEmpty
-            ? '${m['activityDetail']}'.trim()
-            : kind == 'agent'
-            ? raftText(context, switch (presence?.activity) {
-                RaftAvatarActivity.thinking => 'Thinking',
-                RaftAvatarActivity.working => 'Working',
-                RaftAvatarActivity.error => 'Error',
-                RaftAvatarActivity.offline => 'Offline',
-                _ => 'Online',
-              })
+        secondary: display != null
+            ? agentDisplayText(
+                display,
+                lastSeenAt:
+                    w.services.entityDirectory.agent(id)?['lastSeenAt']
+                        is String
+                    ? DateTime.tryParse(
+                        w.services.entityDirectory.agent(id)!['lastSeenAt']
+                            as String,
+                      )
+                    : m['lastSeenAt'] is String
+                    ? DateTime.tryParse(m['lastSeenAt'] as String)
+                    : null,
+                relativeTime: (seen) => resourceRelativeTime(
+                  seen.toIso8601String(),
+                  chinese: Localizations.localeOf(context).languageCode == 'zh',
+                ),
+                translate: (source, values) =>
+                    raftFormat(context, source, values),
+              )
             : (description.isEmpty ? null : description),
         secondaryMono: kind == 'agent',
         roleLabel: switch (role) {
@@ -323,7 +736,48 @@ class _ChannelMembersState extends State<ChannelMembers> {
           origin: origin,
           presence: widget.page ? presence : null,
         ),
-        onRemove: canRemove ? () => remove(kind, id) : null,
+        serverBadges: channelMemberServerLabels(m, channel),
+        onTap: widget.page
+            ? () => setState(() {
+                if (kind != 'agent') {
+                  primeHumanProfileServers(
+                    w,
+                    channel.json['serverId'] as String?,
+                    id,
+                    m['servers'],
+                  );
+                }
+                profile = (kind: kind, id: id);
+              })
+            : null,
+        onRemove: canRemove && !isAllChannel && local
+            ? () => requestRemove(
+                kind,
+                id,
+                '${m['displayName'] ?? m['name'] ?? ''}',
+              )
+            : null,
+        roleActionLabel: roleAction == null
+            ? null
+            : raftText(
+                context,
+                roleAction.nextRole == 'admin' ? 'Make Admin' : 'Demote',
+              ),
+        roleActionSemantics: roleAction == null
+            ? null
+            : raftFormat(
+                context,
+                roleAction.nextRole == 'admin'
+                    ? 'Make {name} a Channel Admin'
+                    : 'Remove Channel Admin from {name}',
+                {'name': '${m['name'] ?? ''}'},
+              ),
+        roleActionDisabled: roleChanging == '$kind:$id',
+        onRoleAction: roleAction == null
+            ? null
+            : () => roleAction.protectedDemote
+                  ? protectedDemote('${m['displayName'] ?? m['name'] ?? ''}')
+                  : changeRole(kind, id, roleAction.nextRole),
       );
     }
 
@@ -336,7 +790,11 @@ class _ChannelMembersState extends State<ChannelMembers> {
         avatarContext: RaftMountedAvatarContext.compactList,
         origin: origin,
         presence: c.kind == 'agent' && agentRows[c.id] != null
-            ? channelMemberPresence(agentRows[c.id]!)
+            ? channelMemberPresence(
+                // ignore: raft_lints/avoid_render_index_assertion -- Guarded by `agentRows[c.id] != null` on the line above.
+                agentRows[c.id]!,
+                directory: w.services.entityDirectory.agent(c.id),
+              )
             : null,
       ),
     );
@@ -349,12 +807,16 @@ class _ChannelMembersState extends State<ChannelMembers> {
       addView: addView,
       loading: loading,
       adding: adding,
-      error: error,
-      humans: [for (final h in humans) row('human', h)],
+      error: error ?? loadError.message,
+      humans: [
+        for (final h in humans) row('human', h),
+        for (final e in externalMembers) externalRow(e),
+      ],
       agents: [for (final a in agents) row('agent', a)],
       onAdd: canAdd ? () => setState(() => addView = true) : null,
       onBack: () => setState(() {
         addView = false;
+        error = null;
         selected.clear();
         search.clear();
       }),
@@ -381,10 +843,48 @@ class _ChannelMembersState extends State<ChannelMembers> {
       isChecked: selected.contains,
       onToggle: (key) => setState(() {
         if (!selected.remove(key)) selected.add(key);
+        // Web toggleCandidate: the add failure described the old selection.
+        error = null;
       }),
       canCreateAgent: w.can('createAgents'),
+      onCreateAgent: createAgent,
+      createAgentName: createPromoted ? createAgentName : null,
+      joinFailedAgent:
+          pendingJoin != null && !agents.any((a) => a['id'] == pendingJoin!.id)
+          ? pendingJoin!.name
+          : null,
+      onRetryJoin: pendingJoin == null
+          ? null
+          : () =>
+                unawaited(joinCreatedAgent(pendingJoin!.id, pendingJoin!.name)),
+      retryingJoin: retryingJoin,
       onConfirm: confirmAdd,
     );
+    final open = profile;
+    if (widget.page && open != null) {
+      void back() => setState(() => profile = null);
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (_, _) => back(),
+        child: open.kind == 'human'
+            ? MemberProfileView(
+                key: ValueKey('member-page-profile-${open.id}'),
+                controller: w,
+                userId: open.id,
+                onClose: back,
+                onBack: back,
+                onOpenAgent: (id) =>
+                    setState(() => profile = (kind: 'agent', id: id)),
+              )
+            : FleetDetail(
+                key: ValueKey('member-page-profile-${open.id}'),
+                controller: w,
+                computers: false,
+                initial: agentRows[open.id] ?? {'id': open.id},
+                onClose: back,
+              ),
+      );
+    }
     return PopScope(
       canPop: !widget.page || (!addView && !widget.embedded),
       onPopInvokedWithResult: (didPop, _) {
@@ -392,6 +892,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
         if (addView) {
           setState(() {
             addView = false;
+            error = null;
             selected.clear();
             search.clear();
           });

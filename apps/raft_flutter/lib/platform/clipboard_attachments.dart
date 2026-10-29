@@ -67,7 +67,7 @@ Future<({List<ComposerFile> files, int folders})> readLocalFileEntries(
           break;
       }
     } on FileSystemException catch (error) {
-      debugPrint('skipped unreadable file: ${error.message}');
+      debugPrint('skipped unreadable file: ${error.runtimeType}');
     }
   }
   return (files: files, folders: folders);

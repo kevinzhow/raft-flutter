@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final narrow in [true, false]) {
       testWidgets(
-        '[N24e] $family/$dark unavailable Source selection shell ${narrow ? 'mobile Back' : 'desktop'}',
+        '[N24e] ${dark ? 'dark' : 'light'} unavailable Source selection shell ${narrow ? 'mobile Back' : 'desktop'}',
         (tester) async {
           var backs = 0;
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: SizedBox(
                   width: narrow ? 390 : 900,
@@ -28,7 +25,7 @@ void main() {
               ),
             ),
           );
-          expect(find.text('SELECT A CHANNEL'), findsOneWidget);
+          expect(find.text('Select a channel'), findsOneWidget);
           expect(
             find.byType(RaftPanelIconButton),
             narrow ? findsOneWidget : findsNothing,
@@ -36,7 +33,8 @@ void main() {
           if (narrow) {
             final button = tester.getRect(find.byType(RaftPanelIconButton));
             final line = tester.getRect(find.byType(RaftCssLineBox));
-            expect(button.size, const Size(28, 28));
+            // The Android input profile uses the touch PanelAction.
+            expect(button.size, const Size(44, 44));
             expect(line.top - button.bottom, 16);
             await tester.tap(find.byType(RaftPanelIconButton));
             expect(backs, 1);
@@ -48,11 +46,11 @@ void main() {
       );
     }
     testWidgets(
-      '[N24e] $family/$dark actual channel placeholder has Source linebox and no borrowed controls',
+      '[N24e] ${dark ? 'dark' : 'light'} actual channel placeholder has Source linebox and no borrowed controls',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: const Scaffold(
               body: SizedBox(
                 key: Key('surface'),
@@ -63,7 +61,7 @@ void main() {
             ),
           ),
         );
-        expect(find.text('LOADING CHANNEL'), findsOneWidget);
+        expect(find.text('Loading channel'), findsOneWidget);
         final surface = tester.getRect(find.byKey(const Key('surface')));
         final line = tester.getRect(find.byType(RaftCssLineBox));
         expect(line.center, surface.center);

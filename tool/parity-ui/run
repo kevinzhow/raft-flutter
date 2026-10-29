@@ -1,0 +1,358 @@
+#!/usr/bin/env python3
+"""raft-ui specimen reference: the REAL @botiverse/raft-ui 0.7.1 components as
+pixel references for the Flutter port (light + dark, one look).
+
+  tool/parity-ui/run run [--cases <id|glob>[,...]]   # install (locked), build host, capture every case
+  tool/parity-ui/run check                           # capture twice, require byte-identical PNGs; official CLI validate + diff round trip
+  tool/parity-ui/run cases                           # case ids, and which have no Flutter preview yet
+  tool/parity-ui/run dom-dump [--cases ...] [--out DIR]  # diagnostic: DOM rects + computed styles of the React specimens, no PNGs
+  tool/parity-ui/run flutter [--cases ...]           # capture the Flutter side (test/parity/cases/ui_raft_specimens.dart) into <out>/visual-testing-results/android
+  tool/parity-ui/run diff                            # official `cli.mjs diff --pairs react__android` once Flutter captures exist
+  tool/parity-ui/run fonts [--refresh]               # verify (or refetch) the sha256-pinned Space Grotesk / Space Mono cache
+
+A second React provider next to tool/parity (official Web cases) and
+tool/parity-ext (extension cases): same official provider output contract
+(`visual-testing-results/<provider>/<case-id>.png + .metadata.json`), same
+pinned Chromium 147 and Android text flags, same official CLI for validate /
+diff / site, but the render host is tool/parity-ui/host (raft-ui from npm, pinned by
+pnpm-lock.yaml) instead of the raft-source Vite host. The manifest is generated
+from tool/parity-ui/specimens.json on every run and is not committed; output
+is build/parity-ui/ (git-ignored; override with PARITY_UI_OUT), references are
+never committed, like tool/parity and tool/parity-ext.
+"""
+import argparse
+import datetime as dt
+import fnmatch
+import hashlib
+import importlib.machinery
+import importlib.util
+import json
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+import urllib.request
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+UI = ROOT / 'tool/parity-ui'
+HOST = UI / 'host'
+FONTS = UI / 'fonts'
+OUT = pathlib.Path(os.environ.get('PARITY_UI_OUT', ROOT / 'build/parity-ui'))
+FLUTTER_CASES = ROOT / 'apps/raft_flutter/test/parity/cases'
+PAIR = 'react__android'
+FONT_CSS_URL = ('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700'
+                '&family=Space+Mono:wght@400;700&display=swap')  # = what raft-ui's fonts.css @imports
+
+sys.path.insert(0, str(ROOT / 'tool'))  # tool/parity's sibling modules
+_loader = importlib.machinery.SourceFileLoader('parity_ui_official_adapter', str(ROOT / 'tool/parity'))
+parity = importlib.util.module_from_spec(importlib.util.spec_from_loader(_loader.name, _loader))
+_loader.exec_module(parity)  # node_env(), VT (official CLI), FONT_FETCH_UA
+parity.OUT = OUT
+
+
+def tool_env():
+    env = parity.node_env()
+    env['SLOCK_VISUAL_REPO_ROOT'] = str(OUT)
+    return env
+
+
+def case_id(specimen, mode):
+    return f'components.raft-ui.{specimen}.{mode}'
+
+
+def spec():
+    return json.loads((UI / 'specimens.json').read_text())
+
+
+def build_manifest():
+    """sharedCases.json-schema manifest from specimens.json -> <out>/cases.json."""
+    s = spec()
+    cases = []
+    for sp in s['specimens']:
+        for mode in s['modes']:
+            cid = case_id(sp['id'], mode)
+            cases.append({
+                'id': cid,
+                'title': f'{sp["title"]} ({mode})',
+                'captureType': 'component-fixture',
+                'surface': f'raft-ui.{sp["component"]}',
+                'category': 'raft-ui-specimens',
+                'suite': 'raft-flutter-raft-ui-specimens',
+                'fixture': 'tool/parity-ui/specimens.json',
+                # 390 = 358 frame content + 2 x 16 padding; phone width, 3x like the official mobile cases.
+                'viewport': {'width': sp['width'] + 32, 'height': 1200, 'density': 3},
+                'theme': mode,
+                'locale': 'en',
+                'variants': [{'id': 'default', 'name': 'Default',
+                              # parityTheme: how test/parity/parity_harness.dart picks the Flutter theme
+                              'props': {'specimen': sp['id'], 'mode': mode, 'raftUi': s['raftUi'], 'parityTheme': f'raft-{mode}'}}],
+                'capture': {'selector': f'[data-specimen="{sp["id"]}"]', 'crop': 'element',
+                            'contract': 'component-bounds', 'androidKey': f'raft-ui-specimen-{sp["id"]}',
+                            'interactions': [], 'androidInteractions': []},
+                'reactPathHint': f'tool/parity-ui/host/src/specimens.tsx ({sp["source"]})',
+                'androidCaseHint': f"apps/raft_flutter/test/parity/cases/ui_raft_specimens.dart '{sp['id']}.{mode}'",
+                'tolerance': {'pixelRatio': 0.02, 'layoutDp': 1, 'ignoreAntialiasing': True},
+            })
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / 'cases.json'
+    path.write_text(json.dumps({'version': 1, 'name': 'raft-flutter raft-ui specimens', 'raftUi': s['raftUi'],
+                                'cases': cases}, indent=1) + '\n')
+    return path, cases
+
+
+def select(cases, patterns):
+    if not patterns:
+        return cases
+    pats = [p.strip() for p in patterns.split(',') if p.strip()]
+    picked = [c for c in cases if any(fnmatch.fnmatchcase(c['id'], p) for p in pats)]
+    if not picked:
+        sys.exit(f'no case matches {patterns}')
+    return picked
+
+
+def sh(cmd, cwd, env=None, check=True):
+    print('+', ' '.join(map(str, cmd)), flush=True)
+    r = subprocess.run(['nice', '-n', '10', *map(str, cmd)], cwd=cwd, env=env or tool_env())
+    if check and r.returncode != 0:
+        sys.exit(f'failed (exit {r.returncode}): {" ".join(map(str, cmd))}')
+    return r.returncode
+
+
+def ensure_deps():
+    """pnpm install --frozen-lockfile in the host (lockfile is the pin)."""
+    stamp = HOST / 'node_modules/.parity-ui-lock-sha'
+    lock_sha = hashlib.sha256((HOST / 'pnpm-lock.yaml').read_bytes()).hexdigest()
+    if stamp.is_file() and stamp.read_text() == lock_sha and (HOST / 'node_modules/@botiverse/raft-ui').is_dir():
+        return
+    sh(['pnpm', 'install', '--frozen-lockfile'], HOST)
+    stamp.write_text(lock_sha)
+    v = json.loads((HOST / 'node_modules/@botiverse/raft-ui/package.json').read_text())['version']
+    if v != spec()['raftUi']:
+        sys.exit(f'installed raft-ui {v}, specimens.json pins {spec()["raftUi"]}')
+
+
+def capture(out, cases, manifest):
+    ensure_deps()
+    cmd_fonts(argparse.Namespace(refresh=False), quiet=True)
+    out.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(out / 'visual-testing-results/react', ignore_errors=True)
+    env = tool_env()
+    env['SLOCK_VISUAL_REPO_ROOT'] = str(out)
+    sh(['node', UI / 'capture.mjs', '--manifest', manifest, '--out', out, '--only', ','.join(c['id'] for c in cases)],
+       ROOT, env)
+
+
+def hashes(out):
+    d = out / 'visual-testing-results/react'
+    return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(d.glob('*.png'))}
+
+
+def flutter_declared():
+    text = '\n'.join(p.read_text() for p in FLUTTER_CASES.rglob('*.dart')) if FLUTTER_CASES.is_dir() else ''
+    # Flutter builders are keyed by specimen id (`'button.variants'`) and expand to both modes.
+    return lambda cid: f"'{cid}'" in text or f"'{cid.removeprefix('components.raft-ui.').rsplit('.', 1)[0]}'" in text
+
+
+def cli(*args, out, manifest, log=None):
+    cmd = ['node', str(parity.VT / 'src/cli.mjs'), *args, '--manifest', str(manifest)]
+    print('+', ' '.join(cmd), flush=True)
+    env = parity.node_env()
+    env['SLOCK_VISUAL_REPO_ROOT'] = str(out)
+    with (open(log, 'a') if log else open(os.devnull, 'w')) as sink:
+        r = subprocess.run(cmd, cwd=parity.VT, env=env, stdout=sink if log else None,
+                           stderr=subprocess.STDOUT if log else None)
+    if r.returncode != 0:
+        sys.exit(f'official CLI failed: {" ".join(args)} (exit {r.returncode})' + (f'; see {log}' if log else ''))
+
+
+# --- commands ---------------------------------------------------------------
+
+def cmd_run(a):
+    manifest, cases = build_manifest()
+    chosen = select(cases, a.cases)
+    capture(OUT, chosen, manifest)
+    print(f'raft-ui {spec()["raftUi"]} specimens: {len(chosen)} PNG + metadata in {OUT}/visual-testing-results/react')
+
+
+def cmd_cases(a):
+    _, cases = build_manifest()
+    declared = flutter_declared()
+    missing = [c['id'] for c in cases if not declared(c['id'])]
+    for c in cases:
+        print(f'{"flutter " if declared(c["id"]) else "MISSING "}{c["id"]}')
+    print(f'{len(cases)} cases, {len(missing)} without a Flutter preview case')
+
+
+def cmd_check(a):
+    """Capture twice into separate dirs; every PNG must be byte-identical. Then the official CLI
+    validates the manifest and diffs the react captures against a copy of themselves in the
+    `android` slot (proves the output contract is what `diff` reads; all must be identical)."""
+    manifest, cases = build_manifest()
+    chosen = select(cases, a.cases)
+    runs = [OUT / 'determinism' / n for n in ('a', 'b')]
+    for r in runs:
+        capture(r, chosen, manifest)
+    ha, hb = hashes(runs[0]), hashes(runs[1])
+    bad = sorted(k for k in ha.keys() | hb.keys() if ha.get(k) != hb.get(k))
+    for k in sorted(ha):
+        print(f'{"DIFF" if k in bad else "same"} {ha[k][:16]} {hb.get(k, "-")[:16]} {k}')
+    if bad or len(ha) != len(chosen):
+        sys.exit(f'determinism FAILED: {len(bad)} differing, {len(ha)}/{len(chosen)} captured')
+    print(f'determinism OK: {len(ha)} PNGs byte-identical across two captures')
+    # official CLI round trip on run `a`
+    work = OUT / 'determinism/roundtrip'
+    shutil.rmtree(work, ignore_errors=True)
+    shutil.copytree(runs[0] / 'visual-testing-results', work / 'visual-testing-results')
+    shutil.copytree(work / 'visual-testing-results/react', work / 'visual-testing-results/android')
+    for p in (work / 'visual-testing-results/android').glob('*.metadata.json'):
+        m = json.loads(p.read_text())
+        m.update({'provider': 'android', 'providerType': 'flutter-widget-test', 'source': 'flutter'})
+        p.write_text(json.dumps(m, indent=2) + '\n')
+    cli('validate', out=work, manifest=manifest)
+    cli('diff', '--pairs', PAIR, out=work, manifest=manifest, log=work / 'diff.log')
+    diffs = sorted((work / 'visual-testing-results/diff').glob(f'{PAIR}*.json'))
+    print(f'official diff wrote {len(diffs)} json file(s) under {work}/visual-testing-results/diff')
+    summary = [json.loads(p.read_text()) for p in diffs]
+    flat = json.dumps(summary)
+    print('round trip: all units present' if all(c['id'] in flat for c in chosen) else 'WARNING: some ids missing from diff output')
+
+
+def cmd_diff(a):
+    manifest, cases = build_manifest()
+    android = OUT / 'visual-testing-results/android'
+    if not android.is_dir() or not any(android.glob('*.png')):
+        sys.exit(f'no Flutter captures in {android}: the provider writes android/<case-id>.png + .metadata.json '
+                 '(run `tool/parity-ui/run cases` for the ids)')
+    cli('diff', '--pairs', PAIR, out=OUT, manifest=manifest, log=OUT / 'diff.log')
+    cli('site', '--pairs', PAIR, '--skip-analysis', '--site-dir', str(OUT / 'site'), out=OUT, manifest=manifest, log=OUT / 'diff.log')
+    print_scores(select(cases, a.cases))
+
+
+def print_scores(chosen):
+    """Per-case table from the official diff output: status and pixel-perfect similarity. Official thresholds:
+    > 99% pass, > 96% basic-pass (both count as passing); `missing` = no Flutter capture."""
+    diff = json.loads((OUT / 'visual-testing-results/diff' / f'{PAIR}.json').read_text())
+    by_id = {r['id']: r for r in diff['results']}
+    rows, passing = [], 0
+    for c in chosen:
+        r = by_id.get(c['id'], {})
+        sim = (r.get('metrics') or {}).get('pixelPerfectSimilarity')
+        status = r.get('status', 'missing')
+        passing += status in ('same', 'pass', 'basic-pass')
+        rows.append((c['id'].removeprefix('components.raft-ui.'), status, f'{sim * 100:6.2f}%' if sim is not None else '     -'))
+    width = max(len(r[0]) for r in rows)
+    for name, status, sim in rows:
+        print(f'{name:<{width}}  {status:<10}  {sim}')
+    print(f'{passing}/{len(rows)} cases pass the official thresholds (pass > 99%, basic-pass > 96%)')
+
+
+def fetch(url):
+    req = urllib.request.Request(url, headers={'User-Agent': parity.FONT_FETCH_UA})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return r.read()
+
+
+def cmd_dom_dump(a):
+    manifest, cases = build_manifest()
+    chosen = select(cases, a.cases)
+    ensure_deps()
+    cmd_fonts(argparse.Namespace(refresh=False), quiet=True)
+    out = pathlib.Path(a.out).resolve()
+    env = tool_env()
+    sh(['node', UI / 'capture.mjs', '--manifest', manifest, '--out', OUT / 'dom-dump-run', '--dom-dump', out,
+        '--only', ','.join(c['id'] for c in chosen)], ROOT, env)
+    print(f'DOM dumps in {out}')
+
+
+def cmd_flutter(a):
+    """Flutter provider: the real widgets from test/parity/cases/ui_raft_specimens.dart, captured by
+    the shared parity harness into <out>/visual-testing-results/android (the `diff` input)."""
+    manifest, cases = build_manifest()
+    chosen = select(cases, a.cases)
+    android = OUT / 'visual-testing-results/android'
+    android.mkdir(parents=True, exist_ok=True)
+    for c in chosen:  # stale captures must never survive a failed run
+        for suffix in ('.png', '.metadata.json'):
+            (android / f"{c['id']}{suffix}").unlink(missing_ok=True)
+    shared = OUT / 'flutter-shared'
+    shared.mkdir(parents=True, exist_ok=True)  # the harness reads fixture JSON from here; specimens need none
+    env = {**os.environ, 'TZ': 'Asia/Shanghai', 'PARITY_SHARED_DIR': str(shared),
+           'PARITY_RESULT_ROOT': str(OUT / 'visual-testing-results'), 'PARITY_MANIFEST': str(manifest),
+           'PARITY_CASES': ','.join(c['id'] for c in chosen)}
+    r = subprocess.run(['nice', '-n', '10', str(ROOT / 'tool/flutter'), 'test', 'test/parity/parity_capture_test.dart',
+                        '--no-pub', '--reporter', 'expanded'], cwd=ROOT / 'apps/raft_flutter', env=env)
+    missing = [c['id'] for c in chosen if not (android / f"{c['id']}.png").is_file()]
+    have = len(chosen) - len(missing)
+    print(f'flutter: {have}/{len(chosen)} captures in {android}')
+    if r.returncode != 0 and missing:
+        sys.exit(f'flutter capture failed (exit {r.returncode}); no capture for: {", ".join(missing)}')
+
+
+def cmd_fonts(a, quiet=False):
+    """Space Grotesk + Space Mono, the families raft-ui's fonts.css imports from Google. Default:
+    verify the committed cache. --refresh re-downloads it (review the diff)."""
+    manifest_path = FONTS / 'manifest.json'
+    if a.refresh:
+        css = fetch(FONT_CSS_URL)
+        files = {}
+        shutil.rmtree(FONTS / 'files', ignore_errors=True)
+        (FONTS / 'files').mkdir(parents=True)
+        for url in sorted(set(re.findall(rb'url\((https://fonts\.gstatic\.com/[^)]+)\)', css))):
+            url = url.decode()
+            body = fetch(url)
+            name = url.removeprefix('https://fonts.gstatic.com/s/').replace('/', '_')
+            (FONTS / 'files' / name).write_bytes(body)
+            files[url] = {'file': f'files/{name}', 'sha256': hashlib.sha256(body).hexdigest(), 'bytes': len(body)}
+        (FONTS / 'raft-ui.css').write_bytes(css)
+        manifest_path.write_text(json.dumps({
+            'cssUrl': FONT_CSS_URL,
+            'css': {'file': 'raft-ui.css', 'sha256': hashlib.sha256(css).hexdigest(), 'bytes': len(css)},
+            'userAgent': parity.FONT_FETCH_UA,
+            'fetchedAt': dt.datetime.now(dt.timezone.utc).isoformat(),
+            'files': files,
+        }, indent=2) + '\n')
+        print(f'fonts: cached CSS + {len(files)} files in {FONTS}')
+    m = json.loads(manifest_path.read_text())
+    bad = [e['file'] for e in [m['css'], *m['files'].values()]
+           if hashlib.sha256((FONTS / e['file']).read_bytes()).hexdigest() != e['sha256']]
+    css = (FONTS / m['css']['file']).read_text()
+    missing = [u for u in re.findall(r'url\((https://fonts\.gstatic\.com/[^)]+)\)', css) if u not in m['files']]
+    if bad or missing:
+        sys.exit(f'font cache invalid: hash mismatch {bad}, unmapped urls {missing}')
+    # raft-ui's fonts.css must still import exactly this URL (a raft-ui bump may change it).
+    fonts_css = (HOST / 'node_modules/@botiverse/raft-ui/dist/fonts.css')
+    if fonts_css.is_file() and m['cssUrl'] not in fonts_css.read_text():
+        sys.exit('raft-ui fonts.css imports a different Google Fonts URL than the cache; run `fonts --refresh`')
+    if not quiet:
+        print(f'fonts: cache OK ({len(m["files"])} files, fetched {m["fetchedAt"]})')
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest='cmd', required=True)
+    for name, fn in [('run', cmd_run), ('check', cmd_check)]:
+        s = sub.add_parser(name)
+        s.add_argument('--cases', help='ids / globs (default: every case)')
+        s.set_defaults(fn=fn)
+    sub.add_parser('cases').set_defaults(fn=cmd_cases)
+    s = sub.add_parser('flutter')
+    s.add_argument('--cases', help='ids / globs (default: every case)')
+    s.set_defaults(fn=cmd_flutter)
+    s = sub.add_parser('dom-dump')
+    s.add_argument('--cases', help='ids / globs (default: every case)')
+    s.add_argument('--out', default=str(OUT / 'dom-dump'))
+    s.set_defaults(fn=cmd_dom_dump)
+    s = sub.add_parser('diff')
+    s.add_argument('--cases', help='ids / globs shown in the table (default: every case)')
+    s.set_defaults(fn=cmd_diff)
+    s = sub.add_parser('fonts')
+    s.add_argument('--refresh', action='store_true')
+    s.set_defaults(fn=cmd_fonts)
+    a = p.parse_args()
+    a.fn(a)
+
+
+if __name__ == '__main__':
+    main()

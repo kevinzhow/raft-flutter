@@ -14,11 +14,11 @@ bool ForwardWindowsNotificationActivation(const std::vector<std::string>& argume
 bool HandleWindowsNotificationActivation(
     UINT message, LPARAM lparam,
     flutter::MethodChannel<flutter::EncodableValue>* channel, HWND window);
-void InitializeWindowsNotificationSdk(const std::string& app_id, const std::string& icon);
-void ShowWindowsSdkNotification(const flutter::EncodableValue* arguments);
-void ClearWindowsSdkNotifications();
+void InitializeWindowsNotifications(const std::string& app_id, const std::string& icon);
+void ShowWindowsNotification(const flutter::EncodableValue* arguments);
+void ClearWindowsNotifications();
 flutter::EncodableList TakeWindowsNotificationActivations();
-void ShutdownWindowsNotificationSdk();
+void ShutdownWindowsNotifications();
 
 std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
 CreateWindowsNotificationsChannel(flutter::BinaryMessenger* messenger,

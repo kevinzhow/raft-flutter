@@ -7,6 +7,8 @@ import '../data/source_activity_unread_store.dart';
 import '../data/workspace_controller.dart';
 import '../data/raft_location.dart';
 import '../data/workspace_navigation.dart';
+import '../platform/app_services.dart';
+import '../platform/app_update.dart';
 import 'system_notification_center.dart';
 
 /// Route-level mobile navigation, following MainLayout.tsx's root/detail cuts.
@@ -35,7 +37,6 @@ String? mobileWorkspaceRootTabForLocation(
 String mobileWorkspaceBackSection(String section) => switch (section) {
   'computers' ||
   'workspace-settings' ||
-  'sidebar-settings' ||
   'providers' ||
   'integrations' ||
   'im-bridges' ||
@@ -56,8 +57,12 @@ class WorkspaceMobileTabBar extends StatelessWidget {
     this.bottomInset = 0,
     this.tabs,
     this.activityUnread,
+    this.appUpdate,
   });
   final WorkspaceController controller;
+
+  /// Red dot on the Settings tab while a newer release is unseen.
+  final AppUpdateService? appUpdate;
 
   /// The configurable tabs to show, in order (Settings is appended). Null is
   /// the default bar; callers pass the account-filtered device choice.
@@ -72,18 +77,27 @@ class WorkspaceMobileTabBar extends StatelessWidget {
   final double bottomInset;
 
   @override
-  Widget build(BuildContext context) => activityUnread == null
-      ? bar(context)
-      : ListenableBuilder(
-          listenable: activityUnread!,
-          builder: (context, _) => bar(context),
-        );
+  Widget build(BuildContext context) {
+    // A covered phone route keeps this bar mounted and does not rebuild it
+    // from the shell. Read the root service here so a replacement releases
+    // the previous one in that same frame.
+    final live = AppServicesScope.maybeOf(context)?.appUpdate ?? appUpdate;
+    final listenables = [?activityUnread, ?live];
+    return listenables.isEmpty
+        ? bar(context, live)
+        : ListenableBuilder(
+            listenable: Listenable.merge(listenables),
+            builder: (context, _) => bar(context, live),
+          );
+  }
 
-  Widget bar(BuildContext context) {
+  Widget bar(BuildContext context, AppUpdateService? update) {
     String tr(String s) => raftText(context, s);
     final w = controller;
-    final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-    final t = RaftTokens.of(context);
+    final nativeMobile =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
     final tabIds =
         tabs ??
         MobileTabbarSettings.defaults.effective(
@@ -135,28 +149,23 @@ class WorkspaceMobileTabBar extends StatelessWidget {
           label: tr('Settings'),
           glyph: RaftGlyph.settings,
           key: const Key('mobile-tab-settings'),
+          attention: update?.hasUnseen ?? false,
         ),
       ],
     );
-    if (android) {
+    if (nativeMobile) {
       // The bar is the only consumer of the bottom system inset on tab roots.
       // It reads the stable system bar height (viewPadding), never the
       // keyboard-aware padding, so it cannot follow or outlive the keyboard.
-      navigation = Padding(
-        padding: EdgeInsets.only(bottom: raftSystemBottomInset(context)),
-        child: navigation,
-      );
-      // The in-flow bar paints beneath Android's transparent navigation bar;
-      // the floating capsule has no strip fill.
-      if (t.brutal) {
-        navigation = ColoredBox(
-          color: RaftMobileNavRecipe(
-            t,
-            viewportHeight: MediaQuery.sizeOf(context).height,
-          ).background,
+      navigation = ColoredBox(
+        color: RaftTokens.of(context).colors['layer-mobile-nav-system']!,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: raftSystemBottomInset(context)),
           child: navigation,
-        );
-      }
+        ),
+      );
+      // The in-flow bar paints beneath the system navigation / home indicator;
+      // the floating capsule has no strip fill.
     }
     return navigation;
   }
@@ -171,11 +180,15 @@ class WorkspaceMobileHomeHeader extends StatelessWidget {
     required this.onServer,
     required this.onBilling,
     this.serverSwitcher,
+    this.workingSummary,
   });
   final WorkspaceController controller;
   final VoidCallback onServer;
   final VoidCallback onBilling;
   final Widget? serverSwitcher;
+
+  /// The working-agents summary, before the bell.
+  final Widget? workingSummary;
 
   @override
   Widget build(BuildContext context) =>
@@ -183,10 +196,11 @@ class WorkspaceMobileHomeHeader extends StatelessWidget {
       RaftMobileRootHeader(
         leading: RaftMobileServerSelector(
           key: const Key('mobile-server-selector'),
-          label: controller.server?.name ?? raftText(context, 'Workspace'),
+          label: controller.server?.name ?? raftText(context, 'Server'),
           onPressed: onServer,
         ),
         actions: [
+          ?workingSummary,
           SystemNotificationBell(
             key: const Key('mobile-home-notifications'),
             controller: controller,

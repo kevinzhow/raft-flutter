@@ -1,3 +1,7 @@
+@Tags(['look-elegant'])
+library;
+
+import 'package:raft_ui/raft_ui.dart' show packForThemeId, elegantThemePackId;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,18 +9,18 @@ import 'package:raft_ui/src/message_row_recipe.dart';
 import 'package:raft_ui/src/message_toolbar_glyphs.dart';
 import 'package:raft_ui/src/theme.dart';
 
-// Discriminating BEFORE test: source actual upper-half pointer is valid outside
-// the visual row. clipBehavior.none alone must not be accepted as proof.
-// Run unchanged against BEFORE and OverlayPortal AFTER. This test remains
-// unrun in the staging lane and is not a native/source parity pass.
+// The Raft toolbar sits inside the row (toolbarTop 4); the old Brutal toolbar
+// overhung the row by 14 px, so a pointer could land above the visual row.
+// The actual pointer still has to travel from the body onto the toolbar and
+// activate the reaction.
 void main() {
   testWidgets(
-    'actual pointer can cross onto toolbar above row and activate reaction',
+    'actual pointer can move from the body onto the toolbar and activate reaction',
     (tester) async {
       var activated = 0;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           home: Scaffold(
             body: Padding(
               padding: const EdgeInsets.only(top: 40),
@@ -28,7 +32,7 @@ void main() {
                   children: [
                     RaftMessageToolbarAction(
                       key: const Key('reaction-action'),
-                      label: 'Add reaction',
+                      label: 'Add Reaction',
                       icon: const RaftMessageAddReactionGlyph(),
                       onPressed: () => activated++,
                     ),
@@ -45,7 +49,8 @@ void main() {
       await tester.pump();
       final action = tester.getRect(find.byKey(const Key('reaction-action')));
       final point = Offset(action.center.dx, action.top + 2);
-      expect(point.dy, lessThan(40));
+      // Inside the row (which starts at the 40 px padding), not above it.
+      expect(point.dy, greaterThanOrEqualTo(40));
       await mouse.moveTo(point);
       await tester.pump();
       final opacity = tester.widget<Opacity>(

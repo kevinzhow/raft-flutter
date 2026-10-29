@@ -1,0 +1,152 @@
+name: SignPath Windows TEST certificate probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit_test_signing:
+        description: Submit to the configured TEST policy (false builds unsigned only)
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: signpath-test
+  cancel-in-progress: false
+
+jobs:
+  test-runner:
+    if: >-
+      github.repository == 'kevinzhow/raft-flutter' &&
+      github.ref == 'refs/heads/cindy/integration' &&
+      github.run_attempt == 1
+    runs-on: windows-2022
+    environment: signpath-test
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+      SIGNPATH_TEST_ORGANIZATION_ID: ${{ vars.SIGNPATH_TEST_ORGANIZATION_ID }}
+      SIGNPATH_TEST_PROJECT_SLUG: ${{ vars.SIGNPATH_TEST_PROJECT_SLUG }}
+      SIGNPATH_TEST_POLICY_SLUG: ${{ vars.SIGNPATH_TEST_POLICY_SLUG }}
+      SIGNPATH_TEST_ARTIFACT_SLUG: ${{ vars.SIGNPATH_TEST_ARTIFACT_SLUG }}
+      SIGNPATH_TEST_CERTIFICATE_SHA1: ${{ vars.SIGNPATH_TEST_CERTIFICATE_SHA1 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Enforce the manual source boundary
+        run: python tool/signpath_test.py guard
+      - name: Check TEST settings before building
+        if: inputs.submit_test_signing
+        env:
+          TEST_ENABLED: ${{ vars.SIGNPATH_TEST_ENABLED }}
+          SIGNPATH_TEST_API_TOKEN: ${{ secrets.SIGNPATH_TEST_API_TOKEN }}
+        shell: pwsh
+        run: |
+          if ($env:TEST_ENABLED -ne 'true') { throw 'Enable the reviewed TEST environment first' }
+          if ([String]::IsNullOrWhiteSpace($env:SIGNPATH_TEST_API_TOKEN)) {
+            throw 'The TEST submitter token is not configured'
+          }
+          python tool/signpath_test.py settings
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid TEST configuration' }
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version-file: .fvmrc
+          channel: stable
+          cache: true
+      - name: Select the repository SDK wrapper
+        run: python tool/release.py sdk
+      - name: Initialize the selected SDK before strict version verification
+        shell: python
+        run: |
+          import os
+          import subprocess
+          import sys
+          sys.path.insert(0, 'tool')
+          from flutter_launcher import sdk_probe_report
+          probe = subprocess.run(
+              [os.environ['RAFT_FLUTTER_BIN'], '--version', '--machine'],
+              capture_output=True, text=True)
+          print(sdk_probe_report(probe))
+          sys.exit(probe.returncode)
+      - name: Resolve only the locked dependencies
+        run: python tool/flutter pub get --enforce-lockfile
+      - name: Build the isolated signing sample without release packaging
+        working-directory: apps/raft_flutter
+        shell: pwsh
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: >-
+          python ../../tool/flutter build windows --release --target=lib/main.dart
+          --build-name=0.0.0-signpath-test --build-number=1
+          --dart-define=RAFT_APP_VERSION=0.0.0-signpath-test
+          --dart-define=RAFT_DEPLOYMENT_ENV=signpath-test
+          --dart-define=RAFT_AUTO_UPDATE=false
+          "--dart-define=RAFT_COMMIT_SHA=$env:SOURCE_COMMIT"
+      - name: Stage only the unsigned Raft runner
+        shell: pwsh
+        run: |
+          $exe = 'apps/raft_flutter/build/windows/x64/runner/Release/raft_flutter.exe'
+          $version = (Get-Item -LiteralPath $exe).VersionInfo
+          if ($version.ProductName -ne 'Raft' -or $version.CompanyName -ne 'app.raft' -or
+              $version.OriginalFilename -ne 'raft_flutter.exe') { throw 'Unexpected PE identity' }
+          if ((Get-AuthenticodeSignature -LiteralPath $exe).Status -ne 'NotSigned') {
+            throw 'Expected unsigned test input'
+          }
+          python tool/signpath_test.py stage --source $exe --output build/signpath-test/input --manifest build/signpath-test/unsigned.json
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid unsigned payload' }
+          git diff --exit-code
+      # upload-artifact supplies the outer ZIP: its root is raft_flutter.exe.
+      - name: Upload the exact unsigned input before requesting signing
+        id: unsigned
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: signpath-test-unsigned-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/signpath-test/input/raft_flutter.exe
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+      - name: Submit to the TEST policy through GitHub Trusted Build
+        if: inputs.submit_test_signing
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_TEST_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_TEST_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_TEST_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_TEST_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_TEST_ARTIFACT_SLUG }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 600
+          service-unavailable-timeout-in-seconds: 120
+          output-artifact-directory: build/signpath-test/signed
+      - name: Verify returned image bytes and the pinned TEST signature
+        if: inputs.submit_test_signing
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem build/signpath-test/signed -Recurse -File)
+          if ($files.Count -ne 1 -or $files[0].Name -ne 'raft_flutter.exe') {
+            throw 'Unexpected signed archive members'
+          }
+          python tool/signpath_test.py inspect --unsigned build/signpath-test/input/raft_flutter.exe --signed build/signpath-test/signed/raft_flutter.exe --output build/signpath-test/proof
+          if ($LASTEXITCODE -ne 0) { throw 'Signed payload inspection failed' }
+          ./tool/signpath/verify-test-signature.ps1 -InspectionDirectory build/signpath-test/proof -SignedFile build/signpath-test/signed/raft_flutter.exe -ExpectedThumbprint $env:SIGNPATH_TEST_CERTIFICATE_SHA1
+      - name: Preserve TEST-only output and proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: signpath-test-proof-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/signpath-test/unsigned.json
+            build/signpath-test/proof/
+            build/signpath-test/signed/
+          if-no-files-found: warn
+          retention-days: 7

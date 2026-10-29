@@ -9,6 +9,7 @@ import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/app_services_fixture.dart';
 
 /// High-frequency presence events (agent heartbeats, last-seen, machine status
 /// repeats) must not rebuild the workspace, the sidebar or chat rows that do
@@ -168,14 +169,14 @@ void main() {
         ..dms = client.dmRows
         ..channel = client.channelRows.single
         ..section = 'chat'
-        ..channelLoading = false
+        ..messageDomain.state.channelLoading = false
         ..loading = false;
-      w.ledger.switchServer('s');
-      w.ledger.ingest(
+      w.messageDomain.ledger.switchServer('s');
+      w.messageDomain.ledger.ingest(
         _Client.messages,
-        expectedGeneration: w.ledger.generation,
+        expectedGeneration: w.messageDomain.ledger.generation,
       );
-      w.visibleIds['c'] = {for (final m in _Client.messages) '${m['id']}'};
+      w.messageDomain.visibleIds['c'] = {for (final m in _Client.messages) '${m['id']}'};
       addTearDown(() async {
         w.dispose();
         await client.stream.close();
@@ -183,12 +184,14 @@ void main() {
       unawaited(w.entityDirectory.preload());
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
-          home: WorkspaceView(
-            controller: w,
-            appearance: const RaftAppearance(),
-            onAppearance: (_) async {},
-            onLogout: () async {},
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: const RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
           ),
         ),
       );
@@ -203,8 +206,8 @@ void main() {
       );
       expect(w.entityDirectory.agent('cindy'), isNotNull);
 
-      // The first working signal shows the live activity bar (a real layout
-      // change); the burst below only refreshes it.
+      // The first working signal shows the working-agents summary (a real
+      // layout change); the burst below only refreshes it.
       for (final id in ['cindy', 'bob']) {
         client.stream.add(
           RaftEvent('agent:activity', {
@@ -216,7 +219,7 @@ void main() {
         );
       }
       await t.pump(const Duration(milliseconds: 16));
-      expect(find.byKey(const Key('live-agent-activity-bar')), findsOneWidget);
+      expect(find.byKey(const Key('working-agents-summary')), findsOneWidget);
 
       final counts = _Rebuilds()..start();
       addTearDown(counts.stop);

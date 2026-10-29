@@ -1,370 +1,402 @@
 import 'package:flutter/material.dart';
 
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+
+import 'package:raft_theme/raft_theme.dart' show RaftThemePack;
+
 import 'design_primitives.dart';
-import 'dialog_card.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'theme.dart';
+import 'raft/ui_tokens.dart';
 
-/// AppearanceThemePicker.tsx (preferences branch): mode segmented control
-/// and the Light / Dark theme radio groups. Each theme card renders inside its
-/// own theme scope (`data-theme={option.family}` + mode class).
+/// Appearance setting: which theme to paint with, and Light / Dark / System for
+/// that theme's two modes.
+///
+/// The theme and the mode are separate choices: every theme carries its own
+/// light and dark values, so any combination is meaningful.
 class RaftAppearancePicker extends StatelessWidget {
   const RaftAppearancePicker({
     super.key,
     required this.appearance,
     required this.onChanged,
+    this.showMode = true,
   });
   final RaftAppearance appearance;
   final ValueChanged<RaftAppearance> onChanged;
+
+  /// Also offer Light / Dark / System. The Raft look shows those as the
+  /// preview cards ([RaftAppearanceModeCards]) and keeps only the theme here.
+  final bool showMode;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final dark =
-        appearance.mode == ThemeMode.dark ||
-        appearance.mode == ThemeMode.system &&
-            MediaQuery.platformBrightnessOf(context) == Brightness.dark;
-    // `text-sm font-bold text-foreground-strong`
-    final groupTitle = RaftTypography.body(
-      t,
-      size: 14,
-      line: 20,
-      weight: FontWeight.w700,
-    );
-    Widget themes(bool night) {
-      final choices = night ? [RaftFamily.elegant] : RaftFamily.values;
-      return Column(
-        key: Key('appearance-theme-group-${night ? 'dark' : 'light'}'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Flexible(
-                child: Text(
-                  raftText(
-                    context,
-                    night ? 'Dark appearance' : 'Light appearance',
-                  ),
-                  style: groupTitle,
-                ),
-              ),
-              if (dark == night) ...[
-                const SizedBox(width: 8),
-                // `rounded-full bg-primary-soft px-2 py-0.5 text-[10px]
-                // font-bold text-primary-strong`
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: t.colors['primary-soft'],
-                    borderRadius: BorderRadius.circular(9999),
-                  ),
-                  child: Text(
-                    raftText(context, 'Current'),
-                    style: RaftTypography.body(
-                      t,
-                      size: 10,
-                      line: 15,
-                      weight: FontWeight.w700,
-                      color: t.colors['primary-strong'],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          // `grid gap-2 sm:grid-cols-2`
-          LayoutBuilder(
-            builder: (context, c) {
-              final columns = MediaQuery.sizeOf(context).width >= 640 ? 2 : 1;
-              final cardWidth = (c.maxWidth - (columns - 1) * 8) / columns;
-              return Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final family in choices)
-                    SizedBox(
-                      width: cardWidth,
-                      child: _ThemeChoice(
-                        family: family,
-                        dark: night,
-                        selected: night || appearance.light == family,
-                        onSelected: () => onChanged(
-                          appearance.copyWith(light: night ? null : family),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ],
-      );
-    }
-
-    // `text-xs font-bold uppercase tracking-widest text-foreground-muted`
     final eyebrow = RaftTypography.body(
       t,
       size: 12,
       line: 16,
       weight: FontWeight.w700,
       color: t.muted,
-    ).copyWith(letterSpacing: 1.2);
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(raftText(context, 'Color mode').toUpperCase(), style: eyebrow),
+        Text(raftText(context, 'Theme'), style: eyebrow),
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
-          // raft-ui SegmentedControl (AppearanceThemePicker.tsx), recipe
-          // geometry without touch-target growth.
-          child: RaftRecipeSegmentedControl<ThemeMode>(
-            key: const Key('appearance-mode'),
-            value: appearance.mode,
-            label: 'Appearance mode',
-            items: const [
-              (ThemeMode.light, null, 'Light'),
-              (ThemeMode.dark, null, 'Dark'),
-              (ThemeMode.system, null, 'System'),
+          child: RaftSegmentedControl<String>(
+            key: const Key('appearance-theme'),
+            legacyStyle: RaftSegmentedStyle.recipe,
+            value: appearance.themeId,
+            label: 'Theme',
+            items: [
+              for (final theme in builtInAppearanceThemes)
+                RaftSegmentedOption(
+                  value: theme.id,
+                  label: raftText(context, theme.en),
+                ),
             ],
-            onChanged: (mode) => onChanged(appearance.copyWith(mode: mode)),
+            onChanged: (id) => onChanged(appearance.copyWith(themeId: id)),
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          raftText(
-            context,
-            'System follows your device while keeping separate Light and Dark theme choices.',
+        if (showMode) ...[
+          const SizedBox(height: 16),
+          Text(raftText(context, 'Color mode'), style: eyebrow),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            // raft-ui SegmentedControl, recipe geometry without touch-target
+            // growth.
+            child: RaftSegmentedControl<ThemeMode>(
+              key: const Key('appearance-mode'),
+              legacyStyle: RaftSegmentedStyle.recipe,
+              value: appearance.mode,
+              label: 'Appearance mode',
+              items: const [
+                RaftSegmentedOption(value: ThemeMode.light, label: 'Light'),
+                RaftSegmentedOption(value: ThemeMode.dark, label: 'Dark'),
+                RaftSegmentedOption(value: ThemeMode.system, label: 'System'),
+              ],
+              onChanged: (mode) => onChanged(appearance.copyWith(mode: mode)),
+            ),
           ),
-          style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
-        ),
-        const SizedBox(height: 16),
-        themes(false),
-        const SizedBox(height: 16),
-        themes(true),
+          const SizedBox(height: 8),
+          Text(
+            raftText(context, 'System follows your device.'),
+            style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
+          ),
+        ],
       ],
     );
   }
 }
 
-class _ThemeChoice extends StatefulWidget {
-  const _ThemeChoice({
-    required this.family,
-    required this.dark,
-    required this.selected,
-    required this.onSelected,
+/// Web v1.21.23 `AppearanceThemePicker`: Light / Dark / System as three
+/// preview cards (`grid grid-cols-1 gap-2 sm:grid-cols-3`). Each card is a
+/// miniature of the app in that mode (yellow frame, cream sidebar with the
+/// sticker row, paper with the pink button); System is light with the dark
+/// half on the diagonal. The checked card has a 1.5px `line-strong` border and
+/// says "Saved on this device." under its label.
+class RaftAppearanceModeCards extends StatelessWidget {
+  const RaftAppearanceModeCards({
+    super.key,
+    required this.appearance,
+    required this.onChanged,
   });
-  final RaftFamily family;
-  final bool dark, selected;
-  final VoidCallback onSelected;
-  @override
-  State<_ThemeChoice> createState() => _ThemeChoiceState();
-}
+  final RaftAppearance appearance;
+  final ValueChanged<RaftAppearance> onChanged;
 
-class _ThemeChoiceState extends State<_ThemeChoice> {
-  bool hovered = false;
   @override
   Widget build(BuildContext context) {
-    final host = RaftTokens.of(context);
-    final family = widget.family, selected = widget.selected;
-    final theme = raftTheme(family, dark: widget.dark),
-        t = theme.extension<RaftTokens>()!;
-    final brutal = family == RaftFamily.brutal;
-    // Card class: brutal `border-2 bg-layer-panel` + selected
-    // `border-line-strong shadow-raft-md` / `border-line-muted shadow-none`;
-    // elegant `rounded-lg border-[0.5px] bg-layer-panel shadow-none` +
-    // selected `border-accent-strong theme-brutal:border-soft-signal`.
-    final cardBorder = brutal
-        ? Border.all(
-            color: t.colors[selected ? 'line-strong' : 'line-muted']!,
-            width: 2,
-          )
-        : Border.all(
-            color: selected
-                ? (host.brutal
-                      ? host.colors['color-soft-signal']!
-                      : t.colors['accent-strong']!)
-                : t.colors['line-muted']!,
-            // `border-[0.5px]`: Chromium lays out and paints sub-1px borders
-            // as 1px (measured in the Web capture: 118px card, 3 device px).
-            width: 1,
-          );
-    final previewLine = brutal ? 2.0 : 1.0;
-    return Theme(
-      data: theme,
-      child: Semantics(
-        button: true,
-        selected: selected,
-        label: '${family.name} ${widget.dark ? 'dark' : 'light'}',
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => hovered = true),
-          onExit: (_) => setState(() => hovered = false),
-          child: GestureDetector(
-            key: ValueKey(
-              'appearance-${widget.dark ? 'dark' : 'light'}-theme-${family.name}',
+    final wide = MediaQuery.sizeOf(context).width >= 640;
+    Widget card(ThemeMode mode, String label) => _ModeCard(
+      key: ValueKey('appearance-theme-${mode.name}'),
+      mode: mode,
+      label: label,
+      selected: appearance.mode == mode,
+      pack: appearance.pack,
+      onTap: () => onChanged(appearance.copyWith(mode: mode)),
+    );
+    final cards = [
+      card(ThemeMode.light, raftText(context, 'Light')),
+      card(ThemeMode.dark, raftText(context, 'Dark')),
+      card(ThemeMode.system, raftText(context, 'System')),
+    ];
+    return Semantics(
+      container: true,
+      label: raftText(context, 'Appearance mode'),
+      child: wide
+          // The three cards hold the same content, so they share one height
+          // without stretching (which breaks under a scroll view).
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 8,
+              children: [for (final c in cards) Expanded(child: c)],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 8,
+              children: cards,
             ),
-            onTap: widget.onSelected,
-            child: Transform.translate(
-              // `group-hover:-translate-y-px`
-              offset: Offset(0, hovered ? -1 : 0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: t.panel,
-                  border: cardBorder,
-                  borderRadius: brutal ? null : BorderRadius.circular(8),
-                  boxShadow: brutal && selected
-                      ? t.themeShadows.md.outer
-                      : null,
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+    );
+  }
+}
+
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
+    super.key,
+    required this.mode,
+    required this.label,
+    required this.selected,
+    required this.pack,
+    required this.onTap,
+  });
+  final ThemeMode mode;
+  final String label;
+  final bool selected;
+  final RaftThemePack pack;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final light = RaftTokens.theme(pack: pack);
+    final dark = RaftTokens.theme(dark: true, pack: pack);
+    Widget preview() => switch (mode) {
+      ThemeMode.light => _PreviewSurface(tokens: light),
+      ThemeMode.dark => _PreviewSurface(tokens: dark),
+      ThemeMode.system => Stack(
+        children: [
+          _PreviewSurface(tokens: light),
+          Positioned.fill(
+            child: ClipPath(
+              clipper: const _DiagonalClipper(),
+              child: _PreviewSurface(tokens: dark),
+            ),
+          ),
+        ],
+      ),
+    };
+    final radius = t.size('radius.container', fallback: 10);
+    final borderWidth = selected ? 1.5 : 1.0;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          // `p-2`; the checked card swaps the 1px hairline for a 1.5px
+          // `line-strong` border and `p-[7.5px]`.
+          padding: EdgeInsets.all(8 + 1 - borderWidth),
+          decoration: BoxDecoration(
+            color: t.card,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(
+              color: selected
+                  ? t.colors['line-strong']!
+                  : t.colors['line-hairline']!,
+              width: borderWidth,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 8,
+            children: [
+              preview(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  spacing: 8,
                   children: [
-                    ExcludeSemantics(
-                      child: Container(
-                        height: 64,
-                        padding: const EdgeInsets.all(8),
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(
-                          color: t.canvas,
-                          border: Border.all(
-                            color: t
-                                .colors[brutal ? 'line-strong' : 'line-muted']!,
-                            width: previewLine,
-                          ),
-                          borderRadius: brutal
-                              ? null
-                              : BorderRadius.circular(6),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: t.panel,
-                            border: Border.all(
-                              color: brutal
-                                  ? Colors.black
-                                  : t.colors['line-muted']!,
-                              width: previewLine,
-                            ),
-                            borderRadius: brutal
-                                ? null
-                                : BorderRadius.circular(4),
-                            // brutal `shadow-brutal-xs` is not a defined
-                            // utility; elegant `shadow-raft-xs`.
-                            boxShadow: brutal ? null : t.themeShadows.xs.outer,
-                          ),
-                          // The rows overflow the h-full panel; the h-16
-                          // preview's `overflow-hidden` clips them.
-                          child: OverflowBox(
-                            alignment: Alignment.topLeft,
-                            maxHeight: double.infinity,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                FractionallySizedBox(
-                                  widthFactor: .6,
-                                  child: Container(
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: t.muted.withValues(
-                                        alpha: t.muted.a * .35,
-                                      ),
-                                      borderRadius: brutal
-                                          ? null
-                                          : BorderRadius.circular(9999),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color:
-                                            t.colors[brutal
-                                                ? 'primary-400'
-                                                : 'primary-soft'],
-                                        borderRadius: brutal
-                                            ? null
-                                            : BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Container(
-                                        height: 6,
-                                        decoration: BoxDecoration(
-                                          color: t.colors['fill-muted'],
-                                          borderRadius: brutal
-                                              ? null
-                                              : BorderRadius.circular(9999),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      width: 28,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: brutal
-                                            ? t.colors['accent-400']
-                                            : t.accentSoft,
-                                        borderRadius: brutal
-                                            ? null
-                                            : BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
+                    Expanded(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: RaftTypography.body(
+                          t,
+                          size: 14,
+                          line: 20,
+                          weight: FontWeight.w600,
+                          color: t.colors['foreground'],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            raftText(context, brutal ? 'Brutal' : 'Elegant'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: RaftTypography.body(
-                              t,
-                              size: 14,
-                              line: 20,
-                              weight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        if (selected) ...[
-                          const SizedBox(width: 8),
-                          RaftIcon(
-                            RaftGlyph.check,
-                            size: 14,
-                            color:
-                                t.colors[brutal
-                                    ? 'primary-500'
-                                    : 'accent-strong'],
-                          ),
-                        ],
-                      ],
-                    ),
+                    if (selected)
+                      RaftIcon(
+                        RaftGlyph.check,
+                        size: 16,
+                        color: t.colors['foreground'],
+                      ),
                   ],
                 ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: SizedBox(
+                  height: 16,
+                  child: selected
+                      ? Text(
+                          raftText(context, 'Saved on this device.'),
+                          style: RaftTypography.body(
+                            t,
+                            size: 12,
+                            line: 16,
+                            color: t.colors['foreground-hint'],
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DiagonalClipper extends CustomClipper<Path> {
+  const _DiagonalClipper();
+  @override
+  Path getClip(Size size) => Path()
+    ..moveTo(size.width, 0)
+    ..lineTo(size.width, size.height)
+    ..lineTo(0, size.height)
+    ..close();
+  @override
+  bool shouldReclip(_DiagonalClipper old) => false;
+}
+
+/// ThemePreviewSurface: `flex h-20 overflow-hidden rounded-control border
+/// border-line-seam bg-layer-canvas` of a frame strip (`w-3`), a sidebar
+/// (`w-1/3`) with the sticker row and the paper with the pink button.
+class _PreviewSurface extends StatelessWidget {
+  const _PreviewSurface({required this.tokens});
+  final RaftTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = tokens.colors;
+    final seam = BorderSide(color: tokens.ui.lineSeam);
+    Widget bar(double widthFactor, Color color, {double height = 6}) =>
+        FractionallySizedBox(
+          widthFactor: widthFactor,
+          alignment: Alignment.centerLeft,
+          child: Container(
+            height: height,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        );
+    final ink = tokens.ui.foreground;
+    return Container(
+      height: 80,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: c['layer-canvas'],
+        borderRadius: BorderRadius.circular(
+          tokens.size('radius.control', fallback: 8),
+        ),
+        border: Border.fromBorderSide(seam),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            decoration: BoxDecoration(
+              color: c['layer-frame'],
+              border: Border(right: seam),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: c['layer-sidebar'],
+                border: Border(right: seam),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 4,
+                children: [
+                  bar(.75, ink.withValues(alpha: .3)),
+                  Container(
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: c['brand-400'],
+                      borderRadius: BorderRadius.circular(3),
+                      border: Border.all(color: tokens.ui.stickerInk),
+                    ),
+                  ),
+                  bar(.667, ink.withValues(alpha: .15)),
+                  bar(.5, ink.withValues(alpha: .15)),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 6,
+                children: [
+                  bar(.5, ink.withValues(alpha: .4)),
+                  Row(
+                    spacing: 6,
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color:
+                              c['palette-lavender-400'] ??
+                              const Color(0xffbbafe6),
+                          borderRadius: BorderRadius.circular(2),
+                          border: Border.all(color: tokens.ui.stickerInk),
+                        ),
+                      ),
+                      Expanded(child: bar(1, ink.withValues(alpha: .15))),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: c['layer-card'],
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: tokens.ui.lineStrong),
+                    ),
+                    child: Row(
+                      spacing: 6,
+                      children: [
+                        Expanded(child: bar(1, ink.withValues(alpha: .15))),
+                        Container(
+                          width: 24,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: c['attention-400'],
+                            borderRadius: BorderRadius.circular(3),
+                            border: Border.all(color: tokens.ui.stickerInk),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

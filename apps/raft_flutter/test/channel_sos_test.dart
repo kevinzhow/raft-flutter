@@ -28,7 +28,7 @@ Future<void> _open(
   w.channels = [channel];
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(RaftFamily.elegant),
+      theme: raftTheme(),
       home: Scaffold(
         body: ChannelSettings(controller: w, channel: channel, isPanel: true),
       ),
@@ -50,7 +50,7 @@ Future<void> _open(
   }
 }
 
-Finder get _stopAgents => find.text('Stop Agents');
+Finder get _stopAgents => find.text('Stop All Agents');
 
 Iterable<RequestOptions> _sos(MessageAdapter api) =>
     api.calls.where((c) => c.path.endsWith('-all-agents'));
@@ -83,7 +83,7 @@ void main() {
     await tester.ensureVisible(_stopAgents);
     await tester.tap(_stopAgents);
     await tester.pumpAndSettle();
-    expect(find.text('STOP ALL AGENTS'), findsOneWidget);
+    expect(find.text('Stop Agents'), findsNWidgets(2));
     expect(_sos(api), isEmpty, reason: 'opening the dialog sends nothing');
     await tester.tap(find.byKey(const ValueKey('sos-stop')));
     await _settle(tester, () => _sos(api).isNotEmpty);
@@ -93,9 +93,9 @@ void main() {
     stop.complete({'ok': true});
     await _settle(
       tester,
-      () => find.text('AGENTS STOPPED').evaluate().isNotEmpty,
+      () => find.text('Agents Stopped').evaluate().isNotEmpty,
     );
-    expect(find.text('AGENTS STOPPED'), findsOneWidget);
+    expect(find.text('Agents Stopped'), findsOneWidget);
     final field = find.descendant(
       of: find.byKey(const ValueKey('sos-guidance')),
       matching: find.byType(EditableText),
@@ -125,7 +125,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a rejected stop stays on the confirmation with the error', (
+  testWidgets('a rejected stop stays on the confirmation without a message', (
     tester,
   ) async {
     final (w, api) = (await tester.runAsync(() => fixture('admin')))!;
@@ -141,12 +141,10 @@ void main() {
     await tester.pumpAndSettle();
     // No route: the adapter answers 404 `Unexpected endpoint`.
     await tester.tap(find.byKey(const ValueKey('sos-stop')));
-    await _settle(
-      tester,
-      () => find.byKey(const ValueKey('sos-error')).evaluate().isNotEmpty,
-    );
-    expect(find.text('STOP ALL AGENTS'), findsOneWidget);
-    expect(find.byKey(const ValueKey('sos-error')), findsOneWidget);
+    await _settle(tester, () => _sos(api).isNotEmpty);
+    expect(find.text('Stop Agents'), findsNWidgets(2));
+    // Web shows nothing for a failed stop.
+    expect(find.byKey(const ValueKey('sos-error')), findsNothing);
     expect(_sos(api).single.path, '/channels/c1/stop-all-agents');
     expect(
       tester
@@ -154,7 +152,148 @@ void main() {
           .onPressed,
       isNotNull,
     );
+    // Permission lost while the dialog is open: nothing is sent and, again,
+    // nothing is said.
+    w.server = RaftRecord({'id': 's1', 'role': 'guest'});
+    w.notifyListeners();
+    await tester.tap(find.byKey(const ValueKey('sos-stop')));
+    await _settle(tester, () => false);
+    expect(_sos(api), hasLength(1));
+    expect(find.text('Stop Agents'), findsNWidgets(2));
+    expect(find.byKey(const ValueKey('sos-error')), findsNothing);
   });
+
+  for (final (label, response) in <(String, Object?)>[
+    (
+      'partial',
+      {
+        'ok': false,
+        'started': 1,
+        'total': 3,
+        'results': [
+          {'agentId': 'a', 'ok': true},
+          {'agentId': 'b', 'ok': false, 'reason': 'start_in_flight'},
+          {'agentId': 'c', 'ok': false, 'error': 'Computer offline'},
+        ],
+      },
+    ),
+    // Web reads only `results`: a response naming no missed agent closes
+    // the dialog, and a request that throws keeps the guidance silently.
+    ('legacy failure', {'ok': false}),
+    ('missing response', null),
+    ('rejected request', 'rejected'),
+  ]) {
+    final closes = label == 'legacy failure' || label == 'missing response';
+    testWidgets('$label resume follows Web', (tester) async {
+      const feedback = 'sos-resume-shortfall';
+      final (w, api) = (await tester.runAsync(() => fixture('member')))!;
+      addTearDown(w.dispose);
+      _routes(api);
+      api.routes['GET /channels/c1/members'] = (_) => {
+        'humans': [],
+        'agents': [
+          {'id': 'b', 'name': 'Birch'},
+          {'id': 'c', 'name': 'Cedar'},
+        ],
+      };
+      api.routes['POST /channels/c1/stop-all-agents'] = (_) => {'ok': true};
+      final resumeBodies = <Map>[];
+      api.routes['POST /channels/c1/resume-all-agents'] = (request) {
+        resumeBodies.add(Map.from(request.data as Map));
+        if (response == 'rejected' && resumeBodies.length == 1) {
+          throw StateError('offline');
+        }
+        return resumeBodies.length == 1
+            ? response
+            : {
+                'ok': true,
+                'started': 2,
+                'total': 2,
+                'results': [
+                  {'agentId': 'b', 'ok': true},
+                  {'agentId': 'c', 'ok': true},
+                ],
+              };
+      };
+      await _open(
+        tester,
+        w,
+        RaftChannel({'id': 'c1', 'name': 'release', 'joined': true}),
+      );
+      await tester.tap(_stopAgents);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('sos-stop')));
+      await _settle(
+        tester,
+        () => find.text('Agents Stopped').evaluate().isNotEmpty,
+      );
+      final field = find.descendant(
+        of: find.byKey(const ValueKey('sos-guidance')),
+        matching: find.byType(EditableText),
+      );
+      await tester.enterText(field, 'Keep the schema.');
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('sos-resume')));
+      await _settle(
+        tester,
+        () =>
+            resumeBodies.isNotEmpty &&
+            (closes
+                ? find
+                      .byKey(const ValueKey('channel-sos-dialog'))
+                      .evaluate()
+                      .isEmpty
+                : label != 'partial' ||
+                      find.byKey(const Key(feedback)).evaluate().isNotEmpty),
+      );
+      if (closes) {
+        expect(resumeBodies, hasLength(1));
+        expect(find.byKey(const ValueKey('channel-sos-dialog')), findsNothing);
+        expect(tester.takeException(), isNull);
+        return;
+      }
+      expect(find.byKey(const ValueKey('channel-sos-dialog')), findsOneWidget);
+      expect(
+        tester.widget<EditableText>(field).controller.text,
+        'Keep the schema.',
+      );
+      expect(resumeBodies.single.containsKey('agentIds'), false);
+      if (label == 'partial') {
+        expect(find.byKey(const Key(feedback)), findsOneWidget);
+        // Web counts: one agent still starting, one failed (no names).
+        expect(
+          find.text(
+            '1 agent is still starting and did not get your guidance. Try again in a moment.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('1 agent could not be resumed.'), findsOneWidget);
+        expect(find.textContaining('Birch'), findsNothing);
+      } else {
+        // A thrown request shows nothing at all.
+        expect(find.byKey(const Key(feedback)), findsNothing);
+        expect(find.byKey(const ValueKey('sos-error')), findsNothing);
+        expect(
+          tester
+              .widget<RaftButton>(find.byKey(const ValueKey('sos-resume')))
+              .onPressed,
+          isNotNull,
+        );
+      }
+      await tester.tap(find.byKey(const ValueKey('sos-resume')));
+      await _settle(
+        tester,
+        () =>
+            find.byKey(const ValueKey('channel-sos-dialog')).evaluate().isEmpty,
+      );
+      expect(resumeBodies, hasLength(2));
+      if (label == 'partial') expect(resumeBodies.last['agentIds'], ['b', 'c']);
+      expect(resumeBodies.last['prompt'], resumeBodies.first['prompt']);
+      expect(find.byKey(const ValueKey('channel-sos-dialog')), findsNothing);
+      expect(find.byKey(const Key(feedback)), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   for (final (name, role, json) in [
     ('guest', 'guest', <String, dynamic>{'joined': true}),

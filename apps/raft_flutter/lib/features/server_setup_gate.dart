@@ -5,19 +5,30 @@ import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/cause_notice.dart';
+import '../data/freshness.dart';
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'management_support.dart';
 import 'create_agent_dialog.dart';
 import 'computer_setup_commands.dart';
+import 'delete_server_confirm.dart';
 import 'resource_cards.dart';
 
 /// Settings and the setup surface of one workspace share an invalidation
 /// signal, never a verdict. It belongs to the controller (account / server
 /// session) it was raised on, so another controller's gate does not reload.
-final _setupSignals = Expando<ValueNotifier<int>>('serverSetupSignal');
+final _setupSignals = Expando<_SetupSignal>('serverSetupSignal');
+
+/// A named type so the test leak ignore list can name it: it is held by an
+/// Expando on the controller and released by GC, never disposed.
+class _SetupSignal extends ValueNotifier<int> {
+  _SetupSignal() : super(0);
+}
+
 ValueNotifier<int> _setupSignal(WorkspaceController w) =>
-    _setupSignals[w] ??= ValueNotifier<int>(0);
+    _setupSignals[w] ??= _SetupSignal();
 void refreshServerSetup(WorkspaceController w) => _setupSignal(w).value++;
 
 const setupSurveyRoles = {
@@ -64,12 +75,27 @@ class ServerSetupGate extends StatefulWidget {
 class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   @override
   WorkspaceController get w => widget.controller;
+
+  /// SetupSessionFooter "Delete this server": owners only.
+  bool get ownerDeletes => setupShowsDeleteServer(w);
+  VoidCallback? get deleteServer =>
+      setupDeleteServerAction(context, w, busy: busy);
   Map<String, dynamic>? projection;
+  // ignore: raft_lints/avoid_imperative_notice_state -- createdAgentId clears on setup reset and server/account switch (clearData); notice is written by reset() but never rendered and clears on server/account switch (clearData).
   String? createdAgentId, notice;
   List<Map<String, dynamic>>? setupMachines;
-  String? setupMachinesError;
+
+  /// The failed machine-list read. It describes a list the current step has
+  /// to show, so it ends with that need (the step moved on) or the next read.
+  final _machinesFailure = CauseNotice();
+  String? get setupMachinesError => _machinesFailure.message;
+  bool get _needsMachines =>
+      (projection?['surface'] == 'create_agent' && createdAgentId == null) ||
+      projection?['surface'] == 'computer_runtime';
   StreamSubscription<RaftEvent>? events;
-  Timer? poll, debounce;
+  Timer? debounce;
+  RaftForegroundPeriodic? poll;
+  final resumeReload = Freshness(const Duration(seconds: 20));
   String get base => '/servers/${w.server!.id}';
   bool get blocked =>
       projection?['phase'] != null &&
@@ -85,7 +111,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
     startManagement();
     _signal = _setupSignal(w)..addListener(reload);
     listenEvents();
-    poll = Timer.periodic(const Duration(seconds: 10), (_) {
+    // Stops while hidden/paused; resume reloads (didChangeAppLifecycleState).
+    poll = RaftForegroundPeriodic(const Duration(seconds: 10), () {
       if (blocked && !busy) reload();
     });
   }
@@ -101,7 +128,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
         scheduleReload();
       }
     });
-    _directory = w.entityDirectory..addListener(directoryChanged);
+    _directory = w.services.entityDirectory..addListener(directoryChanged);
     _seenRevisions = directoryRevisions();
     _signature = setupSignature();
   }
@@ -118,15 +145,17 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
 
   /// The directory's scoped counters for what setup reads: computers and
   /// agents. Members, presence and activity never move them.
-  (int, int) directoryRevisions() =>
-      (w.entityDirectory.computerRevision, w.entityDirectory.agentRevision);
+  (int, int) directoryRevisions() => (
+    w.services.entityDirectory.computerRevision,
+    w.services.entityDirectory.agentRevision,
+  );
 
   /// Source ServerSetupProjectionGate re-reads the projection when the
   /// machines' id/status/runtimes change. Agent creation moves the
   /// create-agent step, so the agent id set is part of the signature too.
   /// Activity, presence and session patches leave it unchanged.
   String setupSignature() {
-    final directory = w.entityDirectory;
+    final directory = w.services.entityDirectory;
     final machines = [
       for (final m in directory.rows(WorkspaceEntityKind.computers))
         '${m['id']}:${m['status']}:'
@@ -159,7 +188,9 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
       _directory?.removeListener(directoryChanged);
       _signal?.removeListener(reload);
       if (_announcementServer != null) {
-        oldWidget.controller.announcementGate.detach(_announcementServer!);
+        oldWidget.controller.services.announcementGate.detach(
+          _announcementServer!,
+        );
         _announcementServer = null;
       }
       rebindManagementController();
@@ -174,7 +205,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   void _attachAnnouncementGate() {
     final id = w.server?.id;
     if (id == _announcementServer) return;
-    final gate = w.announcementGate;
+    final gate = w.services.announcementGate;
     if (_announcementServer != null) gate.detach(_announcementServer!);
     _announcementServer = id;
     if (id != null) gate.attach(id);
@@ -184,18 +215,18 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   /// first read (no projection) reads as blocked.
   void _reportAnnouncementGate(String serverId) {
     if (w.server?.id != serverId) return;
-    w.announcementGate.report(serverId, projection);
+    w.services.announcementGate.report(serverId, projection);
   }
 
   @override
   void dispose() {
     if (_announcementServer != null) {
-      w.announcementGate.detach(_announcementServer!);
+      w.services.announcementGate.detach(_announcementServer!);
     }
     _signal?.removeListener(reload);
     events?.cancel();
     _directory?.removeListener(directoryChanged);
-    poll?.cancel();
+    poll?.dispose();
     debounce?.cancel();
     surveyOther.dispose();
     super.dispose();
@@ -203,7 +234,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) reload();
+    if (state == AppLifecycleState.resumed && resumeReload.due()) reload();
   }
 
   @override
@@ -224,7 +255,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   void clearData() {
     projection = null;
     setupMachines = null;
-    setupMachinesError = null;
+    _machinesFailure.clear();
+    _surveyFailure.clear();
     createdAgentId = null;
     notice = null;
   }
@@ -244,24 +276,52 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
     if (!accepts(generation, request)) return;
     projection = managementMap(result);
     _reportAnnouncementGate(serverId);
-    if ((projection?['surface'] == 'create_agent' && createdAgentId == null) ||
-        projection?['surface'] == 'computer_runtime') {
+    if (_needsMachines) {
       try {
         final catalog = await w.client.get('$base/machines');
         if (!accepts(generation, request)) return;
         setupMachines = managementRows(
           catalog is List ? catalog : managementMap(catalog)['machines'],
         );
-        setupMachinesError = null;
+        _machinesFailure.clear();
       } catch (e) {
         if (!accepts(generation, request)) return;
-        setupMachinesError = '$e';
+        _machinesFailure.raise(
+          userErrorText(
+            e,
+            fallback: 'Server setup could not be updated. Try again.',
+            where: 'setup machines',
+          ),
+          whileTrue: () => _needsMachines,
+        );
         if (e is RaftApiException && [401, 403].contains(e.status)) {
           setupMachines = null;
         }
       }
     }
     // A failed refetch preserves the last authoritative projection.
+  }
+
+  /// The owner deferred setup: the conversation stays usable and a bar offers
+  /// to resume (Web `projection.phase === 'deferred'` and `!blocksChat`).
+  bool get deferred =>
+      projection?['phase'] == 'deferred' && projection?['blocksChat'] != true;
+
+  /// ServerSetupProjectionGate.handleResume: start the setup again; the
+  /// projection it answers decides what shows next. A failure is kept in
+  /// [error] (the bar shows none, like Web) for the step that follows.
+  Future<void> resume() async {
+    if (busy) return;
+    final generation = w.client.generation, scope = authority;
+    await run(() async {
+      final result = await w.client.post(
+        '$base/setup-transition',
+        data: {'action': 'start'},
+      );
+      if (!accepts(generation) || scope != authority) return;
+      projection = managementMap(result);
+      _reportAnnouncementGate(w.server!.id);
+    }, refresh: false);
   }
 
   Future<void> transition(String action) async {
@@ -308,7 +368,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
               RaftAgentBanner(
                 status: RaftAgentBannerStatus.warning,
                 description: (error ?? setupMachinesError)!,
-                action: createdAgentId == null ? 'Try again' : null,
+                action: createdAgentId == null ? 'Try Again' : null,
                 onAction: createdAgentId == null ? reload : null,
               )
             else if (createdAgentId == null)
@@ -324,11 +384,12 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
                     'enabled'
             ? null
             : completeCindy,
-        sessionActions: widget.onSwitchServer == null
-            ? null
-            : RaftCindySessionLink(
-                onPressed: busy ? null : widget.onSwitchServer,
-              ),
+        sessionActions: setupSessionActions(
+          context,
+          w,
+          onSwitchServer: widget.onSwitchServer,
+          busy: busy,
+        ),
       );
     }
     return CreateAgentDialog(
@@ -350,7 +411,14 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
     );
   }
 
-  String? surveyRole, surveySource, surveyError;
+  String? surveyRole, surveySource;
+
+  /// The failed survey save; it ends with the survey (answered, or another
+  /// server's setup took over: [clearData]) or the next submit.
+  final _surveyFailure = CauseNotice();
+  String? get surveyError => _surveyFailure.message;
+  bool get _surveyPending =>
+      managementMap(projection?['postSetup'])['surveyPending'] == true;
   final surveyOther = TextEditingController();
 
   /// ServerSetupSurveyStep.handleSubmit: one PATCH /auth/me carrying the role
@@ -358,7 +426,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   Future<void> submitSurvey() async {
     final role = surveyRole, source = surveySource;
     if (role == null || source == null || busy) return;
-    setState(() => surveyError = null);
+    setState(_surveyFailure.clear);
     await run(() async {
       try {
         await w.client.request(
@@ -375,7 +443,10 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
       } on RaftApiException {
         if (mounted) {
           setState(
-            () => surveyError = "Couldn't save your answers. Try again.",
+            () => _surveyFailure.raise(
+              "Couldn't save your answers. Try again.",
+              whileTrue: () => _surveyPending,
+            ),
           );
         }
         return;
@@ -389,7 +460,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   Widget stepPage(Widget step) => LayoutBuilder(
     builder: (context, box) {
       final padding = raftScrollPadding(context, const EdgeInsets.all(16));
-      return SingleChildScrollView(
+      return RaftKeyboardScrollView(
         padding: padding,
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -409,8 +480,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
       return;
     }
     await confirm(
-      'Start setup over?',
-      'Every computer connected to this unfinished workspace will be revoked. Its old credentials will stop working; the installed Computer service is not removed.',
+      'Start Over',
+      'Every computer connected to this unfinished server will be revoked. Its old credentials will stop working; the installed Raft Computer is not removed.',
       () async {
         final generation = w.client.generation, scope = authority;
         final result = managementMap(await w.client.post('$base/setup-reset'));
@@ -420,7 +491,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
         notice =
             '${result['revokedComputers'] ?? 0} computer connections revoked.';
       },
-      submit: 'Start over',
+      submit: 'Start Over',
+      cancel: 'Keep Setup',
       destructive: true,
     );
     if (mounted) setState(() {});
@@ -431,7 +503,22 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   Widget label(String text) => Text(raftText(context, text));
   @override
   Widget build(BuildContext context) {
-    if (!blocked) return widget.child;
+    if (!blocked) {
+      // The child keeps its place in the tree whether or not the bar shows.
+      return Stack(
+        fit: StackFit.passthrough,
+        children: [
+          widget.child,
+          if (deferred)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: RaftSetupResumeBar(onResume: resume, loading: busy),
+            ),
+        ],
+      );
+    }
     final current = projection!;
     if (current['surface'] == 'create_agent') {
       return PopScope(
@@ -461,6 +548,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
           otherController: surveyOther,
           onContinue: submitSurvey,
           onSwitchServer: busy ? null : widget.onSwitchServer,
+          onDeleteServer: deleteServer,
+          showDeleteServer: ownerDeletes,
         ),
       );
     }
@@ -470,6 +559,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
           key: const ValueKey('setup-handoff'),
           starting: busy,
           onSwitchServer: busy ? null : widget.onSwitchServer,
+          onDeleteServer: deleteServer,
+          showDeleteServer: ownerDeletes,
           onDone: () => run(() async {
             final generation = w.client.generation, scope = authority;
             final result = await w.client.post('$base/setup-handoff');
@@ -484,13 +575,13 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   }
 
   /// packages/shared `getSetupRuntimeOptions()` (supported, not deprecated,
-  /// not the built-in): id, display name, abbreviation.
+  /// not the built-in; Copilot CLI is deprecated since Web v1.21.12): id,
+  /// display name, abbreviation.
   static const _setupRuntimes = <(String, String, String)>[
     ('claude', 'Claude Code', 'CC'),
     ('codex', 'Codex CLI', 'CX'),
     ('grok', 'Grok Build', 'GK'),
     ('kimi-sdk', 'Kimi Code', 'KC'),
-    ('copilot', 'Copilot CLI', 'CP'),
     ('cursor', 'Cursor CLI', 'CU'),
     ('opencode', 'OpenCode', 'OC'),
     ('pi', 'Pi', 'PI'),
@@ -585,6 +676,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
       guideCommands: commands == null
           ? null
           : (commands.install, commands.setup),
+      guideInstallAndSetup: commands?.installAndSetup,
       serverSlug: w.server?.string('slug'),
       canReset: managementStrings(current['allowedExits']).contains('reset'),
       loading: busy,
@@ -600,6 +692,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
         }
       },
       onSwitchServer: busy ? null : widget.onSwitchServer,
+      onDeleteServer: deleteServer,
+      showDeleteServer: ownerDeletes,
       onCopyInstallCommand: (id, command) =>
           Clipboard.setData(ClipboardData(text: command)),
     );

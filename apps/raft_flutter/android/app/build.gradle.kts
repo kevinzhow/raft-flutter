@@ -31,11 +31,30 @@ android {
         versionName = flutter.versionName
     }
 
+    val releaseKeystore = System.getenv("RAFT_ANDROID_KEYSTORE_PATH")
+    val releaseSigningRequired = System.getenv("RAFT_ANDROID_SIGNING_REQUIRED") == "true"
+    if (releaseSigningRequired && releaseKeystore.isNullOrBlank()) {
+        throw GradleException("Release signing was required, but RAFT_ANDROID_KEYSTORE_PATH is missing")
+    }
+    if (!releaseKeystore.isNullOrBlank()) {
+        signingConfigs.create("raftRelease") {
+            storeFile = file(releaseKeystore)
+            storePassword = System.getenv("RAFT_ANDROID_STORE_PASSWORD")
+                ?: throw GradleException("Missing RAFT_ANDROID_STORE_PASSWORD")
+            keyAlias = System.getenv("RAFT_ANDROID_KEY_ALIAS")
+                ?: throw GradleException("Missing RAFT_ANDROID_KEY_ALIAS")
+            keyPassword = System.getenv("RAFT_ANDROID_KEY_PASSWORD")
+                ?: throw GradleException("Missing RAFT_ANDROID_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Local acceptance retains its existing debug key. CI requires the
+            // persistent release keystore; it never publishes a random debug key.
+            signingConfig = signingConfigs.getByName(
+                if (releaseKeystore.isNullOrBlank()) "debug" else "raftRelease"
+            )
         }
     }
 }
@@ -51,5 +70,7 @@ flutter {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
+    implementation("androidx.core:core-splashscreen:1.2.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

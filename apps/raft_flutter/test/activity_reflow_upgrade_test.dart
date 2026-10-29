@@ -8,19 +8,19 @@ import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show fixture;
 import 'workspace_activity_activation_test.dart' show channelRow, message;
+import 'support/app_services_fixture.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final mode in ['other-row', 'other-row-double', 'late', 'detail']) {
-      testWidgets('Activity C reflow $family/$dark $mode', (t) async {
+      testWidgets('Activity C reflow ${dark ? 'dark' : 'light'} $mode', (
+        t,
+      ) async {
         SharedPreferences.setMockInitialValues({});
         t.view.physicalSize = const Size(1440, 900);
         t.view.devicePixelRatio = 1;
@@ -34,7 +34,7 @@ void main() {
         addTearDown(w.dispose);
         w.loading = false;
         w.section = 'activity';
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         w.channels = [
           w.channel!,
           RaftChannel({'id': 'c2', 'name': 'second', 'joined': true}),
@@ -59,12 +59,14 @@ void main() {
         };
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            theme: raftTheme(dark: dark),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -110,7 +112,7 @@ void main() {
           if (mode == 'late') {
             await t.pump(const Duration(milliseconds: 151));
           } else {
-            await t.tap(find.byTooltip('Close detail'));
+            await t.tap(find.byTooltip('Close Detail'));
             expect(w.location.route, RaftRoute.activity);
             expect(w.location.content, isNull);
             await t.pump();

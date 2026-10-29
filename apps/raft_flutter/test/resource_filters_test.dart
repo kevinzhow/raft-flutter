@@ -1,7 +1,29 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/data/source_activity_unread_store.dart';
 import 'package:raft_flutter/features/resource_filters.dart';
 
 void main() {
+  test('Activity view identity ignores pagination but retains every filter', () {
+    final filters = ResourceFilters();
+    String key({int limit = 30, int offset = 0, String path = '/channels/inbox'}) =>
+        ResourceFilters.viewKey(
+          path,
+          filters.list('', filter: 'all', limit: limit, offset: offset),
+        );
+    final initial = key();
+    expect(initial, SourceActivityUnreadStore.defaultInboxView);
+    expect(key(limit: 60, offset: 30), initial);
+    expect(key(path: '/channels/inbox/done'), isNot(initial));
+    filters.channelId = 'ch9';
+    expect(key(), isNot(initial));
+    filters.channelId = null;
+    filters.direction = 'asc';
+    expect(key(), isNot(initial));
+    expect(
+      ResourceFilters.viewKey('/channels/inbox', filters.list('', filter: 'unread')),
+      isNot(key()),
+    );
+  });
   test(
     'filter-only Search uses mounted params and requires a meaningful filter',
     () {

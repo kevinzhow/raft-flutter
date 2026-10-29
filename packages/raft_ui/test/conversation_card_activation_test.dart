@@ -4,21 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'N24 activation $family/$dark first click is immediate; keyboard and nested actions stay distinct',
+      'N24 activation ${dark ? 'dark' : 'light'} first click is immediate; keyboard and nested actions stay distinct',
       (tester) async {
         final activation = <int>[];
         var legacy = 0, nested = 0;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: Center(
                 child: SizedBox(
@@ -56,16 +53,16 @@ void main() {
         expect(activation, [1, 2, 1]);
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
-        // Focus the row's actual InkWell rather than invoking its callback.
-        final ink = tester.element(
+        // Focus the row's real input rather than invoking its callback.
+        final input = tester.widget<FocusableActionDetector>(
           find
               .descendant(
                 of: find.byType(RaftConversationCard),
-                matching: find.byType(InkWell),
+                matching: find.byType(FocusableActionDetector),
               )
               .first,
         );
-        Focus.of(ink).requestFocus();
+        input.focusNode!.requestFocus();
         await tester.pump();
         await tester.sendKeyEvent(LogicalKeyboardKey.enter);
         expect(activation, [1, 2, 1, 1]);
@@ -74,7 +71,9 @@ void main() {
         expect(nested, 1);
         expect(activation, hasLength(count));
         expect(
-          tester.getSemantics(find.byType(RaftConversationCard)).label,
+          tester
+              .getSemantics(find.bySemanticsLabel(RegExp('Open conversation')))
+              .label,
           contains('Open conversation'),
         );
         expect(tester.takeException(), isNull);
@@ -87,7 +86,7 @@ void main() {
       var opened = 0;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftConversationCard(
               onOpen: () => opened++,
@@ -130,7 +129,7 @@ void main() {
     final key = GlobalKey();
     final details = <int>[];
     Widget host(bool flipped) => MaterialApp(
-      theme: raftTheme(RaftFamily.elegant),
+      theme: raftTheme(),
       home: Scaffold(
         body: Row(
           children: [
@@ -163,7 +162,7 @@ void main() {
       final semantics = tester.ensureSemantics();
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftConversationCard(
               onOpen: () {},
@@ -194,7 +193,9 @@ void main() {
         SemanticsActionEvent(
           type: SemanticsAction.tap,
           viewId: tester.view.viewId,
-          nodeId: tester.getSemantics(find.byType(RaftConversationCard)).id,
+          nodeId: tester
+              .getSemantics(find.bySemanticsLabel('Pointer override'))
+              .id,
         ),
       );
       expect(activation, [1, 1]);

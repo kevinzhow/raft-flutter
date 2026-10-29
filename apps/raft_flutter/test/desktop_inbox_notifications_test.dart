@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/platform/background_inbox.dart';
 import 'package:raft_flutter/platform/desktop_inbox_notifications.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
+import 'package:raft_flutter/platform/content_coordinator.dart';
+import 'package:raft_flutter/platform/macos_dock_unread.dart';
+import 'package:raft_flutter/platform/windows_tray.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -62,6 +66,10 @@ class _Notifications extends NativeNotificationService {
     enabled = permitted = available = initialized = true;
   }
   bool allowed = true;
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<void> bind(String? scope) async {}
   final sent = <Map<String, dynamic>>[];
   @override
   Future<void> refreshPermission() async {
@@ -74,6 +82,9 @@ class _Notifications extends NativeNotificationService {
     required String title,
     required String body,
     required String payload,
+    int? unread,
+    bool quiet = false,
+    String? conversation,
   }) async {
     if (allowed) {
       sent.add(Map<String, dynamic>.from(jsonDecode(payload) as Map));
@@ -101,7 +112,11 @@ Map<String, dynamic> _row(String id, {bool old = false}) => {
 };
 
 void main() {
-  for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
+  for (final platform in [
+    TargetPlatform.macOS,
+    TargetPlatform.windows,
+    TargetPlatform.linux,
+  ]) {
     group('$platform', () {
       late _Client client;
       late WorkspaceController w;
@@ -111,6 +126,7 @@ void main() {
         client = _Client();
         w = WorkspaceController(client, ownsClient: false)
           ..server = RaftRecord({'id': 's', 'role': 'owner'});
+        w.activityUnread.start();
         notifications = _Notifications(platform);
         desktop = DesktopInboxNotifications(
           notifications: notifications,
@@ -144,6 +160,74 @@ void main() {
         w.setForeground(false);
         await t.pump();
         await desktop.prepared;
+      }
+
+      if (platform == TargetPlatform.windows) {
+        test('native tray hide after resume delivers a newly accepted DM without reading it', () async {
+          setup();
+          const channel = MethodChannel('test/windows-tray-inbox');
+          final messenger =
+              TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+          messenger.setMockMethodCallHandler(
+            channel,
+            (_) async => {'available': true},
+          );
+          const windowChannel = MethodChannel('app.raft/windows-notifications');
+          messenger.setMockMethodCallHandler(windowChannel, (_) async => true);
+          addTearDown(
+            () => messenger.setMockMethodCallHandler(windowChannel, null),
+          );
+          addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+          final coordinator = NativeContentCoordinator(
+            notifications: notifications,
+            links: const Stream.empty(),
+            dockUnread: MacOSDockUnread(platform: TargetPlatform.linux),
+            tray: WindowsTray(platform: platform, channel: channel),
+          );
+          await coordinator.init();
+          coordinator.desktop!.dispose();
+          coordinator.desktop = desktop;
+          coordinator.onForegroundChanged = () =>
+              w.setForeground(coordinator.appForeground);
+          coordinator.bindWorkspace(w);
+          coordinator.didChangeAppLifecycleState(AppLifecycleState.resumed);
+          expect(notifications.deliveryAllowed!(), false);
+          final hidden = Completer<void>();
+          messenger.handlePlatformMessage(
+            channel.name,
+            const StandardMethodCodec().encodeMethodCall(
+              const MethodCall('hidden', true),
+            ),
+            (_) => hidden.complete(),
+          );
+          await hidden.future;
+          await desktop.prepared;
+          expect(w.foreground, false);
+          expect(coordinator.appForeground, false);
+          w.activityUnread.acceptWindow({
+            'items': [_row('after-tray-hide')],
+          }, scope: w.activityUnread.scope);
+          await desktop.deliverPending();
+          expect(notifications.sent, hasLength(1));
+          expect(
+            notifications.sent.single['uri'],
+            contains('/messages/after-tray-hide'),
+          );
+          expect(client.reads, ['/servers/s/notification-settings']);
+          expect(w.activityUnread.totalUnreadCount, 1);
+          coordinator.didChangeAppLifecycleState(AppLifecycleState.resumed);
+          expect(coordinator.appForeground, true);
+          expect(w.foreground, true);
+          expect(notifications.deliveryAllowed!(), false);
+          w.activityUnread.acceptWindow({
+            'items': [_row('after-tray-restore')],
+          }, scope: w.activityUnread.scope);
+          await desktop.deliverPending();
+          expect(notifications.sent, hasLength(1));
+          expect(client.directoryReads, 0);
+          expect(client.inboxReads, 0);
+          await coordinator.dispose();
+        });
       }
 
       testWidgets(

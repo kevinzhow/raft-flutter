@@ -7,18 +7,19 @@ import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/data/workspace_entity_directory.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
-import 'package:raft_flutter/features/workspace_grid_view.dart';
 import 'package:raft_flutter/features/source_feedback_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'workspace_source_location_contract_test.dart' show pageFixture, frames;
+import 'flutter_test_config.dart' show leakDebt;
+import 'support/app_services_fixture.dart';
 
 // Source 26f77ef LeftRail649–771 + Sidebar922–1019/3840–3848/4554–4561.
 // Every test mounts WorkspaceView and activates real product handlers.
 Future<void> mountShell(
   WidgetTester t,
   WorkspaceController w,
-  RaftFamily family,
   bool dark, {
   double width = 1280,
   PersonalPresentationStore? presentation,
@@ -28,13 +29,15 @@ Future<void> mountShell(
   addTearDown(t.view.reset);
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
-      home: WorkspaceView(
-        controller: w,
-        appearance: RaftAppearance(light: family),
-        onAppearance: (_) async {},
-        onLogout: () async {},
-        presentation: presentation,
+      theme: raftTheme(dark: dark),
+      home: withAppServices(
+        WorkspaceView(
+          controller: w,
+          appearance: RaftAppearance(),
+          onAppearance: (_) async {},
+          onLogout: () async {},
+          presentation: presentation,
+        ),
       ),
     ),
   );
@@ -55,20 +58,17 @@ Future<void> retire(WidgetTester t) async {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  // Leak debt (other): see docs/development.md, Leak tracking.
+  leakDebt(const ['ValueNotifier<bool>']);
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K08a] $family/$dark classic owner keeps six entries, guest hides directory, and one sidebar heading',
+      '[K08a] ${dark ? 'dark' : 'light'} native owner keeps global actions and five rail entries; guest hides directory',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         api.routes['GET /agents'] = (_) => [];
         api.routes['GET /servers/s1/members'] = (_) => [];
-        await mountShell(t, w, family, dark);
+        await mountShell(t, w, dark);
         for (final id in [
-          'search',
           'chat',
           'activity',
           'tasks',
@@ -77,37 +77,44 @@ void main() {
         ]) {
           expect(find.byKey(ValueKey('rail-$id')), findsOneWidget);
         }
-        expect(find.byType(RaftChatSidebarHeading), findsOneWidget);
-        expect(
-          t.getSize(find.byType(RaftChatSidebarHeading)).height,
-          family == RaftFamily.brutal ? 62 : 56,
-        );
-        expect(find.byKey(const Key('rail-workspace')), findsOneWidget);
+        final topBar = find.byType(RaftWorkspaceTopBar);
+        expect(topBar, findsOneWidget);
+        expect(t.getRect(topBar), const Rect.fromLTWH(0, 0, 1280, 48));
+        expect(find.byType(RaftChatSidebarHeading), findsNothing);
+        expect(find.byKey(const Key('topbar-workspace')), findsOneWidget);
+        expect(find.byKey(const Key('rail-workspace')), findsNothing);
+        expect(find.byKey(const Key('rail-search')), findsNothing);
         expect(find.byKey(const Key('account-navigation')), findsNothing);
         expect(find.byType(PopupMenuButton<String>), findsNothing);
-        final search = t.getRect(find.byKey(const ValueKey('rail-search'))),
-            chat = t.getRect(find.byKey(const ValueKey('rail-chat')));
-        expect(chat.top - search.top, 46);
-        expect(search.top, family == RaftFamily.brutal ? 70 : 72);
+        final search = t.getRect(find.byKey(const ValueKey('topbar-search'))),
+            chat = t.getRect(find.byKey(const ValueKey('rail-chat'))),
+            activity = t.getRect(find.byKey(const ValueKey('rail-activity')));
+        expect(search.top, 5.5);
+        expect(search.height, 36);
+        expect(activity.top - chat.top, 46);
+        // The shared row is 48px, followed by the rail's 8px top inset.
+        expect(chat.top, 56);
         w.server = RaftRecord({...w.server!.json, 'role': 'guest'});
         w.notifyListeners();
         await frames(t, () {});
         expect(find.byKey(const ValueKey('rail-members')), findsNothing);
         expect(find.byKey(const ValueKey('rail-computers')), findsNothing);
-        for (final id in ['search', 'chat', 'activity', 'tasks']) {
+        for (final id in ['chat', 'activity', 'tasks']) {
           expect(find.byKey(ValueKey('rail-$id')), findsOneWidget);
         }
+        expect(find.byKey(const Key('topbar-search')), findsOneWidget);
+        expect(find.byKey(const Key('topbar-workspace')), findsOneWidget);
         await retire(t);
       },
       variant: TargetPlatformVariant({TargetPlatform.linux}),
     );
     testWidgets(
-      '[K08b] $family/$dark real Help opens resources and Feedback/About publish scoped settings paths',
+      '[K08b] ${dark ? 'dark' : 'light'} real Help opens resources and Feedback/About publish scoped settings paths',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         api.routes['GET /agents'] = (_) => [];
         api.routes['GET /servers/s1/members'] = (_) => [];
-        await mountShell(t, w, family, dark);
+        await mountShell(t, w, dark);
         final before = w.navigation.entries.length;
         final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
         await mouse.addPointer(location: const Offset(1200, 20));
@@ -183,7 +190,7 @@ void main() {
       variant: TargetPlatformVariant({TargetPlatform.linux}),
     );
     testWidgets(
-      '[K08f] $family/$dark Help in already joined Community pushes Home without joining or clearing its draft',
+      '[K08f] ${dark ? 'dark' : 'light'} Help in already joined Community pushes Home without joining or clearing its draft',
       (t) async {
         final (w, api) = await pageFixture(
           t,
@@ -194,7 +201,7 @@ void main() {
         w.drafts['c1'] = 'Retain joined community editor';
         api.routes['GET /agents'] = (_) => [];
         api.routes['GET /servers/s1/members'] = (_) => [];
-        await mountShell(t, w, family, dark);
+        await mountShell(t, w, dark);
         final before = w.navigation.entries.length;
         await openHelp(t);
         await t.tap(
@@ -217,44 +224,14 @@ void main() {
       variant: TargetPlatformVariant({TargetPlatform.linux}),
     );
     testWidgets(
-      '[K08c] $family/$dark actual available workspace toggle is lg gated and retains location/draft',
-      (t) async {
-        final (w, api) = await pageFixture(t, section: 'chat');
-        api.routes['GET /agents'] = (_) => [];
-        api.routes['GET /servers/s1/members'] = (_) => [];
-        w.drafts['c1'] = 'Keep this editor';
-        await mountShell(t, w, family, dark, width: 1023);
-        expect(find.byKey(const Key('workspace-mode-toggle')), findsNothing);
-        t.view.physicalSize = const Size(1024, 800);
-        await t.pumpAndSettle();
-        final uri = w.location.toString(), count = w.navigation.entries.length;
-        expect(find.byKey(const Key('workspace-mode-toggle')), findsOneWidget);
-        await t.tap(find.byKey(const Key('workspace-mode-toggle')));
-        await frames(t, () {});
-        await t.pumpAndSettle();
-        expect(find.byType(WorkspaceGridView), findsOneWidget);
-        expect(w.location.toString(), uri);
-        expect(w.navigation.entries.length, count);
-        expect(w.drafts['c1'], 'Keep this editor');
-        await t.tap(find.byKey(const Key('workspace-mode-toggle')));
-        await frames(t, () {});
-        await t.pumpAndSettle();
-        expect(find.byType(WorkspaceGridView), findsNothing);
-        expect(w.location.toString(), uri);
-        expect(w.drafts['c1'], 'Keep this editor');
-        await retire(t);
-      },
-      variant: TargetPlatformVariant({TargetPlatform.linux}),
-    );
-    testWidgets(
-      '[K08d] $family/$dark browser/native empty-section defaults and persisted choice are separate',
+      '[K08d] ${dark ? 'dark' : 'light'} browser/native empty-section defaults are off and persisted choice wins',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         api.routes['GET /agents'] = (_) => [];
         api.routes['GET /servers/s1/members'] = (_) => [];
         final presentation = PersonalPresentationStore(desktop: false);
         addTearDown(presentation.dispose);
-        await mountShell(t, w, family, dark, presentation: presentation);
+        await mountShell(t, w, dark, presentation: presentation);
         expect(presentation.value.hideEmptySections, isFalse);
         expect(find.text('Drag channels or DMs here to pin'), findsOneWidget);
         expect(find.text('No joint channels yet'), findsOneWidget);
@@ -267,19 +244,19 @@ void main() {
         await presentation.writes;
         final native = PersonalPresentationStore(desktop: true);
         addTearDown(native.dispose);
-        expect(native.value.hideEmptySections, isTrue);
+        expect(native.value.hideEmptySections, isFalse);
         await native.bind(w.client.origin, w.client.user!.id);
         expect(
           native.value.hideEmptySections,
           isFalse,
-          reason: 'the same persisted user choice overrides native default',
+          reason: 'the same saved user choice is restored on native clients',
         );
         await retire(t);
       },
       variant: TargetPlatformVariant({TargetPlatform.linux}),
     );
     testWidgets(
-      '[K08e] $family/$dark actual DM row has Source avatar, description, typography and input route',
+      '[K08e] ${dark ? 'dark' : 'light'} actual DM row has Source avatar, description, typography and input route',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         final dm = RaftChannel({
@@ -295,7 +272,7 @@ void main() {
           'peerAvatarUrl': 'pixel:robot',
         });
         w.dms = [dm];
-        w.unread['dm1'] = 5;
+        w.conversationReads.unread['dm1'] = 5;
         api.routes['GET /agents'] = (_) => [];
         api.routes['GET /servers/s1/members'] = (_) => [];
         api.routes['GET /messages/channel/dm1'] = (_) => {
@@ -303,14 +280,15 @@ void main() {
           'hasMore': false,
         };
         api.routes['POST /channels/dm1/read'] = (_) => {};
-        await mountShell(t, w, family, dark);
+        await mountShell(t, w, dark);
         final row = find.byKey(const ValueKey('sidebar-channel-dm1'));
         final avatar = find.descendant(
           of: row,
           matching: find.byType(RaftAvatar),
         );
         expect(avatar, findsOneWidget);
-        expect(t.getSize(avatar), const Size(18, 18));
+        // AvatarSlot sidebar-list=2xs; pinned avatar recipe is size-[19px].
+        expect(t.getSize(avatar), const Size(19, 19));
         final content = t.widget<RaftAvatarContent>(
           find.descendant(of: row, matching: find.byType(RaftAvatarContent)),
         );
@@ -319,21 +297,19 @@ void main() {
           of: row,
           matching: find.byType(RaftControl),
         );
-        final controlHeight = family == RaftFamily.brutal ? 32.0 : 34.0;
-        final trailingMargin = family == RaftFamily.brutal ? 4.0 : 2.0;
+        final controlHeight = 36.0;
+        final trailingMargin = 1.0;
         expect(t.getSize(control).height, controlHeight);
         expect(t.getSize(row).height, controlHeight + trailingMargin);
-        expect(t.getRect(control).top, t.getRect(row).top);
+        expect(t.getRect(control).top, t.getRect(row).top + 1);
         final title = t.widget<Text>(
           find.descendant(of: row, matching: find.text('Cindy')),
         );
-        expect(title.style!.fontSize, 14);
+        expect(title.style!.fontSize, 15);
         expect(title.style!.fontWeight, FontWeight.w700);
         expect(
           title.style!.color,
-          family == RaftFamily.brutal
-              ? Colors.black
-              : RaftTokens.of(t.element(row)).colors['foreground-muted'],
+          RaftTokens.of(t.element(row)).colors['foreground'],
         );
         final desc = t.widget<Text>(
           find.descendant(
@@ -341,9 +317,9 @@ void main() {
             matching: find.text('Keeps release notes aligned.'),
           ),
         );
-        expect(desc.style!.fontSize, 12);
-        expect(desc.style!.height, 16 / 12);
-        expect(desc.style!.fontWeight, FontWeight.w500);
+        expect(desc.style!.fontSize, 13);
+        expect(desc.style!.height, 18 / 13);
+        expect(desc.style!.fontWeight, FontWeight.w400);
         api.routes['GET /agents'] = (_) => [
           {
             'id': 'agent1',

@@ -1,13 +1,23 @@
+import 'agent_create_form.dart' show RaftAgentInlineText;
+import 'hover_region.dart';
+import 'banner_recipe.dart';
+import 'banner_action_slot.dart';
+
 import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/widgets.dart';
 
+import 'raft_underline.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/banner.g.dart';
-import 'recipes/recipe_runtime.dart' show RaftSlotStyle, RaftTokenResolver;
+import 'recipes/recipe_runtime.dart'
+    show RaftRecipeSet, RaftSlotStyle, RaftTokenResolver;
 import 'theme.dart';
+import 'space.dart';
+import 'surface_background_scope.dart';
+import 'raft/ui_tokens.dart' show raftChromeBlend;
 
 export 'recipes/banner.g.dart'
     show RaftBannerRecipeStatus, RaftBannerRecipeSize;
@@ -18,8 +28,11 @@ export 'recipes/banner.g.dart'
 class RaftBanner extends StatelessWidget {
   const RaftBanner({
     super.key,
-    required this.description,
+    this.description = '',
+    this.live = true,
+    this.descriptionBuilder,
     this.title,
+    this.titleBuilder,
     this.status = RaftBannerRecipeStatus.warning,
     this.size = RaftBannerRecipeSize.md,
     this.strongPrefix,
@@ -28,14 +41,39 @@ class RaftBanner extends StatelessWidget {
     this.titleGap,
     this.glyph,
     this.action,
+    this.actions,
+    this.centerAction = false,
     this.descriptionTail,
+    this.descriptionTailWeight,
     this.textAlign,
     this.footer,
-  });
+    this.linkAction,
+    this.linkSeparator = ' ',
+    this.backgroundColor,
+    this.foregroundColor,
+    this.actionForeground,
+  }) : assert(action == null || actions == null);
+
+  /// The description as CSS text (even leading) that may end in a link action
+  /// (`Button variant="link" size="inline"`: a word in the line that happens to
+  /// be clickable), set after the text in the link button's weight and colour.
+  /// A null `label` is no link; a null `onPressed` shows it disabled.
+  final ({String? label, VoidCallback? onPressed})? linkAction;
+
+  /// Text between the description and its inline link.
+  final String linkSeparator;
+
+  /// Call-site `bg-*` / `text-*` classes on the Banner (a dark-only warning
+  /// tint, say); null keeps the recipe. [actionForeground] colours the
+  /// [linkAction].
+  final Color? backgroundColor, foregroundColor, actionForeground;
 
   /// An inline underlined link after the description copy, 4px (`ml-1`) from
   /// it: Web HistoryLimitBanner's `<button className="ml-1 underline">`.
   final ({String label, VoidCallback onPressed})? descriptionTail;
+
+  /// Callsite `font-bold` on the tail link (ChatPanel's billing links).
+  final FontWeight? descriptionTailWeight;
 
   /// Web `text-center` on the Banner root.
   final TextAlign? textAlign;
@@ -44,12 +82,29 @@ class RaftBanner extends StatelessWidget {
   /// (`[&>svg]` size and intent colour from the recipe).
   final RaftGlyph? glyph;
 
+  /// Rich body replacing the [description] text (Web `Banner` children that
+  /// are not a plain string, e.g. a `<p>` with a `<strong>` plus a checkbox
+  /// row). Receives the recipe description text style.
+  final Widget Function(TextStyle style)? descriptionBuilder;
+
   /// Extra body content after the description (a button row).
   final Widget? footer;
 
   /// `actions` -> `BannerAction` (trailing grid cell, `gap-x` from the
   /// recipe).
   final Widget? action;
+
+  /// Multiple children of the public BannerAction slot. Its layout and gaps
+  /// belong to the Banner recipe, rather than to a caller-built button row.
+  final List<Widget>? actions;
+
+  /// Rich BannerTitle content, such as a translated heading containing a
+  /// monospace channel name. Receives the same recipe style as [title].
+  final Widget Function(TextStyle style)? titleBuilder;
+
+  /// Web `[&>div:last-child]:self-center`: center the action against the whole
+  /// icon/body group while keeping the leading glyph aligned with its title.
+  final bool centerAction;
 
   /// Measured space between title and description where the Web grid adds
   /// it (MachineDetailPanel disk-low banner: 4px); null keeps the recipe.
@@ -64,13 +119,27 @@ class RaftBanner extends StatelessWidget {
   /// Leading part of [description] rendered `<strong>` (rich catalog copy).
   final String? strongPrefix;
   final String description;
+
+  /// False makes a dialog explanation static rather than a live alert.
+  final bool live;
   final String? title;
   final RaftBannerRecipeStatus status;
   final RaftBannerRecipeSize size;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
-    final recipe = RaftBannerRecipe.resolve(
+    final raft = t.option('banner.style', or: 'recipe') == 'raft';
+    final hasTitle = title != null || titleBuilder != null;
+    // Web's adapter does not mount BannerDescription for an empty body.
+    // Preserve the frozen looks' existing empty line until their retirement.
+    final hasDescription =
+        !raft ||
+        descriptionBuilder != null ||
+        description.isNotEmpty ||
+        linkAction != null ||
+        descriptionTail != null;
+    final hasAction = action != null || (actions?.isNotEmpty ?? false);
+    final source = RaftBannerRecipe.resolve(
       theme: t.recipeTheme,
       status: status,
       size: size,
@@ -79,42 +148,96 @@ class RaftBanner extends StatelessWidget {
           'group/banner:data-size=${size.css}',
           'group/banner:data-status=${status.css}',
           if (glyph != null) 'has:>svg',
-          if (action != null) 'has:>data-slot=banner-action',
-          if (title != null)
+          if (hasAction) 'has:>data-slot=banner-action',
+          if (hasTitle && hasDescription)
             'has:>data-slot=banner-description+has:>data-slot=banner-title',
         },
       ),
       tokens: tokens,
     );
+    final recipe = raftBannerSlots(t, source, size, status);
+    // raft-ui 0.7 `banner`: `BannerAction` is `col-start-(--banner-text-col)
+    // mt-2 flex flex-wrap gap-2`, a row under the copy; the description keeps
+    // its own `font-normal` whatever the caller put on the root.
+    // A caller that centres its action (`centerAction`) keeps it in the trailing cell.
+    final below = raft && !centerAction;
+    final trailing = below || !hasAction
+        ? null
+        : actions == null
+        ? action
+        : Wrap(
+            spacing: recipe.action.columnGap ?? RaftSpace.x2,
+            runSpacing: recipe.action.rowGap ?? RaftSpace.x2,
+            children: actions!,
+          );
+    final weight = raft ? null : descriptionWeight;
     final base = recipe.root.text(
       tokens,
       base: DefaultTextStyle.of(context).style,
     );
+    final fill =
+        backgroundColor ??
+        recipe.root.backgroundColor?.resolve(tokens, currentColor: base.color);
+    final surface = RaftSurfaceBackgroundScope.of(context);
+    final background =
+        t.recipeSet == RaftRecipeSet.raft &&
+            raft &&
+            fill != null &&
+            fill.a < 1 &&
+            surface != null &&
+            surface.a == 1
+        ? raftChromeBlend(fill, surface)
+        : backgroundColor;
     return Semantics(
-      role: SemanticsRole.alert,
+      role: live ? SemanticsRole.alert : null,
       child: RaftRecipeBox(
         style: recipe.root,
         tokens: tokens,
+        decorationOverride: background == null
+            ? null
+            : (d) => d.copyWith(color: background),
         child: _withLeading(
+          context,
           recipe,
           tokens,
+          trailing,
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (title != null)
+              if (hasTitle)
                 Padding(
-                  // Measured: Web's Banner grid leaves 2px (Brutal) / 4px between title and description
-                  // (also at `lg`) although the recipe declares no row gap.
+                  // Current Banner uses the generated root's gap-y-0.
+                  // Frozen looks keep their existing title spacing; callers
+                  // with an explicit Web margin retain their override.
                   padding: recipe.title.margin.copyWith(
-                    bottom: titleGap ?? (RaftTokens.of(context).brutal ? 2 : 4),
+                    bottom: hasDescription
+                        ? titleGap ??
+                              (raft
+                                  ? recipe.root.rowGap ??
+                                        recipe.title.margin.bottom
+                                  : 4)
+                        : 0,
                   ),
-                  child: Text(
-                    raftText(context, title!),
-                    style: recipe.title.text(tokens, base: base),
-                  ),
+                  child:
+                      titleBuilder?.call(
+                        recipe.title
+                            .text(tokens, base: base)
+                            .copyWith(color: foregroundColor),
+                      ) ??
+                      Text(
+                        raftText(context, title!),
+                        style: recipe.title
+                            .text(tokens, base: base)
+                            .copyWith(color: foregroundColor),
+                      ),
                 ),
-              if (strongPrefix != null && description.startsWith(strongPrefix!))
+              if (!hasDescription)
+                const SizedBox.shrink()
+              else if (descriptionBuilder != null)
+                descriptionBuilder!(recipe.description.text(tokens, base: base))
+              else if (strongPrefix != null &&
+                  description.startsWith(strongPrefix!))
                 Text.rich(
                   TextSpan(
                     children: [
@@ -129,13 +252,16 @@ class RaftBanner extends StatelessWidget {
                   ),
                   style: recipe.description.text(tokens, base: base),
                 )
+              else if (linkAction != null)
+                _linkDescription(context, recipe, tokens, base)
               else if (descriptionTail != null)
                 _TailedDescription(
                   text: raftText(context, description),
                   tail: descriptionTail!,
+                  tailWeight: descriptionTailWeight,
                   style: recipe.description
                       .text(tokens, base: base)
-                      .copyWith(fontWeight: descriptionWeight),
+                      .copyWith(fontWeight: weight),
                   textAlign: textAlign,
                 )
               else
@@ -144,9 +270,14 @@ class RaftBanner extends StatelessWidget {
                   textAlign: textAlign,
                   style: recipe.description
                       .text(tokens, base: base)
-                      .copyWith(fontWeight: descriptionWeight),
+                      .copyWith(fontWeight: weight),
                 ),
               ?footer,
+              if (below && hasAction)
+                RaftBannerActionSlot(
+                  style: recipe.action,
+                  children: actions ?? [action!],
+                ),
             ],
           ),
         ),
@@ -154,9 +285,34 @@ class RaftBanner extends StatelessWidget {
     );
   }
 
-  Widget _withLeading(
+  Widget _linkDescription(
+    BuildContext context,
     RaftBannerRecipeStyle recipe,
     RaftTokenResolver tokens,
+    TextStyle base,
+  ) {
+    final text = recipe.description.text(tokens, base: base);
+    final color = foregroundColor ?? text.color;
+    return RaftAgentInlineText(
+      description,
+      action: linkAction!.label,
+      actionSeparator: linkSeparator,
+      onAction: linkAction!.onPressed,
+      style: text.copyWith(color: color),
+      actionForeground:
+          actionForeground ??
+          recipe.description
+              .target('& button')
+              ?.color
+              ?.resolve(tokens, currentColor: color),
+    );
+  }
+
+  Widget _withLeading(
+    BuildContext context,
+    RaftBannerRecipeStyle recipe,
+    RaftTokenResolver tokens,
+    Widget? action,
     Widget content,
   ) {
     if (glyph == null && action == null) {
@@ -173,7 +329,7 @@ class RaftBanner extends StatelessWidget {
     final gap = recipe.root.columnGap ?? 8;
     final svg = recipe.root.target('& > svg');
     // Title + description: the svg spans both rows at the top (`mt-0.5`).
-    final stacked = title != null;
+    final stacked = title != null || titleBuilder != null;
     final brutal = recipe.root.borderWidth.top > 0;
     return LayoutBuilder(
       builder: (context, box) {
@@ -181,6 +337,7 @@ class RaftBanner extends StatelessWidget {
         // full-width row, end aligned (`mt-2` Brutal / `mt-1` Elegant).
         final below = action != null && box.maxWidth <= 384;
         final main = _rowOf(
+          context,
           stacked,
           gap,
           svg,
@@ -206,6 +363,7 @@ class RaftBanner extends StatelessWidget {
   }
 
   Widget _rowOf(
+    BuildContext context,
     bool stacked,
     double gap,
     RaftSlotStyle? svg,
@@ -214,20 +372,46 @@ class RaftBanner extends StatelessWidget {
     Widget content,
     Widget? action,
   ) {
+    if (centerAction && action != null) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: _rowOf(
+              context,
+              stacked,
+              gap,
+              svg,
+              recipe,
+              tokens,
+              content,
+              null,
+            ),
+          ),
+          SizedBox(width: gap),
+          action,
+        ],
+      );
+    }
+    final t = RaftTokens.of(context);
+    final start = t.option('banner.iconAlignment', or: 'center') == 'start';
     return Row(
-      crossAxisAlignment: stacked
+      crossAxisAlignment: stacked || (start && !centerAction)
           ? CrossAxisAlignment.start
           : CrossAxisAlignment.center,
       children: [
         if (glyph != null) ...[
           Padding(
-            padding: EdgeInsets.only(top: stacked ? 2 : 0),
+            padding: EdgeInsets.only(top: stacked && !start ? 2 : 0),
             child: RaftIcon(
               glyph!,
-              size: svg?.width ?? 16,
-              color:
-                  svg?.textStyle(tokens).color ??
-                  recipe.root.textStyle(tokens).color,
+              size: size == RaftBannerRecipeSize.md
+                  ? t.size('size.bannerGlyph', fallback: 16)
+                  : svg?.width ?? 16,
+              color: t.option('banner.iconColor', or: 'intent') == 'foreground'
+                  ? t.ink
+                  : svg?.textStyle(tokens).color ??
+                        recipe.root.textStyle(tokens).color,
             ),
           ),
           SizedBox(width: gap),
@@ -244,8 +428,10 @@ class _TailedDescription extends StatelessWidget {
     required this.text,
     required this.tail,
     required this.style,
+    this.tailWeight,
     this.textAlign,
   });
+  final FontWeight? tailWeight;
   final String text;
   final ({String label, VoidCallback onPressed}) tail;
   final TextStyle style;
@@ -263,14 +449,14 @@ class _TailedDescription extends StatelessWidget {
           baseline: TextBaseline.alphabetic,
           child: Padding(
             padding: const EdgeInsets.only(left: 4),
-            child: MouseRegion(
+            child: RaftHoverRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: tail.onPressed,
-                child: Text(
+                child: RaftUnderlinedText(
                   raftText(context, tail.label),
-                  style: style.copyWith(decoration: TextDecoration.underline),
+                  style: style.copyWith(fontWeight: tailWeight),
                 ),
               ),
             ),
@@ -280,6 +466,9 @@ class _TailedDescription extends StatelessWidget {
     ),
     textAlign: textAlign,
     style: style,
+    // The baseline-aligned link box must not grow its line past the CSS
+    // line-height (the inline-block link keeps the 20px line).
+    strutStyle: StrutStyle.fromTextStyle(style, forceStrutHeight: true),
   );
 }
 
@@ -290,12 +479,16 @@ class RaftHistoryLimitBanner extends StatelessWidget {
   const RaftHistoryLimitBanner({
     super.key,
     required this.message,
-    required this.linkLabel,
-    required this.onLink,
+    this.linkLabel,
+    this.onLink,
     this.inset = false,
   });
-  final String message, linkLabel;
-  final VoidCallback onLink;
+
+  /// [linkLabel] null renders the bare notice (ChatPanel's "Message not found"
+  /// banner shares the HistoryLimitBanner classes without the billing link).
+  final String message;
+  final String? linkLabel;
+  final VoidCallback? onLink;
   final bool inset;
 
   @override
@@ -311,7 +504,9 @@ class RaftHistoryLimitBanner extends StatelessWidget {
             size: RaftBannerRecipeSize.sm,
             textAlign: TextAlign.center,
             description: message,
-            descriptionTail: (label: linkLabel, onPressed: onLink),
+            descriptionTail: linkLabel == null
+                ? null
+                : (label: linkLabel!, onPressed: onLink ?? () {}),
           ),
         ),
       ),

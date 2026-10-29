@@ -8,9 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/data/attachment_image_repository.dart';
+import 'package:raft_flutter/features/attachment_image_zoom.dart';
 import 'package:raft_flutter/features/attachment_view.dart';
 import 'package:raft_flutter/platform/attachment_files.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -24,13 +26,21 @@ class _Client extends RaftClient {
     urlReads++;
     return {'url': 'https://storage.example.invalid/image'};
   }
+
+  // The batch route is not served here: tiles fall back to the single route.
+  @override
+  Future<dynamic> post(String path, {dynamic data}) async => {'urls': []};
 }
 
 class _Files extends AttachmentFiles {
   final bytes = Completer<Uint8List>();
   int reads = 0;
   @override
-  Future<Uint8List> image(String url, {required CancelToken cancel}) {
+  Future<Uint8List> image(
+    String url, {
+    required CancelToken cancel,
+    void Function(int, int)? onProgress,
+  }) {
     reads++;
     return bytes.future;
   }
@@ -64,7 +74,6 @@ class _MemoryStore implements AttachmentImageByteStore {
 
 Future<(_Client, WorkspaceController, _Files)> mountImage(
   WidgetTester tester,
-  RaftFamily family,
   bool dark, {
   AttachmentImageByteStore? store,
 }) async {
@@ -83,7 +92,7 @@ Future<(_Client, WorkspaceController, _Files)> mountImage(
   });
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
+      theme: raftTheme(dark: dark).copyWith(platform: TargetPlatform.linux),
       home: Scaffold(
         body: AttachmentView(
           controller: w,
@@ -110,16 +119,33 @@ Future<void> decodeWithoutPainting(WidgetTester tester) async {
   expect(state.imageProvider, isA<ImageProvider>());
 }
 
+/// Pumps frames and yields to the real event loop until [finder] matches,
+/// failing after [timeout] of wall-clock time. The lightbox shows the zoom
+/// surface once the original has been read back and decoded, which is real
+/// file and codec work: a fixed delay or frame count fails on a loaded machine.
+Future<void> pumpUntilFound(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 45),
+}) async {
+  final clock = Stopwatch()..start();
+  while (finder.evaluate().isEmpty) {
+    if (clock.elapsed > timeout) {
+      fail('Timed out after ${timeout.inSeconds}s waiting for $finder');
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 60));
+  }
+}
+
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[K11a] $family/$dark painted loading image accepts its first click',
+      '[K11a] ${dark ? 'dark' : 'light'} painted loading image accepts its first click',
       (tester) async {
-        final (_, _, files) = await mountImage(tester, family, dark);
+        final (_, _, files) = await mountImage(tester, dark);
         await tester.pump();
         expect(files.reads, 1);
         expect(
@@ -132,8 +158,10 @@ void main() {
         expect(action.hitTestable(), findsOneWidget);
         await tester.tap(action);
         await tester.pump();
+        // The route's first frame is built off stage while the Hero measures.
+        await tester.pump();
         expect(
-          find.byTooltip('Close preview'),
+          find.byTooltip('Close Preview'),
           findsOneWidget,
           reason: 'Source opens the lightbox at intent while image bytes are pending.',
         );
@@ -142,16 +170,17 @@ void main() {
     );
     for (final retirement in ['close', 'revoke']) {
       testWidgets(
-        '[K11b] $family/$dark pending image $retirement rejects late preview',
+        '[K11b] ${dark ? 'dark' : 'light'} pending image $retirement rejects late preview',
         (tester) async {
-          final (_, w, files) = await mountImage(tester, family, dark);
+          final (_, w, files) = await mountImage(tester, dark);
           await tester.pump();
           await tester.tap(find.byTooltip('Preview image.png'));
           await tester.pump();
-          expect(find.byTooltip('Close preview'), findsOneWidget);
+          await tester.pump();
+          expect(find.byTooltip('Close Preview'), findsOneWidget);
           await tester.pump(const Duration(milliseconds: 300));
           if (retirement == 'close') {
-            await tester.tap(find.byTooltip('Close preview'));
+            await tester.tap(find.byTooltip('Close Preview'));
           } else {
             w.revokeServer('server');
           }
@@ -163,7 +192,7 @@ void main() {
           for (var i = 0; i < 5; i++) {
             await tester.pump(const Duration(milliseconds: 100));
           }
-          expect(find.byTooltip('Close preview'), findsNothing);
+          expect(find.byTooltip('Close Preview'), findsNothing);
           expect(
             find.byKey(const ValueKey('attachment-image-image')),
             findsNothing,
@@ -174,11 +203,10 @@ void main() {
       );
     }
     testWidgets(
-      '[K11c] $family/$dark real pointer survives decoded-before-paint handoff',
+      '[K11c] ${dark ? 'dark' : 'light'} real pointer survives decoded-before-paint handoff',
       (tester) async {
         final (client, _, files) = await mountImage(
           tester,
-          family,
           dark,
           store: _MemoryStore(),
         );
@@ -191,7 +219,11 @@ void main() {
         await decodeWithoutPainting(tester);
         await tester.tapAt(paintedCenter);
         await tester.pump();
-        expect(find.byTooltip('Close preview'), findsOneWidget);
+        await tester.pump();
+        expect(find.byTooltip('Close Preview'), findsOneWidget);
+        // The card's picture flies to the stage; the stage's own picture
+        // takes over when the flight lands.
+        await tester.pump(const Duration(milliseconds: 400));
         expect(
           find.byKey(const ValueKey('attachment-image-image')),
           findsOneWidget,
@@ -211,23 +243,21 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark accepted loading click displays decode failure without reopening',
+      '${dark ? 'dark' : 'light'} accepted loading click displays decode failure without reopening',
       (tester) async {
-        final (_, _, files) = await mountImage(tester, family, dark);
+        final (_, _, files) = await mountImage(tester, dark);
         await tester.pump();
         await tester.tap(find.byTooltip('Preview image.png'));
         await tester.pump();
-        expect(find.byTooltip('Close preview'), findsOneWidget);
+        await tester.pump();
+        expect(find.byTooltip('Close Preview'), findsOneWidget);
         files.bytes.completeError(StateError('owned image failure'));
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 30)),
         );
         await tester.pump(const Duration(milliseconds: 300));
-        expect(
-          find.text('Preview unavailable. Download the original file.'),
-          findsOneWidget,
-        );
-        expect(find.byTooltip('Close preview'), findsOneWidget);
+        expect(find.text('Failed to load image'), findsOneWidget);
+        expect(find.byTooltip('Close Preview'), findsOneWidget);
         expect(tester.takeException(), isNull);
         expect(files.reads, 1);
       },
@@ -237,7 +267,6 @@ void main() {
   testWidgets('image lightbox: the 0 key resets zoom and pan', (tester) async {
     final (_, _, files) = await mountImage(
       tester,
-      RaftFamily.elegant,
       false,
       store: _MemoryStore(),
     );
@@ -248,18 +277,18 @@ void main() {
     await decodeWithoutPainting(tester);
     await tester.tapAt(center);
     await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 50)),
-    );
     await tester.pump();
+    // The card's picture lands on the stage before the stage's own takes over.
+    await tester.pump(const Duration(milliseconds: 400));
+    await pumpUntilFound(tester, find.byType(ImageZoomSurface));
     final zoom = tester
-        .widget<InteractiveViewer>(find.byType(InteractiveViewer))
-        .transformationController!;
+        .widget<ImageZoomSurface>(find.byType(ImageZoomSurface))
+        .controller;
     zoom.value = Matrix4.identity()..scaleByDouble(2, 2, 1, 1);
     expect(zoom.value.getMaxScaleOnAxis(), 2);
     await tester.sendKeyEvent(LogicalKeyboardKey.digit0);
     await tester.pump();
     expect(zoom.value, Matrix4.identity());
-    expect(find.byTooltip('Close preview'), findsOneWidget);
+    expect(find.byTooltip('Close Preview'), findsOneWidget);
   });
 }

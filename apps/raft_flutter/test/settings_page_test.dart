@@ -57,7 +57,7 @@ void main() {
       RaftAppearance? accepted;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
+          theme: raftTheme(),
           home: Scaffold(
             body: RaftSettingsPage(
               destinations: [
@@ -90,11 +90,34 @@ void main() {
       await tester.tap(find.text('Dark').first);
       await tester.pumpAndSettle();
       expect(accepted?.mode, ThemeMode.dark);
-      await tester.tap(
-        find.byKey(const ValueKey('appearance-light-theme-elegant')),
-      );
+      await tester.tap(find.text('System').first);
       await tester.pumpAndSettle();
-      expect(accepted?.light, RaftFamily.elegant);
+      expect(accepted?.mode, ThemeMode.system);
+      // Both axes are offered at 360px and both are actionable: the theme row
+      // carries all three built-in looks, and the mode row still switches.
+      for (final theme in builtInAppearanceThemes) {
+        expect(find.text(theme.en), findsOneWidget, reason: theme.id);
+      }
+      // "Actionable" means the tap reaches the callback, not merely that the text
+      // is painted. The picker is a pure function of the appearance it is given,
+      // so each tap reports its own change against the mode it was built with
+      // (light): that is what tells the two axes apart.
+      await tester.tap(find.text('Brutal').first);
+      await tester.pumpAndSettle();
+      expect(accepted?.themeId, brutalThemePackId);
+      expect(
+        accepted?.mode,
+        ThemeMode.light,
+        reason: 'choosing a theme must not change the mode',
+      );
+      await tester.tap(find.text('Dark').first);
+      await tester.pumpAndSettle();
+      expect(accepted?.mode, ThemeMode.dark);
+      expect(
+        accepted?.themeId,
+        raftThemePackId,
+        reason: 'choosing a mode must not change the theme',
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -115,7 +138,7 @@ void main() {
     client.acknowledgement = Completer<dynamic>();
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: SingleChildScrollView(child: AccountSettings(controller: w)),
         ),
@@ -145,7 +168,7 @@ void main() {
       client.acknowledgement = Completer<dynamic>();
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: Scaffold(
             body: SingleChildScrollView(child: AccountSettings(controller: w)),
           ),

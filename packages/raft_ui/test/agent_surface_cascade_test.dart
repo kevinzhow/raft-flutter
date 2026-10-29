@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/agent_surface_previews.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'selection_popover_surface_test.dart' as selection;
 
@@ -14,12 +15,14 @@ Future<void> loadFonts(WidgetTester tester) async {
   await tester.runAsync(() async {
     ByteData bytes;
     try {
-      bytes = await rootBundle.load('packages/raft_ui/assets/fonts/Geist.ttf');
+      bytes = await rootBundle.load(
+        'packages/raft_ui/assets/fonts/SpaceGrotesk.ttf',
+      );
     } on FlutterError {
-      bytes = await rootBundle.load('assets/fonts/Geist.ttf');
+      bytes = await rootBundle.load('assets/fonts/SpaceGrotesk.ttf');
     }
     await (FontLoader(
-      'packages/raft_ui/Geist',
+      'packages/raft_ui/SpaceGrotesk',
     )..addFont(Future.value(bytes))).load();
   });
 }
@@ -30,56 +33,57 @@ Widget host(ThemeData theme, Widget child) => MaterialApp(
 );
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('$family/$dark Source portal font and label cascade', (
-      tester,
-    ) async {
-      await loadFonts(tester);
-      final theme = raftTheme(family, dark: dark),
-          tokens = theme.extension<RaftTokens>()!,
-          controller = TextEditingController(text: 'Product');
-      await tester.pumpWidget(
-        host(
-          theme,
-          RaftAgentDialogCard(
-            title: 'Create Agent',
-            onClose: () {},
-            children: [
-              RaftStableField(
-                label: 'Name',
-                child: RaftAgentTextInput(controller: controller),
-              ),
-            ],
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        DefaultTextStyle.of(
-          tester.element(find.byType(RaftStableField)),
-        ).style.fontFamily,
-        tokens.bodyFont,
-      );
-      expect(
-        tester.widget<Text>(find.text('NAME')).style!.color,
-        dark ? tokens.colors['foreground-hint'] : tokens.strong,
-      );
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox());
-      controller.dispose();
-    });
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark form repaint keeps real IME, selection and input hit',
+      '${dark ? 'dark' : 'light'} legacy Elegant portal font and label cascade',
+      (tester) async {
+        await loadFonts(tester);
+        final theme = raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
+            tokens = theme.extension<RaftTokens>()!,
+            controller = TextEditingController(text: 'Product');
+        await tester.pumpWidget(
+          host(
+            theme,
+            RaftAgentDialogCard(
+              title: 'Create Agent',
+              onClose: () {},
+              children: [
+                RaftStableField(
+                  label: 'Name',
+                  child: RaftAgentTextInput(controller: controller),
+                ),
+              ],
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          DefaultTextStyle.of(tester.element(find.byType(RaftStableField)))
+              .style
+              .fontFamily,
+          tokens.bodyFont,
+        );
+        expect(
+          tester.widget<Text>(find.text('Name')).style!.color,
+          dark ? tokens.colors['foreground-hint'] : tokens.strong,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        controller.dispose();
+      },
+      skip: raftLookSkip(raftLookElegant),
+    );
+    testWidgets(
+      '${dark ? 'dark' : 'light'} form repaint keeps real IME, selection and input hit',
       (tester) async {
         await loadFonts(tester);
         final controller = TextEditingController(text: 'draft');
         late StateSetter update;
         var invalid = false;
-        var currentTheme = raftTheme(family, dark: dark);
+        var currentTheme = raftTheme(dark: dark);
         await tester.pumpWidget(
           StatefulBuilder(
             builder: (context, setState) {
@@ -120,10 +124,7 @@ void main() {
         final value = controller.value;
         update(() {
           invalid = true;
-          currentTheme = raftTheme(
-            family == RaftFamily.brutal ? RaftFamily.elegant : family,
-            dark: family == RaftFamily.brutal || !dark,
-          );
+          currentTheme = raftTheme(dark: !dark);
         });
         await tester.pumpAndSettle();
         expect(tester.state(find.byType(EditableText)), same(editable));
@@ -139,10 +140,10 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark default warning and capacity caller stay distinct',
+      '${dark ? 'dark' : 'light'} default warning and capacity caller stay distinct',
       (tester) async {
         await loadFonts(tester);
-        final theme = raftTheme(family, dark: dark),
+        final theme = raftTheme(dark: dark),
             tokens = theme.extension<RaftTokens>()!;
         Widget warning(bool caller) => host(
           theme,
@@ -172,10 +173,10 @@ void main() {
         final ordinary = tester.widget<RaftAgentInlineText>(
           find.byType(RaftAgentInlineText),
         );
-        if (!tokens.brutal) {
-          expect(ordinary.style!.color, isNot(tokens.muted));
-          expect(ordinary.actionForeground, ordinary.style!.color);
-        }
+        expect(ordinary.style!.color, isNot(tokens.muted));
+        // raft-ui 0.7.0's banner no longer recolours its description button, so
+        // the inline action keeps the link colour instead of inheriting the text.
+        expect(ordinary.actionForeground, isNull);
         await tester.pumpWidget(warning(true));
         await tester.pumpAndSettle();
         final explicit = tester.widget<RaftAgentInlineText>(
@@ -193,13 +194,13 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark message menu paint retains keyboard and pointer semantics',
+      '${dark ? 'dark' : 'light'} message menu paint retains keyboard and pointer semantics',
       (tester) async {
         final semantics = tester.ensureSemantics();
         var selected = 0, dismissed = 0;
         await tester.pumpWidget(
           host(
-            raftTheme(family, dark: dark),
+            raftTheme(dark: dark),
             Center(
               child: RaftMessageContextMenu(
                 onDismiss: () => dismissed++,
@@ -226,10 +227,8 @@ void main() {
         final box = tester.widget<RaftRecipeBox>(
           find.byType(RaftRecipeBox).first,
         );
-        expect(
-          box.style.cssShadows(box.tokens).where((s) => s.inset).length,
-          dark ? 2 : 0,
-        );
+        // elevation-float has outer layers only, in light and dark.
+        expect(box.style.cssShadows(box.tokens).where((s) => s.inset), isEmpty);
         expect(
           find.byWidgetPredicate(
             (w) => w is Semantics && w.properties.role == SemanticsRole.menu,
@@ -260,10 +259,10 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark explicit primary text caller preserves generic accent and disabled action',
+      '${dark ? 'dark' : 'light'} explicit primary text caller preserves generic accent and disabled action',
       (tester) async {
         var calls = 0;
-        final theme = raftTheme(family, dark: dark),
+        final theme = raftTheme(dark: dark),
             tokens = theme.extension<RaftTokens>()!;
         Widget buttons(bool override) => host(
           theme,
@@ -279,9 +278,9 @@ void main() {
         );
         await tester.pumpWidget(buttons(false));
         await tester.pumpAndSettle();
-        final before = DefaultTextStyle.of(
-          tester.element(find.text('Create')),
-        ).style.color;
+        final before = DefaultTextStyle.of(tester.element(find.text('Create')))
+            .style
+            .color;
         await tester.pumpWidget(buttons(true));
         await tester.pumpAndSettle();
         expect(
@@ -316,13 +315,13 @@ void main() {
       },
     );
     testWidgets(
-      '$family/$dark interactive form preview edits, selects and submits',
+      '${dark ? 'dark' : 'light'} interactive form preview edits, selects and submits',
       (tester) async {
         await loadFonts(tester);
         await tester.binding.setSurfaceSize(const Size(440, 560));
         addTearDown(() => tester.binding.setSurfaceSize(null));
         await tester.pumpWidget(
-          host(raftTheme(family, dark: dark), const AgentSurfacePreview()),
+          host(raftTheme(dark: dark), const AgentSurfacePreview()),
         );
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField), 'Product-QA');
@@ -331,12 +330,12 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Laptop'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Use capacity caller'));
+        await tester.tap(find.text('Use Capacity Caller'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Create'));
         await tester.pumpAndSettle();
         expect(find.text('Created'), findsOneWidget);
-        await tester.tap(find.byType(RaftAgentCloseButton));
+        await tester.tap(find.byType(RaftDialogClose));
         await tester.pump();
         expect(find.text('Closed'), findsOneWidget);
         expect(tester.takeException(), isNull);

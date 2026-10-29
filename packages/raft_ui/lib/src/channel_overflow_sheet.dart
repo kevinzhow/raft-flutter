@@ -5,26 +5,36 @@
 // The app adapter (apps/raft_flutter ChannelSettings) owns data, permissions
 // and commands and passes plain values and callbacks in.
 import 'dart:math' as math;
+import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
 
 import 'channel_header.dart' show raftCollapseWhitespace;
+import 'panel_edge.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
+import 'dialog_surface.dart';
 import 'icons.dart';
 import 'indicators.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
+import 'recipe_surface.dart' show RaftRecipeBinding;
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
 import 'tooltip.dart';
 import 'recipes/button_variants.g.dart';
+import 'recipes/recipe_router.dart' show usesLegacyRecipes;
+import 'raft/ui_tokens.dart';
 import 'settings_controls.dart' show RaftSettingsRecipeButton;
+import 'space.dart';
+import 'status_bar.dart';
+import 'text_scaling.dart' show RaftScaled;
+import 'page_tokens.dart';
+import 'error_presentation.dart' show RaftErrorBanner;
 import 'theme.dart';
 
 /// The drawer popup of `OverflowSheet`: `inset-y-0 right-0 h-dvh w-full
 /// max-w-[min(100vw,34rem)] flex-col rounded-none border-0
-/// theme-brutal:border-l-2 theme-brutal:border-line-strong bg-layer-panel
-/// theme-brutal:bg-brutal-cream`, a `h-panel-header` header and a
+/// theme-brutal:border-l-2 theme-brutal:border-line-strong bg-layer-popover`, a `h-panel-header` header and a
 /// `min-h-0 flex-1 overflow-y-auto py-2` body.
 class RaftOverflowSheet extends StatelessWidget {
   const RaftOverflowSheet({
@@ -35,7 +45,7 @@ class RaftOverflowSheet extends StatelessWidget {
     this.badge,
     this.badgeTone = RaftBadgeRecipeVariant.success,
     this.subtitle,
-    this.closeLabel = 'Close channel details and settings',
+    this.closeLabel = 'Close Channel Details and Settings',
     this.bodyKey,
     this.page = false,
   });
@@ -69,20 +79,19 @@ class RaftOverflowSheet extends StatelessWidget {
     // `h-panel-header` reads `--shell-header-height`, which the AppShell root
     // sets; the drawer portals out of it, so Web paints the 62px fallback.
     const headerHeight = RaftMetrics.brutalPanelHeader;
-    final headerColor = t.brutal
-        ? t.colors['color-soft-signal']!
-        : t.colors['layer-panel']!;
-    final edge = t.brutal ? Colors.black : t.colors['line-muted']!;
+    final headerColor = t.colors['layer-drawer-header']!;
+    final edge = t.colors['line-muted']!;
     final titleStyle = raftCssTextStyle(
       family: t.bodyFont,
       // text-base font-bold leading-tight (16px / 1.25).
       step: (16, 20),
       weight: FontWeight.w700,
-      color: t.brutal ? Colors.black : t.strong,
+      color: t.strong,
     );
-    final subtitleColor = (t.brutal ? Colors.black : t.strong).withValues(
-      alpha: .85,
-    );
+    final subtitleColor = t.strong.withValues(alpha: .85);
+    // Above the default text size the header grows with its title and
+    // description, which wrap instead of truncating.
+    final grows = RaftScaled.grows(context);
     final identity = Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,8 +104,8 @@ class RaftOverflowSheet extends StatelessWidget {
                 child: Text(
                   title,
                   key: const ValueKey('channel-overflow-title-text'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: grows ? null : 1,
+                  overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
                   style: titleStyle,
                 ),
               ),
@@ -117,8 +126,8 @@ class RaftOverflowSheet extends StatelessWidget {
           Text(
             raftCollapseWhitespace(subtitle!),
             key: const ValueKey('channel-overflow-identity-desc'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            maxLines: grows ? null : 1,
+            overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
             style: raftCssTextStyle(
               family: t.monoFont,
               step: RaftTextSteps.xs,
@@ -127,36 +136,43 @@ class RaftOverflowSheet extends StatelessWidget {
           ),
       ],
     );
-    final header = Container(
-      height: headerHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: headerColor,
-        border: Border(
-          bottom: BorderSide(color: edge, width: t.brutal ? 2 : 1),
+    final header = RaftStatusBarSource(
+      color: headerColor,
+      child: Container(
+        height: grows ? null : headerHeight,
+        constraints: grows
+            ? const BoxConstraints(minHeight: headerHeight)
+            : null,
+        padding: grows
+            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+            : const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: headerColor,
+          border: Border(bottom: BorderSide(color: edge, width: 1)),
         ),
-      ),
-      child: Row(
-        children: [
-          if (mobile) ...[
-            // Web's 28px drawer Back; touch area extended around it.
-            RaftTouchTargetExpander(
-              minSize: const Size.square(RaftMetrics.touchTarget),
-              child: RaftSettingsRecipeButton(
-                key: const ValueKey('channel-overflow-back'),
-                label: '',
-                variant: RaftButtonRecipeVariant.default_,
-                glyph: RaftGlyph.arrowLeft,
-                glyphSize: 16,
-                size: RaftButtonRecipeSize.iconSm,
-                semanticLabel: raftText(context, closeLabel),
-                onPressed: onClose,
+        child: Row(
+          children: [
+            if (mobile) ...[
+              // Web's drawer Back (`icon-sm`: the pack's size.control.sm); touch area
+              // extended around it.
+              RaftTouchTargetExpander(
+                minSize: const Size.square(RaftMetrics.touchTarget),
+                child: RaftSettingsRecipeButton(
+                  key: const ValueKey('channel-overflow-back'),
+                  label: '',
+                  variant: RaftButtonRecipeVariant.default_,
+                  glyph: RaftGlyph.arrowLeft,
+                  glyphSize: 16,
+                  size: RaftButtonRecipeSize.iconSm,
+                  semanticLabel: raftText(context, closeLabel),
+                  onPressed: onClose,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
+              const SizedBox(width: 8),
+            ],
+            Expanded(child: identity),
           ],
-          Expanded(child: identity),
-        ],
+        ),
       ),
     );
 
@@ -216,36 +232,30 @@ class _OverflowDrawerFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final size = MediaQuery.sizeOf(context);
-    final paper = t.brutal
-        ? t.colors['color-brutal-cream']!
-        : t.colors['layer-panel']!;
+    final paper = t.colors['layer-drawer']!;
     return Align(
       alignment: Alignment.centerRight,
       child: SizedBox(
         key: const ValueKey('channel-overflow-sheet'),
         width: page
             ? size.width
-            : RaftOverflowSheet.widthFor(size.width, brutal: t.brutal),
+            : math.min(
+                size.width,
+                t.size('size.channelOverflowDrawer', fallback: 448),
+              ),
         height: double.infinity,
         child: Material(
           color: paper,
           // Elegant: the drawer is a `rounded-xl` card; brutal `rounded-none`.
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(page || t.brutal ? 0 : 12),
+            borderRadius: BorderRadius.circular(page ? 0 : 12),
           ),
           clipBehavior: Clip.antiAlias,
           child: Container(
             decoration: BoxDecoration(
-              // Web keeps `theme-brutal:border-l-2` on the phone's full-width
-              // drawer too (the content column starts 2px in).
-              border: t.brutal
-                  ? Border(
-                      left: BorderSide(
-                        color: t.colors['line-strong']!,
-                        width: 2,
-                      ),
-                    )
-                  : null,
+              // The shared rule (RaftPanelEdge): every width but the
+              // full-width phone page draws `theme-brutal:border-l-2`.
+              border: RaftPanelEdge.left(context, RaftPanelEdgeStyle.drawer),
             ),
             child: DefaultTextStyle.merge(
               style: TextStyle(fontFamily: t.bodyFont, color: t.strong),
@@ -274,13 +284,7 @@ class RaftOverflowPanelBody extends StatelessWidget {
     final t = RaftTokens.of(context);
     if (_sliver) {
       final decoration = BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: t.brutal
-                ? Colors.black.withValues(alpha: .1)
-                : t.colors['line-muted']!,
-          ),
-        ),
+        border: Border(top: BorderSide(color: t.colors['line-muted']!)),
       );
       return DecoratedSliver(
         key: const ValueKey('channel-settings-panel'),
@@ -306,13 +310,7 @@ class RaftOverflowPanelBody extends StatelessWidget {
         16 + MediaQuery.paddingOf(context).bottom,
       ),
       decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: t.brutal
-                ? Colors.black.withValues(alpha: .1)
-                : t.colors['line-muted']!,
-          ),
-        ),
+        border: Border(top: BorderSide(color: t.colors['line-muted']!)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -338,27 +336,32 @@ class RaftOverflowGroupHeading extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return Padding(
-      padding: EdgeInsets.only(top: 20, bottom: bottom),
+      // FormSection `py-4` (v1.21.23) / `mt-5`.
+      padding: EdgeInsets.only(top: t.formSectionWeb ? 16 : 20, bottom: bottom),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             raftText(context, title),
-            style: raftCssTextStyle(
-              family: t.bodyFont,
-              step: RaftTextSteps.base,
-              weight: FontWeight.w700,
-              color: t.strong,
+            style: t.formSectionTitle(
+              raftCssTextStyle(
+                family: t.bodyFont,
+                step: RaftTextSteps.base,
+                weight: FontWeight.w700,
+                color: t.strong,
+              ),
             ),
           ),
           if (description != null) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: t.formSectionWeb ? 2 : 4),
             Text(
               raftText(context, description!),
-              style: raftCssTextStyle(
-                family: t.bodyFont,
-                step: RaftTextSteps.xs,
-                color: t.colors['foreground-muted'],
+              style: t.formSectionDescription(
+                raftCssTextStyle(
+                  family: t.bodyFont,
+                  step: RaftTextSteps.xs,
+                  color: t.colors['foreground-muted'],
+                ),
               ),
             ),
           ],
@@ -398,9 +401,25 @@ class RaftChannelInfoForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final hairline = t.brutal
-        ? Colors.black.withValues(alpha: .1)
-        : t.colors['line-muted']!;
+    final hairline = t.colors['line-muted']!;
+    final cancelButton = RaftSettingsRecipeButton(
+      key: const ValueKey('channel-settings-discard-draft'),
+      label: 'Cancel',
+      variant: RaftButtonRecipeVariant.outline,
+      size: RaftButtonRecipeSize.sm,
+      onPressed: !canCancel || saving ? null : onCancel,
+    );
+    final saveButton = RaftSettingsRecipeButton(
+      key: const ValueKey('channel-settings-save-inline'),
+      label: saving ? 'Saving…' : (savedLabel ?? 'Save'),
+      glyph: savedLabel != null && !saving ? RaftGlyph.check : null,
+      glyphSize: 12,
+      variant: savedLabel != null
+          ? RaftButtonRecipeVariant.success
+          : RaftButtonRecipeVariant.accent,
+      size: RaftButtonRecipeSize.sm,
+      onPressed: !canSave || saving ? null : onSave,
+    );
     return Container(
       padding: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -411,7 +430,6 @@ class RaftChannelInfoForm extends StatelessWidget {
         children: [
           RaftProductFormField(
             label: 'Name',
-            uppercase: false,
             required: true,
             labelWeight: FontWeight.w500,
             family: t.bodyFont,
@@ -427,7 +445,6 @@ class RaftChannelInfoForm extends StatelessWidget {
           const SizedBox(height: 12),
           RaftProductFormField(
             label: 'Description',
-            uppercase: false,
             optional: true,
             labelWeight: FontWeight.w500,
             family: t.bodyFont,
@@ -440,30 +457,20 @@ class RaftChannelInfoForm extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              RaftSettingsRecipeButton(
-                key: const ValueKey('channel-settings-discard-draft'),
-                label: 'Cancel',
-                variant: RaftButtonRecipeVariant.outline,
-                size: RaftButtonRecipeSize.sm,
-                onPressed: !canCancel || saving ? null : onCancel,
-              ),
-              const SizedBox(width: 8),
-              RaftSettingsRecipeButton(
-                key: const ValueKey('channel-settings-save-inline'),
-                label: saving ? 'Saving…' : (savedLabel ?? 'Save'),
-                glyph: savedLabel != null && !saving ? RaftGlyph.check : null,
-                glyphSize: 12,
-                variant: savedLabel != null
-                    ? RaftButtonRecipeVariant.success
-                    : RaftButtonRecipeVariant.accent,
-                size: RaftButtonRecipeSize.sm,
-                onPressed: !canSave || saving ? null : onSave,
-              ),
-            ],
-          ),
+          // Cancel / Save sit on one line; above the default text size they
+          // wrap onto a second line when they no longer fit.
+          if (RaftScaled.grows(context))
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [cancelButton, saveButton],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [cancelButton, const SizedBox(width: 8), saveButton],
+            ),
         ],
       ),
     );
@@ -513,11 +520,13 @@ class RaftOverflowActions extends StatelessWidget {
         children: [
           Text(
             raftText(context, title),
-            style: raftCssTextStyle(
-              family: t.bodyFont,
-              step: RaftTextSteps.base,
-              weight: FontWeight.w700,
-              color: t.strong,
+            style: t.formSectionTitle(
+              raftCssTextStyle(
+                family: t.bodyFont,
+                step: RaftTextSteps.base,
+                weight: FontWeight.w700,
+                color: t.strong,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -596,17 +605,29 @@ class RaftMembersStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final muted = t.colors['foreground-muted']!;
-    final headingStyle = raftCssTextStyle(
-      family: t.bodyFont,
-      step: RaftTextSteps.base,
-      weight: FontWeight.w700,
-      color: t.brutal ? Colors.black : t.strong,
+    final headingStyle = t.formSectionTitle(
+      raftCssTextStyle(
+        family: t.bodyFont,
+        step: RaftTextSteps.base,
+        weight: FontWeight.w700,
+        color: t.strong,
+      ),
     );
     final summaryStyle = raftCssTextStyle(
       family: t.bodyFont,
       step: RaftTextSteps.xs,
       weight: FontWeight.w700,
-      color: t.brutal ? Colors.black : muted,
+      color: muted,
+    );
+    final headingText = Text(
+      raftText(context, heading),
+      key: const ValueKey('channel-overflow-members-heading'),
+      style: headingStyle,
+    );
+    final chevron = RaftIcon(
+      RaftGlyph.chevronRight,
+      size: 14,
+      color: summaryStyle.color,
     );
     return Padding(
       key: const ValueKey('channel-overflow-members-strip'),
@@ -620,37 +641,45 @@ class RaftMembersStrip extends StatelessWidget {
               key: const ValueKey('channel-overflow-members-entry'),
               behavior: HitTestBehavior.opaque,
               onTap: onOpen,
-              child: Row(
-                children: [
-                  Text(
-                    raftText(context, heading),
-                    key: const ValueKey('channel-overflow-members-heading'),
-                    style: headingStyle,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+              child: RaftScaled.grows(context)
+                  // Heading over summary when they no longer fit one row.
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Text(
-                            summary,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: summaryStyle,
-                          ),
+                        headingText,
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Flexible(child: Text(summary, style: summaryStyle)),
+                            const SizedBox(width: 4),
+                            chevron,
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        RaftIcon(
-                          RaftGlyph.chevronRight,
-                          size: 14,
-                          color: summaryStyle.color,
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        headingText,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  summary,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: summaryStyle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              chevron,
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -753,13 +782,15 @@ class _TextTile extends StatelessWidget {
       child: Center(
         child: Text(
           text,
+          // The tile is a fixed-size avatar: its text keeps its size.
+          textScaler: TextScaler.noScaling,
           style: TextStyle(
             fontFamily: t.bodyFont,
             // AvatarSlot human text: text-sm font-bold; the add tile text-lg.
             fontSize: large ? 18 : 14,
             height: large ? 28 / 18 : 20 / 14,
             fontWeight: FontWeight.w700,
-            color: t.brutal ? Colors.black : r.placeholderForeground,
+            color: r.placeholderForeground,
           ),
         ),
       ),
@@ -775,7 +806,6 @@ class _TextTile extends StatelessWidget {
                 color: r.border,
                 width: r.borderWidth,
                 radius: r.radius,
-                cover: t.brutal ? t.colors['color-brutal-lavender']! : null,
               ),
             ),
           ),
@@ -791,11 +821,9 @@ class _DashedEdgePainter extends CustomPainter {
     required this.color,
     required this.width,
     required this.radius,
-    this.cover,
   });
   final Color color;
   final double width, radius;
-  final Color? cover;
   @override
   void paint(Canvas canvas, Size size) {
     final inset = width / 2;
@@ -812,16 +840,7 @@ class _DashedEdgePainter extends CustomPainter {
           Radius.circular(math.max(0, radius - inset)),
         ),
       );
-    // Repaint the ring in the fill colour, then dash it on top.
-    if (cover != null) {
-      canvas.drawPath(
-        path,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = width
-          ..color = cover!,
-      );
-    }
+    // Dash the ring on top of the avatar's solid border.
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = width
@@ -841,17 +860,11 @@ class _DashedEdgePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DashedEdgePainter old) =>
-      old.color != color ||
-      old.width != width ||
-      old.radius != radius ||
-      old.cover != cover;
+      old.color != color || old.width != width || old.radius != radius;
 }
 
-/// `channel-overflow-unsaved-prompt`: `Modal layer={1}` holding a
-/// `w-full max-w-sm card-brutal p-6` with the title (`mb-4 text-lg
-/// font-bold`), the message (`mb-5 text-sm text-black/70`) and three `sm`
-/// actions (`flex justify-end gap-3`): Keep editing / Discard changes /
-/// Save and close (the last only while the draft can be saved).
+/// The channel settings unsaved-changes modal. The Raft look follows Web's
+/// DialogSurface and wrapping action row; older looks retain their renderer.
 class RaftUnsavedChangesPrompt extends StatelessWidget {
   const RaftUnsavedChangesPrompt({
     super.key,
@@ -871,6 +884,81 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (!usesLegacyRecipes(t.recipeTokens)) {
+      return RaftModalBackdrop(
+        child: Semantics(
+          role: SemanticsRole.dialog,
+          scopesRoute: true,
+          namesRoute: true,
+          explicitChildNodes: true,
+          label: raftText(context, 'Unsaved changes'),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: RaftDialogSurface(
+              key: const ValueKey('channel-overflow-unsaved-prompt'),
+              child: Padding(
+                padding: const EdgeInsets.all(RaftSpace.x5),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        raftText(context, 'Unsaved changes'),
+                        style: t.scale(t.typeSlot('headline')),
+                      ),
+                    ),
+                    const SizedBox(height: RaftSpace.x1_5),
+                    Text(
+                      raftText(context, message),
+                      style: t.scale(
+                        t.typeSlot('subhead'),
+                        color: t.ui.foregroundMuted,
+                      ),
+                    ),
+                    const SizedBox(height: RaftSpace.x5),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: RaftSpace.x2,
+                      runSpacing: RaftSpace.x2,
+                      children: [
+                        RaftSettingsRecipeButton(
+                          key: const ValueKey('channel-overflow-unsaved-keep'),
+                          label: 'Keep editing',
+                          variant: RaftButtonRecipeVariant.ghost,
+                          size: RaftButtonRecipeSize.lg,
+                          onPressed: busy ? null : onKeepEditing,
+                        ),
+                        RaftSettingsRecipeButton(
+                          key: const ValueKey(
+                            'channel-overflow-unsaved-discard',
+                          ),
+                          label: 'Discard changes',
+                          variant: RaftButtonRecipeVariant.warning,
+                          size: RaftButtonRecipeSize.lg,
+                          onPressed: busy ? null : onDiscard,
+                        ),
+                        if (onSaveAndClose != null)
+                          RaftSettingsRecipeButton(
+                            key: const ValueKey(
+                              'channel-overflow-unsaved-save',
+                            ),
+                            label: busy ? 'Saving…' : 'Save and close',
+                            variant: RaftButtonRecipeVariant.accent,
+                            size: RaftButtonRecipeSize.lg,
+                            onPressed: busy ? null : onSaveAndClose,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return RaftModalBackdrop(
       child: _PromptCard(
         key: const ValueKey('channel-overflow-unsaved-prompt'),
@@ -911,14 +999,15 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
                 runSpacing: 12,
                 children: [
                   RaftSettingsRecipeButton(
-                    label: 'Keep editing',
+                    key: const ValueKey('channel-overflow-unsaved-keep'),
+                    label: 'Keep Editing',
                     variant: RaftButtonRecipeVariant.outline,
                     size: RaftButtonRecipeSize.sm,
                     onPressed: busy ? null : onKeepEditing,
                   ),
                   RaftSettingsRecipeButton(
                     key: const ValueKey('channel-overflow-unsaved-discard'),
-                    label: 'Discard changes',
+                    label: 'Discard Changes',
                     variant: RaftButtonRecipeVariant.warning,
                     size: RaftButtonRecipeSize.sm,
                     onPressed: busy ? null : onDiscard,
@@ -926,7 +1015,7 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
                   if (onSaveAndClose != null) ...[
                     RaftSettingsRecipeButton(
                       key: const ValueKey('channel-overflow-unsaved-save'),
-                      label: busy ? 'Saving…' : 'Save and close',
+                      label: busy ? 'Saving…' : 'Save and Close',
                       variant: RaftButtonRecipeVariant.accent,
                       size: RaftButtonRecipeSize.sm,
                       onPressed: busy ? null : onSaveAndClose,
@@ -946,7 +1035,8 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       RaftSettingsRecipeButton(
-                        label: 'Keep editing',
+                        key: const ValueKey('channel-overflow-unsaved-keep'),
+                        label: 'Keep Editing',
                         variant: RaftButtonRecipeVariant.outline,
                         size: RaftButtonRecipeSize.sm,
                         onPressed: busy ? null : onKeepEditing,
@@ -954,7 +1044,7 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
                       const SizedBox(width: 12),
                       RaftSettingsRecipeButton(
                         key: const ValueKey('channel-overflow-unsaved-discard'),
-                        label: 'Discard changes',
+                        label: 'Discard Changes',
                         variant: RaftButtonRecipeVariant.warning,
                         size: RaftButtonRecipeSize.sm,
                         onPressed: busy ? null : onDiscard,
@@ -963,7 +1053,7 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
                         const SizedBox(width: 12),
                         RaftSettingsRecipeButton(
                           key: const ValueKey('channel-overflow-unsaved-save'),
-                          label: busy ? 'Saving…' : 'Save and close',
+                          label: busy ? 'Saving…' : 'Save and Close',
                           variant: RaftButtonRecipeVariant.accent,
                           size: RaftButtonRecipeSize.sm,
                           onPressed: busy ? null : onSaveAndClose,
@@ -980,9 +1070,8 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
   }
 }
 
-/// The `card-brutal` utility (index.css): Elegant `border border-line-muted
-/// bg-layer-panel shadow-raft-md` (square), Brutal `border-2 border-black
-/// bg-white shadow-brutal` (the Card recipe paints that one).
+/// The unsaved-changes prompt: raft-ui `DialogSurface`, whose surface is
+/// `bg-layer-popover` (dialog-CY6S-Xqf.mjs), the same role as the drawer.
 class _PromptCard extends StatelessWidget {
   const _PromptCard({
     super.key,
@@ -996,16 +1085,13 @@ class _PromptCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (t.brutal) {
-      return RaftRecipeCard(maxWidth: maxWidth, padding: padding, child: child);
-    }
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: Container(
         width: double.infinity,
         padding: padding,
         decoration: BoxDecoration(
-          color: t.colors['layer-panel'],
+          color: t.colors['layer-dialog'],
           border: Border.all(color: t.colors['line-muted']!),
           boxShadow: t.themeShadows.md.outer,
         ),
@@ -1036,7 +1122,7 @@ class RaftOverflowNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-    child: RaftWarningBanner(message),
+    child: RaftErrorBanner(message),
   );
 }
 
@@ -1066,6 +1152,6 @@ class RaftOverflowFormError extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 20),
-    child: RaftWarningBanner(message),
+    child: RaftErrorBanner(message),
   );
 }

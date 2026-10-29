@@ -252,10 +252,13 @@ void main() {
     );
     final navigation = WorkspaceNavigation();
     navigation.bind('cold-task-alias', thread.withQuery({'task': '1'}));
-    expect(mobilePageEntries(navigation), hasLength(3));
+    // Home -> conversation -> thread -> task: a cold thread still has its
+    // conversation page under it.
+    expect(mobilePageEntries(navigation), hasLength(4));
     expect(backMobilePage(navigation), thread);
     expect(navigation.location.task, isNull);
     expect(navigation.location.thread?.itemId, 'message');
+    expect(mobilePageEntries(navigation), hasLength(3));
   });
 
   testWidgets(
@@ -316,7 +319,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -336,10 +339,12 @@ void main() {
     );
     await tester.tap(find.text('Open detail'));
     await tester.pumpAndSettle();
-    // Web's elegant phone PanelHeader: 56px, `pl-5`, 32px boxed Back.
+    // Web v1.21.23 Raft: pl-4 minus the 13px leading overhang,
+    // then the 44px ghost action's center.
     expect(find.byType(RaftMobilePageHeader), findsNothing);
     expect(tester.getSize(find.byType(RaftPanelHeaderBar)).height, 56);
-    expect(tester.getCenter(find.byType(RaftPanelAction)).dx, 20 + 16);
+    expect(tester.getSize(find.byType(RaftPanelAction)), const Size(44, 44));
+    expect(tester.getCenter(find.byType(RaftPanelAction)).dx, 3 + 22);
     await tester.tap(find.byType(RaftPanelAction));
     await tester.pumpAndSettle();
     expect(find.text('Open detail'), findsOneWidget);

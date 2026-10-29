@@ -7,7 +7,7 @@ import 'app_global_server_selector_test.dart' show RootFixture;
 const withActivity = '["chat","tasks","activity"]';
 
 void main() {
-  for (final theme in ['brutal', 'elegant-light']) {
+  for (final theme in ['light']) {
     Future<RootFixture> mount(
       WidgetTester t, {
       required int unread,

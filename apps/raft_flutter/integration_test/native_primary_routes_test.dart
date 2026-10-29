@@ -20,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'primary_route_tabs_fixture.dart';
 
 import 'package:raft_flutter/features/source_channel_files_view.dart';
+import '../test/support/app_services_fixture.dart';
 
 class _PublicClient extends RaftClient {
   _PublicClient(this.fixture)
@@ -134,10 +135,9 @@ void main() {
         expect(check(), isTrue);
       }
 
-      for (final (family, dark, theme) in [
-        (RaftFamily.brutal, false, 'brutal-light'),
-        (RaftFamily.elegant, false, 'elegant-light'),
-        (RaftFamily.elegant, true, 'elegant-dark'),
+      for (final (dark, theme) in [
+        (false, 'elegant-light'),
+        (true, 'elegant-dark'),
       ]) {
         final fixture = primaryRouteTabsFixture();
         final client = _PublicClient(fixture)..loading = Completer<void>();
@@ -148,14 +148,14 @@ void main() {
           ..channels = (fixture['context']['channels'] as List)
               .map((e) => RaftChannel(Map<String, dynamic>.from(e)))
               .toList();
-        w.ledger.switchServer('visual-server');
+        w.messageDomain.ledger.switchServer('visual-server');
         final selection = viewport.width < 768
             ? null
             : w.selectChannel(w.channels.first, autoRead: false);
         final shotKey = GlobalKey();
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             builder: (context, child) => Align(
               alignment: Alignment.topLeft,
               child: RepaintBoundary(
@@ -178,11 +178,13 @@ void main() {
                 ),
               ),
             ),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -444,8 +446,8 @@ void main() {
           await t.tap(homeChannel);
         }
         await until(() => find.byType(RaftComposer).evaluate().isNotEmpty);
-        expect(w.channelLoading, isTrue);
-        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(w.messageDomain.state.channelLoading, isTrue);
+        expect(find.byType(RaftSpinner), findsNothing);
         await capture('loading-before-ack');
         client.loading!.complete();
         if (selection != null) await selection;
@@ -486,9 +488,9 @@ void main() {
             identical(t.state(find.byType(RaftComposer)), composerState),
             true,
           );
-          expect(w.threadParent, isNull);
+          expect(w.messageDomain.state.threadParent, isNull);
           expect(
-            w.messages
+            w.messageDomain.messages
                 .firstWhere((message) => message.json['senderName'] == 'artin')
                 .string('senderType'),
             'user',
@@ -609,8 +611,8 @@ void main() {
         await t.tap(replies);
         await until(
           () =>
-              w.threadParent != null &&
-              !w.threadLoading &&
+              w.messageDomain.state.threadParent != null &&
+              !w.messageDomain.state.threadLoading &&
               w.replies.length == 2,
         );
         await until(
@@ -642,10 +644,10 @@ void main() {
         } else {
           await capture('thread-open');
         }
-        await t.tap(find.byTooltip('Close thread').first);
+        await t.tap(find.byTooltip('Close Thread').first);
         await until(
           () =>
-              w.threadParent == null &&
+              w.messageDomain.state.threadParent == null &&
               find.byType(RaftComposer).evaluate().length == 1 &&
               find
                   .byWidgetPredicate(

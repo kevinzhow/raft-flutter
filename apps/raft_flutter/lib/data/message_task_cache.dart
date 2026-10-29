@@ -7,7 +7,7 @@ import 'package:raft_client/raft_client.dart';
 import 'resource_row_reconcile.dart' show rowDeepEquals;
 import 'source_task_bucket.dart';
 import 'task_board_reconcile.dart' show mergeTaskFields;
-import 'workspace_controller.dart';
+import 'workspace_message_host.dart';
 
 const messageTaskStatuses = [
   'todo',
@@ -18,25 +18,76 @@ const messageTaskStatuses = [
 ];
 
 /// Client principal and server: shared by every controller on one client.
-String _principal(RaftClient client) => jsonEncode([
-  client.origin,
-  client.generation,
-  client.user?.id,
-  client.serverId,
-]);
+///
+/// Every mounted timeline row asks for these several times; the encoding is a
+/// pure function of the four values, so the last answer is reused while they
+/// are unchanged.
+String _principal(RaftClient client) {
+  final origin = client.origin,
+      generation = client.generation,
+      user = client.user?.id,
+      server = client.serverId;
+  final last = _lastPrincipal;
+  if (last != null &&
+      last.origin == origin &&
+      last.generation == generation &&
+      last.user == user &&
+      last.server == server) {
+    return last.encoded;
+  }
+  final encoded = jsonEncode([origin, generation, user, server]);
+  _lastPrincipal = (
+    origin: origin,
+    generation: generation,
+    user: user,
+    server: server,
+    encoded: encoded,
+  );
+  return encoded;
+}
+
+({
+  Object? origin,
+  Object? generation,
+  Object? user,
+  Object? server,
+  String encoded,
+})?
+_lastPrincipal;
 
 /// Principal, server and role that accepted the cached task references. A
 /// change here drops every channel bucket; nothing else does.
-String messageTaskIdentity(WorkspaceController w) =>
-    jsonEncode([_principal(w.client), w.server?.string('role')]);
+String messageTaskIdentity(WorkspaceMessageHost host) {
+  final w = host.messageDomain;
+  final principal = _principal(w.transport.client),
+      role = w.context.server?.string('role');
+  final last = _lastIdentity;
+  if (last != null && last.principal == principal && last.role == role) {
+    return last.encoded;
+  }
+  final encoded = jsonEncode([principal, role]);
+  _lastIdentity = (principal: principal, role: role, encoded: encoded);
+  return encoded;
+}
 
-RaftChannel? _channel(WorkspaceController w, String channelId) =>
-    w.channel?.id == channelId
-    ? w.channel
-    : [...w.channels, ...w.dms].where((c) => c.id == channelId).firstOrNull;
+({String principal, String? role, String encoded})? _lastIdentity;
+
+RaftChannel? _channel(WorkspaceMessageHost host, String channelId) {
+  final w = host.messageDomain;
+  return w.presentation.channel?.id == channelId
+      ? w.presentation.channel
+      : [
+          ...w.channels.channels,
+          ...w.channels.dms,
+        ].where((c) => c.id == channelId).firstOrNull;
+}
 
 /// The channel record's authority fields (Source loadTasks bucket key).
-String messageTaskChannelAuthority(WorkspaceController w, String channelId) {
+String messageTaskChannelAuthority(
+  WorkspaceMessageHost host,
+  String channelId,
+) {
+  final w = host.messageDomain;
   final channel = _channel(w, channelId);
   return jsonEncode([
     channel?.joined,
@@ -97,7 +148,8 @@ class MessageTaskCache extends ChangeNotifier {
 
   /// Bind to [w]'s identity. A principal change (account, session or server
   /// on this client) drops every bucket.
-  Map<String, _Bucket> _bind(WorkspaceController w) {
+  Map<String, _Bucket> _bind(WorkspaceMessageHost host) {
+    final w = host.messageDomain;
     final principal = _principal(client);
     if (_principalKey != principal) {
       final had = _all.any((b) => b.loaded);
@@ -126,15 +178,17 @@ class MessageTaskCache extends ChangeNotifier {
   /// Accepted tasks of [channelId] under [w]'s identity, or null when the
   /// channel has not been loaded for it.
   Map<String, Map<String, dynamic>>? tasks(
-    WorkspaceController w,
+    WorkspaceMessageHost host,
     String channelId,
   ) {
+    final w = host.messageDomain;
     if (_principalKey != _principal(client)) return null;
     final bucket = _scopes[messageTaskIdentity(w)]?[channelId];
     return bucket != null && bucket.loaded ? bucket.byMessage : null;
   }
 
-  bool needsRevalidation(WorkspaceController w, String channelId) {
+  bool needsRevalidation(WorkspaceMessageHost host, String channelId) {
+    final w = host.messageDomain;
     if (_principalKey != _principal(client)) return true;
     final bucket = _scopes[messageTaskIdentity(w)]?[channelId];
     if (bucket == null || !bucket.loaded || bucket.stale) return true;
@@ -166,13 +220,14 @@ class MessageTaskCache extends ChangeNotifier {
   /// the bucket is fresh, the channel hides task references (threads,
   /// read-only) or the member may not view it. The returned future never
   /// fails; callers must not block the timeline on it.
-  Future<void> warm(WorkspaceController w, String channelId) {
+  Future<void> warm(WorkspaceMessageHost host, String channelId) {
+    final w = host.messageDomain;
     final channel = _channel(w, channelId);
     if (channel == null ||
         channel.type == 'thread' ||
         channel.json['readOnlyReason'] != null ||
-        w.client.user == null ||
-        !w.can('viewChannel', resource: channel) ||
+        w.transport.client.user == null ||
+        !w.context.can('viewChannel', resource: channel) ||
         !needsRevalidation(w, channelId) ||
         (_scopes[messageTaskIdentity(w)]?[channelId]?.inFlight ?? 0) > 0) {
       return Future.value();
@@ -184,7 +239,8 @@ class MessageTaskCache extends ChangeNotifier {
   /// place until the response is accepted; unchanged tasks keep their
   /// objects. A response is dropped when the identity, the channel authority
   /// or the view permission changed while it was in flight.
-  Future<void> revalidate(WorkspaceController w, String channelId) async {
+  Future<void> revalidate(WorkspaceMessageHost host, String channelId) async {
+    final w = host.messageDomain;
     final identity = messageTaskIdentity(w);
     final scope = _bind(w);
     final bucket = scope.putIfAbsent(channelId, _Bucket.new);
@@ -211,7 +267,7 @@ class MessageTaskCache extends ChangeNotifier {
       return;
     }
     final channel = _channel(w, channelId);
-    if (channel != null && !w.can('viewChannel', resource: channel)) {
+    if (channel != null && !w.context.can('viewChannel', resource: channel)) {
       evict(channelId);
       return;
     }

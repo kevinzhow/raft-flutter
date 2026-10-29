@@ -5,12 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-Widget host(
-  Widget child, {
-  RaftFamily family = RaftFamily.elegant,
-  bool reduced = false,
-}) => MaterialApp(
-  theme: raftTheme(family),
+Widget host(Widget child, {bool reduced = false}) => MaterialApp(
+  theme: raftTheme(),
   home: MediaQuery(
     data: MediaQueryData(disableAnimations: reduced),
     child: Scaffold(body: child),
@@ -30,9 +26,8 @@ void main() {
     expect(clicks, 1);
     final context = tester.element(find.text('Default'));
     expect(
-      Actions.find<ButtonActivateIntent>(
-        context,
-      ).isEnabled(const ButtonActivateIntent()),
+      Actions.find<ButtonActivateIntent>(context)
+          .isEnabled(const ButtonActivateIntent()),
       isTrue,
     );
     Actions.invoke(context, const ButtonActivateIntent());
@@ -58,7 +53,7 @@ void main() {
       expect(node.flagsCollection.isButton, isTrue);
       expect(node.flagsCollection.isEnabled, isNot(Tristate.none));
       expect(node.flagsCollection.isEnabled, Tristate.isFalse);
-      expect(find.byType(RaftSpinner), findsOneWidget);
+      expect(find.byType(RaftPixelSpinner), findsOneWidget);
       await tester.tap(find.byType(RaftButton));
       await tester.pump(const Duration(seconds: 2));
       expect(tester.binding.transientCallbackCount, 0);
@@ -86,43 +81,41 @@ void main() {
     expect(tester.getSize(find.byType(RaftIcon)), const Size(48, 48));
   });
 
-  testWidgets('Elegant avatar preserves36px layout and32px painted circle', (
+  testWidgets(
+    'avatar is a 36px square sticker (rounded-sticker, not a circle)',
+    (tester) async {
+      await tester.pumpWidget(host(const RaftAvatar(name: 'Human')));
+      expect(tester.getSize(find.byType(RaftAvatar)), const Size(36, 36));
+      final surface = tester.widget<RaftCssBox>(
+        find.descendant(
+          of: find.byType(RaftAvatar),
+          matching: find.byType(RaftCssBox),
+        ),
+      );
+      expect(surface.radius, 4);
+      expect(surface.width, 36);
+    },
+  );
+
+  testWidgets('field outer box preserves source content plus border', (
     tester,
   ) async {
-    await tester.pumpWidget(host(const RaftAvatar(name: 'Human')));
-    expect(tester.getSize(find.byType(RaftAvatar)), const Size(36, 36));
-    final surface = find.descendant(
-      of: find.byType(RaftAvatar),
-      matching: find.byType(Container),
-    );
-    expect(tester.getSize(surface), const Size(32, 32));
-  });
-
-  for (final family in RaftFamily.values) {
-    testWidgets(
-      '$family field outer box preserves source content plus border',
-      (tester) async {
-        await tester.pumpWidget(
-          host(
-            const SizedBox(
-              width: 320,
-              child: RaftFieldSurface(
-                child: TextField(
-                  decoration: InputDecoration(hintText: 'Workspace name'),
-                ),
-              ),
+    await tester.pumpWidget(
+      host(
+        const SizedBox(
+          width: 320,
+          child: RaftFieldSurface(
+            child: TextField(
+              decoration: InputDecoration(hintText: 'Server name'),
             ),
-            family: family,
           ),
-        );
-        expect(
-          tester.getSize(find.byType(RaftFieldSurface)).height,
-          family == RaftFamily.brutal ? 44 : 38,
-        );
-        expect(tester.takeException(), isNull);
-      },
+        ),
+      ),
     );
-  }
+    // 0.7.1 `h-11`: 24px line + 2 x 10 padding.
+    expect(tester.getSize(find.byType(RaftFieldSurface)).height, 44);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'Menu actual ArrowDown and Enter invoke next row; Escape dismisses',
@@ -134,7 +127,7 @@ void main() {
             onDismiss: () => dismissed++,
             children: [
               RaftMenuItem(
-                label: 'Copy link',
+                label: 'Copy Link',
                 autofocus: true,
                 onPressed: () => copied++,
               ),

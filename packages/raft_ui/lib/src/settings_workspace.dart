@@ -3,22 +3,27 @@
 // - [RaftProviderConnectionsFrame]: ProviderConnectionsSettings.tsx page
 //   chrome (header, description, error, loading, empty, list frame).
 // The app supplies data and callbacks; every class list is resolved here.
+import 'card.dart' show RaftCard;
+
 import 'package:flutter/material.dart';
 
+import 'raft_underline.dart';
 import 'system_inset.dart';
 import 'banner.dart';
 import 'components.dart' show RaftButton;
 import 'design_primitives.dart' show RaftSpinner, RaftTypography;
-import 'feedback_inbox.dart' show RaftDashedBorderPainter, RaftUiSkeleton;
+import 'feedback_inbox.dart' show RaftDashedBorderPainter;
+import 'error_presentation.dart';
 import 'icons.dart';
-import 'list_items.dart' show RaftSectionEyebrow, RaftSurfaceListItem;
+import 'list_items.dart' show RaftSectionEyebrow;
 import 'settings_controls.dart' show RaftSettingsRecipeButton;
 import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'settings_layout.dart';
-import 'switch.dart';
+import 'raft/switch.dart';
+import 'indicators.dart' show RaftSkeleton;
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 
@@ -77,34 +82,25 @@ class RaftServerLabsSection extends StatelessWidget {
     // `divide-black/10` (both themes) / `border-line-muted
     // theme-brutal:border-black`.
     final divider = Colors.black.withValues(alpha: .1);
-    final masterLine = t.brutal ? Colors.black : t.colors['line-muted']!;
-    final note = RaftTypography.mono(
-      t,
-      size: 12,
-      line: 16,
-      color: t.brutal ? Colors.black.withValues(alpha: .45) : t.muted,
-    );
+    final masterLine = t.colors['line-muted']!;
+    final note = RaftTypography.mono(t, size: 12, line: 16, color: t.muted);
     final description = RaftTypography.body(
       t,
       size: 12,
       line: 20,
       color: text.muted,
     );
-    Widget warning(String message) => RaftBanner(
-      status: RaftBannerRecipeStatus.warning,
-      size: RaftBannerRecipeSize.sm,
-      description: message,
-      descriptionWeight: FontWeight.w700,
-    );
+    Widget warning(String message) =>
+        RaftErrorBanner(message, small: true, bold: true);
     final body = switch (status) {
       RaftServerLabsStatus.loading => const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          RaftUiSkeleton(height: 40),
+          RaftSkeleton(fromRecipe: true, width: double.infinity, height: 40),
           SizedBox(height: 12),
-          RaftUiSkeleton(height: 64),
+          RaftSkeleton(fromRecipe: true, width: double.infinity, height: 64),
           SizedBox(height: 12),
-          RaftUiSkeleton(height: 64),
+          RaftSkeleton(fromRecipe: true, width: double.infinity, height: 64),
         ],
       ),
       RaftServerLabsStatus.unavailable => Row(
@@ -112,11 +108,7 @@ class RaftServerLabsSection extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: RaftIcon(
-              RaftGlyph.alertTriangle,
-              size: 16,
-              color: t.brutal ? Colors.black.withValues(alpha: .5) : t.muted,
-            ),
+            child: RaftIcon(RaftGlyph.alertTriangle, size: 16, color: t.muted),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -197,7 +189,6 @@ class RaftServerLabsSection extends StatelessWidget {
               style: description.copyWith(
                 fontStyle: FontStyle.italic,
                 height: 16 / 12,
-                color: t.brutal ? Colors.black.withValues(alpha: .4) : null,
               ),
             )
           else
@@ -311,8 +302,8 @@ class RaftProviderConnectionsFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
-    final muted = t.brutal ? Colors.black.withValues(alpha: .6) : t.muted;
-    final edge = t.brutal ? Colors.black : t.colors['line-muted']!;
+    final muted = t.muted;
+    final edge = t.colors['line-muted']!;
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
@@ -328,7 +319,7 @@ class RaftProviderConnectionsFrame extends StatelessWidget {
                   ? null
                   : RaftButton(
                       key: const ValueKey('provider-connections-add'),
-                      label: 'Add connection',
+                      label: 'Add provider connection',
                       glyph: RaftGlyph.plus,
                       tone: RaftButtonRecipeVariant.default_,
                       size: RaftButtonRecipeSize.sm,
@@ -356,7 +347,7 @@ class RaftProviderConnectionsFrame extends StatelessWidget {
                   border: Border.all(color: edge, width: 2),
                 ),
                 child: Text(
-                  error!,
+                  raftText(context, error!),
                   style: RaftTypography.body(
                     t,
                     size: 14,
@@ -375,9 +366,7 @@ class RaftProviderConnectionsFrame extends StatelessWidget {
                 // `border-2 border-dashed border-line-muted
                 // theme-brutal:border-black/25`.
                 foregroundPainter: RaftDashedBorderPainter(
-                  t.brutal
-                      ? Colors.black.withValues(alpha: .25)
-                      : t.colors['line-muted']!,
+                  t.colors['line-muted']!,
                   2,
                 ),
                 child: Padding(
@@ -389,18 +378,14 @@ class RaftProviderConnectionsFrame extends StatelessWidget {
                   child: Text(
                     raftText(context, 'No provider connections yet.'),
                     textAlign: TextAlign.center,
-                    style: text.bodyMuted.copyWith(
-                      color: t.brutal
-                          ? Colors.black.withValues(alpha: .55)
-                          : t.muted,
-                    ),
+                    style: text.bodyMuted.copyWith(color: t.muted),
                   ),
                 ),
               )
             else
               Container(
                 decoration: BoxDecoration(
-                  color: t.brutal ? Colors.white : t.panel,
+                  color: t.panel,
                   border: Border.all(color: edge, width: 2),
                 ),
                 child: Column(
@@ -444,9 +429,7 @@ class RaftMessagingBridgesSection extends StatelessWidget {
         Container(
           key: const ValueKey('im-bridges-header'),
           padding: const EdgeInsets.all(16),
-          decoration: RaftSettingsCard.decoration(
-            t,
-          ).copyWith(color: t.brutal ? t.product.brutalCream : null),
+          decoration: RaftSettingsCard.decoration(t).copyWith(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -488,8 +471,7 @@ class RaftMessagingBridgesSection extends StatelessWidget {
             size: RaftBannerRecipeSize.lg,
             glyph: RaftGlyph.circleAlert,
             title: 'Raft for Slack',
-            description:
-                'The Slack bridge operation failed. No setup state was assumed.',
+            description: 'The Slack bridge operation failed. No setup state was assumed.',
           )
         else
           ?child,
@@ -631,7 +613,7 @@ class _RaftMcpServersSectionState extends State<RaftMcpServersSection> {
         );
     Widget addButton({bool primary = false}) => RaftButton(
       key: ValueKey(primary ? 'mcp-empty-add' : 'mcp-add-server'),
-      label: 'Add server',
+      label: 'Add MCP server',
       glyph: RaftGlyph.plus,
       tone: primary
           ? RaftButtonRecipeVariant.default_
@@ -641,12 +623,7 @@ class _RaftMcpServersSectionState extends State<RaftMcpServersSection> {
     );
     final items = <WidgetBuilder>[
       if (widget.error != null)
-        (_) => RaftBanner(
-          status: RaftBannerRecipeStatus.warning,
-          size: RaftBannerRecipeSize.sm,
-          description: widget.error!,
-          descriptionWeight: FontWeight.w700,
-        ),
+        (_) => RaftErrorBanner(widget.error!, small: true, bold: true),
       (_) => Padding(
         padding: EdgeInsets.only(top: widget.error == null ? 0 : 24),
         child: header(
@@ -655,15 +632,13 @@ class _RaftMcpServersSectionState extends State<RaftMcpServersSection> {
           action: widget.usage
               ? (widget.loading
                     ? Text(
-                        raftText(context, 'Loading…'),
+                        raftText(context, 'Loading usage…'),
                         style: RaftTypography.body(
                           t,
                           size: 12,
                           line: 16,
                           weight: FontWeight.w700,
-                          color: t.brutal
-                              ? Colors.black.withValues(alpha: .5)
-                              : t.muted,
+                          color: t.muted,
                         ),
                       )
                     : null)
@@ -671,7 +646,7 @@ class _RaftMcpServersSectionState extends State<RaftMcpServersSection> {
               ? null
               : addButton(),
           detail: widget.usage
-              ? 'MCP servers this Agent has used. Enabled Server tools are available automatically.'
+              ? 'MCP servers this agent has used. Enabled server tools are available automatically.'
               : 'Configure the MCP catalog, credentials, and provider connections for this Raft Server.',
         ),
       ),
@@ -684,9 +659,7 @@ class _RaftMcpServersSectionState extends State<RaftMcpServersSection> {
               t,
               size: 12,
               line: 16,
-              color: t.brutal
-                  ? Colors.black.withValues(alpha: .4)
-                  : t.colors['foreground-placeholder'],
+              color: t.colors['foreground-placeholder'],
             ),
           ),
         )
@@ -725,7 +698,7 @@ class _RaftMcpServersSectionState extends State<RaftMcpServersSection> {
         for (final r in widget.recommendations)
           (_) => Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: RaftSurfaceListItem(
+            child: RaftCard.item(
               key: ValueKey('mcp-recommendation-${r.id}'),
               interactive: false,
               child: Row(
@@ -787,8 +760,8 @@ class _McpServerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
-    final line = t.brutal ? Colors.black : t.colors['line-muted']!;
-    // `border px-1.5 py-0.5 text-[10px] font-bold uppercase`.
+    final line = t.colors['line-muted']!;
+    // `border px-1.5 py-0.5 text-[10px] font-bold`.
     Widget badge(String label, Color fill, {Color? color}) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -796,7 +769,7 @@ class _McpServerCard extends StatelessWidget {
         border: Border.all(color: line),
       ),
       child: Text(
-        label.toUpperCase(),
+        label,
         style: RaftTypography.body(
           t,
           size: 10,
@@ -808,29 +781,13 @@ class _McpServerCard extends StatelessWidget {
     );
     final oauth = server.oauthStatus ?? 'disconnected';
     final (oauthFill, oauthInk) = switch (oauth) {
-      'connected' =>
-        t.brutal
-            ? (t.product.brutalLime, Colors.black)
-            : (t.colors['success-soft']!, t.colors['success-strong']!),
-      'error' =>
-        t.brutal
-            ? (t.product.brutalRed.withValues(alpha: .3), Colors.black)
-            : (t.colors['danger-soft']!, t.colors['danger-strong']!),
-      _ =>
-        t.brutal
-            ? (t.product.brutalLavender.withValues(alpha: .4), Colors.black)
-            : (t.colors['accent-soft']!, t.colors['accent-strong']!),
+      'connected' => (t.colors['success-soft']!, t.colors['success-strong']!),
+      'error' => (t.colors['danger-soft']!, t.colors['danger-strong']!),
+      _ => (t.colors['accent-soft']!, t.colors['accent-strong']!),
     };
-    final muted = RaftTypography.body(
-      t,
-      size: 14,
-      line: 20,
-      color: t.brutal ? Colors.black.withValues(alpha: .7) : t.muted,
-    );
-    final placeholder = t.brutal
-        ? Colors.black.withValues(alpha: .5)
-        : t.colors['foreground-placeholder']!;
-    return RaftSurfaceListItem(
+    final muted = RaftTypography.body(t, size: 14, line: 20, color: t.muted);
+    final placeholder = t.colors['foreground-placeholder']!;
+    return RaftCard.item(
       interactive: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -851,9 +808,7 @@ class _McpServerCard extends StatelessWidget {
                         if (!server.enabled)
                           badge(
                             raftText(context, 'Disabled'),
-                            t.brutal
-                                ? const Color(0xFFE5E7EB)
-                                : t.colors['fill-muted']!,
+                            t.colors['fill-muted']!,
                           ),
                         badge(server.provider, text.panel),
                         if (server.authMode == 'oauth')
@@ -861,12 +816,8 @@ class _McpServerCard extends StatelessWidget {
                         else if (server.hasCredentials)
                           badge(
                             raftText(context, 'Credentials stored'),
-                            t.brutal
-                                ? t.product.brutalLavender.withValues(alpha: .4)
-                                : t.colors['accent-soft']!,
-                            color: t.brutal
-                                ? Colors.black
-                                : t.colors['accent-strong'],
+                            t.colors['accent-soft']!,
+                            color: t.colors['accent-strong'],
                           ),
                       ],
                     ),
@@ -891,11 +842,10 @@ class _McpServerCard extends StatelessWidget {
                     ],
                     if (server.lastCheckError != null) ...[
                       const SizedBox(height: 12),
-                      RaftBanner(
-                        status: RaftBannerRecipeStatus.warning,
-                        size: RaftBannerRecipeSize.sm,
-                        description: server.lastCheckError!,
-                        descriptionWeight: FontWeight.w700,
+                      RaftErrorBanner(
+                        server.lastCheckError!,
+                        small: true,
+                        bold: true,
                       ),
                     ],
                   ],
@@ -943,17 +893,15 @@ class _McpServerCard extends StatelessWidget {
                     size: 13,
                     color: text.muted,
                   ),
-                  Text(
+                  RaftUnderlinedText(
                     '${server.tools.length} ${server.tools.length == 1 ? 'tool' : 'tools'}',
                     style: RaftTypography.body(
                       t,
                       size: 12,
                       line: 16,
                       weight: FontWeight.w700,
-                      color: t.brutal
-                          ? Colors.black.withValues(alpha: .7)
-                          : t.muted,
-                    ).copyWith(decoration: TextDecoration.underline),
+                      color: t.muted,
+                    ),
                   ),
                 ],
               ),
@@ -1055,16 +1003,13 @@ class _McpUsageGrid extends StatelessWidget {
       size: 12,
       line: 16,
       weight: FontWeight.w700,
-      color: t.brutal ? Colors.black : t.strong,
+      color: t.strong,
     );
-    final value = RaftTypography.body(
-      t,
-      size: 12,
-      line: 16,
-      color: t.brutal ? Colors.black.withValues(alpha: .65) : t.muted,
-    );
-    Widget cell(String label, String text, {bool mono = false}) => Expanded(
-      child: Column(
+    final value = RaftTypography.body(t, size: 12, line: 16, color: t.muted);
+    // `grid gap-2 sm:grid-cols-3`: one column below the 640px `sm` viewport.
+    final wide = MediaQuery.sizeOf(context).width >= 640;
+    Widget cell(String label, String text, {bool mono = false}) {
+      final column = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(raftText(context, label), style: strong),
@@ -1075,17 +1020,26 @@ class _McpUsageGrid extends StatelessWidget {
                 : value,
           ),
         ],
-      ),
-    );
+      );
+      return wide ? Expanded(child: column) : column;
+    }
+
+    final cells = [
+      cell('Calls', server.usageCalls ?? ''),
+      cell('Last used', server.usageLastUsed ?? ''),
+      cell('Last tool', server.usageLastTool ?? '', mono: true),
+    ];
+    if (!wide) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 8,
+        children: cells,
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        cell('Calls', server.usageCalls ?? ''),
-        const SizedBox(width: 8),
-        cell('Last used', server.usageLastUsed ?? ''),
-        const SizedBox(width: 8),
-        cell('Last tool', server.usageLastTool ?? '', mono: true),
-      ],
+      spacing: 8,
+      children: cells,
     );
   }
 }
@@ -1103,23 +1057,18 @@ class _McpEmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
       child: Column(
         children: [
-          if (t.brutal)
-            RaftIcon(RaftGlyph.blocks, size: 36, color: t.muted)
-          else
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: t.dark
-                    ? t.colors['layer-inset']
-                    : t.colors['fill-muted'],
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: RaftIcon(
-                RaftGlyph.blocks,
-                size: 18,
-                color: t.colors['foreground-placeholder'],
-              ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: t.dark ? t.colors['layer-inset'] : t.colors['fill-muted'],
+              borderRadius: BorderRadius.circular(6),
             ),
+            child: RaftIcon(
+              RaftGlyph.blocks,
+              size: 18,
+              color: t.colors['foreground-placeholder'],
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             raftText(
@@ -1127,19 +1076,12 @@ class _McpEmptyState extends StatelessWidget {
               usage ? 'No MCP usage yet' : 'No managed MCP servers yet',
             ),
             textAlign: TextAlign.center,
-            style: t.brutal
-                ? RaftTypography.heading(
-                    t,
-                    size: 18,
-                    line: 28,
-                    weight: FontWeight.w600,
-                  ).copyWith(color: t.strong.withValues(alpha: .6))
-                : RaftTypography.heading(
-                    t,
-                    size: 14,
-                    line: 20,
-                    weight: FontWeight.w500,
-                  ).copyWith(color: t.dark ? t.muted : t.colors['foreground']),
+            style: RaftTypography.heading(
+              t,
+              size: 14,
+              line: 20,
+              weight: FontWeight.w500,
+            ).copyWith(color: t.dark ? t.muted : t.colors['foreground']),
           ),
           const SizedBox(height: 8),
           ConstrainedBox(
@@ -1148,14 +1090,11 @@ class _McpEmptyState extends StatelessWidget {
               raftText(
                 context,
                 usage
-                    ? 'Enabled MCP servers are available automatically and appear here after this Agent calls one.'
+                    ? 'Enabled MCP servers are available automatically and appear here after this agent calls one.'
                     : 'Add a Streamable HTTP server or start from a recommended integration.',
               ),
               textAlign: TextAlign.center,
-              style: text.bodyMuted.copyWith(
-                height: 1.625,
-                color: t.brutal ? t.strong.withValues(alpha: .6) : null,
-              ),
+              style: text.bodyMuted.copyWith(height: 1.625),
             ),
           ),
           if (action != null) ...[const SizedBox(height: 20), action!],

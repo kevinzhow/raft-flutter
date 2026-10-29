@@ -1,0 +1,13 @@
+{
+  "_doc": "Frozen pixel baselines of the pre-theme app (Brutal / Elegant looks) captured once from commit a57b9dab with tool/theme-baseline (official + extension desktop) and tool/parity-ext/frozen-capture (extension phone / tablet / frame). Paths are relative to $PARITY_FROZEN_ROOT (default /mnt/data/theme-baseline); the first directory that holds <case id>.png wins. The baselines are deliverables: nothing in this repo deletes or rewrites them.",
+  "commit": "a57b9dab8a818a557460601f5bd6ef74c7c5963a",
+  "official": {
+    "brutal-light": ["p2-a57b9dab/brutal-light/pass-1/visual-testing-results/android"],
+    "elegant-light": ["p2-a57b9dab/elegant-light/pass-1/visual-testing-results/android"],
+    "elegant-dark": ["p2-a57b9dab/elegant-dark/pass-1/visual-testing-results/android"]
+  },
+  "ext": [
+    "p2-a57b9dab/ext-desktop/pass-1/visual-testing-results/android",
+    "cindy-a57b9dab-ext/pass-1/visual-testing-results/android"
+  ]
+}

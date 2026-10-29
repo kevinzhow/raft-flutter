@@ -12,7 +12,6 @@ import 'message_presentation_test.dart' show fixture;
 /// widget callers simulate the keyboard inset through TestFlutterView.
 Future<void> checkTallFocusReceipt(
   WidgetTester tester, {
-  required RaftFamily family,
   required bool dark,
   Widget Function(Widget child)? hostBuilder,
   Future<void> Function()? resize,
@@ -34,10 +33,15 @@ Future<void> checkTallFocusReceipt(
   }
   final (w, api) = (await tester.runAsync(() => fixture('member')))!;
   addTearDown(w.dispose);
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   final old = contextRows('old', count: 8);
-  w.ledger.ingest(old, expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = old.map((row) => row['id'] as String).toSet();
+  w.messageDomain.ledger.ingest(
+    old,
+    expectedGeneration: w.messageDomain.ledger.generation,
+  );
+  w.messageDomain.visibleIds['c1'] = old
+      .map((row) => row['id'] as String)
+      .toSet();
   final next = contextRows('target');
   next[40]['content'] = [for (var i = 0; i < 14; i++) 'Tall line $i 中文']
       .join('  \n');
@@ -49,7 +53,7 @@ Future<void> checkTallFocusReceipt(
   api.routes['POST /channels/c1/read'] = (_) => {};
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
+      theme: raftTheme(dark: dark),
       home: (hostBuilder ?? ((child) => child))(
         Scaffold(
           body: Column(
@@ -141,7 +145,7 @@ Future<void> checkTallFocusReceipt(
   );
   await tester.pump(const Duration(milliseconds: 2200));
   await tester.pump();
-  expect(w.highlightedMessageId, isNull);
+  expect(w.messageDomain.state.highlightedMessageId, isNull);
   expect(paintedMessage(tester, 'target-40'), firstTarget);
   expect(
     tester.element(find.byKey(const ValueKey('message-target-40'))),

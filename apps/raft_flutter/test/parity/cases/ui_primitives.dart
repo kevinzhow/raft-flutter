@@ -71,7 +71,11 @@ Widget _frame(
           fontFamily: RaftTokens.of(context).headingFont,
           fontSize: 16,
           height: 1.5,
-          color: Colors.black,
+          // `<main class="... text-foreground">` in the current Source; the
+          // frozen looks were captured with `text-black`.
+          color: ctx.againstWeb
+              ? RaftTokens.of(context).colors['foreground']
+              : Colors.black,
           leadingDistribution: TextLeadingDistribution.even,
         ),
         child: OverflowBox(
@@ -123,7 +127,11 @@ Widget _fixtureLabel(String text) => Text(
 /// `flex items-center gap-N` row whose line box is the `text-sm` 20px.
 Widget _labelRow(double gap, Widget lead, String label) => Row(
   mainAxisSize: MainAxisSize.min,
-  children: [lead, SizedBox(width: gap), _fixtureLabel(label)],
+  children: [
+    lead,
+    SizedBox(width: gap),
+    _fixtureLabel(label),
+  ],
 );
 
 Widget _reducedMotion(Widget child) => Builder(
@@ -225,7 +233,7 @@ final ParityCase _card = ParityCase(
             style: RaftPanelStyle.legacyCard,
             child: _column(8, [
               const Text(
-                'Channel settings',
+                'Channel Settings',
                 style: TextStyle(
                   fontSize: 16,
                   height: 20 / 16,
@@ -260,44 +268,49 @@ final ParityCase _formField = ParityCase(
   notes:
       'Fixture inputs are the Web legacy .input-brutal class '
       '(RaftInputChrome.legacy); the error input adds the callsite '
-      '!border-brutal-red ring-2 ring-brutal-red/60 (invalid).',
-  build: (ctx) => _frame(
-    ctx,
-    height: 296,
-    child: _column(12, [
-      const RaftField(
-        label: 'Email',
-        uppercase: false,
-        required: true,
-        child: RaftTextInput(
-          initialValue: 'cindy@slock.ai',
-          readOnly: true,
-          chrome: RaftInputChrome.legacy,
+      '!border-brutal-red ring-2 ring-brutal-red/60 (invalid); against the Web '
+      'the raft-ui Input (default chrome) is used.',
+  build: (ctx) {
+    final chrome = ctx.againstWeb
+        ? RaftInputChrome.recipe
+        : RaftInputChrome.legacy;
+    return _frame(
+      ctx,
+      height: 296,
+      child: _column(12, [
+        RaftField(
+          label: 'Email',
+          required: true,
+          child: RaftTextInput(
+            initialValue: 'cindy@slock.ai',
+            readOnly: true,
+            chrome: chrome,
+          ),
         ),
-      ),
-      const RaftField(
-        label: 'Description',
-        optional: true,
-        hint: 'Shown in channel discovery.',
-        child: RaftTextInput(
-          initialValue: 'Visual parity fixture',
-          readOnly: true,
-          chrome: RaftInputChrome.legacy,
+        RaftField(
+          label: 'Description',
+          optional: true,
+          hint: 'Shown in channel discovery.',
+          child: RaftTextInput(
+            initialValue: 'Visual parity fixture',
+            readOnly: true,
+            chrome: chrome,
+          ),
         ),
-      ),
-      const RaftField(
-        label: 'Server Name',
-        compact: true,
-        error: 'Name is required',
-        child: RaftTextInput(
-          initialValue: '',
-          readOnly: true,
-          invalid: true,
-          chrome: RaftInputChrome.legacy,
+        RaftField(
+          label: 'Server Name',
+          compact: true,
+          error: 'Name is required',
+          child: RaftTextInput(
+            initialValue: '',
+            readOnly: true,
+            invalid: true,
+            chrome: chrome,
+          ),
         ),
-      ),
-    ]),
-  ),
+      ]),
+    );
+  },
 );
 
 const _agreement = 'This agreement copy is too long for the configured limit.';
@@ -324,7 +337,7 @@ final ParityCase _textarea = ParityCase(
                   style: TextStyle(
                     fontSize: 12,
                     height: 16 / 12,
-                    color: t.brutal ? t.product.brutalRed : t.semantic.danger,
+                    color: t.semantic.danger,
                   ),
                 ),
               ),
@@ -345,21 +358,21 @@ final ParityCase _checkbox = ParityCase(
     ctx,
     height: 132,
     child: _column(12, [
-      _labelRow(8, RaftCheckbox(value: true, onChanged: (_) {}), 'As Task selected'),
       _labelRow(
         8,
-        RaftCheckbox(
-          value: false,
-          onChanged: (_) {},
-          size: RaftCheckboxRecipeSize.md,
-        ),
+        RaftCheckbox(value: true, onChanged: (_) {}),
+        'As Task selected',
+      ),
+      _labelRow(
+        8,
+        RaftCheckbox(value: false, onChanged: (_) {}),
         'Permission row unchecked',
       ),
       Opacity(
         opacity: .6,
         child: _labelRow(
           8,
-          const RaftCheckbox(value: true, size: RaftCheckboxRecipeSize.md),
+          const RaftCheckbox(value: true),
           'Disabled checked',
         ),
       ),
@@ -368,26 +381,28 @@ final ParityCase _checkbox = ParityCase(
 );
 
 final ParityCase _checkMarker = ParityCase(
-  widgets: const ['raft_ui:RaftCheckMarker'],
+  widgets: const ['raft_ui:RaftCheckboxIndicator'],
   build: (ctx) => _frame(
     ctx,
     height: 112,
     child: Align(
       alignment: Alignment.topLeft,
       child: _column(12, [
-        _labelRow(12, const RaftCheckMarker(checked: true), 'Square checked'),
         _labelRow(
           12,
-          const RaftCheckMarker(checked: false, size: RaftCheckMarkerSize.md),
+          const RaftCheckboxIndicator(size: 14, checked: true),
+          'Square checked',
+        ),
+        _labelRow(
+          12,
+          const RaftCheckboxIndicator(size: 16, checked: false),
           'Square unchecked',
         ),
         _labelRow(
           12,
-          const RaftCheckMarker(
+          const RaftCheckboxIndicator(
             checked: true,
-            circle: true,
-            size: RaftCheckMarkerSize.lg,
-            yellow: true,
+            shape: RaftCheckboxShape.circle,
           ),
           'Circle yellow',
         ),
@@ -507,7 +522,8 @@ final ParityCase _progressBar = ParityCase(
 
 final ParityCase _skeleton = ParityCase(
   widgets: const ['raft_ui:RaftSkeleton', 'raft_ui:RaftSkeletonRow'],
-  notes: 'Pulse frozen at full opacity via reduced motion (React frame ~0.999).',
+  notes:
+      'Pulse frozen at full opacity via reduced motion (React frame ~0.999).',
   build: (ctx) => _frame(
     ctx,
     height: 150,
@@ -541,7 +557,7 @@ final ParityCase _spinner = ParityCase(
   notes:
       'React renders spinners with animation:none; Flutter uses reduced '
       'motion (MediaQuery.disableAnimations) for the same static frame. '
-      'RaftSpinner takes a free size: React xs/sm/md/lg = 10/16/20/32px. '
+      'The source xs/sm/md/lg size axis is shared by all themes: Raft uses pixel grids, legacy themes keep the original rings. '
       'The black inverse box reproduces the fixture span (p-2 around a 24px '
       'line box).',
   build: (ctx) => _reducedMotion(
@@ -551,14 +567,17 @@ final ParityCase _spinner = ParityCase(
       child: Align(
         alignment: Alignment.topLeft,
         child: _row(20, [
-          const RaftSpinner(size: 10),
-          const RaftSpinner(size: 16),
-          const RaftSpinner(size: 20),
-          const RaftSpinner(size: 32),
+          const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.xs),
+          const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.sm),
+          const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.md),
+          const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.lg),
           Container(
             color: Colors.black,
             padding: const EdgeInsets.fromLTRB(8, 10, 8, 14),
-            child: const RaftSpinner(size: 16, inverse: true),
+            child: const RaftSpinner(
+              recipeSize: RaftSpinnerRecipeSize.sm,
+              inverse: true,
+            ),
           ),
         ]),
       ),
@@ -678,12 +697,14 @@ final ParityCase _selectionPopover = ParityCase(
           ],
           tokens.recipeTokens,
         );
+        final search = TextEditingController(text: 'des');
+        ctx.onDispose(search.dispose);
         return RaftSelectionPopover(
           surfaceStyle: surface,
           title: 'Channels',
           width: 310,
           onClear: () {},
-          searchController: TextEditingController(text: 'des'),
+          searchController: search,
           searchPlaceholder: 'Search channels',
           options: [
             RaftSelectionOption(
@@ -722,51 +743,72 @@ final ParityCase _selectionPopover = ParityCase(
 final ParityCase _menuItem = ParityCase(
   widgets: const ['raft_ui:RaftMenuButtonItem'],
   notes:
-      'Container is fixture markup (w-full overflow-hidden border-2 '
-      'border-black bg-white shadow-brutal); the frame is content-sized in '
-      'React (16 + 116 + 16).',
-  build: (ctx) => _frame(
-    ctx,
-    height: 148,
-    child: Container(
-      clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(width: 2),
-        boxShadow: RaftProductShadows.shadowBrutal.paintOrder,
-      ),
-      child: Semantics(
-        role: SemanticsRole.menu,
-        child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          RaftMenuButtonItem(
-            label: 'Open Channel',
-            onPressed: () {},
-            trailing: Builder(
-              builder: (context) => Text(
-                '⌘K',
-                style: TextStyle(
-                  fontFamily: RaftTokens.of(context).monoFont,
-                  fontSize: 12,
-                  height: 16 / 12,
-                  color: Colors.black.withValues(alpha: .4),
-                ),
+      'Container is fixture markup: `w-full overflow-hidden rounded-container '
+      'border border-line-seam bg-layer-popover shadow-float` against the Web, '
+      '`border-2 border-black bg-white shadow-brutal` for the frozen looks; the '
+      'frame is content-sized in React (16 + 116 + 16).',
+  build: (ctx) => Builder(
+    builder: (context) {
+      final t = RaftTokens.of(context);
+      final web = ctx.againstWeb;
+      final decoration = web
+          ? BoxDecoration(
+              color: t.popover,
+              borderRadius: BorderRadius.circular(
+                t.size('radius.container', fallback: 10),
               ),
+              border: Border.all(color: t.colors['line-seam']!),
+              boxShadow: [
+                for (final layer in t.shadowLayers('shadow.float'))
+                  if (!layer.inset) layer.toBoxShadow(),
+              ],
+            )
+          : BoxDecoration(
+              color: Colors.white,
+              border: Border.all(width: 2),
+              boxShadow: RaftProductShadows.shadowBrutal.paintOrder,
+            );
+      return _frame(
+        ctx,
+        height: web ? 178 : 148,
+        child: Container(
+          clipBehavior: web ? Clip.antiAlias : Clip.hardEdge,
+          decoration: decoration,
+          child: Semantics(
+            role: SemanticsRole.menu,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                RaftMenuButtonItem(
+                  label: 'Open Channel',
+                  onPressed: () {},
+                  trailing: Text(
+                    '⌘K',
+                    style: TextStyle(
+                      fontFamily: t.monoFont,
+                      fontFamilyFallback: t.fontFallback,
+                      fontSize: 12,
+                      height: 16 / 12,
+                      color: web
+                          ? t.colors['foreground-hint']
+                          : Colors.black.withValues(alpha: .4),
+                    ),
+                  ),
+                ),
+                RaftMenuButtonItem(label: 'Mark as Read', onPressed: () {}),
+                const RaftMenuButtonItem(label: 'Archive unavailable'),
+                RaftMenuButtonItem(
+                  label: 'Delete Message',
+                  onPressed: () {},
+                  topDivider: true,
+                ),
+              ],
             ),
           ),
-          RaftMenuButtonItem(label: 'Mark as Read', onPressed: () {}),
-          const RaftMenuButtonItem(label: 'Archive unavailable'),
-          RaftMenuButtonItem(
-            label: 'Delete Message',
-            onPressed: () {},
-            topDivider: true,
-          ),
-        ],
-      ),
-      ),
-    ),
+        ),
+      );
+    },
   ),
 );
 
@@ -779,95 +821,112 @@ final ParityCase _select = ParityCase(
       RaftSelectField<String>(
         value: 'codex',
         items: const [
-          DropdownMenuItem(value: 'codex', child: Text('Codex')),
-          DropdownMenuItem(value: 'claude', child: Text('Claude')),
-          DropdownMenuItem(
+          RaftSelectItem(value: 'codex', label: 'Codex'),
+          RaftSelectItem(value: 'claude', label: 'Claude'),
+          RaftSelectItem(
             value: 'disabled',
             enabled: false,
-            child: Text('Unavailable Runtime'),
+            label: 'Unavailable Runtime',
           ),
         ],
         onChanged: (_) {},
       ),
       const RaftSelectField<String>(
         value: null,
-        items: [DropdownMenuItem(value: 'codex', child: Text('Codex'))],
+        items: [RaftSelectItem(value: 'codex', label: 'Codex')],
         onChanged: null,
       ),
     ]),
   ),
 );
 
-Widget _surfaceItemBody(String title, String detail) => Builder(
-  builder: (context) {
-    final t = RaftTokens.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontFamily: t.bodyFont,
-            fontSize: 14,
-            height: 20 / 14,
-            fontWeight: FontWeight.w700,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          detail,
-          style: RaftTypography.mono(
-            t,
-            size: 12,
-            line: 16,
-            color: Colors.black.withValues(alpha: .5),
-          ),
-        ),
-      ],
+/// The Source fixture markup: `text-callout font-bold text-foreground` over a
+/// `font-mono text-mono-meta text-foreground-muted` line. Elegant / Brutal are
+/// scored against the frozen render of the `text-black` / `text-black/50` markup
+/// the earlier Source used, so only the Web comparison reads the tokens.
+Widget _surfaceItemBody(ParityContext ctx, String title, String detail) =>
+    Builder(
+      builder: (context) {
+        final t = RaftTokens.of(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: t.bodyFont,
+                fontSize: 14,
+                height: 20 / 14,
+                fontWeight: FontWeight.w700,
+                color: ctx.againstWeb ? t.colors['foreground'] : Colors.black,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              detail,
+              style: RaftTypography.mono(
+                t,
+                size: 12,
+                line: 16,
+                color: ctx.againstWeb
+                    ? t.colors['foreground-muted']
+                    : Colors.black.withValues(alpha: .5),
+              ),
+            ),
+          ],
+        );
+      },
     );
-  },
-);
 
 final ParityCase _surfaceListItem = ParityCase(
-  widgets: const ['raft_ui:RaftSurfaceListItem'],
+  widgets: const ['raft_ui:RaftCard'],
   notes: 'Row text is the Source fixture child markup: text-black and text-black/50 in every theme.',
   build: (ctx) => _frame(
     ctx,
     height: 182,
     child: _column(12, [
-      RaftSurfaceListItem(
+      RaftCard.item(
         interactive: false,
-        child: _surfaceItemBody('Private app', 'Available to this server'),
+        child: _surfaceItemBody(ctx, 'Private app', 'Available to this server'),
       ),
-      RaftSurfaceListItem(
+      RaftCard.item(
         selected: true,
         interactive: false,
-        child: _surfaceItemBody('Active integration', 'Selected list item state'),
+        child: _surfaceItemBody(
+          ctx,
+          'Active integration',
+          'Selected list item state',
+        ),
       ),
     ]),
   ),
 );
 
 final ParityCase _avatarListRow = ParityCase(
-  widgets: const ['raft_ui:RaftAvatarListRow', 'raft_ui:RaftAvatar', 'raft_ui:RaftBadge'],
+  widgets: const [
+    'raft_ui:RaftAvatarListRow',
+    'raft_ui:RaftAvatar',
+    'raft_ui:RaftBadge',
+  ],
   notes:
       'AvatarSlot context="surface-list" humanPlaceholder is rendered with '
-      'the generic RaftAvatar(size 32) (no surface-list mounted context).',
-  build: (ctx) => _frame(
-    ctx,
-    height: 168,
-    child: _column(12, [
-      const RaftAvatarListRow(
-        avatar: RaftAvatar(name: 'Cindy', size: 32),
+      'the generic RaftAvatar(size 32) (no surface-list mounted context). '
+      'Against the Web the rows sit in a ListRowGroup, as the Source fixture has them.',
+  build: (ctx) {
+    final rows = [
+      RaftAvatarListRow(
+        avatar: RaftAvatar(name: ctx.againstWeb ? '' : 'Cindy', size: 32),
         name: 'Cindy',
         subtitle: 'Claude Code',
-        rightContent: [
+        rightContent: const [
           RaftBadge(label: 'Online', variant: RaftBadgeRecipeVariant.success),
         ],
       ),
       RaftAvatarListRow(
-        avatar: const RaftAvatar(name: 'Product UX Designer', size: 32),
+        avatar: RaftAvatar(
+          name: ctx.againstWeb ? '' : 'Product UX Designer',
+          size: 32,
+        ),
         name: 'Product UX Designer',
         subtitle: 'product@slock.ai',
         selected: true,
@@ -880,6 +939,13 @@ final ParityCase _avatarListRow = ParityCase(
           ),
         ],
       ),
-    ]),
-  ),
+    ];
+    return _frame(
+      ctx,
+      height: 168,
+      child: ctx.againstWeb
+          ? RaftListRowGroup(children: rows)
+          : _column(12, rows),
+    );
+  },
 );

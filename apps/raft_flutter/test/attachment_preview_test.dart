@@ -41,6 +41,7 @@ class _Files extends AttachmentPreviewFiles {
     String filename, {
     required CancelToken cancel,
     required bool Function() authorized,
+    void Function(int, int)? onProgress,
   }) async => lease;
 }
 
@@ -51,9 +52,13 @@ class _Player implements AttachmentPlayer {
   @override
   Stream<AttachmentPlayback> get changes => events.stream;
   @override
+  AttachmentPlayback get playback => const AttachmentPlayback();
+  @override
+  bool get usesPlatformView => false;
+  @override
   Widget video() => const ColoredBox(color: Colors.red);
   @override
-  Future<void> open(File file) async {
+  Future<void> open(AttachmentSource source) async {
     events.add(const AttachmentPlayback(duration: Duration(seconds: 3)));
   }
 
@@ -102,13 +107,18 @@ void main() {
       }),
       isNull,
     );
-    expect(
-      attachmentPreviewKind({
-        'filename': 'big.csv',
-        'sizeBytes': 6 * 1024 * 1024,
-      }),
-      isNull,
-    );
+    // Beyond the server's table sizes the viewer still opens: it reads the
+    // original, or offers the system app (see attachment_local_preview_test).
+    for (final (name, size) in [
+      ('big.csv', 6 * 1024 * 1024),
+      ('big.xlsx', 40 * 1024 * 1024),
+    ]) {
+      expect(
+        attachmentPreviewKind({'filename': name, 'sizeBytes': size}),
+        'document',
+        reason: name,
+      );
+    }
     expect(
       attachmentPreviewKind({
         'filename': 'index.html',
@@ -175,7 +185,7 @@ void main() {
       });
       try {
         final files = AttachmentPreviewFiles(
-          temporaryDirectory: () async => folder,
+          stagingDirectory: () async => folder,
         );
         await expectLater(
           files.load(
@@ -237,7 +247,7 @@ void main() {
     },
   );
   testWidgets(
-    'playback pauses on background, revocation and cleans its lease',
+    'playback pauses on background, revocation and cleans its lease (audio plays the cached file)',
     (tester) async {
       final folder = (await tester.runAsync(
         () => Directory.systemTemp.createTemp('raft-player-test-'),
@@ -266,8 +276,8 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
-      expect(find.byType(RaftMediaControls), findsOneWidget);
-      await tester.tap(find.byTooltip('Play'));
+      expect(find.byType(RaftAudioPreview), findsOneWidget);
+      await tester.tap(find.byKey(const Key('audio-play-toggle')));
       expect(player.toggles, 1);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await tester.pump();

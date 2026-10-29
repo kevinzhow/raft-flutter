@@ -1,0 +1,341 @@
+#!/usr/bin/env python3
+"""Login / onboarding acceptance driver (docs/login-acceptance.md).
+
+Steps through the states of apps/raft_flutter/integration_test/login_qa_main.dart on an
+Android emulator (adb forward tcp:8791 tcp:8791), saves a screenshot per state and theme,
+and prints every paragraph painted in Flutter's missing-Material fallback style.
+
+  tool/login-qa --serial emulator-5582 --out /tmp/login-qa [--themes brutal,elegant,dark] [state ...]
+"""
+import argparse, json, os, subprocess, sys, time, urllib.parse, urllib.request
+
+ADB = os.path.expanduser('~/android-sdk/platform-tools/adb')
+PORT = 8791
+
+
+def call(path, **q):
+    url = f'http://localhost:{PORT}{path}' + ('?' + urllib.parse.urlencode(q) if q else '')
+    try:
+        with urllib.request.urlopen(url, timeout=20) as r:
+            return r.read().decode()
+    except urllib.error.HTTPError as e:
+        return f'HTTP {e.code}: {e.read().decode()[:200]}'
+
+
+class Driver:
+    def __init__(self, serial, out):
+        self.serial, self.out = serial, out
+        os.makedirs(out, exist_ok=True)
+        self.fallback = {}
+        self.log = []
+
+    def adb(self, *args, **kw):
+        return subprocess.run([ADB, '-s', self.serial, *args], capture_output=True, **kw)
+
+    def shot(self, name):
+        data = self.adb('exec-out', 'screencap', '-p').stdout
+        with open(f'{self.out}/{name}.png', 'wb') as f:
+            f.write(data)
+        info = json.loads(call('/texts') or '{}') if True else {}
+        if info.get('fallback'):
+            self.fallback[name] = info['fallback']
+        self.log.append((name, info.get('texts', [])[:12]))
+
+    def tap(self, **q):
+        r = call('/tap', **q)
+        if r != 'tapped':
+            print('  tap failed', q, r)
+        time.sleep(.5)
+
+    def type(self, text):
+        self.adb('shell', 'input', 'text', text.replace(' ', '%s'))
+        time.sleep(.4)
+
+    def key(self, code):
+        self.adb('shell', 'input', 'keyevent', str(code))
+        time.sleep(.5)
+
+    def hide_keyboard(self):
+        info = json.loads(call('/texts'))
+        if info.get('viewInsetsBottom', 0) > 0:
+            self.key(4)
+            time.sleep(.6)
+
+    lang = 'en'
+
+    def scenario(self, name, theme, wait=3.0):
+        call('/scenario', name=name, theme=theme, lang=self.lang)
+        time.sleep(wait)
+
+
+def fill(d, email='alice@example.invalid', password='correct-horse-battery'):
+    d.tap(key='login-email'); d.type(email)
+    d.tap(key='login-password'); d.type(password)
+    d.hide_keyboard()
+
+
+def signin(d):
+    d.tap(key='login-submit')
+
+
+# state -> function(driver, theme): takes the screenshots of that state.
+def st_simple(scenario, wait=3.0, label=None):
+    def run(d, theme):
+        d.scenario(scenario, theme, wait)
+        d.shot(f'{label or scenario}.{theme}')
+        if scenario in ('restoring', 'servers-loading', 'resolution-loading', 'joining-community', 'invite-loading'):
+            call('/release')
+    return run
+
+
+def st_login_keyboard(d, theme):
+    d.scenario('login', theme)
+    d.tap(key='login-email')
+    time.sleep(1.2)
+    d.shot(f'login-keyboard.{theme}')
+    d.tap(key='login-password')
+    time.sleep(.6)
+    d.type('secret-password')
+    time.sleep(.6)
+    d.shot(f'login-keyboard-password.{theme}')
+    d.hide_keyboard()
+
+
+def st_login_invalid(d, theme):
+    d.scenario('login', theme)
+    signin(d); time.sleep(.5)
+    d.shot(f'login-empty-error.{theme}')
+    d.tap(key='login-email'); d.type('not-an-email')
+    d.tap(key='login-password'); d.type('x'); d.hide_keyboard()
+    signin(d); time.sleep(.5)
+    d.shot(f'login-invalid-email.{theme}')
+
+
+def st_login_failure(kind):
+    def run(d, theme):
+        d.scenario('login', theme)
+        call('/set', login=kind)
+        fill(d)
+        signin(d)
+        time.sleep(1.5 if kind != 'pending' else 1.0)
+        d.shot(f'login-{kind}.{theme}')
+        call('/release')
+    return run
+
+
+def st_login_pressed(d, theme):
+    d.scenario('login', theme)
+    fill(d)
+    for name, q in [('signin', dict(key='login-submit')), ('forgot', dict(text='Forgot password?')),
+                    ('create-one', dict(text='Create one'))]:
+        call('/down', **q); time.sleep(.5)
+        d.shot(f'login-pressed-{name}.{theme}')
+        call('/up'); time.sleep(.3)
+        d.scenario('login', theme, 1.5)
+        fill(d)
+
+
+def st_register(d, theme):
+    d.scenario('login', theme)
+    d.tap(text='Create one'); time.sleep(.6)
+    d.shot(f'register.{theme}')
+    d.tap(key='login-email'); d.type('new@example.invalid')
+    d.tap(key='login-password'); d.type('longenoughpassword'); d.hide_keyboard()
+    d.shot(f'register-filled.{theme}')
+    signin(d); time.sleep(.6)
+    d.shot(f'register-unchecked-error.{theme}')
+
+
+def st_register_exists(d, theme):
+    d.scenario('login', theme)
+    d.tap(text='Create one'); time.sleep(.6)
+    call('/set', register='exists')
+    d.tap(key='login-email'); d.type('new@example.invalid')
+    d.tap(key='login-password'); d.type('longenoughpassword'); d.hide_keyboard()
+    # tick the terms checkbox (the row's label text) then submit
+    d.tap(contains='I agree', at='left')
+    signin(d); time.sleep(1.2)
+    d.shot(f'register-exists.{theme}')
+
+
+def st_login_success(d, theme):
+    d.scenario('login', theme)
+    call('/set', servers='two')
+    fill(d)
+    signin(d); time.sleep(3)
+    d.shot(f'login-success-servers.{theme}')
+
+
+def st_login_success_first(d, theme):
+    d.scenario('login', theme)
+    call('/set', servers='none')
+    fill(d)
+    signin(d); time.sleep(3)
+    d.shot(f'login-success-first-server.{theme}')
+
+
+def st_login_success_verify(d, theme):
+    d.scenario('login', theme)
+    call('/set', account='verify')
+    fill(d)
+    signin(d); time.sleep(3)
+    d.shot(f'login-success-verify.{theme}')
+
+
+def st_verify(d, theme):
+    d.scenario('onboarding-verify', theme, 4)
+    d.shot(f'onboarding-verify.{theme}')
+    d.tap(text='Enter code manually'); time.sleep(.6)
+    d.shot(f'onboarding-verify-manual.{theme}')
+    d.tap(text='Resend Verification Email'); time.sleep(1.2)
+    d.shot(f'onboarding-verify-resend.{theme}')
+
+
+def st_profile(d, theme):
+    d.scenario('onboarding-profile', theme, 4)
+    d.shot(f'onboarding-profile.{theme}')
+    r = json.loads(call('/texts'))
+    d.tap(key='onboarding-username')
+    time.sleep(.8)
+    d.shot(f'onboarding-profile-keyboard.{theme}')
+    d.hide_keyboard()
+
+
+def st_forgot(d, theme):
+    d.scenario('login', theme)
+    d.tap(text='Forgot password?'); time.sleep(.6)
+    d.shot(f'forgot.{theme}')
+    d.tap(key='login-email'); d.type('alice@example.invalid'); d.hide_keyboard()
+    signin(d); time.sleep(1.2)
+    d.shot(f'forgot-sent.{theme}')
+    d.tap(text='I have a reset link'); time.sleep(.6)
+    d.shot(f'reset.{theme}')
+
+
+def st_servers_create(d, theme):
+    d.scenario('servers-two', theme, 5)
+    d.tap(text='+ Create New Server'); time.sleep(.6)
+    d.shot(f'servers-create.{theme}')
+    d.tap(key='global-server-name'); d.type('Launch Team')
+    d.hide_keyboard()
+    d.shot(f'servers-create-filled.{theme}')
+    call('/set', create='fail')
+    d.tap(key='global-server-create-submit'); time.sleep(1.2)
+    d.shot(f'servers-create-error.{theme}')
+    call('/set', create='pending')
+    d.tap(key='global-server-create-submit'); time.sleep(.8)
+    d.shot(f'servers-create-busy.{theme}')
+    call('/release')
+
+
+def st_servers_pressed(d, theme):
+    d.scenario('servers-two', theme, 5)
+    for name, q in [('row', dict(key='global-server-a')), ('create-new', dict(key='global-server-create-new')),
+                    ('logout', dict(text='Log out'))]:
+        call('/down', **q); time.sleep(.5)
+        d.shot(f'servers-pressed-{name}.{theme}')
+        call('/up'); time.sleep(.3)
+        # a tap on the row would navigate away: restart the state
+        d.scenario('servers-two', theme, 4)
+
+
+def st_servers_first_pressed(d, theme):
+    d.scenario('servers-none', theme, 5)
+    d.shot(f'servers-none.{theme}')
+    d.tap(key='global-server-name'); d.type('Alex Chen Studio')
+    time.sleep(.5)
+    d.shot(f'servers-none-keyboard.{theme}')
+    d.hide_keyboard()
+    d.shot(f'servers-none-filled.{theme}')
+    call('/down', key='global-server-create-submit'); time.sleep(.5)
+    d.shot(f'servers-none-pressed-create.{theme}')
+    call('/up')
+
+
+def st_setup_bar(d, theme):
+    d.scenario('workspace-setup-bar', theme, 4)
+    d.shot(f'workspace-setup-bar-home.{theme}')
+    d.tap(text='general'); time.sleep(2.5)
+    d.shot(f'workspace-setup-bar.{theme}')
+
+
+def st_workspace_tap(d, theme):
+    d.scenario('servers-two', theme, 5)
+    d.tap(key='global-server-a'); time.sleep(3)
+    d.shot(f'workspace-after-select.{theme}')
+
+
+def st_root_error(d, theme):
+    d.scenario('root-error', theme, 5)
+    d.shot(f'root-error.{theme}')
+
+
+STATES = {
+    'restoring': st_simple('restoring'),
+    'restore-offline': st_simple('restore-offline', 4),
+    'login': st_simple('login'),
+    'login-social': st_simple('login-social', 4),
+    'login-keyboard': st_login_keyboard,
+    'login-invalid': st_login_invalid,
+    'login-wrong': st_login_failure('wrong'),
+    'login-network': st_login_failure('network'),
+    'login-server': st_login_failure('server'),
+    'login-rate': st_login_failure('rate'),
+    'login-pending': st_login_failure('pending'),
+    'login-pressed': st_login_pressed,
+    'register': st_register,
+    'register-exists': st_register_exists,
+    'forgot': st_forgot,
+    'public-server': st_simple('public-server', 4),
+    'invite-signed-out': st_simple('invite-signed-out', 4),
+    'invite-signed-in': st_simple('invite-signed-in', 4),
+    'invite-loading': st_simple('invite-loading', 3),
+    'invite-expired': st_simple('invite-expired', 4),
+    'invite-throttled': st_simple('invite-throttled', 4),
+    'invite-seat-limit': st_simple('invite-seat-limit', 4),
+    'invite-agreement': st_simple('invite-agreement', 4),
+    'onboarding-verify': st_verify,
+    'onboarding-profile': st_profile,
+    'login-success': st_login_success,
+    'login-success-first': st_login_success_first,
+    'login-success-verify': st_login_success_verify,
+    'servers-loading': st_simple('servers-loading', 4),
+    'servers-many': st_simple('servers-many', 5),
+    'servers-two': st_simple('servers-two', 5),
+    'servers-one': st_simple('servers-one', 5),
+    'servers-none': st_servers_first_pressed,
+    'servers-failed': st_simple('servers-failed', 5),
+    'servers-create': st_servers_create,
+    'servers-pressed': st_servers_pressed,
+    'access-denied': st_simple('access-denied', 1.0),
+    'joining-community': st_simple('joining-community', 1.5),
+    'resolution-loading': st_simple('resolution-loading', 1.5),
+    'workspace': st_simple('workspace', 4),
+    'workspace-setup-bar': st_setup_bar,
+    'workspace-after-select': st_workspace_tap,
+    'root-error': st_root_error,
+}
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--serial', default='emulator-5582')
+    ap.add_argument('--out', default='/tmp/login-qa')
+    ap.add_argument('--themes', default='brutal,elegant,dark')
+    ap.add_argument('--lang', default='en', help='account display language (zh-CN: signed-in pages only)')
+    ap.add_argument('states', nargs='*')
+    a = ap.parse_args()
+    d = Driver(a.serial, a.out)
+    d.lang = a.lang
+    names = a.states or list(STATES)
+    for name in names:
+        for theme in a.themes.split(','):
+            print(name, theme, flush=True)
+            try:
+                STATES[name](d, theme)
+            except Exception as e:
+                print('  FAILED', e)
+    with open(f'{a.out}/fallback.json', 'w') as f:
+        json.dump(d.fallback, f, indent=1)
+    with open(f'{a.out}/texts.json', 'w') as f:
+        json.dump(d.log, f, indent=1)
+    print('fallback-style paragraphs:', json.dumps(d.fallback, indent=1) if d.fallback else 'none')

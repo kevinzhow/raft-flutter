@@ -9,15 +9,9 @@ Widget surfaceProgressPreview() => Padding(
   child: Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      RaftSurfaceListItem(
-        onTap: () {},
-        child: const Text('Interactive surface'),
-      ),
+      RaftCard.item(onTap: () {}, child: const Text('Interactive surface')),
       const SizedBox(height: 16),
-      const RaftSurfaceListItem(
-        selected: true,
-        child: Text('Selected surface'),
-      ),
+      const RaftCard.item(selected: true, child: Text('Selected surface')),
       const SizedBox(height: 16),
       const RaftProgressBar(
         value: 64,

@@ -1,4 +1,4 @@
-// Generated from pinned shared RUNTIME_MODELS. Regenerate with generate_catalog.ts.
+// Generated from pinned shared RUNTIME_MODELS. Regenerate with tool/gen_agent_metadata_catalog.mjs.
 const sourceRuntimeModelLabels = <String, Map<String, String>>{
   'external': {'external': 'External agent'},
   'builtin': {
@@ -115,17 +115,17 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/anthropic/claude-sonnet-4.5': 'Anthropic: Claude Sonnet 4.5',
     'openrouter/anthropic/claude-sonnet-4.5:batch':
         'Anthropic: Claude Sonnet 4.5 (batch)',
-    'openrouter/anthropic/claude-sonnet-4': 'Anthropic: Claude Sonnet 4',
     'openrouter/~anthropic/claude-sonnet-latest':
         'Anthropic: Claude Sonnet Latest',
+    'openrouter/anthropic/claude-haiku-5.5': 'Anthropic: Claude Haiku 5.5',
+    'openrouter/anthropic/claude-haiku-5.5:batch':
+        'Anthropic: Claude Haiku 5.5 (batch)',
     'openrouter/anthropic/claude-haiku-4.5': 'Anthropic: Claude Haiku 4.5',
     'openrouter/anthropic/claude-haiku-4.5:batch':
         'Anthropic: Claude Haiku 4.5 (batch)',
     'openrouter/~anthropic/claude-haiku-latest':
         'Anthropic: Claude Haiku Latest',
     'openrouter/openai/gpt-5.1-codex-max': 'OpenAI: GPT-5.1-Codex-Max',
-    'openrouter/kwaipilot/kat-coder-pro-v2.5': 'Kwaipilot: KAT-Coder-Pro V2.5',
-    'openrouter/qwen/qwen3-max-thinking': 'Qwen: Qwen3 Max Thinking',
     'openrouter/qwen/qwen3.8-max-0902': 'Qwen: Qwen3.8 Max (0902)',
     'openrouter/deepseek/deepseek-v4-pro-0813':
         'DeepSeek: DeepSeek V4 Pro 0813',
@@ -134,6 +134,8 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/google/gemini-2.5-pro-preview':
         'Google: Gemini 2.5 Pro Preview 06-05',
     'openrouter/openai/gpt-6.1-sol-pro': 'OpenAI: GPT-6.1 Sol Pro',
+    'openrouter/openai/gpt-6.1-sol-pro:batch':
+        'OpenAI: GPT-6.1 Sol Pro (batch)',
     'openrouter/openai/gpt-6-astra-pro': 'OpenAI: GPT-6 Astra Pro',
     'openrouter/openai/gpt-6-astra-pro:batch':
         'OpenAI: GPT-6 Astra Pro (batch)',
@@ -161,7 +163,6 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/upstage/solar-pro4': 'Upstage: Solar Pro 4',
     'openrouter/qwen/qwen3.8-max-prime': 'Qwen: Qwen3.8 Max Prime',
     'openrouter/qwen/qwen3.7-max': 'Qwen: Qwen3.7 Max',
-    'openrouter/qwen/qwen3.6-max-preview': 'Qwen: Qwen3.6 Max Preview',
     'openrouter/google/gemini-3.1-pro-preview':
         'Google: Gemini 3.1 Pro Preview',
     'openrouter/google/gemini-3.1-pro-preview:batch':
@@ -169,7 +170,6 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/google/gemini-3.1-pro-preview-customtools':
         'Google: Gemini 3.1 Pro Preview Custom Tools',
     'openrouter/openai/o3-pro': 'OpenAI: o3 Pro',
-    'openrouter/qwen/qwen3-max': 'Qwen: Qwen3 Max',
     'openrouter/upstage/solar-pro-3': 'Upstage: Solar Pro 3',
     'openrouter/xiaomi/mimo-v2.6-pro': 'Xiaomi: MiMo-V2.6-Pro',
     'openrouter/xiaomi/mimo-v2.6-pro-ultraspeed':
@@ -194,20 +194,15 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/openai/gpt-5.2-codex': 'OpenAI: GPT-5.2-Codex',
     'openrouter/openai/gpt-5.1-codex': 'OpenAI: GPT-5.1-Codex',
     'openrouter/qwen/qwen3-coder-next': 'Qwen: Qwen3 Coder Next',
-    'openrouter/qwen/qwen3-coder-plus': 'Qwen: Qwen3 Coder Plus',
     'openrouter/moonshotai/kimi-k2.7-code': 'MoonshotAI: Kimi K2.7 Code',
     'openrouter/bytedance-seed/seed-2.0-code': 'ByteDance Seed: Seed-2.0-Code',
+    'openrouter/openrouter/pareto-code': 'Pareto Code Router',
     'openrouter/qwen/qwen3-235b-a22b-thinking-2507':
         'Qwen: Qwen3 235B A22B Thinking 2507',
-    'openrouter/qwen/qwen3-30b-a3b-thinking-2507':
-        'Qwen: Qwen3 30B A3B Thinking 2507',
-    'openrouter/qwen/qwen3-vl-235b-a22b-thinking':
-        'Qwen: Qwen3 VL 235B A22B Thinking',
     'openrouter/qwen/qwen3-next-80b-a3b-thinking':
         'Qwen: Qwen3 Next 80B A3B Thinking',
     'openrouter/qwen/qwen3-vl-30b-a3b-thinking':
         'Qwen: Qwen3 VL 30B A3B Thinking',
-    'openrouter/qwen/qwen3-vl-8b-thinking': 'Qwen: Qwen3 VL 8B Thinking',
     'openrouter/google/gemini-3-pro-image':
         'Google: Nano Banana Pro (Gemini 3 Pro Image)',
     'openrouter/moonshotai/kimi-k2-thinking': 'MoonshotAI: Kimi K2 Thinking',
@@ -220,6 +215,8 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
         'Mistral: Mistral Large 3 2512 (batch)',
     'openrouter/mistralai/mistral-large-2407': 'Mistral Large 2407',
     'openrouter/nvidia/nemotron-3-super-120b-a12b': 'NVIDIA: Nemotron 3 Super',
+    'openrouter/mistralai/mistral-large-4-0': 'Mistral: Mistral Large 4',
+    'openrouter/nvidia/nemotron-3.5-super-vl': 'NVIDIA: Nemotron 3.5 Super VL',
     'openrouter/mistralai/mistral-large': 'Mistral Large',
     'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free':
         'NVIDIA: Nemotron 3 Ultra (free)',
@@ -244,7 +241,6 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/qwen/qwen3-30b-a3b-instruct-2507':
         'Qwen: Qwen3 30B A3B Instruct 2507',
     'openrouter/qwen/qwen3.5-plus-02-15': 'Qwen: Qwen3.5 Plus 2026-02-15',
-    'openrouter/qwen/qwen-plus-2025-07-28': 'Qwen: Qwen Plus 0728',
     'openrouter/openai/gpt-4o-2024-11-20': 'OpenAI: GPT-4o (2024-11-20)',
     'openrouter/openai/gpt-4o-2024-08-06': 'OpenAI: GPT-4o (2024-08-06)',
     'openrouter/openai/gpt-4o-2024-05-13': 'OpenAI: GPT-4o (2024-05-13)',
@@ -253,7 +249,6 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/deepseek/deepseek-r1-0528': 'DeepSeek: R1 0528',
     'openrouter/qwen/qwen3.5-397b-a17b': 'Qwen: Qwen3.5 397B A17B',
     'openrouter/deepseek/deepseek-chat-v3-0324': 'DeepSeek: DeepSeek V3 0324',
-    'openrouter/qwen/qwen3-235b-a22b': 'Qwen: Qwen3 235B A22B',
     'openrouter/qwen/qwen3-vl-235b-a22b-instruct':
         'Qwen: Qwen3 VL 235B A22B Instruct',
     'openrouter/openai/gpt-oss-120b': 'OpenAI: gpt-oss-120b',
@@ -266,10 +261,8 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
         'Meta: Llama 3.1 70B Instruct',
     'openrouter/meta-llama/llama-3.3-70b-instruct':
         'Meta: Llama 3.3 70B Instruct',
-    'openrouter/sao10k/l3.1-euryale-70b': 'Sao10K: Llama 3.1 Euryale 70B v2.2',
     'openrouter/qwen/qwen3.6-35b-a3b': 'Qwen: Qwen3.6 35B A3B',
     'openrouter/qwen/qwen3-32b': 'Qwen: Qwen3 32B',
-    'openrouter/qwen/qwen3-vl-32b-instruct': 'Qwen: Qwen3 VL 32B Instruct',
     'openrouter/google/gemma-4-31b-it': 'Google: Gemma 4 31B',
     'openrouter/meta/muse-glimmer-30b': 'Meta: Muse Glimmer 30B',
     'openrouter/qwen/qwen3-30b-a3b': 'Qwen: Qwen3 30B A3B',
@@ -281,7 +274,7 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/prism-ml/ternary-bonsai-2-27b': 'PrismML: Ternary Bonsai 2 27B',
     'openrouter/qwen/qwen3.6-27b': 'Qwen: Qwen3.6 27B',
     'openrouter/qwen/qwen3.8-27b': 'Qwen: Qwen3.8 27B',
-    'openrouter/unbiased/pareto-26.10-preview': 'Pareto 26.10 Preview',
+    'openrouter/unbiased/pareto-26.9': 'Pareto 26.9',
     'openrouter/google/gemma-4-26b-a4b-it': 'Google: Gemma 4 26B A4B ',
     'openrouter/mistralai/mistral-small-3.1-24b-instruct':
         'Mistral: Mistral Small 3.1 24B',
@@ -298,10 +291,10 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/ibm-granite/granite-4.2-8b': 'IBM: Granite 4.2 8B',
     'openrouter/meta-llama/llama-3.1-8b-instruct':
         'Meta: Llama 3.1 8B Instruct',
-    'openrouter/qwen/qwen3-8b': 'Qwen: Qwen3 8B',
     'openrouter/qwen/qwen3-vl-8b-instruct': 'Qwen: Qwen3 VL 8B Instruct',
     'openrouter/qwen/qwen-2.5-7b-instruct': 'Qwen: Qwen2.5 7B Instruct',
     'openrouter/openai/gpt-6.1-sol': 'OpenAI: GPT-6.1 Sol',
+    'openrouter/openai/gpt-6.1-sol:batch': 'OpenAI: GPT-6.1 Sol (batch)',
     'openrouter/openai/gpt-6-astra': 'OpenAI: GPT-6 Astra',
     'openrouter/openai/gpt-6-astra:batch': 'OpenAI: GPT-6 Astra (batch)',
     'openrouter/openai/gpt-6-luna': 'OpenAI: GPT-6 Luna',
@@ -331,6 +324,7 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/z-ai/glm-5.1': 'Z.ai: GLM 5.1',
     'openrouter/openai/gpt-5': 'OpenAI: GPT-5',
     'openrouter/openai/gpt-5:batch': 'OpenAI: GPT-5 (batch)',
+    'openrouter/stepfun/step-5-preview': 'StepFun: Step 5 Preview',
     'openrouter/z-ai/glm-5': 'Z.ai: GLM 5',
     'openrouter/x-ai/grok-4.20': 'SpaceXAI: Grok 4.20',
     'openrouter/x-ai/grok-4.7': 'SpaceXAI: Grok 4.7',
@@ -346,6 +340,8 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/x-ai/grok-4.3:batch': 'SpaceXAI: Grok 4.3 (batch)',
     'openrouter/openai/gpt-4.1': 'OpenAI: GPT-4.1',
     'openrouter/openai/gpt-4.1:batch': 'OpenAI: GPT-4.1 (batch)',
+    'openrouter/google/gemini-4-argon': 'Google: Gemini 4 Argon',
+    'openrouter/google/gemini-4-argon:batch': 'Google: Gemini 4 Argon (batch)',
     'openrouter/meta-llama/llama-4-maverick': 'Meta: Llama 4 Maverick',
     'openrouter/meta-llama/llama-4-scout': 'Meta: Llama 4 Scout',
     'openrouter/openai/gpt-4': 'OpenAI: GPT-4',
@@ -383,6 +379,7 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/tencent/hy3-preview': 'Tencent: Hy3 preview',
     'openrouter/minimax/minimax-m2.7': 'MiniMax: MiniMax M2.7',
     'openrouter/moonshotai/kimi-k2.6': 'MoonshotAI: Kimi K2.6',
+    'openrouter/liquid/lfm-2.5-24b-a2b': 'LiquidAI: LFM2.5-24B-A2B',
     'openrouter/inception/mercury-2.5': 'Inception: Mercury 2.5',
     'openrouter/minimax/minimax-m2.5': 'MiniMax: MiniMax M2.5',
     'openrouter/moonshotai/kimi-k2.5': 'MoonshotAI: Kimi K2.5',
@@ -412,6 +409,8 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/openrouter/auto': 'Auto Router',
     'openrouter/openrouter/auto-beta': 'Auto Router (Beta)',
     'openrouter/cohere/command-a-plus': 'Cohere: Command A+',
+    'openrouter/meta/muse-spark-open': 'Meta: Muse Spark Open',
+    'openrouter/meta/muse-wonder': 'Meta: Muse Wonder',
     'openrouter/mistralai/mistral-nemo': 'Mistral: Mistral Nemo',
     'openrouter/mistralai/mistral-saba': 'Mistral: Saba',
     'openrouter/~moonshotai/kimi-latest': 'MoonshotAI: Kimi Latest',
@@ -422,12 +421,11 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/~openai/gpt-sol-latest': 'OpenAI: GPT Sol Latest',
     'openrouter/~openai/gpt-terra-latest': 'OpenAI: GPT Terra Latest',
     'openrouter/openrouter/fusion': 'OpenRouter: Fusion',
-    'openrouter/unbiased/pareto': 'Pareto',
+    'openrouter/~unbiased/pareto-latest': 'Pareto Latest',
     'openrouter/qwen/qwen-plus': 'Qwen: Qwen-Plus',
     'openrouter/rekaai/reka-edge': 'Reka Edge',
     'openrouter/relace/relace-search': 'Relace: Relace Search',
     'openrouter/sakana/sakana-namazu': 'Sakana: Sakana Namazu',
-    'openrouter/stealth/space-bunny-alpha': 'Space Bunny Alpha',
     'openrouter/typesafe/jev-router': 'TypeSafe: Jev Router',
     'openrouter/~x-ai/grok-latest': 'xAI: Grok Latest',
     'openrouter/~z-ai/glm-latest': 'Z.ai: GLM Latest',
@@ -482,8 +480,6 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/google/gemini-3-flash-preview:batch':
         'Google: Gemini 3 Flash Preview (batch)',
     'openrouter/inclusionai/ling-3.0-flash': 'inclusionAI: Ling 3.0 Flash',
-    'openrouter/inclusionai/ling-3.0-flash-fin':
-        'inclusionAI: Ling 3.0 Flash Fin',
     'openrouter/inclusionai/ling-3.0-flash-vl':
         'inclusionAI: Ling 3.0 Flash VL',
     'openrouter/xiaomi/mimo-v2.6-flash': 'Xiaomi: MiMo-V2.6-Flash',
@@ -500,6 +496,8 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/~z-ai/glm-flash-latest': 'Z.ai: GLM Flash Latest',
     'openrouter/nvidia/nemotron-3-super-120b-a12b:free':
         'NVIDIA: Nemotron 3 Super (free)',
+    'openrouter/nvidia/nemotron-3.5-super-vl:free':
+        'NVIDIA: Nemotron 3.5 Super VL (free)',
     'openrouter/openai/gpt-4o-mini-2024-07-18':
         'OpenAI: GPT-4o-mini (2024-07-18)',
     'openrouter/nvidia/nemotron-3-nano-30b-a3b':
@@ -527,6 +525,7 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/openai/o3-mini': 'OpenAI: o3 Mini',
     'openrouter/openai/o3-mini:batch': 'OpenAI: o3 Mini (batch)',
     'openrouter/openai/o3-mini-high': 'OpenAI: o3 Mini High',
+    'openrouter/google/gemini-nano-banana-2.1': 'Google: Nano Banana 2.1',
     'openrouter/amazon/nova-2-lite-v1': 'Amazon: Nova 2 Lite',
     'openrouter/bytedance-seed/seed-2.0-lite': 'ByteDance Seed: Seed-2.0-Lite',
     'openrouter/bytedance-seed/seed-2.0-mini': 'ByteDance Seed: Seed-2.0-Mini',
@@ -538,7 +537,6 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/google/gemma-4-31b-it:free': 'Google: Gemma 4 31B (free)',
     'openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free':
         'NVIDIA: Nemotron 3 Nano Omni (free)',
-    'openrouter/qwen/qwen3.8-27b:free': 'Qwen: Qwen3.8 27B (free)',
     'openrouter/google/gemma-4-26b-a4b-it:free':
         'Google: Gemma 4 26B A4B  (free)',
     'openrouter/nvidia/nemotron-3.5-lightning:free':
@@ -560,9 +558,6 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/google/gemini-2.5-flash-lite': 'Google: Gemini 2.5 Flash Lite',
     'openrouter/google/gemini-2.5-flash-lite:batch':
         'Google: Gemini 2.5 Flash Lite (batch)',
-    'openrouter/inclusionai/ling-3.0-flash-sante:free':
-        'inclusionAI: Ling 3.0 Flash Sante (free)',
-    'openrouter/apodex/apodex-1.1-mini:free': 'Apodex: Apodex 1.1 Mini (free)',
     'openai/gpt-5.5-pro': 'GPT-5.5 Pro',
     'openai/gpt-5.4-pro': 'GPT-5.4 Pro',
     'openai/gpt-5.2-pro': 'GPT-5.2 Pro',
@@ -622,6 +617,7 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'anthropic/claude-sonnet-4-6': 'Claude Sonnet 4.6',
     'anthropic/claude-sonnet-4-5': 'Claude Sonnet 4.5 (latest)',
     'anthropic/claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+    'anthropic/claude-haiku-5-5': 'Claude Haiku 5.5',
     'anthropic/claude-haiku-4-5': 'Claude Haiku 4.5 (latest)',
     'google/deep-research-max-preview-04-2026':
         'Deep Research Max Preview (Apr-21-2026)',
@@ -635,6 +631,7 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'google/gemini-2.5-computer-use-preview-10-2025':
         'Gemini 2.5 Computer Use Preview 10-2025',
     'google/gemma-4-26b-a4b-it': 'Gemma 4 26B A4B IT',
+    'google/gemini-4-argon': 'Gemini 4 Argon',
     'google/gemini-3.8-flash': 'Gemini 3.8 Flash',
     'google/gemini-3.7-flash': 'Gemini 3.7 Flash',
     'google/gemini-3.6-flash': 'Gemini 3.6 Flash',
@@ -675,10 +672,14 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'claude-sonnet-5-5': 'Claude Sonnet 5.5',
     'claude-sonnet-5': 'Claude Sonnet 5',
     'claude-sonnet-4-6': 'Claude Sonnet 4.6',
+    'claude-haiku-5-5': 'Claude Haiku 5.5',
     'claude-haiku-4-5': 'Claude Haiku 4.5',
   },
   'codex': {
+    'gpt-6.1-sol': 'GPT-6.1 Sol',
     'gpt-6-astra': 'GPT-6-Astra',
+    'gpt-6-sol': 'GPT-6 Sol',
+    'gpt-6-luna': 'GPT-6 Luna',
     'gpt-5.6-sol': 'GPT-5.6 Sol',
     'gpt-5.6-terra': 'GPT-5.6 Terra',
     'gpt-5.6-luna': 'GPT-5.6 Luna',

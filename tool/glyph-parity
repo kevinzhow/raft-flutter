@@ -9,7 +9,7 @@
       .local/toolchain-paths.txt or PATH)
       first re-render tool/glyph_parity/reference/{chromium.png,manifest.json}:
       lucide-react 0.575.0 / 1.48.0 markup from react-dom/server, painted by the
-      Playwright Chromium (playwright-core 1.59 from DIR, browsers from
+      Playwright Chromium (playwright-core 1.64 from DIR, browsers from
       ~/.cache/ms-playwright) at deviceScaleFactor 1
 
 The sample (glyphs, lucide props, sizes 16/20/24) is tool/glyph_parity/samples.json.

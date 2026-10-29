@@ -6,14 +6,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../data/agent_archive.dart';
+import '../data/raft_location.dart';
+import '../data/raft_permalink.dart';
+import '../platform/content_links.dart';
+import 'agent_archive_requests.dart';
+import 'agent_hosted_actions.dart';
+import '../data/user_error.dart';
+import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
-import 'runtime_form_dialog.dart';
+import '../platform/system_bars.dart';
 import 'managed_agent_launcher.dart';
 import 'agent_scopes_view.dart';
-import 'agent_migration_view.dart';
 import 'agent_detail_view.dart';
+import 'agent_profile_rules.dart';
+import 'quoted_message_preview.dart' show openRaftPermalink;
+import 'agent_metadata_projection.dart';
+import 'report_issue.dart';
+import 'agent_runtime_editor.dart';
 import 'agent_avatar_dialog.dart';
 import 'computer_detail_view.dart';
 import 'add_computer_dialog.dart';
@@ -56,10 +69,26 @@ Future<T?> _fleetDialog<T>(
   BuildContext context,
   WorkspaceController w,
   bool Function() authorized,
-  WidgetBuilder builder,
-) async {
+  WidgetBuilder builder, {
+  bool dismissible = false,
+  bool form = false,
+  bool guardUnsaved = true,
+}) async {
   if (!context.mounted || !authorized()) return null;
-  final route = DialogRoute<T>(context: context, builder: builder);
+  // Web `Dialog` layer: the recipe overlay (Brutal black/65, Elegant backdrop + blur).
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final Route<T> route = form
+      // A form with inputs: a bottom sheet on a phone, a dialog from 768.
+      ? raftFormRoute<T>(context, builder: builder, guardUnsaved: guardUnsaved)
+      : RaftDialogRoute<T>(
+          builder: builder,
+          // Web `DialogCard` / `ConfirmDialog`: no scrim close, Escape closes.
+          dismissible: dismissible,
+          capturedThemes: InheritedTheme.capture(
+            from: context,
+            to: navigator.context,
+          ),
+        );
   void changed() {
     if (!authorized() && route.isActive) route.navigator?.removeRoute(route);
   }
@@ -90,7 +119,8 @@ Future<void> showCredential(
   if (!context.mounted) return;
   bool valid() => context.mounted && (authorized?.call() ?? true);
   if (!valid()) return;
-  Widget builder(BuildContext dialog) => AlertDialog(
+  Widget builder(BuildContext dialog) => RaftAlertDialog(
+    legacy: RaftLegacyAlert.material,
     title: Text(raftText(context, 'Save this credential')),
     content: SizedBox(
       width: 480,
@@ -114,7 +144,7 @@ Future<void> showCredential(
       ),
     ),
     actions: [
-      TextButton(
+      RaftButton.text(
         onPressed: () => _closeFleetDialog(dialog),
         child: Text(raftText(context, 'Close')),
       ),
@@ -123,7 +153,11 @@ Future<void> showCredential(
   if (controller != null) {
     await _fleetDialog<void>(context, controller, valid, builder);
   } else {
-    await showDialog<void>(context: context, builder: builder);
+    await showRaftDialog<void>(
+      legacyMaterial: true,
+      context: context,
+      builder: builder,
+    );
   }
 }
 
@@ -152,11 +186,12 @@ Future<void> showFleetRegistration(
     context,
     w,
     valid,
+    form: true,
     (_) => RaftFormDialog(
-      title: computers ? 'Register computer' : 'Create external agent',
-      submitLabel: computers ? 'Register' : 'Create',
+      title: computers ? 'Register Computer' : 'Create External Agent',
+      submitLabel: computers ? 'Register Computer' : 'Create External Agent',
       description: computers
-          ? 'Register a computer, then use its one-time key to connect the Raft Computer service.'
+          ? 'Register a computer, then use its one-time key to connect Raft Computer.'
           : 'An external agent runs in a client you connect yourself.',
       fields: [
         const RaftFormField('name', 'Name', required: true),
@@ -210,6 +245,7 @@ class _FleetViewState extends State<FleetView> {
   late _FleetScope scope;
   WorkspaceController? _listened;
   WorkspaceEntityDirectory? _directory;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared on scope change and controller change; only set by a defensive catch around showManagedAgentForm, which does not throw.
   String? actionError;
   bool current(_FleetScope captured) => mounted && captured.current(w);
   WorkspaceEntityKind get kind => widget.computers
@@ -220,7 +256,7 @@ class _FleetViewState extends State<FleetView> {
   /// clears itself on identity change and patches realtime events in place.
   List<Map<String, dynamic>> get rows => [
     if (w.server != null && w.client.user != null)
-      for (final row in w.entityDirectory.rows(kind))
+      for (final row in w.services.entityDirectory.rows(kind))
         if (!widget.attentionOnly ||
             widget.computers &&
                 row['isComputer'] == true &&
@@ -234,7 +270,7 @@ class _FleetViewState extends State<FleetView> {
     scope.revoked = true;
     scope = _FleetScope(w);
     if (w.server != null && w.client.user != null) {
-      w.entityDirectory.ensure([kind]);
+      w.services.entityDirectory.ensure([kind]);
     }
     setState(() => actionError = null);
   }
@@ -247,7 +283,7 @@ class _FleetViewState extends State<FleetView> {
     _listened?.removeListener(authorityChanged);
     _directory?.removeListener(directoryChanged);
     _listened = w..addListener(authorityChanged);
-    _directory = w.entityDirectory..addListener(directoryChanged);
+    _directory = w.services.entityDirectory..addListener(directoryChanged);
   }
 
   @override
@@ -256,7 +292,7 @@ class _FleetViewState extends State<FleetView> {
     scope = _FleetScope(w);
     bind();
     if (w.server != null && w.client.user != null) {
-      w.entityDirectory.ensure([kind], retryFailed: true);
+      w.services.entityDirectory.ensure([kind], retryFailed: true);
     }
   }
 
@@ -268,7 +304,7 @@ class _FleetViewState extends State<FleetView> {
       scope.revoked = true;
       scope = _FleetScope(w);
       actionError = null;
-      w.entityDirectory.ensure([kind]);
+      w.services.entityDirectory.ensure([kind]);
     }
   }
 
@@ -283,7 +319,7 @@ class _FleetViewState extends State<FleetView> {
   /// Explicit refresh and the user's own mutations re-read the list in place.
   Future<void> load() async {
     if (!current(scope) || w.server == null || w.client.user == null) return;
-    await w.entityDirectory.refresh(kind, force: true);
+    await w.services.entityDirectory.refresh(kind, force: true);
   }
 
   Future<void> create() async {
@@ -304,17 +340,34 @@ class _FleetViewState extends State<FleetView> {
       await showManagedAgentForm(context, w);
       if (current(captured)) await load();
     } catch (e) {
-      if (current(captured)) setState(() => actionError = '$e');
+      if (current(captured)) {
+        setState(
+          () => actionError = userErrorText(
+            e,
+            fallback: 'Failed to create agent',
+            where: 'managed agent form',
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final rows = this.rows;
-    final state = w.entityDirectory.state(kind);
-    final loading = !w.entityDirectory.settled(kind);
+    final state = w.services.entityDirectory.state(kind);
+    final loading = !w.services.entityDirectory.settled(kind);
     final error =
-        actionError ?? (state.error == null ? null : '${state.error}');
+        actionError ??
+        (state.error == null
+            ? null
+            : userErrorText(
+                state.error,
+                fallback: widget.computers
+                    ? "Couldn't load computers"
+                    : raftGenericErrorText,
+                where: 'fleet directory',
+              ));
     if (widget.computers &&
         MediaQuery.sizeOf(context).width <
             RaftLayoutMetrics.desktopBreakpoint) {
@@ -322,9 +375,19 @@ class _FleetViewState extends State<FleetView> {
       return RaftMobileComputerList(
         key: const PageStorageKey('fleet-computers'),
         loading: loading,
-        error: error == null
+        // Web MobileComputersPanel: a failed first load is the load-error
+        // state; a failed refresh that kept the saved list is a banner.
+        error: error == null || rows.isNotEmpty
             ? null
             : raftText(context, 'Directory could not be loaded.'),
+        errorTitle: raftText(context, "Couldn't load computers"),
+        errorDetail: raftText(context, 'Check your connection and try again.'),
+        refreshError: error != null && rows.isNotEmpty
+            ? raftText(
+                context,
+                "Couldn't refresh computers. Showing saved results.",
+              )
+            : null,
         emptyTitle: raftText(
           context,
           widget.attentionOnly
@@ -335,9 +398,9 @@ class _FleetViewState extends State<FleetView> {
           context,
           widget.attentionOnly
               ? 'All computers are up to date and online.'
-              : 'Add a computer to run agents in this workspace.',
+              : 'Add a computer to run agents in this server.',
         ),
-        addLabel: raftText(context, 'Add computer'),
+        addLabel: raftText(context, 'Add Computer'),
         retryLabel: raftText(context, 'Retry'),
         onRetry: load,
         onAdd: state.loaded && w.can('registerMachines')
@@ -352,39 +415,32 @@ class _FleetViewState extends State<FleetView> {
               mobile: true,
               name: '${row['name'] ?? ''}',
               description: '${row['description'] ?? ''}',
-              runLabel: raftText(context, computerRunLabel(row).$1),
-              offline: computerRunLabel(row).$2,
+              runLabel: raftText(context, _status(row).label),
+              offline: _status(row).offline,
               availableVersion: computerAvailableVersion(
                 row,
-                w.entityDirectory.latestComputerVersion,
+                w.services.entityDirectory.latestComputerVersion,
               ),
               diskLow: computerDiskLow(row) != null,
-              dot:
-                  computerAvailableVersion(
-                        row,
-                        w.entityDirectory.latestComputerVersion,
-                      ) !=
-                      null
-                  ? RaftComputerDot.upgrade
-                  : row['status'] == 'online'
-                  ? RaftComputerDot.online
-                  : RaftComputerDot.offline,
+              dot: _status(row).dot,
               onTap: () {
                 if (!current(captured)) return;
                 if (widget.onOpenDetail != null) {
                   widget.onOpenDetail!(Map.of(row));
                 } else {
-                  Navigator.push(
-                    context,
+                  Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute<void>(
                       // ds-allow: Standalone native route supplies the Material host and system insets; workspace routes already own them.
-                      builder: (_) => Scaffold(
-                        body: SafeArea(
-                          bottom: false,
-                          child: FleetDetail(
-                            controller: w,
-                            computers: true,
-                            initial: row,
+                      builder: (context) => Scaffold(
+                        body: RaftSystemBarSurface(
+                          statusBarFallback: RaftTokens.of(context).panel,
+                          child: SafeArea(
+                            bottom: false,
+                            child: FleetDetail(
+                              controller: w,
+                              computers: true,
+                              initial: row,
+                            ),
                           ),
                         ),
                       ),
@@ -401,6 +457,17 @@ class _FleetViewState extends State<FleetView> {
       child: fleetList(context, rows, loading, error),
     );
   }
+
+  ({String label, bool offline, RaftComputerDot dot}) _status(
+    Map<String, dynamic> row,
+  ) => computerRowStatus(
+    row,
+    computerAvailableVersion(
+      row,
+      w.services.entityDirectory.latestComputerVersion,
+    ),
+    w.services.entityDirectory.upgradeReconnect(row),
+  );
 
   Widget fleetList(
     BuildContext context,
@@ -421,7 +488,7 @@ class _FleetViewState extends State<FleetView> {
             ),
             RaftTooltip(
               message: raftText(context, 'Refresh'),
-              child: IconButton(
+              child: RaftButton.iconAction(
                 onPressed: load,
                 icon: const Icon(Icons.refresh),
               ),
@@ -430,7 +497,7 @@ class _FleetViewState extends State<FleetView> {
               RaftButton(
                 label: raftText(
                   context,
-                  widget.computers ? 'Register computer' : 'Create agent',
+                  widget.computers ? 'Register Computer' : 'Create Agent',
                 ),
                 onPressed: create,
               ),
@@ -442,28 +509,28 @@ class _FleetViewState extends State<FleetView> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Align(
             alignment: Alignment.centerRight,
-            child: TextButton.icon(
+            child: RaftButton.text(
               onPressed: managed,
               icon: const RaftIcon(RaftGlyph.bot, size: 14),
-              label: Text(raftText(context, 'Create managed agent')),
+              label: Text(raftText(context, 'Create Managed Agent')),
             ),
           ),
         ),
       if (error != null)
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Semantics(liveRegion: true, child: Text(error)),
+          child: RaftErrorBanner(error),
         ),
       Expanded(
         child: loading && rows.isEmpty
-            ? Center(child: CircularProgressIndicator())
+            ? const Center(child: RaftSpinner())
             : rows.isEmpty
             ? RaftEmptyState(
                 title: raftText(
                   context,
                   widget.computers ? 'No computers' : 'No agents',
                 ),
-                detail: 'Add one to this workspace.',
+                detail: 'Add one to this server.',
               )
             : ListView.builder(
                 key: const Key('fleet-directory'),
@@ -471,21 +538,13 @@ class _FleetViewState extends State<FleetView> {
                 itemBuilder: (context, index) {
                   final captured = scope;
                   final row = rows[index],
-                      name =
-                          '${rows[index]['displayName'] ?? rows[index]['name']}';
-                  return ListTile(
+                      name = nonEmptyOr(
+                        rows[index]['displayName'],
+                        rows[index]['name'],
+                      );
+                  return RaftListRow(
                     key: ValueKey('fleet-${row['id']}'),
-                    leading: widget.computers
-                        ? const RaftIcon(RaftGlyph.monitor, size: 20)
-                        : RaftAvatar(name: name),
-                    title: Text(name),
-                    subtitle: Text(
-                      widget.computers
-                          ? '${row['status'] ?? 'Offline'} · ${row['hostname'] ?? row['os'] ?? ''}'
-                          : '${row['external'] == true ? 'External' : row['runtime'] ?? ''} · ${row['activity'] ?? row['status'] ?? ''}',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
+                    onPressed: () async {
                       if (!current(captured)) return;
                       if (widget.onOpenDetail != null) {
                         widget.onOpenDetail!(Map.of(row));
@@ -493,8 +552,7 @@ class _FleetViewState extends State<FleetView> {
                       }
                       // The detail edits the shared directory, so the list is
                       // already current when the route pops.
-                      await Navigator.push(
-                        context,
+                      await Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
                           builder: (_) => FleetDetail(
                             controller: w,
@@ -504,6 +562,22 @@ class _FleetViewState extends State<FleetView> {
                         ),
                       );
                     },
+                    children: [
+                      widget.computers
+                          ? const RaftListRowIcon(RaftGlyph.monitor)
+                          : RaftAvatar(name: name),
+                      RaftListRowBody(
+                        children: [
+                          RaftListRowTitle(name),
+                          RaftListRowDescription(
+                            widget.computers
+                                ? '${row['status'] ?? 'Offline'} · ${row['hostname'] ?? row['os'] ?? ''}'
+                                : '${row['external'] == true ? 'External' : row['runtime'] ?? ''} · ${raftText(context, agentDisplayText(agentRowAmbientDisplay(row)))}',
+                          ),
+                        ],
+                      ),
+                      const RaftListRowChevron(),
+                    ],
                   );
                 },
               ),
@@ -519,12 +593,20 @@ class FleetDetail extends StatefulWidget {
     required this.computers,
     required this.initial,
     this.onClose,
+    this.closeAction = false,
+    this.onLeaveForMessage,
+    this.backAlways = false,
     this.initialTab = AgentDetailTab.profile,
     this.clock,
     this.initialTrajectoryLog = const [],
     this.onOpenAgent,
+    this.feedbackExportUrl,
   });
   final List<Map<String, dynamic>> initialTrajectoryLog;
+
+  /// Feedback export worker of Report Issue; null = the build's
+  /// `RAFT_FEEDBACK_EXPORT_URL` (Web `VITE_FEEDBACK_EXPORT_URL`).
+  final String? feedbackExportUrl;
 
   /// Computers: open an agent row of "Agents on this computer".
   final ValueChanged<String>? onOpenAgent;
@@ -532,6 +614,21 @@ class FleetDetail extends StatefulWidget {
   final bool computers;
   final Map<String, dynamic> initial;
   final VoidCallback? onClose;
+
+  /// The agent header carries a close action at md+ (Web profile overlay
+  /// `onClose`); the Agents route detail column has none.
+  final bool closeAction;
+
+  /// A host that owns the page this detail lives on (the profile slot): called
+  /// just before the DM is opened, in place of [onClose] afterwards. [onClose]
+  /// is the host's *Back* (on a phone it pops the topmost mobile page), and
+  /// once the DM is the topmost page, running it would pop the DM the user
+  /// just opened.
+  final VoidCallback? onLeaveForMessage;
+
+  /// The agent header keeps its Back at md+ too (a Search / Activity content
+  /// slot: Web `backButtonVisibility="always"`).
+  final bool backAlways;
 
   /// Web `?agentTab=` deep link (agents only).
   final AgentDetailTab initialTab;
@@ -550,6 +647,10 @@ class _FleetDetailState extends State<FleetDetail> {
   late final String id;
   int request = 0;
   bool get current => mounted && !closingForAuthority && scope.current(w);
+
+  /// The agent left the shared list: its detail was re-read once to learn
+  /// whether it is archived (read-only profile) or gone.
+  bool _removedRead = false;
   String get base =>
       widget.computers ? '/servers/$serverId/machines/$id' : '/agents/$id';
   bool get external => row['external'] == true || row['runtime'] == 'external';
@@ -562,7 +663,9 @@ class _FleetDetailState extends State<FleetDetail> {
   }
 
   bool busy = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when an action starts, a detail read succeeds, the user dismisses it, or the profile closes for an authority change.
   String? error;
+
   StreamSubscription<RaftEvent>? subscription;
   Timer? timer;
   Route<dynamic>? profileRoute;
@@ -571,7 +674,6 @@ class _FleetDetailState extends State<FleetDetail> {
   /// GET /servers/:id/machines for the agent's Computer rows; null while
   /// in flight.
   List<Map<String, dynamic>>? machines;
-  Map<String, dynamic>? liveActivity;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -597,9 +699,7 @@ class _FleetDetailState extends State<FleetDetail> {
     // An HTTP/socket completion can arrive while this route has already popped
     // but its State is still mounted for the transition. Remove only our route.
     if (route?.isActive != true || route!.isFirst) return;
-    final navigator = route.navigator;
-    navigator?.popUntil((r) => identical(r, route) || r.isFirst);
-    if (route.isActive) navigator?.removeRoute(route);
+    route.navigator?.removeRoute(route);
   }
 
   WorkspaceEntityKind get kind => widget.computers
@@ -611,13 +711,17 @@ class _FleetDetailState extends State<FleetDetail> {
   /// realtime patches show here exactly as in the list.
   Map<String, dynamic>? detail;
 
+  /// The last accepted detail read of this agent, kept for the session so a
+  /// revisit shows the detail-only rows at the first frame.
+  String get detailCacheKey => 'agent-detail/$id';
+
   /// Whether the shared directory has listed this entity in this scope; only
   /// then does its absence from an accepted list mean it was deleted.
   bool listed = false;
 
   Map<String, dynamic>? get directoryRow => widget.computers
-      ? w.entityDirectory.computer(id)
-      : w.entityDirectory.agent(id);
+      ? w.services.entityDirectory.computer(id)
+      : w.services.entityDirectory.agent(id);
 
   /// The visible row never blanks: without any accepted source it keeps the
   /// row it already shows.
@@ -630,19 +734,27 @@ class _FleetDetailState extends State<FleetDetail> {
 
   void directoryChanged() {
     if (!current) return;
-    final directory = w.entityDirectory;
+    final directory = w.services.entityDirectory;
     final failure = directory.state(kind).error;
     if (failure is RaftApiException && [401, 403].contains(failure.status)) {
       closeProfile();
       return;
     }
-    if (!widget.computers && directory.agentDeleted(id)) {
+    final missing =
+        !widget.computers && directory.agentDeleted(id) ||
+        listed && directory.state(kind).loaded && directoryRow == null;
+    if (!widget.computers && missing) {
+      // Web `AgentById`: an archived agent keeps a read-only profile. Read it
+      // once; a profile that is really gone closes (loadDetail).
+      if (!_removedRead) {
+        _removedRead = true;
+        unawaited(loadDetail());
+      }
+    } else if (missing) {
       closeProfile();
       return;
-    }
-    if (listed && directory.state(kind).loaded && directoryRow == null) {
-      closeProfile();
-      return;
+    } else {
+      _removedRead = false;
     }
     final next = compose();
     final nextMachines =
@@ -666,15 +778,21 @@ class _FleetDetailState extends State<FleetDetail> {
     serverId = w.server!.id;
     scope = _FleetScope(w);
     id = widget.initial['id'] as String;
-    row = compose();
-    if (w.entityDirectory.state(WorkspaceEntityKind.computers).loaded) {
-      machines = w.entityDirectory.rows(WorkspaceEntityKind.computers);
+    if (!widget.computers) {
+      final cached = w.agentTabCache.peek(detailCacheKey);
+      if (cached is Map<String, dynamic>) detail = cached;
     }
-    w.entityDirectory.addListener(directoryChanged);
+    row = compose();
+    if (w.services.entityDirectory
+        .state(WorkspaceEntityKind.computers)
+        .loaded) {
+      machines = w.services.entityDirectory.rows(WorkspaceEntityKind.computers);
+    }
+    w.services.entityDirectory.addListener(directoryChanged);
     w.addListener(authorityChanged);
     // The shared directory is read only when this scope has not settled it;
     // a revisit renders the accepted rows with no list request.
-    w.entityDirectory.ensure([
+    w.services.entityDirectory.ensure([
       kind,
       if (!widget.computers) WorkspaceEntityKind.computers,
     ], retryFailed: true);
@@ -686,12 +804,7 @@ class _FleetDetailState extends State<FleetDetail> {
       }
       if (widget.computers || e.payload is! Map) return;
       final p = e.payload as Map;
-      if (e.name == 'agent:activity' && p['agentId'] == id) {
-        setState(
-          () =>
-              liveActivity = {'activity': p['activity'], 'detail': p['detail']},
-        );
-      } else if (e.name == 'agent:updated' && (p['agentId'] ?? p['id']) == id) {
+      if (e.name == 'agent:updated' && (p['agentId'] ?? p['id']) == id) {
         // Only this agent's stored profile changed; the list itself is
         // re-read by the shared directory.
         timer?.cancel();
@@ -705,7 +818,7 @@ class _FleetDetailState extends State<FleetDetail> {
     scope.revoked = true;
     ++request;
     w.removeListener(authorityChanged);
-    w.entityDirectory.removeListener(directoryChanged);
+    w.services.entityDirectory.removeListener(directoryChanged);
     timer?.cancel();
     subscription?.cancel();
     super.dispose();
@@ -719,24 +832,33 @@ class _FleetDetailState extends State<FleetDetail> {
     try {
       final result = await w.query(base);
       if (!current || ticket != request) return;
-      if (result is! Map || result['id'] != id || result['deletedAt'] != null) {
-        closeProfile();
+      if (result is! Map || result['id'] != id) {
+        // Web `AgentById`: an id the server does not hold renders the
+        // "Agent unavailable" panel (it does not navigate away).
+        setState(() => gone = true);
         return;
       }
       detail = Map<String, dynamic>.from(result);
+      w.agentTabCache.put(detailCacheKey, detail!);
       setState(() {
+        gone = false;
         row = compose();
         error = null;
       });
     } on RaftApiException catch (e) {
       if (!current || ticket != request) return;
       if (e.status == 404 || e.status == 403) {
-        closeProfile();
+        // An agent that left the list and cannot be read is gone: close.
+        if (_removedRead) {
+          closeProfile();
+          return;
+        }
+        setState(() => gone = true);
         return;
       }
-      _readFailed('$e');
+      _readFailed(e, 'agent detail');
     } catch (e) {
-      if (current && ticket == request) _readFailed('$e');
+      if (current && ticket == request) _readFailed(e, 'agent detail');
     }
   }
 
@@ -748,39 +870,119 @@ class _FleetDetailState extends State<FleetDetail> {
   /// refresh) failed. Web falls back silently once the profile is on screen,
   /// so the page-level error slot is only for a profile that cannot render
   /// yet (it carries the Retry); mutation failures use `action` instead.
-  void _readFailed(String message) {
+  void _readFailed(Object failure, String where) {
     if (_renderable) return;
-    setState(() => error = message);
+    setState(
+      () => error = userErrorText(
+        failure,
+        fallback: raftGenericErrorText,
+        where: where,
+      ),
+    );
   }
 
   /// After the user's own mutation (or an explicit retry): re-read the shared
   /// list in place and, for agents, the detail fields.
   Future<void> load() async {
     if (!current) return;
-    final list = w.entityDirectory.refresh(kind, force: true);
+    final list = w.services.entityDirectory.refresh(kind, force: true);
     await Future.wait([list, if (!widget.computers) loadDetail()]);
     if (!current) return;
-    final failure = w.entityDirectory.state(kind).error;
+    final failure = w.services.entityDirectory.state(kind).error;
     if (widget.computers &&
         failure == null &&
-        w.entityDirectory.state(kind).loaded &&
+        w.services.entityDirectory.state(kind).loaded &&
         directoryRow == null) {
       closeProfile();
       return;
     }
     setState(() {
       row = compose();
-      if (failure != null && !_renderable) error = '$failure';
+      if (failure != null && !_renderable) {
+        error = userErrorText(
+          failure,
+          fallback: raftGenericErrorText,
+          where: 'fleet detail refresh',
+        );
+      }
     });
   }
 
   /// Web AgentDetailHeader onMessage: open (or create) the DM and jump to it.
   Future<void> message() async {
-    final value = await w.client.post('/channels/dm', data: {'agentId': id});
+    // The DM with this agent is usually already in the sidebar: go there at
+    // once; only a first conversation asks the server to create it.
+    final existing = w.dms
+        .where((c) => c.json['peerId'] == id && c.json['peerType'] == 'agent')
+        .firstOrNull;
+    final value = existing != null
+        ? {'id': existing.id}
+        : await w.client.post('/channels/dm', data: {'agentId': id});
     if (!current || value is! Map || value['id'] is! String) return;
-    await w.jumpToMessage(value['id'], null);
+    await _leaveFor(() => w.jumpToMessage(value['id'], null));
+  }
+
+  /// Leaves the profile for a conversation: a profile slot closes itself
+  /// first (its Back would pop the page just opened), a route page pops.
+  Future<void> _leaveFor(Future<void> Function() open) async {
+    final leave = widget.onLeaveForMessage;
+    if (leave != null) {
+      leave();
+      await open();
+      return;
+    }
+    await open();
     if (mounted && widget.onClose == null) Navigator.of(context).maybePop();
     widget.onClose?.call();
+  }
+
+  /// Chat tab channel row (Web `nav.toChannel`).
+  Future<void> openChannel(String channelId) async {
+    if (!current) return;
+    await _leaveFor(() => w.jumpToMessage(channelId, null));
+  }
+
+  /// Reminder chip (Web `handleOpenReminderMsgRef`): the message the reminder
+  /// was set from, in its thread, DM or channel. A link outside the app opens
+  /// in the browser.
+  Future<void> openReminderMessage(String permalink) async {
+    if (!current) return;
+    final link = parseRaftPermalink(
+      permalink,
+      hostnames: [ContentLinks.originFor(w.client.origin).host],
+    );
+    if (link == null) {
+      final uri = Uri.tryParse(permalink);
+      if (uri != null && (uri.scheme == 'https' || uri.scheme == 'http')) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      return;
+    }
+    await _leaveFor(() => openRaftPermalink(w, link));
+  }
+
+  /// Info > Computer (Web `nav.toMachine`): the profile closes and the
+  /// Computer opens in the workspace.
+  void openComputer(String machineId) {
+    if (!current || !w.can('viewMachines')) return;
+    w.navigation.navigate(
+      RaftLocation.at(
+        serverSlug: w.location.serverSlug,
+        route: RaftRoute.computer,
+        entityId: machineId,
+      ),
+    );
+    w.closeThread(navigate: false);
+    w.notifyListeners();
+  }
+
+  /// Info > Creator: their profile replaces this one.
+  void openCreator(String type, String creatorId) {
+    if (!current) return;
+    w.openProfile(
+      type == 'human' ? RaftProfileKind.human : RaftProfileKind.agent,
+      creatorId,
+    );
   }
 
   /// ResetAgentDialog: one entry point, the mode is chosen in the dialog and
@@ -792,7 +994,7 @@ class _FleetDetailState extends State<FleetDetail> {
       w,
       () => allowed('controlAgentRuntime'),
       (_) => RaftResetAgentDialog(
-        agentName: '${row['displayName'] ?? row['name'] ?? ''}',
+        agentName: nonEmptyOr(row['displayName'], row['name']),
         canFullReset: allowed('resetAgentWorkspace'),
         // Web: a plain member may only restart / reset the model.
         memberRuntimeOnly: w.server?.string('role') == 'member',
@@ -801,7 +1003,10 @@ class _FleetDetailState extends State<FleetDetail> {
     );
   }
 
-  Future<void> action(Future<void> Function() operation) async {
+  Future<void> action(
+    Future<void> Function() operation, {
+    String fallback = raftGenericErrorText,
+  }) async {
     if (busy || !current) {
       return;
     }
@@ -812,7 +1017,15 @@ class _FleetDetailState extends State<FleetDetail> {
     try {
       await operation();
     } catch (e) {
-      if (current) setState(() => error = '$e');
+      if (current) {
+        setState(
+          () => error = userErrorText(
+            e,
+            fallback: fallback,
+            where: 'agent action',
+          ),
+        );
+      }
     } finally {
       if (current) setState(() => busy = false);
     }
@@ -842,6 +1055,11 @@ class _FleetDetailState extends State<FleetDetail> {
           await load();
         },
       ),
+      // Web `Dialog`: an outside press runs `requestClose`.
+      dismissible: true,
+      form: true,
+      // The dialog asks about its own dirty draft (requestClose).
+      guardUnsaved: false,
     );
   }
 
@@ -852,13 +1070,14 @@ class _FleetDetailState extends State<FleetDetail> {
       context,
       w,
       () => allowed(cap),
+      form: true,
       (_) => RaftFormDialog(
-        title: widget.computers ? 'Edit computer' : 'Edit agent',
+        title: widget.computers ? 'Edit Computer' : 'Edit Agent',
         fields: [
           RaftFormField(
             widget.computers ? 'name' : 'displayName',
             'Display name',
-            initial: '${row['displayName'] ?? row['name']}',
+            initial: nonEmptyOr(row['displayName'], row['name']),
             required: true,
           ),
           RaftFormField(
@@ -881,6 +1100,8 @@ class _FleetDetailState extends State<FleetDetail> {
     String title,
     String detail,
     Future<void> Function() operation, {
+    required String submit,
+    String cancel = 'Cancel',
     bool destructive = false,
   }) async {
     if (!current) return;
@@ -892,7 +1113,8 @@ class _FleetDetailState extends State<FleetDetail> {
         title: title,
         description: detail,
         fields: [],
-        submitLabel: destructive ? 'Delete' : 'Continue',
+        submitLabel: submit,
+        cancelLabel: cancel,
         destructive: destructive,
         onSubmit: (_) async {
           if (!current) throw const RaftApiException('Fleet access changed.');
@@ -902,18 +1124,98 @@ class _FleetDetailState extends State<FleetDetail> {
     );
   }
 
+  /// Web `ConfirmDialog` (raft-ui `Dialog`, `max-w-sm`): title, one plain
+  /// message, Cancel and the coloured confirm action.
+  Future<void> webConfirm({
+    required String title,
+    required String message,
+    required String confirmLabel,
+    String cancelLabel = 'Cancel',
+    required String loadingLabel,
+    required RaftButtonRecipeVariant variant,
+    required Future<void> Function() operation,
+  }) async {
+    if (!current) return;
+    await _fleetDialog<bool>(
+      context,
+      w,
+      () => current,
+      (_) => RaftConfirmDialog(
+        surfaceKey: const ValueKey('agent-dialog'),
+        title: title,
+        message: message,
+        confirmLabel: confirmLabel,
+        cancelLabel: cancelLabel,
+        loadingLabel: loadingLabel,
+        confirmVariant: variant,
+        onConfirm: () async {
+          if (!current) throw const RaftApiException('Fleet access changed.');
+          await operation();
+        },
+      ),
+    );
+  }
+
+  /// AgentArchiveDialog: archiving is the former delete. Agents with a
+  /// workspace on a Computer choose whether it stays there or is deleted; the
+  /// profile stays open as the read-only archived profile.
+  Future<void> archive() async {
+    if (!current) return;
+    final machineId = row['machineId'];
+    // The Computer list may still be in flight when the dialog opens: the
+    // option copy names the Computer as soon as it lands.
+    String computerName() {
+      final rows =
+          machines ??
+          w.services.entityDirectory.rows(WorkspaceEntityKind.computers);
+      return '${rows.where((m) => m['id'] == machineId).firstOrNull?['name'] ?? ''}';
+    }
+
+    var archived = false;
+    await _fleetDialog<bool>(
+      context,
+      w,
+      () => allowed('deleteAgents'),
+      (_) => ListenableBuilder(
+        listenable: w.services.entityDirectory,
+        builder: (_, _) => RaftAgentArchiveDialog(
+          agentName: nonEmptyOr(row['displayName'], row['name']),
+          computer: computerName(),
+          hasComputerWorkspace: machineId is String && !external,
+          onConfirm: (deleteWorkspace) async {
+            require('deleteAgents');
+            await archiveAgent(
+              w,
+              id,
+              deleteWorkspace
+                  ? AgentArchiveWorkspaceChoice.delete
+                  : AgentArchiveWorkspaceChoice.keep,
+            );
+            archived = true;
+          },
+        ),
+      ),
+    );
+    if (archived) await load();
+  }
+
+  /// Computers only: agents are archived ([archive]).
   Future<void> remove() async {
-    bool removed = false;
+    if (!widget.computers) {
+      await archive();
+      return;
+    }
+    var removed = false;
     await confirm(
-      widget.computers ? 'Delete computer?' : 'Delete agent?',
-      widget.computers
-          ? 'Disconnect this computer from the workspace. Its agents can no longer use this connection.'
-          : 'Delete this agent and stop its managed runtime. This cannot be undone.',
+      'Delete Computer',
+      'Disconnect this computer from the server. Its agents can no longer use this connection.',
       () async {
-        require(widget.computers ? 'removeMachines' : 'deleteAgents');
+        require('removeMachines');
         await w.command('DELETE', base);
         removed = true;
       },
+      submit: 'Delete Computer',
+      cancel: 'Keep Computer',
       destructive: true,
     );
     if (removed) closeProfile();
@@ -925,18 +1227,24 @@ class _FleetDetailState extends State<FleetDetail> {
         : 'issueAgentCredentials';
     require(cap);
     if (widget.computers) {
-      await confirm('Rotate computer key?', 'The old key will stop working. Reconnect this computer using the new key.', () async {
-        require(cap);
-        final result = await w.command('POST', '$base/rotate-key');
-        if (mounted && allowed(cap)) {
-          await showCredential(
-            context,
-            result['apiKey'],
-            controller: w,
-            authorized: () => allowed(cap),
-          );
-        }
-      });
+      await confirm(
+        'Rotate Computer Key',
+        'The old key will stop working. Reconnect this computer using the new key.',
+        () async {
+          require(cap);
+          final result = await w.command('POST', '$base/rotate-key');
+          if (mounted && allowed(cap)) {
+            await showCredential(
+              context,
+              result['apiKey'],
+              controller: w,
+              authorized: () => allowed(cap),
+            );
+          }
+        },
+        submit: 'Rotate Key',
+        cancel: 'Keep Key',
+      );
     } else {
       final result = await w.command(
         'POST',
@@ -958,8 +1266,7 @@ class _FleetDetailState extends State<FleetDetail> {
 
   Future<void> inspect(String kind) async {
     require(widget.computers ? 'editMachines' : 'editAgents');
-    await Navigator.push(
-      context,
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => FleetInspection(
           controller: w,
@@ -979,49 +1286,149 @@ class _FleetDetailState extends State<FleetDetail> {
       throw const RaftApiException('This action is not available.');
     }
     require(capability);
-    await w.command('POST', '$base/reset', data: {'mode': mode});
+    // Web ResetAgentDialog: `data.error || agent.reset.failed`.
+    await withWebError(
+      'Failed to reset agent',
+      () => w.command('POST', '$base/reset', data: {'mode': mode}),
+      where: 'agent reset',
+    );
     await load();
   }
 
   Future<void> runtimeCommand(String command) async {
     require(widget.computers ? 'controlComputers' : 'controlAgentRuntime');
-    await load();
-    if (!current) return;
-    final target = row['computerBroadcastPolicy'] is Map
-        ? row['computerBroadcastPolicy']['targetVersion']
-        : null;
-    if (widget.computers &&
-        command == 'upgrade' &&
-        (target is! String || row['computerUpgradeAvailable'] != true)) {
+    // The confirmation opens from the row on screen (the shared directory
+    // keeps it current); the fresh read happens when the user confirms.
+    String? upgradeTarget() {
+      final policy = row['computerBroadcastPolicy'];
+      final target = policy is Map ? policy['targetVersion'] : null;
+      return target is String && row['computerUpgradeAvailable'] == true
+          ? target
+          : null;
+    }
+
+    final upgrading = widget.computers && command == 'upgrade';
+    if (upgrading && upgradeTarget() == null) {
       throw const RaftApiException(
         'An upgrade is no longer available. Refresh this computer.',
       );
     }
+    final target = upgradeTarget();
+    if (!mounted) return;
+    if (!widget.computers && command == 'stop') {
+      // AgentDetailPanel `ConfirmDialog` "Stop Agent" (confirm colour orange).
+      await webConfirm(
+        title: raftText(context, 'Stop Agent'),
+        message: raftFormat(
+          context,
+          'Stop "{name}"? The agent will stop processing messages.',
+          {'name': nonEmptyOr(row['displayName'], row['name'])},
+        ),
+        confirmLabel: raftText(context, 'Stop Agent'),
+        cancelLabel: raftText(context, 'Keep Working'),
+        loadingLabel: raftText(context, 'Stopping…'),
+        variant: RaftButtonRecipeVariant.warning,
+        operation: () async {
+          require('controlAgentRuntime');
+          await withWebError(
+            'Failed to stop agent',
+            () => w.command('POST', '$base/stop', data: {}),
+            where: 'agent stop',
+          );
+          await load();
+        },
+      );
+      return;
+    }
+    final commandLabel =
+        '${command[0].toUpperCase()}${command.substring(1)} ${widget.computers ? 'Computer' : 'Agent'}';
     await confirm(
-      '${command[0].toUpperCase()}${command.substring(1)} ${widget.computers ? 'computer' : 'agent'}?',
-      command == 'upgrade'
+      commandLabel,
+      upgrading
           ? 'Upgrade this computer to $target. Active agent sessions may be interrupted.'
           : 'This action affects the selected runtime.',
       () async {
         require(widget.computers ? 'controlComputers' : 'controlAgentRuntime');
+        // Action time: re-read, then act only on what is still true.
+        await load();
+        if (!current) return;
+        final fresh = upgrading ? upgradeTarget() : null;
+        if (upgrading && fresh == null) {
+          throw const RaftApiException(
+            'An upgrade is no longer available. Refresh this computer.',
+          );
+        }
         final result = await w.command(
           'POST',
           widget.computers ? '$base/computer/$command' : '$base/$command',
-          data: command == 'upgrade' ? {'targetVersion': target} : {},
+          data: upgrading ? {'targetVersion': fresh} : {},
         );
         await load();
         if (mounted && current) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                result is Map && result['appliesOnReconnect'] == true
-                    ? 'Requested. Applies when the computer reconnects.'
-                    : 'Request accepted. Check runtime status for completion.',
-              ),
-            ),
+          showRaftToast(
+            context,
+            result is Map && result['appliesOnReconnect'] == true
+                ? 'Requested. Applies when the computer reconnects.'
+                : 'Request accepted. Check runtime status for completion.',
+            tone: RaftToastRecipeTone.success,
           );
         }
       },
+      submit: commandLabel,
+    );
+  }
+
+  /// The "Edit runtime config" modal, then the confirmation it asks for
+  /// (Web `requestConfirm` closes the modal before the ConfirmDialog opens).
+  Future<void> editRuntime() async {
+    if (!allowed('editAgents')) return;
+    final machineId = row['machineId'];
+    final confirm = await showAgentRuntimeEditor(
+      context,
+      controller: w,
+      agent: row,
+      machine: machineId is String
+          ? machines?.where((m) => m['id'] == machineId).firstOrNull
+          : null,
+      authorized: () => allowed('editAgents'),
+      onSaved: load,
+    );
+    if (confirm == null || !mounted) return;
+    await webConfirm(
+      title: confirm.title,
+      message: confirm.message,
+      confirmLabel: confirm.confirmLabel,
+      cancelLabel: confirm.cancelLabel,
+      loadingLabel: confirm.loadingLabel,
+      variant: confirm.variant,
+      operation: () async {
+        require('editAgents');
+        await confirm.operation();
+        await load();
+      },
+    );
+  }
+
+  /// Web `ReportIssueDialog` (`canManageAgent && showReportDialog`).
+  Future<void> reportIssue() async {
+    final captured = scope;
+    bool valid() =>
+        current &&
+        identical(scope, captured) &&
+        row['deletedAt'] == null &&
+        allowed('editAgents');
+    if (!valid()) return;
+    final machineId = row['machineId'];
+    await showReportIssueDialog(
+      context,
+      controller: w,
+      agent: row,
+      machine: machineId is String
+          ? machines?.where((m) => m['id'] == machineId).firstOrNull
+          : null,
+      activityLog: agentCachedActivityEntries(w, id),
+      authorized: valid,
+      exportUrl: widget.feedbackExportUrl,
     );
   }
 
@@ -1044,7 +1451,9 @@ class _FleetDetailState extends State<FleetDetail> {
     final route = DialogRoute<void>(
       context: context,
       barrierColor: overlay.backgroundColor?.resolve(rt),
-      barrierDismissible: false,
+      // Web `Dialog`: an outside press runs `requestClose` (the PopScope in
+      // the dialog asks before discarding a staged change).
+      barrierDismissible: true,
       builder: (_) => AgentAvatarDialog(
         controller: w,
         agent: row,
@@ -1053,7 +1462,10 @@ class _FleetDetailState extends State<FleetDetail> {
           if (!valid()) return;
           setState(() => row = next);
           unawaited(
-            w.entityDirectory.refresh(WorkspaceEntityKind.agents, force: true),
+            w.services.entityDirectory.refresh(
+              WorkspaceEntityKind.agents,
+              force: true,
+            ),
           );
         },
       ),
@@ -1070,75 +1482,114 @@ class _FleetDetailState extends State<FleetDetail> {
     }
   }
 
-  Widget agentPanel(BuildContext context) => AgentDetailPanel(
-    controller: w,
-    agent: row,
-    machines: machines,
-    liveActivity: liveActivity,
-    initialTab: widget.initialTab,
-    clock: widget.clock,
-    initialTrajectoryLog: widget.initialTrajectoryLog,
-    busy: busy,
-    error: error,
-    canManage: allowed('editAgents'),
-    canViewPrivate: allowed('editAgents'),
-    canControlRuntime: allowed('controlAgentRuntime'),
-    actions: AgentDetailActions(
-      onEditAvatar: busy ? null : editAvatar,
-      onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),
-      onEditName: busy ? null : () => editField('displayName'),
-      onEditDescription: busy ? null : () => editField('description'),
-      onEditRole: busy ? null : () => editField('role'),
-      onEditRuntime: !external && row['machineId'] is String
-          ? () async {
-              if (!allowed('editAgents')) return;
-              await _fleetDialog<void>(
-                context,
-                w,
-                () => allowed('editAgents'),
-                (_) => RuntimeFormDialog(
-                  controller: w,
-                  machineId: row['machineId'],
-                  runtimeId: row['runtime'],
-                  agentId: id,
+  Widget agentPanel(BuildContext context) {
+    final access = agentProfileAccess(
+      agent: row,
+      currentServerId: serverId,
+      currentUserId: w.client.user?.id,
+      editAgents: allowed('editAgents'),
+      controlAgentRuntime: allowed('controlAgentRuntime'),
+      external: external,
+    );
+    final managed = access.canManage && !busy;
+    return AgentDetailPanel(
+      controller: w,
+      agent: row,
+      machines: machines,
+      initialTab: widget.initialTab,
+      clock: widget.clock,
+      initialTrajectoryLog: widget.initialTrajectoryLog,
+      busy: busy,
+      error: error,
+      onDismissError: () => setState(() => error = null),
+      canManage: access.canManage,
+      canViewPrivate: access.canViewPrivate,
+      canControlRuntime: access.canControlRuntime,
+      actions: AgentDetailActions(
+        onEditAvatar: managed ? editAvatar : null,
+        onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),
+        onClose: widget.closeAction ? widget.onClose : null,
+        backAlways: widget.backAlways,
+        onEditName: managed ? () => editField('displayName') : null,
+        onEditDescription: managed ? () => editField('description') : null,
+        onEditRole: managed ? () => editField('role') : null,
+        onEditRuntime: managed && !external && row['machineId'] is String
+            ? editRuntime
+            : null,
+        onStartStop: () {
+          final starting = agentRowAmbientDisplay(row).activity == 'offline';
+          unawaited(
+            action(
+              () => runtimeCommand(starting ? 'start' : 'stop'),
+              // Web handleStop: `agent.detail.stopAgentFailed`.
+              fallback: starting
+                  ? raftGenericErrorText
+                  : 'Failed to stop agent',
+            ),
+          );
+        },
+        onRestartReset: () => action(restartReset),
+        onStopHostedTurn: access.canStopHostedTurn && !busy
+            ? () => unawaited(stopHostedTurnWithFeedback(context, w, id))
+            : null,
+        onDelete: access.canManage && allowed('deleteAgents') ? remove : null,
+        canArchive: !access.boundedPublic && allowed('deleteAgents'),
+        onOpenChannel: (id) => unawaited(openChannel(id)),
+        onOpenMessage: (link) => unawaited(openReminderMessage(link)),
+        onOpenComputer: openComputer,
+        onOpenCreator: openCreator,
+        onMessage: !access.boundedPublic && row['deletedAt'] == null
+            ? () => action(message)
+            : null,
+        // Web `AgentMigrationSection`: `agent_migration_v0` and a computer.
+        canMigrate:
+            access.canManage &&
+            allowed('migrateAgents') &&
+            w.agentMigrationEnabled &&
+            row['machineId'] is String,
+        canShowCloudArrival:
+            access.canManage &&
+            allowed('migrateAgents') &&
+            w.agentMigrationEnabled &&
+            external &&
+            row['hostedRuntime'] is Map,
+        onReportIssue:
+            access.canManage &&
+                reportIssueEnabled(
+                  widget.feedbackExportUrl ?? reportIssueBuildUrl,
+                ) &&
+                row['deletedAt'] == null
+            ? reportIssue
+            : null,
+        onPermissions: access.canManage
+            ? () => Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(
+                  builder: (_) => AgentScopesView(controller: w, agentId: id),
                 ),
-              );
-              await load();
-            }
-          : null,
-      onStartStop: () => action(
-        () => runtimeCommand(
-          '${liveActivity?['activity'] ?? row['activity'] ?? 'offline'}' ==
-                  'offline'
-              ? 'start'
-              : 'stop',
-        ),
+              )
+            : null,
       ),
-      onRestartReset: () => action(restartReset),
-      onDelete: allowed('deleteAgents') ? remove : null,
-      onMessage: row['deletedAt'] == null ? () => action(message) : null,
-      onMigrate: allowed('migrateAgents')
-          ? () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AgentMigrationView(controller: w, agentId: id),
-              ),
-            )
-          : null,
-      onPermissions: allowed('editAgents')
-          ? () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AgentScopesView(controller: w, agentId: id),
-              ),
-            )
-          : null,
-    ),
-  );
+    );
+  }
+
+  /// Web `AgentById`: the id is not an agent this server holds (deleted,
+  /// terminated or no access) once its list has loaded.
+  bool gone = false;
+  bool get _unavailable =>
+      !widget.computers &&
+      (gone ||
+          row['deletedAt'] != null ||
+          (w.services.entityDirectory.state(kind).loaded &&
+              directoryRow == null));
 
   @override
   Widget build(BuildContext context) => !current
       ? const SizedBox.shrink()
+      : !_renderable && _unavailable
+      ? RaftAgentUnavailablePanel(
+          onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),
+          onClose: widget.onClose,
+        )
       : !_renderable
       ? SourceProfileLoadingPanel(
           onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),
@@ -1152,13 +1603,26 @@ class _FleetDetailState extends State<FleetDetail> {
       : ComputerDetailPanel(
           controller: w,
           machine: row,
-          onClose: widget.onClose,
+          // A directory removal and the DELETE completion can both close the
+          // detail. They must share the same once-only lifecycle owner.
+          onClose: closeProfile,
           onOpenAgent: widget.onOpenAgent,
           onCreateAgent: () async {
             if (!allowed('createAgents')) return;
             await showManagedAgentForm(context, w, suggestedComputer: id);
           },
         );
+}
+
+class _PendingFile {
+  const _PendingFile();
+}
+
+const _pendingFile = _PendingFile();
+
+class _FileReadFailed {
+  const _FileReadFailed(this.message);
+  final String message;
 }
 
 class FleetInspection extends StatefulWidget {
@@ -1216,6 +1680,7 @@ class _FleetInspectionState extends State<FleetInspection> {
   }
 
   List<Map<String, dynamic>> rows = [];
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when an action starts, a detail read succeeds, the user dismisses it, or the profile closes for an authority change.
   String? error;
   bool loading = true;
   String dir = '';
@@ -1271,7 +1736,19 @@ class _FleetInspectionState extends State<FleetInspection> {
         'dir': target,
       });
     } catch (e) {
-      if (current && ticket == request) setState(() => error = '$e');
+      if (current && ticket == request) {
+        setState(
+          () => error = userErrorText(
+            e,
+            fallback: switch (widget.kind) {
+              'workspace-files' => 'Failed to load files',
+              'skills' => 'Failed to load skills',
+              _ => raftGenericErrorText,
+            },
+            where: 'fleet inspection',
+          ),
+        );
+      }
     } finally {
       if (current && ticket == request) setState(() => loading = false);
     }
@@ -1286,39 +1763,60 @@ class _FleetInspectionState extends State<FleetInspection> {
       await load();
       return;
     }
-    try {
-      final data = await widget.controller.query(
-        '${widget.base}/workspace-files/read',
-        query: {'path': path},
-      );
-      if (!mounted || !current || ticket != fileRequest) return;
-      await _fleetDialog<void>(
-        context,
-        w,
-        () => current && ticket == fileRequest,
-        (dialog) => AlertDialog(
-          title: Text('${row['name']}'),
-          content: SizedBox(
-            width: 600,
-            child: SingleChildScrollView(
-              child: SelectableText(
-                data['binary'] == true
-                    ? 'Binary file · ${data['mimeType'] ?? ''} · ${data['size']} bytes'
-                    : '${data['content'] ?? ''}',
-              ),
+    // The dialog opens at once with the file name; the content (never held
+    // locally) fills in when the read lands.
+    final content = ValueNotifier<Object?>(_pendingFile);
+    unawaited(
+      widget.controller
+          .query('${widget.base}/workspace-files/read', query: {'path': path})
+          .then<void>(
+            (data) {
+              if (current && ticket == fileRequest) content.value = data;
+            },
+            onError: (Object e) {
+              if (current && ticket == fileRequest) {
+                content.value = _FileReadFailed(
+                  userErrorText(
+                    e,
+                    fallback: 'Failed to load file',
+                    where: 'workspace file read',
+                  ),
+                );
+              }
+            },
+          ),
+    );
+    await _fleetDialog<void>(
+      context,
+      w,
+      () => current && ticket == fileRequest,
+      (dialog) => RaftAlertDialog(
+        legacy: RaftLegacyAlert.material,
+        title: Text('${row['name']}'),
+        content: SizedBox(
+          width: 600,
+          child: SingleChildScrollView(
+            child: ValueListenableBuilder<Object?>(
+              valueListenable: content,
+              builder: (_, data, _) => SelectableText(switch (data) {
+                _PendingFile() => raftText(context, 'Loading file…'),
+                _FileReadFailed(:final message) => raftText(context, message),
+                Map() when data['binary'] == true =>
+                  'Binary file · ${data['mimeType'] ?? ''} · ${data['size']} bytes',
+                Map() => '${data['content'] ?? ''}',
+                _ => '',
+              }),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => _closeFleetDialog(dialog),
-              child: Text(raftText(context, 'Close')),
-            ),
-          ],
         ),
-      );
-    } catch (e) {
-      if (current && ticket == fileRequest) setState(() => error = '$e');
-    }
+        actions: [
+          RaftButton.text(
+            onPressed: () => _closeFleetDialog(dialog),
+            child: Text(raftText(context, 'Close')),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -1336,7 +1834,7 @@ class _FleetInspectionState extends State<FleetInspection> {
       actions: [
         RaftTooltip(
           message: raftText(context, 'Refresh'),
-          child: IconButton(
+          child: RaftButton.iconAction(
             onPressed: load,
             icon: const RaftIcon(RaftGlyph.refreshCw, size: 12),
           ),
@@ -1344,20 +1842,14 @@ class _FleetInspectionState extends State<FleetInspection> {
       ],
     ),
     body: loading
-        ? Center(child: CircularProgressIndicator())
+        ? const Center(child: RaftSpinner())
         : error != null && shownDir != dir
         ? Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(error!),
-                  TextButton(
-                    onPressed: load,
-                    child: Text(raftText(context, 'Try again')),
-                  ),
-                ],
+                children: [RaftLoadError(error!, onRetry: load, expand: false)],
               ),
             ),
           )
@@ -1372,39 +1864,158 @@ class _FleetInspectionState extends State<FleetInspection> {
               if (error != null)
                 Padding(
                   padding: const EdgeInsets.all(RaftSpace.x4),
-                  child: RaftWarningBanner(error!),
+                  child: RaftErrorBanner(error!),
                 ),
               if (dir.isNotEmpty)
-                ListTile(
-                  title: Text(raftText(context, 'Root folder')),
-                  leading: const Icon(Icons.arrow_upward),
-                  onTap: () {
+                RaftListRow(
+                  onPressed: () {
                     dir = '';
                     load();
                   },
+                  children: [
+                    const RaftListRowIcon(RaftGlyph.arrowUp),
+                    RaftListRowBody(
+                      children: [RaftListRowTitle('Root folder')],
+                    ),
+                  ],
                 ),
               for (final row in rows)
-                ListTile(
-                  title: Text(
-                    '${row['name'] ?? row['agentName'] ?? row['directoryName'] ?? row['activity'] ?? row['eventType'] ?? 'Entry'}',
-                  ),
-                  subtitle: Text(
-                    '${row['detail'] ?? row['message'] ?? row['description'] ?? row['createdAt'] ?? row['status'] ?? ''}',
-                  ),
-                  leading: widget.kind == 'workspace-files'
-                      ? RaftIcon(
-                          row['type'] == 'directory' ||
-                                  row['isDirectory'] == true
-                              ? RaftGlyph.folderClosed
-                              : RaftGlyph.fileText,
-                          size: 14,
-                        )
-                      : null,
-                  onTap: widget.kind == 'workspace-files'
+                RaftListRow(
+                  interactive: widget.kind == 'workspace-files',
+                  onPressed: widget.kind == 'workspace-files'
                       ? () => openFile(row)
                       : null,
+                  children: [
+                    if (widget.kind == 'workspace-files')
+                      RaftListRowIcon(
+                        row['type'] == 'directory' || row['isDirectory'] == true
+                            ? RaftGlyph.folderClosed
+                            : RaftGlyph.fileText,
+                      ),
+                    RaftListRowBody(
+                      children: [
+                        RaftListRowTitle(
+                          '${row['name'] ?? row['agentName'] ?? row['directoryName'] ?? row['activity'] ?? row['eventType'] ?? 'Entry'}',
+                        ),
+                        RaftListRowDescription(
+                          '${row['detail'] ?? row['message'] ?? row['description'] ?? row['createdAt'] ?? row['status'] ?? ''}',
+                          wrap: true,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
             ],
           ),
   );
+}
+
+/// What a Members row of a managed agent can do without opening its profile
+/// (Web Sidebar `member-agent` context menu).
+enum MemberAgentCommand { start, stop, restartReset }
+
+/// Whether the Members row menu offers Start, Stop and Restart / Reset for
+/// [agent]: an external agent has no managed runtime, and the viewer needs
+/// `controlAgentRuntime` (Sidebar.tsx `capabilities.controlAgentRuntime &&
+/// !isExternalAgent`).
+bool memberAgentRuntimeControllable(
+  WorkspaceController w,
+  Map<String, dynamic> agent,
+) =>
+    agent['external'] != true &&
+    agent['runtime'] != 'external' &&
+    (agent['creatorType'] == 'user' &&
+            agent['creatorId'] == w.client.user?.id ||
+        w.can('controlAgentRuntime'));
+
+/// Web Sidebar `toggleContextAgentRuntime` / `resetContextAgent`: Start posts
+/// at once, Stop asks for a confirmation, Restart / Reset opens the reset
+/// dialog. Each runs under the account and workspace it was opened in.
+Future<void> runMemberAgentCommand(
+  BuildContext context,
+  WorkspaceController w,
+  Map<String, dynamic> agent,
+  MemberAgentCommand command,
+) async {
+  final id = agent['id'];
+  if (id is! String || !context.mounted) return;
+  final captured = _FleetScope(w);
+  final owned =
+      agent['creatorType'] == 'user' && agent['creatorId'] == w.client.user?.id;
+  bool allowed(String capability) =>
+      context.mounted &&
+      captured.current(w) &&
+      (owned || w.can(capability)) &&
+      agent['external'] != true &&
+      agent['runtime'] != 'external';
+  if (!allowed('controlAgentRuntime')) return;
+  final name = nonEmptyOr(agent['displayName'], agent['name']);
+  final base = '/agents/$id';
+  void refresh() => unawaited(
+    w.services.entityDirectory.refresh(WorkspaceEntityKind.agents, force: true),
+  );
+  switch (command) {
+    case MemberAgentCommand.start:
+      try {
+        await w.command('POST', '$base/start', data: {});
+      } catch (_) {
+        // Web `void startAgent(id)`: a failed start shows nothing.
+      }
+      if (captured.current(w)) refresh();
+    case MemberAgentCommand.stop:
+      await _fleetDialog<bool>(
+        context,
+        w,
+        () => allowed('controlAgentRuntime'),
+        (_) => RaftConfirmDialog(
+          surfaceKey: const ValueKey('agent-dialog'),
+          title: raftText(context, 'Stop Agent'),
+          message: raftFormat(
+            context,
+            'Are you sure you want to stop "{name}"? The agent will stop processing messages.',
+            {'name': name},
+          ),
+          confirmLabel: raftText(context, 'Stop Agent'),
+          loadingLabel: raftText(context, 'Stopping…'),
+          confirmVariant: RaftButtonRecipeVariant.warning,
+          onConfirm: () async {
+            if (!allowed('controlAgentRuntime')) {
+              throw const RaftApiException('Fleet access changed.');
+            }
+            await withWebError(
+              'Failed to stop agent',
+              () => w.command('POST', '$base/stop', data: {}),
+              where: 'agent stop',
+            );
+            if (captured.current(w)) refresh();
+          },
+        ),
+      );
+    case MemberAgentCommand.restartReset:
+      await _fleetDialog<bool>(
+        context,
+        w,
+        () => allowed('controlAgentRuntime'),
+        (_) => RaftResetAgentDialog(
+          agentName: name,
+          canFullReset: allowed('resetAgentWorkspace'),
+          // Web: a plain member may only restart / reset the model.
+          memberRuntimeOnly: w.server?.string('role') == 'member',
+          onConfirm: (mode) async {
+            final capability = mode == 'full'
+                ? 'resetAgentWorkspace'
+                : 'controlAgentRuntime';
+            if (!allowed(capability)) {
+              throw const RaftApiException('This action is not available.');
+            }
+            await withWebError(
+              'Failed to reset agent',
+              () => w.command('POST', '$base/reset', data: {'mode': mode}),
+              where: 'agent reset',
+            );
+            if (captured.current(w)) refresh();
+          },
+        ),
+      );
+  }
 }

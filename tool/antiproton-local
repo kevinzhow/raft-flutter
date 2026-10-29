@@ -1,0 +1,321 @@
+#!/usr/bin/env python3
+"""Run a local antiproton (hosted agent runtime) for the local Raft test stack.
+
+Usage: tool/antiproton-local --config PATH setup|start|stop|status|mint-token
+
+antiproton is a Cloudflare Worker with Durable Objects; this runs it with
+`wrangler dev --local` (miniflare/workerd, state persisted under runDir) so a
+local Raft server can provision hosted agents on it (RaftBench analysis, Cloud
+agents). Nothing is deployed and nothing leaves the machine except the
+model calls antiproton makes to the model provider.
+
+Config (JSON, mode 600, under .local/; paths may start with ~):
+  sourceDir   clone of github.com/botiverse/antiproton, `npm ci` already run
+  runDir      private directory for the generated config, state, log and pid
+  port        fixed localhost port for the Worker
+  nodeBinDir  directory with Node >= 24 (default: PATH)
+  raftOrigin  origin of the local Raft API; the provider token is bound to it
+  raftEnvFile private KEY=VALUE file of the local Raft server (see tool/raft-stack)
+  modelKeyFile / modelKeyRef
+              YAML credentials file and the key under `refs:` holding the
+              DeepSeek API key (default ~/.dsh/.credentials.yaml, DEEPSEEK_API_KEY)
+
+Secrets (model key, operator token, credential KEK, provider token) are only
+ever written to mode-600 files by this script: never printed, logged or put in
+process arguments.
+"""
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import signal
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from local_env_file import random_b64, read_env_file, write_env_file  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[1]
+ACTIONS = {'setup', 'start', 'stop', 'status', 'mint-token'}
+USAGE = 'Usage: tool/antiproton-local --config PATH setup|start|stop|status|mint-token'
+PROVIDER_TOKEN_VAR = 'ANTIPROTON_PROVISIONING_TOKEN'
+DEFAULT_MODEL_KEY_FILE = '~/.dsh/.credentials.yaml'
+DEFAULT_MODEL_KEY_REF = 'DEEPSEEK_API_KEY'
+MODEL_ENV_VAR = 'DEEPSEEK_API_KEY'
+
+
+def parse_args(argv):
+    args = list(argv)
+    if len(args) != 3 or args[0] != '--config' or args[2] not in ACTIONS:
+        raise SystemExit(USAGE)
+    return Path(args[1]).expanduser(), args[2]
+
+
+def load_config(path):
+    if not path.exists():
+        raise SystemExit(f'Create {path} using docs/local-test-stack.md first.')
+    raw = json.loads(path.read_text())
+    config = dict(raw)
+    for key in ('sourceDir', 'runDir', 'nodeBinDir', 'raftEnvFile', 'modelKeyFile'):
+        if config.get(key):
+            config[key] = Path(os.path.expanduser(config[key]))
+    for key in ('sourceDir', 'runDir', 'port', 'raftOrigin', 'raftEnvFile'):
+        if not config.get(key):
+            raise SystemExit(f'Config key {key} is required.')
+    config.setdefault('modelKeyFile', Path(os.path.expanduser(DEFAULT_MODEL_KEY_FILE)))
+    config.setdefault('modelKeyRef', DEFAULT_MODEL_KEY_REF)
+    if not Path(config['raftEnvFile']).is_absolute():
+        config['raftEnvFile'] = path.parent.parent / config['raftEnvFile']
+    return config
+
+
+def entry_module(source_dir):
+    """Re-export only the Worker's default handler and classes.
+
+    cf/src/index.ts also exports plain constants (HOOK_OBJECT_TIMEOUT_MS) that the
+    local workerd refuses as entry-point exports ("not of type function").
+    """
+    return f'export {{ default, AgentDO, SandboxTools }} from {json.dumps(str(Path(source_dir) / "cf/src/index.ts"))};\n'
+
+
+def wrangler_config(source_dir, port, main):
+    """Local Worker config: the production bindings and vars, minus routes, crons and secrets."""
+    source_dir = Path(source_dir)
+    deepseek = {'id': 'deepseek', 'baseUrl': 'https://api.deepseek.com',
+                'auth': {'secret': 'DEEPSEEK_API_KEY', 'header': 'authorization'}}
+    return {
+        'name': 'antiproton-local',
+        'main': str(main),
+        'compatibility_date': '2026-09-05',
+        'compatibility_flags': ['nodejs_compat'],
+        'workers_dev': True,
+        'migrations': [{'tag': 'v1', 'new_sqlite_classes': ['AgentDO']}],
+        'durable_objects': {'bindings': [{'name': 'AGENT', 'class_name': 'AgentDO'}]},
+        'd1_databases': [{
+            'binding': 'CONTROL_DB', 'database_name': 'antiproton-local-control',
+            'database_id': 'antiproton-local-control',
+            'migrations_dir': str(source_dir / 'cf/migrations'),
+        }],
+        'worker_loaders': [{'binding': 'LOADER'}],
+        'version_metadata': {'binding': 'CF_VERSION_METADATA'},
+        'r2_buckets': [{'binding': 'ARTIFACTS', 'bucket_name': 'antiproton-local-artifacts'}],
+        'queues': {
+            'producers': [{'binding': 'MODEL_QUEUE', 'queue': 'antiproton-local-model'}],
+            'consumers': [
+                {'queue': 'antiproton-local-model', 'max_batch_size': 1, 'max_batch_timeout': 0,
+                 'max_retries': 3, 'dead_letter_queue': 'antiproton-local-model-dlq'},
+                {'queue': 'antiproton-local-model-dlq', 'max_batch_size': 10, 'max_batch_timeout': 5},
+            ],
+        },
+        'vars': {
+            'DEEPSEEK_BASE_URL': 'https://api.deepseek.com',
+            'HARNESS_MODEL': 'deepseek-flash',
+            'MODEL_PROVIDERS': [deepseek],
+            'USER_MODELS': [{'id': 'deepseek-flash', 'label': 'DeepSeek Flash',
+                             'provider': 'deepseek', 'model': 'deepseek-flash'}],
+            'ARTIFACT_BUCKET': 'antiproton-local-artifacts',
+            # Hook URLs a plugin makes (Raft push) point here; Raft posts to them.
+            'HOOK_ORIGIN': f'http://localhost:{port}',
+            'UI_ALLOW_ANONYMOUS': '1',
+            'DEPLOYMENT_ENV': 'local',
+        },
+        'observability': {'enabled': False},
+    }
+
+
+def read_yaml_ref(path, ref):
+    """Value of `  <ref>: value` under the top-level `refs:` map (no YAML library needed)."""
+    in_refs = False
+    for line in Path(path).read_text().splitlines():
+        if re.match(r'^\S', line):
+            in_refs = line.split(':', 1)[0] == 'refs'
+            continue
+        match = re.match(r'^\s+([A-Za-z0-9_.-]+):\s*(.*?)\s*$', line)
+        if in_refs and match and match.group(1) == ref:
+            value = match.group(2).strip('\'"')
+            return value or None
+    return None
+
+
+def runtime_env(config, base_env):
+    run_dir = Path(config['runDir'])
+    env = {k: v for k, v in base_env.items() if not k.lower().startswith('npm_config_')}
+    path = [str(config['nodeBinDir'])] if config.get('nodeBinDir') else []
+    env['PATH'] = os.pathsep.join(path + [env.get('PATH', '')])
+    env.update(
+        WRANGLER_SEND_METRICS='false',
+        WRANGLER_LOG_PATH=str(run_dir / 'wrangler-logs'),
+        XDG_CONFIG_HOME=str(run_dir / 'xdg'),
+        CI='1',
+    )
+    return env
+
+
+def paths(config):
+    run_dir = Path(config['runDir'])
+    return {
+        'dir': run_dir, 'entry': run_dir / 'entry.ts', 'config': run_dir / 'wrangler.local.json', 'vars': run_dir / '.dev.vars',
+        'state': run_dir / 'state', 'log': run_dir / 'antiproton.log', 'pid': run_dir / 'antiproton.pid',
+    }
+
+
+def setup(config):
+    p = paths(config)
+    p['dir'].mkdir(mode=0o700, parents=True, exist_ok=True)
+    p['dir'].chmod(0o700)
+    p['entry'].write_text(entry_module(config['sourceDir']))
+    p['config'].write_text(json.dumps(wrangler_config(config['sourceDir'], config['port'], p['entry']), indent=2) + '\n')
+    values = read_env_file(p['vars'])
+    if not values.get(MODEL_ENV_VAR):
+        model_key = read_yaml_ref(config['modelKeyFile'], config['modelKeyRef'])
+        if not model_key:
+            raise SystemExit(f"{config['modelKeyRef']} not found in {config['modelKeyFile']}.")
+        values[MODEL_ENV_VAR] = model_key
+    values.setdefault('AUTOMATION_TOKEN', secrets.token_urlsafe(32))
+    values.setdefault('SECRET_KEK', random_b64())
+    write_env_file(p['vars'], values)
+    env = runtime_env(config, os.environ)
+    log = p['dir'] / 'setup.log'
+    with log.open('w') as output:
+        log.chmod(0o600)
+        result = subprocess.run(
+            ['npx', 'wrangler', 'd1', 'migrations', 'apply', 'CONTROL_DB', '--local',
+             '--config', str(p['config']), '--persist-to', str(p['state'])],
+            cwd=config['sourceDir'], env=env, stdout=output, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+    print(f'setup: config {p["config"]}, wrangler d1 migrations exit {result.returncode}; private log: {log}')
+    return result.returncode
+
+
+def antiproton_pid(config):
+    pid_file = paths(config)['pid']
+    if not pid_file.exists():
+        return None
+    pid = int(pid_file.read_text().strip())
+    try:
+        os.kill(pid, 0)
+        cmdline = Path(f'/proc/{pid}/cmdline').read_bytes()
+    except (OSError, ProcessLookupError):
+        return None
+    return pid if b'wrangler' in cmdline else None
+
+
+def http_ready(port, timeout=2):
+    try:
+        urllib.request.urlopen(f'http://127.0.0.1:{port}/', timeout=timeout)
+        return True
+    except urllib.error.HTTPError:
+        return True
+    except OSError:
+        return False
+
+
+def start(config):
+    p = paths(config)
+    if not p['config'].exists() or not p['vars'].exists():
+        raise SystemExit('Run setup first.')
+    if antiproton_pid(config):
+        print(f'already running (pid {antiproton_pid(config)}) on http://localhost:{config["port"]}')
+        return 0
+    env = runtime_env(config, os.environ)
+    log = p['log']
+    with log.open('a') as output:
+        log.chmod(0o600)
+        child = subprocess.Popen(
+            ['npx', 'wrangler', 'dev', '--config', str(p['config']), '--local', '--ip', '127.0.0.1',
+             '--port', str(config['port']), '--inspector-port', '0', '--persist-to', str(p['state'])],
+            cwd=config['sourceDir'], env=env, stdout=output, stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL, start_new_session=True)
+    p['pid'].write_text(f'{child.pid}\n')
+    for _ in range(120):
+        if child.poll() is not None:
+            raise SystemExit(f'wrangler exited with {child.returncode}; see {log}')
+        if http_ready(config['port']):
+            print(f'antiproton: http://localhost:{config["port"]} (pid {child.pid}); private log: {log}')
+            return 0
+        time.sleep(1)
+    raise SystemExit(f'antiproton did not answer within 120 s; see {log}')
+
+
+def stop(config):
+    pid = antiproton_pid(config)
+    pid_file = paths(config)['pid']
+    if not pid:
+        pid_file.unlink(missing_ok=True)
+        print('antiproton is not running')
+        return 0
+    # The pid is the session leader we started, so its process group is wrangler plus workerd.
+    os.killpg(pid, signal.SIGTERM)
+    for _ in range(30):
+        if not antiproton_pid(config):
+            break
+        time.sleep(1)
+    else:
+        os.killpg(pid, signal.SIGKILL)
+    pid_file.unlink(missing_ok=True)
+    print('antiproton stopped')
+    return 0
+
+
+def status(config):
+    pid = antiproton_pid(config)
+    if pid:
+        print(f'antiproton running (pid {pid}); http://localhost:{config["port"]} answers: {http_ready(config["port"])}')
+        return 0
+    print('antiproton not running')
+    return 1
+
+
+def provider_token_valid(config, token):
+    """Whether antiproton accepts the token (any non-401 answer; the request names a throwaway server)."""
+    request = urllib.request.Request(
+        f'http://127.0.0.1:{config["port"]}/provision/models?raftServerId=00000000-0000-4000-8000-000000000000',
+        headers={'authorization': f'Bearer {token}'})
+    try:
+        urllib.request.urlopen(request, timeout=10)
+        return True
+    except urllib.error.HTTPError as error:
+        return error.code != 401
+    except OSError:
+        return False
+
+
+def mint_token(config):
+    """Issue a platform provider token for the local Raft origin and store it in the Raft env file."""
+    p = paths(config)
+    env_values = read_env_file(config['raftEnvFile'])
+    existing = env_values.get(PROVIDER_TOKEN_VAR)
+    if existing and provider_token_valid(config, existing):
+        print('provider token already valid; nothing to do')
+        return 0
+    operator = read_env_file(p['vars']).get('AUTOMATION_TOKEN')
+    if not operator:
+        raise SystemExit('Run setup first.')
+    request = urllib.request.Request(
+        f'http://127.0.0.1:{config["port"]}/admin/provider-tokens', method='POST',
+        data=json.dumps({'label': 'local raft stack', 'scope': 'platform',
+                         'raftOrigin': config['raftOrigin']}).encode(),
+        headers={'content-type': 'application/json', 'x-harness-token': operator})
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            token = json.load(response)['token']
+    except urllib.error.HTTPError as error:
+        raise SystemExit(f'antiproton refused to issue a provider token: HTTP {error.code}')
+    env_values[PROVIDER_TOKEN_VAR] = token
+    write_env_file(config['raftEnvFile'], env_values)
+    print(f'provider token issued for {config["raftOrigin"]}; stored in the Raft env file (value not shown)')
+    return 0
+
+
+def main(argv):
+    config_path, action = parse_args(argv)
+    config = load_config(config_path)
+    return {'setup': setup, 'start': start, 'stop': stop, 'status': status,
+            'mint-token': mint_token}[action](config)
+
+
+if __name__ == '__main__':
+    raise SystemExit(main(sys.argv[1:]))

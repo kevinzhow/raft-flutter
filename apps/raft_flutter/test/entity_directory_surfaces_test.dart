@@ -136,7 +136,7 @@ void main() {
   }
 
   Widget host(Widget child) => MaterialApp(
-    theme: raftTheme(RaftFamily.elegant),
+    theme: raftTheme(),
     home: Scaffold(
       body: SizedBox(width: child is FleetView ? 640 : 320, child: child),
     ),
@@ -153,8 +153,8 @@ void main() {
       for (var frame = 0; frame < 4; frame++) {
         await t.pump(const Duration(milliseconds: 16));
         expect(_rows(t, rows), first, reason: '${event.name} frame $frame');
-        expect(find.text('Loading...'), findsNothing);
-        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.text('Loading profile…'), findsNothing);
+        expect(find.byType(RaftSpinner), findsNothing);
       }
     }
     await t.pump(const Duration(milliseconds: 400));
@@ -177,7 +177,7 @@ void main() {
         for (var visit = 0; visit < 2; visit++) {
           await t.pumpWidget(host(view()));
           // First frame: final rows, no loading shell, no request.
-          expect(find.text('Loading...'), findsNothing);
+          expect(find.text('Loading profile…'), findsNothing);
           expect(
             find.text(computers ? 'Source Computer' : 'Source Agent'),
             findsOneWidget,
@@ -200,12 +200,12 @@ void main() {
       (t) async {
         await setUpWorkspace(t);
         final reads = w.paths.length;
-        final rows = find.byType(ListTile);
+        final rows = find.byType(RaftListRow);
         for (var visit = 0; visit < 2; visit++) {
           await t.pumpWidget(
             host(FleetView(controller: w, computers: computers)),
           );
-          expect(find.byType(CircularProgressIndicator), findsNothing);
+          expect(find.byType(RaftSpinner), findsNothing);
           expect(
             find.byKey(ValueKey('fleet-${computers ? 'c' : 'a'}')),
             findsOneWidget,
@@ -237,7 +237,7 @@ void main() {
       );
       await t.pump();
       expect(find.textContaining('offline · build-host'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(RaftSpinner), findsNothing);
       expect(w.paths.length, reads);
       await t.pump(const Duration(milliseconds: 200));
       // Source machineStatus recovery: machines and agents, never members.
@@ -245,7 +245,7 @@ void main() {
         w.paths.sublist(reads),
         unorderedEquals(['/servers/s/machines', '/agents']),
       );
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(RaftSpinner), findsNothing);
       expect(t.takeException(), isNull);
     },
   );
@@ -287,6 +287,55 @@ void main() {
       expect(projections(), 2);
       await t.pumpWidget(const SizedBox.shrink());
       expect(t.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'a runtime_unavailable frame keeps how the runtime lookup ended',
+    (t) async {
+      await setUpWorkspace(t);
+      Object? reason() => w.entityDirectory.agent('a')?['spawnLookupReason'];
+      client.stream.add(
+        const RaftEvent('agent:activity', {
+          'agentId': 'a',
+          'activity': 'error',
+          'detail': 'codex is not installed',
+          'detailKind': 'runtime_unavailable',
+          'spawnFailure': {
+            'reason': 'runtime_not_found',
+            'lookupReason': 'lookup_timed_out',
+          },
+        }),
+      );
+      await t.pump();
+      expect(reason(), 'lookup_timed_out');
+      // A later frame without the carrier clears it (Web keeps the carrier only
+      // while the state is the runtime_unavailable frame).
+      client.stream.add(
+        const RaftEvent('agent:activity', {
+          'agentId': 'a',
+          'activity': 'error',
+          'detail': 'codex is not installed',
+          'detailKind': 'runtime_unavailable',
+        }),
+      );
+      await t.pump();
+      expect(reason(), isNull);
+      // An unknown value is dropped, never read as a verdict.
+      client.stream.add(
+        const RaftEvent('agent:activity', {
+          'agentId': 'a',
+          'activity': 'error',
+          'detail': 'codex is not installed',
+          'detailKind': 'runtime_unavailable',
+          'spawnFailure': {
+            'reason': 'runtime_not_found',
+            'lookupReason': 'cosmic_rays',
+          },
+        }),
+      );
+      await t.pump();
+      expect(reason(), isNull);
     },
   );
 }

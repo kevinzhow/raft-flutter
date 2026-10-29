@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""Capture the frozen Elegant / Brutal reference images of the extension cases from the a57b9dab tree.
+
+  tool/parity-ext/frozen-capture --worktree <a57b9dab checkout> --out <dir> [--shards N] [--cases GLOB[,GLOB]]
+
+Run once per baseline set (never as part of a regression run). `<worktree>` must be a clean checkout whose product code
+is a57b9dab (the last commit before the single-look rewrite); the tool builds THAT tree's extension manifest, renders
+every case with that tree's own Flutter provider (the theme named in the case id; no override) and writes
+<out>/pass-1/visual-testing-results/android/<case id>.png (+ metadata), the layout tool/parity-ext/frozen_ref.py and
+frozen-baselines.json read. Register the output directory in frozen-baselines.json. The images are deliverables: this
+tool refuses a non-empty --out and never deletes anything.
+"""
+import argparse
+import json
+import os
+import pathlib
+import subprocess
+import sys
+
+PINNED = 'a57b9dab'
+HERE = pathlib.Path(__file__).resolve().parent
+CURRENT_ROOT = HERE.parents[1]
+# Case families that were written after a57b9dab but only compose widgets that already existed there: their Flutter
+# case file and manifest builder are overlaid on the pinned tree for the capture (and removed afterwards), so the
+# frozen original of those cases is the a57b9dab app rendering the very same scenario.
+OVERLAYS = [{
+    'dart': 'apps/raft_flutter/test/parity/cases/ext_frame.dart',
+    'builder': 'tool/parity-ext/build-frame-cases.py',
+    'fixtures': ['tool/parity-ext/fixtures/frame.json'],
+}]
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('--worktree', required=True)
+    p.add_argument('--out', required=True)
+    p.add_argument('--shards', type=int, default=3)
+    p.add_argument('--cases', default='')
+    p.add_argument('--shared', default=os.environ.get('PARITY_FROZEN_SHARED'),
+                   help='the official shared fixtures the a57b9dab baseline used (tool/theme-baseline raft_source())')
+    a = p.parse_args()
+    if not a.shared:
+        sys.exit('set --shared or PARITY_FROZEN_SHARED to the official shared fixtures the baseline used (<raft-source>/packages/visual-testing/shared)')
+    wt = pathlib.Path(a.worktree).resolve()
+    out = pathlib.Path(a.out).resolve()
+    head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=wt, text=True).strip()
+    if not head.startswith(PINNED):
+        sys.exit(f'{wt} is at {head[:8]}, not {PINNED}')
+    if subprocess.check_output(['git', 'status', '--porcelain'], cwd=wt, text=True).strip():
+        sys.exit(f'{wt} is dirty; a frozen baseline must come from a clean pinned tree')
+    if out.exists() and any(out.iterdir()):
+        sys.exit(f'{out} is not empty')
+    results = out / 'pass-1' / 'visual-testing-results'
+    (results / 'android').mkdir(parents=True)
+    manifest_dir = out / 'manifest'
+    manifest_dir.mkdir()
+    r = subprocess.run([sys.executable, '-c',
+                        'import sys,pathlib;sys.path.insert(0,"tool/parity-ext");from builders import build_manifest;'
+                        f'print(build_manifest(pathlib.Path({str(manifest_dir)!r})))'],
+                       cwd=wt, text=True, capture_output=True)
+    if r.returncode:
+        sys.exit(r.stderr[-2000:])
+    manifest = pathlib.Path(r.stdout.strip().splitlines()[-1])
+    import shutil
+    overlaid = []
+    for o in OVERLAYS:
+        subprocess.run([sys.executable, str(CURRENT_ROOT / o['builder'])], cwd=CURRENT_ROOT, check=True,
+                       env={**os.environ, 'PARITY_EXT_MANIFEST': str(manifest)}, stdout=subprocess.DEVNULL)
+        for rel in [o['dart'], *o['fixtures']]:
+            dest = wt / rel
+            shutil.copyfile(CURRENT_ROOT / rel, dest)
+            overlaid.append(dest)
+    ids = [c['id'] for c in json.loads(manifest.read_text())['cases']]
+    print(f'{len(ids)} extension cases in the a57b9dab manifest', flush=True)
+    logs = out / 'logs'
+    logs.mkdir()
+    procs = []
+    for i in range(a.shards):
+        env = {**os.environ, 'TZ': 'Asia/Shanghai', 'PARITY_SHARED_DIR': a.shared, 'PARITY_RESULT_ROOT': str(results),
+               'PARITY_MANIFEST': str(manifest), 'PARITY_EXT_FIXTURES': str(wt / 'tool/parity-ext/fixtures'),
+               'PARITY_CASES': a.cases, 'PARITY_SHARD_INDEX': str(i), 'PARITY_SHARD_TOTAL': str(a.shards)}
+        env.pop('PARITY_THEME_OVERRIDE', None)
+        log = open(logs / f'shard{i}.log', 'w')
+        procs.append((subprocess.Popen(['nice', '-n', '15', str(wt / 'tool/flutter'), 'test', 'test/parity/parity_capture_test.dart',
+                                        '--no-pub', '--reporter', 'expanded'], cwd=wt / 'apps/raft_flutter', env=env,
+                                       stdout=log, stderr=subprocess.STDOUT), log))
+    codes = [pr.wait() for pr, _ in procs]
+    for dest in overlaid:  # leave the pinned tree clean
+        dest.unlink(missing_ok=True)
+    for _, log in procs:
+        log.close()
+    got = {f.name[:-4] for f in (results / 'android').glob('*.png')}
+    (out / 'capture.json').write_text(json.dumps({
+        'commit': head, 'cases': len(ids), 'captured': len(got), 'missing': sorted(set(ids) - got)[:500],
+        'exitCodes': codes}, indent=1))
+    print(f'captured {len(got)}/{len(ids)}; exit codes {codes}; see {out / "capture.json"}')
+
+
+if __name__ == '__main__':
+    main()

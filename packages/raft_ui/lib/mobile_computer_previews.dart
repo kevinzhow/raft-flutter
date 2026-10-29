@@ -5,15 +5,9 @@ import 'previews.dart';
 import 'raft_ui.dart';
 
 @Preview(
-  name: 'Computers · Brutal',
+  name: 'Computers · Light',
   group: 'Mobile computers',
-  wrapper: brutalWrapper,
-  size: Size(390, 844),
-)
-@Preview(
-  name: 'Computers · Elegant',
-  group: 'Mobile computers',
-  wrapper: elegantWrapper,
+  wrapper: lightWrapper,
   size: Size(390, 844),
 )
 @Preview(
@@ -43,7 +37,7 @@ Widget computerDirectoryInsetPreview() => Builder(
             child: RaftMobileComputerList(
               emptyTitle: 'No computers yet',
               emptyDetail: 'Add a computer',
-              addLabel: 'Add computer',
+              addLabel: 'Add Computer',
               retryLabel: 'Retry',
               rows: [
                 for (var i = 1; i <= 16; i++)
@@ -83,7 +77,7 @@ class _ComputersPreviewState extends State<_ComputersPreview> {
       Wrap(
         children: [
           for (final option in ['loaded', 'loading', 'empty', 'error'])
-            TextButton(
+            RaftButton.text(
               onPressed: () => setState(() => state = option),
               child: Text(option),
             ),
@@ -94,11 +88,11 @@ class _ComputersPreviewState extends State<_ComputersPreview> {
           loading: state == 'loading',
           error: state == 'error' ? 'Directory could not be loaded.' : null,
           emptyTitle: 'No computers yet',
-          emptyDetail: 'Add a computer to run agents in this workspace.',
+          emptyDetail: 'Add a computer to run agents in this server.',
           retryLabel: 'Retry',
-          addLabel: 'Add computer',
+          addLabel: 'Add Computer',
           onRetry: () => setState(() => state = 'loaded'),
-          onAdd: () => setState(() => result = 'Add computer'),
+          onAdd: () => setState(() => result = 'Add Computer'),
           rows: state == 'empty' || state == 'loading'
               ? []
               : [

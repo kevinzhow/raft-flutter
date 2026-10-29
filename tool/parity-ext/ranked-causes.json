@@ -1,0 +1,302 @@
+[
+ {
+  "glob": "components.thread.files.list",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Leak: file cards render the soft Raft card (grey fill, dark icon button) where the original Brutal card has an ink border, hard offset shadow and ink-bordered action button"
+ },
+ {
+  "glob": "components.channelsettings.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Leak: drawer / sheet header and page tone: the original yellow header band (Brutal) / cream page are replaced by the Raft white header; list and switch rows unchanged"
+ },
+ {
+  "glob": "components.list-pages.*dialog*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Leak: dialog renders the soft rounded Raft dialog; the original Brutal dialog is an ink-bordered card with a hard shadow and an uppercase title"
+ },
+ {
+  "glob": "components.public-server.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Loading state: the original showed the channel list, the current page shows a spinner (product change since a57b9dab). The join / agreement states were not inspected"
+ },
+ {
+  "glob": "components.settings.appearance.page",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Product change: the Appearance page has new sections since a57b9dab (App icon, Message font size)"
+ },
+ {
+  "glob": "components.ext-settings.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Not inspected side by side: a Raft recipe showing in this look or a product change since a57b9dab (siblings: task status chips, drawer header, dialog shell)"
+ },
+ {
+  "glob": "components.wp6.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Not inspected side by side: a Raft recipe showing in this look or a product change since a57b9dab (siblings: task status chips, drawer header, dialog shell)"
+ },
+ {
+  "glob": "components.taskdetail.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Not inspected side by side: a Raft recipe showing in this look or a product change since a57b9dab (siblings: task status chips, drawer header, dialog shell)"
+ },
+ {
+  "glob": "components.tasks.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Leak: task status badges / icons render the Raft symbols (outline chips with play / eye icons) instead of the original filled pills with the half-circle glyphs"
+ },
+ {
+  "glob": "components.thread.message-row.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Leak: inline task chips use the Raft status symbol; header line (name / model) and CJK fallback glyphs differ from the frozen render"
+ },
+ {
+  "glob": "components.computers.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Not inspected side by side: a Raft recipe showing in this look or a product change since a57b9dab (siblings: task status chips, drawer header, dialog shell)"
+ },
+ {
+  "glob": "components.navigation.tabbar.states",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Phone tab bar: the app now draws one tab bar for every look (docked / capsule); the original per-look bar (Brutal in-flow edge bar, Elegant floating capsule) is not reproduced"
+ },
+ {
+  "glob": "components.home.search.*",
+  "cause": "Search page: filter chips are yellow pills in Flutter, light-blue pills when selected on the Web; the Web selected result row is yellow, the field ring is a double ink ring (Flutter: yellow border)"
+ },
+ {
+  "glob": "components.list-pages.search.*",
+  "cause": "Search page: filter chips and selected result row colours, field ring and Clear All weight differ from the Raft recipe"
+ },
+ {
+  "glob": "components.members-ext.activity.*",
+  "cause": "Activity skeleton / empty: Web bordered skeleton cards with inset, Flutter flat rows; the Flutter header carries an extra icon tile"
+ },
+ {
+  "glob": "components.members-ext.saved.*",
+  "cause": "Saved skeleton / empty: same card-vs-flat-row and header differences as Activity"
+ },
+ {
+  "glob": "components.settings.account.*",
+  "cause": "Account page: error banner placement (Web pink box under the email, Flutter text above the field), connected-account cards, and Flutter shows Display Language / Edit Profile buttons the Web page does not"
+ },
+ {
+  "glob": "components.settings.appearance.page",
+  "cause": "Appearance: Web v1.21.23 offers only the 3-card Light / Dark / System picker; Flutter still has Theme (Raft / Elegant / Brutal) and Color mode segmented controls and an App icon block"
+ },
+ {
+  "glob": "components.ext-settings.appearance.page*",
+  "cause": "Appearance: Web has the 3-card Light / Dark / System picker only; Flutter still shows the Theme (Raft / Elegant / Brutal) and Color mode segmented controls"
+ },
+ {
+  "glob": "components.screens-ext.composer.*",
+  "cause": "Composer mention popover: Flutter popover captured semi-transparent (mid fade) without the yellow selected row; Web white popover with the first row selected"
+ },
+ {
+  "glob": "components.taskspage.*",
+  "cause": "Tasks page: Flutter board starts scrolled horizontally and its header has an icon tile; Web board starts at the first column"
+ },
+ {
+  "glob": "components.states.phone.phone-sidebar-row.*",
+  "cause": "Phone sidebar row pressed: Web shows a pressed fill under the row, Flutter shows no pressed state"
+ },
+ {
+  "glob": "screens.home.loading",
+  "cause": "Home loading screen: skeleton rows and tab bar differ (capsule tab bar, flat skeletons)"
+ },
+ {
+  "glob": "components.navigation.tabbar.*",
+  "cause": "Phone tab bar: Flutter draws the old floating capsule (icons only, grey selected disc); Web v1.21.23 MobileTabBar is an in-flow edge bar with labels and a yellow selected sticker"
+ },
+ {
+  "glob": "components.states.phone.phone-tab*",
+  "cause": "Phone tab bar item: capsule item vs Web edge-bar item (label under the icon, yellow sticker when selected)"
+ },
+ {
+  "glob": "components.frame.phone.tabbar.*",
+  "cause": "Phone tab bar: floating capsule vs Web in-flow edge bar with labels"
+ },
+ {
+  "glob": "components.frame.*.topbar.*",
+  "cause": "Flutter has no desktop top bar (Web: yellow AppTopBar with workspace name, strip, centred search, Working now, bell); the crop shows the rail head / header instead"
+ },
+ {
+  "glob": "components.states.desktop.topbar-*",
+  "cause": "Flutter has no desktop top bar yet"
+ },
+ {
+  "glob": "components.frame.desktop.rail.*",
+  "cause": "Rail: Flutter neutral cream with grey icons; Web rail is the yellow frame (layer-frame) with ink icons and a white selected sticker"
+ },
+ {
+  "glob": "components.states.desktop.rail-*",
+  "cause": "Rail item: Flutter neutral rail and grey hover/selected wash; Web yellow frame item (variant on-frame: pressed wash, white selected sticker, ink ring on focus)"
+ },
+ {
+  "glob": "components.states.desktop.sidebar-*",
+  "cause": "Sidebar control: Flutter uses a grey wash for hover/selected and no sticker; Web selected row is a yellow sticker with an ink border, hover/pressed are fills"
+ },
+ {
+  "glob": "components.frame.*.sidebar.*",
+  "cause": "Sidebar column: cream fill and row styles differ (selected row sticker, section header weight, count badges)"
+ },
+ {
+  "glob": "components.states.desktop.conversation-tab*",
+  "cause": "Conversation tabs: Flutter underline tabs; Web (tabs.selected = sticker) selected tab is a yellow sticker, others are plain with hover fill"
+ },
+ {
+  "glob": "components.channelheader.*",
+  "cause": "Channel header: Flutter outlined icon buttons and an underline tab strip on a cream wash; Web borderless header buttons, yellow sticker tab, white canvas"
+ },
+ {
+  "glob": "components.states.desktop.header-*",
+  "cause": "Header icon buttons: Flutter outlined 32px buttons; Web borderless panel-action buttons"
+ },
+ {
+  "glob": "components.states.desktop.composer-*",
+  "cause": "Composer controls: send / As Task checkbox shapes and colours differ (Web: ink-bordered sticker send, square checkbox)"
+ },
+ {
+  "glob": "components.states.*activity-row*",
+  "cause": "Activity row: row fill / Done button reveal differ"
+ },
+ {
+  "glob": "components.ext-settings.appearance.states-*",
+  "cause": "Settings switch: Flutter pill with different track colours and focus ring; Web switch has the Raft ink border and focus-ring double ring"
+ },
+ {
+  "glob": "*toast*",
+  "cause": "Toast: Flutter is a 288x56 Material-style grey card with a ring check icon; Web is a compact ink pill (170x44) with a square status mark"
+ },
+ {
+  "glob": "components.auth-pages.*.bootstrap.*",
+  "cause": "Auth splash: page background white in Flutter, cream (layer-sidebar) on the Web"
+ },
+ {
+  "glob": "components.auth-pages.*.servers.loading.*",
+  "cause": "Auth splash: page background white in Flutter, cream on the Web"
+ },
+ {
+  "glob": "components.auth-pages.*.server-denied.*",
+  "cause": "Server-denied page: layout and button styles differ (cream page, yellow sticker primary)"
+ },
+ {
+  "glob": "components.public-server.*",
+  "cause": "Public server page: Flutter cream page, grey selected row, outline buttons and uppercase section title; Web white page, yellow sticker row, pink sticker Sign in, sentence-case title"
+ },
+ {
+  "glob": "components.wp6.tasks.filter*",
+  "cause": "Segmented control: Flutter draws separate segments (segmented.frame = separate); Web draws a framed, padded track with a yellow sticker for the selected segment"
+ },
+ {
+  "glob": "components.computers.list.*",
+  "cause": "Computer rows: Flutter white card with avatar tile; Web row is a flat list row, selected = yellow sticker with ink border"
+ },
+ {
+  "glob": "components.computers.detail.*",
+  "cause": "Computer detail panel: cream/white panel fills, button and badge styles differ from the Raft panel"
+ },
+ {
+  "glob": "components.list-pages.computers.*",
+  "cause": "Phone computers page: list-row styles (flat ListRow vs cards) and header differ"
+ },
+ {
+  "glob": "components.members-pages.*",
+  "cause": "Members / agent / human pages: shell chrome (tab bar capsule, rail, header) and tab / button styles differ from Raft; content text matches"
+ },
+ {
+  "glob": "components.shell.*.sidebar.*",
+  "cause": "Sidebar states: row selected/hover styles, section headers and badges follow the Elegant-style recipe, not the Raft sticker recipe"
+ },
+ {
+  "glob": "components.thread-ext.*",
+  "cause": "Message / attachment pieces: card borders, placeholder tiles and badges follow the old recipe"
+ },
+ {
+  "glob": "components.conversation.*",
+  "cause": "Conversation components: card borders / chips / banners follow the old recipe"
+ },
+ {
+  "glob": "components.auth-ext.*",
+  "cause": "Auth forms: field and button styles (ink border, sticker primary) differ"
+ },
+ {
+  "glob": "components.ext-settings.*",
+  "cause": "Settings pages: panel, card and control styles follow the old recipe; copy and layout match"
+ },
+ {
+  "glob": "components.list-pages.*",
+  "cause": "List pages: row / card / filter styles follow the old recipe"
+ },
+ {
+  "glob": "components.taskdetail.*",
+  "cause": "Task detail: property chips, badges and panel header follow the old recipe"
+ },
+ {
+  "glob": "components.raftbench.*",
+  "cause": "RaftBench page: Raft cards and badges not yet on the Raft recipe"
+ },
+ {
+  "glob": "components.channelsettings.*",
+  "cause": "Channel settings: drawer / dialog shell and controls follow the old recipe"
+ },
+ {
+  "glob": "components.*",
+  "cause": "Raft look recipes not applied to this component (see the side-by-side)"
+ },
+ {
+  "glob": "screens.*",
+  "cause": "Whole real screen: shell chrome (frame, tab bar) and control recipes differ"
+ },
+ {
+  "glob": "components.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Differs from the frozen a57b9dab render: a product change since then or a Raft recipe showing in this look (see the side-by-side)"
+ },
+ {
+  "glob": "screens.*",
+  "look": [
+   "brutal",
+   "elegant"
+  ],
+  "cause": "Whole real screen differs from the frozen render: product change since a57b9dab or a Raft recipe in this look"
+ }
+]

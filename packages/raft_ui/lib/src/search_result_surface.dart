@@ -1,4 +1,6 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+
+import 'raft/ui_tokens.dart';
 
 import 'design_primitives.dart';
 import 'recipe_surface.dart';
@@ -44,6 +46,25 @@ class RaftSearchResultSurface extends StatelessWidget {
             if (nested) 'data-nested=true',
           ],
         );
+        if (t.option('searchResult.selection', or: 'card') == 'flat') {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: selected
+                  ? t.ui['brand-soft']
+                  : interaction.hovered
+                  ? t.ui.fillPressed
+                  : null,
+            ),
+            foregroundDecoration: interaction.focusVisible
+                ? BoxDecoration(
+                    border: Border.all(color: t.ui.foreground, width: 2),
+                  )
+                : null,
+            child: child,
+          );
+        }
         final style = entity
             ? RaftSearchEntityRecipe.resolve(
                 theme: t.recipeTheme,
@@ -120,6 +141,7 @@ class RaftTaskFilterButton extends StatelessWidget {
           style: slot,
           tokens: t.recipeTokens,
           overflowCenter: true,
+          controlLabel: true,
           child: Center(widthFactor: 1, heightFactor: 1, child: child),
         );
       },

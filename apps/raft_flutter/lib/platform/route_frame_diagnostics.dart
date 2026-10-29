@@ -37,6 +37,7 @@ abstract final class RouteFrameDiagnostics {
         });
       }
     });
+    // ignore: raft_lints/avoid_unreviewed_idle_work, raft_lints/avoid_unreleased_resource -- 3 s flush of the opt-in route frame probe; only created when the diagnostics flag is on, never in a normal run, and it lives for the whole run by design.
     _flushTimer = Timer.periodic(const Duration(seconds: 3), (_) => _flush());
   }
 

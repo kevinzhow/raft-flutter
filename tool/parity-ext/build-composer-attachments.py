@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Append the composer attachment cases to the run-time manifest ($PARITY_EXT_MANIFEST).
 
-Run after build-cases.py, build-live-activity.py, build-channel-header.py,
+Run after build-cases.py, build-channel-header.py,
 build-announcements.py and build-search-overlay-cases.py; idempotent: every
 `components.composerattachments.*` case is replaced, all other cases are kept.
 

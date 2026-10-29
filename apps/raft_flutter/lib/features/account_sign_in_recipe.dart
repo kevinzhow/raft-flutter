@@ -12,10 +12,7 @@ class RaftAccountSignInRecipe {
   // bg-layer-panel theme-brutal:bg-white p-3`
   BoxDecoration get providerDecoration => BoxDecoration(
     color: RaftSettingsText(tokens).panel,
-    border: Border.all(
-      color: RaftSettingsText(tokens).softEdge,
-      width: tokens.brutal ? 2 : 1,
-    ),
+    border: Border.all(color: RaftSettingsText(tokens).softEdge, width: 1),
   );
   TextStyle get heading =>
       RaftTypography.body(tokens, size: 14, line: 20, weight: FontWeight.w700);

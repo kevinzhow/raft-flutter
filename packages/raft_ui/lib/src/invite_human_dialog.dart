@@ -1,12 +1,21 @@
+import 'overlays/dialog.dart' show RaftDialog;
 // Web `member/InviteHumanDialog.tsx`: the "Invite Human" DialogCard (`max-w-lg`)
 // with the By email / By link segmented control, one row per invitee (email
-// Input + optional role Select + remove), "Add another", the join-link field
+// Input + optional role Select + remove), "Add Another", the join-link field
 // with its limits, and Cancel / Send invites. Presentation only: the app owns
 // requests, billing gates and navigation.
+import 'raft/segmented_control.dart'
+    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+import 'label.dart';
+import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
+
 import 'package:flutter/material.dart';
+
+import 'form_presentation.dart';
 
 import 'banner.dart';
 import 'dialog_card.dart';
+import 'error_presentation.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
@@ -73,12 +82,25 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
   final invitees = <RaftInvitee>[RaftInvitee()];
   final controllers = <int, TextEditingController>{};
   bool sending = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next send starts; the dialog state is dropped when it closes.
   String? error;
+
+  /// The last send had no email: the prompt holds only while no row has one.
+  bool emailRequired = false;
   String maxUses = 'unlimited', expiry = 'never';
   final _linkController = TextEditingController();
 
   TextEditingController controllerFor(RaftInvitee i) =>
-      controllers.putIfAbsent(i.id, () => TextEditingController(text: i.email));
+      controllers.putIfAbsent(i.id, () {
+        final c = TextEditingController(text: i.email);
+        // The seat-limit banner follows the typed rows, so a change rebuilds.
+        c.addListener(() {
+          if (i.email == c.text) return;
+          i.email = c.text;
+          if (mounted) setState(() {});
+        });
+        return c;
+      });
 
   @override
   void dispose() {
@@ -95,17 +117,16 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
         if (i.email.trim().isNotEmpty) (i.email.trim(), i.role),
     ];
     if (targets.isEmpty) {
-      setState(
-        () => error = raftText(
-          context,
-          'Enter at least one email, or copy the invite link above.',
-        ),
-      );
+      setState(() {
+        error = null;
+        emailRequired = true;
+      });
       return;
     }
     setState(() {
       sending = true;
       error = null;
+      emailRequired = false;
     });
     try {
       await widget.onSend(targets);
@@ -113,7 +134,11 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
       if (mounted) {
         setState(() {
           sending = false;
-          error = e is StateError ? e.message : '$e';
+          error = raftErrorMessage(
+            context,
+            e,
+            fallback: 'Failed to send invites',
+          );
         });
       }
     }
@@ -122,11 +147,25 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final seatReached = widget.seatLimitMessage != null && tab == 'email';
-    return Center(
+    // Guest invitations consume no paid seat: only a filled row asking for a
+    // seat-consuming role trips the email path (`emailInviteSeatLimitReached`).
+    final seatReached =
+        widget.seatLimitMessage != null &&
+        tab == 'email' &&
+        invitees.any((i) => i.email.trim().isNotEmpty && i.role != 'guest');
+    final shownError =
+        error ??
+        (emailRequired && invitees.every((i) => i.email.trim().isEmpty)
+            ? raftText(
+                context,
+                'Enter at least one email, or copy the invite link above.',
+              )
+            : null);
+    // Web `Modal`: full-window backdrop, `p-4` frame, centred column.
+    return RaftModalBackdrop(
       child: Material(
         type: MaterialType.transparency,
-        child: RaftDialogCard(
+        child: RaftDialog.card(
           key: const ValueKey('invite-dialog'),
           title: 'Invite Human',
           maxWidth: 512,
@@ -135,69 +174,85 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // `space-y-4`
-              if (error != null && !seatReached) ...[
-                RaftBanner(
-                  description: error!,
-                  descriptionWeight: FontWeight.w700,
-                ),
+              if (shownError != null && !seatReached) ...[
+                RaftErrorBanner(shownError, bold: true),
                 const SizedBox(height: 16),
               ],
               if (seatReached) ...[
                 RaftBanner(
                   description: widget.seatLimitMessage!,
                   descriptionWeight: FontWeight.w700,
+                  descriptionTail: widget.onViewBilling == null
+                      ? null
+                      : (
+                          label: raftText(context, 'View Billing'),
+                          onPressed: widget.onViewBilling!,
+                        ),
                 ),
                 const SizedBox(height: 16),
               ],
-              RaftRecipeSegmentedControl<String>(
+              // `member.invite.agentReachHint`: any member can DM and direct
+              // every agent in the server, so the dialog says so up front.
+              RaftBanner(
+                key: const ValueKey('invite-agent-reach-hint'),
+                status: RaftBannerRecipeStatus.info,
+                glyph: RaftGlyph.info,
+                description: raftText(
+                  context,
+                  'Members you invite can DM and give instructions to every agent in this server. Keep personal agents in a separate server of your own.',
+                ),
+              ),
+              const SizedBox(height: 16),
+              RaftSegmentedControl<String>(
+                legacyStyle: RaftSegmentedStyle.recipe,
+                expand: true,
                 value: tab,
                 label: raftText(context, 'Invite method'),
                 items: const [
-                  ('email', null, 'By email'),
-                  ('link', null, 'By link'),
+                  RaftSegmentedOption(value: 'email', label: 'By Email'),
+                  RaftSegmentedOption(value: 'link', label: 'By Link'),
                 ],
                 onChanged: (v) => setState(() => tab = v),
               ),
               const SizedBox(height: 16),
               if (tab == 'email') _email(context, t) else _link(context, t),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  RaftRecipeButton(
-                    label: raftText(context, 'Cancel'),
-                    variant: RaftButtonRecipeVariant.outline,
-                    size: RaftButtonRecipeSize.sm,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    textStep: RaftTextSteps.sm,
-                    onPressed: widget.onClose,
-                  ),
-                  if (tab == 'email') ...[
-                    const SizedBox(width: 12),
-                    RaftRecipeButton(
-                      key: const ValueKey('invite-send'),
-                      label: sending
-                          ? raftText(context, 'Sending…')
-                          : raftText(context, 'Send invites'),
-                      glyph: RaftGlyph.mail,
-                      glyphSize: 14,
-                      variant: RaftButtonRecipeVariant.accent,
-                      size: RaftButtonRecipeSize.sm,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      textStep: RaftTextSteps.sm,
-                      gap: 6,
-                      disabled: sending || seatReached,
-                      onPressed: send,
-                    ),
-                  ],
-                ],
+            ],
+          ),
+          footer: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              RaftRecipeButton(
+                label: raftText(context, 'Cancel'),
+                variant: RaftButtonRecipeVariant.outline,
+                size: RaftButtonRecipeSize.sm,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                textStep: RaftTextSteps.sm,
+                onPressed: raftExplicitClose(context, widget.onClose),
               ),
+              if (tab == 'email') ...[
+                const SizedBox(width: 12),
+                RaftRecipeButton(
+                  key: const ValueKey('invite-send'),
+                  label: sending
+                      ? raftText(context, 'Sending…')
+                      : raftText(context, 'Send Invites'),
+                  glyph: RaftGlyph.mail,
+                  glyphSize: 14,
+                  variant: RaftButtonRecipeVariant.accent,
+                  size: RaftButtonRecipeSize.sm,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  textStep: RaftTextSteps.sm,
+                  gap: 6,
+                  disabled: sending || seatReached,
+                  onPressed: send,
+                ),
+              ],
             ],
           ),
         ),
@@ -205,22 +260,29 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
     );
   }
 
-  /// `<label className="mb-1 block text-sm font-bold text-foreground-strong
-  /// uppercase tracking-wide">` (a bare label: no Field gap).
-  Widget _fieldLabel(BuildContext context, RaftTokens t, String text) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Text(
-          raftText(context, text).toUpperCase(),
-          style: raftCssTextStyle(
-            family: t.headingFont,
-            step: RaftTextSteps.sm,
-            weight: FontWeight.w700,
-            color: t.colors['foreground-strong'],
-            trackingEm: .025,
-          ),
-        ),
+  /// The Web's `FIELD_LABEL_CLASS` label (13/18 600 ink-2) is a [RaftLabel]; the frozen looks keep the bare
+  /// `<label className="mb-1 block text-sm font-bold text-foreground-strong">` (no Field gap).
+  Widget _fieldLabel(BuildContext context, RaftTokens t, String text) {
+    // `mb-1.5` under the label.
+    if (t.recipeSet == RaftRecipeSet.raft) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: RaftLabel(text),
       );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        raftText(context, text),
+        style: raftCssTextStyle(
+          family: t.headingFont,
+          step: RaftTextSteps.sm,
+          weight: FontWeight.w700,
+          color: t.colors['foreground-strong'],
+        ),
+      ),
+    );
+  }
 
   Widget _email(BuildContext context, RaftTokens t) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -236,10 +298,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 Expanded(
                   child: RaftDialogTextInput(
                     fieldKey: ValueKey('invite-email-$index'),
-                    controller: controllerFor(invitee)
-                      ..addListener(
-                        () => invitee.email = controllerFor(invitee).text,
-                      ),
+                    controller: controllerFor(invitee),
                     placeholder: 'name@company.com',
                   ),
                 ),
@@ -252,13 +311,13 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                       height: 36, // chrome="field": the Input's box
                       label: raftText(context, 'Role'),
                       items: [
-                        DropdownMenuItem(
+                        RaftSelectItem(
                           value: 'member',
-                          child: Text(raftText(context, 'Member')),
+                          label: raftText(context, 'Member'),
                         ),
-                        DropdownMenuItem(
+                        RaftSelectItem(
                           value: 'guest',
-                          child: Text(raftText(context, 'Guest')),
+                          label: raftText(context, 'Guest'),
                         ),
                       ],
                       onChanged: (v) =>
@@ -273,7 +332,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                     glyphSize: 14,
                     variant: RaftButtonRecipeVariant.danger,
                     size: RaftButtonRecipeSize.iconXs,
-                    tooltip: raftFormat(context, 'Remove invitee {index}', {
+                    tooltip: raftFormat(context, 'Remove Invitee {index}', {
                       'index': index + 1,
                     }),
                     onPressed: () => setState(() => invitees.remove(invitee)),
@@ -287,7 +346,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
             alignment: Alignment.centerLeft,
             child: RaftRecipeButton(
               key: const ValueKey('invite-add'),
-              label: raftText(context, 'Add another'),
+              label: raftText(context, 'Add Another'),
               glyph: RaftGlyph.plus,
               glyphSize: 14,
               variant: RaftButtonRecipeVariant.ghost,
@@ -306,8 +365,8 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
         ? raftText(context, 'Preparing invite link…')
         : link.url ?? raftText(context, 'Invite link unavailable');
     _linkController.text = urlText;
-    DropdownMenuItem<String> item(String v, String label) =>
-        DropdownMenuItem(value: v, child: Text(raftText(context, label)));
+    RaftSelectItem<String> item(String v, String label) =>
+        RaftSelectItem(value: v, label: raftText(context, label));
     final muted = t.colors['foreground-muted'];
     Widget labelText(String text) => Text(
       raftText(context, text),
@@ -398,7 +457,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
             ),
             RaftRecipeButton(
               key: const ValueKey('invite-link-apply'),
-              label: raftText(context, 'Update link'),
+              label: raftText(context, 'Update Link'),
               size: RaftButtonRecipeSize.sm,
               disabled: link.loading,
               onPressed: widget.onApplyLink == null
@@ -410,15 +469,13 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 key: const ValueKey('invite-link-revoke'),
                 onTap: widget.onRevokeLink,
                 child: Text(
-                  raftText(context, 'Revoke link'),
+                  raftText(context, 'Revoke Link'),
                   style: TextStyle(
                     fontFamily: t.headingFont,
                     fontSize: 12,
                     height: 16 / 12,
                     fontWeight: FontWeight.w700,
-                    color: t.brutal
-                        ? t.colors['brutal-pink']
-                        : t.colors['accent-strong'],
+                    color: t.colors['accent-strong'],
                   ),
                 ),
               ),

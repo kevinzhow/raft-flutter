@@ -23,6 +23,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
   NormalizeWindowsNotificationArguments(command_line_arguments);
+  if (command_line_arguments.empty() && ForwardWindowsTrayLaunch()) {
+    ::CoUninitialize();
+    return EXIT_SUCCESS;
+  }
   if (ForwardWindowsNotificationActivation(command_line_arguments)) {
     ::CoUninitialize();
     return EXIT_SUCCESS;
@@ -44,7 +48,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
-  ShutdownWindowsNotificationSdk();
+  ShutdownWindowsNotifications();
   ::CoUninitialize();
   return EXIT_SUCCESS;
 }

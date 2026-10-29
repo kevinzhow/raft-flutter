@@ -8,12 +8,14 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show paintedMessage;
 import 'message_presentation_test.dart' show fixture, MessageAdapter;
 import 'workspace_activity_activation_test.dart'
     show threadRow, channelRow, message;
+import 'support/app_services_fixture.dart';
 
 Future<void> _dispatch(WidgetTester tester, {VoidCallback? afterFrame}) async {
   for (var i = 0; i < 12; i++) {
@@ -33,11 +35,7 @@ class _MountedActivity {
   int get oldReads =>
       api.calls.where((r) => r.path == '/channels/thread-1/read').length;
 
-  static Future<_MountedActivity> mount(
-    WidgetTester tester,
-    RaftFamily family,
-    bool dark,
-  ) async {
+  static Future<_MountedActivity> mount(WidgetTester tester, bool dark) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
@@ -50,11 +48,11 @@ class _MountedActivity {
     });
     w.channels = [w.channel!, main];
     w.channel = main;
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       message('old-main', main.id),
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds[main.id] = {'old-main'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds[main.id] = {'old-main'};
     w.loading = false;
     w.setSection('activity');
     final page = _MountedActivity(w, api, main);
@@ -81,12 +79,14 @@ class _MountedActivity {
     };
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(family, dark: dark),
-        home: WorkspaceView(
-          controller: w,
-          appearance: const RaftAppearance(),
-          onAppearance: (_) async {},
-          onLogout: () async {},
+        theme: raftTheme(dark: dark),
+        home: withAppServices(
+          WorkspaceView(
+            controller: w,
+            appearance: const RaftAppearance(),
+            onAppearance: (_) async {},
+            onLogout: () async {},
+          ),
         ),
       ),
     );
@@ -108,7 +108,7 @@ class _MountedActivity {
     expect(workspace.threadIdentity?.parentMessageId, 'parent');
     expect(workspace.presentedThreadParent, isNull);
     expect(workspace.channel?.id, main.id);
-    expect(workspace.messages.map((row) => row.id), ['old-main']);
+    expect(workspace.messageDomain.messages.map((row) => row.id), ['old-main']);
     expect(find.byType(RaftThreadHeader), findsOneWidget);
     expect(
       tester
@@ -200,17 +200,13 @@ class _MountedActivity {
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final authority in ['principal', 'server']) {
       for (final pending in [false, true]) {
         testWidgets(
-          '[K07] $family/$dark actual row input retires $authority ${pending ? 'after the first thread frame' : 'before the first frame'} without private late paint',
+          '[K07] ${dark ? 'dark' : 'light'} actual row input retires $authority ${pending ? 'after the first thread frame' : 'before the first frame'} without private late paint',
           (tester) async {
-            final page = await _MountedActivity.mount(tester, family, dark);
+            final page = await _MountedActivity.mount(tester, dark);
             try {
               await page.open(tester);
               if (pending) {
@@ -255,9 +251,9 @@ void main() {
       }
     }
     testWidgets(
-      '[K07] $family/$dark actual thread row and painted reply retire on accepted parent-channel revocation while parent HTTP waits',
+      '[K07] ${dark ? 'dark' : 'light'} actual thread row and painted reply retire on accepted parent-channel revocation while parent HTTP waits',
       (tester) async {
-        final page = await _MountedActivity.mount(tester, family, dark);
+        final page = await _MountedActivity.mount(tester, dark);
         try {
           await page.open(tester);
           await page.reachFirstThreadFrame(tester);
@@ -273,7 +269,7 @@ void main() {
             await tester.pump(const Duration(milliseconds: 16));
           }
           expect(paintedMessage(tester, 'reply'), isNotNull);
-          expect(page.workspace.threadParentLoading, true);
+          expect(page.workspace.messageDomain.threadParentLoading, true);
           expect(page.workspace.presentedThreadParent, isNull);
           final reads = page.oldReads;
           page.api.routes['GET /channels'] = (_) => [page.main.json];
@@ -295,8 +291,13 @@ void main() {
           await tester.pump();
           page.assertNoPrivatePaint(tester);
           expect(page.workspace.channel?.id, page.main.id);
-          expect(page.workspace.messages.map((row) => row.id), ['old-main']);
-          expect(page.workspace.ledger.messages('thread-1'), isEmpty);
+          expect(page.workspace.messageDomain.messages.map((row) => row.id), [
+            'old-main',
+          ]);
+          expect(
+            page.workspace.messageDomain.ledger.messages('thread-1'),
+            isEmpty,
+          );
           page.parent.complete({
             'messages': [
               {...message('parent', 'c1'), 'content': 'Private late parent'},

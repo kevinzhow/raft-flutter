@@ -56,7 +56,7 @@ void main() {
   });
 
   Widget page(String channel) => MaterialApp(
-    theme: raftTheme(RaftFamily.elegant),
+    theme: raftTheme(),
     home: RaftDensityScope(
       density: RaftDensity.desktop,
       child: Scaffold(
@@ -71,10 +71,13 @@ void main() {
     ),
   );
   final away = MaterialApp(
-    theme: raftTheme(RaftFamily.elegant),
+    theme: raftTheme(),
     home: const Scaffold(body: SizedBox.expand()),
   );
-  final spinner = find.byType(CircularProgressIndicator);
+  // TasksPanel loading is Web's SkeletonRow cards (no spinner).
+  final spinner = find.byWidgetPredicate(
+    (w) => w is RaftSpinner || w is RaftSkeletonRow,
+  );
 
   testWidgets(
     'a channel Tasks tab revisit shows its cached board at the first frame and revalidates silently',

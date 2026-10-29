@@ -1,5 +1,5 @@
 // Supplemental test host only: extend the pinned VisualTestingRoot's public
-// ThemeProvider/AppThemeContext inputs without editing the Source checkout.
+// ThemeProvider/AppThemeContext inputs (v1.21.23: light or dark) without editing the Source checkout.
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -19,18 +19,20 @@ function once(code, before, after) {
   return code.replace(before, after);
 }
 let code = once(original,
-  '  const preset: AppThemePreset = defaultTheme === "elegant" ? "elegant-light" : "brutal";',
+  '  return (\n    <ThemeProvider mode={mode}>\n'
+  + '      <AppThemeContext.Provider value={FIXED_THEME_CONTEXTS[mode]}>',
   `  const override = new URLSearchParams(window.location.search).get('parityTheme');
   if (override && !['brutal-light', 'elegant-light', 'elegant-dark'].includes(override)) {
     throw new Error('Unknown supplemental parity theme');
   }
-  const selectedTheme = override ? (override === 'brutal-light' ? 'brutal' : 'elegant') : defaultTheme;
-  const dark = override === 'elegant-dark';
-  const preset: AppThemePreset = dark ? 'elegant-dark' : selectedTheme === 'elegant' ? 'elegant-light' : 'brutal';`);
-code = once(code, '    resolvedMode: "light" as const,', '    resolvedMode: dark ? "dark" as const : "light" as const,');
-code = once(code,
-  '<ThemeProvider defaultTheme={defaultTheme} defaultMode="light">',
-  '<ThemeProvider defaultTheme={selectedTheme} defaultMode={dark ? "dark" : "light"}>');
+  // v1.21.23 has one "Raft" appearance: the two light names render the same page and
+  // elegant-dark selects the dark mode.
+  const dark = override ? override === 'elegant-dark' : mode === 'dark';
+  const effectiveMode: AppResolvedMode = dark ? 'dark' : 'light';
+  const themeContext: AppThemeContextValue = FIXED_THEME_CONTEXTS[effectiveMode];
+  return (
+    <ThemeProvider mode={effectiveMode}>
+      <AppThemeContext.Provider value={themeContext}>`);
 mkdirSync(out, { recursive: true });
 // Apply the same owner-authorized fixture repair as the original 99 runner.
 // Theme overrides still affect only the fixture root; no product code edits.

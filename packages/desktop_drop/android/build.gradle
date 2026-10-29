@@ -1,0 +1,79 @@
+group 'com.example.desktop_drop'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    ext.kotlin_version = '2.2.0'
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: 'com.android.library'
+
+// Apply KGP only when AGP does not provide built-in Kotlin.
+// AGP <9 never has built-in Kotlin -> apply KGP.
+// AGP 9+ defaults to built-in Kotlin unless property is explicitly false.
+def agpMajor = 0
+try {
+    agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0].toInteger()
+} catch (ignored) {
+    agpMajor = 0
+}
+
+def builtInKotlin = agpMajor >= 9
+if (builtInKotlin && project.hasProperty('android.builtInKotlin')) {
+    builtInKotlin = project.property('android.builtInKotlin').toString().toBoolean()
+}
+
+if (!builtInKotlin) {
+    apply plugin: 'kotlin-android'
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+android {
+    // Conditional for compatibility with AGP <4.2.
+    if (project.android.hasProperty("namespace")) {
+        namespace 'one.mixin.desktop.drop'
+    }
+
+    compileSdk 36
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        minSdkVersion 16
+    }
+
+    if (!builtInKotlin) {
+        kotlinOptions {
+            jvmTarget = JavaVersion.VERSION_1_8.toString()
+        }
+    }
+}
+
+if (builtInKotlin) {
+    kotlin {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+        }
+    }
+}

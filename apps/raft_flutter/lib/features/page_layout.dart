@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart' as recipes;
 
+import '../platform/system_bars.dart';
+
+/// Vertical padding floor once a shell header grows. The narrow Web panel
+/// header uses this same 8px floor.
+const _scaledHeaderPadding = RaftMetrics.fieldVerticalPadding;
+
 /// The product panel header shared by the source's individual page columns.
 /// Platform safe-area insets are supplied by the host, outside this rectangle.
 double raftPageHeaderHeight(BuildContext context) =>
@@ -25,12 +31,20 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
     this.variant = RaftPanelHeaderVariant.canonical,
     this.leftInset,
     this.bottomRule = false,
+    this.iconBackground,
+    this.background,
   });
 
   /// Elegant desktop only: the host's own left padding (ActivityInboxPanel
   /// `pl-3`) and the `border-b` rule it adds under the header.
   final double? leftInset;
   final bool bottomRule;
+
+  /// Callsite `iconBg` (SavedPanel `bg-primary-soft`); null keeps the recipe fill.
+  final Color? iconBackground;
+
+  /// The containing page surface; null preserves the header recipe.
+  final Color? background;
   final String title;
   final String? subtitle;
   final Widget? icon;
@@ -56,12 +70,27 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
       mobile: mobile,
       variant: variant,
     );
+    // v1.21.23 page heads (Tasks, Saved, Activity, Search, ...) carry no icon
+    // tile; the pre-theme looks keep it (pageHeader.icon).
+    final tile = t.option('pageHeader.icon', or: 'none') == 'tile';
+    if (!tile && !mobile && variant == RaftPanelHeaderVariant.tasks) {
+      return RaftPanelHeaderBar(
+        key: const Key('page-header-surface'),
+        title: title,
+        background: background,
+        subtitle: subtitle,
+        leftPadding: leftInset,
+        bottomRule: bottomRule,
+        actions: actions,
+      );
+    }
     if (mobile && variant == RaftPanelHeaderVariant.canonical) {
       // Below md Web renders the same AppPanelHeader grid: boxed Back, title
       // (+ meta), actions. The icon tile is `hidden md:flex` on these
       // non-identity surfaces.
       return RaftPanelHeaderBar(
         title: title,
+        background: background,
         subtitle: subtitle,
         onBack: onBack,
         backKey: backKey,
@@ -79,7 +108,7 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
         inset: RaftLayoutMetrics.panelInset,
       );
       return RaftMobilePageHeader(
-        background: root.background,
+        background: t.colors['layer-section-header-mobile'],
         border: root.border,
         headerHeight: root.height,
         inset: root.inset,
@@ -91,14 +120,25 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: RaftTypography.heading(t, size: 16, line: 20),
+              style: t.option('listGroup.frame', or: 'framed') == 'plain'
+                  ? t.scale(
+                      RaftTypeScale.headline,
+                      color: t.colors['foreground-on-frame'],
+                    )
+                  : RaftTypography.heading(t, size: 16, line: 20),
             ),
             if (subtitle?.isNotEmpty == true)
               Text(
                 subtitle!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: RaftTypography.mono(t, color: t.muted),
+                style: t.option('listGroup.frame', or: 'framed') == 'plain'
+                    ? t.scale(
+                        RaftTypeScale.caption,
+                        weight: FontWeight.w500,
+                        color: t.colors['foreground-on-frame-muted'],
+                      )
+                    : RaftTypography.mono(t, color: t.muted),
               ),
           ],
         ),
@@ -106,16 +146,19 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
       );
     }
     final canonical = variant == RaftPanelHeaderVariant.canonical;
-    if (canonical && !t.brutal) {
+    if (canonical) {
       // Elegant desktop PanelHeader: the 36px `fill-muted` icon tile and the
       // title with its meta inline (the same bar the Agent / Human panels use).
       return RaftPanelHeaderBar(
         key: const Key('page-header-surface'),
         title: title,
+        background: background,
         subtitle: subtitle,
         leftPadding: leftInset,
         bottomRule: bottomRule,
-        iconSlot: icon == null ? null : RaftPanelHeaderMutedTile(icon: icon!),
+        iconSlot: icon == null || !tile
+            ? null
+            : RaftPanelHeaderMutedTile(icon: icon!),
         actions: actions,
       );
     }
@@ -131,22 +174,38 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
     final titleStyle = canonical
         ? source.title.text(t.recipeTokens, base: RaftTypography.body(t))
         : recipe.title;
-    final subtitleStyle = canonical && !t.brutal
+    final subtitleStyle = canonical
         ? source.meta.text(t.recipeTokens, base: RaftTypography.body(t))
         : recipe.subtitle;
-    final gap = canonical && !t.brutal
+    final gap = canonical
         ? RaftResourceMetrics.elegantHeaderGap
         : RaftLayoutMetrics.panelGap;
-    return Container(
+    // Above the default text size the header height is a minimum and the
+    // title / subtitle wrap, the same way the narrow Web panel header grows.
+    final grows = RaftScaled.grows(context);
+    final lines = grows ? null : 1;
+    final clip = grows ? TextOverflow.clip : TextOverflow.ellipsis;
+    final restingPadding = canonical && mobile
+        ? RaftResourceMetrics.elegantMobileHeaderInset
+        : EdgeInsets.symmetric(horizontal: RaftLayoutMetrics.panelInset);
+    final header = Container(
       key: const Key('page-header-surface'),
-      height: height,
-      padding: canonical && !t.brutal && mobile
-          ? RaftResourceMetrics.elegantMobileHeaderInset
-          : EdgeInsets.symmetric(horizontal: RaftLayoutMetrics.panelInset),
+      height: grows ? null : height,
+      constraints: grows ? BoxConstraints(minHeight: height) : null,
+      padding: grows
+          ? restingPadding.copyWith(
+              top: restingPadding.top < _scaledHeaderPadding
+                  ? _scaledHeaderPadding
+                  : restingPadding.top,
+              bottom: restingPadding.bottom < _scaledHeaderPadding
+                  ? _scaledHeaderPadding
+                  : restingPadding.bottom,
+            )
+          : restingPadding,
       decoration: BoxDecoration(
-        color: recipe.background,
+        color: background ?? recipe.background,
         border: Border(
-          bottom: canonical && !t.brutal && mobile
+          bottom: canonical && mobile
               ? BorderSide(color: t.line)
               : recipe.border,
         ),
@@ -159,7 +218,7 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
               height: RaftLayoutMetrics.panelIcon,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: recipe.iconBackground,
+                color: iconBackground ?? recipe.iconBackground,
                 border: Border.all(color: t.line, width: t.border),
                 borderRadius: recipe.iconRadius,
               ),
@@ -178,36 +237,33 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
                 if (!canonical)
                   Text(
                     title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: lines,
+                    overflow: clip,
                     style: titleStyle,
                   ),
                 if (canonical)
                   RaftCssText(
                     title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: lines,
+                    overflow: clip,
                     style: titleStyle,
                   ),
-                if (canonical &&
-                    !t.brutal &&
-                    subtitle != null &&
-                    subtitle!.isNotEmpty)
+                if (canonical && subtitle != null && subtitle!.isNotEmpty)
                   const SizedBox(
                     height: RaftResourceMetrics.elegantHeaderMetaGap,
                   ),
                 if (subtitle != null && subtitle!.isNotEmpty)
                   canonical
                       ? RaftCssText(
-                          subtitle!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          subtitle,
+                          maxLines: lines,
+                          overflow: clip,
                           style: subtitleStyle,
                         )
                       : Text(
                           subtitle!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          maxLines: lines,
+                          overflow: clip,
                           style: subtitleStyle,
                         ),
               ],
@@ -217,6 +273,7 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
     );
+    return RaftStatusBarSource(color: recipe.background, child: header);
   }
 }
 
@@ -266,15 +323,18 @@ PreferredSizeWidget raftPageAppBar(
   final navigator = Navigator.of(context);
   return PreferredSize(
     preferredSize: Size.fromHeight(raftPageHeaderHeight(context)),
-    // ds-allow: Native Scaffold appBar ink host and safe-area background; raft_ui owns the header content.
-    child: Material(
-      color: RaftTokens.of(context).panel,
-      child: SafeArea(
-        bottom: false,
-        child: RaftPanelHeaderBar(
-          title: title,
-          onBack: navigator.canPop() ? () => navigator.maybePop() : null,
-          actions: actions,
+    child: RaftSystemBarSurface(
+      statusBarFallback: RaftTokens.of(context).panel,
+      // ds-allow: Native Scaffold appBar ink host and safe-area background; raft_ui owns the header content.
+      child: Material(
+        color: RaftTokens.of(context).panel,
+        child: SafeArea(
+          bottom: false,
+          child: RaftPanelHeaderBar(
+            title: title,
+            onBack: navigator.canPop() ? () => navigator.maybePop() : null,
+            actions: actions,
+          ),
         ),
       ),
     ),

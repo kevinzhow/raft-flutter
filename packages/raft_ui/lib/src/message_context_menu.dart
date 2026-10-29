@@ -11,6 +11,7 @@ import 'list_items.dart';
 import 'icons.dart';
 import 'quick_reaction_picker.dart';
 import 'recipe_surface.dart';
+import 'popover_surface.dart';
 import 'recipes/context_menu.g.dart';
 import 'recipes/token_binding.dart';
 import 'theme.dart';
@@ -89,6 +90,10 @@ class RaftMessageContextMenu extends StatelessWidget {
     final children = <Widget>[
       if (onReact != null)
         _QuickReactionRow(onReact: onReact!, label: reactionLabel),
+      if (onReact != null &&
+          groups.isNotEmpty &&
+          t.option('messageMenu.reactionDivider', or: 'hidden') == 'shown')
+        divider(),
       for (var i = 0; i < groups.length; i++) ...[
         if (i > 0) divider(),
         for (final item in groups[i])
@@ -111,13 +116,17 @@ class RaftMessageContextMenu extends StatelessWidget {
         child: Semantics(
           role: SemanticsRole.menu,
           child: ConstrainedBox(
-            // `min-w-48`; the width is otherwise the intrinsic content width.
-            constraints: BoxConstraints(minWidth: content.minWidth ?? 192),
+            // Web v1.21.23 min-w-60; a57b9dab min-w-48.
+            constraints: BoxConstraints(
+              minWidth: t.size(
+                'size.menuPopupMin',
+                fallback: content.minWidth ?? 192,
+              ),
+            ),
             child: IntrinsicWidth(
-              child: RaftRecipeBox(
-                style: content,
-                tokens: resolver,
-                clip: true,
+              child: RaftPopoverSurface(
+                key: const ValueKey('raft-message-context-menu'),
+                surfaceStyle: content,
                 // `maxHeight: calc(100dvh - 16px); overflowY: auto`.
                 child: SingleChildScrollView(
                   child: Column(
@@ -155,7 +164,7 @@ class _QuickReactionRow extends StatelessWidget {
       key: const ValueKey('message-menu-reaction-quick-row'),
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      color: t.brutal ? Colors.white : t.colors['layer-panel'],
+      color: t.colors['layer-panel'],
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

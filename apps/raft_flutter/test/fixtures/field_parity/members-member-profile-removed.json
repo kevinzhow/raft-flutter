@@ -1,0 +1,25 @@
+{
+  "userId": "44444444-4444-4444-8444-444444444444",
+  "serverId": "22222222-2222-4222-8222-222222222201",
+  "serverName": "Acme Robotics",
+  "serverSlug": "acme-robotics",
+  "name": "li_wen",
+  "displayName": "",
+  "description": "Left the team in September.",
+  "avatarUrl": null,
+  "email": null,
+  "gravatarHash": "9d8c7b6a5f4e3d2c1b0a99887766554433221100ffeeddccbbaa99887766554",
+  "role": null,
+  "joinedAt": null,
+  "membershipStatus": "removed",
+  "createdAgents": [
+    {
+      "id": "55555555-5555-4555-8555-555555555501",
+      "name": "li-helper",
+      "displayName": "Li Helper",
+      "avatarUrl": "pixel:robot",
+      "runtime": "codex",
+      "status": "active"
+    }
+  ]
+}

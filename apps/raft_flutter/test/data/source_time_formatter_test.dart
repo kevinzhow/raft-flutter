@@ -9,9 +9,9 @@ import 'package:raft_flutter/data/source_time_formatter.dart';
 void main() {
   setUpAll(initializeSourceTimeFormatting);
 
-  final receipt = jsonDecode(
-    File('test/data/source_time_golden.json').readAsStringSync(),
-  ) as Map<String, dynamic>;
+  final receipt =
+      jsonDecode(File('test/data/source_time_golden.json').readAsStringSync())
+          as Map<String, dynamic>;
   for (final raw in receipt['cases'] as List) {
     final row = Map<String, dynamic>.from(raw as Map);
     test('original source ${row['id']} ${row['host']} '
@@ -226,4 +226,47 @@ void main() {
       );
     },
   );
+
+  test('row labels follow a clock that crosses midnight and a new year', () {
+    // Rows share one answer per calendar day of the clock; the answer must
+    // change exactly when the day does, however often it is read before.
+    final formatter = SourceTimeFormatter(
+      preferredTimezone: 'Asia/Shanghai',
+      hostTimezone: 'Asia/Shanghai',
+      preferredTimeFormat: SourceTimeFormat.twentyFourHour,
+    );
+    final message = DateTime.parse('2026-12-31T08:00:00+08:00');
+    String label(String now) =>
+        formatter.messageTime(message, now: DateTime.parse(now));
+    expect(label('2026-12-31T23:59:59.900+08:00'), '08:00');
+    expect(label('2026-12-31T20:00:00+08:00'), '08:00');
+    expect(label('2027-01-01T00:00:00.100+08:00'), 'Yesterday 08:00');
+    expect(label('2027-01-01T23:59:00+08:00'), 'Yesterday 08:00');
+    expect(label('2027-01-02T00:00:00+08:00'), '12/31/2026 08:00');
+    expect(label('2027-01-02T09:00:00+08:00'), '12/31/2026 08:00');
+    final june = DateTime.parse('2026-06-10T08:00:00+08:00');
+    expect(
+      formatter.messageTime(
+        june,
+        now: DateTime.parse('2026-06-12T09:00:00+08:00'),
+      ),
+      '06/10 08:00',
+    );
+    // Going back in time recomputes.
+    expect(label('2026-12-31T12:00:00+08:00'), '08:00');
+    expect(
+      formatter.dayLabel(
+        message,
+        now: DateTime.parse('2027-01-01T01:00:00+08:00'),
+      ),
+      'Yesterday',
+    );
+    expect(
+      formatter.dayLabel(
+        message,
+        now: DateTime.parse('2026-12-31T22:00:00+08:00'),
+      ),
+      'Today',
+    );
+  });
 }

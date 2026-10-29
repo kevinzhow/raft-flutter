@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_client/raft_client.dart';
@@ -6,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
 import 'slack_bridge_contract.dart';
+import '../data/feature_flag_client_facts.dart';
 
 class IMBridgesView extends StatefulWidget {
   const IMBridgesView({super.key, required this.controller});
@@ -31,7 +31,9 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
   String raftChannelId = '', slackChannelId = '';
   bool disconnectConfirmed = false,
       editingMappings = false,
-      partialFailure = false,
+          // ignore: raft_lints/avoid_imperative_notice_state -- Wizard flag set after a partly failed confirmation batch; cleared with the other wizard state when the wizard resets and on the next attempt.
+          partialFailure =
+          false,
       inviteHelp = false,
       working = false;
   SlackBridgeProjection? mappingBaseline;
@@ -61,13 +63,17 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         },
     ];
     if (next.stage == 'channels') {
-      raftChannelId = next.rows('raftChannels').firstOrNull?['id'] as String? ?? '';
+      raftChannelId =
+          next.rows('raftChannels').firstOrNull?['id'] as String? ?? '';
       slackChannelId = _firstMember(next);
     }
   }
 
   String _firstMember(SlackBridgeProjection p) =>
-      p.rows('slackChannels').where((c) => c['isMember'] == true).firstOrNull?['id']
+      p
+              .rows('slackChannels')
+              .where((c) => c['isMember'] == true)
+              .firstOrNull?['id']
           as String? ??
       '';
 
@@ -92,13 +98,10 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
     final flags = managementMap(
       await w.client.post(
         '/feature-flags/evaluate',
-        data: {
-          'keys': ['slack_bridge_v0'],
-          'serverId': w.server?.id,
-          'platform': defaultTargetPlatform == TargetPlatform.android
-              ? 'mobile'
-              : 'web',
-        },
+        data: featureFlagEvaluateBody(
+          keys: ['slack_bridge_v0'],
+          serverId: w.server?.id,
+        ),
       ),
     );
     if (!accepts(generation, request)) return;
@@ -127,7 +130,7 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         !w.can('manageIntegrations') ||
         !enabled) {
       throw StateError(
-        'The active workspace or your permission changed. Refresh before continuing.',
+        'The active server or your permission changed. Refresh before continuing.',
       );
     }
   }
@@ -156,6 +159,25 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
     await launchManaged(url);
   }
 
+  /// `beginReauthorization`: reload the snapshot, then re-run Slack OAuth from
+  /// its authority. A connect / oauth stage has nothing to reauthorize, so the
+  /// fresh view is adopted instead of redirecting.
+  Future<void> reauthorize(String scope) async {
+    checkScope(scope);
+    final next = SlackBridgeProjection.parse(await w.client.get(base));
+    checkScope(scope);
+    final a = next.oauthAuthority;
+    if (a == null || next.stage == 'connect' || next.stage == 'oauth') {
+      setState(() => adopt(next));
+      return;
+    }
+    final url = SlackBridgeProjection.oauthUrl(
+      await w.client.post('/slack-bridge/oauth/start', data: a),
+    );
+    checkScope(scope);
+    await launchManaged(url);
+  }
+
   Future<void> verifyAndEnable(String scope) async {
     final next = await update(() => w.client.post('$base/preflight'), scope);
     if (next.preflightPassed) {
@@ -175,7 +197,9 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
     final raft = <String>{}, slack = <String>{};
     if (pairs.isEmpty) return false;
     for (final p in pairs) {
-      if (p['raftChannelId']!.isEmpty || p['slackChannelId']!.isEmpty) return false;
+      if (p['raftChannelId']!.isEmpty || p['slackChannelId']!.isEmpty) {
+        return false;
+      }
       if (!raft.add(p['raftChannelId']!) || !slack.add(p['slackChannelId']!)) {
         return false;
       }
@@ -183,8 +207,13 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
     return true;
   }
 
-  bool _isMember(SlackBridgeProjection p, String id) =>
-      p.rows('slackChannels').any((c) => c['id'] == id && c['isMember'] == true);
+  // ignore: raft_lints/avoid_render_index_assertion -- Channel pair rows always carry both ids (the pair editor and parse fill them).
+  bool _pairsAreMembers(SlackBridgeProjection p) =>
+      pairs.every((pair) => _isMember(p, pair['slackChannelId']!));
+
+  bool _isMember(SlackBridgeProjection p, String id) => p
+      .rows('slackChannels')
+      .any((c) => c['id'] == id && c['isMember'] == true);
 
   void addPair() {
     final p = projection;
@@ -210,9 +239,12 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         projection = next;
         mappingBaseline = next;
         if (!next.rows('raftChannels').any((c) => c['id'] == raftChannelId)) {
-          raftChannelId = next.rows('raftChannels').firstOrNull?['id'] as String? ?? '';
+          raftChannelId =
+              next.rows('raftChannels').firstOrNull?['id'] as String? ?? '';
         }
-        if (!_isMember(next, slackChannelId)) slackChannelId = _firstMember(next);
+        if (!_isMember(next, slackChannelId)) {
+          slackChannelId = _firstMember(next);
+        }
       } else {
         adopt(next);
       }
@@ -228,7 +260,11 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         () => w.client.request(
           'PUT',
           '$base/channel-pairs',
-          data: {'pairs': [for (final p in pairs) {...p}]},
+          data: {
+            'pairs': [
+              for (final p in pairs) {...p},
+            ],
+          },
         ),
         scope,
       );
@@ -240,12 +276,17 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
   /// then the additions over the last response, then verify and enable.
   Future<void> applyManaged(String scope) async {
     final baseline = mappingBaseline!;
-    String key(Map<String, dynamic> p) => '${p['raftChannelId']}\u0000${p['slackChannelId']}';
+    String key(Map<String, dynamic> p) =>
+        '${p['raftChannelId']}\u0000${p['slackChannelId']}';
     final desired = {for (final p in pairs) key(p)};
     final baselinePairs = baseline.rows('channelPairs');
     final baselineKeys = baselinePairs.map(key).toSet();
-    final removed = baselinePairs.where((p) => !desired.contains(key(p))).toList();
-    final additions = pairs.where((p) => !baselineKeys.contains(key(p))).toList();
+    final removed = baselinePairs
+        .where((p) => !desired.contains(key(p)))
+        .toList();
+    final additions = pairs
+        .where((p) => !baselineKeys.contains(key(p)))
+        .toList();
     if (removed.isEmpty && additions.isEmpty) {
       setState(() => adopt(baseline));
       return;
@@ -275,7 +316,9 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
           scope,
         );
         if (next.rows('channelPairs').any((q) => key(q) == key(p))) {
-          throw StateError('Removal was not confirmed. Refresh before retrying.');
+          throw StateError(
+            'Removal was not confirmed. Refresh before retrying.',
+          );
         }
         current = next;
         confirmed++;
@@ -284,12 +327,19 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
       final currentKeys = current.rows('channelPairs').map(key).toSet();
       final fresh = [
         for (final p in current.rows('channelPairs'))
-          {'raftChannelId': p['raftChannelId'], 'slackChannelId': p['slackChannelId']},
+          {
+            'raftChannelId': p['raftChannelId'],
+            'slackChannelId': p['slackChannelId'],
+          },
         for (final p in pairs)
           if (!currentKeys.contains(key(p))) {...p},
       ];
       await update(
-        () => w.client.request('PUT', '$base/channel-pairs', data: {'pairs': fresh}),
+        () => w.client.request(
+          'PUT',
+          '$base/channel-pairs',
+          data: {'pairs': fresh},
+        ),
         scope,
       );
       await verifyAndEnable(scope);
@@ -358,28 +408,97 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
             : _reasons[reason]!,
         'Reconnect Slack',
       ),
-      'quarantined' => ('degraded', _reasons[reason]!, 'Ask an operator to resolve quarantine'),
-      'credential_missing' => ('unverified', _reasons[reason]!, 'Verify credential persistence'),
-      'credential_unverified' => ('unverified', _reasons[reason]!, 'Verify credential persistence'),
-      'credential_revoked' => ('disconnected', _reasons[reason]!, 'Reauthorize Slack'),
-      'binding_required' => ('unverified', _reasons[reason]!, 'Configure a channel pair'),
-      'binding_quarantined' => ('degraded', _reasons[reason]!, 'Ask an operator to resolve quarantine'),
-      'binding_revoked' => ('degraded', _reasons[reason]!, 'Repair the revoked binding'),
-      'binding_paused' => ('degraded', _reasons[reason]!, 'Resume the paused binding'),
-      'audience_mismatch' => ('degraded', _reasons[reason]!, 'Repair the channel audience'),
-      'audience_unverified' => ('unverified', 'The channel audience could not be read.', 'Retry verification'),
-      'connection_unverified' => ('degraded', 'The hosted connection check failed.', 'Reconnect Slack'),
-      'scope_unverified' => ('degraded', _reasons[reason]!, 'Reauthorize Slack'),
-      'verification_required' => ('unverified', 'The current bridge state has not been verified.', 'Retry verification'),
+      'quarantined' => (
+        'degraded',
+        _reasons[reason]!,
+        'Ask an operator to resolve quarantine',
+      ),
+      'credential_missing' => (
+        'unverified',
+        _reasons[reason]!,
+        'Verify credential persistence',
+      ),
+      'credential_unverified' => (
+        'unverified',
+        _reasons[reason]!,
+        'Verify credential persistence',
+      ),
+      'credential_revoked' => (
+        'disconnected',
+        _reasons[reason]!,
+        'Reauthorize Slack',
+      ),
+      'binding_required' => (
+        'unverified',
+        _reasons[reason]!,
+        'Configure a channel pair',
+      ),
+      'binding_quarantined' => (
+        'degraded',
+        _reasons[reason]!,
+        'Ask an operator to resolve quarantine',
+      ),
+      'binding_revoked' => (
+        'degraded',
+        _reasons[reason]!,
+        'Repair the revoked binding',
+      ),
+      'binding_paused' => (
+        'degraded',
+        _reasons[reason]!,
+        'Resume the paused binding',
+      ),
+      'audience_mismatch' => (
+        'degraded',
+        _reasons[reason]!,
+        'Repair the channel audience',
+      ),
+      'audience_unverified' => (
+        'unverified',
+        'The channel audience could not be read.',
+        'Retry verification',
+      ),
+      'connection_unverified' => (
+        'degraded',
+        'The hosted connection check failed.',
+        'Reconnect Slack',
+      ),
+      'scope_unverified' => (
+        'degraded',
+        _reasons[reason]!,
+        'Reauthorize Slack',
+      ),
+      'verification_required' => (
+        'unverified',
+        'The current bridge state has not been verified.',
+        'Retry verification',
+      ),
       'healthy' => ('connected', _reasons[reason]!, 'No action needed'),
-      _ => ('unverified', 'The current bridge state has not been verified.', 'Retry verification'),
+      _ => (
+        'unverified',
+        'The current bridge state has not been verified.',
+        'Retry verification',
+      ),
     };
   }
 
   String _lastVerified(String iso) {
     final t = DateTime.parse(iso).toUtc();
     final hour = t.hour % 12 == 0 ? 12 : t.hour % 12;
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${months[t.month - 1]} ${t.day}, ${t.year}, $hour:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'AM' : 'PM'}';
   }
 
@@ -395,15 +514,14 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
     Widget? wizard;
     if (p != null && enabled) {
       String name(String list, String id) =>
-          p.rows(list).where((c) => c['id'] == id).firstOrNull?['name'] as String? ?? id;
-      String pairLabel(Map<String, dynamic> pair) => raftFormat(
-        context,
-        '#{raftName} ↔ #{slackName}',
-        {
-          'raftName': name('raftChannels', '${pair['raftChannelId']}'),
-          'slackName': name('slackChannels', '${pair['slackChannelId']}'),
-        },
-      );
+          p.rows(list).where((c) => c['id'] == id).firstOrNull?['name']
+              as String? ??
+          id;
+      String pairLabel(Map<String, dynamic> pair) =>
+          raftFormat(context, '#{raftName} ↔ #{slackName}', {
+            'raftName': name('raftChannels', '${pair['raftChannelId']}'),
+            'slackName': name('slackChannels', '${pair['slackChannelId']}'),
+          });
       final slack = p.rows('slackChannels');
       final stage = RaftSlackStage.values.byName(p.stage);
       final (healthState, healthReason, healthAction) = health(p);
@@ -412,10 +530,19 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         for (final pair in bindingKeys)
           slack.where((c) => c['id'] == pair['slackChannelId']).firstOrNull,
       ].where((c) => c == null || c['isMember'] != true).toList();
-      final missing = membershipIssues.whereType<Map<String, dynamic>>().where((c) => c['isMember'] == false).toList();
-      final unknown = membershipIssues.any((c) => c == null || c['isMember'] == null);
-      final recovery = healthReason == _reasons['audience_mismatch'] && membershipIssues.isNotEmpty;
-      final disconnectable = manage &&
+      final missing = membershipIssues
+          .whereType<Map<String, dynamic>>()
+          .where((c) => c['isMember'] == false)
+          .toList();
+      final unknown = membershipIssues.any(
+        (c) => c == null || c['isMember'] == null,
+      );
+      final recovery =
+          healthReason == _reasons['audience_mismatch'] &&
+          membershipIssues.isNotEmpty;
+      final mentionSync = p.mentionSyncHint;
+      final disconnectable =
+          manage &&
           p.stage != 'connect' &&
           p.health['install']?['state'] != 'revoked' &&
           p.connectionEpoch != null;
@@ -424,11 +551,14 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
           : [
               for (final id in const ['oauth', 'endpoint', 'scope', 'audience'])
                 (
+                  // ignore: raft_lints/avoid_render_index_assertion -- _checkLabels covers every check id the projection can emit (SlackBridgeProjection.parse fails closed).
                   label: _checkLabels[id]!,
-                  state: ((p.snapshot['preflight']['checks'] as List)
-                          .cast<Map<String, dynamic>>()
-                          .where((c) => c['id'] == id)
-                          .firstOrNull?['state'] as String?) ??
+                  state:
+                      ((p.snapshot['preflight']['checks'] as List)
+                              .cast<Map<String, dynamic>>()
+                              .where((c) => c['id'] == id)
+                              .firstOrNull?['state']
+                          as String?) ??
                       'unverified',
                 ),
             ];
@@ -461,24 +591,37 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
               value: '${c['id']}',
               label: c['isMember'] == true
                   ? '#${c['name']}'
-                  : raftFormat(context, '#{name} — invite the Raft app in Slack', {'name': c['name']}),
+                  : raftFormat(
+                      context,
+                      '#{name} — invite the Raft app in Slack',
+                      {'name': c['name']},
+                    ),
               enabled: c['isMember'] == true,
             ),
         ],
         slackValue: slackChannelId,
         onSlack: (v) => setState(() => slackChannelId = v),
-        canAddPair: raftChannelId.isNotEmpty && slackChannelId.isNotEmpty && _isMember(p, slackChannelId),
+        canAddPair:
+            raftChannelId.isNotEmpty &&
+            slackChannelId.isNotEmpty &&
+            _isMember(p, slackChannelId),
         onAddPair: addPair,
         onRefresh: refresh,
-        pairLabels: [for (final pair in managedPairs ? pairs : p.rows('channelPairs')) pairLabel(pair)],
+        pairLabels: [
+          for (final pair in managedPairs ? pairs : p.rows('channelPairs'))
+            pairLabel(pair),
+        ],
         onRemovePair: (i) => setState(() => pairs = [...pairs]..removeAt(i)),
         pairInvalid: !(editingMappings && pairs.isEmpty
             ? true
-            : _pairsValid && pairs.every((pair) => _isMember(p, pair['slackChannelId']!))),
-        finishLabel: editingMappings ? 'Apply mapping changes' : 'Save mappings and enable',
-        finishEnabled: (editingMappings && pairs.isEmpty
+            : _pairsValid && _pairsAreMembers(p)),
+        finishLabel: editingMappings
+            ? 'Apply mapping changes'
+            : 'Save mappings and enable',
+        finishEnabled:
+            (editingMappings && pairs.isEmpty
                 ? true
-                : _pairsValid && pairs.every((pair) => _isMember(p, pair['slackChannelId']!))) &&
+                : _pairsValid && _pairsAreMembers(p)) &&
             (!editingMappings || mappingBaseline != null),
         onFinish: finish,
         checks: checks,
@@ -488,18 +631,37 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         healthState: healthState,
         healthReason: healthReason,
         healthAction: healthAction,
-        lastVerified: p.health['lastVerifiedAt'] == null ? null : _lastVerified('${p.health['lastVerifiedAt']}'),
+        lastVerified: p.health['lastVerifiedAt'] == null
+            ? null
+            : _lastVerified('${p.health['lastVerifiedAt']}'),
         failingSurface: _surfaces['${p.health['failingSurface']}'],
         recoveryTitle: recovery
-            ? (unknown ? 'Slack channel access needs attention' : 'Slack channel access was removed')
+            ? (unknown
+                  ? 'Slack channel access needs attention'
+                  : 'Slack channel access was removed')
             : null,
         recoveryDescription: recovery
             ? (unknown
                   ? 'Message sync is paused because Raft could not verify access to a mapped Slack channel. Confirm that the Raft app is still in the channel, then refresh and recheck.'
-                  : raftFormat(context, 'Message sync is paused for {channels}. Invite the Raft app back to the affected channel, then refresh and recheck.', {
-                      'channels': missing.map((c) => '#${c['name']}').join(', '),
-                    }))
+                  : raftFormat(
+                      context,
+                      'Message sync is paused for {channels}. Invite the Raft app back to the affected channel, then refresh and recheck.',
+                      {
+                        'channels': missing
+                            .map((c) => '#${c['name']}')
+                            .join(', '),
+                      },
+                    ))
             : null,
+        mentionSyncTitle: mentionSync == null
+            ? null
+            : "Some members can't be picked from Slack's @ menu yet",
+        mentionSyncDescription: mentionSync == null
+            ? null
+            : raftFormat(context, mentionSync.source, {
+                'count': mentionSync.count,
+                'code': mentionSync.code,
+              }),
         inviteStepsOpen: inviteHelp,
         onToggleInviteSteps: () => setState(() => inviteHelp = !inviteHelp),
         onManage: manage ? this.manage : null,
@@ -508,6 +670,9 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         onDisconnect: () => setState(() => disconnectConfirmed = true),
         onDisconnectCancel: () => setState(() => disconnectConfirmed = false),
         onDisconnectConfirm: disconnect,
+        onReauthorize: disconnectable && p.stage != 'oauth'
+            ? () => run(() => reauthorize(authority), refresh: false)
+            : null,
       );
     }
     return ListView(
@@ -516,9 +681,7 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
       children: [
         RaftMessagingBridgesSection(
           failed: failedLoad,
-          child: loading && p == null
-              ? const RaftSkeleton(height: 48)
-              : wizard,
+          child: loading && p == null ? const RaftSkeleton(height: 48) : wizard,
         ),
       ],
     );
@@ -554,5 +717,6 @@ const _reasons = {
   'binding_revoked': 'A channel binding was revoked.',
   'binding_quarantined': 'A channel binding is quarantined.',
   'audience_mismatch': 'The Raft app is not in a mapped Slack channel, or the verified channel audience does not match the binding.',
-  'scope_unverified': 'The installed OAuth scopes do not match the required grant.',
+  'scope_unverified':
+      'The installed OAuth scopes do not match the required grant.',
 };

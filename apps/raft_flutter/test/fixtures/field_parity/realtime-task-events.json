@@ -1,0 +1,33 @@
+{
+  "_source": "packages/server/src/services/taskRealtimeEvents.ts:34-52 (projectTaskCreated), :113-135 (emit wrappers: task:created {channelId,tasks[]}, task:updated {channelId,task}, task:deleted {channelId,taskId}); message:updated for a task message is the allowlisted partial projection at messageRealtimeEvents.ts:45-77 (no attachments/reactions).",
+  "events": [
+    {
+      "event": "task:created",
+      "payload": {
+        "channelId": "77777777-7777-4777-8777-777777777777",
+        "tasks": [{
+          "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "messageId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "channelId": "77777777-7777-4777-8777-777777777777", "channelName": "general", "channelType": "channel",
+          "taskNumber": 17, "title": "Ship parity audit", "description": null, "status": "todo",
+          "claimedByType": null, "claimedById": null, "claimedByName": null, "claimedAt": null, "completedAt": null,
+          "createdByType": "user", "createdById": "44444444-4444-4444-8444-444444444444", "createdByName": "Alice",
+          "createdAt": "2026-10-12T08:00:00.000Z", "updatedAt": "2026-10-12T08:00:00.000Z",
+          "revision": 1, "taskCurrentProjection": null, "isLegacy": false
+        }]
+      }
+    },
+    { "event": "task:deleted", "payload": { "channelId": "77777777-7777-4777-8777-777777777777", "taskId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" } },
+    {
+      "event": "message:updated",
+      "payload": {
+        "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "seq": 1190, "channelId": "77777777-7777-4777-8777-777777777777",
+        "senderType": "user", "senderId": "44444444-4444-4444-8444-444444444444", "randomId": null, "messageType": "message",
+        "content": "Ship parity audit", "actionMetadata": null, "threadId": null,
+        "taskStatus": "in_progress", "taskNumber": 17, "taskAssigneeType": "agent",
+        "taskAssigneeId": "11111111-1111-4111-8111-111111111111", "taskAssigneeName": "builder",
+        "taskClaimedAt": "2026-10-12T08:05:00.000Z", "taskCompletedAt": null,
+        "createdAt": "2026-10-12T08:00:00.000Z", "updatedAt": "2026-10-12T08:05:00.000Z", "senderName": "Alice"
+      }
+    }
+  ]
+}

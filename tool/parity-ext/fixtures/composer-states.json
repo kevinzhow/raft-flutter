@@ -1,0 +1,3078 @@
+{
+ "name": "raft-flutter parity extension: composer states",
+ "scope": "Public deterministic test data; no credentials. Sidebar/rail data = fixtures/shell.json preset default; messages = fixtures/screens.json scenes.",
+ "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+ "states": {
+  "as-task": {
+   "selected": "shell-design",
+   "draft": "Review the sidebar spacing before Friday.",
+   "routes": {
+    "GET /messages/channel/shell-design": {
+     "messages": [
+      {
+       "id": "scr-m1",
+       "seq": 1,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+       "createdAt": "2026-06-18T09:20:00.000Z",
+       "reactions": [
+        {
+         "emoji": "👍",
+         "count": 2,
+         "reactorIds": [
+          "visual-user",
+          "agent-cindy"
+         ],
+         "reactorNames": [
+          "artin",
+          "Cindy"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m2",
+       "seq": 2,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+       "createdAt": "2026-06-18T09:34:00.000Z"
+      },
+      {
+       "id": "scr-m3",
+       "seq": 3,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+       "createdAt": "2026-06-19T04:10:00.000Z",
+       "mentions": [
+        {
+         "type": "agent",
+         "id": "agent-cindy",
+         "name": "Cindy"
+        }
+       ]
+      },
+      {
+       "id": "scr-m4",
+       "seq": 4,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+       "createdAt": "2026-06-19T04:14:00.000Z",
+       "threadId": "thread-screens-1",
+       "reactions": [
+        {
+         "emoji": "🚀",
+         "count": 1,
+         "reactorIds": [
+          "visual-user"
+         ],
+         "reactorNames": [
+          "artin"
+         ]
+        },
+        {
+         "emoji": "✅",
+         "count": 2,
+         "reactorIds": [
+          "visual-human-designer",
+          "visual-user"
+         ],
+         "reactorNames": [
+          "designer",
+          "artin"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m5",
+       "seq": 5,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Thanks! I will review the diffs after lunch.",
+       "createdAt": "2026-06-19T04:20:00.000Z"
+      },
+      {
+       "id": "scr-m6",
+       "seq": 6,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "One question on the header: is the description meant to clamp at two lines?",
+       "createdAt": "2026-06-19T04:21:00.000Z"
+      },
+      {
+       "id": "scr-m7",
+       "seq": 7,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "system",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "content": "Product-UX-Designer joined the channel.",
+       "createdAt": "2026-06-19T08:05:00.000Z"
+      },
+      {
+       "id": "scr-m8",
+       "seq": 8,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-product-ux",
+       "senderName": "Product-UX-Designer",
+       "senderDisplayName": "Product UX Designer",
+       "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+       "createdAt": "2026-06-19T08:12:00.000Z"
+      },
+      {
+       "id": "scr-m9",
+       "seq": 9,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Looks good to me. Let us ship the screens this week.",
+       "createdAt": "2026-06-19T12:05:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {
+      "scr-m4": {
+       "threadChannelId": "thread-screens-1",
+       "replyCount": 2,
+       "lastReplyAt": "2026-06-19T04:41:00.000Z",
+       "participantIds": [
+        "visual-user",
+        "agent-cindy"
+       ],
+       "unreadCount": 0,
+       "firstUnreadMessageId": null
+      }
+     }
+    },
+    "GET /messages/channel/thread-screens-1": {
+     "messages": [
+      {
+       "id": "scr-t1",
+       "seq": 10,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Great, thanks for posting it here.",
+       "createdAt": "2026-06-19T04:30:00.000Z"
+      },
+      {
+       "id": "scr-t2",
+       "seq": 11,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Report attached: every case is above the threshold.",
+       "createdAt": "2026-06-19T04:41:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {}
+    }
+   },
+   "patch": {},
+   "extraChannels": []
+  },
+  "single": {
+   "selected": "shell-design",
+   "draft": "@Android-Developer-4 please review the visual diff",
+   "routes": {
+    "GET /messages/channel/shell-design": {
+     "messages": [
+      {
+       "id": "scr-m1",
+       "seq": 1,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+       "createdAt": "2026-06-18T09:20:00.000Z",
+       "reactions": [
+        {
+         "emoji": "👍",
+         "count": 2,
+         "reactorIds": [
+          "visual-user",
+          "agent-cindy"
+         ],
+         "reactorNames": [
+          "artin",
+          "Cindy"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m2",
+       "seq": 2,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+       "createdAt": "2026-06-18T09:34:00.000Z"
+      },
+      {
+       "id": "scr-m3",
+       "seq": 3,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+       "createdAt": "2026-06-19T04:10:00.000Z",
+       "mentions": [
+        {
+         "type": "agent",
+         "id": "agent-cindy",
+         "name": "Cindy"
+        }
+       ]
+      },
+      {
+       "id": "scr-m4",
+       "seq": 4,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+       "createdAt": "2026-06-19T04:14:00.000Z",
+       "threadId": "thread-screens-1",
+       "reactions": [
+        {
+         "emoji": "🚀",
+         "count": 1,
+         "reactorIds": [
+          "visual-user"
+         ],
+         "reactorNames": [
+          "artin"
+         ]
+        },
+        {
+         "emoji": "✅",
+         "count": 2,
+         "reactorIds": [
+          "visual-human-designer",
+          "visual-user"
+         ],
+         "reactorNames": [
+          "designer",
+          "artin"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m5",
+       "seq": 5,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Thanks! I will review the diffs after lunch.",
+       "createdAt": "2026-06-19T04:20:00.000Z"
+      },
+      {
+       "id": "scr-m6",
+       "seq": 6,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "One question on the header: is the description meant to clamp at two lines?",
+       "createdAt": "2026-06-19T04:21:00.000Z"
+      },
+      {
+       "id": "scr-m7",
+       "seq": 7,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "system",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "content": "Product-UX-Designer joined the channel.",
+       "createdAt": "2026-06-19T08:05:00.000Z"
+      },
+      {
+       "id": "scr-m8",
+       "seq": 8,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-product-ux",
+       "senderName": "Product-UX-Designer",
+       "senderDisplayName": "Product UX Designer",
+       "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+       "createdAt": "2026-06-19T08:12:00.000Z"
+      },
+      {
+       "id": "scr-m9",
+       "seq": 9,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Looks good to me. Let us ship the screens this week.",
+       "createdAt": "2026-06-19T12:05:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {
+      "scr-m4": {
+       "threadChannelId": "thread-screens-1",
+       "replyCount": 2,
+       "lastReplyAt": "2026-06-19T04:41:00.000Z",
+       "participantIds": [
+        "visual-user",
+        "agent-cindy"
+       ],
+       "unreadCount": 0,
+       "firstUnreadMessageId": null
+      }
+     }
+    },
+    "GET /messages/channel/thread-screens-1": {
+     "messages": [
+      {
+       "id": "scr-t1",
+       "seq": 10,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Great, thanks for posting it here.",
+       "createdAt": "2026-06-19T04:30:00.000Z"
+      },
+      {
+       "id": "scr-t2",
+       "seq": 11,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Report attached: every case is above the threshold.",
+       "createdAt": "2026-06-19T04:41:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {}
+    },
+    "POST /v2/messages": {
+     "message": {
+      "id": "cs-sent-shell-design",
+      "seq": 90,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@Android-Developer-4 please review the visual diff",
+      "createdAt": "2026-06-19T12:31:00.000Z"
+     },
+     "pendingMentionActions": [
+      {
+       "resolutionId": "cs-pending-1",
+       "messageId": "cs-sent-shell-design",
+       "targetType": "agent",
+       "targetHandle": "Android-Developer-4",
+       "targetAvatarUrl": "pixel:robot",
+       "reason": "target_not_in_channel",
+       "availableActions": [
+        "add",
+        "notify"
+       ],
+       "expiresAt": null
+      }
+     ],
+     "unresolvedMentionHandles": []
+    }
+   },
+   "patch": {},
+   "extraChannels": []
+  },
+  "multi": {
+   "selected": "shell-design",
+   "draft": "@Android-Developer-4 @QA-Engineer-2 please review the visual diff",
+   "routes": {
+    "GET /messages/channel/shell-design": {
+     "messages": [
+      {
+       "id": "scr-m1",
+       "seq": 1,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+       "createdAt": "2026-06-18T09:20:00.000Z",
+       "reactions": [
+        {
+         "emoji": "👍",
+         "count": 2,
+         "reactorIds": [
+          "visual-user",
+          "agent-cindy"
+         ],
+         "reactorNames": [
+          "artin",
+          "Cindy"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m2",
+       "seq": 2,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+       "createdAt": "2026-06-18T09:34:00.000Z"
+      },
+      {
+       "id": "scr-m3",
+       "seq": 3,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+       "createdAt": "2026-06-19T04:10:00.000Z",
+       "mentions": [
+        {
+         "type": "agent",
+         "id": "agent-cindy",
+         "name": "Cindy"
+        }
+       ]
+      },
+      {
+       "id": "scr-m4",
+       "seq": 4,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+       "createdAt": "2026-06-19T04:14:00.000Z",
+       "threadId": "thread-screens-1",
+       "reactions": [
+        {
+         "emoji": "🚀",
+         "count": 1,
+         "reactorIds": [
+          "visual-user"
+         ],
+         "reactorNames": [
+          "artin"
+         ]
+        },
+        {
+         "emoji": "✅",
+         "count": 2,
+         "reactorIds": [
+          "visual-human-designer",
+          "visual-user"
+         ],
+         "reactorNames": [
+          "designer",
+          "artin"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m5",
+       "seq": 5,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Thanks! I will review the diffs after lunch.",
+       "createdAt": "2026-06-19T04:20:00.000Z"
+      },
+      {
+       "id": "scr-m6",
+       "seq": 6,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "One question on the header: is the description meant to clamp at two lines?",
+       "createdAt": "2026-06-19T04:21:00.000Z"
+      },
+      {
+       "id": "scr-m7",
+       "seq": 7,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "system",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "content": "Product-UX-Designer joined the channel.",
+       "createdAt": "2026-06-19T08:05:00.000Z"
+      },
+      {
+       "id": "scr-m8",
+       "seq": 8,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-product-ux",
+       "senderName": "Product-UX-Designer",
+       "senderDisplayName": "Product UX Designer",
+       "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+       "createdAt": "2026-06-19T08:12:00.000Z"
+      },
+      {
+       "id": "scr-m9",
+       "seq": 9,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Looks good to me. Let us ship the screens this week.",
+       "createdAt": "2026-06-19T12:05:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {
+      "scr-m4": {
+       "threadChannelId": "thread-screens-1",
+       "replyCount": 2,
+       "lastReplyAt": "2026-06-19T04:41:00.000Z",
+       "participantIds": [
+        "visual-user",
+        "agent-cindy"
+       ],
+       "unreadCount": 0,
+       "firstUnreadMessageId": null
+      }
+     }
+    },
+    "GET /messages/channel/thread-screens-1": {
+     "messages": [
+      {
+       "id": "scr-t1",
+       "seq": 10,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Great, thanks for posting it here.",
+       "createdAt": "2026-06-19T04:30:00.000Z"
+      },
+      {
+       "id": "scr-t2",
+       "seq": 11,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Report attached: every case is above the threshold.",
+       "createdAt": "2026-06-19T04:41:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {}
+    },
+    "POST /v2/messages": {
+     "message": {
+      "id": "cs-sent-shell-design",
+      "seq": 90,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@Android-Developer-4 @QA-Engineer-2 please review the visual diff",
+      "createdAt": "2026-06-19T12:31:00.000Z"
+     },
+     "pendingMentionActions": [
+      {
+       "resolutionId": "cs-pending-1",
+       "messageId": "cs-sent-shell-design",
+       "targetType": "agent",
+       "targetHandle": "Android-Developer-4",
+       "targetAvatarUrl": "pixel:robot",
+       "reason": "target_not_in_channel",
+       "availableActions": [
+        "add",
+        "notify"
+       ],
+       "expiresAt": null
+      },
+      {
+       "resolutionId": "cs-pending-2",
+       "messageId": "cs-sent-shell-design",
+       "targetType": "agent",
+       "targetHandle": "QA-Engineer-2",
+       "targetAvatarUrl": "pixel:robot",
+       "reason": "target_not_in_channel",
+       "availableActions": [
+        "add",
+        "notify"
+       ],
+       "expiresAt": null
+      }
+     ],
+     "unresolvedMentionHandles": []
+    }
+   },
+   "patch": {},
+   "extraChannels": []
+  },
+  "agent-stopped": {
+   "selected": "shell-dm-cindy",
+   "draft": "Thanks, please re-run the three flagged cases.",
+   "routes": {
+    "GET /messages/channel/shell-dm-cindy": {
+     "messages": [
+      {
+       "id": "scr-a1",
+       "seq": 1,
+       "serverId": "visual-server",
+       "channelId": "shell-dm-cindy",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Can you summarise yesterday's visual testing run?",
+       "createdAt": "2026-06-18T09:00:00.000Z"
+      },
+      {
+       "id": "scr-a2",
+       "seq": 2,
+       "serverId": "visual-server",
+       "channelId": "shell-dm-cindy",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Yesterday's run:\n\n1. 92 cases passed\n2. 3 cases need a second look\n3. The `elegant-dark` baseline is attached to the task\n\nI will keep the release notes aligned.",
+       "createdAt": "2026-06-18T09:02:00.000Z"
+      },
+      {
+       "id": "scr-a3",
+       "seq": 3,
+       "serverId": "visual-server",
+       "channelId": "shell-dm-cindy",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Thanks. Please re-run the three flagged cases today.",
+       "createdAt": "2026-06-19T03:00:00.000Z"
+      },
+      {
+       "id": "scr-a4",
+       "seq": 4,
+       "serverId": "visual-server",
+       "channelId": "shell-dm-cindy",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Done. All three are inside the tolerance now.",
+       "createdAt": "2026-06-19T03:12:00.000Z",
+       "reactions": [
+        {
+         "emoji": "🎉",
+         "count": 1,
+         "reactorIds": [
+          "visual-user"
+         ],
+         "reactorNames": [
+          "artin"
+         ]
+        }
+       ]
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {}
+    },
+    "POST /v2/messages": {
+     "message": {
+      "id": "cs-sent-shell-dm-cindy",
+      "seq": 90,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Thanks, please re-run the three flagged cases.",
+      "createdAt": "2026-06-19T12:31:00.000Z"
+     },
+     "pendingMentionActions": [],
+     "unresolvedMentionHandles": [],
+     "deliveryWarnings": [
+      {
+       "targetType": "agent",
+       "targetId": "agent-cindy",
+       "reason": "agent_stopped"
+      }
+     ]
+    }
+   },
+   "patch": {},
+   "extraChannels": []
+  },
+  "unresolved": {
+   "selected": "shell-design",
+   "draft": "@ghostwriter @nobody can you take a look at this?",
+   "routes": {
+    "GET /messages/channel/shell-design": {
+     "messages": [
+      {
+       "id": "scr-m1",
+       "seq": 1,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+       "createdAt": "2026-06-18T09:20:00.000Z",
+       "reactions": [
+        {
+         "emoji": "👍",
+         "count": 2,
+         "reactorIds": [
+          "visual-user",
+          "agent-cindy"
+         ],
+         "reactorNames": [
+          "artin",
+          "Cindy"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m2",
+       "seq": 2,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+       "createdAt": "2026-06-18T09:34:00.000Z"
+      },
+      {
+       "id": "scr-m3",
+       "seq": 3,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+       "createdAt": "2026-06-19T04:10:00.000Z",
+       "mentions": [
+        {
+         "type": "agent",
+         "id": "agent-cindy",
+         "name": "Cindy"
+        }
+       ]
+      },
+      {
+       "id": "scr-m4",
+       "seq": 4,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+       "createdAt": "2026-06-19T04:14:00.000Z",
+       "threadId": "thread-screens-1",
+       "reactions": [
+        {
+         "emoji": "🚀",
+         "count": 1,
+         "reactorIds": [
+          "visual-user"
+         ],
+         "reactorNames": [
+          "artin"
+         ]
+        },
+        {
+         "emoji": "✅",
+         "count": 2,
+         "reactorIds": [
+          "visual-human-designer",
+          "visual-user"
+         ],
+         "reactorNames": [
+          "designer",
+          "artin"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m5",
+       "seq": 5,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Thanks! I will review the diffs after lunch.",
+       "createdAt": "2026-06-19T04:20:00.000Z"
+      },
+      {
+       "id": "scr-m6",
+       "seq": 6,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "One question on the header: is the description meant to clamp at two lines?",
+       "createdAt": "2026-06-19T04:21:00.000Z"
+      },
+      {
+       "id": "scr-m7",
+       "seq": 7,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "system",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "content": "Product-UX-Designer joined the channel.",
+       "createdAt": "2026-06-19T08:05:00.000Z"
+      },
+      {
+       "id": "scr-m8",
+       "seq": 8,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-product-ux",
+       "senderName": "Product-UX-Designer",
+       "senderDisplayName": "Product UX Designer",
+       "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+       "createdAt": "2026-06-19T08:12:00.000Z"
+      },
+      {
+       "id": "scr-m9",
+       "seq": 9,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Looks good to me. Let us ship the screens this week.",
+       "createdAt": "2026-06-19T12:05:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {
+      "scr-m4": {
+       "threadChannelId": "thread-screens-1",
+       "replyCount": 2,
+       "lastReplyAt": "2026-06-19T04:41:00.000Z",
+       "participantIds": [
+        "visual-user",
+        "agent-cindy"
+       ],
+       "unreadCount": 0,
+       "firstUnreadMessageId": null
+      }
+     }
+    },
+    "GET /messages/channel/thread-screens-1": {
+     "messages": [
+      {
+       "id": "scr-t1",
+       "seq": 10,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Great, thanks for posting it here.",
+       "createdAt": "2026-06-19T04:30:00.000Z"
+      },
+      {
+       "id": "scr-t2",
+       "seq": 11,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Report attached: every case is above the threshold.",
+       "createdAt": "2026-06-19T04:41:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {}
+    },
+    "POST /v2/messages": {
+     "message": {
+      "id": "cs-sent-shell-design",
+      "seq": 90,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@ghostwriter @nobody can you take a look at this?",
+      "createdAt": "2026-06-19T12:31:00.000Z"
+     },
+     "pendingMentionActions": [],
+     "unresolvedMentionHandles": [
+      "ghostwriter",
+      "nobody"
+     ]
+    }
+   },
+   "patch": {},
+   "extraChannels": []
+  },
+  "conversion": {
+   "selected": "shell-design",
+   "draft": "Waiting for the conversion to finish.",
+   "routes": {
+    "GET /messages/channel/shell-design": {
+     "messages": [
+      {
+       "id": "scr-m1",
+       "seq": 1,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+       "createdAt": "2026-06-18T09:20:00.000Z",
+       "reactions": [
+        {
+         "emoji": "👍",
+         "count": 2,
+         "reactorIds": [
+          "visual-user",
+          "agent-cindy"
+         ],
+         "reactorNames": [
+          "artin",
+          "Cindy"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m2",
+       "seq": 2,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+       "createdAt": "2026-06-18T09:34:00.000Z"
+      },
+      {
+       "id": "scr-m3",
+       "seq": 3,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+       "createdAt": "2026-06-19T04:10:00.000Z",
+       "mentions": [
+        {
+         "type": "agent",
+         "id": "agent-cindy",
+         "name": "Cindy"
+        }
+       ]
+      },
+      {
+       "id": "scr-m4",
+       "seq": 4,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+       "createdAt": "2026-06-19T04:14:00.000Z",
+       "threadId": "thread-screens-1",
+       "reactions": [
+        {
+         "emoji": "🚀",
+         "count": 1,
+         "reactorIds": [
+          "visual-user"
+         ],
+         "reactorNames": [
+          "artin"
+         ]
+        },
+        {
+         "emoji": "✅",
+         "count": 2,
+         "reactorIds": [
+          "visual-human-designer",
+          "visual-user"
+         ],
+         "reactorNames": [
+          "designer",
+          "artin"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m5",
+       "seq": 5,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Thanks! I will review the diffs after lunch.",
+       "createdAt": "2026-06-19T04:20:00.000Z"
+      },
+      {
+       "id": "scr-m6",
+       "seq": 6,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "One question on the header: is the description meant to clamp at two lines?",
+       "createdAt": "2026-06-19T04:21:00.000Z"
+      },
+      {
+       "id": "scr-m7",
+       "seq": 7,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "system",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "content": "Product-UX-Designer joined the channel.",
+       "createdAt": "2026-06-19T08:05:00.000Z"
+      },
+      {
+       "id": "scr-m8",
+       "seq": 8,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-product-ux",
+       "senderName": "Product-UX-Designer",
+       "senderDisplayName": "Product UX Designer",
+       "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+       "createdAt": "2026-06-19T08:12:00.000Z"
+      },
+      {
+       "id": "scr-m9",
+       "seq": 9,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Looks good to me. Let us ship the screens this week.",
+       "createdAt": "2026-06-19T12:05:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {
+      "scr-m4": {
+       "threadChannelId": "thread-screens-1",
+       "replyCount": 2,
+       "lastReplyAt": "2026-06-19T04:41:00.000Z",
+       "participantIds": [
+        "visual-user",
+        "agent-cindy"
+       ],
+       "unreadCount": 0,
+       "firstUnreadMessageId": null
+      }
+     }
+    },
+    "GET /messages/channel/thread-screens-1": {
+     "messages": [
+      {
+       "id": "scr-t1",
+       "seq": 10,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Great, thanks for posting it here.",
+       "createdAt": "2026-06-19T04:30:00.000Z"
+      },
+      {
+       "id": "scr-t2",
+       "seq": 11,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Report attached: every case is above the threshold.",
+       "createdAt": "2026-06-19T04:41:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {}
+    }
+   },
+   "patch": {
+    "conversionJob": {
+     "id": "cs-conversion-job",
+     "status": "running",
+     "phase": "copying_messages",
+     "canCancel": true
+    }
+   },
+   "extraChannels": []
+  },
+  "archived": {
+   "selected": "shell-design",
+   "draft": "#launch",
+   "routes": {
+    "GET /messages/channel/shell-design": {
+     "messages": [
+      {
+       "id": "scr-m1",
+       "seq": 1,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+       "createdAt": "2026-06-18T09:20:00.000Z",
+       "reactions": [
+        {
+         "emoji": "👍",
+         "count": 2,
+         "reactorIds": [
+          "visual-user",
+          "agent-cindy"
+         ],
+         "reactorNames": [
+          "artin",
+          "Cindy"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m2",
+       "seq": 2,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+       "createdAt": "2026-06-18T09:34:00.000Z"
+      },
+      {
+       "id": "scr-m3",
+       "seq": 3,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+       "createdAt": "2026-06-19T04:10:00.000Z",
+       "mentions": [
+        {
+         "type": "agent",
+         "id": "agent-cindy",
+         "name": "Cindy"
+        }
+       ]
+      },
+      {
+       "id": "scr-m4",
+       "seq": 4,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+       "createdAt": "2026-06-19T04:14:00.000Z",
+       "threadId": "thread-screens-1",
+       "reactions": [
+        {
+         "emoji": "🚀",
+         "count": 1,
+         "reactorIds": [
+          "visual-user"
+         ],
+         "reactorNames": [
+          "artin"
+         ]
+        },
+        {
+         "emoji": "✅",
+         "count": 2,
+         "reactorIds": [
+          "visual-human-designer",
+          "visual-user"
+         ],
+         "reactorNames": [
+          "designer",
+          "artin"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "scr-m5",
+       "seq": 5,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "Thanks! I will review the diffs after lunch.",
+       "createdAt": "2026-06-19T04:20:00.000Z"
+      },
+      {
+       "id": "scr-m6",
+       "seq": 6,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-human-designer",
+       "senderName": "designer",
+       "senderDisplayName": "Designer",
+       "content": "One question on the header: is the description meant to clamp at two lines?",
+       "createdAt": "2026-06-19T04:21:00.000Z"
+      },
+      {
+       "id": "scr-m7",
+       "seq": 7,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "system",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "content": "Product-UX-Designer joined the channel.",
+       "createdAt": "2026-06-19T08:05:00.000Z"
+      },
+      {
+       "id": "scr-m8",
+       "seq": 8,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-product-ux",
+       "senderName": "Product-UX-Designer",
+       "senderDisplayName": "Product UX Designer",
+       "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+       "createdAt": "2026-06-19T08:12:00.000Z"
+      },
+      {
+       "id": "scr-m9",
+       "seq": 9,
+       "serverId": "visual-server",
+       "channelId": "shell-design",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Looks good to me. Let us ship the screens this week.",
+       "createdAt": "2026-06-19T12:05:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {
+      "scr-m4": {
+       "threadChannelId": "thread-screens-1",
+       "replyCount": 2,
+       "lastReplyAt": "2026-06-19T04:41:00.000Z",
+       "participantIds": [
+        "visual-user",
+        "agent-cindy"
+       ],
+       "unreadCount": 0,
+       "firstUnreadMessageId": null
+      }
+     }
+    },
+    "GET /messages/channel/thread-screens-1": {
+     "messages": [
+      {
+       "id": "scr-t1",
+       "seq": 10,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "user",
+       "senderId": "visual-user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "content": "Great, thanks for posting it here.",
+       "createdAt": "2026-06-19T04:30:00.000Z"
+      },
+      {
+       "id": "scr-t2",
+       "seq": 11,
+       "serverId": "visual-server",
+       "channelId": "thread-screens-1",
+       "messageType": "chat",
+       "senderType": "agent",
+       "senderId": "agent-cindy",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "content": "Report attached: every case is above the threshold.",
+       "createdAt": "2026-06-19T04:41:00.000Z"
+      }
+     ],
+     "hasMore": false,
+     "historyLimited": false,
+     "threadSummariesByParentMessageId": {}
+    }
+   },
+   "patch": {},
+   "extraChannels": [
+    {
+     "id": "shell-archived-launch",
+     "serverId": "visual-server",
+     "name": "launch-2025",
+     "type": "channel",
+     "description": "Retired launch planning",
+     "createdAt": "2026-05-01T00:00:00.000Z",
+     "joined": true,
+     "archivedAt": "2026-06-01T00:00:00.000Z"
+    }
+   ]
+  }
+ },
+ "routes": {
+  "GET /product-feedback/tickets": {
+   "tickets": [],
+   "unread_total": 0,
+   "next_cursor": null
+  },
+  "GET /servers/unread-summary": [
+   {
+    "serverId": "visual-server",
+    "unreadCount": 7,
+    "serverPushMuted": false,
+    "activityUnreadCount": 3
+   },
+   {
+    "serverId": "shell-server-acme",
+    "unreadCount": 3,
+    "serverPushMuted": false,
+    "activityUnreadCount": 3
+   },
+   {
+    "serverId": "shell-server-side",
+    "unreadCount": 12,
+    "serverPushMuted": true,
+    "activityUnreadCount": 12
+   }
+  ],
+  "GET /channels/threads/followers": {
+   "threads": []
+  },
+  "GET /channels/threads/followed": {
+   "threads": []
+  }
+ },
+ "routeSets": {
+  "cs-as-task": {
+   "GET /messages/channel/shell-design": {
+    "messages": [
+     {
+      "id": "scr-m1",
+      "seq": 1,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+      "createdAt": "2026-06-18T09:20:00.000Z",
+      "reactions": [
+       {
+        "emoji": "👍",
+        "count": 2,
+        "reactorIds": [
+         "visual-user",
+         "agent-cindy"
+        ],
+        "reactorNames": [
+         "artin",
+         "Cindy"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m2",
+      "seq": 2,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+      "createdAt": "2026-06-18T09:34:00.000Z"
+     },
+     {
+      "id": "scr-m3",
+      "seq": 3,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+      "createdAt": "2026-06-19T04:10:00.000Z",
+      "mentions": [
+       {
+        "type": "agent",
+        "id": "agent-cindy",
+        "name": "Cindy"
+       }
+      ]
+     },
+     {
+      "id": "scr-m4",
+      "seq": 4,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+      "createdAt": "2026-06-19T04:14:00.000Z",
+      "threadId": "thread-screens-1",
+      "reactions": [
+       {
+        "emoji": "🚀",
+        "count": 1,
+        "reactorIds": [
+         "visual-user"
+        ],
+        "reactorNames": [
+         "artin"
+        ]
+       },
+       {
+        "emoji": "✅",
+        "count": 2,
+        "reactorIds": [
+         "visual-human-designer",
+         "visual-user"
+        ],
+        "reactorNames": [
+         "designer",
+         "artin"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m5",
+      "seq": 5,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Thanks! I will review the diffs after lunch.",
+      "createdAt": "2026-06-19T04:20:00.000Z"
+     },
+     {
+      "id": "scr-m6",
+      "seq": 6,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "One question on the header: is the description meant to clamp at two lines?",
+      "createdAt": "2026-06-19T04:21:00.000Z"
+     },
+     {
+      "id": "scr-m7",
+      "seq": 7,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "system",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "content": "Product-UX-Designer joined the channel.",
+      "createdAt": "2026-06-19T08:05:00.000Z"
+     },
+     {
+      "id": "scr-m8",
+      "seq": 8,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-product-ux",
+      "senderName": "Product-UX-Designer",
+      "senderDisplayName": "Product UX Designer",
+      "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+      "createdAt": "2026-06-19T08:12:00.000Z"
+     },
+     {
+      "id": "scr-m9",
+      "seq": 9,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Looks good to me. Let us ship the screens this week.",
+      "createdAt": "2026-06-19T12:05:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {
+     "scr-m4": {
+      "threadChannelId": "thread-screens-1",
+      "replyCount": 2,
+      "lastReplyAt": "2026-06-19T04:41:00.000Z",
+      "participantIds": [
+       "visual-user",
+       "agent-cindy"
+      ],
+      "unreadCount": 0,
+      "firstUnreadMessageId": null
+     }
+    }
+   },
+   "GET /messages/channel/thread-screens-1": {
+    "messages": [
+     {
+      "id": "scr-t1",
+      "seq": 10,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Great, thanks for posting it here.",
+      "createdAt": "2026-06-19T04:30:00.000Z"
+     },
+     {
+      "id": "scr-t2",
+      "seq": 11,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Report attached: every case is above the threshold.",
+      "createdAt": "2026-06-19T04:41:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {}
+   }
+  },
+  "cs-single": {
+   "GET /messages/channel/shell-design": {
+    "messages": [
+     {
+      "id": "scr-m1",
+      "seq": 1,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+      "createdAt": "2026-06-18T09:20:00.000Z",
+      "reactions": [
+       {
+        "emoji": "👍",
+        "count": 2,
+        "reactorIds": [
+         "visual-user",
+         "agent-cindy"
+        ],
+        "reactorNames": [
+         "artin",
+         "Cindy"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m2",
+      "seq": 2,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+      "createdAt": "2026-06-18T09:34:00.000Z"
+     },
+     {
+      "id": "scr-m3",
+      "seq": 3,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+      "createdAt": "2026-06-19T04:10:00.000Z",
+      "mentions": [
+       {
+        "type": "agent",
+        "id": "agent-cindy",
+        "name": "Cindy"
+       }
+      ]
+     },
+     {
+      "id": "scr-m4",
+      "seq": 4,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+      "createdAt": "2026-06-19T04:14:00.000Z",
+      "threadId": "thread-screens-1",
+      "reactions": [
+       {
+        "emoji": "🚀",
+        "count": 1,
+        "reactorIds": [
+         "visual-user"
+        ],
+        "reactorNames": [
+         "artin"
+        ]
+       },
+       {
+        "emoji": "✅",
+        "count": 2,
+        "reactorIds": [
+         "visual-human-designer",
+         "visual-user"
+        ],
+        "reactorNames": [
+         "designer",
+         "artin"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m5",
+      "seq": 5,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Thanks! I will review the diffs after lunch.",
+      "createdAt": "2026-06-19T04:20:00.000Z"
+     },
+     {
+      "id": "scr-m6",
+      "seq": 6,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "One question on the header: is the description meant to clamp at two lines?",
+      "createdAt": "2026-06-19T04:21:00.000Z"
+     },
+     {
+      "id": "scr-m7",
+      "seq": 7,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "system",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "content": "Product-UX-Designer joined the channel.",
+      "createdAt": "2026-06-19T08:05:00.000Z"
+     },
+     {
+      "id": "scr-m8",
+      "seq": 8,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-product-ux",
+      "senderName": "Product-UX-Designer",
+      "senderDisplayName": "Product UX Designer",
+      "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+      "createdAt": "2026-06-19T08:12:00.000Z"
+     },
+     {
+      "id": "scr-m9",
+      "seq": 9,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Looks good to me. Let us ship the screens this week.",
+      "createdAt": "2026-06-19T12:05:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {
+     "scr-m4": {
+      "threadChannelId": "thread-screens-1",
+      "replyCount": 2,
+      "lastReplyAt": "2026-06-19T04:41:00.000Z",
+      "participantIds": [
+       "visual-user",
+       "agent-cindy"
+      ],
+      "unreadCount": 0,
+      "firstUnreadMessageId": null
+     }
+    }
+   },
+   "GET /messages/channel/thread-screens-1": {
+    "messages": [
+     {
+      "id": "scr-t1",
+      "seq": 10,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Great, thanks for posting it here.",
+      "createdAt": "2026-06-19T04:30:00.000Z"
+     },
+     {
+      "id": "scr-t2",
+      "seq": 11,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Report attached: every case is above the threshold.",
+      "createdAt": "2026-06-19T04:41:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {}
+   },
+   "POST /v2/messages": {
+    "message": {
+     "id": "cs-sent-shell-design",
+     "seq": 90,
+     "serverId": "visual-server",
+     "channelId": "shell-design",
+     "messageType": "chat",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "senderDisplayName": "artin",
+     "content": "@Android-Developer-4 please review the visual diff",
+     "createdAt": "2026-06-19T12:31:00.000Z"
+    },
+    "pendingMentionActions": [
+     {
+      "resolutionId": "cs-pending-1",
+      "messageId": "cs-sent-shell-design",
+      "targetType": "agent",
+      "targetHandle": "Android-Developer-4",
+      "targetAvatarUrl": "pixel:robot",
+      "reason": "target_not_in_channel",
+      "availableActions": [
+       "add",
+       "notify"
+      ],
+      "expiresAt": null
+     }
+    ],
+    "unresolvedMentionHandles": []
+   }
+  },
+  "cs-multi": {
+   "GET /messages/channel/shell-design": {
+    "messages": [
+     {
+      "id": "scr-m1",
+      "seq": 1,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+      "createdAt": "2026-06-18T09:20:00.000Z",
+      "reactions": [
+       {
+        "emoji": "👍",
+        "count": 2,
+        "reactorIds": [
+         "visual-user",
+         "agent-cindy"
+        ],
+        "reactorNames": [
+         "artin",
+         "Cindy"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m2",
+      "seq": 2,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+      "createdAt": "2026-06-18T09:34:00.000Z"
+     },
+     {
+      "id": "scr-m3",
+      "seq": 3,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+      "createdAt": "2026-06-19T04:10:00.000Z",
+      "mentions": [
+       {
+        "type": "agent",
+        "id": "agent-cindy",
+        "name": "Cindy"
+       }
+      ]
+     },
+     {
+      "id": "scr-m4",
+      "seq": 4,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+      "createdAt": "2026-06-19T04:14:00.000Z",
+      "threadId": "thread-screens-1",
+      "reactions": [
+       {
+        "emoji": "🚀",
+        "count": 1,
+        "reactorIds": [
+         "visual-user"
+        ],
+        "reactorNames": [
+         "artin"
+        ]
+       },
+       {
+        "emoji": "✅",
+        "count": 2,
+        "reactorIds": [
+         "visual-human-designer",
+         "visual-user"
+        ],
+        "reactorNames": [
+         "designer",
+         "artin"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m5",
+      "seq": 5,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Thanks! I will review the diffs after lunch.",
+      "createdAt": "2026-06-19T04:20:00.000Z"
+     },
+     {
+      "id": "scr-m6",
+      "seq": 6,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "One question on the header: is the description meant to clamp at two lines?",
+      "createdAt": "2026-06-19T04:21:00.000Z"
+     },
+     {
+      "id": "scr-m7",
+      "seq": 7,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "system",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "content": "Product-UX-Designer joined the channel.",
+      "createdAt": "2026-06-19T08:05:00.000Z"
+     },
+     {
+      "id": "scr-m8",
+      "seq": 8,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-product-ux",
+      "senderName": "Product-UX-Designer",
+      "senderDisplayName": "Product UX Designer",
+      "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+      "createdAt": "2026-06-19T08:12:00.000Z"
+     },
+     {
+      "id": "scr-m9",
+      "seq": 9,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Looks good to me. Let us ship the screens this week.",
+      "createdAt": "2026-06-19T12:05:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {
+     "scr-m4": {
+      "threadChannelId": "thread-screens-1",
+      "replyCount": 2,
+      "lastReplyAt": "2026-06-19T04:41:00.000Z",
+      "participantIds": [
+       "visual-user",
+       "agent-cindy"
+      ],
+      "unreadCount": 0,
+      "firstUnreadMessageId": null
+     }
+    }
+   },
+   "GET /messages/channel/thread-screens-1": {
+    "messages": [
+     {
+      "id": "scr-t1",
+      "seq": 10,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Great, thanks for posting it here.",
+      "createdAt": "2026-06-19T04:30:00.000Z"
+     },
+     {
+      "id": "scr-t2",
+      "seq": 11,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Report attached: every case is above the threshold.",
+      "createdAt": "2026-06-19T04:41:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {}
+   },
+   "POST /v2/messages": {
+    "message": {
+     "id": "cs-sent-shell-design",
+     "seq": 90,
+     "serverId": "visual-server",
+     "channelId": "shell-design",
+     "messageType": "chat",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "senderDisplayName": "artin",
+     "content": "@Android-Developer-4 @QA-Engineer-2 please review the visual diff",
+     "createdAt": "2026-06-19T12:31:00.000Z"
+    },
+    "pendingMentionActions": [
+     {
+      "resolutionId": "cs-pending-1",
+      "messageId": "cs-sent-shell-design",
+      "targetType": "agent",
+      "targetHandle": "Android-Developer-4",
+      "targetAvatarUrl": "pixel:robot",
+      "reason": "target_not_in_channel",
+      "availableActions": [
+       "add",
+       "notify"
+      ],
+      "expiresAt": null
+     },
+     {
+      "resolutionId": "cs-pending-2",
+      "messageId": "cs-sent-shell-design",
+      "targetType": "agent",
+      "targetHandle": "QA-Engineer-2",
+      "targetAvatarUrl": "pixel:robot",
+      "reason": "target_not_in_channel",
+      "availableActions": [
+       "add",
+       "notify"
+      ],
+      "expiresAt": null
+     }
+    ],
+    "unresolvedMentionHandles": []
+   }
+  },
+  "cs-agent-stopped": {
+   "GET /messages/channel/shell-dm-cindy": {
+    "messages": [
+     {
+      "id": "scr-a1",
+      "seq": 1,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Can you summarise yesterday's visual testing run?",
+      "createdAt": "2026-06-18T09:00:00.000Z"
+     },
+     {
+      "id": "scr-a2",
+      "seq": 2,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Yesterday's run:\n\n1. 92 cases passed\n2. 3 cases need a second look\n3. The `elegant-dark` baseline is attached to the task\n\nI will keep the release notes aligned.",
+      "createdAt": "2026-06-18T09:02:00.000Z"
+     },
+     {
+      "id": "scr-a3",
+      "seq": 3,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Thanks. Please re-run the three flagged cases today.",
+      "createdAt": "2026-06-19T03:00:00.000Z"
+     },
+     {
+      "id": "scr-a4",
+      "seq": 4,
+      "serverId": "visual-server",
+      "channelId": "shell-dm-cindy",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Done. All three are inside the tolerance now.",
+      "createdAt": "2026-06-19T03:12:00.000Z",
+      "reactions": [
+       {
+        "emoji": "🎉",
+        "count": 1,
+        "reactorIds": [
+         "visual-user"
+        ],
+        "reactorNames": [
+         "artin"
+        ]
+       }
+      ]
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {}
+   },
+   "POST /v2/messages": {
+    "message": {
+     "id": "cs-sent-shell-dm-cindy",
+     "seq": 90,
+     "serverId": "visual-server",
+     "channelId": "shell-dm-cindy",
+     "messageType": "chat",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "senderDisplayName": "artin",
+     "content": "Thanks, please re-run the three flagged cases.",
+     "createdAt": "2026-06-19T12:31:00.000Z"
+    },
+    "pendingMentionActions": [],
+    "unresolvedMentionHandles": [],
+    "deliveryWarnings": [
+     {
+      "targetType": "agent",
+      "targetId": "agent-cindy",
+      "reason": "agent_stopped"
+     }
+    ]
+   }
+  },
+  "cs-unresolved": {
+   "GET /messages/channel/shell-design": {
+    "messages": [
+     {
+      "id": "scr-m1",
+      "seq": 1,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+      "createdAt": "2026-06-18T09:20:00.000Z",
+      "reactions": [
+       {
+        "emoji": "👍",
+        "count": 2,
+        "reactorIds": [
+         "visual-user",
+         "agent-cindy"
+        ],
+        "reactorNames": [
+         "artin",
+         "Cindy"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m2",
+      "seq": 2,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+      "createdAt": "2026-06-18T09:34:00.000Z"
+     },
+     {
+      "id": "scr-m3",
+      "seq": 3,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+      "createdAt": "2026-06-19T04:10:00.000Z",
+      "mentions": [
+       {
+        "type": "agent",
+        "id": "agent-cindy",
+        "name": "Cindy"
+       }
+      ]
+     },
+     {
+      "id": "scr-m4",
+      "seq": 4,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+      "createdAt": "2026-06-19T04:14:00.000Z",
+      "threadId": "thread-screens-1",
+      "reactions": [
+       {
+        "emoji": "🚀",
+        "count": 1,
+        "reactorIds": [
+         "visual-user"
+        ],
+        "reactorNames": [
+         "artin"
+        ]
+       },
+       {
+        "emoji": "✅",
+        "count": 2,
+        "reactorIds": [
+         "visual-human-designer",
+         "visual-user"
+        ],
+        "reactorNames": [
+         "designer",
+         "artin"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m5",
+      "seq": 5,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Thanks! I will review the diffs after lunch.",
+      "createdAt": "2026-06-19T04:20:00.000Z"
+     },
+     {
+      "id": "scr-m6",
+      "seq": 6,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "One question on the header: is the description meant to clamp at two lines?",
+      "createdAt": "2026-06-19T04:21:00.000Z"
+     },
+     {
+      "id": "scr-m7",
+      "seq": 7,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "system",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "content": "Product-UX-Designer joined the channel.",
+      "createdAt": "2026-06-19T08:05:00.000Z"
+     },
+     {
+      "id": "scr-m8",
+      "seq": 8,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-product-ux",
+      "senderName": "Product-UX-Designer",
+      "senderDisplayName": "Product UX Designer",
+      "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+      "createdAt": "2026-06-19T08:12:00.000Z"
+     },
+     {
+      "id": "scr-m9",
+      "seq": 9,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Looks good to me. Let us ship the screens this week.",
+      "createdAt": "2026-06-19T12:05:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {
+     "scr-m4": {
+      "threadChannelId": "thread-screens-1",
+      "replyCount": 2,
+      "lastReplyAt": "2026-06-19T04:41:00.000Z",
+      "participantIds": [
+       "visual-user",
+       "agent-cindy"
+      ],
+      "unreadCount": 0,
+      "firstUnreadMessageId": null
+     }
+    }
+   },
+   "GET /messages/channel/thread-screens-1": {
+    "messages": [
+     {
+      "id": "scr-t1",
+      "seq": 10,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Great, thanks for posting it here.",
+      "createdAt": "2026-06-19T04:30:00.000Z"
+     },
+     {
+      "id": "scr-t2",
+      "seq": 11,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Report attached: every case is above the threshold.",
+      "createdAt": "2026-06-19T04:41:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {}
+   },
+   "POST /v2/messages": {
+    "message": {
+     "id": "cs-sent-shell-design",
+     "seq": 90,
+     "serverId": "visual-server",
+     "channelId": "shell-design",
+     "messageType": "chat",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "senderDisplayName": "artin",
+     "content": "@ghostwriter @nobody can you take a look at this?",
+     "createdAt": "2026-06-19T12:31:00.000Z"
+    },
+    "pendingMentionActions": [],
+    "unresolvedMentionHandles": [
+     "ghostwriter",
+     "nobody"
+    ]
+   }
+  },
+  "cs-conversion": {
+   "GET /messages/channel/shell-design": {
+    "messages": [
+     {
+      "id": "scr-m1",
+      "seq": 1,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+      "createdAt": "2026-06-18T09:20:00.000Z",
+      "reactions": [
+       {
+        "emoji": "👍",
+        "count": 2,
+        "reactorIds": [
+         "visual-user",
+         "agent-cindy"
+        ],
+        "reactorNames": [
+         "artin",
+         "Cindy"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m2",
+      "seq": 2,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+      "createdAt": "2026-06-18T09:34:00.000Z"
+     },
+     {
+      "id": "scr-m3",
+      "seq": 3,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+      "createdAt": "2026-06-19T04:10:00.000Z",
+      "mentions": [
+       {
+        "type": "agent",
+        "id": "agent-cindy",
+        "name": "Cindy"
+       }
+      ]
+     },
+     {
+      "id": "scr-m4",
+      "seq": 4,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+      "createdAt": "2026-06-19T04:14:00.000Z",
+      "threadId": "thread-screens-1",
+      "reactions": [
+       {
+        "emoji": "🚀",
+        "count": 1,
+        "reactorIds": [
+         "visual-user"
+        ],
+        "reactorNames": [
+         "artin"
+        ]
+       },
+       {
+        "emoji": "✅",
+        "count": 2,
+        "reactorIds": [
+         "visual-human-designer",
+         "visual-user"
+        ],
+        "reactorNames": [
+         "designer",
+         "artin"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m5",
+      "seq": 5,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Thanks! I will review the diffs after lunch.",
+      "createdAt": "2026-06-19T04:20:00.000Z"
+     },
+     {
+      "id": "scr-m6",
+      "seq": 6,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "One question on the header: is the description meant to clamp at two lines?",
+      "createdAt": "2026-06-19T04:21:00.000Z"
+     },
+     {
+      "id": "scr-m7",
+      "seq": 7,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "system",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "content": "Product-UX-Designer joined the channel.",
+      "createdAt": "2026-06-19T08:05:00.000Z"
+     },
+     {
+      "id": "scr-m8",
+      "seq": 8,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-product-ux",
+      "senderName": "Product-UX-Designer",
+      "senderDisplayName": "Product UX Designer",
+      "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+      "createdAt": "2026-06-19T08:12:00.000Z"
+     },
+     {
+      "id": "scr-m9",
+      "seq": 9,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Looks good to me. Let us ship the screens this week.",
+      "createdAt": "2026-06-19T12:05:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {
+     "scr-m4": {
+      "threadChannelId": "thread-screens-1",
+      "replyCount": 2,
+      "lastReplyAt": "2026-06-19T04:41:00.000Z",
+      "participantIds": [
+       "visual-user",
+       "agent-cindy"
+      ],
+      "unreadCount": 0,
+      "firstUnreadMessageId": null
+     }
+    }
+   },
+   "GET /messages/channel/thread-screens-1": {
+    "messages": [
+     {
+      "id": "scr-t1",
+      "seq": 10,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Great, thanks for posting it here.",
+      "createdAt": "2026-06-19T04:30:00.000Z"
+     },
+     {
+      "id": "scr-t2",
+      "seq": 11,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Report attached: every case is above the threshold.",
+      "createdAt": "2026-06-19T04:41:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {}
+   }
+  },
+  "cs-archived": {
+   "GET /messages/channel/shell-design": {
+    "messages": [
+     {
+      "id": "scr-m1",
+      "seq": 1,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Kicking off the sidebar polish pass. The plan:\n\n- **Rail** spacing and the active indicator\n- Sidebar *unread* badges and drafts\n- The `ChatPanel` header and tab strip\n\nOwners are listed in the doc.",
+      "createdAt": "2026-06-18T09:20:00.000Z",
+      "reactions": [
+       {
+        "emoji": "👍",
+        "count": 2,
+        "reactorIds": [
+         "visual-user",
+         "agent-cindy"
+        ],
+        "reactorNames": [
+         "artin",
+         "Cindy"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m2",
+      "seq": 2,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Baselines are regenerated. Run the focused cases with:\n\n```bash\ntool/parity-ext/run run --cases 'components.screens-ext.*'\n```\n\nThen open the side-by-side report.",
+      "createdAt": "2026-06-18T09:34:00.000Z"
+     },
+     {
+      "id": "scr-m3",
+      "seq": 3,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "@Cindy can you re-run the parity suite for the desktop shell? I want the channel screen and the Activity list in the same report.",
+      "createdAt": "2026-06-19T04:10:00.000Z",
+      "mentions": [
+       {
+        "type": "agent",
+        "id": "agent-cindy",
+        "name": "Cindy"
+       }
+      ]
+     },
+     {
+      "id": "scr-m4",
+      "seq": 4,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "On it. The first capture finished with 92 cases passing; I am attaching the report to this thread.",
+      "createdAt": "2026-06-19T04:14:00.000Z",
+      "threadId": "thread-screens-1",
+      "reactions": [
+       {
+        "emoji": "🚀",
+        "count": 1,
+        "reactorIds": [
+         "visual-user"
+        ],
+        "reactorNames": [
+         "artin"
+        ]
+       },
+       {
+        "emoji": "✅",
+        "count": 2,
+        "reactorIds": [
+         "visual-human-designer",
+         "visual-user"
+        ],
+        "reactorNames": [
+         "designer",
+         "artin"
+        ]
+       }
+      ]
+     },
+     {
+      "id": "scr-m5",
+      "seq": 5,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "Thanks! I will review the diffs after lunch.",
+      "createdAt": "2026-06-19T04:20:00.000Z"
+     },
+     {
+      "id": "scr-m6",
+      "seq": 6,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-human-designer",
+      "senderName": "designer",
+      "senderDisplayName": "Designer",
+      "content": "One question on the header: is the description meant to clamp at two lines?",
+      "createdAt": "2026-06-19T04:21:00.000Z"
+     },
+     {
+      "id": "scr-m7",
+      "seq": 7,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "system",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "content": "Product-UX-Designer joined the channel.",
+      "createdAt": "2026-06-19T08:05:00.000Z"
+     },
+     {
+      "id": "scr-m8",
+      "seq": 8,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-product-ux",
+      "senderName": "Product-UX-Designer",
+      "senderDisplayName": "Product UX Designer",
+      "content": "Hi all. I wrote up the spacing spec for the composer and the timeline; feedback welcome before we freeze it.",
+      "createdAt": "2026-06-19T08:12:00.000Z"
+     },
+     {
+      "id": "scr-m9",
+      "seq": 9,
+      "serverId": "visual-server",
+      "channelId": "shell-design",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Looks good to me. Let us ship the screens this week.",
+      "createdAt": "2026-06-19T12:05:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {
+     "scr-m4": {
+      "threadChannelId": "thread-screens-1",
+      "replyCount": 2,
+      "lastReplyAt": "2026-06-19T04:41:00.000Z",
+      "participantIds": [
+       "visual-user",
+       "agent-cindy"
+      ],
+      "unreadCount": 0,
+      "firstUnreadMessageId": null
+     }
+    }
+   },
+   "GET /messages/channel/thread-screens-1": {
+    "messages": [
+     {
+      "id": "scr-t1",
+      "seq": 10,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "user",
+      "senderId": "visual-user",
+      "senderName": "artin",
+      "senderDisplayName": "artin",
+      "content": "Great, thanks for posting it here.",
+      "createdAt": "2026-06-19T04:30:00.000Z"
+     },
+     {
+      "id": "scr-t2",
+      "seq": 11,
+      "serverId": "visual-server",
+      "channelId": "thread-screens-1",
+      "messageType": "chat",
+      "senderType": "agent",
+      "senderId": "agent-cindy",
+      "senderName": "Cindy",
+      "senderDisplayName": "Cindy",
+      "content": "Report attached: every case is above the threshold.",
+      "createdAt": "2026-06-19T04:41:00.000Z"
+     }
+    ],
+    "hasMore": false,
+    "historyLimited": false,
+    "threadSummariesByParentMessageId": {}
+   }
+  }
+ }
+}

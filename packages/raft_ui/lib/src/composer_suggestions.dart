@@ -9,7 +9,10 @@ class RaftComposerSuggestion {
     required this.name,
     this.title,
     this.detail,
+    this.serverLabel,
     this.inChannel = true,
+    this.threadRank,
+    this.archived = false,
     this.referenceText,
     this.avatar,
     this.mutedAvatar,
@@ -17,12 +20,26 @@ class RaftComposerSuggestion {
   final String type, id, name;
   final String? title, detail, referenceText;
 
+  /// Web `getMentionCandidateServerLabel`: the source server of a person who
+  /// participates through another server (`serverName || serverSlug`). Shown
+  /// as a second meta with the "Source server: {server}" tooltip and matched
+  /// by the query.
+  final String? serverLabel;
+
   /// Web MentionCandidateAvatar (`AvatarSlot context="compact-list"`),
   /// supplied by the authority-checked adapter; [mutedAvatar] is the
   /// not-in-channel treatment (`!border-black/40 opacity-60`).
   final Widget? avatar, mutedAvatar;
   final bool inChannel;
-  bool get isMention => type == 'user' || type == 'agent';
+
+  /// Thread composers only (Web `buildRecentParticipantRanks`): 0 is the most
+  /// recent speaker of the thread; null never spoke. Ranked before the match
+  /// order inside each group.
+  final int? threadRank;
+
+  /// An archived channel option (Web `ch.archivedAt`): the `archived` Badge.
+  final bool archived;
+  bool get isMention => type == 'user' || type == 'agent' || type == 'external';
   String get insertion =>
       referenceText ?? '${type == 'channel' ? '#' : '@'}$name';
   Map<String, dynamic> get mention => {'type': type, 'id': id, 'name': name};

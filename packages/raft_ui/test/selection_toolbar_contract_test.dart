@@ -5,23 +5,20 @@ import 'package:flutter/services.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Finder button(String label) =>
     find.byWidgetPredicate((w) => w is RaftButton && w.tooltip == label);
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark compact row, busy permissions and top/end menu',
+      '${dark ? 'dark' : 'light'} compact row, busy permissions and top/end menu',
       (t) async {
         t.view.physicalSize = const Size(1400, 900);
         t.view.devicePixelRatio = 1;
         addTearDown(t.view.resetPhysicalSize);
         addTearDown(t.view.resetDevicePixelRatio);
-        final theme = raftTheme(family, dark: dark);
+        final theme = raftTheme(dark: dark);
         final tokens = theme.extension<RaftTokens>()!;
         var width = 1200.0, busy = false, cancel = 0, copy = 0, preview = 0;
         late StateSetter update;
@@ -58,8 +55,8 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        expect(t.widget<RaftButton>(button('Copy link')).label, 'Copy link');
-        expect(t.getSize(button('More')).height, 28);
+        expect(t.widget<RaftButton>(button('Copy Link')).label, 'Copy Link');
+        expect(t.getSize(button('More')).height, 32);
         final count = t.widget<Text>(find.text('2 selected'));
         expect(count.style!.fontSize, 12);
         expect(count.style!.height, 16 / 12);
@@ -72,15 +69,10 @@ void main() {
               )
               .first,
         );
-        expect(
-          surface.color,
-          tokens.colors[tokens.brutal ? 'color-soft-signal' : 'primary-soft'],
-        );
+        expect(surface.color, tokens.colors['primary-soft']);
         update(() => width = 320);
         await t.pumpAndSettle();
-        if (family == RaftFamily.brutal) {
-          expect(t.widget<RaftButton>(button('Copy link')).label, isEmpty);
-        }
+
         expect(t.takeException(), isNull);
         final trigger = t.getRect(button('More'));
         await t.tap(button('More'));
@@ -93,7 +85,7 @@ void main() {
         expect(
           t
               .widget<RaftMenuItem>(
-                find.widgetWithText(RaftMenuItem, 'Generate image'),
+                find.widgetWithText(RaftMenuItem, 'Generate Image'),
               )
               .focusNode!
               .hasFocus,
@@ -110,7 +102,7 @@ void main() {
         await t.pumpAndSettle();
         expect(t.widget<RaftButton>(button('Select All')).onPressed, isNull);
         expect(t.widget<RaftButton>(button('Forward')).onPressed, isNull);
-        expect(t.widget<RaftButton>(button('Copy link')).onPressed, isNotNull);
+        expect(t.widget<RaftButton>(button('Copy Link')).onPressed, isNotNull);
         await t.tap(button('More'));
         await t.pump(const Duration(milliseconds: 300));
         expect(find.byType(RaftSpinner), findsOneWidget);
@@ -148,16 +140,16 @@ void main() {
           busy = false;
         });
         await t.pumpAndSettle();
-        expect(t.widget<RaftButton>(button('Copy link')).label, 'Copy link');
+        expect(t.widget<RaftButton>(button('Copy Link')).label, 'Copy Link');
         expect(t.takeException(), isNull);
       },
     );
     testWidgets(
-      '$family/$dark zero selected and disabled forward remain admitted correctly',
+      '${dark ? 'dark' : 'light'} zero selected and disabled forward remain admitted correctly',
       (t) async {
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: RaftSelectionToolbar(
                 selected: 0,
@@ -172,7 +164,7 @@ void main() {
         );
         expect(find.byTooltip('Select All'), findsNothing);
         expect(t.widget<RaftButton>(button('More')).onPressed, isNull);
-        expect(t.widget<RaftButton>(button('Copy link')).onPressed, isNull);
+        expect(t.widget<RaftButton>(button('Copy Link')).onPressed, isNull);
         expect(
           t.widget<RaftButton>(button('Unavailable target')).onPressed,
           isNull,
@@ -188,7 +180,7 @@ void main() {
       try {
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(RaftFamily.elegant),
+            theme: raftTheme(),
             home: Scaffold(
               body: RaftSelectionToolbar(
                 selected: 1,
@@ -200,10 +192,10 @@ void main() {
             ),
           ),
         );
-        expect(t.widget<RaftButton>(button('Copy link')).label, 'Copied');
-        final labeled = find.bySemanticsLabel('Copy link');
+        expect(t.widget<RaftButton>(button('Copy Link')).label, 'Copied');
+        final labeled = find.bySemanticsLabel('Copy Link');
         expect(labeled, findsOneWidget);
-        expect(t.getSemantics(labeled).label, 'Copy link');
+        expect(t.getSemantics(labeled).label, 'Copy Link');
         expect(
           t
               .getSemantics(labeled)
@@ -217,27 +209,20 @@ void main() {
       }
     },
   );
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'production inherited face compacts Copy link into one authored row $family/$dark',
+      'production inherited face compacts Copy link into one authored row ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
         addTearDown(t.view.resetPhysicalSize);
         addTearDown(t.view.resetDevicePixelRatio);
-        final theme = raftTheme(family, dark: dark);
+        final theme = raftTheme(dark: dark);
         final tokens = theme.extension<RaftTokens>()!;
         await t.runAsync(() async {
           for (final (name, file) in [
-            (
-              tokens.bodyFont,
-              family == RaftFamily.brutal ? 'HankenGrotesk.ttf' : 'Geist.ttf',
-            ),
-            (tokens.monoFont, 'GeistMono.ttf'),
+            (tokens.bodyFont, 'SpaceGrotesk.ttf'),
+            (tokens.monoFont, 'SpaceMono.ttf'),
           ]) {
             ByteData data;
             try {
@@ -271,16 +256,11 @@ void main() {
         );
         await t.pumpAndSettle();
         final top = t.getRect(button('Cancel')).top;
-        for (final label in ['Forward', 'Copy link', 'More']) {
+        for (final label in ['Forward', 'Copy Link', 'More']) {
           expect(t.getRect(button(label)).top, closeTo(top, .01));
         }
-        if (family == RaftFamily.brutal) {
-          expect(t.widget<RaftButton>(button('Copy link')).label, isEmpty);
-        }
-        expect(
-          t.getRect(find.byType(RaftSelectionToolbar)).height,
-          family == RaftFamily.brutal ? 46 : 45,
-        );
+
+        expect(t.getRect(find.byType(RaftSelectionToolbar)).height, 49);
         expect(t.takeException(), isNull);
       },
     );

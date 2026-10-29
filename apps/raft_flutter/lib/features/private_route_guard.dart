@@ -7,6 +7,11 @@ import '../data/workspace_controller.dart';
 /// All application overlays belong to the account/workspace authority in which
 /// they opened. Remove them directly on revocation, including busy PopScopes.
 class PrivateRouteGuard extends NavigatorObserver {
+  /// Settings name of an overlay the app root itself owns (not a workspace):
+  /// a scope change does not remove it; the root closes it when its own
+  /// condition ends (the community agreement over the not-found page).
+  static const rootOwnedRoute = 'raft-root-owned';
+
   final List<Route<dynamic>> _routes = [];
   final Map<String, String> _scopes = {};
   @override
@@ -39,11 +44,13 @@ class PrivateRouteGuard extends NavigatorObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final route in stale) {
         if (route is AccountScopedRoute && route.valid()) continue;
+        if (route.settings.name == rootOwnedRoute) continue;
         if (_routes.contains(route) && route.isActive) {
           navigator?.removeRoute(route);
         }
       }
     });
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- Single request after a state change; nothing re-requests from the callback.
     WidgetsBinding.instance.scheduleFrame();
   }
 }
@@ -57,6 +64,18 @@ String workspaceAuthority(WorkspaceController w) => jsonEncode([
   w.channel?.joined,
   w.channel?.archived,
   w.channel?.json['channelCapabilities'],
+]);
+
+/// Account, server, and role for a channel search page.
+///
+/// Unlike [workspaceAuthority] this omits the current channel. Opening another
+/// channel must not revoke that search. Losing the channel or `viewChannel`
+/// still revokes it at the call site.
+String channelSearchPageAuthority(WorkspaceController w) => jsonEncode([
+  w.client.generation,
+  w.client.user?.id,
+  w.server?.id,
+  w.server?.string('role'),
 ]);
 
 /// Server-level identity of the shared agent/member directory. Unlike

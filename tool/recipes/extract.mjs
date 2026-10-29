@@ -6,10 +6,12 @@
 //
 // Usage: node tool/recipes/extract.mjs [--source /tmp/rui] [--out build/recipes]
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as acorn from 'acorn';
+import { loadBundle } from './lib/bundle.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../..');
@@ -23,8 +25,10 @@ export const sourceRoot = arg('source', process.env.RAFT_UI_SOURCE ?? '/tmp/rui'
 const outDir = resolve(repo, arg('out', 'build/recipes'));
 const TV_CALLEE = 'tv$1';
 
-const file = join(sourceRoot, 'dist/index.mjs');
-const code = readFileSync(file, 'utf8');
+const bundle = loadBundle(sourceRoot);
+const code = bundle.code;
+// `import { S as tv }` from the shared chunk: `tv` is the chunk's `tv$1`.
+const TV_CALLEES = new Set([TV_CALLEE, ...[...bundle.aliasToLocal].filter(([, l]) => l === TV_CALLEE).map(([a]) => a)]);
 const pkg = JSON.parse(readFileSync(join(sourceRoot, 'package.json'), 'utf8'));
 
 const comments = [];
@@ -82,7 +86,8 @@ const exportsByLocal = new Map();
 for (const stmt of ast.body) {
   if (stmt.type !== 'ExportNamedDeclaration') continue;
   for (const s of stmt.specifiers ?? []) {
-    const local = s.local.name ?? s.local.value;
+    const local0 = s.local.name ?? s.local.value;
+    const local = bundle.aliasToLocal.get(local0) ?? local0;
     const exported = s.exported.name ?? s.exported.value;
     if (!exportsByLocal.has(local)) exportsByLocal.set(local, []);
     exportsByLocal.get(local).push(exported);
@@ -102,9 +107,16 @@ function evaluate(node, ctx, path) {
   switch (node.type) {
     case 'Literal':
       return node.value;
-    case 'TemplateLiteral':
+    case 'TemplateLiteral': {
       if (node.expressions.length === 0) return node.quasis[0].value.cooked;
+      // `border-sticker-ink ${fill} ...` inside a class helper: substitute
+      // string-valued parameters, give up (non-literal) on anything else.
+      const parts = node.expressions.map((e) => evaluate(e, ctx, path));
+      if (parts.every((v) => typeof v === 'string')) {
+        return node.quasis.map((q, i) => q.value.cooked + (i < parts.length ? parts[i] : '')).join('');
+      }
       break;
+    }
     case 'ArrayExpression': {
       const out = [];
       node.elements.forEach((e, i) => {
@@ -139,6 +151,8 @@ function evaluate(node, ctx, path) {
       break;
     case 'Identifier': {
       if (node.name === 'undefined') return null;
+      // Parameter of a class helper currently being inlined (see CallExpression).
+      if (ctx.env?.has(node.name)) return ctx.env.get(node.name);
       const decl = topLevel.get(node.name);
       if (decl && decl.kind === 'const' && decl.node.init) {
         ctx.resolvedIdentifiers.push({ path, name: node.name });
@@ -147,9 +161,29 @@ function evaluate(node, ctx, path) {
       break;
     }
     case 'CallExpression':
-      if (node.callee.type === 'Identifier' && node.callee.name === TV_CALLEE) {
+      if (node.callee.type === 'Identifier' && TV_CALLEES.has(node.callee.name)) {
         const inner = callNames.get(node);
         return { $recipe: inner };
+      }
+      // raft-ui 0.7.0 factors repeated class lists into top-level helpers
+      // (`const sticker = (fill) => [...]`, `outline`, `chip`, `linkChip`).
+      // Inline a call to such an expression-bodied arrow function by binding
+      // its identifier parameters to the evaluated literal arguments, so the
+      // recipe sees exactly the class list the Web runtime builds.
+      if (node.callee.type === 'Identifier') {
+        const decl = topLevel.get(node.callee.name);
+        const fn = decl?.kind === 'const' ? decl.node.init : null;
+        if (
+          fn?.type === 'ArrowFunctionExpression' &&
+          fn.expression &&
+          fn.params.every((p) => p.type === 'Identifier') &&
+          node.arguments.length === fn.params.length &&
+          node.arguments.every((a) => a.type !== 'SpreadElement')
+        ) {
+          const env = new Map(ctx.env ?? []);
+          fn.params.forEach((p, i) => env.set(p.name, evaluate(node.arguments[i], ctx, path)));
+          return evaluate(fn.body, { ...ctx, env }, path);
+        }
       }
       break;
   }
@@ -161,7 +195,7 @@ function evaluate(node, ctx, path) {
 const calls = [];
 const callNames = new Map();
 walk(ast, (node, parents) => {
-  if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier' || node.callee.name !== TV_CALLEE) return;
+  if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier' || !TV_CALLEES.has(node.callee.name)) return;
   calls.push({ node, parents: [...parents] });
 });
 // Name outer calls first so nested `extend: tv$1(...)` can derive from them.
@@ -277,8 +311,23 @@ const recipes = calls
   })
   .sort((a, b) => a.line - b.line);
 
+// Web-authored menu compositions still belong to the same generated family.
+// Parse their actual TSX class expressions; never copy a list into Dart.
+const webCss = process.env.RAFT_WEB_CSS;
+let productRecipeCount = 0;
+if (webCss) {
+  const web = dirname(dirname(resolve(webCss)));
+  for (const family of ['menu', 'dialog', 'member-picker', 'choice']) {
+    const products = JSON.parse(execFileSync(process.execPath, [
+      join(here, `${family}-compositions.mjs`), '--web', web, '--raw',
+    ], { encoding: 'utf8' }));
+    recipes.push(...products);
+    productRecipeCount += products.length;
+  }
+}
+
 // Sanity: count raw `tv$1(` occurrences so the test can assert full coverage.
-const rawCallCount = (code.match(/\btv\$1\(/g) ?? []).length;
+const rawCallCount = [...TV_CALLEES].reduce((n, c) => n + (code.match(new RegExp(`\\b${c.replace(/\$/g, '\\$')}\\(`, 'g')) ?? []).length, 0);
 
 // The bundle's own `tv$1` wrapper (tailwind-variants + raft-ui cn), kept as
 // source so resolve.mjs evaluates recipes exactly like the Web runtime.
@@ -293,11 +342,13 @@ const out = {
     package: pkg.name,
     version: pkg.version,
     file: 'dist/index.mjs',
-    sha256: createHash('sha256').update(code).digest('hex'),
+    files: bundle.files,
+    sha256: createHash('sha256').update(bundle.texts.join('\n')).digest('hex'),
   },
   tvImport,
   tvWrapperSource,
   rawCallCount,
+  productRecipeCount,
   recipeCount: recipes.length,
   recipes,
 };

@@ -1,0 +1,47 @@
+{
+  "plan": "pro",
+  "displayName": "Pro",
+  "serverPlan": "pro",
+  "source": "subscription",
+  "capacity": { "maxHumans": -1, "maxAgents": -1, "maxUniversalSeats": 3 },
+  "usage": { "humans": 2, "agents": 14, "universalSeats": 3.4000000000000004 },
+  "fileUploadQuota": {
+    "month": "2026-10",
+    "plan": "pro",
+    "limited": false,
+    "enforced": true,
+    "limitBytes": -1,
+    "usedBytes": 1048576,
+    "reservedBytes": 0,
+    "remainingBytes": -1
+  },
+  "provisioned": {
+    "humans": 3,
+    "agents": 30,
+    "proPackQuantity": 3,
+    "trialFreePackQuantity": 0,
+    "firstPackTrialEndsAt": null
+  },
+  "price": {
+    "billingInterval": "annual",
+    "monthlyUsd": 26.4,
+    "annualUsd": 316.79999999999995,
+    "discountPercent": 12,
+    "baseMonthlyUsd": 26.4,
+    "overageMonthlyUsd": 0,
+    "seatQuantity": 3,
+    "packQuantity": 3,
+    "humanSeatQuantity": 3,
+    "agentSeatQuantity": 30,
+    "agentSeatBlockQuantity": 3
+  },
+  "subscription": {
+    "status": "active",
+    "billingInterval": "annual",
+    "currentPeriodStart": "2026-09-01T00:00:00.000Z",
+    "currentPeriodEnd": "2027-09-01T00:00:00.000Z",
+    "cancelAtPeriodEnd": true
+  },
+  "stripeConfigured": true,
+  "permissions": { "canReadBillingSummary": true, "canManageBilling": false }
+}

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
   testWidgets('unanchored comments retain selection and have no jump button', (
@@ -9,7 +10,7 @@ void main() {
   ) async {
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: SizedBox(
             width: 390,
@@ -40,18 +41,14 @@ void main() {
     expect(find.byType(RaftInteractive), findsNothing);
     expect(t.takeException(), isNull);
   });
-  for (final (family, dark) in const [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family dark=$dark comments own jump, pending anchor, write gate and loading recipe',
+      'dark=$dark comments own jump, pending anchor, write gate and loading recipe',
       (t) async {
         var jumps = 0, removes = 0;
         Widget host({bool loading = false, bool blocked = false}) =>
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(
                 body: SizedBox(
                   width: 390,
@@ -75,7 +72,7 @@ void main() {
                       variant: RaftComposerVariant.compact,
                       accessoryRow: RaftCommentAnchorChip(
                         label: 'L2–4',
-                        removeLabel: 'Remove anchor',
+                        removeLabel: 'Remove Anchor',
                         onRemove: () => ++removes,
                       ),
                       onSend: (_) async => true,
@@ -114,7 +111,7 @@ void main() {
         await t.pump();
         await t.sendKeyEvent(LogicalKeyboardKey.enter);
         expect(removes, 1);
-        await t.tap(find.bySemanticsLabel('Remove anchor'));
+        await t.tap(find.bySemanticsLabel('Remove Anchor'));
         expect(removes, 2);
         await t.pumpWidget(host(blocked: true));
         expect(find.byType(RaftComposer), findsNothing);

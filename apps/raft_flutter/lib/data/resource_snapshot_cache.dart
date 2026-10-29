@@ -73,6 +73,37 @@ class ResourceSnapshot extends PageSnapshot {
 
   /// Other recently accepted filter/query windows, by request shape.
   final Map<String, ResourceViewWindow> viewWindows;
+
+  /// Rows and view windows changed. Every other accepted field stays.
+  ResourceSnapshot replaceRows({
+    required List<Map<String, dynamic>> rows,
+    required int? totalCount,
+    required Map<String, ResourceViewWindow> viewWindows,
+  }) => ResourceSnapshot(
+    identity: identity,
+    enabledActivity: enabledActivity,
+    view: view,
+    rows: rows,
+    hasMore: hasMore,
+    filter: filter,
+    activeActivityFilter: activeActivityFilter,
+    query: query,
+    channelId: channelId,
+    direction: direction,
+    totalCount: totalCount,
+    totalUnreadCount: totalUnreadCount,
+    activityAllCount: activityAllCount,
+    savedActivityTotal: savedActivityTotal,
+    activityGroups: activityGroups,
+    acceptedActivityItems: acceptedActivityItems,
+    savedActivityItems: savedActivityItems,
+    doneActivityItems: doneActivityItems,
+    channelAccess: channelAccess,
+    scrollOffset: scrollOffset,
+    viewWindows: viewWindows,
+    sectionScrollOffsets: sectionScrollOffsets,
+    inboxSerial: inboxSerial,
+  );
 }
 
 /// Tasks page snapshot (Source taskStore serverTasks + serverTaskPages):
@@ -109,10 +140,68 @@ class TaskSnapshot extends PageSnapshot {
   final Set<String> channels, creators, assignees, collapsed;
   final Map<String, Map<String, dynamic>> channelAccess;
   final double listOffset, boardOffset;
+
+  TaskSnapshot withRows(List<Map<String, dynamic>> rows, int? totalCount) =>
+      TaskSnapshot(
+        identity: identity,
+        layout: layout,
+        view: view,
+        filter: filter,
+        rows: rows,
+        cursor: cursor,
+        hasMore: hasMore,
+        totalCount: totalCount,
+        lanes: lanes,
+        laneCursors: laneCursors,
+        channels: channels,
+        creators: creators,
+        assignees: assignees,
+        collapsed: collapsed,
+        channelAccess: channelAccess,
+        listOffset: listOffset,
+        boardOffset: boardOffset,
+      );
 }
+
+/// One workspace page window on the session cache, keyed by page.
+///
+/// The concrete window lives in another library. Tasks and Saved share this
+/// slot. It is not the snapshot map.
+abstract interface class ServerPageSlot {
+  PageSnapshot get snapshot;
+  bool get needsRevalidate;
+  set needsRevalidate(bool value);
+  int get attached;
+  void attach();
+  void detach();
+}
+
+/// Page keys for the session windows. Not snapshot slots.
+const serverTasksPage = 'tasks';
+const serverSavedPage = 'saved';
 
 class ResourceSnapshotCache {
   final _snapshots = <String, PageSnapshot>{};
+  final _pages = <String, ({ServerPageSlot slot, void Function() release})>{};
+
+  /// The window for [key], if the session still holds one.
+  ServerPageSlot? serverPage(String key) => _pages[key]?.slot;
+
+  /// [release] runs when this window is replaced or the cache is cleared.
+  void keepServerPage(
+    String key,
+    ServerPageSlot window,
+    void Function() release,
+  ) {
+    final current = _pages[key];
+    if (!identical(current?.slot, window)) current?.release();
+    _pages[key] = (slot: window, release: release);
+  }
+
+  void dropServerPage(String key) {
+    final current = _pages.remove(key);
+    current?.release();
+  }
 
   /// The [T] snapshot of [section] accepted under exactly [identity], if any.
   T? read<T extends PageSnapshot>(String section, String identity) {
@@ -129,7 +218,14 @@ class ResourceSnapshotCache {
   void remove(String section) => _snapshots.remove(section);
 
   /// Server or account switch: no page snapshot survives.
-  void clear() => _snapshots.clear();
+  void clear() {
+    final held = _pages.values.toList();
+    _pages.clear();
+    for (final page in held) {
+      page.release();
+    }
+    _snapshots.clear();
+  }
 }
 
 /// A management or settings page's accepted projection (the page's own data

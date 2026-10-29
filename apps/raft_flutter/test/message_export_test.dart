@@ -61,9 +61,12 @@ void main() {
   test('channel selection excludes loaded unmounted replies and toggles only the clicked root', () async {
     final (w, _) = await fixture('owner');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'parent', 'later'};
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest(
+      messages(),
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
     final selection = MessageSelection(w, thread: false);
     addTearDown(selection.dispose);
     selection.enter('parent');
@@ -79,12 +82,15 @@ void main() {
   test('thread row selection is explicit and Select All includes the visible parent and replies', () async {
     final (w, _) = await fixture('owner');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'parent', 'later'};
-    w.threadParent = w.messages.first;
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest(
+      messages(),
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
+    w.messageDomain.state.threadParent = w.messageDomain.messages.first;
     w.threadChannelId = 't1';
-    w.visibleIds['t1'] = {'reply'};
+    w.messageDomain.visibleIds['t1'] = {'reply'};
     final selection = MessageSelection(w, thread: true);
     addTearDown(selection.dispose);
     selection.enter('reply');
@@ -101,8 +107,8 @@ void main() {
   test('thread Select All excludes system/action/forward snapshots while explicit action selection stays possible', () async {
     final (w, _) = await fixture('owner');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       ...messages(),
       {
         'id': 'system',
@@ -125,10 +131,10 @@ void main() {
         'messageType': 'chat',
         'actionMetadata': {'kind': 'forwarded-bundle'},
       },
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'parent', 'later'};
-    w.visibleIds['t1'] = {'reply', 'system', 'action', 'forward'};
-    w.threadParent = w.messages.first;
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
+    w.messageDomain.visibleIds['t1'] = {'reply', 'system', 'action', 'forward'};
+    w.messageDomain.state.threadParent = w.messageDomain.messages.first;
     w.threadChannelId = 't1';
     final selection = MessageSelection(w, thread: true);
     addTearDown(selection.dispose);
@@ -145,13 +151,16 @@ void main() {
   test('bounded selection retains prior choices and clears on visibility/role loss', () async {
     final (w, _) = await fixture('owner');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     final rows = [
       for (var i = 0; i < 31; i++)
         {'id': 'm$i', 'channelId': 'c1', 'seq': '${i + 1}', 'content': 'body'},
     ];
-    w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = rows.map((r) => r['id']!).toSet();
+    w.messageDomain.ledger.ingest(
+      rows,
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = rows.map((r) => r['id']!).toSet();
     final selection = MessageSelection(w, thread: false);
     addTearDown(selection.dispose);
     selection.enter('m0');
@@ -168,13 +177,16 @@ void main() {
     (tester) async {
       final (w, _) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
-      w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'parent', 'later'};
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest(
+        messages(),
+        expectedGeneration: w.messageDomain.ledger.generation,
+      );
+      w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
       Future<bool?>? result;
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.elegant, dark: true),
+          theme: raftTheme(dark: true),
           home: Builder(
             builder: (ctx) => Scaffold(
               body: TextButton(
@@ -182,7 +194,9 @@ void main() {
                   result = previewMessageImage(
                     ctx,
                     w,
-                    messages: [SelectedMessageRow(w.messages.first)],
+                    messages: [
+                      SelectedMessageRow(w.messageDomain.messages.first),
+                    ],
                     width: 500,
                   );
                 },
@@ -221,7 +235,12 @@ void main() {
           matching: find.byType(Image),
         ),
       );
-      final bytes = (image.image as MemoryImage).bytes;
+      // Decoded at display size: unwrap the sized provider to reach the PNG.
+      final shown = image.image;
+      final bytes =
+          ((shown is RaftSizedImageProvider ? shown.imageProvider : shown)
+                  as MemoryImage)
+              .bytes;
       expect(bytes.take(8), [137, 80, 78, 71, 13, 10, 26, 10]);
       expect(bytes.length, greaterThan(1000));
       final decoded = await tester.runAsync(
@@ -232,7 +251,7 @@ void main() {
       expect(frame.image.height, greaterThan(100));
       frame.image.dispose();
       decoded!.dispose();
-      await tester.tap(find.byTooltip('Close preview'));
+      await tester.tap(find.byTooltip('Close Preview'));
       await tester.pumpAndSettle();
       expect(await tester.runAsync(() => result!), isFalse);
       expect(find.text('Export'), findsOneWidget);
@@ -244,9 +263,12 @@ void main() {
       (tester) async {
         final (w, _) = (await tester.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'parent', 'later'};
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest(
+          messages(),
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
         final selection = MessageSelection(w, thread: false)..enter('parent');
         var disposed = false;
         addTearDown(() {
@@ -257,7 +279,7 @@ void main() {
         Future<bool?>? result;
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(RaftFamily.elegant),
+            theme: raftTheme(),
             home: Builder(
               builder: (context) => Scaffold(
                 body: TextButton(
@@ -331,7 +353,7 @@ void main() {
       final png = Uint8List.fromList(data!.buffer.asUint8List());
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(RaftFamily.brutal),
+          theme: raftTheme(),
           home: Builder(
             builder: (ctx) => Scaffold(
               body: TextButton(
@@ -354,7 +376,7 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
       expect(find.byType(MessageImageReview), findsOneWidget);
-      await tester.tap(find.text('Save image'));
+      await tester.tap(find.text('Save Image'));
       await tester.pump();
       expect(files.requested.isCompleted, isTrue);
       authorized = false;

@@ -42,7 +42,7 @@ class _FooterPreviewState extends State<_FooterPreview> {
                 onPressed: () {},
               ),
               RaftMenuEntry(
-                label: 'Mobile app',
+                label: 'Mobile App',
                 leading: const RaftIcon(RaftGlyph.smartphone, size: 14),
                 onPressed: () => setState(() => unseen = false),
               ),
@@ -54,10 +54,9 @@ class _FooterPreviewState extends State<_FooterPreview> {
             ],
           ),
           RaftWorkspaceRailAction(
-            label: 'Exit workspace mode',
+            label: 'Exit Workspace Mode',
             glyph: RaftGlyph.squareSplitHorizontal,
             selected: true,
-            depressed: true,
             onPressed: () {},
           ),
           RaftWorkspaceRailAction(

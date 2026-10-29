@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/activity_row_window.dart';
 import 'reading_anchor.dart';
 
 /// Key of one Activity/Saved row inside its lazy list, so a row keeps its
@@ -34,12 +35,40 @@ class ResourceListUpdates {
   List<String?> _keys = const [];
   Object? _view;
   Map<String, int> _index = const {};
+  List<Map<String, dynamic>>? _rows;
+  Object? _rowsView;
+  List<String?> _rowKeys = const [];
+
+  /// Rebuild identities at the accepted-data boundary, not on layout changes.
+  bool observeRows({
+    required Object? view,
+    required List<Map<String, dynamic>> rows,
+    required String? Function(Map) keyOf,
+    required bool indexedActivity,
+    ScrollPosition? position,
+  }) {
+    final rowsView = (view, indexedActivity);
+    if (indexedActivity && rows is IndexedActivityRows) {
+      _rowKeys = rows.rowKeys;
+    } else if (!identical(rows, _rows) || rowsView != _rowsView) {
+      _rowKeys = [for (final row in rows) keyOf(row)];
+    }
+    _rows = rows;
+    _rowsView = rowsView;
+    return observe(view: view, keys: _rowKeys, position: position);
+  }
+
+  int? _indexOf(String key) => switch (_keys) {
+    ResourceRowKeys keys => keys.uniqueIndexOf(key),
+    _ => _index[key],
+  };
 
   /// Item index of a keyed row for `findItemIndexCallback`.
-  int? indexOf(Key key) => key is ResourceRowListKey ? _index[key.value] : null;
+  int? indexOf(Key key) =>
+      key is ResourceRowListKey ? _indexOf(key.value) : null;
 
   /// The list key of the row with [rowKey], when it is unique in the list.
-  Key? keyOf(String? rowKey) => rowKey != null && _index.containsKey(rowKey)
+  Key? keyOf(String? rowKey) => rowKey != null && _indexOf(rowKey) != null
       ? ResourceRowListKey(rowKey)
       : null;
 
@@ -54,16 +83,22 @@ class ResourceListUpdates {
     required List<String?> keys,
     ScrollPosition? position,
   }) {
-    if (view == _view && listEquals(keys, _keys)) return false;
+    if (view == _view &&
+        (identical(keys, _keys) ||
+            keys is! ResourceRowKeys && listEquals(keys, _keys))) {
+      return false;
+    }
     final previous = _keys, sameView = view == _view && previous.isNotEmpty;
-    _keys = List.unmodifiable(keys);
+    _keys = keys is ResourceRowKeys ? keys : List.unmodifiable(keys);
     _view = view;
     final index = <String, int>{}, repeated = <String>{};
-    for (var i = 0; i < keys.length; i++) {
-      final key = keys[i];
-      if (key == null) continue;
-      if (index.containsKey(key)) repeated.add(key);
-      index[key] = i;
+    if (keys is! ResourceRowKeys) {
+      for (var i = 0; i < keys.length; i++) {
+        final key = keys[i];
+        if (key == null) continue;
+        if (index.containsKey(key)) repeated.add(key);
+        index[key] = i;
+      }
     }
     // A repeated key cannot identify one row; such rows follow their index.
     _index = {
@@ -80,7 +115,7 @@ class ResourceListUpdates {
     // Rows now above the previous first row that is still listed: new rows
     // and rows moved to the top.
     final oldTop = previous.firstWhere(
-      (key) => key != null && _index.containsKey(key),
+      (key) => key != null && _indexOf(key) != null,
       orElse: () => null,
     );
     final above = <String>{
@@ -161,7 +196,7 @@ class ResourceListUpdates {
       final itemIndex = childIndex ~/ 2;
       if (itemIndex >= previous.length) continue;
       final key = previous[itemIndex];
-      if (key == null || !_index.containsKey(key) || above.contains(key)) {
+      if (key == null || _indexOf(key) == null || above.contains(key)) {
         continue;
       }
       final offset = RaftReadingAnchorController.scrollOffsetOf(child);

@@ -1,0 +1,62 @@
+{
+  "sourceCommit": "bed0a28d9890c7a9d3e183249e78cee8d19d5e75",
+  "scenarios": {
+    "empty": [],
+    "queuedSharedFile": [
+      {
+        "origin": "https://composer-contract.invalid",
+        "principal": "fixture-user",
+        "server": "fixture-server",
+        "kind": "draft",
+        "id": "fixture-channel",
+        "payload": "{\"text\":\"原来的草稿\\nDraft \\\"one\\\"\\n\\n共有メモ\",\"channelId\":\"fixture-channel\",\"shareTokens\":[\"fixture-share\"],\"files\":[{\"ref\":{\"token\":\"fixture-share-reference\",\"file\":\"item-0\"},\"id\":null,\"metadata\":{}}]}"
+      }
+    ],
+    "inFlightWithNewText": [
+      {
+        "origin": "https://composer-contract.invalid",
+        "principal": "fixture-user",
+        "server": "fixture-server",
+        "kind": "attempt",
+        "id": "fixture-channel",
+        "payload": "{\"fingerprint\":\"[\\\"送信する本文\\\",[\\\"fixture-attachment\\\"]]\",\"randomId\":\"fixture-random-id\",\"channelId\":\"fixture-channel\"}"
+      },
+      {
+        "origin": "https://composer-contract.invalid",
+        "principal": "fixture-user",
+        "server": "fixture-server",
+        "kind": "draft",
+        "id": "fixture-channel",
+        "payload": "{\"text\":\"送信する本文\\n\\n后面新输入的文字\\n\\nSecond paragraph\",\"channelId\":\"fixture-channel\",\"shareTokens\":[\"fixture-share\"],\"files\":[{\"ref\":{\"token\":\"fixture-share-reference\",\"file\":\"item-0\"},\"id\":\"fixture-attachment\",\"metadata\":{\"id\":\"fixture-attachment\",\"filename\":\"照片-あ.png\",\"mimeType\":\"image/png\",\"sizeBytes\":3}}]}"
+      }
+    ],
+    "failedWithNewText": [
+      {
+        "origin": "https://composer-contract.invalid",
+        "principal": "fixture-user",
+        "server": "fixture-server",
+        "kind": "attempt",
+        "id": "fixture-channel",
+        "payload": "{\"fingerprint\":\"[\\\"送信する本文\\\",[\\\"fixture-attachment\\\"]]\",\"randomId\":\"fixture-random-id\",\"channelId\":\"fixture-channel\"}"
+      },
+      {
+        "origin": "https://composer-contract.invalid",
+        "principal": "fixture-user",
+        "server": "fixture-server",
+        "kind": "draft",
+        "id": "fixture-channel",
+        "payload": "{\"text\":\"送信する本文\\n后面新输入的文字\\n\\nSecond paragraph\",\"channelId\":\"fixture-channel\",\"shareTokens\":[\"fixture-share\"],\"files\":[{\"ref\":{\"token\":\"fixture-share-reference\",\"file\":\"item-0\"},\"id\":\"fixture-attachment\",\"metadata\":{\"id\":\"fixture-attachment\",\"filename\":\"照片-あ.png\",\"mimeType\":\"image/png\",\"sizeBytes\":3}}]}"
+      }
+    ],
+    "clearedDraftKeepsRetry": [
+      {
+        "origin": "https://composer-contract.invalid",
+        "principal": "fixture-user",
+        "server": "fixture-server",
+        "kind": "attempt",
+        "id": "fixture-channel",
+        "payload": "{\"fingerprint\":\"[\\\"送信する本文\\\",[\\\"fixture-attachment\\\"]]\",\"randomId\":\"fixture-random-id\",\"channelId\":\"fixture-channel\"}"
+      }
+    ]
+  }
+}

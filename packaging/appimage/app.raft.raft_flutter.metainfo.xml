@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>app.raft.raft_flutter</id>
+  <name>Raft</name>
+  <summary>A collaborative workspace for humans and agents</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <description><p>Chat, channels, threads, tasks and workspace administration in the Raft Flutter client.</p></description>
+  <launchable type="desktop-id">app.raft.raft_flutter.desktop</launchable>
+  <url type="homepage">https://github.com/kevinzhow/raft-flutter</url>
+  <content_rating type="oars-1.1"/>
+</component>

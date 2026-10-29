@@ -1,0 +1,21 @@
+{
+  "artifact": "raft-flutter-0.1.0-appimage-x64.AppImage",
+  "commit": "e90af8b4a22257c08e52923dc6b7864daffd8bd7",
+  "sha256": "1de2570d8a3269e02dbcb468b4d104bb3a01bc3ecca0f0d3eae3de354f568c02",
+  "mode": "direct",
+  "fuseDevice": "present",
+  "window": "0x200003",
+  "GDK_SCALE": 2,
+  "GDK_DPI_SCALE": 1,
+  "osRelease": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "scope": "production first screen; no account or messaging acceptance",
+  "softwareRenderingForced": false,
+  "file": "raft-linux-appimage-hidpi-2026-10-12.png",
+  "width": 2560,
+  "height": 1440,
+  "colors": 739,
+  "capture": "X11 Raft window",
+  "imageSha256": "783ad8d9cf955c8935ff532ca076f253d86439d0d548cd53b1dc0c133856830b",
+  "workflowRun": "https://github.com/kevinzhow/raft-flutter/actions/runs/38247319392",
+  "workflowResult": "Ubuntu production build/direct/extract/PDF passed; Fedora setup failed before executing the app"
+}

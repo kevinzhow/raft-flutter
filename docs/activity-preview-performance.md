@@ -51,7 +51,6 @@ RAFT_FLUTTER_BIN=/path/to/pinned/flutter ../../tool/flutter build macos --profil
 
 此前 A 方案预留空列的测量为历史结果（热缓存首帧 250.943→14.955ms），原样保存在第一轮证据包，不纳入此 C 表。首次广泛 C 回归的 21 个失败和修正前日志保留，不能把它们标为未运行。
 
-全 App 人工等待筛查及尚未修改的串行加载候选见 [不必要交互等待复查](artificial-latency-audit.md)。
 
 ## 按条目身份修正（2026-10-11）
 

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
-import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show paintedMessage;
@@ -27,7 +27,7 @@ void main() {
     test('[N24g] accepted memory bucket ownership: $invalidate', () async {
       final (w, api) = await fixture('owner');
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final c2 = RaftChannel({'id': 'c2', 'name': 'other', 'joined': true});
       w.channels.add(c2);
       api.routes['POST /channels/c1/read'] = (_) => {};
@@ -59,16 +59,19 @@ void main() {
       };
       final opening = w.jumpToMessage('c1', 'target');
       await started.future;
-      expect(w.pendingMessageContextChannelId, 'c1');
+      expect(w.messageDomain.pendingMessageContextChannelId, 'c1');
       expect(
-        w.messages.map((m) => m.id),
+        w.messageDomain.messages.map((m) => m.id),
         invalidate == null ? ['accepted'] : isEmpty,
       );
-      expect(w.messages.any((m) => m.id == 'other-private'), false);
+      expect(
+        w.messageDomain.messages.any((m) => m.id == 'other-private'),
+        false,
+      );
       if (invalidate == null) {
-        expect(w.hasMore, true);
-        expect(w.hasNewer, true);
-        expect(w.historyLimited, false);
+        expect(w.messageDomain.state.hasMore, true);
+        expect(w.messageDomain.state.hasNewer, true);
+        expect(w.messageDomain.state.historyLimited, false);
       }
       response.complete({
         'messages': [row('target', 'c1', 10)],
@@ -76,19 +79,15 @@ void main() {
         'hasNewer': false,
       });
       await opening;
-      expect(w.messages.map((m) => m.id), ['target']);
-      expect(w.hasMore, false);
-      expect(w.hasNewer, false);
+      expect(w.messageDomain.messages.map((m) => m.id), ['target']);
+      expect(w.messageDomain.state.hasMore, false);
+      expect(w.messageDomain.state.hasNewer, false);
     });
   }
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '[N24g] $family/$dark canonical thread Back then channel double-click retains accepted destination every pending frame',
+      '[N24g] ${dark ? 'dark' : 'light'} canonical thread Back then channel double-click retains accepted destination every pending frame',
       (tester) async {
         final (w, api) = await pageFixture(tester);
         w.channels.add(
@@ -129,7 +128,7 @@ void main() {
         };
         await tester.runAsync(() => w.selectChannel(w.channel!));
         w.section = 'activity';
-        await mountPage(tester, w, family, dark);
+        await mountPage(tester, w, dark);
         final thread = find.byKey(const ValueKey('activity-thread-t2'));
         await tester.tap(thread);
         await tester.pump(const Duration(milliseconds: 80));
@@ -137,7 +136,9 @@ void main() {
         await tester.runAsync(() async {
           for (
             var i = 0;
-            i < 60 && (w.threadLoading || w.channelLoading);
+            i < 60 &&
+                (w.messageDomain.state.threadLoading ||
+                    w.messageDomain.state.channelLoading);
             i++
           ) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
@@ -161,15 +162,15 @@ void main() {
         await tester.tap(channel);
         for (var frame = 0; frame < 12; frame++) {
           await tester.pump(const Duration(milliseconds: 16));
-          expect(w.channelLoading, true);
+          expect(w.messageDomain.state.channelLoading, true);
           expect(w.location.route, RaftRoute.channel);
           expect(w.location.entityId, 'c1');
           expect(w.location.messageId, 'target');
           expect(w.location.thread, isNull);
-          expect(w.messages.map((m) => m.id), ['accepted-tail']);
-          expect(w.hasMore, false);
-          expect(w.hasNewer, false);
-          expect(w.historyLimited, true);
+          expect(w.messageDomain.messages.map((m) => m.id), ['accepted-tail']);
+          expect(w.messageDomain.state.hasMore, false);
+          expect(w.messageDomain.state.hasNewer, false);
+          expect(w.messageDomain.state.historyLimited, true);
           expect(
             paintedMessage(tester, 'accepted-tail'),
             isNotNull,
@@ -191,17 +192,17 @@ void main() {
             'hasOlder': false,
             'hasNewer': true,
           });
-          for (var i = 0; i < 40 && w.channelLoading; i++) {
+          for (var i = 0; i < 40 && w.messageDomain.state.channelLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
         });
         await pageFrames(tester, () {}, count: 8);
-        expect(w.messages.map((m) => m.id), ['target']);
+        expect(w.messageDomain.messages.map((m) => m.id), ['target']);
         expect(paintedMessage(tester, 'target'), isNotNull);
         expect(paintedMessage(tester, 'accepted-tail'), isNull);
-        expect(w.hasMore, false);
-        expect(w.hasNewer, true);
-        expect(w.historyLimited, false);
+        expect(w.messageDomain.state.hasMore, false);
+        expect(w.messageDomain.state.hasNewer, true);
+        expect(w.messageDomain.state.historyLimited, false);
         expect(w.navigation.index, index + 1);
         expect(w.navigation.entries.length, entries);
         expect(tester.takeException(), isNull);

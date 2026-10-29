@@ -1,0 +1,1570 @@
+{
+  "source": {
+    "old": "a57b9dab",
+    "new": "cindy/raft-design"
+  },
+  "tiers": {
+    "semantic": [
+      {
+        "role": "foreground",
+        "brutal": "#141110",
+        "elegantLight": "#191815",
+        "elegantDark": "#d8d8d5",
+        "raftLight": "#141111",
+        "raftDark": "#e5e5e2",
+        "raftToken": "foreground"
+      },
+      {
+        "role": "foreground-strong",
+        "brutal": "#141110",
+        "elegantLight": "#0a0a0a",
+        "elegantDark": "#e5e5e2",
+        "raftLight": "#141111",
+        "raftDark": "#e5e5e2",
+        "raftToken": "foreground"
+      },
+      {
+        "role": "foreground-muted",
+        "brutal": "#141110 / 0.60",
+        "elegantLight": "#3d3d3a",
+        "elegantDark": "#c4c4c1",
+        "raftLight": "#141111 / 0.68",
+        "raftDark": "#c4c4c1",
+        "raftToken": "foreground-muted"
+      },
+      {
+        "role": "foreground-hint",
+        "brutal": "#5d5d5d",
+        "elegantLight": "#5d5d5d",
+        "elegantDark": "#989895",
+        "raftLight": "#141111 / 0.62",
+        "raftDark": "#9e9e9b",
+        "raftToken": "foreground-hint"
+      },
+      {
+        "role": "foreground-icon",
+        "brutal": "#151210 / 0.68",
+        "elegantLight": "#3d3d3a / 0.68",
+        "elegantDark": "#c4c4c1 / 0.68",
+        "raftLight": "#141111 / 0.68",
+        "raftDark": "#c4c4c1",
+        "raftToken": "foreground-muted"
+      },
+      {
+        "role": "foreground-placeholder",
+        "brutal": "#141110 / 0.50",
+        "elegantLight": "#72726e",
+        "elegantDark": "#8c8c89",
+        "raftLight": "#141111 / 0.62",
+        "raftDark": "#9e9e9b",
+        "raftToken": "foreground-hint"
+      },
+      {
+        "role": "foreground-disabled",
+        "brutal": "#140f10 / 0.30",
+        "elegantLight": "#9f9f9a",
+        "elegantDark": "#8f8f8c",
+        "raftLight": "#141111 / 0.30",
+        "raftDark": "#636360",
+        "raftToken": "foreground-disabled"
+      },
+      {
+        "role": "foreground-inverse",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#0a0a0a",
+        "raftLight": "#ffffff",
+        "raftDark": "#1b1b19",
+        "raftToken": "foreground-inverse"
+      },
+      {
+        "role": "foreground-active",
+        "brutal": "#43433f",
+        "elegantLight": "#43433f",
+        "elegantDark": "#d8d8d5",
+        "raftLight": "#141111",
+        "raftDark": "#e5e5e2",
+        "raftToken": "foreground-active"
+      },
+      {
+        "role": "foreground-hover",
+        "brutal": "#4d4d4a",
+        "elegantLight": "#4d4d4a",
+        "elegantDark": "#cececb",
+        "raftLight": "#141111",
+        "raftDark": "#e5e5e2",
+        "raftToken": "foreground-hover"
+      },
+      {
+        "role": "layer-canvas",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#141411",
+        "raftLight": "#ffffff",
+        "raftDark": "#1b1b19",
+        "raftToken": "layer-canvas"
+      },
+      {
+        "role": "layer-canvas-muted",
+        "brutal": "#ffffff",
+        "elegantLight": "#f8f8f7",
+        "elegantDark": "#0d0d0b",
+        "raftLight": "#fffaef",
+        "raftDark": "#0d0d0b",
+        "raftToken": "layer-sidebar"
+      },
+      {
+        "role": "layer-panel",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#242422",
+        "raftLight": "#ffffff",
+        "raftDark": "#1b1b19",
+        "raftToken": "layer-canvas"
+      },
+      {
+        "role": "layer-popover",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#292927",
+        "raftLight": "#ffffff",
+        "raftDark": "#292927",
+        "raftToken": "layer-popover"
+      },
+      {
+        "role": "layer-backdrop",
+        "brutal": "#000000 / 0.65",
+        "elegantLight": "#000000 / 0.35",
+        "elegantDark": "#000000 / 0.60",
+        "raftLight": "#000000 / 0.65",
+        "raftDark": "#000000 / 0.60",
+        "raftToken": "layer-backdrop"
+      },
+      {
+        "role": "layer-inset",
+        "brutal": "#fcfcfa",
+        "elegantLight": "#fcfcfb",
+        "elegantDark": "#131311",
+        "raftLight": "#f3f3f3",
+        "raftDark": "#32322f",
+        "raftToken": "fill-muted"
+      },
+      {
+        "role": "layer-card",
+        "brutal": "#fbfaf8",
+        "elegantLight": "#fbfaf8",
+        "elegantDark": "#1b1b19",
+        "raftLight": "#ffffff",
+        "raftDark": "#242422",
+        "raftToken": "layer-card"
+      },
+      {
+        "role": "layer-hud",
+        "brutal": "#252429",
+        "elegantLight": "#252429",
+        "elegantDark": "#1d1c21",
+        "raftLight": "#252429",
+        "raftDark": "#292927",
+        "raftToken": "layer-hud"
+      },
+      {
+        "role": "layer-hud-foreground",
+        "brutal": "#f3f3f5",
+        "elegantLight": "#f3f3f5",
+        "elegantDark": "#b7b7bb",
+        "raftLight": "#f3f3f5",
+        "raftDark": "#e5e5e2",
+        "raftToken": "foreground-on-hud"
+      },
+      {
+        "role": "fill-muted",
+        "brutal": "#f3f3f3",
+        "elegantLight": "#f4f4f3",
+        "elegantDark": "#32322f",
+        "raftLight": "#f3f3f3",
+        "raftDark": "#32322f",
+        "raftToken": "fill-muted"
+      },
+      {
+        "role": "fill-strong",
+        "brutal": "#ebebeb",
+        "elegantLight": "#eeeeed",
+        "elegantDark": "#393936",
+        "raftLight": "#eaeaea",
+        "raftDark": "#3a3a37",
+        "raftToken": "fill-strong"
+      },
+      {
+        "role": "line-strong",
+        "brutal": "#141110",
+        "elegantLight": "#191815",
+        "elegantDark": "#eeefec",
+        "raftLight": "#141111",
+        "raftDark": "#e5e5e2",
+        "raftToken": "line-strong"
+      },
+      {
+        "role": "line",
+        "brutal": "#141110",
+        "elegantLight": "#cbcbc6",
+        "elegantDark": "#757571",
+        "raftLight": "#141111 / 0.45",
+        "raftDark": "#fafaf7 / 0.26",
+        "raftToken": "line-seam"
+      },
+      {
+        "role": "line-muted",
+        "brutal": "#140f10 / 0.30",
+        "elegantLight": "#e5e5e2",
+        "elegantDark": "#f1f1f1 / 0.10",
+        "raftLight": "#141111 / 0.15",
+        "raftDark": "#fafaf7 / 0.10",
+        "raftToken": "line-hairline"
+      },
+      {
+        "role": "line-hairline",
+        "brutal": "#14130f / 0.15",
+        "elegantLight": "#191919 / 0.08",
+        "elegantDark": "#fafafa / 0.06",
+        "raftLight": "#141111 / 0.15",
+        "raftDark": "#fafaf7 / 0.10",
+        "raftToken": "line-hairline"
+      },
+      {
+        "role": "line-field",
+        "brutal": "#020201 / 0.08",
+        "elegantLight": "#191919 / 0.08",
+        "elegantDark": "#f6f6f6 / 0.16",
+        "raftLight": "#141111",
+        "raftDark": "#e5e5e2",
+        "raftToken": "line-field"
+      },
+      {
+        "role": "line-field-hover",
+        "brutal": "#010101 / 0.10",
+        "elegantLight": "#1f1615 / 0.10",
+        "elegantDark": "#f8f8f3 / 0.20",
+        "raftLight": "#141111",
+        "raftDark": "#e5e5e2",
+        "raftToken": "line-field-hover"
+      },
+      {
+        "role": "ink",
+        "brutal": "#000000",
+        "elegantLight": "#191815",
+        "elegantDark": "#fafaf7",
+        "raftLight": "#141111",
+        "raftDark": "#fafaf7",
+        "raftToken": "ink"
+      },
+      {
+        "role": "ink-2",
+        "brutal": "#060606 / 0.02",
+        "elegantLight": "#111111 / 0.02",
+        "elegantDark": "#efefee / 0.02",
+        "raftLight": "#141111 / 0.02",
+        "raftDark": "#fafaf7 / 0.02",
+        "raftToken": "ink-2"
+      },
+      {
+        "role": "ink-4",
+        "brutal": "#030303 / 0.04",
+        "elegantLight": "#191816 / 0.04",
+        "elegantDark": "#f3f3f7 / 0.04",
+        "raftLight": "#141111 / 0.04",
+        "raftDark": "#fafaf7 / 0.04",
+        "raftToken": "ink-4"
+      },
+      {
+        "role": "ink-6",
+        "brutal": "#020202 / 0.06",
+        "elegantLight": "#151514 / 0.06",
+        "elegantDark": "#fafafa / 0.06",
+        "raftLight": "#141111 / 0.06",
+        "raftDark": "#fafaf7 / 0.06",
+        "raftToken": "ink-6"
+      },
+      {
+        "role": "ink-8",
+        "brutal": "#020201 / 0.08",
+        "elegantLight": "#191919 / 0.08",
+        "elegantDark": "#f9f9ed / 0.08",
+        "raftLight": "#141111 / 0.08",
+        "raftDark": "#fafaf7 / 0.08",
+        "raftToken": "ink-8"
+      },
+      {
+        "role": "ink-10",
+        "brutal": "#010101 / 0.10",
+        "elegantLight": "#1f1615 / 0.10",
+        "elegantDark": "#f1f1f1 / 0.10",
+        "raftLight": "#141111 / 0.10",
+        "raftDark": "#fafaf7 / 0.10",
+        "raftToken": "ink-10"
+      },
+      {
+        "role": "ink-16",
+        "brutal": "#010001 / 0.16",
+        "elegantLight": "#191815 / 0.16",
+        "elegantDark": "#f6f6f6 / 0.16",
+        "raftLight": "#141111 / 0.16",
+        "raftDark": "#fafaf7 / 0.16",
+        "raftToken": "ink-16"
+      },
+      {
+        "role": "ink-20",
+        "brutal": "#000101 / 0.20",
+        "elegantLight": "#171813 / 0.20",
+        "elegantDark": "#f8f8f3 / 0.20",
+        "raftLight": "#141111 / 0.20",
+        "raftDark": "#fafaf7 / 0.20",
+        "raftToken": "ink-20"
+      },
+      {
+        "role": "ink-30",
+        "brutal": "#000000 / 0.30",
+        "elegantLight": "#191613 / 0.30",
+        "elegantDark": "#f7f7f7 / 0.30",
+        "raftLight": "#141111 / 0.30",
+        "raftDark": "#fafaf7 / 0.30",
+        "raftToken": "ink-30"
+      },
+      {
+        "role": "ink-40",
+        "brutal": "#000000 / 0.40",
+        "elegantLight": "#191914 / 0.40",
+        "elegantDark": "#f9f9f7 / 0.40",
+        "raftLight": "#141111 / 0.40",
+        "raftDark": "#fafaf7 / 0.40",
+        "raftToken": "ink-40"
+      },
+      {
+        "role": "primary-50",
+        "brutal": "#fff9ed",
+        "elegantLight": "#fff9ed",
+        "elegantDark": "#fff9ed",
+        "raftLight": "#fff9ed",
+        "raftDark": "#fff9ed",
+        "raftToken": "brand-50"
+      },
+      {
+        "role": "primary-100",
+        "brutal": "#fff6e3",
+        "elegantLight": "#fff6e3",
+        "elegantDark": "#fff6e3",
+        "raftLight": "#fff6e3",
+        "raftDark": "#fff6e3",
+        "raftToken": "brand-100"
+      },
+      {
+        "role": "primary-200",
+        "brutal": "#ffe9b9",
+        "elegantLight": "#ffe9b9",
+        "elegantDark": "#ffe9b9",
+        "raftLight": "#ffe9b9",
+        "raftDark": "#ffe9b9",
+        "raftToken": "brand-200"
+      },
+      {
+        "role": "primary-300",
+        "brutal": "#ffdf91",
+        "elegantLight": "#ffdf91",
+        "elegantDark": "#ffdf91",
+        "raftLight": "#ffdf91",
+        "raftDark": "#ffdf91",
+        "raftToken": "brand-300"
+      },
+      {
+        "role": "primary-400",
+        "brutal": "#ffd441",
+        "elegantLight": "#ffd441",
+        "elegantDark": "#ffd441",
+        "raftLight": "#ffd440",
+        "raftDark": "#ffd440",
+        "raftToken": "brand-400"
+      },
+      {
+        "role": "primary-500",
+        "brutal": "#d3ad03",
+        "elegantLight": "#d3ad03",
+        "elegantDark": "#d3ad03",
+        "raftLight": "#d3ad03",
+        "raftDark": "#d3ad03",
+        "raftToken": "brand-500"
+      },
+      {
+        "role": "primary-600",
+        "brutal": "#a78802",
+        "elegantLight": "#a78802",
+        "elegantDark": "#a78802",
+        "raftLight": "#a78802",
+        "raftDark": "#a78802",
+        "raftToken": "brand-600"
+      },
+      {
+        "role": "primary-700",
+        "brutal": "#7a6300",
+        "elegantLight": "#7a6300",
+        "elegantDark": "#7a6300",
+        "raftLight": "#7a6300",
+        "raftDark": "#7a6300",
+        "raftToken": "brand-700"
+      },
+      {
+        "role": "primary-800",
+        "brutal": "#534300",
+        "elegantLight": "#534300",
+        "elegantDark": "#534300",
+        "raftLight": "#534300",
+        "raftDark": "#534300",
+        "raftToken": "brand-800"
+      },
+      {
+        "role": "primary-900",
+        "brutal": "#2d2300",
+        "elegantLight": "#2d2300",
+        "elegantDark": "#2d2300",
+        "raftLight": "#2d2300",
+        "raftDark": "#2d2300",
+        "raftToken": "brand-900"
+      },
+      {
+        "role": "primary-950",
+        "brutal": "#1c1500",
+        "elegantLight": "#1c1500",
+        "elegantDark": "#1c1500",
+        "raftLight": "#1c1500",
+        "raftDark": "#1c1500",
+        "raftToken": "brand-950"
+      },
+      {
+        "role": "accent-50",
+        "brutal": "#fff0f4",
+        "elegantLight": "#fff0f4",
+        "elegantDark": "#fff0f4",
+        "raftLight": "#fff0f4",
+        "raftDark": "#fff0f4",
+        "raftToken": "attention-50"
+      },
+      {
+        "role": "accent-100",
+        "brutal": "#ffe1e8",
+        "elegantLight": "#ffe1e8",
+        "elegantDark": "#ffe1e8",
+        "raftLight": "#ffe1e8",
+        "raftDark": "#ffe1e8",
+        "raftToken": "attention-100"
+      },
+      {
+        "role": "accent-200",
+        "brutal": "#fec1d2",
+        "elegantLight": "#fec1d2",
+        "elegantDark": "#fec1d2",
+        "raftLight": "#fec1d2",
+        "raftDark": "#fec1d2",
+        "raftToken": "attention-200"
+      },
+      {
+        "role": "accent-300",
+        "brutal": "#fea0bc",
+        "elegantLight": "#fea0bc",
+        "elegantDark": "#fea0bc",
+        "raftLight": "#fea0bc",
+        "raftDark": "#fea0bc",
+        "raftToken": "attention-300"
+      },
+      {
+        "role": "accent-400",
+        "brutal": "#fe7da8",
+        "elegantLight": "#fe7da8",
+        "elegantDark": "#fe7da8",
+        "raftLight": "#ff99c3",
+        "raftDark": "#ff99c3",
+        "raftToken": "attention-400"
+      },
+      {
+        "role": "accent-500",
+        "brutal": "#fe2f8b",
+        "elegantLight": "#fe2f8b",
+        "elegantDark": "#fe2f8b",
+        "raftLight": "#fe7da8",
+        "raftDark": "#fe7da8",
+        "raftToken": "attention-500"
+      },
+      {
+        "role": "accent-600",
+        "brutal": "#d4086f",
+        "elegantLight": "#d4086f",
+        "elegantDark": "#d4086f",
+        "raftLight": "#d4086f",
+        "raftDark": "#d4086f",
+        "raftToken": "attention-600"
+      },
+      {
+        "role": "accent-700",
+        "brutal": "#9f0551",
+        "elegantLight": "#9f0551",
+        "elegantDark": "#9f0551",
+        "raftLight": "#9f0551",
+        "raftDark": "#9f0551",
+        "raftToken": "attention-700"
+      },
+      {
+        "role": "accent-800",
+        "brutal": "#700238",
+        "elegantLight": "#700238",
+        "elegantDark": "#700238",
+        "raftLight": "#700238",
+        "raftDark": "#700238",
+        "raftToken": "attention-800"
+      },
+      {
+        "role": "accent-900",
+        "brutal": "#42011e",
+        "elegantLight": "#42011e",
+        "elegantDark": "#42011e",
+        "raftLight": "#42011e",
+        "raftDark": "#42011e",
+        "raftToken": "attention-900"
+      },
+      {
+        "role": "accent-950",
+        "brutal": "#2f0014",
+        "elegantLight": "#2f0014",
+        "elegantDark": "#2f0014",
+        "raftLight": "#2f0014",
+        "raftDark": "#2f0014",
+        "raftToken": "attention-950"
+      },
+      {
+        "role": "secondary-50",
+        "brutal": "#f7f6f5",
+        "elegantLight": "#f7f6f5",
+        "elegantDark": "#f7f6f5",
+        "raftLight": "#f7f6f5",
+        "raftDark": "#f7f6f5",
+        "raftToken": "palette-stone-50"
+      },
+      {
+        "role": "secondary-100",
+        "brutal": "#efedeb",
+        "elegantLight": "#efedeb",
+        "elegantDark": "#efedeb",
+        "raftLight": "#efedeb",
+        "raftDark": "#efedeb",
+        "raftToken": "palette-stone-100"
+      },
+      {
+        "role": "secondary-200",
+        "brutal": "#e0dcd7",
+        "elegantLight": "#e0dcd7",
+        "elegantDark": "#e0dcd7",
+        "raftLight": "#e0dcd7",
+        "raftDark": "#e0dcd7",
+        "raftToken": "palette-stone-200"
+      },
+      {
+        "role": "secondary-300",
+        "brutal": "#d2cbc2",
+        "elegantLight": "#d2cbc2",
+        "elegantDark": "#d2cbc2",
+        "raftLight": "#d2cbc2",
+        "raftDark": "#d2cbc2",
+        "raftToken": "palette-stone-300"
+      },
+      {
+        "role": "secondary-400",
+        "brutal": "#c0b9b1",
+        "elegantLight": "#c0b9b1",
+        "elegantDark": "#c0b9b1",
+        "raftLight": "#c0b9b1",
+        "raftDark": "#c0b9b1",
+        "raftToken": "palette-stone-400"
+      },
+      {
+        "role": "secondary-500",
+        "brutal": "#9d9891",
+        "elegantLight": "#9d9891",
+        "elegantDark": "#9d9891",
+        "raftLight": "#9d9891",
+        "raftDark": "#9d9891",
+        "raftToken": "palette-stone-500"
+      },
+      {
+        "role": "secondary-600",
+        "brutal": "#7b7671",
+        "elegantLight": "#7b7671",
+        "elegantDark": "#7b7671",
+        "raftLight": "#7b7671",
+        "raftDark": "#7b7671",
+        "raftToken": "palette-stone-600"
+      },
+      {
+        "role": "secondary-700",
+        "brutal": "#5d5955",
+        "elegantLight": "#5d5955",
+        "elegantDark": "#5d5955",
+        "raftLight": "#5d5955",
+        "raftDark": "#5d5955",
+        "raftToken": "palette-stone-700"
+      },
+      {
+        "role": "secondary-800",
+        "brutal": "#3e3b38",
+        "elegantLight": "#3e3b38",
+        "elegantDark": "#3e3b38",
+        "raftLight": "#3e3b38",
+        "raftDark": "#3e3b38",
+        "raftToken": "palette-stone-800"
+      },
+      {
+        "role": "secondary-900",
+        "brutal": "#23211f",
+        "elegantLight": "#23211f",
+        "elegantDark": "#23211f",
+        "raftLight": "#23211f",
+        "raftDark": "#23211f",
+        "raftToken": "palette-stone-900"
+      },
+      {
+        "role": "secondary-950",
+        "brutal": "#141312",
+        "elegantLight": "#141312",
+        "elegantDark": "#141312",
+        "raftLight": "#141312",
+        "raftDark": "#141312",
+        "raftToken": "palette-stone-950"
+      },
+      {
+        "role": "info",
+        "brutal": "#28ccf3",
+        "elegantLight": "#28ccf3",
+        "elegantDark": "#28ccf3",
+        "raftLight": "#27ccf3",
+        "raftDark": "#27ccf3",
+        "raftToken": "info"
+      },
+      {
+        "role": "info-strong",
+        "brutal": "#06414f",
+        "elegantLight": "#095c71",
+        "elegantDark": "#6ccdea",
+        "raftLight": "#06414f",
+        "raftDark": "#6ccdea",
+        "raftToken": "info-strong"
+      },
+      {
+        "role": "info-muted",
+        "brutal": "#a9e6fe",
+        "elegantLight": "#a2dff7",
+        "elegantDark": "#007693 / 0.28",
+        "raftLight": "#a9e6fe",
+        "raftDark": "#007592 / 0.28",
+        "raftToken": "info-muted"
+      },
+      {
+        "role": "info-soft",
+        "brutal": "#d7f2fe",
+        "elegantLight": "#baeafd",
+        "elegantDark": "#005f79 / 0.18",
+        "raftLight": "#d7f2fe",
+        "raftDark": "#005f7a / 0.18",
+        "raftToken": "info-soft"
+      },
+      {
+        "role": "success",
+        "brutal": "#1fc16b",
+        "elegantLight": "#1fc16b",
+        "elegantDark": "#1fc16b",
+        "raftLight": "#a9d877",
+        "raftDark": "#a9d877",
+        "raftToken": "success"
+      },
+      {
+        "role": "success-foreground",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#ffffff",
+        "raftLight": "#141111",
+        "raftDark": "#141111",
+        "raftToken": "success-foreground"
+      },
+      {
+        "role": "success-strong",
+        "brutal": "#074c27",
+        "elegantLight": "#025f2c",
+        "elegantDark": "#6ed892",
+        "raftLight": "#344522",
+        "raftDark": "#b7e18c",
+        "raftToken": "success-strong"
+      },
+      {
+        "role": "success-muted",
+        "brutal": "#8cfeb2",
+        "elegantLight": "#82f0b8",
+        "elegantDark": "#0a7d43 / 0.28",
+        "raftLight": "#c0f588",
+        "raftDark": "#0c7d43 / 0.28",
+        "raftToken": "success-muted"
+      },
+      {
+        "role": "success-soft",
+        "brutal": "#c6fed5",
+        "elegantLight": "#9ff9c9",
+        "elegantDark": "#157340 / 0.18",
+        "raftLight": "#dcfac1",
+        "raftDark": "#167641 / 0.18",
+        "raftToken": "success-soft"
+      },
+      {
+        "role": "warning",
+        "brutal": "#ff6900",
+        "elegantLight": "#ff6900",
+        "elegantDark": "#ff6900",
+        "raftLight": "#f8a16f",
+        "raftDark": "#f8a16f",
+        "raftToken": "warning"
+      },
+      {
+        "role": "warning-foreground",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#ffffff",
+        "raftLight": "#141111",
+        "raftDark": "#141111",
+        "raftToken": "warning-foreground"
+      },
+      {
+        "role": "warning-strong",
+        "brutal": "#6a2700",
+        "elegantLight": "#d84100",
+        "elegantDark": "#ffaf76",
+        "raftLight": "#5b310f",
+        "raftDark": "#ffaf76",
+        "raftToken": "warning-strong"
+      },
+      {
+        "role": "warning-muted",
+        "brutal": "#ffd8c7",
+        "elegantLight": "#ffdccd",
+        "elegantDark": "#ac561b / 0.28",
+        "raftLight": "#fbd1c0",
+        "raftDark": "#ac571d / 0.28",
+        "raftToken": "warning-muted"
+      },
+      {
+        "role": "warning-soft",
+        "brutal": "#ffe9e0",
+        "elegantLight": "#ffe9df",
+        "elegantDark": "#9e5119 / 0.18",
+        "raftLight": "#fde6de",
+        "raftDark": "#9e511e / 0.18",
+        "raftToken": "warning-soft"
+      },
+      {
+        "role": "danger",
+        "brutal": "#f70720",
+        "elegantLight": "#f70720",
+        "elegantDark": "#f70720",
+        "raftLight": "#f97264",
+        "raftDark": "#f97264",
+        "raftToken": "danger"
+      },
+      {
+        "role": "danger-foreground",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#ffffff",
+        "raftLight": "#141111",
+        "raftDark": "#141111",
+        "raftToken": "danger-foreground"
+      },
+      {
+        "role": "danger-strong",
+        "brutal": "#621708",
+        "elegantLight": "#96240e",
+        "elegantDark": "#f8a49d",
+        "raftLight": "#b5321a",
+        "raftDark": "#f8a49d",
+        "raftToken": "danger-strong"
+      },
+      {
+        "role": "danger-muted",
+        "brutal": "#fbbdb9",
+        "elegantLight": "#fac2be",
+        "elegantDark": "#d23a2d / 0.30",
+        "raftLight": "#fbbdb9",
+        "raftDark": "#d33c30 / 0.30",
+        "raftToken": "danger-muted"
+      },
+      {
+        "role": "danger-soft",
+        "brutal": "#fddedd",
+        "elegantLight": "#fdd1ce",
+        "elegantDark": "#c63124 / 0.18",
+        "raftLight": "#fddedd",
+        "raftDark": "#c93126 / 0.18",
+        "raftToken": "danger-soft"
+      },
+      {
+        "role": "inactive",
+        "brutal": "#787878",
+        "elegantLight": "#787878",
+        "elegantDark": "#8f8f8d",
+        "raftLight": "#c0b9b1",
+        "raftDark": "#c0b9b1",
+        "raftToken": "inactive"
+      },
+      {
+        "role": "inactive-foreground",
+        "brutal": "#ededed",
+        "elegantLight": "#ededed",
+        "elegantDark": "#0a0a09",
+        "raftLight": "#141111",
+        "raftDark": "#141111",
+        "raftToken": "inactive-foreground"
+      },
+      {
+        "role": "task-status-todo",
+        "brutal": "#f8a16f",
+        "elegantLight": "#ff6900",
+        "elegantDark": "#ff6900",
+        "raftLight": "#f8a16f",
+        "raftDark": "#ff6900",
+        "raftToken": "task-status-todo"
+      },
+      {
+        "role": "task-status-todo-soft",
+        "brutal": "#fde6de",
+        "elegantLight": "#ffe9df",
+        "elegantDark": "#9e5119 / 0.18",
+        "raftLight": "#fde6de",
+        "raftDark": "#9e511e / 0.18",
+        "raftToken": "task-status-todo-soft"
+      },
+      {
+        "role": "task-status-todo-strong",
+        "brutal": "#5b310f",
+        "elegantLight": "#c53200",
+        "elegantDark": "#ffaf76",
+        "raftLight": "#5b310f",
+        "raftDark": "#ffaf76",
+        "raftToken": "task-status-todo-strong"
+      },
+      {
+        "role": "task-status-in-progress",
+        "brutal": "#28ccf3",
+        "elegantLight": "#28ccf3",
+        "elegantDark": "#28ccf3",
+        "raftLight": "#27ccf3",
+        "raftDark": "#27ccf3",
+        "raftToken": "task-status-in-progress"
+      },
+      {
+        "role": "task-status-in-progress-soft",
+        "brutal": "#d7f2fe",
+        "elegantLight": "#baeafd",
+        "elegantDark": "#005f79 / 0.18",
+        "raftLight": "#d7f2fe",
+        "raftDark": "#005f7a / 0.18",
+        "raftToken": "task-status-in-progress-soft"
+      },
+      {
+        "role": "task-status-in-progress-strong",
+        "brutal": "#06414f",
+        "elegantLight": "#095c71",
+        "elegantDark": "#6ccdea",
+        "raftLight": "#06414f",
+        "raftDark": "#6ccdea",
+        "raftToken": "task-status-in-progress-strong"
+      },
+      {
+        "role": "task-status-in-review",
+        "brutal": "#bbafe6",
+        "elegantLight": "#7f62cb",
+        "elegantDark": "#9d8ada",
+        "raftLight": "#bbafe6",
+        "raftDark": "#9d8ada",
+        "raftToken": "task-status-in-review"
+      },
+      {
+        "role": "task-status-in-review-soft",
+        "brutal": "#efecf9",
+        "elegantLight": "#dcd7f2",
+        "elegantDark": "#67529d / 0.24",
+        "raftLight": "#efecf9",
+        "raftDark": "#6853a0 / 0.24",
+        "raftToken": "task-status-in-review-soft"
+      },
+      {
+        "role": "task-status-in-review-strong",
+        "brutal": "#442b7c",
+        "elegantLight": "#442b7c",
+        "elegantDark": "#ccc4ec",
+        "raftLight": "#442b7c",
+        "raftDark": "#ccc4ec",
+        "raftToken": "task-status-in-review-strong"
+      },
+      {
+        "role": "task-status-done",
+        "brutal": "#a9d877",
+        "elegantLight": "#1fc16b",
+        "elegantDark": "#1fc16b",
+        "raftLight": "#a9d877",
+        "raftDark": "#20c16b",
+        "raftToken": "task-status-done"
+      },
+      {
+        "role": "task-status-done-soft",
+        "brutal": "#dcfac1",
+        "elegantLight": "#9ff9c9",
+        "elegantDark": "#157340 / 0.18",
+        "raftLight": "#dcfac1",
+        "raftDark": "#167641 / 0.18",
+        "raftToken": "task-status-done-soft"
+      },
+      {
+        "role": "task-status-done-strong",
+        "brutal": "#344522",
+        "elegantLight": "#025f2c",
+        "elegantDark": "#6ed892",
+        "raftLight": "#344522",
+        "raftDark": "#6ed892",
+        "raftToken": "task-status-done-strong"
+      },
+      {
+        "role": "task-status-closed",
+        "brutal": "#c0b9b1",
+        "elegantLight": "#787878",
+        "elegantDark": "#8f8f8d",
+        "raftLight": "#c0b9b1",
+        "raftDark": "#8f8f8d",
+        "raftToken": "task-status-closed"
+      },
+      {
+        "role": "task-status-closed-soft",
+        "brutal": "#e0dcd7",
+        "elegantLight": "#f4f4f3",
+        "elegantDark": "#32322f",
+        "raftLight": "#e0dcd7",
+        "raftDark": "#32322f",
+        "raftToken": "task-status-closed-soft"
+      },
+      {
+        "role": "task-status-closed-strong",
+        "brutal": "#3e3b38",
+        "elegantLight": "#9f9f9a",
+        "elegantDark": "#8f8f8c",
+        "raftLight": "#3e3b38",
+        "raftDark": "#9e9e9b",
+        "raftToken": "task-status-closed-strong"
+      },
+      {
+        "role": "primary-strong",
+        "brutal": "#655000",
+        "elegantLight": "#655000",
+        "elegantDark": "#f6d56b",
+        "raftLight": "#564919",
+        "raftDark": "#ffd440",
+        "raftToken": "brand-strong"
+      },
+      {
+        "role": "primary-soft",
+        "brutal": "#fff0bd",
+        "elegantLight": "#fff0bd",
+        "elegantDark": "#866d1c / 0.16",
+        "raftLight": "#fff0bd",
+        "raftDark": "#876f1f / 0.16",
+        "raftToken": "brand-soft"
+      },
+      {
+        "role": "primary-edge",
+        "brutal": "#e8c54e / 0.70",
+        "elegantLight": "#e8c54e / 0.70",
+        "elegantDark": "#f9d452 / 0.40",
+        "raftLight": "#141111",
+        "raftDark": "#141111",
+        "raftToken": "brand-edge"
+      },
+      {
+        "role": "primary-glow",
+        "brutal": "#f4c931",
+        "elegantLight": "#f4c931",
+        "elegantDark": "#f4c931",
+        "raftLight": "#ffd440",
+        "raftDark": "#ffd440",
+        "raftToken": "brand-glow"
+      },
+      {
+        "role": "accent-strong",
+        "brutal": "#c00064",
+        "elegantLight": "#c00064",
+        "elegantDark": "#ffacc7",
+        "raftLight": "#c00064",
+        "raftDark": "#ffacc7",
+        "raftToken": "attention-strong"
+      },
+      {
+        "role": "accent-soft",
+        "brutal": "#ffd6e2",
+        "elegantLight": "#ffd6e2",
+        "elegantDark": "#cb4279 / 0.16",
+        "raftLight": "#ffd6e2",
+        "raftDark": "#d0457c / 0.16",
+        "raftToken": "attention-soft"
+      },
+      {
+        "role": "primary-hover",
+        "brutal": "#f6cc3e",
+        "elegantLight": "#f3e4b3",
+        "elegantDark": "#d5b559 / 0.35",
+        "raftLight": "#e3bd3a",
+        "raftDark": "#e3bd3a",
+        "raftToken": "brand-hover"
+      },
+      {
+        "role": "primary-active",
+        "brutal": "#ecc43b",
+        "elegantLight": "#ecc43c",
+        "elegantDark": "#fedb7a",
+        "raftLight": "#e3bd3a",
+        "raftDark": "#e3bd3a",
+        "raftToken": "brand-active"
+      },
+      {
+        "role": "accent-hover",
+        "brutal": "#f578a2",
+        "elegantLight": "#f8cad8",
+        "elegantDark": "#f290b0 / 0.35",
+        "raftLight": "#e389ae",
+        "raftDark": "#e389ae",
+        "raftToken": "attention-hover"
+      },
+      {
+        "role": "accent-active",
+        "brutal": "#eb739b",
+        "elegantLight": "#eb749c",
+        "elegantDark": "#fd9bb8",
+        "raftLight": "#e389ae",
+        "raftDark": "#e389ae",
+        "raftToken": "attention-active"
+      },
+      {
+        "role": "info-hover",
+        "brutal": "#24bde1",
+        "elegantLight": "#26bde1",
+        "elegantDark": "#73d4f4",
+        "raftLight": "#25b6d8",
+        "raftDark": "#25b6d8",
+        "raftToken": "info-hover"
+      },
+      {
+        "role": "info-active",
+        "brutal": "#22b4d7",
+        "elegantLight": "#25b5d7",
+        "elegantDark": "#88d8f4",
+        "raftLight": "#25b6d8",
+        "raftDark": "#25b6d8",
+        "raftToken": "info-active"
+      },
+      {
+        "role": "warning-hover",
+        "brutal": "#ec6100",
+        "elegantLight": "#ec6104",
+        "elegantDark": "#fe8e6c",
+        "raftLight": "#dd9064",
+        "raftDark": "#dd9064",
+        "raftToken": "warning-hover"
+      },
+      {
+        "role": "warning-active",
+        "brutal": "#e25c00",
+        "elegantLight": "#e25d06",
+        "elegantDark": "#fe9d82",
+        "raftLight": "#dd9064",
+        "raftDark": "#dd9064",
+        "raftToken": "warning-active"
+      },
+      {
+        "role": "danger-hover",
+        "brutal": "#e5061d",
+        "elegantLight": "#e50b1e",
+        "elegantDark": "#f86e70",
+        "raftLight": "#de665a",
+        "raftDark": "#de665a",
+        "raftToken": "danger-hover"
+      },
+      {
+        "role": "danger-active",
+        "brutal": "#db051b",
+        "elegantLight": "#db0c1e",
+        "elegantDark": "#f88485",
+        "raftLight": "#de665a",
+        "raftDark": "#de665a",
+        "raftToken": "danger-active"
+      }
+    ],
+    "product": [
+      {
+        "role": "color-brutal-yellow",
+        "brutal": "#ffd440",
+        "elegantLight": "#ffd440",
+        "elegantDark": "#ffd440",
+        "raftLight": "#ffd440",
+        "raftDark": "#ffd440",
+        "raftToken": "brand-400"
+      },
+      {
+        "role": "color-soft-signal",
+        "brutal": "#ffd440",
+        "elegantLight": "#ffd440",
+        "elegantDark": "#ffd440",
+        "raftLight": "#ffd440",
+        "raftDark": "#ffd440",
+        "raftToken": "brand-400"
+      },
+      {
+        "role": "color-brutal-lavender",
+        "brutal": "#bbafe6",
+        "elegantLight": "#bbafe6",
+        "elegantDark": "#bbafe6",
+        "raftLight": "#bbafe6",
+        "raftDark": "#bbafe6",
+        "raftToken": "palette-lavender-400"
+      },
+      {
+        "role": "color-brutal-pink",
+        "brutal": "#fe7da8",
+        "elegantLight": "#fe7da8",
+        "elegantDark": "#fe7da8",
+        "raftLight": "#ff99c3",
+        "raftDark": "#ff99c3",
+        "raftToken": "attention-400"
+      },
+      {
+        "role": "color-brutal-cyan",
+        "brutal": "#27ccf3",
+        "elegantLight": "#27ccf3",
+        "elegantDark": "#27ccf3",
+        "raftLight": "#27ccf3",
+        "raftDark": "#27ccf3",
+        "raftToken": "info"
+      },
+      {
+        "role": "color-brutal-orange",
+        "brutal": "#f8a16f",
+        "elegantLight": "#f8a16f",
+        "elegantDark": "#f8a16f",
+        "raftLight": "#f8a16f",
+        "raftDark": "#f8a16f",
+        "raftToken": "warning"
+      },
+      {
+        "role": "color-brutal-lime",
+        "brutal": "#a9d877",
+        "elegantLight": "#a9d877",
+        "elegantDark": "#a9d877",
+        "raftLight": "#a9d877",
+        "raftDark": "#a9d877",
+        "raftToken": "success"
+      },
+      {
+        "role": "color-brutal-red",
+        "brutal": "#f97264",
+        "elegantLight": "#f97264",
+        "elegantDark": "#f97264",
+        "raftLight": "#f97264",
+        "raftDark": "#f97264",
+        "raftToken": "danger"
+      },
+      {
+        "role": "color-brutal-stone",
+        "brutal": "#c0b9b1",
+        "elegantLight": "#c0b9b1",
+        "elegantDark": "#c0b9b1",
+        "raftLight": "#c0b9b1",
+        "raftDark": "#c0b9b1",
+        "raftToken": "palette-stone-400"
+      },
+      {
+        "role": "color-brutal-cream",
+        "brutal": "#fffaef",
+        "elegantLight": "#fffaef",
+        "elegantDark": "#fffaef",
+        "raftLight": "#fffaef",
+        "raftDark": "#fffaef",
+        "raftToken": "palette-cream-200"
+      },
+      {
+        "role": "color-status-busy",
+        "brutal": "#ffd440",
+        "elegantLight": "#ffd440",
+        "elegantDark": "#ffd440",
+        "raftLight": "#ffd440",
+        "raftDark": "#ffd440",
+        "raftToken": "presence-busy"
+      },
+      {
+        "role": "color-brutal-black",
+        "brutal": "#141111",
+        "elegantLight": "#141111",
+        "elegantDark": "#141111",
+        "raftLight": "#141111",
+        "raftDark": "#141111",
+        "raftToken": "sticker-ink"
+      },
+      {
+        "role": "color-code-surface",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#0a0c10",
+        "raftLight": "#ffffff",
+        "raftDark": "#0a0c10",
+        "raftToken": "layer-code"
+      },
+      {
+        "role": "color-code-foreground",
+        "brutal": "#24292e",
+        "elegantLight": "#24292e",
+        "elegantDark": "#f0f3f6",
+        "raftLight": "#141111",
+        "raftDark": "#e5e5e2",
+        "raftToken": "foreground"
+      }
+    ],
+    "component": [
+      {
+        "role": "primary",
+        "brutal": "#ffd440",
+        "elegantLight": "#ffd441",
+        "elegantDark": "#ffd441",
+        "raftLight": "#ffd440",
+        "raftDark": "#ffd440",
+        "raftToken": "brand-400"
+      },
+      {
+        "role": "accent",
+        "brutal": "#fe7da8",
+        "elegantLight": "#fe7da8",
+        "elegantDark": "#fe7da8",
+        "raftLight": "#ff99c3",
+        "raftDark": "#ff99c3",
+        "raftToken": "attention-400"
+      },
+      {
+        "role": "brutal-cream",
+        "brutal": "#fffaef",
+        "elegantLight": "#fffaef",
+        "elegantDark": "#fffaef",
+        "raftLight": "#fffaef",
+        "raftDark": "#fffaef",
+        "raftToken": "palette-cream-200"
+      },
+      {
+        "role": "button-default-fill",
+        "brutal": "#141110",
+        "elegantLight": "#191815",
+        "elegantDark": "#fafaf7",
+        "raftLight": "#141111",
+        "raftDark": "#fafaf7",
+        "raftToken": "ink"
+      },
+      {
+        "role": "button-default-hover",
+        "brutal": "#31312d",
+        "elegantLight": "#31312d",
+        "elegantDark": "#e5e5e2",
+        "raftLight": "#141111",
+        "raftDark": "#e5e5e2",
+        "raftToken": "foreground-hover"
+      },
+      {
+        "role": "button-primary-hover",
+        "brutal": "#f6cc3e",
+        "elegantLight": "#f3e4b3",
+        "elegantDark": "#d5b559 / 0.35",
+        "raftLight": "#e3bd3a",
+        "raftDark": "#e3bd3a",
+        "raftToken": "brand-hover"
+      },
+      {
+        "role": "button-accent-hover",
+        "brutal": "#f578a2",
+        "elegantLight": "#f8cad8",
+        "elegantDark": "#f290b0 / 0.35",
+        "raftLight": "#e389ae",
+        "raftDark": "#e389ae",
+        "raftToken": "attention-hover"
+      },
+      {
+        "role": "button-accent-edge",
+        "brutal": "#c10064 / 0.28",
+        "elegantLight": "#c10064 / 0.28",
+        "elegantDark": "#ffacc7 / 0.28",
+        "raftLight": "#141111",
+        "raftDark": "#141111",
+        "raftToken": "sticker-ink"
+      },
+      {
+        "role": "button-danger-fill",
+        "brutal": "#f70720",
+        "elegantLight": "#f70720",
+        "elegantDark": "#db2c2b",
+        "raftLight": "#f97264",
+        "raftDark": "#f97264",
+        "raftToken": "danger"
+      },
+      {
+        "role": "button-danger-hover",
+        "brutal": "#e5061d",
+        "elegantLight": "#e50b1e",
+        "elegantDark": "#e63935",
+        "raftLight": "#de665a",
+        "raftDark": "#de665a",
+        "raftToken": "danger-hover"
+      },
+      {
+        "role": "button-danger-foreground",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#fafaf7",
+        "raftLight": "#141111",
+        "raftDark": "#141111",
+        "raftToken": "danger-foreground"
+      },
+      {
+        "role": "button-danger-high-contrast",
+        "brutal": "#8e2510",
+        "elegantLight": "#8e2510",
+        "elegantDark": "#8e2510",
+        "raftLight": "#b5321a",
+        "raftDark": "#f8a49d",
+        "raftToken": "danger-strong"
+      },
+      {
+        "role": "button-danger-high-contrast-foreground",
+        "brutal": "#ffffff",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#ffffff",
+        "raftLight": "#ffffff",
+        "raftDark": "#1b1b19",
+        "raftToken": "foreground-inverse"
+      },
+      {
+        "role": "task-section-fill",
+        "brutal": "#000000 / 0",
+        "elegantLight": "#f5f5f5 / 0.52",
+        "elegantDark": "#1b1b19",
+        "raftLight": "#f3f3f3",
+        "raftDark": "#32322f",
+        "raftToken": "fill-muted"
+      },
+      {
+        "role": "code-border",
+        "brutal": "#000000",
+        "elegantLight": "#cbcbc6",
+        "elegantDark": "#757571",
+        "raftLight": "#141111 / 0.45",
+        "raftDark": "#fafaf7 / 0.26",
+        "raftToken": "line-seam"
+      },
+      {
+        "role": "field-inset-line",
+        "brutal": "#000000 / 0",
+        "elegantLight": "#000000 / 0",
+        "elegantDark": "#000000 / 0.35",
+        "raftLight": "#141111 / 0.15",
+        "raftDark": "#fafaf7 / 0.10",
+        "raftToken": "line-hairline"
+      },
+      {
+        "role": "field-inset-top",
+        "brutal": "#000000 / 0",
+        "elegantLight": "#000000 / 0",
+        "elegantDark": "#000000 / 0.30",
+        "raftLight": "",
+        "raftDark": "",
+        "raftToken": ""
+      },
+      {
+        "role": "field-inset-bottom",
+        "brutal": "#000000 / 0",
+        "elegantLight": "#000000 / 0",
+        "elegantDark": "#f3f3f7 / 0.04",
+        "raftLight": "",
+        "raftDark": "",
+        "raftToken": ""
+      },
+      {
+        "role": "switch-thumb",
+        "brutal": "#141110",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#555552",
+        "raftLight": "#ffffff",
+        "raftDark": "#ffffff",
+        "raftToken": "sticker-paper"
+      },
+      {
+        "role": "switch-thumb-checked",
+        "brutal": "#141110",
+        "elegantLight": "#ffffff",
+        "elegantDark": "#171715",
+        "raftLight": "#ffffff",
+        "raftDark": "#ffffff",
+        "raftToken": "sticker-paper"
+      },
+      {
+        "role": "switch-thumb-disabled",
+        "brutal": "#141110",
+        "elegantLight": "#d8d8d5",
+        "elegantDark": "#424241",
+        "raftLight": "#eaeaea",
+        "raftDark": "#3a3a37",
+        "raftToken": "fill-strong"
+      },
+      {
+        "role": "switch-thumb-checked-disabled",
+        "brutal": "#141110",
+        "elegantLight": "#d8d8d5",
+        "elegantDark": "#292928",
+        "raftLight": "#eaeaea",
+        "raftDark": "#3a3a37",
+        "raftToken": "fill-strong"
+      },
+      {
+        "role": "switch-shadow-bottom",
+        "brutal": "#000000 / 0",
+        "elegantLight": "#000000 / 0",
+        "elegantDark": "#f3f3f7 / 0.04",
+        "raftLight": "",
+        "raftDark": "",
+        "raftToken": ""
+      }
+    ]
+  },
+  "extra": {
+    "elevation": {
+      "xs": {
+        "brutal": "1px 1px 0px 0px #141110",
+        "elegantLight": "0px 0.5px 0px 0px #0a0a09 / 0.07",
+        "elegantDark": "inset 0px 1px 0px 0px #fafaf7 / 0.04 , 0px 0px 0px 1px #000000 / 0.40 , 0px 1px 3px 0px #000000 / 0.22",
+        "raftLight": "none (controls and steps xs\u2026md cast nothing)",
+        "raftDark": "none (controls and steps xs\u2026md cast nothing)"
+      },
+      "sm": {
+        "brutal": "2px 2px 0px 0px #141110",
+        "elegantLight": "0px 0.5px 0px 0px #0a0a09 / 0.07 , 0px 5px 4px -2px #0a0a09 / 0.01 , 0px 3px 3px -1px #0a0a09 / 0.02 , 0px 1px 2px -1px #0a0a09 / 0.04",
+        "elegantDark": "inset 0px 1px 0px 0px #fafaf7 / 0.05 , inset 0px 0px 0px 1px #fafaf7 / 0.03 , 0px 0px 0px 1px #000000 / 0.45 , 0px 6px 6px -2px #000000 / 0.15 , 0px 2px 4px 0px #000000 / 0.25",
+        "raftLight": "none (controls and steps xs\u2026md cast nothing)",
+        "raftDark": "none (controls and steps xs\u2026md cast nothing)"
+      },
+      "md": {
+        "brutal": "4px 4px 0px 0px #141110",
+        "elegantLight": "0px 0.5px 0px 0px #0a0a09 / 0.07 , 0px 8px 8px -4px #0a0a09 / 0.02 , 0px 5px 5px -2px #0a0a09 / 0.03 , 0px 2px 3px -1px #0a0a09 / 0.04",
+        "elegantDark": "inset 0px 1px 0px 0px #fafaf7 / 0.05 , inset 0px 0px 0px 1px #fafaf7 / 0.03 , 0px 0px 0px 1px #000000 / 0.45 , 0px 10px 10px -4px #000000 / 0.16 , 0px 4px 6px -2px #000000 / 0.20 , 0px 1px 2px 0px #000000 / 0.25",
+        "raftLight": "none (controls and steps xs\u2026md cast nothing)",
+        "raftDark": "none (controls and steps xs\u2026md cast nothing)"
+      },
+      "lg": {
+        "brutal": "4px 4px 0px 0px #000000",
+        "elegantLight": "0px 1px 1px 0px #191815 / 0.10 , 0px 0px 0px 1px #191815 / 0.04 , 0px 2px 12px -4px #191815 / 0.16",
+        "elegantDark": "inset 0px 1px 0px 0px #fafaf7 / 0.06 , inset 0px 0px 0px 1px #fafaf7 / 0.04 , 0px 0px 0px 1px #000000 / 0.55 , 0px 10px 20px -6px #000000 / 0.45 , 0px 4px 8px -3px #000000 / 0.35",
+        "raftLight": "0px 1px 0px 0px #141111 / 0.04 , 0px 12px 32px -12px #141111 / 0.32",
+        "raftDark": "0px 1px 0px 0px #141111 / 0.04 , 0px 12px 32px -12px #141111 / 0.32"
+      },
+      "xl": {
+        "brutal": "6px 6px 0px 0px #141110",
+        "elegantLight": "0px 0.5px 0px 0px #0a0a09 / 0.07 , 0px 0px 0px 1px #191815 / 0.08 , 0px 18px 24px -12px #0a0a09 / 0.03 , 0px 12px 12px -6px #0a0a09 / 0.04 , 0px 4px 6px -3px #0a0a09 / 0.04",
+        "elegantDark": "inset 0px 1px 0px 0px #fafaf7 / 0.06 , inset 0px 0px 0px 1px #fafaf7 / 0.04 , 0px 0px 0px 1px #000000 / 0.60 , 0px 24px 44px -12px #000000 / 0.50 , 0px 10px 16px -6px #000000 / 0.45 , 0px 4px 6px -3px #000000 / 0.40",
+        "raftLight": "0px 1px 0px 0px #141111 / 0.04 , 0px 12px 32px -12px #141111 / 0.32",
+        "raftDark": "0px 1px 0px 0px #141111 / 0.04 , 0px 12px 32px -12px #141111 / 0.32"
+      },
+      "shadow.float": {
+        "brutal": "",
+        "elegantLight": "",
+        "elegantDark": "",
+        "raftLight": "0px 1px 0px 0px #141111 / 0.04 , 0px 12px 32px -12px #141111 / 0.32",
+        "raftDark": "0px 0px 0px 1px #fafaf7 / 0.08 , 0px 16px 40px -12px #000000 / 0.80"
+      },
+      "shadow.sticker": {
+        "brutal": "",
+        "elegantLight": "",
+        "elegantDark": "",
+        "raftLight": "4px 4px 0px 0px #141111",
+        "raftDark": "4px 4px 0px 0px #000000"
+      },
+      "shadow.focusRing": {
+        "brutal": "",
+        "elegantLight": "",
+        "elegantDark": "",
+        "raftLight": "0px 0px 0px 2px #ffffff , 0px 0px 0px 4px #141111",
+        "raftDark": "0px 0px 0px 2px #1b1b19 , 0px 0px 0px 4px #e5e5e2"
+      }
+    },
+    "type": {
+      "type.field.size": {
+        "brutal": "16.0",
+        "elegantLight": "14.0",
+        "elegantDark": "14.0",
+        "raftLight": "16.0",
+        "raftDark": "16.0"
+      },
+      "type.field.line": {
+        "brutal": "24.0",
+        "elegantLight": "20.0",
+        "elegantDark": "20.0",
+        "raftLight": "24.0",
+        "raftDark": "24.0"
+      },
+      "type.field.weight": {
+        "brutal": "400.0",
+        "elegantLight": "400.0",
+        "elegantDark": "400.0",
+        "raftLight": "400.0",
+        "raftDark": "400.0"
+      },
+      "type.cardTitle.size": {
+        "brutal": "18.0",
+        "elegantLight": "16.0",
+        "elegantDark": "16.0",
+        "raftLight": "16.0",
+        "raftDark": "16.0"
+      },
+      "type.cardTitle.line": {
+        "brutal": "20.0",
+        "elegantLight": "22.0",
+        "elegantDark": "22.0",
+        "raftLight": "24.0",
+        "raftDark": "24.0"
+      },
+      "type.cardTitle.weight": {
+        "brutal": "700.0",
+        "elegantLight": "500.0",
+        "elegantDark": "500.0",
+        "raftLight": "600.0",
+        "raftDark": "600.0"
+      },
+      "font.heading.stack": {
+        "brutal": "['Hanken Grotesk', 'system-ui', 'sans-serif']",
+        "elegantLight": "['Inter', 'system-ui', 'sans-serif']",
+        "elegantDark": "['Inter', 'system-ui', 'sans-serif']",
+        "raftLight": "Space Grotesk \u203a PingFang SC \u203a Hiragino Sans GB \u203a Microsoft YaHei \u203a Noto Sans SC \u203a system-ui \u203a sans-serif",
+        "raftDark": "Space Grotesk \u203a PingFang SC \u203a Hiragino Sans GB \u203a Microsoft YaHei \u203a Noto Sans SC \u203a system-ui \u203a sans-serif"
+      },
+      "font.sans.stack": {
+        "brutal": "['Hanken Grotesk', 'system-ui', 'sans-serif']",
+        "elegantLight": "['Geist', 'system-ui', 'sans-serif']",
+        "elegantDark": "['Geist', 'system-ui', 'sans-serif']",
+        "raftLight": "Space Grotesk \u203a PingFang SC \u203a Hiragino Sans GB \u203a Microsoft YaHei \u203a Noto Sans SC \u203a system-ui \u203a sans-serif",
+        "raftDark": "Space Grotesk \u203a PingFang SC \u203a Hiragino Sans GB \u203a Microsoft YaHei \u203a Noto Sans SC \u203a system-ui \u203a sans-serif"
+      },
+      "font.mono.stack": {
+        "brutal": "['Geist Mono', 'ui-monospace', 'monospace']",
+        "elegantLight": "['Geist Mono', 'ui-monospace', 'monospace']",
+        "elegantDark": "['Geist Mono', 'ui-monospace', 'monospace']",
+        "raftLight": "Space Mono \u203a ui-monospace \u203a SF Mono \u203a Menlo \u203a monospace",
+        "raftDark": "Space Mono \u203a ui-monospace \u203a SF Mono \u203a Menlo \u203a monospace"
+      }
+    }
+  }
+}

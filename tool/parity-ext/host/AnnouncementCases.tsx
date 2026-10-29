@@ -4,10 +4,11 @@
 // `parityExtAnn`.
 //
 // Mounts the REAL product component `AnnouncementModal` (MainLayout mounts it
-// over the whole app) with the announcement store primed the way a
-// `GET /announcements/active` response leaves it (`pending[0]` presented).
-// The page behind it is the host's plain white `main`; the Modal portals to
-// document.body. Data: tool/parity-ext/fixtures/announcements.json, which the
+// over the whole app; v1.21.12 renders raft-ui's AnnouncementDialog) with the
+// announcement store primed the way a `GET /announcements/active` response
+// leaves it (`pending[0]` presented). The page behind it is the host's plain
+// white `main`; the dialog portals to document.body. The host's own router
+// serves the CTA's `useNavigate`. Data: tool/parity-ext/fixtures/announcements.json, which the
 // Flutter provider serves from its fixture client.
 import ParityExtAnnouncementModal from "../src/components/AnnouncementModal";
 import { useAnnouncementStore as parityExtAnnStore } from "../src/store/announcementStore";

@@ -73,4 +73,45 @@ void main() {
       'new-fixture',
     );
   });
+
+  test(
+    'logout queues before a new login while the worker owns credentials',
+    () async {
+      const origin = 'https://fixture.invalid';
+      final delegate = MemorySessionStore();
+      final store = SessionPersistence(delegate), ownership = Completer<void>();
+      await delegate.write(origin, session('old-fixture'));
+      final clear = store.clearAfter(origin, ownership.future);
+      final login = store.write(origin, session('new-login-fixture'));
+      // A different engine completes rotation before handing off ownership.
+      await delegate.write(origin, session('rotated-fixture'));
+      ownership.complete();
+      expect((await clear)?.refreshToken, 'rotated-fixture');
+      await login;
+      expect((await store.read(origin))?.refreshToken, 'new-login-fixture');
+    },
+  );
+
+  test(
+    'logout cannot clear another principal stored by the previous owner',
+    () async {
+      const origin = 'https://fixture.invalid';
+      final store = SessionPersistence(MemorySessionStore());
+      final bob = Session(
+        accessToken: 'bob-fixture',
+        refreshToken: 'bob-fixture',
+        cachedUser: {'id': 'bob'},
+      );
+      await store.write(origin, bob);
+      expect(
+        await store.clearAfter(
+          origin,
+          Future<void>.value(),
+          principal: 'alice',
+        ),
+        isNull,
+      );
+      expect((await store.read(origin))?.cachedUser?['id'], 'bob');
+    },
+  );
 }

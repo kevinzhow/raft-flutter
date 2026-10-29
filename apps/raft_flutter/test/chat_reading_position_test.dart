@@ -6,6 +6,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/message_timeline.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show paintedMessage;
@@ -30,7 +31,6 @@ List<Map<String, dynamic>> _rows(String prefix, int from, int count) => [
 Future<void> _mount(
   WidgetTester tester,
   WorkspaceController w,
-  RaftFamily family,
   bool dark,
 ) async {
   tester.view.physicalSize = const Size(1280, 800);
@@ -38,7 +38,7 @@ Future<void> _mount(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
+      theme: raftTheme(dark: dark),
       home: Scaffold(body: RaftChatView(controller: w)),
     ),
   );
@@ -57,33 +57,34 @@ Future<void> _mount(
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark scrolled-up arrivals are counted without moving, an own send follows to the end',
+      '${dark ? 'dark' : 'light'} scrolled-up arrivals are counted without moving, an own send follows to the end',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
         api.routes['POST /channels/c1/read'] = (_) => {};
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final rows = _rows('read', 0, 60);
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
-        await _mount(tester, w, family, dark);
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = rows
+            .map((r) => r['id'] as String)
+            .toSet();
+        await _mount(tester, w, dark);
         final dynamic state = tester.state(find.byType(RaftChatView));
         final ScrollController viewport = state.viewport;
         viewport.jumpTo(viewport.offset - 2400);
         await tester.pumpAndSettle();
         final (anchor, before) = _anchor(tester, rows)!;
-        expect(find.byType(RaftTimelineBottomButton), findsOneWidget);
-        expect(find.text('Back to bottom'), findsOneWidget);
+        expect(find.byType(RaftTimelineBottomButtonBody), findsOneWidget);
+        expect(find.text('Back to Bottom'), findsOneWidget);
 
         Future<void> arrive(String id, int seq, String sender) async {
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {
               'id': id,
               'channelId': 'c1',
@@ -91,8 +92,8 @@ void main() {
               'senderId': sender,
               'content': 'Arrival $id',
             },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1']!.add(id);
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1']!.add(id);
           w.notifyListeners();
           for (var i = 0; i < 6; i++) {
             await tester.pump(const Duration(milliseconds: 16));
@@ -102,10 +103,10 @@ void main() {
         }
 
         await arrive('other-1', 900, 'bob');
-        expect(find.textContaining('1 new message'), findsOneWidget);
-        expect(find.text('Back to bottom'), findsNothing);
+        expect(find.textContaining('1 New Message'), findsOneWidget);
+        expect(find.text('Back to Bottom'), findsNothing);
         await arrive('other-2', 901, 'bob');
-        expect(find.textContaining('2 new message'), findsOneWidget);
+        expect(find.textContaining('2 New Message'), findsOneWidget);
         expect(state.distanceFromLatest(viewport.position), greaterThan(100));
 
         // The reader's own send goes back to the latest end, wherever they are.
@@ -138,7 +139,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(state.distanceFromLatest(viewport.position), 0);
         expect(find.text('My own message'), findsOneWidget);
-        expect(find.byType(RaftTimelineBottomButton), findsNothing);
+        expect(find.byType(RaftTimelineBottomButtonBody), findsNothing);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
         await tester.pump();
@@ -146,23 +147,28 @@ void main() {
     );
 
     testWidgets(
-      '$family/$dark loading an older page keeps the reading position',
+      '${dark ? 'dark' : 'light'} loading an older page keeps the reading position',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final rows = _rows('page', 50, 60);
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
-        w.hasMore = true;
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = rows
+            .map((r) => r['id'] as String)
+            .toSet();
+        w.messageDomain.state.hasMore = true;
         final requests = <Map<String, dynamic>>[];
         final page = Completer<Map<String, dynamic>>();
         api.routes['GET /messages/channel/c1'] = (o) {
           requests.add(Map.of(o.queryParameters));
           return page.future;
         };
-        await _mount(tester, w, family, dark);
+        await _mount(tester, w, dark);
         // A real upward drag toward older history arms and triggers paging.
         for (var i = 0; i < 40 && requests.isEmpty; i++) {
           await tester.drag(
@@ -186,8 +192,8 @@ void main() {
           expect(paintedMessage(tester, anchor), before);
         }
         await tester.pumpAndSettle();
-        expect(w.messages.first.id, 'older-0');
-        expect(w.messages.length, 110);
+        expect(w.messageDomain.messages.first.id, 'older-0');
+        expect(w.messageDomain.messages.length, 110);
         expect(paintedMessage(tester, anchor), before);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());

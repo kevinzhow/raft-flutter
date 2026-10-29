@@ -20,6 +20,25 @@ class SessionPersistence implements SessionStore {
   Future<void> write(String origin, Session? session) =>
       writeIf(origin, session, () => true);
 
+  /// Queue logout before later logins, but read and clear rotating credentials
+  /// only after the background owner has finished its writes.
+  Future<Session?> clearAfter(
+    String origin,
+    Future<void> credentialsReady, {
+    String? principal,
+  }) {
+    final next = _writes.catchError((Object _) {}).then((_) async {
+      await credentialsReady;
+      final latest = await delegate.read(origin);
+      final owner = latest?.cachedUser?['id'];
+      if (principal != null && owner != null && principal != owner) return null;
+      await delegate.write(origin, null);
+      return latest;
+    });
+    _writes = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return next;
+  }
+
   Future<void> writeIf(
     String origin,
     Session? session,

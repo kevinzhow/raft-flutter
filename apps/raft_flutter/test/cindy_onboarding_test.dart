@@ -9,6 +9,7 @@ import 'package:raft_flutter/features/create_agent_dialog.dart';
 import 'package:raft_flutter/features/runtime_form_dialog.dart';
 import 'package:raft_flutter/features/server_setup_gate.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'parity/cases/members_settings/runtime_forms.dart';
 
@@ -90,7 +91,11 @@ class _Workspace extends WorkspaceController {
     if (path.endsWith('/runtimes/rescan')) return {'accepted': true};
     if (path.endsWith('/setup-transition')) {
       if (failCompletion) {
-        throw const RaftApiException('Completion failed', status: 503);
+        throw RaftApiException.response(
+          'Completion failed',
+          status: 503,
+          body: {'error': 'Completion failed'},
+        );
       }
       return setupProjection = {
         'phase': 'complete',
@@ -125,7 +130,7 @@ void main() {
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(body: SingleChildScrollView(child: child)),
       ),
     );
@@ -147,22 +152,27 @@ void main() {
     of: find.text('Create Cindy'),
     matching: find.byType(RaftButton),
   );
-  testWidgets('setup admits array machine catalog and real workspace switch', (t) async {
+  testWidgets('setup admits array machine catalog and real workspace switch', (
+    t,
+  ) async {
     final original = c.getFn;
     c.getFn = (path) => path == '/servers/s/machines'
         ? Future.value([_machine])
         : original(path);
     var switches = 0;
-    await host(t, ServerSetupGate(
-      controller: w,
-      onSwitchServer: () => switches++,
-      child: const Text('Conversation'),
-    ));
+    await host(
+      t,
+      ServerSetupGate(
+        controller: w,
+        onSwitchServer: () => switches++,
+        child: const Text('Conversation'),
+      ),
+    );
     final form = t.widget<CreateAgentDialog>(find.byType(CreateAgentDialog));
     expect(form.machines.single['id'], 'm');
-    await t.ensureVisible(find.text('Switch server'));
+    await t.ensureVisible(find.text('Switch Server'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Switch server'));
+    await t.tap(find.text('Switch Server'));
     await t.pump();
     expect(switches, 1);
     expect(w.commands, isEmpty);
@@ -230,9 +240,9 @@ void main() {
           child: const Text('Conversation'),
         ),
       );
-      await t.ensureVisible(find.text('Switch server'));
+      await t.ensureVisible(find.text('Switch Server'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Switch server'));
+      await t.tap(find.text('Switch Server'));
       await t.pump();
       expect(switches, 1);
       expect(w.commands, isEmpty);
@@ -261,18 +271,14 @@ void main() {
       await t.pumpWidget(const SizedBox.shrink());
     },
   );
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'setup session link actual Tab focus and keyboard activation $family/$dark',
+      'setup session link actual Tab focus and keyboard activation ${dark ? 'dark' : 'light'}',
       (t) async {
         var switches = 0;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: RaftCindySessionLink(onPressed: () => switches++),
             ),
@@ -299,7 +305,7 @@ void main() {
         expect(switches, 1);
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: const Scaffold(body: RaftCindySessionLink(onPressed: null)),
           ),
         );
@@ -347,7 +353,7 @@ void main() {
     expect(w.commands, hasLength(1));
     final d = w.commands.single['data'] as Map;
     expect(d['name'], 'Cindy');
-    expect(d['description'], 'Onboarding Assistant');
+    expect(d['description'], 'Onboarding agent');
     expect(d['avatarUrl'], 'pixel:mug');
     expect(d['onboarding'], true);
     expect(d['runtime'], 'codex');
@@ -376,7 +382,7 @@ void main() {
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: RuntimeFormDialog(
             controller: w,
@@ -426,22 +432,16 @@ void main() {
   ) async {
     var switches = 0;
     await host(t, step(onSwitch: () => switches++));
-    await t.ensureVisible(find.text('Switch server'));
+    await t.ensureVisible(find.text('Switch Server'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Switch server'));
+    await t.tap(find.text('Switch Server'));
     await t.pump();
     expect(switches, 1);
     expect(w.commands, isEmpty);
     expect(c.user!.id, 'viewer');
   });
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('responsive same-source shell ${family.name} dark=$dark', (
-      t,
-    ) async {
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets('responsive same-source shell dark=$dark', (t) async {
       t.view.devicePixelRatio = 1;
       t.view.physicalSize = const Size(1100, 800);
       addTearDown(t.view.reset);
@@ -449,7 +449,7 @@ void main() {
       addTearDown(() => t.binding.setSurfaceSize(null));
       await t.pumpWidget(
         MaterialApp(
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(dark: dark),
           home: Scaffold(
             body: Center(
               child: RaftCindySetupScreen(

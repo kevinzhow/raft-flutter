@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import 'control_typography.dart';
 import 'localization.dart';
 
 import 'theme.dart';
-import 'icons.dart';
 import 'design_primitives.dart';
 import 'inline_badge_editor.dart';
 import 'recipe_surface.dart';
 import 'mounted_task_chip.dart';
+import 'task_status_badge.dart';
 import 'panel_layout.dart' show RaftCssText;
+import 'raft/ui_tokens.dart';
+import 'tokens/tokens.dart';
 import '../recipes.dart';
 
 const raftTaskStatuses = ['todo', 'in_progress', 'in_review', 'done', 'closed'];
@@ -29,96 +32,34 @@ String raftTaskStatusLabel(String status) => switch (status) {
   _ => status,
 };
 
-/// Component scales from raft-ui Badge and the product InlineBadgeEditor.
-/// Status colors remain semantic status roles, resolved by RaftTaskStatus.
+/// Hit target of the status badge: the chip's own height, or the touch target
+/// in touch density.
 @immutable
 class RaftTaskBadgeRecipe {
   const RaftTaskBadgeRecipe(this.tokens);
   final RaftTokens tokens;
-  double get height => 20;
-  double get radius => tokens.brutal ? 0 : 999;
-  EdgeInsets get inset =>
-      EdgeInsets.symmetric(horizontal: tokens.brutal ? 6 : 10, vertical: 2);
-  TextStyle label(Color foreground) => RaftTypography.body(
-    tokens,
-    size: tokens.brutal ? 10 : 11,
-    line: 12,
-    weight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
-    color: foreground,
-  ).copyWith(letterSpacing: tokens.brutal ? 0 : .22);
+  double get height =>
+      RaftMessageTaskChipRecipe(tokens, RaftMessageTaskStatus.todo).chipHeight;
   BoxConstraints target(RaftDensity density) => BoxConstraints(
     minWidth: density == RaftDensity.touch ? RaftMetrics.touchTarget : 0,
     minHeight: density == RaftDensity.touch ? RaftMetrics.touchTarget : height,
   );
 }
 
+/// Web `StatusBadge` (a raft-ui `TaskStatusBadge`): the status icon and label on
+/// the `task-status-*` tokens, the same chip a message row shows.
 class RaftTaskStatus extends StatelessWidget {
   const RaftTaskStatus({super.key, required this.status});
   final String status;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final recipe = RaftTaskBadgeRecipe(t);
-    final (semantic, brutal, icon) = switch (status) {
-      'in_progress' => ('info', 'cyan', Icons.play_arrow_outlined),
-      'in_review' => ('accent', 'lavender', Icons.visibility_outlined),
-      'done' => ('success', 'lime', Icons.check_circle_outline),
-      'closed' => ('muted', 'stone', Icons.block),
-      _ => ('warning', 'orange', Icons.circle_outlined),
-    };
-    final bg =
-        t.colors[t.brutal
-            ? 'color-brutal-$brutal'
-            : status == 'closed'
-            ? 'fill-muted'
-            : '$semantic-soft']!;
-    final fg = t.brutal
-        ? Colors.black
-        : t.colors[status == 'closed'
-              ? 'foreground-strong'
-              : '$semantic-strong']!;
-    return Container(
-      height: recipe.height,
-      padding: recipe.inset,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(recipe.radius),
-        border: t.brutal ? Border.all(color: t.ink) : null,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: 4,
-        children: [
-          ExcludeSemantics(child: RaftSymbol(icon, size: 10, color: fg)),
-          Text(
-            raftText(context, raftTaskStatusLabel(status)),
-            style: recipe.label(fg),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Status chip background/foreground — getTaskStatusBadgeClassName
-/// (packages/web/src/components/task/taskStatusUi.ts): soft semantic pair in
-/// elegant, `bg-brutal-{tone} text-black` in brutal.
-(Color, Color) raftTaskStatusBadgeColors(RaftTokens t, String status) {
-  final (semantic, brutal) = switch (status) {
-    'in_progress' => ('info', 'cyan'),
-    'in_review' => ('accent', 'lavender'),
-    'done' => ('success', 'lime'),
-    'closed' => ('muted', 'stone'),
-    _ => ('warning', 'orange'),
-  };
-  if (t.brutal) return (t.colors['color-brutal-$brutal']!, Colors.black);
-  return status == 'closed'
-      ? (t.colors['fill-muted']!, t.colors['foreground-strong']!)
-      : (t.colors['$semantic-soft']!, t.colors['$semantic-strong']!);
+  Widget build(BuildContext context) => RaftTaskStatusBadge(
+    status: raftTaskStatusOf(status),
+    label: raftText(context, raftTaskStatusLabel(status)),
+  );
 }
 
 /// TaskCard's status control: InlineBadgeEditor with the task status options
-/// (`uppercase={false}`, `dropdownMinWidth="min-w-[140px]"`).
+/// (`dropdownMinWidth="min-w-[140px]"`).
 class RaftTaskStatusEditor extends StatelessWidget {
   const RaftTaskStatusEditor({
     super.key,
@@ -138,7 +79,6 @@ class RaftTaskStatusEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final (bg, fg) = raftTaskStatusBadgeColors(t, status);
     final editor = RaftInlineBadgeEditor(
       label: raftText(context, raftTaskStatusLabel(status)),
       // The badge reads its status; a "Task status" tooltip adds nothing.
@@ -156,8 +96,7 @@ class RaftTaskStatusEditor extends StatelessWidget {
           ),
       ],
       onSelect: onSelect,
-      background: bg,
-      foreground: fg,
+      taskStatus: raftTaskStatusOf(status),
       open: open,
       onOpenChanged: onOpenChanged,
       alignRight: alignRight,
@@ -172,7 +111,8 @@ class RaftTaskStatusEditor extends StatelessWidget {
 
 /// raft-ui TaskCard (taskCard recipe) as composed by the product TaskCard
 /// (packages/web/src/components/task/TaskCard.tsx): meta row, title,
-/// description, then `mt-2 flex justify-end` with the status editor.
+/// description, then `mt-2 flex items-center gap-2` with the status editor at
+/// the start (v1.21.23; its menu opens left-aligned).
 class RaftTaskCard extends StatelessWidget {
   const RaftTaskCard({
     super.key,
@@ -182,11 +122,15 @@ class RaftTaskCard extends StatelessWidget {
     this.channel = '',
     this.description = '',
     this.assignee,
+    this.legacy = false,
     this.onTap,
     this.onStatus,
     this.statusOptions = const [],
   });
   final String title, number, status, channel, description;
+
+  /// A pre-thread task: TaskCardLegacy badge after the number.
+  final bool legacy;
   final String? assignee;
   final VoidCallback? onTap;
   final ValueChanged<String>? onStatus;
@@ -196,7 +140,7 @@ class RaftTaskCard extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
     final r = RaftTaskCardRecipe.resolve(
-      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      theme: RaftRecipeTheme.elegant,
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     );
@@ -218,6 +162,7 @@ class RaftTaskCard extends StatelessWidget {
     final document = raftCssText
         .merge(DefaultTextStyle.of(context).style)
         .copyWith(fontSize: 16, height: 1.5);
+    final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
     final editable = onStatus != null && statusOptions.isNotEmpty;
     return Semantics(
       button: onTap != null,
@@ -227,7 +172,16 @@ class RaftTaskCard extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: r.root.padding,
-        decoration: r.root.decoration(rt),
+        // `border-[0.5px]` resolves to the used 1px border box.
+        decoration: plain
+            ? BoxDecoration(
+                color: t.ui.layerCard,
+                border: Border.all(color: t.ui.lineHairline),
+                borderRadius: BorderRadius.circular(
+                  t.size('radius.container', fallback: 10),
+                ),
+              )
+            : r.root.withCssUsedBorderWidths().decoration(rt),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -244,7 +198,9 @@ class RaftTaskCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
-                      padding: r.meta.margin,
+                      padding: plain
+                          ? const EdgeInsets.only(bottom: 8)
+                          : r.meta.margin,
                       child: _TaskMetaBaseline(
                         child: Row(
                           spacing: r.meta.columnGap ?? 8,
@@ -255,10 +211,30 @@ class RaftTaskCard extends StatelessWidget {
                                   '#$channel',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: text(r.channel),
+                                  style: plain
+                                      ? t.scale(
+                                          RaftTypeScale.monoMeta,
+                                          mono: true,
+                                          color: t.ui.foregroundHint,
+                                        )
+                                      : text(r.channel),
                                 ),
                               ),
-                            RaftCssText('#$number', style: text(r.number)),
+                            RaftCssText(
+                              '#$number',
+                              style: plain
+                                  ? t.scale(
+                                      RaftTypeScale.monoMeta,
+                                      mono: true,
+                                      color: t.ui.foregroundHint,
+                                    )
+                                  : text(r.number),
+                            ),
+                            if (legacy)
+                              RaftCssText(
+                                raftText(context, 'Legacy'),
+                                style: text(r.legacy),
+                              ),
                           ],
                         ),
                       ),
@@ -267,7 +243,9 @@ class RaftTaskCard extends StatelessWidget {
                       title,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: text(r.title),
+                      style: plain
+                          ? t.scale(RaftTypeScale.body, weight: FontWeight.w600)
+                          : text(r.title),
                     ),
                     if (description.isNotEmpty)
                       Padding(
@@ -276,7 +254,12 @@ class RaftTaskCard extends StatelessWidget {
                           description,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: text(r.description),
+                          style: plain
+                              ? t.scale(
+                                  RaftTypeScale.callout,
+                                  color: t.ui.foregroundMuted,
+                                )
+                              : text(r.description),
                         ),
                       ),
                   ],
@@ -286,7 +269,7 @@ class RaftTaskCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 8), // mt-2
               child: Align(
-                alignment: Alignment.centerRight,
+                alignment: Alignment.centerLeft,
                 // The badge is inline content of a block wrapper: it sits on
                 // the line box of the inherited document text (16px / 1.5).
                 child: RaftInlineLineBox(
@@ -296,6 +279,7 @@ class RaftTaskCard extends StatelessWidget {
                           status: status,
                           options: statusOptions,
                           onSelect: onStatus!,
+                          alignRight: false,
                         )
                       : RaftTaskStatus(status: status),
                 ),
@@ -330,22 +314,6 @@ class _RenderTaskMetaBaseline extends RenderProxyBox {
   }
 }
 
-RaftMessageTaskStatus _iconStatus(String status) => switch (status) {
-  'in_progress' => RaftMessageTaskStatus.inProgress,
-  'in_review' => RaftMessageTaskStatus.inReview,
-  'done' => RaftMessageTaskStatus.done,
-  'closed' => RaftMessageTaskStatus.closed,
-  _ => RaftMessageTaskStatus.todo,
-};
-
-RaftTaskStatusRecipeStatus _recipeStatus(String status) => switch (status) {
-  'in_progress' => RaftTaskStatusRecipeStatus.inProgress,
-  'in_review' => RaftTaskStatusRecipeStatus.inReview,
-  'done' => RaftTaskStatusRecipeStatus.done,
-  'closed' => RaftTaskStatusRecipeStatus.closed,
-  _ => RaftTaskStatusRecipeStatus.todo,
-};
-
 /// raft-ui TaskSection (taskListSection recipe) as TasksPanel's list view
 /// composes it (packages/web/src/components/task/TasksPanel.tsx TaskSection):
 /// trigger row with TaskSectionBadge + TaskSectionCount, then the cards
@@ -373,7 +341,7 @@ class RaftTaskSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
-    final theme = t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant;
+    final theme = RaftRecipeTheme.elegant;
     final states = RaftRecipeStates({if (t.dark) RaftRecipeStates.dark});
     final r = RaftTaskListSectionRecipe.resolve(
       theme: theme,
@@ -396,7 +364,12 @@ class RaftTaskSection extends StatelessWidget {
       style: r.root,
       tokens: rt,
       decorationOverride: (decoration) =>
-          decoration.copyWith(color: t.components.taskSectionFill),
+          t.option('listGroup.frame', or: 'framed') == 'plain'
+          ? const BoxDecoration()
+          : decoration.copyWith(color: t.components.taskSectionFill),
+      padding: t.option('listGroup.frame', or: 'framed') == 'plain'
+          ? EdgeInsets.zero
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -437,10 +410,15 @@ class RaftSliverTaskSection extends StatelessWidget {
     this.triggerKey,
     this.emptyLabel,
     this.findChildIndexCallback,
+    this.footer,
   });
   final String status;
   final int count;
   final IndexedWidgetBuilder itemBuilder;
+
+  /// Below the rows inside the open panel, with no gap (TaskSection's
+  /// per-lane "Load More" button follows `TaskSectionItems` directly).
+  final Widget? footer;
   final bool collapsed;
   final VoidCallback? onToggle;
   final Key? triggerKey;
@@ -452,30 +430,32 @@ class RaftSliverTaskSection extends StatelessWidget {
     final t = RaftTokens.of(context),
         rt = RaftRecipeTokens(RaftTokens.of(context));
     final r = RaftTaskListSectionRecipe.resolve(
-      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      theme: RaftRecipeTheme.elegant,
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     );
+    final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
     final current = DefaultTextStyle.of(context).style.color;
     final shadows = r.root.cssShadows(rt, currentColor: current);
     return DecoratedSliver(
       decoration: RaftCssBoxDecoration(
-        color: t.components.taskSectionFill,
-        border: r.root.border(rt, currentColor: current),
-        borderRadius: r.root.borderRadius,
+        color: plain ? null : t.components.taskSectionFill,
+        border: plain ? null : r.root.border(rt, currentColor: current),
+        borderRadius: plain ? null : r.root.borderRadius,
         boxShadow: [
-          for (final layer in shadows.reversed)
-            if (!layer.inset)
-              BoxShadow(
-                color: layer.color,
-                offset: layer.offset,
-                blurRadius: raftCssBlurRadius(layer.blur),
-                spreadRadius: layer.spread,
-              ),
+          if (!plain)
+            for (final layer in shadows.reversed)
+              if (!layer.inset)
+                BoxShadow(
+                  color: layer.color,
+                  offset: layer.offset,
+                  blurRadius: raftCssBlurRadius(layer.blur),
+                  spreadRadius: layer.spread,
+                ),
         ],
       ),
       sliver: SliverPadding(
-        padding: r.root.padding,
+        padding: plain ? EdgeInsets.zero : r.root.padding,
         sliver: SliverMainAxisGroup(
           slivers: [
             SliverToBoxAdapter(
@@ -512,6 +492,7 @@ class RaftSliverTaskSection extends StatelessWidget {
                   findChildIndexCallback: findChildIndexCallback,
                 ),
               ),
+            if (!collapsed && footer != null) SliverToBoxAdapter(child: footer),
           ],
         ),
       ),
@@ -531,6 +512,7 @@ Widget _taskSectionTrigger(
 }) {
   final t = RaftTokens.of(context);
   final label = raftText(context, raftTaskStatusLabel(status));
+  final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
   return Semantics(
     button: onToggle != null,
     expanded: !collapsed,
@@ -542,8 +524,11 @@ Widget _taskSectionTrigger(
       key: triggerKey,
       behavior: HitTestBehavior.opaque,
       onTap: onToggle,
-      child: Padding(
-        padding: r.trigger.padding,
+      child: Container(
+        constraints: plain ? const BoxConstraints(minHeight: 32) : null,
+        padding: plain
+            ? const EdgeInsets.symmetric(horizontal: 8)
+            : r.trigger.padding,
         child: Row(
           children: [
             Row(
@@ -616,53 +601,67 @@ class RaftTaskSectionBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
-    final theme = t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant;
+    if (t.option('listGroup.frame', or: 'framed') == 'plain') {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: 8,
+        children: [
+          RaftMessageTaskStatusIcon(
+            status: raftTaskStatusOf(status),
+            color: t.ui.foregroundHint,
+            size: 9,
+          ),
+          RaftCssText(
+            label,
+            style: t.scale(
+              RaftTypeScale.footnote,
+              weight: FontWeight.w700,
+              color: t.ui.foregroundHint,
+            ),
+            controlLabel: true,
+          ),
+        ],
+      );
+    }
+    final theme = RaftRecipeTheme.elegant;
     final badge = board
         ? RaftTaskBoardColumnRecipe.resolve(theme: theme, tokens: rt).badge
         : RaftTaskListSectionRecipe.resolve(theme: theme, tokens: rt).badge;
-    final statusStyle = RaftTaskStatusRecipe.resolve(
-      theme: theme,
-      status: _recipeStatus(status),
-      tokens: rt,
-    ).base;
+
     final base = badge.textStyle(rt);
     final size = base.fontSize ?? 10;
     final fg = base.color ?? t.strong;
-    final upper = badge.textTransform == 'uppercase';
-    final iconColor = t.brutal
-        ? (badge.target('& svg')?.color?.resolve(rt) ?? fg)
-        : switch (status) {
-            'in_progress' => const Color(0xFFF0B800), // oklch(0.8 0.19 88.97)
-            'in_review' => const Color(0xFFEE8A2E), // oklch(0.72 0.16 58)
-            'done' => t.colors['success']!,
-            'closed' => t.colors['inactive']!,
-            _ => t.colors['foreground-placeholder']!,
-          };
+    final iconColor = switch (status) {
+      'in_progress' => t.semantic.taskStatusInProgressStrong,
+      'in_review' => t.semantic.taskStatusInReviewStrong,
+      'done' => t.semantic.taskStatusDoneStrong,
+      'closed' => t.semantic.taskStatusClosedStrong,
+      _ => t.semantic.taskStatusTodoStrong,
+    };
     return Container(
       padding: badge.padding,
-      decoration: BoxDecoration(
-        color: t.brutal ? statusStyle.backgroundColor?.resolve(rt) : null,
-        border: badge.border(rt),
-      ),
+      decoration: BoxDecoration(color: null, border: badge.border(rt)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: badge.columnGap ?? 4,
         children: [
           RaftMessageTaskStatusIcon(
-            status: _iconStatus(status),
+            status: raftTaskStatusOf(status),
             color: iconColor,
-            inverse: t.colors['foreground-inverse']!,
             size: badge.target('& svg')?.width ?? 10,
           ),
           Text(
-            upper ? label.toUpperCase() : label,
-            style: base.copyWith(
-              fontFamily: base.fontFamily ?? t.headingFont,
-              fontSize: size,
-              // Unset line-height inherits the trigger button's 1.5.
-              height: base.height ?? 1.5,
-              color: fg,
-              letterSpacing: upper ? 0 : base.letterSpacing,
+            label,
+            style: RaftControlTypography.of(
+              context,
+              base.copyWith(
+                fontFamily: base.fontFamily ?? t.headingFont,
+                fontSize: size,
+                // Unset line-height inherits the trigger button's 1.5.
+                height: base.height ?? 1.5,
+                color: fg,
+                letterSpacing: base.letterSpacing,
+              ),
             ),
           ),
         ],
@@ -713,7 +712,9 @@ class RaftTaskBoardColumn extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onToggle,
         child: Padding(
-          padding: r.trigger.padding,
+          padding: t.option('taskBoard.column', or: 'flat') == 'flat'
+              ? EdgeInsets.zero
+              : r.trigger.padding,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             spacing: r.heading.columnGap ?? 8,
@@ -735,6 +736,34 @@ class RaftTaskBoardColumn extends StatelessWidget {
         ),
       ),
     );
+    // raft-ui 0.7.0 taskBoardColumn: a flat 232px lane (no border, fill or
+    // padding), `min-h-8` trigger, `mb-2` under it while open; the pre-theme
+    // looks keep the bordered 320px lane card (taskBoard.column).
+    if (t.option('taskBoard.column', or: 'flat') == 'flat') {
+      return Container(
+        width: 232,
+        decoration: BoxDecoration(
+          color: dropActive ? t.colors['fill-pressed'] : null,
+          borderRadius: BorderRadius.circular(
+            t.size('radius.container', fallback: 10),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 32),
+              child: Align(alignment: Alignment.centerLeft, child: trigger),
+            ),
+            if (!collapsed) ...[
+              const SizedBox(height: 8),
+              Flexible(child: body),
+            ],
+          ],
+        ),
+      );
+    }
     return RaftRecipeBox(
       style: r.root,
       tokens: rt,
@@ -744,16 +773,12 @@ class RaftTaskBoardColumn extends StatelessWidget {
       decorationOverride: (d) => d.copyWith(
         color: dropActive
             ? t.colors['primary-soft']
-            : t.brutal
-            ? Colors.white.withValues(alpha: .3)
             : t.colors['fill-muted']!.withValues(alpha: .3),
         border: Border.all(
           color: dropActive
-              ? (t.brutal ? Colors.black : t.colors['line-strong']!)
-              : t.brutal
-              ? Colors.black.withValues(alpha: .2)
+              ? (t.colors['line-strong']!)
               : t.colors['line-muted']!,
-          width: t.brutal ? 2 : 1,
+          width: 1,
         ),
       ),
       child: Column(
@@ -795,14 +820,10 @@ class RaftTaskLaneEmpty extends StatelessWidget {
     final t = RaftTokens.of(context);
     // Board: border 1 (Brutal 2) line-muted (black/20); list: border-2
     // line-muted (black/30).
-    final borderWidth = board ? (t.brutal ? 2.0 : 1.0) : 2.0;
-    final borderColor = t.brutal
-        ? Colors.black.withValues(alpha: board ? .2 : .3)
-        : t.colors['line-muted']!;
-    final radius = t.brutal ? 0.0 : 8.0;
-    final fillColor = board
-        ? (t.brutal ? null : t.colors['layer-panel'])
-        : fill;
+    final borderWidth = board ? (1.0) : 2.0;
+    final borderColor = t.colors['line-muted']!;
+    final radius = 8.0;
+    final fillColor = board ? (t.colors['layer-panel']) : fill;
     return SizedBox(
       width: double.infinity,
       child: CustomPaint(
@@ -867,4 +888,36 @@ class _LaneEmptyPainter extends CustomPainter {
       old.color != color ||
       old.width != width ||
       old.radius != radius;
+}
+
+/// TasksPanel lane paging button: `<Button size="sm" variant="outline"
+/// className="box-border h-8 min-h-8 w-full gap-1 py-0 text-xs">`, labelled
+/// `task.panel.loadMore` ("Load More") or `common.loading` ("Loading more…").
+class RaftTaskLoadMoreButton extends StatelessWidget {
+  const RaftTaskLoadMoreButton({
+    super.key,
+    required this.onPressed,
+    this.loading = false,
+  });
+  final VoidCallback? onPressed;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => RaftControl(
+      variant: RaftControlVariant.outline,
+      visualHeight: 32,
+      visualWidth: constraints.maxWidth,
+      minimumTargetSize: 32,
+      onPressed: loading ? null : onPressed,
+      child: Center(
+        child: Text(
+          raftText(context, loading ? 'Loading more…' : 'Load More'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12, height: 16 / 12),
+        ),
+      ),
+    ),
+  );
 }

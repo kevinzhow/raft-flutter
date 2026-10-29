@@ -7,24 +7,22 @@ import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show fixture;
 import 'workspace_activity_activation_test.dart'
     show channelRow, message, threadRow;
+import 'support/app_services_fixture.dart';
 
 /// ThreadsInbox.tsx:1104-1175: opening an Activity entry fills the content slot
 /// beside the Activity list; the page never gains a full-width channel header
 /// on top (workspace-channel-header belongs to the channel route only).
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final scenario in ['channel', 'dm', 'thread']) {
       testWidgets(
-        '[K02] $family/$dark clicking an Activity $scenario entry adds no full-width channel header',
+        '[K02] ${dark ? 'dark' : 'light'} clicking an Activity $scenario entry adds no full-width channel header',
         (tester) async {
           SharedPreferences.setMockInitialValues({});
           tester.view.physicalSize = const Size(1440, 900);
@@ -33,7 +31,7 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           w.dms = [
             RaftChannel({
               'id': 'd1',
@@ -79,12 +77,14 @@ void main() {
           };
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(light: family),
-                onAppearance: (_) async {},
-                onLogout: () async {},
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
+                ),
               ),
             ),
           );

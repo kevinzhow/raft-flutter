@@ -2,61 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final theme in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    testWidgets('Workspace mode actual checkbox Tab/Space/disabled $theme', (
-      t,
-    ) async {
-      var enabled = false;
-      int changes = 0;
-      bool disabled = false;
-      late StateSetter update;
-      await t.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(theme.$1, dark: theme.$2),
-          home: Scaffold(
-            body: SizedBox(
-              width: 390,
-              child: StatefulBuilder(
-                builder: (context, setState) {
-                  update = setState;
-                  return RaftWorkspaceModeCard(
-                    enabled: enabled,
-                    onChanged: disabled
-                        ? null
-                        : (v) => setState(() {
-                            enabled = v;
-                            changes++;
-                          }),
-                  );
-                },
+  for (final dark in raftThemeMatrix([false, true])) {
+    testWidgets(
+      'Workspace mode actual checkbox Tab/Space/disabled ${dark ? 'dark' : 'light'}',
+      (t) async {
+        var enabled = false;
+        int changes = 0;
+        bool disabled = false;
+        late StateSetter update;
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(dark: dark),
+            home: Scaffold(
+              body: SizedBox(
+                width: 390,
+                child: StatefulBuilder(
+                  builder: (context, setState) {
+                    update = setState;
+                    return RaftWorkspaceModeCard(
+                      enabled: enabled,
+                      onChanged: disabled
+                          ? null
+                          : (v) => setState(() {
+                              enabled = v;
+                              changes++;
+                            }),
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
-      );
-      expect(find.text('Workspace mode'), findsOneWidget);
-      await t.sendKeyEvent(LogicalKeyboardKey.tab);
-      await t.sendKeyEvent(LogicalKeyboardKey.space);
-      await t.pump();
-      expect(enabled, true);
-      expect(changes, 1);
-      update(() => disabled = true);
-      await t.pump();
-      await t.sendKeyEvent(LogicalKeyboardKey.enter);
-      await t.pump();
-      expect(changes, 1);
-      await t.pumpWidget(const SizedBox());
-      await t.pumpAndSettle();
-    });
+        );
+        expect(find.text('Server mode'), findsOneWidget);
+        await t.sendKeyEvent(LogicalKeyboardKey.tab);
+        await t.sendKeyEvent(LogicalKeyboardKey.space);
+        await t.pump();
+        expect(enabled, true);
+        expect(changes, 1);
+        update(() => disabled = true);
+        await t.pump();
+        await t.sendKeyEvent(LogicalKeyboardKey.enter);
+        await t.pump();
+        expect(changes, 1);
+        await t.pumpWidget(const SizedBox());
+        await t.pumpAndSettle();
+      },
+    );
 
     testWidgets(
-      'Editor groups move preserves panel State; inactive keyboard is excluded $theme',
+      'Editor groups move preserves panel State; inactive keyboard is excluded ${dark ? 'dark' : 'light'}',
       (t) async {
         late StateSetter update;
         var moved = false;
@@ -66,7 +64,7 @@ void main() {
         final focus = FocusNode();
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(theme.$1, dark: theme.$2),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: StatefulBuilder(
                 builder: (context, setState) {
@@ -137,105 +135,106 @@ void main() {
       },
     );
 
-    testWidgets('Editor tabs actual arrows, edge drop and resize $theme', (
-      t,
-    ) async {
-      t.view.physicalSize = const Size(1100, 680);
-      t.view.devicePixelRatio = 1;
-      addTearDown(t.view.resetPhysicalSize);
-      addTearDown(t.view.resetDevicePixelRatio);
-      var split = false;
-      var selected = 'a';
-      var weights = <double>[1, 1];
-      int splitCalls = 0, resizeCalls = 0;
-      await t.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(theme.$1, dark: theme.$2),
-          home: Scaffold(
-            body: StatefulBuilder(
-              builder: (context, update) {
-                const a = RaftEditorTab(
-                  id: 'a',
-                  label: 'general',
-                  child: Text('A'),
-                );
-                const b = RaftEditorTab(
-                  id: 'b',
-                  label: 'second',
-                  child: Text('B'),
-                );
-                return RaftEditorGroups(
-                  groups: split
-                      ? [
-                          const RaftEditorGroup(
-                            id: 'one',
-                            tabs: [a],
-                            selected: 'a',
-                          ),
-                          const RaftEditorGroup(
-                            id: 'two',
-                            tabs: [b],
-                            selected: 'b',
-                          ),
-                        ]
-                      : [
-                          RaftEditorGroup(
-                            id: 'one',
-                            tabs: [a, b],
-                            selected: selected,
-                          ),
-                        ],
-                  onSelect: (_, id) => update(() => selected = id),
-                  onClose: (_) {},
-                  onMove: (_, __) {},
-                  onSplit: (id) => update(() {
-                    expect(id, 'b');
-                    splitCalls++;
-                    split = true;
-                  }),
-                  weights: weights,
-                  onWeightsChanged: (next) => update(() {
-                    resizeCalls++;
-                    weights = next;
-                  }),
-                );
-              },
+    testWidgets(
+      'Editor tabs actual arrows, edge drop and resize ${dark ? 'dark' : 'light'}',
+      (t) async {
+        t.view.physicalSize = const Size(1100, 680);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.resetPhysicalSize);
+        addTearDown(t.view.resetDevicePixelRatio);
+        var split = false;
+        var selected = 'a';
+        var weights = <double>[1, 1];
+        int splitCalls = 0, resizeCalls = 0;
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(dark: dark),
+            home: Scaffold(
+              body: StatefulBuilder(
+                builder: (context, update) {
+                  const a = RaftEditorTab(
+                    id: 'a',
+                    label: 'general',
+                    child: Text('A'),
+                  );
+                  const b = RaftEditorTab(
+                    id: 'b',
+                    label: 'second',
+                    child: Text('B'),
+                  );
+                  return RaftEditorGroups(
+                    groups: split
+                        ? [
+                            const RaftEditorGroup(
+                              id: 'one',
+                              tabs: [a],
+                              selected: 'a',
+                            ),
+                            const RaftEditorGroup(
+                              id: 'two',
+                              tabs: [b],
+                              selected: 'b',
+                            ),
+                          ]
+                        : [
+                            RaftEditorGroup(
+                              id: 'one',
+                              tabs: [a, b],
+                              selected: selected,
+                            ),
+                          ],
+                    onSelect: (_, id) => update(() => selected = id),
+                    onClose: (_) {},
+                    onMove: (_, __) {},
+                    onSplit: (id) => update(() {
+                      expect(id, 'b');
+                      splitCalls++;
+                      split = true;
+                    }),
+                    weights: weights,
+                    onWeightsChanged: (next) => update(() {
+                      resizeCalls++;
+                      weights = next;
+                    }),
+                  );
+                },
+              ),
             ),
           ),
-        ),
-      );
-      await t.sendKeyEvent(LogicalKeyboardKey.tab);
-      await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await t.pump();
-      expect(selected, 'b');
-      await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await t.pump();
-      expect(selected, 'a');
-      final start = t.getCenter(find.byKey(const ValueKey('editor-tab-b')));
-      final drag = await t.startGesture(start);
-      await drag.moveTo(const Offset(1088, 320));
-      await t.pump();
-      await drag.moveTo(const Offset(1088, 340));
-      await t.pump();
-      await drag.up();
-      await t.pump();
-      expect(splitCalls, 1);
-      final first = find.byKey(const ValueKey('editor-group-one'));
-      final initialWidth = t.getSize(first).width;
-      await t.drag(
-        find.byKey(const ValueKey('editor-splitter-one-two')),
-        const Offset(80, 0),
-      );
-      await t.pump();
-      expect(resizeCalls, greaterThan(0));
-      expect(t.getSize(first).width, greaterThan(initialWidth));
-      expect(
-        t.getSize(find.byKey(const ValueKey('editor-group-two'))).width,
-        greaterThanOrEqualTo(260),
-      );
-      expect(t.takeException(), isNull);
-      await t.pumpWidget(const SizedBox());
-      await t.pumpAndSettle();
-    });
+        );
+        await t.sendKeyEvent(LogicalKeyboardKey.tab);
+        await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+        await t.pump();
+        expect(selected, 'b');
+        await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+        await t.pump();
+        expect(selected, 'a');
+        final start = t.getCenter(find.byKey(const ValueKey('editor-tab-b')));
+        final drag = await t.startGesture(start);
+        await drag.moveTo(const Offset(1088, 320));
+        await t.pump();
+        await drag.moveTo(const Offset(1088, 340));
+        await t.pump();
+        await drag.up();
+        await t.pump();
+        expect(splitCalls, 1);
+        final first = find.byKey(const ValueKey('editor-group-one'));
+        final initialWidth = t.getSize(first).width;
+        await t.drag(
+          find.byKey(const ValueKey('editor-splitter-one-two')),
+          const Offset(80, 0),
+        );
+        await t.pump();
+        expect(resizeCalls, greaterThan(0));
+        expect(t.getSize(first).width, greaterThan(initialWidth));
+        expect(
+          t.getSize(find.byKey(const ValueKey('editor-group-two'))).width,
+          greaterThanOrEqualTo(260),
+        );
+        expect(t.takeException(), isNull);
+        await t.pumpWidget(const SizedBox());
+        await t.pumpAndSettle();
+      },
+    );
   }
 }

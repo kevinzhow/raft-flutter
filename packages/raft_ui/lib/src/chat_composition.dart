@@ -5,11 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
+import 'raft/tabs.dart';
+import 'raft/checkbox.dart';
 import 'viewport_breakpoints.dart';
 import 'icons.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'sidebar_section.dart';
+import 'separator.dart';
 import 'theme.dart';
+import 'status_bar.dart';
+import 'text_scaling.dart';
+import 'large_content_viewer.dart';
+import 'tap_slop.dart';
 
 enum RaftChatSidebarGroupKind { pinned, joint, channels, directMessages }
 
@@ -50,13 +57,10 @@ class RaftChatSidebarGroupRecipe {
     tokens,
     size: 12,
     line: 16.5,
-    color: tokens.brutal
-        ? Colors.black.withValues(
-            alpha: kind == RaftChatSidebarGroupKind.pinned ? .45 : .5,
-          )
-        : tokens.colors[kind == RaftChatSidebarGroupKind.pinned
-              ? 'foreground-placeholder'
-              : 'foreground-muted'],
+    color:
+        tokens.colors[kind == RaftChatSidebarGroupKind.pinned
+            ? 'foreground-placeholder'
+            : 'foreground-muted'],
   );
 }
 
@@ -82,8 +86,12 @@ class RaftChatSidebarGroup extends StatelessWidget {
     this.disclosureKey,
     this.headerKey,
     this.onContextMenu,
+    this.contextMenuOnLongPress = true,
+    this.wrapHeader,
+    this.wrapEmpty,
   }) : itemBuilder = null,
-       findChildIndexCallback = null;
+       findChildIndexCallback = null,
+       onReorderItem = null;
 
   /// A group in a scroll viewport whose offscreen rows are built on demand.
   const RaftChatSidebarGroup.sliver({
@@ -96,6 +104,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
     required this.onExpandedChanged,
     required IndexedWidgetBuilder this.itemBuilder,
     this.findChildIndexCallback,
+    this.onReorderItem,
     this.loading = false,
     this.dragActive = false,
     this.dragSource = false,
@@ -106,11 +115,28 @@ class RaftChatSidebarGroup extends StatelessWidget {
     this.disclosureKey,
     this.headerKey,
     this.onContextMenu,
+    this.contextMenuOnLongPress = true,
+    this.wrapHeader,
+    this.wrapEmpty,
   }) : children = const [];
 
   final IndexedWidgetBuilder? itemBuilder;
   final ChildIndexGetter? findChildIndexCallback;
+
+  /// Non-null makes the rows a [SliverReorderableList] (indexes as
+  /// [SliverReorderableList.onReorderItem] reports them). Each row must then
+  /// carry its own key and drag start listener (long press lifts it).
+  final ReorderCallback? onReorderItem;
   final ValueChanged<Offset>? onContextMenu;
+
+  /// See [RaftSidebarSectionHeader.contextMenuOnLongPress].
+  final bool contextMenuOnLongPress;
+
+  /// Wraps the built header (the host makes it a drag handle or drop target).
+  final Widget Function(Widget header)? wrapHeader;
+
+  /// Wraps the empty-section hint (the host makes it a drop target).
+  final Widget Function(Widget empty)? wrapEmpty;
   final RaftChatSidebarGroupKind kind;
   final String label, emptyLabel;
   final int count;
@@ -129,10 +155,11 @@ class RaftChatSidebarGroup extends StatelessWidget {
       hideEmpty: hideEmpty,
       dragActive: dragActive,
       dragSource: dragSource,
-    ))
+    )) {
       return itemBuilder == null
           ? const SizedBox.shrink()
           : const SliverToBoxAdapter();
+    }
     Widget? empty;
     if (count == 0) {
       if (loading && recipe.loadingRows > 0) {
@@ -155,7 +182,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
         );
       }
     }
-    final header = RaftSidebarSectionHeader(
+    final built = RaftSidebarSectionHeader(
       key: headerKey,
       label: label,
       count: count,
@@ -165,12 +192,16 @@ class RaftChatSidebarGroup extends StatelessWidget {
       actions: actions,
       attention: attention,
       onContextMenu: onContextMenu,
+      contextMenuOnLongPress: contextMenuOnLongPress,
     );
+    final header = wrapHeader?.call(built) ?? built;
     final emptyRegion = empty == null
         ? null
-        : ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 28),
-            child: empty,
+        : (wrapEmpty ?? (Widget w) => w)(
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 28),
+              child: empty,
+            ),
           );
     final builder = itemBuilder;
     if (builder != null) {
@@ -178,13 +209,21 @@ class RaftChatSidebarGroup extends StatelessWidget {
         slivers: [
           SliverToBoxAdapter(child: header),
           if (expanded) ...[
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                builder,
-                childCount: count,
-                findChildIndexCallback: findChildIndexCallback,
+            if (onReorderItem case final reorder?)
+              SliverReorderableList(
+                itemCount: count,
+                itemBuilder: builder,
+                onReorderItem: reorder,
+                proxyDecorator: raftSidebarReorderProxy,
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  builder,
+                  childCount: count,
+                  findChildIndexCallback: findChildIndexCallback,
+                ),
               ),
-            ),
             if (emptyRegion != null) SliverToBoxAdapter(child: emptyRegion),
           ],
         ],
@@ -200,6 +239,27 @@ class RaftChatSidebarGroup extends StatelessWidget {
     );
   }
 }
+
+/// The lifted row of a reorderable sidebar list. Rows are ghost controls, so
+/// the proxy carries the sidebar canvas to stay legible over the rows below.
+Widget raftSidebarReorderProxy(
+  Widget child,
+  int index,
+  Animation<double> animation,
+) => Builder(
+  builder: (context) {
+    final size = MediaQuery.sizeOf(context);
+    return ColoredBox(
+      color: RaftSidebarRecipe(
+        RaftTokens.of(context),
+        viewportWidth: size.width,
+        viewportHeight: size.height,
+        variant: RaftSidebarVariant.mountedProduct,
+      ).bodyBackground,
+      child: child,
+    );
+  },
+);
 
 /// Product Skeleton.tsx (not RUI Skeleton): px8/py8/gap6,
 /// 18px bordered avatar and a 60%-width, 12px line in all three themes.
@@ -217,10 +277,11 @@ class _LoadingRowsState extends State<RaftChatSidebarLoadingRows>
     vsync: this,
     duration: const Duration(seconds: 1),
   );
-  late final opacity = Tween<double>(
-    begin: 1,
-    end: .5,
-  ).animate(CurvedAnimation(parent: pulse, curve: const Cubic(.4, 0, .6, 1)));
+  late final curve = CurvedAnimation(
+    parent: pulse,
+    curve: const Cubic(.4, 0, .6, 1),
+  );
+  late final opacity = Tween<double>(begin: 1, end: .5).animate(curve);
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -228,12 +289,14 @@ class _LoadingRowsState extends State<RaftChatSidebarLoadingRows>
       pulse.stop();
       pulse.value = 0;
     } else if (!pulse.isAnimating) {
+      // ignore: raft_lints/avoid_unreviewed_idle_work -- Loop driven by an AnimationController whose vsync is this State, so TickerMode (hidden routes, offstage tabs, folded panels) mutes it, it is disposed with the widget, and reduced motion stops it.
       pulse.repeat(reverse: true);
     }
   }
 
   @override
   void dispose() {
+    curve.dispose();
     pulse.dispose();
     super.dispose();
   }
@@ -297,7 +360,7 @@ class RaftConversationTab {
   final bool enabled;
 }
 
-/// ConversationPanelTabs + underline Tabs + product h7/max-md h10 overrides.
+/// Mounted ConversationPanelTabs layout, with the pack-selected tab surface.
 class RaftConversationTabsRecipe {
   const RaftConversationTabsRecipe(
     this.tokens, {
@@ -307,51 +370,34 @@ class RaftConversationTabsRecipe {
   final RaftTokens tokens;
   final bool mobile;
   final RaftDensity density;
-  double get sourceTabHeight => tokens.brutal
-      ? 28
-      : mobile
-      ? 40
-      : 28;
-  double get sourceListHeight => tokens.brutal
-      ? 28
-      : mobile
-      ? 40
-      : 48;
-  // ChatPanel mounts h-7 tabs (Elegant mobile is overridden to h-10 by
-  // ConversationPanelTabs). Its flow stays source-sized on coarse input too;
-  // the generic 48px native target must not enlarge this specific tab strip.
+  RaftTabsVariant get variant =>
+      tokens.option('conversationTabs.variant', or: 'underline') == 'default'
+      ? RaftTabsVariant.standard
+      : RaftTabsVariant.underline;
+  double get sourceTabHeight => tokens.size(
+    mobile ? 'size.conversationTabPhone' : 'size.conversationTab',
+    fallback: mobile ? 40 : 48,
+  );
+  double get sourceListHeight =>
+      mobile ? tokens.size('size.conversationTabListPhone', fallback: 40) : 48;
   double get targetHeight => sourceTabHeight;
   double get effectiveListHeight => math.max(sourceListHeight, targetHeight);
-  double get outerBottomBorder => tokens.brutal
-      ? 2
-      : mobile
-      ? 1
-      : 0;
-  Color get background => tokens.brutal
-      ? Colors.white
-      : mobile
-      ? tokens.colors['layer-canvas-muted']!
-      // ConversationPanelContent is the mounted ancestor: dark tabs are
-      // transparent over its card surface, independently of the panel timeline.
-      : tokens.dark
-      ? tokens.card
-      : tokens.panel;
-  Color get border =>
-      tokens.brutal ? Colors.black : tokens.colors['line-muted']!;
-  double get gap => tokens.brutal ? 0 : 4;
-  EdgeInsets get listInset =>
-      EdgeInsets.symmetric(horizontal: tokens.brutal ? 0 : 16);
-  double horizontalInset(int index) => tokens.brutal
-      ? index == 0
-            ? 22
-            : 16
-      : 12;
-  EdgeInsets tabInset(int index) => tokens.brutal
-      ? EdgeInsets.only(left: index == 0 ? 22 : 16, right: 16)
-      : const EdgeInsets.symmetric(horizontal: 12);
+  double get outerBottomBorder =>
+      mobile ? 1 : tokens.size('stroke.conversationTabList', fallback: 0);
+  Color get background =>
+      tokens.colors[mobile
+          ? 'layer-conversation-tabs-phone'
+          : 'layer-conversation-tabs']!;
+  Color get border => tokens.colors['line-conversation-header']!;
+  double get gap => tokens.size('space.conversationTabGap', fallback: 20);
+  EdgeInsets get listInset => EdgeInsets.symmetric(
+    horizontal: mobile
+        ? 16
+        : tokens.size('space.conversationTabInline', fallback: 16),
+    vertical: tokens.size('space.conversationTabVertical', fallback: 0),
+  );
   double get glyphSize => 14;
-  double get glyphStroke => tokens.brutal ? 2.5 : 1.5;
-  double get indicatorHeight => mobile ? 1 : 2;
+  double get glyphStroke => 1.5;
   Color get indicator => tokens.colors['primary-400']!;
 }
 
@@ -360,26 +406,17 @@ class _ConversationTabControlRecipe extends RaftControlRecipe {
   @override
   bool get transformsOnInteraction => false;
   @override
-  Color get background => tokens.brutal
-      ? selected
-            // raft-ui styles.css: --color-primary aliases --primary-400,
-            // separately from the legacy component role --primary.
-            ? tokens.semantic.primary400
-            : Colors.white
-      : Colors.transparent;
+  Color get background => Colors.transparent;
   // Product direct-child bg-white selector overrides the lower-specificity
   // generic Brutal tab hover background. Active hover stays primary.
   @override
   Color backgroundFor({bool hovered = false}) => background;
   @override
-  Color get foreground => tokens.brutal
-      ? Colors.black
-      : selected
-      ? tokens.ink
-      : tokens.colors['foreground-placeholder']!;
+  Color get foreground =>
+      selected ? tokens.ink : tokens.colors['foreground-placeholder']!;
   @override
   Color foregroundFor({bool hovered = false}) =>
-      tokens.brutal || selected || !hovered ? foreground : tokens.muted;
+      selected || !hovered ? foreground : tokens.muted;
   @override
   Gradient? get overlayGradient => null;
   @override
@@ -397,10 +434,10 @@ class _ConversationTabControlRecipe extends RaftControlRecipe {
   @override
   TextStyle get textStyle => RaftTypography.body(
     tokens,
-    size: tokens.brutal ? 12 : 13,
-    line: tokens.brutal ? 16 : 19.5,
-    weight: tokens.brutal ? FontWeight.w600 : FontWeight.w500,
-  ).copyWith(letterSpacing: tokens.brutal ? 0 : -.065);
+    size: 13,
+    line: 19.5,
+    weight: FontWeight.w500,
+  ).copyWith(letterSpacing: -.065);
 }
 
 /// Controlled selected/query value. Host supplies scoped persisted order and
@@ -485,8 +522,9 @@ class _ConversationTabsState extends State<RaftConversationTabs> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.hideHeader || widget.tabs.length <= 1)
+    if (widget.hideHeader || widget.tabs.length <= 1) {
       return const SizedBox.shrink();
+    }
     final tokens = RaftTokens.of(context);
     final recipe = RaftConversationTabsRecipe(
       tokens,
@@ -494,56 +532,67 @@ class _ConversationTabsState extends State<RaftConversationTabs> {
           raftBreakpointWidth(context) < RaftLayoutMetrics.desktopBreakpoint,
       density: RaftDensityScope.of(context),
     );
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
+    // Fixed chrome: text is bounded (RaftChrome) and a long press shows the
+    // tab large (Large Content Viewer) once the bound hides growth.
+    return RaftChrome(
+      child: RaftLargeContentScope(child: _tabStrip(context, recipe)),
+    );
+  }
+
+  Widget _tabStrip(BuildContext context, RaftConversationTabsRecipe recipe) {
+    final grows = RaftScaled.grows(context);
+    return RaftTapSlopHost(
+      child: RaftStatusBarSource(
         color: recipe.background,
-        // Elegant desktop tabs have no rule (`border-b-0`); a zero-width
-        // Flutter BorderSide would still paint a hairline.
-        border: Border(
-          bottom: recipe.outerBottomBorder == 0
-              ? BorderSide.none
-              : BorderSide(
-                  color: recipe.border,
-                  width: recipe.outerBottomBorder,
-                ),
-        ),
-      ),
-      child: SizedBox(
-        height: recipe.effectiveListHeight,
-        child: Focus(
-          canRequestFocus: false,
-          onKeyEvent: navigation,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            primary: false,
-            child: Padding(
-              padding: recipe.listInset,
-              child: Semantics(
-                role: SemanticsRole.tabBar,
-                explicitChildNodes: true,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (
-                      var index = 0;
-                      index < widget.tabs.length;
-                      index++
-                    ) ...[
-                      if (index > 0 && recipe.gap > 0)
-                        SizedBox(width: recipe.gap),
-                      buildTab(widget.tabs[index], index, recipe),
-                    ],
-                    // Source TabsList owns the final right border; separators
-                    // belong to the following tab and do not consume its width.
-                    if (recipe.tokens.brutal)
-                      SizedBox(
-                        key: const ValueKey('conversation-tab-list-edge'),
-                        width: 2,
-                        height: recipe.sourceTabHeight,
-                        child: const ColoredBox(color: Colors.black),
-                      ),
-                  ],
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: recipe.background,
+            // Elegant desktop tabs have no rule (`border-b-0`); a zero-width
+            // Flutter BorderSide would still paint a hairline.
+            border: Border(
+              bottom: recipe.outerBottomBorder == 0
+                  ? BorderSide.none
+                  : BorderSide(
+                      color: recipe.border,
+                      width: recipe.outerBottomBorder,
+                    ),
+            ),
+          ),
+          child: ConstrainedBox(
+            // The strip is a minimum height: the tabs grow with their label.
+            constraints: BoxConstraints(
+              minHeight: recipe.effectiveListHeight,
+              maxHeight: grows ? double.infinity : recipe.effectiveListHeight,
+            ),
+            child: Focus(
+              canRequestFocus: false,
+              onKeyEvent: navigation,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                primary: false,
+                child: Padding(
+                  padding: recipe.listInset,
+                  child: Semantics(
+                    role: SemanticsRole.tabBar,
+                    explicitChildNodes: true,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (
+                          var index = 0;
+                          index < widget.tabs.length;
+                          index++
+                        ) ...[
+                          if (index > 0 && recipe.gap > 0)
+                            SizedBox(width: recipe.gap),
+                          buildTab(widget.tabs[index], index, recipe),
+                        ],
+                        // Source TabsList owns the final right border; separators
+                        // belong to the following tab and do not consume its width.
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -560,7 +609,8 @@ class _ConversationTabsState extends State<RaftConversationTabs> {
   ) {
     final selected = tab.id == widget.value;
     final focus = node(tab.id);
-    final control = Semantics(
+    final grows = RaftScaled.grows(context);
+    Widget control = Semantics(
       role: SemanticsRole.tab,
       label: tab.label,
       selected: selected,
@@ -569,75 +619,65 @@ class _ConversationTabsState extends State<RaftConversationTabs> {
       focused: focus.hasFocus,
       onTap: tab.enabled ? () => widget.onChanged(tab.id) : null,
       child: ExcludeSemantics(
-        child: SizedBox(
-          height: recipe.effectiveListHeight,
-          child: Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              RaftControl(
-                key: ValueKey('panel-tab-${tab.id.name}'),
-                focusNode: focus,
-                recipe: _ConversationTabControlRecipe(
-                  recipe.tokens,
-                  selected: selected,
-                ),
-                onPressed: tab.enabled ? () => widget.onChanged(tab.id) : null,
-                visualHeight: recipe.sourceTabHeight,
-                minimumTargetSize: recipe.targetHeight,
-                padding: recipe.tabInset(index),
-                shadow: false,
-                child: Builder(
-                  builder: (context) => Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (tab.id == RaftConversationTabId.tasks)
-                        _ConversationTaskGlyph(
-                          size: recipe.glyphSize,
-                          stroke: recipe.glyphStroke,
-                          color:
-                              DefaultTextStyle.of(context).style.color ??
-                              recipe.tokens.ink,
-                        )
-                      else
-                        RaftIcon(
-                          tab.id == RaftConversationTabId.chat
-                              ? RaftGlyph.messageSquare
-                              : RaftGlyph.paperclip,
-                          size: recipe.glyphSize,
-                          strokeWidth: recipe.glyphStroke,
-                        ),
-                      const SizedBox(width: 6),
-                      RaftCssText(tab.label),
-                    ],
-                  ),
-                ),
-              ),
-              if (recipe.tokens.brutal && index > 0)
-                Positioned(
-                  key: ValueKey('conversation-tab-separator-${tab.id.name}'),
-                  left: 0,
-                  top:
-                      (recipe.effectiveListHeight - recipe.sourceTabHeight) / 2,
-                  height: recipe.sourceTabHeight,
-                  width: 2,
-                  child: IgnorePointer(child: ColoredBox(color: Colors.black)),
-                ),
-              if (selected && !recipe.tokens.brutal)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: recipe.indicatorHeight,
-                  child: IgnorePointer(
-                    child: ColoredBox(color: recipe.indicator),
-                  ),
-                ),
-            ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: recipe.targetHeight,
+            maxHeight: grows ? double.infinity : recipe.targetHeight,
+          ),
+          // The mounted panel selects its tab variant independently of the generic Tabs control.
+          child: RaftTabButton(
+            key: ValueKey('panel-tab-${tab.id.name}'),
+            focusNode: focus,
+            label: tab.label,
+            variant: recipe.variant,
+            selected: selected,
+            height: recipe.targetHeight,
+            growsWithText: grows,
+            glyph: switch (tab.id) {
+              RaftConversationTabId.chat => RaftGlyph.messageSquare,
+              RaftConversationTabId.files => RaftGlyph.paperclip,
+              RaftConversationTabId.tasks => null,
+            },
+            icon: tab.id == RaftConversationTabId.tasks
+                ? (size, color, stroke) => _ConversationTaskGlyph(
+                    size: size,
+                    stroke: stroke,
+                    color: color,
+                  )
+                : null,
+            onPressed: tab.enabled ? () => widget.onChanged(tab.id) : null,
           ),
         ),
       ),
     );
+    if (tab.enabled) {
+      control = RaftLargeContentViewer(
+        label: tab.label,
+        onActivate: () => widget.onChanged(tab.id),
+        iconBuilder: (context, size) => switch (tab.id) {
+          RaftConversationTabId.chat => RaftIcon(
+            RaftGlyph.messageSquare,
+            size: size,
+          ),
+          RaftConversationTabId.files => RaftIcon(
+            RaftGlyph.paperclip,
+            size: size,
+          ),
+          RaftConversationTabId.tasks => _ConversationTaskGlyph(
+            size: size,
+            stroke: recipe.glyphStroke,
+            color: IconTheme.of(context).color ?? recipe.tokens.ink,
+          ),
+        },
+        child: control,
+      );
+    }
+    if (RaftDensityScope.of(context) == RaftDensity.touch) {
+      control = RaftTapSlopAnchor(
+        minSize: const Size.square(RaftMetrics.touchTarget),
+        child: control,
+      );
+    }
     return widget.reorderWrapper?.call(control, tab, index) ?? control;
   }
 }
@@ -651,8 +691,8 @@ class _ConversationTaskGlyph extends StatelessWidget {
   final double size, stroke;
   final Color color;
   @override
-  Widget build(BuildContext context) => SizedBox.square(
-    dimension: size,
+  Widget build(BuildContext context) => RaftIconViewport(
+    size: size,
     child: CustomPaint(painter: _ListTodoPainter(color, stroke)),
   );
 }
@@ -706,7 +746,7 @@ class RaftConversationHeaderActionsRecipe {
   final bool mobile;
   double get visualSize => 28;
   double get glyphSize => 14;
-  double get gap => mobile && !tokens.brutal ? 2 : 6;
+  double get gap => mobile ? 2 : 6;
 }
 
 /// The two real sibling header actions; opening the settings drawer is app-owned.
@@ -761,36 +801,27 @@ class RaftConversationDateHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final text =
-        RaftTypography.mono(
-          t,
-          size: t.brutal ? 10 : 11,
-          line: t.brutal ? 15 : 16.5,
-          color: t.brutal ? Colors.black.withValues(alpha: .5) : t.muted,
-        ).copyWith(
-          fontFamily: t.brutal ? t.bodyFont : t.monoFont,
-          fontWeight: t.brutal ? FontWeight.w700 : FontWeight.w400,
-          letterSpacing: t.brutal ? 1 : 1.1,
-        );
-    final line = Divider(
-      height: t.brutal ? 2 : 1,
-      thickness: t.brutal ? 2 : 1,
-      color: t.brutal
-          ? Colors.black.withValues(alpha: .15)
-          : t.colors[t.dark ? 'ink-4' : 'line-hairline'],
+    final text = RaftTypography.mono(
+      t,
+      size: 11,
+      line: 16.5,
+      color: t.muted,
+    ).copyWith(fontFamily: t.monoFont, fontWeight: FontWeight.w400);
+    final line = RaftSeparator(
+      thickness: 1,
+      color: t.colors[t.dark ? 'ink-4' : 'line-hairline'],
     );
-    // Announced in the label's own case, not the visual uppercase.
     return Semantics(
       header: true,
       label: label,
       excludeSemantics: true,
       child: Opacity(
-        opacity: t.brutal ? 1 : .7,
+        opacity: .7,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final labelText = label.toUpperCase();
+              final labelText = label;
               final painter = TextPainter(
                 text: TextSpan(text: labelText, style: text),
                 textDirection: Directionality.of(context),
@@ -808,7 +839,7 @@ class RaftConversationDateHeader extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Transform.translate(
-                      offset: Offset(0, t.brutal ? 1.5 : 0),
+                      offset: Offset(0, 0),
                       child: line,
                     ),
                   ),
@@ -826,7 +857,7 @@ class RaftConversationDateHeader extends StatelessWidget {
                   ),
                   Expanded(
                     child: Transform.translate(
-                      offset: Offset(0, t.brutal ? 1.5 : 0),
+                      offset: Offset(0, 0),
                       child: line,
                     ),
                   ),
@@ -845,13 +876,18 @@ class _ComposerTaskControlRecipe extends _ConversationTabControlRecipe {
   @override
   Color get background => Colors.transparent;
   @override
-  Color get foreground =>
-      tokens.brutal ? Colors.black.withValues(alpha: .6) : tokens.strong;
+  Color get foreground => tokens.colors['foreground-composer-task']!;
   @override
   Color foregroundFor({bool hovered = false}) => foreground;
   @override
-  TextStyle get textStyle =>
-      RaftTypography.body(tokens, size: 12, line: 16, weight: FontWeight.w700);
+  TextStyle get textStyle => RaftTypography.body(
+    tokens,
+    size: tokens.size('type.composerTaskLabel.size', fallback: 14),
+    line: tokens.size('type.composerTaskLabel.line', fallback: 20),
+    weight: raftFontWeight(
+      tokens.size('type.composerTaskLabel.weight', fallback: 600),
+    ),
+  );
 }
 
 /// Controlled checkbox presentation for RaftComposer.taskAction. This never
@@ -893,6 +929,8 @@ class _ComposerTaskToggleState extends State<RaftComposerTaskToggle> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final native = t.option('checkbox.mark', or: 'fillCheck') == 'fillCheck';
+    final face = t.size('size.composerTaskToggle', fallback: 32);
     return TextFieldTapRegion(
       child: Semantics(
         label: widget.label,
@@ -906,10 +944,10 @@ class _ComposerTaskToggleState extends State<RaftComposerTaskToggle> {
         child: ExcludeSemantics(
           child: RaftControl(
             key: const ValueKey('composer-as-task-toggle'),
-            minimumTargetSize: 16,
+            minimumTargetSize: face,
             focusNode: focus,
             focusOnPointer: false,
-            visualHeight: 16,
+            visualHeight: face,
             padding: EdgeInsets.zero,
             shadow: false,
             tooltip: widget.tooltip,
@@ -920,34 +958,30 @@ class _ComposerTaskToggleState extends State<RaftComposerTaskToggle> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: widget.checked
-                        ? t.brutal
-                              ? Colors.black
-                              : t.strong
-                        : t.panel,
-                    border: Border.all(
-                      color: t.brutal ? Colors.black : t.colors['line-strong']!,
-                      width: t.brutal ? 2 : 1,
-                    ),
-                  ),
-                  child: widget.checked
-                      ? Center(
-                          child: RaftIcon(
-                            RaftGlyph.check,
-                            size: 10,
-                            strokeWidth: 4,
-                            color: t.brutal
-                                ? Colors.white
-                                : t.colors['foreground-inverse'],
-                          ),
-                        )
-                      : null,
+                RaftCheckboxIndicator(
+                  checked: widget.checked,
+                  disabled: native && widget.onChanged == null,
+                  size: t.size('size.composerTaskCheckbox', fallback: 20),
+                  style: native
+                      ? null
+                      : RaftCheckboxIndicatorStyle(
+                          fill: widget.checked
+                              ? t.colors['layer-composer-task-checked']
+                              : t.panel,
+                          borderColor: t.colors['line-composer-task'],
+                          markColor: t.colors['foreground-inverse'],
+                          radius: 0,
+                          borderWidth:
+                              t.option('checkbox.mark', or: 'strokeCheck') ==
+                                  'thickStroke'
+                              ? 2
+                              : 1,
+                          // Both a57 optional appearances use the same mark.
+                          markSize: 10,
+                          markStrokeWidth: 4,
+                        ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: t.size('space.composerTaskGap', fallback: 8)),
                 Text(widget.label),
               ],
             ),

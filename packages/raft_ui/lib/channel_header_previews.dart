@@ -22,8 +22,8 @@ class _ChannelHeaderPreviewState extends State<_ChannelHeaderPreview> {
         description:
             'A public description can wrap without hiding the channel identity.',
         onBack: () => setState(() => result = 'Back'),
-        onSearch: () => setState(() => result = 'Search channel'),
-        onSettings: () => setState(() => result = 'Channel settings'),
+        onSearch: () => setState(() => result = 'Search Channel'),
+        onSettings: () => setState(() => result = 'Channel Settings'),
       ),
       Text(result),
     ],
@@ -49,8 +49,8 @@ class _DesktopPanelHeaderPreviewState
       RaftChannelHeader(
         name: 'design',
         description: 'Product and UI decisions',
-        onSearch: () => setState(() => result = 'Search channel'),
-        onSettings: () => setState(() => result = 'Channel settings'),
+        onSearch: () => setState(() => result = 'Search Channel'),
+        onSettings: () => setState(() => result = 'Channel Settings'),
       ),
       RaftPanelHeaderBar(
         title: 'Designer',
@@ -58,8 +58,8 @@ class _DesktopPanelHeaderPreviewState
         actions: [
           RaftPanelIconButton(
             glyph: RaftGlyph.x,
-            tooltip: 'Close profile',
-            onPressed: () => setState(() => result = 'Close profile'),
+            tooltip: 'Close Profile',
+            onPressed: () => setState(() => result = 'Close Profile'),
           ),
         ],
       ),
@@ -92,7 +92,7 @@ class _DmHeaderPreviewState extends State<_DmHeaderPreview> {
         activity: RaftActivityTone.working,
         activityText: 'Capturing visual testing baselines',
         onSearch: () => setState(() => result = 'Search DM'),
-        onSettings: () => setState(() => result = 'DM settings'),
+        onSettings: () => setState(() => result = 'DM Settings'),
       ),
       RaftDmHeader(
         name: 'Designer',
@@ -103,7 +103,7 @@ class _DmHeaderPreviewState extends State<_DmHeaderPreview> {
         muted: true,
         onBack: () => setState(() => result = 'Back'),
         onSearch: () => setState(() => result = 'Search DM'),
-        onSettings: () => setState(() => result = 'DM settings'),
+        onSettings: () => setState(() => result = 'DM Settings'),
       ),
       Text(result),
     ],

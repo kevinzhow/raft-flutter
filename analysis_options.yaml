@@ -1,0 +1,29 @@
+# Repository analyzer plugin (tool/raft_lints). Analyzer plugins can only be
+# enabled here, in the options file at the root of the workspace; a package's
+# own analysis_options.yaml gets them by listing this file in `include`.
+#
+# `dart analyze` / `flutter analyze` print plugin results only when the plugin
+# finishes before the main analysis first goes idle, so the gate runs
+# `tool/raft-lints`, which executes the same rules deterministically.
+plugins:
+  raft_lints:
+    path: tool/raft_lints
+    diagnostics:
+      avoid_render_index_assertion: error
+      avoid_render_single: error
+      avoid_render_where_without_or_else: error
+      avoid_unproxied_network_client: error
+      avoid_raw_image_decode: error
+      avoid_builtin_underline: error
+      avoid_material_slider: error
+      avoid_raw_bottom_sheet: error
+      avoid_caught_exception_text: error
+      avoid_material_feedback: error
+      avoid_unreviewed_idle_work: error
+      avoid_imperative_notice_state: error
+      avoid_unreleased_resource: error
+      avoid_text_scale_factor: error
+      avoid_fixed_height_text: error
+      avoid_pixel_text_height: error
+      off_grid_spacing: error
+      avoid_view_display: error

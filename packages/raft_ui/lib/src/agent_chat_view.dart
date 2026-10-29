@@ -8,6 +8,8 @@
 // headers `px-5` (20), channel cards `px-4` (16) + `space-y-3`, DM list `p-4`,
 // DM card `p-3` with its own border (1px line-muted, brutal 2px black/30)
 // that is not the SurfaceListItem border.
+import 'card.dart' show RaftCard;
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -15,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'agent_profile.dart' show RaftPanelText;
 import 'collapsible.dart' show RaftShowMoreToggle;
 import 'dialog_card.dart' show RaftTextSteps, raftCssTextStyle;
+import 'error_presentation.dart' show RaftErrorBanner;
 import 'icons.dart';
 import 'list_items.dart';
 import 'localization.dart';
@@ -66,9 +69,16 @@ class RaftAgentChatView extends StatefulWidget {
     super.key,
     required this.channels,
     required this.dms,
+    this.channelsError,
+    this.dmsError,
   });
   final List<RaftAgentChannelRow> channels;
   final List<RaftAgentDmRow> dms;
+
+  /// A failed channels / DMs read (English source): the section shows
+  /// `<Banner intent="warning" density="sm" className="font-bold">` in
+  /// `px-5 pb-4`, like Web.
+  final String? channelsError, dmsError;
 
   /// `AGENT_CHAT_CHANNEL_PREVIEW_LIMIT`.
   static const channelPreviewLimit = 5;
@@ -83,12 +93,14 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final bg = t.brutal ? Colors.white : t.colors['layer-panel']!;
-    final rule = t.brutal ? Colors.black : t.colors['line-muted']!;
-    final sectionRule = t.brutal
-        ? Colors.black.withValues(alpha: .1)
-        : t.colors['line-muted']!;
-    final empty = widget.channels.isEmpty && widget.dms.isEmpty;
+    final bg = t.colors['layer-panel']!;
+    final rule = t.colors['line-muted']!;
+    final sectionRule = t.colors['line-muted']!;
+    final empty =
+        widget.channels.isEmpty &&
+        widget.dms.isEmpty &&
+        widget.channelsError == null &&
+        widget.dmsError == null;
     return ColoredBox(
       color: bg,
       child: SingleChildScrollView(
@@ -100,9 +112,7 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 color: bg,
-                border: Border(
-                  bottom: BorderSide(color: rule, width: t.brutal ? 2 : 1),
-                ),
+                border: Border(bottom: BorderSide(color: rule, width: 1)),
               ),
               child: RaftSectionEyebrow(raftText(context, 'Channels & DMs')),
             ),
@@ -167,14 +177,16 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
         const SizedBox(height: 4),
         RaftCssText(
           text,
-          style: RaftPanelText.caption(t).copyWith(
-            color: t.brutal
-                ? Colors.black.withValues(alpha: .6)
-                : t.colors['foreground-muted'],
-          ),
+          style: RaftPanelText.caption(t)
+              .copyWith(color: t.colors['foreground-muted']),
         ),
       ],
     ),
+  );
+
+  Widget _errorRow(String message) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+    child: RaftErrorBanner(message, small: true, bold: true),
   );
 
   /// `flex items-center gap-3 border ... bg-fill-muted px-3 py-2` inside `px-4 pb-4`.
@@ -189,23 +201,13 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: t.brutal
-            ? Colors.black.withValues(alpha: .015)
-            : t.colors['fill-muted'],
-        border: Border.all(
-          color: t.brutal
-              ? Colors.black.withValues(alpha: .15)
-              : t.colors['line-muted']!,
-        ),
+        color: t.colors['fill-muted'],
+        border: Border.all(color: t.colors['line-muted']!),
       ),
       child: Row(
         children: [
           IconTheme.merge(
-            data: IconThemeData(
-              color: t.brutal
-                  ? Colors.black.withValues(alpha: .35)
-                  : t.colors['foreground-placeholder'],
-            ),
+            data: IconThemeData(color: t.colors['foreground-placeholder']),
             child: icon,
           ),
           const SizedBox(width: 12),
@@ -219,9 +221,7 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
                     family: t.bodyFont,
                     step: RaftTextSteps.sm,
                     weight: FontWeight.w700,
-                    color: t.brutal
-                        ? Colors.black.withValues(alpha: .65)
-                        : t.colors['foreground-muted'],
+                    color: t.colors['foreground-muted'],
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -230,9 +230,7 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
                   style: raftCssTextStyle(
                     family: t.bodyFont,
                     step: RaftTextSteps.xs,
-                    color: t.brutal
-                        ? Colors.black.withValues(alpha: .45)
-                        : t.colors['foreground-placeholder'],
+                    color: t.colors['foreground-placeholder'],
                   ),
                 ),
               ],
@@ -261,7 +259,9 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
             'Channels where this agent can read or participate.',
           ),
         ),
-        if (widget.channels.isEmpty)
+        if (widget.channelsError != null)
+          _errorRow(widget.channelsError!)
+        else if (widget.channels.isEmpty)
           _inlineEmpty(
             context,
             t,
@@ -287,8 +287,8 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
                     child: RaftShowMoreToggle(
                       key: const ValueKey('agent-channels-show-all'),
                       label: expanded
-                          ? raftText(context, 'Show fewer')
-                          : raftFormat(context, 'Show all {count} channels', {
+                          ? raftText(context, 'Show Fewer')
+                          : raftFormat(context, 'Show All {count} Channels', {
                               'count': widget.channels.length,
                             }),
                       onPressed: () => setState(() => expanded = !expanded),
@@ -306,14 +306,10 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
     RaftTokens t,
     RaftAgentChannelRow c,
   ) {
-    final placeholder = t.brutal
-        ? Colors.black.withValues(alpha: .45)
-        : t.colors['foreground-placeholder']!;
-    final muted = t.brutal
-        ? Colors.black.withValues(alpha: .6)
-        : t.colors['foreground-muted'];
+    final placeholder = t.colors['foreground-placeholder']!;
+    final muted = t.colors['foreground-muted'];
     final description = c.description?.trim();
-    return RaftSurfaceListItem(
+    return RaftCard.item(
       onTap: c.onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +335,7 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
                           family: t.bodyFont,
                           step: RaftTextSteps.sm,
                           weight: FontWeight.w700,
-                          color: t.brutal ? Colors.black : t.strong,
+                          color: t.strong,
                         ),
                       ),
                     ),
@@ -370,20 +366,14 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                border: Border.all(
-                  color: t.brutal
-                      ? Colors.black.withValues(alpha: .2)
-                      : t.colors['line-muted']!,
-                ),
+                border: Border.all(color: t.colors['line-muted']!),
               ),
               child: RaftCssText(
                 raftText(context, c.type == 'private' ? 'Private' : 'Joint'),
                 style: raftCssTextStyle(
                   family: t.monoFont,
                   step: (11, 16.5),
-                  color: t.brutal
-                      ? Colors.black.withValues(alpha: .55)
-                      : t.colors['foreground-muted'],
+                  color: t.colors['foreground-muted'],
                 ),
               ),
             ),
@@ -402,7 +392,9 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
         raftText(context, 'Agent DMs'),
         raftText(context, 'Direct conversations involving this agent.'),
       ),
-      if (widget.dms.isEmpty)
+      if (widget.dmsError != null)
+        _errorRow(widget.dmsError!)
+      else if (widget.dms.isEmpty)
         _inlineEmpty(
           context,
           t,
@@ -468,14 +460,9 @@ class RaftConversationPreviewCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: t.brutal ? Colors.white : t.colors['layer-panel'],
-        border: Border.all(
-          color: t.brutal
-              ? Colors.black.withValues(alpha: .3)
-              : t.colors['line-muted']!,
-          width: t.brutal ? 2 : 1,
-        ),
-        borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+        color: t.colors['layer-panel'],
+        border: Border.all(color: t.colors['line-muted']!, width: 1),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,7 +497,7 @@ class RaftConversationPreviewCard extends StatelessWidget {
                           family: t.bodyFont,
                           step: (12, 16),
                           weight: FontWeight.w700,
-                          color: t.brutal ? Colors.black : t.strong,
+                          color: t.strong,
                         ),
                       ),
                     ),
@@ -544,18 +531,18 @@ class RaftConversationPreviewCard extends StatelessWidget {
             style: raftCssTextStyle(
               family: t.bodyFont,
               step: RaftTextSteps.sm,
-              color: t.brutal ? Colors.black : t.strong,
+              color: t.strong,
             ),
           ),
           if (footer != null) ...[
             const SizedBox(height: 4),
             RaftCssText(
-              raftText(context, footer!).toUpperCase(),
+              raftText(context, footer!),
               style: raftCssTextStyle(
                 family: t.monoFont,
                 step: (11, 16.5),
                 color: Colors.black.withValues(alpha: .45),
-              ).copyWith(letterSpacing: .55),
+              ),
             ),
           ],
         ],

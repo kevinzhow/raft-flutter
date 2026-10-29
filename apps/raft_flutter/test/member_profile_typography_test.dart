@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'parity/parity_harness.dart' show loadParityFonts;
 
@@ -14,13 +15,12 @@ void main() {
   Future<void> host(
     WidgetTester tester,
     Widget child, {
-    RaftFamily family = RaftFamily.brutal,
     bool dark = false,
     double scale = 1,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(family, dark: dark),
+        theme: raftTheme(dark: dark),
         home: Scaffold(
           body: MediaQuery(
             data: MediaQueryData(textScaler: TextScaler.linear(scale)),
@@ -87,7 +87,9 @@ void main() {
       matching: find.byType(RaftCssText),
     );
     expect(tester.getRect(name).top, 20);
-    expect(tester.getRect(name).height, 22.5);
+    // raft-ui 0.7.0 PanelTitle: a 22px row (17px, 1.3) that still reserves the
+    // handle below.
+    expect(tester.getRect(name).height, 22);
     expect(tester.getRect(handle).top, 42.5);
   });
 
@@ -126,7 +128,7 @@ void main() {
     await tester.tap(find.text('Copy'));
     await tester.pumpAndSettle();
     expect(copied, isNotEmpty);
-    expect('Turns product feedback into specs.', contains(copied!));
+    expect('Turns product feedback into specs.', contains(copied));
   });
 
   testWidgets('fractional section border keeps layout but snaps CSS paint', (
@@ -167,19 +169,25 @@ void main() {
     List<int> pixel(int y) =>
         List.generate(3, (c) => bytes.getUint8((y * image.width + 3) * 4 + c));
     expect(pixel(68), [255, 255, 255]);
-    expect(pixel(69), [229, 229, 229]);
-    expect(pixel(71), [229, 229, 229]);
+    // The section rule is `line-muted` composited over the white backdrop.
+    final rule = Color.alphaBlend(
+      raftTheme().extension<RaftTokens>()!.colors['line-muted']!,
+      Colors.white,
+    );
+    final ruleRgb = [
+      (rule.r * 255).round(),
+      (rule.g * 255).round(),
+      (rule.b * 255).round(),
+    ];
+    expect(pixel(69), ruleRgb);
+    expect(pixel(71), ruleRgb);
     expect(pixel(72), [255, 255, 255]);
     image.dispose();
   });
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark wrapping, scaling and semantics survive resize',
+      '${dark ? 'dark' : 'light'} wrapping, scaling and semantics survive resize',
       (tester) async {
         final semantics = tester.ensureSemantics();
 
@@ -191,15 +199,9 @@ void main() {
             style: const TextStyle(fontSize: 14, height: 20 / 14),
           ),
         );
-        await host(tester, content(200), family: family, dark: dark);
+        await host(tester, content(200), dark: dark);
         final initial = tester.getSize(find.byType(RaftCssText)).height;
-        await host(
-          tester,
-          content(100),
-          family: family,
-          dark: dark,
-          scale: 1.5,
-        );
+        await host(tester, content(100), dark: dark, scale: 1.5);
         expect(
           tester.getSize(find.byType(RaftCssText)).height,
           greaterThan(initial),

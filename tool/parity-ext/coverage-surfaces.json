@@ -1,0 +1,2340 @@
+[
+ {
+  "surface": "Top bar: AppTopBar (workspace name + quick-switch strip, centred search field, trailing actions)",
+  "level": 1,
+  "webFiles": [
+   "components/topbar/AppTopBar.tsx",
+   "components/topbar/ShellTopBar.tsx",
+   "components/topbar/WorkspaceStrip.tsx",
+   "components/topbar/WorkspaceStripButton.tsx",
+   "components/topbar/WorkspaceStripCurrentMark.tsx",
+   "components/topbar/WorkspaceStripSortableAvatar.tsx",
+   "components/topbar/useStripLayout.ts",
+   "components/topbar/workspaceStripLayout.ts",
+   "components/topbar/topBarClasses.ts",
+   "components/topbar/topBarVisibility.ts"
+  ],
+  "linesChanged": 759,
+  "platforms": [
+   "desktop",
+   "phone (only when hosted)"
+  ],
+  "inventoryRows": [
+   "2.06",
+   "2.01"
+  ],
+  "notes": "NEW in v1.21.23 (whole topbar/ directory is added). Part of the yellow frame (layer-frame); shown at desktop width only unless a host shell (desktop app) supplies TopBarHostContext. Workspace strip = drag-reorderable avatars (dnd-kit). Replaces the sidebar head / server switcher entry."
+ },
+ {
+  "surface": "Top bar right region: TopBarGlobalActions (WorkingNowSummary count + notification Bell)",
+  "level": 1,
+  "webFiles": [
+   "components/topbar/TopBarGlobalActions.tsx",
+   "components/layout/WorkingNowSummary.tsx",
+   "components/layout/NotificationTrigger.tsx"
+  ],
+  "linesChanged": 262,
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.05",
+   "2.14"
+  ],
+  "notes": "TopBarGlobalActions NEW; WorkingNowSummary NEW (replaces layout/LiveAgentActivityBar.tsx which is deleted); NotificationTrigger gains flavor=\"top-bar\"."
+ },
+ {
+  "surface": "Window chrome / desktop title-bar host contract (TopBarHostContext, data-raft-titlebar, edge insets)",
+  "level": 1,
+  "webFiles": [
+   "components/topbar/topBarHostContext.ts",
+   "desktopHandshake.ts",
+   "desktopRuntimeEnvironment.ts",
+   "desktopServerTitle.ts",
+   "desktopServerWindow.ts",
+   "components/window/ThreadWindowRoute.tsx"
+  ],
+  "linesChanged": 79,
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "The Electron/desktop shell draws its title bar as this web top bar (82px mac traffic-light inset, Windows caption inset). No separate web window chrome exists. Thread pop-out window = ThreadWindowRoute. desktop*.ts changed lines: see linesChanged (0 if untouched)."
+ },
+ {
+  "surface": "Left rail (AppRail: Chat / Activity / Members / Computers / Tasks / Saved tabs, Help, Settings)",
+  "level": 1,
+  "webFiles": [
+   "components/layout/LeftRail.tsx"
+  ],
+  "linesChanged": 316,
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.01",
+   "2.07"
+  ],
+  "notes": "Restyled onto frame colours (foreground-on-frame, layer-frame-active, line-frame-active) with Button variant=\"on-frame\" (36px frame items); help menu stays on the rail. Phone has no rail (MobileTabBar instead)."
+ },
+ {
+  "surface": "Sidebar (channels / DMs / sections list, head removed, mobileInline home list)",
+  "level": 1,
+  "webFiles": [
+   "components/layout/Sidebar.tsx",
+   "components/layout/SidebarSortMenu.tsx",
+   "components/layout/SidebarSectionDialog.tsx",
+   "components/layout/SidebarReadToggleMenuItem.tsx",
+   "components/layout/SidebarConversationFinder.tsx",
+   "components/layout/MoveToSectionMenuItem.tsx",
+   "components/layout/SectionSortModeMenuItem.tsx",
+   "components/layout/SidebarSectionEmojiPicker.tsx"
+  ],
+  "linesChanged": 1562,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.01",
+   "2.02",
+   "2.04",
+   "2.08",
+   "2.09",
+   "2.10",
+   "2.11",
+   "2.12",
+   "2.13"
+  ],
+  "notes": "Sidebar.tsx (1327 lines changed) hosts channel/DM/section rows (SidebarItem with tone, thread-count, pink sticker count, yellow @ indicator), members mode, computers mode and settings nav. layer-sidebar is now a cream (oklch 0.986 0.0154 86) in light. Same file is shared by L2 surfaces Members list,"
+ },
+ {
+  "surface": "Phone Home / phone titlebar (sidebar as home list, workspace pill, notification trigger)",
+  "level": 1,
+  "webFiles": [
+   "components/layout/Sidebar.tsx",
+   "components/layout/NotificationTrigger.tsx",
+   "utils/channelUnreadIndicator.ts"
+  ],
+  "linesChanged": 946,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone"
+  ],
+  "inventoryRows": [
+   "2.02",
+   "2.04"
+  ],
+  "notes": "Sidebar rendered mobileInline. Old mobileServerSelectorGeometry.ts deleted. Lines attributed to the Sidebar() declaration only."
+ },
+ {
+  "surface": "Phone bottom tab bar (MobileTabBar / raft-ui MobileNav*)",
+  "level": 1,
+  "webFiles": [
+   "components/layout/MainLayout.tsx"
+  ],
+  "linesChanged": 96,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone"
+  ],
+  "inventoryRows": [
+   "2.03"
+  ],
+  "notes": "MobileBottomBarStack.tsx deleted; MobileTabBar now lives in MainLayout.tsx on raft-ui MobileNavRoot/MobileNavItem/MobileNavLabel."
+ },
+ {
+  "surface": "Main layout / panel layout (rail + sidebar + content + right panel, resizable, master-detail sizing)",
+  "level": 1,
+  "webFiles": [
+   "components/layout/MainLayout.tsx",
+   "components/layout/masterDetailPanelSizing.ts",
+   "components/layout/rightPanelUrlSync.ts",
+   "components/layout/ContentSlotThreadPanel.tsx",
+   "components/ui/PanelResizeHandle.tsx",
+   "App.tsx"
+  ],
+  "linesChanged": 259,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.15",
+   "3.01",
+   "3.03"
+  ],
+  "notes": "App.tsx (90 lines: auth bootstrap, server resolver, access-denied) included whole. Desktop three-column frame with top bar above; phone single column."
+ },
+ {
+  "surface": "Thread / right panel frame (PanelHeader, ThreadPanelWrapper, panel resize)",
+  "level": 1,
+  "webFiles": [
+   "components/ui/PanelHeader.tsx",
+   "components/layout/MainLayout.tsx",
+   "components/ui/PanelResizeHandle.tsx"
+  ],
+  "linesChanged": 207,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.35"
+  ],
+  "notes": "Panel/section/drawer/thread heads share one 20px edge rule (raft-ui 0.6.0)."
+ },
+ {
+  "surface": "Task detail modal frame (TaskModalBar / TaskModalHead)",
+  "level": 1,
+  "webFiles": [
+   "components/layout/MainLayout.tsx",
+   "components/task/TaskModalHead.tsx"
+  ],
+  "linesChanged": 73,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "6.08"
+  ],
+  "notes": "Task thread modal chrome in MainLayout."
+ },
+ {
+  "surface": "Auth bootstrap status + Server resolver + access denied + server selection (App.tsx)",
+  "level": 2,
+  "webFiles": [
+   "App.tsx"
+  ],
+  "linesChanged": 66,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.01",
+   "1.16",
+   "1.17"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Login",
+  "level": 2,
+  "webFiles": [
+   "components/auth/LoginPage.tsx",
+   "components/auth/SocialProviderButton.tsx",
+   "components/auth/OpenInBrowserSignInGuide.tsx",
+   "components/brand/AuthBrandShell.tsx",
+   "components/auth/AuthPageFrame.tsx",
+   "assets/icons/provider_google.svg"
+  ],
+  "linesChanged": 146,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.02",
+   "1.03",
+   "1.04"
+  ],
+  "notes": "AuthBrandShell/AuthPageFrame shared by every auth page."
+ },
+ {
+  "surface": "Register",
+  "level": 2,
+  "webFiles": [
+   "components/auth/RegisterPage.tsx",
+   "components/auth/LegalAcceptanceCheckbox.tsx"
+  ],
+  "linesChanged": 38,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.05",
+   "1.06"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Forgot password",
+  "level": 2,
+  "webFiles": [
+   "components/auth/ForgotPasswordPage.tsx"
+  ],
+  "linesChanged": 16,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.07"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Reset password",
+  "level": 2,
+  "webFiles": [
+   "components/auth/ResetPasswordPage.tsx"
+  ],
+  "linesChanged": 14,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.08"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Email verification",
+  "level": 2,
+  "webFiles": [
+   "components/auth/EmailVerificationPage.tsx"
+  ],
+  "linesChanged": 28,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.09"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Account identity (profile) setup",
+  "level": 2,
+  "webFiles": [
+   "components/auth/AccountIdentitySetupPage.tsx"
+  ],
+  "linesChanged": 85,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.10"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Social auth callback",
+  "level": 2,
+  "webFiles": [
+   "components/auth/SocialAuthCallbackPage.tsx"
+  ],
+  "linesChanged": 91,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.11"
+  ],
+  "notes": "inventory marks it excluded (transient)."
+ },
+ {
+  "surface": "Invite accept",
+  "level": 2,
+  "webFiles": [
+   "components/auth/InviteAcceptPage.tsx",
+   "components/auth/CenteredCardFrame.tsx"
+  ],
+  "linesChanged": 36,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.12"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Choose server / create server (ServerSelector, ServerCreatePreview, ServerOptionCard, OnboardingCreateShell)",
+  "level": 2,
+  "webFiles": [
+   "components/auth/ServerSelector.tsx",
+   "components/auth/ServerCreatePreview.tsx",
+   "components/auth/ServerOptionCard.tsx",
+   "components/auth/OnboardingCreateShell.tsx"
+  ],
+  "linesChanged": 182,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.13",
+   "1.14",
+   "1.15"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Server setup: survey step",
+  "level": 2,
+  "webFiles": [
+   "components/onboarding/ServerSetupSurveyStep.tsx",
+   "components/onboarding/SetupStepFrame.tsx",
+   "components/onboarding/SetupSessionFooter.tsx"
+  ],
+  "linesChanged": 223,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.21"
+  ],
+  "notes": "SetupStepFrame NEW (shared step chrome)."
+ },
+ {
+  "surface": "Server setup: connect computer / runtime step",
+  "level": 2,
+  "webFiles": [
+   "components/onboarding/ServerSetupComputerRuntimeStep.tsx",
+   "pages/ServerSetupComputerRuntimePreviewPage.tsx"
+  ],
+  "linesChanged": 140,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.22"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Server setup: handoff step",
+  "level": 2,
+  "webFiles": [
+   "components/onboarding/ServerSetupHandoffStep.tsx"
+  ],
+  "linesChanged": 60,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.23"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Server setup: display style (appearance) step",
+  "level": 2,
+  "webFiles": [
+   "components/onboarding/ServerSetupDisplayStyleStep.tsx",
+   "components/onboarding/DisplayStylePicker.tsx",
+   "pages/DisplayStylePreviewPage.tsx",
+   "utils/onboardingDisplayStyle.ts"
+  ],
+  "linesChanged": 161,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "NEW step: light/dark/system cards, same picker as Settings > Appearance. NOT in the v1.21.12 inventory."
+ },
+ {
+  "surface": "Server setup projection gate",
+  "level": 2,
+  "webFiles": [
+   "components/onboarding/ServerSetupProjectionGate.tsx"
+  ],
+  "linesChanged": 74,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.24"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Public server page (signed-out preview, join banner)",
+  "level": 2,
+  "webFiles": [
+   "pages/PublicServerPage.tsx",
+   "pages/PublicMessageRow.tsx",
+   "pages/MarketplaceServerRow.tsx",
+   "components/server/PublicServerChannelRow.tsx",
+   "components/server/PublicServerChannelSidebar.tsx",
+   "components/server/PublicServerSidebarFrame.tsx",
+   "components/server/PublicPageGlobe.tsx",
+   "components/server/PublicCookieConsent.tsx",
+   "analytics/publicVisitorConsent.ts",
+   "analytics/publicVisits.ts"
+  ],
+  "linesChanged": 741,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.19",
+   "1.20"
+  ],
+  "notes": "PublicCookieConsent and PublicPageGlobe NEW. Public page also reuses AppearanceSection (publicSurface) and ReleaseNotesPanel."
+ },
+ {
+  "surface": "Device login (/login/device)",
+  "level": 2,
+  "webFiles": [
+   "pages/DeviceLoginPage.tsx"
+  ],
+  "linesChanged": 27,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.25"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "App login handoff (/login/app)",
+  "level": 2,
+  "webFiles": [
+   "pages/AppLoginPage.tsx"
+  ],
+  "linesChanged": 14,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.26"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "Login with Raft setup (/login-with-raft/setup)",
+  "level": 2,
+  "webFiles": [
+   "pages/HumanLoginSetupPage.tsx",
+   "components/oauth/RequestedScopeConsent.tsx"
+  ],
+  "linesChanged": 239,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.27"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "Integration invite (/integration-invite)",
+  "level": 2,
+  "webFiles": [
+   "pages/IntegrationInvitePage.tsx"
+  ],
+  "linesChanged": 78,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.28"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "Agent connection callback (/connections/callback)",
+  "level": 2,
+  "webFiles": [
+   "pages/AgentConnectionCallbackPage.tsx"
+  ],
+  "linesChanged": 15,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.29"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "Mobile download chooser (/download)",
+  "level": 2,
+  "webFiles": [
+   "pages/MobileDownloadChooserPage.tsx"
+  ],
+  "linesChanged": 95,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.30"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "Chinese community page",
+  "level": 2,
+  "webFiles": [
+   "pages/ChineseCommunityPage.tsx"
+  ],
+  "linesChanged": 18,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.31"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "Root error fallback",
+  "level": 2,
+  "webFiles": [
+   "components/errors/RootErrorFallback.tsx",
+   "components/errors/RootFallbackScroller.tsx"
+  ],
+  "linesChanged": 171,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.33"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "App update gate",
+  "level": 2,
+  "webFiles": [
+   "components/errors/AppUpdateGate.tsx"
+  ],
+  "linesChanged": 113,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.34"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "PWA install prompt",
+  "level": 2,
+  "webFiles": [
+   "components/pwa/PwaInstallPrompt.tsx"
+  ],
+  "linesChanged": 51,
+  "platforms": [
+   "phone"
+  ],
+  "inventoryRows": [
+   "1.32"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "Palette audit page (/palette-audit, dev)",
+  "level": 2,
+  "webFiles": [
+   "pages/PaletteAuditPage.tsx"
+  ],
+  "linesChanged": 635,
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "Dev-only route; 635 lines changed (rewritten to the Raft palette/token ramps). Token reference, not a user surface."
+ },
+ {
+  "surface": "Dev previews (/dev/account-bootstrap)",
+  "level": 2,
+  "webFiles": [
+   "pages/AccountBootstrapPreviewPage.tsx"
+  ],
+  "linesChanged": 0,
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "Dev-only."
+ },
+ {
+  "surface": "Channel page (header + timeline + composer)",
+  "level": 2,
+  "webFiles": [
+   "components/message/ChatPanel.tsx",
+   "components/message/MessageTimeline.tsx",
+   "components/message/DateDivider.tsx",
+   "components/message/HistoryLimitBanner.tsx",
+   "components/message/HistoryTopState.tsx",
+   "components/message/ThreadUnreadJumpPill.tsx",
+   "components/channel/ChannelDescription.tsx",
+   "components/channel/channelKindIcon.tsx",
+   "hooks/useMessagePlacement.ts"
+  ],
+  "linesChanged": 598,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.01",
+   "3.04",
+   "3.05",
+   "3.06"
+  ],
+  "notes": "ThreadUnreadJumpPill NEW (136). ChatPanel also hosts DM pages, Files tab, Tasks tab, banners."
+ },
+ {
+  "surface": "DM page (human DM / agent DM)",
+  "level": 2,
+  "webFiles": [
+   "components/message/ChatPanel.tsx",
+   "components/agent/AgentDMConversationCard.tsx",
+   "components/agent/AgentDMConversationList.tsx",
+   "components/layout/agentDmProfileSource.ts"
+  ],
+  "linesChanged": 287,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.02"
+  ],
+  "notes": "Same ChatPanel as channel page (lines counted in both)."
+ },
+ {
+  "surface": "Channel Files tab",
+  "level": 2,
+  "webFiles": [
+   "components/message/ChannelFilesPanel.tsx",
+   "components/message/ChannelFilesPanelFileRow.tsx",
+   "components/message/ChannelFileVisual.tsx",
+   "components/message/ChannelFileOverflowMenu.tsx",
+   "components/channel/ActiveUploadRow.tsx"
+  ],
+  "linesChanged": 89,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.07"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Channel Tasks tab",
+  "level": 2,
+  "webFiles": [
+   "components/message/ChatPanel.tsx",
+   "components/task/TasksPanel.tsx"
+  ],
+  "linesChanged": 489,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.08"
+  ],
+  "notes": "TasksPanel scoped to channel; shares files with Tasks page."
+ },
+ {
+  "surface": "Thread page / thread panel",
+  "level": 2,
+  "webFiles": [
+   "components/message/ThreadPanel.tsx",
+   "components/message/ThreadOverflowMenu.tsx",
+   "components/message/InlineThreadReplies.tsx",
+   "components/message/threadSearch.ts",
+   "components/message/ThreadRepliesBadge.tsx",
+   "components/thread/ThreadAgentFollowers.tsx",
+   "components/thread/ThreadAgentFollowerRow.tsx",
+   "store/threadStore.ts",
+   "hooks/useParentThreadUnread.ts"
+  ],
+  "linesChanged": 629,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.35",
+   "3.36",
+   "3.37",
+   "3.38",
+   "3.39"
+  ],
+  "notes": "Includes in-thread search (threadSearch.ts 105 lines); threadStore.ts/useParentThreadUnread are logic."
+ },
+ {
+  "surface": "Activity (threads inbox) page",
+  "level": 2,
+  "webFiles": [
+   "components/thread/ThreadsInbox.tsx",
+   "components/thread/InboxContextMenu.tsx",
+   "components/thread/inboxPinnedConversation.ts"
+  ],
+  "linesChanged": 1329,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "5.05",
+   "5.06",
+   "5.07",
+   "5.08",
+   "5.12"
+  ],
+  "notes": "ThreadsInbox.tsx 1272 lines: largest single page rewrite (raft-ui ActivityInbox*/InboxItem*). Route activity (legacy inbox/threads redirect)."
+ },
+ {
+  "surface": "Saved messages page",
+  "level": 2,
+  "webFiles": [
+   "components/saved/SavedPanel.tsx"
+  ],
+  "linesChanged": 53,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "5.09",
+   "5.10",
+   "5.11"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Search page (MessageSearchPage) and search overlay",
+  "level": 2,
+  "webFiles": [
+   "components/search/MessageSearchPage.tsx",
+   "components/search/SearchOverlay.tsx",
+   "components/search/EntityResultRow.tsx",
+   "components/search/MessageHitRow.tsx",
+   "components/search/SearchHomeEntityRow.tsx",
+   "components/search/searchOverlayAnchor.ts",
+   "components/search/searchOverlayLocation.ts"
+  ],
+  "linesChanged": 693,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "5.01",
+   "5.02",
+   "5.03",
+   "5.04"
+  ],
+  "notes": "Desktop Cmd-K overlay is anchored to the top-bar search field (SearchTrigger). Phone = Search tab page."
+ },
+ {
+  "surface": "Tasks page (board / list)",
+  "level": 2,
+  "webFiles": [
+   "components/task/TasksPanel.tsx",
+   "components/task/TaskCard.tsx",
+   "components/task/TaskFilterSegmentedControl.tsx",
+   "components/task/StatusBadge.tsx",
+   "components/task/TaskChipList.tsx",
+   "components/task/CreateTaskDialog.tsx"
+  ],
+  "linesChanged": 320,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "6.01",
+   "6.02",
+   "6.03",
+   "6.04",
+   "6.05",
+   "6.06",
+   "6.07",
+   "6.10"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Task detail (thread modal: properties, replies, history)",
+  "level": 2,
+  "webFiles": [
+   "components/task/TaskProperties.tsx",
+   "components/task/TaskTitleRow.tsx",
+   "components/task/HistoryTimeline.tsx",
+   "components/task/TaskModalHead.tsx",
+   "components/message/ThreadPanel.tsx"
+  ],
+  "linesChanged": 216,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "6.08"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Legacy v1 task panel (read-only)",
+  "level": 2,
+  "webFiles": [
+   "components/task/LegacyTaskPanel.tsx"
+  ],
+  "linesChanged": 127,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "6.09"
+  ],
+  "notes": "raft-ui LegacyTaskPanel* deprecated in 0.7.0; inventory: excluded."
+ },
+ {
+  "surface": "Members list (sidebar members mode)",
+  "level": 2,
+  "webFiles": [
+   "components/layout/MemberAgentRow.tsx",
+   "components/layout/MemberHumanRow.tsx",
+   "components/layout/Sidebar.tsx",
+   "components/member/CreatedAgentRow.tsx"
+  ],
+  "linesChanged": 261,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.01",
+   "7.02"
+  ],
+  "notes": "Route members (EmptyRoute) + sidebar members mode. Sidebar.tsx portion attributed to peer/DM row declarations only (the members-mode block lives inside Sidebar(), not separable: unknown)."
+ },
+ {
+  "surface": "Human (member) detail page",
+  "level": 2,
+  "webFiles": [
+   "components/member/HumanDetailPanel.tsx",
+   "components/member/RolePermissionHelpDialog.tsx",
+   "components/member/InviteeRow.tsx",
+   "components/ui/AvatarEditVeil.tsx"
+  ],
+  "linesChanged": 263,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.03",
+   "7.04",
+   "7.05",
+   "7.07"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Invite human dialog",
+  "level": 2,
+  "webFiles": [
+   "components/member/InviteHumanDialog.tsx"
+  ],
+  "linesChanged": 92,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.06"
+  ],
+  "notes": "Dialog; counted as a page in the inventory."
+ },
+ {
+  "surface": "Agent profile: Profile tab",
+  "level": 2,
+  "webFiles": [
+   "components/agent/AgentDetailPanel.tsx",
+   "components/agent/HostedRuntimeStatus.tsx",
+   "components/agent/AgentHostedRuntimeModel.tsx",
+   "components/agent/AgentHostedRuntimeUsage.tsx",
+   "components/agent/HostedModelChoice.tsx",
+   "components/agent/HostedCindyFailedBanner.tsx",
+   "components/agent/hostedRuntimeUsage.ts",
+   "components/agent/AgentSkills.tsx",
+   "components/agent/AgentConnections.tsx",
+   "components/agent/PixelAvatar.tsx"
+  ],
+  "linesChanged": 1233,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.08"
+  ],
+  "notes": "HostedModelChoice and HostedCindyFailedBanner NEW. Panel route agent/:agentId. AgentDetailPanel() shell lines (263) included here."
+ },
+ {
+  "surface": "Agent profile: Activity tab",
+  "level": 2,
+  "webFiles": [
+   "components/agent/AgentActivityLog.tsx",
+   "components/agent/AgentActivityOverview.tsx",
+   "components/agent/AgentActivityDot.tsx",
+   "utils/liveAgentActivity.ts"
+  ],
+  "linesChanged": 786,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.09"
+  ],
+  "notes": "AgentActivityOverview NEW (387)."
+ },
+ {
+  "surface": "Agent profile: Chat tab",
+  "level": 2,
+  "webFiles": [
+   "components/agent/AgentDetailPanel.tsx"
+  ],
+  "linesChanged": 124,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.10"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Agent profile: Reminders tab",
+  "level": 2,
+  "webFiles": [
+   "components/agent/AgentRemindersSection.tsx"
+  ],
+  "linesChanged": 71,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.11"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Agent profile: Workspace tab",
+  "level": 2,
+  "webFiles": [
+   "components/agent/AgentWorkspace.tsx"
+  ],
+  "linesChanged": 160,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.12"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Agent profile: Apps tab",
+  "level": 2,
+  "webFiles": [
+   "components/agent/AgentAppAccessTab.tsx",
+   "components/agent/GrantableAppOption.tsx",
+   "components/agent/GrantScopeCheckbox.tsx",
+   "components/agent/AppEventFilterButton.tsx",
+   "components/agent/IntegrationActionButton.tsx"
+  ],
+  "linesChanged": 318,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.13"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Agent profile: MCP tab",
+  "level": 2,
+  "webFiles": [
+   "components/agent/AgentMcpTab.tsx",
+   "components/agent/McpServerListItem.tsx",
+   "components/agent/McpRecommendationItem.tsx",
+   "components/agent/McpHeaderRow.tsx",
+   "components/agent/managedMcpCredentials.ts",
+   "components/agent/CredentialRow.tsx",
+   "components/ui/KeyValueInput.tsx",
+   "components/ui/KeyValueRow.tsx"
+  ],
+  "linesChanged": 507,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.14"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Agent unavailable panel",
+  "level": 2,
+  "webFiles": [
+   "components/agent/AgentUnavailablePanel.tsx",
+   "components/agent/agentDetailAvailability.ts"
+  ],
+  "linesChanged": 17,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.20"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Agent archive (archive dialog + archived agents section)",
+  "level": 2,
+  "webFiles": [
+   "components/agentArchive/AgentArchiveDialog.tsx",
+   "components/agentArchive/AgentArchiveSection.tsx",
+   "components/agentArchive/archiveApi.ts",
+   "components/agentArchive/useArchivedAgentMachineName.ts"
+  ],
+  "linesChanged": 307,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "NEW directory. Archived agents also render in Settings > Server Profile (ArchivedAgentsSection). Not in v1.21.12 inventory."
+ },
+ {
+  "surface": "Agent migration (dialogs, progress, hosted migration review)",
+  "level": 2,
+  "webFiles": [
+   "components/agentMigration/AgentMigrationDialog.tsx",
+   "components/agentMigration/AgentMigrationSection.tsx",
+   "components/agentMigration/AgentMigrationCancelDialog.tsx",
+   "components/agentMigration/AgentMigrationUpgradeDialog.tsx",
+   "components/agentMigration/HostedMigrationReview.tsx",
+   "components/agentMigration/MigrationProgressPanel.tsx",
+   "components/agentMigration/MigrationErrorContent.tsx",
+   "components/agentMigration/MigrationReference.tsx",
+   "components/agentMigration/presentation.ts",
+   "components/agentMigration/state.ts",
+   "components/agentMigration/realtime.ts",
+   "components/agentMigration/errors.ts"
+  ],
+  "linesChanged": 740,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.21"
+  ],
+  "notes": "HostedMigrationReview NEW. Inventory: excluded (flag-off)."
+ },
+ {
+  "surface": "Member graph (/members/graph)",
+  "level": 2,
+  "webFiles": [
+   "components/settings/MemberGraphSection.tsx"
+  ],
+  "linesChanged": 175,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.25"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Computers list (sidebar computers mode)",
+  "level": 2,
+  "webFiles": [
+   "components/layout/Sidebar.tsx",
+   "components/machine/MachineAgentRow.tsx"
+  ],
+  "linesChanged": 131,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": [
+   "8.01"
+  ],
+  "notes": "ComputerRowBody attributed from Sidebar.tsx."
+ },
+ {
+  "surface": "Phone Computers page",
+  "level": 2,
+  "webFiles": [
+   "components/machine/MobileComputersPanel.tsx"
+  ],
+  "linesChanged": 135,
+  "platforms": [
+   "phone"
+  ],
+  "inventoryRows": [
+   "8.02"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Computer detail",
+  "level": 2,
+  "webFiles": [
+   "components/machine/MachineDetailPanel.tsx",
+   "components/machine/ComputerCommandGuide.tsx",
+   "components/machine/ComputerReleaseNotesAffordance.tsx",
+   "components/machine/WorkspaceDeleteButton.tsx",
+   "components/machine/useRuntimeRescan.ts",
+   "components/machine/CommandRow.tsx",
+   "components/machine/CommandCopyRoot.tsx"
+  ],
+  "linesChanged": 675,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "8.03",
+   "8.05"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Add computer dialog",
+  "level": 2,
+  "webFiles": [
+   "components/machine/AddMachineDialog.tsx"
+  ],
+  "linesChanged": 160,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "8.04"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Computer bulk change model dialog",
+  "level": 3,
+  "webFiles": [
+   "components/machine/BulkChangeModelDialog.tsx",
+   "components/machine/BulkResetOptionCard.tsx",
+   "analytics/bulkModelChange.ts"
+  ],
+  "linesChanged": 245,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "NEW; not in v1.21.12 inventory."
+ },
+ {
+  "surface": "Runtime usage chip",
+  "level": 3,
+  "webFiles": [
+   "components/machine/RuntimeAccountUsageChip.tsx"
+  ],
+  "linesChanged": 88,
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": [
+   "8.06"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Channel settings (EditChannelDialog drawer)",
+  "level": 2,
+  "webFiles": [
+   "components/channel/EditChannelDialog.tsx",
+   "components/channel/ChannelMemberList.tsx",
+   "components/channel/ChannelPreferencesSection.tsx",
+   "components/channel/ChannelSlackBridgeField.tsx",
+   "components/channel/JointConversionSection.tsx",
+   "components/channel/JointAttachmentUploadSection.tsx",
+   "components/channel/channelSettingsClasses.ts",
+   "components/channel/memberPickerClasses.ts",
+   "components/agent/ChannelMembers.tsx"
+  ],
+  "linesChanged": 1141,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "4.04",
+   "4.05",
+   "4.07"
+  ],
+  "notes": "channelSettingsClasses/memberPickerClasses NEW (shared form classes)."
+ },
+ {
+  "surface": "Create channel dialog",
+  "level": 2,
+  "webFiles": [
+   "components/channel/CreateChannelDialog.tsx",
+   "components/channel/AddMembersDialog.tsx"
+  ],
+  "linesChanged": 200,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "4.01",
+   "4.02",
+   "4.06"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Create shared (joint) channel dialog",
+  "level": 2,
+  "webFiles": [
+   "components/channel/CreateJointChannelDialog.tsx",
+   "components/channel/JointInviteDraftCard.tsx",
+   "components/channel/SameAdminJointNotice.tsx",
+   "components/layout/usePendingJointInvites.ts",
+   "utils/jointSameAdmin.ts"
+  ],
+  "linesChanged": 372,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "4.03"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Create agent dialog (+ runtime config editor, external agent setup)",
+  "level": 2,
+  "webFiles": [
+   "components/agent/CreateAgentDialog.tsx",
+   "components/agent/RuntimeConfigFields.tsx",
+   "components/agent/RuntimeFormV2FieldControl.tsx",
+   "components/agent/RuntimeChoiceCombobox.tsx",
+   "components/agent/SchemaBuiltInRuntimeFields.tsx",
+   "components/agent/SchemaKimiRuntimeFields.tsx",
+   "components/agent/StableField.tsx",
+   "components/agent/EnvVarEntryRow.tsx",
+   "components/agent/ExternalAgentToken.tsx"
+  ],
+  "linesChanged": 750,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.17",
+   "7.23",
+   "7.24"
+  ],
+  "notes": "Wide Dialog (raft-ui 0.6.0: one-go forms use wide Dialog; DrawerContent width removed). RuntimeConfigFields also edits agent runtime config (7.17)."
+ },
+ {
+  "surface": "Raftbench page (/raftbench)",
+  "level": 2,
+  "webFiles": [
+   "raftbench/RaftBenchPage.tsx",
+   "raftbench/HostedAnalysis.tsx",
+   "raftbench/ManagerOverview.tsx",
+   "raftbench/liveMessages.ts",
+   "raftbench/model.ts",
+   "raftbench/taskMetrics.ts",
+   "raftbench/costMetrics.ts",
+   "raftbench/periodMetrics.ts",
+   "raftbench/access.ts"
+  ],
+  "linesChanged": 1564,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "NEW directory (RaftBenchPage 853); admin-only analytics page. Not in the v1.21.12 inventory (parity-ext has build-raftbench.py)."
+ },
+ {
+  "surface": "Release notes page (/release-notes)",
+  "level": 2,
+  "webFiles": [
+   "components/settings/ReleaseNotesPanel.tsx"
+  ],
+  "linesChanged": 32,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.23"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Settings navigation (desktop rail list / phone root list)",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsSidebarList.tsx",
+   "components/settings/settingsNavigation.ts",
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/SettingsSegmentedControls.tsx"
+  ],
+  "linesChanged": 61,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.01"
+  ],
+  "notes": "Tab list unchanged (14 tabs). SettingsPanel() shell only attributed."
+ },
+ {
+  "surface": "Settings: Account",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/SettingsProfileCard.tsx",
+   "components/settings/UsageDataSettings.tsx"
+  ],
+  "linesChanged": 156,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.02",
+   "9.03",
+   "9.04"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Settings: Language & Region",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "utils/translationContract.ts"
+  ],
+  "linesChanged": 71,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.05"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Settings: Appearance",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/AppearanceThemePicker.tsx",
+   "store/appearanceStore.ts"
+  ],
+  "linesChanged": 750,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.06"
+  ],
+  "notes": "ThemeModeGroup and ThemePresetCard (Brutal/Elegant family picker) DELETED; now a 3-card light/dark/system picker with live preview. Other device toggles unchanged in scope."
+ },
+ {
+  "surface": "Settings: Notifications",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/AppNotificationsControls.tsx",
+   "components/settings/AppNotificationEventCheckbox.tsx",
+   "components/settings/AppNotificationGroupCheckbox.tsx"
+  ],
+  "linesChanged": 518,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.07"
+  ],
+  "notes": "AppNotificationsControls 438 lines."
+ },
+ {
+  "surface": "Settings: Server Profile (profile, public visibility, archived channels/agents, danger zone)",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/ArchivedChannelsSection.tsx",
+   "components/settings/ArchivedAgentsSection.tsx",
+   "components/settings/UnarchiveChannelButton.tsx",
+   "components/settings/DeleteServerConfirmDialog.tsx"
+  ],
+  "linesChanged": 340,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.08",
+   "9.09",
+   "9.10"
+  ],
+  "notes": "ArchivedAgentsSection NEW (128)."
+ },
+ {
+  "surface": "Settings: Plan & Billing",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/PlanSectionContent.tsx",
+   "components/settings/HostedRuntimeSpendCard.tsx",
+   "utils/billingControls.ts",
+   "utils/usdAmount.ts"
+  ],
+  "linesChanged": 457,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.11",
+   "9.12"
+  ],
+  "notes": "HostedRuntimeSpendCard NEW (137)."
+ },
+ {
+  "surface": "Settings: Administration (admins, system channels, invites, join links, agreement, onboarding agent, translation, permissions)",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/AdminPrincipalRow.tsx",
+   "components/settings/PendingInviteRow.tsx",
+   "components/settings/JoinLinkRow.tsx"
+  ],
+  "linesChanged": 264,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.13"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Settings: Applications (installed / my apps / marketplace / detail)",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/InstalledConnectedAppItem.tsx",
+   "components/settings/RegisteredConnectedAppItem.tsx",
+   "components/settings/AppPermissionAccessRow.tsx",
+   "components/settings/connectedAppsErrorSurface.tsx",
+   "components/integrations/AppSetup.tsx"
+  ],
+  "linesChanged": 891,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.14"
+  ],
+  "notes": "IntegrationsSection alone is 704 changed lines. AppSetup NEW."
+ },
+ {
+  "surface": "Settings: Application editor (register app, redirects, scopes)",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/DeclaredScopeToggle.tsx",
+   "components/settings/AppWhenToUseField.tsx"
+  ],
+  "linesChanged": 134,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.15"
+  ],
+  "notes": "ConnectedAppEditorRailButton DELETED."
+ },
+ {
+  "surface": "Settings: MCP Servers",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/agent/McpServerListItem.tsx",
+   "components/agent/McpHeaderRow.tsx"
+  ],
+  "linesChanged": 326,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.16"
+  ],
+  "notes": "McpServerListItem 326 (shared with the agent MCP tab)."
+ },
+ {
+  "surface": "Settings: AI Providers",
+  "level": 2,
+  "webFiles": [
+   "components/settings/ProviderConnectionsSettings.tsx",
+   "components/settings/ProviderAccountRow.tsx",
+   "components/settings/ManagedConnectionRow.tsx",
+   "components/settings/AssignedAgentRow.tsx",
+   "components/icons/ProviderLogos.tsx"
+  ],
+  "linesChanged": 259,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.17"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Settings: IM Bridges",
+  "level": 2,
+  "webFiles": [
+   "components/settings/IMBridgesSettingsSection.tsx",
+   "components/settings/slackBridgeProvisioning.ts",
+   "components/settings/slackBridgeVisibility.ts"
+  ],
+  "linesChanged": 6,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.19"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Settings: Slack bridge setup wizard",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SlackBridgeSetupWizard.tsx",
+   "components/settings/slackOAuthReturn.ts",
+   "components/settings/slackBridgeProvisioningApi.ts"
+  ],
+  "linesChanged": 230,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.20"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Settings: Labs",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/ServerLabRow.tsx"
+  ],
+  "linesChanged": 72,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.21"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Settings: About",
+  "level": 2,
+  "webFiles": [
+   "components/settings/SettingsPanel.tsx",
+   "components/settings/DesktopDownloadOptions.tsx",
+   "components/settings/MobileDownloadQr.tsx",
+   "utils/desktopDownload.ts"
+  ],
+  "linesChanged": 341,
+  "linesBasis": "attributed (hunks mapped to listed top-level declarations; other files whole)",
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.22"
+  ],
+  "notes": "DesktopDownloadOptions NEW (179)."
+ },
+ {
+  "surface": "Settings: Feedback (My Feedback)",
+  "level": 2,
+  "webFiles": [
+   "components/settings/AboutFeedbackDialog.tsx",
+   "components/settings/LazyAboutFeedbackDialog.tsx",
+   "feedback/feedbackSdkTheme.ts"
+  ],
+  "linesChanged": 29,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "9.24"
+  ],
+  "notes": "feedbackSdkTheme.ts NEW (feedback SDK themed from raft tokens). Other feedback/* files not enumerated."
+ },
+ {
+  "surface": "Settings: Agent JWT settings (removed)",
+  "level": 3,
+  "webFiles": [],
+  "linesChanged": 61,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "DELETED in v1.21.23."
+ },
+ {
+  "surface": "Notification center (popover / phone sheet)",
+  "level": 3,
+  "webFiles": [
+   "components/layout/NotificationCenter.tsx",
+   "components/layout/NotificationTrigger.tsx",
+   "components/layout/dismissedNotificationStore.ts",
+   "components/layout/useSystemNotifications.tsx"
+  ],
+  "linesChanged": 163,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.05"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Server switcher menu",
+  "level": 3,
+  "webFiles": [
+   "components/ui/ServerSwitcherMenu.tsx"
+  ],
+  "linesChanged": 264,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.06"
+  ],
+  "notes": "serverSwitcherMenuLayout.ts deleted. Now also reached from the top-bar workspace strip."
+ },
+ {
+  "surface": "Live agent activity bar -> WorkingNowSummary",
+  "level": 3,
+  "webFiles": [
+   "components/layout/WorkingNowSummary.tsx"
+  ],
+  "linesChanged": 291,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.14"
+  ],
+  "notes": "Bar deleted; replaced by WorkingNowSummary in the top bar (raft-ui LiveAgentActivityBar* deprecated)."
+ },
+ {
+  "surface": "Message row (MessageItem) + hover toolbar + reactions",
+  "level": 3,
+  "webFiles": [
+   "components/message/MessageItem.tsx",
+   "components/message/MessageHoverToolbar.tsx",
+   "components/message/ReactionGlyph.tsx",
+   "components/message/MentionLink.tsx",
+   "components/message/MessageSelectionShortcut.tsx"
+  ],
+  "linesChanged": 1132,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.09",
+   "3.10",
+   "3.11",
+   "3.12"
+  ],
+  "notes": "MessageItem 1077 lines (markdown rendering 375, inline audio/video cards ~230)."
+ },
+ {
+  "surface": "Message markdown rendering pipeline",
+  "level": 3,
+  "webFiles": [
+   "components/message/remarkMessageTokens.ts",
+   "components/message/repairGeneratedMarkdown.ts",
+   "components/message/messageMarkdownSecurity.ts",
+   "components/markdown/MarkdownContent.tsx",
+   "components/markdown/CustomProtocolLink.tsx",
+   "components/markdown/MarkdownOutline.tsx",
+   "utils/markdownAutolink.ts",
+   "utils/markdownSourceAlignment.ts"
+  ],
+  "linesChanged": 548,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "Mostly logic; visible effect via raft-ui Markdown* parts."
+ },
+ {
+  "surface": "Composer (MessageInput) + suggestions + pending-mention strip",
+  "level": 3,
+  "webFiles": [
+   "components/message/MessageInput.tsx",
+   "components/message/useComposerAutosize.ts",
+   "components/message/PendingMentionActionStrip.tsx",
+   "components/message/PendingMentionActionStripRow.tsx",
+   "components/message/AutocompleteOptionRow.tsx",
+   "components/message/composerHost.ts"
+  ],
+  "linesChanged": 450,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.19",
+   "3.20",
+   "3.21",
+   "3.22",
+   "3.23",
+   "3.24"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Attachments: chips, preview surfaces, read-only attachments, comments panel",
+  "level": 3,
+  "webFiles": [
+   "components/message/AttachmentChip.tsx",
+   "components/message/AttachmentTypeBadge.tsx",
+   "components/message/AttachmentMetaText.tsx",
+   "components/message/ReadOnlyMessageAttachments.tsx",
+   "components/message/attachmentPreviewSurfaces.tsx",
+   "components/message/AttachmentCommentsPanel.tsx",
+   "utils/attachmentBadgeLabel.ts"
+  ],
+  "linesChanged": 652,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.25",
+   "3.26"
+  ],
+  "notes": "ReadOnlyMessageAttachments + AttachmentMetaText NEW. FilePreviewBadge props removed in raft-ui 0.6.0."
+ },
+ {
+  "surface": "Forward composer",
+  "level": 3,
+  "webFiles": [
+   "components/message/ForwardComposerMobile.tsx",
+   "components/message/ForwardComposerDesktop.tsx",
+   "components/message/ForwardComposerTargetList.tsx",
+   "components/message/ForwardComposerDialog.tsx",
+   "components/message/ForwardComposerWarnings.tsx",
+   "components/message/ForwardToastProvider.tsx",
+   "components/message/ForwardedBundleRouteCard.tsx",
+   "components/message/ForwardedBundleCard.tsx"
+  ],
+  "linesChanged": 253,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.14",
+   "3.15"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Select mode / share lightbox",
+  "level": 3,
+  "webFiles": [
+   "components/message/SelectShareLightbox.tsx",
+   "components/message/SelectModeToolbar.tsx",
+   "components/message/useSelectionShareHandlers.ts",
+   "utils/selectScreenshot.ts",
+   "components/ui/SelectionPopover.tsx"
+  ],
+  "linesChanged": 341,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.13"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Profile preview card / mention hover preview / external identity",
+  "level": 3,
+  "webFiles": [
+   "components/message/ProfilePreviewCardContent.tsx",
+   "components/message/MentionHoverActivityPreview.tsx",
+   "components/message/ExternalIdentityPreviewCard.tsx",
+   "components/profile/ProfilePanel.tsx",
+   "components/profile/ExternalIdentityDetailPanel.tsx"
+  ],
+  "linesChanged": 229,
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.27",
+   "3.28",
+   "3.29",
+   "3.30"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Quoted message / permalink preview",
+  "level": 3,
+  "webFiles": [
+   "components/message/QuotedMessagePermalinkPreview.tsx",
+   "components/message/quotedMessagePermalink.ts",
+   "components/ui/cards/QuotedMessageCard.tsx",
+   "components/ui/cards/ConversationPreviewCard.tsx"
+  ],
+  "linesChanged": 165,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.16"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Action card in a message (install app / create agent / channel members ...)",
+  "level": 3,
+  "webFiles": [
+   "components/actions/ActionCard.tsx",
+   "components/actions/ActionCardScopes.tsx",
+   "components/actions/ActionCardScopeNotices.tsx",
+   "components/actions/ActionTypeIcon.tsx",
+   "components/actions/useActionCardDetail.ts"
+  ],
+  "linesChanged": 750,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.31"
+  ],
+  "notes": "ActionCard 504 lines; MessageActionCard raft-ui header/status/collapse parts."
+ },
+ {
+  "surface": "SOS dialog / notification activation banner",
+  "level": 3,
+  "webFiles": [
+   "components/message/SOSDialog.tsx",
+   "components/message/NotificationActivationBanner.tsx"
+  ],
+  "linesChanged": 36,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.32",
+   "3.33"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Mermaid card + viewer",
+  "level": 3,
+  "webFiles": [
+   "components/mermaid/MermaidDiagram.tsx",
+   "components/mermaid/MermaidToolbar.tsx",
+   "components/mermaid/mermaid.css",
+   "components/mermaid/mermaidTheme.ts"
+  ],
+  "linesChanged": 106,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.17",
+   "3.18"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Handoff dialog",
+  "level": 3,
+  "webFiles": [
+   "components/handoff/HandoffCreateFlow.tsx",
+   "components/handoff/HandoffDialog.tsx",
+   "components/handoff/HandoffToolTab.tsx"
+  ],
+  "linesChanged": 150,
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.26"
+  ],
+  "notes": "inventory: excluded."
+ },
+ {
+  "surface": "Report issue / reset agent / agent profile edit / agent overflow menu",
+  "level": 3,
+  "webFiles": [
+   "components/agent/ReportIssueDialog.tsx",
+   "components/agent/ResetAgentDialog.tsx",
+   "components/agent/AgentProfileEditDialog.tsx",
+   "components/agent/AgentProfileOverflowMenu.tsx",
+   "components/agent/stopHostedTurn.ts"
+  ],
+  "linesChanged": 281,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "7.15",
+   "7.16",
+   "7.18",
+   "7.19"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Channel overflow menu / member removal / archive visual",
+  "level": 3,
+  "webFiles": [
+   "components/channel/ChannelOverflowMenu.tsx",
+   "components/channel/useChannelMemberRemoval.tsx",
+   "components/channel/channelArchiveVisual.ts",
+   "components/channel/ChannelPinMenuItem.tsx"
+  ],
+  "linesChanged": 98,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.40",
+   "4.07"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Community agreement dialog",
+  "level": 3,
+  "webFiles": [
+   "components/server/CommunityAgreementDialog.tsx",
+   "components/server/AgreementBody.tsx"
+  ],
+  "linesChanged": 33,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "1.18"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Announcement modal",
+  "level": 3,
+  "webFiles": [
+   "components/AnnouncementModal.tsx",
+   "analytics/announcements.ts"
+  ],
+  "linesChanged": 74,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.19"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Confirm dialog / Modal / toasts",
+  "level": 3,
+  "webFiles": [
+   "components/ConfirmDialog.tsx",
+   "components/Modal.tsx",
+   "components/LocalizedToastProvider.tsx",
+   "components/toastBridge.ts"
+  ],
+  "linesChanged": 127,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.16",
+   "2.18"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "Inline badge editor / menu item",
+  "level": 3,
+  "webFiles": [
+   "components/InlineBadgeEditor.tsx",
+   "components/InlineBadgeMenuItem.tsx"
+  ],
+  "linesChanged": 52,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": ""
+ },
+ {
+  "surface": "Image lightbox + ui Lightbox + PreviewShell",
+  "level": 3,
+  "webFiles": [
+   "components/ImageLightbox.tsx",
+   "components/ui/Lightbox.tsx",
+   "components/ui/PreviewShell.tsx"
+  ],
+  "linesChanged": 134,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "3.25"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "ui: FormDialog (NEW shared dialog shell) + DialogCard + FormField + SlugInput",
+  "level": 3,
+  "webFiles": [
+   "components/ui/FormDialog.tsx",
+   "components/ui/DialogCard.tsx",
+   "components/ui/FormField.tsx",
+   "components/ui/SlugInput.tsx"
+  ],
+  "linesChanged": 233,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.20"
+  ],
+  "notes": "FormDialog NEW (171)."
+ },
+ {
+  "surface": "ui: AvatarListRow + AvatarSlot + AttentionDot + StatusDot + AvatarEditVeil",
+  "level": 3,
+  "webFiles": [
+   "components/ui/AvatarListRow.tsx",
+   "components/ui/AvatarSlot.tsx",
+   "components/ui/AttentionDot.tsx",
+   "components/ui/StatusDot.tsx",
+   "components/ui/AvatarEditVeil.tsx",
+   "components/member/GravatarAvatar.tsx"
+  ],
+  "linesChanged": 646,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.20"
+  ],
+  "notes": "Presence colours: raft-ui Status/AvatarBadge `presence` map (online/busy/error/offline/external)."
+ },
+ {
+  "surface": "ui: OverflowSheet + BottomSheet + MenuItem + ContextMenuDivider + TextLink + CloseButton + CopyIconButton",
+  "level": 3,
+  "webFiles": [
+   "components/ui/OverflowSheet.tsx",
+   "components/ui/BottomSheet.tsx",
+   "components/ui/MenuItem.tsx",
+   "components/ui/ContextMenuDivider.tsx",
+   "components/ui/TextLink.tsx",
+   "components/ui/CloseButton.tsx",
+   "components/ui/CopyIconButton.tsx",
+   "components/ui/CopyButton.tsx"
+  ],
+  "linesChanged": 339,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.17"
+  ],
+  "notes": ""
+ },
+ {
+  "surface": "ui: Banner + EmptyState + Skeleton + ProgressBar + SectionEyebrow + SectionHeader + SurfaceListItem + ShowMoreToggle + Tooltip",
+  "level": 3,
+  "webFiles": [
+   "components/ui/Banner.tsx",
+   "components/ui/EmptyState.tsx",
+   "components/ui/Skeleton.tsx",
+   "components/ui/ProgressBar.tsx",
+   "components/ui/SectionEyebrow.tsx",
+   "components/ui/SectionHeader.tsx",
+   "components/ui/SurfaceListItem.tsx",
+   "components/ui/ShowMoreToggle.tsx",
+   "components/ui/Tooltip.tsx"
+  ],
+  "linesChanged": 260,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": [
+   "2.17"
+  ],
+  "notes": "Banner role=status except destructive (raft-ui 0.7.0)."
+ },
+ {
+  "surface": "ui: CheckMarker (removed; replaced by raft-ui CheckboxIndicator)",
+  "level": 3,
+  "webFiles": [],
+  "linesChanged": 71,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "DELETED."
+ },
+ {
+  "surface": "App theme: AppThemeProvider / appTheme / appThemeCache / appThemeChrome / index.css (mode only: light/dark/system)",
+  "level": 3,
+  "webFiles": [
+   "theme/AppThemeProvider.tsx",
+   "theme/appTheme.ts",
+   "theme/appThemeCache.ts",
+   "theme/appThemeChrome.ts",
+   "theme/appThemeContract.ts",
+   "index.css"
+  ],
+  "linesChanged": 760,
+  "platforms": [
+   "phone",
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "Single Raft look; legacy storage keys map brutal->light, elegant-light->light, elegant-dark->dark, elegant-system->system. index.css 367 lines (global tokens/fonts rewritten onto raft-ui foundation: Space Grotesk / Space Mono)."
+ },
+ {
+  "surface": "Dev/e2e probe (sidebar DnD)",
+  "level": 3,
+  "webFiles": [
+   "utils/sidebarDndE2eProbe.tsx"
+  ],
+  "linesChanged": 211,
+  "platforms": [
+   "desktop"
+  ],
+  "inventoryRows": null,
+  "notes": "Test probe, not a user surface."
+ }
+]

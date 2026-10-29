@@ -1,5 +1,5 @@
 // GENERATED — do not edit. Regenerate with `tool/gen-tokens`.
-// Source: raft-ui-0.5.27/styles.css, raft-web-26f77ef/index.css
+// Source: raft-ui-0.5.52/styles.css, raft-web-a98ae00/index.css
 // dart format off
 // ignore_for_file: constant_identifier_names, lines_longer_than_80_chars
 
@@ -11,7 +11,8 @@ import 'package:flutter/foundation.dart';
 ///
 /// raft-ui styles.css @theme declares the bare brutal aliases; the Web product
 /// index.css @theme re-declares several with hex literals and wins (later
-/// @theme declaration). These are NOT the `--primary-*` ladders.
+/// @theme declaration). These are NOT the `--primary-*` ladders. Values: see
+/// [RaftSemanticColors] and raft_token_mapping.dart.
 @immutable
 class RaftProductColors {
   const RaftProductColors({
@@ -26,11 +27,32 @@ class RaftProductColors {
     required this.brutalStone,
     required this.brutalCream,
     required this.statusBusy,
-    required this.workspaceModeActive,
     required this.brutalBlack,
     required this.codeSurface,
     required this.codeForeground,
   });
+
+  /// Builds the tier from a map keyed by CSS custom-property name (without `--`); throws
+  /// a [StateError] naming the first missing key, so no field can be left unmapped.
+  factory RaftProductColors.fromCssMap(Map<String, Color> map) {
+    Color of(String key) => map[key] ?? (throw StateError('RaftProductColors: no value for $key'));
+    return RaftProductColors(
+      brutalYellow: of('color-brutal-yellow'),
+      softSignal: of('color-soft-signal'),
+      brutalLavender: of('color-brutal-lavender'),
+      brutalPink: of('color-brutal-pink'),
+      brutalCyan: of('color-brutal-cyan'),
+      brutalOrange: of('color-brutal-orange'),
+      brutalLime: of('color-brutal-lime'),
+      brutalRed: of('color-brutal-red'),
+      brutalStone: of('color-brutal-stone'),
+      brutalCream: of('color-brutal-cream'),
+      statusBusy: of('color-status-busy'),
+      brutalBlack: of('color-brutal-black'),
+      codeSurface: of('color-code-surface'),
+      codeForeground: of('color-code-foreground'),
+    );
+  }
 
   /// `--color-brutal-yellow` — product @theme overrides raft-ui `var(--color-brutal-yellow-400)`
   final Color brutalYellow;
@@ -54,14 +76,30 @@ class RaftProductColors {
   final Color brutalCream;
   /// `--color-status-busy` — product @theme
   final Color statusBusy;
-  /// `--color-workspace-mode-active` — product @theme
-  final Color workspaceModeActive;
   /// `--color-brutal-black` — product @theme
   final Color brutalBlack;
   /// `--color-code-surface` — product @theme (:root.dark override)
   final Color codeSurface;
   /// `--color-code-foreground` — product @theme (:root.dark override)
   final Color codeForeground;
+
+  /// Every CSS name of this tier, in field order (without the leading `--`).
+  static const List<String> cssNames = [
+    'color-brutal-yellow',
+    'color-soft-signal',
+    'color-brutal-lavender',
+    'color-brutal-pink',
+    'color-brutal-cyan',
+    'color-brutal-orange',
+    'color-brutal-lime',
+    'color-brutal-red',
+    'color-brutal-stone',
+    'color-brutal-cream',
+    'color-status-busy',
+    'color-brutal-black',
+    'color-code-surface',
+    'color-code-foreground',
+  ];
 
   /// All tokens keyed by CSS custom-property name (without the leading `--`).
   Map<String, Color> toCssMap() => {
@@ -76,109 +114,8 @@ class RaftProductColors {
     'color-brutal-stone': brutalStone,
     'color-brutal-cream': brutalCream,
     'color-status-busy': statusBusy,
-    'color-workspace-mode-active': workspaceModeActive,
     'color-brutal-black': brutalBlack,
     'color-code-surface': codeSurface,
     'color-code-foreground': codeForeground,
   };
-
-  /// `brutal-light` resolved values.
-  static const brutal = RaftProductColors(
-    // #FFD440
-    brutalYellow: Color(0xffffd440),
-    // var(--color-brutal-yellow)
-    softSignal: Color(0xffffd440),
-    // #BBAFE6
-    brutalLavender: Color(0xffbbafe6),
-    // #FE7DA8
-    brutalPink: Color(0xfffe7da8),
-    // #27CCF3
-    brutalCyan: Color(0xff27ccf3),
-    // #F8A16F
-    brutalOrange: Color(0xfff8a16f),
-    // #A9D877
-    brutalLime: Color(0xffa9d877),
-    // #F97264
-    brutalRed: Color(0xfff97264),
-    // #C0B9B1
-    brutalStone: Color(0xffc0b9b1),
-    // #FFFAEF
-    brutalCream: Color(0xfffffaef),
-    // #FFD440
-    statusBusy: Color(0xffffd440),
-    // #E3B100
-    workspaceModeActive: Color(0xffe3b100),
-    // #141111
-    brutalBlack: Color(0xff141111),
-    // #ffffff
-    codeSurface: Color(0xffffffff),
-    // #24292e
-    codeForeground: Color(0xff24292e),
-  );
-  /// `elegant-light` resolved values.
-  static const elegantLight = RaftProductColors(
-    // #FFD440
-    brutalYellow: Color(0xffffd440),
-    // var(--color-brutal-yellow)
-    softSignal: Color(0xffffd440),
-    // #BBAFE6
-    brutalLavender: Color(0xffbbafe6),
-    // #FE7DA8
-    brutalPink: Color(0xfffe7da8),
-    // #27CCF3
-    brutalCyan: Color(0xff27ccf3),
-    // #F8A16F
-    brutalOrange: Color(0xfff8a16f),
-    // #A9D877
-    brutalLime: Color(0xffa9d877),
-    // #F97264
-    brutalRed: Color(0xfff97264),
-    // #C0B9B1
-    brutalStone: Color(0xffc0b9b1),
-    // #FFFAEF
-    brutalCream: Color(0xfffffaef),
-    // #FFD440
-    statusBusy: Color(0xffffd440),
-    // #E3B100
-    workspaceModeActive: Color(0xffe3b100),
-    // #141111
-    brutalBlack: Color(0xff141111),
-    // #ffffff
-    codeSurface: Color(0xffffffff),
-    // #24292e
-    codeForeground: Color(0xff24292e),
-  );
-  /// `elegant-dark` resolved values.
-  static const elegantDark = RaftProductColors(
-    // #FFD440
-    brutalYellow: Color(0xffffd440),
-    // var(--color-brutal-yellow)
-    softSignal: Color(0xffffd440),
-    // #BBAFE6
-    brutalLavender: Color(0xffbbafe6),
-    // #FE7DA8
-    brutalPink: Color(0xfffe7da8),
-    // #27CCF3
-    brutalCyan: Color(0xff27ccf3),
-    // #F8A16F
-    brutalOrange: Color(0xfff8a16f),
-    // #A9D877
-    brutalLime: Color(0xffa9d877),
-    // #F97264
-    brutalRed: Color(0xfff97264),
-    // #C0B9B1
-    brutalStone: Color(0xffc0b9b1),
-    // #FFFAEF
-    brutalCream: Color(0xfffffaef),
-    // #FFD440
-    statusBusy: Color(0xffffd440),
-    // #E3B100
-    workspaceModeActive: Color(0xffe3b100),
-    // #141111
-    brutalBlack: Color(0xff141111),
-    // #0a0c10
-    codeSurface: Color(0xff0a0c10),
-    // #f0f3f6
-    codeForeground: Color(0xfff0f3f6),
-  );
 }

@@ -45,7 +45,7 @@ void main() {
       'active': 2,
     });
     final zh = await copy(t, n, 'zh');
-    expect(zh.title, '共 2 台 Computer 离线：Search, {count}');
+    expect(zh.title, '共 2 台计算机离线：Search, {count}');
     expect(zh.body, '2 个 Agent 正在这台计算机上运行，重连前无法继续。');
     final en = await copy(t, n, 'en');
     expect(en.title, 'Search, {count} are offline');

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <!-- upload-artifact creates this ZIP. Do not upload a ZIP inside this ZIP. -->
+    <pe-file path="raft_flutter.exe" min-matches="1" max-matches="1"
+             product-name="Raft" company-name="app.raft"
+             original-filename="raft_flutter.exe">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

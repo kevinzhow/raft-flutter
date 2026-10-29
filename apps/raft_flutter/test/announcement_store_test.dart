@@ -31,7 +31,7 @@ class Wire {
       if (hold != null) return hold!.future;
       return answer(query);
     },
-    post: (path) async {
+    post: (path, {query}) async {
       posts.add(path);
       if (failPost) throw StateError('500');
       return {'ok': true};

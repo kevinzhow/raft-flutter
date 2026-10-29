@@ -128,4 +128,55 @@ void main() {
       expect(project(type: 'agent').pixelKey, isNull);
     },
   );
+  test('channel roster rows (joint peers) take precedence over the server directory', () {
+    final peer = project(id: 'peer', members: const []);
+    expect(peer.uploadedUrl, isNull);
+    final resolved = projectSenderAvatar(
+      origin: 'https://active.invalid',
+      senderId: 'peer',
+      senderType: 'user',
+      agents: const [],
+      members: [
+        {'userId': 'peer', 'avatarUrl': '/api/avatars/users/a.webp'},
+      ],
+      channelMembers: [
+        {
+          'id': 'peer',
+          'serverId': 'other',
+          'avatarUrl': '/api/avatars/users/b.webp',
+          'gravatarHash': 'c' * 64,
+        },
+      ],
+    );
+    expect(
+      resolved.uploadedUrl,
+      'https://active.invalid/api/avatars/users/b.webp',
+    );
+    expect(resolved.gravatarUrl, contains('/avatar/${'c' * 64}'));
+    final agent = projectSenderAvatar(
+      origin: 'https://active.invalid',
+      senderId: 'bot',
+      senderType: 'agent',
+      agents: const [],
+      members: const [],
+      channelAgents: [
+        {'id': 'bot', 'avatarUrl': 'pixel:robot'},
+      ],
+    );
+    expect(agent.pixelKey, 'robot');
+    // Rows for other people never leak across ids.
+    expect(
+      projectSenderAvatar(
+        origin: 'https://active.invalid',
+        senderId: 'someone-else',
+        senderType: 'user',
+        agents: const [],
+        members: const [],
+        channelMembers: [
+          {'id': 'peer', 'avatarUrl': '/api/avatars/users/b.webp'},
+        ],
+      ).uploadedUrl,
+      isNull,
+    );
+  });
 }

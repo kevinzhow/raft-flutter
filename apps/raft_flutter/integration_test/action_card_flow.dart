@@ -173,7 +173,7 @@ Future<void> verifyPreparedActionCard(
     expect(card, findsOneWidget);
     final confirm = find.descendant(
       of: card,
-      matching: find.widgetWithText(RaftButton, 'Create channel'),
+      matching: find.widgetWithText(RaftButton, 'Create Channel'),
     );
     await revealNativeControl(tester, confirm);
     await capture('linux-prepared-action-card');

@@ -36,7 +36,7 @@ Map<String, dynamic> value(bool enabled) => {
 Future<void> flush() => Future<void>.delayed(Duration.zero);
 void main() {
   test(
-    '[N22a] unknown keeps legacy threshold; only actual evaluated receipt enables md',
+    '[N22a] the split-preview threshold is 768 whether or not the flag evaluated on',
     () async {
       final client = _Client();
       final w = WorkspaceController(client)
@@ -46,11 +46,14 @@ void main() {
         flag.dispose();
         w.dispose();
       });
-      expect(flag.masterDetail(900), false);
-      expect(flag.masterDetail(1024), true);
+      expect(flag.enabled, false);
+      expect(flag.masterDetail(900), true);
+      expect(flag.masterDetail(768), true);
+      expect(flag.masterDetail(767), false);
       expect(client.flags.single['keys'], ['activity_sidebar_inbox_v0']);
       client.pending.single.complete(value(true));
       await flush();
+      expect(flag.enabled, true);
       expect(flag.masterDetail(768), true);
       expect(flag.masterDetail(767), false);
     },
@@ -73,7 +76,7 @@ void main() {
       await flush();
       client.pending[0].complete(value(true));
       await flush();
-      expect(flag.masterDetail(900), false);
+      expect(flag.enabled, false);
     },
   );
   test('same-generation role change revokes old evaluated presentation immediately', () async {
@@ -87,15 +90,15 @@ void main() {
     });
     client.pending[0].complete(value(true));
     await flush();
-    expect(flag.masterDetail(900), true);
+    expect(flag.enabled, true);
     final generation = client.generation;
     w.server = RaftRecord({'id': 's', 'role': 'member'});
     w.notifyListeners();
     expect(client.generation, generation);
-    expect(flag.masterDetail(900), false);
+    expect(flag.enabled, false);
     client.pending[1].completeError(const RaftApiException('Denied'));
     await flush();
-    expect(flag.masterDetail(900), false);
+    expect(flag.enabled, false);
   });
   test(
     'server:updated re-evaluates without flipping the accepted presentation',

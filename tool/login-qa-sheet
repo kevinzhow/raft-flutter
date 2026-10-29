@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""Contact sheets: device screenshots (tool/login-qa) next to the Web (React) parity captures.
+
+  tool/login-qa-sheet --shots /tmp/login-qa/after --out /tmp/login-qa/sheets [--base /tmp/login-qa/before]
+
+One row per state; per theme (brutal, elegant, dark): [Web | Flutter] (+ the pre-fix Flutter
+shot when --base has it). Web captures come from the parity cache
+(.parity-cache/react, case ids components.auth-pages.mobile.* / components.auth-ext.mobile.*).
+"""
+import argparse, glob, json, os
+from PIL import Image, ImageDraw
+
+CACHE = '/home/kevinzhow/github/raft-flutter-wt/.parity-cache/react'
+THEMES = [('brutal', 'brutal'), ('elegant', 'elegant'), ('dark', 'elegant-dark')]
+# state -> Web case id (without theme suffix)
+WEB = {
+    'restoring': 'auth-pages.mobile.bootstrap.restoring',
+    'resolution-loading': 'auth-pages.mobile.bootstrap.loading',
+    'servers-loading': 'auth-pages.mobile.servers.loading',
+    'joining-community': 'auth-pages.mobile.servers.joining-community',
+    'login': 'auth-ext.mobile.login.default',
+    'login-social': 'auth-ext.mobile.login.social',
+    'login-empty-error': 'auth-ext.mobile.login.missing-password',
+    'login-invalid-email': 'auth-ext.mobile.login.invalid-email',
+    'login-wrong': 'auth-ext.mobile.login.error',
+    'register': 'auth-pages.mobile.register.default',
+    'register-filled': 'auth-pages.mobile.register.filled',
+    'register-unchecked-error': 'auth-pages.mobile.register.unchecked',
+    'register-exists': 'auth-pages.mobile.register.error',
+    'forgot': 'auth-ext.mobile.forgot.default',
+    'forgot-sent': 'auth-ext.mobile.forgot.sent',
+    'reset': 'auth-ext.mobile.reset.default',
+    'onboarding-verify': 'auth-ext.mobile.verify.default',
+    'onboarding-profile': 'auth-pages.mobile.identity.default',
+    'invite-signed-out': 'auth-pages.mobile.invite.signed-out',
+    'invite-signed-in': 'auth-pages.mobile.invite.signed-in',
+    'invite-loading': 'auth-pages.mobile.invite.loading',
+    'invite-expired': 'auth-pages.mobile.invite.expired',
+    'invite-throttled': 'auth-pages.mobile.invite.throttled',
+    'invite-seat-limit': 'auth-pages.mobile.invite.seat-limit',
+    'invite-agreement': 'auth-pages.mobile.invite.agreement',
+    'servers-two': 'auth-ext.mobile.server.choose',
+    'servers-none': 'auth-ext.mobile.server.create-first',
+    'servers-none-filled': 'auth-ext.mobile.server.create-first-filled',
+    'servers-create': 'auth-ext.mobile.server.create-more',
+    'servers-create-filled': 'auth-ext.mobile.server.create-more-filled',
+    'access-denied': 'auth-pages.mobile.server-denied.with-server',
+    'root-error': 'auth-pages.mobile.root-error.default',
+    'workspace-setup-bar': 'auth-pages.mobile.setup-gate.resume-bar',
+}
+
+
+def web_index():
+    idx = {}
+    for f in glob.glob(f'{CACHE}/*.key.json'):
+        try:
+            cid = json.load(open(f)).get('caseId', '')
+        except Exception:
+            continue
+        if cid.startswith('components.auth'):
+            idx[cid] = f.replace('.key.json', '.png')
+    return idx
+
+
+def thumb(path, w):
+    if not path or not os.path.exists(path):
+        im = Image.new('RGB', (w, int(w * 2.1)), (235, 235, 235))
+        ImageDraw.Draw(im).text((10, 10), 'n/a', fill=(120, 120, 120))
+        return im
+    im = Image.open(path).convert('RGB')
+    return im.resize((w, int(im.height * w / im.width)))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--shots', required=True)
+    ap.add_argument('--base')
+    ap.add_argument('--out', required=True)
+    ap.add_argument('--per-page', type=int, default=4)
+    a = ap.parse_args()
+    os.makedirs(a.out, exist_ok=True)
+    idx = web_index()
+    states = sorted({os.path.basename(p).rsplit('.', 2)[0] for p in glob.glob(f'{a.shots}/*.png')})
+    w, gap = 200, 8
+    cols_per_theme = 2 + (1 if a.base else 0)
+    pages = [states[i:i + a.per_page] for i in range(0, len(states), a.per_page)]
+    for n, page in enumerate(pages):
+        thumbs = []
+        for s in page:
+            row = []
+            for theme, webtheme in THEMES:
+                web = idx.get(f'components.{WEB.get(s, "")}.{webtheme}') if s in WEB else None
+                row.append(thumb(web, w))
+                if a.base:
+                    row.append(thumb(f'{a.base}/{s}.{theme}.png', w))
+                row.append(thumb(f'{a.shots}/{s}.{theme}.png', w))
+            thumbs.append(row)
+        H = max(max(i.height for i in r) for r in thumbs)
+        label_h = 18
+        W = len(thumbs[0]) * (w + gap)
+        sheet = Image.new('RGB', (W, len(page) * (H + label_h + gap)), 'white')
+        d = ImageDraw.Draw(sheet)
+        y = 0
+        for s, row in zip(page, thumbs):
+            heads = []
+            for theme, _ in THEMES:
+                heads += ['web'] + (['before'] if a.base else []) + ['flutter']
+            for i, (im, h) in enumerate(zip(row, heads)):
+                x = i * (w + gap)
+                d.text((x + 2, y + 3), f'{s} {THEMES[i // cols_per_theme][0]} {h}', fill=(0, 0, 0))
+                sheet.paste(im, (x, y + label_h))
+            y += H + label_h + gap
+        sheet.save(f'{a.out}/sheet-{n + 1:02d}.png')
+    print(f'{len(pages)} sheets, {len(states)} states -> {a.out}')
+
+
+main()

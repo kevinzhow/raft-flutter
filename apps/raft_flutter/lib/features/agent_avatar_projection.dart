@@ -20,20 +20,26 @@ RaftAvatarPresence? agentAvatarPresence(AgentAmbientDisplay? display) {
 }
 
 /// Presence of a directory row: the live `activity` (agent:activity event) or
-/// the row's own `activity`, else its `status` (`agentStatusFallbackActivity`).
-RaftAvatarPresence agentRowPresence(Map<String, dynamic> json, {String? live}) {
-  final activity = live ?? json['activity'];
+/// the row's own activity, routed through [resolveAgentAmbientDisplay] so an
+/// external agent is online only within 120 s of `lastSeenAt` (Web
+/// resolveAgentDisplayState). [live] is a newer activity name.
+RaftAvatarPresence agentRowPresence(
+  Map<String, dynamic> json, {
+  String? live,
+  DateTime? now,
+}) {
+  final display = agentRowAmbientDisplay(
+    json,
+    live: live == null ? null : {'activity': live},
+    now: now,
+  );
   return RaftAvatarPresence(
-    activity: switch (activity) {
-      'online' => RaftAvatarActivity.online,
+    activity: switch (display.activity) {
       'thinking' => RaftAvatarActivity.thinking,
       'working' => RaftAvatarActivity.working,
       'error' => RaftAvatarActivity.error,
       'offline' => RaftAvatarActivity.offline,
-      _ =>
-        json['status'] == 'active'
-            ? RaftAvatarActivity.online
-            : RaftAvatarActivity.offline,
+      _ => RaftAvatarActivity.online,
     },
   );
 }

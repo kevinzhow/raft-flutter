@@ -1,0 +1,10 @@
+{
+  "_source": "machine:status agentOrchestrator.ts:5865-5869 (online) and :7019-7025 (offline, with cause); machine:capabilities :5231-5239; machine:updated routes/servers.ts:2767 (id-only 'reload' hint); machine:upgrade-request :6235/:7593; computer:restart:done :7424+ (relayed as {machineId, ...daemonFrame}). All to room server:<serverId>.",
+  "events": [
+    { "event": "machine:status", "payload": { "machineId": "99999999-9999-4999-8999-999999999999", "status": "online", "statusVersion": 12 } },
+    { "event": "machine:status", "payload": { "machineId": "99999999-9999-4999-8999-999999999999", "status": "offline", "statusVersion": 13, "cause": "socket_close" } },
+    { "event": "machine:capabilities", "payload": { "machineId": "99999999-9999-4999-8999-999999999999", "runtimes": ["claude", "codex"], "runtimeVersions": { "claude": "2.1.0" }, "hostname": "dev-box", "os": "linux", "daemonVersion": "1.80.0", "computerVersion": "0.9.0" } },
+    { "event": "machine:updated", "payload": { "serverId": "66666666-6666-4666-8666-666666666666", "machineId": "99999999-9999-4999-8999-999999999999" } },
+    { "event": "computer:restart:done", "payload": { "machineId": "99999999-9999-4999-8999-999999999999", "type": "computer:restart:done", "requestId": "req-1", "ok": false, "error": "control_busy" } }
+  ]
+}

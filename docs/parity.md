@@ -8,6 +8,46 @@ home-grown differ. The Flutter app is plugged in as a **provider**: it writes
 captures in the official provider output contract and the official CLI does
 `diff`, `site` and all scoring.
 
+## Open owner decisions (Web v1.21.23 alignment, 2026-10-24)
+
+Nothing below is decided. Each item names what Kevin has to answer; the rows stay as they are
+(⚠️ / ❌ in `capability-parity.json`, `open` or unverified in `docs/behavior-parity/`) until he does.
+Numbers are the items of the v1.21.23 plan, section 3.
+
+| # | Question | What the answer needs | Rows it settles |
+| --- | --- | --- | --- |
+| 3 | Native push (FCM / APNs) | The server needs a native push channel first; until then record it as a server-capability gap and do not schedule it | `ui:notifications.push-subscription`, `ui:notifications.web-push-controls` |
+| 5 | Web removed the Activity Done, Saved and DMs views (flag `activity_sidebar_inbox_v0`); the app still has them and the server still serves them | Keep and record as an intended difference (recommended), or remove to match Web | `BP-READ-080` (differs), `BP-READ-038` note, `GET /channels/inbox/done`, `POST /channels/inbox/undone` |
+| 6 | Open Raft https links in the app | The platform owner must host `assetlinks.json` and `apple-app-site-association` on the Raft domain; the app side is built and switched off (`RAFT_APP_LINKS`) | `ui:global-ui.routes-external-https-links` |
+| 7 | Product analytics (`POST /product-events/batch`) and the "Share usage data" switch | Record as an intended difference and remove the switch (recommended: today it does nothing), or decide to send events (a separate privacy decision) | `RAW analytics/track.ts`, `ui:global-ui.product-analytics-events` |
+| 8 | Web-only items to record as not applicable in one go: desktop download options, cookie consent and public visit counts, palette audit page, sidebar drag-and-drop probe, desktop multi-window, history menu | One "yes" | `ui:global-ui.desktop-server-windows` and the rows of the other items |
+| BP | Twelve behaviour rows without a recorded owner decision | A "confirm" that records them as intended differences or not applicable, with the date | `BP-READ-003`, `004`, `053`, `069`, `071`, `072`, `076`, `BP-RT-007`, `016`, `017`, `052`, `053` |
+| Invite | The private-app invite page (`/integration-invites/:token`) is a browser page for admins; record it as an intended difference like the other browser-hosted pages (recommended)? | A yes or no | `GET /integration-invites/:id`, `POST /integration-invites/:id/install`, `ui:global-ui.routes-integration-invite`, `ui:integrations.integration-invite-page` |
+
+Open differences that are only listed for review (not questions): the "open differences" sections for the public page,
+RaftBench, attachments and navigation further down. Two further differences wait on shell work, not on an owner answer:
+the Appearance tab for signed-out visitors (`ui:public.settings-appearance-signed-out`) and the public-page globe on
+the desktop (`ui:server.public-page-live-globe`).
+
+## Owner decisions for the Web v1.21.23 alignment
+
+| Date | Decision | Source | Where it is recorded |
+| --- | --- | --- | --- |
+| 2026-10-21 | Follow Web v1.21.23 in full, except the intentional differences recorded here and in `capability-parity.json` | Kevin, #raft-flutter `4c35558a` | `docs/upstream-sync.json`, `docs/upstream-reports/v1.21.12-to-v1.21.23.md` |
+| 2026-10-24 | Default appearance is Web's "Raft" look; Elegant and Brutal stay as selectable themes (plan item 1). The theme was merged when no case scored below the previous client; remaining low-similarity pages are being fixed against the official 96% pass bar (task #228) | Kevin, `18e37fbf` (plan approved), `367b04d0` (merge, continue the low pages) | PR #424 (integration `24d0c88e`); release v1.21.23+1 |
+| 2026-10-24 | Build the cloud (hosted) agent family, verified against a local antiproton server (plan item 2) | Kevin, `0b62aedd` | the cloud-agent rows are ✅ in `capability-parity.json` (`POST /agents` note, `GET /agents/:id/hosted-runtime`) |
+| 2026-10-23 | Build RaftBench in full (plan item 4; the plan had suggested ➖) | Kevin, `b9c81968` | section "RaftBench vs Web v1.21.23" below; RaftBench rows ✅ |
+| 2026-10-23 | Live sequence jumps keep no gap fetch (intended difference) | Kevin, `9c047186` | section "Live sequence jumps do not trigger a gap fetch"; `BP-READ-021`, `BP-RT-030` |
+| 2026-10-21 | No floating Share / Download icons on attachment cards | Kevin, PR #295 | section "Attachment cards"; `ui:files.attachment-card-download` ➖ |
+| 2026-10-17 | Video cards are posters on every platform | Kevin | section "Video cards"; `ui:files.video-audio-preview` ➖ |
+| 2026-10-17 | Forms are bottom sheets below 768 px and dialogs from 768 px (`RaftPresentationPolicy.form`) | product owner, commit `49315d69` | `docs/close-affordances.md` (the "approved" rows of the dialog family); not a capability row |
+| by 2026-10-13 | Settings > Release Notes shows the client's own release notes, not the server's `GET /release-notes` | owner-approved when the page was built; the plan of 2026-10-21 lists it as decided | the Release Notes bullet under "Navigation audit"; `GET /release-notes`, `ui:tabs.release-notes` ➖ |
+| by 2026-10-21 | The app uses the v2 runtime form protocol and never the v1 schema-backed path | owner decision listed in the plan (section 1) | `GET /servers/:id/machines/:id/runtime-form-definitions/:id` and its option-sources row ➖ |
+| 2026-10-24 | Agent access JWT card removed; Created Agents list removed from the agent profile | none needed: Web v1.21.23 removed both | `GET` / `PUT /integrations/clients/:id/agent-jwt`, `ui:agents.created-agents-list` ➖ |
+
+The visual baselines are not re-recorded by this alignment pass: the theme work (task #228) is still changing pages,
+so a new baseline would be out of date at once. They are re-recorded when that work lands.
+
 ## Authorized baseline fixture repair (2026-10-09)
 
 Human message `65b111e1` authorizes fixing defective test baselines. Five
@@ -148,6 +188,18 @@ were equal):
   (`overflow-wrap: anywhere`), and Chrome's default `text-spacing-trim`
   halves adjacent CJK punctuation (`），`). A word-joiner fix needs a
   copy-stripping selection delegate; not done in this pass.
+* **Ellipsis in a name box narrower than "C…" (2026-10-21).** In the
+  260px `md-wrap-clarify` / `md-wrap-slice1` renders the name box is 16.8px
+  wide. Blink paints `C..` (the heading font has no `…`, so Chromium falls
+  back to periods and keeps as many as fit); Flutter measures one `…` (10.4px
+  in Hanken Grotesk) after `C` (10.6px), finds 21px > 16.8px and paints
+  nothing. The box width matches (header at the same x, same cluster width);
+  only the truncation glyph handling differs, and `Text` takes no custom
+  ellipsis. Left as is.
+* **Elegant avatar badge inset (2026-10-21).** Measured against the React
+  v1.21.12 render (thread panel 30px, main row 32px, light and dark): the
+  status dot covers the same pixels (x 47..54, y 112..119 and 50..57, 76..83),
+  so the recipe value stays.
 * **Host fallback fonts:** Chromium draws `→`/`。` from Liberation/Noto
   Sans Mongolian on this host.
 
@@ -187,6 +239,120 @@ size and `RaftTouchTargetExpander` extends the hit area to 48px.
 Elegant `panelHeader` draws no bottom border (`border-b-0`); the conversation
 and thread headers keep the 1px `line-muted` rule Source's mounted panel adds.
 
+## Phone live-append read: intended difference from Web (owner decision 2026-10-12)
+
+Web marks a live message in the open conversation read only when the user
+interacted in the last second (`canAutoMarkLiveAppendRead`, pointer/key). On
+the phone layout (`mobileNavigation`) Flutter drops that 1 s requirement: a live
+message counts as read when the conversation page is presented in the
+foreground (app resumed, page is the top route, `_mayMarkRead`) and its timeline
+is at the latest end (`!hasNewer` and not scrolled above the bottom; the chat
+view reports the edge through `setTimelineAtBottom`). No tap is needed. Desktop
+keeps Web's 1 s activity gate. Everything else matches Web: opening clears the
+local unread, scrolling back to the bottom and returning to the foreground send
+the read receipt.
+
+## Unread agent messages start open: intended difference from Web (owner decision 2026-10-17)
+
+Web collapses any message taller than 320px behind "Show more", whoever sent it,
+and remembers what the reader expanded for the life of the app. Owner decision
+2026-10-17 (Kevin, task #151, commit dac14dae): an **unread agent message starts
+open** and a read one starts collapsed, the same on phone and desktop. The rule
+uses the read cursor the unread count uses (`maxReadSeq`, a missing fact counts
+as unread); a message that becomes read while it is on screen does not fold
+again; the reader's toggle wins for the rest of the visit; the next visit
+follows the cursor again (`agent_message_collapse.dart`). A thread's parent row
+keeps the ordinary collapse. Because the choice is per visit, Web's
+app-lifetime expansion memory is **not** ported: a message the reader expanded
+starts collapsed again on the next visit if it is read. Everything else follows
+Web: forwarded bundles and action cards never collapse, the toggle announces
+`aria-expanded`, an expansion grows downward from where the reader sees it
+(`preserveTimelineViewport`), and a collapse reveals a row that ended outside
+the viewport (`keepTimelineMessageVisible`). The `md-wrap-slice1` / `clarify`
+renders show an agent message that Web folds because the fixtures are unread.
+
+## Phone task detail covers the bottom navigation: intended difference from Web (owner decision 2026-10-12)
+
+Owner decision 2026-10-12: on a phone the task detail is a full page that covers
+the bottom navigation bar (Home / Tasks / Members / Settings). Web keeps the bar
+visible below the task detail. Flutter keeps its own behaviour; the
+`taskdetail.mobile.*` geometry differences caused by the missing bar (composer
+and bar position, scroll state) are expected and not to be "fixed". Other
+`taskdetail.mobile.*` differences (for example text content) still follow Web.
+
+## Activity master-detail threshold: intended difference from Web (owner decision 2026-10-12)
+
+Owner decision 2026-10-12: Activity master-detail (single tap = side preview,
+same-row double tap = open) applies at every multi-column width (>= 768 dp,
+`RaftLayoutMetrics.desktopBreakpoint`) regardless of the
+`activity_sidebar_inbox_v0` flag; Web uses 768 with the flag and 1024 without.
+(`DesktopActivityFlag.masterDetail`; covered by
+`test/activity_fold_widths_test.dart`.)
+
+## Visual suite levels and looks (owner scope 2026-10-24)
+
+The visual suite has three explicit levels, because a theme change can move any of them:
+
+| level | what | cases |
+| --- | --- | --- |
+| L1 frame | app frame: window, top bar, rail, sidebar, mobile tab bar, channel header, panel layout, at phone / tablet / desktop widths | `components.frame.*` (new, the real Web `MainLayout` vs the real `WorkspaceView`), `components.shell.*` rail + sidebar states, `components.channelheader.*`, official `components.navigation.tabbar.states`, `components.home.titlebar.states`, `components.thread.header.states` |
+| L2 page | every main page / route as a whole-page capture | `screens.*`, `components.settings.*.page`, `components.ext-settings.*`, `components.members-pages.*` (incl. `window.*` whole-window cases), `components.list-pages.*`, computers, tasks, auth / public pages, Raftbench |
+| L3 component | official component cases and the extension dialogs, menus, rows and cards | everything else |
+
+`tool/parity-ext/levels.py` is the only place that assigns an id to a level (`unassigned()` reports a family it does not know).
+Looks and what each is compared with:
+
+* **raft**: Flutter in the Raft look against the pinned Web v1.21.23 render (the default pipelines).
+* **elegant / brutal**: Flutter in that look against its own frozen original, the a57b9dab render captured once
+  (`tool/theme-baseline` for the official cases and the extension desktop cases, `tool/parity-ext/frozen-capture` for the
+  rest; registry `tool/parity-ext/frozen-baselines.json`, files under `$PARITY_FROZEN_ROOT`, default `/mnt/data/theme-baseline`).
+  They never move because the look is a new pixel contract: a regression means the look drifted from itself.
+
+One command runs any slice and writes one summary (level x look x mode):
+
+```bash
+tool/parity-ext/run regress --level frame|page|component|all --theme raft|elegant|brutal|all --mode light|dark|all [--fast] [--out DIR]
+tool/parity-ext/run regress --plan-only        # case counts per job, nothing runs
+tool/parity-ext/run regress --summary-only     # rebuild <out>/regress-summary.md from the job directories
+```
+
+Official ids run through `tool/parity`, extension ids through `tool/parity-ext/run run`, one job per (look, mode) in
+`<out>/<look>-<mode>/{official,ext}/`; the Raft jobs set `PARITY_THEME_OVERRIDE=raft-case` (the Flutter harness renders every
+extension case in the Raft pack, brightness from the case's own theme name), the Elegant / Brutal jobs add `--frozen`.
+Pass line is the tool's own: `pixelPerfectSimilarity > 0.96`. `--fast` is the nightly subset (`tool/nightly_visual.py`, job 4
+of `tool/nightly-quality`): L1 frame + the key L2 pages (`levels.FAST_PAGES`), phone and desktop widths, light.
+
+Official cases the tool cannot run (20 of 119: 18 `baselineStatus: pending`, 2 hidden) have no React capture upstream;
+`tool/parity-ext/official-skipped.json` maps each to the extension cases that render the same Web page, and
+`docs/parity-coverage-map.md` reports their scores.
+
+### Control states (owner scope 2026-10-24)
+
+Level cases show a surface at rest; the controls on it have states. `components.states.<platform>.<control>.<state>` (L1 for the
+frame's controls, L2 for page controls such as the composer) crops one control in one state, on the same real Web `MainLayout` /
+Flutter `WorkspaceView` scenes as `components.frame.*`: default, selected, hover (pointer over it), pressed (`hold`: pointer down,
+no release), keyboard focus (`focus`: `locator.focus()` / `FocusNode.requestFocus()` under the traditional highlight), disabled and
+checked. The crop is a transparent marker (`mark` step) over the control plus 6 px, so a focus ring or a pressed shadow is inside it.
+`tool/parity-ext/build-states-cases.py` lists the controls (`CONTROLS`), their Web locator and Flutter `ValueKey`, the states, and
+clones existing `ext-settings` cases for settings controls. The Web steps `hold`, `focus`, `mark` are `SPEC_STATES_PATCHES` in
+`tool/parity-ext/run` and are not part of the React cache key (the cases carry `machineryRev`; bump it when the steps change).
+`docs/parity-coverage-map.md` lists, per control family, the states the Web has and the ones captured; touch hosts have no hover.
+
+### Theme isolation (owner scope 2026-10-24)
+
+Three checks that one look cannot leak into another, none of which changes product code:
+
+* `tool/parity-ext/theme-isolation`: runtime switch. Each representative L1 / L2 surface is pumped in look A, the app theme is
+  switched to look B the way the app root does (same `MaterialApp`, new `theme` / `darkTheme` / `themeMode`, widgets keep their
+  State), settled, and compared byte for byte with a fresh launch in B; every ordered pair of raft / elegant / brutal x light /
+  dark (30 pairs, Brutal dark is the Brutal light column by decision). `distinctLooks` in `done.jsonl` says how many of the
+  fresh renders differ, so a clean result is meaningful. The first fresh render of a process is discarded (one-time async work).
+* `tool/parity-ext/pack-audit`: Elegant and Brutal `extends: raft`, so a name they do not write is the Raft value. The audit lists
+  per tier what is inherited, checks every colour role of the original look (`docs/theme-contract/values.json`) against what the
+  pack resolves to, and lists the Raft-only colour roles that components read.
+* `tool/parity-ext/literal-audit`: colour, typography, shape and geometry literals in `packages/raft_ui/lib` and
+  `apps/raft_flutter/lib` that bypass the contract (the `tool/ds-audit` scanner), per category and file.
+
 ## One command
 
 ```bash
@@ -205,6 +371,21 @@ the Node 24 / pnpm 10 binaries), `PARITY_REPORTS_ROOT`, `PARITY_BASE_URL`,
 
 Published report: <http://100.109.192.23:18931/raft_flutter_parity/latest/>
 (each run is kept under `raft_flutter_parity/<UTC timestamp>/`).
+
+## Legacy looks: on demand (`tool/theme-suite`)
+
+Owner decision 2026-10-25: the regular checks test the Raft look only. The frozen-baseline regression of the legacy looks (Elegant and Brutal against their a57b9dab originals, `regress --theme elegant|brutal`) runs on demand through the legacy suite, together with the Dart tests of those looks:
+
+```bash
+tool/theme-suite --look elegant --mode light     # one look, one mode
+tool/theme-suite --look all                      # Elegant + Brutal, both modes, plus the packages/raft_theme tests
+tool/theme-suite --look brutal --visual-only --cases 'components.ui.button.*'
+tool/theme-suite --look all --plan               # what would run, nothing run
+```
+
+The visual half needs the pinned Web source (`PARITY_RAFT_SOURCE`, `RAFT_PARITY_SOURCE`, or `~/.cache/raft-flutter/raft-source-23`) and the Node toolchain the other parity tools use; without the source the step fails and says so (`--tests-only` skips it). Scores are reported, not judged, unless `--baseline <earlier regress-summary.json>` is given, in which case a case that lost one point fails the step. Results: `.local/theme-suite/visual-<look>/regress-summary.{md,json}`.
+
+**Run it when** a change touches the theme engine, `packages/raft_theme`, the theme adapters or packs, recipes or recipe binding, or a legacy-look file (`THEME_ENGINE_PATHS` in `tool/theme_looks.py`); `check-project`, `preflight` and the pre-gate script print a notice when a diff does. The nightly runs its Dart half every night and keeps its own fast visual job (`tool/nightly_visual.py`). The details are in [Development](development.md#looks-the-checks-test-the-raft-look-only).
 
 ## How it is wired
 
@@ -236,11 +417,12 @@ Result: 152 Playwright tests passed (99 provider captures + the package's
 metric specs), 99/99 React captures. Provenance (raft-source commit and dirty
 files at capture time) is in `build/parity/react-source.json`.
 
-One-time host setup that was needed: the pinned `@playwright/test` 1.59.1
-wants `chromium_headless_shell-1217`, and Playwright refuses to download on
+One-time host setup that was needed: the pinned `@playwright/test` wants a
+matching `chromium_headless_shell-<build>` (1.59.1 at v1.21.2: build 1217, Chrome 147;
+1.64.0 at v1.21.12: build 1248, Chrome 156), and Playwright refuses to download on
 Ubuntu 26.04, so it was installed with
 `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 pnpm exec playwright install chromium`
-from `raft-source/packages/web`.
+from `raft-source/packages/web`. The shared `~/.cache/ms-playwright` keeps both builds.
 
 ### Provider identity
 
@@ -277,8 +459,13 @@ provider `source`"). `diff --pairs react__android` and `site` work unmodified.
 
 ### Coverage map
 
-`apps/raft_flutter/test/parity/case_map.dart` merges one map per group in
-`apps/raft_flutter/test/parity/cases/*.dart`: `case id → ParityCase(builder)`.
+`apps/raft_flutter/test/parity/case_map.dart` (committed, only re-exports the generated, git-ignored
+`case_map.g.dart`) merges one map per group in `apps/raft_flutter/test/parity/cases/**/*.dart`:
+`case id → ParityCase(builder)`. `tool/parity_case_map.py` discovers every public top-level
+`final Map<String, ParityCase> <name>` (and `Map<String, ParityUncovered>`) by that type, so a new case family only
+declares its own map; no shared registry is edited. The generator runs from `tool/flutter` (any
+subcommand), `tool/parity` and `tool/parity-ext/run`; a case id declared by two maps throws at startup.
+Run `python3 tool/parity_case_map.py --list` to see what is registered.
 A case without a builder is NOT COVERED. Reasons are explicit
 (`ParityUncovered`): `harnessTodo` (builder not written yet),
 `noFlutterSurface` (the Flutter app has no implementation of that surface),
@@ -307,30 +494,33 @@ production Web shows. (Production `index.css` imports only raft-ui's URL plus
 the `Raft Quote Glyphs` woff2; the Space Grotesk URLs are not requested by the
 product.)
 
+**v1.21.23 (raft-ui 0.7.0):** raft-ui now imports Space Grotesk and Space Mono
+(`css2?family=Space+Grotesk:wght@300..700&family=Space+Mono:wght@400;700`), so
+the cache below holds that response (fetched 2026-10-23 for the Chrome 156
+headless-shell UA, 9 woff2 files) and the older Geist / Hanken Grotesk / Inter
+description in this section is the v1.21.12 state. The upstream spec still fulfils
+that URL with its own offline TTF subsets, so the production-fonts patch stays.
+The Flutter app does not bundle Space Grotesk or Space Mono yet (the Raft look
+work), so React captures from the v1.21.23 render host differ from the Flutter
+ones by typeface until it does.
+
 What `tool/parity run` does now (raft-source untouched):
 
-* `tool/parity-fonts/` (committed, 492 KB, OFL): the exact CSS Google returns
-  for raft-ui's URL to the pinned Chromium 147 UA (identical to the headed
-  Chrome 147 response) and all 22 woff2 files it references, sha256-pinned in
+* `tool/parity-fonts/` (committed, OFL): the exact CSS Google returns for raft-ui's
+  URL to the Chromium 156 UA and every woff2 file it references, sha256-pinned in
   `manifest.json`. `tool/parity fonts` verifies, `--refresh` refetches.
 * The official spec and Playwright config are copied into
   `build/parity/react-provider/` and patched; every patch anchor must match
   exactly once or the run stops. Changes: path wiring (spec runs outside its
   package); raft-ui's URL and its gstatic files are fulfilled from the cache
   (the legacy Space Grotesk URL mapping and the Quote Glyphs file stay as
-  upstream); the font-readiness assertions probe Hanken Grotesk, Geist, Geist
-  Mono, Inter (400/700) + Raft Quote Glyphs and require each family's files to
-  be served; every capture's metadata gains `fontFaces` (document.fonts
+  upstream); the font-readiness check requires the Space Grotesk and Space Mono
+  files to be served; every capture's metadata gains `fontFaces` (document.fonts
   status) and `platformFonts` (the faces Chromium actually drew, via CDP
   `CSS.getPlatformFontsForNode`). Everything else is the official spec,
   invoked with the same env as the CLI's `runReactProvider`.
-* Verified across all 99 captures (glyphs drawn): Hanken Grotesk 45,327,
-  Geist Mono 16,262, Inter 521, Geist 45; system fonts only for glyphs outside
-  the served subsets (Noto Sans CJK 1,060 for Chinese text, plus 32 symbol
-  glyphs from Noto Sans Mongolian/DejaVu Sans Mono) — the same fallback the
-  production page gets on this host. E.g. `components.ui.card.states` →
-  Hanken Grotesk only; `components.ui.card.states.elegant` → Inter + Geist;
-  `message-row.long-inline-code` → Hanken Grotesk + Geist Mono.
+* The v1.21.12 verification (Hanken Grotesk, Geist, Geist Mono, Inter glyph
+  counts over the 99 captures) is not repeated for Space Grotesk / Space Mono.
 
 Flutter side: `packages/raft_ui/assets/fonts` were compared with Google's
 served files (fontTools, every Google-served codepoint, wght 300–700,
@@ -511,8 +701,9 @@ About / MCP / Labs / Providers / IM Bridges pages (`components.ext-settings.*`),
 and the desktop Create channel / Create agent dialogs
 (`components.dialogs.desktop.*`, `build-desktop-dialogs.py`, which re-renders the
 official phone cases' stores and Flutter builders at 1280x800). Which Web pages still have no
-brutal-light case: [parity-page-inventory.md](parity-page-inventory.md)
-(generated by `tool/parity-ext/inventory.py`).
+brutal-light case: the page inventory, generated on demand with
+`python3 tool/parity-ext/inventory.py --write build/parity-ext/page-inventory.md` (statuses are computed from the
+built manifests; see docs/parity-ext-quickstart.md "Page inventory").
 
 Surfaces the official 99-case set does not cover are compared on the **same
 official framework** in a separate suite, so official and added coverage
@@ -521,7 +712,7 @@ everything below is generated from this repository.
 
 | piece | file | role |
 | --- | --- | --- |
-| manifest | `build/parity-ext/cases.json`, generated on every `run` by the `tool/parity-ext/build-*.py` builders (ordered by `tool/parity-ext/builders.txt`; never committed) | `sharedCases.json` schema; ids `components.computers.<surface>.<theme>`; per-case `viewport` (desktop 1280 wide, density 1), `capture.selector` (React crop), `capture.androidKey` (the Flutter `ValueKey` of the same region), `capture.interactions` / `capture.androidInteractions` |
+| manifest | `build/parity-ext/cases.json`, generated on every `run` by the `tool/parity-ext/build-*.py` builders (discovered automatically by `builders.py`; never committed) | `sharedCases.json` schema; ids `components.computers.<surface>.<theme>`; per-case `viewport` (desktop 1280 wide, density 1), `capture.selector` (React crop), `capture.androidKey` (the Flutter `ValueKey` of the same region), `capture.interactions` / `capture.androidInteractions` |
 | fixture | `tool/parity-ext/fixtures/computers.json` | data both providers render (machines in every state, the two official agents placed on `computer-mbp`, workspaces, follow-up API routes) |
 | React render host | `tool/parity-ext-web.mjs` + `tool/parity-ext/host/*.tsx` | the pinned official Vite host with generated, anchor-checked additions: the `parityTheme` root override (brutal-light / elegant-light / elegant-dark, as `tool/theme-parity-web.mjs`), the host files appended to a generated `VisualTestingCases.tsx` whose default export asks the extension registry first (official ids fall through unchanged), and the fixture as `virtual:parity-ext/computers` |
 | React provider | generated copy of the official spec/config (same as `tool/parity`) plus three anchored patches | answer the fixture's `routes` and the case's machine list with `page.route`, a `hover` interaction, park the pointer after click-only interactions (Flutter taps leave no hover); `deviceScaleFactor` follows each case's density; `reuseExistingServer: false` |
@@ -553,7 +744,7 @@ badge-dot, and loading-skeleton pulse phase (Activity/Saved loading elegant ~78 
 
 No Flutter equivalent (so no case; not built here): report-issue dialog, agent
 unavailable panel, role-permission help dialog, seat-limit banner in the invite dialog.
-Flutter has agent migration (`agent_migration_view.dart`) but no extension case was
+Flutter has agent migration (`agent_migration_section.dart`) but no extension case was
 added for its dialogs/progress yet.
 
 ### Manifest generation (2026-10-11)
@@ -561,10 +752,9 @@ added for its dialogs/progress yet.
 `tool/parity-ext/cases.json` is no longer committed (it was the one file every
 parallel branch that added a family had to merge). Every `tool/parity-ext/run`
 invocation runs all `tool/parity-ext/build-*.py` into `<out>/cases.json`
-(`PARITY_EXT_MANIFEST`, `builders.py`) in the order of `builders.txt`; a
-builder missing from the registry still runs, last and alphabetically, with a
-warning. The theme-sampled `cases.sampled.json` is derived from it; the Flutter
-capture reads it through `PARITY_MANIFEST` (`case_map.dart` never read the
+(`PARITY_EXT_MANIFEST`, `builders.py`). Builders are discovered automatically (no registry file): `build-cases.py`
+first, then by an optional top-level `ORDER = n` constant in the builder (default 1000), then by file name. The theme-sampled `cases.sampled.json` is derived from it; the Flutter
+capture reads it through `PARITY_MANIFEST` (`case_map.g.dart` never read the
 file). Builders replace only their own `components.<area>.*` cases, so the
 result is order independent apart from case order. The generated
 `fixtures/*.json` stay committed: the Flutter capture (`PARITY_EXT_FIXTURES`),
@@ -686,50 +876,13 @@ over white is (254,245,240) in Chromium = alpha 26/255 then truncation,
 over `layer-panel` is 29.53/46.58/49.78 exactly, Chromium (29,46,49), Flutter
 (30,47,50).
 
-### Live agent activity bar cases (8 surfaces x 3 themes = 24)
+### Live agent activity bar cases (removed)
 
-Derived from Web `components/layout/LiveAgentActivityBar.tsx`
-(`LiveAgentActivityBarPresentation`), the raft-ui `liveAgentActivityBar`
-recipe, `MainLayout.tsx` / `MobileBottomBarStack.tsx` (placement) and
-`utils/liveAgentActivity.ts` (only `working` / `thinking` items show).
-`tool/parity-ext/build-live-activity.py` appends the ids
-`components.liveactivity.<platform>.<kind>.<theme>` to the generated manifest (registered
-after `build-cases.py` in `builders.txt`); the React side is `host/LiveActivityCases.tsx`, the
-Flutter side `test/parity/cases/ext_live_activity.dart`. The capture is the bar
-itself (`[data-testid="live-agent-activity-bar"]` / `ValueKey
-live-agent-activity-bar`) on the sidebar surface it sits in:
-
-* desktop (240 wide, 1x): the Sidebar `bottomSlot`, inside `border-r` on the
-  canvas (brutal: cream); kinds tool-finished, working, thinking, compacting,
-  long (truncated);
-* mobile (390 wide, 3x): `mobile-live-activity-slot`, elegant floating
-  (`fixed inset-x-0 bottom-0`), brutal in flow above the tab bar; kinds
-  tool-finished, thinking, long.
-
-Web spec: one strip for the newest live item (`items[0]`, expiry 90 s,
-heartbeat refreshes in place, terminal activity clears), flush with its
-container (no outer margin). Elegant: `rounded-lg border border-line-muted
-bg-layer-panel shadow-raft-md px-3 py-2` (dark: transparent border). Brutal:
-`border-t-2 border-black bg-white px-3` (`md:bg-brutal-cream`), no radius or
-shadow. Row `min-h-8 items-center gap-2`: 36px agent avatar (`size-9`, 1px
-border, black in brutal, pixel art or image), 10px `Status` dot (elegant
-semantic warning orange; brutal fixed busy `#FFD440` with a black border), one
-ellipsised line of text (elegant 13px sans `foreground-muted`; brutal 14px
-mono `black/60`). Nothing is tappable; the text has a hover tooltip. The
-220 ms elegant enter/exit motion in raft-ui never runs in the product because
-the connected wrapper unmounts instead of passing a null child. Production
-Flutter now uses `RaftLiveAgentActivityBar` (`packages/raft_ui`), fed by
-`NativeLiveAgentActivityBar` from `ChatAgentPresentation`.
-
-| | before (old bar) | after |
-| --- | --- | --- |
-| mean pixel-perfect similarity | 70.96 % | 95.78 % |
-| passing (basic-pass or better) | 0 / 24 | 11 / 24 |
-
-What changed: floating card instead of a top-bordered strip, 36px avatar
-(pixel art was missing before), status dot colours per theme (orange in
-elegant, not a fixed yellow), 13px sans / 14px mono text. The remaining
-difference is Chromium vs Skia text rasterisation (see "Text rendering").
+Raft Design System decision 0006 deprecates the live bar and shows working
+agents where they appear, so the Flutter app no longer has the strip and the
+`components.liveactivity.*` extension cases (`build-live-activity.py`,
+`host/LiveActivityCases.tsx`, `cases/ext_live_activity.dart`) were removed.
+The inventory row 2.14 is marked superseded.
 
 ### Conversation header cases (16 surfaces x 3 themes = 48)
 
@@ -882,59 +1035,73 @@ padding, the messages card paints without a heading while an error shows.
 Remaining difference is text rasterisation and Chromium's truncating blend arithmetic
 (1-2 level steps on every shadow/ring line, worst in elegant-dark), not geometry.
 
-### Announcement modal cases (13 surfaces x 3 themes = 39)
+### Announcement dialog cases (17 surfaces x 3 themes = 51)
 
-Derived from Web `components/AnnouncementModal.tsx` (`Modal layer={1}
-closeOnBackdrop` + `Card w-full max-w-xl`), `components/Modal.tsx` and
-`store/announcementStore.ts`. `tool/parity-ext/build-announcements.py`
-appends `components.announcements.<platform>.<kind>.<theme>` (run it after
+Derived from Web v1.21.12 `components/AnnouncementModal.tsx` (raft-ui 0.5.52
+`AnnouncementDialog*` from `raft-ui/wip` on `layer={1}`: label row with the
+close button, title, optional picture, the first page's Markdown, and a footer
+with "Got it" or the call to action) and `store/announcementStore.ts`.
+`tool/parity-ext/build-announcements.py` appends
+`components.announcements.<platform>.<kind>.<theme>` (run it after
 `build-cases.py` and `build-live-activity.py`); data is
 `tool/parity-ext/fixtures/announcements.json`. The React host
 (`host/AnnouncementCases.tsx`) mounts the real `AnnouncementModal` with
-`useAnnouncementStore.pending` primed; the Flutter builders
-(`test/parity/cases/ext_announcements.dart`) mount the real `AnnouncementHost`
-whose fixture client answers `GET /announcements/active` and the setup
-projection (`phase: null`), so the modal opens exactly as on workspace entry.
+`useAnnouncementStore.pending` primed and serves
+`GET /api/announcements/images/:id` from `fixtures/announcement-picture.png`
+(a `{"$file": ...}` route answer in `tool/parity-ext/run`); the Flutter
+builders (`test/parity/cases/ext_announcements.dart`) mount the real
+`AnnouncementHost` whose fixture client answers `GET /announcements/active`
+and the setup projection (`phase: null`), so the dialog opens exactly as on
+workspace entry. The picture comes through an `HttpOverrides` client that
+answers the same PNG.
 
-* desktop (1280x800, 1x): single page, multi-page first / middle / last
-  (`capture.interactions` press Next), rich Markdown (h2/h3, ordered list,
-  bold/italic, inline code, link), long body (`max-h-[60vh]`), long title
-  (`truncate`), and the whole viewport with the backdrop (`overlay`);
-* mobile (390x844, 3x): single, multi-middle, rich, long, overlay.
+* desktop (1280x800, 1x): single, call to action (`cta`, `cta-long` where the
+  label wraps and the footer wraps with it), `image` (label + picture + CTA),
+  `image-only`, `multi` (three pages; only the first shows), rich Markdown (h1
+  to h3, ordered list, bold/italic, inline code, link), long body
+  (`max-h-[70dvh]`), long title, and the whole viewport with the scrim
+  (`overlay`);
+* mobile (390x844, 3x): single, cta, cta-long (footer stacks, `@max-[28rem]`),
+  image, rich, long, overlay.
 
-Element cases crop the card (`[data-testid="announcement-modal"]` / `ValueKey
+Element cases crop the dialog (`[data-testid="announcement-modal"]` / `ValueKey
 announcement-modal`), overlay cases the viewport.
 
-Blink details reproduced in `packages/raft_ui/lib/src/announcement_modal.dart`
-(each measured on the parity Chromium with element/range rects):
+Details reproduced in `packages/raft_ui/lib/src/announcement_modal.dart` and
+`announcement_markdown.dart`:
 
-* the card is centred at a fractional y (e.g. 296.5) but painted at the whole
-  CSS pixel (round half up); its layout rect keeps the fraction, and
-  Playwright's element screenshot encloses it in whole CSS pixels. The
-  harness now encloses extension element crops in CSS pixels before scaling
-  (`parity_harness.dart`; no change for integer rects, the 9 mobile live
-  activity cases score identically);
-* text uses `RaftCssText` line boxes (22.75px `leading-relaxed` lines, Blink
-  baseline); elegant InlineCode is `inline-flex` with `py-[1.5px]`, so a line
-  holding it grows by `box descent - (line-height - css baseline)` (1.094px
-  at 14px Geist), brutal InlineCode is an inline box (content area + 1px
-  border) that never grows its line;
-* `list-disc` markers are Blink's painted symbol: an `(A*2/3+1)/2` circle
-  (5px for A = 14) ending 11px before the item content;
-* the primary button is focused on open and keeps `:focus-visible` after it
-  is clicked (Blink keeps it on a script-focused element).
+* the dialog is `DialogContent` with `max-w-xl gap-0 overflow-clip p-0`; the
+  body slot is `px-7 pt-6 pb-5` and scrolls under `max-h-[70dvh]`; the footer
+  is `flex-wrap justify-between gap-3 border-t px-7 py-4`, `flex-col` with
+  `w-full` actions when the dialog is narrower than 28rem, and its actions are
+  `ml-auto`; the CTA button is `h-auto min-h-8 whitespace-normal`;
+* text uses `RaftCssText` line boxes (22.75px `leading-relaxed` lines); the
+  Markdown has no heading margins or uppercase (h1 `text-xl`, h2 `text-lg`, h3
+  `text-base`, bold), only `p + p` gets `mt-3`, lists are `list-disc|decimal
+  pl-5` with no item margin, links are underlined, and `code` is the plain
+  raft-ui InlineCode;
+* a link's tap recognizer sits on every text leaf of the link (a span's
+  recognizer does not cover its children; with the recognizer on the parent
+  span, as the previous modal had it, a tap on the link did nothing in a
+  widget test);
+* the dialog route fades in over 150ms; the case waits for it and for the
+  picture to decode (`interact`).
 
-| | first run | final |
+| | v1.21.2 modal (39 cases) | v1.21.12 dialog (51 cases) |
 | --- | --- | --- |
-| mean pixel-perfect similarity | 92.0 % | 93.6 % |
-| passing (>96 %) | 8 / 39 | 8 / 39 (overlay x6, mobile single/rich brutal) |
-| capture size mismatches | 15 | 0 |
+| capture size mismatches | 0 | 0 |
+| mean RGB similarity | n/a | 98.9 % |
+| mean pixel-perfect similarity | 93.6 % | 89.7 % |
+| passing (>96 % pixel-perfect) | 8 / 39 | 1 / 51 |
 
-All 39 crops have identical sizes and the glyph positions match (checked by
-row profiles and 5x zooms); what remains is Chromium vs Skia text
-rasterisation (Chromium's glyphs are darker, see "Text rendering"), which
-keeps text-dense cards at 89–96 %. Not covered: the failed-write error
-notice (Web `toast.error`; Flutter uses a SnackBar), hover states.
+Every crop has the Web's size. What remains is text rasterisation (Chromium's
+glyphs are darker, see "Text rendering"), the picture's resampling filter, and
+a few lines one pixel off (row profiles of the glyphs agree everywhere else).
+The old modal painted its card at the whole CSS pixel; applying that snap (down
+or up) to the dialog, which Web centres with `top-1/2 -translate-1/2` at e.g. y
+= 263.375, lowered every score, so the dialog is painted unsnapped. Not
+covered: the failed-write error notice
+(Web `toast.error`; Flutter uses a SnackBar), hover states.
 
 ### Thread, timeline, attachment and message-surface cases (`components.thread-ext.*`, 240 cases)
 
@@ -1218,8 +1385,8 @@ What changed in Flutter (all measured against the Web DOM):
   The row whose menu is open keeps `bg-fill-muted`. Sort menu labels are Web's
   (Manual / Recent / A-Z).
 * Rail: server avatar fill / ink per theme, Brutal 2px header border,
-  other-server attention dot; agent presence dot on agent rows; the Web browser
-  default for hide-empty sections (Electron / the Linux client turn it on).
+  other-server attention dot; agent presence dot on agent rows; hide-empty
+  sections default off in the browser and native clients (Kevin, 2026-10-18).
 * `RaftBanner`: Brutal 2px / Elegant 4px title gap and the action dropping to
   its own end-aligned row at or below 24rem (container query). `RaftToast`: icon
   cell, close button and the two empty-track column gaps of the Web grid.
@@ -1240,8 +1407,82 @@ around ThreadsInbox at 390px, 3x), but Flutter does not draw it. The ext cases
 `components.shell.mobile.activity.frame.*` therefore differ from Web by that
 1px vertical line by design; the owner decision overrides the Web analysis.
 
+Owner decision 2026-10-12, superseded by the v1.21.12 message-row port: on a
+phone the message avatar lined up with the header buttons, which Web v1.21.2
+did not do (its Brutal avatar sat at 32 dp: 12 wrapper + row margin 12 + border
+2 + padding 6), so Flutter dropped the wrapper inset below 768 dp. raft-ui
+0.5.36 removed Brutal's row `mx-3` and set the row insets to 8, so Web
+v1.21.12 itself puts the avatar at 20 dp (12 + 8) and a row's box edge at 12
+dp at every width. `RaftTimelineCompositionRecipe.messageInsetFor` now keeps
+the wrapper inset at every width and the intended difference is gone.
+
+Owner decision 2026-10-12: no left panel border on phone (intended difference
+from Web). "On mobile, don't draw the black line on the left anywhere." Web's
+`Panel edge="attached"` (`border-l-2 border-black`, Elegant `border-l
+border-line-muted`) and the Brutal drawer `border-l-2` carry no breakpoint, so
+Web draws them on phones too, 2px (Brutal) / 1px (Elegant) inside the screen
+edge. Flutter draws them only at width >= 768 (`RaftLayoutMetrics.desktopBreakpoint`,
+now decided in one place, see "Panel left edge" below):
+`RaftSettingsPanelFrame`, the channel overflow/settings drawer frames
+(`_OverflowDrawerFrame`, `RaftChannelSettingsSheet`; the full-width phone page
+and the members page's `RaftOverflowBareSheet(page: true)` draw none), and the
+`RaftTaskSurface` ThreadPanel edge. Header/footer top and bottom rules, the
+bottom tab bar and the rail are unchanged, as is every desktop border. The
+phone content column therefore starts at x = 0 and the Drawer Back sits at
+16 + 14 (Settings Back at 20 + half the action width). Parity cases whose
+phone captures contain that line differ from Web by that 1-2px vertical line by
+design: the 6 official + 22 ext phone Settings sub-page cases, the 13 channel /
+DM settings drawer cases, the members page and the phone task detail; the
+owner decision overrides the Web analysis (this reverses the phone half of the
+earlier alignment-audit fixes 1-4; their desktop halves stay).
+`packages/raft_ui/test/phone_no_left_border_test.dart` pins the absence on
+phone and the presence on desktop.
+
+### Panel left edge: one rule, one place (`RaftPanelEdge`)
+
+Rule: **the attached left edge shows everywhere except when the surface is
+rendered as a full-width standalone phone page** (width below 768 dp, the same
+cut as `RaftAdaptiveWorkspace.compactOf`). A foldable (816 / 841) and a desktop
+window always draw it. `packages/raft_ui/lib/src/panel_edge.dart` is the only
+place that decides: `RaftPanelEdge.presentationOf(context)` returns
+`attached` or `phonePage`, `RaftPanelEdge.left(context, style)` returns the
+border (`attachedPanel` Brutal 2px black / Elegant 1px line-muted,
+`activityInbox` 1px, `drawer` Brutal-only 2px line-strong) and
+`RaftPanelEdge.masterRight` the master/detail divider. A surface never compares
+a width or reads its own "mobile" / "page" / "detail" flag for its edge.
+
+Surfaces on the rule (registry `apps/raft_flutter/test/support/panel_edge_registry.dart`):
+Settings panel (`RaftSettingsPanelFrame`), channel / DM settings drawer and
+members page (`_OverflowDrawerFrame`, `RaftChannelSettingsSheet`), the task
+thread panel inside its modal, the workspace thread and profile panels
+(`RaftAdaptiveWorkspace`), the Activity inbox panel (`ResourceView`), and the
+Activity / Search detail divider (`DesktopMasterDetail.masterEdge`, Web
+`MainLayout` col-2 `border-r`: Activity 1px, Search Brutal 2px, drawn inside
+the master's width). Guards: `panel_edge_matrix_test.dart` mounts each surface
+at 390 / 816 / 841 / 1280 in Brutal, Elegant and Elegant dark and checks the
+painted rule (absent only on the phone page); `panel_edge_registry_test.dart`
+fails on an unregistered `RaftPanelEdge` user, a listed file that does not use
+it, and any `left: BorderSide` whose neighbouring lines test a width /
+`compactOf` / `mobile` flag (allowlist: the legacy docked task panel).
+
+Why the Activity / Search detail lost its divider (owner report 2026-10-12,
+macOS desktop, Brutal, Activity list beside a Thread panel): the Flutter port
+of the master/detail layout (`DesktopMasterDetail`) never drew it. On Web the
+detail column has no border of its own (`renderContentSlot`: "no
+width/border/resize chrome needed") and the line is the right border of the
+col-2 wrapper (`masterDetailShellClassName`); the port copied the columns and
+widths but not that wrapper border, and no test looked between the two columns
+(`shell_border_placement_test` only has the Activity page without a detail).
+Checked by rendering the same Activity + thread preview at 85997b8a (before the
+phone decision) and at the branch base: no rule between list and detail in
+either, so the phone commit (65cdd952) did not remove it. What did keep the
+class of bug alive: every panel decided its own edge (an `attached` flag, a
+`MediaQuery` width, a `mobile` bool, `compactOf`), the 2026-10-11 / 10-12 fixes
+patched surfaces one by one, and the pinned tests covered only the surfaces
+that had already been reported (Settings, drawer, task).
+
 Remaining gaps: the OverflowSheet (Drawer) shell, the emoji picker popover
-(third-party grid), the Electron-only "Find a conversation" sidebar box, the
+(third-party grid), the
 toast action variant (the Web toast manager ignores `actionProps` here), the
 member / computers sidebar rails, and text rasterisation. Elegant (light) toasts
 differ by a constant 2 levels in the blue channel of the translucent fill (the
@@ -1282,6 +1523,7 @@ which rounds single-channel 1-level differences to 0. Per-channel max delta
 
 ## Known harness limitations
 
+* A Flutter fixture must use the same input device as the Source provider: the React provider clicks with a mouse and leaves the pointer over the control, so hover transforms and hover-only overlays (e.g. the Agent overflow menu anchoring) are only reproduced by a mouse click that keeps hover until capture, not by a touch tap.
 * React baseline fonts deviate from the official spec on purpose (production
   Google Fonts, see "Baseline fonts").
 * Flutter captures are host `flutter test` rasters (software Skia, Linux), not
@@ -1334,8 +1576,7 @@ replies, history; `routes` + `routeSets` answer the API on both providers).
 
 ### WP6 task and settings leftovers (153 = 51 surfaces x 3 themes)
 
-`tool/parity-ext/build-wp6-cases.py` (registered last in
-`tool/parity-ext/builders.txt`, run by `tool/parity-ext/run`) appends `components.wp6.<surface>.<state>.<theme>` and writes
+`tool/parity-ext/build-wp6-cases.py` (run by `tool/parity-ext/run`) appends `components.wp6.<surface>.<state>.<theme>` and writes
 `tool/parity-ext/fixtures/wp6.json` (every route in a `routeSets` entry, so no
 other family sees it). React host: `host/Wp6Cases.tsx` (tasks surfaces mount the
 real `CreateTaskDialog` / `TaskFilterSegmentedControl` / `MainLayout`; the
@@ -1387,7 +1628,7 @@ Blink border snapping on fractional boxes and one-level translucent fills in
 `RaftBanner` (dark).
 ### Auth and onboarding cases (240 = 41 surfaces x 2 platforms x 3 themes, the two first-server forms mobile only)
 
-`tool/parity-ext/build-auth-cases.py` (registered last in `builders.txt`) writes
+`tool/parity-ext/build-auth-cases.py` (discovered automatically) writes
 `components.auth-ext.<platform>.<surface>.<theme>` (platform desktop 1280x800 @1 /
 mobile 390x844 @3) and `fixtures/auth-ext.json` (user, providers, servers, per-case
 `routeSets`). React host: `host/AuthCases.tsx` mounts the real `LoginPage`,
@@ -1448,6 +1689,60 @@ they sit on box edges; fractional-width controls (the survey Continue button, co
 rows) are painted unsnapped by Flutter, and the handoff body wraps one word differently from
 Chromium's `text-balance`.
 
+## raft-ui specimen reference (`tool/parity-ui`)
+
+A second React provider for the move to the official raft-ui look (one look, light + dark): it renders the real
+`@botiverse/raft-ui` components (pinned `0.7.1`, React 19, Tailwind CSS v4, versions fixed by
+`tool/parity-ui/host/pnpm-lock.yaml`) as fixed-size specimens, instead of the raft-source Vite host. Specimens are
+listed in `tool/parity-ui/specimens.json` and rendered by `tool/parity-ui/host/src/specimens.tsx` (component doc
+preview code where it exists). Same provider output contract, pinned Chromium 147 and Android text flags as the other
+providers; fonts come only from the sha256-pinned Space Grotesk / Space Mono cache (`tool/parity-ui/fonts`), any other
+external request fails the capture. The official CLI validates and diffs it unmodified (`--manifest build/parity-ui/cases.json`,
+ids `components.raft-ui.<specimen>.<light|dark>`); the Flutter provider writes `android/<id>.png` into the same output.
+References are never committed (output `build/parity-ui/`, override `PARITY_UI_OUT`).
+
+```bash
+tool/parity-ui/run run [--cases 'components.raft-ui.button.*']   # capture
+tool/parity-ui/run check                                          # capture twice: byte-identical PNGs; official validate + diff round trip
+tool/parity-ui/run cases                                          # ids and which have no Flutter preview case yet
+tool/parity-ui/run flutter [--cases ...]                          # Flutter side: apps/raft_flutter/test/parity/cases/ui_raft_specimens.dart
+tool/parity-ui/run diff [--cases ...]                             # official diff + site, then a per-case score table
+tool/parity-ui/run dom-dump [--cases ...] [--out DIR]             # DOM rects + computed styles of the React specimens (diagnostic)
+```
+
+The Flutter specimens (`ui_raft_specimens.dart` and `ui_raft_specimens/<group>.dart`, keyed by specimen id, both modes)
+render the real `raft_ui` widgets through the shared parity harness (`PARITY_MANIFEST` = `build/parity-ui/cases.json`; the
+manifest props carry `parityTheme`). The harness sets `RaftBorderSnap.emulatedDeviceScaleFactor`: the reference is captured
+with an emulated device scale factor, where Blink floors `border-[1.5px]` to a whole CSS pixel (1px), and
+`raftControlBorderPx` reproduces that only here. Translucent tokens on a known fill go through `raftChromeBlend`
+(Chromium truncates the destination term of source-over; Flutter rounds, one level off on whole borders). Mono labels carry a
+1px baseline shift where Blink's rounded ascent/descent differ from Flutter's (`raft/text_baseline.dart`). Pass thresholds of
+the official CLI: > 99% pass, > 96% basic-pass.
+
+Result, raft-ui 0.7.1 core components (before = the base branch's widgets in the same layouts, old fonts and tokens; `-` = the
+component did not exist or has no comparable widget; after = this change):
+
+| case | before light / dark | after light / dark |
+| --- | --- | --- |
+| button.variants | 82.43 / 62.88 | 98.90 / 97.64 |
+| button.sizes | 60.71 / 44.73 | 98.60 / 96.67 |
+| button.states | 69.26 / 71.26 | 98.51 / 98.39 |
+| badge.variants | 71.93 / 61.60 | 96.67 / 96.07 |
+| status.lights | - | 99.11 / 99.07 |
+| avatar.faces | 72.53 / 68.01 | 99.26 / 98.27 |
+| avatar.sizes | 77.60 / 75.11 | 99.34 / 98.12 |
+| avatar.presence | - | 99.07 / 98.15 |
+| input.states | 59.55 / 38.80 | 98.74 / 98.77 |
+| switch.states | 84.85 / 60.25 | 98.46 / 96.67 |
+| checkbox.states | 90.99 / 86.76 | 98.66 / 98.86 |
+| tabs.variants | - | 97.72 / 97.63 |
+| segmented-control.states | 65.67 / 61.63 | 98.03 / 96.77 |
+| list-row.variants | - | 97.70 / 96.72 |
+| icon-tile.variants | - | 99.61 / 99.43 |
+
+What is left in these cases is glyph anti-aliasing (Flutter's strokes are ~5% lighter than Chromium's at 12-13px) and
+1-level edge pixels.
+
 ## Composed screens (extension suite, `components.screens-ext.*`)
 
 Top missing pages of the page inventory (3.01 channel screen, 3.02 DM screens, 3.20 composer
@@ -1487,3 +1782,407 @@ Left: the `@mention` highlight is 1/255 lighter in Chromium over the content ban
 counted as fill, 5% of that crop); tab-strip and chip widths follow fractional text advances
 (hairline); phone composer shadow (Web headless phone autofocuses the composer, a real phone does not);
 Elegant themes (sampled) still carry 1-2px row-pitch and blend deltas in the popups.
+
+## Phone forward page and incoming share (cindy/share-forward)
+
+One Web page, two Flutter modes. Web's phone forward flow (`ForwardComposerDialog` below md ->
+`ForwardComposerMobile.tsx` + `ForwardComposerTargetList.tsx`) is the only reference: the
+destinations page (header, search, "Recent" list, "Select multiple"), the note page ("Message
+preview" card + note composer) and the search loading / failed / empty rows. Flutter mounts it twice
+with the same `raft_ui` pieces (`RaftForwardPage`, `RaftForwardPageHeader`, `RaftForwardTargetsBody`,
+`RaftForwardSearchInput`, `RaftForwardTargetRow`, `RaftForwardPreviewStep`, `RaftForwardSearchStatus`,
+`RaftForwardTargetBadge`): `ForwardComposerPage` (forward mode) and `IncomingSharePicker` (share mode,
+Android external SEND / SEND_MULTIPLE). The two controllers keep their own state machines (forward
+request / retry; share staging, server membership, join confirmation, hand-off) because those are
+product logic, not chrome; everything the user sees that exists in both is one widget.
+
+Cases: `components.forward-mobile.page.<state>.<theme>` (7 states x 3 themes = 21; states targets, search,
+search-empty, search-error, search-loading, multi, note). React mounts the real `ForwardComposerDialog`
+at 390x844 (`tool/parity-ext/host/ForwardMobileCases.tsx`, data `fixtures/forwardmobile.json`, builder
+`build-forward-mobile.py`); Flutter mounts the real `ForwardComposerPage` (`cases/ext_forward_mobile.dart`).
+Run: `PARITY_EXT_WEB_PORT=<port> PARITY_EXT_ALL_THEMES=1 tool/parity-ext/run run --cases 'components.forward-mobile.*'`.
+
+| | official 96% | geometry (non-text >= 99.5%) | mean exact | mean non-text |
+| --- | --- | --- | --- | --- |
+| before (f6133720) | 12/21 | 10/21 | 96.32% | 97.65% |
+| after | 19/21 | 13/21 | 98.29% | 99.25% |
+
+After, per theme (geometry): brutal-light 7/7 (non-text 99.54-99.98%), elegant-light 6/7 (99.63-99.78%; the
+note page is 97.93%), elegant-dark 0/7 (98.45-98.71%; note 97.36%).
+
+Forward mode, differences found against Web and fixed:
+
+1. Dark search input: the recipe was resolved without the `dark` flag (flat fill, bright ring, no inset
+   shadow). It now uses `recipeTheme` / `recipeStates` like `RaftInput`, and `RaftRecipeBox` paints the inset layers.
+2. Peer avatars: DM / search rows showed a plain placeholder. They now show the peer's pixel / uploaded / Gravatar
+   artwork, and an agent without one wears the default robot (Web `AvatarSlot context="compact-list"`).
+3. Multi-select checkbox: it was built without `onChanged`, so it painted the disabled style when checked. It is
+   enabled (Web `pointer-events-none`, not `disabled`) and only disabled for an unchecked row at the 10-target limit.
+4. Focus: choosing a row or "Select multiple" moves focus off the search input (Web's row / button takes focus), so
+   the ring and the keyboard go away.
+5. Note page: the note editor was a one-line field with the send icon beside it. Web mounts
+   `MessageInput variant="compact"` (box with the send action inside, taller). Flutter now mounts the shared
+   compact `RaftComposer` (the attachment-comment composer) with an empty note allowed.
+6. Note page spacing: "Message preview" label line box 16px with 4px less gap above the card (the card keeps its own
+   4px), and the bundle header line is 16.5px (`RaftForwardedBundle.headerLine`) because outside a message row the
+   Web header inherits `leading-normal`; in a message row it stays 20px.
+7. Header title / subtitle and the preview label use even leading (CSS half-leading) like the rows.
+
+Still different (measured, not fixed): elegant-light note page has about 1.7dp less vertical room inside the bundle
+card; elegant-dark outline icon buttons differ in the top highlight rows (shared `RaftControl`, not forward specific);
+header title ink sits about 1dp lower than Web (text rasterization bucket); Web's "Not joined" / "New DM"
+rows join / open the DM through the Web composer's own warnings, Flutter joins at send (unchanged).
+
+Share mode (`IncomingSharePicker`), what it was and what it is now. Kevin's phone screenshots (header "Forward - 1 message
+selected", untranslated "Server", chevrons, bottom sheet with a target chip and "Continue") come from an older build;
+integration HEAD already used the forward list, but still had its own `RaftPanelHeaderBar`, a boxed segmented server
+control, checkbox rows, a selection chip + Continue footer and no empty state. Now:
+
+| Share need | Web element used | Difference |
+| --- | --- | --- |
+| Header | `ForwardComposerMobile` header (28px outline back button, 16/24 title "Select destinations", 12px mono subtitle) | The subtitle says what is shared ("Sharing 3 files", "Sharing text", "Sharing 2 files and text") instead of "{n} selected from {source}". No "Select multiple": exactly one target. |
+| Server choice | none in the forward page (it lists the current server); closest is its own `Button size="sm" variant="outline"` | Chip row above the search, selected chip `accent`, hidden with a single server. A semantic "Server" label only; no visible caption. |
+| Rows | `ForwardComposerTargetList` row, single-select form (no checkbox, no chevron) | Channels show the bare name; DMs `@name`; "Not joined" / "New DM" badges for rows that need a join / a new DM. Order: latest activity, then label (Web `getForwardTargets`), list label "Recent". |
+| Select | Web single-select on a phone: tapping a row goes straight to the note page | Opens "Add shared content" (the note page layout). Back keeps the choice. |
+| Preview of the share | note page "Message preview" + `ForwardedBundleCard` | "Shared content" label and a bundle-framed card (header strip with glyph, "Shared", file count; text body; attachment chips). No author / time row (the content is not a message). Images are listed as file chips with name and size: the content URI is not readable until the private copy exists, so there are no thumbnails. |
+| Final step | note page send action (accent) | Full-width accent "Continue" bar. There is no note editor: the composer the user lands in is the editor. A hint states that files are added to the composer for review. |
+| Empty / loading / error | `RaftForwardSearchStatus` | "No destinations match your search." / "No destinations available." / the load error with Retry / the spinner. |
+
+Device check (Android emulator, isolated `app.raft.raft_flutter.linkperf` release x86_64, local stack through
+`10.0.2.2`; not a phone): a real `am start -a android.intent.action.SEND -t image/png --eu EXTRA_STREAM
+content://media/external/images/media/<id>` into the logged-in app opens the picker ("Sharing 1 file", server chips,
+Recent list with pixel avatars and "New DM" badges), search filters, a row opens "Add shared content" (PNG chip, name and
+size), and Continue lands in that channel's composer with the file queued; no message was sent. A text share shows the
+snippet. Two observations: a SEND without a URI grant (EXTRA_STREAM only, no `-d` / ClipData, unlike a real sender)
+cannot be read, so the chip shows "attachment.bin" and Continue ends with the "could not be added" banner; after an
+`adb install -r` the restored session stayed in "Background session recovery" until the process was restarted
+(pre-existing, not part of this change). Real-phone Chrome / Photos / Files shares remain unverified.
+
+Hand-off, staging limits, join confirmation, membership re-check and "no upload / send" are unchanged
+(docs/sharing-evidence.md). Contact sheet (Web | before | after, 3 themes): `tool/share-forward-sheet`;
+share-mode captures come from `apps/raft_flutter/tool/captures/share_forward_capture_test.dart` (set `SHARE_SHEET_OUT`).
+
+## Navigation audit (cindy/nav-audit)
+
+Full table and guard design: `docs/navigation-audit.md`. Intended differences recorded there:
+
+* Settings > Bottom bar and the Settings > Computers row exist on the phone only (device preference;
+  Web's desktop has the Computers rail).
+* System notices for computers open the Computers detail / attention list in a pushed page; Web
+  navigates to `/computer/:id` and `/computers?filter=attention`.
+* Channel settings and Channel members open as full-width pages on a phone (Web: phone drawer) and
+  as dialogs / modals on wide layouts.
+* Settings > Resources > Network (system / manual HTTP proxy, test connection) is a native-only page with no Web
+  counterpart (the browser owns proxying). Design and platform notes: `docs/system-proxy.md`.
+* Settings > Resources > Storage (attachment cache size, Clear cache) is a native-only page with no Web
+  counterpart (the browser owns its HTTP cache). The app keeps opened attachments in one on-disk cache under
+  the platform cache directory (1 GB, least recently used out; `AttachmentDiskCache`), so a second open makes
+  no request. Clearing it never touches the session, drafts, settings or files the user saved.
+* Update check (native only, intended difference): a release build looks up the latest GitHub release's
+  `build-manifest-<platform>-<arch>.json` (never the REST API) at start and at most every 6 h, and shows a red dot
+  on the Settings entry and the About row plus a "New version available: X (build)" row in About with a download
+  (Android) or release-page (desktop) button; on macOS and Windows builds that carry an update key (installed copy on
+  Windows) the button reads "Update now" and starts Sparkle/WinSparkle instead (`docs/auto-update.md`). Web updates itself and has no equivalent. About always shows an Updates card under Version (native only):
+  "You're on the latest version" with "Last checked: <relative time>", "Checking for updates…" with a spinner, the
+  new-version row above, "Couldn't check for updates" with a short reason (failures never show raw exception
+  text; the reason clears on the next successful check), or, for iOS, dev builds and Linux outside an AppImage,
+  "Update checks aren't available for this build" with the reason and no button. Every supported build has a
+  "Check for updates" button that checks now, ignoring the 6 h throttle (taps during a check are ignored). On
+  macOS/Windows it runs the same manifest check and does not call Sparkle/WinSparkle: their own check opens a
+  second dialog that would repeat the card's answer; "Update now" is what hands over to them. Build numbers: CI passes `--build-number=<run>` and
+  `--dart-define=RAFT_BUILD_NUMBER=<run>`; the manifest `buildNumber` is compared with that define (Android's
+  `versionCode` is 2000 + the same number for the arm64 split APK).
+* Settings > Release Notes lists the client's own release notes (the `release-notes.json` asset of the latest
+  GitHub release, built by `tool/release_notes.py` from `docs/release-notes/<tag>.md`), not Web's server
+  `GET /release-notes`. The asset has the same item shape and the view reuses Web's parser, layout and
+  Current/retracted rules; the last downloaded copy is kept for offline use. Intended difference: the notes
+  describe this app's builds, are English only, and make no `/api/release-notes` request.
+* Unknown external routes still land on Home (Web catch-all); unknown internal targets now throw
+  in debug and test.
+
+## Profile side panel (cindy/phone-avatar-profile)
+
+Owner-approved difference (Kevin, 2026-10-12): on wide layouts (docked column) a tap or click that
+lands outside the profile panel also closes it, like the X. Web's `ProfilePanel` is non-modal and
+closes only from its X / Escape (no outside-click handler or backdrop). Flutter observes the tap
+with a raw pointer `Listener` (`ProfileOutsideTapDismiss`), so it never enters the gesture arena and
+the tapped control still runs; a tap that retargets the profile (another sender avatar, a
+mention) switches it instead of closing. A drag / scroll is not a tap. Phone and folded widths show
+the profile as a full page (no outside area). On those, the agent header gains a close X at >= 768px
+like Web (`hidden md:flex`).
+
+## Close affordances (cindy/close-sweep)
+
+Every closable surface is inventoried in `docs/close-affordances.md` (generated from the guard
+registry) with its x / Back / Escape / scrim / system back at phone, foldable and desktop widths
+against Web. Differences kept on purpose: the profile panel's outside tap (above); phone pages
+(image lightbox, attachment preview) lead with Back instead of x.
+
+## HTML preview loading: transfer progress instead of Web's preparing chip (owner decision 2026-10-12)
+
+Web shows a "Preparing interactive preview…" chip while the sandboxed iframe loads.
+The native preview shows the shared attachment transfer panel instead ("Connecting…",
+then WebView load percent on Android/iOS/macOS, or downloaded bytes on the Linux/Windows
+static fallback), matching the image/PDF/video previews. Kevin asked for this on
+2026-10-12 ("缺个加载进度？别的都有"). The `html.preparing` ext parity cases
+(desktop and mobile) therefore differ from Web on purpose.
+
+## Message-list images: no signing ahead of time, no transfer text (owner decision 2026-10-13)
+
+Web's inline image is a plain `<img>` on a tinted box (`bg-brutal-cream/60`): a thumbnail URL
+loads directly, an image without one asks `POST /attachments/urls` once for the whole gallery, and
+nothing in the list shows transfer text. Flutter now does the same (Kevin: "预取的 attachments 的连接，这个不要预取了" and
+"为啥消息列表中图片还会出现一个连接中？"):
+
+* A signed attachment URL is requested only when it is needed: opening the viewer, downloading,
+  sharing, playing a clip, or rendering an image that has no `thumbnailUrl` (visible tiles of one
+  frame share one batch request). Scrolling, hovering (desktop), pressing and "nearby" rows never
+  sign anything; the removed paths are the list/viewport batch prefetch, the hover prefetch, the
+  press warm-up and the host pre-connect. Already-signed URLs are still reused from the cache.
+* Images with a `thumbnailUrl` (public 320px WebP) load straight from it, and are cached on disk.
+* A list tile that is loading shows only the neutral placeholder: no "Connecting…" chip, no
+  size/percent chip, no bar. The bar and chip stay on explicit surfaces (image viewer, document
+  and media previews, downloads), which Web renders with its own spinner/progress there.
+  The earlier "Option A" bar on list tiles is therefore gone.
+
+Differences kept on purpose: the placeholder carries a quiet picture glyph (Web shows the tinted
+box only), the same placeholder the viewer uses; a failed tile keeps its red "Download failed ·
+tap to retry" band (Web shows a broken image).
+
+## Underlines: one offset everywhere, including auth links (owner decision 2026-10-12)
+
+Every underline uses the hyperlink metrics (`underline decoration-2 underline-offset-2`):
+2px stroke, 2px below the baseline, shared by all themes (packages/raft_ui/lib/src/raft_underline.dart,
+guarded by the avoid_builtin_underline lint, tool/raft_lints). Web's auth-page links use a plain `underline` with no offset;
+Kevin asked to unify all underlines on the link style, so the `auth-ext` / `auth-pages` login and
+register cases differ from Web by that gap on purpose.
+
+## Image viewer: no gallery arrows (owner decision 2026-10-13)
+
+Web's `ImageLightbox` shows a previous / next `Button size="icon-lg"` (`ChevronLeft/Right size={24}`,
+`absolute left-8 / right-8`, disabled at the ends) on a multi-image gallery. Kevin: the thumbnail strip
+already shows every image, so Flutter has no arrows on any layout. Navigation is the thumbnail strip
+(tap), ArrowLeft / ArrowRight (not while zoomed, no wrap), a horizontal swipe on touch layouts, and the
+header counter chip (`2 / 3`) still shows the position. Everything else in the gallery (counter chip,
+thumbnail strip `size-12 border-2`, `bottom-4`, `gap-1.5`) matches Web.
+
+Parity cases `components.thread-ext.attachment.image.gallery[.mobile]` (index 1 of 3) and
+`image.gallery-first` (index 0 of 3) pass `hideArrows=1` to the React host, which injects a style hiding
+Web's two arrow wrappers, so the comparison covers counter, strip and stage without the arrows. Non-text
+similarity at 1280x800 (brutal / elegant / elegant-dark): index 1 of 3 99.71 / 99.64 / 99.62 %, index 0 of 3
+99.72 / 99.67 / 99.62 %. Before the arrows were removed (Web unmasked) the same two cases measured
+99.71 / 99.43 / 99.50 % and 99.72 / 99.44 / 99.51 %, so the arrows cost the elegant themes about 0.2 points (just under the 99.5 bar) and nothing visible in brutal; the
+phone-width gallery cases (~96 %, hairline bucket on the stage image) are unchanged by this.
+
+## Video cards: posters on every platform (owner decision 2026-10-17)
+
+Web's `InlineVideoAttachmentCard` is a `<video preload="metadata" controls>` in a 16:9 box: the browser decodes the
+first frame at once and plays in place. Flutter intentionally uses the same poster-only timeline card on desktop,
+tablet and phone:
+
+* the message card is `RaftVideoPosterCard`: the poster at the video's own shape (width / height of the message,
+  else the shape read from the file; 16:9 until either is known), a play button in the middle, the length in the
+  bottom-right corner, never black. A video taller than 60 % of the screen is cropped to fill (cover), not squeezed.
+* no playback player or session exists for a card: a tap anywhere on it opens the media viewer
+  (`media_browser.dart`), which plays at once, with the card-to-viewer Hero flying the poster.
+* the viewer pages through message images and videos on every platform, without `RAFT_MEDIA_BROWSER_VIDEO`.
+
+Why: a column of inline players holds one decoder and one stream per card; that costs scroll frames and
+resources, and a muted 16:9 player with its own controls is a second, smaller viewer next to the real one. The decision
+is recorded in `capability-parity.json` (`ui:files.video-audio-preview`, ➖ intended difference).
+
+Poster without a server thumbnail (CLI uploads carry no `thumbnailUrl`, no width and no height; Web does not need
+one): the first frame is read from the video through the platform (Android `MediaMetadataRetriever` over a ranged
+data source, iOS / macOS `AVAssetImageGenerator`, Windows / Linux a one-off libmpv player), stored in the private
+attachment cache as the `poster-frame` rendition beside a `video-shape` entry (size, rotation, length), so it is
+counted in Settings > Storage, removed by Clear cache and sign-out, and a server thumbnail added later wins. See
+`docs/media-playback.md`, "Video cards".
+
+## Agent Activity / Workspace states and the state-parity guard (cindy/agent-activity-parity)
+
+Kevin found the Activity log rows and the Workspace "加载中…" line differing from Web, and asked why the style
+parity never caught it. Causes and fixes:
+
+- **Cases only covered the populated default.** Added 18 cases per platform (desktop + phone, 3 themes):
+  `components.members-pages.<platform>.agent.activity-{empty,loading,error,status,subagent,tools,text,slock,long-path}`
+  and `agent.workspace-{loading,empty,error,rows,truncated,dir-loading,dir-open,file-loading,file-error}`
+  (`tool/parity-ext/agent_activity_data.py`, `build-members-pages.py`).
+- **The old state cases were false passes.** `components.members-ext.agent.activity-{empty,loading,error}` compared a
+  Flutter "Loading..." against a React page that still showed rows: both React hosts (`MemberCases.tsx`,
+  `MembersPagesCases.tsx`) primed `trajectoryLogs` from the official host and the case route merged into them. The hosts now
+  clear the primed trajectory; the log comes only from the case route. A state case must show the state on the React side.
+- **Fixture routes can differ by query** (`{"$when": [{"query": {...}, "answer": ...}], "$default": ...}`, applied by
+  `tool/parity-ext/run` for React and `test/parity/cases/fixture_when.dart` for Flutter), so the workspace root and one folder
+  can answer differently (folder loading / folder error).
+- **What differed** (all fixed): no Subagent badge; `#channel` / `#channel:shortid` tokens in action/system rows are plain mono
+  text (Web: pink / cyan reference pills, channels only, DMs never resolve there); "Using update_task_status" (Web
+  `getToolLogLabel`, `features/tool_display.dart`, `send_message` rows hidden); Output rows labelled "Message"; compaction rows
+  showed the raw kind; long (> 200) rows had no chevron / expand; empty/loading/error showed text instead of the EmptyState;
+  the log did not start at the newest row; workspace loading line unpadded and left-aligned, no "No files yet", no folder
+  loading row, no truncation hint, no selected-row highlight, no file-pane loading, server error text instead of the fixed
+  "Failed to load files", hidden files filtered by name instead of `includeHidden`; the phone tab strip did not centre the
+  active tab on a route that opens on it; reference chips ignored the dark theme (no `dark` recipe state).
+- **Result** (all three themes, run 20261013): 123 cases (incl. the 5 existing `components.members-ext.agent.activity*` /
+  `workspace` ones), 101 with non-text >= 99.5%, mean non-text 99.60%, min 98.82%. The 22 below are long-text rows
+  (`activity-long-path`, `slock`, `subagent`, `tools`, `text`): `break-all` mono lines wrap 1-2 characters differently
+  (a zero-width break point per glyph makes Flutter advance whole pixels; `letterSpacing` only approximates Blink), 16.41px
+  reference chips grow a line by 0.41px that `RaftCssText` rounds away, and the Elegant panel header avatar/actions area
+  carries a shared ~0.3% floor.
+- **State inventory and guard.** `docs/state-parity.json` lists every screen/panel's loading / empty / error / partial states
+  (does Web have it, does Flutter, which parity case covers it, gap size). `test/state_parity_guard_test.dart` fails when a
+  listed state has neither a resolvable case id nor an intentional / NA justification, when a navigation-registry section is
+  not mapped, or when a `flutterEntry` file is gone. A new screen or panel must add its states there.
+
+## Agent profile Skills: collapsed by default (owner decision 2026-10-18)
+
+Web's embedded `AgentSkills` renders every card of every source path, so on an agent with many skills the
+profile's Actions and every section after them sat far below the first screens. Owner request: make the list a
+disclosure that starts collapsed.
+
+Flutter now renders the section as one collapsible header row (`RaftCollapsibleSectionHeader`, raft_ui):
+
+* Collapsed is the default and is the whole section: the `SKILLS` eyebrow with its count and a trailing right chevron
+  (the same quarter-turn chevron the sidebar sections use, none when animations are reduced). Tapping the row,
+  Enter/Space, or the screen reader's tap opens it; the row is one button that announces `Skills, N` with an
+  expanded/collapsed state.
+* Opening and closing are animated, not a cut: the body unfolds from under the header while it fades in (240 ms
+  open, 200 ms close, decelerating in and easing out again) and the chevron turns over the same beat. The body
+  leaves the tree only once it is fully folded, so a closed section is still exactly one header row for layout,
+  tests and screen readers. `MediaQuery.disableAnimations` reduces both to a cut.
+* The label shares the left edge of neighbouring section titles; the chevron stays at the far right of the
+  disclosure. On touch devices the header keeps a 48px minimum target. Any independent action remains outside
+  the disclosure button, with its own pointer, keyboard and screen-reader target.
+* Expanded adds the Global and Workspace sub-sections exactly as Web renders them (path groups, cards, `/command`
+  badges, descriptions clamped to two lines, empty lines) below the unchanged header. Collapsing hides them again;
+  the header never moves.
+* The disclosure is local view state: `/agents/:id/skills` is still fetched once when the profile opens (Web's
+  eager read), a re-open keeps the accepted list, and the loading / "Failed to load skills" + Retry states are
+  unchanged. With no skills at all the header keeps its `0` and stays a plain label, like Web.
+* Parity cases that compare the profile (`components.members-ext.agent.profile*`,
+  `components.members-pages.*.agent.profile-fast-mode`, …) therefore differ from Web by the collapsed body on
+  purpose: the React hosts always render the cards. The state cases for this section still apply — expand it in
+  the Flutter case before comparing the list.
+
+## Attachment cards: no floating Share / Download icons (owner decision 2026-10-21)
+
+Web v1.21.12 puts a Download icon over an image tile on hover or focus (`MessageImageGalleryAction`,
+`group-hover/img:flex`) and a real secondary Download button on the audio chip (`secondaryDownload`). Its file
+chips (`AttachmentChip`) carry only the decorative, `aria-hidden` Download / Eye glyph at the end of the meta line.
+There is no Share on any of them: Share on a card is a Flutter addition.
+
+Flutter shows no floating Share or Download icon on any message attachment card (Kevin, 2026-10-21; images first,
+PR #295):
+
+* Image tiles, file cards (documents, PDF, CSV / XLSX, markdown, text, diff, HTML, archives, code, anything else),
+  forwarded-message and thread-reply attachments, the public page and the pending-share preview all use the one
+  `RaftAttachmentCard`; it has no Share / Download callbacks, so hover, focus and touch never reveal an icon.
+  The decorative Eye / Download glyph in the meta line of a file card stays, as on Web.
+* The whole card is the action: tap, click, Enter and Space open the viewer. A file with no preview (archives,
+  code the server does not preview, diff / patch) saves on tap, as before.
+* Download stays in the viewer (document preview header, HTML preview, media viewer, failed-preview pane). Share
+  moves there too: the document / PDF, CSV / XLSX, markdown, text and HTML preview headers have a Share action
+  (`attachment-preview-share`, before Download) that runs the same share path the card used and shows only where
+  the platform has a share sheet (Android, iOS), as before. Web has no file Share, so this is a Flutter addition.
+  A file with no preview (archive, code, diff / patch) is saved by the tap and has no Share, as it had none beyond
+  the removed overlay.
+* Left as is: the audio card keeps its Download icon (Web has it too, and the inline player has no viewer to
+  open); the Files tab rows keep their "Jump to original message" and "Download file" actions, which are list-row
+  actions on Web as well and not an overlay on a card.
+
+Parity cases that compare a message attachment card with Web differ only where Web draws the image hover Download.
+The row is `ui:files.attachment-card-download` in `capability-parity.json` (➖, intended difference).
+
+## Owner decisions 2026-10-21 (Kevin): differences from Web v1.21.12 that stay
+
+Recorded after the v1.21.2 to v1.21.12 audit. Each one is also on its row in `capability-parity.json` or in the
+behaviour checklists (`docs/behavior-parity/`).
+
+* **Feedback source stays `web`.** Web sends `X-Raft-Client-Kind` on `POST /product-feedback` (default `web`). The app
+  sends no such header, so the server default (`web`) applies and feedback tickets stay in one source; they are not
+  split into ios / android. Row: `POST /product-feedback`.
+* **We keep the `reaction_viewer:updated` listener.** Web v1.21.12 dropped it together with the normalized-V2
+  reaction layer, but the server still emits it to the user room. Keeping it is a harmless superset (the own-reaction
+  state follows another device). BP-RT-008 is resolved as an intended difference.
+* **Unread agent messages start expanded.** Unchanged since 2026-10-17 (section "Unread agent messages start open"
+  above): an unread agent message starts open, a read one starts collapsed, per visit; the reader's toggle wins.
+  Confirmed again for the v1.21.12 message-row port. Checked against the code in
+  `agent_message_collapse.dart`.
+* **Browser-hosted login pages are not ported.** "Login with Raft" (consent / setup, `/oauth/clients/lookup`,
+  `/oauth/authorize/human`), device / CLI login approval (`/login/device`, `/auth/device/approve`) and native-app
+  login approval (`/login/app`, `/auth/app-login/requests/*`) are browser pages. The native app signs in through its
+  own native login flows (`auth_view.dart`, `oauth_broker.dart`), so these rows are intentional differences (➖) in
+  `capability-parity.json`; they were ❌ in some rows and ➖ in others before. The private-app share link page
+  (`/integration-invites/:token`) is a different surface and is still recorded as missing.
+* **No local-session handoff.** "Take over a local session" needs the Electron desktop shell's local-session bridge;
+  the app has none. Rows `ui:agents.handoff-local-session` and `ui:global-ui.desktop-handoff-local-session` are ➖.
+
+## Public server page vs Web v1.21.23 (cindy/w23-pub): open differences
+
+Not owner decisions yet; each is listed so a reviewer can accept or send it back. Where a bullet is also an item of "Open owner decisions" at the top, that item is the open question.
+
+* Signed-out visitors get no Appearance tab on the public page (Web v1.21.23 shows it to everyone). The app follows the device theme while signed out and the appearance setting lives in the app root; the tab waits for the appearance rework.
+* Signed-out Language & Region shows the display language of the device and offers no other (Web keeps a local display language). Translation mode, target, default view, timezone and time format are saved on the device like Web.
+* No cookie banner, visitor id or public visit counts (`POST /public-visits/:slug`): Web-only browser statistics (plan decision 8, open).
+* The Chinese community page opens from the Help menu only; Web's redirect of a direct `/s/community-cn` link and the `community_cn_qr_page_view` event are not ported. The page has a Back control (a browser page has the browser's).
+* A native window has no per-page title: Web sets the document title of the Chinese community page; the app title bar keeps the app name.
+* The globe after the server name shows in the phone server selector only; the desktop top bar that carries it in Web is the shell package.
+
+## RaftBench vs Web v1.21.23 (cindy/w23-bench): open differences
+
+RaftBench (owner / admin, `raftbench_overview_v0`) is ported in full: tasks and cost, conversation
+insights with their settings, progress, findings and evidence, the collapsed legacy phrase rules and
+the service-agent DM notice. Kevin decided on 2026-10-23 (`b9c81968`) to build it (the plan had suggested recording
+it as an intentional difference). What still differs, for a reviewer to accept or send back:
+
+* `/s/<slug>/raftbench` opens Settings > RaftBench (`settings/raftbench` inside the app); Web mounts the page as its own route under the Settings rail.
+* While the rollout flag has not resolved on a direct visit, the page is blank; Web shows "RaftBench is not enabled for this server" for that moment. The Settings row itself follows the remembered flag value, so a normal visit never sees either.
+* "Analyze messages since (UTC)" is a field that opens the platform date picker (Web: the browser's native date input). It shows `mm/dd/yyyy` (`yyyy/mm/dd` in Chinese) without the calendar glyph.
+* Channel checkboxes are raft-ui checkboxes (Web: native), the finding dot is a round status dot (Web: the pixel `Status`), and the `<details>` marker is a drawn triangle.
+* The brand colour of the progress bars is the primary-400 token until the raft-ui 0.7.0 token set lands; the text scale (title / headline / callout / footnote / caption) is Web's 0.7.0 scale written out in `raftbench_parts.dart`.
+* A failed dashboard read or save is the one generic message, like Web; the server's `raftbench_*` code is not shown. The hosted-agent model line polls every 60 seconds like Web.
+* Sparkles and Wallet glyphs are vendored by hand (`FLUTTER_ADDED` in `tool/gen-glyphs`) because a full `--import-sources` needs the raft-ui 0.7.0 pin.
+
+## Live sequence jumps do not trigger a gap fetch: intended difference from Web (owner decision 2026-10-23)
+
+Web treats a live `message:new` whose `seq` is past the open window's tail as a
+gap: it holds the message in a pending-gap list, calls `syncGap` and stitches
+the window when the gap fills (BP-READ-021, BP-RT-030). Owner decision
+2026-10-23 (Kevin, `9c047186`, after the v1.21.23 read-path port): **keep the difference**.
+Channel `seq` is sparse in the sync core, so a jump does not prove a missing
+message; the client heals real gaps through the heartbeat, `rooms:joined` and
+resume reads instead.
+
+## Attachments and large files vs Web v1.21.23 (cindy/w23-files): differences
+
+Not owner decisions yet; each is listed so a reviewer can accept or send it back. Where a bullet is also an item of "Open owner decisions" at the top, that item is the open question.
+
+* Unfinished-uploads banner wording: Web says "This browser no longer has the original file ... let the original tab finish uploading"; the app says "This app ... the original window". The behaviour is the same (list the viewer's active sessions of the channel, hide rows a pending chip owns, Cancel upload).
+* Unfinished direct uploads are not persisted across an app restart: like Web's draft cache they live with the running session, so after a restart the banner is the way to cancel them.
+* The presigned PUT does not follow redirects (browser XHR does); storage hosts answer the PUT directly.
+
+### WP-FILES 2/3: pending attachments, card summaries, Outline
+
+* Pending chips: a finger long-presses before it drags (Web's PointerSensor also starts on touch pointers, but a swipe on a phone then scrolls the page; the app keeps swipes free). Mouse and pen drag past a 5 px slop like Web.
+* Card summaries fetch `GET /attachments/:id/preview` for document and diff cards once the message exists, like Web; the answer is cached for the session and shared by concurrent cards. The preview modal still keeps its own on-disk cache, so opening a card does not reuse the summary response.
+* Markdown Outline: shown from 1280 px wide beside the app's existing document layout (the paper keeps the app's inset; Web's grid also caps the paper at 48rem). The column is level with the first block and keeps 24 px under the top while scrolling (Web's `sticky top-20`). A jump finds the heading paragraph by its text (the n-th for a repeated title), so a heading whose rendered text differs from its source (markup characters inside words) may not be found.
+
+### WP-FILES 3/3: attachment comments
+
+* Anchors are captured by a tap or a drag over the numbered lines (text) or rows (CSV/XLSX) while the comment panel is open; Web captures a text selection on desktop (and a tap only on touch screens). The pending rows are tinted (`fill-muted`); Web shows only the native selection. The quote is the text of the rows (cells tab-separated), capped at 400 characters.
+* HTML-region anchors are not captured and a stored one does not jump: the preview WebView has no JavaScript channel by design (nothing in an uploaded document reaches the app) and Web offers region capture on fine pointers only. Markdown-section anchors are not captured either.
+* The video "Add timestamp" button floats above the control bar (Web's sits over the `<video>` controls); a paused video in comment mode captures its time on pause and on a paused scrub like Web, and a jump seeks it paused without capturing the seek back.
+* The `re:` chip and the comment panel exist only while `attachment_comments_v0` is on; the flag is read once per identity and remembered, so the first frame after a cold start follows the last answer. The chip's quote rule uses `line-muted` until the `line-seam` token lands with the theme work.
+* A same-surface jump from the chip is the ordinary message jump (Web uses a transient focus without a URL change).
+
+## Navigation, search and platform vs Web v1.21.23 (cindy/w23-nav): open differences
+
+Not owner decisions yet; each is listed so a reviewer can accept or send it back. Where a bullet is also an item of "Open owner decisions" at the top, that item is the open question.
+
+* **Rail memory is wide-layout only.** Web restores the last location of Chat, Tasks, Members, Computers and Settings on every rail press; the app does the same on the desktop rail and keeps the phone tab bar opening tab roots (`docs/source-navigation-contract.md`, PUSH rule 7, owner decision 2026-10-11). A remembered conversation restores its thread beside it but not a `?msg=` highlight.
+* **"Find a conversation" shows on pointer desktops.** Web shows it in the Electron shell only; the desktop app is that shell's counterpart, so Linux, macOS and Windows windows in the wide layout get it, touch platforms and the phone Home list do not. The results float over the sidebar list as in Web; the visual-parity harness hides the box because its browser reference has none.
+* **Window title text is the OS window name, not a strip label.** `#channel | Workspace | Raft` reaches the task switcher and window list through `setTitle`; the title bar strip stays text-free (`docs/desktop-title-bar.md`). The macOS and Windows handlers were written on a Linux machine and are not compiled there. Pages outside a workspace (the Chinese community page, public pages) keep "Raft" until they send a title of their own.
+* **Cross-workspace message links.** A channel link into another workspace of a joint channel opens the local channel (or thread) through `GET /messages/context/:id`, like Web; DM links of another workspace and links with no readable local projection (404) open in the browser as before.
+* **Search continuation time format.** "Searched messages back to {time}" formats the time as medium date plus short time in the display language (`d MMM y, h:mm a` / `y年M月d日 HH:mm`); Web uses the browser's `Intl` medium/short style, which can differ in punctuation.
+* **Reduced motion is wider than Web.** Web applies `prefers-reduced-motion` to a handful of CSS animations, ImageZoom and three `motion-reduce` spots; the app honours the system setting at all of those and at every one-off transition and looping animation it owns.
+* **Update discovery needed no new code.** Android, macOS, Windows and the Linux AppImage already compare a build manifest and show the dot; iOS and distro Linux packages have no release channel here, and an in-app Android install is a product decision (see `ui:global-ui.app-update-discovery`).
+* **Raft https links do not open the app yet.** The app side is built and switched off (`RAFT_APP_LINKS`), waiting on the Raft domain's `assetlinks.json` and `apple-app-site-association` (owner decision 6, still open); `docs/deployment.md` lists what the domain must host.

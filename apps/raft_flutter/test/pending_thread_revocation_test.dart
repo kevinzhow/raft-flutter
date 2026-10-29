@@ -10,6 +10,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/platform/workspace_cache.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show paintedMessage;
@@ -85,7 +86,7 @@ void main() {
       late Future<void> mainTransfer, threadTransfer, reading;
       late UploadDraft mainAttachment, threadAttachment;
       await (() async {
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         await w.selectChannel(main);
         w.saveDraft('Keep unrelated main draft');
         mainTransfer = w.attachUpload('main.txt', Uint8List.fromList([1]));
@@ -135,8 +136,8 @@ void main() {
         threadAttachment = w.uploads(thread: true).single;
         await w.flushCache();
         expect(w.presentedThreadParent, isNull);
-        expect(w.threadParentLoading, true);
-        expect(w.ledger.messages('c1'), isEmpty);
+        expect(w.messageDomain.threadParentLoading, true);
+        expect(w.messageDomain.ledger.messages('c1'), isEmpty);
         expect(w.replies.single.id, 'private-reply');
         expect(w.readState.state('s1', 'alice', 'thread-1')?['maxReadSeq'], 7);
         expect(
@@ -177,7 +178,7 @@ void main() {
         await w.flushCache();
         expect(w.channels.any((c) => c.id == removed), false);
         expect(w.channel?.id, 'c0');
-        expect(w.messages.single.id, 'main');
+        expect(w.messageDomain.messages.single.id, 'main');
         expect(w.drafts['c0'], 'Keep unrelated main draft');
         expect(mainAttachment.cancel.cancelled, false);
         expect(w.readState.state('s1', 'alice', 'c0')?['maxReadSeq'], 2);
@@ -198,9 +199,9 @@ void main() {
         if (revokeParent) {
           expect(w.threadIdentity, isNull);
           expect(w.replies, isEmpty);
-          expect(w.ledger.messages('thread-1'), isEmpty);
-          expect(w.visibleIds.containsKey('thread-1'), false);
-          expect(w.drafts.containsKey('thread:parent'), false);
+          expect(w.messageDomain.ledger.messages('thread-1'), isEmpty);
+          expect(w.messageDomain.visibleIds.containsKey('thread-1'), false);
+          expect(w.drafts['thread:parent'], 'Private parent draft');
           expect(w.readState.state('s1', 'alice', 'thread-1'), isNull);
           expect(threadAttachment.cancel.cancelled, true);
           expect(
@@ -215,7 +216,11 @@ void main() {
               'draft',
               'thread:parent',
             ),
-            isNull,
+            allOf(
+              containsPair('text', 'Private parent draft'),
+              containsPair('files', isEmpty),
+              containsPair('shareTokens', isNull),
+            ),
           );
           final frontiers = await db.read(
             w.client.origin,
@@ -275,7 +280,11 @@ void main() {
               'draft',
               'thread:parent',
             ),
-            isNull,
+            allOf(
+              containsPair('text', 'Private parent draft'),
+              containsPair('files', isEmpty),
+              containsPair('shareTokens', isNull),
+            ),
           );
         } else {
           expect(w.presentedThreadParent?.id, 'parent');
@@ -289,14 +298,10 @@ void main() {
     });
   }
 
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final revokeParent in [true, false]) {
       testWidgets(
-        '[N24a] $family/$dark held-parent private rows retire only on parent revocation=$revokeParent',
+        '[N24a] ${dark ? 'dark' : 'light'} held-parent private rows retire only on parent revocation=$revokeParent',
         (tester) async {
           SharedPreferences.setMockInitialValues({});
           tester.view.physicalSize = const Size(390, 844);
@@ -313,11 +318,11 @@ void main() {
               });
           w.channels.addAll([main, other]);
           w.channel = main;
-          w.ledger.switchServer('s1');
-          w.ledger.ingest([
+          w.messageDomain.ledger.switchServer('s1');
+          w.messageDomain.ledger.ingest([
             row('main', 'c0', 2),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c0'] = {'main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c0'] = {'main'};
           w.setSection('activity');
           w.navigation.navigate(
             w.location.withQuery({
@@ -351,7 +356,7 @@ void main() {
           });
           await tester.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               home: Scaffold(body: RaftChatView(controller: w, thread: true)),
             ),
           );
@@ -369,11 +374,11 @@ void main() {
           await tester.runAsync(w.refreshChannels);
           for (var frame = 0; frame < 6; frame++) {
             await tester.pump(const Duration(milliseconds: 16));
-            expect(w.messages.single.id, 'main');
+            expect(w.messageDomain.messages.single.id, 'main');
             expect(find.text('Message parent'), findsNothing);
             if (revokeParent) {
               expect(w.threadIdentity, isNull);
-              expect(w.ledger.messages('thread-1'), isEmpty);
+              expect(w.messageDomain.ledger.messages('thread-1'), isEmpty);
               expect(paintedMessage(tester, 'private-reply'), isNull);
             } else {
               expect(w.threadIdentity?.parentMessageId, 'parent');
@@ -384,7 +389,11 @@ void main() {
             parent.complete({
               'messages': [row('parent', 'c1', 1)],
             });
-            for (var i = 0; i < 40 && w.threadParentLoading; i++) {
+            for (
+              var i = 0;
+              i < 40 && w.messageDomain.threadParentLoading;
+              i++
+            ) {
               await Future<void>.delayed(const Duration(milliseconds: 5));
             }
           });

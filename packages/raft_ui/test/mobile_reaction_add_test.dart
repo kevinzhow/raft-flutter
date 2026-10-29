@@ -1,28 +1,32 @@
+@Tags(['look-elegant'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark mobile add uses source flow and real bounded hit; permission/count/desktop gates',
+      '${dark ? 'dark' : 'light'} mobile add uses source flow and real bounded hit; permission/count/desktop gates',
       (t) async {
         var opens = 0;
         Widget host({
           double width = 390,
           bool permitted = true,
           int count = 2,
+          RaftDensity density = RaftDensity.touch,
         }) => MaterialApp(
-          theme: raftTheme(family, dark: dark),
+          theme: raftTheme(
+            pack: packForThemeId(elegantThemePackId),
+            dark: dark,
+          ),
           home: MediaQuery(
             data: MediaQueryData(size: Size(width, 720)),
             child: Scaffold(
               body: RaftDensityScope(
-                density: RaftDensity.touch,
+                density: density,
                 child: SizedBox(
                   width: width,
                   child: RaftMessageTile(
@@ -62,7 +66,14 @@ void main() {
         expect(add, findsNothing);
         await t.pumpWidget(host(count: 0));
         expect(add, findsNothing);
+        // Touch decides, not the width: an unfolded foldable (900 dp) has no
+        // hover bar either, so the inline add stays; a pointer window has the
+        // bar and no inline add, however narrow.
         await t.pumpWidget(host(width: 900));
+        expect(add, findsOneWidget);
+        await t.pumpWidget(host(density: RaftDensity.desktop));
+        expect(add, findsNothing);
+        await t.pumpWidget(host(width: 900, density: RaftDensity.desktop));
         expect(add, findsNothing);
         expect(t.takeException(), isNull);
       },

@@ -65,7 +65,7 @@ function ParityExtThView({ props }: { props: ParityExtThProps }) {
   const theme = parityExtThTheme();
   const brutal = theme === "brutal-light";
   // AppShell root sets the header height the PanelHeader recipe reads.
-  const shellVars = { ["--shell-header-height" as string]: brutal ? "62px" : "56px" } as ParityExtThCSSProperties;
+  const shellVars = { ["--shell-header-height" as string]: "56px" } as ParityExtThCSSProperties;
   const mobile = props.platform === "mobile";
   const viewportHeight = window.innerHeight;
   // Desktop main column: viewport - LeftRail (brutal 64 / elegant 56) - 240 sidebar.

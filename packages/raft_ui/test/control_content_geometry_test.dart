@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
+
+import 'control_paint.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family dark=$dark touch navigation centers content in painted face',
+      'dark=$dark floating navigation centers content in painted face',
       (tester) async {
         var selected = '';
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            // This44px face/18px glyph contract belongs to the capsule.
+            // Default docked geometry is covered by mobile_nav_contract_test.
+            theme: raftTheme(
+              pack: packForThemeId(elegantThemePackId),
+              dark: dark,
+            ),
             home: Scaffold(
               body: RaftDensityScope(
                 density: RaftDensity.touch,
@@ -61,10 +65,7 @@ void main() {
         expect(controls, findsNWidgets(4));
         for (var index = 0; index < 4; index++) {
           final control = controls.at(index);
-          final face = find.descendant(
-            of: control,
-            matching: find.byType(AnimatedContainer),
-          );
+          final face = controlFace(control);
           final glyph = find.descendant(
             of: control,
             matching: find.byType(RaftIcon),
@@ -72,44 +73,26 @@ void main() {
           final faceRect = tester.getRect(face);
           expect(tester.getCenter(glyph).dx, closeTo(faceRect.center.dx, .001));
           expect(tester.getSize(glyph), const Size(18, 18));
-          if (family == RaftFamily.brutal) {
-            final label = find.descendant(
-              of: control,
-              matching: find.byType(Text),
-            );
-            expect(
-              tester.getCenter(label).dx,
-              closeTo(faceRect.center.dx, .001),
-            );
-            final content = tester
-                .getRect(glyph)
-                .expandToInclude(tester.getRect(label));
-            expect(content.center.dy, closeTo(faceRect.center.dy, .001));
-            expect(faceRect.height, 51);
-          } else {
-            expect(faceRect.size, const Size(44, 44));
-            expect(tester.getSize(control), const Size(48, 48));
-            expect(
-              tester.getCenter(glyph).dy,
-              closeTo(faceRect.center.dy, .001),
-            );
-          }
+          expect(faceRect.size, const Size(44, 44));
+          expect(tester.getSize(control), const Size(48, 48));
+          expect(tester.getCenter(glyph).dy, closeTo(faceRect.center.dy, .001));
         }
         await tester.tap(controls.at(1));
         expect(selected, 'tasks');
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       },
+      skip: raftLookSkip(raftLookElegant),
     );
     testWidgets(
-      '$family dark=$dark control centers intrinsic text row without changing padding',
+      'dark=$dark control centers intrinsic text row without changing padding',
       (tester) async {
         const contentKey = ValueKey('control-row');
         const naturalKey = ValueKey('natural-control');
         const labelKey = ValueKey('natural-label');
         await tester.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: RaftDensityScope(
                 density: RaftDensity.desktop,
@@ -144,26 +127,26 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        final face = find.descendant(
-          of: find.byType(RaftControl).first,
-          matching: find.byType(AnimatedContainer),
-        );
+        final face = controlFace(find.byType(RaftControl).first);
         expect(
           tester.getCenter(find.byKey(contentKey)).dx,
           closeTo(tester.getCenter(face).dx, .001),
         );
-        final naturalFace = find.descendant(
-          of: find.byKey(naturalKey),
-          matching: find.byType(AnimatedContainer),
-        );
+        final naturalFace = controlFace(find.byKey(naturalKey));
         final insets =
             tester.getSize(naturalFace).width -
             tester.getSize(find.byKey(labelKey)).width;
-        final recipe = RaftControlRecipe(
-          raftTheme(family, dark: dark).extension<RaftTokens>()!,
-          visualHeight: 32,
+        expect(
+          insets,
+          closeTo(
+            24 +
+                controlDecoration(
+                  tester,
+                  find.byKey(naturalKey),
+                ).border!.dimensions.horizontal,
+            .001,
+          ),
         );
-        expect(insets, closeTo(24 + recipe.side().width * 2, .001));
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       },

@@ -1,19 +1,19 @@
+@Tags(['slow'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '1000 MCP cards stay lazy and retain expanded tools $family/$dark',
+      '1000 MCP cards stay lazy and retain expanded tools ${dark ? 'dark' : 'light'}',
       (t) async {
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             home: Scaffold(
               body: RaftMcpServersSection(
                 scrollable: true,
@@ -66,63 +66,66 @@ void main() {
       },
     );
     for (final layout in RaftConnectedAppsLayout.values) {
-      testWidgets('1000 app cards stay lazy $family/$dark/$layout', (t) async {
-        t.view.physicalSize = const Size(1200, 800);
-        t.view.devicePixelRatio = 1;
-        addTearDown(t.view.reset);
-        final search = TextEditingController();
-        addTearDown(search.dispose);
-        var opened = '';
-        await t.pumpWidget(
-          MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: Scaffold(
-              body: RaftConnectedAppsSection(
-                scrollable: true,
-                description: 'Fixture applications',
-                tab: RaftConnectedAppsTab.myApps,
-                counts: (marketplace: 0, installed: 0, myApps: 1000),
-                onTab: (_) {},
-                searchController: search,
-                category: 'all',
-                categories: const [('all', 'All categories')],
-                onCategory: (_) {},
-                layout: layout,
-                onLayout: (_) {},
-                rows: [
-                  for (var i = 0; i < 1000; i++)
-                    RaftConnectedAppRow(
-                      id: '$i',
-                      name: 'App $i',
-                      initials: 'AP',
-                      meta: 'Fixture',
-                      onOpenName: () => opened = '$i',
-                    ),
-                ],
+      testWidgets(
+        '1000 app cards stay lazy ${dark ? 'dark' : 'light'}/$layout',
+        (t) async {
+          t.view.physicalSize = const Size(1200, 800);
+          t.view.devicePixelRatio = 1;
+          addTearDown(t.view.reset);
+          final search = TextEditingController();
+          addTearDown(search.dispose);
+          var opened = '';
+          await t.pumpWidget(
+            MaterialApp(
+              theme: raftTheme(dark: dark),
+              home: Scaffold(
+                body: RaftConnectedAppsSection(
+                  scrollable: true,
+                  description: 'Fixture applications',
+                  tab: RaftConnectedAppsTab.myApps,
+                  counts: (marketplace: 0, installed: 0, myApps: 1000),
+                  onTab: (_) {},
+                  searchController: search,
+                  category: 'all',
+                  categories: const [('all', 'All categories')],
+                  onCategory: (_) {},
+                  layout: layout,
+                  onLayout: (_) {},
+                  rows: [
+                    for (var i = 0; i < 1000; i++)
+                      RaftConnectedAppRow(
+                        id: '$i',
+                        name: 'App $i',
+                        initials: 'AP',
+                        meta: 'Fixture',
+                        onOpenName: () => opened = '$i',
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-        await t.pumpAndSettle();
-        expect(
-          find.textContaining(RegExp(r'^App \d+$')).evaluate().length,
-          lessThan(30),
-        );
-        await t.scrollUntilVisible(
-          find.text('App 999'),
-          4000,
-          scrollable: find
-              .descendant(
-                of: find.byType(CustomScrollView),
-                matching: find.byType(Scrollable),
-              )
-              .first,
-          maxScrolls: 100,
-        );
-        await t.tap(find.text('App 999'));
-        expect(opened, '999');
-        expect(t.takeException(), isNull);
-      });
+          );
+          await t.pumpAndSettle();
+          expect(
+            find.textContaining(RegExp(r'^App \d+$')).evaluate().length,
+            lessThan(30),
+          );
+          await t.scrollUntilVisible(
+            find.text('App 999'),
+            4000,
+            scrollable: find
+                .descendant(
+                  of: find.byType(CustomScrollView),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+            maxScrolls: 100,
+          );
+          await t.tap(find.text('App 999'));
+          expect(opened, '999');
+          expect(t.takeException(), isNull);
+        },
+      );
     }
   }
 }

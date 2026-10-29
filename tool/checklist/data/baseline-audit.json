@@ -154,10 +154,10 @@
     },
     {
       "id": "N22",
-      "title_zh": "宽度达到 768 才显示桌面侧栏；旧版动态需 1024 才能左右分栏，新版 768；工作区网格低于 1024 不启用。",
+      "title_zh": "宽度达到 768 才显示桌面侧栏；旧版动态需 1024 才能左右分栏，新版 768。",
       "web_source": "ThreadsInbox:572–574 [S29]、MainLayout:1691–1715 [S26]",
       "status": "verified",
-      "evidence": "apps/raft_flutter/test/desktop_activity_flag_test.dart:35（1024/768/767）、test/workspace_mode_test.dart:60（1023/1024）、test/desktop_workspace_routes_test.dart:182–203（768 与 767 的桌面/手机头部）。"
+      "evidence": "apps/raft_flutter/test/desktop_activity_flag_test.dart:35（1024/768/767）、test/desktop_workspace_routes_test.dart:182–203（768 与 767 的桌面/手机头部）。桌面并排网格已随 Web v1.21.x 删除。"
     },
     {
       "id": "N23",

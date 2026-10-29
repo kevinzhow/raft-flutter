@@ -38,7 +38,7 @@ void main() {
     String? copied;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
+        theme: raftTheme(),
         home: Scaffold(
           body: RaftMessageBody(
             content: '```ts\nconst n = 3;\n```',
@@ -48,7 +48,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Copy code'));
+    await tester.tap(find.byTooltip('Copy Code'));
     await tester.pumpAndSettle();
     expect(copied, 'const n = 3;');
     expect(find.byTooltip('Copied'), findsOneWidget);
@@ -60,7 +60,7 @@ void main() {
     Uint8List? leased, copied;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
+        theme: raftTheme(),
         home: Scaffold(
           body: RaftMermaidBlock(
             source: 'flowchart LR\n A[Draft] --> B[Ship]',
@@ -74,7 +74,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.runAsync(() async {
-      await tester.tap(find.byTooltip('Download Mermaid diagram').first);
+      await tester.tap(find.byTooltip('Download Mermaid Diagram').first);
       await tester.pumpAndSettle();
       expect(
         tester
@@ -108,7 +108,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant, dark: true),
+        theme: raftTheme(dark: true),
         home: const Scaffold(
           body: SingleChildScrollView(
             child: RaftMermaidBlock(
@@ -123,12 +123,12 @@ void main() {
       tester.getSize(find.byKey(const ValueKey('mermaid-toolbar'))).width,
       lessThan(360),
     );
-    expect(find.byTooltip('Expand diagram'), findsOneWidget);
+    expect(find.byTooltip('Expand Diagram'), findsOneWidget);
     expect(
-      tester.getSize(find.byTooltip('Expand diagram')).width,
+      tester.getSize(find.byTooltip('Expand Diagram')).width,
       greaterThanOrEqualTo(48),
     );
-    await tester.tap(find.byTooltip('Show source'));
+    await tester.tap(find.byTooltip('Show Source'));
     await tester.pumpAndSettle();
     expect(find.text('sequenceDiagram\n Alice->>Bob: Review'), findsOneWidget);
     expect(tester.takeException(), isNull);

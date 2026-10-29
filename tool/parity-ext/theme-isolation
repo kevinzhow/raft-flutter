@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""Runtime theme-switch isolation check (docs/parity.md "Theme isolation").
+
+  tool/parity-ext/theme-isolation [--out DIR] [--cases ID[,ID...]] [--looks raft-light,...] [--fast]
+
+For each case and every ordered pair of looks (raft / elegant / brutal x light / dark) pumps the case in look A, switches the
+app theme to look B at runtime like the app root does, and compares the raster byte for byte with a fresh launch in look B
+(apps/raft_flutter/test/parity/parity_switch_test.dart). Every difference is a leak. Writes <out>/leaks.jsonl (one object per
+leak: case, from, to, differing pixels, how many still show the look switched away from, bounding box, image paths) and
+<out>/theme-isolation.md (ranked). Flutter only: no Web render is involved. Product code is never touched.
+"""
+import argparse
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import tempfile
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'tool/parity-ext'))
+sys.path.insert(0, str(ROOT / 'tool'))
+import builders  # noqa: E402
+import parity_case_map  # noqa: E402
+
+# Representative L1 / L2 surfaces (one per family of widgets that keep State): frame, settings, members, lists, computers,
+# activity, phone tab bar and the phone settings page.
+DEFAULT_CASES = [
+    'components.frame.desktop.channel.brutal',
+    'components.frame.phone.home.brutal',
+    'components.frame.tablet.home.brutal',
+    'components.ext-settings.appearance.page.brutal',
+    'components.ext-settings.account.page.brutal',
+    'components.members-pages.desktop.window.agent.brutal',
+    'components.list-pages.tasks.desktop-board.brutal',
+    'components.computers.list.rows.brutal',
+    'components.screens-ext.activity.desktop.list.brutal',
+    'components.navigation.tabbar.states',
+    'components.settings.account.page',
+]
+FAST_CASES = DEFAULT_CASES[:3] + DEFAULT_CASES[3:4]
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('--out', default=os.environ.get('PARITY_SWITCH_OUT', str(ROOT / 'build/theme-isolation')))
+    p.add_argument('--cases', help='comma list of case ids (default: the representative set)')
+    p.add_argument('--looks', default='raft-light,raft-dark,elegant-light,elegant-dark,brutal-light,brutal-dark')
+    p.add_argument('--fast', action='store_true', help='4 surfaces only')
+    p.add_argument('--shared', default=(os.environ['PARITY_RAFT_SOURCE'] + '/packages/visual-testing/shared')
+                   if os.environ.get('PARITY_RAFT_SOURCE') else None, help='official shared fixtures (default: $PARITY_RAFT_SOURCE/packages/visual-testing/shared)')
+    a = p.parse_args()
+    if not a.shared:
+        sys.exit('set PARITY_RAFT_SOURCE (the pinned raft-source checkout) or --shared')
+    out = pathlib.Path(a.out).resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    for stale in ('leaks.jsonl', 'done.jsonl'):
+        (out / stale).unlink(missing_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        ext = json.loads(builders.build_manifest(pathlib.Path(tmp)).read_text())['cases']
+        official = json.loads((pathlib.Path(a.shared) / 'sharedCases.json').read_text())['cases']
+        manifest = out / 'cases.json'
+        manifest.write_text(json.dumps({'cases': official + ext}))
+    parity_case_map.write()
+    cases = a.cases or ','.join(FAST_CASES if a.fast else DEFAULT_CASES)
+    env = {**os.environ, 'TZ': 'Asia/Shanghai', 'PARITY_SHARED_DIR': a.shared, 'PARITY_SWITCH_OUT': str(out),
+           'PARITY_MANIFEST': str(manifest), 'PARITY_EXT_FIXTURES': str(ROOT / 'tool/parity-ext/fixtures'),
+           'PARITY_SWITCH_CASES': cases, 'PARITY_SWITCH_LOOKS': a.looks}
+    env.pop('PARITY_THEME_OVERRIDE', None)
+    log = out / 'flutter.log'
+    with open(log, 'w') as sink:
+        r = subprocess.run(['nice', '-n', '15', str(ROOT / 'tool/flutter'), 'test', 'test/parity/parity_switch_test.dart',
+                            '--no-pub', '--reporter', 'expanded'], cwd=ROOT / 'apps/raft_flutter', env=env,
+                           stdout=sink, stderr=subprocess.STDOUT)
+    leaks = [json.loads(line) for line in (out / 'leaks.jsonl').read_text().splitlines()] if (out / 'leaks.jsonl').is_file() else []
+    done = [json.loads(line) for line in (out / 'done.jsonl').read_text().splitlines()] if (out / 'done.jsonl').is_file() else []
+    leaks.sort(key=lambda l: -l.get('differentPixels', 0) / max(1, l.get('totalPixels', 1)))
+    lines = ['# Theme isolation: runtime switch vs fresh launch', '',
+             f'Cases run: {len(done)} of {len(cases.split(","))}; ordered pairs per case: '
+             f'{len(a.looks.split(",")) * (len(a.looks.split(",")) - 1)}; leaks: {len(leaks)} (flutter exit {r.returncode}, log {log}).', '',
+             '| case | from -> to | different pixels | still show the old look | bbox (x0,y0,x1,y1) |', '| --- | --- | --- | --- | --- |']
+    for l in leaks:
+        share = 100 * l.get('differentPixels', 0) / max(1, l.get('totalPixels', 1))
+        lines.append(f"| `{l['case']}` | {l['from']} -> {l['to']} | {l.get('differentPixels', 'size')} ({share:.2f}%) | "
+                     f"{l.get('staleFromPixels', '')} | {l.get('bbox', '')} |")
+    (out / 'theme-isolation.md').write_text('\n'.join(lines) + '\n')
+    print(f'{len(leaks)} leak(s) in {len(done)} case(s); report {out / "theme-isolation.md"}')
+
+
+if __name__ == '__main__':
+    main()

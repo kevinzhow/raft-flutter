@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/features/mobile_workspace_pages.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/native_sharing.dart';
@@ -8,8 +9,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../integration_test/perf_lab/fixtures.dart';
 import '../integration_test/perf_lab/navigation_activity.dart';
 import '../integration_test/perf_lab/navigation_host.dart';
+import 'flutter_test_config.dart' show leakDebt;
 
 void main() {
+  // Leak debt (other): see docs/development.md, Leak tracking.
+  leakDebt(const ['_NativePicture']);
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets(
@@ -38,6 +42,9 @@ void main() {
       api.routes['GET /channels/inbox'] = (_) => {'items': []};
       api.routes['GET /channels/public'] = (_) => [];
       api.routes['GET /announcements/active'] = (_) => {'announcements': []};
+      api.routes['GET /servers/unread-summary'] = (_) => [];
+      // An owner reads the pending joint invites (Web usePendingJointInvites).
+      api.routes['GET /channels/joint-invites'] = (_) => {'invites': []};
       api.routes['GET /product-feedback/tickets'] = (_) => {
         'unread_total': 0,
         'tickets': [],
@@ -49,6 +56,7 @@ void main() {
       final content = LabNavigationContent();
       await tester.pumpWidget(
         app.RaftApp(
+          services: const AppServices.updatesDisabledForTestOrPreview(),
           sessionStore: client.sessionStore,
           createClient: (_, _, _) => client,
           initialLocation: Uri(path: '/s/lab'),
@@ -66,8 +74,30 @@ void main() {
       expect(content.workspace?.server?.id, 's1');
       expect(find.byType(MobileWorkspacePages), findsOneWidget);
       expect(api.misses, isEmpty);
+      final accountUnread = content.dockUnread.counts;
+      expect(
+        accountUnread.notificationAccount,
+        '${client.origin}\nalice',
+        reason: 'The lab keeps the real account observer during the replay.',
+      );
+      expect(ChangeNotifier.debugAssertNotDisposed(accountUnread), isTrue);
+      expect(
+        ChangeNotifier.debugAssertNotDisposed(accountUnread.successfulRefresh),
+        isTrue,
+      );
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
+      expect(
+        () => ChangeNotifier.debugAssertNotDisposed(accountUnread),
+        throwsFlutterError,
+        reason: 'Unmounting the root retires the lab-owned account observer.',
+      );
+      expect(
+        () => ChangeNotifier.debugAssertNotDisposed(
+          accountUnread.successfulRefresh,
+        ),
+        throwsFlutterError,
+      );
     },
   );
 
@@ -130,10 +160,16 @@ void main() {
         final events = result['events']! as List;
         expect(events, hasLength(9));
         expect(
-          workspace.ledger.message('one', 'nav-live-$n')?['taskStatus'],
+          workspace.messageDomain.ledger.message(
+            'one',
+            'nav-live-$n',
+          )?['taskStatus'],
           'in_progress',
         );
-        expect(workspace.ledger.contains('two', 'nav-background-$n'), isTrue);
+        expect(
+          workspace.messageDomain.ledger.contains('two', 'nav-background-$n'),
+          isTrue,
+        );
         expect(workspace.entityDirectory.agent('nav-agent-$n'), isNull);
       }
       expect(api.hits['GET /agents'], greaterThan(reads));

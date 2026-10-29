@@ -145,7 +145,8 @@ void main() {
   }
 
   Widget host(Widget child) => MaterialApp(
-    theme: raftTheme(RaftFamily.elegant),
+    // Hover cards belong to a pointer: the platform decides, not the width.
+    theme: raftTheme().copyWith(platform: TargetPlatform.linux),
     home: Scaffold(
       body: Align(alignment: Alignment.topLeft, child: child),
     ),
@@ -194,7 +195,7 @@ void main() {
       'Reasoning',
       'Default',
       'Ships the release',
-      'Recent activity'.toUpperCase(),
+      'Recent activity',
       'Planning the fix',
       'Running command',
     ]) {
@@ -334,7 +335,7 @@ void main() {
     expect(find.byType(RaftRuntimeUsageChip), findsOneWidget);
     final mouse = await _hover(t, find.text('Claude Code'));
     expect(find.text('Claude usage'), findsOneWidget);
-    expect(find.text('VERSION 2.1.0'), findsOneWidget);
+    expect(find.text('Version 2.1.0'), findsOneWidget);
     expect(find.text('Max'), findsOneWidget);
     expect(find.text('ali****@example.com'), findsOneWidget);
     expect(find.text('Account-wide · updated 5 minutes ago'), findsOneWidget);

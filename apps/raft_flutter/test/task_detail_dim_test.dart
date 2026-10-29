@@ -7,9 +7,11 @@ import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'task_surface_test.dart' show modernTask, taskRoutes, flush;
 import 'workspace_source_location_contract_test.dart' show pageFixture;
+import 'support/app_services_fixture.dart';
 
 /// Regression: the task modal painted its box shadow in a *foreground*
 /// decoration, i.e. over the whole surface. The summed alpha (about 13% black
@@ -17,13 +19,9 @@ import 'workspace_source_location_contract_test.dart' show pageFixture;
 /// the modal looked dimmed under its own backdrop. The surface must show the
 /// theme panel colour exactly, with the scrim only behind it.
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'task modal surface paints the theme panel colour, no scrim above it $family/$dark',
+      'task modal surface paints the theme panel colour, no scrim above it ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(1280, 844);
         t.view.devicePixelRatio = 1;
@@ -46,15 +44,16 @@ void main() {
             key: root,
             child: MaterialApp(
               debugShowCheckedModeBanner: false,
-              theme: raftTheme(family, dark: dark),
-              home: WorkspaceView(
-                controller: w,
-                appearance: RaftAppearance(
-                  mode: dark ? ThemeMode.dark : ThemeMode.light,
-                  light: family,
+              theme: raftTheme(dark: dark),
+              home: withAppServices(
+                WorkspaceView(
+                  controller: w,
+                  appearance: RaftAppearance(
+                    mode: dark ? ThemeMode.dark : ThemeMode.light,
+                  ),
+                  onAppearance: (_) async {},
+                  onLogout: () async {},
                 ),
-                onAppearance: (_) async {},
-                onLogout: () async {},
               ),
             ),
           ),
@@ -67,6 +66,7 @@ void main() {
         final boundary =
             root.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = (await t.runAsync(boundary.toImage))!;
+        addTearDown(image.dispose);
         final bytes = (await t.runAsync(
           () => image.toByteData(format: ui.ImageByteFormat.rawRgba),
         ))!;

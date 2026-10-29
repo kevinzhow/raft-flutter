@@ -7,6 +7,8 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/page_alignment_fixtures.dart';
 import 'package:raft_flutter/features/resource_cards.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/page_layout.dart';
+import 'package:raft_ui/test_themes.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -91,6 +93,7 @@ void main() {
     String section,
     Size size, {
     bool dark = false,
+    String packId = raftThemePackId,
     Future<void> Function(String, String?)? onMessage,
   }) async {
     t.view.physicalSize = size;
@@ -99,7 +102,7 @@ void main() {
     addTearDown(t.view.resetDevicePixelRatio);
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(RaftFamily.elegant, dark: dark),
+        theme: raftTheme(pack: packForThemeId(packId), dark: dark),
         home: Scaffold(
           body: ResourceView(
             controller: w,
@@ -110,6 +113,47 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
+  }
+
+  // The page frame, header and populated list must share the measured surface.
+  // Checking only the outer decoration missed the list's own Material fill.
+  for (final (pack, dark, color) in raftThemeMatrix([
+    (raftThemePackId, false, 0xffffffff),
+    (raftThemePackId, true, 0xff1b1b19),
+    (elegantThemePackId, false, 0xfff8f8f7),
+    (elegantThemePackId, true, 0xff0d0d0b),
+    (brutalThemePackId, false, 0xffffffff),
+    (brutalThemePackId, true, 0xff0d0d0b),
+  ], look: (v) => raftLookOf(v.$1))) {
+    for (final section in ['activity', 'saved']) {
+      for (final width in [390.0, 1280.0]) {
+        testWidgets('$section surface $pack dark=$dark width=$width', (
+          t,
+        ) async {
+          await mount(t, section, Size(width, 844), dark: dark, packId: pack);
+          final list = find.descendant(
+            of: find.byType(ResourceView),
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Material &&
+                  w.child is Stack &&
+                  (w.child! as Stack).children.firstOrNull is Positioned &&
+                  ((w.child! as Stack).children.first as Positioned).bottom ==
+                      0,
+            ),
+          );
+          expect(list, findsOneWidget);
+          expect(t.widget<Material>(list).color, Color(color));
+          final header = find.descendant(
+            of: find.byType(ResourceView),
+            matching: find.byType(RaftPageHeader),
+          );
+          expect(t.widget<RaftPageHeader>(header).background, Color(color));
+          expect(t.takeException(), isNull);
+          await t.pumpWidget(const SizedBox());
+        });
+      }
+    }
   }
 
   testWidgets(

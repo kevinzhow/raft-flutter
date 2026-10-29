@@ -21,7 +21,7 @@ class _SelectionPreviewState extends State<_SelectionPreview> {
     children: [
       Text(result),
       RaftButton(
-        label: 'Toggle rendering',
+        label: 'Toggle Rendering',
         onPressed: () => setState(() => busy = !busy),
       ),
       const Spacer(),
@@ -37,7 +37,7 @@ class _SelectionPreviewState extends State<_SelectionPreview> {
         onCopyLinks: () => setState(() => result = 'Copied links'),
         onForward: () => setState(() => result = 'Forward'),
         onCopyMarkdown: () => setState(() => result = 'Copied MD'),
-        onPreview: () => setState(() => result = 'Generate image'),
+        onPreview: () => setState(() => result = 'Generate Image'),
       ),
     ],
   );

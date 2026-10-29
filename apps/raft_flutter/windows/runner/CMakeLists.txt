@@ -13,6 +13,8 @@ add_executable(${BINARY_NAME} WIN32
   "win32_window.cpp"
   "windows_notifications.cpp"
   "windows_notification_delivery.cpp"
+  "windows_tray.cpp"
+  "windows_exit.cpp"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
   "Runner.rc"
   "runner.exe.manifest"
@@ -35,10 +37,9 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 # Add dependency libraries and include directories. Add any application-specific
 # dependencies here.
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
-target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib")
+target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "gdi32.lib")
 target_link_libraries(${BINARY_NAME} PRIVATE "windowsapp.lib" "shell32.lib" "advapi32.lib" "propsys.lib")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
-include(windows_app_sdk.cmake)
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)

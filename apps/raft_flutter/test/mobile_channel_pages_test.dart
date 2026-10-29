@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -8,18 +11,16 @@ import 'package:raft_flutter/features/mobile_workspace_pages.dart';
 import 'package:raft_flutter/features/private_route_guard.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'workspace_channel_settings_identity_test.dart' show settingsFixture;
 import 'task_surface_test.dart' show flush;
+import 'support/app_services_fixture.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'Mobile channel pages share current settings content, preserve history and keyboard focus $family/$dark',
+      'Mobile channel pages share current settings content, preserve history and keyboard focus ${dark ? 'dark' : 'light'}',
       (t) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
@@ -47,13 +48,15 @@ void main() {
         };
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(family, dark: dark),
+            theme: raftTheme(dark: dark),
             navigatorObservers: [PrivateRouteGuard()],
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(light: family),
-              onAppearance: (_) async {},
-              onLogout: () async {},
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
             ),
           ),
         );
@@ -62,7 +65,7 @@ void main() {
         final base = w.location;
         final pages = mobilePageEntries(w.navigation).length;
         for (var cycle = 0; cycle < 3; cycle++) {
-          await t.tap(find.byTooltip('Channel details and settings'));
+          await t.tap(find.byTooltip('Channel Details and Settings'));
           await t.pump();
           final context = t.element(find.byType(ChannelSettings));
           expect(ModalRoute.of(context)?.animation?.value, lessThan(1));
@@ -74,12 +77,14 @@ void main() {
           expect(find.byType(RaftChannelSettingsSheet), findsNothing);
           expect(find.byType(RaftChannelInfoForm), findsOneWidget);
           expect(t.testTextInput.isVisible, isFalse);
-          // Web's Drawer header below md: 62px, px-4, 28px Back, inside the
-          // Brutal drawer's `border-l-2` (kept on the phone).
+          // Web's Drawer header below md: px-4 and the shared Button
+          // `icon-sm` Back (raft-ui 0.7.0 `iconMd`: `size-8`, 32px in the Raft
+          // look; 28px in the a57b9dab looks). Owner decision 2026-10-12: no
+          // left edge line on the phone.
           expect(find.byType(RaftMobilePageHeader), findsNothing);
           expect(
             t.getCenter(find.byKey(const ValueKey('channel-overflow-back'))).dx,
-            16 + 14 + (family == RaftFamily.brutal ? 2 : 0),
+            16 + 16,
           );
           expect(
             t.getSemantics(find.text('#test')).flagsCollection.isHeader,
@@ -126,7 +131,7 @@ void main() {
           expect(find.byType(ChannelSettings), findsNothing);
           expect(t.takeException(), isNull);
         }
-        await t.tap(find.byTooltip('Channel details and settings'));
+        await t.tap(find.byTooltip('Channel Details and Settings'));
         await flush(t);
         await t.pumpAndSettle();
         await t.enterText(
@@ -167,17 +172,21 @@ void main() {
         await t.binding.handlePopRoute();
         await t.pumpAndSettle();
         expect(find.byType(RaftUnsavedChangesPrompt), findsOneWidget);
-        await t.tap(find.text('Keep editing'));
+        await t.tap(
+          find.byKey(const ValueKey('channel-overflow-unsaved-keep')),
+        );
         await t.pumpAndSettle();
         expect(find.byType(RaftUnsavedChangesPrompt), findsNothing);
         expect(w.location.channelPage?.kind, RaftChannelPage.settings);
         await t.tap(find.byKey(const ValueKey('channel-overflow-back')));
         await t.pumpAndSettle();
         expect(find.byType(RaftUnsavedChangesPrompt), findsOneWidget);
-        await t.tap(find.text('Discard changes'));
+        await t.tap(
+          find.byKey(const ValueKey('channel-overflow-unsaved-discard')),
+        );
         await t.pumpAndSettle();
         expect(w.location.uri, base.uri);
-        await t.tap(find.byTooltip('Channel details and settings'));
+        await t.tap(find.byTooltip('Channel Details and Settings'));
         await flush(t);
         await t.pumpAndSettle();
         // A lost membership retires the settings route.

@@ -7,6 +7,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/agent_detail_view.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _agent = <String, dynamic>{
@@ -61,74 +62,75 @@ class _Workspace extends WorkspaceController {
 /// Retry) and Web's profile fallback swallows a failed `/agents/:id`; neither
 /// secondary read may put a page-level error above the profile.
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final (label, failSkills, failDetail) in [
       ('skills 500', true, false),
       ('detail 500', false, true),
       ('skills and detail 500', true, true),
     ]) {
-      testWidgets('$family/$dark agent profile with $label has no page error', (
-        tester,
-      ) async {
-        SharedPreferences.setMockInitialValues({});
-        tester.view.physicalSize = const Size(900, 1600);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.reset);
-        final client = _Client()..selectServer('s');
-        final w = _Workspace(
-          client,
-          failSkills: failSkills,
-          failDetail: failDetail,
-        )..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'});
-        addTearDown(() async {
-          w.dispose();
-          await client.stream.close();
-        });
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: Scaffold(
-              body: FleetDetail(
-                controller: w,
-                computers: false,
-                initial: const {'id': 'a'},
-                onClose: () {},
+      testWidgets(
+        '${dark ? 'dark' : 'light'} agent profile with $label has no page error',
+        (tester) async {
+          SharedPreferences.setMockInitialValues({});
+          tester.view.physicalSize = const Size(900, 1600);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          final client = _Client()..selectServer('s');
+          final w =
+              _Workspace(client, failSkills: failSkills, failDetail: failDetail)
+                ..server = RaftRecord({
+                  'id': 's',
+                  'name': 'Fixture',
+                  'role': 'owner',
+                });
+          addTearDown(() async {
+            w.dispose();
+            await client.stream.close();
+          });
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: raftTheme(dark: dark),
+              home: Scaffold(
+                body: FleetDetail(
+                  controller: w,
+                  computers: false,
+                  initial: const {'id': 'a'},
+                  onClose: () {},
+                ),
               ),
             ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(find.byType(AgentDetailPanel), findsOneWidget);
-        expect(find.byType(RaftPanelError), findsNothing);
-        expect(find.text('Profile could not be loaded.'), findsNothing);
-        expect(find.text('Alpha Agent'), findsWidgets);
-        if (failSkills) {
-          await tester.scrollUntilVisible(
-            find.text('Retry'),
-            300,
-            scrollable: find.byType(Scrollable).last,
           );
-          // The failure is shown once, inside the Skills section, with Retry.
-          expect(find.text('Internal server error'), findsOneWidget);
-          expect(
-            find.descendant(
-              of: find.byType(AgentSkillsSection),
-              matching: find.text('Internal server error'),
-            ),
-            findsOneWidget,
-          );
-          expect(find.text('Retry'), findsOneWidget);
-        } else {
-          expect(find.text('Internal server error'), findsNothing);
-        }
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox());
-        await tester.pump();
-      });
+          await tester.pumpAndSettle();
+          expect(find.byType(AgentDetailPanel), findsOneWidget);
+          expect(find.byType(RaftPanelErrorStrip), findsNothing);
+          expect(find.text('Profile could not be loaded.'), findsNothing);
+          expect(find.text('Alpha Agent'), findsWidgets);
+          if (failSkills) {
+            await tester.scrollUntilVisible(
+              find.text('Retry'),
+              300,
+              scrollable: find.byType(Scrollable).last,
+            );
+            // The failure is shown once, inside the Skills section, with Retry.
+            expect(find.text('Failed to load skills'), findsOneWidget);
+            expect(
+              find.descendant(
+                of: find.byType(AgentSkillsSection),
+                matching: find.text('Failed to load skills'),
+              ),
+              findsOneWidget,
+            );
+            expect(find.text('Retry'), findsOneWidget);
+            // A body-less 500 shows the Web fallback, never the exception text.
+            expect(find.text('Internal server error'), findsNothing);
+          } else {
+            expect(find.text('Failed to load skills'), findsNothing);
+          }
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump();
+        },
+      );
     }
   }
 }

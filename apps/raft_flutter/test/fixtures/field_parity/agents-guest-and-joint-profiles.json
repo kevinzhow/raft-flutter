@@ -1,0 +1,32 @@
+{
+  "guest GET /agents row (routes/agents.ts:1110 toGuestChannelAgentProfile)": {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "serverId": "99999999-9999-4999-8999-999999999999",
+    "name": "atlas",
+    "displayName": "Atlas",
+    "avatarUrl": "pixel:mug",
+    "description": null,
+    "status": "active",
+    "deletedAt": null,
+    "createdAt": "2026-09-01T10:00:00.000Z",
+    "activity": "online",
+    "activityDetail": "",
+    "profileProjection": "channel_summary"
+  },
+  "joint-channel GET /agents/:id (routes/agents.ts:1095 toJointAgentProfile)": {
+    "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "serverId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "serverName": "Partner Workspace",
+    "serverSlug": "partner",
+    "name": "remote-bot",
+    "displayName": null,
+    "avatarUrl": null,
+    "description": null,
+    "status": "active",
+    "external": false,
+    "deletedAt": null,
+    "createdAt": "2026-09-01T10:00:00.000Z",
+    "activity": "offline",
+    "activityDetail": ""
+  }
+}

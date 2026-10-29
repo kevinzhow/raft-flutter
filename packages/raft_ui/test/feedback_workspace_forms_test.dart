@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
-Widget _host(
-  Widget child, {
-  RaftFamily family = RaftFamily.elegant,
-  bool dark = false,
-}) => MaterialApp(
-  theme: raftTheme(family, dark: dark),
+Widget _host(Widget child, {bool dark = false}) => MaterialApp(
+  theme: raftTheme(dark: dark),
   home: Scaffold(body: SizedBox(width: 900, height: 700, child: child)),
 );
 
@@ -85,12 +82,8 @@ final _png = Uint8List.fromList(const [
 ]);
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
-    group('$family/$dark', () {
+  for (final dark in raftThemeMatrix([false, true])) {
+    group('${dark ? 'dark' : 'light'}', () {
       testWidgets('composer: Enter submits, Shift+Enter and IME composition '
           'do not; the counter and actions render', (t) async {
         final controller = TextEditingController();
@@ -110,7 +103,7 @@ void main() {
                   RaftComposerAction(
                     key: const ValueKey('send'),
                     glyph: RaftGlyph.send,
-                    tooltip: 'Send reply',
+                    tooltip: 'Send Reply',
                     onPressed: () => submitted++,
                   ),
                 ],
@@ -118,7 +111,6 @@ void main() {
                 onChanged: changes.add,
               ),
             ),
-            family: family,
             dark: dark,
           ),
         );
@@ -190,7 +182,6 @@ void main() {
                 actions: const [],
               ),
             ),
-            family: family,
             dark: dark,
           ),
         );
@@ -227,11 +218,10 @@ void main() {
               onKind: kinds.add,
               composer: const SizedBox(height: 40),
             ),
-            family: family,
             dark: dark,
           ),
         );
-        expect(find.text('New feedback'), findsOneWidget);
+        expect(find.text('New Feedback'), findsOneWidget);
         expect(find.text('Up to 3 images.'), findsOneWidget);
         await t.tap(find.byKey(const ValueKey('feedback-kind-bug')));
         await t.tap(find.byKey(const ValueKey('feedback-back')));
@@ -285,7 +275,6 @@ void main() {
                 ),
               ],
             ),
-            family: family,
             dark: dark,
           ),
         );
@@ -295,7 +284,7 @@ void main() {
         expect(find.text('footer'), findsOneWidget);
         expect(find.byKey(const ValueKey('c')), findsOneWidget);
         await pump(error: 'Couldn’t load feedback. Try again.');
-        await t.tap(find.text('Try again'));
+        await t.tap(find.text('Try Again'));
         expect(retried, 1);
         await pump(loading: true);
         await pump(loadingMore: true);

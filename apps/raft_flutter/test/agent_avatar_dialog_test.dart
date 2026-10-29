@@ -10,6 +10,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/agent_avatar_dialog.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
+import 'package:raft_ui/test_themes.dart';
 
 import 'parity/parity_harness.dart' show loadParityFonts;
 
@@ -72,13 +73,12 @@ void main() {
   Future<void> open(
     WidgetTester t, {
     Future<AgentAvatarUpload?> Function()? pick,
-    RaftFamily family = RaftFamily.brutal,
     bool dark = false,
     bool fleet = false,
   }) async {
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(family, dark: dark),
+        theme: raftTheme(dark: dark),
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -148,7 +148,7 @@ void main() {
       await t.tap(find.text('Cancel'));
       await t.pumpAndSettle();
       expect(find.text('Unsaved changes'), findsOneWidget);
-      await t.tap(find.text('Keep editing'));
+      await t.tap(find.text('Keep Editing'));
       await t.pumpAndSettle();
       expect(
         t
@@ -158,7 +158,7 @@ void main() {
       );
       await t.tap(find.text('Cancel'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Discard'));
+      await t.tap(find.text('Discard Changes'));
       await t.pumpAndSettle();
       expect(w.writes, isEmpty);
       expect(find.text('Open'), findsOneWidget);
@@ -286,15 +286,11 @@ void main() {
       expect(t.takeException(), isNull);
     },
   );
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'avatar close button supports keyboard without bypassing dirty guard $family/$dark',
+      'avatar close button supports keyboard without bypassing dirty guard ${dark ? 'dark' : 'light'}',
       (t) async {
-        await open(t, family: family, dark: dark);
+        await open(t, dark: dark);
         expect(find.text('Close'), findsNothing);
         final close = find.byType(RaftRecipeButton);
         expect(t.getSize(close), const Size(32, 32));
@@ -318,7 +314,7 @@ void main() {
         await t.pumpAndSettle();
         expect(find.byType(RaftAvatarDiscardConfirmation), findsOneWidget);
         expect(w.writes, isEmpty);
-        await t.tap(find.text('Keep editing'));
+        await t.tap(find.text('Keep Editing'));
         await t.pumpAndSettle();
         expect(
           t
@@ -330,9 +326,9 @@ void main() {
       },
     );
     testWidgets(
-      'preset controls have real 40px targets and keyboard activation $family/$dark',
+      'preset controls have real 40px targets and keyboard activation ${dark ? 'dark' : 'light'}',
       (t) async {
-        await open(t, family: family, dark: dark);
+        await open(t, dark: dark);
         final target = find.byKey(const ValueKey('avatar-choice-tree'));
         expect(t.getSize(target), const Size(40, 40));
         final focus = find.descendant(

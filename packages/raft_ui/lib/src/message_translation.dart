@@ -1,5 +1,8 @@
+import 'hover_region.dart';
+
 import 'package:flutter/material.dart';
 
+import 'raft_underline.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'indicators.dart';
@@ -137,14 +140,13 @@ class _RaftTranslationActionState extends State<_RaftTranslationAction> {
     final decoration = slot['text-decoration-line'];
     final underline =
         decoration is CssKeyword && decoration.value == 'underline';
-    final decorationColor = RaftColorRef.fromCss(
-      slot['text-decoration-color'],
-    )?.resolve(tokens, currentColor: style.color);
+    final decorationColor = RaftColorRef.fromCss(slot['text-decoration-color'])
+        ?.resolve(tokens, currentColor: style.color);
     final background = slot.backgroundColor?.resolve(
       tokens,
       currentColor: style.color,
     );
-    return MouseRegion(
+    return RaftHoverRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
       child: RaftControl(
@@ -165,12 +167,11 @@ class _RaftTranslationActionState extends State<_RaftTranslationAction> {
             borderRadius: slot.borderRadius,
           ),
           child: ExcludeSemantics(
-            child: Text(
+            child: RaftUnderlinedText(
               widget.label,
-              style: style.copyWith(
-                decoration: underline ? TextDecoration.underline : null,
-                decorationColor: decorationColor ?? style.color,
-              ),
+              style: style,
+              underline: underline,
+              underlineColor: decorationColor,
             ),
           ),
         ),
@@ -204,6 +205,7 @@ class _RaftPulseState extends State<RaftPulse>
         ..stop()
         ..value = 0;
     } else if (!pulse.isAnimating) {
+      // ignore: raft_lints/avoid_unreviewed_idle_work -- Loop driven by an AnimationController whose vsync is this State, so TickerMode (hidden routes, offstage tabs, folded panels) mutes it, it is disposed with the widget, and reduced motion stops it.
       pulse.repeat();
     }
   }
@@ -229,21 +231,20 @@ class _RaftPulseState extends State<RaftPulse>
 /// className="inline-block w-44 max-w-full align-middle"` on the body's
 /// first line box, so the row keeps one body line while it waits.
 class RaftMessageTranslationSkeleton extends StatelessWidget {
-  const RaftMessageTranslationSkeleton({super.key, this.fontSize = 14});
+  const RaftMessageTranslationSkeleton({super.key, this.fontSize});
 
   /// Message body font size (the line box follows the body's line height).
-  final double fontSize;
+  final double? fontSize;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final line =
-        MessageContentRecipe(
-          t,
-          fontSize: fontSize,
-          mountedMessage: true,
-        ).body.height! *
-        fontSize;
+    final style = MessageContentRecipe(
+      t,
+      fontSize: fontSize,
+      mountedMessage: true,
+    ).body;
+    final line = style.height! * style.fontSize!;
     return SizedBox(
       key: const ValueKey('message-translation-skeleton'),
       height: line,
@@ -261,6 +262,8 @@ class _SkeletonLine extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => RaftSkeleton(
       variant: RaftSkeletonVariant.line,
+      // Elegant `rounded-full bg-foreground-strong/8` pill.
+      themed: true,
       // `w-44 max-w-full`.
       width: constraints.maxWidth.isFinite
           ? constraints.maxWidth.clamp(0, 176).toDouble()
@@ -304,10 +307,7 @@ class RaftMessageTranslationOriginal extends StatelessWidget {
     );
     final base = DefaultTextStyle.of(context).style;
     final labelSlot = recipe.translationOriginalLabel;
-    var labelText = label;
-    if (labelSlot.textTransform == 'uppercase') {
-      labelText = labelText.toUpperCase();
-    }
+    final labelText = label;
     final quoteText = quote
         .text(tokens, base: base)
         .copyWith(fontStyle: FontStyle.normal);

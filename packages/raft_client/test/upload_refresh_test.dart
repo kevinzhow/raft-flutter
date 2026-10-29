@@ -121,6 +121,33 @@ void main() {
     await client.dispose();
   });
 
+  test('the file part carries the browser MIME type of the picked file, so the server can tell a picture', () async {
+    final adapter = _Adapter();
+    final client = RaftClient(
+      origin: 'https://example.invalid',
+      sessionStore: MemorySessionStore(),
+      transport: Dio()..httpClientAdapter = adapter,
+    );
+    await client.login('fixture', 'fixture');
+    client.selectServer('server');
+    await client.upload(
+      'channel',
+      Uint8List.fromList(utf8.encode('png bytes')),
+      'screen.png',
+      mimeType: 'image/png',
+    );
+    await client.upload(
+      'channel',
+      Uint8List.fromList(utf8.encode('plain')),
+      'noext',
+    );
+    final typed = adapter.uploadBodies.first.toLowerCase();
+    expect(typed, contains('content-type: image/png'));
+    final untyped = adapter.uploadBodies.last.toLowerCase();
+    expect(untyped, contains('content-type: application/octet-stream'));
+    await client.dispose();
+  });
+
   test('an expired login retries a fresh multipart body with the original selected filename and bytes', () async {
     final adapter = _Adapter();
     final client = RaftClient(

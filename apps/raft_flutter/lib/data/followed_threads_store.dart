@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_sync/raft_sync.dart' show canonicalWireSeq;
 
+import 'resource_row_reconcile.dart' show projectFullyRead;
 import 'workspace_entity_directory.dart' show WorkspaceEntityScope;
 
 /// Source threadStore.followedThreads: the current principal's followed
@@ -27,6 +29,7 @@ class FollowedThreadsStore extends ChangeNotifier {
     this.authority,
     Stream<RaftEvent>? events,
     this.isOpen,
+    this.readFrontier,
   }) : _readScope = scope {
     authority?.addListener(_authorityChanged);
     _subscription = events?.listen(_event);
@@ -34,12 +37,32 @@ class FollowedThreadsStore extends ChangeNotifier {
 
   static const path = '/channels/threads/followed';
 
+  /// Rows per request (the server accepts 1 to 200) and the most requests one
+  /// reload makes, so a runaway cursor cannot loop.
+  static const pageSize = 200, maxPages = 100;
+
+  /// The query of the page after [cursor] (the first page when null).
+  static Map<String, dynamic> pageQuery(String? cursor) => {
+    'limit': pageSize,
+    'cursor': ?cursor,
+  };
+
+  /// Source FOLLOWED_THREADS_REFRESH_DELAY_MS: replies into threads that are
+  /// not in the list (the server auto-followed them) share one reload.
+  static const refreshDelay = Duration(milliseconds: 1500);
+
   final WorkspaceEntityScope? Function() _readScope;
-  final Future<dynamic> Function(String path) query;
+  final Future<dynamic> Function(String path, {Map<String, dynamic>? query})
+  query;
   final Future<dynamic> Function(String path, Map<String, dynamic> data)
   command;
   final Listenable? authority;
   final bool Function(String threadChannelId)? isOpen;
+
+  /// The read this device already accepted for a thread (the read ledger's
+  /// `maxReadSeq` and `readStateVersion`), or null when none is known.
+  final ({BigInt maxReadSeq, int version})? Function(String threadChannelId)?
+  readFrontier;
   StreamSubscription<RaftEvent>? _subscription;
 
   WorkspaceEntityScope? _scope;
@@ -56,6 +79,7 @@ class FollowedThreadsStore extends ChangeNotifier {
   bool _loaded = false, _settled = false, _again = false, _connected = false;
   Object? _error;
   Future<void>? _pending;
+  Timer? _coalesced;
 
   /// Clears every row when the server-level identity changes.
   bool synchronize() {
@@ -69,11 +93,14 @@ class FollowedThreadsStore extends ChangeNotifier {
     _overrides.clear();
     _inFlight.clear();
     _pending = null;
+    _coalesced?.cancel();
+    _coalesced = null;
     _loaded = _settled = _again = _connected = false;
     _error = null;
     final epoch = _epoch;
     // Getters synchronize lazily; the reload for the new identity is scheduled
     // here so whichever caller observes the change first starts it.
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- One-shot deferral out of a build or notification; the callback does not schedule another microtask itself.
     scheduleMicrotask(() {
       if (_disposed || epoch != _epoch) return;
       notifyListeners();
@@ -169,17 +196,29 @@ class FollowedThreadsStore extends ChangeNotifier {
 
   Future<void> _load(WorkspaceEntityScope scope, int epoch) async {
     try {
-      final value = await Future.sync(() => query(path));
-      if (!_accepts(scope, epoch)) return;
-      final raw = value is Map ? value['threads'] : null;
-      if (raw is! List) {
-        throw const FormatException('Invalid followed threads response.');
+      final rows = <Map<String, dynamic>>[];
+      // Newest activity first, `pageSize` rows a request; a server before
+      // `limit` returns the whole list at once and names no `next`.
+      String? cursor;
+      for (var page = 0; page < maxPages; page++) {
+        final value = await Future.sync(
+          () => query(path, query: pageQuery(cursor)),
+        );
+        if (!_accepts(scope, epoch)) return;
+        final raw = value is Map ? value['threads'] : null;
+        if (raw is! List) {
+          throw const FormatException('Invalid followed threads response.');
+        }
+        rows.addAll([
+          for (final row in raw)
+            if (row is Map && row['parentMessageId'] is String)
+              Map<String, dynamic>.from(row),
+        ]);
+        final next = value['next'];
+        if (next is! String || next.isEmpty || next == cursor) break;
+        cursor = next;
       }
-      _setRows([
-        for (final row in raw)
-          if (row is Map && row['parentMessageId'] is String)
-            Map<String, dynamic>.from(row),
-      ]);
+      _setRows(_projectKnownReads(rows, _rows));
       for (final entry in _overrides.entries.toList()) {
         if (!_inFlight.contains(entry.key) &&
             _byParent.containsKey(entry.key) == entry.value.following) {
@@ -206,6 +245,45 @@ class FollowedThreadsStore extends ChangeNotifier {
         }
       }
     }
+  }
+
+  /// Source applyKnownReadStateProjectionsToFollowedThreads (v1.21.23): a
+  /// served row with unread shows read when this device already holds that
+  /// thread at 0 for the same latest activity ([previous] is the row list
+  /// being replaced), or when the ledger's read is newer than the served row's
+  /// `readStateVersion` (default 0) and covers the row's latest activity seq.
+  /// Both clear through [projectFullyRead], so unread, jump target and mark go
+  /// together; a read never raises unread and a row without a latest seq keeps
+  /// the served state.
+  List<Map<String, dynamic>> _projectKnownReads(
+    List<Map<String, dynamic>> rows,
+    List<Map<String, dynamic>> previous,
+  ) {
+    final frontier = readFrontier;
+    final before = {for (final row in previous) row['threadChannelId']: row};
+    return [for (final row in rows) _projectKnownRead(row, before, frontier)];
+  }
+
+  Map<String, dynamic> _projectKnownRead(
+    Map<String, dynamic> row,
+    Map<Object?, Map<String, dynamic>> before,
+    ({BigInt maxReadSeq, int version})? Function(String)? frontier,
+  ) {
+    final id = row['threadChannelId'];
+    final latest = canonicalWireSeq(row['latestActivitySeq']);
+    if (id is! String || latest == null) return row;
+    final local = before[id];
+    if (local != null &&
+        local['unreadCount'] == 0 &&
+        canonicalWireSeq(local['latestActivitySeq']) == latest) {
+      return projectFullyRead(row, latest);
+    }
+    final ledger = frontier?.call(id);
+    final served = row['readStateVersion'];
+    if (ledger == null || ledger.version <= (served is int ? served : 0)) {
+      return row;
+    }
+    return projectFullyRead(row, ledger.maxReadSeq);
   }
 
   Future<void> follow(String parentMessageId) =>
@@ -331,12 +409,13 @@ class FollowedThreadsStore extends ChangeNotifier {
     if (index < 0) {
       final parent = payload['parentMessageId'];
       if (parent is String) _retireAcknowledged(parent);
-      unawaited(refresh());
+      _requestRefresh();
       return;
     }
     final row = _rows[index];
     final open = isOpen?.call(threadId) == true;
     final unread = payload['unreadCount'];
+    final reply = payload['latestReply'];
     final next = <String, dynamic>{
       ...row,
       if (payload['replyCount'] is num) 'replyCount': payload['replyCount'],
@@ -346,6 +425,15 @@ class FollowedThreadsStore extends ChangeNotifier {
         'unreadCount': unread is num
             ? unread
             : ((row['unreadCount'] as num?) ?? 0) + 1,
+      // Source thread:updated: a reply that mentions the member lights the
+      // thread's @ mark, and a reply into a fully read thread is its first
+      // unread one.
+      if (!open && _mentionsMember(reply)) 'hasMention': true,
+      if (!open &&
+          reply is Map &&
+          reply['id'] is String &&
+          ((row['unreadCount'] as num?) ?? 0) == 0)
+        'firstUnreadMessageId': reply['id'],
     };
     final rows = [..._rows]..[index] = next;
     final order = {for (var i = 0; i < rows.length; i++) rows[i]: i};
@@ -362,10 +450,55 @@ class FollowedThreadsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _mentionsMember(dynamic reply) {
+    final me = _scope?.principal,
+        list = reply is Map ? reply['mentions'] : null;
+    return me != null &&
+        list is List &&
+        list.any((m) => m is Map && m['type'] == 'user' && m['id'] == me);
+  }
+
+  void _requestRefresh() {
+    if (_coalesced?.isActive == true) return;
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- One-shot 1.5 s coalescing of followed-thread reloads (Web parity); cancelled by dispose and identity changes.
+    _coalesced = Timer(refreshDelay, () {
+      _coalesced = null;
+      if (!_disposed && started) unawaited(refresh());
+    });
+  }
+
+  /// Source applyServerThreadUnread, for an accepted `read_state:updated`
+  /// scope [fact] that carries the unread count left after the read. A read
+  /// only lowers unread, never raises it, and a zero that describes an older
+  /// frontier cannot erase a reply this device already knows about.
+  void applyReadStateHint(Map fact) {
+    synchronize();
+    final scope = fact['scopeId'], left = fact['unreadCount'];
+    if (_disposed || scope is! String || left is! int || left < 0) return;
+    final index = _rows.indexWhere((row) => row['threadChannelId'] == scope);
+    if (index < 0) return;
+    final row = _rows[index], current = row['unreadCount'];
+    if (current is! num || current <= left) return;
+    final latest = canonicalWireSeq(row['latestActivitySeq']);
+    final read = canonicalWireSeq(fact['maxReadSeq']);
+    if (left == 0 && latest != null && read != null && latest > read) return;
+    final rows = [..._rows]
+      ..[index] = {
+        ...row,
+        'unreadCount': left,
+        // A count, not a position: keep the jump target while anything is
+        // unread, drop it once nothing is.
+        if (left == 0) 'firstUnreadMessageId': null,
+      };
+    _setRows(rows);
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _coalesced?.cancel();
     ++_epoch;
     authority?.removeListener(_authorityChanged);
     _subscription?.cancel();

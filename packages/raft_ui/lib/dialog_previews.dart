@@ -9,6 +9,39 @@ Widget sourceDialogPreview() => const _DialogPreview();
 @RaftPreviews('Source alert dialog', size: Size(390, 500))
 Widget sourceAlertDialogPreview() => const _DialogPreview(alert: true);
 
+@RaftPreviews('Product dialog card', size: Size(390, 500))
+Widget productDialogCardPreview() => Center(
+  child: RaftDialog.card(
+    title: 'Review changes',
+    onClose: () {},
+    child: const Text('Existing messages and files remain available.'),
+    footer: Wrap(
+      alignment: WrapAlignment.end,
+      children: [RaftButton(label: 'Save', onPressed: () {})],
+    ),
+  ),
+);
+
+@RaftPreviews('Wide dialog with bars', size: Size(880, 680))
+Widget wideBarDialogPreview() => RaftDialog(
+  title: 'Review changes',
+  bar: true,
+  size: RaftDialogSize.wide,
+  content: const Text('Scrollable content keeps its header and actions.'),
+  actions: [RaftButton(label: 'Save', onPressed: () {})],
+);
+
+@RaftPreviews('Busy dialog card', size: Size(390, 500))
+Widget busyDialogCardPreview() => Center(
+  child: RaftDialog.card(
+    title: 'Saving changes',
+    onClose: () {},
+    closeEnabled: false,
+    child: const Text('Wait for the pending request to finish.'),
+    footer: const RaftButton(label: 'Save', busy: true),
+  ),
+);
+
 class _DialogPreview extends StatefulWidget {
   const _DialogPreview({this.alert = false});
   final bool alert;
@@ -62,7 +95,7 @@ class _DialogPreviewState extends State<_DialogPreview> {
       mainAxisSize: MainAxisSize.min,
       children: [
         RaftButton(
-          label: widget.alert ? 'Open alert dialog' : 'Open dialog',
+          label: widget.alert ? 'Open Alert Dialog' : 'Open Dialog',
           onPressed: open,
         ),
         const SizedBox(height: 16),
@@ -93,7 +126,7 @@ Widget sosStoppedPreview() => Center(
     onStop: () async => null,
     onResume: (_) async {
       await Future<void>.delayed(const Duration(seconds: 1));
-      return 'Agents could not be resumed. Try again.';
+      return const RaftSosShortfall(starting: 1, failed: 1);
     },
     onClose: () {},
   ),

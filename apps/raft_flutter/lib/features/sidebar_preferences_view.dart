@@ -3,6 +3,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import 'management_support.dart';
 
 class SidebarPreferencesView extends StatefulWidget {
@@ -31,6 +32,25 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
   void initState() {
     super.initState();
     startManagement();
+    if (loading) seedFromLocal();
+  }
+
+  /// A cold open (no page snapshot yet) still paints from what the workspace
+  /// already holds: the sidebar order it loads for the rail and the agent
+  /// directory. Both are the same projections the reads below return; if
+  /// either is missing the page waits for the read instead of showing a
+  /// partial view.
+  void seedFromLocal() {
+    final order = w.sidebarOrder;
+    final directory = w.services.entityDirectory;
+    final viewAgents = w.can('viewAgents');
+    if (order.isEmpty ||
+        (viewAgents && !directory.state(WorkspaceEntityKind.agents).loaded)) {
+      return;
+    }
+    prefs = Map<String, dynamic>.from(order);
+    agents = viewAgents ? directory.rows(WorkspaceEntityKind.agents) : [];
+    loading = false;
   }
 
   @override
@@ -84,7 +104,7 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
     } on RaftApiException catch (e) {
       if (e.status == 409) {
         await reload();
-        throw const RaftApiException(
+        throw const RaftUserError(
           'The sidebar changed on another client. Review the updated list and retry.',
         );
       }
@@ -107,7 +127,7 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
         existing?['id'] ??
         'native-section-${DateTime.now().microsecondsSinceEpoch}';
     await form(
-      existing == null ? 'Create sidebar section' : 'Edit sidebar section',
+      existing == null ? 'Create Sidebar Section' : 'Edit Sidebar Section',
       [
         RaftFormField(
           'name',
@@ -150,7 +170,7 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
 
   Future<void> deleteSection(Map<String, dynamic> section) async {
     await form(
-      'Remove sidebar section?',
+      'Remove Sidebar Section',
       [],
       (_) async {
         await save({
@@ -163,7 +183,8 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
         }, sectionChange: true);
       },
       description: 'Conversations return to their normal sections. Messages and memberships remain available.',
-      submit: 'Remove',
+      submit: 'Remove Section',
+      cancel: 'Keep Section',
       destructive: true,
     );
   }
@@ -207,20 +228,16 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
     );
   }
 
-  Widget sortPicker(String label, String key) =>
-      DropdownButtonFormField<String>(
-        key: ValueKey('$key:${prefs[key]}'),
-        initialValue: prefs[key] as String? ?? 'manual',
-        decoration: InputDecoration(labelText: raftText(context, label)),
-        items: [
-          for (final mode in modes.entries)
-            DropdownMenuItem(
-              value: mode.key,
-              child: Text(raftText(context, mode.value)),
-            ),
-        ],
-        onChanged: busy ? null : (value) => run(() => save({key: value})),
-      );
+  Widget sortPicker(String label, String key) => RaftLabeledSelect<String>(
+    fieldKey: ValueKey('$key:${prefs[key]}'),
+    label: label,
+    value: prefs[key] as String? ?? 'manual',
+    items: [
+      for (final mode in modes.entries)
+        RaftSelectItem(value: mode.key, label: raftText(context, mode.value)),
+    ],
+    onChanged: busy ? null : (value) => run(() => save({key: value})),
+  );
 
   Widget sectionOrderList() {
     final labels = {
@@ -252,10 +269,20 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
               next.insert(to, next.removeAt(from));
               await save({'sectionOrder': next}, sectionChange: true);
             }),
-            itemBuilder: (context, index) => ListTile(
+            itemBuilder: (context, index) => RaftListRow(
               key: ValueKey('sidebar-section-${ids[index]}'),
-              title: Text(labels[ids[index]]!),
-              trailing: const Icon(Icons.drag_handle),
+              interactive: false,
+              children: [
+                RaftListRowBody(
+                  children: [
+                    RaftListRowTitle(
+                      // ignore: raft_lints/avoid_render_index_assertion -- `labels` and `ids` are built together from the same section list.
+                      labels[ids[index]]!,
+                    ),
+                  ],
+                ),
+                const RaftListRowIcon(RaftGlyph.gripVertical),
+              ],
             ),
           ),
         ),
@@ -297,12 +324,17 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
                 next.insert(to, next.removeAt(from));
                 await save({'pinned': next, 'pinnedSortMode': 'manual'});
               }),
-              itemBuilder: (context, index) => ListTile(
+              itemBuilder: (context, index) => RaftListRow(
                 key: ValueKey(
                   'sidebar-pinned-${refs[index]['kind']}-${refs[index]['id']}',
                 ),
-                title: Text(label(refs[index])),
-                trailing: const Icon(Icons.drag_handle),
+                interactive: false,
+                children: [
+                  RaftListRowBody(
+                    children: [RaftListRowTitle(label(refs[index]))],
+                  ),
+                  const RaftListRowIcon(RaftGlyph.gripVertical),
+                ],
               ),
             ),
           ),
@@ -339,36 +371,41 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
             }),
             itemBuilder: (context, index) {
               final c = sorted[index];
-              return ListTile(
+              return RaftListRow(
                 key: ValueKey('sidebar-item-${c.id}'),
-                title: Text(c.name),
-                onTap: busy ? null : () => run(() => place('channel', c.id)),
-                trailing: dms
-                    ? RaftTooltip(
-                        message: raftText(
-                          context,
-                          hidden.contains(c.id)
-                              ? 'Show direct message'
-                              : 'Hide direct message',
-                        ),
-                        child: IconButton(
-                          icon: Icon(
-                            hidden.contains(c.id)
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: busy
-                              ? null
-                              : () => run(() async {
-                                  if (!hidden.remove(c.id)) hidden.add(c.id);
-                                  await save({'hiddenDmIds': hidden.toList()});
-                                }),
-                        ),
-                      )
-                    : const Padding(
-                        padding: EdgeInsets.only(right: 24),
-                        child: Icon(Icons.drag_handle),
+                onPressed: busy
+                    ? null
+                    : () => run(() => place('channel', c.id)),
+                children: [
+                  RaftListRowBody(children: [RaftListRowTitle(c.name)]),
+                  if (dms)
+                    RaftTooltip(
+                      message: raftText(
+                        context,
+                        hidden.contains(c.id)
+                            ? 'Show Direct Message'
+                            : 'Hide Direct Message',
                       ),
+                      child: RaftButton.iconAction(
+                        icon: Icon(
+                          hidden.contains(c.id)
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: busy
+                            ? null
+                            : () => run(() async {
+                                if (!hidden.remove(c.id)) hidden.add(c.id);
+                                await save({'hiddenDmIds': hidden.toList()});
+                              }),
+                      ),
+                    )
+                  else
+                    const Padding(
+                      padding: EdgeInsets.only(right: 24),
+                      child: RaftListRowIcon(RaftGlyph.gripVertical),
+                    ),
+                ],
               );
             },
           ),
@@ -379,7 +416,7 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
 
   @override
   Widget build(BuildContext context) => loading
-      ? const Center(child: CircularProgressIndicator())
+      ? const Center(child: RaftSpinner())
       : ListView(
           key: const Key('sidebar-preferences'),
           padding: raftScrollPadding(context, const EdgeInsets.all(24)),
@@ -388,7 +425,7 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
               raftText(context, 'Sidebar preferences'),
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            if (error != null) Semantics(liveRegion: true, child: Text(error!)),
+            if (error != null) RaftErrorBanner(error!, small: true),
             Text(
               raftText(
                 context,
@@ -418,39 +455,55 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             for (final section in sections)
-              ListTile(
+              RaftListRow(
                 key: ValueKey('sidebar-custom-section-${section['id']}'),
-                title: Text('${section['emoji'] ?? ''} ${section['name']}'),
-                subtitle: Text(
-                  raftText(
-                    context,
-                    modes[section['sortMode']] ?? 'Manual order',
+                onPressed: busy ? null : () => run(() => editSection(section)),
+                children: [
+                  RaftListRowBody(
+                    children: [
+                      RaftListRowTitle(
+                        '${section['emoji'] ?? ''} ${section['name']}',
+                      ),
+                      RaftListRowDescription(
+                        raftText(
+                          context,
+                          modes[section['sortMode']] ?? 'Manual order',
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                onTap: busy ? null : () => run(() => editSection(section)),
-                trailing: RaftTooltip(
-                  message: raftText(context, 'Remove section'),
-                  child: IconButton(
-                    icon: const RaftIcon(RaftGlyph.trash2, size: 14),
-                    onPressed: busy
-                        ? null
-                        : () => run(() => deleteSection(section)),
+                  RaftTooltip(
+                    message: raftText(context, 'Remove Section'),
+                    child: RaftButton.iconAction(
+                      icon: const RaftIcon(RaftGlyph.trash2, size: 14),
+                      onPressed: busy
+                          ? null
+                          : () => run(() => deleteSection(section)),
+                    ),
                   ),
-                ),
+                ],
               ),
             RaftButton(
-              label: raftText(context, 'Create sidebar section'),
+              label: raftText(context, 'Create Sidebar Section'),
               onPressed: busy || sections.length >= 50
                   ? null
                   : () => run(editSection),
             ),
             for (final agent in agents)
-              ListTile(
-                title: Text('${agent['displayName'] ?? agent['name']}'),
-                leading: const Icon(Icons.smart_toy_outlined),
-                onTap: busy
+              RaftListRow(
+                onPressed: busy
                     ? null
                     : () => run(() => place('agent', '${agent['id']}')),
+                children: [
+                  const RaftListRowIcon(RaftGlyph.bot),
+                  RaftListRowBody(
+                    children: [
+                      RaftListRowTitle(
+                        '${agent['displayName'] ?? agent['name']}',
+                      ),
+                    ],
+                  ),
+                ],
               ),
           ],
         );

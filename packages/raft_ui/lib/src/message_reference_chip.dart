@@ -5,11 +5,18 @@
 // raft-ui TaskChip variant="inline" (status icon + `#N`), unknown tasks →
 // Badge variant muted. Every visual value resolves from the generated
 // raft-ui recipes.
+import 'hover_region.dart';
+
 import 'package:flutter/material.dart';
 
+import 'raft_underline.dart';
+import 'raft/css_box.dart';
 import 'hover_card.dart';
+import 'icons.dart';
+import 'localization.dart';
 import 'mounted_task_chip.dart';
 import 'panel_layout.dart' show raftCssBaseline;
+import 'recipe_surface.dart' show RaftRecipeBinding;
 import 'recipes/badge.g.dart';
 import 'recipes/message_reference.g.dart';
 import 'recipes/recipe_runtime.dart';
@@ -38,12 +45,37 @@ enum RaftReferenceKind {
 
   /// Unknown task number (`Badge variant="muted"`).
   unknownTask,
+
+  /// A Raft message permalink in a body (`ReferenceChip variant="link"` with a
+  /// Link icon, the channel label and a trailing `msg`).
+  permalink,
+
+  /// The same link whose target could not be read ("Unavailable linked
+  /// message", a non-interactive span).
+  permalinkUnavailable,
+
+  /// `re: filename · anchor` above an attachment comment (`ReferenceChip
+  /// variant="muted"` with a MessageSquare icon).
+  attachmentComment,
 }
 
 @immutable
 class RaftReferenceAppearance {
-  const RaftReferenceAppearance(this.kind, {this.taskStatus, this.hoverCard});
+  const RaftReferenceAppearance(
+    this.kind, {
+    this.taskStatus,
+    this.hoverCard,
+    this.label,
+    this.agentRead,
+  });
   final RaftReferenceKind kind;
+
+  /// Web MentionLink #693: whether the mentioned agent has read the message
+  /// (a small square on the mention's corner); null draws nothing.
+  final bool? agentRead;
+
+  /// Shown instead of the link text (a permalink chip's channel label).
+  final String? label;
   final RaftMessageTaskStatus? taskStatus;
 
   /// MentionLink PreviewCard content (delay 200, closeDelay 120, 280 wide).
@@ -51,7 +83,9 @@ class RaftReferenceAppearance {
 }
 
 RaftRecipeTheme _theme(RaftTokens t) =>
-    t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant;
+    t.option('press.effect', or: 'scale') == 'offsetShadow'
+    ? RaftRecipeTheme.brutal
+    : RaftRecipeTheme.elegant;
 
 /// Inline span for one reference inside a markdown paragraph. [base] is the
 /// surrounding paragraph style (the recipes use `font-size: inherit`).
@@ -78,31 +112,38 @@ InlineSpan raftReferenceSpan(
     final s = RaftMessageReferenceRecipe.resolve(
       theme: _theme(t),
       variant: RaftMessageReferenceRecipeVariant.secondary,
+      states: t.recipeStates(),
       tokens: resolver,
     ).root;
     final decoration = RaftColorRef.fromCss(s['text-decoration-color']);
-    child = Text(
+    final color = s.color?.resolve(resolver) ?? base.color;
+    child = RaftUnderlinedText(
       label,
       style: base.copyWith(
-        fontWeight: s.fontWeight,
-        color: s.color?.resolve(resolver) ?? base.color,
-        decoration: TextDecoration.underline,
-        decorationColor: decoration?.resolve(
-          resolver,
-          currentColor: base.color,
-        ),
-        decorationThickness: 2,
+        fontWeight:
+            t.option('messageReference.chipLayout', or: 'intrinsic') == 'fixed'
+            ? FontWeight.w700
+            : s.fontWeight,
+        color:
+            t.option('messageReference.chipLayout', or: 'intrinsic') == 'fixed'
+            ? t.colors['foreground']
+            : color,
       ),
+      underlineColor: decoration?.resolve(resolver, currentColor: color),
     );
   } else {
     child = RaftReferenceChip(
-      label: label,
+      label: appearance.label ?? label,
       appearance: appearance,
       fontSize: base.fontSize ?? 14,
       fontFamily: base.fontFamily,
       fontFamilyFallback: base.fontFamilyFallback,
     );
   }
+  final read = appearance?.kind == RaftReferenceKind.mention
+      ? appearance?.agentRead
+      : null;
+  if (read != null) child = _AgentReadBadge(read: read, child: child);
   Widget link = _ReferenceLink(
     label: label,
     href: href,
@@ -153,7 +194,7 @@ class _ReferenceLinkState extends State<_ReferenceLink> {
       label: widget.label,
       onTap: widget.onTap,
       child: ExcludeSemantics(
-        child: MouseRegion(
+        child: RaftHoverRegion(
           // In-message refs keep the arrow cursor (`cursor-default`).
           cursor: SystemMouseCursors.basic,
           child: GestureDetector(
@@ -195,6 +236,20 @@ class RaftReferenceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.option('sticker.ring', or: 'none') == 'dieCut' &&
+        (appearance.kind == RaftReferenceKind.selfMention ||
+            appearance.kind == RaftReferenceKind.message)) {
+      return _sourceChip(context, t, sticker: true);
+    }
+    if (t.option('messageReference.chipLayout', or: 'intrinsic') == 'fixed' &&
+        const {
+          RaftReferenceKind.channel,
+          RaftReferenceKind.thread,
+          RaftReferenceKind.permalink,
+          RaftReferenceKind.permalinkUnavailable,
+        }.contains(appearance.kind)) {
+      return _sourceChip(context, t, sticker: false);
+    }
     final resolver = RaftRecipeTokens(t);
     late final RaftSlotStyle s;
     Color? background, foreground, iconColor;
@@ -205,6 +260,7 @@ class RaftReferenceChip extends StatelessWidget {
     switch (appearance.kind) {
       case RaftReferenceKind.task:
         final status = appearance.taskStatus ?? RaftMessageTaskStatus.todo;
+        // ignore: raft_lints/avoid_render_index_assertion -- The recipe evaluator always returns the 'root' node it was asked for.
         s = RaftTaskChipRecipe.resolveProps({
           'theme': _theme(t).name,
           'variant': 'inline',
@@ -227,18 +283,13 @@ class RaftReferenceChip extends StatelessWidget {
         icon = SizedBox.square(
           dimension: fontSize * .857,
           child: FittedBox(
-            child: RaftMessageTaskStatusIcon(
-              status: status,
-              color: iconColor,
-              inverse: t.brutal ? Colors.white : t.colors['layer-panel']!,
-            ),
+            child: RaftMessageTaskStatusIcon(status: status, color: iconColor),
           ),
         );
       case RaftReferenceKind.unknownTask:
         s = RaftBadgeRecipe.resolve(
           theme: _theme(t),
           variant: RaftBadgeRecipeVariant.muted,
-          uppercase: false,
           tokens: resolver,
         ).root;
         lineHeight = 1;
@@ -246,20 +297,47 @@ class RaftReferenceChip extends StatelessWidget {
         s = RaftMessageReferenceRecipe.resolve(
           theme: _theme(t),
           variant: RaftMessageReferenceRecipeVariant.primary,
+          states: t.recipeStates(),
           tokens: resolver,
         ).root;
       case RaftReferenceKind.channel:
         s = RaftMessageReferenceRecipe.resolve(
           theme: _theme(t),
           variant: RaftMessageReferenceRecipeVariant.accent,
+          states: t.recipeStates(),
           tokens: resolver,
         ).root;
       case RaftReferenceKind.thread || RaftReferenceKind.mention:
         s = RaftMessageReferenceRecipe.resolve(
           theme: _theme(t),
           variant: RaftMessageReferenceRecipeVariant.link,
+          states: t.recipeStates(),
           tokens: resolver,
         ).root;
+      case RaftReferenceKind.attachmentComment:
+        s = RaftMessageReferenceRecipe.resolve(
+          theme: _theme(t),
+          variant: RaftMessageReferenceRecipeVariant.muted,
+          states: t.recipeStates(extra: const ['has:>svg']),
+          tokens: resolver,
+        ).root;
+      case RaftReferenceKind.permalink ||
+          RaftReferenceKind.permalinkUnavailable:
+        // `<MessageReferenceChip variant="link"><Link/>label</…>`: the
+        // `has:>svg` states add the Brutal icon cell (`::before`).
+        s = RaftMessageReferenceRecipe.resolve(
+          theme: _theme(t),
+          variant: RaftMessageReferenceRecipeVariant.link,
+          states: t.recipeStates(extra: const ['has:>svg']),
+          tokens: resolver,
+        ).root;
+    }
+    if (appearance.kind == RaftReferenceKind.permalink ||
+        appearance.kind == RaftReferenceKind.permalinkUnavailable) {
+      // `<Icon size={12} className="shrink-0" />`
+      icon = const RaftIcon(RaftGlyph.link, size: 12);
+    } else if (appearance.kind == RaftReferenceKind.attachmentComment) {
+      icon = const RaftIcon(RaftGlyph.messageSquare, size: 12);
     }
     final decoration = s.decoration(resolver);
     final size = s.fontSize ?? fontSize;
@@ -279,6 +357,26 @@ class RaftReferenceChip extends StatelessWidget {
       leadingDistribution: TextLeadingDistribution.even,
     );
     final gap = s.columnGap ?? 4;
+    // Brutal `has:>svg`: the glyph sits in a full-height cell filled by the
+    // `::before` background with a right rule, svg margin 3px each side.
+    final before = s.before;
+    final Widget? iconCell = icon != null && before != null
+        ? Container(
+            margin: EdgeInsets.zero,
+            // ds-allow: Web raft-ui/message-reference.recipe.ts `[&>svg]:mx-[3px]`
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            decoration: BoxDecoration(
+              color: before.backgroundColor?.resolve(resolver),
+              border: Border(
+                right: BorderSide(
+                  color: before.border(resolver)?.right.color ?? Colors.black,
+                  width: before.border(resolver)?.right.width ?? 1,
+                ),
+              ),
+            ),
+            child: Center(child: icon),
+          )
+        : null;
     final chip = Container(
       height: appearance.kind == RaftReferenceKind.unknownTask
           ? s.height
@@ -294,7 +392,12 @@ class RaftReferenceChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[icon, SizedBox(width: gap)],
+          if (icon != null && iconCell != null)
+            iconCell
+          else if (icon != null) ...[
+            icon,
+            SizedBox(width: gap),
+          ],
           Flexible(
             // CSS uses the declared line-height as the inline-flex line box.
             // RenderParagraph rounds its natural height to whole pixels.
@@ -329,9 +432,171 @@ class RaftReferenceChip extends StatelessWidget {
               ),
             ),
           ),
+          if (appearance.kind == RaftReferenceKind.permalink) ...[
+            SizedBox(width: gap),
+            // `text-[10px] font-normal leading-none text-foreground-placeholder`
+            Text(
+              'msg',
+              style: TextStyle(
+                fontFamily: fontFamily ?? t.headingFont,
+                fontFamilyFallback: fontFamilyFallback,
+                fontSize: 10,
+                height: 1,
+                fontWeight: FontWeight.w400,
+                color: t.colors['foreground-placeholder'],
+              ),
+            ),
+          ],
         ],
       ),
     );
     return chip;
+  }
+
+  // raft-ui 0.7.0 message-reference.recipe: the fixed variant has a 22px
+  // minimum box, 20px line and .875em label. A scaled label grows the box.
+  // Sticker rings paint without adding layout, as CSS inset-ring / ring do.
+  Widget _sourceChip(
+    BuildContext context,
+    RaftTokens t, {
+    required bool sticker,
+  }) {
+    final size = sticker ? fontSize : fontSize * .875;
+    final line = sticker ? size * 1.2 : 20.0;
+    final unavailable =
+        appearance.kind == RaftReferenceKind.permalinkUnavailable;
+    final linkIcon =
+        appearance.kind == RaftReferenceKind.permalink || unavailable;
+    final foreground =
+        t.colors[sticker
+            ? 'sticker-ink'
+            : unavailable
+            ? 'foreground-hint'
+            : 'foreground'];
+    final style = TextStyle(
+      fontFamily: fontFamily ?? t.bodyFont,
+      fontFamilyFallback: fontFamilyFallback,
+      fontSize: size,
+      height: line / size,
+      fontWeight: FontWeight.w600,
+      color: foreground,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
+    final scaledStyle = style.copyWith(
+      fontSize: MediaQuery.textScalerOf(context).scale(size),
+    );
+    final labelBox = SizedBox(
+      height: MediaQuery.textScalerOf(context).scale(size) * line / size,
+      child: Baseline(
+        baseline: raftCssBaseline(scaledStyle),
+        baselineType: TextBaseline.alphabetic,
+        child: Text(
+          label,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+          strutStyle: StrutStyle.fromTextStyle(
+            style,
+            leading: 0,
+            leadingDistribution: TextLeadingDistribution.even,
+            forceStrutHeight: true,
+          ),
+        ),
+      ),
+    );
+    final ring = raftControlBorderPx(context, 1.5);
+    return RaftCssBox(
+      radius: t.size('radius.sticker', fallback: 4),
+      minHeight: sticker ? null : 22,
+      fill:
+          t.colors[sticker
+              ? 'brand-400'
+              : unavailable
+              ? 'inactive-soft'
+              : appearance.kind == RaftReferenceKind.channel
+              ? 'attention-soft'
+              : 'info-soft'],
+      insetRingWidth: sticker ? ring : 0,
+      insetRingColor: t.colors['sticker-ink'],
+      rings: sticker ? [RaftRing(ring, t.colors['sticker-edge']!)] : const [],
+      padding: sticker
+          // ignore: raft_lints/off_grid_spacing -- raft-ui 0.7.0 MessageReferenceText px-[3px].
+          ? const EdgeInsets.symmetric(horizontal: 3)
+          // ignore: raft_lints/off_grid_spacing -- raft-ui 0.7.0 MessageReferenceChip has-[>svg]:pl-[3px].
+          : EdgeInsets.only(left: linkIcon ? 3 : 6, right: 6),
+      alignment: Alignment.center,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (linkIcon) ...[
+            RaftIcon(
+              RaftGlyph.link,
+              size: 14,
+              color: t.colors['foreground-muted'],
+            ),
+            const SizedBox(width: 2),
+          ],
+          Flexible(child: labelBox),
+          if (appearance.kind == RaftReferenceKind.permalink) ...[
+            const SizedBox(width: 2),
+            Text(
+              'msg',
+              style: style.copyWith(
+                fontSize: 10,
+                height: 1,
+                fontWeight: FontWeight.w400,
+                color: t.colors['foreground-placeholder'],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The read marker of an @mentioned agent: a 8px square (radius 2, 1.5px ink
+/// edge) hanging off the mention's top-right corner, lime once read and a
+/// white sticker until then. `mr-2` keeps the next word clear of it.
+class _AgentReadBadge extends StatelessWidget {
+  const _AgentReadBadge({required this.read, required this.child});
+  final bool read;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final label = raftText(context, read ? 'Read' : 'Not read yet');
+    final ink = t.colors['sticker-ink'] ?? t.strong;
+    final paper = t.colors['sticker-paper'] ?? Colors.white;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          child,
+          Positioned(
+            right: -6,
+            top: 0,
+            child: IgnorePointer(
+              child: Semantics(
+                label: label,
+                child: Container(
+                  key: ValueKey('mention-read-${read ? 'read' : 'unread'}'),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: read ? t.colors['success'] : paper,
+                    border: Border.all(color: ink, width: 1.5),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

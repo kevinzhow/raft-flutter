@@ -80,7 +80,7 @@ class _ChannelPagesPreviewState extends State<_ChannelPagesPreview> {
               t,
               RaftSheetSection('Preferences', [
                 RaftSheetSwitchRow(
-                  title: widget.dm ? 'Pin conversation' : 'Pin channel',
+                  title: widget.dm ? 'Pin conversation' : 'Pin Channel',
                   description:
                       'Keep this conversation at the top of your sidebar.',
                   value: pinned,
@@ -124,7 +124,7 @@ class _ChannelPagesPreviewState extends State<_ChannelPagesPreview> {
                       const RaftOverflowGroupHeading(
                         title: 'Info',
                         description:
-                            'Name and description shown across the workspace.',
+                            'Name and description shown across the server.',
                       ),
                       RaftChannelInfoForm(
                         nameController: name,

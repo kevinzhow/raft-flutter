@@ -1,20 +1,22 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_focus_receipt_test.dart' show paintedMessage;
 import 'message_context_transition_test.dart' show row;
 import 'message_presentation_test.dart' show fixture, MessageAdapter;
 import 'workspace_activity_activation_test.dart' show channelRow;
+import 'support/app_services_fixture.dart';
 
 // The held transport returns a real HTTP 404 response. Completing an error
 // future across WidgetTester's real/FakeAsync error zones is not an HTTP test.
@@ -52,7 +54,7 @@ Future<(WorkspaceController, MessageAdapter)> pageFixture(
   SharedPreferences.setMockInitialValues({});
   final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
   w.loading = false;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.section = 'chat';
   api.routes['GET /servers/s1/setup-projection'] = (_) => {
     'phase': 'complete',
@@ -72,21 +74,27 @@ Future<(WorkspaceController, MessageAdapter)> pageFixture(
 Future<void> mountPage(
   WidgetTester tester,
   WorkspaceController w,
-  RaftFamily family,
   bool dark, {
   double width = 1440,
+  double height = 900,
+  bool browserHost = kIsWeb,
 }) async {
-  tester.view.physicalSize = Size(width, 900);
+  tester.view.physicalSize = Size(width, height);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(family, dark: dark),
-      home: WorkspaceView(
-        controller: w,
-        appearance: RaftAppearance(light: family),
-        onAppearance: (_) async {},
-        onLogout: () async {},
+      theme: raftTheme(dark: dark),
+      home: withAppServices(
+        WorkspaceHostScope(
+          browser: browserHost,
+          child: WorkspaceView(
+            controller: w,
+            appearance: RaftAppearance(),
+            onAppearance: (_) async {},
+            onLogout: () async {},
+          ),
+        ),
       ),
     ),
   );
@@ -105,20 +113,19 @@ Future<void> pageFrames(
 }
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final switchThread in [false, true]) {
       testWidgets(
-        '${switchThread ? '[N07b]' : '[N07a]'} $family/$dark actual side-thread ${switchThread ? 'retarget' : 'close'} replaces only its slot',
+        '${switchThread ? '[N07b]' : '[N07a]'} ${dark ? 'dark' : 'light'} actual side-thread ${switchThread ? 'retarget' : 'close'} replaces only its slot',
         (tester) async {
           final (w, api) = await pageFixture(tester);
           final p1 = row('p1', 'c1', 1), p2 = row('p2', 'c1', 2);
-          w.ledger.ingest([p1, p2], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'p1', 'p2'};
-          w.threadSummaries = {
+          w.messageDomain.ledger.ingest([
+            p1,
+            p2,
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'p1', 'p2'};
+          w.messageDomain.threadSummaries = {
             'p1': {'replyCount': 1},
             'p2': {'replyCount': 1},
           };
@@ -141,7 +148,7 @@ void main() {
             'messages': [row('r1', 't1', 1)],
           };
           api.routes['GET /messages/channel/t2'] = (_) => pending.future;
-          await mountPage(tester, w, family, dark);
+          await mountPage(tester, w, dark);
           // Source MainLayout1330–1420 puts the independent task modal above
           // the channel. Its backdrop covers the replies badge. Close that
           // actual overlay before using the exposed channel controls; closing
@@ -149,7 +156,7 @@ void main() {
           final beforeTaskClose = Map<String, String>.from(
             w.location.uri.queryParameters,
           );
-          await tester.tap(find.byTooltip('Close task'));
+          await tester.tap(find.byTooltip('Close Task'));
           await tester.pump();
           expect(
             w.location.uri.queryParameters,
@@ -163,7 +170,11 @@ void main() {
             find.byKey(const ValueKey('thread-replies-badge-p1')),
           );
           await tester.runAsync(() async {
-            for (var i = 0; i < 40 && w.threadLoading; i++) {
+            for (
+              var i = 0;
+              i < 40 && w.messageDomain.state.threadLoading;
+              i++
+            ) {
               await Future<void>.delayed(const Duration(milliseconds: 5));
             }
           });
@@ -196,7 +207,11 @@ void main() {
               pending.complete({
                 'messages': [row('r2', 't2', 1)],
               });
-              for (var i = 0; i < 40 && w.threadLoading; i++) {
+              for (
+                var i = 0;
+                i < 40 && w.messageDomain.state.threadLoading;
+                i++
+              ) {
                 await Future<void>.delayed(const Duration(milliseconds: 5));
               }
             });
@@ -227,19 +242,19 @@ void main() {
 
     for (final back in [true, false]) {
       testWidgets(
-        '[N09] $family/$dark mounted ${back ? 'Back' : 'new route'} rejects held old parent and replies',
+        '[N09] ${dark ? 'dark' : 'light'} mounted ${back ? 'Back' : 'new route'} rejects held old parent and replies',
         (tester) async {
           final (w, api) = await pageFixture(tester);
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             row('main', 'c1', 1),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'main'};
           final parent = Completer<Map<String, dynamic>>.sync(),
               replies = Completer<Map<String, dynamic>>.sync();
           api.routes['GET /messages/context/parent'] = (_) => parent.future;
           api.routes['GET /messages/context/reply'] = (_) => replies.future;
           api.routes['GET /channels/inbox'] = (_) => {'items': []};
-          await mountPage(tester, w, family, dark, width: back ? 390 : 1440);
+          await mountPage(tester, w, dark, width: back ? 390 : 1440);
           late Future<void> opening;
           await tester.runAsync(() async {
             opening = w.openThreadIdentity(
@@ -305,7 +320,9 @@ void main() {
             expect(paintedMessage(tester, 'reply'), isNull);
             expect(w.presentedThreadParent, isNull);
             expect(
-              w.ledger.messages('c1').any((m) => m['id'] == 'parent'),
+              w.messageDomain.ledger
+                  .messages('c1')
+                  .any((m) => m['id'] == 'parent'),
               false,
             );
             if (back) expect(paintedMessage(tester, 'main'), isNotNull);
@@ -318,16 +335,16 @@ void main() {
 
     for (final failLast in [false, true]) {
       testWidgets(
-        '[L04] $family/$dark actual Activity last click ${failLast ? 'fails without reviving old context' : 'wins over late old context'}',
+        '[L04] ${dark ? 'dark' : 'light'} actual Activity last click ${failLast ? 'fails without reviving old context' : 'wins over late old context'}',
         (tester) async {
           final (w, api) = await pageFixture(tester);
           w.channels.add(
             RaftChannel({'id': 'c2', 'name': 'second', 'joined': true}),
           );
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             row('old', 'c1', 1),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'old'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'old'};
           w.section = 'activity';
           final (first, second, latest) = (await tester.runAsync(
             () async => (
@@ -357,7 +374,7 @@ void main() {
           api.routes['GET /messages/context/first'] = (_) => first.future;
           api.routes['GET /messages/context/second'] = (_) => second.future;
           api.routes['GET /messages/channel/c2'] = (_) => latest.future;
-          await mountPage(tester, w, family, dark);
+          await mountPage(tester, w, dark);
           await tester.tap(find.byKey(const ValueKey('activity-channel-c1')));
           // Different item identities switch previews even inside the time window.
           await tester.pump(const Duration(milliseconds: 220));
@@ -418,7 +435,11 @@ void main() {
               second.complete({
                 'messages': [row('second', 'c2', 20)],
               });
-              for (var i = 0; i < 40 && w.channelLoading; i++) {
+              for (
+                var i = 0;
+                i < 40 && w.messageDomain.state.channelLoading;
+                i++
+              ) {
                 await Future<void>.delayed(const Duration(milliseconds: 5));
               }
             });
@@ -440,14 +461,23 @@ void main() {
               latest.complete({
                 'messages': [row('latest', 'c2', 30)],
               });
-              for (var i = 0; i < 40 && w.channelLoading; i++) {
+              for (
+                var i = 0;
+                i < 40 && w.messageDomain.state.channelLoading;
+                i++
+              ) {
                 await Future<void>.delayed(const Duration(milliseconds: 5));
               }
             });
             await pageFrames(tester, () {});
             expect(paintedMessage(tester, 'latest'), isNotNull);
-            expect(w.highlightedMessageId, isNull);
-            expect(find.byType(MaterialBanner), findsOneWidget);
+            expect(w.messageDomain.state.highlightedMessageId, isNull);
+            // The failed context load leaves the latest window with the
+            // "Message not found" state (no workspace banner).
+            expect(
+              w.messageDomain.contextLoadError,
+              MessageContextLoadError.notFound,
+            );
           } else {
             expect(paintedMessage(tester, 'second'), isNotNull);
           }

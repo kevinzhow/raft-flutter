@@ -22,7 +22,9 @@ Future<void> verifyMessageSelection(
       'Selection export $marker\n\n**中文内容** and 日本語\n\n'
       '```mermaid\nflowchart LR\n A[Select] --> B[Review]\n```';
   await w.send(body);
-  final message = w.messages.singleWhere((m) => m.content == body);
+  final message = w.messageDomain.messages.singleWhere(
+    (m) => m.content == body,
+  );
   await w.jumpToMessage(w.channel!.id, message.id);
   final tile = find.byKey(ValueKey('message-${message.id}'));
   for (var i = 0; i < 50 && tile.evaluate().isEmpty; i++) {
@@ -36,7 +38,7 @@ Future<void> verifyMessageSelection(
       );
     }
     debugPrint(
-      'Selection context diagnostic: loaded=${w.messages.any((m) => m.id == message.id)} loading=${w.channelLoading} highlighted=${w.highlightedMessageId == message.id} rows=${w.messages.length}',
+      'Selection context diagnostic: loaded=${w.messageDomain.messages.any((m) => m.id == message.id)} loading=${w.messageDomain.state.channelLoading} highlighted=${w.messageDomain.state.highlightedMessageId == message.id} rows=${w.messageDomain.messages.length}',
     );
     await capture('linux-failure-selection-context');
   }
@@ -75,7 +77,7 @@ Future<void> verifyMessageSelection(
   expect(more.hitTestable(), findsOneWidget);
   await tester.tap(more);
   await tester.pump(const Duration(milliseconds: 300));
-  await tester.tap(find.text('Generate image'));
+  await tester.tap(find.text('Generate Image'));
   for (
     var i = 0;
     i < 200 && find.byType(MessageImageReview).evaluate().isEmpty;
@@ -104,12 +106,12 @@ Future<void> verifyMessageSelection(
   expect(
     find.descendant(
       of: find.byType(MessageImageReview),
-      matching: find.byTooltip('Show source'),
+      matching: find.byTooltip('Show Source'),
     ),
     findsNothing,
   );
   await capture('linux-message-selection-preview');
-  await tester.tap(find.byTooltip('Close preview'));
+  await tester.tap(find.byTooltip('Close Preview'));
   await tester.pump(const Duration(milliseconds: 400));
   expect(find.byType(MessageImageReview), findsNothing);
   expect(find.byType(RaftSelectionToolbar), findsOneWidget);

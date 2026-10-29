@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 // Official cases owned by this group (default selection):
@@ -38,8 +39,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../parity_harness.dart';
 import 'thread_composer/fake_workspace.dart';
+import '../../support/app_services_fixture.dart';
 
 final Map<String, ParityCase> threadComposerCases = {
+  for (final state in const ['default', 'hover', 'focus'])
+    for (final theme in const ['raft', 'raft-dark'])
+      'components.files-popup.$state.$theme': _filesPopupCase,
   'components.thread.composer.empty': _composer(draft: ''),
   'components.thread.composer.states': _composer(
     draft: _seed,
@@ -243,6 +248,7 @@ class _ComposerHostState extends State<_ComposerHost> {
   @override
   void dispose() {
     directory.dispose();
+    w.dispose();
     super.dispose();
   }
 
@@ -256,7 +262,7 @@ class _ComposerHostState extends State<_ComposerHost> {
         RaftComposer(
           initialDraft: widget.draft,
           // As RaftChatView mounts it.
-          accessoryRow: raftComposerAccessory(w),
+          accessoryRow: raftComposerAccessory(context, w),
           taskAction: RaftComposerTaskToggle(
             key: const Key('composer-as-task'),
             checked: alsoCreateTask,
@@ -313,15 +319,65 @@ final ParityCase _files = ParityCase(
         width: 390,
         height: 360,
         padding: EdgeInsets.zero,
-        child: _FilesHost(fixture: fx),
+        child: _FilesHost(fixture: fx, parityContext: ctx),
       ),
     );
   },
   settle: const Duration(milliseconds: 600),
 );
 
+// Real SourceChannelFilesView entry; the original official list case stays intact.
+final ParityCase _filesPopupCase = ParityCase(
+  widgets: const [
+    'raft_flutter:SourceChannelFilesView',
+    'raft_flutter:SourceChannelFileRow',
+    'raft_ui:RaftDropdownMenu',
+    'raft_ui:RaftMenuPanel',
+  ],
+  notes:
+      'Extension suite (not official). Actual Files list first-row overflow. '
+      'Shared official files fixture; complete popup bounds only. '
+      'No download, jump, preview or native platform claim.',
+  build: (ctx) => _files.build(ctx),
+  settle: const Duration(milliseconds: 600),
+  interact: (tester, ctx) async {
+    expect(find.byType(SourceChannelFilesView), findsOneWidget);
+    final popup = find.byKey(
+      const ValueKey('channel-file-overflow-menu-visual-file-image'),
+    );
+    expect(popup, findsOneWidget);
+    expect(tester.widget<RaftMenuPanel>(popup).kind, RaftMenuKind.dropdownMenu);
+    for (final label in const ['Jump to original message', 'Download file']) {
+      expect(
+        find.descendant(of: popup, matching: find.text(label)).hitTestable(),
+        findsOneWidget,
+      );
+    }
+    if (ctx.props['menuPopupState'] != 'focus') return;
+    final row = find.descendant(
+      of: popup,
+      matching: find.widgetWithText(RaftMenuItem, 'Jump to original message'),
+    );
+    expect(row, findsOneWidget);
+    expect(
+      find
+          .descendant(
+            of: row,
+            matching: find.byType(FocusableActionDetector),
+            matchRoot: true,
+          )
+          .evaluate()
+          .map((element) => element.widget as FocusableActionDetector)
+          .any((detector) => detector.focusNode?.hasPrimaryFocus ?? false),
+      isTrue,
+      reason: 'The actual jump action must own keyboard focus.',
+    );
+  },
+);
+
 class _FilesHost extends StatefulWidget {
-  const _FilesHost({required this.fixture});
+  const _FilesHost({required this.fixture, required this.parityContext});
+  final ParityContext parityContext;
   final ParityThreadFixture fixture;
   @override
   State<_FilesHost> createState() => _FilesHostState();
@@ -329,6 +385,16 @@ class _FilesHost extends StatefulWidget {
 
 class _FilesHostState extends State<_FilesHost> {
   late final WorkspaceController w = widget.fixture.composerWorkspace();
+
+  @override
+  void initState() {
+    super.initState();
+    // The cached store is retired (cleared), not disposed, by the controller.
+    // This isolated fixture owns its final lifetime after the view unmounts.
+    final store = w.channelFilesStore(widget.fixture.composerChannelId);
+    widget.parityContext.onDispose(store.dispose);
+    widget.parityContext.onDispose(w.dispose);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -393,7 +459,7 @@ final ParityCase _header = ParityCase(
             maxWidth: ctx.width,
             minHeight: ctx.height,
             maxHeight: ctx.height,
-            child: _HeaderHost(fixture: fx, family: ctx.family),
+            child: _HeaderHost(fixture: fx),
           ),
         ),
       ),
@@ -417,9 +483,8 @@ final ParityCase _header = ParityCase(
 );
 
 class _HeaderHost extends StatefulWidget {
-  const _HeaderHost({required this.fixture, required this.family});
+  const _HeaderHost({required this.fixture});
   final ParityThreadFixture fixture;
-  final RaftFamily family;
   @override
   State<_HeaderHost> createState() => _HeaderHostState();
 }
@@ -430,14 +495,23 @@ class _HeaderHostState extends State<_HeaderHost> {
   @override
   void initState() {
     super.initState();
-    w.ledger.switchServer('visual-server');
+    w.messageDomain.ledger.switchServer('visual-server');
   }
 
   @override
-  Widget build(BuildContext context) => WorkspaceView(
-    controller: w,
-    appearance: RaftAppearance(light: widget.family),
-    onAppearance: (_) async {},
-    onLogout: () async {},
+  void dispose() {
+    w.dispose();
+    unawaited((w.client as ParityFakeClient).stream.close());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => withAppServices(
+    WorkspaceView(
+      controller: w,
+      appearance: RaftAppearance(),
+      onAppearance: (_) async {},
+      onLogout: () async {},
+    ),
   );
 }

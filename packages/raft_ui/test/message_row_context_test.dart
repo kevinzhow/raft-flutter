@@ -1,24 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [767.0, 957.0, 1024.0]) {
       for (final rowContext in RaftMessageRowContext.values) {
-        testWidgets('mounted row padding $family/$dark/$width/$rowContext', (
-          t,
-        ) async {
+        testWidgets('mounted row padding $dark/$width/$rowContext', (t) async {
           await t.binding.setSurfaceSize(Size(width, 400));
           addTearDown(() => t.binding.setSurfaceSize(null));
           var activated = 0;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(family, dark: dark),
+              theme: raftTheme(dark: dark),
               builder: (context, child) => MediaQuery(
                 data: MediaQuery.of(context).copyWith(size: Size(width, 400)),
                 child: child!,
@@ -46,27 +41,17 @@ void main() {
             ),
           );
           await t.pumpAndSettle();
-          final isBrutal = family == RaftFamily.brutal;
-          final internal = isBrutal
-              ? 6.0
-              : rowContext == RaftMessageRowContext.thread && width < 1024
-              ? 12.0
-              : width < 768
-              ? 16.0
-              : 28.0;
-          final expectedAvatar =
-              12 + (isBrutal ? 12 : 0) + (isBrutal ? 2 : 1) + internal;
+          // Web v1.21.23: px-2, a 35px slot/avatar, gap-3 at every width.
+          // The existing timeline wrapper contributes its separate 12px inset.
+          const inset = 12.0 + 8;
+          expect(t.getTopLeft(find.byKey(const ValueKey('avatar'))).dx, inset);
           expect(
-            t.getTopLeft(find.byKey(const ValueKey('avatar'))).dx,
-            expectedAvatar,
+            t.getSize(find.byKey(const ValueKey('avatar'))),
+            const Size.square(35),
           );
-          final expectedContent =
-              expectedAvatar +
-              (isBrutal || width >= 768 ? 36 : 32) +
-              (isBrutal || width >= 768 ? 12 : 8);
           expect(
             t.getTopLeft(find.byKey(const ValueKey('content'))).dx,
-            expectedContent,
+            inset + 35 + 12,
           );
           await t.tap(find.text('Public author'));
           await t.pump();

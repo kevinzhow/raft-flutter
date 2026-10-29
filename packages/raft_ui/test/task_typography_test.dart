@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 Future<void> loadTaskFonts(WidgetTester tester) => tester.runAsync(() async {
-  for (final family in ['HankenGrotesk', 'Inter', 'Geist', 'GeistMono']) {
+  for (final family in [
+    'SpaceGrotesk',
+    'SpaceMono',
+    'HankenGrotesk',
+    'Inter',
+    'Geist',
+    'GeistMono',
+  ]) {
     ByteData data;
     try {
       data = await rootBundle.load('packages/raft_ui/assets/fonts/$family.ttf');
@@ -18,18 +26,14 @@ Future<void> loadTaskFonts(WidgetTester tester) => tester.runAsync(() async {
 });
 
 void main() {
-  for (final (family, dark) in [
-    (RaftFamily.brutal, false),
-    (RaftFamily.elegant, false),
-    (RaftFamily.elegant, true),
-  ]) {
+  for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      '$family/$dark task inherits document face and retains separate status action',
+      '$dark task inherits document face and retains separate status action',
       (tester) async {
         await loadTaskFonts(tester);
         var opened = 0;
         String? selected;
-        final theme = raftTheme(family, dark: dark);
+        final theme = raftTheme(dark: dark);
         final tokens = theme.extension<RaftTokens>()!;
         await tester.pumpWidget(
           MaterialApp(
@@ -74,7 +78,9 @@ void main() {
         );
         expect(
           tester.widget<Text>(find.text('#210')).style!.fontFamily,
-          family == RaftFamily.brutal ? tokens.monoFont : tokens.bodyFont,
+          tokens.option('listGroup.frame', or: 'framed') == 'plain'
+              ? tokens.monoFont
+              : tokens.bodyFont,
         );
         await tester.tap(find.text('Review the thread header strip baselines'));
         expect(opened, 1);
@@ -87,11 +93,11 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
-    testWidgets('$family/$dark inline status inherits its document face', (
+    testWidgets('$dark inline status inherits its document face', (
       tester,
     ) async {
       await loadTaskFonts(tester);
-      final theme = raftTheme(family, dark: dark);
+      final theme = raftTheme(dark: dark);
       final tokens = theme.extension<RaftTokens>()!;
       await tester.pumpWidget(
         MaterialApp(
@@ -115,31 +121,21 @@ void main() {
         tester.widget<Text>(find.text('In Progress')).style!.fontFamily,
         tokens.headingFont,
       );
-      // Source DOM: h20 Brutal badge keeps the h24 strut; the h22 Elegant
-      // badge plus its baseline descent grows the inline line to h25.
+      // Legacy chips fit the 24px document strut; the current 22px chip plus
+      // mt-0.5 and the host baseline expands this Flutter line to 25px.
       expect(
         tester.getSize(find.byType(RaftInlineLineBox)).height,
-        family == RaftFamily.brutal ? 24 : 25,
+        tokens.option('task.status', or: 'symbol') == 'square' ? 25 : 24,
       );
-      if (family == RaftFamily.brutal) {
-        final badge = find
-            .ancestor(
-              of: find.text('In Progress'),
-              matching: find.byType(DecoratedBox),
-            )
-            .first;
-        // Actual Chromium DOM: badge top 3, h20 in the document's h24 line.
-        expect(tester.getTopLeft(badge).dy, 3);
-        expect(tester.getSize(badge).height, 20);
-      }
+
       expect(tester.takeException(), isNull);
     });
   }
-  testWidgets('task keeps the Source fractional meta line and card height', (
+  testWidgets('Raft task keeps its token meta line and card height', (
     tester,
   ) async {
     await loadTaskFonts(tester);
-    final theme = raftTheme(RaftFamily.brutal);
+    final theme = raftTheme();
     final tokens = theme.extension<RaftTokens>()!;
     await tester.pumpWidget(
       MaterialApp(
@@ -169,9 +165,10 @@ void main() {
       of: find.text('#210'),
       matching: find.byType(RaftCssText),
     );
-    expect(tester.getSize(number).height, 16.5);
-    // Source DOM measurement, 358px card, one title line, editable status.
-    expect(tester.getSize(find.byType(RaftTaskCard)).height, 103.25);
+    expect(tester.getSize(number).height, 16);
+    // Updated body/mono-meta scale and 22px status, at 358px in the host raster.
+    // Pixel comparison remains separate; this is not a browser-height assertion.
+    expect(tester.getSize(find.byType(RaftTaskCard)).height, 113);
     expect(tester.takeException(), isNull);
   });
 }

@@ -3,8 +3,10 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:markdown/markdown.dart' as md;
 
 import 'localization.dart';
+import 'markdown_autolink.dart';
 
 /// Compact accessibility contract for one timeline message row.
 ///
@@ -25,7 +27,7 @@ import 'localization.dart';
 class RaftMessageSemanticsAction {
   const RaftMessageSemanticsAction(this.label, this.onInvoke);
 
-  /// Localized, stable action name ("Reply in thread", "Save message"...).
+  /// Localized, stable action name ("Reply in thread", "Save Message"...).
   final String label;
 
   /// Receives the row's context, e.g. as a popup anchor.
@@ -159,7 +161,7 @@ final _authoredLink = RegExp(
   r'\[((?:\\.|[^\]\\])*)\]\(\s*<?([^)\s>]*)>?(?:\s+"[^"]*")?\s*\)',
 );
 final _angleLink = RegExp(r'<((?:https?|mailto):[^>\s]+)>');
-final _bareUrl = RegExp(r'(?<![(<\w/="])https?://[^\s<>()\[\]]+');
+final _urlHint = RegExp(r'://|www\.', caseSensitive: false);
 final _sentinel = RegExp(
   '\u{E000}([^\u{E001}]*)\u{E001}([^\u{E002}]*)\u{E002}',
 );
@@ -193,6 +195,27 @@ List<String> _plainLines(String markdown) {
   return lines;
 }
 
+/// The links of a parsed (and reference-resolved) body, in reading order:
+/// authored links, autolinks and identity references.
+List<RaftMessageSemanticsLink> raftTreeSemanticsLinks(List<md.Node> nodes) {
+  final found = <RaftMessageSemanticsLink>[];
+  void visit(md.Node node) {
+    if (node is! md.Element) return;
+    final href = node.attributes['href'];
+    if (node.tag == 'a' && href != null) {
+      final label = node.textContent.trim();
+      found.add((label: label.isEmpty ? href : label, href: href));
+      return;
+    }
+    for (final child in node.children ?? const <md.Node>[]) {
+      visit(child);
+    }
+  }
+
+  nodes.forEach(visit);
+  return found;
+}
+
 /// A link or identity reference rendered inside message prose.
 typedef RaftMessageSemanticsLink = ({String label, String href});
 
@@ -206,7 +229,7 @@ List<RaftMessageSemanticsLink> raftMessageSemanticsLinks(String markdown) {
   if (cached != null) return _linkCache[markdown] = cached;
   final found = <(int, RaftMessageSemanticsLink)>[];
   if (markdown.contains('](') ||
-      markdown.contains('://') ||
+      _urlHint.hasMatch(markdown) ||
       markdown.contains('\u{E000}')) {
     // Blank code spans (same length) so offsets stay comparable.
     final text = markdown.replaceAllMapped(
@@ -215,12 +238,15 @@ List<RaftMessageSemanticsLink> raftMessageSemanticsLinks(String markdown) {
     );
     final taken = <(int, int)>[];
     bool free(Match m) => !taken.any((r) => m.start < r.$2 && r.$1 < m.end);
+    // An image's source is not prose.
+    for (final m in _image.allMatches(text)) {
+      taken.add((m.start, m.end));
+    }
     for (final m in _authoredLink.allMatches(text)) {
       if (m.start > 0 && text[m.start - 1] == '!') continue;
       taken.add((m.start, m.end));
-      final label = _unescape(
-        m[1]!.replaceAllMapped(_sentinel, (s) => s[2]!),
-      ).trim();
+      final label = _unescape(m[1]!.replaceAllMapped(_sentinel, (s) => s[2]!))
+          .trim();
       found.add((m.start, (label: label.isEmpty ? m[2]! : label, href: m[2]!)));
       // A reference nested in an authored label is its own link.
       for (final s in _sentinel.allMatches(m[1]!)) {
@@ -229,6 +255,7 @@ List<RaftMessageSemanticsLink> raftMessageSemanticsLinks(String markdown) {
     }
     for (final m in _sentinel.allMatches(text)) {
       if (!free(m)) continue;
+      taken.add((m.start, m.end));
       found.add((m.start, (label: m[2]!, href: m[1]!)));
     }
     for (final m in _angleLink.allMatches(text)) {
@@ -236,10 +263,12 @@ List<RaftMessageSemanticsLink> raftMessageSemanticsLinks(String markdown) {
       taken.add((m.start, m.end));
       found.add((m.start, (label: m[1]!, href: m[1]!)));
     }
-    for (final m in _bareUrl.allMatches(text)) {
-      if (!free(m)) continue;
-      final url = m[0]!.replaceFirst(RegExp(r'[.,:;!?]+$'), '');
-      found.add((m.start, (label: url, href: url)));
+    // The same scan the renderer's syntax runs, so a URL is a link here
+    // exactly when it is drawn as one.
+    for (final u in raftBareUrls(text)) {
+      if (!taken.any((r) => u.start < r.$2 && r.$1 < u.end)) {
+        found.add((u.start, (label: u.text, href: u.href)));
+      }
     }
   }
   found.sort((a, b) => a.$1.compareTo(b.$1));
@@ -288,6 +317,7 @@ class RaftMessageProseSemantics extends StatelessWidget {
                       ? Uri.tryParse(link.href)
                       : null,
                   onTap: onLink == null ? null : () => onLink!(link.href),
+                  // ignore: raft_lints/off_grid_spacing -- invisible semantics node, not layout
                   child: const SizedBox(height: 1),
                 ),
             ],
