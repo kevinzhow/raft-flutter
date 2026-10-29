@@ -67,6 +67,8 @@ export 'src/channel_footer.dart';
 export 'src/attachment_comments.dart';
 
 export 'src/design_primitives.dart';
+export 'src/menu_action_row.dart';
+export 'src/menu_popup_backend.dart';
 export 'src/raft/raft.dart';
 export 'src/recipe_surface.dart';
 export 'src/dialog_surface.dart';
