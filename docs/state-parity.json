@@ -13724,7 +13724,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/platform/desktop_caption_controls.dart#local-function:CLASS:_DesktopCaptionControlsState@1975/METHOD:build@2898/FUNCTION:<anonymous>@2957/FUNCTION:group@3071": {
+      "apps/raft_flutter/lib/platform/desktop_caption_controls.dart#local-function:CLASS:_DesktopCaptionControlsState@2051/METHOD:build@2974/FUNCTION:<anonymous>@3033/FUNCTION:group@3147": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
