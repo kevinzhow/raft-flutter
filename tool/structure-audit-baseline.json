@@ -1156,177 +1156,153 @@
       "module": "main",
       "metric": "lines",
       "limit": 58,
-      "reason": "Read device RAM once during bootstrap for the approved attachment preview memory tiers.",
-      "reviewer": "Kevin",
-      "expires": "2026-10-30"
+      "reason": "Read device RAM once during bootstrap for the approved attachment preview memory tiers. Originally reviewed by Kevin;renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
+      "reviewer": "Cindy",
+      "expires": "2026-11-30"
     },
     {
       "module": "main",
       "metric": "tokens",
       "limit": 232,
-      "reason": "Read device RAM once during bootstrap for the approved attachment preview memory tiers.",
-      "reviewer": "Kevin",
-      "expires": "2026-10-30"
+      "reason": "Read device RAM once during bootstrap for the approved attachment preview memory tiers. Originally reviewed by Kevin;renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
+      "reviewer": "Cindy",
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController.attachmentMedia",
       "limit": 1,
-      "reason": "task #136 first AttachmentMedia slice requested by Cindy: replace twelve media fields with one owner shared by borrowed presentations; no new media state in the controller. Review this ownership seam with Kevin before further slices.",
+      "reason": "task #136 first AttachmentMedia slice requested by Cindy: replace twelve media fields with one owner shared by borrowed presentations; no new media state in the controller. Review this ownership seam with Kevin before further slices. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController.deviceStore",
       "limit": 1,
-      "reason": "task #136 second slice requested by Cindy after Kevin approved the extraction method: replace cache, write-queue and retired fields with one WorkspaceDeviceStore owner; UI notices and authorization stay in the controller.",
+      "reason": "task #136 second slice requested by Cindy after Kevin approved the extraction method: replace cache, write-queue and retired fields with one WorkspaceDeviceStore owner; UI notices and authorization stay in the controller. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController.apiGateway",
       "limit": 1,
-      "reason": "task #136 third composition-root slice authorized by Cindy: replace the shared-read map with one RaftApiGateway shared by borrowed presentations; preserve caller query overrides and leave UI revisions in the controller.",
+      "reason": "task #136 third composition-root slice authorized by Cindy: replace the shared-read map with one RaftApiGateway shared by borrowed presentations; preserve caller query overrides and leave UI revisions in the controller. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController.services",
       "limit": 1,
-      "reason": "task #136 composition-root continuation requested by Cindy: replace repository ownership flags, lazy stores and panel caches with one WorkspaceServices owner; preserve injection, facade overrides and teardown order. Pending reviewer acceptance with this slice.",
+      "reason": "task #136 composition-root continuation requested by Cindy: replace repository ownership flags, lazy stores and panel caches with one WorkspaceServices owner; preserve injection, facade overrides and teardown order. Pending reviewer acceptance with this slice. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController.sessionScope",
       "limit": 1,
-      "reason": "task #136 step 5a authorized by Cindy: replace two receiver-local revocation sets with one SessionScope that dispatches server revocation and reset in fixed synchronous phases; preserve projection, borrowed/independent ownership and queued purge order. Pending exception approval with this concrete slice.",
+      "reason": "task #136 step 5a authorized by Cindy: replace two receiver-local revocation sets with one SessionScope that dispatches server revocation and reset in fixed synchronous phases; preserve projection, borrowed/independent ownership and queued purge order. Pending exception approval with this concrete slice. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController.attachmentRetentionIndex",
       "limit": 1,
-      "reason": "task #136 step 6c authorized by Cindy: replace five receiver-local attachment history retention index fields with one AttachmentRetentionIndex; preserve admission stamps, debug counters and the original source-captured media callback. Principle accepted; this concrete field and measured slice remain subject to reviewer acceptance.",
+      "reason": "task #136 step 6c authorized by Cindy: replace five receiver-local attachment history retention index fields with one AttachmentRetentionIndex; preserve admission stamps, debug counters and the original source-captured media callback. Principle accepted; this concrete field and measured slice remain subject to reviewer acceptance. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
-    },
-    {
-      "module": "workspace_controller",
-      "metric": "field.WorkspaceController._replyAuthority",
-      "limit": 1,
-      "reason": "Replacement reference for receiver-local reply authority epochs: two state fields, zero callbacks or dependency ports, and reads and writes together; root fields 93 to 92; total production growth 13 lines and 67 tokens.",
-      "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController._session",
       "limit": 1,
-      "reason": "task #161 D1 replaces 21 receiver-local session fields with domain owners. Existing public entrypoints and ordered teardown remain; bounded reference approved by Cindy in Raft fdc8ac23-11c2-424f-9197-e5c50a16d0eb.",
+      "reason": "task #161 D1 replaces 21 receiver-local session fields with domain owners. Existing public entrypoints and ordered teardown remain; bounded reference approved by Cindy in Raft fdc8ac23-11c2-424f-9197-e5c50a16d0eb. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field._WorkspaceSessionBindings.w",
       "limit": 1,
-      "reason": "Temporary composition adapter preserves the original receiver and public virtual dispatch without adding generic methods to Root. Remove during caller cleanup; approved by Cindy in Raft fdc8ac23-11c2-424f-9197-e5c50a16d0eb.",
+      "reason": "Temporary composition adapter preserves the original receiver and public virtual dispatch without adding generic methods to Root. Remove during caller cleanup; approved by Cindy in Raft fdc8ac23-11c2-424f-9197-e5c50a16d0eb. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field._WorkspaceSessionBindings._transitions",
       "limit": 1,
-      "reason": "One cached typed wrapper exposes only the four frozen synchronous transition commands, without bindings or handler maps. Remove temporary composition bridge at cleanup; approved by Cindy in Raft fdc8ac23-11c2-424f-9197-e5c50a16d0eb.",
+      "reason": "One cached typed wrapper exposes only the four frozen synchronous transition commands, without bindings or handler maps. Remove temporary composition bridge at cleanup; approved by Cindy in Raft fdc8ac23-11c2-424f-9197-e5c50a16d0eb. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field._WorkspaceTransitions.scope",
       "limit": 1,
-      "reason": "One reference to the existing SessionScope implements its four frozen transition commands; no duplicate state, handlers or notifications. Approved by Cindy in Raft fdc8ac23-11c2-424f-9197-e5c50a16d0eb.",
+      "reason": "One reference to the existing SessionScope implements its four frozen transition commands; no duplicate state, handlers or notifications. Approved by Cindy in Raft fdc8ac23-11c2-424f-9197-e5c50a16d0eb. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController._channels",
       "limit": 1,
-      "reason": "task #161 D2 replaces five receiver-local projections and three duplicate repository references with one WorkspaceChannels owner. Original receiver/source dispatch and repository identities are preserved; eight old ceilings are zero and three old reference exceptions are removed. Approved by Cindy in Raft 76c62ba8-a7c1-48e9-9051-161a927aa2b8.",
+      "reason": "task #161 D2 replaces five receiver-local projections and three duplicate repository references with one WorkspaceChannels owner. Original receiver/source dispatch and repository identities are preserved; eight old ceilings are zero and three old reference exceptions are removed. Approved by Cindy in Raft 76c62ba8-a7c1-48e9-9051-161a927aa2b8. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
-    },
-    {
-      "module": "app_root",
-      "metric": "tokens",
-      "limit": 11950,
-      "reason": "PR #216: one navigator-wide native hover policy wrapper (+7 tokens, no new fields); approved by Cindy in 1759c092-c736-4932-b550-e8337263704f. Message caller cleanup: two generation reads now use the existing message-domain owner (parent 11943 to 11947); replacement limit approved by Cindy in 4f9dceed-51de-4792-b6e1-b236560fd23d. Message static utility caller cleanup: one direct WorkspaceMessages import adds 3 tokens (11947 to 11950), with no new fields; approved by Cindy in 13bea60f-f64a-4b41-8c7d-877124d959ba. Existing expiry and revocation conditions remain in force.",
-      "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController._messages",
       "limit": 1,
-      "reason": "task #161 D4 moves 24 receiver-local message/thread projections and the existing window reference into WorkspaceMessages, replacing them with one domain reference. Root forwarding getters remain on the temporary-forward list and are removed when callers move to messageDomain; this allowance permits no new forwards. Approved by Cindy in Raft b3bf6a3d-ffbd-4bd9-a79d-cffe34275fb6.",
+      "reason": "task #161 D4 moves 24 receiver-local message/thread projections and the existing window reference into WorkspaceMessages, replacing them with one domain reference. Root forwarding getters remain on the temporary-forward list and are removed when callers move to messageDomain; this allowance permits no new forwards. Approved by Cindy in Raft b3bf6a3d-ffbd-4bd9-a79d-cffe34275fb6. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController._editor",
       "limit": 1,
-      "reason": "D5 replaces six receiver-local editor states with one owner; Root fields 41 to 36. Approved by Cindy in Raft fa9cd784-0543-409b-bb0c-4789b4738c2d. The 38 temporary compatibility declarations (168 lines), static alias, root reference and this exception must be removed by 2026-10-30 through the agreed caller migration and composition cleanup.",
+      "reason": "D5 replaces six receiver-local editor states with one owner; Root fields 41 to 36. Approved by Cindy in Raft fa9cd784-0543-409b-bb0c-4789b4738c2d. The 38 temporary compatibility declarations (168 lines), static alias, root reference and this exception must be removed by 2026-10-30 through the agreed caller migration and composition cleanup. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "resource_view",
       "metric": "field._ResourceViewState._authorityCache",
       "limit": 1,
-      "reason": "task #197 holds one independent directory cache; sorting and serialization move out of row builds, no new permission decisions. Approved by Cindy in Raft 8870d8d9-b9c5-412c-8865-3fbfdf3faef1. By 2026-10-30 move the cache into the Activity repository/ViewModel with task #136, then remove this exception.",
+      "reason": "task #197 holds one independent directory cache; sorting and serialization move out of row builds, no new permission decisions. Approved by Cindy in Raft 8870d8d9-b9c5-412c-8865-3fbfdf3faef1. By 2026-10-30 move the cache into the Activity repository/ViewModel with task #136, then remove this exception. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController._presentation",
       "limit": 1,
-      "reason": "D3 replaces 16 receiver-local Root presentation/navigation fields with one WorkspacePresentation owner (Root fields 36 to 21). Old field ceilings are zero and the old _conversationPresentation exception is removed; the common context is unchanged. Approved by Cindy in Raft 1a9f9178-87f8-41df-b8a2-28f6cfd97760. Remove this Root reference during D6/caller and composition cleanup before 2026-10-30; no new forwards or context growth.",
+      "reason": "D3 replaces 16 receiver-local Root presentation/navigation fields with one WorkspacePresentation owner (Root fields 36 to 21). Old field ceilings are zero and the old _conversationPresentation exception is removed; the common context is unchanged. Approved by Cindy in Raft 1a9f9178-87f8-41df-b8a2-28f6cfd97760. Remove this Root reference during D6/caller and composition cleanup before 2026-10-30; no new forwards or context growth. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "workspace_controller",
       "metric": "field.WorkspaceController.reactions",
       "limit": 1,
-      "reason": "Cindy approved D6 on 2026-10-18 (d834986b-5093-4304-88d3-1adc7a30ddf6): one owner reference replaces four Root reaction state fields; old ceilings zero and Root totals lowered. Receiver/source and hydration overrides retain explicit dispatch; common context unchanged. Retire this and _presentation in caller/composition cleanup; no new forwards.",
+      "reason": "Cindy approved D6 on 2026-10-18 (d834986b-5093-4304-88d3-1adc7a30ddf6): one owner reference replaces four Root reaction state fields; old ceilings zero and Root totals lowered. Receiver/source and hydration overrides retain explicit dispatch; common context unchanged. Retire this and _presentation in caller/composition cleanup; no new forwards. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     },
     {
       "module": "chat_view",
       "metric": "lines",
       "limit": 3765,
-      "reason": "This mechanical message caller migration uses a live UI-local message-domain alias; no new state. Approved by Cindy in 09fa9961-2e3d-450e-b0d3-afd9280216d4. Revoke when page view models replace these receivers. Read-state caller migration extends this same exception only to the measured value; approved by Cindy in 0ed09255-82e2-4442-a5b4-572eaf376299 (2026-10-19). Original expiry and revocation conditions remain.",
+      "reason": "This mechanical message caller migration uses a live UI-local message-domain alias; no new state. Approved by Cindy in 09fa9961-2e3d-450e-b0d3-afd9280216d4. Revoke when page view models replace these receivers. Read-state caller migration extends this same exception only to the measured value; approved by Cindy in 0ed09255-82e2-4442-a5b4-572eaf376299 (2026-10-19). Original expiry and revocation conditions remain. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
-      "expires": "2026-10-30"
-    },
-    {
-      "module": "chat_view",
-      "metric": "tokens",
-      "limit": 20630,
-      "reason": "This mechanical message caller migration uses a live UI-local message-domain alias; no new state. Approved by Cindy in 09fa9961-2e3d-450e-b0d3-afd9280216d4. Revoke when page view models replace these receivers. Read-state caller migration extends this same exception only to the measured value; approved by Cindy in 0ed09255-82e2-4442-a5b4-572eaf376299 (2026-10-19). Original expiry and revocation conditions remain.",
-      "reviewer": "Cindy",
-      "expires": "2026-10-30"
+      "expires": "2026-11-30"
     }
   ]
 }
