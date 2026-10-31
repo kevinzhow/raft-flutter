@@ -193,6 +193,12 @@ input path. Caption positions from a different logical window width are ignored
 until the next Dart layout; unchanged positions survive height-only resize and
 DPI changes. Maximized content is constrained to the monitor work area, while
 borderless fullscreen uses the whole monitor and hides caption hit targets.
+DWM's frame extension covers the complete 48 logical-pixel row, scaled to the
+window's current DPI. A decorative one-pixel extension also clips Windows'
+internal maximize-button region to one pixel, so a correct `HTMAXBUTTON` alone
+does not make Snap Layouts available. DPI changes update this extension while
+the ordinary window owner still applies the suggested window bounds. Native
+caption fallback and borderless fullscreen remove the extension.
 Nonclient tracking requests both `TME_HOVER` and `TME_LEAVE` with the system
 hover timeout. Native move, hover and leave messages go directly through
 `DefWindowProc` before any plugin can consume them. A consumed one-shot hover
@@ -207,6 +213,15 @@ buttons keep semantic labels but do not show an extra Flutter tooltip over the
 native controls or snap popup. There is currently no Windows system-fullscreen
 command or F11 binding; native fullscreen transition tests do not imply a public
 entry point exists.
+
+For native caption QA without loading an account or message database, build
+`apps/raft_flutter/test_driver/windows_frame_qa.dart` as the Windows target. It
+uses the production runner, `DesktopTitleBar` and `RaftWorkspaceTopBar`; F6
+cycles Brutal light, Elegant light/dark and Raft light/dark; F9 quits the host.
+Its tray bridge uses the separate lab preference namespace and the production
+exit handshake. Its search action only increments an in-memory counter. This
+isolates caption rendering, input and native window behavior from an installed
+application's data.
 
 Set the process environment `RAFT_DESKTOP_TITLE_BAR=native` to retain the older
 system caption. Older runners that do not advertise `customControls` retain it

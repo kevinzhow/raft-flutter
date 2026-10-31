@@ -39,6 +39,7 @@ class WindowsFrame {
   static LRESULT CALLBACK ChildProc(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
   LRESULT HitTest(POINT screen) const;
   bool IsFullscreen() const;
+  void UpdateFrameMargins(UINT dpi);
   void NotifyIfChanged(const State& before);
   void ForwardPointer(UINT message, WPARAM wp, LPARAM screen);
   HWND window_, child_;
@@ -49,6 +50,7 @@ class WindowsFrame {
   double caption_layout_width_ = -1;
   bool subclassed_ = false;
   bool tracking_max_ = false;
+  int frame_margin_ = -1;
 };
 
 #endif  // RUNNER_WINDOWS_FRAME_H_

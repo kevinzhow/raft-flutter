@@ -31,12 +31,11 @@ Iterable<File> _dartFiles(String dir) =>
               f.path.endsWith('.dart') &&
               !f.path.endsWith('_previews.dart') &&
               !f.path.endsWith('.g.dart') &&
-              !f.path.contains('/l10n/') &&
-              !f.path.contains('/previews'),
+              !_normalize(f.path).contains('/l10n/') &&
+              !_normalize(f.path).contains('/previews'),
         );
 
-String _normalize(String path) =>
-    path.startsWith('../../packages/') ? path : path;
+String _normalize(String path) => path.replaceAll('\\', '/');
 
 void main() {
   final surfaces = allCloseSurfaces;
@@ -81,7 +80,7 @@ void main() {
     final missing = <String>[];
     for (final root in ['lib', '../../packages/raft_ui/lib/src']) {
       for (final file in _dartFiles(root)) {
-        final path = file.path;
+        final path = _normalize(file.path);
         if (listed.contains(path) || closeScanExempt.containsKey(path)) {
           continue;
         }

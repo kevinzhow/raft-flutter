@@ -1,6 +1,7 @@
-// Hidden windows and actual Win32 message dispatch. This is not pointer/UI QA.
+// Win32 message dispatch and a briefly shown DWM geometry probe. Not pointer/UI QA.
 #include <windows.h>
 #include <windowsx.h>
+#include <dwmapi.h>
 
 #if __has_include("windows_frame.h")
 #include "windows_frame.h"
@@ -65,8 +66,9 @@ struct Window {
         WS_OVERLAPPEDWINDOW, 100, 100, 800, 600, nullptr, nullptr,
         GetModuleHandleW(nullptr), this);
     Check(hwnd != nullptr, "create frame fixture");
+    Resize(800, 600);
     child = CreateWindowW(L"RaftIsolatedFrameChild", L"", WS_CHILD,
-        0, 0, 800, 600, hwnd, nullptr, GetModuleHandleW(nullptr), this);
+        0, 0, Physical(800), Physical(600), hwnd, nullptr, GetModuleHandleW(nullptr), this);
     Check(child != nullptr, "create Flutter child stand-in");
 #ifdef RAFT_FRAME_AVAILABLE
     frame = std::make_unique<WindowsFrame>(hwnd, child, [this] { ++changes; },
@@ -85,8 +87,15 @@ struct Window {
 #endif
     DestroyWindow(hwnd);
   }
+  int Physical(int logical) const {
+    return MulDiv(logical, GetDpiForWindow(hwnd), 96);
+  }
+  void Resize(int width, int height) const {
+    SetWindowPos(hwnd, nullptr, 0, 0, Physical(width), Physical(height),
+                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+  }
   LPARAM Point(int x, int y) const {
-    POINT point{x, y}; ClientToScreen(hwnd, &point);
+    POINT point{Physical(x), Physical(y)}; ClientToScreen(hwnd, &point);
     return MAKELPARAM(point.x, point.y);
   }
   void Pump() {
@@ -102,6 +111,7 @@ void NoExtraCaption() {
   ClientToScreen(w.hwnd, &origin);
   std::cout << "outer=" << outer.right-outer.left << 'x' << outer.bottom-outer.top
             << " client=" << client.right << 'x' << client.bottom
+            << " dpi=" << GetDpiForWindow(w.hwnd)
             << " topInset=" << origin.y-outer.top << '\n';
   Check(origin.y == outer.top && origin.x == outer.left &&
         client.bottom == outer.bottom-outer.top,
@@ -109,11 +119,32 @@ void NoExtraCaption() {
 }
 
 #ifdef RAFT_FRAME_AVAILABLE
+void SystemCaptionGeometry() {
+  Window w;
+  // DWM does not lay out an unshown window's real caption buttons. Hidden-only
+  // queries can return fallback geometry and miss the one-pixel clipping bug.
+  ShowWindow(w.hwnd, SW_SHOWNOACTIVATE);
+  UpdateWindow(w.hwnd);
+  DwmFlush();
+  w.Pump();
+  TITLEBARINFOEX title{};
+  title.cbSize = sizeof(title);
+  SendMessageW(w.hwnd, WM_GETTITLEBARINFOEX, 0,
+               reinterpret_cast<LPARAM>(&title));
+  const auto& maximum = title.rgrect[3];
+  const auto height = maximum.bottom - maximum.top;
+  std::cout << "system maximize bounds=" << maximum.left << ',' << maximum.top
+            << ',' << maximum.right << ',' << maximum.bottom << '\n';
+  Check(maximum.right > maximum.left &&
+        height >= GetSystemMetricsForDpi(SM_CYCAPTION, GetDpiForWindow(w.hwnd)),
+        "custom frame must preserve a full system maximize region for Snap Layouts");
+}
+
 void Rects(Window& w) {
-  // Coordinates sent by Dart are logical, while Win32 hit tests are physical.
-  const double scale = GetDpiForWindow(w.hwnd) / 96.0;
-  Check(w.frame->SetCaptionRects({{{550/scale, 0, 46, 48},
-      {620/scale, 0, 46, 48}, {690/scale, 0, 46, 48}}}), "valid caption rects");
+  // The fixture, caption rectangles and pointer inputs share logical units.
+  // Window::Point converts to physical screen coordinates at the Win32 boundary.
+  Check(w.frame->SetCaptionRects({{{550, 0, 46, 48},
+      {620, 0, 46, 48}, {690, 0, 46, 48}}}), "valid caption rects");
 }
 void HitTests() {
   Window w; Rects(w);
@@ -141,10 +172,10 @@ void InvalidAndStaleRects() {
   Check(SendMessageW(w.hwnd, WM_NCHITTEST, 0, w.Point(640,25)) == HTCLIENT,
         "invalid input must remove stale maximize hit target");
   Rects(w);
-  SetWindowPos(w.hwnd, nullptr, 0,0,800,700, SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+  w.Resize(800, 700);
   Check(SendMessageW(w.hwnd, WM_NCHITTEST, 0, w.Point(640,25)) == HTMAXBUTTON,
         "height-only resize must retain deduplicated caption positions");
-  SetWindowPos(w.hwnd, nullptr, 0,0,790,700, SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+  w.Resize(790, 700);
   Check(SendMessageW(w.hwnd, WM_NCHITTEST, 0, w.Point(640,25)) == HTCLIENT,
         "width change disables old caption targets until new Flutter layout arrives");
 }
@@ -184,7 +215,8 @@ void StateAndFullscreen() {
   Check(SendMessageW(w.hwnd, WM_NCHITTEST, 0, w.Point(640,25)) == HTCLIENT,
         "fullscreen cannot leave hidden maximize/resize hit targets");
   SetWindowLongPtrW(w.hwnd, GWL_STYLE, original);
-  SetWindowPos(w.hwnd, nullptr, 100,100,800,600, SWP_NOZORDER|SWP_NOACTIVATE|SWP_FRAMECHANGED);
+  SetWindowPos(w.hwnd, nullptr, 100,100,w.Physical(800),w.Physical(600),
+      SWP_NOZORDER|SWP_NOACTIVATE|SWP_FRAMECHANGED);
   Check(!w.frame->state().fullscreen, "restoring window clears fullscreen state");
 }
 void ForwardMaxPointer() {
@@ -256,11 +288,12 @@ int main() {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     NoExtraCaption();
 #ifdef RAFT_FRAME_AVAILABLE
+    SystemCaptionGeometry();
     HitTests(); InvalidAndStaleRects(); MaximumClientArea(); StateAndFullscreen();
     NativeHoverDoesNotStartFlutterTracking();
     NativeHoverRequestsSystemHoverNotification();
     ForwardMaxPointer(); CloseOwnership(); FallbackAndLifetime();
-    std::cout << "PASS: 10 native frame scenarios (hidden windows; not visual/pointer acceptance)\n";
+    std::cout << "PASS: 11 native frame scenarios (dispatch/geometry; not visual/pointer acceptance)\n";
 #endif
     return 0;
   } catch (const std::exception& e) { std::cerr << "FAIL: " << e.what() << '\n'; return 1; }

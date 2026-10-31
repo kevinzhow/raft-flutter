@@ -8,6 +8,7 @@
 
 namespace {
 constexpr UINT_PTR kChildSubclass = 1;
+constexpr int kCaptionRowHeight = 48;
 POINT ScreenPoint(LPARAM lp) { return {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)}; }
 bool Valid(const WindowsFrame::Rect& rect) {
   return std::isfinite(rect.x) && std::isfinite(rect.y) &&
@@ -42,12 +43,24 @@ bool WindowsFrame::Enable(bool custom) {
   state_.maximize_hovered = false;
   rects_ = {};
   // Keep WS_OVERLAPPEDWINDOW: Windows still owns resizing, snap and system menu.
-  MARGINS margins{0, 0, custom ? 1 : 0, 0};
-  DwmExtendFrameIntoClientArea(window_, &margins);
+  UpdateFrameMargins(GetDpiForWindow(window_));
   SetWindowPos(window_, nullptr, 0, 0, 0, 0,
       SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
   NotifyIfChanged(before);
   return true;
+}
+
+void WindowsFrame::UpdateFrameMargins(UINT dpi) {
+  if (!dpi) dpi = GetDpiForWindow(window_);
+  // A one-pixel extension clips Windows' internal maximize rectangle to one
+  // pixel, so Snap Layouts remain unavailable even when HTMAXBUTTON is correct.
+  // Register the complete shared caption row; Dart still paints its controls.
+  const int margin = state_.custom_controls && !state_.fullscreen
+      ? MulDiv(kCaptionRowHeight, dpi, 96) : 0;
+  if (margin == frame_margin_) return;
+  MARGINS margins{0, 0, margin, 0};
+  if (SUCCEEDED(DwmExtendFrameIntoClientArea(window_, &margins)))
+    frame_margin_ = margin;
 }
 
 bool WindowsFrame::SetCaptionRects(const CaptionRects& rects) {
@@ -185,6 +198,7 @@ std::optional<LRESULT> WindowsFrame::HandleMessage(UINT message, WPARAM wp, LPAR
       const auto before = state_;
       state_.maximized = wp == SIZE_MAXIMIZED;
       state_.fullscreen = IsFullscreen();
+      UpdateFrameMargins(GetDpiForWindow(window_));
       state_.maximize_hovered = false;
       NotifyIfChanged(before);
       break;
@@ -192,10 +206,15 @@ std::optional<LRESULT> WindowsFrame::HandleMessage(UINT message, WPARAM wp, LPAR
     case WM_WINDOWPOSCHANGED: {
       const auto before = state_;
       state_.fullscreen = IsFullscreen();
+      UpdateFrameMargins(GetDpiForWindow(window_));
       if (state_.fullscreen) state_.maximize_hovered = false;
       NotifyIfChanged(before);
       break;
     }
+    case WM_DPICHANGED:
+      UpdateFrameMargins(LOWORD(wp));
+      // The window owner still applies the suggested physical bounds.
+      break;
     case WM_ACTIVATE: {
       const auto before = state_;
       state_.active = LOWORD(wp) != WA_INACTIVE;
