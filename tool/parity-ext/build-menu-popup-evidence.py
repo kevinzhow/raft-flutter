@@ -13,7 +13,8 @@ from builders import manifest_path  # noqa: E402
 
 path = manifest_path()
 manifest = json.loads(path.read_text())
-source = pathlib.Path(os.environ['PARITY_RAFT_SOURCE'])
+source = pathlib.Path(os.environ.get(
+    'PARITY_RAFT_SOURCE', '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'))
 shared = json.loads((source / 'packages/visual-testing/shared/sharedCases.json').read_text())
 files_base = next(c for c in shared['cases'] if c['id'] == 'components.thread.files.list')
 tasks_base = next(c for c in manifest['cases']
