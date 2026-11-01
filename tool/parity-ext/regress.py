@@ -177,10 +177,13 @@ def run_job(job, a):
 
 
 # ------------------------------------------------------------------------------------------------ summary
-def load_rows(a, ext_cases):
+def load_rows(a, ext_cases, jobs=None, outside_plan=None):
+    jobs = plan(a) if jobs is None else jobs
+    selected = {(j['look'], j['mode'], engine): set(j[engine])
+                for j in jobs for engine in ('official', 'ext') if j[engine]}
     width = {c['id']: (c.get('viewport') or {}).get('width') for c in ext_cases}
-    selection = getattr(a, 'cases', None)
     rows = []
+    excluded = {}
     roots = [pathlib.Path(a.out), *map(pathlib.Path, a.also)]
     jobdirs = [p for root in roots for p in sorted(root.iterdir()) if p.is_dir() and not p.name.startswith('_')]
     reasons = {}
@@ -193,18 +196,21 @@ def load_rows(a, ext_cases):
         if look not in LOOKS or mode not in MODES:
             continue
         for engine in ('official', 'ext'):
+            ids = selected.get((look, mode, engine))
+            if not ids:
+                continue
             f = jobdir / engine / 'summary.json'
             if not f.is_file():
                 continue
-            wanted_suffix = {'brutal-light': '.brutal', 'elegant-light': '.elegant', 'elegant-dark': '.elegant-dark'}[EXT_THEME[look][mode]]
             for r in json.loads(f.read_text())['cases']:
                 cid = r['id']
-                if selection and not any(fnmatch.fnmatchcase(cid, pattern) for pattern in selection.split(',')):
-                    continue
-                # an extension summary lists every manifest case; keep the ones this look / mode runs
-                if engine == 'ext' and not cid.endswith(wanted_suffix):
-                    continue
-                if engine == 'ext' and wanted_suffix == '.elegant' and cid.endswith('.elegant-dark'):
+                if cid not in ids:
+                    # Official reports deliberately cover their full manifest,
+                    # even when this execution requested only the fast subset.
+                    excluded[(look, mode, engine, cid)] = {
+                        'id': cid, 'look': look, 'mode': mode, 'engine': engine,
+                        'level': levels.level_of(cid),
+                    }
                     continue
                 score, why, verdict = r.get('pixelPerfectSimilarity'), reasons.get((jobdir.name, engine, cid), ''), r['verdict']
                 if look == 'raft' and mode == 'dark' and score is not None and web_page_is_light(jobdir / engine, cid):
@@ -216,7 +222,19 @@ def load_rows(a, ext_cases):
                     'score': score, 'nonText': r.get('nonTextSimilarity'), 'why': why})
     latest = {}
     for r in rows:  # a case reported by two directories keeps the later one
-        latest[(r['look'], r['mode'], r['id'])] = r
+        latest[(r['look'], r['mode'], r['engine'], r['id'])] = r
+    for (look, mode, engine), ids in selected.items():
+        for cid in sorted(ids):
+            key = (look, mode, engine, cid)
+            if key not in latest:
+                latest[key] = {
+                    'id': cid, 'look': look, 'mode': mode, 'engine': engine,
+                    'level': levels.level_of(cid), 'width': width.get(cid) or 390,
+                    'verdict': 'capture-not-reported', 'score': None, 'nonText': None,
+                    'why': 'Selected case is absent from this job\'s summary.',
+                }
+    if outside_plan is not None:
+        outside_plan.extend(excluded.values())
     return list(latest.values())
 
 
@@ -268,12 +286,16 @@ def cell(rows):
     return f'{passing}/{n} ({mean * 100:.1f}%)' + (f', {nofix} no capture/ref' if nofix else '')
 
 
-def summarize(a, ext_cases):
-    rows = load_rows(a, ext_cases)
+def summarize(a, ext_cases, jobs=None):
+    jobs = plan(a) if jobs is None else jobs
+    outside = []
+    rows = load_rows(a, ext_cases, jobs, outside)
     keys = sorted({(r['look'], r['mode']) for r in rows}, key=lambda k: (LOOKS.index(k[0]), MODES.index(k[1])))
     lines = [f'# Visual regression: levels x looks ({dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%MZ")})', '',
              'Cell = cases above the 96% line / cases in the cell (mean exact score of the captured pairs). '
              'raft = vs Web v1.21.23; elegant / brutal = vs the frozen a57b9dab render.', '',
+             f'Execution scope: {len(rows)} selected case(s); {len(outside)} full-manifest row(s) outside this plan. '
+             'Outside-plan rows are not execution failures or passes. The official full-manifest reports remain unchanged.', '',
              '| level | ' + ' | '.join(f'{l} {m}' for l, m in keys) + ' |', '| --- | ' + ' | '.join('---' for _ in keys) + ' |']
     for lvl in levels.LEVELS:
         lines.append(f'| {lvl} | ' + ' | '.join(cell([r for r in rows if r['level'] == lvl and (r['look'], r['mode']) == k])
@@ -290,8 +312,17 @@ def summarize(a, ext_cases):
     missing = [r for r in rows if r['score'] is None]
     lines += ['', f'## No capture or no reference ({len(missing)})', '', '| verdict | level | look | mode | case | why |', '| --- | --- | --- | --- | --- | --- |']
     lines += [f"| {r['verdict']} | {r['level']} | {r['look']} | {r['mode']} | `{r['id']}` | {r.get('why', '')} |" for r in missing]
+    lines += ['', f'## Coverage outside this execution plan ({len(outside)})', '',
+              '| level | look | mode | engine | cases |', '| --- | --- | --- | --- | --- |']
+    groups = sorted({(r['level'], r['look'], r['mode'], r['engine']) for r in outside})
+    for group in groups:
+        count = sum((r['level'], r['look'], r['mode'], r['engine']) == group for r in outside)
+        lines.append('| ' + ' | '.join([*group, str(count)]) + ' |')
     root = pathlib.Path(a.out)
-    (root / 'regress-summary.json').write_text(json.dumps({'rows': rows}, indent=1))
+    selection = {'planned': sum(len(j[e]) for j in jobs for e in ('official', 'ext')),
+                 'reported': len(rows), 'outsidePlan': len(outside)}
+    (root / 'regress-summary.json').write_text(json.dumps(
+        {'rows': rows, 'selection': selection, 'outsidePlan': outside}, indent=1))
     (root / 'regress-summary.md').write_text('\n'.join(lines) + '\n')
     print(f'[regress] summary: {root / "regress-summary.md"} ({len(rows)} rows, {len(below)} below 96%, {len(missing)} without score)')
     return rows
@@ -310,7 +341,7 @@ def command(a):
             code = run_job(j, a)
             failed = failed or code != 0
     ext_full, _ = manifests(a.out)
-    rows = summarize(a, ext_full)
+    rows = summarize(a, ext_full, jobs=jobs)
     missing = sum(row['score'] is None for row in rows)
     structural = {'react-missing', 'not-covered', 'web-not-dark'}
     blocking = sum(row['score'] is None and (bool(getattr(a, 'cases', None)) or row.get('verdict') not in structural)

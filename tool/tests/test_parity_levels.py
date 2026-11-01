@@ -133,6 +133,7 @@ class RegressTests(unittest.TestCase):
 
     def test_explicit_selection_does_not_count_unselected_official_rows(self):
         from argparse import Namespace
+        from unittest.mock import patch
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp) / 'raft-light/official'
             directory.mkdir(parents=True)
@@ -141,7 +142,12 @@ class RegressTests(unittest.TestCase):
                 {'id': 'components.thread.message-row.md-wrap-slice1', 'pixelPerfectSimilarity': 0.8, 'verdict': 'failing'},
                 {'id': 'components.ui.button.states', 'pixelPerfectSimilarity': None, 'verdict': 'flutter-capture-failed'},
             ]}))
-            rows = regress.load_rows(Namespace(out=temp, also=[], cases='components.thread.header.states'), [])
+            args = Namespace(out=temp, also=[], cases='components.thread.header.states',
+                             level='all', theme='raft', mode='light', fast=False,
+                             no_official=False, no_ext=True)
+            with patch.object(regress, 'manifests', return_value=([], [])), \
+                 patch.object(regress, 'official_cases', return_value=[{'id': args.cases}]):
+                rows = regress.load_rows(args, [])
             self.assertEqual([row['id'] for row in rows], ['components.thread.header.states'])
 
     def test_cell_counts_pass_line_and_unscored(self):
@@ -190,6 +196,137 @@ class RegressTests(unittest.TestCase):
     def test_each_look_reads_its_own_theme_names(self):
         self.assertEqual(regress.EXT_THEME['raft'], {'light': 'brutal-light', 'dark': 'elegant-dark'})
         self.assertNotIn('dark', regress.EXT_THEME['brutal'])
+
+
+class RegressSelectionTests(unittest.TestCase):
+    """Replay job summaries through the same selection used for execution."""
+
+    def args(self, out, **changes):
+        import argparse
+        parser = argparse.ArgumentParser()
+        regress.add_arguments(parser)
+        args = parser.parse_args(['--out', str(out), '--summary-only'])
+        for name, value in changes.items():
+            setattr(args, name, value)
+        return args
+
+    def case(self, cid, theme='brutal-light', width=390):
+        return {'id': cid, 'theme': theme, 'viewport': {'width': width}}
+
+    def row(self, case, score=0.99, verdict='passing'):
+        return {'id': case['id'], 'pixelPerfectSimilarity': score, 'verdict': verdict}
+
+    def report(self, out, job, engine, rows):
+        path = Path(out) / job / engine / 'summary.json'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({'cases': rows}))
+        return path
+
+    def sources(self, official, extension):
+        from contextlib import ExitStack
+        from unittest.mock import patch
+        stack = ExitStack()
+        stack.enter_context(patch.object(regress, 'official_cases', return_value=official))
+        stack.enter_context(patch.object(regress, 'manifests', return_value=(extension, extension)))
+        return stack
+
+    def test_fast_summary_uses_all_394_selected_rows_and_keeps_225_coverage_gaps_separate(self):
+        official = [self.case(f'screens.fast-{i}') for i in range(24)]
+        components = [self.case(f'components.ui.control-{i}.states') for i in range(67)]
+        tablets = [self.case(f'screens.tablet-{i}', width=816) for i in range(8)]
+        official += components + tablets
+        extension = [self.case(f'components.states.desktop.row-{i}.default.{look}', f'{look}-light')
+                     for look in ['brutal', 'elegant'] for i in range(106)]
+        framework = [self.case(f'components.framework.{platform}.{region}.default.raft-light',
+                               'raft-light', width)
+                     for platform, region, width in [('desktop', 'frame', 1280),
+                                                     ('desktop', 'navigation', 1280),
+                                                     ('mobile', 'frame', 390),
+                                                     ('phone-short', 'frame', 390)]]
+        extension += framework
+        with tempfile.TemporaryDirectory() as temp, self.sources(official, extension):
+            original = []
+            for look in ['raft', 'elegant', 'brutal']:
+                rows = [self.row(c) for c in official[:24]] + [
+                    self.row(c, None, 'flutter-capture-failed') for c in official[24:]]
+                original.append(self.report(temp, f'{look}-light', 'official', rows))
+                theme = 'brutal-light' if look == 'raft' else f'{look}-light'
+                selected = [c for c in extension if c['theme'] == theme or
+                            look == 'raft' and c['theme'] == 'raft-light']
+                ext_rows = [self.row(c) for c in selected]
+                if look == 'raft':
+                    ext_rows[-4:] = [self.row(c, score, verdict) for c, score, verdict in zip(
+                        framework, [0.90, 0.68, 0.98, 0.99], ['failing', 'failing', 'passing', 'passing'])]
+                original.append(self.report(temp, f'{look}-light', 'ext', ext_rows))
+            before = {str(p): p.read_bytes() for p in original}
+            rows = regress.summarize(self.args(temp, fast=True), extension)
+            self.assertEqual(len(rows), 394)
+            actual = {r['id']: (r['score'], r['verdict']) for r in rows if r['look'] == 'raft'}
+            self.assertEqual({c['id']: actual[c['id']] for c in framework}, dict(zip(
+                [c['id'] for c in framework], [(0.90, 'failing'), (0.68, 'failing'),
+                                              (0.98, 'passing'), (0.99, 'passing')])))
+            self.assertFalse(any(r['score'] is None for r in rows))
+            summary = json.loads((Path(temp) / 'regress-summary.json').read_text())
+            self.assertEqual(summary['selection'], {'planned': 394, 'reported': 394, 'outsidePlan': 225})
+            self.assertEqual(sum(r['level'] == 'component' for r in summary['outsidePlan']), 201)
+            self.assertEqual(sum(r['level'] == 'page' for r in summary['outsidePlan']), 24)
+            self.assertEqual({str(p): p.read_bytes() for p in original}, before)
+
+    def test_summary_respects_level_look_mode_case_and_engine_filters(self):
+        button = self.case('components.ui.button.states')
+        header = self.case('components.thread.header.states')
+        official = [button, header]
+        extension = [self.case(f'components.frame.desktop.rail.{look}', theme)
+                     for look, theme in [('brutal', 'brutal-light'), ('elegant', 'elegant-light'),
+                                         ('elegant-dark', 'elegant-dark')]]
+        with tempfile.TemporaryDirectory() as temp, self.sources(official, extension):
+            for job in ['raft-light', 'raft-dark', 'elegant-light', 'elegant-dark', 'brutal-light']:
+                self.report(temp, job, 'official', [self.row(c) for c in official])
+                self.report(temp, job, 'ext', [self.row(c) for c in extension])
+            args = self.args(temp, level='component', theme='elegant', mode='dark',
+                             cases='components.ui.*', no_ext=True)
+            rows = regress.load_rows(args, extension)
+            self.assertEqual([(r['look'], r['mode'], r['engine'], r['id']) for r in rows],
+                             [('elegant', 'dark', 'official', button['id'])])
+            args = self.args(temp, level='frame', theme='raft', mode='light', no_official=True)
+            rows = regress.load_rows(args, extension)
+            self.assertEqual([(r['look'], r['mode'], r['engine'], r['id']) for r in rows],
+                             [('raft', 'light', 'ext', extension[0]['id'])])
+
+    def test_selected_failed_capture_still_fails_after_unselected_rows_are_removed(self):
+        button, header = self.case('components.ui.button.states'), self.case('components.thread.header.states')
+        with tempfile.TemporaryDirectory() as temp, self.sources([button, header], []):
+            self.report(temp, 'raft-light', 'official', [self.row(button, None, 'flutter-capture-failed'), self.row(header)])
+            args = self.args(temp, theme='raft', mode='light', cases=button['id'], no_ext=True)
+            with self.assertRaises(SystemExit) as error:
+                regress.command(args)
+            self.assertEqual(error.exception.code, 1)
+            rows = json.loads((Path(temp) / 'regress-summary.json').read_text())['rows']
+            self.assertEqual([(r['id'], r['score'], r['verdict']) for r in rows],
+                             [(button['id'], None, 'flutter-capture-failed')])
+
+    def test_selected_case_missing_from_job_summary_cannot_disappear(self):
+        first, missing = self.case('screens.first'), self.case('screens.missing')
+        with tempfile.TemporaryDirectory() as temp, self.sources([first, missing], []):
+            self.report(temp, 'raft-light', 'official', [self.row(first)])
+            with self.assertRaises(SystemExit) as error:
+                regress.command(self.args(temp, theme='raft', mode='light', no_ext=True))
+            self.assertEqual(error.exception.code, 1)
+            rows = json.loads((Path(temp) / 'regress-summary.json').read_text())['rows']
+            self.assertEqual(len(rows), 2)
+            row = next(r for r in rows if r['id'] == missing['id'])
+            self.assertIsNone(row['score'])
+            self.assertEqual(row['verdict'], 'capture-not-reported')
+
+    def test_also_keeps_the_latest_selected_result_without_expanding_the_plan(self):
+        button, header = self.case('components.ui.button.states'), self.case('components.thread.header.states')
+        with tempfile.TemporaryDirectory() as temp, self.sources([button, header], []):
+            base, extra = Path(temp) / 'base', Path(temp) / 'extra'
+            self.report(base, 'raft-light', 'official', [self.row(button, 0.5, 'failing'), self.row(header)])
+            self.report(extra, 'raft-light', 'official', [self.row(button, 0.98), self.row(header)])
+            rows = regress.load_rows(self.args(base, also=[str(extra)], theme='raft', mode='light',
+                                              cases=button['id'], no_ext=True), [])
+            self.assertEqual([(r['id'], r['score']) for r in rows], [(button['id'], 0.98)])
 
 
 class NightlyVisualTests(unittest.TestCase):
