@@ -231,8 +231,8 @@
         "field._ResourcePagePreviewState.receipt": 1,
         "field._ResourcePagePreviewState.workspace": 1,
         "field._VisualPresentationStorage.values": 1,
-        "lines": 2753,
-        "tokens": 14881,
+        "lines": 2746,
+        "tokens": 14857,
         "field.WorkspaceController._presentation": 0,
         "field.WorkspaceController.reactions": 0
       },
@@ -296,7 +296,7 @@
         "field._WorkspaceViewState.gridKey": 0,
         "field._WorkspaceViewState.heldCompact": 1,
         "field._WorkspaceViewState.heldRail": 1,
-        "field._WorkspaceViewState.joinedChannelsOnly": 1,
+        "field._WorkspaceViewState.joinedChannelsOnly": 0,
         "field._WorkspaceViewState.joiningCommunityFromHelp": 1,
         "field._WorkspaceViewState.labsEnabled": 1,
         "field._WorkspaceViewState.lastAuthority": 1,
@@ -305,7 +305,7 @@
         "field._WorkspaceViewState.lastCompact": 1,
         "field._WorkspaceViewState.lastGridActive": 0,
         "field._WorkspaceViewState.liveActivities": 1,
-        "field._WorkspaceViewState.liveActivityShown": 1,
+        "field._WorkspaceViewState.liveActivityShown": 0,
         "field._WorkspaceViewState.mainSelection": 1,
         "field._WorkspaceViewState.masterCompactWidth": 1,
         "field._WorkspaceViewState.masterWideWidth": 1,
@@ -351,8 +351,8 @@
         "field._WorkspaceViewState.threadWidth": 1,
         "field._WorkspaceViewState.workspaceErrorScheduled": 1,
         "field._WorkspaceViewState.workspaceMode": 0,
-        "lines": 4900,
-        "tokens": 25626
+        "lines": 4887,
+        "tokens": 25523
       }
     },
     "resource_view": {
@@ -479,8 +479,8 @@
         "field._ResourceViewState.viewWindows": 1,
         "field._TaskDrag.row": 1,
         "field._TaskDrag.scope": 1,
-        "lines": 5896,
-        "tokens": 34011
+        "lines": 5878,
+        "tokens": 33992
       }
     },
     "server_page_window": {
@@ -529,8 +529,8 @@
         "field.MobileSettingsDirectPage.buildPage": 1,
         "field.MobileSettingsDirectPage.controller": 1,
         "field.MobileSettingsDirectPage.presentation": 1,
-        "field.MobileSettingsDirectPage.workspaceMode": 1,
-        "field.MobileSettingsPreference._override": 1,
+        "field.MobileSettingsDirectPage.workspaceMode": 0,
+        "field.MobileSettingsPreference._override": 0,
         "field.MobileSettingsSelection._disposed": 1,
         "field.MobileSettingsSelection._value": 1,
         "field.MobileSettingsSelection.controller": 1,
@@ -538,9 +538,9 @@
         "field._AccountSettingsCache.widget": 1,
         "field._MobileSettingsDirectPageState._leaf": 1,
         "field._MobileSettingsDirectPageState.selection": 1,
-        "field._MobileSettingsSwitchState.preference": 1,
-        "lines": 402,
-        "tokens": 1724
+        "field._MobileSettingsSwitchState.preference": 0,
+        "lines": 241,
+        "tokens": 1085
       }
     },
     "chat_view": {
@@ -548,8 +548,8 @@
       "metrics": {
         "field.ChatViewportHandle._jump": 1,
         "field.ChatViewportHandle._owner": 1,
-        "field.MobileChatDirectRead.channel": 1,
-        "field.MobileChatDirectRead.thread": 1,
+        "field.MobileChatDirectRead.channel": 0,
+        "field.MobileChatDirectRead.thread": 0,
         "field.RaftChatView.controller": 1,
         "field.RaftChatView.hideThreadParent": 1,
         "field.RaftChatView.onOpenChannelSettings": 1,
@@ -566,8 +566,8 @@
         "field._RaftChatViewState.alsoCreateTask": 1,
         "field._RaftChatViewState.atBottom": 1,
         "field._RaftChatViewState.bindingRevision": 1,
-        "field._RaftChatViewState.bodyPreparation": 1,
-        "field._RaftChatViewState.bodyPreparationInputs": 1,
+        "field._RaftChatViewState.bodyPreparation": 0,
+        "field._RaftChatViewState.bodyPreparationInputs": 0,
         "field._RaftChatViewState.boundSearch": 1,
         "field._RaftChatViewState.capturingSelection": 1,
         "field._RaftChatViewState.centerAfter": 1,
@@ -627,12 +627,12 @@
         "field._RaftChatViewState.taskProjection": 1,
         "field._RaftChatViewState.timelineKeys": 1,
         "field._RaftChatViewState.unavailableQuoted": 1,
-        "field._RaftChatViewState.updates": 1,
+        "field._RaftChatViewState.updates": 0,
         "field._RaftChatViewState.viewport": 1,
         "field._RaftChatViewState.windowIndex": 1,
         "field._RaftChatViewState.windowRevision": 1,
         "lines": 3737,
-        "tokens": 20555
+        "tokens": 20469
       }
     },
     "main": {
@@ -775,7 +775,7 @@
         "field._RaftAppState.workspace": 1,
         "field._RaftAppState.workspaceRootInputs": 1,
         "lines": 2214,
-        "tokens": 11939
+        "tokens": 11936
       }
     },
     "workspace_composer": {
@@ -868,15 +868,15 @@
         "field._UploadOperation.cancellation": 1,
         "field._UploadOperation.id": 1,
         "field._UploadOperation.scope": 1,
-        "lines": 1215,
-        "tokens": 7596
+        "lines": 1184,
+        "tokens": 7499
       }
     },
     "workspace_session": {
       "root": "apps/raft_flutter/lib/data/workspace_session.dart",
       "metrics": {
         "field.WorkspaceSession._burstAt": 1,
-        "field.WorkspaceSession._connectedBefore": 1,
+        "field.WorkspaceSession._connectedBefore": 0,
         "field.WorkspaceSession._features": 1,
         "field.WorkspaceSession._gapSyncedThrough": 1,
         "field.WorkspaceSession._lastHeartbeat": 1,
@@ -895,8 +895,8 @@
         "field.WorkspaceSession.revocations": 1,
         "field.WorkspaceSession.subscription": 1,
         "field.WorkspaceSession.transport": 1,
-        "lines": 551,
-        "tokens": 3132
+        "lines": 548,
+        "tokens": 3091
       }
     },
     "workspace_server_directory": {
@@ -962,8 +962,8 @@
         "field.WorkspaceChannels.sidebarOrder": 1,
         "field.WorkspaceChannels.transport": 1,
         "field.WorkspaceChannels.windows": 1,
-        "lines": 320,
-        "tokens": 1870
+        "lines": 319,
+        "tokens": 1853
       }
     },
     "workspace_message_prefetch": {
@@ -1036,7 +1036,7 @@
       "root": "apps/raft_flutter/lib/data/workspace_message_selection.dart",
       "metrics": {
         "field.WorkspaceMessageSelection.m": 1,
-        "lines": 320,
+        "lines": 317,
         "tokens": 1930
       }
     },
@@ -1044,8 +1044,8 @@
       "root": "apps/raft_flutter/lib/data/workspace_message_commands.dart",
       "metrics": {
         "field.WorkspaceThreadCommands.m": 1,
-        "lines": 429,
-        "tokens": 2527
+        "lines": 416,
+        "tokens": 2421
       }
     },
     "workspace_message_navigation": {
@@ -1077,8 +1077,8 @@
         "field.WorkspaceEditor.threads": 1,
         "field.WorkspaceEditor.transport": 1,
         "field.WorkspaceEditor.windows": 1,
-        "lines": 590,
-        "tokens": 3590
+        "lines": 570,
+        "tokens": 3490
       }
     },
     "workspace_share_targets": {
@@ -1123,7 +1123,7 @@
         "field.WorkspacePresentation.presentationActive": 1,
         "field.WorkspacePresentation.source": 1,
         "lines": 399,
-        "tokens": 1913
+        "tokens": 1911
       }
     },
     "reaction_repository": {
