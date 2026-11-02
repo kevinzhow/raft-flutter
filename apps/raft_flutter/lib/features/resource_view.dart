@@ -2902,12 +2902,12 @@ class _ResourceViewState extends State<ResourceView> {
     return ListView.separated(
       key: PageStorageKey(('resource-list', 'activity', value)),
       primary: false,
-      padding: activityListLayout
-          ? EdgeInsets.zero
-          : raftScrollPadding(
-              context,
-              RaftConversationCardRecipe(RaftTokens.of(context)).listInset,
-            ),
+      padding: raftScrollPadding(
+        context,
+        activityListLayout
+            ? EdgeInsets.zero
+            : RaftConversationCardRecipe(RaftTokens.of(context)).listInset,
+      ),
       controller: activityScrolls[value],
       itemCount: listed.length,
       separatorBuilder: (_, _) => SizedBox(
@@ -2939,14 +2939,14 @@ class _ResourceViewState extends State<ResourceView> {
       physics: mobileActivityRefresh
           ? const AlwaysScrollableScrollPhysics()
           : null,
-      padding: activityListLayout
-          ? EdgeInsets.zero
-          : raftScrollPadding(
-              context,
-              widget.section == 'activity' || widget.section == 'saved'
-                  ? RaftConversationCardRecipe(RaftTokens.of(context)).listInset
-                  : const EdgeInsets.all(16),
-            ),
+      padding: raftScrollPadding(
+        context,
+        activityListLayout
+            ? EdgeInsets.zero
+            : widget.section == 'activity' || widget.section == 'saved'
+            ? RaftConversationCardRecipe(RaftTokens.of(context)).listInset
+            : const EdgeInsets.all(16),
+      ),
       // SavedPanel loads the next page when its sentinel comes
       // within `rootMargin: 240px` of the scroller.
       scrollCacheExtent: widget.section == 'saved'
