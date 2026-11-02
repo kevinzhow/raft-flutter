@@ -27,7 +27,7 @@ void consumeWorkspaceMemberEvent(
   final updated = event.name == 'server:member-updated';
   if (updated) entries.applyMembershipRole(payload);
   if (updated || payload['userId'] == client.user?.id) {
-    entries.recoverMembership();
-    directory.refreshChannels();
+    entries.recoverMembership(quietErrors: true);
+    directory.refreshChannels(quietErrors: true);
   }
 }

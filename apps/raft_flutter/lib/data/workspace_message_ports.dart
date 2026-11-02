@@ -51,7 +51,7 @@ abstract interface class WorkspaceMessageEntryPort {
   });
   Future<void> markRead(String id);
   Future<void> refreshChannel(String id);
-  Future<void> refreshChannels();
+  Future<void> refreshChannels({bool quietErrors = false});
   Future<void> flushCache();
 }
 

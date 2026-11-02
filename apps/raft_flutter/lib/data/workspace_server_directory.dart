@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_sync/raft_sync.dart';
 
 import 'burst_reads.dart';
 import 'user_error.dart';
@@ -41,7 +40,6 @@ class WorkspaceServerDirectory {
   final WorkspaceSessionRevocations revocations;
   final BurstReads _burstAt;
   final bool Function() clientOwnership;
-  bool get ownsClient => clientOwnership();
   final VoidCallback ensureIdentity;
   final bool Function(Object) quietFailure, staleScope;
   List<RaftRecord> servers = [];
@@ -50,7 +48,6 @@ class WorkspaceServerDirectory {
   int planRevision = 0;
 
   RaftClient get client => transport.client;
-  ReadStateLedger get readState => directory.readState;
   List<RaftChannel> get channels => directory.channels;
   set channels(List<RaftChannel> value) => directory.assignChannels(value);
   List<RaftChannel> get dms => directory.dms;
@@ -62,12 +59,6 @@ class WorkspaceServerDirectory {
   set section(String value) => presentation.assignSection(value);
   set error(String? value) => presentation.assignError(value);
   set loading(bool value) => presentation.assignLoading(value);
-  bool get mobileNavigation => presentation.mobileNavigation;
-  int get navigationRevision => presentation.navigationRevision;
-  int get channelGeneration => messages.channelGeneration;
-  int get threadGeneration => messages.threadGeneration;
-  bool canVisitSection(String value) => presentation.canVisitSection(value);
-  String syncIdentity() => context.syncIdentity();
   Set<String> get revokedServers => revocations.revokedServers;
   void revokeChannel(String id) => context.transitions.revokeChannel(id);
   void patchServerRows(RaftRecord Function(RaftRecord) patch) {
@@ -87,7 +78,7 @@ class WorkspaceServerDirectory {
     bool cachedFirst = false,
     void Function()? onCacheMiss,
   }) => _burstAt.directoryRead(() async {
-    if (!ownsClient) {
+    if (!clientOwnership()) {
       throw StateError('A borrowed editor cannot load the server directory.');
     }
     final generation = client.generation,
@@ -198,7 +189,7 @@ class WorkspaceServerDirectory {
         });
         server = fresh;
         context.changed();
-        await directory.refreshChannels();
+        await directory.refreshChannels(quietErrors: true);
         final open = channel;
         if (!context.disposed && open != null && server?.id == held.id) {
           unawaited(
@@ -222,7 +213,7 @@ class WorkspaceServerDirectory {
     if (source != null) {
       return source.bootstrap();
     }
-    if (!ownsClient) {
+    if (!clientOwnership()) {
       throw StateError('A borrowed editor cannot bootstrap a session.');
     }
     loading = true;
@@ -272,17 +263,17 @@ class WorkspaceServerDirectory {
         onCacheMiss: onCacheMiss,
       );
     }
-    if (!ownsClient) {
+    if (!clientOwnership()) {
       throw StateError('A borrowed editor cannot select a server.');
     }
     if (revokedServers.contains(next.id)) return;
     final selection = context.transitions.selectServer(next);
-    final selectionAtStart = channelGeneration,
-        threadAtStart = threadGeneration,
-        navigationAtStart = navigationRevision;
+    final selectionAtStart = messages.channelGeneration,
+        threadAtStart = messages.threadGeneration,
+        navigationAtStart = presentation.navigationRevision;
     context.changed();
     final generation = client.generation;
-    final replyIdentity = syncIdentity();
+    final replyIdentity = context.syncIdentity();
     final cached = await device.read('channels', '');
     await selection.restoredEntities;
     await selection.restoredTranslations;
@@ -301,7 +292,7 @@ class WorkspaceServerDirectory {
       if (initial != null) {
         channel = initial;
         // A principal/role change before this point retires its summaries.
-        final replyAuthority = replyIdentity == syncIdentity()
+        final replyAuthority = replyIdentity == context.syncIdentity()
             ? messages.replyToken(initial.id)
             : '';
         final request = messages.hydrationRequest(
@@ -323,7 +314,7 @@ class WorkspaceServerDirectory {
     }
     final cachedFrontiers = await device.read('read-frontiers', '');
     if (generation != client.generation) return;
-    readState.restore(
+    directory.readState.restore(
       cachedFrontiers,
       serverId: next.id,
       principalId: client.user!.id,
@@ -343,7 +334,7 @@ class WorkspaceServerDirectory {
     } else {
       onCacheMiss?.call();
     }
-    final readGeneration = readState.generation;
+    final readGeneration = directory.readState.generation;
     List<List<RaftChannel>> values;
     try {
       values = await Future.wait([
@@ -397,8 +388,8 @@ class WorkspaceServerDirectory {
     final principalId = client.user?.id;
     if (principalId == null) return;
     for (final c in [...channels, ...dms]) {
-      readState.consumeSnapshot(
-        c.json['readState'],
+      directory.readState.consumeSnapshot(
+        c.json['directory.readState'],
         serverId: next.id,
         principalId: principalId,
         scopeId: c.id,
@@ -409,11 +400,11 @@ class WorkspaceServerDirectory {
     await directory.refreshUnread();
     final joined = channels.where((c) => c.joined && !c.archived).toList();
     if (joined.isNotEmpty &&
-        selectionAtStart == channelGeneration &&
-        threadAtStart == threadGeneration) {
+        selectionAtStart == messages.channelGeneration &&
+        threadAtStart == messages.threadGeneration) {
       final selected =
           joined.where((c) => c.id == channel?.id).firstOrNull ?? joined.first;
-      if (mobileNavigation && section == 'home') {
+      if (presentation.mobileNavigation && section == 'home') {
         channel = selected;
         await drafts.restoreDraft(selected.id);
       } else {
@@ -421,7 +412,7 @@ class WorkspaceServerDirectory {
         // (e.g. a remembered non-chat page) keeps its section.
         await messages.selectChannel(
           selected,
-          navigate: navigationAtStart == navigationRevision,
+          navigate: navigationAtStart == presentation.navigationRevision,
         );
       }
     } else if (heldAuthorityChanged &&
@@ -459,7 +450,7 @@ class WorkspaceServerDirectory {
       server = RaftRecord({...server!.json, 'role': role});
       ensureIdentity();
       entries.refreshMessageSyncFlag();
-      if (!canVisitSection(section)) section = 'chat';
+      if (!presentation.canVisitSection(section)) section = 'chat';
     }
     device.save('servers', '', servers.map((s) => s.json).toList(), server: '');
     context.changed();
@@ -480,7 +471,7 @@ class WorkspaceServerDirectory {
         server: '',
       );
     } else {
-      unawaited(entries.recoverMembership());
+      unawaited(entries.recoverMembership(quietErrors: true));
     }
     planRevision++;
     context.changed();
@@ -488,7 +479,7 @@ class WorkspaceServerDirectory {
 
   void applyServerAvatar(String serverId, String? avatarUrl) {
     if (entries.sessionSource != null) {
-      unawaited(entries.recoverMembership());
+      unawaited(entries.recoverMembership(quietErrors: true));
       return;
     }
     if (context.disposed) return;
@@ -501,16 +492,25 @@ class WorkspaceServerDirectory {
     context.changed();
   }
 
-  Future<void> recoverMembership({bool coalesce = false}) async {
+  Future<void> recoverMembership({
+    bool coalesce = false,
+    bool quietErrors = false,
+  }) async {
     if (entries.sessionSource != null) {
-      return entries.sessionSource!.recoverMembership();
+      return entries.sessionSource!.recoverMembership(
+        coalesce: coalesce,
+        quietErrors: quietErrors,
+      );
     }
-    if (!ownsClient || coalesce && _burstAt.directoryReading) return;
+    if (!clientOwnership() || coalesce && _burstAt.directoryReading) return;
     final generation = client.generation,
         request = ++_membershipRequest,
         revision = _membershipRevision;
+    // Quiet reads must not hide a later device-write or projection failure.
+    var readCompleted = false;
     try {
       final current = await client.servers();
+      readCompleted = true;
       if (generation != client.generation ||
           context.disposed ||
           request != _membershipRequest ||
@@ -534,14 +534,14 @@ class WorkspaceServerDirectory {
       }
       if (server != null) {
         server = current.where((s) => s.id == server!.id).firstOrNull;
-        if (!canVisitSection(section)) section = 'chat';
+        if (!presentation.canVisitSection(section)) section = 'chat';
       }
       context.changed();
     } catch (e) {
-      // A refresh superseded by a newer one, or outrun by a server switch
-      // (deleting the open server selects the next), is not a failure.
+      // Superseded reads and retired server scopes cannot publish a failure.
       if (!context.disposed &&
           !quietFailure(e) &&
+          (!quietErrors || readCompleted) &&
           generation == client.generation &&
           request == _membershipRequest) {
         // ignore: raft_lints/avoid_imperative_notice_state -- Raised only for the latest membership request on the current client generation and not for rate-limited or stale-scope failures.

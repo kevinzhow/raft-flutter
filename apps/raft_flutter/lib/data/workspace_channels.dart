@@ -92,7 +92,8 @@ class WorkspaceChannels
       [...channels, ...dms].where((c) => c.id == id).firstOrNull;
 
   @override
-  Future<void> refreshChannels() => directory.refreshChannels();
+  Future<void> refreshChannels({bool quietErrors = false}) =>
+      directory.refreshChannels(quietErrors: quietErrors);
   @override
   Future<void> refreshChannel(String id) => directory.refreshChannel(id);
   @override
@@ -146,9 +147,7 @@ class WorkspaceChannels
     final current = presentation.channel?.id == channelId
         ? presentation.channel
         : null;
-    final row =
-        current ??
-        [...channels, ...dms].where((c) => c.id == channelId).firstOrNull;
+    final row = current ?? channelById(channelId);
     if (row == null || !context.can('viewChannel', resource: row)) return null;
     return jsonEncode([identity, row.id, row.json['channelCapabilities']]);
   }

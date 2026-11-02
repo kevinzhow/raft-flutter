@@ -64,6 +64,7 @@ import 'attachment_media.dart';
 import 'attachment_retention_index.dart';
 import 'workspace_presentation.dart';
 import 'workspace_presentation_ports.dart';
+import 'user_error.dart';
 
 export 'attachment_media.dart' show WorkspaceAttachmentImageLease;
 
@@ -114,8 +115,8 @@ class WorkspaceController extends ChangeNotifier
       drafts: bindings,
       entities: bindings,
       revocations: bindings,
-      quietFailure: _quietFailure,
-      staleScope: _staleScope,
+      quietFailure: quietWorkspaceFailure,
+      staleScope: staleWorkspaceFailure,
       ownsClient: ownsClient,
     );
     final conversationReads = ConversationReadRepository(
@@ -164,7 +165,7 @@ class WorkspaceController extends ChangeNotifier
       patchSelected: (patch) {
         if (channel != null) channel = patch(channel!);
       },
-      reloadLists: () => refreshChannels(),
+      reloadLists: () => refreshChannels(quietErrors: true),
       reloadRow: (id) => refreshChannel(id),
       revokeChannel: _session.revokeChannel,
       closeDeniedThread: (id) {
@@ -172,7 +173,7 @@ class WorkspaceController extends ChangeNotifier
       },
       changed: notifyListeners,
       setError: setError,
-      quietFailure: _quietFailure,
+      quietFailure: quietWorkspaceFailure,
     );
     apiGateway =
         presentationSource?.apiGateway ??
@@ -293,7 +294,7 @@ class WorkspaceController extends ChangeNotifier
       drafts: bindings,
       notifications: bindings,
       resolveSource: () => presentationSource?._messages,
-      staleScope: _staleScope,
+      staleScope: staleWorkspaceFailure,
     );
     MessageHistoryPages.attach(this);
     services = WorkspaceServices(
@@ -838,18 +839,6 @@ class WorkspaceController extends ChangeNotifier
 
 
 
-  static bool _rateLimited(Object e) => e is RaftApiException && e.rateLimited;
-
-  /// A background refresh that failed is only an error worth showing when its
-  /// scope is still the open one: a rate limit, or a fence tripped because the
-  /// account or workspace changed (a deleted or left server), is not.
-  static bool _quietFailure(Object e) => _rateLimited(e) || _staleScope(e);
-
-  /// A request fenced by an account or workspace change: its owner moved on,
-  /// so it reports nothing (also for the user's own actions, which are
-  /// otherwise reported, rate limits included).
-  static bool _staleScope(Object e) => e is RaftApiException && e.staleScope;
-
   @override
   // ignore: raft_lints/avoid_imperative_notice_state -- Compatibility command delegates the existing scoped notice to its presentation owner; notification and source dispatch are unchanged.
   void setError(String? value) => _presentation.setError(value);
@@ -985,12 +974,12 @@ class WorkspaceController extends ChangeNotifier
   /// Full channel and DM list reload (Source `loadChannels` +
   /// `loadDMChannels`): server selection, `rooms:joined`, a role change, or a
   /// channel event without an id. Unchanged rows keep their objects.
-  Future<void> refreshChannels() async {
+  Future<void> refreshChannels({bool quietErrors = false}) async {
     final source = presentationSource;
     if (source != null) {
-      return source.refreshChannels();
+      return source.refreshChannels(quietErrors: quietErrors);
     }
-    return _channels.refreshChannels();
+    return _channels.refreshChannels(quietErrors: quietErrors);
   }
 
 
@@ -1042,8 +1031,8 @@ class WorkspaceController extends ChangeNotifier
 
   /// With [coalesce] (a refresh nobody asked for), a directory read already in
   /// flight stands in for it: starting another would retire that read.
-  Future<void> recoverMembership({bool coalesce = false}) =>
-      _session.recoverMembership(coalesce: coalesce);
+  Future<void> recoverMembership({bool coalesce = false, bool quietErrors = false}) =>
+      _session.recoverMembership(coalesce: coalesce, quietErrors: quietErrors);
 
   bool _rejectRevokedConversation(String id) => _presentation.rejectRevokedConversation(id);
   String? get missingConversationChannelId => _presentation.missingConversationChannelId;
@@ -1525,8 +1514,8 @@ class _WorkspaceSessionBindings
     VoidCallback? onCacheMiss,
   }) => w.selectServer(next, onHydrated: onHydrated, onCacheMiss: onCacheMiss);
   @override
-  Future<void> recoverMembership({bool coalesce = false}) =>
-      w.recoverMembership(coalesce: coalesce);
+  Future<void> recoverMembership({bool coalesce = false, bool quietErrors = false}) =>
+      w.recoverMembership(coalesce: coalesce, quietErrors: quietErrors);
   @override
   Future<void> revalidateServerDirectory() => w.revalidateServerDirectory();
   @override
@@ -1548,7 +1537,8 @@ class _WorkspaceSessionBindings
   @override
   RaftChannel? channelById(String id) => w.channelById(id);
   @override
-  Future<void> refreshChannels() => w.refreshChannels();
+  Future<void> refreshChannels({bool quietErrors = false}) =>
+      w.refreshChannels(quietErrors: quietErrors);
   @override
   Future<void> refreshChannel(String id) => w.refreshChannel(id);
   @override

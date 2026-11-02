@@ -121,10 +121,6 @@ class WorkspaceSession
   SourceActivityUnreadStore? get activityUnreadIfBound =>
       entities.activityUnreadIfBound;
   MessageLedger get ledger => messages.ledger;
-  MessageSync get messageSync => messages.messageSync;
-  ThreadRepliesSync get threadRepliesSync => messages.threadRepliesSync;
-  NotificationPrefsSync get notificationPrefsSync =>
-      directory.notificationPrefsSync;
   ReadStateLedger get readState => directory.readState;
   List<RaftChannel> get channels => directory.channels;
   List<RaftChannel> get dms => directory.dms;
@@ -137,9 +133,6 @@ class WorkspaceSession
   set error(String? value) => presentation.assignError(value);
   set loading(bool value) => presentation.assignLoading(value);
   bool get mobileNavigation => presentation.mobileNavigation;
-  int get navigationRevision => presentation.navigationRevision;
-  int get channelGeneration => messages.channelGeneration;
-  int get threadGeneration => messages.threadGeneration;
   bool canVisitSection(String value) => presentation.canVisitSection(value);
   @override
   (int, BigInt)? get gapSyncedThrough => _gapSyncedThrough;
@@ -321,7 +314,9 @@ class WorkspaceSession
     if (due('gap', freshness: const Duration(seconds: 3))) {
       unawaited(messages.syncVisibleScopes());
     }
-    if (due('channels')) unawaited(directory.refreshChannels());
+    if (due('channels')) {
+      unawaited(directory.refreshChannels(quietErrors: true));
+    }
     if (due('unread')) unawaited(directory.refreshUnread());
   }
 
@@ -373,12 +368,10 @@ class WorkspaceSession
     if (entityDirectory.started && due('authors')) {
       entityDirectory.revalidateLive();
     }
-    // Another session of this account may have joined or created a server;
-    // the server tells only that server's room, so this is the one moment the
-    // directory is re-read. On a desktop the engine reports window focus as
-    // inactive/resumed, so this also runs when the window regains focus.
+    // Other sessions may join a server without notifying this server's room.
+    // Re-read membership on foreground; desktop window focus also resumes.
     if (due('membership', freshness: _membershipResumeFreshness)) {
-      unawaited(entries.recoverMembership(coalesce: true));
+      unawaited(entries.recoverMembership(coalesce: true, quietErrors: true));
     }
   }
 
@@ -391,8 +384,13 @@ class WorkspaceSession
   void applyServerAvatar(String serverId, String? avatarUrl) =>
       _serverDirectory.applyServerAvatar(serverId, avatarUrl);
 
-  Future<void> recoverMembership({bool coalesce = false}) =>
-      _serverDirectory.recoverMembership(coalesce: coalesce);
+  Future<void> recoverMembership({
+    bool coalesce = false,
+    bool quietErrors = false,
+  }) => _serverDirectory.recoverMembership(
+    coalesce: coalesce,
+    quietErrors: quietErrors,
+  );
 
   void event(RaftEvent event) {
     if (context.disposed) return;
@@ -422,7 +420,9 @@ class WorkspaceSession
       // not repeat the whole refresh burst each time: what was read less than
       // [_burstFreshness] ago is still fresh, and the resume sync below
       // brings messages up to date.
-      if (due('membership')) entries.recoverMembership(coalesce: true);
+      if (due('membership')) {
+        entries.recoverMembership(coalesce: true, quietErrors: true);
+      }
       if (due('syncFlag')) entries.refreshMessageSyncFlag();
       if (due('sidebar')) directory.loadSidebar();
       // The shared entity directory owns reconnect revalidation for every surface.
@@ -442,14 +442,14 @@ class WorkspaceSession
         event.payload is Map &&
         event.payload['serverId'] is String) {
       entries.revokeServer(event.payload['serverId']);
-      entries.recoverMembership();
+      entries.recoverMembership(quietErrors: true);
     }
     if (event.name == 'connection:error' &&
         event.payload is Map &&
         event.payload['notServerMember'] == true) {
       final id = client.serverId;
       if (id != null) entries.revokeServer(id);
-      entries.recoverMembership();
+      entries.recoverMembership(quietErrors: true);
     }
     consumeWorkspaceMemberEvent(
       event,

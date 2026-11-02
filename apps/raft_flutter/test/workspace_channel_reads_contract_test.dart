@@ -84,9 +84,10 @@ class _Workspace extends WorkspaceController {
   Future<void> Function(String)? rowOverride;
 
   @override
-  Future<void> refreshChannels() {
+  Future<void> refreshChannels({bool quietErrors = false}) {
     listCalls++;
-    return listOverride?.call() ?? super.refreshChannels();
+    return listOverride?.call() ??
+        super.refreshChannels(quietErrors: quietErrors);
   }
 
   @override

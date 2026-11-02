@@ -40,9 +40,8 @@ bool isDisplayableServerMessage(String message) {
   if (text.contains('\n') && text.split('\n').length > 3) return false;
   if (text.contains('<') && text.contains('>')) return false;
   if (RegExp(r'^\s*[{\[]').hasMatch(text)) return false;
-  if (RegExp(
-    r'(Exception|Error)\b.*:|\bat .*\.dart|#\d+\s',
-  ).hasMatch(text.split('\n').first)) {
+  if (RegExp(r'(Exception|Error)\b.*:|\bat .*\.dart|#\d+\s')
+      .hasMatch(text.split('\n').first)) {
     return false;
   }
   if (_secret.hasMatch(text)) return false;
@@ -107,3 +106,16 @@ void logUserError(Object? error, {StackTrace? stack, String? where}) {
 /// The formatter [RaftErrorScope] installs for raft_ui dialogs.
 String raftAppErrorFormatter(Object error, {String? fallback}) =>
     userErrorText(error, fallback: fallback);
+
+bool _rateLimited(Object e) => e is RaftApiException && e.rateLimited;
+
+/// A background refresh that failed is only an error worth showing when its
+/// scope is still the open one: a rate limit, or a fence tripped because the
+/// account or workspace changed (a deleted or left server), is not.
+bool quietWorkspaceFailure(Object e) =>
+    _rateLimited(e) || staleWorkspaceFailure(e);
+
+/// A request fenced by an account or workspace change: its owner moved on,
+/// so it reports nothing (also for the user's own actions, which are
+/// otherwise reported, rate limits included).
+bool staleWorkspaceFailure(Object e) => e is RaftApiException && e.staleScope;

@@ -31,7 +31,7 @@ abstract interface class WorkspaceChannelDirectoryPort {
   List<RaftChannel> get channels;
   List<RaftChannel> get dms;
   RaftChannel? channelById(String id);
-  Future<void> refreshChannels();
+  Future<void> refreshChannels({bool quietErrors = false});
   Future<void> refreshChannel(String id);
   void recordRowWrite(String id);
   void putRow(RaftChannel row);

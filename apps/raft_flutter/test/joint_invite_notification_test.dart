@@ -106,7 +106,7 @@ class _Workspace extends WorkspaceController {
   }
 
   @override
-  Future<void> refreshChannels() async {
+  Future<void> refreshChannels({bool quietErrors = false}) async {
     refreshes++;
   }
 }

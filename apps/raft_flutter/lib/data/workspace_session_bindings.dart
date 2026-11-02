@@ -18,7 +18,10 @@ abstract interface class WorkspaceSessionEntries {
     VoidCallback? onHydrated,
     VoidCallback? onCacheMiss,
   });
-  Future<void> recoverMembership({bool coalesce = false});
+  Future<void> recoverMembership({
+    bool coalesce = false,
+    bool quietErrors = false,
+  });
   Future<void> revalidateServerDirectory();
   Future<void> refreshMessageSyncFlag();
   void applyMembershipRole(dynamic payload);

@@ -80,14 +80,16 @@ class ChannelRepository {
   /// Full channel and DM list reload (Source `loadChannels` +
   /// `loadDMChannels`): server selection, `rooms:joined`, a role change, or a
   /// channel event without an id. Unchanged rows keep their objects.
-  Future<void> refreshChannels() async {
+  Future<void> refreshChannels({bool quietErrors = false}) async {
     final generation = _generation();
     final read = ++_channelReadSeq;
+    var readCompleted = false;
     try {
       final lists = await Future.wait([
         client.channels(),
         client.channels(dm: true),
       ]);
+      readCompleted = true;
       if (generation != _generation() || _isDisposed()) return;
       // A list read that started later has already been applied.
       if (read < _channelListSeq) return;
@@ -130,9 +132,12 @@ class ChannelRepository {
         },
       );
     } catch (e) {
-      // A rate-limited background refresh is not an error to show: the held
-      // lists stay, and the next refresh (after Retry-After) catches up.
-      if (generation == _generation() && !_isDisposed() && !_quietFailure(e)) {
+      // Automatic read failures retain the lists without a toast. Failures
+      // while applying an accepted result still use the existing notice.
+      if (generation == _generation() &&
+          !_isDisposed() &&
+          !_quietFailure(e) &&
+          (!quietErrors || readCompleted)) {
         _setError(userErrorText(e, where: 'refresh channels'));
       }
     }
