@@ -235,23 +235,35 @@ class WorkspaceThreadCommands {
                 thread: true,
               )
             : null;
-        final focused = focusedMessageId != null || readingPage != null;
-        final page =
-            readingPage ??
-            (focusedMessageId == null
-                ? await MessageHistoryPages.read(
-                    m,
-                    request,
-                    m.state.threadChannelId!,
-                    thread: true,
-                  )
-                : await MessageHistoryPages.context(
-                    m,
-                    request,
-                    m.state.threadChannelId!,
-                    focusedMessageId,
-                    thread: true,
-                  ));
+        var focused = focusedMessageId != null || readingPage != null;
+        Map<String, dynamic>? page = readingPage;
+        if (page == null && focusedMessageId != null) {
+          try {
+            page = await MessageHistoryPages.context(
+              m,
+              request,
+              m.state.threadChannelId!,
+              focusedMessageId,
+              thread: true,
+            );
+          } on RaftApiException catch (e) {
+            // A 404 here means the focused reply is missing (deleted, or not
+            // readable yet), not the thread: open the thread's latest replies,
+            // as the channel path does. Revoking the thread for it locked the
+            // thread until the next server selection (Activity rows that showed
+            // the previous conversation or nothing until restart, #294).
+            if (e.status != 404) rethrow;
+            if (!request.current) return;
+            focused = false;
+            m.state.highlightedMessageId = null;
+          }
+        }
+        page ??= await MessageHistoryPages.read(
+          m,
+          request,
+          m.state.threadChannelId!,
+          thread: true,
+        );
         if (!request.current) return;
         final boundary = m.messageWindows.acceptThreadPage(
           request,
