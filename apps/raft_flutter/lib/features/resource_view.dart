@@ -40,6 +40,8 @@ import '../data/task_view_mode_preference.dart';
 import 'activity_card_row.dart';
 import 'activity_first_unread.dart';
 import 'activity_list_row.dart';
+import 'activity_pagination.dart';
+import 'activity_task_rows.dart';
 import 'activity_rollout_flags.dart';
 import 'activity_find_scope.dart';
 import 'create_task_dialog.dart';
@@ -68,6 +70,8 @@ import 'reading_anchor.dart';
 import 'agent_message_collapse.dart' show captureActivityAgentCollapse;
 import '../platform/content_links.dart';
 import '../platform/interaction_timing.dart';
+
+export 'activity_task_rows.dart';
 
 class ResourceView extends StatefulWidget {
   const ResourceView({
@@ -1972,6 +1976,9 @@ class _ResourceViewState extends State<ResourceView> {
     bool quietErrors = false,
     Map<String, dynamic>? seed,
   }) async {
+    if (append && activityPage && (activeLoad != null || loading || !hasMore)) {
+      return;
+    }
     if (widget.section == 'tasks' && widget.channelId != null && !tabActive) {
       reloadWhenActive = true;
       return;
@@ -2744,7 +2751,7 @@ class _ResourceViewState extends State<ResourceView> {
     final scope = authority, view = filter;
     // Inside each pager page: a wrapper outside PageView would receive the
     // horizontal pager's notifications instead of this vertical list's.
-    return RaftPullToRefresh(
+    final results = RaftPullToRefresh(
       enabled: mobileActivityRefresh,
       onRefresh: () =>
           accepts(scope) && filter == view ? load(keep: true) : Future.value(),
@@ -2758,6 +2765,23 @@ class _ResourceViewState extends State<ResourceView> {
         child: resourceResultsBody(context),
       ),
     );
+    return activityPage
+        ? ActivityPagination(
+            controller: listScroll!,
+            scope: (scope, listView),
+            offset: rows.length,
+            ready: () =>
+                accepts(scope) &&
+                filter == view &&
+                hasMore &&
+                !loading &&
+                activeLoad == null &&
+                error == null &&
+                rowsView == listView,
+            onMore: () => load(append: true),
+            child: results,
+          )
+        : results;
   }
 
   bool get mobileActivityRefresh =>
@@ -5825,50 +5849,6 @@ String? activityGroupTitle(
       first['peerDisplayName'] ??
       first['peerName'];
   return name == null ? null : '$name';
-}
-
-/// Thread-row task label `#N @claimant` (ThreadsInbox.tsx task badge).
-String activityTaskLabel(Map<String, dynamic> row) {
-  final claimant = row['taskClaimedByName'];
-  return '#${row['taskNumber']}'
-      '${claimant is String && claimant.isNotEmpty ? ' @$claimant' : ''}';
-}
-
-/// Source applyTaskToInboxItems / normalizeTaskMetadataUpdate: overlay
-/// `taskNumber`, `taskStatus`, `taskClaimedByName` (null when unclaimed) on
-/// thread rows whose `parentMessageId` is the task's `messageId`. Returns
-/// [rows] itself when nothing changed.
-List<Map<String, dynamic>> applyTaskToActivityRows(
-  List<Map<String, dynamic>> rows,
-  Map task,
-) {
-  final messageId = task['messageId'], status = task['status'];
-  final number = task['taskNumber'];
-  if (messageId is! String || status is! String || number is! num) return rows;
-  final claimant = task['claimedByName'];
-  final name = claimant is String ? claimant : null;
-  var changed = false;
-  final next = [
-    for (final row in rows)
-      if (row['kind'] != 'thread' || row['parentMessageId'] != messageId)
-        row
-      else if (row['taskNumber'] == number &&
-          row['taskStatus'] == status &&
-          row['taskClaimedByName'] == name)
-        row
-      else ...[
-        () {
-          changed = true;
-          return {
-            ...row,
-            'taskNumber': number,
-            'taskStatus': status,
-            'taskClaimedByName': name,
-          };
-        }(),
-      ],
-  ];
-  return changed ? next : rows;
 }
 
 class _TaskDrag {

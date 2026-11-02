@@ -340,19 +340,13 @@ void main() {
         final dynamic state = await mount(tester);
         await select(tester, 'dms');
         expect(state.rows, hasLength(30));
-        await tester.scrollUntilVisible(
-          find.text('Load More'),
-          500,
-          maxScrolls: 30,
-          scrollable: find
-              .descendant(
-                of: find.byType(ListView),
-                matching: find.byType(Scrollable),
-              )
-              .first,
+        await tester.drag(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is ListView && widget.controller == state.listScroll,
+          ),
+          const Offset(0, -6000),
         );
-        expect(find.text('Load More'), findsOneWidget);
-        await tester.tap(find.text('Load More'));
         await tester.pumpAndSettle();
         expect(workspace.dmQueries.last, containsPair('offset', 30));
         expect(workspace.dmQueries.last, containsPair('filter', 'all'));

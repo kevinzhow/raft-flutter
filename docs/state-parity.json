@@ -42747,6 +42747,48 @@
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "apps/raft_flutter/lib/features/activity_pagination.dart#class:ActivityPagination": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task292 Activity pagination",
+        "reason": "Source-bound behavioral wrapper for the active Activity pager: observes scroll metrics and gates continuation by accepted scope/offset and visibility. It creates no visual style or acceptance claim."
+      },
+      "apps/raft_flutter/lib/features/activity_pagination.dart#class:_ActivityPaginationState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task292 Activity pagination",
+        "reason": "Source-bound behavioral wrapper for the active Activity pager: observes scroll metrics and gates continuation by accepted scope/offset and visibility. It creates no visual style or acceptance claim."
+      },
+      "apps/raft_flutter/lib/features/activity_pagination.dart#method:ActivityPagination.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task292 Activity pagination",
+        "reason": "Source-bound behavioral wrapper for the active Activity pager: observes scroll metrics and gates continuation by accepted scope/offset and visibility. It creates no visual style or acceptance claim."
+      },
+      "apps/raft_flutter/lib/features/activity_pagination.dart#method:_ActivityPaginationState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task292 Activity pagination",
+        "reason": "Source-bound behavioral wrapper for the active Activity pager: observes scroll metrics and gates continuation by accepted scope/offset and visibility. It creates no visual style or acceptance claim."
+      },
+      "apps/raft_flutter/lib/features/activity_pagination.dart#method:_ActivityPaginationState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task292 Activity pagination",
+        "reason": "Source-bound behavioral wrapper for the active Activity pager: observes scroll metrics and gates continuation by accepted scope/offset and visibility. It creates no visual style or acceptance claim."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6572/METHOD:scopedDialog@46059/FUNCTION:buildOwned@46286": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task292 Activity pagination",
+        "reason": "Existing scoped builder at its actual resolved identity after Activity pagination imports. Prior unresolved ownership and visual-acceptance limits remain unchanged."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6572/METHOD:scopedMenu@47107/FUNCTION:buildOwned@47314": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task292 Activity pagination",
+        "reason": "Existing scoped builder at its actual resolved identity after Activity pagination imports. Prior unresolved ownership and visual-acceptance limits remain unchanged."
       }
     },
     "entries": {
