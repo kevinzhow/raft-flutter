@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import re
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
@@ -20,6 +19,14 @@ SPEC.loader.exec_module(harness)
 
 @unittest.skipUnless(os.name == 'posix', 'POSIX subprocess/socket fixture')
 class WaylandHarnessTests(unittest.TestCase):
+    def bind_socket(self, root):
+        # Only a real S_IFSOCK path is needed by the readiness-unit fixtures.
+        # A child cwd keeps its short AF_UNIX address inside the owned runtime
+        # without changing the test runner's cwd or escaping a long TMPDIR.
+        subprocess.run([sys.executable, '-c',
+                        "import socket\nwith socket.socket(socket.AF_UNIX) as bound: bound.bind('wayland-raft')"],
+                       cwd=root, check=True, timeout=5)
+
     def run_harness(self, scenario='delayed'):
         temporary = tempfile.TemporaryDirectory(prefix='raft-kwin-harness-')
         self.addCleanup(temporary.cleanup)
@@ -103,6 +110,10 @@ sys.exit(1)
                 completed, output = self.run_harness()
             address = output.parent / 'runtime/wayland-raft'
             self.assertGreater(len(os.fsencode(address)), 107)
+            before = Path.cwd()
+            self.bind_socket(long_root)
+            self.assertTrue((long_root / 'wayland-raft').is_socket())
+            self.assertEqual(Path.cwd(), before)
             self.assertTrue(address.is_socket())
             self.assertTrue(address.is_relative_to(long_root))
             self.assertEqual(completed.returncode, 0, completed.stderr)
@@ -154,10 +165,8 @@ sys.exit(1)
         for stage in ('no-socket', 'no-owner', 'no-method'):
             with self.subTest(stage=stage), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
-                bound = socket.socket(socket.AF_UNIX)
-                self.addCleanup(bound.close)
                 if stage != 'no-socket':
-                    bound.bind(str(root / 'wayland-raft'))
+                    self.bind_socket(root)
                 process = Mock(pid=123)
                 process.poll.return_value = None
                 def call(args, **kwargs):
@@ -184,9 +193,7 @@ sys.exit(1)
     def test_unresponsive_dbus_call_is_bounded_and_logged(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            bound = socket.socket(socket.AF_UNIX)
-            self.addCleanup(bound.close)
-            bound.bind(str(root / 'wayland-raft'))
+            self.bind_socket(root)
             process = Mock(pid=123)
             process.poll.return_value = None
             tick = iter(i / 100 for i in range(1000))
