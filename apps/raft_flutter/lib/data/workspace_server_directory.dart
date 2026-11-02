@@ -497,9 +497,7 @@ class WorkspaceServerDirectory {
     bool quietErrors = false,
   }) async {
     if (entries.sessionSource != null) {
-      return entries.sessionSource!.recoverMembership(
-        quietErrors: quietErrors,
-      );
+      return entries.sessionSource!.recoverMembership(quietErrors: quietErrors);
     }
     if (!clientOwnership() || coalesce && _burstAt.directoryReading) return;
     final generation = client.generation,
