@@ -8,7 +8,7 @@ fi
 # Select one coherent official release-repository dependency transaction.
 # This KDE compatibility floor does not freeze the container's core packages.
 mkdir -p /evidence/fedora
-dnf --repo=fedora install -y python3 dbus-daemon dbus-tools gnome-keyring xorg-x11-server-Xvfb xwininfo ImageMagick \
+dnf --repo=fedora --setopt=allow_downgrade=False install -y python3 dbus-daemon dbus-tools gnome-keyring xorg-x11-server-Xvfb xwininfo ImageMagick \
   kwin-wayland libkscreen mesa-dri-drivers mesa-libEGL mesa-libGL libglvnd-egl libglvnd-glx \
   fontconfig freetype harfbuzz libwayland-client alsa-lib pipewire-libs libstdc++
 rpm -q --qf '%{NAME} %{EPOCHNUM}:%{VERSION}-%{RELEASE}.%{ARCH}\n' \

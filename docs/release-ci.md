@@ -337,7 +337,7 @@ CI runs the actual release file directly and in extract-and-run mode at 2× scal
 A Fedora 44 container without `/dev/fuse` additionally runs the downloaded artifact
 in X11 and under KDE's KWin native Wayland compositor. The compatibility floor
 uses only Fedora's official `fedora` release repository for the complete dependency
-installation transaction (`dnf --repo=fedora install`), with KWin 6.6.4 and Qt Base
+installation transaction (`dnf --repo=fedora --setopt=allow_downgrade=False install`), with KWin 6.6.4 and Qt Base
 6.10.2. The harness records installed KWin, libkscreen, Qt Base and Xvfb RPM versions
 and fails if the KWin or Qt Base versions differ; it never downgrades or falls back
 automatically. The container base may contain patched core packages, so this is a
