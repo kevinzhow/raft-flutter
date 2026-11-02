@@ -163,6 +163,16 @@ void main() {
         skipOffstage: false,
       );
       expect(retained, findsOneWidget);
+      final screen = Offset.zero & const Size(700, 900);
+      final retainedBounds = t.getRect(retained);
+      final visible = retainedBounds.intersect(screen);
+      expect(visible.width, greaterThan(0));
+      expect(visible.width, lessThan(retainedBounds.width));
+      expect(visible.height, greaterThan(0));
+      expect(
+        t.widget<ListView>(retained).padding!.resolve(TextDirection.ltr).bottom,
+        32,
+      );
       // The inactive projection has no paging footer. Measure its reachable
       // end rather than the offset retained from the taller active list.
       final scroll = t.widget<ListView>(retained).controller!;
@@ -177,7 +187,12 @@ void main() {
           .last;
       try {
         expect(t.getRect(retained).bottom, closeTo(900, .01));
-        expect(t.getRect(lastRow).bottom, closeTo(900 - 32, .01));
+        final rowBounds = t.getRect(lastRow);
+        expect(rowBounds.overlaps(screen), isTrue);
+        // Auto-pagination can grow the lazy window after its prior maximum
+        // was measured. The visible final row must remain above the bar;
+        // only the list's system padding is required to be exactly once.
+        expect(rowBounds.bottom, lessThanOrEqualTo(900 - 32 + .01));
         expect(t.takeException(), isNull);
       } finally {
         await swipe.up();
