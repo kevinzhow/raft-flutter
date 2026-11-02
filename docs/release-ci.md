@@ -335,8 +335,20 @@ version is `X.Y.Z-isolated`. Release CI never sets the variable.
 
 CI runs the actual release file directly and in extract-and-run mode at 2× scale.
 A Fedora 44 container without `/dev/fuse` additionally runs the downloaded artifact
-in X11 and under KDE's KWin native Wayland compositor. Source/OS/mode, startup logs,
-original PNGs and Wayland buffer-commit evidence are retained. KWin is nested on
+in X11 and under KDE's KWin native Wayland compositor. The compatibility floor
+uses only Fedora's official `fedora` release repository for the complete dependency
+installation transaction (`dnf --repo=fedora install`), with KWin 6.6.4 and Qt Base
+6.10.2. The harness records installed KWin, libkscreen, Qt Base and Xvfb RPM versions
+and fails if the KWin or Qt Base versions differ; it never downgrades or falls back
+automatically. The container base may contain patched core packages, so this is a
+KDE compatibility floor, not a frozen whole-container GA snapshot or a reproduction
+of an earlier release's environment. Newer KDE, including KWin 6.8, is not covered:
+its nested X11 backend requires DRI3 unavailable on this GPU-less Xvfb setup. That
+compositor initialization failure does not establish an AppImage failure. The real
+runtime checks below remain mandatory before publication.
+
+Source/OS/mode, package versions, startup logs, original PNGs and Wayland buffer-commit
+evidence are retained. KWin is nested on
 Xvfb to make its CPU-rendered output capturable on a GPU-less runner; the app
 itself is forced to use Wayland, and the monitor and client scale are checked at 2×. These are production
 startup checks, not login or full feature acceptance. The disposable tests use a
