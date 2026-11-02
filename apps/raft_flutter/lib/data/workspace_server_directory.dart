@@ -389,7 +389,7 @@ class WorkspaceServerDirectory {
     if (principalId == null) return;
     for (final c in [...channels, ...dms]) {
       directory.readState.consumeSnapshot(
-        c.json['directory.readState'],
+        c.json['readState'],
         serverId: next.id,
         principalId: principalId,
         scopeId: c.id,
@@ -498,7 +498,6 @@ class WorkspaceServerDirectory {
   }) async {
     if (entries.sessionSource != null) {
       return entries.sessionSource!.recoverMembership(
-        coalesce: coalesce,
         quietErrors: quietErrors,
       );
     }

@@ -1,14 +1,29 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 
-import 'activity_incremental_refresh_test.dart' show channelRow;
+import 'activity_incremental_refresh_test.dart' show ActivityClient, channelRow;
 import 'app_global_server_selector_test.dart' show RootCache, RootFixture;
 
 const _failure = 'Fixture directory unavailable.';
 const _preview = 'Accepted Activity survives a failed background read';
+
+class _Source extends WorkspaceController {
+  _Source(super.client);
+  final membershipCalls = <(bool, bool)>[];
+
+  @override
+  Future<void> recoverMembership({
+    bool coalesce = false,
+    bool quietErrors = false,
+  }) async {
+    membershipCalls.add((coalesce, quietErrors));
+  }
+}
 
 class _Cache extends RootCache {
   bool failServerWrite = false;
@@ -90,6 +105,88 @@ Future<void> _resume(WidgetTester t, RootFixture f) async {
 }
 
 void main() {
+  testWidgets(
+    'server selection consumes channel and DM readState wire snapshots',
+    (t) async {
+      final f = RootFixture();
+      addTearDown(() async => f.close(t));
+      f.overrides['GET /channels'] = (_) => [
+        {
+          'id': 'ca',
+          'name': 'general-a',
+          'type': 'channel',
+          'serverId': 'a',
+          'joined': true,
+          'readState': {
+            'kind': 'present',
+            'maxReadSeq': '17',
+            'readStateVersion': 7,
+          },
+        },
+      ];
+      f.overrides['GET /channels/dm'] = (_) => [
+        {
+          'id': 'da',
+          'name': 'Direct message',
+          'type': 'dm',
+          'serverId': 'a',
+          'joined': true,
+          'readState': {
+            'kind': 'present',
+            'maxReadSeq': '45',
+            'readStateVersion': 9,
+          },
+        },
+      ];
+      await f.mount(
+        t,
+        'light',
+        856,
+        cachedSession: true,
+        uri: Uri.parse('/s/alpha/activity'),
+      );
+      final w = f.workspace(t);
+      expect(w.channels.single.json['readState'], isNotNull);
+      expect(w.dms.single.json['readState'], isNotNull);
+      expect(
+        w.readState.state('a', 'alice', 'ca'),
+        containsPair('maxReadSeq', 17),
+      );
+      expect(
+        w.readState.state('a', 'alice', 'ca'),
+        containsPair('readStateVersion', 7),
+      );
+      expect(
+        w.readState.state('a', 'alice', 'da'),
+        containsPair('maxReadSeq', 45),
+      );
+      expect(
+        w.readState.state('a', 'alice', 'da'),
+        containsPair('readStateVersion', 9),
+      );
+    },
+  );
+
+  test(
+    'borrowed membership preserves source coalescing and forwards quiet policy',
+    () async {
+      final client = ActivityClient()..user = RaftRecord({'id': 'alice'});
+      final source = _Source(client);
+      final borrowed = WorkspaceController(
+        client,
+        presentationSource: source,
+        ownsClient: false,
+      );
+      addTearDown(() async {
+        borrowed.dispose();
+        source.dispose();
+        await client.dispose();
+      });
+      await borrowed.recoverMembership(coalesce: true, quietErrors: true);
+      expect(source.membershipCalls, [(false, true)]);
+    },
+  );
+
   for (final offline in [false, true]) {
     testWidgets(
       'actual foreground membership read stays quiet (${offline ? 'offline' : '503'})',
