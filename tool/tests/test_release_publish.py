@@ -99,6 +99,11 @@ class PublishCase(unittest.TestCase):
         self.assertIn('- A fixed thing.', body)
         self.assertLess(body.index('A fixed thing.'), body.index('App version:'))
         self.assertIn('<!-- raft-release:', body)
+        self.assertNotIn('Windows requires Windows App Runtime', body)
+        self.assertIn('Windows bundles the Microsoft Visual C++ runtimes', body)
+        self.assertIn('Windows App Runtime is not required.', body)
+        self.assertNotIn('Linux tar.gz requires', body)
+        self.assertIn('AppImage has an Ubuntu 24.04 ABI baseline.', body)
 
     def test_prepare_attaches_client_release_notes_to_the_draft_only_once(self):
         release.prepare()

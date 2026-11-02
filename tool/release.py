@@ -636,10 +636,10 @@ def prepare():
                      + '\n\nEach platform has its own `CHECKSUMS-PLATFORM-ARCH.txt` and '
                      '`build-manifest-PLATFORM-ARCH.json` for source and SHA-256 provenance. '
                      'Hosted CI compiles and packages; platform functional acceptance is separate.\n'
-                     '\nWindows requires Windows App Runtime 1.7 x64; extract the whole ZIP. '
+                     '\nWindows bundles the Microsoft Visual C++ runtimes; extract the whole ZIP '
+                     'or use the per-user setup installer. Windows App Runtime is not required. '
                      'macOS ARM64 builds have ad-hoc signatures and are not notarized; '
                      'see READ-ME-FIRST.txt in the ZIP for first-launch instructions. '
-                     'Linux tar.gz requires compatible Ubuntu 26.04 runtime dependencies; '
                      'AppImage has an Ubuntu 24.04 ABI baseline.\n\n'
                      '<!-- raft-release:' + json.dumps(metadata, sort_keys=True, separators=(',', ':')) + ' -->\n',
                      encoding='utf-8')
