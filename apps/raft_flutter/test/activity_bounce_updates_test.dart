@@ -37,8 +37,21 @@ void main() {
     await tester.pumpAndSettle();
     final dynamic page = tester.state(find.byType(ResourceView));
     final scroll = activityScroll(tester);
+    expect(page.rows, hasLength(30));
     scroll.position.jumpTo(scroll.position.maxScrollExtent - 20);
     await tester.pumpAndSettle();
+    // Nearing the first page's end accepts the automatic next page. Reach the
+    // bottom of that loaded window before beginning the held bounce.
+    expect(workspace.inboxQueries.map((query) => query['offset']), [0, 30]);
+    expect(page.rows, hasLength(60));
+    expect(page.hasMore, isFalse);
+    scroll.position.jumpTo(scroll.position.maxScrollExtent);
+    await tester.pumpAndSettle();
+    expect(
+      scroll.position.pixels,
+      closeTo(scroll.position.maxScrollExtent, .01),
+    );
+    expect(scroll.position.outOfRange, isFalse);
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(ListView).last),
     );
