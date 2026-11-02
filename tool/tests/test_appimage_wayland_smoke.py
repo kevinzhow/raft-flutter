@@ -18,6 +18,7 @@ harness = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(harness)
 
 
+@unittest.skipUnless(os.name == 'posix', 'POSIX subprocess/socket fixture')
 class WaylandHarnessTests(unittest.TestCase):
     def run_harness(self, scenario='delayed'):
         temporary = tempfile.TemporaryDirectory(prefix='raft-kwin-harness-')
@@ -41,7 +42,9 @@ out=Path(os.environ['FIXTURE_OUTPUT'])
 (out/'fixture-pid').write_text(str(os.getpid()))
 print('fixture compositor stderr', file=__import__('sys').stderr, flush=True)
 s=socket.socket(socket.AF_UNIX)
-s.bind(os.environ['XDG_RUNTIME_DIR']+'/wayland-raft')
+# Bind a short address while keeping the socket inside the isolated temp tree.
+os.chdir(os.environ['XDG_RUNTIME_DIR'])
+s.bind('wayland-raft')
 if os.environ['FIXTURE_SCENARIO'] == 'dead': raise SystemExit(23)
 while True: time.sleep(0.05)
 ''')
@@ -91,6 +94,22 @@ sys.exit(1)
         self.assertIn('org.freedesktop.DBus.GetConnectionUnixProcessID', calls)
         self.assertIn('--dest :1.42', calls)
         self.assertIn('output.1.scale.2', (output / 'kscreen-doctor-calls').read_text())
+
+    def test_long_isolated_tmpdir_keeps_the_socket_inside_its_runtime(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            long_root = Path(temporary) / ('nested-' + 'x' * 80)
+            long_root.mkdir()
+            with patch.object(tempfile, 'tempdir', str(long_root)):
+                completed, output = self.run_harness()
+            address = output.parent / 'runtime/wayland-raft'
+            self.assertGreater(len(os.fsencode(address)), 107)
+            self.assertTrue(address.is_socket())
+            self.assertTrue(address.is_relative_to(long_root))
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            state = json.loads((output / 'kwin-state.json').read_text())
+            self.assertEqual(state['phase'], 'smoke-passed')
+            self.assertIsNone(state['returnCodeBeforeCleanup'])
+            self.assertIsNotNone(state['returnCodeAfterCleanup'])
 
     def test_compositor_death_is_not_replaced_by_a_ready_socket(self):
         completed, output = self.run_harness('dead')
