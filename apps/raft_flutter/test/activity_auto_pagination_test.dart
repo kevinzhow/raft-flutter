@@ -7,15 +7,21 @@ import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'activity_incremental_refresh_test.dart'
-    show ActivityClient, ActivityWorkspace, activityFixture, channelRow;
+    show ActivityClient, ActivityWorkspace, channelRow;
 
 class PagingWorkspace extends ActivityWorkspace {
   PagingWorkspace(super.client);
-  bool failAppend = false, emptyAppend = false;
+  bool failAppend = false, emptyAppend = false, failRefresh = false;
 
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
     final result = await super.query(path, query: query);
+    if (path == '/channels/inbox' &&
+        (query?['offset'] as int? ?? 0) == 0 &&
+        failRefresh) {
+      failRefresh = false;
+      throw const RaftApiException('Refresh unavailable', status: 500);
+    }
     if (path == '/channels/inbox' && (query?['offset'] as int? ?? 0) > 0) {
       if (failAppend) {
         throw const RaftApiException('Page unavailable', status: 500);
@@ -30,12 +36,19 @@ void main() {
   late ActivityClient client;
   late PagingWorkspace w;
   setUp(() {
-    final (baseClient, baseWorkspace) = activityFixture();
-    client = baseClient;
+    client = ActivityClient()..user = RaftRecord({'id': 'alice'});
+    client.selectServer('s1');
     w = PagingWorkspace(client)
-      ..server = baseWorkspace.server
-      ..channels = baseWorkspace.channels;
-    baseWorkspace.dispose();
+      ..server = RaftRecord({'id': 's1', 'role': 'owner'})
+      ..channels = [
+        for (var i = 0; i < 60; i++)
+          RaftChannel({
+            'id': 'ch$i',
+            'name': 'Channel $i',
+            'joined': true,
+            if (i == 7) 'isPrivate': true,
+          }),
+      ];
   });
   tearDown(() async {
     w.dispose();
@@ -142,6 +155,30 @@ void main() {
     await t.pumpAndSettle();
     expect(w.inboxQueries.map((q) => q['offset']), [0, 0, 30]);
     expect(state.rows, hasLength(60));
+  });
+
+  testWidgets('failed quiet refresh wakes the near-end continuation', (
+    t,
+  ) async {
+    final dynamic state = await mount(t);
+    final gate = w.hold = Completer<void>();
+    w.failRefresh = true;
+    client.emit('message:updated', {'id': 'changed', 'channelId': 'ch40'});
+    await t.pump(const Duration(milliseconds: 150));
+    expect(w.inboxQueries.map((q) => q['offset']), [0, 0]);
+    expect(state.activeLoad, isNotNull);
+    await reachEnd(t);
+    final ScrollController scroll = state.listScroll;
+    expect(scroll.position.extentAfter, lessThan(240));
+    expect(w.inboxQueries, hasLength(2));
+    w.hold = null;
+    gate.complete();
+    await t.pumpAndSettle();
+    expect(state.activeLoad, isNull);
+    expect(state.error, isNull);
+    expect(w.inboxQueries.map((q) => q['offset']), [0, 0, 30]);
+    expect(state.rows, hasLength(60));
+    expect(find.text('Load More'), findsNothing);
   });
 
   testWidgets('failed append stays stopped until the user retries', (t) async {

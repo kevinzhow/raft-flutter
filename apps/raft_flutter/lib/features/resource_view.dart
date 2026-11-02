@@ -2374,6 +2374,10 @@ class _ResourceViewState extends State<ResourceView> {
       }
       if (activeLoad == request) {
         activeLoad = null;
+        // A failed quiet refresh has no data/loading rebuild of its own.
+        if (activityPage && accepts(scope, request)) {
+          setState(() {});
+        }
         if (trailingReconcile && accepts(scope)) {
           trailingReconcile = false;
           unawaited(reconcile());
