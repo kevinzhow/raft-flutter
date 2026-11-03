@@ -24,9 +24,22 @@ const _interior = {
 };
 
 Directory _sourceDirectory() {
-  final local = Directory('lib/src');
-  if (local.existsSync()) return local;
-  return Directory('packages/raft_ui/lib/src');
+  for (var root = Directory.current.absolute; ; root = root.parent) {
+    final package = Directory('${root.path}/packages/raft_ui');
+    final manifest = File('${package.path}/pubspec.yaml');
+    final source = Directory('${package.path}/lib/src');
+    if (source.existsSync() &&
+        manifest.existsSync() &&
+        RegExp(
+          r'^name:\s*raft_ui\s*$',
+          multiLine: true,
+        ).hasMatch(manifest.readAsStringSync())) {
+      return source;
+    }
+    if (root.parent.path == root.path) {
+      throw StateError('Cannot locate the checked-out raft_ui/lib/src.');
+    }
+  }
 }
 
 String _withoutCommentLines(String source) => source

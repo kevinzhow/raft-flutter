@@ -32300,6 +32300,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/raftbench/raftbench_page_view.dart#local-function:CLASS:_RaftbenchAdminViewState@3846/METHOD:build@4388/FUNCTION:tile@4847": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Same unresolved builder after the shared service notice Safe Area migration shifted its source offsets; real-entry/family/state mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/raftbench/raftbench_page_view.dart#local-function:CLASS:_RaftbenchAdminViewState@3867/METHOD:build@4409/FUNCTION:tile@4868": {
         "role": "unresolved",
         "familyRefs": [],

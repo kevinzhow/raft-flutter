@@ -1303,6 +1303,22 @@
       "reason": "This mechanical message caller migration uses a live UI-local message-domain alias; no new state. Approved by Cindy in 09fa9961-2e3d-450e-b0d3-afd9280216d4. Revoke when page view models replace these receivers. Read-state caller migration extends this same exception only to the measured value; approved by Cindy in 0ed09255-82e2-4442-a5b4-572eaf376299 (2026-10-19). Original expiry and revocation conditions remain. Renewed by Cindy on 2026-10-31 (Raft #raft-flutter:899e0e10, 33a6b3b3): still measured in use; the planned caller/composition cleanup has not landed. No growth allowed; remove or re-review by 2026-11-30.",
       "reviewer": "Cindy",
       "expires": "2026-11-30"
+    },
+    {
+      "module": "workspace_thread_commands",
+      "metric": "lines",
+      "limit": 428,
+      "reason": "#294 fix (991d4bd3e): a 404 for the focused reply opens the thread's latest replies instead of revoking the thread. Owner Cindy (Raft #raft-flutter:c1b7d3ae): move the focused-reply fallback out of WorkspaceThreadCommands by 2026-11-30. No growth allowed.",
+      "reviewer": "Cindy",
+      "expires": "2026-11-30"
+    },
+    {
+      "module": "workspace_thread_commands",
+      "metric": "tokens",
+      "limit": 2479,
+      "reason": "#294 fix (991d4bd3e): a 404 for the focused reply opens the thread's latest replies instead of revoking the thread. Owner Cindy (Raft #raft-flutter:c1b7d3ae): move the focused-reply fallback out of WorkspaceThreadCommands by 2026-11-30. No growth allowed.",
+      "reviewer": "Cindy",
+      "expires": "2026-11-30"
     }
   ]
 }
