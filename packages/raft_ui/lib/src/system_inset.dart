@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,6 +14,12 @@ import 'package:flutter/services.dart';
 /// This is the single place to change if a future Flutter changes that.
 double raftBottomInset(BuildContext context) =>
     MediaQuery.paddingOf(context).bottom;
+
+/// Bottom obstruction for an overlay whose viewport still includes the IME.
+/// Resizing hosts must consume their viewInsets before passing them on; unlike
+/// an in-flow footer, a viewport overlay must clear the keyboard itself.
+double raftOverlayBottomInset(BuildContext context) =>
+    math.max(raftBottomInset(context), MediaQuery.viewInsetsOf(context).bottom);
 
 /// The system bar height regardless of the keyboard. Only for bars that must
 /// stay put when the keyboard opens (the root tab bar). Everything else uses
@@ -78,6 +86,8 @@ class RaftBottomInsetSurface extends StatelessWidget {
     this.color,
     this.decoration,
     this.padding = EdgeInsets.zero,
+    this.avoidKeyboard = false,
+    this.avoidSides = false,
     required this.child,
   }) : assert(color == null || decoration == null);
 
@@ -86,16 +96,30 @@ class RaftBottomInsetSurface extends StatelessWidget {
 
   /// Padding before the system inset is added.
   final EdgeInsets padding;
+
+  /// Only for viewport overlays that have not already spent the keyboard inset.
+  /// Ordinary footers sit in a resizing host and leave this false.
+  final bool avoidKeyboard;
+
+  /// Only for an exposed window boundary whose host has not spent side insets.
+  /// Workspace footers leave this false: their host or rail owns the sides.
+  final bool avoidSides;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final background = decoration?.color ?? color;
+    final inset = avoidKeyboard
+        ? raftOverlayBottomInset(context)
+        : raftBottomInset(context);
+    final sides = avoidSides ? MediaQuery.paddingOf(context) : EdgeInsets.zero;
     final surface = DecoratedBox(
       decoration: decoration ?? BoxDecoration(color: color),
       child: Padding(
         padding: padding.copyWith(
-          bottom: padding.bottom + raftBottomInset(context),
+          left: padding.left + sides.left,
+          right: padding.right + sides.right,
+          bottom: padding.bottom + inset,
         ),
         child: child,
       ),

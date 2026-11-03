@@ -225,6 +225,8 @@ Windows 使用同一 DesktopInboxNotifications 权威与生命周期。WindowsNo
 
 - **登出策略。** 会话只在服务器明确判定凭据无效时结束：`/auth/refresh`，或刷新成功后的 `/auth/me`，返回带服务器 JSON 错误体的 401。无 JSON 体的 401、任何 403、400/404/408/429/5xx、超时、连接错误、无法解析的 200 一律保留会话与凭据，显示非破坏性状态并退避重试；启动恢复失败（不是“没有已存凭据”）显示恢复页，不显示登录表单。实现在 `packages/raft_client/lib/src/session_policy.dart`，由 `logout_policy_test.dart` 固定。
 - **Android 边到边。** 背景绘制到系统栏下方，页面自己拥有底部内容边界：滚动页用 `raftScrollPadding`，底部栏用 `RaftBottomInsetSurface`，锚定菜单和弹层按所属 overlay 的 metrics 放置并限高；不加通用 SafeArea，嵌套滚动不重复加。回归在 `edge_to_edge_audit_test.dart`。
+- **底部控件的唯一所有者。** 频道加入／只读／归档、只读服务提示和公开服务器底栏都由 SDK 底栏组件使用 `RaftBottomInsetSurface`，页面不补偏移。普通底栏依赖宿主已处理键盘；仍覆盖完整视口的浮条显式使用 `avoidKeyboard` 或 `raftOverlayBottomInset`，取未消费的系统栏与键盘遮挡的较大值，不叠加两者。
+- **边界与内部控件分开。** 公开服务器底栏显式使用 `avoidSides`；布局先清除被导航轨道遮住的那一侧 inset，另一侧仍由底栏负责。全视口浮条自行避开各侧及顶部系统区域。内部提示、对话框内部操作行不再次消费系统边距。SDK 的底栏家族几何测试和分类守卫登记这些职责，新增底栏家族必须同时登记并验证。
 - **保留但不活动的页面。** 用回调内部守卫排除输入、焦点和语义，不要传 `null` 回调：`null` 会套用控件的禁用透明度（0.6），页面滑动时表现为颜色闪变。
 
 ## Live entity and recovery ownership

@@ -75,16 +75,14 @@ class RaftbenchServiceDmNotice extends StatelessWidget {
   const RaftbenchServiceDmNotice({super.key});
 
   @override
-  Widget build(BuildContext context) => ColoredBox(
+  Widget build(BuildContext context) => RaftBottomInsetSurface(
     key: const ValueKey('raftbench-service-dm-notice'),
     color: RaftTokens.of(context).canvas,
-    child: const Padding(
-      padding: EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: RaftBanner(
-        status: RaftBannerRecipeStatus.info,
-        textAlign: TextAlign.center,
-        description: 'This read-only analysis agent does not reply to DMs. Results appear on the RaftBench page.',
-      ),
+    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+    child: const RaftBanner(
+      status: RaftBannerRecipeStatus.info,
+      textAlign: TextAlign.center,
+      description: 'This read-only analysis agent does not reply to DMs. Results appear on the RaftBench page.',
     ),
   );
 }

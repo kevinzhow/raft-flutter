@@ -16,6 +16,7 @@ import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeVariant, RaftButtonRecipeSize;
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'theme.dart';
+import 'system_inset.dart';
 
 /// `border-t border-line-muted bg-layer-panel` / brutal `border-t-2 border-black bg-white`.
 BoxDecoration _footerDecoration(RaftTokens t, {Color? color}) => BoxDecoration(
@@ -29,6 +30,13 @@ BoxDecoration _footerDecoration(RaftTokens t, {Color? color}) => BoxDecoration(
         )
       : null,
 );
+
+// Container used to include the recipe border in its content padding. Keep
+// that layout when the bottom-edge owner paints through the system inset.
+EdgeInsets _footerPadding(BuildContext context, BoxDecoration decoration) =>
+    const EdgeInsets.all(12)
+        .add(decoration.padding)
+        .resolve(Directionality.of(context));
 
 /// The joint over-limit grace banner (`px-3 pt-3` host) above the footer.
 class RaftChannelGraceBanner extends StatelessWidget {
@@ -63,9 +71,10 @@ class RaftChannelBannerFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Container(
-      decoration: _footerDecoration(t),
-      padding: const EdgeInsets.all(12),
+    final decoration = _footerDecoration(t);
+    return RaftBottomInsetSurface(
+      decoration: decoration,
+      padding: _footerPadding(context, decoration),
       child: RaftBanner(
         textAlign: TextAlign.center,
         description: message,
@@ -106,10 +115,11 @@ class RaftChannelArchivedFooter extends StatelessWidget {
     }
     final color = t.colors['warning-strong'];
     final text = RaftTypography.heading(t, size: 14, line: 20, color: color);
-    return Container(
+    final decoration = _footerDecoration(t, color: t.colors['warning-soft']);
+    return RaftBottomInsetSurface(
       key: const ValueKey('channel-archived-footer'),
-      decoration: _footerDecoration(t, color: t.colors['warning-soft']),
-      padding: const EdgeInsets.all(12),
+      decoration: decoration,
+      padding: _footerPadding(context, decoration),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
@@ -152,10 +162,11 @@ class RaftChannelJoinFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Container(
+    final decoration = _footerDecoration(t);
+    return RaftBottomInsetSurface(
       key: const ValueKey('channel-join-footer'),
-      decoration: _footerDecoration(t),
-      padding: const EdgeInsets.all(12),
+      decoration: decoration,
+      padding: _footerPadding(context, decoration),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -23,6 +23,7 @@ import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'settings_controls.dart';
+import 'system_inset.dart';
 import 'settings_layout.dart';
 import 'tooltip.dart' show RaftTooltip;
 import 'adaptive_workspace.dart' show RaftRailDestination, RaftWorkspaceRail;
@@ -311,10 +312,7 @@ class RaftPublicBottomBanner extends StatelessWidget {
         width: double.infinity,
         applyText: false,
         // `!px-5 max-sm:!px-3 max-sm:!py-2`.
-        padding: EdgeInsets.symmetric(
-          horizontal: narrow ? RaftSpace.x3 : RaftSpace.x5,
-          vertical: narrow ? RaftSpace.x2 : recipe.root.padding.top,
-        ),
+        padding: EdgeInsets.zero,
         decorationOverride: (d) => d.copyWith(
           borderRadius: BorderRadius.zero,
           border: d.border is Border
@@ -326,40 +324,51 @@ class RaftPublicBottomBanner extends StatelessWidget {
         // small buttons): stacked, the banner was ~105px tall on a 390px phone.
         // From sm up v1.21.23 stacks them (the action slot is `mt-2` under the
         // description); the pre-theme looks kept the row (publicServer.banner).
-        child:
-            !narrow &&
-                t.option('publicServer.banner', or: 'stacked') == 'stacked'
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  copy,
-                  const SizedBox(height: RaftSpace.x2),
-                  Align(alignment: Alignment.centerLeft, child: buttons),
-                ],
-              )
-            : LayoutBuilder(
-                builder: (context, box) => Row(
+        child: RaftBottomInsetSurface(
+          avoidKeyboard: true,
+          avoidSides: true,
+          padding: EdgeInsets.symmetric(
+            horizontal: narrow ? RaftSpace.x3 : RaftSpace.x5,
+            vertical: narrow ? RaftSpace.x2 : recipe.root.padding.top,
+          ),
+          child:
+              !narrow &&
+                  t.option('publicServer.banner', or: 'stacked') == 'stacked'
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: copy),
-                    const SizedBox(width: RaftSpace.x2),
-                    // The copy keeps at least 120px beside the actions; wider
-                    // actions (large text, long labels) shrink to fit instead
-                    // of squeezing the sentence into a tall one-word column.
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: box.maxWidth.isFinite
-                            ? (box.maxWidth - RaftSpace.x2 - 120).clamp(0, 1e9)
-                            : double.infinity,
-                      ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerRight,
-                        child: buttons,
-                      ),
-                    ),
+                    copy,
+                    const SizedBox(height: RaftSpace.x2),
+                    Align(alignment: Alignment.centerLeft, child: buttons),
                   ],
+                )
+              : LayoutBuilder(
+                  builder: (context, box) => Row(
+                    children: [
+                      Expanded(child: copy),
+                      const SizedBox(width: RaftSpace.x2),
+                      // The copy keeps at least 120px beside the actions; wider
+                      // actions (large text, long labels) shrink to fit instead
+                      // of squeezing the sentence into a tall one-word column.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: box.maxWidth.isFinite
+                              ? (box.maxWidth - RaftSpace.x2 - 120).clamp(
+                                  0,
+                                  1e9,
+                                )
+                              : double.infinity,
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: buttons,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
@@ -407,10 +416,10 @@ class RaftPublicFloatingBanner extends StatelessWidget {
   final Widget? action;
   @override
   Widget build(BuildContext context) => Positioned(
-    left: 0,
-    right: 0,
-    top: top ? RaftSpace.x4 : null,
-    bottom: top ? null : RaftSpace.x4,
+    left: MediaQuery.paddingOf(context).left,
+    right: MediaQuery.paddingOf(context).right,
+    top: top ? RaftSpace.x4 + MediaQuery.paddingOf(context).top : null,
+    bottom: top ? null : RaftSpace.x4 + raftOverlayBottomInset(context),
     child: Align(
       alignment: Alignment.center,
       child: ConstrainedBox(
@@ -861,20 +870,33 @@ class RaftPublicServerLayout extends StatelessWidget {
                     children: [
                       ?rail,
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: Stack(
-                                children: [
-                                  Positioned.fill(child: columns),
-                                  if (threadOverlay != null)
-                                    Positioned.fill(child: threadOverlay!),
-                                ],
-                              ),
+                        child: Builder(
+                          builder: (context) => MediaQuery.removePadding(
+                            context: context,
+                            // The rail shields this side of the content column.
+                            // The banner still owns the opposite exposed edge.
+                            removeLeft:
+                                rail != null &&
+                                Directionality.of(context) == TextDirection.ltr,
+                            removeRight:
+                                rail != null &&
+                                Directionality.of(context) == TextDirection.rtl,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: Stack(
+                                    children: [
+                                      Positioned.fill(child: columns),
+                                      if (threadOverlay != null)
+                                        Positioned.fill(child: threadOverlay!),
+                                    ],
+                                  ),
+                                ),
+                                ?banner,
+                              ],
                             ),
-                            ?banner,
-                          ],
+                          ),
                         ),
                       ),
                     ],

@@ -157,6 +157,7 @@ WorkspaceController _workspace(ParityContext ctx) {
     ..channels = channels
     ..dms = dms;
   w.messageDomain.ledger.switchServer('visual-server');
+  addTearDown(w.dispose);
   return w;
 }
 

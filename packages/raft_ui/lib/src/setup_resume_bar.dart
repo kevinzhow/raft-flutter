@@ -8,6 +8,7 @@ import 'design_primitives.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
 import 'theme.dart';
+import 'system_inset.dart';
 
 /// `pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4
 /// pb-4` around a `max-w-[560px]` row (`flex-wrap items-center
@@ -68,7 +69,8 @@ class RaftSetupResumeBar extends StatelessWidget {
     );
     return Material(
       type: MaterialType.transparency,
-      child: Padding(
+      child: RaftBottomInsetSurface(
+        avoidKeyboard: true,
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Center(
           heightFactor: 1,
