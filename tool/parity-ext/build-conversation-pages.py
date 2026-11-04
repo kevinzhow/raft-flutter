@@ -113,6 +113,18 @@ rows = {
     'profile-human': {'message': row_msg('msg-cv-profile-human', DESIGNER, 'Reviewing the diffs after lunch.')},
 }
 
+# Current live DM's last own human message, with a server-authorized peer
+# frontier. Both captures render the product message row, not a status mock.
+read_dm = channel('channel-cv-read', 'Cindy', ctype='dm')
+rows['dm-read'] = {
+    'message': row_msg('msg-cv-read', OWNER, 'The report is ready for review.', channelId=read_dm['id']),
+    'readReceipt': {'channel': read_dm,
+                    'peerReadStates': [{'peerKind': 'agent', 'peerId': CINDY['id'], 'maxReadSeq': 1}]},
+}
+routes[f'GET /channels/{read_dm["id"]}'] = {
+    **read_dm, 'peerReadStates': rows['dm-read']['readReceipt']['peerReadStates'],
+}
+
 
 def action_row(mid, content, action, state='prepared', **meta):
     return {'message': row_msg(mid, CINDY, content, actionMetadata={
@@ -400,6 +412,15 @@ def add(scene, platform, state, title, *, props=None, win=(0, 120), interactions
 
 
 # ---- 3.03 no conversation selected (desktop main column) ---------------------
+for platform, width in [('desktop', 560), ('mobile', 390)]:
+    add('dm-read', platform, 'read', 'Last DM message read status', view='row',
+        props={'row': 'dm-read', 'boxWidth': width, 'padX': 16, 'padTop': 8},
+        notes='Actual MessageItem / RaftChatView; own human message, current DM and accepted peer frontier.')
+    add('dm-read-status', platform, 'read', 'Actual DM read status line', view='row',
+        props={'row': 'dm-read', 'boxWidth': width, 'padX': 16, 'padTop': 8},
+        selector='[data-testid="dm-read-status"]', android_key='dm-read-status',
+        notes='The actual status row beneath the same production message. Whole-message captures stay separate; this crop does not claim avatar or body parity.')
+
 add('empty', 'desktop', 'no-channel', 'No conversation selected', props={'surface': 'chat', 'chan': ''},
     win=(0, 800), notes='ChatPanel channel=null: the centred "Select a channel" line.')
 

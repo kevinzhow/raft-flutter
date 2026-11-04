@@ -152,6 +152,38 @@
     "createdAt": "2026-06-22T02:30:00.000Z"
    }
   },
+  "dm-read": {
+   "message": {
+    "id": "msg-cv-read",
+    "seq": 1,
+    "serverId": "visual-server",
+    "channelId": "channel-cv-read",
+    "messageType": "chat",
+    "senderType": "user",
+    "senderId": "visual-user",
+    "senderName": "artin",
+    "content": "The report is ready for review.",
+    "createdAt": "2026-06-22T02:30:00.000Z"
+   },
+   "readReceipt": {
+    "channel": {
+     "id": "channel-cv-read",
+     "serverId": "visual-server",
+     "name": "Cindy",
+     "description": "Visual testing release gates",
+     "type": "dm",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "joined": true
+    },
+    "peerReadStates": [
+     {
+      "peerKind": "agent",
+      "peerId": "agent-cindy",
+      "maxReadSeq": 1
+     }
+    ]
+   }
+  },
   "action-install-app": {
    "message": {
     "id": "msg-cv-action-install",
@@ -1089,6 +1121,22 @@
   },
   "GET /tasks/channel/cafe0000-0000-0000-0000-0000000000a2": {
    "tasks": []
+  },
+  "GET /channels/channel-cv-read": {
+   "id": "channel-cv-read",
+   "serverId": "visual-server",
+   "name": "Cindy",
+   "description": "Visual testing release gates",
+   "type": "dm",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "peerReadStates": [
+    {
+     "peerKind": "agent",
+     "peerId": "agent-cindy",
+     "maxReadSeq": 1
+    }
+   ]
   },
   "GET /messages/context/beef0000-0000-0000-0000-000000000001": {
    "messages": [

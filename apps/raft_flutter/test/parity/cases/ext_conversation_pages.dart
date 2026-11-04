@@ -505,6 +505,9 @@ class _RowStage extends ChatStage {
     required Size super.canvas,
     super.threadSummaries,
     super.tasks,
+    super.channelId,
+    super.extraChannels,
+    super.dms,
   });
 
   @override
@@ -589,11 +592,18 @@ _RowStage _rowStage(ParityContext ctx) {
   final padTop = (ctx.props['padTop'] as num?)?.toDouble() ?? 32;
   final summary = row['threadSummary'];
   final task = row['linkedTask'];
+  final readReceipt = row['readReceipt'] as Map?;
+  final dm = readReceipt == null
+      ? null
+      : Map<String, dynamic>.from(readReceipt['channel'] as Map);
   final stage = _RowStage(
     ctx,
     rowWidth: width - 2 * padX,
     rowOrigin: Offset(padX, padTop),
     canvas: Size(width, height),
+    channelId: message['channelId'] as String,
+    extraChannels: [?dm],
+    dms: [?dm],
     messages: [
       {'threadId': null, ...message},
     ],
@@ -772,6 +782,24 @@ final Map<String, ParityCase> extConversationCases = () {
   }
 
   add('empty', 'desktop', 'no-channel', _windowCase);
+  for (final platform in const ['desktop', 'mobile']) {
+    for (final scene in const ['dm-read', 'dm-read-status']) {
+      add(
+        scene,
+        platform,
+        'read',
+        _rowCase(
+          widgets: const ['raft_ui:RaftMessageReadStatus'],
+          act: (t, _, _) async {
+            expect(
+              find.byKey(const ValueKey('dm-read-status')),
+              findsOneWidget,
+            );
+          },
+        ),
+      );
+    }
+  }
   add('selection', 'desktop', 'one', _selectCase(second: false));
   add('selection', 'desktop', 'two', _selectCase(second: true));
   add('forward', 'desktop', 'dialog', _forwardCase);

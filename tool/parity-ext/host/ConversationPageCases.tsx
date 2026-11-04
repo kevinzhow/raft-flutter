@@ -16,6 +16,8 @@
 import ParityExtCvThreadPanel from "../src/components/message/ThreadPanel";
 import { useThreadStore as parityExtCvThreadStore } from "../src/store/threadStore";
 import { useTranslationStore as parityExtCvTranslationStore } from "../src/store/translationStore";
+import { useReadReceiptStore as parityExtCvReadStore } from "../src/store/readReceiptStore";
+import { setServerFeatureFlagForTests as parityExtCvReadFlag } from "../src/store/serverFeatureFlags";
 import parityExtCvFixture from "virtual:parity-ext/conversation";
 import type { CSSProperties as ParityExtCvCSSProperties } from "react";
 
@@ -138,6 +140,7 @@ type ParityExtCvRow = {
   threadSummary?: Record<string, unknown>;
   linkedTask?: Record<string, unknown>;
   hideThreadActions?: boolean;
+  readReceipt?: { channel: Record<string, unknown>; peerReadStates: Array<{ peerKind: "agent"; peerId: string; maxReadSeq: number }> };
 };
 
 
@@ -168,6 +171,13 @@ function parityExtCvPrimeTranslation(p: ParityExtCvProps, messageId: string, con
 function ParityExtCvRowView({ p }: { p: ParityExtCvProps }) {
   useMemo(() => primeDirectVisualStores(p.caseId), [p.caseId]);
   const spec = (parityExtCvFixture.rows as Record<string, ParityExtCvRow>)[p.row];
+  useMemo(() => {
+    if (!spec.readReceipt) return;
+    const { channel, peerReadStates } = spec.readReceipt;
+    useChannelStore.setState({ dmChannels: [channel] as never });
+    parityExtCvReadFlag(useServerStore.getState().current!.id, "read_receipts_v0", true);
+    parityExtCvReadStore.setState({ scopes: { [channel.id as string]: { kind: "peers", peers: peerReadStates } } });
+  }, [spec]);
   const message = { channelId: fxChannels.design.id, threadId: null, ...spec.message } as unknown as Message;
   useMemo(() => parityExtCvPrimeTranslation(p, spec.message.id as string, message.content), [p, spec, message.content]);
   // Permalinks point at the page's own origin (the preview only resolves current-host links).
@@ -177,7 +187,9 @@ function ParityExtCvRowView({ p }: { p: ParityExtCvProps }) {
     <main className="min-h-screen bg-white p-0 font-display text-black">
       <div
         data-visual-case={p.caseId}
-        className={parityExtCvPanelClass}
+        // Current ConversationPanelRoot/Content paint bg-layer-canvas. The
+        // legacy panel class predates the pinned modern token vocabulary.
+        className={spec.readReceipt ? "bg-layer-canvas" : parityExtCvPanelClass}
         // flow-root keeps the row's own block margins inside the box (auto height).
         style={{ width: p.boxWidth ?? 440, height: p.boxHeight ?? undefined, padding: `${p.padTop}px ${p.padX}px 0`, boxSizing: "border-box", display: "flow-root" }}
       >
@@ -189,6 +201,7 @@ function ParityExtCvRowView({ p }: { p: ParityExtCvProps }) {
           threadSummary={spec.threadSummary as never}
           linkedTask={spec.linkedTask as never}
           hideThreadActions={spec.hideThreadActions}
+          showDmReadStatus={!!spec.readReceipt}
         />
       </div>
     </main>

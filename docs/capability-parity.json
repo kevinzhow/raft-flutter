@@ -701,10 +701,10 @@
    "area": "messages",
    "capability": "Agent read receipts: 'Read' badge in DMs and per-mention 'Read / Not read yet' state on agent mentions",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "MessageItem showDmReadReceipt footer 'Read' | MessageMarkdownBody readReceiptEnabled mention chips",
-   "gate": "agent read badges feature enabled",
-   "flutterEntry": "agent_read_badge.dart agentMentionRead -> RaftReferenceAppearance.agentRead (marker on an @mentioned agent)",
+   "gate": "read_receipts_v0 enabled; accepted peer frontier; own human sender; current live DM last row only",
+   "flutterEntry": "agent_read_badge.dart agentMentionRead for mention chips; dm_read_status.dart dmReadStatusMessageId -> RaftMessageReadStatus below the current live DM last message",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_read_badge.dart",
@@ -713,11 +713,19 @@
     {
      "file": "packages/raft_ui/lib/src/message_reference_chip.dart",
      "needle": "class _AgentReadBadge"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/dm_read_status.dart",
+     "needle": "String? dmReadStatusMessageId("
+    },
+    {
+     "file": "packages/raft_ui/lib/src/message_read_status.dart",
+     "needle": "class RaftMessageReadStatus"
     }
    ],
-   "justification": "The per-mention read marker is drawn (sender only, agents only, once the channel's read frontiers are known). The DM 'Read' line under the last message is not drawn yet.",
-   "impact": "Users DMing agents cannot see the single 'Read' line; the markers cover channels and DMs with an @mention.",
-   "size": "M"
+   "justification": "Mention chips and the separate last-message DM line use the accepted read frontier. The DM line is restricted to the current live conversation, own human sender and enabled feature; context windows, pending sends and other senders do not show it. Desktop visual differences and native acceptance remain unresolved.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -2446,7 +2454,7 @@
      "needle": "'/channels/${c.id}/join'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/channel_footer_widgets.dart",
      "needle": "RaftChannelJoinFooter("
     }
    ],
@@ -5601,10 +5609,10 @@
    "area": "agents-computers-runtimes",
    "capability": "Browse the agent's workspace file tree (root and lazily-expanded folders), refresh, show/hide hidden files, copy path",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "AgentDetailPanel > 'Workspace' tab (AgentWorkspace.tsx): tree, 'Refresh', hidden-files toggle, copy-path button (not shown for hosted agents)",
    "gate": "tab visible to canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_detail_view.dart AgentWorkspaceTab > RaftWorkspaceTreeView (refresh, hidden toggle, copy path, truncation hint, archived error states)",
+   "flutterEntry": "agent_detail_view.dart AgentWorkspaceTab -> RaftWorkspaceTreeView(showPath: !widget.hosted); regular workspace refresh/hidden-files/tree/preview behavior is retained",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
@@ -5613,11 +5621,15 @@
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
      "needle": "RaftWorkspaceTreeView("
+    },
+    {
+     "file": "packages/raft_ui/lib/src/agent_profile.dart",
+     "needle": "errorFinal || !showPath"
     }
    ],
-   "justification": "Copy-path is shown even for hosted external agents (Web hides it); folder listings are lazy-loaded per directory.",
-   "impact": "Low.",
-   "size": "S"
+   "justification": "Hosted/external agents omit the local Computer path and Copy Path control. Native visual acceptance remains pending.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -5680,7 +5692,7 @@
    "status": "covered",
    "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row > 'N agents' expander (AssignedAgentsPanel; row button opens the agent)",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
-   "flutterEntry": "provider_views.dart 'Assigned agents' dialog",
+   "flutterEntry": "provider_views.dart Assigned agents dialog: active agent row opens the profile after closing the dialog; deleted agents retain the detach action",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/provider_views.dart",
@@ -5689,9 +5701,13 @@
     {
      "file": "apps/raft_flutter/lib/features/provider_views.dart",
      "needle": "Agents using"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/provider_views.dart",
+     "needle": "w.openProfile(RaftProfileKind.agent, openAgentId!)"
     }
    ],
-   "justification": "Flutter lists agents but rows do not open the agent profile (Web has an 'Open agent' button).",
+   "justification": "The active agent row now opens the current workspace profile and rejects a late selection after authority changes. Deleted-agent rows remain non-navigable. Focused action regressions pass; native visual acceptance is pending.",
    "impact": "",
    "size": ""
   },
@@ -5947,10 +5963,10 @@
    "area": "agents-computers-runtimes",
    "capability": "Fetch the server's friendly model-label catalog used to display model names everywhere",
    "background": true,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "modelLabelCatalogStore.watchModelLabelCatalog (MainLayout) feeding catalogModelLabel in agent profile, create/edit model selects and message headers",
    "gate": "background; any member",
-   "flutterEntry": "model_label_catalog.dart ModelLabelCatalogStore (GET /servers/:id/model-label-catalog, 5 min window, 60 s back-off) feeding message sender rows (agentPresentationModelLabel), the Computer page agent rows and the profile hover card; the bundled sourceRuntimeModelLabels remains the fallback",
+   "flutterEntry": "model_label_catalog.dart shared ModelLabelCatalogStore now also feeds AgentDetailPanel, CreateAgentDialog and AgentRuntimeEditor via ModelLabelCatalogListener, in addition to message/Computer/hover rows",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/model_label_catalog.dart",
@@ -5959,11 +5975,23 @@
     {
      "file": "apps/raft_flutter/lib/features/agent_metadata_catalog.dart",
      "needle": "sourceRuntimeModelLabels"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/model_label_listener.dart",
+     "needle": "mixin ModelLabelCatalogListener"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_runtime_editor.dart",
+     "needle": "displayLabel:"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/create_agent_dialog.dart",
+     "needle": "modelDisplayLabel("
     }
    ],
-   "justification": "The agent profile page (agent_detail_view.dart) and the create-agent model select still resolve names from the bundled table only; they move with the Agent profile and New Agent packages.",
-   "impact": "Cosmetic: a model the server names itself still shows as a raw id on those two surfaces.",
-   "size": "S"
+   "justification": "The server-reported label wins over runtime and bundled fallback labels; the option value remains the model ID. The surface listener follows controller replacement and removes itself on disposal. The listener follows create/edit/profile and late catalog updates; native visual acceptance remains pending.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -6270,7 +6298,7 @@
    "area": "agents-computers-runtimes",
    "capability": "Start a stopped managed agent",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Profile > Actions 'Start Agent' | Profile header menu 'Start Agent' | Computer detail bulk 'Start' | Members sidebar agent context menu 'Start'",
    "gate": "controlAgentRuntime capability (or creator); not for external agents",
    "flutterEntry": "agent_detail_view.dart onStartStop + computer_detail_view.dart bulk start; fleet_views.dart runtimeCommand('start') | Members row menu runMemberAgentCommand",
@@ -6282,11 +6310,15 @@
     {
      "file": "apps/raft_flutter/lib/features/computer_detail_view.dart",
      "needle": "/agents/$agent/${mode.name}"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/fleet_views.dart",
+     "needle": "!widget.computers && command == 'start'"
     }
    ],
-   "justification": "All three Web entry points exist (profile, bulk, Members row menu). The profile Start keeps a confirm dialog that Web does not have; the Members row menu starts at once like Web.",
-   "impact": "Members-list users must open the profile to start an agent.",
-   "size": "S"
+   "justification": "The managed Agent profile now starts directly, matching existing bulk and Members actions. Stop and Reset retain their confirmation flows. Focused real action tests pass; native acceptance is pending.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
