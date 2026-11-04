@@ -29,6 +29,7 @@ import 'recipes/token_binding.dart';
 import 'status_bar.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
+import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 
 /// Shared Settings page pieces from the Web client:
 /// - [RaftSettingsSidebarList]: components/settings/SettingsSidebarList.tsx
@@ -590,6 +591,13 @@ class RaftSettingsPanelFrame extends StatelessWidget {
     horizontal: 20,
     vertical: 16,
   );
+
+  /// Web `px-4 py-4 md:px-5`; frozen looks keep their existing inset.
+  static EdgeInsets contentInsetFor(BuildContext context) =>
+      !usesLegacyRecipes(RaftTokens.of(context).recipeTokens) &&
+          raftBreakpointWidth(context) < 768
+      ? const EdgeInsets.all(RaftSpace.x4)
+      : contentInset;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);

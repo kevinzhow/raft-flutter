@@ -154,6 +154,7 @@ class PublicServerSettings extends StatelessWidget {
     required this.onTab,
     required this.about,
     required this.documentationUrl,
+    this.onBack,
     this.account,
     this.appearance,
     this.onAppearance,
@@ -173,6 +174,7 @@ class PublicServerSettings extends StatelessWidget {
   final ValueChanged<String> onTab;
   final Widget Function(BuildContext) about;
   final String documentationUrl;
+  final VoidCallback? onBack;
   final PublicSettingsAccount? account;
   final RaftAppearance? appearance;
   final ValueChanged<RaftAppearance>? onAppearance;
@@ -231,7 +233,9 @@ class PublicServerSettings extends StatelessWidget {
     final header = RaftSettingsPanelHeader(
       title: active.title ?? active.label,
       glyph: active.glyph,
-      mobile: false,
+      mobile: raftBreakpointWidth(context) < 768,
+      onMobileBack: onBack,
+      backKey: const ValueKey('public-settings-back'),
     );
     Widget page() => active.scroll
         ? ListView(
@@ -241,7 +245,7 @@ class PublicServerSettings extends StatelessWidget {
             primary: false,
             padding: raftScrollPadding(
               context,
-              RaftSettingsPanelFrame.contentInset,
+              RaftSettingsPanelFrame.contentInsetFor(context),
             ),
             children: [
               KeyedSubtree(

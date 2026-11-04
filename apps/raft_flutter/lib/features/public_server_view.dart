@@ -1230,6 +1230,9 @@ class _PublicServerViewState extends State<PublicServerView> {
       onTab: (tab) => setState(() => settingsTab = tab),
       about: about,
       documentationUrl: widget.documentationUrl,
+      // Public Settings uses the root public-route fallback, as Web's
+      // useMobileBack('/') does without a current member workspace.
+      onBack: widget.onUnavailable,
       account: widget.account?.settings,
       appearance: widget.appearance,
       onAppearance: widget.onAppearance,
