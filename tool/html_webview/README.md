@@ -257,6 +257,11 @@ metadata with the actual request method, and rejects navigation when its host
 policy callback fails. Redirects cannot reuse gesture metadata to open an
 external browser.
 
+Pointer release follows WPE's own Wayland implementation: clear the released
+button before constructing the Up event, while preserving other held buttons
+and keyboard modifiers. The old adapter reported a still-pressed button in
+`mouseup.buttons`, preventing a complete pointer-up sequence.
+
 The preview's explicit `allowFileAccess: false` also cancels native file chooser
 requests before either the Dart callback or GTK fallback. This is required
 because the pinned Linux plugin's chooser-mode decoder does not support Linux;

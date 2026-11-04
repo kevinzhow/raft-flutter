@@ -41,6 +41,12 @@ def patch(name, source):
         return replace_once(source, '      {"isRedirect", make_fl_value(isRedirect)},',
                             '      {"isRedirect", make_fl_value(isRedirect)},\n      {"hasGesture", make_fl_value(hasGesture)},')
     if name == "in_app_webview/in_app_webview.cc":
+        source = replace_once(source,
+                              "      // Update button state AFTER the event (but include in modifiers)\n      break;",
+                              "      // Match WPEWaylandSeat: UP reports the remaining pressed buttons.\n      button_state_ &= ~button_modifier_bit;\n      break;")
+        source = replace_once(source,
+                              "  // Clear button state AFTER sending the UP event\n  if (event_type == WPE_EVENT_POINTER_UP) {\n    button_state_ &= ~button_modifier_bit;\n  }\n",
+                              "")
         source = replace_once(source, "      // Create URLRequest\n      auto urlRequest =",
                               "      // Preserve the real method; non-HTTP requests can have none.\n      const gchar* method = webkit_uri_request_get_http_method(request);\n      auto urlRequest =")
         source = replace_once(source, '          std::optional<std::string>("GET"),',

@@ -68,8 +68,49 @@ int main() {
 }
 '''
 
+POINTER_FIXTURE = r'''
+#include <cassert>
+#include <cstdint>
+#include <vector>
+#define HAVE_WPE_PLATFORM 1
+using guint=unsigned; using guint32=uint32_t; using WPEModifiers=uint32_t;
+enum WPEEventType { WPE_EVENT_POINTER_MOVE, WPE_EVENT_POINTER_DOWN, WPE_EVENT_POINTER_UP };
+constexpr int WPE_INPUT_SOURCE_MOUSE=0;
+struct WPEEvent { WPEEventType type; WPEModifiers modifiers; unsigned button, presses; };
+std::vector<WPEEvent> events;
+long long g_get_monotonic_time() { return 1000; }
+WPEEvent* wpe_event_pointer_move_new(WPEEventType type,void*,int,guint32,
+ WPEModifiers modifiers,double,double,double,double) { return new WPEEvent{type,modifiers,0,0}; }
+WPEEvent* wpe_event_pointer_button_new(WPEEventType type,void*,int,guint32,
+ WPEModifiers modifiers,guint button,double,double,guint presses) {
+ return new WPEEvent{type,modifiers,button,presses}; }
+void wpe_view_event(void*,WPEEvent* event) { events.push_back(*event); }
+void wpe_event_unref(WPEEvent* event) { delete event; }
+struct InAppWebView {
+ void* wpe_view_=this; double cursor_x_=1,cursor_y_=1;
+ uint32_t current_modifiers_=2,button_state_=0;
+ void HideAllPopups() {};
+ void SetPointerButton(int,int,int);
+};
+'''
+POINTER_MAIN = r'''
+int main() {
+ InAppWebView view;
+ // A second held button and the keyboard modifier must survive left release.
+ view.button_state_=1u<<9;
+ view.SetPointerButton(static_cast<int>(WpePointerEventKind::Down),1,1);
+ assert(events.back().type==WPE_EVENT_POINTER_DOWN && events.back().presses==1);
+ assert(events.back().modifiers==(2u|(1u<<9)|(1u<<8)));
+ view.SetPointerButton(static_cast<int>(WpePointerEventKind::Up),1,1);
+ assert(events.back().type==WPE_EVENT_POINTER_UP && events.back().presses==0);
+ assert(events.back().modifiers==(2u|(1u<<9)));
+ assert(view.button_state_==(1u<<9));
+}
+'''
 
-@unittest.skipUnless(PLUGIN.is_dir(), "Pinned public Linux plugin is not installed")
+
+@unittest.skipUnless(os.name == "posix" and PLUGIN.is_dir(),
+                     "Pinned public Linux plugin requires the POSIX native test host")
 class LinuxHtmlPluginTest(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="raft-linux-html-")
@@ -121,6 +162,31 @@ class LinuxHtmlPluginTest(unittest.TestCase):
                 capture_output=True, timeout=30)
             self.assertEqual(compiled.returncode, 0, compiled.stderr.decode())
             # Disable cores for the intentional original-source assertion.
+            import resource
+            def no_core():
+                resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+            result = subprocess.run([str(binary)], capture_output=True,
+                                    timeout=5, preexec_fn=no_core)
+            self.assertEqual(result.returncode == 0, expected, result.stderr.decode())
+
+    @unittest.skipUnless(shutil.which("c++"), "C++ compiler is unavailable")
+    def test_actual_pointer_up_reports_remaining_buttons(self):
+        PATCH.prepare(self.original, self.output)
+        header = (self.original / "in_app_webview/in_app_webview.h").read_text()
+        start = header.index("enum class WpePointerEventKind {")
+        event_kind = header[start:header.index("};", start) + 2]
+        for label, directory, expected in (("original", self.original, False),
+                                            ("patched", self.output, True)):
+            source = (directory / "in_app_webview/in_app_webview.cc").read_text()
+            start = source.index("void InAppWebView::SetPointerButton(")
+            body = source[start:source.index("void InAppWebView::SetScrollDelta(", start)]
+            path = self.directory / (label + "-pointer.cc")
+            binary = path.with_suffix(".bin")
+            path.write_text(POINTER_FIXTURE + event_kind + body + POINTER_MAIN)
+            compiled = subprocess.run(
+                ["c++", "-std=c++17", str(path), "-o", str(binary)],
+                capture_output=True, timeout=30)
+            self.assertEqual(compiled.returncode, 0, compiled.stderr.decode())
             import resource
             def no_core():
                 resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
