@@ -584,6 +584,12 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     // Verification starts first so it overlaps the page opening below.
     final authorization = _authorizeContent(w.client, target, valid);
     unawaited(authorization.then<void>((_) {}, onError: (Object _) {}));
+    unawaited(
+      w.readReceipts.hydrate(
+        target.channelId,
+        detail: authorization.then((accepted) => accepted.$2.json),
+      ),
+    );
     try {
       Future<void>? opening;
       if (known != null) {

@@ -171,6 +171,8 @@ class ReadReceipts extends ChangeNotifier {
   final ReadReceiptsAuthority w;
   final Map<String, ReadReceiptScope> _scopes = {};
   final Map<String, Future<void>> _inFlight = {};
+  final _hydrated = <String>{};
+  final _detailVersions = <String, int>{};
   Object? _identity;
   int _epoch = 0;
   bool _disposed = false;
@@ -187,6 +189,8 @@ class ReadReceipts extends ChangeNotifier {
       _epoch++;
       _scopes.clear();
       _inFlight.clear();
+      _hydrated.clear();
+      _detailVersions.clear();
     }
     return _epoch;
   }
@@ -200,29 +204,58 @@ class ReadReceipts extends ChangeNotifier {
   ReadReceiptProjection project(String scopeId, int? messageSeq) =>
       projectReadReceipt(scope(scopeId), messageSeq);
 
-  /// Reads the scope's detail once at a time.
-  Future<void> hydrate(String scopeId) {
+  bool wasHydrated(String scopeId) {
+    _scope();
+    return _hydrated.contains(scopeId);
+  }
+
+  /// Reuse a current, authorized channel detail, including an absent gate.
+  /// A newer accepted detail also retires any older receipt-only request.
+  void acceptDetail(String scopeId, dynamic data) {
+    if (_disposed) return;
+    _scope();
+    _detailVersions[scopeId] = (_detailVersions[scopeId] ?? 0) + 1;
+    _hydrated.add(scopeId);
+    final next = normalizeReadReceiptHydrate(data);
+    if (next == null) {
+      if (_scopes.remove(scopeId) != null) notifyListeners();
+    } else {
+      _scopes[scopeId] = mergeReadReceiptHydrate(_scopes[scopeId], next);
+      notifyListeners();
+    }
+  }
+
+  /// Reads the scope's detail once at a time. Navigation may supply its own
+  /// current, authorized detail request so optimistic UI shares that same I/O.
+  Future<void> hydrate(String scopeId, {Future<dynamic>? detail}) {
+    if (_disposed) return Future.value();
     final epoch = _scope();
     final existing = _inFlight[scopeId];
-    if (existing != null) return existing;
+    if (existing != null && detail == null) return existing;
+    if (detail != null) {
+      _detailVersions[scopeId] = (_detailVersions[scopeId] ?? 0) + 1;
+    }
     late final Future<void> request;
-    request = _fetch(scopeId, epoch).whenComplete(() {
+    request = _fetch(scopeId, epoch, detail).whenComplete(() {
       if (identical(_inFlight[scopeId], request)) _inFlight.remove(scopeId);
     });
     return _inFlight[scopeId] = request;
   }
 
-  Future<void> _fetch(String scopeId, int epoch) async {
+  Future<void> _fetch(
+    String scopeId,
+    int epoch,
+    Future<dynamic>? detail,
+  ) async {
+    final version = _detailVersions[scopeId];
     try {
-      final data = await w.client.get('/channels/$scopeId');
-      if (_disposed || _scope() != epoch) return;
-      final hydrate = normalizeReadReceiptHydrate(data);
-      if (hydrate == null) {
-        if (_scopes.remove(scopeId) != null) notifyListeners();
+      final data = await (detail ?? w.client.get('/channels/$scopeId'));
+      if (_disposed ||
+          _scope() != epoch ||
+          _detailVersions[scopeId] != version) {
         return;
       }
-      _scopes[scopeId] = mergeReadReceiptHydrate(_scopes[scopeId], hydrate);
-      notifyListeners();
+      acceptDetail(scopeId, data);
     } catch (_) {
       // A failed detail leaves the scope disabled; a later mount or
       // `summaryChanged` frame retries.
@@ -231,13 +264,15 @@ class ReadReceipts extends ChangeNotifier {
 
   void clearScope(String scopeId) {
     _scope();
+    _hydrated.remove(scopeId);
+    _detailVersions[scopeId] = (_detailVersions[scopeId] ?? 0) + 1;
     if (_scopes.remove(scopeId) != null) notifyListeners();
   }
 
   /// Delivered by the owning workspace's existing session subscription.
   void consumeEvent(RaftEvent event) {
     if (_disposed || event.name != 'scope_read:updated') return;
-    _scope();
+    final epoch = _scope();
     final payload = event.payload;
     if (payload is! Map) return;
     final id = payload['scopeId'];
@@ -249,7 +284,15 @@ class ReadReceipts extends ChangeNotifier {
       if (!current.isSummary) return;
       final pending = _inFlight[id];
       unawaited(
-        pending == null ? hydrate(id) : pending.then((_) => hydrate(id)),
+        pending == null
+            ? hydrate(id)
+            : pending.then((_) {
+                if (!_disposed &&
+                    _scope() == epoch &&
+                    _scopes[id]?.isSummary == true) {
+                  return hydrate(id);
+                }
+              }),
       );
       return;
     }
@@ -277,6 +320,8 @@ class ReadReceipts extends ChangeNotifier {
     _disposed = true;
     _scopes.clear();
     _inFlight.clear();
+    _hydrated.clear();
+    _detailVersions.clear();
     super.dispose();
   }
 }

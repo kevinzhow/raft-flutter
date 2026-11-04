@@ -159,6 +159,7 @@ void main() {
               'joined': true,
             }),
           ];
+          api.routes['GET /channels/d1'] = (_) => w.dms.single.json;
           final target = 'dm-$priority';
           api.routes['GET /channels/inbox'] = (_) => {
             'items': [
@@ -219,6 +220,15 @@ void main() {
                 'error=${w.error} channel=${w.channel?.id}',
           );
           expect(w.threadIdentity, isNull);
+          // The new receipt surface reads canonical detail after painting.
+          // Drain that actual transport; its absent receipt gate stays quiet.
+          await t.pump(const Duration(milliseconds: 16));
+          await flush(t);
+          expect(
+            api.calls.where((r) => r.path == '/channels/d1'),
+            hasLength(1),
+          );
+          expect(w.navigation.entries.length, entries + 1);
           expect(t.takeException(), isNull);
           await t.pumpWidget(const SizedBox());
         },

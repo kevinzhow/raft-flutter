@@ -141,7 +141,7 @@ class WorkspaceController extends ChangeNotifier
       windowGeneration: (thread) =>
           thread ? _messages.threadGeneration : _messages.channelGeneration,
       isDisposed: () => _disposed,
-      refreshUnread: () => refreshUnread(),
+      refreshUnread: refreshUnread,
     );
     sessionScope = SessionScope(this, ownsMedia: presentationSource == null);
     final channelRepository = ChannelRepository(
@@ -165,6 +165,7 @@ class WorkspaceController extends ChangeNotifier
       patchSelected: (patch) {
         if (channel != null) channel = patch(channel!);
       },
+      acceptDetail: (row) => readReceipts.acceptDetail(row.id, row.json),
       reloadLists: () => refreshChannels(quietErrors: true),
       reloadRow: (id) => refreshChannel(id),
       revokeChannel: _session.revokeChannel,
@@ -180,7 +181,7 @@ class WorkspaceController extends ChangeNotifier
         RaftApiGateway(
           client,
           savedChanged: () => _channels.savedChanged(),
-          refreshUnread: () => refreshUnread(),
+          refreshUnread: refreshUnread,
         );
     deviceStore = WorkspaceDeviceStore(
       client,
@@ -235,7 +236,7 @@ class WorkspaceController extends ChangeNotifier
       sidebar: sidebarRepository,
       effectiveReadState: () =>
           presentationSource?.readState ?? _channels.localReadState,
-      refreshUnread: () => refreshUnread(),
+      refreshUnread: refreshUnread,
     );
     this.composer =
         composer ??

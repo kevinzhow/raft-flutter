@@ -30,6 +30,7 @@ class ChannelRepository {
     this._saveDirectory,
     this._acceptSelection,
     this._patchSelected,
+    this._acceptDetail,
   });
 
   final RaftClient client;
@@ -56,6 +57,7 @@ class ChannelRepository {
   final void Function(Map<String, dynamic>)? _saveDirectory;
   final void Function(Set<String>)? _acceptSelection;
   final void Function(RaftChannel Function(RaftChannel))? _patchSelected;
+  final void Function(RaftChannel)? _acceptDetail;
 
   /// Selection has always reset only row authority, leaving reads in flight.
   void resetRowAuthority() => _channelRowSeq.clear();
@@ -323,6 +325,7 @@ class ChannelRepository {
       ..._dms(),
     ].where((c) => c.id == id).firstOrNull;
     if (fresh != null && _listsChannel(fresh)) {
+      _acceptDetail?.call(fresh);
       _putChannelRow(_reuseChannelRow(held, fresh));
     } else if (held != null) {
       _acceptLists(

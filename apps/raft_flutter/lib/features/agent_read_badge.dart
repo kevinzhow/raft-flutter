@@ -76,6 +76,6 @@ void watchReadFrontiers(WorkspaceController w, String channelId) {
     asked.scopes.clear();
   }
   if (!asked.scopes.add(channelId)) return;
-  if (receipts.scope(channelId) != null) return;
+  if (receipts.wasHydrated(channelId)) return;
   unawaited(receipts.hydrate(channelId));
 }
