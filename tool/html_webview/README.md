@@ -320,3 +320,107 @@ The CMake native adapter still applies to its separate build copy.
 MethodChannel test doubles, including mouse/touch order, Cancel, already-focused
 input, failure recovery and disposal. It proves callback ordering, not native
 WebKit click delivery; real first-click acceptance remains required separately.
+
+## Building and restoring an SDK in CI
+
+The source-defined builder is `tool/html_webview/Dockerfile`. It starts from a
+fixed Ubuntu 24.04 image digest and uses signed Noble repositories. Within that
+private image it applies current Noble security updates, installs the declared
+build/development packages, and preserves exact package archives and APT metadata.
+Clang 18.1.3 and the reviewed GCC13 backtrace headers/archive are checked again by
+the worker. Two compatible libwpe archives are separately pinned in
+`libwpe-pins.json` and extracted rather than installed over Ubuntu. These operations
+never install or upgrade packages on the developer's host.
+
+Build this environment on a dedicated runner, then pass its actual immutable
+image ID to the bounded worker:
+
+```sh
+docker build --platform linux/amd64 --pull --no-cache -t raft-html-sdk-builder -f tool/html_webview/Dockerfile tool/html_webview
+IMAGE_ID=$(docker image inspect --format '{{.Id}}' raft-html-sdk-builder)
+python3 -m tool.html_webview.sdk build \
+  --archive /inputs/wpewebkit-2.54.2.tar.xz \
+  --work /work/new-sdk-build --image "$IMAGE_ID" --max-seconds 21600
+```
+
+The source archive still requires the fixed reviewed SHA above. No mutable image
+tag is accepted by the worker. Source compilation runs as the caller's non-root
+UID, at nice15 once, with two CPUs, 16GiB, no network and no host permission bypass.
+It configures the fixed production options and checks the successful feature
+fingerprint before compiling only five engine roles plus InspectorResources.
+The worker uses only two isolated libbacktrace headers, never GCC's entire
+intrinsics include directory. Install uses a new DESTDIR and cannot implicitly
+build `all`. Previous work directories, failed stages, logs and containers remain
+available; a bounded stop targets only that invocation's exact labelled container.
+On shared machines, obtain the existing native-build resource allocation before
+running this substantial build; this CLI does not override a shared full-check
+supervisor or provide a new global scheduler.
+
+The worker authenticates each APT InRelease, the complete Packages checksum chain
+and each selected archive body before private extraction. It stages the actual
+ELF closure, matching GIO/GStreamer helpers/modules, relative pkg-config, full
+source/package notices, exact marker and content manifest. Standard license texts
+and cross-package copyright directory aliases are resolved within authenticated
+archives. Host libc, graphics drivers and Bubblewrap are excluded. Any missing
+exact archive, conflicting bytes, unresolved dependency, unsafe link, altered
+security configuration or GLIBC requirement above 2.39 stops the job and retains
+its evidence. Stage/seal and basic codec checks are separate from actual HTML,
+HTTPS, sandbox, session-cleanup and packaging acceptance.
+
+The image's actual installed versions and archive hashes are recorded in the
+build key together with source, adapters, worker, configuration and compiler
+identity. A new Noble security patch produces a new key; it must not be described
+as the package set of an older build. A runtime patch different from its compile
+input must be reviewed and recorded explicitly. The automatic builder stages its
+own matching build/runtime versions and does not silently apply such overrides.
+Existing media/HTML byte conflicts still fail in the application packager.
+
+On success `/work/new-sdk-build/result.json` has this schema (real hashes are
+computed by that invocation, never copied from this example):
+
+```json
+{
+  "state": "sdk-ready",
+  "prefix": "sdk",
+  "manifestSha256": "ACTUAL_CONTENT_MANIFEST_SHA256",
+  "archive": "sdk.tar.gz",
+  "archiveSha256": "ACTUAL_ARCHIVE_SHA256",
+  "buildKey": "ACTUAL_CANONICAL_BUILD_INPUT_KEY",
+  "sourceInputs": "prepared/source-inputs.json",
+  "scope": "Authenticated SDK closure/content/ELF floor only; native renderer acceptance not run"
+}
+```
+
+A trusted CI build job publishes that archive as a normal workflow artifact and
+passes its actual `archiveSha256` as a same-run job output. The dependent job uses
+that trusted output, rather than a downloaded archive's self-reported hash:
+
+```sh
+python3 -m tool.html_webview.sdk restore \
+  --archive /inputs/sdk.tar.gz --sha256 "$TRUSTED_BUILD_JOB_ARCHIVE_SHA256" \
+  --destination /work/new-restored-sdk
+```
+
+The JSON result supplies the restored prefix and actual content-manifest pin for
+`RAFT_HTML_WEBVIEW_SDK` / `RAFT_HTML_WEBVIEW_MANIFEST_SHA256`. There is no dependency
+on a private machine path or unpublished release URL. Artifact publication and
+trust decisions remain in the CI workflow; the CLI does not publish a release,
+create a tag, infer trust from cache names or download arbitrary SDK binaries.
+
+### Consumer development dependencies
+
+This SDK includes WPE/libwpe headers and the runtime closure. It is **not a complete
+replacement for a Linux development sysroot**. Its public `.pc` files require
+GLib/GObject/GIO and libsoup development metadata/headers, including applicable
+private Cflags dependencies such as sysprof-capture. The Flutter plugin also
+requires GTK3, epoxy, libsecret and wayland-server development packages. Use the
+matching Noble builder/development environment above, or a separately verified
+development sysroot; do not mix arbitrary newer/older host headers with bundled
+libraries or assume a runtime `.so` supplies development headers.
+
+Noble libsoup 3.4.4's actual pkg-config graph does not require json-glib. Additional
+plugin versions may differ. The builder supplies the signed Noble nlohmann-json3
+3.11.3 development package; consumer CMake should prefer its exact local package
+config. Upstream FetchContent without URL_HASH must not become an implicit
+unverified network dependency. Native consumer compilation still needs its own
+real validation before claiming support on a particular machine.
