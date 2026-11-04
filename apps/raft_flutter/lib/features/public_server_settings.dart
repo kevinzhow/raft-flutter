@@ -235,7 +235,9 @@ class PublicServerSettings extends StatelessWidget {
     );
     Widget page() => active.scroll
         ? ListView(
-            key: PageStorageKey('public-settings-page-${active.id}'),
+            // Web closes this scroll surface when leaving Settings for Chat.
+            // Keep the offset while the form is mounted, not after it closes.
+            key: ValueKey('public-settings-page-${active.id}'),
             primary: false,
             padding: raftScrollPadding(
               context,

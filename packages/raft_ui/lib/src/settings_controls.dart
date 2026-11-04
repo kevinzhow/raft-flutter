@@ -1060,6 +1060,7 @@ class RaftSettingsPreference extends StatelessWidget {
     this.notice,
     this.error,
     this.gapBefore = 0,
+    this.semanticTypography = false,
   });
   final String title;
   final String? description, notice, error;
@@ -1068,9 +1069,13 @@ class RaftSettingsPreference extends StatelessWidget {
   /// Space above the block (the form's `space-y-4` between blocks).
   final double gapBefore;
 
+  /// Opt in to the Language & Region semantic type slots.
+  final bool semanticTypography;
+
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), text = RaftSettingsText(t);
+    final t = RaftTokens.of(context),
+        text = RaftSettingsText(t, semanticTypography: semanticTypography);
     return Padding(
       padding: EdgeInsets.only(top: gapBefore),
       child: Column(

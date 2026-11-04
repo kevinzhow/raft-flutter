@@ -20,6 +20,7 @@ import 'panel_layout.dart' show RaftCssText, RaftPanelHeaderBar;
 import 'sidebar_frame.dart' show RaftMountedSidebarFrame;
 import 'recipe_surface.dart';
 import 'recipes/banner.g.dart';
+import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'settings_controls.dart';
@@ -640,7 +641,11 @@ class RaftPublicSettingsSidebar extends StatelessWidget {
       frameKey: const ValueKey('public-server-settings-sidebar'),
       title: title,
       width: sm ? (width ?? 240) : 144,
-      padding: RaftSettingsSidebarList.inset(t),
+      // PublicServerSidebarFrame uses p-2; the member list has a different
+      // top inset. Keep the frozen pre-0.7 frame unchanged.
+      padding: usesLegacyRecipes(t.recipeTokens)
+          ? RaftSettingsSidebarList.inset(t)
+          : const EdgeInsets.all(RaftSpace.x2),
       child: child,
     );
   }

@@ -10616,12 +10616,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/public_server_settings.dart#local-function:CLASS:PublicServerSettings@5075/METHOD:build@6693/FUNCTION:panel@8726": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/public_server_settings.dart#method:PublicServerSettings.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -41455,8 +41449,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42712,
-            "sha256": "c9cbca41762bcf1db1dd37775989ddff95eb81a46e1bc6ee774a09bc37d97cf4"
+            "bytes": 42890,
+            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41469,8 +41463,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42712,
-            "sha256": "c9cbca41762bcf1db1dd37775989ddff95eb81a46e1bc6ee774a09bc37d97cf4"
+            "bytes": 42890,
+            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41483,8 +41477,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42712,
-            "sha256": "c9cbca41762bcf1db1dd37775989ddff95eb81a46e1bc6ee774a09bc37d97cf4"
+            "bytes": 42890,
+            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41525,8 +41519,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42712,
-            "sha256": "c9cbca41762bcf1db1dd37775989ddff95eb81a46e1bc6ee774a09bc37d97cf4"
+            "bytes": 42890,
+            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41539,8 +41533,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42712,
-            "sha256": "c9cbca41762bcf1db1dd37775989ddff95eb81a46e1bc6ee774a09bc37d97cf4"
+            "bytes": 42890,
+            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -43089,6 +43083,67 @@
         "familyRefs": [],
         "owner": "task299 scoped source registration",
         "reason": "Shared pinned details-frame composition used by opt-in private-app permission disclosures; frozen looks delegate to the existing Card. This source registration grants no family exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/language_settings_previews.dart#function:languageSettingsReferencePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "select",
+          "segmented",
+          "button",
+          "card"
+        ],
+        "owner": "Cody task299",
+        "reason": "Interactive SDK preview of the existing Language and Region family, including draft and saved states. It makes no network/account writes and grants no platform or visual acceptance."
+      },
+      "packages/raft_ui/lib/language_settings_previews.dart#class:_LanguageSettingsPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "select",
+          "segmented",
+          "button",
+          "card"
+        ],
+        "owner": "Cody task299",
+        "reason": "Interactive SDK preview of the existing Language and Region family, including draft and saved states. It makes no network/account writes and grants no platform or visual acceptance."
+      },
+      "packages/raft_ui/lib/language_settings_previews.dart#class:_LanguageSettingsPreviewState": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "select",
+          "segmented",
+          "button",
+          "card"
+        ],
+        "owner": "Cody task299",
+        "reason": "Interactive SDK preview of the existing Language and Region family, including draft and saved states. It makes no network/account writes and grants no platform or visual acceptance."
+      },
+      "packages/raft_ui/lib/language_settings_previews.dart#method:_LanguageSettingsPreview.createState": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "select",
+          "segmented",
+          "button",
+          "card"
+        ],
+        "owner": "Cody task299",
+        "reason": "Interactive SDK preview of the existing Language and Region family, including draft and saved states. It makes no network/account writes and grants no platform or visual acceptance."
+      },
+      "packages/raft_ui/lib/language_settings_previews.dart#method:_LanguageSettingsPreviewState.build": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "select",
+          "segmented",
+          "button",
+          "card"
+        ],
+        "owner": "Cody task299",
+        "reason": "Interactive SDK preview of the existing Language and Region family, including draft and saved states. It makes no network/account writes and grants no platform or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/public_server_settings.dart#local-function:CLASS:PublicServerSettings@5075/METHOD:build@6693/FUNCTION:panel@8877": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {

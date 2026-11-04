@@ -185,6 +185,7 @@ class RaftLanguageRegionView extends StatelessWidget {
               // Select a 12px bottom margin inside its block.
               _selectBlock(
                 RaftSettingsPreference(
+                  semanticTypography: true,
                   title: 'Display language',
                   description: 'Choose the language for the app interface. This is separate from message translation.',
                   child: _select(
@@ -206,10 +207,14 @@ class RaftLanguageRegionView extends StatelessWidget {
                       'Simplified Chinese is still being refined; some pages may still appear in English.',
                       '简体中文仍在完善，部分页面可能仍显示英文。',
                     ),
-                    style: RaftSettingsText(RaftTokens.of(context)).description,
+                    style: RaftSettingsText(
+                      RaftTokens.of(context),
+                      semanticTypography: true,
+                    ).description,
                   ),
                 ),
               RaftSettingsPreference(
+                semanticTypography: true,
                 gapBefore: 16,
                 title: 'Translation mode',
                 description: 'Auto translates visible messages. Manual adds Translate to each message menu. Off keeps originals only.',
@@ -230,6 +235,7 @@ class RaftLanguageRegionView extends StatelessWidget {
               if (translationMode != 'off') ...[
                 _selectBlock(
                   RaftSettingsPreference(
+                    semanticTypography: true,
                     gapBefore: 16,
                     title: 'Translation target',
                     description: translationTargetDescription,
@@ -244,6 +250,7 @@ class RaftLanguageRegionView extends StatelessWidget {
                   ),
                 ),
                 RaftSettingsPreference(
+                  semanticTypography: true,
                   gapBefore: 16,
                   title: 'Default view',
                   description: 'Choose whether messages show translation, original, or both.',
@@ -286,6 +293,7 @@ class RaftLanguageRegionView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               RaftSettingsPreference(
+                semanticTypography: true,
                 title: 'Timezone',
                 description:
                     'Used for local timestamps and scheduling defaults.',
@@ -299,6 +307,7 @@ class RaftLanguageRegionView extends StatelessWidget {
                 ),
               ),
               RaftSettingsPreference(
+                semanticTypography: true,
                 gapBefore: 12,
                 title: 'Time format',
                 description: 'Display only. Does not affect agent behavior.',

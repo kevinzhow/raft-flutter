@@ -879,8 +879,14 @@ class RaftInheritedFont extends StatelessWidget {
 
 @immutable
 class RaftSettingsText {
-  const RaftSettingsText(this.t);
+  const RaftSettingsText(this.t, {this.semanticTypography = false});
   final RaftTokens t;
+
+  /// Language & Region uses the current Web subhead/footnote slots.
+  /// Other settings and the frozen looks retain their existing type scale.
+  final bool semanticTypography;
+  bool get _semantic =>
+      semanticTypography && !usesLegacyRecipes(t.recipeTokens);
 
   /// `text-foreground-strong theme-brutal:text-black`
   Color get strong => t.strong;
@@ -915,15 +921,19 @@ class RaftSettingsText {
   /// `text-sm font-bold`
   TextStyle get title => RaftTypography.inherited(
     t,
-    size: 14,
-    line: 20,
-    weight: FontWeight.w700,
+    size: _semantic ? t.typeSlot('subhead').fontSize : 14,
+    line: _semantic ? t.typeSlot('subhead').lineHeight : 20,
+    weight: _semantic ? FontWeight.w600 : FontWeight.w700,
     color: strong,
   );
 
   /// `text-xs` muted description.
-  TextStyle get description =>
-      RaftTypography.inherited(t, size: 12, line: 16, color: muted);
+  TextStyle get description => RaftTypography.inherited(
+    t,
+    size: _semantic ? t.typeSlot('footnote').fontSize : 12,
+    line: _semantic ? t.typeSlot('footnote').lineHeight : 16,
+    color: muted,
+  );
 
   /// `text-sm` muted copy.
   TextStyle get bodyMuted =>
