@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart' show RaftApiException;
+import 'package:raft_ui/raft_ui.dart' show RaftUserError;
+import 'package:raft_flutter/data/user_error.dart' show userErrorText;
 import 'package:raft_flutter/platform/desktop_window_runtime.dart';
 
 import 'app_global_server_selector_test.dart' show RootCache;
@@ -154,7 +156,12 @@ void main() {
           protection.completeError(
             PlatformException(code: 'desktop_display_unavailable'),
           );
-          expect(await outcome, isA<PlatformException>());
+          final error = await outcome;
+          expect(error, isA<RaftUserError>());
+          expect(
+            userErrorText(error),
+            contains('Select the server in this window instead.'),
+          );
         }
         expect(created, 0);
       },

@@ -5,6 +5,7 @@ import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_ui/raft_ui.dart' show RaftUserError;
 
 import 'desktop_windows.dart';
 import 'desktop_cache_scope.dart';
@@ -197,7 +198,14 @@ Future<DesktopWindowPeer> _create(
     // Linux's independent engines share the GTK EGLDisplay. The host must
     // protect that lifetime before another engine can be created or closed.
     if (defaultTargetPlatform == TargetPlatform.linux) {
-      await _host.invokeMethod<void>('prepareOpen');
+      try {
+        await _host.invokeMethod<void>('prepareOpen');
+      } on PlatformException catch (error) {
+        if (error.code != 'desktop_display_unavailable') rethrow;
+        throw const RaftUserError(
+          'Another window is unavailable on this display. Select the server in this window instead.',
+        );
+      }
     }
     broker.snapshot(binding); // The native check may outlive account authority.
     final window = await WindowController.create(
