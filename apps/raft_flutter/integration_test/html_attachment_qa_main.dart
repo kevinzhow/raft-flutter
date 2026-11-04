@@ -138,7 +138,8 @@ Future<Map<String, Object?>> _snapshot() async {
         canvasPixel:Array.from(document.querySelector('#chart').getContext('2d').getImageData(1,1,1,1).data),
         appBridge:typeof window.flutter_inappwebview,
         network:window.qaNetwork,storage:window.qaStorage,origin:self.origin,
-        lastClick:window.qaLastClick,scriptNavigationFired:window.qaScriptNavigationFired
+        lastClick:window.qaLastClick,scriptNavigationFired:window.qaScriptNavigationFired,
+        fileCount:document.querySelector('#file').files.length
       })''',
       );
       if (document is String) document = jsonDecode(document);
