@@ -15,6 +15,9 @@
 #include <desktop_multi_window/desktop_multi_window_plugin.h>
 #include "desktop_caption_bar.h"
 #include "image_clipboard.h"
+#ifdef RAFT_MULTIWINDOW_QA
+#include "desktop_qa_identity.h"
+#endif
 
 struct _MyApplication {
   GtkApplication parent_instance;
@@ -91,7 +94,12 @@ static gboolean desktop_delete_requested(GtkWidget*, GdkEvent*, gpointer data) {
   return TRUE;
 }
 
-static void register_window_channels(FlView* view, GtkWindow* window, TitleBar* title_bar) {
+static void register_window_channels(FlView* view, GtkWindow* window, TitleBar* title_bar, bool child = false) {
+#ifdef RAFT_MULTIWINDOW_QA
+  raft_qa_observe_window(view, window, child);
+#else
+  (void)child;
+#endif
   raft_image_clipboard_install(view);
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   g_autoptr(FlMethodChannel) window_channel = fl_method_channel_new(
@@ -214,6 +222,16 @@ static void register_window_channels(FlView* view, GtkWindow* window, TitleBar* 
       [](FlMethodChannel*, FlMethodCall* call, gpointer data) {
         GtkWindow* target = GTK_WINDOW(data);
         const gchar* method = fl_method_call_get_name(call);
+#ifdef RAFT_MULTIWINDOW_QA
+        if (g_strcmp0(method, "qaWindowIdentity") == 0) {
+          FlValue* args = fl_method_call_get_args(call);
+          const bool accepted = args && fl_value_get_type(args) == FL_VALUE_TYPE_STRING &&
+              raft_qa_register_window_id(target, fl_value_get_string(args));
+          g_autoptr(FlValue) value = fl_value_new_bool(accepted);
+          fl_method_call_respond_success(call, value, nullptr);
+          return;
+        }
+#endif
         if (g_strcmp0(method, "directoryIdentity") == 0) {
           FlValue* args = fl_method_call_get_args(call);
           struct stat info{};
@@ -250,7 +268,7 @@ static void register_child_window(FlPluginRegistry* registry) {
   title_bar->window = window;
   title_bar->caption = new DesktopCaptionBar(window);
   gtk_window_set_title(window, "Raft");
-  register_window_channels(view, window, title_bar);
+  register_window_channels(view, window, title_bar, true);
 }
 
 // Called when first Flutter frame received.

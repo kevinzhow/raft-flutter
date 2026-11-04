@@ -25,6 +25,14 @@ Future<DesktopWindows?> initializeDesktopWindows(List<String> arguments) async {
     return null;
   }
   final current = await WindowController.fromCurrentEngine();
+  // QA-only metadata; never reads sessions, arguments or business state.
+  if (const bool.fromEnvironment('RAFT_MULTIWINDOW_QA')) {
+    unawaited(
+      _host
+          .invokeMethod<bool>('qaWindowIdentity', current.windowId)
+          .then<void>((_) {}, onError: (Object _) {}),
+    );
+  }
   if (current.arguments.isEmpty) {
     late final StreamSubscription<void> changes;
     var windowSequence = 0;

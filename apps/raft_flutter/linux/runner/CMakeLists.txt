@@ -25,3 +25,11 @@ target_link_libraries(${BINARY_NAME} PRIVATE flutter)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+
+# QA-only, additive readback. Product builds omit the observer and dependency.
+if("$ENV{RAFT_QA_ENGINE_INSTRUMENTATION}" STREQUAL "1")
+  pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
+  target_sources(${BINARY_NAME} PRIVATE "desktop_qa_identity.cc")
+  target_compile_definitions(${BINARY_NAME} PRIVATE RAFT_MULTIWINDOW_QA=1)
+  target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::WAYLAND_CLIENT)
+endif()
