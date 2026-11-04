@@ -18,6 +18,13 @@ on its generated public/private headers. The upstream 2.54.2 graph can otherwise
 start the JIT precompiled header before those headers exist. It changes build
 ordering; compiler options, JIT behavior and security features are unchanged.
 
+`wpe-network-data-order.patch` gives the split WPE NetworkProcess target its
+generated directory-listing resource header as a source dependency. The same
+upstream resource generator still produces the header and implementation; this
+only prevents the split target from compiling before the header exists. Its
+hash is part of source preparation and SDK identity, so an earlier SDK without
+this adapter cannot silently satisfy the new pin.
+
 ## Preparing source
 
 Run inside the dedicated Ubuntu 24.04 build environment. Download the archive

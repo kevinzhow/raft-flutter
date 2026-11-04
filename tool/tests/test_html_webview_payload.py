@@ -83,6 +83,16 @@ class HtmlPayloadTests(unittest.TestCase):
         self.assertEqual(payload.restore(archive, pin, destination), self.pin)
         self.assertEqual(payload.verify(destination, self.pin)['identity'], payload.identity())
 
+    def test_network_generated_header_adapter_is_a_required_source_pin(self):
+        source = self.sdk / payload.METADATA / 'source-inputs.json'
+        inputs = json.loads(source.read_text())
+        inputs['networkDataPatchSha256'] = '0' * 64
+        source.write_text(json.dumps(inputs))
+        (self.sdk / payload.MANIFEST).unlink()
+        with patch.object(payload, 'inspect_elf', return_value='2.39'):
+            with self.assertRaisesRegex(ValueError, 'source/adapter inputs'):
+                payload.seal(self.sdk)
+
     def test_changed_archive_pin_does_not_create_destination(self):
         archive, _ = self.archive()
         destination = self.root / 'not-created'

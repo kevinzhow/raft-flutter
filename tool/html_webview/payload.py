@@ -45,7 +45,8 @@ def identity():
             'sourceSha256': ARCHIVE_SHA256,
             'patchSha256': sha256(HERE / 'wpe-relocation.patch'),
             'headerSha256': sha256(HERE / 'raft_wpe_runtime_paths.h'),
-            'buildOrderPatchSha256': sha256(HERE / 'wpe-build-order.patch')}
+            'buildOrderPatchSha256': sha256(HERE / 'wpe-build-order.patch'),
+            'networkDataPatchSha256': sha256(HERE / 'wpe-network-data-order.patch')}
 
 
 def relative_path(value):

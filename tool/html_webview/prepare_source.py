@@ -32,6 +32,7 @@ def prepare(archive, destination):
         'sourceSha256': ARCHIVE_SHA256,
         'patchSha256': sha256(HERE / 'wpe-relocation.patch'),
         'buildOrderPatchSha256': sha256(HERE / 'wpe-build-order.patch'),
+        'networkDataPatchSha256': sha256(HERE / 'wpe-network-data-order.patch'),
         'headerSha256': sha256(HERE / 'raft_wpe_runtime_paths.h'),
         'state': 'preparing',
     }
@@ -51,6 +52,10 @@ def prepare(archive, destination):
     with (destination / 'build-order-apply.log').open('w') as log:
         subprocess.run(['patch', '--batch', '--forward', '-p1', '-i',
                         str(HERE / 'wpe-build-order.patch')],
+                       cwd=source, stdout=log, stderr=subprocess.STDOUT, check=True)
+    with (destination / 'network-data-order-apply.log').open('w') as log:
+        subprocess.run(['patch', '--batch', '--forward', '-p1', '-i',
+                        str(HERE / 'wpe-network-data-order.patch')],
                        cwd=source, stdout=log, stderr=subprocess.STDOUT, check=True)
     record['state'] = 'prepared'
     receipt.write_text(json.dumps(record, indent=2) + '\n')
