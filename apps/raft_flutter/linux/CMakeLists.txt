@@ -105,6 +105,13 @@ set(FETCHCONTENT_TRY_FIND_PACKAGE_MODE ALWAYS)
 include(flutter/generated_plugins.cmake)
 include(raft_wpe_compat.cmake)
 raft_fix_wpe_compatibility()
+# The plugin's $ORIGIN runtime path is intentionally relocatable. Resolve its
+# SDK dependencies while linking the app without relying on LD_LIBRARY_PATH.
+pkg_get_variable(RAFT_WPE_LINK_DIRECTORY wpe-webkit-2.0 libdir)
+if(NOT IS_DIRECTORY "${RAFT_WPE_LINK_DIRECTORY}")
+  message(FATAL_ERROR "The Linux HTML SDK library directory is missing.")
+endif()
+target_link_options(${BINARY_NAME} PRIVATE "-Wl,-rpath-link,${RAFT_WPE_LINK_DIRECTORY}")
 if(TARGET media_kit_video_plugin)
   target_link_options(media_kit_video_plugin PRIVATE "-Wl,--disable-new-dtags" "-Wl,-rpath-link,${RAFT_MEDIA_BUNDLE}/libs")
   set_target_properties(media_kit_video_plugin PROPERTIES
