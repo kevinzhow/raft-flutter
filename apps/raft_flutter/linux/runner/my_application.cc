@@ -96,6 +96,7 @@ static gboolean desktop_delete_requested(GtkWidget*, GdkEvent*, gpointer data) {
 }
 
 static void register_window_channels(FlView* view, GtkWindow* window, TitleBar* title_bar, bool child = false) {
+  raft_desktop_track_window(view, window);
   raft_shared_egl_watch_engine(fl_view_get_engine(view));
 #ifdef RAFT_MULTIWINDOW_QA
   raft_qa_observe_window(view, window, child);

@@ -62,6 +62,20 @@ int main() {
   dispatch(shared_display); reverse.EngineRemoved();
   assert(reverse.Release() && calls == 1);
 
+  // The engine weak notification can precede compositor/manager disposal.
+  // No final display termination until the real manager request arrives.
+  Reset();
+  SharedEglTermination graphics;
+  dispatch = Terminate;
+  graphics.EngineAdded();
+  assert(graphics.Install(shared_display, &dispatch, Terminate));
+  graphics.EngineRemoved();
+  assert(graphics.live_engines() == 0 && !graphics.ReadyToRelease());
+  assert(calls == 0);
+  dispatch(shared_display);
+  assert(graphics.ReadyToRelease() && graphics.engines_seen() == 1);
+  assert(graphics.Release() && calls == 1);
+
   // Unrelated/new hooks are not overwritten, no shutdown while engines live.
   Reset();
   SharedEglTermination live;

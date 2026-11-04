@@ -1,0 +1,37 @@
+# Pinned desktop_multi_window0.3.1. Adapt only a private build-local copy;
+# never write into pub-cache or replace the existing channel/handler owners.
+function(raft_copy_window_control original destination)
+  file(SHA256 "${original}" control_sha)
+  if(NOT control_sha STREQUAL "d473daf57d9ae48a670672b21cbd21258febaf70814c2d2a96f4bd6b10ab3588")
+    message(FATAL_ERROR "desktop_multi_window control source changed; review the closing gate")
+  endif()
+  file(READ "${original}" control)
+  set(declaration "extern \"C\" bool raft_desktop_window_creation_allowed() __attribute__((weak));\n")
+  set(branch "  if (strcmp(method, \"createWindow\") == 0) {")
+  set(guard "${branch}\n    if (raft_desktop_window_creation_allowed && !raft_desktop_window_creation_allowed()) {\n      fl_method_call_respond_error(method_call, \"desktop_app_closing\",\n          \"Application is closing.\", nullptr, nullptr);\n      return;\n    }")
+  string(REPLACE "${branch}" "${guard}" control "${control}")
+  file(WRITE "${destination}" "${declaration}${control}")
+endfunction()
+
+function(raft_guard_window_creation runner)
+  get_target_property(plugin_dir desktop_multi_window_plugin SOURCE_DIR)
+  get_target_property(plugin_sources desktop_multi_window_plugin SOURCES)
+  set(patched "${CMAKE_CURRENT_BINARY_DIR}/raft_desktop_multi_window_plugin.cc")
+  raft_copy_window_control("${plugin_dir}/desktop_multi_window_plugin.cc" "${patched}")
+  set(guarded_sources)
+  foreach(source IN LISTS plugin_sources)
+    if(source STREQUAL "desktop_multi_window_plugin.cc" OR
+       source STREQUAL "${plugin_dir}/desktop_multi_window_plugin.cc")
+      list(APPEND guarded_sources "${patched}")
+    elseif(IS_ABSOLUTE "${source}")
+      list(APPEND guarded_sources "${source}")
+    else()
+      list(APPEND guarded_sources "${plugin_dir}/${source}")
+    endif()
+  endforeach()
+  set_property(TARGET desktop_multi_window_plugin PROPERTY SOURCES "${guarded_sources}")
+  target_include_directories(desktop_multi_window_plugin PRIVATE "${plugin_dir}")
+  # One specific C predicate; do not export the whole runner with -rdynamic.
+  target_link_options(${runner} PRIVATE
+    "-Wl,--export-dynamic-symbol=raft_desktop_window_creation_allowed")
+endfunction()

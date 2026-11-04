@@ -21,6 +21,8 @@ class SharedEglTermination {
   size_t live_engines() const;
   size_t deferred() const;
   size_t terminated() const;
+  bool ReadyToRelease() const;
+  size_t engines_seen() const;
 
  private:
   static unsigned int Dispatch(Display display);
@@ -32,6 +34,7 @@ class SharedEglTermination {
   Terminate previous_ = nullptr;
   Terminate original_ = nullptr;
   size_t live_engines_ = 0;
+  size_t engines_seen_ = 0;
   size_t deferred_ = 0;
   size_t terminated_ = 0;
   bool installed_ = false;

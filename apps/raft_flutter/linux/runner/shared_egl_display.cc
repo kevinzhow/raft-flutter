@@ -9,6 +9,7 @@
 #endif
 
 #include "shared_egl_termination.h"
+#include "desktop_quit_cleanup.h"
 #ifdef RAFT_MULTIWINDOW_QA
 #include <atomic>
 #include <cstdio>
@@ -16,6 +17,9 @@
 
 namespace {
 SharedEglTermination lifetime;
+DesktopQuitCleanup owned_windows([](GObject* object) {
+  gtk_widget_destroy(GTK_WIDGET(object));
+});
 #ifdef RAFT_MULTIWINDOW_QA
 EGLDisplay observed_display = EGL_NO_DISPLAY;
 PFNEGLDESTROYCONTEXTPROC previous_destroy = nullptr;
@@ -107,6 +111,46 @@ EGLDisplay engine_display(GdkDisplay* display) {
 }
 }  // namespace
 
+extern "C" __attribute__((visibility("default")))
+bool raft_desktop_window_creation_allowed() {
+  return owned_windows.accepting();
+}
+
+void raft_desktop_track_window(FlView* view, GtkWindow* window) {
+  owned_windows.Register(G_OBJECT(window), G_OBJECT(view),
+                         G_OBJECT(fl_view_get_engine(view)));
+}
+
+bool raft_desktop_finish_quit() {
+  // Global quit only. Ordinary child Close never enters this function. Keep
+  // the old single-window exit path untouched when the feature was not used.
+  owned_windows.StopAccepting();
+  if (owned_windows.registered() < 2 && !lifetime.Ready()) return true;
+  const auto result = owned_windows.FinishAfterApplicationRun(
+      g_main_context_default(), 2 * G_USEC_PER_SEC,
+      [] { return lifetime.ReadyToRelease(); },
+      [](const char* stage, unsigned iterations,
+          const DesktopQuitCleanup::Counts& live) {
+#ifdef RAFT_MULTIWINDOW_QA
+        const unsigned phase = g_strcmp0(stage, "run_returned") == 0 ? 1 :
+            g_strcmp0(stage, "owned_destroyed") == 0 ? 2 :
+            g_strcmp0(stage, "drained") == 0 ? 3 : 4;
+        std::fprintf(stderr, "RAFT_EGL_LIFETIME event=quit_stage stage=%u iterations=%u windows=%zu views=%zu engines=%zu deferred=%zu seen=%zu\n",
+                     phase, iterations, live.windows, live.views, live.engines,
+                     lifetime.deferred(), lifetime.engines_seen());
+        for (const auto& object : owned_windows.Objects()) {
+          std::fprintf(stderr, "RAFT_EGL_LIFETIME event=quit_object stage=%u ordinal=%zu window=0x%zx view=0x%zx engine=0x%zx windowLive=%d viewLive=%d engineLive=%d\n",
+                       phase, object.ordinal, object.window, object.view, object.engine,
+                       object.window_live, object.view_live, object.engine_live);
+        }
+#else
+        (void)stage; (void)iterations; (void)live;
+#endif
+      });
+  if (!result.complete) g_warning("Owned desktop quit completion did not finish");
+  return result.complete;
+}
+
 void raft_shared_egl_watch_engine(FlEngine* engine) {
   if (g_object_get_data(G_OBJECT(engine), "raft-egl-observed")) return;
   g_object_set_data(G_OBJECT(engine), "raft-egl-observed", GINT_TO_POINTER(1));
@@ -127,6 +171,7 @@ void raft_shared_egl_watch_engine(FlEngine* engine) {
 }
 
 bool raft_shared_egl_prepare_open(GtkWindow* window) {
+  if (!owned_windows.accepting()) return false;
   // A changed/retired hook must not silently become eligible again.
   static bool installed = false;
   if (installed && !lifetime.Ready()) return false;

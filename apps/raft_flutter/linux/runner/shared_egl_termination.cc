@@ -57,6 +57,7 @@ unsigned int SharedEglTermination::Dispatch(Display display) {
 void SharedEglTermination::EngineAdded() {
   std::lock_guard<std::mutex> lock(mutex_);
   ++live_engines_;
+  ++engines_seen_;
 }
 
 void SharedEglTermination::EngineRemoved() {
@@ -71,7 +72,8 @@ bool SharedEglTermination::Release() {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!installed_) return true;
-    complete = live_engines_ == 0 && *dispatch_ == Dispatch;
+    complete = live_engines_ == 0 && deferred_ >= engines_seen_ &&
+               *dispatch_ == Dispatch;
     // Never leave our callback installed, and never overwrite another owner.
     if (*dispatch_ == Dispatch) *dispatch_ = previous_;
 #ifdef RAFT_MULTIWINDOW_QA
@@ -110,4 +112,12 @@ size_t SharedEglTermination::deferred() const {
 size_t SharedEglTermination::terminated() const {
   std::lock_guard<std::mutex> lock(mutex_);
   return terminated_;
+}
+bool SharedEglTermination::ReadyToRelease() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return !installed_ || (live_engines_ == 0 && deferred_ >= engines_seen_);
+}
+size_t SharedEglTermination::engines_seen() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return engines_seen_;
 }

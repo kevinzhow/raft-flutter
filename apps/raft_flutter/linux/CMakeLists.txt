@@ -112,6 +112,8 @@ if(NOT IS_DIRECTORY "${RAFT_WPE_LINK_DIRECTORY}")
   message(FATAL_ERROR "The Linux HTML SDK library directory is missing.")
 endif()
 target_link_options(${BINARY_NAME} PRIVATE "-Wl,-rpath-link,${RAFT_WPE_LINK_DIRECTORY}")
+include(runner/desktop_window_creation.cmake)
+raft_guard_window_creation(${BINARY_NAME})
 if(TARGET media_kit_video_plugin)
   target_link_options(media_kit_video_plugin PRIVATE "-Wl,--disable-new-dtags" "-Wl,-rpath-link,${RAFT_MEDIA_BUNDLE}/libs")
   set_target_properties(media_kit_video_plugin PROPERTIES
