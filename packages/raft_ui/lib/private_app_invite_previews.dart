@@ -33,13 +33,15 @@ class _InvitePreviewState extends State<_InvitePreview> {
     ],
     selectedServer: selected,
     installed: installed.contains(selected),
-    scopes: RaftCollapsibleSectionHeader(
-      label: 'Identity',
-      labelSpan: const TextSpan(text: 'Identity — Basic profile information'),
-      expanded: identityExpanded,
-      leadingDisclosure: true,
-      onExpandedChanged: (value) => setState(() => identityExpanded = value),
-      children: const [Text('openid · profile')],
+    scopes: RaftDisclosureCard(
+      child: RaftCollapsibleSectionHeader(
+        label: 'Identity',
+        labelSpan: const TextSpan(text: 'Identity — Basic profile information'),
+        expanded: identityExpanded,
+        leadingDisclosure: true,
+        onExpandedChanged: (value) => setState(() => identityExpanded = value),
+        children: const [Text('openid · profile')],
+      ),
     ),
     onServer: (value) => setState(() => selected = value),
     onInstall: () => setState(() => installed.add(selected!)),

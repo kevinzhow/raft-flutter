@@ -641,11 +641,7 @@ class _TierGroupState extends State<_TierGroup> {
         children: children,
       );
     }
-    return RaftCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: RaftSpace.x3,
-        vertical: RaftSpace.x2,
-      ),
+    return RaftDisclosureCard(
       child: RaftCollapsibleSectionHeader(
         label:
             tr(oauthTierLabel(tier)) +

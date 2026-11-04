@@ -42971,24 +42971,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/list_items.dart#local-function:CLASS:RaftAvatarListRow@2459/METHOD:build@3108/FUNCTION:gapped@3330": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 scoped source registration",
-        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
-      },
-      "packages/raft_ui/lib/src/list_items.dart#local-function:CLASS:RaftAvatarListRow@2459/METHOD:build@3108/FUNCTION:gapped@4456": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 scoped source registration",
-        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
-      },
-      "packages/raft_ui/lib/src/list_items.dart#local-function:CLASS:RaftAvatarListRow@2459/METHOD:build@3108/FUNCTION:nameText@4994": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 scoped source registration",
-        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
-      },
       "apps/raft_flutter/lib/features/human_login_sheet.dart#class:_TierGroupState": {
         "role": "entry_composition",
         "familyRefs": [
@@ -43077,6 +43059,36 @@
         "familyRefs": [],
         "owner": "Cody",
         "reason": "Mechanical extraction of the existing app-root viewport scope chain. Account, navigation and update-service ownership stay in the Root; this grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/list_items.dart#local-function:CLASS:RaftAvatarListRow@2478/METHOD:build@3127/FUNCTION:gapped@3349": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 scoped source registration",
+        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
+      },
+      "packages/raft_ui/lib/src/list_items.dart#local-function:CLASS:RaftAvatarListRow@2478/METHOD:build@3127/FUNCTION:gapped@4475": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 scoped source registration",
+        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
+      },
+      "packages/raft_ui/lib/src/list_items.dart#local-function:CLASS:RaftAvatarListRow@2478/METHOD:build@3127/FUNCTION:nameText@5013": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 scoped source registration",
+        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
+      },
+      "packages/raft_ui/lib/src/list_items.dart#class:RaftDisclosureCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task299 scoped source registration",
+        "reason": "Shared pinned details-frame composition used by opt-in private-app permission disclosures; frozen looks delegate to the existing Card. This source registration grants no family exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/list_items.dart#method:RaftDisclosureCard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task299 scoped source registration",
+        "reason": "Shared pinned details-frame composition used by opt-in private-app permission disclosures; frozen looks delegate to the existing Card. This source registration grants no family exemption or visual acceptance."
       }
     },
     "entries": {

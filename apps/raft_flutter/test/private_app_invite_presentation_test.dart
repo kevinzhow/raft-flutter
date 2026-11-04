@@ -63,6 +63,22 @@ void main() {
       ),
     );
     expect(boxes.map((b) => b.top).toSet().length, greaterThan(1));
+    final frame = find.byWidgetPredicate(
+      (w) =>
+          w is DecoratedBox &&
+          w.decoration is BoxDecoration &&
+          (w.decoration as BoxDecoration).borderRadius ==
+              BorderRadius.circular(8) &&
+          (w.decoration as BoxDecoration).border != null,
+    );
+    expect(
+      frame,
+      findsOneWidget,
+      reason:
+          'Pinned Web details uses rounded-control (8px), rather than '
+          'the outer Card rounded-container (10px).',
+    );
+    expect(t.getSize(frame), const Size(256, 78));
     await t.tap(disclosure);
     await t.pumpAndSettle();
     expect(

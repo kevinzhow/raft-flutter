@@ -23,7 +23,7 @@ import 'recipe_surface.dart';
 import 'recipes/card.g.dart';
 import 'recipes/popover.g.dart';
 import 'recipes/recipe_router.dart'
-    show raftPopoverSurfaceClasses, resolveRecipeClasses;
+    show raftPopoverSurfaceClasses, resolveRecipeClasses, usesLegacyRecipes;
 import 'recipes/recipe_runtime.dart';
 import 'panel_layout.dart';
 import 'text_measure.dart';
@@ -339,6 +339,44 @@ class RaftSectionHeader extends StatelessWidget {
           RaftInlineBox(child: action!),
         ],
       ],
+    );
+  }
+}
+
+/// The pinned Web `details` frame: a control-radius hairline with compact
+/// padding, distinct from the enclosing container-radius Card.
+class RaftDisclosureCard extends StatelessWidget {
+  const RaftDisclosureCard({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    if (usesLegacyRecipes(t.recipeTokens)) {
+      return RaftCard(
+        padding: const EdgeInsets.symmetric(
+          horizontal: RaftSpace.x3,
+          vertical: RaftSpace.x2,
+        ),
+        child: child,
+      );
+    }
+    return RaftRecipeBox(
+      style: resolveRecipeClasses(
+        const [
+          'rounded-control',
+          'border',
+          'border-line-hairline',
+          'px-3',
+          'py-2',
+        ],
+        t.recipeStates(),
+        t.recipeTokens,
+      ),
+      tokens: t.recipeTokens,
+      applyText: false,
+      declareSurface: true,
+      child: child,
     );
   }
 }

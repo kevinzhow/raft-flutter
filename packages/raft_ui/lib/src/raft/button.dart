@@ -809,6 +809,7 @@ class RaftButton extends StatelessWidget {
     );
     if (accessibleLabel != null) content = ExcludeSemantics(child: content);
     Widget surface = RaftRecipeBox(
+      compositeSharpStickerEdge: !inactive || disabledOpacity == null,
       style: root,
       tokens: tokens,
       applyText: false,

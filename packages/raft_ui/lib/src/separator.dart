@@ -3,9 +3,11 @@ import 'package:flutter/widgets.dart';
 
 import 'localization.dart';
 import 'recipe_surface.dart';
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
+import 'recipes/recipe_runtime.dart' show RaftRecipeSet, CssVar, CssKeyword;
 import 'recipes/separator.g.dart';
 import 'theme.dart';
+import 'surface_background_scope.dart';
+import 'raft/ui_tokens.dart' show raftChromeBlend;
 
 /// raft-ui `Separator`: a 1px `line-hairline` between groups of content,
 /// horizontal (full width) or vertical (the height of its row), or with a
@@ -56,15 +58,39 @@ class RaftSeparator extends StatelessWidget {
       ),
       tokens: rt,
     );
+    final lineStyle = label != null && !vertical
+        ? style.labeledLine
+        : style.root;
+    final backdrop = RaftSurfaceBackgroundScope.of(context);
+    final ink = lineStyle['background-color'];
+    final plain = switch (lineStyle['background-image']) {
+      null || CssKeyword(value: 'none') => true,
+      _ => false,
+    };
+    final composite =
+        ink is CssVar &&
+        ink.token != null &&
+        ink.fallback == null &&
+        plain &&
+        (lineStyle.opacity ?? 1) == 1 &&
+        lineStyle.before == null &&
+        lineStyle.after == null &&
+        backdrop?.a == 1;
+    final BoxDecoration Function(BoxDecoration)? decoration = !composite
+        ? null
+        : (d) => d.color != null && d.color!.a > 0 && d.color!.a < 1
+              ? d.copyWith(color: raftChromeBlend(d.color!, backdrop!))
+              : d;
     if (label != null && !vertical) {
       return _labeled(
         context,
         t,
         (_) => RaftRecipeBox(
-          style: style.labeledLine,
+          style: lineStyle,
           tokens: rt,
           height: 1,
           applyText: false,
+          decorationOverride: decoration,
         ),
         style: style,
       );
@@ -72,11 +98,12 @@ class RaftSeparator extends StatelessWidget {
     return Semantics(
       container: false,
       child: RaftRecipeBox(
-        style: style.root,
+        style: lineStyle,
         tokens: rt,
         width: vertical ? 1 : null,
         height: vertical ? null : 1,
         applyText: false,
+        decorationOverride: decoration,
       ),
     );
   }

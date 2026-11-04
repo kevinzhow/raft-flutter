@@ -328,6 +328,7 @@ class RaftRecipeBox extends StatelessWidget {
     this.overflowCenter = false,
     this.controlLabel = false,
     this.declareSurface = false,
+    this.compositeSharpStickerEdge = false,
   });
 
   /// The box is a single-line control label (badge, chip, button, tab,
@@ -338,6 +339,10 @@ class RaftRecipeBox extends StatelessWidget {
   /// actual surface for descendants. Default slots preserve their caller's
   /// existing scope (for example a menu's content/list ownership contract).
   final bool declareSurface;
+
+  /// Canonical Button's uncalibrated foundation stickerEdge only. Unknown
+  /// surfaces, literal fits and non-sharp/offset shadows keep their raster.
+  final bool compositeSharpStickerEdge;
 
   /// Inline-flex controls with a fixed height (Button): content taller than
   /// the content box overflows centred instead of being squeezed.
@@ -394,6 +399,7 @@ class RaftRecipeBox extends StatelessWidget {
             ),
       ],
     );
+    final sourceOuterShadows = decoration.boxShadow;
     if (decorationOverride != null) {
       decoration = decorationOverride!(decoration);
     }
@@ -431,11 +437,12 @@ class RaftRecipeBox extends StatelessWidget {
         uniformSurface &&
         (fill?.a == 0 || (fill == null && style['background-color'] == null));
     final backdrop = RaftSurfaceBackgroundScope.of(context);
+    final borderBackdrop = ownedSurface ?? (unpainted ? backdrop : null);
     final border = decoration.border;
     if (declareSurface &&
         cssGeometry &&
         backdrop?.a == 1 &&
-        ownedSurface != null &&
+        borderBackdrop != null &&
         border is Border &&
         originalBorder is Border) {
       BorderSide side(String name, BorderSide actual, BorderSide original) {
@@ -451,7 +458,7 @@ class RaftRecipeBox extends StatelessWidget {
                 actual.color.a > 0 &&
                 actual.color.a < 1
             ? actual.copyWith(
-                color: raftChromeBlend(actual.color, ownedSurface),
+                color: raftChromeBlend(actual.color, borderBackdrop),
               )
             : actual;
       }
@@ -468,6 +475,21 @@ class RaftRecipeBox extends StatelessWidget {
     // CSS outer box-shadows never paint under the border box (a translucent
     // background must not reveal them), unlike Flutter's BoxDecoration.
     final outerShadows = decoration.boxShadow ?? const <BoxShadow>[];
+    final preciseStickerEdge =
+        compositeSharpStickerEdge &&
+        cssGeometry &&
+        ownedSurface != null &&
+        backdrop?.a == 1 &&
+        identical(decoration.boxShadow, sourceOuterShadows) &&
+        style.boxShadow.every(
+          (s) =>
+              s is RaftLiteralShadow &&
+              (s.color.resolve(tokens, currentColor: current).a == 0 ||
+                  (!s.inset &&
+                      s.color is RaftTokenColor &&
+                      (s.color as RaftTokenColor).token.name == 'stickerEdge' &&
+                      (s.color as RaftTokenColor).fallback == null)),
+        );
     decoration = RaftRecipeDecoration(
       cssGeometry: cssGeometry,
       color: decoration.color,
@@ -551,15 +573,38 @@ class RaftRecipeBox extends StatelessWidget {
     // Keep the child Element path stable when focus adds a ring/shadow.
     // Conditional wrapping would dispose a live TextField and its IME session.
     {
-      box = CustomPaint(
-        painter: RaftOuterShadowPainter(
-          outerShadows,
-          decoration.borderRadius?.resolve(TextDirection.ltr) ??
-              BorderRadius.zero,
-          circle: decoration.shape == BoxShape.circle,
-          cssGeometry: cssGeometry,
+      final paintedChild = box;
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      box = Builder(
+        builder: (paintContext) => CustomPaint(
+          painter: RaftOuterShadowPainter(
+            outerShadows,
+            decoration.borderRadius?.resolve(TextDirection.ltr) ??
+                BorderRadius.zero,
+            circle: decoration.shape == BoxShape.circle,
+            cssGeometry: cssGeometry,
+            opaqueBackdrop: preciseStickerEdge ? backdrop : null,
+            compositeOnOpaque: preciseStickerEdge ? raftChromeBlend : null,
+            devicePixelRatio: dpr,
+            pixelAligned: () {
+              final render = paintContext.findRenderObject();
+              if (render is! RenderBox || !render.attached) return false;
+              final matrix = render.getTransformTo(null).storage;
+              for (var i = 0; i < 16; i++) {
+                if (i == 12 || i == 13) continue;
+                final expected = i % 5 == 0 ? 1 : 0;
+                if (matrix[i] != expected) return false;
+              }
+              return [
+                matrix[12] * dpr,
+                matrix[13] * dpr,
+                render.size.width * dpr,
+                render.size.height * dpr,
+              ].every((v) => (v - v.round()).abs() < 1e-7);
+            },
+          ),
+          child: paintedChild,
         ),
-        child: box,
       );
     }
     if (applyTransform) {
