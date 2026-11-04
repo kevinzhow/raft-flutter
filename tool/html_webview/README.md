@@ -332,6 +332,16 @@ the worker. Two compatible libwpe archives are separately pinned in
 `libwpe-pins.json` and extracted rather than installed over Ubuntu. These operations
 never install or upgrade packages on the developer's host.
 
+Each Dockerfile RUN enters nice15 itself; a Docker client's nice value does not
+propagate through the daemon. For a coordinated local legacy build, use
+`DOCKER_BUILDKIT=0` with `--cpuset-cpus=0,1 --cpu-period=100000
+--cpu-quota=200000 --memory=16g --memory-swap=16g`, a unique
+`--build-arg RAFT_HTML_SDK_BUILD_ID=...` and
+`--build-arg RAFT_HTML_SDK_ENFORCE_LIMITS=1`. Before APT starts the inner check
+records and verifies the actual cgroup/nice values. An external shared-gate
+watcher must operate only on this exact build ID's recorded new containers;
+control-plane labels do not authorize touching another container.
+
 Build this environment on a dedicated runner, then pass its actual immutable
 image ID to the bounded worker:
 

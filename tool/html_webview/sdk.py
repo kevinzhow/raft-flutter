@@ -68,7 +68,8 @@ def build_identity(environment):
               'archiveVerifierSha256': sha256(HERE / 'archives.py'),
               'stagerSha256': sha256(HERE / 'stage.py'),
               'libwpePinsSha256': sha256(HERE / 'libwpe-pins.json'),
-              'fetcherSha256': sha256(HERE / 'fetch_libwpe.py')}
+              'fetcherSha256': sha256(HERE / 'fetch_libwpe.py'),
+              'buildResourceCheckSha256': sha256(HERE / 'build_resources.sh')}
     key = hashlib.sha256(json.dumps(inputs, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     return {**inputs, 'key': key}
 

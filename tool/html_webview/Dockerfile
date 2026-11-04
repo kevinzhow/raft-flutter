@@ -2,7 +2,13 @@
 # This digest is the official Ubuntu24.04 image inspected for this SDK profile.
 FROM ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55
 ENV DEBIAN_FRONTEND=noninteractive
-RUN mkdir -p /opt/raft-html-sdk-debs/partial \
+ARG RAFT_HTML_SDK_BUILD_ID=unlabelled
+ARG RAFT_HTML_SDK_ENFORCE_LIMITS=0
+LABEL org.raft.html-sdk.build=$RAFT_HTML_SDK_BUILD_ID
+SHELL ["/usr/bin/nice", "-n", "15", "/bin/sh", "-c"]
+COPY build_resources.sh /opt/raft-html-sdk-recipe/build_resources.sh
+RUN /bin/sh /opt/raft-html-sdk-recipe/build_resources.sh \
+ && mkdir -p /opt/raft-html-sdk-debs/partial \
  && apt-get update \
  && apt-get -y -o Dir::Cache::archives=/opt/raft-html-sdk-debs upgrade --no-install-recommends \
  && apt-get -y -o Dir::Cache::archives=/opt/raft-html-sdk-debs install --no-install-recommends \
