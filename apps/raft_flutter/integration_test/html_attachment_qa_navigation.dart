@@ -35,7 +35,9 @@ Future<void> _watchQaNavigation(
 Future<void> _attemptQaScriptNavigation(HttpRequest request) async {
   request.response.headers.contentType = ContentType.json;
   final controller = _controller;
-  if (controller == null || !_loaded || !_navigationObserverReady) {
+  if (controller == null ||
+      !_loaded ||
+      !(Platform.isLinux || _navigationObserverReady)) {
     request.response.statusCode = HttpStatus.conflict;
     request.response.write(jsonEncode({'scheduled': false}));
     return;
@@ -44,6 +46,7 @@ Future<void> _attemptQaScriptNavigation(HttpRequest request) async {
   // link, so running this after a click detects reuse of stale trusted metadata.
   final result = await controller.evaluateJavascript(
     source: '''window.setTimeout(() => {
+      window.qaScriptNavigationFired++;
       location.assign('https://example.com/');
     }, 25); 'scheduled';''',
   );

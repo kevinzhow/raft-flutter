@@ -34,8 +34,13 @@ canvas{border:2px solid #172554;display:block;margin-top:20px}</style>
 <h1>CSS and script preview</h1><p>This is a local fixture with no account.</p>
 <button id="increment" onclick="count.textContent=Number(count.textContent)+1">Increment</button>
 <strong id="count">0</strong><canvas id="chart" width="320" height="120"></canvas>
-<p><input id="file" type="file"> <a href="https://example.com">External link</a></p>
+<p><input id="file" type="file"> <a id="external" href="https://example.com">External link</a></p>
 <script>
+window.qaLastClick=null;window.qaScriptNavigationFired=0;
+document.addEventListener('click',event=>{
+  const target=event.target.closest('button,input,a');
+  if(target)window.qaLastClick={id:target.id,trusted:event.isTrusted};
+},true);
 const ctx=chart.getContext('2d');ctx.fillStyle='#1e40af';ctx.fillRect(0,0,320,120);
 window.qaNetwork='pending';fetch('/qa-exfil').then(()=>qaNetwork='allowed',()=>qaNetwork='blocked');
 window.qaStorage='allowed';try{localStorage.setItem('qa','1')}catch(_){qaStorage='blocked'}
@@ -132,7 +137,8 @@ Future<Map<String, Object?>> _snapshot() async {
         headingBackground:getComputedStyle(document.querySelector('h1')).backgroundColor,
         canvasPixel:Array.from(document.querySelector('#chart').getContext('2d').getImageData(1,1,1,1).data),
         appBridge:typeof window.flutter_inappwebview,
-        network:window.qaNetwork,storage:window.qaStorage,origin:self.origin
+        network:window.qaNetwork,storage:window.qaStorage,origin:self.origin,
+        lastClick:window.qaLastClick,scriptNavigationFired:window.qaScriptNavigationFired
       })''',
       );
       if (document is String) document = jsonDecode(document);
