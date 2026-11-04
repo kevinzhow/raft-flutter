@@ -307,7 +307,7 @@ void main() {
         child: true,
       ).then((v) => closed = v);
       await t.pumpAndSettle();
-      expect(closed, isNull);
+      expect(closed, isFalse);
       expect(find.text('This window still has unsaved drafts'), findsOneWidget);
       expect(
         find.textContaining('Send or remove unsent attachments'),

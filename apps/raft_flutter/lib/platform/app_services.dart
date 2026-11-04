@@ -142,20 +142,30 @@ class _AppServicesHostState extends State<AppServicesHost>
     cancelClose: _cancelClose,
   );
 
-  Future<bool> _prepareClose() => _preparingClose ??= () async {
-    if (widget.services.isSecondaryWindow) {
-      FocusManager.instance.primaryFocus?.unfocus();
-      setState(() => _closing = true);
-    }
-    final accepted = await saveDesktopWindow(
-      widget.navigatorKey?.currentState?.overlay?.context ?? context,
-      widget.session?.$2,
-      child: widget.services.isSecondaryWindow,
-      onFailure: _cancelClose,
-    );
-    if (!accepted) _preparingClose = null;
-    return accepted;
-  }();
+  Future<bool> _prepareClose() {
+    final existing = _preparingClose;
+    if (existing != null) return existing;
+    late final Future<bool> attempt;
+    attempt = () async {
+      if (widget.services.isSecondaryWindow) {
+        FocusManager.instance.primaryFocus?.unfocus();
+        setState(() => _closing = true);
+      }
+      final accepted = await saveDesktopWindow(
+        widget.navigatorKey?.currentState?.overlay?.context ?? context,
+        widget.session?.$2,
+        child: widget.services.isSecondaryWindow,
+        onFailure: () {
+          if (identical(_preparingClose, attempt)) _cancelClose();
+        },
+      );
+      if (!accepted && identical(_preparingClose, attempt)) {
+        _preparingClose = null;
+      }
+      return accepted;
+    }();
+    return _preparingClose = attempt;
+  }
 
   void _cancelClose() {
     _preparingClose = null;

@@ -1,4 +1,5 @@
 import Cocoa
+import Darwin
 import FlutterMacOS
 import desktop_drop
 import desktop_multi_window
@@ -425,7 +426,7 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
 
     RaftChildWindow.installBrokerHost(controller: flutterViewController, window: self)
     FlutterMultiWindowPlugin.setOnWindowCreatedCallback { controller in
-      RegisterGeneratedPlugins(registry: controller)
+      RegisterRaftChildPlugins(registry: controller)
       RaftChildWindow.attach(controller)
     }
     RegisterGeneratedPlugins(registry: flutterViewController)
@@ -1078,7 +1079,12 @@ final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, N
     let channel = FlutterMethodChannel(name: "app.raft/desktop-window",
       binaryMessenger: controller.engine.binaryMessenger)
     channel.setMethodCallHandler { [weak window] call, result in
-      if call.method == "isActive" {
+      if call.method == "directoryIdentity" {
+        guard let path = call.arguments as? String else { result(nil); return }
+        var info = stat()
+        guard lstat(path, &info) == 0, (info.st_mode & S_IFMT) == S_IFDIR else { result(nil); return }
+        result("\(info.st_dev):\(info.st_ino)")
+      } else if call.method == "isActive" {
         result(window?.isKeyWindow == true && NSApp.isActive)
       } else if call.method == "focus" {
         if let window {

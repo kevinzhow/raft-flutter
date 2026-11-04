@@ -27,16 +27,24 @@ Future<DesktopWindows?> initializeDesktopWindows(List<String> arguments) async {
   final current = await WindowController.fromCurrentEngine();
   if (current.arguments.isEmpty) {
     late final StreamSubscription<void> changes;
+    var windowSequence = 0;
+    Future<Set<String>> observeWindows() async {
+      final sequence = ++windowSequence;
+      final windows = await WindowController.getAll();
+      if (sequence != windowSequence) throw const RaftApiException.staleScope();
+      return windows.map((w) => w.windowId).toSet();
+    }
+
     final broker = DesktopSessionBroker(
       createWindow: _create,
+      createCache: DesktopOwnedCache.create,
+      observeWindows: observeWindows,
       focusPrimary: () => _host.invokeMethod<void>('focus'),
       releaseNative: () => changes.cancel(),
     );
     changes = onWindowsChanged.listen((_) {
       unawaited(
-        WindowController.getAll().then((windows) {
-          broker.removeClosed(windows.map((window) => window.windowId).toSet());
-        }, onError: (Object _) {}),
+        observeWindows().then(broker.removeClosed, onError: (Object _) {}),
       );
     });
     _host.setMethodCallHandler(
@@ -74,7 +82,16 @@ Future<DesktopWindows?> initializeDesktopWindows(List<String> arguments) async {
         ? child.prepareExit()
         : throw MissingPluginException(),
   );
-  await DesktopCacheScope.initializeChild();
+  try {
+    final lease = await child._invoke('cacheLease');
+    if (lease is! Map) {
+      throw const FormatException('Invalid desktop cache lease.');
+    }
+    await DesktopCacheScope.initializeChild(lease);
+  } catch (_) {
+    await child.dispose();
+    rethrow;
+  }
   return child;
 }
 
@@ -91,6 +108,8 @@ Future<DesktopWindowPeer> _create(
   await channel.setMethodCallHandler((call) async {
     try {
       switch (call.method) {
+        case 'cacheLease':
+          return await broker.cacheLease(binding);
         case 'read':
           final snapshot = broker.snapshot(binding);
           return _encode(snapshot);
@@ -238,9 +257,14 @@ class _NativePeer implements DesktopWindowPeer {
 
   @override
   Future<bool> prepareClose() async =>
-      await channel.invokeMethod<bool>('prepareClose') == true;
+      await channel
+          .invokeMethod<bool>('prepareClose')
+          .timeout(const Duration(seconds: 7), onTimeout: () => false) ==
+      true;
   @override
-  Future<void> cancelClose() async => channel.invokeMethod<void>('cancelClose');
+  Future<void> cancelClose() async => channel
+      .invokeMethod<void>('cancelClose')
+      .timeout(const Duration(seconds: 2));
 
   @override
   Future<void> close() async {
@@ -280,7 +304,12 @@ class _ChildWindows implements DesktopWindows, SharedSessionAuthority {
   Future<bool> Function()? _prepareClose;
   void Function()? _cancelClose;
   @override
-  void cancelClose() => _cancelClose?.call();
+  void cancelClose() {
+    if (_closed) return;
+    DesktopCacheScope.resume();
+    _cancelClose?.call();
+  }
+
   @override
   late final WorkspaceCache draftCache = DesktopDraftCache(
     readRecord: (origin, principal, server, kind, id) =>
@@ -298,7 +327,12 @@ class _ChildWindows implements DesktopWindows, SharedSessionAuthority {
   @override
   Future<void> retireDrafts() async {}
   @override
-  Future<bool> prepareExit() async => await _prepareClose?.call() == true;
+  Future<bool> prepareExit() async {
+    final accepted = await _prepareClose?.call() == true;
+    if (accepted) DesktopCacheScope.retire();
+    return accepted;
+  }
+
   @override
   bool get isChild => true;
   @override
@@ -349,7 +383,7 @@ class _ChildWindows implements DesktopWindows, SharedSessionAuthority {
           cancelClose();
           return null;
         case 'prepareClose':
-          return prepareExit();
+          return await _prepareClose?.call() == true;
         case 'focus':
           return _host.invokeMethod<void>('focus');
         case 'close':
@@ -470,6 +504,7 @@ class _ChildWindows implements DesktopWindows, SharedSessionAuthority {
   Future<void> _revoke() async {
     if (_closed) return;
     _closed = true;
+    DesktopCacheScope.retire();
     _snapshot = null;
     _heartbeat?.cancel();
     unawaited(_windows?.cancel());

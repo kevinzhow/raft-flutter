@@ -9,4 +9,7 @@ const Map<String, String> zhCatalogDesktopWindows = {
   'Desktop windows need the local draft database. Restart Raft and try again.':
       '独立窗口需要本地草稿数据库。请重启 Raft 后重试。',
   'This server is already open in another window.': '此服务器已在另一个窗口中打开。',
+  'Drafts are taking too long to save': '保存草稿耗时过长',
+  'This window will stay open. Keep editing, then try closing it again.':
+      '此窗口将保持打开。你可以继续编辑，然后再次尝试关闭。',
 };

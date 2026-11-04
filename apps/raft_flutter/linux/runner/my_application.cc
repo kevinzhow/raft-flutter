@@ -1,4 +1,6 @@
 #include "my_application.h"
+#include <sys/stat.h>
+#include <string>
 
 #include <flutter_linux/flutter_linux.h>
 #ifdef GDK_WINDOWING_X11
@@ -212,7 +214,18 @@ static void register_window_channels(FlView* view, GtkWindow* window, TitleBar* 
       [](FlMethodChannel*, FlMethodCall* call, gpointer data) {
         GtkWindow* target = GTK_WINDOW(data);
         const gchar* method = fl_method_call_get_name(call);
-        if (g_strcmp0(method, "isActive") == 0) {
+        if (g_strcmp0(method, "directoryIdentity") == 0) {
+          FlValue* args = fl_method_call_get_args(call);
+          struct stat info{};
+          if (!args || fl_value_get_type(args) != FL_VALUE_TYPE_STRING ||
+              lstat(fl_value_get_string(args), &info) != 0 || !S_ISDIR(info.st_mode)) {
+            fl_method_call_respond_success(call, nullptr, nullptr);
+          } else {
+            const auto id = std::to_string(info.st_dev) + ":" + std::to_string(info.st_ino);
+            g_autoptr(FlValue) value = fl_value_new_string(id.c_str());
+            fl_method_call_respond_success(call, value, nullptr);
+          }
+        } else if (g_strcmp0(method, "isActive") == 0) {
           g_autoptr(FlValue) active = fl_value_new_bool(gtk_window_is_active(target));
           fl_method_call_respond_success(call, active, nullptr);
         } else if (g_strcmp0(method, "focus") == 0) {

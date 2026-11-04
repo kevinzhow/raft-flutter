@@ -234,7 +234,24 @@ class DesktopCloseGuard : public flutter::Plugin {
     SetWindowSubclass(window_, Proc, 300, reinterpret_cast<DWORD_PTR>(this));
     channel_.SetMethodCallHandler([this](const flutter::MethodCall<Value>& call,
         std::unique_ptr<flutter::MethodResult<Value>> result) {
-      if (call.method_name() == "isActive") {
+      if (call.method_name() == "directoryIdentity") {
+        const auto* path = call.arguments() ? std::get_if<std::string>(call.arguments()) : nullptr;
+        const auto wide = path ? std::filesystem::u8path(*path) : std::filesystem::path();
+        HANDLE handle = path ? CreateFileW(wide.c_str(), FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
+            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, nullptr) : INVALID_HANDLE_VALUE;
+        BY_HANDLE_FILE_INFORMATION info{};
+        if (handle == INVALID_HANDLE_VALUE || !GetFileInformationByHandle(handle, &info) ||
+            !(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ||
+            (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+          if (handle != INVALID_HANDLE_VALUE) CloseHandle(handle);
+          result->Success();
+        } else {
+          CloseHandle(handle);
+          result->Success(Value(std::to_string(info.dwVolumeSerialNumber) + ":" +
+              std::to_string(info.nFileIndexHigh) + ":" + std::to_string(info.nFileIndexLow)));
+        }
+      } else if (call.method_name() == "isActive") {
         result->Success(Value(GetForegroundWindow() == window_));
       } else if (call.method_name() == "focus") {
         if (IsIconic(window_)) ShowWindow(window_, SW_RESTORE);

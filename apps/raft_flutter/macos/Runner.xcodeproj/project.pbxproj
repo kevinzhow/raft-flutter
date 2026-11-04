@@ -21,6 +21,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		C299CA000000000000000101 /* RaftChildPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = C299CA000000000000000102 /* RaftChildPluginRegistrant.swift */; };
 		A773AC310000000000000001 /* AttachmentFileWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A773AC310000000000000002 /* AttachmentFileWriter.swift */; };
 		A773AC310000000000000003 /* AttachmentFilesChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A773AC310000000000000004 /* AttachmentFilesChannel.swift */; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
@@ -65,6 +66,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C299CA000000000000000102 /* RaftChildPluginRegistrant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaftChildPluginRegistrant.swift; sourceTree = "<group>"; };
 		A773AC310000000000000002 /* AttachmentFileWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFileWriter.swift; sourceTree = "<group>"; };
 		A773AC310000000000000004 /* AttachmentFilesChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFilesChannel.swift; sourceTree = "<group>"; };
 		230B2991CA767FDD5E4DCBF4 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -185,6 +187,7 @@
 			children = (
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
+				C299CA000000000000000102 /* RaftChildPluginRegistrant.swift */,
 				A773AC310000000000000002 /* AttachmentFileWriter.swift */,
 				A773AC310000000000000004 /* AttachmentFilesChannel.swift */,
 				33E51913231747F40026EE4D /* DebugProfile.entitlements */,
@@ -454,6 +457,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
+				C299CA000000000000000101 /* RaftChildPluginRegistrant.swift in Sources */,
 				A773AC310000000000000001 /* AttachmentFileWriter.swift in Sources */,
 				A773AC310000000000000003 /* AttachmentFilesChannel.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,

@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 
 import '../data/workspace_cache.dart';
 import 'desktop_drafts.dart';
+import 'desktop_cache_scope.dart';
 
 /// The existing live window was focused; no workspace selection occurred.
 class DesktopWindowAlreadyOpen implements Exception {
@@ -60,10 +61,19 @@ class DesktopSessionBroker implements DesktopWindows {
     required this.createWindow,
     required this.focusPrimary,
     this.releaseNative,
+    this.createCache,
+    this.observeWindows,
   });
   final DesktopWindowFactory createWindow;
   final Future<void> Function() focusPrimary;
   final Future<void> Function()? releaseNative;
+  final Future<DesktopOwnedCache> Function()? createCache;
+  final Future<Set<String>> Function()? observeWindows;
+  final _closingCaches = <String, DesktopOwnedCache>{};
+  final cleanupOutcomes = <String, String>{};
+  final _failedCaches = <String, DesktopOwnedCache>{};
+  final _closingIds = <String>{}, _confirmedRemoved = <String>{};
+  final _cacheRemovals = <String, Completer<void>>{};
   final Map<String, _WindowBinding> _windows = {};
   final Map<String, Future<void>> _opening = {};
   RaftClient? _client;
@@ -141,6 +151,42 @@ class DesktopSessionBroker implements DesktopWindows {
         }
       }
     });
+  }
+
+  Future<Map<String, String>> cacheLease(String binding) async {
+    snapshot(binding);
+    final entry = _windows[binding]!;
+    final creator = createCache;
+    if (creator == null) {
+      throw StateError('Desktop cache owner is unavailable.');
+    }
+    final cache = await (entry.cache ??= creator());
+    try {
+      snapshot(binding);
+      if (!identical(_windows[binding], entry)) {
+        throw const RaftApiException.staleScope();
+      }
+    } catch (_) {
+      if (!entry.cacheExposed) {
+        cleanupOutcomes[binding] = await cache.remove()
+            ? 'removed'
+            : cache.outcome;
+      } else {
+        _failedCaches[binding] = cache;
+        cleanupOutcomes[binding] = 'retired_lease_retained';
+      }
+      rethrow;
+    }
+    entry.cacheExposed = true;
+    return cache.descriptor;
+  }
+
+  Future<void> _cleanup(String id, DesktopOwnedCache cache) async {
+    if (!await cache.remove()) _failedCaches[id] = cache;
+    cleanupOutcomes[id] = cache.outcome;
+    _closingIds.remove(id);
+    _confirmedRemoved.remove(id);
+    _cacheRemovals.remove(id)?.complete();
   }
 
   SharedSessionSnapshot snapshot(String binding) {
@@ -232,11 +278,28 @@ class DesktopSessionBroker implements DesktopWindows {
   Future<bool> prepareExit() async {
     var accepted = false;
     try {
-      for (final entry in _windows.values.toList()) {
-        if (await entry.peer?.prepareClose() != true) return false;
-      }
+      final prepared = await Future.wait(
+        _windows.values.toList().map(
+          (entry) async => await entry.peer?.prepareClose() == true,
+        ),
+      );
+      if (prepared.any((accepted) => !accepted)) return false;
       if (await _prepareClose?.call() != true) return false;
       await _drafts.settled;
+      if (createCache != null) {
+        final retiring = <Future<void>>[];
+        for (final entry in _windows.entries.toList()) {
+          final peer = entry.value.peer;
+          if (peer == null || entry.value.cache == null) continue;
+          final done = _cacheRemovals.putIfAbsent(
+            peer.id,
+            () => Completer<void>(),
+          );
+          retiring.add(done.future);
+          remove(entry.key);
+        }
+        await Future.wait(retiring).timeout(const Duration(seconds: 10));
+      }
       return accepted = true;
     } finally {
       if (!accepted) {
@@ -363,9 +426,16 @@ class DesktopSessionBroker implements DesktopWindows {
     _windows[binding] = entry;
     try {
       final peer = await createWindow(binding, candidates.first, this);
+      entry.peer = peer;
       if ((!_current(client, epoch) || !requested()) ||
           !identical(_windows[binding], entry)) {
-        await peer.close();
+        if (identical(_windows[binding], entry)) {
+          remove(binding);
+        } else {
+          if (entry.cache case final cache?) _trackClosingCache(peer.id, cache);
+          _failedCaches.remove(binding);
+          await _closeAndObserve(peer);
+        }
         throw const RaftApiException.staleScope();
       }
       entry.peer = peer;
@@ -399,18 +469,83 @@ class DesktopSessionBroker implements DesktopWindows {
     }
   }
 
+  void _cacheCreationFailed(String id) {
+    cleanupOutcomes[id] = 'creation_failed_retained';
+    _closingIds.remove(id);
+    _confirmedRemoved.remove(id);
+    _cacheRemovals.remove(id)?.complete();
+  }
+
+  void _trackClosingCache(String id, Future<DesktopOwnedCache> pending) {
+    _cacheRemovals.putIfAbsent(id, () => Completer<void>());
+    _closingIds.add(id);
+    unawaited(
+      pending.then<void>((owned) async {
+        if (_confirmedRemoved.contains(id)) {
+          await _cleanup(id, owned);
+        } else {
+          _closingCaches[id] = owned;
+        }
+      }, onError: (Object _, StackTrace _) => _cacheCreationFailed(id)),
+    );
+  }
+
+  Future<void> _closeAndObserve(DesktopWindowPeer peer) async {
+    try {
+      await peer.close();
+      if (observeWindows != null) removeClosed(await observeWindows!());
+    } catch (_) {
+      /* Unconfirmed native removal retains its exact cache lease. */
+    }
+  }
+
   void remove(String binding) {
     final entry = _windows.remove(binding);
-    if (entry?.peer case final peer?) {
+    if (entry == null) return;
+    final peer = entry.peer, cache = entry.cache;
+    if (peer == null && cache != null) {
+      unawaited(
+        cache.then<void>((owned) {
+          _failedCaches[binding] = owned;
+          cleanupOutcomes[binding] = 'creation_failed_retained';
+        }, onError: (Object _, StackTrace _) => _cacheCreationFailed(binding)),
+      );
+    }
+    if (peer != null) {
+      if (cache != null) _trackClosingCache(peer.id, cache);
       unawaited(peer.publish(null).catchError((Object _) {}));
-      unawaited(peer.close().catchError((Object _) {}));
+      unawaited(_closeAndObserve(peer));
     }
   }
 
   void removeClosed(Set<String> liveIds) {
+    cleanupClosedCaches(liveIds);
     for (final entry in _windows.entries.toList()) {
       final peer = entry.value.peer;
-      if (peer != null && !liveIds.contains(peer.id)) remove(entry.key);
+      if (peer != null && !liveIds.contains(peer.id)) {
+        final cache = entry.value.cache;
+        _windows.remove(entry.key);
+        if (cache != null) {
+          unawaited(
+            cache.then<void>(
+              (owned) => _cleanup(peer.id, owned),
+              onError: (Object _, StackTrace _) =>
+                  _cacheCreationFailed(peer.id),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void cleanupClosedCaches(Set<String> liveIds) {
+    for (final id in _closingIds) {
+      if (!liveIds.contains(id)) _confirmedRemoved.add(id);
+    }
+    for (final entry in _closingCaches.entries.toList()) {
+      if (liveIds.contains(entry.key)) continue;
+      _closingCaches.remove(entry.key);
+      unawaited(_cleanup(entry.key, entry.value));
     }
   }
 
@@ -446,4 +581,6 @@ class _WindowBinding {
   String? server;
   DesktopWindowPeer? peer;
   int sequence = 0;
+  Future<DesktopOwnedCache>? cache;
+  bool cacheExposed = false;
 }
