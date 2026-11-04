@@ -87,21 +87,27 @@ void main() {
       expect(t.takeException(), isNull);
     });
 
-    testWidgets('signed out keeps About and Documentation only', (t) async {
-      await mountPublicServer(t);
-      await openPublicSettings(t);
-      expect(find.text('About'), findsWidgets);
-      expect(find.text('Documentation'), findsOneWidget);
-      for (final label in [
-        'Account',
-        'Language & Region',
-        'Appearance',
-        'Feedback',
-        'Release Notes',
-      ]) {
-        expect(find.text(label), findsNothing, reason: label);
-      }
-    });
+    // This standalone fixture does not borrow an app-root theme owner.
+    // The production anonymous Appearance path is exercised by
+    // anonymous_public_settings_test.dart.
+    testWidgets(
+      'without an app theme owner, public resources remain available',
+      (t) async {
+        await mountPublicServer(t);
+        await openPublicSettings(t);
+        expect(find.text('About'), findsWidgets);
+        expect(find.text('Documentation'), findsOneWidget);
+        for (final label in [
+          'Account',
+          'Language & Region',
+          'Appearance',
+          'Feedback',
+          'Release Notes',
+        ]) {
+          expect(find.text(label), findsNothing, reason: label);
+        }
+      },
+    );
 
     testWidgets('the Help menu opens Feedback and the Mobile app (About)', (
       t,

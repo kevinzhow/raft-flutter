@@ -14,8 +14,8 @@ import 'platform/artifact_web_data.dart' show clearArtifactWebData;
 import 'platform/cache_hygiene.dart' show purgeAccountCaches;
 import 'platform/device_timezone.dart' show readDeviceTimezone;
 import 'data/device_preferences.dart';
-import 'data/display_locale.dart';
 import 'data/public_server_route.dart';
+import 'data/device_display_preferences.dart';
 import 'data/workspace_controller.dart';
 import 'data/workspace_messages.dart';
 import 'data/user_error.dart';
@@ -181,7 +181,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   StreamSubscription<RaftEvent>? sessionEvents;
   // Known before the first build: the deferred first frame is not the only
   // guard against painting the default mode before the stored one.
-  RaftAppearance appearance = storedAppearance();
+  final appearance = DeviceDisplayPreferences();
   bool restoring = true;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when a new sign-in succeeds (new client installed).
   String? bootError;
@@ -221,16 +221,14 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     bindCacheExit(() => closeCacheForExit(cache?.close));
     RaftMemoryRelease.instance.install();
     NativeSystemFonts.instance.addListener(rebuildRoot);
+    appearance.addListener(rebuildRoot);
     removeShareReceiver = sharing.registerReceiver(receiveSharedContent);
     content.onIncomingShare = () => unawaited(sharing.resume());
     content.onForegroundChanged = syncWorkspaceForeground;
     // The few fixed words of a system notification (the unread count) follow
     // the member's display language, like the rest of the app.
     content.notifications.localize = (source) =>
-        displayLocale(client?.user?.string('displayLanguage')).languageCode ==
-            'zh'
-        ? raftChinese[source] ?? source
-        : source;
+        uiLocale.languageCode == 'zh' ? raftChinese[source] ?? source : source;
     unawaited(sharing.init());
     unawaited(content.init(initialArguments: widget.initialArguments));
     // An AppImage installs nothing, so xdg-open cannot find it: after the
@@ -630,10 +628,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       final p = await SharedPreferences.getInstance();
       DevicePreferences.adopt(p);
       origin = p.getString('raft.origin') ?? origin;
-      appearance = storedAppearance(p);
+      appearance.adopt(p);
       unawaited(retireStoredAppearanceTheme(p));
       // Heals the native splash theme (app update, restored preferences).
-      unawaited(NativeLaunchTheme.instance.set(appearance));
+      unawaited(NativeLaunchTheme.instance.set(appearance.value));
       try {
         cache ??=
             await (widget.openWorkspaceCache?.call() ??
@@ -1741,11 +1739,14 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       final route = publicRoute(requestedLocation);
       if (route != null && !publicDismissed) {
         return PublicServerView(
-          key: ValueKey('public-${route.slug}'),
+          key: ValueKey('public-${route.slug}-anonymous'),
           client: anonymousClient ??=
               widget.createClient?.call(origin, MemorySessionStore(), 'web') ??
               RaftClient(origin: origin, sessionStore: MemorySessionStore()),
           slug: route.slug,
+          appearance: appearance.value,
+          onAppearance: setAppearance,
+          displayLanguage: appearance.displayLanguage,
           initialChannelId: route.channelId,
           onSignIn: () => dismissPublic(mode: 'login'),
           onRegister: () => dismissPublic(mode: 'register'),
@@ -1806,14 +1807,14 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (showServerSelector && nonmember != null && !publicDismissed) {
       final w = workspace!;
       return PublicServerView(
-        key: ValueKey('public-${nonmember.slug}'),
+        key: ValueKey('public-${nonmember.slug}-${active.user!.id}'),
         client: active,
         slug: nonmember.slug,
         initialChannelId: nonmember.channelId,
         account: PublicServerAccount.of(
           w,
           onSelect: chooseServer,
-          appearance: appearance,
+          appearance: appearance.value,
           onAppearance: setAppearance,
           onLogout: logout,
         ),
@@ -1873,7 +1874,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     }
     return WorkspaceView(
       controller: workspace!,
-      appearance: appearance,
+      appearance: appearance.value,
       onAppearance: setAppearance,
       onLogout: logout,
       onChooseServer: openServerSelector,
@@ -2013,9 +2014,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   }
 
   Future<void> setAppearance(RaftAppearance value) async {
-    setState(() => appearance = value);
-    final p = await SharedPreferences.getInstance();
-    await saveAppearance(p, value);
+    await appearance.save(value);
     // The next cold start's native splash needs the new canvas.
     await NativeLaunchTheme.instance.set(value);
   }
@@ -2089,6 +2088,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     bindCacheExit(null);
     NativeSystemFonts.instance.removeListener(rebuildRoot);
+    appearance.removeListener(rebuildRoot);
+    appearance.dispose();
     unawaited(content.dispose());
     AttachmentHttp.close();
     sessionEvents?.cancel();
@@ -2112,17 +2113,22 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  Locale get uiLocale => appearance.displayLanguage.resolve(
+    client?.user?.string('displayLanguage'),
+    signedIn: client?.user != null,
+  );
+
   @override
   Widget build(BuildContext context) {
     privateRoutes.scopeChanged(
       '${client?.generation}|${client?.user?.id}',
       domain: 'account',
     );
-    final locale = displayLocale(client?.user?.string('displayLanguage'));
+    final locale = uiLocale;
     final textLocale = WidgetsBinding.instance.platformDispatcher.locale;
     ThemeData themed({bool dark = false}) => raftTheme(
       dark: dark,
-      pack: appearance.pack,
+      pack: appearance.value.pack,
       systemFonts: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
       systemFontFamilies: NativeSystemFonts.instance.value,
       locale: locale,
@@ -2187,7 +2193,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       theme: themed(),
       darkTheme: themed(dark: true),
-      themeMode: appearance.mode,
+      themeMode: appearance.value.mode,
     );
   }
 }

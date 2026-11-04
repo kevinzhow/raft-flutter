@@ -1,20 +1,18 @@
 // The settings surface of the public server page (Web PublicServerPage
 // `publicSettingsGroups` + `SettingsPanel tab=... showAboutWorkspace={false}`).
 //
-// Signed out, only the About group exists (About, Documentation). A signed-in
-// non-member (`public-authenticated-nonmember`, `account-and-resources`)
-// also gets the Personal group (Account, Language & Region, Appearance) and
-// Feedback and Release Notes in Resources. They are the signed-in Settings
+// Anonymous visitors get device-local Appearance and, if translation is
+// enabled, Language & Region. Signed-in nonmembers also get Account, Feedback
+// and Release Notes. They are the signed-in Settings
 // pages themselves, mounted without a current server.
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/message_translation_store.dart';
-import '../data/personal_presentation.dart';
+import '../data/display_language_preferences.dart';
 import '../data/workspace_controller.dart';
 import '../platform/app_services.dart';
 import 'account_settings.dart';
@@ -46,7 +44,9 @@ List<RaftSettingsDestination> publicSettingsDestinations({
   required Widget Function(BuildContext) about,
   required VoidCallback documentation,
   PublicSettingsAccount? account,
-  PersonalPresentationStore? presentation,
+  RaftAppearance? appearance,
+  ValueChanged<RaftAppearance>? onAppearance,
+  DisplayLanguagePreferences? displayLanguage,
   AppServices? services,
   bool translationEnabled = false,
   PublicLocalPreferences? localPreferences,
@@ -72,31 +72,34 @@ List<RaftSettingsDestination> publicSettingsDestinations({
               (_) => PublicLanguageRegionPage(
                 preferences: localPreferences,
                 translations: translations,
+                displayLanguage: displayLanguage,
               ),
             ),
         ]
       : const <RaftSettingsDestination>[];
   return [
-    if (account == null || w == null || presentation == null) ...language,
-    if (account != null && w != null && presentation != null) ...[
+    if (account != null && w != null) ...[
       RaftSettingsDestination(
         'account',
         'Account',
         RaftGlyph.user,
         (_) => AccountSettings(controller: w, onLogout: account.onLogout),
       ),
-      ...language,
+    ],
+    ...language,
+    if ((account?.appearance ?? appearance) != null &&
+        (account?.onAppearance ?? onAppearance) != null)
       RaftSettingsDestination(
         'appearance',
         'Appearance',
         RaftGlyph.type,
         (_) => RaftAppearanceSection(
-          appearance: account.appearance,
-          onAppearance: account.onAppearance,
-          presentation: presentation,
+          appearance: (account?.appearance ?? appearance)!,
+          onAppearance: (account?.onAppearance ?? onAppearance)!,
+          presentation: null,
+          publicSurface: true,
         ),
       ),
-    ],
     RaftSettingsDestination(
       'about',
       'About',
@@ -144,7 +147,7 @@ List<RaftSettingsDestination> publicSettingsDestinations({
 
 /// The settings columns of the public page: the sidebar and the panel of the
 /// selected tab.
-class PublicServerSettings extends StatefulWidget {
+class PublicServerSettings extends StatelessWidget {
   const PublicServerSettings({
     super.key,
     required this.tab,
@@ -152,6 +155,9 @@ class PublicServerSettings extends StatefulWidget {
     required this.about,
     required this.documentationUrl,
     this.account,
+    this.appearance,
+    this.onAppearance,
+    this.displayLanguage,
     this.translationEnabled = false,
     this.localPreferences,
     this.translations,
@@ -168,6 +174,9 @@ class PublicServerSettings extends StatefulWidget {
   final Widget Function(BuildContext) about;
   final String documentationUrl;
   final PublicSettingsAccount? account;
+  final RaftAppearance? appearance;
+  final ValueChanged<RaftAppearance>? onAppearance;
+  final DisplayLanguagePreferences? displayLanguage;
 
   /// The server offers translation: Language & Region is a tab (a signed-out
   /// visitor's form needs [localPreferences] and [translations]).
@@ -186,69 +195,26 @@ class PublicServerSettings extends StatefulWidget {
   final VoidCallback? onSidebarResizeEnd;
 
   @override
-  State<PublicServerSettings> createState() => _PublicServerSettingsState();
-}
-
-class _PublicServerSettingsState extends State<PublicServerSettings> {
-  /// The Appearance page's device choices (font size, live activity, ...): the
-  /// same per-account record the workspace reads.
-  PersonalPresentationStore? presentation;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.account != null) {
-      presentation = PersonalPresentationStore(
-        desktop:
-            !kIsWeb &&
-            const [
-              TargetPlatform.linux,
-              TargetPlatform.macOS,
-              TargetPlatform.windows,
-            ].contains(defaultTargetPlatform),
-      );
-      _bindPresentation();
-    }
-  }
-
-  void _bindPresentation() {
-    final w = widget.account?.controller;
-    if (w == null) return;
-    unawaited(
-      presentation?.bind(
-        w.client.origin,
-        w.client.user?.id,
-        profileFont: w.client.user?.string('preferredMessageBodyFontSize'),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    presentation?.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final destinations = publicSettingsDestinations(
-      about: widget.about,
+      about: about,
       documentation: () => unawaited(
         launchUrl(
-          Uri.parse(widget.documentationUrl),
+          Uri.parse(documentationUrl),
           mode: LaunchMode.externalApplication,
         ),
       ),
-      account: widget.account,
-      presentation: presentation,
+      account: account,
+      appearance: appearance,
+      onAppearance: onAppearance,
+      displayLanguage: displayLanguage,
       services: AppServicesScope.maybeOf(context),
-      translationEnabled: widget.translationEnabled,
-      localPreferences: widget.localPreferences,
-      translations: widget.translations,
+      translationEnabled: translationEnabled,
+      localPreferences: localPreferences,
+      translations: translations,
     );
     final pages = destinations.where((d) => d.builder != null).toList();
-    final active =
-        pages.where((d) => d.id == widget.tab).firstOrNull ?? pages.first;
+    final active = pages.where((d) => d.id == tab).firstOrNull ?? pages.first;
     final groups = [
       for (final group in destinations.map((d) => d.group).toSet())
         RaftSettingsNavGroup(group, [
@@ -257,7 +223,7 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
               id: d.id,
               label: d.label,
               glyph: d.glyph,
-              onTap: d.onOpen ?? () => widget.onTab(d.id),
+              onTap: d.onOpen ?? () => onTab(d.id),
             ),
         ]),
     ];
@@ -286,9 +252,9 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
             key: ValueKey(active.id),
             child: active.builder!(context),
           );
-    final width = widget.sidebarWidth;
+    final width = sidebarWidth;
     final sideBySide = raftBreakpointWidth(context) >= 640;
-    final banner = widget.banner;
+    final banner = this.banner;
     Widget panel(Widget frame) => sideBySide && banner != null
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -304,7 +270,7 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
       children: [
         RaftPublicSettingsSidebar(
           title: raftText(context, 'Settings'),
-          width: widget.sidebarWidth,
+          width: sidebarWidth,
           child: RaftSettingsSidebarList(groups: groups, activeId: active.id),
         ),
         Expanded(
@@ -337,7 +303,7 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
             ],
           )
         : columns;
-    if (width == null || widget.onSidebarResize == null) return body;
+    if (width == null || onSidebarResize == null) return body;
     // PanelResizeHandle: an 8px strip centred on the sidebar's edge, over both
     // columns (`-right-1`), so it never takes width from either.
     return Stack(
@@ -354,8 +320,8 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
             label: raftText(context, 'Resize sidebar'),
             value: width,
             hairline: true,
-            onChanged: widget.onSidebarResize!,
-            onChangeEnd: widget.onSidebarResizeEnd,
+            onChanged: onSidebarResize!,
+            onChangeEnd: onSidebarResizeEnd,
           ),
         ),
       ],

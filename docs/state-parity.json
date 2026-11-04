@@ -5760,19 +5760,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@2457/METHOD:build@3079/FUNCTION:<anonymous>@3172/FUNCTION:card@3346": {
+      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@2457/METHOD:build@3257/FUNCTION:<anonymous>@3388/FUNCTION:card@3596": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@2457/METHOD:build@3079/FUNCTION:<anonymous>@3172/FUNCTION:title@3662": {
+      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@2457/METHOD:build@3257/FUNCTION:<anonymous>@3388/FUNCTION:title@3912": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@2457/METHOD:build@3079/FUNCTION:<anonymous>@3172/FUNCTION:toggle@3991": {
+      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@2457/METHOD:build@3257/FUNCTION:<anonymous>@3388/FUNCTION:toggle@4241": {
         "role": "entry_composition",
         "familyRefs": [
           "switch"
@@ -10604,37 +10604,25 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/public_server_settings.dart#class:_PublicServerSettingsState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "apps/raft_flutter/lib/features/public_server_settings.dart#function:publicSettingsDestinations": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/public_server_settings.dart#local-function:CLASS:_PublicServerSettingsState@6526/METHOD:build@7563/FUNCTION:page@8877": {
+      "apps/raft_flutter/lib/features/public_server_settings.dart#local-function:CLASS:PublicServerSettings@5075/METHOD:build@6693/FUNCTION:page@8013": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/public_server_settings.dart#local-function:CLASS:_PublicServerSettingsState@6526/METHOD:build@7563/FUNCTION:panel@9599": {
+      "apps/raft_flutter/lib/features/public_server_settings.dart#local-function:CLASS:PublicServerSettings@5075/METHOD:build@6693/FUNCTION:panel@8726": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/public_server_settings.dart#method:PublicServerSettings.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/public_server_settings.dart#method:_PublicServerSettingsState.build": {
+      "apps/raft_flutter/lib/features/public_server_settings.dart#method:PublicServerSettings.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -40219,7 +40207,7 @@
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "apps/raft_flutter/lib/features/public_server_view.dart#local-function:CLASS:_PublicServerViewState@7879/METHOD:row@30976/FUNCTION:text@32214": {
+      "apps/raft_flutter/lib/features/public_server_view.dart#local-function:CLASS:_PublicServerViewState@8203/METHOD:row@31536/FUNCTION:text@32774": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
@@ -43035,6 +43023,54 @@
         ],
         "owner": "Cody",
         "reason": "Private App invitation composes existing canonical Card/Banner/Select/Button families and the shared requested-scope consent. Root-flow and SDK state tests are functional evidence; Web comparison is recorded separately."
+      },
+      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@2457/METHOD:build@3257/FUNCTION:<anonymous>@3388/FUNCTION:themeCard@5258": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "radio_group"
+        ],
+        "owner": "Choice9 design-system alignment",
+        "reason": "Public and member Appearance share the existing mode cards and card recipe. Source-reviewed composition only; no visual acceptance is asserted."
+      },
+      "apps/raft_flutter/lib/features/public_appearance_previews.dart#function:publicAppearanceReferencePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "radio_group"
+        ],
+        "owner": "Choice9 design-system alignment",
+        "reason": "SDK Widget Preview for the public-only variant of the existing Appearance family; no network, account mutation or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/public_appearance_previews.dart#class:_PublicAppearancePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "radio_group"
+        ],
+        "owner": "Choice9 design-system alignment",
+        "reason": "SDK Widget Preview for the public-only variant of the existing Appearance family; no network, account mutation or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/public_appearance_previews.dart#class:_PublicAppearancePreviewState": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "radio_group"
+        ],
+        "owner": "Choice9 design-system alignment",
+        "reason": "SDK Widget Preview for the public-only variant of the existing Appearance family; no network, account mutation or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/public_appearance_previews.dart#method:_PublicAppearancePreview.createState": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "radio_group"
+        ],
+        "owner": "Choice9 design-system alignment",
+        "reason": "SDK Widget Preview for the public-only variant of the existing Appearance family; no network, account mutation or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/public_appearance_previews.dart#method:_PublicAppearancePreviewState.build": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "radio_group"
+        ],
+        "owner": "Choice9 design-system alignment",
+        "reason": "SDK Widget Preview for the public-only variant of the existing Appearance family; no network, account mutation or visual acceptance."
       }
     },
     "entries": {
@@ -43609,7 +43645,7 @@
         "declarationRefs": [
           "apps/raft_flutter/lib/features/appearance_section.dart#method:RaftAppearanceSection.build",
           "apps/raft_flutter/lib/features/appearance_section.dart#class:RaftAppearanceSection",
-          "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@2457/METHOD:build@3079/FUNCTION:<anonymous>@3172/FUNCTION:toggle@3991"
+          "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@2457/METHOD:build@3257/FUNCTION:<anonymous>@3388/FUNCTION:toggle@4241"
         ],
         "mountStatus": "source_reviewed",
         "reason": "Source-reviewed canonical control delegation only; current matched-state mounting and visual acceptance remain pending. Required conditions are registered separately; no visual PASS is asserted."

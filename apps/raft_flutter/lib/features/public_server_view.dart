@@ -12,6 +12,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/message_translation_store.dart';
+import '../data/display_language_preferences.dart';
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
@@ -201,6 +202,9 @@ class PublicServerView extends StatefulWidget {
     this.onRegister = _ignore,
     this.initialChannelId,
     this.account,
+    this.appearance,
+    this.onAppearance,
+    this.displayLanguage,
     this.onJoined,
     this.appVersion = const String.fromEnvironment('RAFT_APP_VERSION'),
     this.documentationUrl = 'https://docs.raft.build',
@@ -215,6 +219,11 @@ class PublicServerView extends StatefulWidget {
   /// Set when signed in: Join as Guest replaces Sign in / Create account.
   final PublicServerAccount? account;
 
+  /// App-root device choices, available before signing in.
+  final RaftAppearance? appearance;
+  final ValueChanged<RaftAppearance>? onAppearance;
+  final DisplayLanguagePreferences? displayLanguage;
+
   /// After a guest join: reload the server list and open the server. A
   /// failure here never reads as a failed join (membership is durable).
   final Future<void> Function()? onJoined;
@@ -226,6 +235,10 @@ class PublicServerView extends StatefulWidget {
 
 class _PublicServerViewState extends State<PublicServerView> {
   bool get authenticated => widget.account != null;
+  DisplayLanguagePreferences? localDisplayLanguage;
+  DisplayLanguagePreferences get displayLanguage =>
+      widget.displayLanguage ??
+      (localDisplayLanguage ??= DisplayLanguagePreferences());
   Map<String, dynamic>? server;
   List<Map<String, dynamic>> channels = [];
   bool canJoin = false;
@@ -356,6 +369,7 @@ class _PublicServerViewState extends State<PublicServerView> {
       translations?.clearPublicServer();
     }
     localPrefs?.dispose();
+    localDisplayLanguage?.dispose();
     panels?.dispose();
     timelineScroll.dispose();
     threadScroll.dispose();
@@ -1217,6 +1231,9 @@ class _PublicServerViewState extends State<PublicServerView> {
       about: about,
       documentationUrl: widget.documentationUrl,
       account: widget.account?.settings,
+      appearance: widget.appearance,
+      onAppearance: widget.onAppearance,
+      displayLanguage: displayLanguage,
       translationEnabled: translationEnabled,
       localPreferences: localPrefs,
       translations: translations,

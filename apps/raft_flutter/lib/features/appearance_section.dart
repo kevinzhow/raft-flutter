@@ -73,10 +73,14 @@ class RaftAppearanceSection extends StatelessWidget {
     required this.onAppearance,
     required this.presentation,
     this.railSide,
-  });
+    this.publicSurface = false,
+  }) : assert(publicSurface || presentation != null);
   final RaftAppearance appearance;
   final ValueChanged<RaftAppearance> onAppearance;
-  final PersonalPresentationStore presentation;
+  final PersonalPresentationStore? presentation;
+
+  /// Web public surfaces offer only the device-local theme picker.
+  final bool publicSurface;
 
   /// The device's rail side choice. Always offered on touch-first platforms
   /// (phones and foldables take it in every layout); on computers only while
@@ -84,11 +88,11 @@ class RaftAppearanceSection extends StatelessWidget {
   final RailSideStore? railSide;
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: presentation,
+    listenable: presentation ?? const AlwaysStoppedAnimation(null),
     builder: (context, _) {
       final r = RaftAppearanceSectionRecipe(RaftTokens.of(context)),
-          value = presentation.value,
-          captured = presentation.key;
+          value = presentation?.value ?? const PersonalPresentation(),
+          captured = presentation?.key;
       Widget card(List<Widget> children, {double spacing = 0}) => Container(
         padding: RaftAppearanceSectionRecipe.inset,
         decoration: r.card,
@@ -140,6 +144,20 @@ class RaftAppearanceSection extends StatelessWidget {
           ],
         ),
       ]);
+      Widget themeCard() => card([
+        Padding(
+          padding: const EdgeInsets.only(bottom: RaftSpace.x3),
+          child: title(
+            'Theme',
+            'Choose light, dark, or follow your device. Your choice is saved on this device.',
+          ),
+        ),
+        RaftAppearanceModeCards(
+          appearance: appearance,
+          onChanged: onAppearance,
+        ),
+      ]);
+      if (publicSurface) return themeCard();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -147,19 +165,7 @@ class RaftAppearanceSection extends StatelessWidget {
             // Web `Card className="mb-6 p-4"`: the Light / Dark / System
             // preview cards. The Raft / Elegant / Brutal look picker is a
             // product addition and sits after the Web sections (below).
-            card([
-              Padding(
-                padding: const EdgeInsets.only(bottom: RaftSpace.x3),
-                child: title(
-                  'Theme',
-                  'Choose light, dark, or follow your device. Your choice is saved on this device.',
-                ),
-              ),
-              RaftAppearanceModeCards(
-                appearance: appearance,
-                onChanged: onAppearance,
-              ),
-            ])
+            themeCard()
           else ...[
             card([
               title(
@@ -214,7 +220,7 @@ class RaftAppearanceSection extends StatelessWidget {
               ],
               onChanged: captured == null
                   ? null
-                  : (font) => presentation.update(captured, font: font),
+                  : (font) => presentation!.update(captured, font: font),
             ),
             const SizedBox(height: 16),
             Text(
@@ -253,7 +259,7 @@ class RaftAppearanceSection extends StatelessWidget {
             'Live agent activity',
             'Show which agents are working, and what they are doing, at the top of the window and on the Home bar.',
             value.liveActivity,
-            (show) => presentation.update(captured, liveActivity: show),
+            (show) => presentation!.update(captured, liveActivity: show),
           ),
           const SizedBox(height: RaftAppearanceSectionRecipe.gap),
           toggle(
@@ -261,7 +267,7 @@ class RaftAppearanceSection extends StatelessWidget {
             'Show agent model',
             "Show each agent's model next to its name in chat. On by default in the desktop app.",
             value.modelName,
-            (show) => presentation.update(captured, modelName: show),
+            (show) => presentation!.update(captured, modelName: show),
           ),
           const SizedBox(height: RaftAppearanceSectionRecipe.gap),
           toggle(
@@ -269,7 +275,7 @@ class RaftAppearanceSection extends StatelessWidget {
             'Hide empty sidebar sections',
             'Hide sidebar sections while they have nothing in them (empty Pinned, Joint Channels, Direct Messages). On by default in the desktop app.',
             value.hideEmptySections,
-            (hide) => presentation.update(captured, hideEmptySections: hide),
+            (hide) => presentation!.update(captured, hideEmptySections: hide),
           ),
           if (railSide != null &&
               (railSideFollowsChoice() || railChoiceAvailable(context)))

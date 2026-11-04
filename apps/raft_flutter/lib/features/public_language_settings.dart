@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/message_translation_store.dart';
+import '../data/display_language_preferences.dart';
 import 'locale_settings_page.dart'
     show effectiveTimeFormat, localeTimezoneOptions;
 import 'public_translation.dart';
@@ -16,9 +17,11 @@ class PublicLanguageRegionPage extends StatefulWidget {
     super.key,
     required this.preferences,
     required this.translations,
+    this.displayLanguage,
   });
   final PublicLocalPreferences preferences;
   final MessageTranslationStore translations;
+  final DisplayLanguagePreferences? displayLanguage;
 
   @override
   State<PublicLanguageRegionPage> createState() =>
@@ -27,7 +30,16 @@ class PublicLanguageRegionPage extends StatefulWidget {
 
 class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
   // Drafts of the two forms; null follows the saved value.
-  String? draftMode, draftTarget, draftDisplay, draftTimezone, draftTimeFormat;
+  String? draftDisplayLanguage,
+      draftMode,
+      draftTarget,
+      draftDisplay,
+      draftTimezone,
+      draftTimeFormat;
+  DisplayLanguagePreferences? localDisplayLanguage;
+  DisplayLanguagePreferences get displayLanguage =>
+      widget.displayLanguage ??
+      (localDisplayLanguage ??= DisplayLanguagePreferences());
   bool languageSaved = false, dateTimeSaved = false;
   final timers = <bool, Timer>{};
   bool device24Hour = false;
@@ -66,6 +78,7 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
     for (final timer in timers.values) {
       timer.cancel();
     }
+    localDisplayLanguage?.dispose();
     widget.preferences.removeListener(changed);
     widget.translations.removeListener(changed);
     super.dispose();
@@ -95,6 +108,11 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
   }
 
   Future<void> saveLanguage() async {
+    // Apply the UI choice before any asynchronous local write. A page may
+    // close while storage is pending; the app-root owner outlives the form.
+    final languageWrite = draftDisplayLanguage == null
+        ? Future<void>.value()
+        : displayLanguage.save(draftDisplayLanguage!);
     await widget.preferences.update({
       if ((draftTarget ?? savedTarget) != savedTarget)
         'preferredLanguage': draftTarget == 'browser' ? null : draftTarget,
@@ -103,10 +121,11 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
       if ((draftDisplay ?? savedDisplay) != savedDisplay)
         'preferredTranslationDisplay': draftDisplay,
     });
+    await languageWrite;
     if (!mounted) return;
     widget.translations.publicPreferencesChanged();
     setState(() {
-      draftMode = draftTarget = draftDisplay = null;
+      draftDisplayLanguage = draftMode = draftTarget = draftDisplay = null;
       languageSaved = true;
     });
     flash(true);
@@ -136,12 +155,8 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
         : 'en';
     final mode = draftMode ?? savedMode;
     return RaftLanguageRegionView(
-      // The app's display language follows the device while signed out: the
-      // form shows the live one, and offers no other.
-      displayLanguage: live,
-      displayLanguageOptions: [
-        if (live == 'zh-cn') ('zh-cn', '简体中文') else ('en', 'English'),
-      ],
+      displayLanguage: draftDisplayLanguage ?? live,
+      displayLanguageOptions: displayLanguageOptions,
       showChineseCoverageNotice: live == 'zh-cn',
       translationMode: mode,
       translationNotice: !s.loaded || s.available
@@ -162,6 +177,7 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
       translationDisplay: draftDisplay ?? savedDisplay,
       languageError: null,
       languageDirty:
+          (draftDisplayLanguage ?? live) != live ||
           (draftTarget ?? savedTarget) != savedTarget ||
           mode != savedMode ||
           (draftDisplay ?? savedDisplay) != savedDisplay,
@@ -179,7 +195,7 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
           ? RaftLanguageSaveState.saved
           : RaftLanguageSaveState.idle,
       disabled: false,
-      onDisplayLanguage: (_) {},
+      onDisplayLanguage: (v) => edit(() => draftDisplayLanguage = v),
       onTranslationMode: (v) => edit(() => draftMode = v),
       onTranslationTarget: (v) => edit(() => draftTarget = v),
       onTranslationDisplay: (v) => edit(() => draftDisplay = v),
