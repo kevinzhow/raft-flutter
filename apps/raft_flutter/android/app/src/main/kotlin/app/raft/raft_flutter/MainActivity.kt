@@ -26,6 +26,7 @@ class MainActivity : FlutterActivity() {
     private var shareReceiverReady = false
     private val earlyShares = ArrayDeque<Intent>()
     private var sharing: NativeSharingBridge? = null
+    private var imageClipboard: NativeImageClipboardBridge? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareSharedUris(intent)
@@ -120,6 +121,7 @@ class MainActivity : FlutterActivity() {
                 }
             }
         sharing = NativeSharingBridge(this, flutterEngine, ::shareReceiverAttached)
+        imageClipboard = NativeImageClipboardBridge(this, flutterEngine)
         systemFonts = NativeSystemFontsBridge(this, flutterEngine)
         systemProxy = NativeProxyBridge(this, flutterEngine)
         NativeBatteryBridge(this, flutterEngine)
@@ -493,6 +495,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        imageClipboard?.dispose()
+        imageClipboard = null
         artifactDownloads?.dispose()
         artifactDownloads = null
         super.cleanUpFlutterEngine(flutterEngine)

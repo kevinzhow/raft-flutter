@@ -11,6 +11,7 @@
 #include "flutter/generated_plugin_registrant.h"
 #include "vsync_driver.h"
 #include "desktop_caption_bar.h"
+#include "image_clipboard.h"
 
 struct _MyApplication {
   GtkApplication parent_instance;
@@ -112,6 +113,7 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_realize(GTK_WIDGET(view));
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+  raft_image_clipboard_install(view);
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   g_autoptr(FlMethodChannel) window_channel = fl_method_channel_new(
       fl_engine_get_binary_messenger(fl_view_get_engine(view)),

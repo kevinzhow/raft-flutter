@@ -143,7 +143,7 @@
             </intent-filter>
         </activity-alias>
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name=".ClipboardFileProvider"
             android:authorities="${applicationId}.shared-files"
             android:exported="false"
             android:grantUriPermissions="true">
