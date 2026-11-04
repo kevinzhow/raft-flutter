@@ -18,6 +18,8 @@ import 'text_scaling.dart' show RaftScaled;
 import 'recipes/token_binding.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
+import 'raft/ui_tokens.dart' show raftChromeBlend;
+import 'surface_background_scope.dart';
 
 extension RaftRecipeBinding on RaftTokens {
   RaftRecipeTheme get recipeTheme => RaftRecipeTheme.elegant;
@@ -325,11 +327,17 @@ class RaftRecipeBox extends StatelessWidget {
     this.decorationOverride,
     this.overflowCenter = false,
     this.controlLabel = false,
+    this.declareSurface = false,
   });
 
   /// The box is a single-line control label (badge, chip, button, tab,
   /// segment): its text takes [RaftControlTypography] (Android + Chinese).
   final bool controlLabel;
+
+  /// A component such as Card that owns this decoration may declare its
+  /// actual surface for descendants. Default slots preserve their caller's
+  /// existing scope (for example a menu's content/list ownership contract).
+  final bool declareSurface;
 
   /// Inline-flex controls with a fixed height (Button): content taller than
   /// the content box overflows centred instead of being squeezed.
@@ -367,12 +375,13 @@ class RaftRecipeBox extends StatelessWidget {
     final overlay = cssGeometry
         ? _uniformBackgroundImage(style['background-image'], tokens, current)
         : null;
+    final originalBorder = style.border(tokens, currentColor: current);
     BoxDecoration decoration = RaftRecipeDecoration(
       cssGeometry: cssGeometry,
       color: background == null || overlay == null
           ? overlay ?? background
           : Color.alphaBlend(overlay, background),
-      border: style.border(tokens, currentColor: current),
+      border: originalBorder,
       borderRadius: style.borderRadius,
       boxShadow: [
         for (final l in layers.reversed)
@@ -388,6 +397,74 @@ class RaftRecipeBox extends StatelessWidget {
     if (decorationOverride != null) {
       decoration = decorationOverride!(decoration);
     }
+    // Only the owner of actual uniform opaque paint can describe the surface
+    // seen by descendants. Overrides are authoritative; an unknown layer
+    // blocks a more distant declaration rather than looking through it.
+    final fill = decoration.color;
+    final hasOverlay = [style.before, style.after].any(
+      (slot) =>
+          slot != null &&
+          (switch (slot['background-image']) {
+                null || CssKeyword(value: 'none') => false,
+                _ => true,
+              } ||
+              (slot.backgroundColor?.resolve(tokens, currentColor: current).a ??
+                      0) >
+                  0),
+    );
+    final plainImage = switch (style['background-image']) {
+      null || CssKeyword(value: 'none') => true,
+      _ => overlay != null,
+    };
+    final uniformSurface =
+        (style.opacity ?? 1) == 1 &&
+        plainImage &&
+        decoration.image == null &&
+        decoration.gradient == null &&
+        decoration.backgroundBlendMode == null &&
+        !layers.any((l) => l.inset && l.color.a > 0) &&
+        !hasOverlay;
+    final ownedSurface = uniformSurface && fill?.a == 1 ? fill : null;
+    // A layout-only/unpainted slot does not own a new surface. Keep an
+    // explicitly declared ancestor, as the Select list/item contract requires.
+    final unpainted =
+        uniformSurface &&
+        (fill?.a == 0 || (fill == null && style['background-color'] == null));
+    final backdrop = RaftSurfaceBackgroundScope.of(context);
+    final border = decoration.border;
+    if (declareSurface &&
+        cssGeometry &&
+        backdrop?.a == 1 &&
+        ownedSurface != null &&
+        border is Border &&
+        originalBorder is Border) {
+      BorderSide side(String name, BorderSide actual, BorderSide original) {
+        final ink = style['border-$name-color'];
+        // Foundation tokens are unfitted. Literal CssColor.paint values and
+        // overridden borders retain their calibrated source-over raster.
+        return ink is CssVar &&
+                ink.token != null &&
+                ink.fallback == null &&
+                actual == original &&
+                actual.width > 0 &&
+                actual.style != BorderStyle.none &&
+                actual.color.a > 0 &&
+                actual.color.a < 1
+            ? actual.copyWith(
+                color: raftChromeBlend(actual.color, ownedSurface),
+              )
+            : actual;
+      }
+
+      decoration = decoration.copyWith(
+        border: Border(
+          top: side('top', border.top, originalBorder.top),
+          right: side('right', border.right, originalBorder.right),
+          bottom: side('bottom', border.bottom, originalBorder.bottom),
+          left: side('left', border.left, originalBorder.left),
+        ),
+      );
+    }
     // CSS outer box-shadows never paint under the border box (a translucent
     // background must not reveal them), unlike Flutter's BoxDecoration.
     final outerShadows = decoration.boxShadow ?? const <BoxShadow>[];
@@ -397,6 +474,9 @@ class RaftRecipeBox extends StatelessWidget {
       border: decoration.border,
       borderRadius: decoration.borderRadius,
       shape: decoration.shape,
+      image: decoration.image,
+      gradient: decoration.gradient,
+      backgroundBlendMode: decoration.backgroundBlendMode,
     );
     final inset = [
       for (final l in layers)
@@ -412,6 +492,14 @@ class RaftRecipeBox extends StatelessWidget {
           data: IconThemeData(color: current),
           child: content,
         ),
+      );
+    }
+    if (declareSurface && content != null) {
+      // The wrapper must stay mounted across fill/opacity changes; replacing
+      // its Element path would discard a descendant editor's focus/session.
+      content = RaftSurfaceBackgroundScope(
+        color: unpainted ? backdrop : ownedSurface,
+        child: content,
       );
     }
     // Product overrides (for example InboxRow rounded-md on a Card) change

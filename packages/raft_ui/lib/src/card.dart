@@ -134,6 +134,7 @@ class _RaftCardState extends State<RaftCard> {
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: widget.maxWidth ?? double.infinity),
       child: RaftRecipeBox(
+        declareSurface: true,
         style: root.withCssUsedBorderWidths(),
         tokens: tokens,
         width: double.infinity,
@@ -188,6 +189,7 @@ class _RaftCardState extends State<RaftCard> {
         tokens: rt,
       ).root;
       Widget raft = RaftRecipeBox(
+        declareSurface: true,
         style: root.withCssUsedBorderWidths(),
         tokens: rt,
         width: double.infinity,
@@ -252,6 +254,7 @@ class _RaftCardState extends State<RaftCard> {
     }
 
     Widget item = RaftRecipeBox(
+      declareSurface: true,
       style: card,
       tokens: rt,
       width: double.infinity,
@@ -316,6 +319,7 @@ class _RaftCardState extends State<RaftCard> {
           tokens: rt,
         ).root;
         return RaftRecipeBox(
+          declareSurface: true,
           style: root,
           tokens: rt,
           width: double.infinity,

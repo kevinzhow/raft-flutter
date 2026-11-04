@@ -19,6 +19,7 @@ import 'space.dart';
 import 'system_inset.dart';
 import 'theme.dart';
 import 'text_scaling.dart';
+import 'surface_background_scope.dart';
 import 'tokens/raft_tokens.g.dart' show RaftTypeScale;
 
 class RaftPrivateAppInvitePage extends StatelessWidget {
@@ -55,6 +56,7 @@ class RaftPrivateAppInvitePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final background = t.colors['layer-sidebar'] ?? t.panel;
     String tr(String value) => raftText(context, value);
     Widget text(String value, List<String> classes) {
       final type =
@@ -267,83 +269,86 @@ class RaftPrivateAppInvitePage extends StatelessWidget {
         color: t.semantic.foreground,
       ).copyWith(inherit: false, decoration: TextDecoration.none),
       child: ColoredBox(
-        color: t.colors['layer-sidebar'] ?? t.panel,
-        child: Stack(
-          children: [
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final safe = MediaQuery.paddingOf(context);
-                final padding = raftScrollPadding(
-                  context,
-                  EdgeInsets.fromLTRB(
-                    RaftSpace.x4 + safe.left,
-                    RaftSpace.x4 * 2 + safe.top,
-                    RaftSpace.x4 + safe.right,
-                    RaftSpace.x4 * 2,
-                  ),
-                  RaftSpace.x4,
-                );
-                return SingleChildScrollView(
-                  padding: padding,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: (constraints.maxHeight - padding.vertical)
-                          .clamp(0, double.infinity),
+        color: background,
+        child: RaftSurfaceBackgroundScope(
+          color: background.a == 1 ? background : null,
+          child: Stack(
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final safe = MediaQuery.paddingOf(context);
+                  final padding = raftScrollPadding(
+                    context,
+                    EdgeInsets.fromLTRB(
+                      RaftSpace.x4 + safe.left,
+                      RaftSpace.x4 * 2 + safe.top,
+                      RaftSpace.x4 + safe.right,
+                      RaftSpace.x4 * 2,
                     ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth:
-                              RaftLayoutMetrics.desktopBreakpoint -
-                              RaftSpace.x4 * 2,
-                        ),
-                        child: RaftCard(
-                          padding: const EdgeInsets.all(RaftSpace.x5),
-                          child: Column(
-                            key: const ValueKey('integration-invite-page'),
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            spacing: RaftSpace.x4,
-                            children: children,
+                    RaftSpace.x4,
+                  );
+                  return SingleChildScrollView(
+                    padding: padding,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: (constraints.maxHeight - padding.vertical)
+                            .clamp(0, double.infinity),
+                      ),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth:
+                                RaftLayoutMetrics.desktopBreakpoint -
+                                RaftSpace.x4 * 2,
+                          ),
+                          child: RaftCard(
+                            padding: const EdgeInsets.all(RaftSpace.x5),
+                            child: Column(
+                              key: const ValueKey('integration-invite-page'),
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              spacing: RaftSpace.x4,
+                              children: children,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-            Positioned(
-              top: MediaQuery.paddingOf(context).top + RaftSpace.x2,
-              right: MediaQuery.paddingOf(context).right + RaftSpace.x2,
-              // Native navigation/retry chrome stays outside the Web card's
-              // layout, including the Banner's responsive action slot.
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (error != null)
+                  );
+                },
+              ),
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + RaftSpace.x2,
+                right: MediaQuery.paddingOf(context).right + RaftSpace.x2,
+                // Native navigation/retry chrome stays outside the Web card's
+                // layout, including the Banner's responsive action slot.
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (error != null)
+                      RaftButton(
+                        key: const ValueKey('private-app-invite-retry'),
+                        glyph: RaftGlyph.refreshCw,
+                        tooltip: tr('Retry'),
+                        semanticLabel: tr('Retry'),
+                        uiSize: RaftButtonSize.iconSm,
+                        uiVariant: RaftButtonVariant.ghost,
+                        onPressed: onRetry,
+                      ),
                     RaftButton(
-                      key: const ValueKey('private-app-invite-retry'),
-                      glyph: RaftGlyph.refreshCw,
-                      tooltip: tr('Retry'),
-                      semanticLabel: tr('Retry'),
+                      key: const ValueKey('private-app-invite-close'),
+                      glyph: RaftGlyph.x,
+                      tooltip: tr('Go to Raft'),
+                      semanticLabel: tr('Go to Raft'),
+                      onPressed: onClose,
                       uiSize: RaftButtonSize.iconSm,
                       uiVariant: RaftButtonVariant.ghost,
-                      onPressed: onRetry,
                     ),
-                  RaftButton(
-                    key: const ValueKey('private-app-invite-close'),
-                    glyph: RaftGlyph.x,
-                    tooltip: tr('Go to Raft'),
-                    semanticLabel: tr('Go to Raft'),
-                    onPressed: onClose,
-                    uiSize: RaftButtonSize.iconSm,
-                    uiVariant: RaftButtonVariant.ghost,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
