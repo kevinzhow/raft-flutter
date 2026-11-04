@@ -27,7 +27,9 @@ import 'features/incoming_share_picker.dart';
 import 'features/incoming_share_review.dart';
 import 'data/raft_navigation_history.dart';
 import 'features/app_root_router.dart';
+import 'features/app_viewport.dart';
 import 'features/community_join.dart';
+import 'features/chinese_community.dart';
 import 'features/invite_accept_view.dart';
 import 'features/server_invite_home.dart';
 import 'features/private_app_invite.dart';
@@ -42,7 +44,6 @@ import 'features/private_route_guard.dart';
 import 'platform/auth_audit_log.dart';
 import 'platform/memory_release.dart';
 import 'platform/session_store.dart';
-import 'platform/keyboard_inset_guard.dart';
 import 'platform/launch_theme.dart';
 import 'platform/linux_uri_scheme.dart';
 import 'platform/session_persistence.dart';
@@ -51,9 +52,8 @@ import 'platform/native_sharing.dart';
 import 'platform/ios_share_session.dart';
 import 'platform/incoming_share_staging.dart';
 import 'platform/content_coordinator.dart';
+import 'platform/content_links.dart';
 import 'platform/workspace_cache.dart';
-import 'platform/desktop_title_bar.dart';
-import 'platform/system_bars.dart';
 import 'platform/system_fonts.dart';
 import 'platform/app_services.dart';
 import 'platform/app_window.dart';
@@ -223,6 +223,12 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     NativeSystemFonts.instance.addListener(rebuildRoot);
     appearance.addListener(rebuildRoot);
     removeShareReceiver = sharing.registerReceiver(receiveSharedContent);
+    content.onPrivateAppInvite = (location) async {
+      // The Router first consumes its initial platform route. A queued native
+      // entry must land afterwards rather than be replaced by that old route.
+      await WidgetsBinding.instance.endOfFrame;
+      if (mounted) await receiveAppLocation(location);
+    };
     content.onIncomingShare = () => unawaited(sharing.resume());
     content.onForegroundChanged = syncWorkspaceForeground;
     // The few fixed words of a system notification (the unread count) follow
@@ -929,6 +935,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   String get serverMemoryKey =>
       'raft.server-surface.${Uri.encodeComponent(origin)}.${client?.user?.id}';
 
+  bool get showingStandalonePage =>
+      PrivateAppInviteLink.parse(requestedLocation, origin) != null ||
+      requestedLocation.path == chineseCommunityPagePath;
+
   Future<void> discoverServers() async {
     final w = workspace, c = client;
     if (w == null || c?.user == null) return;
@@ -960,7 +970,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       w.notifyListeners();
       final prefs = await SharedPreferences.getInstance();
       if (!current()) return;
-      if (PrivateAppInviteLink.parse(requestedLocation, origin) != null) {
+      if (showingStandalonePage) {
         showServerSelector = true;
         rebuildRoot();
         return;
@@ -988,6 +998,13 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       } else if (explicit && isAutoJoinCommunitySlug(slug)) {
         showServerSelector = true;
         await joinCommunityFromRoute(slug!, current);
+      } else if (explicit && isChineseCommunitySlug(slug) && publicDismissed) {
+        await receiveAppLocation(
+          Uri(
+            path: chineseCommunityPagePath,
+            queryParameters: {'from': 'direct-community-route'},
+          ),
+        );
       } else {
         showServerSelector = true;
         // A slug this account has no server for opens its public page first;
@@ -1291,7 +1308,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         chooserReturn = null;
       }
       content.bindWorkspace(null);
-      if (deniedSlug == null) appRouter.publish(Uri(path: '/'));
+      if (deniedSlug == null && !showingStandalonePage) {
+        appRouter.publish(Uri(path: '/'));
+      }
     } else if (!showServerSelector && w.server != null) {
       final remember = serverSurfaces[w.server!.id] != w.location.uri;
       serverSurfaces[w.server!.id] = w.location.uri;
@@ -1367,7 +1386,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       return;
     }
     final appInvite = PrivateAppInviteLink.parse(location, origin);
-    if (appInvite != null) {
+    if (appInvite != null || location.path == chineseCommunityPagePath) {
       if (!showServerSelector) {
         chooserReturn = workspace?.navigation.location.uri;
       }
@@ -1377,7 +1396,13 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       selectingServer = false;
       serverSwitchLocation = serverSwitchReturn = null;
       joiningCommunitySlug = communityAttempt = null;
-      requestedLocation = appInvite.location;
+      // An HTTPS invite keeps its coordinator binding while session restore
+      // may still replace the default API origin with the saved one.
+      requestedLocation =
+          appInvite != null &&
+              (!location.hasScheme || location.scheme == 'raft')
+          ? appInvite.location
+          : location;
       showServerSelector = true;
       workspace?.setForeground(false);
       content.bindWorkspace(null);
@@ -1397,7 +1422,11 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     publicDismissed = false;
     serverSwitchLocation = serverSwitchReturn = null;
     final w = workspace;
-    if (w == null || directoryLoading) return;
+    if (w == null || directoryLoading) {
+      appRouter.publish(location);
+      rebuildRoot();
+      return;
+    }
     if (location.path == '/' || location.path == '/servers') {
       openServerSelector();
       appRouter.publish(location);
@@ -1434,7 +1463,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   }
 
   Future<bool> returnFromSelector() async {
-    if (PrivateAppInviteLink.parse(requestedLocation, origin) != null) {
+    if (showingStandalonePage) {
       rootRequest++;
       requestedLocation = Uri(path: '/');
       if (chooserReturn == null) {
@@ -1720,6 +1749,14 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   Widget sessionHome() {
     scheduleShares();
     final active = client;
+    if (requestedLocation.path == chineseCommunityPagePath) {
+      return ChineseCommunityPage(
+        fallbackConfigUrl: ContentLinks.originFor(origin)
+            .resolve(chineseCommunityQrFallbackPath)
+            .toString(),
+        onClose: () => unawaited(returnFromSelector()),
+      );
+    }
     if (restoreFailure != null && !signInInstead && active?.user == null) {
       workspaceRootInputs = null;
       return SessionRecoveryView(
@@ -2090,6 +2127,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     NativeSystemFonts.instance.removeListener(rebuildRoot);
     appearance.removeListener(rebuildRoot);
     appearance.dispose();
+    content.onPrivateAppInvite = null;
     unawaited(content.dispose());
     AttachmentHttp.close();
     sessionEvents?.cancel();
@@ -2151,40 +2189,16 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
               services: widget.services,
               ownsAppUpdate: widget.ownsAppUpdate,
               session: (client, workspace),
-              child: RaftTextScaling(
-                child: RepaintBoundary(
-                  key: raftScreenshotKey,
-                  child: DesktopTitleBar(
-                    integrated:
-                        workspace?.server != null &&
-                        !showServerSelector &&
-                        WorkspaceHostScope.showsTopBar(context),
-                    workspace: workspace,
-                    child: RaftTooltipProvider(
-                      delay: const Duration(milliseconds: 600),
-                      child: RaftViewportBreakpointScope(
-                        // Resolves the theme's font combinations once the app is idle.
-                        child: RaftFontWarmUpScope(
-                          child: RaftSystemBars(
-                            child: RaftErrorScope(
-                              format: raftAppErrorFormatter,
-                              child: RaftToastHost(
-                                child: KeyboardInsetGuard(
-                                  imeVisible: platformImeVisibility,
-                                  child: PrivateAppInviteScope(
-                                    coordinator: origin,
-                                    onOpen: receiveAppLocation,
-                                    child: child!,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              child: buildAppViewport(
+                screenshotKey: raftScreenshotKey,
+                workspace: workspace,
+                integrated:
+                    workspace?.server != null &&
+                    !showServerSelector &&
+                    WorkspaceHostScope.showsTopBar(context),
+                coordinator: origin,
+                openLocation: receiveAppLocation,
+                child: child!,
               ),
             ),
           ),

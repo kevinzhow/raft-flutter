@@ -43071,6 +43071,12 @@
         ],
         "owner": "Choice9 design-system alignment",
         "reason": "SDK Widget Preview for the public-only variant of the existing Appearance family; no network, account mutation or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/app_viewport.dart#function:buildAppViewport": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Mechanical extraction of the existing app-root viewport scope chain. Account, navigation and update-service ownership stay in the Root; this grants no style exemption or visual acceptance."
       }
     },
     "entries": {

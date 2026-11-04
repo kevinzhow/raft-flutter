@@ -13924,18 +13924,22 @@
    "status": "covered",
    "webEntry": "Settings > Language & Region > Display language select + Save",
    "gate": "",
-   "flutterEntry": "locale_settings_page.dart language card; account_settings.dart 'Display language' action",
+   "flutterEntry": "locale_settings_page.dart signed-in language card; public_language_settings.dart anonymous device-only UI language; display_language_preferences.dart resolves account/device/system priority",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/locale_settings_page.dart",
      "needle": "class LocaleSettingsPage"
     },
     {
-     "file": "apps/raft_flutter/lib/features/account_settings.dart",
-     "needle": "account-display-language"
+     "file": "apps/raft_flutter/lib/features/public_language_settings.dart",
+     "needle": "displayLanguage"
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/display_language_preferences.dart",
+     "needle": "class DisplayLanguagePreferences"
     }
    ],
-   "justification": "",
+   "justification": "The two shipped UI languages remain English and Simplified Chinese. Anonymous selection and device persistence are implemented without account writes; disk upgrade and interaction regressions pass.",
    "impact": "",
    "size": ""
   },
@@ -15729,14 +15733,23 @@
    "area": "public-guest",
    "capability": "Signed-out visitors get an Appearance tab on the public page",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "PublicServerPage getPublicPersonalSettingsTabIds (appearance for everyone)",
    "gate": "",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "",
-   "impact": "A signed-out visitor cannot change the theme from the public page (the app follows the device).",
-   "size": "S"
+   "flutterEntry": "public_server_settings.dart Appearance uses the shared RaftAppearanceSection; DeviceDisplayPreferences owns the device-only appearance and UI language",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/public_server_settings.dart",
+     "needle": "'appearance'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/device_display_preferences.dart",
+     "needle": "class DeviceDisplayPreferences"
+    }
+   ],
+   "justification": "Anonymous choices persist on this device without account PATCH requests. Public Appearance hides workspace-only controls. Widget interaction and disk upgrade regressions pass; native and paired Web visual acceptance are pending.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -15795,7 +15808,7 @@
    "status": "covered",
    "webEntry": "PublicServerPage settings surface with settingsScope account-and-resources",
    "gate": "signed-in non-member of a public server",
-   "flutterEntry": "public_server_settings.dart publicSettingsDestinations(): Personal (Account, Language & Region only where the server offers translation, Appearance) and Resources (About, Documentation, Feedback, Release Notes) for a signed-in non-member; Language & Region (local choices) and About + Documentation signed out",
+   "flutterEntry": "public_server_settings.dart publicSettingsDestinations(): anonymous Appearance plus device-local Language & Region when translation is enabled; signed-in nonmembers also get Account, Feedback and Release Notes, using the existing shared pages",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/public_server_settings.dart",
@@ -15806,7 +15819,7 @@
      "needle": "PublicServerSettings("
     }
    ],
-   "justification": "",
+   "justification": "Anonymous display-language selection persists locally; an explicit account display language takes precedence on sign-in without copying device choices to the account. The translation availability gate is preserved.",
    "impact": "",
    "size": ""
   },
@@ -15985,14 +15998,18 @@
    "status": "covered",
    "webEntry": "pages/ChineseCommunityPage.tsx (Help menu > Chinese community)",
    "gate": "",
-   "flutterEntry": "chinese_community.dart ChineseCommunityPage: QR config from the static host, the Web app copy as fallback",
+   "flutterEntry": "chinese_community.dart ChineseCommunityPage loads the static QR configuration with the Web-app-origin fallback; app_root.dart mounts /community/chinese as a public standalone route",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/chinese_community.dart",
      "needle": "chineseCommunityQrConfigUrl"
+    },
+    {
+     "file": "apps/raft_flutter/lib/app_root.dart",
+     "needle": "requestedLocation.path == chineseCommunityPagePath"
     }
    ],
-   "justification": "",
+   "justification": "Direct public route and Back behavior are covered by actual RaftApp integration tests. Existing QR refresh and fallback behavior is reused.",
    "impact": "",
    "size": ""
   },
@@ -16405,18 +16422,18 @@
    "status": "covered",
    "webEntry": "i18n/locale.ts SUPPORTED_LOCALES [en, zh-cn], LOCALE_LABELS, LocaleProvider.tsx, Settings > Language & Region 'Display language'",
    "gate": "",
-   "flutterEntry": "account_settings.dart displayLanguage select (auto, en, zh-cn); app_root.dart displayLocale() with supportedLocales [en, zh-CN]",
+   "flutterEntry": "display_language_preferences.dart resolves explicit account language, local UI language, then device locale; app_root.dart listens to DeviceDisplayPreferences before rendering public and authenticated surfaces",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/account_settings.dart",
-     "needle": "'zh-cn': '简体中文'"
+     "file": "apps/raft_flutter/lib/data/display_language_preferences.dart",
+     "needle": "Locale resolve("
     },
     {
      "file": "apps/raft_flutter/lib/app_root.dart",
      "needle": "supportedLocales: const [Locale('en'), Locale('zh', 'CN')]"
     }
    ],
-   "justification": "Same two locales on both clients. Web ?lang= override and html lang switching are browser mechanics. No RTL on either side.",
+   "justification": "Anonymous UI language is stored under the existing slock.displayLanguage key. An explicit account preference wins after sign-in and neither fallback resolution nor anonymous selection PATCHes the account. The browser-only query override and html lang attribute do not apply to native windows. Native and paired Web visual acceptance are pending.",
    "impact": "",
    "size": ""
   },
@@ -16783,8 +16800,8 @@
    "status": "covered",
    "webEntry": "App.tsx route /community/chinese -> pages/ChineseCommunityPage.tsx; LeftRail.tsx openCommunity -> shouldShowChineseCommunityEntry (utils/communityServers.ts)",
    "gate": "Browser language starts with zh",
-   "flutterEntry": "chinese_community.dart communityHelpEntry: a Chinese display language opens the QR page from the Help menu (workspace and public page)",
-   "justification": "Web also redirects a direct /s/community-cn link to the page when the server is not joined; the app has no such deep-link branch yet. Analytics (community_cn_qr_page_view) is not sent.",
+   "flutterEntry": "chinese_community.dart Help entry and public /community/chinese route; app_root.dart follows public-page-first /s/community-cn resolution and redirects an authenticated nonmember after an unavailable public page",
+   "justification": "Joined users keep the ordinary server workspace; anonymous users retain the public-page/auth fallback. The direct QR utility is public and returns through Root navigation. Eight actual account-entry integration cases pass, including native invite routing alongside this branch. Analytics (community_cn_qr_page_view) is not emitted. OS association and paired Web visual acceptance remain separate, unverified gates.",
    "impact": "",
    "size": "",
    "flutterRefs": [
@@ -16793,8 +16810,8 @@
      "needle": "communityHelpEntry"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chinese_community.dart",
-     "needle": "showChineseCommunityPage"
+     "file": "apps/raft_flutter/lib/app_root.dart",
+     "needle": "isChineseCommunitySlug(slug) && publicDismissed"
     }
    ]
   },
@@ -17337,14 +17354,14 @@
    "status": "covered",
    "webEntry": "LeftRail help menu (shouldShowChineseCommunityEntry -> ChineseCommunityPage with QR)",
    "gate": "browser prefers Chinese",
-   "flutterEntry": "chinese_community.dart ChineseCommunityPage",
+   "flutterEntry": "chinese_community.dart ChineseCommunityPage, reachable from the Chinese-language Help entry and the public /community/chinese route",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/chinese_community.dart",
      "needle": "class ChineseCommunityPage"
     }
    ],
-   "justification": "",
+   "justification": "The existing Help entry stays language-gated. A direct public route does not require sign-in; an authenticated nonmember /s/community-cn fallback opens it after the public server page is unavailable, matching Web routing order.",
    "impact": "",
    "size": ""
   },

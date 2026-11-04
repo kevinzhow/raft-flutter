@@ -17,6 +17,7 @@ const chineseCommunityQrConfigUrl =
 
 /// `CHINESE_COMMUNITY_QR_FALLBACK_CONFIG_PATH`: served by the Web app itself.
 const chineseCommunityQrFallbackPath = '/community/chinese-qr.json';
+const chineseCommunityPagePath = '/community/chinese';
 
 /// `shouldShowChineseCommunityEntry(displayLocale)`: a Chinese display language.
 bool showChineseCommunityEntry(BuildContext context) =>
@@ -141,7 +142,7 @@ Future<Object?> _fetchJson(String url) async {
 Future<void> showChineseCommunityPage(BuildContext context, String apiOrigin) =>
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute<void>(
-        settings: const RouteSettings(name: '/community/chinese'),
+        settings: const RouteSettings(name: chineseCommunityPagePath),
         // Web reads the fallback by a path relative to the app's own origin.
         builder: (_) => ChineseCommunityPage(
           fallbackConfigUrl: ContentLinks.originFor(apiOrigin)
@@ -159,6 +160,7 @@ class ChineseCommunityPage extends StatefulWidget {
     this.fetch = _fetchJson,
     this.now,
     this.imageBuilder,
+    this.onClose,
   });
 
   /// The primary configuration (`getChineseCommunityQrConfigUrl`).
@@ -168,6 +170,7 @@ class ChineseCommunityPage extends StatefulWidget {
   final String fallbackConfigUrl;
   final ChineseCommunityFetch fetch;
   final DateTime Function()? now;
+  final VoidCallback? onClose;
 
   /// Builds the QR picture; [onError] reports a picture that failed to load.
   final Widget Function(String url, VoidCallback onError)? imageBuilder;
@@ -281,7 +284,15 @@ class _ChineseCommunityPageState extends State<ChineseCommunityPage> {
             });
           })
         : null;
-    void close() => Navigator.of(context).maybePop();
+    void close() {
+      final onClose = widget.onClose;
+      if (onClose == null) {
+        Navigator.of(context).maybePop();
+      } else {
+        onClose();
+      }
+    }
+
     return Title(
       // useBrowserDocumentTitle(pages.chineseCommunity.title)
       title: raftText(context, 'Scan the QR code to join'),

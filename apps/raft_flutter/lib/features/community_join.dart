@@ -10,6 +10,11 @@ import 'private_route_guard.dart';
 /// The default community server (utils/communityServers.ts).
 const communityServerSlug = 'community';
 
+/// Web's Chinese community landing page; it never starts the join flow.
+const chineseCommunityServerSlug = 'community-cn';
+
+bool isChineseCommunitySlug(String? slug) => slug == chineseCommunityServerSlug;
+
 /// `/s/<slug>` of a community server the app joins on arrival (Web
 /// ServerResolver: `community`; `community-cn` opens a separate page there).
 bool isAutoJoinCommunitySlug(String? slug) => slug == communityServerSlug;
