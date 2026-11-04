@@ -35,6 +35,15 @@ class RaftAttachmentCommentState extends ChangeNotifier {
   /// whether the location was found (Web `jumpToAnchor`).
   bool Function(RaftCommentAnchor anchor)? jumpHandler;
 
+  Future<bool> Function(RaftCommentAnchor anchor)? asyncJumpHandler;
+
+  /// Native renderers acknowledge the location before a sheet folds. Other
+  /// preview families keep their synchronous jump contract.
+  Future<bool> jumpAsync(RaftCommentAnchor anchor) async {
+    final handler = asyncJumpHandler;
+    return handler == null ? jump(anchor) : await handler(anchor);
+  }
+
   /// Live document position; never persisted in the anchor.
   num? Function(RaftCommentAnchor anchor)? orderHandler;
 
@@ -61,10 +70,19 @@ class RaftAttachmentCommentState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearAnchor() {
+  /// Retiring a renderer drops its data immediately. During a widget rebuild
+  /// the sibling panel hears that change after the current frame, so notifying
+  /// its inherited scope cannot invalidate the tree being built or disposed.
+  void clearAnchor({bool afterFrame = false}) {
     if (_pending == null) return;
     _pending = null;
-    notifyListeners();
+    if (afterFrame) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (hasListeners) notifyListeners();
+      });
+    } else {
+      notifyListeners();
+    }
   }
 
   bool jump(RaftCommentAnchor anchor) => jumpHandler?.call(anchor) ?? false;

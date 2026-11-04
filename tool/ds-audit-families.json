@@ -513,6 +513,29 @@
           "role": "public_api"
         }
       }
+    },
+    "htmlRegionComments": {
+      "canonical": [
+        "RaftHtmlRegionCommentSurface",
+        "RaftHtmlRegionHint",
+        "RaftHtmlRegionMarker"
+      ],
+      "deprecated": {},
+      "note": "Host-owned region capture, instruction and flash parts of Web HtmlPreviewBody at db5e399. Geometry is supplied by a native host facade; uploaded HTML receives no app bridge. Generated semantic tokens and existing dashed-border primitive supply paint. Registration is not visual or native acceptance.",
+      "canonicalBindings": {
+        "RaftHtmlRegionCommentSurface": {
+          "declarationId": "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionCommentSurface",
+          "role": "public_api"
+        },
+        "RaftHtmlRegionHint": {
+          "declarationId": "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionHint",
+          "role": "paint_part"
+        },
+        "RaftHtmlRegionMarker": {
+          "declarationId": "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionMarker",
+          "role": "paint_part"
+        }
+      }
     }
   },
   "recipes": {

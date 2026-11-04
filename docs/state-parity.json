@@ -43375,6 +43375,139 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/attachment_html_preview.dart#method:_HtmlPreviewState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 HTML region comments",
+        "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/attachment_html_preview.dart#method:_HtmlPreviewState.nativePreview": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 HTML region comments",
+        "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
+      },
+      "packages/raft_ui/lib/html_region_comment_previews.dart#class:_Preview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 HTML region comments",
+        "reason": "Interactive SDK fixture with a deterministic geometry facade; native renderer and Web visual acceptance remain separate."
+      },
+      "packages/raft_ui/lib/html_region_comment_previews.dart#class:_PreviewState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 HTML region comments",
+        "reason": "Interactive SDK fixture with a deterministic geometry facade; native renderer and Web visual acceptance remain separate."
+      },
+      "packages/raft_ui/lib/html_region_comment_previews.dart#function:htmlRegionCommentPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 HTML region comments",
+        "reason": "Interactive SDK fixture with a deterministic geometry facade; native renderer and Web visual acceptance remain separate."
+      },
+      "packages/raft_ui/lib/html_region_comment_previews.dart#method:_Preview.createState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 HTML region comments",
+        "reason": "Interactive SDK fixture with a deterministic geometry facade; native renderer and Web visual acceptance remain separate."
+      },
+      "packages/raft_ui/lib/html_region_comment_previews.dart#method:_PreviewState.build": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 HTML region comments",
+        "reason": "Interactive SDK fixture with a deterministic geometry facade; native renderer and Web visual acceptance remain separate."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionCommentSurface": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Canonical host-owned Web HTML region comment part; token-based shared UI, not a page override. Native/Web verification remains pending."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionHint": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Canonical host-owned Web HTML region comment part; token-based shared UI, not a page override. Native/Web verification remains pending."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionMarker": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Canonical host-owned Web HTML region comment part; token-based shared UI, not a page override. Native/Web verification remains pending."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#class:_HtmlRegionState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#class:_RegionPainter": {
+        "role": "internal_part",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Private clipped painter owned only by the canonical HTML marker; its dashed border delegates to the existing primitive.",
+        "delegatesTo": [
+          "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionMarker"
+        ]
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#method:RaftHtmlRegionCommentSurface.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#method:RaftHtmlRegionHint.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#method:RaftHtmlRegionMarker.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#method:_HtmlRegionState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#method:_HtmlRegionState.didChangeDependencies": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
+      },
+      "packages/raft_ui/lib/src/html_region_comments.dart#method:_HtmlRegionState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "task299 HTML region comments",
+        "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
       }
     },
     "entries": {

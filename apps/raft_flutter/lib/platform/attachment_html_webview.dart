@@ -12,6 +12,7 @@ import 'package:webview_flutter_android/src/android_webkit.g.dart'
 
 import 'attachment_html_webview_data.dart';
 import 'attachment_html_desktop.dart';
+import 'attachment_html_geometry.dart';
 import 'attachment_html_webview_events.dart';
 
 export 'attachment_html_webview_events.dart';
@@ -46,6 +47,7 @@ class _AttachmentHtmlWebViewState extends State<AttachmentHtmlWebView> {
   late final WebViewController controller;
   static final blank = Uri.parse('about:blank').toString();
   late final AttachmentHtmlWebData data;
+  late final AttachmentHtmlGeometryController geometry;
   bool loadedReported = false, closed = false;
 
   @override
@@ -79,6 +81,7 @@ class _AttachmentHtmlWebViewState extends State<AttachmentHtmlWebView> {
           onPageFinished: (_) {
             if (closed || loadedReported) return;
             loadedReported = true;
+            widget.events.onGeometryReady?.call(geometry);
             widget.events.onLoaded();
           },
           onHttpError: (error) {
@@ -113,6 +116,12 @@ class _AttachmentHtmlWebViewState extends State<AttachmentHtmlWebView> {
       unawaited(android.setAllowFileAccess(false));
       unawaited(android.setAllowContentAccess(false));
     }
+    geometry = AttachmentHtmlGeometryController(
+      uri: widget.uri,
+      evaluate: controller.runJavaScriptReturningResult,
+      currentUri: () async => Uri.tryParse(await controller.currentUrl() ?? ''),
+      allowed: () => !closed && loadedReported,
+    );
     data =
         widget.dataFor?.call(controller) ?? attachmentHtmlWebData(controller);
     unawaited(start());
@@ -140,6 +149,7 @@ class _AttachmentHtmlWebViewState extends State<AttachmentHtmlWebView> {
     // when about:blank replaces it. The delegate (closed) lets only that one
     // navigation through and ignores every later event of the old page.
     closed = true;
+    geometry.dispose();
     unawaited(
       controller
           .loadRequest(Uri.parse(blank))

@@ -217,9 +217,12 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
   /// A comment's anchor card: show its location in the preview. On the phone
   /// sheet the panel then folds away so the flash is visible (Web
   /// `onAnchorJump`).
-  void jump(Map anchor) {
+  Future<void> jump(Map anchor) async {
     final session = RaftAttachmentCommentScope.read(context);
-    if (session == null || !session.jump(Map<String, dynamic>.from(anchor))) {
+    final owner = w, id = widget.attachmentId, revision = binding;
+    if (session == null ||
+        !await session.jumpAsync(Map<String, dynamic>.from(anchor)) ||
+        !accepts(owner, id, revision)) {
       return;
     }
     final sheet = widget.sheet;

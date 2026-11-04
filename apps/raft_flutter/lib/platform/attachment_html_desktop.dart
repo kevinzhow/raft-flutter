@@ -6,6 +6,7 @@ import 'package:flutter_inappwebview_linux/flutter_inappwebview_linux.dart';
 import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 
 import 'attachment_html_desktop_environment.dart';
+import 'attachment_html_geometry.dart';
 import 'attachment_html_desktop_policy.dart';
 import 'attachment_html_webview_events.dart';
 
@@ -39,7 +40,20 @@ class DesktopAttachmentHtmlWebView extends StatefulWidget {
 }
 
 class _DesktopHtmlState extends State<DesktopAttachmentHtmlWebView> {
-  late final policy = DesktopHtmlPolicy(widget.uri, widget.events);
+  late final policy = DesktopHtmlPolicy(
+    widget.uri,
+    AttachmentHtmlWebViewEvents(
+      onNavigation: widget.events.onNavigation,
+      onFailed: widget.events.onFailed,
+      onProgress: widget.events.onProgress,
+      onLoaded: () {
+        final current = geometry;
+        if (current != null) widget.events.onGeometryReady?.call(current);
+        widget.events.onLoaded();
+      },
+    ),
+  );
+  AttachmentHtmlGeometryController? geometry;
   DesktopHtmlEnvironment? environment;
   PlatformInAppWebViewWidget? view;
   PlatformInAppWebViewController? controller;
@@ -92,6 +106,13 @@ class _DesktopHtmlState extends State<DesktopAttachmentHtmlWebView> {
         }
       }
       if (policy.closed) return;
+      geometry = AttachmentHtmlGeometryController(
+        uri: widget.uri,
+        evaluate: (source) => value.evaluateJavascript(source: source),
+        currentUri: () async =>
+            Uri.tryParse((await value.getUrl())?.toString() ?? ''),
+        allowed: () => !policy.closed && policy.loaded,
+      );
       widget.onControllerCreated?.call(value);
       policy.started = true;
       await value.loadUrl(
@@ -123,6 +144,7 @@ class _DesktopHtmlState extends State<DesktopAttachmentHtmlWebView> {
   @override
   void dispose() {
     policy.closed = true;
+    geometry?.dispose();
     unawaited(close());
     super.dispose();
   }

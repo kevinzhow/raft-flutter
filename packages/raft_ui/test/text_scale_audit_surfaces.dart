@@ -36,6 +36,7 @@ import 'package:raft_ui/dropdown_viewport_previews.dart';
 import 'package:raft_ui/elegant_navigation_previews.dart';
 import 'package:raft_ui/hover_card_previews.dart';
 import 'package:raft_ui/html_previews.dart';
+import 'package:raft_ui/html_region_comment_previews.dart';
 import 'package:raft_ui/inline_badge_previews.dart';
 import 'package:raft_ui/inline_thread_surface_previews.dart';
 import 'package:raft_ui/legacy_input_previews.dart';
@@ -646,6 +647,13 @@ final auditSurfaces = <AuditSurface>[
     'Mounted channel unread, mute and draft states',
     sidebarUnreadIndicatorsPreview,
     Size(390, 240),
+  ),
+  AuditSurface(
+    'htmlRegionCommentPreview',
+    'HTML region comment capture',
+    htmlRegionCommentPreview,
+    Size(856, 944),
+    representative: true,
   ),
   AuditSurface(
     'markdownSectionCommentsPreview',

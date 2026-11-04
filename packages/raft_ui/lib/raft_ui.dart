@@ -53,6 +53,8 @@ export 'src/markdown_outline.dart';
 export 'src/preview_unavailable.dart';
 export 'src/markdown_blocks.dart' show raftSplitMarkdownBlocks;
 export 'src/html_preview.dart';
+export 'src/html_region_geometry.dart';
+export 'src/html_region_comments.dart';
 export 'src/raft_selection_area.dart' show RaftSelectionArea;
 export 'src/text_selection_toolbar.dart';
 export 'src/thread_replies.dart';

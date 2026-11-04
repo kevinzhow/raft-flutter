@@ -17,6 +17,8 @@ class FakeWebView extends WebViewPlatform {
   static String? shown;
   static final _history = <String>[];
   static int backCalls = 0;
+  static Future<Object> Function(String source)? evaluate;
+  static final scripts = <String>[];
 
   static void _show(String url) {
     if (_history.isEmpty || _history.last != url) _history.add(url);
@@ -38,6 +40,8 @@ class FakeWebView extends WebViewPlatform {
     shown = null;
     _history.clear();
     backCalls = 0;
+    evaluate = null;
+    scripts.clear();
     javaScriptMode = null;
     cleared.clear();
     _onNavigationRequest = null;
@@ -135,6 +139,12 @@ class _Controller extends PlatformWebViewController {
   @override
   Future<String?> currentUrl() async => FakeWebView.shown;
   @override
+  Future<Object> runJavaScriptReturningResult(String source) async {
+    FakeWebView.scripts.add(source);
+    return FakeWebView.evaluate?.call(source) ?? '{}';
+  }
+
+  @override
   Future<void> clearLocalStorage() async =>
       FakeWebView.cleared.add('localStorage');
   @override
@@ -162,6 +172,8 @@ class _Delegate extends PlatformNavigationDelegate {
   @override
   Future<void> setOnUrlChange(UrlChangeCallback callback) async =>
       FakeWebView._onUrlChange = callback;
+  @override
+  Future<void> setOnHttpError(HttpResponseErrorCallback callback) async {}
   @override
   Future<void> setOnProgress(ProgressCallback callback) async {}
   @override

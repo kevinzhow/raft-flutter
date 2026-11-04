@@ -14,6 +14,7 @@ import '../platform/attachment_html.dart';
 import '../platform/attachment_html_webview.dart';
 import 'attachment_comments_flag.dart';
 import 'attachment_comments_view.dart';
+import 'management_support.dart' show pageIdentity, cachedServerFlag;
 
 class HtmlAttachmentPreviewDialog extends StatefulWidget {
   const HtmlAttachmentPreviewDialog({
@@ -53,11 +54,20 @@ class HtmlAttachmentPreviewDialog extends StatefulWidget {
 
 class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   late final loader = widget.loader ?? AttachmentHtmlLoader();
+  late Object source = identity;
+  int request = 0;
+  Object get identity => (
+    widget.controller,
+    pageIdentity(widget.controller),
+    widget.controller.client.origin,
+    widget.metadata['id'],
+  );
   CancelToken cancel = CancelToken();
   // ignore: raft_lints/avoid_imperative_notice_state -- Preview error: cleared by load()/interactive() and scope loss; link errors are NOT cleared by a later successful link (see inv-a.md, other agent owns the file).
   String? html, error;
   Uri? webUri;
   bool loading = true, opening = false, pageLoading = false;
+  RaftHtmlRegionController? geometry;
 
   /// What the loading stage draws: bytes of the static download, or the
   /// WebView's page-load percent. Waiting (connecting) until the first update.
@@ -69,7 +79,12 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   /// Failures that Retry cannot fix, and whether the browser can still help.
   bool retryable = true, browserOffered = true;
   bool get webView => widget.useWebView ?? attachmentHtmlWebViewSupported;
-  bool get current => mounted && widget.authorized();
+  bool get current => mounted && source == identity && widget.authorized();
+  bool accepts(int ticket) => current && ticket == request;
+  bool get commentsEnabled =>
+      current &&
+      gate.enabled &&
+      cachedServerFlag(widget.controller, attachmentCommentsFlag) == true;
   @override
   void initState() {
     super.initState();
@@ -80,7 +95,29 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   }
 
   /// Attachment comments exist only while the server has them on.
-  late final gate = AttachmentCommentsGate.of(widget.controller);
+  late AttachmentCommentsGate gate = AttachmentCommentsGate.of(
+    widget.controller,
+  );
+
+  @override
+  void didUpdateWidget(HtmlAttachmentPreviewDialog old) {
+    super.didUpdateWidget(old);
+    if (old.controller != widget.controller) {
+      old.controller.removeListener(scopeChanged);
+      gate.removeListener(gateChanged);
+      gate = AttachmentCommentsGate.of(widget.controller)
+        ..addListener(gateChanged);
+      widget.controller.addListener(scopeChanged);
+      unawaited(gate.ensure());
+    }
+    if (source != identity) {
+      source = identity;
+      unawaited(gate.ensure());
+      unawaited(load());
+    } else if (!widget.authorized()) {
+      scopeChanged();
+    }
+  }
 
   void gateChanged() {
     if (mounted) setState(() {});
@@ -88,7 +125,9 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
 
   void scopeChanged() {
     if (current) return;
+    request++;
     cancel.cancel();
+    geometry = null;
     if (mounted) {
       setState(() {
         html = null;
@@ -103,11 +142,12 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   }
 
   Future<Uri?> resolve() async {
+    final ticket = request;
     if (!current) return null;
     final data = await widget.controller.query(
       '/attachments/${widget.metadata['id']}/html-preview-url',
     );
-    if (!current || data is! Map || data['url'] is! String) return null;
+    if (!accepts(ticket) || data is! Map || data['url'] is! String) return null;
     return attachmentHtmlPreviewUri(
       data['url'],
       widget.controller.client.origin,
@@ -117,6 +157,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
 
   Future<void> load() async {
     if (!current) return;
+    final ticket = ++request;
     cancel.cancel();
     cancel = CancelToken();
     setState(() {
@@ -124,6 +165,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
       error = null;
       html = null;
       webUri = null;
+      geometry = null;
       retryable = browserOffered = true;
       pageLoading = false;
     });
@@ -134,14 +176,14 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
         // A document already opened on this device shows from the cache: no
         // preview-URL request and no download.
         final stored = await storedSource();
-        if (!current) return;
+        if (!accepts(ticket)) return;
         if (stored != null) {
-          await showSource(stored);
+          await showSource(stored, ticket);
           return;
         }
       }
       final uri = await resolve();
-      if (uri == null || !current) return;
+      if (uri == null || !accepts(ticket)) return;
       if (webView) {
         // The WebView cannot read response headers, so the pinned sandbox is
         // verified on a fresh request first; the document's own CSP then
@@ -149,9 +191,9 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
         final isolated = await loader.verify(
           uri,
           cancel: cancel,
-          authorized: () => current,
+          authorized: () => accepts(ticket),
         );
-        if (!current) return;
+        if (!accepts(ticket)) return;
         if (!isolated) throw const AttachmentHtmlNotIsolated();
         setState(() {
           webUri = uri;
@@ -162,26 +204,28 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
       final source = await loader.load(
         uri,
         cancel: cancel,
-        authorized: () => current,
-        onProgress: byteProgress,
+        authorized: () => accepts(ticket),
+        onProgress: (received, total) {
+          if (accepts(ticket)) byteProgress(received, total);
+        },
       );
-      if (source != null && current) {
+      if (source != null && accepts(ticket)) {
         unawaited(storeSource(source));
-        await showSource(source);
+        await showSource(source, ticket);
       }
     } catch (e) {
-      if (current) fail(e);
+      if (accepts(ticket)) fail(e);
     } finally {
-      if (current) setState(() => loading = false);
+      if (accepts(ticket)) setState(() => loading = false);
     }
   }
 
-  Future<void> showSource(String source) async {
+  Future<void> showSource(String source, int ticket) async {
     // Parsing a multi-megabyte document must not block frames.
     final text = source.length > 256 * 1024
         ? await sanitizeOffThread(source)
         : raftStaticHtml(source);
-    if (current) setState(() => html = text);
+    if (accepts(ticket)) setState(() => html = text);
   }
 
   /// Only a document that passed the sandbox check is ever stored, so a hit
@@ -278,6 +322,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
       browserOffered = browser;
       html = null;
       webUri = null;
+      geometry = null;
       pageLoading = false;
     });
   }
@@ -376,7 +421,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
     onClose: widget.onClose,
     onDownload: current ? widget.onDownload : null,
     onShare: current ? widget.onShare : null,
-    commentsBuilder: current && gate.enabled && widget.metadata['id'] is String
+    commentsBuilder: commentsEnabled && widget.metadata['id'] is String
         ? (_, sheet) => AttachmentCommentsView(
             controller: widget.controller,
             attachmentId: widget.metadata['id'] as String,
@@ -391,30 +436,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
           errorLine(context),
         Expanded(
           child: webUri != null
-              ? Stack(
-                  children: [
-                    Positioned.fill(
-                      child: (widget.webViewBuilder ?? webViewBuilder)(
-                        context,
-                        webUri!,
-                        AttachmentHtmlWebViewEvents(
-                          onNavigation: webNavigation,
-                          onLoaded: () {
-                            if (current) setState(() => pageLoading = false);
-                          },
-                          onProgress: pageProgress,
-                          onFailed: (_) {
-                            if (current) {
-                              fail(const _WebViewFailure());
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                    if (pageLoading)
-                      Positioned.fill(child: transferStage(context)),
-                  ],
-                )
+              ? nativePreview(context)
               : loading
               ? transferStage(context)
               : html == null
@@ -463,6 +485,42 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
     ),
   );
 
+  Widget nativePreview(BuildContext context) {
+    final uri = webUri!, ticket = request;
+    bool live() => accepts(ticket) && webUri == uri;
+    return RaftHtmlRegionCommentSurface(
+      key: ValueKey((uri, ticket)),
+      controller: geometry,
+      enabled: commentsEnabled && !pageLoading,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: (widget.webViewBuilder ?? webViewBuilder)(
+              context,
+              uri,
+              AttachmentHtmlWebViewEvents(
+                onGeometryReady: (value) {
+                  if (live()) setState(() => geometry = value);
+                },
+                onNavigation: (url) => live() && webNavigation(url),
+                onLoaded: () {
+                  if (live()) setState(() => pageLoading = false);
+                },
+                onProgress: (percent) {
+                  if (live()) pageProgress(percent);
+                },
+                onFailed: (_) {
+                  if (live()) fail(const _WebViewFailure());
+                },
+              ),
+            ),
+          ),
+          if (pageLoading) Positioned.fill(child: transferStage(context)),
+        ],
+      ),
+    );
+  }
+
   /// The same file transfer panel as the other previews, with Cancel closing
   /// the preview. Opaque, so it also covers the WebView while the page loads.
   Widget transferStage(BuildContext context) {
@@ -492,7 +550,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
     BuildContext context,
     Uri uri,
     AttachmentHtmlWebViewEvents events,
-  ) => AttachmentHtmlWebView(uri: uri, events: events);
+  ) => AttachmentHtmlWebView(key: ValueKey(uri), uri: uri, events: events);
 }
 
 /// The platform WebView could not show the page itself.
