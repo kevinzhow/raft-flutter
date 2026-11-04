@@ -71,7 +71,8 @@ def build_identity(environment):
               'stagerSha256': sha256(HERE / 'stage.py'),
               'libwpePinsSha256': sha256(HERE / 'libwpe-pins.json'),
               'fetcherSha256': sha256(HERE / 'fetch_libwpe.py'),
-              'buildResourceCheckSha256': sha256(HERE / 'build_resources.sh')}
+              'buildResourceCheckSha256': sha256(HERE / 'build_resources.sh'),
+              'privateBuildDepsToolSha256': sha256(HERE / 'build_deps.py')}
     key = hashlib.sha256(json.dumps(inputs, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     return {**inputs, 'key': key}
 
@@ -214,6 +215,9 @@ def worker():
     from .archives import Store, authenticate
     packages_index, apt_proof = authenticate()
     store = Store('/opt/raft-html-sdk-debs', work / 'authenticated-packages', packages_index, apt_proof)
+    from .build_deps import prepare as prepare_build_deps
+    build_env = prepare_build_deps(store, work)
+    environment['privateBuildDepsSha256'] = sha256(work / 'private-build-deps.json')
     archive_inputs = [{k: v for k, v in item.items() if k != 'archive'}
                       for _, item in sorted(store.records.items())]
     json_file(work / 'package-archives.json', archive_inputs)
@@ -222,11 +226,11 @@ def worker():
     json_file(work / 'build-inputs.json', identity)
     source = work / 'prepared' / 'wpewebkit-2.54.2'
     build_dir = work / 'build'
-    logged(work, 'configure', configure_command(source, build_dir, backtrace), 300)
+    logged(work, 'configure', configure_command(source, build_dir, backtrace), 300, env=build_env)
     validate_config((build_dir / 'cmakeconfig.h').read_text())
     if sha256(build_dir / 'cmakeconfig.h') != EXPECTED_CONFIG_SHA256:
         raise ValueError('Configured feature fingerprint differs; review drift before compiling')
-    logged(work, 'compile', ['ninja', '-C', str(build_dir), '-j2', *TARGETS], request['limitSeconds'])
+    logged(work, 'compile', ['ninja', '-C', str(build_dir), '-j2', *TARGETS], request['limitSeconds'], env=build_env)
     command, additions = install_command(build_dir, work / 'install')
     logged(work, 'install', command, 120, env={**os.environ, **additions})
     from .stage import stage

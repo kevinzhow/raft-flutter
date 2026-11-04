@@ -327,6 +327,16 @@ The source-defined builder is `tool/html_webview/Dockerfile`. It starts from a
 fixed Ubuntu 24.04 image digest and uses signed Noble repositories. Within that
 private image it applies current Noble security updates, installs the declared
 build/development packages, and preserves exact package archives and APT metadata.
+JPEG development files are explicit dependencies. Upstream's video configure
+check also requests GStreamer MPEG-TS development files even when the separate
+MPEG-TS feature is OFF. The builder downloads only the two signed bad-plugin
+support development/runtime archives; the worker extracts them to a private
+build prefix and rewrites their PC prefix. It does not install bad-dev's unrelated
+OpenCV dependency tree or enable extra runtime plugins. Actual archive hashes and
+the private prefix inventory are retained with the SDK. Runtime staging follows
+actual DT_NEEDED; no private support library may be labelled as WebKit source or
+satisfied through an arbitrary host fallback.
+
 Clang 18.1.3 and the reviewed GCC13 backtrace headers/archive are checked again by
 the worker. Two compatible libwpe archives are separately pinned in
 `libwpe-pins.json` and extracted rather than installed over Ubuntu. These operations
