@@ -13939,7 +13939,7 @@
      "needle": "class DisplayLanguagePreferences"
     }
    ],
-   "justification": "The two shipped UI languages remain English and Simplified Chinese. Anonymous selection and device persistence are implemented without account writes; disk upgrade and interaction regressions pass.",
+   "justification": "The two shipped UI languages remain English and Simplified Chinese. Anonymous selection persists on this device without account writes; account language takes precedence after sign-in.",
    "impact": "",
    "size": ""
   },
@@ -15747,7 +15747,7 @@
      "needle": "class DeviceDisplayPreferences"
     }
    ],
-   "justification": "Anonymous choices persist on this device without account PATCH requests. Public Appearance hides workspace-only controls. Widget interaction and disk upgrade regressions pass; native and paired Web visual acceptance are pending.",
+   "justification": "Anonymous choices persist on this device without account PATCH requests. Public Appearance hides workspace-only controls. Native and paired Web visual acceptance remain separate gates.",
    "impact": "",
    "size": ""
   },
@@ -16009,7 +16009,7 @@
      "needle": "requestedLocation.path == chineseCommunityPagePath"
     }
    ],
-   "justification": "Direct public route and Back behavior are covered by actual RaftApp integration tests. Existing QR refresh and fallback behavior is reused.",
+   "justification": "The public standalone route reuses the existing QR refresh, fallback and close behavior.",
    "impact": "",
    "size": ""
   },
@@ -16801,7 +16801,7 @@
    "webEntry": "App.tsx route /community/chinese -> pages/ChineseCommunityPage.tsx; LeftRail.tsx openCommunity -> shouldShowChineseCommunityEntry (utils/communityServers.ts)",
    "gate": "Browser language starts with zh",
    "flutterEntry": "chinese_community.dart Help entry and public /community/chinese route; app_root.dart follows public-page-first /s/community-cn resolution and redirects an authenticated nonmember after an unavailable public page",
-   "justification": "Joined users keep the ordinary server workspace; anonymous users retain the public-page/auth fallback. The direct QR utility is public and returns through Root navigation. Eight actual account-entry integration cases pass, including native invite routing alongside this branch. Analytics (community_cn_qr_page_view) is not emitted. OS association and paired Web visual acceptance remain separate, unverified gates.",
+   "justification": "Joined users keep the ordinary server workspace; anonymous users retain the public-page/auth fallback. The direct QR utility is public and returns through Root navigation. Analytics (community_cn_qr_page_view) is not emitted. OS association and visual acceptance remain separate gates.",
    "impact": "",
    "size": "",
    "flutterRefs": [
