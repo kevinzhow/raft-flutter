@@ -511,7 +511,7 @@
      "needle": "class ClipboardFileProvider"
     }
    ],
-   "justification": "Actual production selection, Generate Image, Copy image, review close and independent native receivers pass on Linux X11, native Wayland under nested Weston, and Android API36 x86_64. Full PNG bytes match after the Dart review buffer is zeroed. Clipboard replacement, native decoder failure preserving prior text, and recovery retry were exercised. Android read grants, write rejection, producer restart, replacement revocation, expiry deletion and the 64 MiB admission limit were verified. Existing macOS/iOS/Windows pasteboard paths are unchanged and were not rerun; physical Wayland/KWin and persistence after producer exit are not claimed.",
+   "justification": "Markdown copy and reviewed-PNG copy use their existing selection actions. Linux uses GTK image ownership; Android exposes a read-only leased content URI through the existing FileProvider. Existing macOS/iOS/Windows pasteboard paths are unchanged. Capability failures preserve the previous clipboard and expose Download/retry. Persistence after producer exit depends on the system clipboard manager and is not guaranteed.",
    "impact": "",
    "size": ""
   },
@@ -1711,7 +1711,7 @@
      "needle": "class ClipboardFileProvider"
     }
    ],
-   "justification": "Actual production selection, Generate Image, Copy image, review close and independent native receivers pass on Linux X11, native Wayland under nested Weston, and Android API36 x86_64. Full PNG bytes match after the Dart review buffer is zeroed. Clipboard replacement, native decoder failure preserving prior text, and recovery retry were exercised. Android read grants, write rejection, producer restart, replacement revocation, expiry deletion and the 64 MiB admission limit were verified. Existing macOS/iOS/Windows pasteboard paths are unchanged and were not rerun; physical Wayland/KWin and persistence after producer exit are not claimed.",
+   "justification": "Linux uses GTK-owned PNG bytes; Android uses a read-only leased FileProvider URI, replacement revocation, a 24-hour lifetime and a 64 MiB admission cap. Existing macOS/iOS/Windows pasteboard paths are unchanged. The review may close without invalidating the copied bytes; native copy failure leaves the previous clipboard and exposes Download/retry. Persistence after producer exit is not guaranteed.",
    "impact": "",
    "size": ""
   },
@@ -11429,7 +11429,7 @@
      "needle": "class RaftHtmlRegionCommentSurface"
     }
    ],
-   "justification": "Markdown section and HTML region capture, Remove Anchor without draft loss, exact existing POST payload, stored Web-shaped jump/flash, ordering and account/server/flag/renderer retirement are implemented and pass targeted production-widget and protocol regressions. HTML geometry uses bounded host-to-document evaluation with no document-to-App bridge. Actual native HTML overlay hit-testing, real DOM geometry, Web/Flutter visual comparison and service cross-client round trips remain pending; fake adapters and deterministic DOM tests do not establish those results.",
+   "justification": "Markdown section and HTML region capture, Remove Anchor without draft loss, existing POST payload, stored Web-shaped jump/flash, ordering and authority retirement are implemented. HTML geometry uses bounded host-to-document evaluation without a document-to-App bridge. Native HTML overlay/DOM geometry, paired visual alignment and service cross-client round trips remain pending.",
    "impact": "Native renderer and cross-client comment acceptance remain pending.",
    "size": "M"
   },
@@ -11588,7 +11588,7 @@
      "needle": "class RaftHtmlRegionCommentSurface"
     }
    ],
-   "justification": "Markdown section and HTML region capture, Remove Anchor without draft loss, exact existing POST payload, stored Web-shaped jump/flash, ordering and account/server/flag/renderer retirement are implemented and pass targeted production-widget and protocol regressions. HTML geometry uses bounded host-to-document evaluation with no document-to-App bridge. Actual native HTML overlay hit-testing, real DOM geometry, Web/Flutter visual comparison and service cross-client round trips remain pending; fake adapters and deterministic DOM tests do not establish those results.",
+   "justification": "Text, row, video, Markdown section and fine-pointer HTML region owners feed the existing comment composer. Stored anchors retain document ordering and jump/flash; Remove Anchor retains the draft. HTML geometry uses bounded host-to-document evaluation without an App bridge. Native renderer and cross-client acceptance remain pending.",
    "impact": "Native renderer and cross-client comment acceptance remain pending.",
    "size": "M"
   },
@@ -11704,7 +11704,7 @@
      "needle": "WebViewPlatform.instance != null"
     }
    ],
-   "justification": "Windows WebView2 navigation, real gesture-only external-link routing, script-navigation rejection, no App bridge/storage/network escape, and ephemeral profile cleanup passed actual isolated native acceptance. Linux WPE source/runtime packaging and sandbox relocation are implemented, but the authenticated engine build and native runtime acceptance are still in progress. Authenticated ArtifactViewer capability remains separate from the untrusted isolated HTML renderer.",
+   "justification": "Windows uses isolated ephemeral WebView2 with user-gesture-only external-link mediation. Linux uses sandboxed WPE with contained runtime paths, but its packaged engine and native runtime acceptance remain in progress. Authenticated ArtifactViewer capability stays separate from this untrusted HTML renderer.",
    "impact": "Linux interactive HTML cannot be called delivered until the actual packaged engine and native preview pass acceptance.",
    "size": "M"
   },
