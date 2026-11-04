@@ -1,4 +1,7 @@
 #include "shared_egl_termination.h"
+#ifdef RAFT_MULTIWINDOW_QA
+#include <cstdio>
+#endif
 
 SharedEglTermination* SharedEglTermination::owner_ = nullptr;
 SharedEglTermination::Terminate SharedEglTermination::retired_forward_ = nullptr;
@@ -40,6 +43,10 @@ unsigned int SharedEglTermination::Dispatch(Display display) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (owner_ && owner_->installed_ && display == owner_->display_) {
       ++owner_->deferred_;
+#ifdef RAFT_MULTIWINDOW_QA
+      std::fprintf(stderr, "RAFT_EGL_LIFETIME event=defer display=%p live=%zu deferred=%zu\n",
+                   display, owner_->live_engines_, owner_->deferred_);
+#endif
       return 1;  // EGL_TRUE; the application still owns the live display.
     }
     forward = owner_ ? owner_->original_ : retired_forward_;
@@ -67,6 +74,10 @@ bool SharedEglTermination::Release() {
     complete = live_engines_ == 0 && *dispatch_ == Dispatch;
     // Never leave our callback installed, and never overwrite another owner.
     if (*dispatch_ == Dispatch) *dispatch_ = previous_;
+#ifdef RAFT_MULTIWINDOW_QA
+    std::fprintf(stderr, "RAFT_EGL_LIFETIME event=restore_dispatch restored=%d live=%zu deferred=%zu complete=%d\n",
+                 *dispatch_ == previous_, live_engines_, deferred_, complete);
+#endif
     retired_forward_ = original_;
     owner_ = nullptr;
     installed_ = false;
@@ -79,6 +90,10 @@ bool SharedEglTermination::Release() {
     const bool success = terminate(display) != 0;
     std::lock_guard<std::mutex> lock(mutex_);
     terminated_ = success ? 1 : 0;
+#ifdef RAFT_MULTIWINDOW_QA
+    std::fprintf(stderr, "RAFT_EGL_LIFETIME event=terminate display=%p success=%d count=%zu live=%zu\n",
+                 display, success, terminated_, live_engines_);
+#endif
     return success;
   }
   return complete;

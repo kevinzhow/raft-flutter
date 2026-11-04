@@ -9,9 +9,27 @@
 #endif
 
 #include "shared_egl_termination.h"
+#ifdef RAFT_MULTIWINDOW_QA
+#include <cstdio>
+#endif
 
 namespace {
 SharedEglTermination lifetime;
+#ifdef RAFT_MULTIWINDOW_QA
+EGLDisplay observed_display = EGL_NO_DISPLAY;
+PFNEGLDESTROYCONTEXTPROC previous_destroy = nullptr;
+PFNEGLDESTROYCONTEXTPROC actual_destroy = nullptr;
+size_t destroyed_contexts = 0;
+EGLBoolean observe_context_destroy(EGLDisplay display, EGLContext context) {
+  const EGLBoolean result = actual_destroy(display, context);
+  if (display == observed_display) {
+    if (result == EGL_TRUE) ++destroyed_contexts;
+    std::fprintf(stderr, "RAFT_EGL_LIFETIME event=context_destroy display=%p context=%p success=%d count=%zu\n",
+                 display, context, result == EGL_TRUE, destroyed_contexts);
+  }
+  return result;
+}
+#endif
 
 // GDK keeps its own thread-local current-context bookkeeping. Restore that AND
 // the actual EGL binding, which may belong to Flutter rather than to GDK.
@@ -48,6 +66,13 @@ class CurrentContext {
                eglGetCurrentSurface(EGL_DRAW) == draw_ &&
                eglGetCurrentSurface(EGL_READ) == read_ &&
                eglQueryAPI() == api_ && gdk_gl_context_get_current() == gdk_;
+#ifdef RAFT_MULTIWINDOW_QA
+    std::fprintf(stderr, "RAFT_EGL_LIFETIME event=context_restore success=%d oldDisplay=%p currentDisplay=%p oldContext=%p currentContext=%p oldDraw=%p currentDraw=%p oldRead=%p currentRead=%p oldAPI=%u currentAPI=%u oldGdk=%p currentGdk=%p\n",
+                 success_, display_, eglGetCurrentDisplay(), context_, eglGetCurrentContext(),
+                 draw_, eglGetCurrentSurface(EGL_DRAW), read_, eglGetCurrentSurface(EGL_READ),
+                 api_, eglQueryAPI(), static_cast<void*>(gdk_),
+                 static_cast<void*>(gdk_gl_context_get_current()));
+#endif
     return success_;
   }
  private:
@@ -83,8 +108,18 @@ void raft_shared_egl_watch_engine(FlEngine* engine) {
   if (g_object_get_data(G_OBJECT(engine), "raft-egl-observed")) return;
   g_object_set_data(G_OBJECT(engine), "raft-egl-observed", GINT_TO_POINTER(1));
   lifetime.EngineAdded();
-  g_object_weak_ref(G_OBJECT(engine), [](gpointer, GObject*) {
+#ifdef RAFT_MULTIWINDOW_QA
+  std::fprintf(stderr, "RAFT_EGL_LIFETIME event=engine_added engine=%p live=%zu\n",
+               static_cast<void*>(engine), lifetime.live_engines());
+#endif
+  g_object_weak_ref(G_OBJECT(engine), [](gpointer, GObject* object) {
     lifetime.EngineRemoved();
+#ifdef RAFT_MULTIWINDOW_QA
+    std::fprintf(stderr, "RAFT_EGL_LIFETIME event=engine_finalized engine=%p live=%zu\n",
+                 static_cast<void*>(object), lifetime.live_engines());
+#else
+    (void)object;
+#endif
   }, nullptr);
 }
 
@@ -104,6 +139,11 @@ bool raft_shared_egl_prepare_open(GtkWindow* window) {
   // Compare a realized GTK context's actual handle with the exact lookup used
   // by pinned Flutter3.47's FlOpenGLManager, not just the native display name.
   const EGLDisplay actual_engine_display = engine_display(gdk_display_get_default());
+#ifdef RAFT_MULTIWINDOW_QA
+  std::fprintf(stderr, "RAFT_EGL_LIFETIME event=display_compare gtk=%p engineLookup=%p match=%d\n",
+               actual_gtk_display, actual_engine_display,
+               actual_gtk_display != EGL_NO_DISPLAY && actual_gtk_display == actual_engine_display);
+#endif
   if (actual_gtk_display == EGL_NO_DISPLAY ||
       actual_gtk_display != actual_engine_display) return false;
   // Some implementations already count initialization references. Leave their
@@ -122,7 +162,32 @@ bool raft_shared_egl_prepare_open(GtkWindow* window) {
   g_clear_object(&probe);
   if (installed) return lifetime.Matches(actual_gtk_display);
   installed = lifetime.Install(actual_gtk_display, &epoxy_eglTerminate, terminate);
+#ifdef RAFT_MULTIWINDOW_QA
+  if (installed && !actual_destroy) {
+    actual_destroy = reinterpret_cast<PFNEGLDESTROYCONTEXTPROC>(eglGetProcAddress("eglDestroyContext"));
+    if (actual_destroy) {
+      observed_display = actual_gtk_display;
+      previous_destroy = epoxy_eglDestroyContext;
+      epoxy_eglDestroyContext = observe_context_destroy;
+    }
+  }
+  std::fprintf(stderr, "RAFT_EGL_LIFETIME event=installed success=%d contextObserver=%d live=%zu\n",
+               installed, actual_destroy != nullptr, lifetime.live_engines());
+#endif
   return installed;
 }
 
-bool raft_shared_egl_release() { return lifetime.Release(); }
+bool raft_shared_egl_release() {
+#ifdef RAFT_MULTIWINDOW_QA
+  if (epoxy_eglDestroyContext == observe_context_destroy) {
+    epoxy_eglDestroyContext = previous_destroy;
+  }
+#endif
+  const bool success = lifetime.Release();
+#ifdef RAFT_MULTIWINDOW_QA
+  std::fprintf(stderr, "RAFT_EGL_LIFETIME event=released success=%d live=%zu deferred=%zu terminateCount=%zu contextDestroyCount=%zu ready=%d\n",
+               success, lifetime.live_engines(), lifetime.deferred(), lifetime.terminated(),
+               destroyed_contexts, lifetime.Ready());
+#endif
+  return success;
+}

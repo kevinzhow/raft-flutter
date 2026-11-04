@@ -1,6 +1,7 @@
 """Small production-policy executable. No window, display, engine or account."""
 from pathlib import Path
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -37,6 +38,24 @@ class LinuxEglLifetime(unittest.TestCase):
         self.assertIn('gdk_gl_context_make_current(gdk_)', source)
         self.assertIn('eglMakeCurrent(display_, draw_, read_, context_)', source)
         self.assertNotIn('g_object_ref(engine)', source)
+
+    def test_qa_dispatch_observation_contains_only_native_metadata(self):
+        with tempfile.TemporaryDirectory(prefix='raft-egl-qa-policy-') as folder:
+            executable = str(Path(folder) / 'policy')
+            subprocess.run([
+                os.environ.get('CXX', 'c++'), '-std=c++17', '-Wall', '-Wextra',
+                '-Werror', '-pthread', '-DRAFT_MULTIWINDOW_QA=1', '-I' + str(RUNNER),
+                str(ROOT / 'tool/tests/linux_egl_termination.cc'),
+                str(RUNNER / 'shared_egl_termination.cc'), '-o', executable,
+            ], check=True, capture_output=True, text=True, timeout=30)
+            result = subprocess.run([executable], capture_output=True, text=True, timeout=5)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            events = result.stderr.splitlines()
+            self.assertTrue(events)
+            for line in events:
+                self.assertRegex(line, re.compile(
+                    r'^RAFT_EGL_LIFETIME event=[a-z_]+(?: [A-Za-z]+=(?:0x[0-9a-f]+|[0-9]+))*$'))
+            self.assertTrue(any('event=terminate' in line and 'count=1 live=0' in line for line in events))
 
 
 if __name__ == '__main__':
