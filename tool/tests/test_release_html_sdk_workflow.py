@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
 import textwrap
@@ -94,6 +95,25 @@ class ReleaseHtmlSdkWorkflowTests(unittest.TestCase):
             self.assertIn("github.event_name != 'push' || needs.prepare-release.result == 'success'", text)
             self.assertIn('uses: ./.github/workflows/release-platform.yml', text)
             self.assertIn("publish: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}", text)
+
+    def test_both_noble_consumers_execute_noble_media_preparation(self):
+        block = re.search(r'      - name: Install Linux build and media dependencies\n'
+                          r'.*?        run: \|\n(.*?)(?=      - name:)',
+                          self.consumer, re.S).group(1)
+        for platform in ['linux', 'appimage']:
+            with self.subTest(platform=platform), tempfile.TemporaryDirectory() as temp:
+                directory = Path(temp)
+                calls = directory / 'calls'
+                for name in ['sudo', 'python']:
+                    stub = directory / name
+                    stub.write_text('#!/bin/sh\nprintf "%s %s\\n" "${0##*/}" "$*" >> "$QA_CALLS"\n')
+                    stub.chmod(0o755)
+                body = textwrap.dedent(block).replace('${{ inputs.platform }}', platform)
+                subprocess.run(['/bin/bash', '-eu', '-c', body], check=True,
+                               env={'PATH': f'{directory}:/usr/bin:/bin', 'QA_CALLS': str(calls)})
+                media = [line for line in calls.read_text().splitlines()
+                         if line.startswith('python tool/prepare-media')]
+                self.assertEqual(media, ['python tool/prepare-media-appimage'])
 
     def test_actual_job_conditions_do_not_skip_independent_platforms_when_sdk_fails(self):
         states = ['success', 'failure', 'cancelled', 'skipped']

@@ -251,7 +251,8 @@ def linux_package(stage, suffix=''):
         desktop.write_text(desktop.read_text().replace('Exec=raft_flutter %u', 'Exec=run-raft %u'))
         instructions_path = stage / 'RUN.txt'
         instructions_path.write_text(instructions_path.read_text().replace(
-            'Run ./raft_flutter', 'Run ./run-raft').replace('put raft_flutter on PATH', 'put run-raft on PATH'))
+            'Run ./raft_flutter', 'Run ./run-raft').replace('put raft_flutter on PATH', 'put run-raft on PATH').replace(
+            'Ubuntu 26.04 x86_64', 'Ubuntu 24.04 x86_64'))
         with (stage / 'RUN.txt').open('a') as instructions:
             instructions.write('Use ./run-raft to select the matching HTML TLS/media modules. '
                                'Embedded HTML requires the distribution-installed bubblewrap package at /usr/bin/bwrap. '
