@@ -62,10 +62,14 @@ def inventory(prefix):
                       (HERE.parents[1] / 'packaging/appimage/excludelist').read_text().splitlines()
                       if line.split('#')[0].strip()}
     host_libraries = (host_libraries | {'libGLESv2.so.2', 'libvulkan.so.1'}) - {'libjack.so.0'}
+    host_stems = {name.split('.so', 1)[0] for name in host_libraries}
     for path in sorted(prefix.rglob('*')):
         relative = path.relative_to(prefix).as_posix()
         if relative == MANIFEST:
             continue
+        if (path.name == 'bwrap' or ('.so' in path.name and path.name.split('.so', 1)[0] in host_stems)
+                or re.search(r'(?:_dri\.so|^libvulkan_|^lib.*nvidia|^lib(?:EGL|GLX)_mesa)', path.name)):
+            raise ValueError(f'System sandbox/base library must not be bundled: {relative}')
         mode = path.lstat().st_mode
         if stat.S_ISLNK(mode):
             target = os.readlink(path)
@@ -76,8 +80,6 @@ def inventory(prefix):
         elif stat.S_ISDIR(mode):
             continue
         elif stat.S_ISREG(mode) and not mode & 0o6022:
-            if path.name == 'bwrap' or path.name in host_libraries:
-                raise ValueError(f'System sandbox/base library must not be bundled: {relative}')
             result[relative] = {'sha256': sha256(path), 'size': path.stat().st_size,
                                 'mode': stat.S_IMODE(mode)}
         else:

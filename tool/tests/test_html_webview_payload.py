@@ -144,7 +144,8 @@ class HtmlPayloadTests(unittest.TestCase):
             payload.check_layout(self.sdk)
 
     def test_bundle_cannot_import_host_base_libraries_or_relocated_bwrap(self):
-        for name in ['bwrap', 'libc.so.6', 'ld-linux-x86-64.so.2']:
+        for name in ['bwrap', 'libc.so.6', 'ld-linux-x86-64.so.2', 'libstdc++.so.6.0.33',
+                     'radeonsi_dri.so', 'libvulkan_radeon.so']:
             path = self.sdk / 'lib' / name
             path.write_text('forbidden')
             path.chmod(0o644)
@@ -161,6 +162,14 @@ class HtmlPayloadTests(unittest.TestCase):
         (self.sdk / payload.METADATA / 'packages.json').write_text('{}')
         with self.assertRaisesRegex(ValueError, 'source provenance'):
             payload.check_layout(self.sdk)
+
+    def test_system_library_or_bwrap_alias_cannot_bypass_inventory_rejection(self):
+        for name in ['bwrap', 'libstdc++.so.6', 'ld-linux-x86-64.so.2']:
+            link = self.sdk / 'lib' / name
+            link.symlink_to('libWPEWebKit-2.0.so.1')
+            with self.assertRaisesRegex(ValueError, 'must not be bundled'):
+                payload.inventory(self.sdk)
+            link.unlink()
 
     def test_merge_materializes_library_aliases_and_keeps_sdk_bytes(self):
         (self.sdk / payload.MANIFEST).unlink()
