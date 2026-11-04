@@ -270,3 +270,39 @@ retain the original default until they explicitly disable file access.
 `python3 -m unittest tool.tests.test_linux_html_plugin` verifies hash rejection,
 cache preservation and the actual original/patched native chooser callback
 against external API test doubles. Actual UI acceptance remains separate.
+
+### Linux Dart input ordering
+
+The pinned plugin awaits native focus during pointer Down. Its original Up,
+Cancel and Move callbacks can overtake that await, losing a quick first click.
+`linux_pointer.py` adds one FIFO around the existing callbacks and retains the
+focus-before-Down requirement. A failed focus drops that incomplete gesture;
+the next Down can retry. Disposal releases the wait and prevents queued or late
+callbacks from sending input. This adapter does not change WebKit gesture policy.
+
+The normal dependency preparation step materializes the official Pub archive
+as a private path dependency, before `pub get`:
+
+```sh
+python3 -m tool.html_webview.linux_pointer --download \
+  --archive .dart_tool/raft_plugin_sources/flutter_inappwebview_linux-0.1.0-beta.1.tar.gz \
+  --destination .dart_tool/raft_plugins/flutter_inappwebview_linux
+```
+
+The archive is fixed to SHA256
+`2e1a3b09bb911fb5a8bb155cb7f1eb1428a19b6e20363b9db48beef428b8cef5`.
+Only `lib/src/in_app_webview/custom_platform_view.dart` changes; the generated
+receipt hashes all 214 original and output files and their modes. Existing output
+must match exactly, including the adapter identity. Drift is preserved and rejected,
+never repaired in place. Offline preparation can use the same verified archive
+without `--download`. The shared Pub cache and package_config are never patched.
+
+Use Pub's supported root workspace `dependency_overrides` path to the generated
+directory. Launcher and CI preparation must run before resolving that path; the
+preparer itself does not edit the workspace manifest, lockfile or package graph.
+The CMake native adapter still applies to its separate build copy.
+
+`linux_html_pointer_test.dart` exercises the actual plugin widget through delayed
+MethodChannel test doubles, including mouse/touch order, Cancel, already-focused
+input, failure recovery and disposal. It proves callback ordering, not native
+WebKit click delivery; real first-click acceptance remains required separately.
