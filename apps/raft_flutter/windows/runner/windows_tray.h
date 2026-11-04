@@ -21,7 +21,8 @@ class WindowsTray {
   ~WindowsTray();
   std::optional<LRESULT> HandleMessage(UINT message, WPARAM wparam, LPARAM lparam);
   void PrepareExit(int64_t request_id, const char* reason, WindowsExit::Reply reply);
-  void MarkQuitting() { quitting_ = true; }
+  void SetQuitting(bool value) { quitting_ = value; }
+  bool WillHideOnClose() const { return close_to_tray_ && available_; }
 
  private:
   bool AddIcon();

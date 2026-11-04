@@ -1,3 +1,5 @@
+import 'desktop_cache_scope.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -135,7 +137,12 @@ class VideoCache {
   static Future<Directory> _root() async =>
       debugRoot ??
       Directory(
-        p.join((await getApplicationCacheDirectory()).path, 'raft-video'),
+        p.join(
+          (await (DesktopCacheScope.directory('media') ??
+                  getApplicationCacheDirectory()))
+              .path,
+          'raft-video',
+        ),
       );
 
   /// The folder of [account]'s cache (may not exist yet).

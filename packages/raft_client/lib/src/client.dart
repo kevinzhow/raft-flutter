@@ -18,6 +18,7 @@ import 'proxy/transport_stub.dart'
 import 'session_policy.dart';
 
 part 'channel_read_dispatch.dart';
+part 'shared_session.dart';
 
 abstract interface class SessionStore {
   Future<Session?> read(String origin);
@@ -295,6 +296,7 @@ class RaftClient {
     RateLimitGovernor? governor,
     Future<void> Function(Duration)? sleep,
     this.timezoneProbe,
+    this.sharedSessionAuthority,
   }) : governor = governor ?? RateLimitGovernor(),
        _sleep = sleep ?? ((d) => Future<void>.delayed(d)),
        origin = origin.replaceFirst(RegExp(r'/$'), ''),
@@ -307,6 +309,9 @@ class RaftClient {
              ),
            ) {
     http.options.baseUrl = '${this.origin}/api';
+    _sharedSubscription = sharedSessionAuthority?.changes.listen(
+      _acceptSharedSession,
+    );
     // Every Dio interceptor costs the request an event-loop turn, so the
     // counter is attached only when a tool or test asked for it before the
     // client was built.
@@ -359,6 +364,10 @@ class RaftClient {
   final String origin;
   final String clientKind;
   final SessionStore sessionStore;
+  final SharedSessionAuthority? sharedSessionAuthority;
+  StreamSubscription<SharedSessionSnapshot?>? _sharedSubscription;
+  SharedSessionSnapshot? _sharedSnapshot;
+  bool _sharedRevoked = false;
 
   /// Receives a structured, token-free record of every sign-out and every
   /// credential failure that kept the session.
@@ -444,6 +453,7 @@ class RaftClient {
   }
 
   Future<void> _persist(Session? expected) {
+    if (sharedSessionAuthority != null) return Future<void>.value();
     _persisting++;
     final pending = _persistence.catchError((Object _) {}).then((_) async {
       try {
@@ -483,6 +493,9 @@ class RaftClient {
     Future<void>? credentialsReady,
     void Function(bool cached)? onLocalSession,
   }) async {
+    if (sharedSessionAuthority != null) {
+      return _restoreSharedSession(cachedFirst, onLocalSession);
+    }
     final authentication = ++_authenticationGeneration;
     _generation++;
     lastEndReason = null;
@@ -900,6 +913,11 @@ class RaftClient {
     Future<Session?>? revocationSession,
     required bool revoke,
   }) async {
+    if (sharedSessionAuthority case final authority?) {
+      _retireSharedSession();
+      await authority.end(lastEndReason ?? SessionEndReason.userRequested);
+      return;
+    }
     final old = _session;
     _recoveryTimer?.cancel();
     _recoveryTimer = null;
@@ -1023,6 +1041,12 @@ class RaftClient {
   }
 
   Future<void> reloadUser() async {
+    if (sharedSessionAuthority case final authority?) {
+      final next = await authority.synchronizeUser();
+      if (!_acceptSharedSession(next))
+        throw const RaftApiException.staleScope();
+      return;
+    }
     final next = RaftRecord(Map<String, dynamic>.from(await get('/auth/me')));
     final s = _session;
     if (s == null) return;
@@ -1193,7 +1217,7 @@ class RaftClient {
     final level = priority ?? RaftClient.currentPriority;
     final scoped = currentRequestHeaders;
     if (scoped.isNotEmpty) headers = {...scoped, ...?headers};
-    Future<dynamic> send() => _sendPaced(
+    Future<dynamic> transmit() => _sendPaced(
       method,
       path,
       data: data,
@@ -1208,6 +1232,18 @@ class RaftClient {
       workspaceScoped: workspaceScoped,
       priority: level,
     );
+    Future<dynamic> send() {
+      if (!authorized || sharedSessionAuthority == null) return transmit();
+      final authentication = _authenticationGeneration, workspace = _generation;
+      return _ensureSharedSession().then((_) {
+        if (authentication != _authenticationGeneration ||
+            workspaceScoped && workspace != _generation) {
+          throw const RaftApiException.staleScope();
+        }
+        return transmit();
+      });
+    }
+
     // Identical reads share one request only where the caller says it is
     // safe ([runShared]): the client cannot see the caller's authority (role,
     // channel membership, ...), and a read started after such a change must
@@ -1552,6 +1588,12 @@ class RaftClient {
   }
 
   Future<void> refresh() async {
+    if (sharedSessionAuthority != null) {
+      await (_refreshing ??= _refreshSharedSession().whenComplete(
+        () => _refreshing = null,
+      ));
+      return;
+    }
     final authentication = _authenticationGeneration;
     final before = _session;
     // Rotation is the only step that must not overlap a guest's rotation:
@@ -1715,6 +1757,7 @@ class RaftClient {
   void _authenticateSocket(void Function(Map) callback) async {
     final generation = _generation;
     try {
+      if (sharedSessionAuthority != null) await _ensureSharedSession();
       // A device clock that is ahead makes every token look expired: do not
       // rotate on each socket handshake because of it.
       final last = _lastRotatedAt;
@@ -2034,6 +2077,7 @@ class RaftClient {
 
   Future<void> _dispose() async {
     _closed = true;
+    unawaited(_sharedSubscription?.cancel());
     _generation++;
     _authenticationGeneration++;
     _session = null;

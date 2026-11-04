@@ -4,6 +4,8 @@ import 'package:raft_client/raft_client.dart' show RaftClient;
 import 'package:raft_ui/raft_ui.dart' show RaftLinkScope;
 
 import '../data/local_error_diagnostics.dart';
+import '../data/workspace_cache.dart';
+import 'desktop_window_exit.dart';
 import '../features/custom_protocol_link.dart';
 import '../data/workspace_controller.dart' show WorkspaceController;
 import '../features/human_login.dart' show humanLoginFor;
@@ -11,6 +13,7 @@ import '../features/human_login_scope.dart';
 
 import 'app_update.dart';
 import 'local_network_access.dart';
+import 'desktop_windows.dart';
 
 /// Stable application services. Account and server state have their own owners.
 @immutable
@@ -18,15 +21,19 @@ class AppServices {
   const AppServices.withUpdates(
     AppUpdateService update, {
     this.localNetwork = const LocalNetworkAccess(),
+    this.desktopWindows,
   }) : appUpdate = update;
 
   /// Explicit opt-out for isolated component tests and previews.
   const AppServices.updatesDisabledForTestOrPreview({
     this.localNetwork = const LocalNetworkAccess(),
+    this.desktopWindows,
   }) : appUpdate = null;
 
   final AppUpdateService? appUpdate;
   final LocalNetworkAccess localNetwork;
+  final DesktopWindows? desktopWindows;
+  bool get isSecondaryWindow => desktopWindows?.isChild == true;
 }
 
 /// Place above Navigator so routes, dialogs and overlays share the same values.
@@ -60,7 +67,8 @@ class AppServicesScope extends InheritedWidget {
   @override
   bool updateShouldNotify(AppServicesScope oldWidget) =>
       !identical(services.appUpdate, oldWidget.services.appUpdate) ||
-      !identical(services.localNetwork, oldWidget.services.localNetwork);
+      !identical(services.localNetwork, oldWidget.services.localNetwork) ||
+      !identical(services.desktopWindows, oldWidget.services.desktopWindows);
 }
 
 /// The root may own the update service; borrowed roots and pages never release it.
@@ -70,6 +78,9 @@ class AppServicesHost extends StatefulWidget {
     required this.services,
     this.ownsAppUpdate = false,
     this.session,
+    this.onLogout,
+    this.cache,
+    this.navigatorKey,
     required this.child,
   });
   final AppServices services;
@@ -78,6 +89,9 @@ class AppServicesHost extends StatefulWidget {
   /// The signed-in session (null while signed out): what an artifact link
   /// opened from anywhere below uses for Login with Raft.
   final (RaftClient?, WorkspaceController?)? session;
+  final Future<void> Function()? onLogout;
+  final WorkspaceCache? cache;
+  final GlobalKey<NavigatorState>? navigatorKey;
   final Widget child;
 
   @override
@@ -87,10 +101,13 @@ class AppServicesHost extends StatefulWidget {
 class _AppServicesHostState extends State<AppServicesHost>
     with WidgetsBindingObserver {
   final _retired = <AppUpdateService>{};
+  bool _closing = false;
+  Future<bool>? _preparingClose;
 
   @override
   void initState() {
     super.initState();
+    _bindWindows();
     LocalErrorDiagnostics.shared
       ..platform = defaultTargetPlatform.name
       ..lifecycle(WidgetsBinding.instance.lifecycleState?.name ?? 'resumed');
@@ -104,6 +121,7 @@ class _AppServicesHostState extends State<AppServicesHost>
   @override
   void didUpdateWidget(AppServicesHost oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _bindWindows();
     final previous = oldWidget.services.appUpdate;
     if (oldWidget.ownsAppUpdate &&
         previous != null &&
@@ -113,6 +131,35 @@ class _AppServicesHostState extends State<AppServicesHost>
       WidgetsBinding.instance.addPostFrameCallback((_) => _releaseRetired());
     }
     _retired.remove(widget.services.appUpdate);
+  }
+
+  void _bindWindows() => widget.services.desktopWindows?.bind(
+    widget.session?.$1,
+    widget.session?.$2?.server?.id,
+    onLogout: widget.onLogout,
+    cache: widget.cache,
+    prepareClose: _prepareClose,
+    cancelClose: _cancelClose,
+  );
+
+  Future<bool> _prepareClose() => _preparingClose ??= () async {
+    if (widget.services.isSecondaryWindow) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      setState(() => _closing = true);
+    }
+    final accepted = await saveDesktopWindow(
+      widget.navigatorKey?.currentState?.overlay?.context ?? context,
+      widget.session?.$2,
+      child: widget.services.isSecondaryWindow,
+      onFailure: _cancelClose,
+    );
+    if (!accepted) _preparingClose = null;
+    return accepted;
+  }();
+
+  void _cancelClose() {
+    _preparingClose = null;
+    if (mounted) setState(() => _closing = false);
   }
 
   void _releaseRetired({bool keepCurrent = true}) {
@@ -131,7 +178,13 @@ class _AppServicesHostState extends State<AppServicesHost>
     // way a message does (Web `MarkdownLink`).
     child: HumanLoginScope(
       api: humanLoginFor(widget.session?.$1, widget.session?.$2),
-      child: RaftLinkScope(open: openMessageLink, child: widget.child),
+      child: IgnorePointer(
+        ignoring: _closing,
+        child: ExcludeFocus(
+          excluding: _closing,
+          child: RaftLinkScope(open: openMessageLink, child: widget.child),
+        ),
+      ),
     ),
   );
 

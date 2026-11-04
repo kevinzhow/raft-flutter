@@ -1,3 +1,4 @@
+import 'workspace_desktop_window.dart';
 import 'agent_runtime_labels.dart' show runtimeDisplayNameOf;
 
 import 'dart:async';
@@ -2922,11 +2923,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
             pushMuted: serverUnread[server.id]?.pushMuted ?? false,
             onSelected: () =>
                 unawaited(selectMenuServer(server, scope, mobile: mobile)),
-            onAuxiliary:
-                defaultTargetPlatform == TargetPlatform.linux &&
-                    workspaceBrowserOrigin(w.client.origin) != null
-                ? () => unawaited(openWorkspaceInBrowser(context, w, server))
-                : null,
+            onAuxiliary: serverWindowAction(context, w, server),
+            onOpenWindow: nativeServerWindowAction(context, w, server),
           ),
       ],
       actions: [

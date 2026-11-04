@@ -40,13 +40,19 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     MacOSDockUnread? dockUnread,
     WindowsTray? tray,
     this.appLinks = RaftAppLinks.enabled,
+    this.ownsSystemIntegration = true,
   }) : _providedTray = tray,
        _providedDockUnread = dockUnread,
-       notifications = notifications ?? NativeNotificationService();
+       notifications =
+           notifications ??
+           NativeNotificationService(
+             ownsSystemIntegration: ownsSystemIntegration,
+           );
   final NativeNotificationService notifications;
 
   /// This build accepts allowlisted HTTPS entries; OS association is separate.
   final bool appLinks;
+  final bool ownsSystemIntegration;
   final MacOSDockUnread? _providedDockUnread;
   final WindowsTray? _providedTray;
   late final tray =
@@ -119,6 +125,12 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         : WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     WidgetsBinding.instance.addObserver(this);
     _liveRecovery = LiveSessionRecovery()..bind(_workspace);
+    if (!ownsSystemIntegration) {
+      _appForeground = await isAppWindowActive(
+        platform: notifications.platform,
+      );
+      return;
+    }
     tray.onHidden = () => _setAppForeground(false);
     await tray.initialize(notifications.localize);
     if (_closed) return;
@@ -200,6 +212,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   }
 
   void bindAccount(RaftClient? client) {
+    if (!ownsSystemIntegration) return;
     final previous = dockUnread.counts.notificationAccount;
     dockUnread.bindAccount(client);
     if (previous != null && previous != dockUnread.counts.notificationAccount) {
@@ -210,7 +223,9 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   void retireAccount() {
     bindWorkspace(null);
     bindAccount(null);
-    unawaited(notifications.bindAuthenticatedWorkspace(null));
+    if (ownsSystemIntegration) {
+      unawaited(notifications.bindAuthenticatedWorkspace(null));
+    }
   }
 
   void bindWorkspace(WorkspaceController? workspace) {
@@ -225,8 +240,10 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     _liveRecovery?.bind(workspace);
     if (!appForeground) workspace?.setForeground(false);
     desktop?.bind(workspace);
-    dockUnread.bind(workspace);
-    reconciler.bind(workspace);
+    if (ownsSystemIntegration) {
+      dockUnread.bind(workspace);
+      reconciler.bind(workspace);
+    }
     workspace?.addListener(_changed);
     _events = workspace?.client.events.listen(_event);
     _changed();
@@ -248,6 +265,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   }
 
   void _changed() {
+    if (!ownsSystemIntegration) return;
     unawaited(tray.configure(notifications.localize));
     final scope = currentScope;
     if (_scope == scope) return;
@@ -789,7 +807,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   void _setAppForeground(bool active) {
     final resumed = active && _appForeground != true;
     _appForeground = active;
-    if (resumed) {
+    if (resumed && ownsSystemIntegration) {
       unawaited(dockUnread.resync());
       unawaited(dockUnread.refresh());
     }
@@ -818,16 +836,20 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     desktop?.dispose();
     reconciler.dispose();
-    await dockUnread.dispose();
-    await tray.dispose();
+    if (ownsSystemIntegration) {
+      await dockUnread.dispose();
+      await tray.dispose();
+    }
     _epoch++;
     _navigation++;
     _workspace?.removeListener(_changed);
     await _events?.cancel();
     await _linkSubscription?.cancel();
     notifications.removeListener(_notificationSettingsChanged);
-    await background.bind(null, false);
-    notifications.onTap = null;
-    await notifications.bind(null);
+    if (ownsSystemIntegration) {
+      await background.bind(null, false);
+      notifications.onTap = null;
+      await notifications.bind(null);
+    }
   }
 }

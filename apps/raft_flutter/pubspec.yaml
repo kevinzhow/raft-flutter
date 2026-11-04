@@ -6,6 +6,7 @@ environment:
   sdk: ^3.13.5
 resolution: workspace
 dependencies:
+  desktop_multi_window: 0.3.1
   flutter:
     sdk: flutter
   flutter_localizations:

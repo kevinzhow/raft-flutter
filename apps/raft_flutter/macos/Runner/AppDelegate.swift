@@ -64,6 +64,9 @@ class AppDelegate: FlutterAppDelegate, NSMenuItemValidation {
   }
 
   @objc func showPreferences(_ sender: Any?) {
+    if let target = RaftChildWindow.commands(for: NSApp.keyWindow), target.canOpenPreferences {
+      target.openPreferences(); return
+    }
     guard let target = (retainedMainWindow ?? mainFlutterWindow) as? RaftPreferencesWindow,
       target.canOpenPreferences else { return }
     _ = restoreMainWindow()
@@ -78,6 +81,7 @@ class AppDelegate: FlutterAppDelegate, NSMenuItemValidation {
   }
 
   private var pasteWindow: RaftPasteWindow? {
+    if let child = RaftChildWindow.commands(for: NSApp.keyWindow) { return child }
     let window = retainedMainWindow ?? mainFlutterWindow
     guard NSApp.keyWindow === window else { return nil }
     return window as? RaftPasteWindow
@@ -105,6 +109,7 @@ class AppDelegate: FlutterAppDelegate, NSMenuItemValidation {
       return (target as? NSMenuItemValidation)?.validateMenuItem(item) ?? true
     }
     if menuItem.action == #selector(showPreferences(_:)) {
+      if let child = RaftChildWindow.commands(for: NSApp.keyWindow) { return child.canOpenPreferences }
       return ((retainedMainWindow ?? mainFlutterWindow) as? RaftPreferencesWindow)?
         .canOpenPreferences ?? false
     }

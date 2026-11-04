@@ -10,6 +10,12 @@ import 'appimage/appimage_http.dart';
 import 'appimage/appimage_updater.dart';
 import 'appimage/ed25519.dart';
 
+/// Explicitly cancels a required quit when a desktop child has unsaved drafts.
+/// Other cache-hook failures retain the existing required-exit behavior.
+class AppExitVeto implements Exception {
+  const AppExitVeto();
+}
+
 /// Compile-time and runtime inputs of the updater.
 ///
 /// Release CI passes `--dart-define=RAFT_AUTO_UPDATE=true` (and, on Windows and
@@ -149,14 +155,16 @@ class AppUpdater {
   /// Runs [beforeQuit], or else [requiredExitHook], then requests a required
   /// exit.
   ///
-  /// A throw from the hook does not cancel the exit.
+  /// Only [AppExitVeto] cancels the exit; other hook failures do not.
   Future<void> quitAfterHook() async {
     final hook = beforeQuit ?? requiredExitHook;
     if (hook != null) {
       try {
         await hook();
+      } on AppExitVeto {
+        return;
       } on Object {
-        // The required exit still proceeds.
+        // Other cache failures retain the existing required-exit policy.
       }
     }
     await performRequiredExit();

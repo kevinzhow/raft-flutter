@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart' show SchedulerPhase;
 import 'package:raft_client/raft_client.dart';
@@ -52,11 +51,11 @@ import 'platform/native_sharing.dart';
 import 'platform/ios_share_session.dart';
 import 'platform/incoming_share_staging.dart';
 import 'platform/content_coordinator.dart';
-import 'platform/content_links.dart';
 import 'platform/workspace_cache.dart';
 import 'platform/system_fonts.dart';
+import 'platform/desktop_window_exit.dart';
+import 'platform/desktop_windows.dart';
 import 'platform/app_services.dart';
-import 'platform/app_window.dart';
 import 'platform/background_notifications.dart';
 import 'platform/cache_exit.dart';
 
@@ -98,7 +97,11 @@ class RaftApp extends StatefulWidget {
 }
 
 class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
-  late final content = widget.nativeContent ?? NativeContentCoordinator();
+  late final content =
+      widget.nativeContent ??
+      NativeContentCoordinator(
+        ownsSystemIntegration: !widget.services.isSecondaryWindow,
+      );
   late final sharing = widget.nativeSharing ?? NativeSharing();
   late final shareSession = IOSShareSession(channel: sharing.channel);
   VoidCallback? removeShareReceiver;
@@ -163,6 +166,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   RaftClient? client;
   WorkspaceController? workspace;
   WorkspaceCache? cache;
+  DesktopWindows? get desktopWindows => widget.services.desktopWindows;
 
   /// Set when stored credentials may exist but the session could not be
   /// confirmed. The app shows a recovery state (never the login form) and
@@ -215,26 +219,29 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     );
     routeInformation = appRouter.informationProvider(requestedLocation);
     sessionPersistence = SessionPersistence(
-      widget.sessionStore ?? SecureSessionStore(),
+      widget.sessionStore ??
+          (widget.services.isSecondaryWindow
+              ? MemorySessionStore()
+              : SecureSessionStore()),
     );
     WidgetsBinding.instance.addObserver(this);
-    bindCacheExit(() => closeCacheForExit(cache?.close));
+    bindCacheExit(() => prepareDesktopExit(desktopWindows, cache?.close));
     RaftMemoryRelease.instance.install();
     NativeSystemFonts.instance.addListener(rebuildRoot);
     appearance.addListener(rebuildRoot);
     removeShareReceiver = sharing.registerReceiver(receiveSharedContent);
     content.onPrivateAppInvite = (location) async {
-      // The Router first consumes its initial platform route. A queued native
-      // entry must land afterwards rather than be replaced by that old route.
+      // Queued native entries land after the Router consumes its initial route.
       await WidgetsBinding.instance.endOfFrame;
       if (mounted) await receiveAppLocation(location);
     };
     content.onIncomingShare = () => unawaited(sharing.resume());
     content.onForegroundChanged = syncWorkspaceForeground;
-    // The few fixed words of a system notification (the unread count) follow
-    // the member's display language, like the rest of the app.
+    // Notifications follow the member's display language.
     content.notifications.localize = (source) =>
-        uiLocale.languageCode == 'zh' ? raftChinese[source] ?? source : source;
+        appearance.localeFor(client?.user).languageCode == 'zh'
+        ? raftChinese[source] ?? source
+        : source;
     unawaited(sharing.init());
     unawaited(content.init(initialArguments: widget.initialArguments));
     // An AppImage installs nothing, so xdg-open cannot find it: after the
@@ -633,7 +640,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     try {
       final p = await SharedPreferences.getInstance();
       DevicePreferences.adopt(p);
-      origin = p.getString('raft.origin') ?? origin;
+      origin = desktopWindows?.origin ?? p.getString('raft.origin') ?? origin;
       appearance.adopt(p);
       unawaited(retireStoredAppearanceTheme(p));
       // Heals the native splash theme (app update, restored preferences).
@@ -641,7 +648,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       try {
         cache ??=
             await (widget.openWorkspaceCache?.call() ??
-                DriftWorkspaceCache.open());
+                (widget.services.isSecondaryWindow
+                    ? Future<WorkspaceCache?>.value(desktopWindows?.draftCache)
+                    : DriftWorkspaceCache.open()));
       } catch (e) {
         // The on-device cache is an accelerator; losing it must never look
         // like losing the session.
@@ -790,6 +799,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         RaftClient(
           origin: base,
           sessionStore: store,
+          sharedSessionAuthority: desktopWindows?.sessionAuthority,
           clientKind: kind,
           auditSink: AuthAuditLog.shared,
           timezoneProbe: readDeviceTimezone,
@@ -933,7 +943,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   }
 
   String get serverMemoryKey =>
-      'raft.server-surface.${Uri.encodeComponent(origin)}.${client?.user?.id}';
+      desktopServerMemoryKey(origin, client?.user?.id, desktopWindows);
 
   bool get showingStandalonePage =>
       PrivateAppInviteLink.parse(requestedLocation, origin) != null ||
@@ -983,13 +993,26 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           : requestedLocation.path == '/servers'
           ? null
           : prefs.getString('$serverMemoryKey.last');
-      final target = servers.where((s) => s.string('slug') == slug).firstOrNull;
+      final startupServer = desktopWindows?.startupServerId;
+      final target = servers
+          .where(
+            (s) => startupServer == null
+                ? s.string('slug') == slug
+                : s.id == startupServer,
+          )
+          .firstOrNull;
+      if (startupServer != null && target == null) {
+        await desktopWindows?.dispose();
+        return;
+      }
       if (target != null) {
         publicNonmember = null;
         final remembered = prefs.getString('$serverMemoryKey.${target.id}');
         await chooseServer(
           target,
-          location: explicit
+          location: startupServer != null
+              ? Uri(pathSegments: ['', 's', target.string('slug')])
+              : explicit
               ? requestedLocation
               : remembered == null
               ? null
@@ -1329,7 +1352,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           serverId = w.server!.id,
           uri = w.location.uri,
           memoryKey = serverMemoryKey;
-      if (remember) {
+      if (remember && !widget.services.isSecondaryWindow) {
         unawaited(
           SharedPreferences.getInstance().then((prefs) async {
             if (!mounted ||
@@ -1370,6 +1393,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       SharedPreferences.getInstance().then((prefs) async {
         if (mounted &&
             request == rootRequest &&
+            !widget.services.isSecondaryWindow &&
             identical(c, client) &&
             client?.user?.id == principal) {
           await prefs.remove('$memoryKey.last');
@@ -1594,6 +1618,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       await w.flushCache();
       if (!current()) return;
       if (w.server?.id != selected.id) {
+        await desktopWindows?.selectServer(selected.id);
+        if (!current()) return;
         // A server with an on-device workspace opens as soon as that cache
         // is painted; its fresh channels and page revalidate in place.
         final hydrated = Completer<void>();
@@ -1673,18 +1699,22 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         }
       });
       final prefs = await SharedPreferences.getInstance();
-      if (current()) {
+      if (current() && !widget.services.isSecondaryWindow) {
         await prefs.setString('$serverMemoryKey.last', selected.string('slug'));
       }
     } catch (e) {
       if (current()) {
-        setState(
-          () => selectorError = userErrorText(
-            e,
-            fallback: 'Could not switch servers. Try again.',
-            where: 'choose server',
-          ),
-        );
+        if (e is DesktopWindowAlreadyOpen) {
+          await recoverDesktopServerSelection(w, chooseServer);
+        } else {
+          setState(
+            () => selectorError = userErrorText(
+              e,
+              fallback: 'Could not switch servers. Try again.',
+              where: 'choose server',
+            ),
+          );
+        }
       }
     } finally {
       if (current()) setState(() => selectingServer = false);
@@ -1749,11 +1779,14 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   Widget sessionHome() {
     scheduleShares();
     final active = client;
+    if (widget.services.isSecondaryWindow && active?.user == null) {
+      return const RaftServerResolutionBody(
+        label: 'This window’s session has ended.',
+      );
+    }
     if (requestedLocation.path == chineseCommunityPagePath) {
-      return ChineseCommunityPage(
-        fallbackConfigUrl: ContentLinks.originFor(origin)
-            .resolve(chineseCommunityQrFallbackPath)
-            .toString(),
+      return ChineseCommunityPage.forOrigin(
+        origin,
         onClose: () => unawaited(returnFromSelector()),
       );
     }
@@ -1973,9 +2006,14 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         authAttempt++;
         rootRequest++;
         retireShares();
-        unawaited(clearSharesForAccount(c.origin, principal));
+        if (!widget.services.isSecondaryWindow) {
+          unawaited(clearSharesForAccount(c.origin, principal));
+        }
         // Nothing more is written for this account once its data is cleared.
-        final flushed = workspace?.retireCache() ?? Future<void>.value();
+        final flushed = retireDesktopDrafts(
+          desktopWindows,
+          workspace?.retireCache(),
+        );
         flushed.then((_) => cache?.clearAccount(c.origin, principal));
         unawaited(purgeAccountCaches(c.origin, principal));
         content.retireAccount();
@@ -2036,9 +2074,11 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     rebuildRoot();
     // Late writes (debounced directory saves, socket-driven windows) must not
     // land after the account's device data is cleared.
-    await oldWorkspace?.retireCache();
+    await retireDesktopDrafts(desktopWindows, oldWorkspace?.retireCache());
     if (c != null && principal != null) {
-      final shareCleanup = clearSharesForAccount(c.origin, principal);
+      final shareCleanup = widget.services.isSecondaryWindow
+          ? Future<void>.value()
+          : clearSharesForAccount(c.origin, principal);
       await cache?.clearAccount(c.origin, principal);
       await shareCleanup;
       // Cached attachments and videos of this account go with its other
@@ -2050,11 +2090,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (oldWorkspace == null) await c?.dispose();
   }
 
-  Future<void> setAppearance(RaftAppearance value) async {
-    await appearance.save(value);
-    // The next cold start's native splash needs the new canvas.
-    await NativeLaunchTheme.instance.set(value);
-  }
+  Future<void> setAppearance(RaftAppearance value) =>
+      appearance.save(value).then((_) => NativeLaunchTheme.instance.set(value));
 
   void syncWorkspaceForeground() {
     if (!mounted) return;
@@ -2101,12 +2138,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   void didChangeLocales(List<Locale>? locales) => rebuildRoot();
 
   /// The engine waits for this before it tears the background isolate down.
-  /// Completion, timeout, and failure all allow the exit.
+  /// Unacknowledged child drafts veto normal exit; old cache failures do not.
   @override
-  Future<AppExitResponse> didRequestAppExit() async {
-    await closeCacheForExit(cache?.close);
-    return AppExitResponse.exit;
-  }
+  Future<AppExitResponse> didRequestAppExit() =>
+      desktopExitResponse(desktopWindows, cache?.close);
 
   @override
   void dispose() {
@@ -2151,63 +2186,26 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  Locale get uiLocale => appearance.displayLanguage.resolve(
-    client?.user?.string('displayLanguage'),
-    signedIn: client?.user != null,
-  );
-
   @override
   Widget build(BuildContext context) {
     privateRoutes.scopeChanged(
       '${client?.generation}|${client?.user?.id}',
       domain: 'account',
     );
-    final locale = uiLocale;
-    final textLocale = WidgetsBinding.instance.platformDispatcher.locale;
-    ThemeData themed({bool dark = false}) => raftTheme(
-      dark: dark,
-      pack: appearance.value.pack,
-      systemFonts: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
-      systemFontFamilies: NativeSystemFonts.instance.value,
-      locale: locale,
-      textLocale: textLocale,
-    );
-    return MaterialApp.router(
-      title: 'Raft',
-      routerDelegate: appRouter,
-      routeInformationParser: const RaftAppRouteParser(),
-      routeInformationProvider: routeInformation,
-      locale: locale,
-      supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      builder: (context, child) => appRouter.withHoverDismiss(
-        RaftHoverScope.forPlatform(
-          child: AppWindowCommands(
-            navigatorKey: appRouter.navigatorKey,
-            openSection: workspace?.setSection,
-            child: AppServicesHost(
-              services: widget.services,
-              ownsAppUpdate: widget.ownsAppUpdate,
-              session: (client, workspace),
-              child: buildAppViewport(
-                screenshotKey: raftScreenshotKey,
-                workspace: workspace,
-                integrated:
-                    workspace?.server != null &&
-                    !showServerSelector &&
-                    WorkspaceHostScope.showsTopBar(context),
-                coordinator: origin,
-                openLocation: receiveAppLocation,
-                child: child!,
-              ),
-            ),
-          ),
-        ),
-      ),
-      debugShowCheckedModeBanner: false,
-      theme: themed(),
-      darkTheme: themed(dark: true),
-      themeMode: appearance.value.mode,
+    return buildRaftApplication(
+      router: appRouter,
+      routeInformation: routeInformation,
+      appearance: appearance.value,
+      locale: appearance.localeFor(client?.user),
+      services: widget.services,
+      ownsAppUpdate: widget.ownsAppUpdate,
+      session: (client, workspace),
+      onLogout: logout,
+      cache: cache,
+      screenshotKey: raftScreenshotKey,
+      showServerSelector: showServerSelector,
+      coordinator: origin,
+      openLocation: receiveAppLocation,
     );
   }
 }

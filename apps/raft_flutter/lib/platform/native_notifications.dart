@@ -43,6 +43,7 @@ class NativeNotificationService extends ChangeNotifier {
     this.linuxDetails,
     LinuxActivationTokens? activationTokens,
     this.androidPermissions = const AndroidPermissions(),
+    this.ownsSystemIntegration = true,
   }) : // Only the production plugin listens on the member's real session bus.
        _activationTokens =
            activationTokens ??
@@ -52,6 +53,7 @@ class NativeNotificationService extends ChangeNotifier {
        _preferences = preferences ?? NotificationPreferenceStore(),
        _windows = windows ?? WindowsNotifications();
   final WindowsNotifications _windows;
+  final bool ownsSystemIntegration;
 
   /// Android runtime-permission facts (whether a system prompt can still show).
   final AndroidPermissions androidPermissions;
@@ -164,6 +166,7 @@ class NativeNotificationService extends ChangeNotifier {
   }
 
   Future<bool> _permission({bool request = false}) async {
+    if (!ownsSystemIntegration) return false;
     // Windows has no app-owned permission prompt. Read the notifier's actual
     // setting on every delivery, including OS/user/group-policy restrictions.
     if (_platform == TargetPlatform.windows) return _windows.permitted();
@@ -242,6 +245,10 @@ class NativeNotificationService extends ChangeNotifier {
 
   Future<void> initialize() => _initializing ??= _initialize();
   Future<void> _initialize() async {
+    if (!ownsSystemIntegration) {
+      initialized = true;
+      return;
+    }
     try {
       if (_platform == TargetPlatform.windows) {
         _windows.onTap = (payload) => onTap?.call(payload);
@@ -306,6 +313,7 @@ class NativeNotificationService extends ChangeNotifier {
   }
 
   Future<void> bind(String? scope) async {
+    if (!ownsSystemIntegration) return;
     _detachedAccount = null;
     if (_scope == scope) return;
     _scope = scope;
@@ -431,6 +439,7 @@ class NativeNotificationService extends ChangeNotifier {
 
   /// Restores the device prompt history without requesting OS permission.
   Future<void> bindAuthenticatedWorkspace(String? scope) async {
+    if (!ownsSystemIntegration) return;
     await bind(scope);
     if (_scope != scope || scope == null || !hasPermissionPrompt) return;
     final epoch = _epoch;

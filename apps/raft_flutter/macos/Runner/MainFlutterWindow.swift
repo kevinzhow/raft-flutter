@@ -1,6 +1,7 @@
 import Cocoa
 import FlutterMacOS
 import desktop_drop
+import desktop_multi_window
 import CFNetwork
 import AVFoundation
 import ImageIO
@@ -422,6 +423,11 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     titleBar = RaftTitleBar(
       window: self, messenger: flutterViewController.engine.binaryMessenger)
 
+    RaftChildWindow.installBrokerHost(controller: flutterViewController, window: self)
+    FlutterMultiWindowPlugin.setOnWindowCreatedCallback { controller in
+      RegisterGeneratedPlugins(registry: controller)
+      RaftChildWindow.attach(controller)
+    }
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     super.awakeFromNib()
@@ -1029,5 +1035,141 @@ final class RaftVideoFrame {
     CGImageDestinationAddImage(
       destination, image, [kCGImageDestinationLossyCompressionQuality: quality] as CFDictionary)
     return CGImageDestinationFinalize(destination) ? data as Data : nil
+  }
+}
+
+
+/// Native engine-local channels. Child close destroys only that window;
+/// notification, updater and credential ownership stay in the primary engine.
+final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, NSWindowDelegate {
+  private var commandChannel: FlutterMethodChannel?
+  private(set) var canOpenPreferences = false
+  private(set) var canPasteIntoFlutter = false
+  func openPreferences() { commandChannel?.invokeMethod("openPreferences", arguments: nil) }
+  func pasteFromMenu() { commandChannel?.invokeMethod("pasteRequested", arguments: nil) }
+  static func commands(for window: NSWindow?) -> RaftChildWindow? {
+    guard let window else { return nil }; return children[ObjectIdentifier(window)]
+  }
+  private var titleBar: RaftTitleBar?
+  private var channels: [FlutterMethodChannel] = []
+  private var attachment: AttachmentFilesChannel?
+  private let frame = RaftVideoFrame()
+  private var closeObserver: NSObjectProtocol?
+  private var closePending = false
+  private var brokerChannel: FlutterMethodChannel?
+  func windowShouldClose(_ sender: NSWindow) -> Bool {
+    if !closePending {
+      closePending = true
+      brokerChannel?.invokeMethod("prepareClose", arguments: nil) { [weak self, weak sender] response in
+        self?.closePending = false
+        if response as? Bool == true { sender?.close() }
+      }
+    }
+    return false
+  }
+  private static var children: [ObjectIdentifier: RaftChildWindow] = [:]
+  private static var primaryHost: FlutterMethodChannel?
+
+  static func installBrokerHost(controller: FlutterViewController, window: NSWindow) {
+    primaryHost = brokerHost(controller: controller, window: window)
+  }
+
+  private static func brokerHost(controller: FlutterViewController, window: NSWindow) -> FlutterMethodChannel {
+    let channel = FlutterMethodChannel(name: "app.raft/desktop-window",
+      binaryMessenger: controller.engine.binaryMessenger)
+    channel.setMethodCallHandler { [weak window] call, result in
+      if call.method == "isActive" {
+        result(window?.isKeyWindow == true && NSApp.isActive)
+      } else if call.method == "focus" {
+        if let window {
+          if window.isMiniaturized { window.deminiaturize(nil) }
+          NSApp.activate(ignoringOtherApps: true)
+          window.makeKeyAndOrderFront(nil)
+        }
+        result(nil)
+      } else if call.method == "close" || call.method == "forceClose" {
+        result(nil)
+        let forced = call.method == "forceClose"
+        DispatchQueue.main.async {
+          if forced { window?.close() } else { window?.performClose(nil) }
+        }
+      } else { result(FlutterMethodNotImplemented) }
+    }
+    return channel
+  }
+
+  static func attach(_ controller: FlutterViewController) {
+    guard let window = controller.view.window else { return }
+    let host = RaftChildWindow()
+    let messenger = controller.engine.binaryMessenger
+    let identity = ObjectIdentifier(window)
+    children[identity] = host
+    window.title = "Raft"
+    host.titleBar = RaftTitleBar(window: window, messenger: messenger)
+    host.attachment = AttachmentFilesChannel(messenger: messenger)
+    host.brokerChannel = brokerHost(controller: controller, window: window)
+    host.channels.append(host.brokerChannel!)
+    window.delegate = host
+    func channel(_ name: String, handler: @escaping FlutterMethodCallHandler) {
+      let value = FlutterMethodChannel(name: name, binaryMessenger: messenger)
+      value.setMethodCallHandler(handler)
+      host.channels.append(value)
+    }
+    channel("app.raft/window") { [weak window, weak host] call, result in
+      switch call.method {
+      case "present":
+        window?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); result(nil)
+      case "isActive": result(window?.isKeyWindow == true && NSApp.isActive)
+      case "closeWindow": result(nil); DispatchQueue.main.async { window?.performClose(nil) }
+      case "setWindowCommandsState":
+        let state = call.arguments as? [String: Any]
+        let ready = state?["ready"] as? Bool == true
+        host?.canOpenPreferences = ready && state?["preferences"] as? Bool == true
+        host?.canPasteIntoFlutter = ready && state?["paste"] as? Bool == true
+        result(nil)
+      default: result(FlutterMethodNotImplemented)
+      }
+    }
+    host.commandChannel = host.channels.last
+    channel("app.raft/device-memory") { call, result in
+      if call.method == "snapshot" {
+        result(["totalBytes": Int64(ProcessInfo.processInfo.physicalMemory)])
+      } else if call.method == "availableStorageBytes",
+        let path = (call.arguments as? [String: Any])?["path"] as? String {
+        do {
+          let values = try FileManager.default.attributesOfFileSystem(forPath: path)
+          result((values[.systemFreeSize] as? NSNumber)?.int64Value)
+        } catch {
+          result(FlutterError(code: "storage_unavailable", message: "Available storage could not be read.", details: nil))
+        }
+      } else { result(FlutterMethodNotImplemented) }
+    }
+    channel("app.raft/interaction") { call, result in
+      if call.method == "doubleClickInterval" { result(NSEvent.doubleClickInterval) }
+      else { result(FlutterMethodNotImplemented) }
+    }
+    channel("app.raft/system-proxy") { call, result in
+      switch call.method {
+      case "snapshot": result(RaftSystemProxy.snapshot())
+      case "resolve":
+        guard let url = (call.arguments as? [String: Any])?["url"] as? String else {
+          result(FlutterError(code: "invalid", message: "Missing URL.", details: nil)); return
+        }
+        RaftSystemProxy.resolve(url) { result($0) }
+      default: result(FlutterMethodNotImplemented)
+      }
+    }
+    channel("app.raft/video-frame") { [weak host] call, result in
+      host?.frame.handle(call, result)
+    }
+    host.closeObserver = NotificationCenter.default.addObserver(
+      forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
+        children.removeValue(forKey: identity)
+      }
+  }
+
+  deinit {
+    if let closeObserver { NotificationCenter.default.removeObserver(closeObserver) }
+    for channel in channels { channel.setMethodCallHandler(nil) }
   }
 }

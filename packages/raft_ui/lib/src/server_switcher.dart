@@ -1,3 +1,5 @@
+import 'context_menu_content.dart';
+import 'message_context_menu.dart' show showRaftMessageContextMenu;
 import 'sidebar_text.dart';
 import 'interaction.dart';
 import 'tap_slop.dart';
@@ -28,7 +30,7 @@ import 'recipes/badge.g.dart';
 import 'recipes/context_menu.g.dart';
 import 'recipes/popover.g.dart';
 import 'recipes/recipe_runtime.dart';
-import 'text_scaling.dart' show RaftChrome;
+import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'page_tokens.dart';
 import 'theme.dart';
 import 'sized_image.dart';
@@ -47,13 +49,14 @@ class RaftServerMenuRow {
     this.current = false,
     this.avatarUrl,
     this.onAuxiliary,
+    this.onOpenWindow,
     this.activityUnreadCount,
     this.pushMuted = false,
   });
   final String id, name, slug;
   final String? avatarUrl;
   final VoidCallback onSelected;
-  final VoidCallback? onAuxiliary;
+  final VoidCallback? onAuxiliary, onOpenWindow;
   final bool current, pushMuted;
 
   /// Unknown Activity counts remain absent; legacy sidebar unread is unrelated.
@@ -577,6 +580,27 @@ class _ServerRow extends StatelessWidget {
     return Listener(
       onPointerDown: (e) {
         if (e.buttons == kMiddleMouseButton) onActivate(row.onAuxiliary);
+        if (e.buttons == kSecondaryMouseButton &&
+            row.onOpenWindow != null &&
+            RaftInteraction.of(context).pointer) {
+          showRaftMessageContextMenu<void>(
+            context: context,
+            anchor: e.position,
+            builder: (menuContext) => RaftContextMenuContent(
+              entries: [
+                RaftContextMenuContentItem(
+                  label: raftText(context, 'Open in new window'),
+                  glyph: RaftGlyph.externalLink,
+                  onPressed: () {
+                    Navigator.of(menuContext).pop();
+                    onActivate(row.onOpenWindow);
+                  },
+                ),
+              ],
+              onDismiss: () => Navigator.of(menuContext).pop(),
+            ),
+          );
+        }
       },
       child: RaftInteractive(
         semanticLabel: row.name,
@@ -595,7 +619,8 @@ class _ServerRow extends StatelessWidget {
           final active = state.hovered || state.focusVisible;
           final foreground = active ? t.colors['primary-strong']! : t.strong;
           return Container(
-            height: 48,
+            height: RaftScaled.grows(context) ? null : 48,
+            constraints: const BoxConstraints(minHeight: 48),
             color: active ? t.colors['primary-soft']! : Colors.transparent,
             child: Row(
               children: [
@@ -609,6 +634,7 @@ class _ServerRow extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [

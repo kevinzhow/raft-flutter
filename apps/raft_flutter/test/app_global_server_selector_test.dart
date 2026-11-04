@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/platform/app_services.dart';
+import 'package:raft_flutter/platform/desktop_windows.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/workspace_cache.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -265,6 +266,8 @@ class RootFixture {
     Map<String, Object> preferences = const {},
     bool settle = true,
     AppUpdateService? appUpdate,
+    DesktopWindows? desktopWindows,
+    bool productionCache = false,
   }) async {
     SharedPreferences.setMockInitialValues({
       'raft.origin': 'https://fixture.invalid',
@@ -383,15 +386,22 @@ class RootFixture {
     await t.pumpWidget(
       RaftApp(
         services: appUpdate == null
-            ? AppServices.updatesDisabledForTestOrPreview(localNetwork: network)
-            : AppServices.withUpdates(appUpdate, localNetwork: network),
+            ? AppServices.updatesDisabledForTestOrPreview(
+                localNetwork: network,
+                desktopWindows: desktopWindows,
+              )
+            : AppServices.withUpdates(
+                appUpdate,
+                localNetwork: network,
+                desktopWindows: desktopWindows,
+              ),
         sessionStore: sessions,
         initialLocation: uri ?? Uri(path: '/'),
         nativeContent: contentOverride ?? content,
         nativeSharing: sharing ?? NativeSharing(supported: false),
         nativeSessionOwner: sessionOwner,
         onStartupReady: onStartupReady,
-        openWorkspaceCache: () async => cache,
+        openWorkspaceCache: productionCache ? null : () async => cache,
         createClient: (origin, store, kind) =>
             client = RootClient(origin, store, kind, adapter),
       ),

@@ -7,6 +7,8 @@ import 'package:raft_ui/raft_ui.dart'
     show RaftPreviewRoute, raftText, showRaftAlertDialog;
 import 'package:raft_updater/raft_updater.dart';
 
+import 'desktop_cache_scope.dart';
+
 /// Requests the runner's ordinary close action, preserving its close preference.
 ///
 /// macOS keeps running after closing its window; Windows decides whether to
@@ -15,6 +17,11 @@ Future<void> closeAppWindow({
   TargetPlatform? platform,
   MethodChannel? channel,
 }) async {
+  if (DesktopCacheScope.isChild && channel == null) {
+    await const MethodChannel('app.raft/desktop-window')
+        .invokeMethod<void>('close');
+    return;
+  }
   final name = switch (platform ?? defaultTargetPlatform) {
     TargetPlatform.macOS => 'app.raft/window',
     TargetPlatform.windows => 'app.raft/windows-tray',
@@ -237,6 +244,11 @@ Future<void> presentAppWindow({
   TargetPlatform? platform,
   MethodChannel? channel,
 }) async {
+  if (DesktopCacheScope.isChild && channel == null) {
+    await const MethodChannel('app.raft/desktop-window')
+        .invokeMethod<void>('focus');
+    return;
+  }
   switch (platform ?? defaultTargetPlatform) {
     case TargetPlatform.windows:
       // The notification channel's `present` (ShowWindow + SetForegroundWindow).
@@ -258,11 +270,13 @@ Future<bool> isAppWindowActive({
   TargetPlatform? platform,
   MethodChannel? channel,
 }) async {
-  final name = switch (platform ?? defaultTargetPlatform) {
-    TargetPlatform.windows => 'app.raft/windows-notifications',
-    TargetPlatform.linux || TargetPlatform.macOS => 'app.raft/window',
-    _ => null,
-  };
+  final name = DesktopCacheScope.isChild && channel == null
+      ? 'app.raft/desktop-window'
+      : switch (platform ?? defaultTargetPlatform) {
+          TargetPlatform.windows => 'app.raft/windows-notifications',
+          TargetPlatform.linux || TargetPlatform.macOS => 'app.raft/window',
+          _ => null,
+        };
   if (name == null) return false;
   try {
     return await (channel ?? MethodChannel(name))

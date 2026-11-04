@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show Locale;
+import 'package:raft_client/raft_client.dart' show RaftRecord;
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +16,13 @@ class DeviceDisplayPreferences extends ChangeNotifier {
   RaftAppearance value = storedAppearance();
   final displayLanguage = DisplayLanguagePreferences();
   bool _disposed = false;
+
+  /// Resolves app chrome from a read-only account snapshot and device choices.
+  /// This does not copy local choices into the server-owned account record.
+  Locale localeFor(RaftRecord? account) => displayLanguage.resolve(
+    account?.string('displayLanguage'),
+    signedIn: account != null,
+  );
 
   void changed() {
     if (!_disposed) notifyListeners();

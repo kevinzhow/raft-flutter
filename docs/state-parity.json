@@ -43508,6 +43508,62 @@
         ],
         "owner": "task299 HTML region comments",
         "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/workspace_desktop_window.dart#function:nativeServerWindowAction": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "task299 native server windows",
+        "reason": "Production server-switcher callbacks delegate to the explicit desktop service or existing browser fallback. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_desktop_window.dart#function:openDesktopServerWindow": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "task299 native server windows",
+        "reason": "Production server-switcher callbacks delegate to the explicit desktop service or existing browser fallback. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_desktop_window.dart#function:serverWindowAction": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "task299 native server windows",
+        "reason": "Production server-switcher callbacks delegate to the explicit desktop service or existing browser fallback. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5391/METHOD:buildWorkspace@47604/FUNCTION:<anonymous>@47842/FUNCTION:conversation@50956": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task299 native server windows",
+        "reason": "Existing local builder moved after native-window service wiring; its rendering is unchanged. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5391/METHOD:buildWorkspace@47604/FUNCTION:<anonymous>@47842/FUNCTION:workspace@63551": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task299 native server windows",
+        "reason": "Existing local builder moved after native-window service wiring; its rendering is unchanged. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5391/METHOD:settingsRailAction@108758/FUNCTION:action@108792": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task299 native server windows",
+        "reason": "Existing local builder moved after native-window service wiring; its rendering is unchanged. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/platform/desktop_window_exit.dart#function:saveDesktopWindow": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "task299 native server windows",
+        "reason": "A child draft that cannot be durably acknowledged uses the canonical alert dialog and keeps its editor mounted. No visual acceptance is claimed."
+      },
+      "apps/raft_flutter/lib/features/app_viewport.dart#function:buildRaftApplication": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Pure application presentation extraction of the prior MaterialApp/router/hover/window-service/viewport tree. Root retains account and navigation decisions; the existing AppServicesHost owns services. No new state, Element layer, style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -46029,6 +46085,24 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Root-flow tests mount the real review/install route. The new paired Web cases must still be inspected and compared; this registration grants no current visual pass."
+      },
+      "composition:server-switcher:native-window-menu": {
+        "owner": "task299 native server windows",
+        "kind": "component_surface",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/server_switcher.dart#method:_ServerRow.build"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Existing canonical server row opens canonical ContextMenuContent for the native-window action. Production callback and SDK interaction tests exist; native engines and paired Web visual acceptance are NOT_RUN."
+      },
+      "composition:desktop-window:unsaved-draft-close": {
+        "owner": "task299 native server windows",
+        "kind": "component_surface",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/platform/desktop_window_exit.dart#function:saveDesktopWindow"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Canonical alert dialog explains sending/removing an unretained attachment or restoring the draft database before retrying close. Root-flow widget tests cover interaction; actual native close/quit and paired visual acceptance remain NOT_RUN."
       }
     },
     "requirements": {
@@ -48712,6 +48786,18 @@
         "applicability": "required",
         "owner": "task289 SDK menu/dialog fixtures",
         "reason": "Root must register exact function/size and perform its popup-open action; trigger-only audit cannot verify content."
+      },
+      "composition:server-switcher:native-window-menu:paired-native-acceptance": {
+        "entryId": "composition:server-switcher:native-window-menu",
+        "applicability": "required",
+        "owner": "task299 native server windows",
+        "reason": "Actual independent desktop engines, session revocation, native chrome/IPC and paired real-screen visual acceptance remain pending; widget tests grant no visual pass."
+      },
+      "composition:desktop-window:unsaved-draft-close:paired-native-acceptance": {
+        "entryId": "composition:desktop-window:unsaved-draft-close",
+        "applicability": "required",
+        "owner": "task299 native server windows",
+        "reason": "Actual native caption/shortcut/quit interaction, editor unsealing after a sibling veto and paired real-screen acceptance remain required; widget tests grant no native or visual pass."
       }
     },
     "knownStateAtoms": {

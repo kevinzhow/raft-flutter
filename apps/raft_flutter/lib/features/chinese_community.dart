@@ -144,11 +144,7 @@ Future<void> showChineseCommunityPage(BuildContext context, String apiOrigin) =>
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: chineseCommunityPagePath),
         // Web reads the fallback by a path relative to the app's own origin.
-        builder: (_) => ChineseCommunityPage(
-          fallbackConfigUrl: ContentLinks.originFor(apiOrigin)
-              .resolve(chineseCommunityQrFallbackPath)
-              .toString(),
-        ),
+        builder: (_) => ChineseCommunityPage.forOrigin(apiOrigin),
       ),
     );
 
@@ -162,6 +158,16 @@ class ChineseCommunityPage extends StatefulWidget {
     this.imageBuilder,
     this.onClose,
   });
+
+  /// The same coordinator-relative fallback for menu and public root routes.
+  ChineseCommunityPage.forOrigin(String origin, {super.key, this.onClose})
+    : fallbackConfigUrl = ContentLinks.originFor(origin)
+          .resolve(chineseCommunityQrFallbackPath)
+          .toString(),
+      configUrl = chineseCommunityQrConfigUrl,
+      fetch = _fetchJson,
+      now = null,
+      imageBuilder = null;
 
   /// The primary configuration (`getChineseCommunityQrConfigUrl`).
   final String configUrl;

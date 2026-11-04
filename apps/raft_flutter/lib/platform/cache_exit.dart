@@ -1,12 +1,15 @@
 import 'dart:async';
 
-import 'package:raft_updater/raft_updater.dart' show AppUpdater;
+import 'package:raft_updater/raft_updater.dart' show AppUpdater, AppExitVeto;
 
 /// How long an exit waits for the background database to close.
 const Duration cacheExitBudget = Duration(seconds: 2);
 
-/// What the exit waiter observed. The process still exits in every case.
+/// Cache close outcomes, plus the explicit unsaved-child-draft veto.
 enum CacheExitOutcome {
+  /// An unsaved desktop draft keeps normal close/quit open for retry.
+  vetoed,
+
   /// No close function was supplied.
   absent,
 
@@ -71,7 +74,13 @@ Future<CacheExitOutcome> Function()? cachePrepareExit;
 
 /// Points both exit callers at [hook]. Null clears both.
 void bindCacheExit(Future<CacheExitOutcome> Function()? hook) {
-  AppUpdater.requiredExitHook = hook == null ? null : () => hook();
+  AppUpdater.requiredExitHook = hook == null
+      ? null
+      : () async {
+          if (await hook() == CacheExitOutcome.vetoed) {
+            throw const AppExitVeto();
+          }
+        };
   cachePrepareExit = hook;
 }
 

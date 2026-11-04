@@ -78,6 +78,12 @@ void WindowsExit::Begin(const std::shared_ptr<State>& state,
     prepare(id, state->reason, [weak, id](int64_t reply_id, const std::string& outcome) {
       const auto current = weak.lock();
       if (!current || current->destroyed || current->ready || reply_id != id) return;
+      if (outcome == "vetoed" && !current->session_confirmed) {
+        if (current->timer) KillTimer(current->window, current->timer);
+        current->timer = 0; current->preparing = false; current->ready = false;
+        current->log("raft.windows_exit outcome=vetoed");
+        return;
+      }
       if (outcome == "absent" || outcome == "completed" || outcome == "timedOut" ||
           outcome == "failed" || outcome == "channelError" || outcome == "unavailable") {
         Finish(current, outcome);

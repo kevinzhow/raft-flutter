@@ -10,6 +10,7 @@
 
 #include "flutter/generated_plugin_registrant.h"
 #include "vsync_driver.h"
+#include <desktop_multi_window/desktop_multi_window_plugin.h>
 #include "desktop_caption_bar.h"
 #include "image_clipboard.h"
 
@@ -53,66 +54,42 @@ static void title_bar_free(gpointer data) {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
-// Called when first Flutter frame received.
-static void first_frame_cb(MyApplication* self, FlView* view) {
-  gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
+// A new server-window close is acknowledged by its Dart composer before the
+// engine is destroyed. Missing/failed replies keep the native window alive.
+struct DesktopCloseGuard {
+  GtkWindow* window;
+  FlMethodChannel* channel;
+  bool allowed = false;
+  bool pending = false;
+};
+static void desktop_close_reply(GObject* source, GAsyncResult* result, gpointer data) {
+  auto* guard = static_cast<DesktopCloseGuard*>(data);
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(FlMethodResponse) response = fl_method_channel_invoke_method_finish(
+      FL_METHOD_CHANNEL(source), result, &error);
+  guard->pending = false;
+  if (response && FL_IS_METHOD_SUCCESS_RESPONSE(response)) {
+    FlValue* value = fl_method_success_response_get_result(FL_METHOD_SUCCESS_RESPONSE(response));
+    if (value && fl_value_get_type(value) == FL_VALUE_TYPE_BOOL && fl_value_get_bool(value)) {
+      guard->allowed = true;
+      gtk_window_close(guard->window);
+    }
+  }
+  g_object_unref(guard->window);  // Keeps guard/window alive while Dart replies.
+}
+static gboolean desktop_delete_requested(GtkWidget*, GdkEvent*, gpointer data) {
+  auto* guard = static_cast<DesktopCloseGuard*>(data);
+  if (guard->allowed) return FALSE;
+  if (!guard->pending) {
+    guard->pending = true;
+    g_object_ref(guard->window);
+    fl_method_channel_invoke_method(guard->channel, "prepareClose", nullptr,
+        nullptr, desktop_close_reply, guard);
+  }
+  return TRUE;
 }
 
-// Implements GApplication::activate.
-static void my_application_activate(GApplication* application) {
-  MyApplication* self = MY_APPLICATION(application);
-  GList* windows = gtk_application_get_windows(GTK_APPLICATION(application));
-  if (windows != nullptr) {
-    gtk_window_present(GTK_WINDOW(windows->data));
-    return;
-  }
-  GtkWindow* window =
-      GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
-
-  TitleBar* title_bar = g_new0(TitleBar, 1);
-  title_bar->window = window;
-  title_bar->caption = new DesktopCaptionBar(window);
-  gtk_window_set_title(window, "Raft");
-
-  gtk_window_set_default_size(window, 1280, 720);
-
-  g_autoptr(FlDartProject) project = fl_dart_project_new();
-  fl_dart_project_set_dart_entrypoint_arguments(
-      project, self->dart_entrypoint_arguments);
-  // The Dart UI isolate runs on its own thread (RAFT_LINUX_UI_THREAD=platform
-  // restores the engine default, which runs it on the GTK main thread). With
-  // the default every frame's build waits behind the GTK paint of the previous
-  // frame on the same thread, which takes several ms at 2x scale and turned a
-  // 3 ms frame into a missed 120 Hz refresh; see docs/idle-cpu.md.
-  const gchar* ui_thread = g_getenv("RAFT_LINUX_UI_THREAD");
-  fl_dart_project_set_ui_thread_policy(
-      project, g_strcmp0(ui_thread, "platform") == 0
-                   ? FL_UI_THREAD_POLICY_RUN_ON_PLATFORM_THREAD
-                   : FL_UI_THREAD_POLICY_RUN_ON_SEPARATE_THREAD);
-  // RAFT_LINUX_IMPELLER=0 renders with Skia and =1 with Impeller; unset keeps
-  // the engine's default (Impeller in Flutter 3.47). For A/B measurements.
-  const gchar* impeller = g_getenv("RAFT_LINUX_IMPELLER");
-  if (g_strcmp0(impeller, "0") == 0) fl_dart_project_set_enable_impeller(project, FALSE);
-  if (g_strcmp0(impeller, "1") == 0) fl_dart_project_set_enable_impeller(project, TRUE);
-
-  FlView* view = fl_view_new(project);
-  // Before the view is realized (that starts the engine); see vsync_driver.h.
-  raft_vsync_install(view);
-  GdkRGBA background_color;
-  // Background defaults to black, override it here if necessary, e.g. #00000000
-  // for transparent.
-  gdk_rgba_parse(&background_color, "#000000");
-  fl_view_set_background_color(view, &background_color);
-  gtk_widget_show(GTK_WIDGET(view));
-  gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
-
-  // Show the window when Flutter renders.
-  // Requires the view to be realized so we can start rendering.
-  g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb),
-                           self);
-  gtk_widget_realize(GTK_WIDGET(view));
-
-  fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+static void register_window_channels(FlView* view, GtkWindow* window, TitleBar* title_bar) {
   raft_image_clipboard_install(view);
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   g_autoptr(FlMethodChannel) window_channel = fl_method_channel_new(
@@ -222,6 +199,109 @@ static void my_application_activate(GApplication* application) {
       },
       title_bar, title_bar_free);
 
+  g_autoptr(FlMethodChannel) desktop_channel = fl_method_channel_new(
+      fl_engine_get_binary_messenger(fl_view_get_engine(view)),
+      "app.raft/desktop-window", FL_METHOD_CODEC(codec));
+  auto* guard = new DesktopCloseGuard{window, FL_METHOD_CHANNEL(g_object_ref(desktop_channel))};
+  g_object_set_data_full(G_OBJECT(window), "raft-desktop-close-guard", guard, [](gpointer data) {
+    auto* value = static_cast<DesktopCloseGuard*>(data);
+    g_object_unref(value->channel); delete value;
+  });
+  g_signal_connect(window, "delete-event", G_CALLBACK(desktop_delete_requested), guard);
+  fl_method_channel_set_method_call_handler(desktop_channel,
+      [](FlMethodChannel*, FlMethodCall* call, gpointer data) {
+        GtkWindow* target = GTK_WINDOW(data);
+        const gchar* method = fl_method_call_get_name(call);
+        if (g_strcmp0(method, "isActive") == 0) {
+          g_autoptr(FlValue) active = fl_value_new_bool(gtk_window_is_active(target));
+          fl_method_call_respond_success(call, active, nullptr);
+        } else if (g_strcmp0(method, "focus") == 0) {
+          gtk_window_present(target);
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "close") == 0 || g_strcmp0(method, "forceClose") == 0) {
+          if (g_strcmp0(method, "forceClose") == 0) {
+            auto* guard = static_cast<DesktopCloseGuard*>(g_object_get_data(G_OBJECT(target), "raft-desktop-close-guard"));
+            if (guard) guard->allowed = true;
+          }
+          fl_method_call_respond_success(call, nullptr, nullptr);
+          gtk_window_close(target);
+        } else { fl_method_call_respond_not_implemented(call, nullptr); }
+      }, g_object_ref(window), g_object_unref);
+}
+
+static void register_child_window(FlPluginRegistry* registry) {
+  FlView* view = FL_VIEW(registry);
+  GtkWindow* window = GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(view)));
+  fl_register_plugins(registry);
+  auto* title_bar = g_new0(TitleBar, 1);
+  title_bar->window = window;
+  title_bar->caption = new DesktopCaptionBar(window);
+  gtk_window_set_title(window, "Raft");
+  register_window_channels(view, window, title_bar);
+}
+
+// Called when first Flutter frame received.
+static void first_frame_cb(MyApplication* self, FlView* view) {
+  gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
+}
+
+// Implements GApplication::activate.
+static void my_application_activate(GApplication* application) {
+  MyApplication* self = MY_APPLICATION(application);
+  GList* windows = gtk_application_get_windows(GTK_APPLICATION(application));
+  if (windows != nullptr) {
+    gtk_window_present(GTK_WINDOW(windows->data));
+    return;
+  }
+  GtkWindow* window =
+      GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
+
+  TitleBar* title_bar = g_new0(TitleBar, 1);
+  title_bar->window = window;
+  title_bar->caption = new DesktopCaptionBar(window);
+  gtk_window_set_title(window, "Raft");
+
+  gtk_window_set_default_size(window, 1280, 720);
+
+  g_autoptr(FlDartProject) project = fl_dart_project_new();
+  fl_dart_project_set_dart_entrypoint_arguments(
+      project, self->dart_entrypoint_arguments);
+  // The Dart UI isolate runs on its own thread (RAFT_LINUX_UI_THREAD=platform
+  // restores the engine default, which runs it on the GTK main thread). With
+  // the default every frame's build waits behind the GTK paint of the previous
+  // frame on the same thread, which takes several ms at 2x scale and turned a
+  // 3 ms frame into a missed 120 Hz refresh; see docs/idle-cpu.md.
+  const gchar* ui_thread = g_getenv("RAFT_LINUX_UI_THREAD");
+  fl_dart_project_set_ui_thread_policy(
+      project, g_strcmp0(ui_thread, "platform") == 0
+                   ? FL_UI_THREAD_POLICY_RUN_ON_PLATFORM_THREAD
+                   : FL_UI_THREAD_POLICY_RUN_ON_SEPARATE_THREAD);
+  // RAFT_LINUX_IMPELLER=0 renders with Skia and =1 with Impeller; unset keeps
+  // the engine's default (Impeller in Flutter 3.47). For A/B measurements.
+  const gchar* impeller = g_getenv("RAFT_LINUX_IMPELLER");
+  if (g_strcmp0(impeller, "0") == 0) fl_dart_project_set_enable_impeller(project, FALSE);
+  if (g_strcmp0(impeller, "1") == 0) fl_dart_project_set_enable_impeller(project, TRUE);
+
+  FlView* view = fl_view_new(project);
+  // Before the view is realized (that starts the engine); see vsync_driver.h.
+  raft_vsync_install(view);
+  GdkRGBA background_color;
+  // Background defaults to black, override it here if necessary, e.g. #00000000
+  // for transparent.
+  gdk_rgba_parse(&background_color, "#000000");
+  fl_view_set_background_color(view, &background_color);
+  gtk_widget_show(GTK_WIDGET(view));
+  gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
+
+  // Show the window when Flutter renders.
+  // Requires the view to be realized so we can start rendering.
+  g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb),
+                           self);
+  gtk_widget_realize(GTK_WIDGET(view));
+
+  fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+  desktop_multi_window_plugin_set_window_created_callback(register_child_window);
+  register_window_channels(view, window, title_bar);
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }
 

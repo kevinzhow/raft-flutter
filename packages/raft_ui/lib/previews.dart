@@ -1049,6 +1049,7 @@ class _ServerSwitcherPreviewState extends State<_ServerSwitcherPreview> {
             name: 'Visual Server',
             slug: 'visual',
             current: true,
+            onOpenWindow: () {},
             onSelected: () {},
           ),
           RaftServerMenuRow(
@@ -1056,6 +1057,7 @@ class _ServerSwitcherPreviewState extends State<_ServerSwitcherPreview> {
             name: 'Design',
             slug: 'design',
             activityUnreadCount: 5,
+            onOpenWindow: () {},
             onSelected: () {},
           ),
         ],

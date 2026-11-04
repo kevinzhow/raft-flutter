@@ -1,3 +1,5 @@
+import 'desktop_cache_scope.dart';
+
 import 'dart:async';
 import 'dart:io';
 
@@ -16,6 +18,8 @@ import 'package:path_provider/path_provider.dart';
 /// it (FileProvider paths, `ShareInboxWriter.exportFile`,
 /// `NativePdfPreviewBridge`), so these two names stay at the top of it.
 Future<Directory> cacheStagingDirectory() async {
+  final isolated = DesktopCacheScope.directory('staging');
+  if (isolated != null) return isolated;
   if (Platform.isAndroid || Platform.isIOS) return getTemporaryDirectory();
   return Directory(
     p.join((await getApplicationCacheDirectory()).path, 'staging'),

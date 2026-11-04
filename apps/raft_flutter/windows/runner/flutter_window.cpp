@@ -1,5 +1,6 @@
 #include <filesystem>
 #include "flutter_window.h"
+#include "desktop_windows.h"
 
 #include <dwmapi.h>
 #include <flutter/method_channel.h>
@@ -75,6 +76,10 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  RegisterDesktopChildWindows();
+  InstallDesktopWindowHost(flutter_controller_.get(), GetHandle(), [this] {
+    return tray_ && tray_->WillHideOnClose() && (!exit_ || !exit_->quitting());
+  });
   memory_channel_ =
       std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
           flutter_controller_->engine()->messenger(), "app.raft/device-memory",
@@ -253,7 +258,7 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               LPARAM const lparam) noexcept {
   if (exit_) {
     const auto result = exit_->HandleMessage(message, wparam, lparam);
-    if (exit_ && exit_->quitting() && tray_) tray_->MarkQuitting();
+    if (exit_ && tray_) tray_->SetQuitting(exit_->quitting());
     if (result) return *result;
     if (message == WM_CLOSE && exit_ && exit_->ready_to_close()) {
       return Win32Window::MessageHandler(hwnd, message, wparam, lparam);

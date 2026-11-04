@@ -16258,20 +16258,24 @@
    "background": false,
    "status": "partial",
    "webEntry": "components/ui/ServerSwitcherMenu.tsx onAuxClick -> utils/serverSwitcherNavigation.ts openServerSwitcherAuxClickTarget; desktopServerWindow.ts openDesktopServerWindow (window.openServer / window.bindServer)",
-   "gate": "Desktop",
-   "flutterEntry": "Server menu onAuxiliary exists only on Linux and opens the workspace in the system browser (workspace_view.dart openWorkspaceInBrowser, workspace_browser.dart); no second app window on macOS/Windows/Linux",
+   "gate": "Desktop native window service; pointer/keyboard interaction",
+   "flutterEntry": "workspace_desktop_window.dart connects the canonical switcher auxiliary/context-menu action to DesktopSessionBroker; desktop_multi_window creates a separate Flutter engine with window-local navigation and one primary credential/durable-draft owner",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_browser.dart",
-     "needle": "Future<void> openWorkspaceInBrowser("
+     "file": "apps/raft_flutter/lib/features/workspace_desktop_window.dart",
+     "needle": "Future<void> openDesktopServerWindow("
+    },
+    {
+     "file": "apps/raft_flutter/lib/platform/desktop_windows.dart",
+     "needle": "class DesktopSessionBroker"
     },
     {
      "file": "packages/raft_ui/lib/src/server_switcher.dart",
      "needle": "onActivate(row.onAuxiliary)"
     }
    ],
-   "justification": "Flutter app is single-window.",
-   "impact": "Desktop users working in two servers side by side; occasional. Browser fallback exists on Linux only.",
+   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. Actual native engines/IPC, platform plugin interactions and packaged acceptance remain pending; the existing Linux browser fallback is retained when no native service is installed.",
+   "impact": "Native acceptance is still required on desktop platforms.",
    "size": "L"
   },
   {
@@ -16410,10 +16414,10 @@
    "status": "covered",
    "webEntry": "hooks/useLastLocationResume.ts (slock:last-location, 24h), hooks/useTabRouteMemory.ts readServerSurfaceMemory (slock:serverSurface:v1:{slug}), store/serverPersistenceRegistry.ts last server slug",
    "gate": "",
-   "flutterEntry": "app_root.dart persists raft.server-surface.{origin}.{user}.last and per-server surface and restores both after sign-in",
+   "flutterEntry": "app_root.dart persists and restores primary-window server surfaces; desktop_window_exit.dart builds the account/origin/window navigation namespace",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/app_root.dart",
+     "file": "apps/raft_flutter/lib/platform/desktop_window_exit.dart",
      "needle": "raft.server-surface."
     },
     {
@@ -16421,7 +16425,7 @@
      "needle": "Future<Uri?> serverSurfaceMemory(RaftRecord server)"
     }
    ],
-   "justification": "Flutter has no 24h expiry; harmless.",
+   "justification": "The primary window retains the existing last-server and per-server surface memory without a 24-hour expiry. Child window navigation stays independent and does not overwrite that shared record.",
    "impact": "",
    "size": ""
   },
@@ -16480,7 +16484,7 @@
      "needle": "Locale resolve("
     },
     {
-     "file": "apps/raft_flutter/lib/app_root.dart",
+     "file": "apps/raft_flutter/lib/features/app_viewport.dart",
      "needle": "supportedLocales: const [Locale('en'), Locale('zh', 'CN')]"
     }
    ],
@@ -17517,19 +17521,27 @@
    "area": "global-ui",
    "capability": "Ctrl/Cmd/middle-click a server in the switcher to open it in a new tab/window",
    "background": false,
-   "status": "na",
+   "status": "partial",
    "webEntry": "Server switcher row onClick modifiers / onAuxClick (openServerSwitcherDesktopTarget)",
-   "gate": "",
-   "flutterEntry": "Linux-only 'open in browser' auxiliary action exists (workspace_view.dart onAuxiliary)",
+   "gate": "Desktop native window service; pointer/keyboard interaction",
+   "flutterEntry": "workspace_desktop_window.dart connects the canonical switcher auxiliary/context-menu action to DesktopSessionBroker; desktop_multi_window creates a separate Flutter engine with window-local navigation and one primary credential/durable-draft owner",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "onAuxiliary:"
+     "file": "apps/raft_flutter/lib/features/workspace_desktop_window.dart",
+     "needle": "Future<void> openDesktopServerWindow("
+    },
+    {
+     "file": "apps/raft_flutter/lib/platform/desktop_windows.dart",
+     "needle": "class DesktopSessionBroker"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/server_switcher.dart",
+     "needle": "onActivate(row.onAuxiliary)"
     }
    ],
-   "justification": "Browser tab/window mechanics; mobile has a single window. Linux desktop gets the nearest equivalent (open workspace in browser).",
-   "impact": "",
-   "size": ""
+   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. Actual native engines/IPC, platform plugin interactions and packaged acceptance remain pending; the existing Linux browser fallback is retained when no native service is installed.",
+   "impact": "Native acceptance is still required on desktop platforms.",
+   "size": "L"
   },
   {
    "kind": "endpoint",
