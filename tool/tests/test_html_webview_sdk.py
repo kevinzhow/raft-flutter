@@ -43,12 +43,26 @@ class SdkPreparationTest(unittest.TestCase):
 
     def test_container_is_capped_and_does_not_enable_host_or_security_bypasses(self):
         args = sdk.container_command('sha256:' + 'a' * 64, Path('/tmp/new-sdk'), 'owned-123', 1000, 1000)
-        for option in ['--cpus=2', '--memory=16g', '--cpuset-cpus=0,1', '--network=none', '--user=1000:1000']:
+        for option in ['--cpus=2', '--memory=16g', '--memory-swap=16g', '--cpuset-cpus=0,1', '--network=none', '--user=1000:1000']:
             self.assertIn(option, args)
         self.assertNotIn('--rm', args)
         self.assertNotIn('--privileged', args)
         self.assertFalse(any('security-opt' in arg or '/var/run/docker.sock' in arg for arg in args))
         self.assertIn('readonly', next(arg for arg in args if 'target=/recipe' in arg))
+
+    def test_archive_is_a_separate_readonly_input_mount(self):
+        args = sdk.container_command('sha256:' + 'a' * 64, Path('/tmp/new-sdk'),
+                                     'owned-123', 1000, 1000, Path('/tmp/source archive.tar.xz'))
+        mount = next(arg for arg in args if 'target=/inputs/wpewebkit.tar.xz' in arg)
+        self.assertIn('readonly', mount)
+        self.assertIn('source=/tmp/source archive.tar.xz', mount)
+
+    def test_mount_csv_preserves_commas_and_quotes_in_paths(self):
+        import csv
+        value = sdk.bind_mount(Path('/tmp/a,b"c'), '/inputs/archive', readonly=True)
+        parsed = next(csv.reader([value]))
+        self.assertIn('source=/tmp/a,b"c', parsed)
+        self.assertIn('readonly', parsed)
 
     def test_existing_work_is_not_reused_or_removed(self):
         with tempfile.TemporaryDirectory() as directory:

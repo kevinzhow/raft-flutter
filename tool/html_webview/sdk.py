@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Restore a caller-pinned SDK or build and seal one in an isolated Noble container."""
 import argparse
+import csv
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -107,14 +109,25 @@ def logged(work, name, command, seconds, env=None):
         json_file(Path(work) / (name + '.json'), record)
 
 
-def container_command(image, work, name, uid, gid):
+def bind_mount(source, target, readonly=False):
+    output = io.StringIO()
+    fields = ['type=bind', 'source=' + str(Path(source).resolve()), 'target=' + target]
+    if readonly:
+        fields.append('readonly')
+    csv.writer(output, lineterminator='').writerow(fields)
+    return output.getvalue()
+
+
+def container_command(image, work, name, uid, gid, archive=None):
     recipe = HERE.parents[1].resolve()
-    return ['docker', 'create', '--name', name, '--label=raft-html-sdk=source-build',
-            '--cpus=2', '--memory=16g', '--cpuset-cpus=0,1', '--network=none',
+    command = ['docker', 'create', '--name', name, '--label=raft-html-sdk=source-build',
+            '--cpus=2', '--memory=16g', '--memory-swap=16g', '--cpuset-cpus=0,1', '--network=none',
             f'--user={uid}:{gid}', '--env=PYTHONPATH=/recipe/tool',
-            '--mount', f'type=bind,source={Path(work).resolve()},target=/work',
-            '--mount', f'type=bind,source={recipe},target=/recipe,readonly',
-            '--entrypoint=python3', image_id(image), '-m', 'html_webview.sdk', '_worker']
+            '--mount', bind_mount(work, '/work'),
+            '--mount', bind_mount(recipe, '/recipe', readonly=True)]
+    if archive is not None:
+        command += ['--mount', bind_mount(archive, '/inputs/wpewebkit.tar.xz', readonly=True)]
+    return [*command, '--entrypoint=python3', image_id(image), '-m', 'html_webview.sdk', '_worker']
 
 
 def inspect_owned(container):
@@ -122,7 +135,8 @@ def inspect_owned(container):
     if (data['Id'] != container or data['Config']['Labels'].get('raft-html-sdk') != 'source-build'
             or data['HostConfig']['NanoCpus'] != 2_000_000_000
             or data['HostConfig']['Memory'] != 16 * 1024**3
-            or data['HostConfig']['CpusetCpus'] != '0,1'):
+            or data['HostConfig']['CpusetCpus'] != '0,1'
+            or data['HostConfig']['MemorySwap'] != 16 * 1024**3):
         raise ValueError('SDK container identity or resource contract changed')
     return data
 
@@ -138,9 +152,10 @@ def build(archive, work, image, seconds):
     work = new_work(work)
     record = {'imageId': image, 'sourceSha256': ARCHIVE_SHA256, 'limitSeconds': seconds}
     json_file(work / 'request.json', record)
-    prepare(archive, work / 'prepared')
+    if not Path(archive).is_file():
+        raise ValueError('Source archive is missing; preserve the new request directory')
     name = 'raft-html-sdk-' + uuid.uuid4().hex[:16]
-    command = container_command(image, work, name, os.getuid(), os.getgid())
+    command = container_command(image, work, name, os.getuid(), os.getgid(), archive)
     container = subprocess.check_output(command, text=True, timeout=30).strip()
     if not re.fullmatch('[0-9a-f]{64}', container):
         raise ValueError('Docker did not return a full SDK container ID')
@@ -169,6 +184,11 @@ def worker():
     if os.getuid() == 0 or os.getpriority(os.PRIO_PROCESS, 0) != 0:
         raise ValueError('Use an unprivileged worker at initial nice0; it applies nice15 once')
     os.nice(15)
+    resource_readback = subprocess.check_output(
+        ['/bin/sh', str(HERE / 'build_resources.sh')], text=True,
+        env={**os.environ, 'RAFT_HTML_SDK_ENFORCE_LIMITS': '1'}, timeout=15)
+    (work / 'resource-readback.txt').write_text(resource_readback)
+    prepare('/inputs/wpewebkit.tar.xz', work / 'prepared')
     release = dict(line.split('=', 1) for line in Path('/etc/os-release').read_text().splitlines() if '=' in line)
     if release.get('ID', '').strip('"') != 'ubuntu' or release.get('VERSION_ID', '').strip('"') != '24.04':
         raise ValueError('SDK source builds require the Ubuntu24.04 ABI environment')
@@ -189,7 +209,8 @@ def worker():
             shutil.copy2(gcc / name, backtrace / Path(name).name)
     environment = {'imageId': request['imageId'], 'compilerSha256': sha256(compiler),
                    'packagesSha256': hashlib.sha256(packages).hexdigest(),
-                   'backtraceSha256': BACKTRACE['libbacktrace.a']}
+                   'backtraceSha256': BACKTRACE['libbacktrace.a'],
+                   'resourceReadbackSha256': sha256(work / 'resource-readback.txt')}
     from .archives import Store, authenticate
     packages_index, apt_proof = authenticate()
     store = Store('/opt/raft-html-sdk-debs', work / 'authenticated-packages', packages_index, apt_proof)

@@ -53,9 +53,11 @@ class SdkArchiveTest(unittest.TestCase):
             (root / 'installed-packages.tsv').write_text('fixture version architecture')
             (root / 'package-archives.json').write_text('[]')
             (root / 'compiler.txt').write_text('fixture compiler identity')
+            (root / 'resource-readback.txt').write_text('fixture capped resources')
             identity = {'environment': {
                 'packagesSha256': hashlib.sha256((root / 'installed-packages.tsv').read_bytes()).hexdigest(),
                 'packageArchivesSha256': hashlib.sha256((root / 'package-archives.json').read_bytes()).hexdigest(),
+                'resourceReadbackSha256': hashlib.sha256((root / 'resource-readback.txt').read_bytes()).hexdigest(),
             }}
             build_receipts(root, root / 'metadata', identity)
             self.assertEqual((root / 'metadata/compiler.txt').read_text(), 'fixture compiler identity')

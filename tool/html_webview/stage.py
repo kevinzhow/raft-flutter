@@ -76,7 +76,8 @@ def archive_sdk(prefix, destination):
 def build_receipts(work, metadata, identity):
     """Keep the full build ledger with the SDK, checking the two identity-bound inputs."""
     for filename, key in [('installed-packages.tsv', 'packagesSha256'),
-                          ('package-archives.json', 'packageArchivesSha256')]:
+                          ('package-archives.json', 'packageArchivesSha256'),
+                          ('resource-readback.txt', 'resourceReadbackSha256')]:
         source = Path(work) / filename
         if sha256(source) != identity['environment'][key]:
             raise ValueError('Build provenance changed before SDK staging: ' + filename)

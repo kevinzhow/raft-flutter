@@ -356,7 +356,9 @@ python3 -m tool.html_webview.sdk build \
 The source archive still requires the fixed reviewed SHA above. No mutable image
 tag is accepted by the worker. Source compilation runs as the caller's non-root
 UID, at nice15 once, with two CPUs, 16GiB, no network and no host permission bypass.
-It configures the fixed production options and checks the successful feature
+The source archive is mounted read-only; hash verification, extraction and patching
+also run inside that same capped worker, before configuration. Host setup writes
+only small requests and controls Docker. It configures the fixed production options and checks the successful feature
 fingerprint before compiling only five engine roles plus InspectorResources.
 The worker uses only two isolated libbacktrace headers, never GCC's entire
 intrinsics include directory. Install uses a new DESTDIR and cannot implicitly
