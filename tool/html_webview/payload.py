@@ -20,7 +20,8 @@ GIO_LAUNCHER = 'libexec/raft-html-webview/gio-launch-desktop'
 GST_SCANNER = 'libexec/gstreamer-1.0/gst-plugin-scanner'
 GST_CORE = 'lib/gstreamer-1.0/libgstcoreelements.so'
 LAUNCH_VARIABLES = ('GST_PLUGIN_SYSTEM_PATH_1_0', 'GST_PLUGIN_PATH_1_0',
-                    'GST_PLUGIN_SCANNER_1_0', 'GST_REGISTRY_1_0')
+                    'GST_PLUGIN_SCANNER_1_0', 'GST_REGISTRY_1_0',
+                    'GST_PLUGIN_SCANNER', 'GST_REGISTRY')
 RUNTIME = (
     'lib/libWPEWebKit-2.0.so.1',
     'lib/wpe-webkit-2.0/injected-bundle/libWPEInjectedBundle.so',
@@ -316,9 +317,11 @@ def launch_environment(prefix, manifest_sha256):
             f'export GST_PLUGIN_SYSTEM_PATH_1_0="{prefix}/lib/gstreamer-1.0"\n'
             'export GST_PLUGIN_PATH_1_0=""\n'
             f'export GST_PLUGIN_SCANNER_1_0="{prefix}/{GST_SCANNER}"\n'
+            'export GST_PLUGIN_SCANNER="$GST_PLUGIN_SCANNER_1_0"\n'
             f'registry_dir="${{XDG_CACHE_HOME:-$HOME/.cache}}/raft-html-runtime/{manifest_sha256}"\n'
             'mkdir -p "$registry_dir"\n'
-            'export GST_REGISTRY_1_0="$registry_dir/gstreamer-registry.bin"\n')
+            'export GST_REGISTRY_1_0="$registry_dir/gstreamer-registry.bin"\n'
+            'export GST_REGISTRY="$GST_REGISTRY_1_0"\n')
 
 
 def main():

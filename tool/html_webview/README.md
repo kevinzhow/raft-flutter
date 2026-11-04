@@ -230,6 +230,12 @@ and [registry contract](https://gstreamer.freedesktop.org/documentation/gstreame
 Browser session data remains managed by the separate ephemeral WebView policy;
 this media registry stores plugin metadata.
 
+Scanner and registry paths are set in both the `_1_0` and unversioned variables:
+GStreamer prefers the former, while WebKit's sandbox binding code reads
+`GST_PLUGIN_SCANNER` and `GST_REGISTRY`. They must identify the same contained
+helper and writable registry directory. Both original host values are restored
+for external desktop launching.
+
 `python3 -m unittest tool.tests.test_html_webview_payload` covers pinned restore,
 malformed archives, preservation, byte/mode drift, provenance/TLS requirements,
 SDK/runtime separation, collisions and nested RPATH, including the unchanged

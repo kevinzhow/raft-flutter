@@ -312,7 +312,8 @@ class HtmlPayloadTests(unittest.TestCase):
         app = stage / 'raft_flutter'
         app.write_text('#!/bin/sh\nexec "' + sys.executable + '" "$@"\n')
         app.chmod(0o755)
-        keys = ['GIO_MODULE_DIR', *payload.LAUNCH_VARIABLES]
+        keys = ['GIO_MODULE_DIR', 'GST_PLUGIN_SYSTEM_PATH_1_0', 'GST_PLUGIN_PATH_1_0',
+                'GST_PLUGIN_SCANNER_1_0', 'GST_REGISTRY_1_0', 'GST_PLUGIN_SCANNER', 'GST_REGISTRY']
         probe = 'import os,json; print(json.dumps({k:os.environ.get(k) for k in ' + repr(keys) + '}))'
         cache = self.root / 'qa-cache'
         original = {'PATH': os.defpath, 'HOME': str(self.root), 'XDG_CACHE_HOME': str(cache),
@@ -324,7 +325,16 @@ class HtmlPayloadTests(unittest.TestCase):
         self.assertEqual(values['GST_PLUGIN_SYSTEM_PATH_1_0'], str(stage / 'lib/gstreamer-1.0'))
         self.assertEqual(values['GST_PLUGIN_PATH_1_0'], '')
         self.assertEqual(values['GST_PLUGIN_SCANNER_1_0'], str(stage / payload.GST_SCANNER))
+        self.assertEqual(values['GST_PLUGIN_SCANNER'], values['GST_PLUGIN_SCANNER_1_0'])
+        self.assertEqual(values['GST_REGISTRY'], values['GST_REGISTRY_1_0'])
+        self.assertTrue(Path(values['GST_PLUGIN_SCANNER']).is_relative_to(stage))
         self.assertTrue(values['GST_REGISTRY_1_0'].startswith(str(cache / 'raft-html-runtime')))
+        registry_parent = Path(values['GST_REGISTRY']).parent
+        self.assertTrue(registry_parent.is_relative_to(cache / 'raft-html-runtime' / self.pin))
+        sentinel = registry_parent / 'qa-write-probe'
+        sentinel.write_bytes(b'owned launcher test only')
+        self.assertEqual(sentinel.read_bytes(), b'owned launcher test only')
+        sentinel.unlink()
         helper = stage / payload.GIO_LAUNCHER
         helper.write_text('#!/bin/sh\nexec "$@"\n')
         external = ('import os,subprocess,sys; print(subprocess.check_output('
