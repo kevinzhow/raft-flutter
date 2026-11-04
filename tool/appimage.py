@@ -1,5 +1,6 @@
 """Build a relocatable AppImage on Ubuntu 24.04; keep graphics drivers on the host."""
 import hashlib
+import importlib
 import json
 import os
 from pathlib import Path
@@ -162,9 +163,9 @@ def isolated_directory_setup(app_id, suffix):
     ]) + '\n'
 
 
-def host_environment_capture():
+def host_environment_capture(variables=HOST_LAUNCH_VARIABLES):
     lines = []
-    for key in HOST_LAUNCH_VARIABLES:
+    for key in variables:
         lines.append('export RAFT_APPIMAGE_HOST_' + key + '_SET="' +
                      chr(36) + '{' + key + '+x}"')
         lines.append('export RAFT_APPIMAGE_HOST_' + key + '="' +
@@ -172,7 +173,7 @@ def host_environment_capture():
     return '\n'.join(lines) + '\n'
 
 
-def desktop_launcher_wrapper():
+def desktop_launcher_wrapper(variables=HOST_LAUNCH_VARIABLES):
     # Host programs must not load Ubuntu AppImage libraries or GIO modules.
     dollar = chr(36)
     lines = ['#!/bin/sh', 'set -eu',
@@ -180,7 +181,7 @@ def desktop_launcher_wrapper():
              '(dirname -- "' + dollar + '0")" && pwd)',
              'launcher="' + dollar + '{RAFT_APPIMAGE_HOST_GIO_LAUNCH_DESKTOP:-' +
              dollar + 'helper_dir/gio-launch-desktop}"']
-    for key in HOST_LAUNCH_VARIABLES:
+    for key in variables:
         prefix = 'RAFT_APPIMAGE_HOST_' + key
         lines.extend([
             'if [ "' + dollar + '{' + prefix + '_SET:-}" = x ]; then',
@@ -324,6 +325,8 @@ def package(stage, artifact, root, run, capture_output, file_digest):
     appdir.mkdir(parents=True)
     shutil.move(str(stage), appdir / 'raft')
     stage = appdir / 'raft'
+    html_payload = importlib.import_module('html_webview.payload')
+    html_runtime = html_payload.optional_runtime(stage)
     (stage / 'RUN.txt').unlink()
     if EXECUTABLE != BASE_EXECUTABLE:
         (stage / BASE_EXECUTABLE).rename(stage / EXECUTABLE)
@@ -380,7 +383,7 @@ def package(stage, artifact, root, run, capture_output, file_digest):
         if (stage / 'lib' / name).exists():
             shutil.move(str(stage / 'lib' / name), fallback / name)
     # Avoid loading host GIO modules into the bundled GLib ABI.
-    (stage / 'lib/gio/modules').mkdir(parents=True)
+    (stage / 'lib/gio/modules').mkdir(parents=True, exist_ok=bool(html_runtime))
     schemas = appdir / 'usr/share/glib-2.0/schemas'
     schemas.mkdir(parents=True)
     shutil.copy2('/usr/share/glib-2.0/schemas/gschemas.compiled', schemas)
@@ -401,10 +404,12 @@ def package(stage, artifact, root, run, capture_output, file_digest):
             '<name>Raft</name>', '<name>Raft (isolated build)</name>')
         if APP_ID_SUFFIX else base_metainfo)
     launcher = appdir / 'AppRun'
+    launch_variables = HOST_LAUNCH_VARIABLES + (html_payload.LAUNCH_VARIABLES if html_runtime else ())
+    html_environment = html_payload.launch_environment('$app_dir/raft', html_runtime['manifestSha256']) if html_runtime else ''
     launcher.write_text('''#!/bin/sh
 set -eu
 app_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-''' + host_environment_capture() + input_method_cache_setup() + host_libva_check() + isolated_directory_setup(APP_ID, APP_ID_SUFFIX) + '''export PATH="$app_dir/raft/bin:$PATH"
+''' + host_environment_capture(launch_variables) + input_method_cache_setup() + host_libva_check() + isolated_directory_setup(APP_ID, APP_ID_SUFFIX) + '''export PATH="$app_dir/raft/bin:$PATH"
 export LD_LIBRARY_PATH="$app_dir/raft/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 if [ "$host_libva" = 0 ]; then
   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$app_dir/raft/lib-fallback"
@@ -413,16 +418,17 @@ export GIO_MODULE_DIR="$app_dir/raft/lib/gio/modules"
 export GSETTINGS_SCHEMA_DIR="$app_dir/usr/share/glib-2.0/schemas"
 export GIO_LAUNCH_DESKTOP="$app_dir/raft/bin/raft-gio-launch-desktop"
 export GDK_PIXBUF_MODULE_FILE="$app_dir/raft/lib/loaders.cache"
-exec "$app_dir/raft/''' + EXECUTABLE + '''" "$@"
+''' + html_environment + '''exec "$app_dir/raft/''' + EXECUTABLE + '''" "$@"
 ''')
     launcher.chmod(0o755)
     desktop_wrapper = helpers / 'raft-gio-launch-desktop'
-    desktop_wrapper.write_text(desktop_launcher_wrapper())
+    desktop_wrapper.write_text(desktop_launcher_wrapper(launch_variables))
     desktop_wrapper.chmod(0o755)
     files = [path for path in stage.rglob('*') if path.is_file() and elf(path)]
     needed_glibc = (0, 0)
     for path in files:
-        rpath = '$ORIGIN/../lib' if path.parent == helpers else '$ORIGIN/lib' if path.name == EXECUTABLE else '$ORIGIN'
+        rpath = (html_payload.relative_rpath(path, stage) if html_runtime else
+                 '$ORIGIN/../lib' if path.parent == helpers else '$ORIGIN/lib' if path.name == EXECUTABLE else '$ORIGIN')
         run(['patchelf', '--force-rpath', '--set-rpath', rpath, path])
         needed_glibc = max(needed_glibc, glibc_requirement(capture_output(['readelf', '--version-info', path])))
         dependencies(path, env=env)
@@ -436,6 +442,10 @@ exec "$app_dir/raft/''' + EXECUTABLE + '''" "$@"
                     commands=commands, imageLoaderModules=[path.name for path in loaders],
                     hostProvidedLibraries=sorted(host_libraries))
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
+    html_payload.record_packaged(stage, html_runtime, {
+        'lib/' + name: 'lib-fallback/' + name for name in LIBVA_LIBRARIES
+        if html_runtime and 'lib/' + name in html_runtime['paths'] and (stage / 'lib-fallback' / name).exists()
+    })
     tools = json.loads((root / 'packaging/appimage/tools.json').read_text())
     tool_notices = stage / 'data/notices/appimage-runtime'
     tool_notices.mkdir()
@@ -454,7 +464,7 @@ exec "$app_dir/raft/''' + EXECUTABLE + '''" "$@"
     # the checkout (release.py makes the published .zsync itself).
     run([*command, appdir, artifact], env=dict(env, ARCH='x86_64'), cwd=work)
     artifact.chmod(0o755)
-    return {'runtime': tools['runtime'], 'appimagetool': tools['appimagetool'],
+    result = {'runtime': tools['runtime'], 'appimagetool': tools['appimagetool'],
             'buildSystem': 'Ubuntu 24.04 x86_64',
             'maximumGlibcRequired': '.'.join(map(str, needed_glibc)),
             'elfFilesChecked': len(files), 'hostProvidedLibraries': sorted(host_libraries),
@@ -463,3 +473,8 @@ exec "$app_dir/raft/''' + EXECUTABLE + '''" "$@"
             'updateInformation': information or None,
             'desktopLauncher': 'raft-gio-launch-desktop (bundled helper, restored host environment)',
             'launchModes': ['direct (static FUSE 3 library)', '--appimage-extract-and-run (no FUSE)']}
+    if html_runtime:
+        result['htmlRuntime'] = {'sourceManifestSha256': html_runtime['manifestSha256'],
+                                 'identity': html_runtime['identity'],
+                                 'packagedReceiptSha256': file_digest(stage / html_payload.PACKAGED)}
+    return result

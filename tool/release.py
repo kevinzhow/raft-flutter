@@ -181,6 +181,8 @@ def linux_package(stage, suffix=''):
     for path in stage.rglob('*'):
         if path.is_symlink() and not path.resolve().is_relative_to(stage.resolve()):
             raise ValueError('Linux bundle contains an external symlink')
+    html_payload = tool_module('html_webview.payload')
+    html_runtime = html_payload.optional_runtime(stage)
     manifest_path = stage / 'data/notices/raft-media/manifest.json'
     manifest = json.loads(manifest_path.read_text())
     for record in manifest['libraries']:
@@ -201,10 +203,15 @@ def linux_package(stage, suffix=''):
         jni.unlink()
         elfs.remove(jni)
     for path in elfs:
-        run(['patchelf', '--force-rpath', '--set-rpath', '$ORIGIN/lib' if path.name == 'raft_flutter' else '$ORIGIN', path])
+        rpath = (html_payload.relative_rpath(path, stage) if html_runtime else
+                 '$ORIGIN/lib' if path.name == 'raft_flutter' else '$ORIGIN')
+        run(['patchelf', '--force-rpath', '--set-rpath', rpath, path])
     checks = {}
     env = {k: v for k, v in os.environ.items() if k not in {'LD_LIBRARY_PATH', 'LD_PRELOAD'}}
-    for path in [stage / 'raft_flutter', stage / 'lib/libmpv.so.2', stage / 'lib/libmedia_kit_video_plugin.so']:
+    checked_paths = [stage / 'raft_flutter', stage / 'lib/libmpv.so.2', stage / 'lib/libmedia_kit_video_plugin.so']
+    if html_runtime:
+        checked_paths.extend(path for path in elfs if path not in checked_paths)
+    for path in checked_paths:
         listing = subprocess.check_output(['ldd', str(path)], text=True, env=env)
         if 'not found' in listing:
             raise ValueError('Incomplete relocated Linux dependency closure')
@@ -217,6 +224,7 @@ def linux_package(stage, suffix=''):
         row['preparedSha256'] = row['sha256']
         row['sha256'] = digest(stage / 'lib' / row['library'])
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
+    html_payload.record_packaged(stage, html_runtime)
     (stage / 'linux-dependency-checks.json').write_text(json.dumps(checks, indent=2) + '\n')
     desktop = stage / f'data/applications/app.raft.raft_flutter{suffix}.desktop'
     desktop.write_text(re.sub(r'^Exec=.*$', 'Exec=raft_flutter %u', desktop.read_text(), flags=re.M))
@@ -226,6 +234,28 @@ def linux_package(stage, suffix=''):
         'PDF preview requires installed poppler-utils. Media notices/source versions are in data/notices/raft-media.\n'
         'For desktop registration put raft_flutter on PATH or adjust data/applications/app.raft.raft_flutter.desktop.\n'
         'Other distributions and full-app acceptance on this CI build have not been verified.\n')
+    if html_runtime:
+        appimage = tool_module('appimage')
+        launch_variables = appimage.HOST_LAUNCH_VARIABLES + html_payload.LAUNCH_VARIABLES
+        launcher = stage / 'run-raft'
+        launcher.write_text('#!/bin/sh\nset -eu\n'
+                            'app_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\n' +
+                            appimage.host_environment_capture(launch_variables) +
+                            html_payload.launch_environment('$app_dir', html_runtime['manifestSha256']) +
+                            'export GIO_LAUNCH_DESKTOP="$app_dir/libexec/raft-html-webview/raft-gio-launch-desktop"\n'
+                            'exec "$app_dir/raft_flutter" "$@"\n')
+        launcher.chmod(0o755)
+        wrapper = stage / 'libexec/raft-html-webview/raft-gio-launch-desktop'
+        wrapper.write_text(appimage.desktop_launcher_wrapper(launch_variables))
+        wrapper.chmod(0o755)
+        desktop.write_text(desktop.read_text().replace('Exec=raft_flutter %u', 'Exec=run-raft %u'))
+        instructions_path = stage / 'RUN.txt'
+        instructions_path.write_text(instructions_path.read_text().replace(
+            'Run ./raft_flutter', 'Run ./run-raft').replace('put raft_flutter on PATH', 'put run-raft on PATH'))
+        with (stage / 'RUN.txt').open('a') as instructions:
+            instructions.write('Use ./run-raft to select the matching HTML TLS/media modules. '
+                               'Embedded HTML requires the distribution-installed bubblewrap package at /usr/bin/bwrap. '
+                               'HTML sandboxing fails closed when that prerequisite is unavailable.\n')
 
 
 def zip_folder(stage, destination):

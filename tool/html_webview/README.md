@@ -139,3 +139,99 @@ special files, traversal and trusted-system-helper checks. Root-owned negative
 fixtures can be supplied by the dedicated build container; the tests never
 modify the real system helper. They do not compile WebKit, launch helpers or prove
 renderer, sandbox, AppImage or HTML behavior. Native acceptance remains required.
+
+## Reusing the SDK and runtime
+
+A completed engine build can be staged once as a reusable SDK. Preserve the
+`include`, `lib`, `libexec` and `share` trees together. Add compatible libwpe
+headers/library, the full reviewed runtime dependency closure, and the matching
+GIO GnuTLS backend/cache. Rewrite the four required `.pc` files (WPE WebKit,
+WPEPlatform, headless WPEPlatform and libwpe) to use:
+
+```text
+prefix=${pcfiledir}/../..
+libdir=${prefix}/lib
+includedir=${prefix}/include
+```
+
+Include the matching `gio-launch-desktop` helper under `libexec/raft-html-webview`,
+and the GStreamer scanner under `libexec/gstreamer-1.0`. Stage the reviewed media
+plugins under `lib/gstreamer-1.0`, including core elements; every plugin needs its
+package/archive/notice record and ELF closure. Supported media formats are the
+ones in this reviewed plugin set, not whichever plugins happen to exist on the
+host. Native format acceptance remains separate from CSS/JavaScript/canvas.
+
+Under `share/raft-html-webview`, retain `source-inputs.json`, the actual generated
+`cmakeconfig.h`, `runtime.marker`, package/source notices in `licenses/`, and
+`packages.json`. The latter has an `artifacts` array. Every entry names `name`,
+`version`, HTTPS source/package `url`, exact archive `sha256`, relative `notice`
+under `licenses/`, and `files` (the relative binaries supplied by that artifact).
+Every ELF file must have such a source/package record. These records describe
+the authenticated build inputs; they do not replace the signed repository/source
+authentication receipts or native acceptance. Keep those receipts alongside
+the staged SDK. Files must have no group/world write or setuid/setgid bits.
+
+From the repository root, seal the complete staged prefix:
+
+```sh
+python3 -m tool.html_webview.payload seal --prefix /work/raft-html-wpe-sdk
+```
+
+This creates `share/raft-html-webview/payload.json` and prints its SHA256. It checks
+the current source/adapter pins, required helpers/TLS/cache/headers/pkg-config,
+production sandbox configuration, all file hashes/modes and ELF architecture /
+GLIBC ceiling. It refuses a previous manifest and never changes an installed
+runtime. It does **not** establish full dependency closure or HTML behavior; run
+native acceptance before reviewing this manifest as a release input.
+
+Archive the four top-level trees together after that review and record the
+whole archive's actual SHA256. There is no automatic download, unknown binary
+hash, remote publication or privileged installation in this workflow. Restore
+only a reviewed archive into a new directory:
+
+```sh
+python3 -m tool.html_webview.payload restore \
+  --archive /inputs/reviewed-wpe-sdk.tar.xz --sha256 REVIEWED_ARCHIVE_SHA256 \
+  --destination /work/restored-wpe-sdk
+```
+
+Restore verifies the caller's archive pin before creating a destination, bounds
+the archive, rejects unsafe entries and verifies its full embedded manifest.
+It preserves failed restores and existing directories for investigation. The
+archive pin authenticates its embedded manifest; neither pin may be inferred
+from an untrusted download itself.
+
+For a subsequent build, use this restored prefix only through private environment
+configuration: prepend its `lib/pkgconfig` to `PKG_CONFIG_PATH` and provide its
+library directory to the build linker. Do not replace host packages or modify
+the pub cache. Set `RAFT_HTML_WEBVIEW_SDK` to that prefix and
+`RAFT_HTML_WEBVIEW_MANIFEST_SHA256` to the reviewed manifest hash for packaging.
+Both values are required together. With neither supplied, the existing Linux
+tar/AppImage packaging path is unchanged.
+
+Linux tar and AppImage packaging copy the runtime/helpers/resources after
+verifying the entire SDK again. Different existing media/plugin bytes cause a
+failure rather than an overwrite. Build-only headers/pkg-config/static archives
+stay out of the application; runtime aliases become private regular copies so
+ELF RPATH changes cannot mutate the SDK. Every nested helper or module receives
+an RPATH relative to the shared application `lib` directory. ELF dependency
+checks include the helpers and GIO module. A separate `packaged-runtime.json`
+records the final bytes after those RPATH changes and preserves the original
+source-manifest pin. The AppImage stage verifies that receipt before further
+packaging and records its own final bytes again.
+
+With this payload, the tar's `run-raft` launcher and desktop entry select the
+matching GIO module, GStreamer plugins/scanner and a registry scoped to the
+payload's hash. The main ELF keeps its original name. AppImage uses the same
+environment setup. Both restore the original host GIO/media environment before
+launching an external desktop program. The plugin-path/registry rules follow
+the [GStreamer environment contract](https://gstreamer.freedesktop.org/documentation/gstreamer/running.html)
+and [registry contract](https://gstreamer.freedesktop.org/documentation/gstreamer/gstregistry.html?gi-language=c).
+Browser session data remains managed by the separate ephemeral WebView policy;
+this media registry stores plugin metadata.
+
+`python3 -m unittest tool.tests.test_html_webview_payload` covers pinned restore,
+malformed archives, preservation, byte/mode drift, provenance/TLS requirements,
+SDK/runtime separation, collisions and nested RPATH, including the unchanged
+no-payload Linux packaging path. Its small synthetic payload is explicitly not
+an engine, native run, signed package or release acceptance result.
