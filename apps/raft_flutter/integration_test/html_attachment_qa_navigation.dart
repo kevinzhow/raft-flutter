@@ -45,7 +45,9 @@ Future<void> _attemptQaScriptNavigation(HttpRequest request) async {
   // No pointer/keyboard gesture. The same destination is also used by the real
   // link, so running this after a click detects reuse of stale trusted metadata.
   final result = await controller.evaluateJavascript(
-    source: '''window.setTimeout(() => {
+    source: Platform.isLinux
+        ? "window.qaScriptNavigationRequested=true; 'scheduled';"
+        : '''window.setTimeout(() => {
       window.qaScriptNavigationFired++;
       location.assign('https://example.com/');
     }, 25); 'scheduled';''',

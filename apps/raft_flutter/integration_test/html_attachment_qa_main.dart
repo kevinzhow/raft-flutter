@@ -37,6 +37,26 @@ canvas{border:2px solid #172554;display:block;margin-top:20px}</style>
 <p><input id="file" type="file"> <a id="external" href="https://example.com">External link</a></p>
 <script>
 window.qaLastClick=null;window.qaScriptNavigationFired=0;
+window.qaPointerEvents=[];window.qaScriptNavigationRequested=false;
+for(const type of ['pointerdown','mousedown','pointerup','mouseup','click']){
+  document.addEventListener(type,event=>{
+    const target=event.target.closest('button,input,a');
+    if(target){
+      qaPointerEvents.push({type,id:target.id,trusted:event.isTrusted,
+        button:event.button,buttons:event.buttons});
+      if(qaPointerEvents.length>24)qaPointerEvents.shift();
+    }
+  },true);
+}
+// This timer belongs to document loading, not a host JavaScript evaluation.
+// WPE's evaluate_javascript API forces a user gesture; a timer created by that
+// API cannot serve as a negative test for document-owned scripted navigation.
+window.setInterval(()=>{
+  if(!window.qaScriptNavigationRequested)return;
+  window.qaScriptNavigationRequested=false;
+  window.qaScriptNavigationFired++;
+  location.assign('https://example.com/');
+},50);
 document.addEventListener('click',event=>{
   const target=event.target.closest('button,input,a');
   if(target)window.qaLastClick={id:target.id,trusted:event.isTrusted};
@@ -139,6 +159,7 @@ Future<Map<String, Object?>> _snapshot() async {
         appBridge:typeof window.flutter_inappwebview,
         network:window.qaNetwork,storage:window.qaStorage,origin:self.origin,
         lastClick:window.qaLastClick,scriptNavigationFired:window.qaScriptNavigationFired,
+        pointerEvents:window.qaPointerEvents,
         fileCount:document.querySelector('#file').files.length
       })''',
       );
@@ -151,6 +172,12 @@ Future<Map<String, Object?>> _snapshot() async {
     'loaded': _loaded,
     'failure': _failure,
     'document': document,
+    'nativeViewFocus': [
+      for (final node in FocusManager.instance.rootScope.descendants)
+        if (node.debugLabel ==
+            'flutter_inappwebview_linux_custom_platform_view')
+          {'identity': identityHashCode(node), 'hasFocus': node.hasFocus},
+    ],
     'profile': _profile,
     'selectedInteractive': attachmentHtmlWebViewSupported,
     'environmentDisposed': _environmentDisposed,
