@@ -22,6 +22,6 @@ class ClipboardFileProvider : FileProvider() {
                 throw FileNotFoundException("Clipboard image expired")
             }
         }
-        return super.openFile(uri, mode)
+        return super.openFile(uri, mode) ?: throw FileNotFoundException("Shared file unavailable")
     }
 }
