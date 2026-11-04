@@ -43,8 +43,8 @@ class HtmlAttachmentPreviewDialog extends StatefulWidget {
   final Future<bool> Function(Uri)? openExternal;
 
   /// Show the server's isolated preview URL in the platform WebView (Web
-  /// parity). Null selects it wherever a WebView implementation is registered
-  /// (Android, iOS, macOS); Linux and Windows fall back to the static preview.
+  /// parity). Null selects the registered mobile or desktop renderer. The
+  /// static preview remains available only when no renderer is registered.
   final bool? useWebView;
   final AttachmentHtmlWebViewBuilder? webViewBuilder;
   @override
@@ -186,7 +186,8 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
 
   /// Only a document that passed the sandbox check is ever stored, so a hit
   /// needs no new request to be as safe as the first open.
-  AttachmentImageStoreKey get sourceKey => widget.controller.attachmentMedia.cacheKey(
+  AttachmentImageStoreKey
+  get sourceKey => widget.controller.attachmentMedia.cacheKey(
     widget.metadata,
     'html',
     channelId:
@@ -247,12 +248,10 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
     switch (e) {
       case AttachmentHtmlTooLarge():
         retry = false;
-        message =
-            'This HTML file is too large for the in-app preview. Open it in the browser or download it.';
+        message = 'This HTML file is too large for the in-app preview. Open it in the browser or download it.';
       case AttachmentHtmlNotIsolated():
         retry = browser = false;
-        message =
-            'The server did not provide an isolated HTML preview, so it is not shown. Download the file to view it.';
+        message = 'The server did not provide an isolated HTML preview, so it is not shown. Download the file to view it.';
       case DioException(response: final r?)
           when [401, 403].contains(r.statusCode):
         retry = browser = false;
@@ -260,24 +259,18 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
       case DioException(response: final r?)
           when [404, 410].contains(r.statusCode):
         retry = browser = false;
-        message =
-            'The HTML preview is no longer available. Download the file to view it.';
+        message = 'The HTML preview is no longer available. Download the file to view it.';
       case DioException(response: != null):
-        message =
-            'The server could not deliver the HTML preview. Retry, or open it in the browser.';
+        message = 'The server could not deliver the HTML preview. Retry, or open it in the browser.';
       case DioException():
-        message =
-            'The HTML preview could not be loaded because the connection failed. Retry, or open it in the browser.';
+        message = 'The HTML preview could not be loaded because the connection failed. Retry, or open it in the browser.';
       case FormatException():
         retry = false;
-        message =
-            'This HTML is too complex for the in-app preview. Open it in the browser or download it.';
+        message = 'This HTML is too complex for the in-app preview. Open it in the browser or download it.';
       case _WebViewFailure():
-        message =
-            'This device could not display the HTML preview. Open it in the browser or download it.';
+        message = 'This device could not display the HTML preview. Open it in the browser or download it.';
       default:
-        message =
-            'The HTML preview could not be loaded. Download the file to view it.';
+        message = 'The HTML preview could not be loaded. Download the file to view it.';
     }
     setState(() {
       error = message;

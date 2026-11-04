@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   desktop_drop
   file_selector_windows
+  flutter_inappwebview_windows
   flutter_secure_storage_windows
   flutter_timezone
   media_kit_libs_windows_video

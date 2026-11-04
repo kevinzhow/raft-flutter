@@ -13672,6 +13672,30 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
+      "apps/raft_flutter/lib/platform/attachment_html_desktop.dart#class:DesktopAttachmentHtmlWebView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task299 desktop HTML)",
+        "reason": "Native WPE/WebView2 document renderer within the existing attachment preview shell. Document CSS is not an application design-system family; shell controls retain their existing owners. This registration grants no style exemption or visual/native acceptance."
+      },
+      "apps/raft_flutter/lib/platform/attachment_html_desktop.dart#class:_DesktopHtmlState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task299 desktop HTML)",
+        "reason": "Native WPE/WebView2 document renderer within the existing attachment preview shell. Document CSS is not an application design-system family; shell controls retain their existing owners. This registration grants no style exemption or visual/native acceptance."
+      },
+      "apps/raft_flutter/lib/platform/attachment_html_desktop.dart#method:DesktopAttachmentHtmlWebView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task299 desktop HTML)",
+        "reason": "Native WPE/WebView2 document renderer within the existing attachment preview shell. Document CSS is not an application design-system family; shell controls retain their existing owners. This registration grants no style exemption or visual/native acceptance."
+      },
+      "apps/raft_flutter/lib/platform/attachment_html_desktop.dart#method:_DesktopHtmlState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task299 desktop HTML)",
+        "reason": "Native WPE/WebView2 document renderer within the existing attachment preview shell. Document CSS is not an application design-system family; shell controls retain their existing owners. This registration grants no style exemption or visual/native acceptance."
+      },
       "apps/raft_flutter/lib/platform/attachment_html_webview.dart#class:AttachmentHtmlWebView": {
         "role": "unresolved",
         "familyRefs": [],

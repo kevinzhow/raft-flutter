@@ -11,38 +11,14 @@ import 'package:webview_flutter_android/src/android_webkit.g.dart'
     as android_webview;
 
 import 'attachment_html_webview_data.dart';
+import 'attachment_html_desktop.dart';
+import 'attachment_html_webview_events.dart';
 
-/// Callbacks from the preview WebView to its owner. The WebView never gets a
-/// JavaScript channel, so nothing in the uploaded document can reach the app.
-class AttachmentHtmlWebViewEvents {
-  const AttachmentHtmlWebViewEvents({
-    required this.onNavigation,
-    required this.onLoaded,
-    required this.onFailed,
-    this.onProgress,
-  });
+export 'attachment_html_webview_events.dart';
 
-  /// Main-frame navigation other than the first load. True lets the WebView
-  /// navigate; the owner opens approved links externally and returns false.
-  final bool Function(String url) onNavigation;
-  final VoidCallback onLoaded;
-  final void Function(String reason) onFailed;
-
-  /// Page-load progress, 0..100 (the WebView reports no byte counts).
-  final void Function(int percent)? onProgress;
-}
-
-typedef AttachmentHtmlWebViewBuilder =
-    Widget Function(
-      BuildContext context,
-      Uri uri,
-      AttachmentHtmlWebViewEvents events,
-    );
-
-/// True where a platform WebView implementation is registered (Android, iOS
-/// and macOS use webview_flutter's WebView / WKWebView; Linux and Windows have
-/// no first-party implementation and use the static preview).
-bool get attachmentHtmlWebViewSupported => WebViewPlatform.instance != null;
+/// Prefer an inline isolated renderer wherever one is registered.
+bool get attachmentHtmlWebViewSupported =>
+    attachmentHtmlDesktopSupported || WebViewPlatform.instance != null;
 
 /// Loads the server's isolated `/html-preview` document directly, exactly as
 /// the web client's sandboxed iframe does. No `loadHtmlString` / `data:` URL is
@@ -66,6 +42,7 @@ class AttachmentHtmlWebView extends StatefulWidget {
 }
 
 class _AttachmentHtmlWebViewState extends State<AttachmentHtmlWebView> {
+  late final desktop = attachmentHtmlDesktopSupported;
   late final WebViewController controller;
   static final blank = Uri.parse('about:blank').toString();
   late final AttachmentHtmlWebData data;
@@ -74,6 +51,7 @@ class _AttachmentHtmlWebViewState extends State<AttachmentHtmlWebView> {
   @override
   void initState() {
     super.initState();
+    if (desktop) return;
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -135,7 +113,8 @@ class _AttachmentHtmlWebViewState extends State<AttachmentHtmlWebView> {
       unawaited(android.setAllowFileAccess(false));
       unawaited(android.setAllowContentAccess(false));
     }
-    data = widget.dataFor?.call(controller) ?? attachmentHtmlWebData(controller);
+    data =
+        widget.dataFor?.call(controller) ?? attachmentHtmlWebData(controller);
     unawaited(start());
   }
 
@@ -153,6 +132,10 @@ class _AttachmentHtmlWebViewState extends State<AttachmentHtmlWebView> {
 
   @override
   void dispose() {
+    if (desktop) {
+      super.dispose();
+      return;
+    }
     // Unload the document first: its scripts, timers, media and network stop
     // when about:blank replaces it. The delegate (closed) lets only that one
     // navigation through and ignores every later event of the old page.
@@ -206,6 +189,11 @@ class _AttachmentHtmlWebViewState extends State<AttachmentHtmlWebView> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      WebViewWidget(controller: controller);
+  Widget build(BuildContext context) => desktop
+      ? DesktopAttachmentHtmlWebView(
+          key: ValueKey(widget.uri),
+          uri: widget.uri,
+          events: widget.events,
+        )
+      : WebViewWidget(controller: controller);
 }
