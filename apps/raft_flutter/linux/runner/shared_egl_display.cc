@@ -10,6 +10,7 @@
 
 #include "shared_egl_termination.h"
 #ifdef RAFT_MULTIWINDOW_QA
+#include <atomic>
 #include <cstdio>
 #endif
 
@@ -19,13 +20,15 @@ SharedEglTermination lifetime;
 EGLDisplay observed_display = EGL_NO_DISPLAY;
 PFNEGLDESTROYCONTEXTPROC previous_destroy = nullptr;
 PFNEGLDESTROYCONTEXTPROC actual_destroy = nullptr;
-size_t destroyed_contexts = 0;
+std::atomic<size_t> destroyed_contexts{0};
 EGLBoolean observe_context_destroy(EGLDisplay display, EGLContext context) {
   const EGLBoolean result = actual_destroy(display, context);
   if (display == observed_display) {
-    if (result == EGL_TRUE) ++destroyed_contexts;
+    const size_t count = result == EGL_TRUE
+        ? destroyed_contexts.fetch_add(1, std::memory_order_relaxed) + 1
+        : destroyed_contexts.load(std::memory_order_relaxed);
     std::fprintf(stderr, "RAFT_EGL_LIFETIME event=context_destroy display=%p context=%p success=%d count=%zu\n",
-                 display, context, result == EGL_TRUE, destroyed_contexts);
+                 display, context, result == EGL_TRUE, count);
   }
   return result;
 }
@@ -187,7 +190,7 @@ bool raft_shared_egl_release() {
 #ifdef RAFT_MULTIWINDOW_QA
   std::fprintf(stderr, "RAFT_EGL_LIFETIME event=released success=%d live=%zu deferred=%zu terminateCount=%zu contextDestroyCount=%zu ready=%d\n",
                success, lifetime.live_engines(), lifetime.deferred(), lifetime.terminated(),
-               destroyed_contexts, lifetime.Ready());
+               destroyed_contexts.load(std::memory_order_relaxed), lifetime.Ready());
 #endif
   return success;
 }
