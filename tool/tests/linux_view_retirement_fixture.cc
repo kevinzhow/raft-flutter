@@ -67,10 +67,20 @@ int main(int argc,char** argv) {
   add(view,event_box);add(event_box,renderer);renderer->renderer=true;g_mutex_init(&renderer->frame_mutex);
   auto* engine=G_OBJECT(g_object_new(G_TYPE_OBJECT,nullptr));
   view->engine=G_OBJECT(g_object_ref(engine));renderer->engine=G_OBJECT(g_object_ref(engine));
-  g_object_weak_ref(engine,[](gpointer,GObject*){engine_retired=true;},nullptr);
+  g_object_weak_ref(engine,[](gpointer,GObject*){engine_retired=true;std::fputs("FIXTURE_ENGINE_WEAK_RETIRED\n",stderr);},nullptr);
   auto* other=widget(true);auto* other_renderer=widget();add(other,other_renderer);
   other_renderer->engine=G_OBJECT(g_object_new(G_TYPE_OBJECT,nullptr));
   raft_desktop_track_window(view,view);raft_desktop_track_window(view,view); // Registration deduplicates.
+  if (std::strcmp(argv[1],"single-window")==0) {
+    gtk_widget_destroy(view);
+    const bool immediate=renderer_finalized && !engine_retired;
+    g_object_unref(engine);
+    const bool no_cleanup=g_main_context_pending(nullptr)==FALSE;
+    std::printf("READBACK singleWindowImmediate=%d engineRetired=%d noCleanupPending=%d\n",immediate,engine_retired,no_cleanup);
+    gtk_widget_destroy(other);g_object_unref(other);g_object_unref(view);
+    return immediate&&engine_retired&&no_cleanup?0:1;
+  }
+  raft_desktop_track_window(other,other); // Second real owned engine enables the narrow lifecycle.
   std::mutex mutex;std::condition_variable condition;bool locked=false,release=false;
   std::thread raster([&]{g_mutex_lock(&renderer->frame_mutex);{std::lock_guard<std::mutex> lock(mutex);locked=true;}condition.notify_one();
     {std::unique_lock<std::mutex> lock(mutex);condition.wait(lock,[&]{return release;});}g_mutex_unlock(&renderer->frame_mutex);});

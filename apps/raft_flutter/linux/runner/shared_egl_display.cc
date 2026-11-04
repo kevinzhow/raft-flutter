@@ -118,9 +118,11 @@ bool raft_desktop_window_creation_allowed() {
 }
 
 void raft_desktop_track_window(FlView* view, GtkWindow* window) {
-  raft_desktop_retire_view_children_after_engine(view);
   owned_windows.Register(G_OBJECT(window), G_OBJECT(view),
                          G_OBJECT(fl_view_get_engine(view)));
+  raft_desktop_retire_view_children_after_engine(view, [] {
+    return owned_windows.registered() >= 2;
+  });
 }
 
 bool raft_desktop_finish_quit() {
