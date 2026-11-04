@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart'
+    show WebViewPlatform;
 
-import '../platform/attachment_html_webview.dart'
-    show attachmentHtmlWebViewSupported;
 import 'artifact_link.dart';
 import 'artifact_viewer.dart';
 import 'private_app_invite.dart';
@@ -66,10 +66,11 @@ Future<void> openMessageLink(BuildContext context, String url) async {
   if (uri == null) return;
   if (await PrivateAppInviteScope.open(context, uri)) return;
   if (!context.mounted) return;
-  // Linux and Windows have no platform WebView: the browser opens it, as it
-  // did before.
+  // ArtifactViewer needs the authenticated webview_flutter implementation.
+  // An isolated WPE/WebView2 attachment renderer does not provide that API
+  // or its session; keep the external browser fallback on those hosts.
   if (ArtifactLinks.matches(uri) &&
-      (debugArtifactViewerSupported ?? attachmentHtmlWebViewSupported)) {
+      (debugArtifactViewerSupported ?? WebViewPlatform.instance != null)) {
     await openArtifactLink(context, uri);
   } else if (['https', 'http', 'mailto'].contains(uri.scheme)) {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
