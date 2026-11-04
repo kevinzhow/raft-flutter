@@ -248,3 +248,20 @@ malformed archives, preservation, byte/mode drift, provenance/TLS requirements,
 SDK/runtime separation, collisions and nested RPATH, including the unchanged
 no-payload Linux packaging path. Its small synthetic payload is explicitly not
 an engine, native run, signed package or release acceptance result.
+
+The Linux plugin uses a complete build-local source copy. The configure step
+checks the exact hashes of every modified upstream file before applying
+`patch_linux_plugin.py`; it never edits the Pub cache. This backport uses the
+WPE 2.54 reduced-motion setting, transmits native user-gesture and redirect
+metadata with the actual request method, and rejects navigation when its host
+policy callback fails. Redirects cannot reuse gesture metadata to open an
+external browser.
+
+The preview's explicit `allowFileAccess: false` also cancels native file chooser
+requests before either the Dart callback or GTK fallback. This is required
+because the pinned Linux plugin's chooser-mode decoder does not support Linux;
+its callback exception otherwise opens the native chooser. Other plugin users
+retain the original default until they explicitly disable file access.
+`python3 -m unittest tool.tests.test_linux_html_plugin` verifies hash rejection,
+cache preservation and the actual original/patched native chooser callback
+against external API test doubles. Actual UI acceptance remains separate.

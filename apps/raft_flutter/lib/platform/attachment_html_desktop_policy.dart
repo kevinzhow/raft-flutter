@@ -60,10 +60,10 @@ class DesktopHtmlPolicy {
     // WebView2's pinned adapter serializes its native link classification,
     // derived from IsUserInitiated, rather than Android's hasGesture field.
     final gesture =
-        action.hasGesture ??
-        (defaultTargetPlatform == TargetPlatform.windows &&
-            action.isRedirect != true &&
-            action.navigationType == NavigationType.LINK_ACTIVATED);
+        action.isRedirect != true &&
+        (action.hasGesture ??
+            (defaultTargetPlatform == TargetPlatform.windows &&
+                action.navigationType == NavigationType.LINK_ACTIVATED));
     if ((fragment || gesture) && events.onNavigation(url)) {
       return NavigationActionPolicy.ALLOW;
     }

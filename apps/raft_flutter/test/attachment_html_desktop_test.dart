@@ -179,6 +179,39 @@ void main() {
     },
   );
 
+  test('redirects cannot reuse a gesture to request an external browser', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    final requested = <String>[];
+    final policy = DesktopHtmlPolicy(
+      uri,
+      AttachmentHtmlWebViewEvents(
+        onNavigation: (url) {
+          requested.add(url);
+          return false;
+        },
+        onLoaded: () {},
+        onFailed: (_) {},
+      ),
+    )..started = true;
+    for (final redirect in [true, false, true]) {
+      expect(
+        policy.navigation(
+          NavigationAction(
+            request: URLRequest(
+              url: WebUri('https://external.example'),
+              method: 'GET',
+            ),
+            isForMainFrame: true,
+            hasGesture: true,
+            isRedirect: redirect,
+          ),
+        ),
+        NavigationActionPolicy.CANCEL,
+      );
+    }
+    expect(requested, ['https://external.example']);
+  });
+
   test(
     'documents cannot request device permissions, local files or downloads',
     () async {
