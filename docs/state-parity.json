@@ -28332,30 +28332,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@12955/METHOD:build@17187/FUNCTION:compactProse@19630": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@12955/METHOD:build@17187/FUNCTION:selectable@19992": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@32708/METHOD:build@33290/FUNCTION:failed@33446": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@48309/METHOD:build@48805/FUNCTION:<anonymous>@48914/FUNCTION:control@50151": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/message_body.dart#method:RaftCodeBlock.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -39925,12 +39901,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "third_party/flutter_markdown_plus/lib/src/builder.dart#local-function:CLASS:MarkdownBuilder@2866/METHOD:visitElementAfter@13041/FUNCTION:defaultChild@13355": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "third_party/flutter_markdown_plus/lib/src/builder.dart#method:MarkdownBuilder._addAnonymousBlockIfNeeded": {
         "role": "unresolved",
         "familyRefs": [],
@@ -41802,18 +41772,6 @@
         "owner": "design-system alignment",
         "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
       },
-      "packages/raft_ui/lib/src/document_preview.dart#local-function:CLASS:_RaftDocumentPreviewState@1949/METHOD:_lazyCsv@9924/FUNCTION:<anonymous>@10547/FUNCTION:cells@11032": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
-      },
-      "packages/raft_ui/lib/src/document_preview.dart#local-function:CLASS:_RaftDocumentPreviewState@1949/METHOD:buildPane@17939/FUNCTION:pane@18939": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
-      },
       "packages/raft_ui/lib/src/document_preview.dart#method:_RaftDocumentPreviewState._xlsxTabs": {
         "role": "unresolved",
         "familyRefs": [],
@@ -43171,6 +43129,228 @@
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/document_previews.dart#class:_MarkdownCommentsPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Interactive SDK fixture for structural section capture, removal and jump. This registers ownership, not product or visual acceptance."
+      },
+      "packages/raft_ui/lib/document_previews.dart#class:_MarkdownCommentsPreviewState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Interactive SDK fixture for structural section capture, removal and jump. This registers ownership, not product or visual acceptance."
+      },
+      "packages/raft_ui/lib/document_previews.dart#function:markdownSectionCommentsPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Interactive SDK fixture for structural section capture, removal and jump. This registers ownership, not product or visual acceptance."
+      },
+      "packages/raft_ui/lib/document_previews.dart#method:_MarkdownCommentsPreview.createState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Interactive SDK fixture for structural section capture, removal and jump. This registers ownership, not product or visual acceptance."
+      },
+      "packages/raft_ui/lib/document_previews.dart#method:_MarkdownCommentsPreviewState.build": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Interactive SDK fixture for structural section capture, removal and jump. This registers ownership, not product or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/document_preview.dart#local-function:CLASS:_RaftDocumentPreviewState@1990/METHOD:_lazyCsv@9965/FUNCTION:<anonymous>@10588/FUNCTION:cells@11073": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/lazy_markdown_document.dart#function:anchoredBlock": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#class:RaftMarkdownAnchorBlock": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#class:RaftMarkdownAnchorFragment": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#class:RaftMarkdownCommentAnchorHost": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#class:_MarkdownAnchors": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#class:_MarkdownBlockScope": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#class:_MarkdownBlockState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:RaftMarkdownAnchorBlock.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:RaftMarkdownAnchorBlock.delegatesOf": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:RaftMarkdownAnchorBlock.withChild": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:RaftMarkdownAnchorBuilder.wrap": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:RaftMarkdownAnchorBuilder.wrapOther": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:RaftMarkdownAnchorFragment.of": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:RaftMarkdownAnchorFragment.slice": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:RaftMarkdownAnchorFragment.updateShouldNotify": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:RaftMarkdownCommentAnchorHost.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:_MarkdownAnchors.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:_MarkdownAnchors.didChangeDependencies": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:_MarkdownAnchors.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:_MarkdownBlockScope.updateShouldNotify": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:_MarkdownBlockState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/markdown_comment_anchors.dart#method:_MarkdownBlockState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@12995/METHOD:build@17227/FUNCTION:anchoredOther@20262": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@12995/METHOD:build@17227/FUNCTION:compactProse@19785": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@12995/METHOD:build@17227/FUNCTION:selectable@20147": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@33881/METHOD:build@34463/FUNCTION:failed@34619": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@49588/METHOD:build@50084/FUNCTION:<anonymous>@50193/FUNCTION:control@51430": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#method:_JoinedSelectionState.didChangeDependencies": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "third_party/flutter_markdown_plus/lib/src/builder.dart#local-function:CLASS:MarkdownBuilder@2866/METHOD:visitElementAfter@13211/FUNCTION:defaultChild@13525": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/attachment_preview_shell.dart#method:_RaftAttachmentPreviewShellState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Retires transient comment mode and pending location when the comment entry is removed. Existing shell rendering and authority remain unchanged; no visual acceptance or style exception."
+      },
+      "packages/raft_ui/lib/src/document_preview.dart#local-function:CLASS:_RaftDocumentPreviewState@1990/METHOD:buildPane@18402/FUNCTION:pane@19402": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {

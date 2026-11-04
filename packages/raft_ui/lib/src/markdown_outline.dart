@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:unorm_dart/unorm_dart.dart' as unorm;
 
 import 'localization.dart';
 import 'theme.dart';
@@ -85,42 +86,12 @@ String _cleanHeadingText(String raw) => raw
     .replaceAll(RegExp(r'[`*_~]'), '')
     .trim();
 
-// `String.prototype.normalize("NFKD")` drops accents through the slug regex
-// (the combining mark is not a letter); the Latin-1 and Latin Extended-A
-// letters are mapped to their base letters to the same effect.
-const _accents = {
-  'àáâãäåāăą': 'a',
-  'çćĉċč': 'c',
-  'ďđ': 'd',
-  'èéêëēĕėęě': 'e',
-  'ĝğġģ': 'g',
-  'ĥħ': 'h',
-  'ìíîïĩīĭįı': 'i',
-  'ĵ': 'j',
-  'ķ': 'k',
-  'ĺļľŀł': 'l',
-  'ñńņňŉ': 'n',
-  'òóôõöøōŏő': 'o',
-  'ŕŗř': 'r',
-  'śŝşš': 's',
-  'ţťŧ': 't',
-  'ùúûüũūŭůűų': 'u',
-  'ŵ': 'w',
-  'ýÿŷ': 'y',
-  'źżž': 'z',
-};
-final _accentMap = {
-  for (final entry in _accents.entries)
-    for (final rune in entry.key.runes) String.fromCharCode(rune): entry.value,
-};
-
+// The exact Web sequence: lowercase, NFKD, replace every non-letter/number
+// run with a hyphen, then trim. Combining marks become separators, not
+// silently removed accents (e.g. éa -> e-a).
 String _slugifyHeading(String title) {
-  final folded = title
-      .toLowerCase()
-      .split('')
-      .map((c) => _accentMap[c] ?? c)
-      .join();
-  final slug = folded
+  final slug = unorm
+      .nfkd(title.toLowerCase())
       .replaceAll(RegExp(r'[^\p{L}\p{N}]+', unicode: true), '-')
       .replaceAll(RegExp(r'^-+|-+$'), '');
   return slug.isEmpty ? 'section' : slug;

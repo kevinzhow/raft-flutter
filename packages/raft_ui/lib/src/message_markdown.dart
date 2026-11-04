@@ -209,7 +209,10 @@ md.ExtensionSet _extensions(RaftMarkdownMode mode) {
     ...gfm.inlineSyntaxes,
   ];
   if (mode == RaftMarkdownMode.document) {
-    return md.ExtensionSet(gfm.blockSyntaxes, inline);
+    return md.ExtensionSet([
+      const _SourceHeadingSyntax(),
+      ...gfm.blockSyntaxes,
+    ], inline);
   }
   // The standard block syntaxes without the indented code block.
   return md.ExtensionSet([
@@ -245,7 +248,14 @@ List<md.Node> raftParseMarkdown(String source, RaftMarkdownMode mode) {
 
 /// An element with the same tag and attributes over [children].
 md.Element raftCopyElement(md.Element element, List<md.Node> children) =>
-    md.Element(element.tag, children)..attributes.addAll(element.attributes);
+    (element is RaftMarkdownHeadingElement
+          ? RaftMarkdownHeadingElement(
+              element.tag,
+              children,
+              element.sourceLine,
+            )
+          : md.Element(element.tag, children))
+      ..attributes.addAll(element.attributes);
 
 List<md.Node> _unwrapSplits(List<md.Node> nodes) {
   final out = <md.Node>[];
@@ -305,3 +315,21 @@ List<md.Node> _dedentProse(List<md.Node> nodes, [bool prose = false]) => [
     else
       node,
 ];
+
+/// An ATX heading's source line, kept out of rendered HTML attributes. The
+/// value travels with prepared ASTs parsed in the lazy document's isolate.
+class RaftMarkdownHeadingElement extends md.Element {
+  RaftMarkdownHeadingElement(super.tag, super.children, this.sourceLine);
+  final int sourceLine;
+}
+
+class _SourceHeadingSyntax extends md.HeaderSyntax {
+  const _SourceHeadingSyntax();
+  @override
+  md.Node parse(md.BlockParser parser) {
+    final line = parser.lines.indexOf(parser.current) + 1;
+    final element = super.parse(parser) as md.Element;
+    return RaftMarkdownHeadingElement(element.tag, element.children ?? [], line)
+      ..attributes.addAll(element.attributes);
+  }
+}

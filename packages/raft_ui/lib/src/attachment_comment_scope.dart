@@ -5,6 +5,7 @@
 import 'package:flutter/widgets.dart';
 
 /// `{type, data}` as the comment API stores it (Web `CommentAnchor`):
+/// `md-section` (`headingId`, `headingTitle`, `quote`),
 /// `lines` / `csv-rows` (`start`, `end`, `quote`), `html-region`
 /// (`x y w h viewportWidth documentWidth documentHeight quote`) and
 /// `video-timestamp` (`time`).
@@ -33,6 +34,11 @@ class RaftAttachmentCommentState extends ChangeNotifier {
   /// Set by the preview body that can show an anchor's location; returns
   /// whether the location was found (Web `jumpToAnchor`).
   bool Function(RaftCommentAnchor anchor)? jumpHandler;
+
+  /// Live document position; never persisted in the anchor.
+  num? Function(RaftCommentAnchor anchor)? orderHandler;
+
+  num? order(RaftCommentAnchor anchor) => orderHandler?.call(anchor);
 
   /// Comment mode keeps the panel open and live-captures anchors in the
   /// preview; closing the panel ends it (the typed draft survives, only WHERE

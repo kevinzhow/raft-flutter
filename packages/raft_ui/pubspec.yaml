@@ -19,6 +19,7 @@ dependencies:
   html: ^0.15.6
   path_parsing: ^1.1.0
   intl: ^0.20.3
+  unorm_dart: 0.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

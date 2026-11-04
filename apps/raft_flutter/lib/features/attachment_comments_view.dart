@@ -49,14 +49,14 @@ String attachmentAnchorLabel(BuildContext context, Map anchor) {
 }
 
 /// `anchorOrderKey`: section/line/row/time position, null when unanchored.
-num? _anchorOrder(Map? anchor) {
+num? _anchorOrder(Map? anchor, RaftAttachmentCommentState? session) {
   if (anchor == null) return null;
   final data = anchor['data'] is Map ? anchor['data'] as Map : const {};
   final value = switch (anchor['type']) {
     'lines' || 'csv-rows' => data['start'],
     'html-region' => data['y'],
     'video-timestamp' => data['time'],
-    // Markdown order requires the live preview heading, not a persisted offset.
+    'md-section' => session?.order(Map<String, dynamic>.from(anchor)),
     _ => null,
   };
   final number = num.tryParse('$value');
@@ -93,6 +93,7 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
   // ignore: raft_lints/avoid_imperative_notice_state -- Load error: cleared by a successful load, a rebind to another attachment/controller and a scope revocation.
   String? error;
   bool anchorCleared = false;
+  String draft = '';
   late String authority;
   int binding = 0, request = 0;
   bool revoked = false;
@@ -117,6 +118,7 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
     }
     error = null;
     anchorCleared = false;
+    draft = '';
     ++binding;
     w.addListener(scopeChanged);
     load();
@@ -325,13 +327,16 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
       todayLabel: raftText(context, 'Today'),
       yesterdayLabel: raftText(context, 'Yesterday'),
     );
+    final session = RaftAttachmentCommentScope.maybeOf(context);
     final sorted = comments == null
         ? null
         : ([...comments!]..sort((a, b) {
             final ka =
-                _anchorOrder(a['anchor'] as Map?) ?? double.negativeInfinity;
+                _anchorOrder(a['anchor'] as Map?, session) ??
+                double.negativeInfinity;
             final kb =
-                _anchorOrder(b['anchor'] as Map?) ?? double.negativeInfinity;
+                _anchorOrder(b['anchor'] as Map?, session) ??
+                double.negativeInfinity;
             if (ka != kb) return ka.compareTo(kb);
             return '${a['createdAt']}'.compareTo('${b['createdAt']}');
           }));
@@ -370,6 +375,11 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
                 ),
             ],
       composer: RaftComposer(
+        initialDraft: draft,
+        draftRevision: revision,
+        onDraftChanged: (value) {
+          if (accepts(owner, id, revision)) draft = value;
+        },
         variant: RaftComposerVariant.compact,
         hint: raftFormat(context, 'Comment on {filename}…', {
           'filename': widget.filename,

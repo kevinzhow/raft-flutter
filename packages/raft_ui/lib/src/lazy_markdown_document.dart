@@ -1,3 +1,6 @@
+import 'markdown_comment_anchors.dart';
+import 'markdown_outline.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'
@@ -147,7 +150,11 @@ class _RaftLazyMarkdownDocumentState extends State<RaftLazyMarkdownDocument> {
       old.handle?.expandAll = null;
       widget.handle?.expandAll = expandAll;
     }
-    if (old.source != widget.source) load();
+    if (old.source != widget.source) {
+      expanded = pinned = selectAllPending = false;
+      insideArea = null;
+      load();
+    }
   }
 
   @override
@@ -259,6 +266,13 @@ class _RaftLazyMarkdownDocumentState extends State<RaftLazyMarkdownDocument> {
     final recipe = widget.recipe;
     final complete = parsed != null;
     final blocks = parsed?.blocks ?? [firstBlock!];
+    final anchors = RaftMarkdownAnchorFragment.of(context);
+    final headingCounts = anchors == null
+        ? const <int>[]
+        : [
+            for (final block in blocks)
+              raftExtractMarkdownOutline(block).length,
+          ];
     final truncated = widget.truncated;
     final width = MediaQuery.sizeOf(context).width;
     final wide = width >= 768;
@@ -269,6 +283,8 @@ class _RaftLazyMarkdownDocumentState extends State<RaftLazyMarkdownDocument> {
       color: recipe.background,
       // One selection region for the whole sheet, like the single column.
       child: RaftSelectionArea(
+        key: ValueKey(widget.source),
+        onSelectionChanged: anchors?.selectionChanged,
         child: _SheetSelection(
           onSelectAll: complete && !expanded ? selectAllBlocks : null,
           onClear: selectionCleared,
@@ -329,11 +345,16 @@ class _RaftLazyMarkdownDocumentState extends State<RaftLazyMarkdownDocument> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  RaftMessageBody(
-                                    content: blocks[at],
-                                    fontSize: 16,
-                                    documentMode: true,
-                                    joinsAmbientSelection: true,
+                                  anchoredBlock(
+                                    anchors,
+                                    headingCounts,
+                                    at,
+                                    RaftMessageBody(
+                                      content: blocks[at],
+                                      fontSize: 16,
+                                      documentMode: true,
+                                      joinsAmbientSelection: true,
+                                    ),
                                   ),
                                   if (!last) const _BlockBreak(),
                                 ],
@@ -438,3 +459,16 @@ class _SheetDelegate extends StaticSelectionContainerDelegate {
     return super.dispatchSelectionEvent(event);
   }
 }
+
+Widget anchoredBlock(
+  RaftMarkdownAnchorFragment? anchors,
+  List<int> counts,
+  int at,
+  Widget child,
+) => anchors == null
+    ? child
+    : anchors.slice(
+        counts.take(at).fold(0, (a, b) => a + b),
+        counts[at],
+        child,
+      );

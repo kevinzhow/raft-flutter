@@ -648,6 +648,13 @@ final auditSurfaces = <AuditSurface>[
     Size(390, 240),
   ),
   AuditSurface(
+    'markdownSectionCommentsPreview',
+    'Markdown section comments',
+    markdownSectionCommentsPreview,
+    Size(856, 944),
+    representative: true,
+  ),
+  AuditSurface(
     'documentMediaPreview',
     'Document and media preview',
     documentMediaPreview,

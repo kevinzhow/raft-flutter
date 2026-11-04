@@ -25,8 +25,10 @@ class RaftSelectionArea extends StatefulWidget {
     required this.child,
     this.contextMenuBuilder = _platformToolbar,
     this.shortcut,
+    this.onSelectionChanged,
   });
   final Widget child;
+  final ValueChanged<SelectedContent?>? onSelectionChanged;
   final SelectableRegionContextMenuBuilder? contextMenuBuilder;
 
   /// Web `MessageSelectionShortcut`: a mouse selection here shows Quote / Copy
@@ -83,6 +85,7 @@ class _RaftSelectionAreaState extends State<RaftSelectionArea> {
 
   void selectionChanged(SelectedContent? content) {
     selected = content?.plainText ?? '';
+    widget.onSelectionChanged?.call(content);
     if (!pointerDown) scheduleShortcut();
   }
 
@@ -177,7 +180,10 @@ class _RaftSelectionAreaState extends State<RaftSelectionArea> {
       // ignore: raft_lints/avoid_bare_selection_area -- this is the wrapper
       child: SelectionArea(
         contextMenuBuilder: widget.contextMenuBuilder,
-        onSelectionChanged: widget.shortcut == null ? null : selectionChanged,
+        onSelectionChanged:
+            widget.shortcut == null && widget.onSelectionChanged == null
+            ? null
+            : selectionChanged,
         child: Builder(
           builder: (context) {
             inside = context;

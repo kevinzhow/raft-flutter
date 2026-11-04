@@ -85,7 +85,8 @@ class RaftAttachmentPreviewShell extends StatefulWidget {
 
 class _RaftAttachmentPreviewShellState
     extends State<RaftAttachmentPreviewShell> {
-  late bool open = widget.commentsOpenInitially;
+  late bool open =
+      widget.commentsOpenInitially && widget.commentsBuilder != null;
   late final RaftAttachmentCommentState session =
       widget.commentSession ?? RaftAttachmentCommentState();
   late final bool ownsSession = widget.commentSession == null;
@@ -100,7 +101,18 @@ class _RaftAttachmentPreviewShellState
   }
 
   @override
+  void didUpdateWidget(RaftAttachmentPreviewShell old) {
+    super.didUpdateWidget(old);
+    if (widget.commentsBuilder == null) {
+      open = false;
+      mounted_ = false;
+      session.commentMode = false;
+    }
+  }
+
+  @override
   void dispose() {
+    session.commentMode = false;
     session.openPanel = null;
     if (ownsSession) session.dispose();
     super.dispose();
@@ -112,6 +124,7 @@ class _RaftAttachmentPreviewShellState
   bool copied = false;
 
   void setOpen(bool value) => setState(() {
+    value = value && widget.commentsBuilder != null;
     open = value;
     // Closing the panel ends the comment session (the pending anchor dies).
     session.commentMode = value;
@@ -227,12 +240,8 @@ class _RaftAttachmentPreviewShellState
             width: open ? raftLightboxAsideWidth : 0,
             child: !mounted_
                 ? null
-                : open
-                ? RaftLightboxAside(
-                    borderWidth: 1,
-                    child: comments(context, null),
-                  )
                 : Offstage(
+                    offstage: !open,
                     child: RaftLightboxAside(
                       borderWidth: 1,
                       child: comments(context, null),

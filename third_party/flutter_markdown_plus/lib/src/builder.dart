@@ -112,6 +112,7 @@ class MarkdownBuilder implements md.NodeVisitor {
     required this.paddingBuilders,
     required this.listItemCrossAxisAlignment,
     this.fitContent = false,
+    this.blockWrapper,
     this.onSelectionChanged,
     this.onTapText,
     this.contextMenuBuilder,
@@ -152,6 +153,9 @@ class MarkdownBuilder implements md.NodeVisitor {
 
   /// Call when build a padding for widget.
   final Map<String, MarkdownPaddingBuilder> paddingBuilders;
+
+  /// Optional layout-neutral annotation of a completed top-level block.
+  final Widget Function(md.Element element, Widget child)? blockWrapper;
 
   /// Whether to allow the widget to fit the child content.
   final bool fitContent;
@@ -500,7 +504,7 @@ class MarkdownBuilder implements md.NodeVisitor {
         );
       }
 
-      _addBlockChild(child);
+      _addBlockChild(_blocks.length == 1 ? (blockWrapper?.call(element, child) ?? child) : child);
     } else {
       final _InlineElement current = _inlines.removeLast();
       final _InlineElement parent = _inlines.last;

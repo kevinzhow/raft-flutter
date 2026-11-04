@@ -79,3 +79,68 @@ class _PreviewState extends State<_Preview> {
     ],
   );
 }
+
+@RaftPreviews('Markdown section comments', size: Size(856, 944))
+Widget markdownSectionCommentsPreview() => const _MarkdownCommentsPreview();
+
+class _MarkdownCommentsPreview extends StatefulWidget {
+  const _MarkdownCommentsPreview();
+  @override
+  State<_MarkdownCommentsPreview> createState() =>
+      _MarkdownCommentsPreviewState();
+}
+
+class _MarkdownCommentsPreviewState extends State<_MarkdownCommentsPreview> {
+  final comments = RaftAttachmentCommentState()..commentMode = true;
+  @override
+  void initState() {
+    super.initState();
+    comments.addListener(changed);
+  }
+
+  void changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    comments.removeListener(changed);
+    comments.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => RaftAttachmentCommentScope(
+    state: comments,
+    child: Column(
+      children: [
+        const Expanded(
+          child: RaftDocumentPreview(
+            data: {
+              'kind': 'markdown',
+              'markdown': '# Guide\n\nSelect text with a pointer or tap a section on touch.\n\n## Usage\n\nDiscuss this paragraph.\n\n## Usage\n\nA repeated heading has its own location.',
+            },
+          ),
+        ),
+        Wrap(
+          spacing: 8,
+          children: [
+            if (comments.pendingAnchor case final anchor?)
+              RaftCommentAnchorChip(
+                label: '§ ${anchor['data']['headingTitle']}',
+                removeLabel: 'Remove Anchor',
+                onRemove: comments.clearAnchor,
+              ),
+            RaftButton.text(
+              onPressed: () => comments.jump({
+                'type': 'md-section',
+                'data': {'headingId': 'usage-2', 'headingTitle': 'Usage'},
+              }),
+              child: const Text('Jump to second Usage'),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}

@@ -1,3 +1,5 @@
+import 'markdown_comment_anchors.dart';
+
 import 'package:flutter/material.dart';
 
 import 'raft_selection_area.dart';
@@ -457,6 +459,17 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
         ? 0
         : linesOf('${data['text'] ?? ''}').length;
     final rowCount = tabular ? (selected['rows'] as List? ?? []).length : 0;
+    // Each format owns one jump handler. Nesting the numbered-row host
+    // under Markdown would lose that handler when switching back to CSV.
+    if (kind == 'markdown') {
+      return RaftMarkdownCommentAnchorHost(
+        outline: outlineOf('${data['markdown'] ?? ''}'),
+        expand: () async {
+          await lazyMarkdown.expandAll?.call();
+        },
+        child: Builder(builder: buildPane),
+      );
+    }
     return RaftDocumentAnchorHost(
       totals: {'lines': lineCount, 'csv-rows': rowCount},
       scrollNear: scrollLazyNear,
@@ -586,6 +599,7 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                             vertical: 32,
                           ),
                     child: RaftMessageBody(
+                      key: ValueKey(markdownSource),
                       content: '${data['markdown'] ?? ''}',
                       fontSize: 16,
                       documentMode: true,

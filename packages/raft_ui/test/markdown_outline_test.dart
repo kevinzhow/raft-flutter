@@ -110,7 +110,7 @@ void main() {
         ))
           i.id,
       ];
-      expect(ids, ['cafe-deja-vu', '中文-标题', 'section', 'section-2']);
+      expect(ids, ['cafe-de-ja-vu', '中文-标题', 'section', 'section-2']);
     });
   });
 

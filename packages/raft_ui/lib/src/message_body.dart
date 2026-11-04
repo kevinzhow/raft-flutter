@@ -1,3 +1,4 @@
+import 'markdown_comment_anchors.dart';
 import 'interaction.dart';
 import 'idle_work.dart';
 import 'hover_region.dart';
@@ -558,6 +559,9 @@ class RaftMessageBody extends StatelessWidget {
             );
           },
         );
+    final anchorBuilder = documentMode
+        ? RaftMarkdownAnchorFragment.of(context)?.builder()
+        : null;
     final builders = <String, MarkdownElementBuilder>{
       'a': _MessageLinkBuilder(
         onLink,
@@ -583,6 +587,12 @@ class RaftMessageBody extends StatelessWidget {
         enableProseSelection && chunks.any((c) => c.markdown);
     Widget selectable(Widget block) =>
         proseSelection ? SelectionContainer.disabled(child: block) : block;
+    Widget anchoredOther(String text, Widget child) =>
+        anchorBuilder?.wrapOther(
+          text,
+          _JoinedSelection(separator: '', child: child),
+        ) ??
+        child;
     final blocks = <Widget>[
       for (final chunk in chunks)
         if (chunk.markdown)
@@ -590,6 +600,7 @@ class RaftMessageBody extends StatelessWidget {
             chunk.text,
             _RaftMarkdown(
               data: chunk.text,
+              blockWrapper: anchorBuilder?.wrap(chunk.text),
               treeInputs: inputs,
               styleSheet: resolveStyleSheets().$1,
               resolvedStyleSheet: resolveStyleSheets().$2,
@@ -626,13 +637,16 @@ class RaftMessageBody extends StatelessWidget {
                     exportMode: exportMode,
                   ),
                 )
-              : RaftCodeBlock(
-                  code: chunk.text,
-                  language: chunk.language,
-                  onCopy: onCopyCode,
-                  exportMode: exportMode,
-                  fontSize: fontSize,
-                  joinsSelection: proseSelection,
+              : anchoredOther(
+                  chunk.text,
+                  RaftCodeBlock(
+                    code: chunk.text,
+                    language: chunk.language,
+                    onCopy: onCopyCode,
+                    exportMode: exportMode,
+                    fontSize: fontSize,
+                    joinsSelection: proseSelection,
+                  ),
                 ),
     ];
     final column = Column(
@@ -650,6 +664,9 @@ class RaftMessageBody extends StatelessWidget {
         ? RaftSelectionShortcutScope.maybeOf(context)
         : null;
     return RaftSelectionArea(
+      onSelectionChanged: documentMode
+          ? RaftMarkdownAnchorFragment.of(context)?.selectionChanged
+          : null,
       // Desktop context menus belong to the message host; a touch selection
       // keeps the platform Copy / Select all toolbar.
       contextMenuBuilder: RaftSelectionArea.touchToolbarOnly,
@@ -684,6 +701,8 @@ class RaftMessageBody extends StatelessWidget {
 const _listItemGap = 2.0;
 
 Widget _tightenListItemGaps(Widget widget, double blockSpacing) {
+  if (widget is RaftMarkdownAnchorBlock)
+    return widget.withChild(_tightenListItemGaps(widget.child, blockSpacing));
   bool isSpacer(Widget w) => w is SizedBox && w.height == blockSpacing;
   bool isItem(Widget w) =>
       w is Row && w.children.length == 2 && w.children.first is SizedBox;
@@ -755,6 +774,13 @@ class _JoinedSelection extends StatefulWidget {
 
 class _JoinedSelectionState extends State<_JoinedSelection> {
   late _JoinedDelegate delegate = _JoinedDelegate(widget.separator);
+  Set<SelectionContainerDelegate>? tracked;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    tracked?.remove(delegate);
+    tracked = RaftMarkdownAnchorBlock.delegatesOf(context)?..add(delegate);
+  }
 
   @override
   void didUpdateWidget(_JoinedSelection old) {
@@ -764,6 +790,7 @@ class _JoinedSelectionState extends State<_JoinedSelection> {
 
   @override
   void dispose() {
+    tracked?.remove(delegate);
     delegate.dispose();
     super.dispose();
   }
@@ -801,6 +828,7 @@ class _JoinedDelegate extends StaticSelectionContainerDelegate {
 /// stops dispatching long-press word selection through three nested
 /// containers. Layout is untouched.
 Widget _joinBlock(Widget w) {
+  if (w is RaftMarkdownAnchorBlock) return w.withChild(_joinBlock(w.child));
   if (_isSpacer(w)) return w;
   // Structure without text of its own: its blocks sit one level down.
   if (w is Column || w is Row || w is Padding || w is DecoratedBox) {
@@ -888,11 +916,13 @@ class _RaftMarkdown extends MarkdownBody {
     required MarkdownTapLinkCallback super.onTapLink,
     required MarkdownBulletBuilder super.bulletBuilder,
     this.joinSelection = false,
+    this.blockWrapper,
   }) : super(softLineBreak: true);
 
   /// Inside a message selection area: wrap the blocks so a copy keeps its
   /// lines ([_joinBlocks]).
   final bool joinSelection;
+  final Widget Function(md.Element, Widget)? blockWrapper;
 
   /// What the tree for [data] depends on besides its source.
   final _TreeInputs treeInputs;
@@ -1018,7 +1048,8 @@ class _RaftMarkdownState extends State<MarkdownWidget>
             (oldWidget as _RaftMarkdown).treeInputs.key ||
         widget.styleSheet != oldWidget.styleSheet ||
         markdown.searchHighlight != oldWidget.searchHighlight ||
-        markdown.builderKey != oldWidget.builderKey) {
+        markdown.builderKey != oldWidget.builderKey ||
+        markdown.blockWrapper != oldWidget.blockWrapper) {
       rebuildChildren();
     }
   }
@@ -1058,6 +1089,7 @@ class _RaftMarkdownState extends State<MarkdownWidget>
                   : entry.value,
           },
           paddingBuilders: markdown.paddingBuilderFactory(),
+          blockWrapper: markdown.blockWrapper,
           fitContent: true,
           listItemCrossAxisAlignment:
               MarkdownListItemCrossAxisAlignment.baseline,
