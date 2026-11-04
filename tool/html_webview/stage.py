@@ -72,6 +72,20 @@ def archive_sdk(prefix, destination):
                     tar.add(file, arcname=file.name, recursive=True, filter=normalized)
 
 
+
+def build_receipts(work, metadata, identity):
+    """Keep the full build ledger with the SDK, checking the two identity-bound inputs."""
+    for filename, key in [('installed-packages.tsv', 'packagesSha256'),
+                          ('package-archives.json', 'packageArchivesSha256')]:
+        source = Path(work) / filename
+        if sha256(source) != identity['environment'][key]:
+            raise ValueError('Build provenance changed before SDK staging: ' + filename)
+        copy(source, Path(metadata) / filename)
+    copy(Path(work) / 'compiler.txt', Path(metadata) / 'compiler.txt')
+    for name in ['wpe-relocation.patch', 'wpe-build-order.patch',
+                 'wpe-network-data-order.patch', 'raft_wpe_runtime_paths.h']:
+        copy(payload.HERE / name, Path(metadata) / 'adapters' / name)
+
 def stage(raw, source, build, prefix, workspace, cache, build_identity, archive):
     """No network, package installation or host fallback is permitted during staging."""
     raw, source, build, prefix, workspace, cache = map(Path, (raw, source, build, prefix, workspace, cache))
@@ -212,6 +226,7 @@ def stage(raw, source, build, prefix, workspace, cache, build_identity, archive)
     (meta / 'packages.json').write_text(json.dumps({'artifacts': [engine, *records.values()],
                                                   'files': file_records, 'systemSonames': sorted(excluded)}, indent=2) + '\n')
     (meta / 'build-inputs.json').write_text(json.dumps(build_identity, indent=2) + '\n')
+    build_receipts(build.parent, meta, build_identity)
     (meta / 'apt-authentication.json').write_text(json.dumps(proofs, indent=2) + '\n')
     for file in prefix.rglob('*'):
         if file.is_file() and not file.is_symlink():
