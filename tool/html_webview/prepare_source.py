@@ -31,6 +31,7 @@ def prepare(archive, destination):
         'sourceUrl': f'https://wpewebkit.org/releases/wpewebkit-{VERSION}.tar.xz',
         'sourceSha256': ARCHIVE_SHA256,
         'patchSha256': sha256(HERE / 'wpe-relocation.patch'),
+        'buildOrderPatchSha256': sha256(HERE / 'wpe-build-order.patch'),
         'headerSha256': sha256(HERE / 'raft_wpe_runtime_paths.h'),
         'state': 'preparing',
     }
@@ -46,6 +47,10 @@ def prepare(archive, destination):
     with (destination / 'relocation-apply.log').open('w') as log:
         subprocess.run(['patch', '--batch', '--forward', '-p1', '-i',
                         str(HERE / 'wpe-relocation.patch')],
+                       cwd=source, stdout=log, stderr=subprocess.STDOUT, check=True)
+    with (destination / 'build-order-apply.log').open('w') as log:
+        subprocess.run(['patch', '--batch', '--forward', '-p1', '-i',
+                        str(HERE / 'wpe-build-order.patch')],
                        cwd=source, stdout=log, stderr=subprocess.STDOUT, check=True)
     record['state'] = 'prepared'
     receipt.write_text(json.dumps(record, indent=2) + '\n')

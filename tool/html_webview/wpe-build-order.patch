@@ -1,0 +1,7 @@
+--- a/Source/JavaScriptCore/CMakeLists.txt
++++ b/Source/JavaScriptCore/CMakeLists.txt
+@@ -1857,0 +1858,4 @@
++
++if (PORT STREQUAL "WPE" AND TARGET JavaScriptCoreJIT)
++    add_dependencies(JavaScriptCoreJIT JavaScriptCore_CopyHeaders JavaScriptCore_CopyPrivateHeaders)
++endif ()

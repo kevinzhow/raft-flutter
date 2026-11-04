@@ -13,6 +13,11 @@ update must review the current [security advisory](https://webkitgtk.org/securit
 and source authentication before changing this pin. A distribution's older WPE
 package is not a security-supported substitute.
 
+`wpe-build-order.patch` adds only the WPE JavaScriptCore JIT target's dependency
+on its generated public/private headers. The upstream 2.54.2 graph can otherwise
+start the JIT precompiled header before those headers exist. It changes build
+ordering; compiler options, JIT behavior and security features are unchanged.
+
 ## Preparing source
 
 Run inside the dedicated Ubuntu 24.04 build environment. Download the archive
@@ -59,8 +64,12 @@ share/raft-html-webview/runtime.marker
 
 The three WebKit helpers, injected bundle and matching DBus proxy are required
 together. Package their complete ELF dependency closure and resources;
-the Flutter plugin's `.so` export alone does not make a usable runtime. Retain
-the source, licenses, package versions and SHA256 manifest. Validate the whole
+the Flutter plugin's `.so` export alone does not make a usable runtime. Include
+the matching GIO TLS module and its dependencies in the AppImage's configured
+`lib/gio/modules` directory: an empty directory there prevents HTTPS document
+loads even if a loopback HTTP fixture works. Generate the matching module cache
+with the packaged GLib tools; never load arbitrary host modules into bundled GLib.
+Retain the source, licenses, package versions and SHA256 manifest. Validate the whole
 payload against the Ubuntu 24.04 GLIBC 2.39 ceiling, using the existing AppImage
 packager's ELF checks. Do not include a replacement libc or device driver.
 
