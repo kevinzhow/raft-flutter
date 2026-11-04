@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart' show SchedulerPhase;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_client/system_proxy.dart' show SystemProxy;
-import 'package:raft_updater/raft_updater.dart' show AppUpdater;
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,6 +14,8 @@ import 'platform/artifact_web_data.dart' show clearArtifactWebData;
 import 'platform/cache_hygiene.dart' show purgeAccountCaches;
 import 'platform/device_timezone.dart' show readDeviceTimezone;
 import 'data/device_preferences.dart';
+import 'data/display_locale.dart';
+import 'data/public_server_route.dart';
 import 'data/workspace_controller.dart';
 import 'data/workspace_messages.dart';
 import 'data/user_error.dart';
@@ -28,6 +29,9 @@ import 'data/raft_navigation_history.dart';
 import 'features/app_root_router.dart';
 import 'features/community_join.dart';
 import 'features/invite_accept_view.dart';
+import 'features/server_invite_home.dart';
+import 'features/private_app_invite.dart';
+import 'features/private_app_invite_view.dart';
 import 'features/global_server_selector.dart';
 import 'features/public_server_view.dart';
 import 'features/workspace_view.dart';
@@ -35,7 +39,6 @@ import 'features/auth_view.dart';
 import 'features/session_recovery_view.dart';
 import 'features/account_onboarding.dart';
 import 'features/private_route_guard.dart';
-import 'features/root_error_boundary.dart';
 import 'platform/auth_audit_log.dart';
 import 'platform/memory_release.dart';
 import 'platform/session_store.dart';
@@ -52,85 +55,14 @@ import 'platform/workspace_cache.dart';
 import 'platform/desktop_title_bar.dart';
 import 'platform/system_bars.dart';
 import 'platform/system_fonts.dart';
-import 'platform/app_update.dart';
 import 'platform/app_services.dart';
 import 'platform/app_window.dart';
-import 'platform/app_update_smoke.dart';
 import 'platform/background_notifications.dart';
 import 'platform/cache_exit.dart';
 
+export 'data/display_locale.dart';
+
 final raftScreenshotKey = GlobalKey();
-
-/// Creates the owned application services after native bootstrap is ready.
-void runRaftAppRoot(List<String> args) {
-  // Release builds show the root fallback instead of a grey/red screen.
-  RootErrors.instance.install();
-  // The branded splash stays until startup is ready; a fatal startup error
-  // releases the first frame too, so the root fallback can paint.
-  WidgetsBinding.instance.deferFirstFrame();
-  var firstFrameAllowed = false;
-  void allowFirstFrame() {
-    if (firstFrameAllowed) return;
-    firstFrameAllowed = true;
-    WidgetsBinding.instance.allowFirstFrame();
-  }
-
-  void releaseOnError() {
-    if (RootErrors.instance.current != null) allowFirstFrame();
-  }
-
-  RootErrors.instance.addListener(releaseOnError);
-  // Release builds only: dev/local builds and platforms without a GitHub
-  // release asset get a disabled service. Starts after the first frame.
-  final updateOrigin = updateOriginOverride();
-  final appUpdate = AppUpdateService.forThisBuild(origin: updateOrigin);
-  // Linux AppImage in-place updates use the app's proxy-aware HTTP client.
-  AppUpdater.instance.configureAppImage(
-    httpClientFactory: (url) async {
-      await SystemProxy.instance.ready(url);
-      return SystemProxy.instance.createHttpClient();
-    },
-    origin: updateOrigin,
-  );
-  runApp(
-    RootErrorBoundary(
-      child: RaftApp(
-        initialArguments: args,
-        onStartupReady: allowFirstFrame,
-        services: AppServices.withUpdates(appUpdate),
-        ownsAppUpdate: true,
-      ),
-    ),
-  );
-  unawaited(
-    WidgetsBinding.instance.waitUntilFirstFrameRasterized.then((_) async {
-      await appUpdate.start();
-      await runAppImageUpdateSmoke(
-        appUpdate,
-        AppUpdater.instance,
-        origin: updateOrigin,
-      );
-    }),
-  );
-}
-
-/// The server stores only locales shipped by the UI. Translation language is separate.
-Locale displayLocale(String? preference, {Locale? device}) {
-  final language = preference?.toLowerCase().replaceAll('_', '-');
-  if (language == 'zh-cn' || language == 'zh-hans') {
-    return const Locale('zh', 'CN');
-  }
-  if (language == 'en' || language?.startsWith('en-') == true) {
-    return const Locale('en');
-  }
-  final resolved = device ?? WidgetsBinding.instance.platformDispatcher.locale;
-  return resolved.languageCode == 'zh' &&
-          (resolved.countryCode == 'CN' ||
-              resolved.scriptCode == 'Hans' ||
-              resolved.countryCode == null)
-      ? const Locale('zh', 'CN')
-      : const Locale('en');
-}
 
 class RaftApp extends StatefulWidget {
   const RaftApp({
@@ -910,6 +842,12 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       workspace = null;
       rootRequest++;
       clearAccessDenied();
+      if (Uri.parse(origin).origin != Uri.parse(base.trim()).origin &&
+          PrivateAppInviteLink.parse(requestedLocation, origin) != null) {
+        // A relative pending token belongs to the coordinator that admitted
+        // it, never a different server chosen on the native login form.
+        requestedLocation = Uri(path: '/');
+      }
       serverSurfaces.clear();
       chooserReturn = null;
       serverSwitchLocation = serverSwitchReturn = null;
@@ -950,7 +888,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (!mounted || !identical(c, client) || accountNeedsOnboarding(c.user)) {
       return;
     }
-    unawaited(resumePendingInvite());
+    await resumePendingInvite();
+    if (!mounted || !identical(c, client) || accountNeedsOnboarding(c.user)) {
+      return;
+    }
     if (workspace != null) {
       if (!showServerSelector && serverSwitchLocation == null) {
         content.bindWorkspace(workspace);
@@ -1021,6 +962,11 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       w.notifyListeners();
       final prefs = await SharedPreferences.getInstance();
       if (!current()) return;
+      if (PrivateAppInviteLink.parse(requestedLocation, origin) != null) {
+        showServerSelector = true;
+        rebuildRoot();
+        return;
+      }
       final explicit =
           requestedLocation.pathSegments.length >= 2 &&
           requestedLocation.pathSegments.first == 's';
@@ -1137,9 +1083,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     final w = workspace, c = client;
     if (w == null || c?.user == null || communityAttempt == slug) return;
     communityAttempt = slug;
-    final principal = c!.user!.id;
+    final principal = c!.user!.id, request = rootRequest;
     bool live() =>
         mounted &&
+        request == rootRequest &&
         identical(client, c) &&
         identical(workspace, w) &&
         c.user?.id == principal &&
@@ -1218,8 +1165,13 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   /// `takePendingInviteRedirectPath`: an invite left for sign-in resumes once
   /// the account is ready (verified, identity set up).
   Future<void> resumePendingInvite() async {
+    final request = rootRequest;
     final token = await PendingInvite.take();
-    if (token != null && mounted && invite == null) {
+    if (token != null &&
+        mounted &&
+        request == rootRequest &&
+        invite == null &&
+        PrivateAppInviteLink.parse(requestedLocation, origin) == null) {
       showInvite(InviteLink(token));
     }
   }
@@ -1237,13 +1189,21 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
 
   Future<bool> enterInvitedServer(String serverId) async {
     final w = workspace, c = client;
-    if (c?.user == null) return false;
+    final link = invite, request = rootRequest;
+    if (c?.user == null || link == null) return false;
     if (w == null) {
       // Account setup is still pending: the server list loads after it.
       clearInvite();
       return true;
     }
-    if (!await w.loadServerDirectory() || !mounted) return false;
+    if (!await w.loadServerDirectory() ||
+        !mounted ||
+        request != rootRequest ||
+        !identical(invite, link) ||
+        !identical(workspace, w) ||
+        !identical(client, c)) {
+      return false;
+    }
     final joined = w.servers.where((s) => s.id == serverId).firstOrNull;
     if (joined == null) return false;
     clearInvite();
@@ -1254,40 +1214,16 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     return true;
   }
 
-  Widget inviteHome(bool signedIn) {
-    final link = invite!;
-    return InviteAcceptView(
-      key: ValueKey('invite-${link.token}-$signedIn'),
-      token: link.token,
-      signedIn: signedIn,
-      loadInfo: () async {
-        final api = inviteApi();
-        await widget.services.localNetwork.ensure(api.origin, request: true);
-        return Map<String, dynamic>.from(
-          await api.request(
-            'GET',
-            '/auth/invite-info',
-            query: {'token': link.token},
-            authorized: false,
-          ),
-        );
-      },
-      accept: (agreementId) async {
-        final result = await inviteApi().post(
-          '/auth/accept-invite',
-          data: {'token': link.token, 'agreementId': ?agreementId},
-        );
-        return InviteJoined(
-          '${result['serverId']}',
-          '${result['serverName'] ?? ''}',
-        );
-      },
-      onEnter: enterInvitedServer,
-      onSignIn: () => leaveInviteFor('login'),
-      onCreateAccount: () => leaveInviteFor('register'),
-      onGoToRaft: clearInvite,
-    );
-  }
+  Widget inviteHome(bool signedIn) => buildServerInviteHome(
+    link: invite!,
+    signedIn: signedIn,
+    api: inviteApi,
+    network: widget.services.localNetwork,
+    onEnter: enterInvitedServer,
+    onSignIn: () => leaveInviteFor('login'),
+    onCreateAccount: () => leaveInviteFor('register'),
+    onClose: clearInvite,
+  );
 
   /// storePendingInvite + clearInviteUrl + switch to the auth form.
   void leaveInviteFor(String mode) {
@@ -1304,6 +1240,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
 
   Future<void> leaveAccessDenied() async {
     final fallback = deniedFallback;
+    final request = rootRequest;
     if (!mounted || deniedSlug == null) return;
     clearAccessDenied();
     if (fallback == null) {
@@ -1311,7 +1248,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       return;
     }
     final location = await serverSurfaceMemory(fallback);
-    if (!mounted) return;
+    if (!mounted || request != rootRequest) return;
     await chooseServer(fallback, location: location);
   }
 
@@ -1431,6 +1368,25 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       unawaited(sharing.resume());
       return;
     }
+    final appInvite = PrivateAppInviteLink.parse(location, origin);
+    if (appInvite != null) {
+      if (!showServerSelector) {
+        chooserReturn = workspace?.navigation.location.uri;
+      }
+      rootRequest++;
+      clearAccessDenied();
+      clearInvite();
+      selectingServer = false;
+      serverSwitchLocation = serverSwitchReturn = null;
+      joiningCommunitySlug = communityAttempt = null;
+      requestedLocation = appInvite.location;
+      showServerSelector = true;
+      workspace?.setForeground(false);
+      content.bindWorkspace(null);
+      appRouter.publish(requestedLocation);
+      rebuildRoot();
+      return;
+    }
     final link = InviteLink.fromLocation(location);
     if (link != null) {
       // An invite link opens the invite page; the URL itself is consumed.
@@ -1480,6 +1436,14 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   }
 
   Future<bool> returnFromSelector() async {
+    if (PrivateAppInviteLink.parse(requestedLocation, origin) != null) {
+      rootRequest++;
+      requestedLocation = Uri(path: '/');
+      if (chooserReturn == null) {
+        await receiveAppLocation(requestedLocation);
+        return true;
+      }
+    }
     if (invite != null) {
       // Back leaves the invite page (the Web "Go to Raft" action).
       clearInvite();
@@ -1745,18 +1709,6 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     }
   }
 
-  /// App.tsx: `/^\/s\/([^/]+)(?:\/channel\/([^/]+))?(?:\/.*)?$/`.
-  static ({String slug, String? channelId})? publicRoute(Uri location) {
-    final segments = location.pathSegments;
-    if (segments.length < 2 || segments.first != 's' || segments[1].isEmpty) {
-      return null;
-    }
-    final channel = segments.length >= 4 && segments[2] == 'channel'
-        ? segments[3]
-        : null;
-    return (slug: segments[1], channelId: channel);
-  }
-
   void dismissPublic({String? mode, bool rediscover = false}) {
     setState(() {
       publicDismissed = true;
@@ -1816,6 +1768,29 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         client: active,
         onComplete: () => finishOnboarding(active),
         onSignOut: logout,
+      );
+    }
+    final appInvite = PrivateAppInviteLink.parse(requestedLocation, origin);
+    if (appInvite != null) {
+      return PrivateAppInviteView(
+        key: ValueKey((
+          active,
+          active.authenticationGeneration,
+          active.user?.id,
+          appInvite.identity,
+        )),
+        client: active,
+        link: appInvite,
+        onClose: () => unawaited(returnFromSelector()),
+        onSettings: (id, current) {
+          final request = rootRequest;
+          return openPrivateAppSettings(
+            () => mounted ? workspace : null,
+            id,
+            receiveAppLocation,
+            current: () => mounted && request == rootRequest && current(),
+          );
+        },
       );
     }
     if (workspace == null) {
@@ -2190,7 +2165,11 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
                               child: RaftToastHost(
                                 child: KeyboardInsetGuard(
                                   imeVisible: platformImeVisibility,
-                                  child: child!,
+                                  child: PrivateAppInviteScope(
+                                    coordinator: origin,
+                                    onOpen: receiveAppLocation,
+                                    child: child!,
+                                  ),
                                 ),
                               ),
                             ),

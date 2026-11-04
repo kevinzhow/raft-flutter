@@ -245,7 +245,7 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
                     failure = null;
                   }),
                 ),
-                _ConsentCard(
+                RequestedAppScopes(
                   key: const ValueKey('human-login-scopes'),
                   scopes: scopes,
                 ),
@@ -439,9 +439,14 @@ class _AppCard extends StatelessWidget {
 
 /// Web `RequestedScopeConsent` / `oauthScopePresentation`: what the request
 /// will grant, in the same words.
-class _ConsentCard extends StatelessWidget {
-  const _ConsentCard({super.key, required this.scopes});
+class RequestedAppScopes extends StatelessWidget {
+  const RequestedAppScopes({
+    super.key,
+    required this.scopes,
+    this.collapseIdentity = false,
+  });
   final List<String> scopes;
+  final bool collapseIdentity;
 
   @override
   Widget build(BuildContext context) {
@@ -476,7 +481,10 @@ class _ConsentCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x1,
       children: [
-        RaftDialogSectionEyebrow('Requested access', color: t.ink),
+        if (collapseIdentity)
+          RaftSectionEyebrow(tr('Requested access'), color: t.ink)
+        else
+          RaftDialogSectionEyebrow('Requested access', color: t.ink),
         Text(
           tr(intro),
           style: RaftTypography.inherited(
@@ -502,6 +510,8 @@ class _ConsentCard extends StatelessWidget {
                 if (visible.any((s) => oauthScopeTier(s) == tier))
                   _TierGroup(
                     tier: tier,
+                    collapsible:
+                        collapseIdentity && tier == OAuthScopeTier.identity,
                     scopes: [
                       for (final s in visible)
                         if (oauthScopeTier(s) == tier) s,
@@ -536,76 +546,105 @@ class _ConsentCard extends StatelessWidget {
   }
 }
 
-class _TierGroup extends StatelessWidget {
-  const _TierGroup({required this.tier, required this.scopes});
+class _TierGroup extends StatefulWidget {
+  const _TierGroup({
+    required this.tier,
+    required this.scopes,
+    this.collapsible = false,
+  });
   final OAuthScopeTier tier;
   final List<String> scopes;
 
+  final bool collapsible;
+  @override
+  State<_TierGroup> createState() => _TierGroupState();
+}
+
+class _TierGroupState extends State<_TierGroup> {
+  bool expanded = false;
+  OAuthScopeTier get tier => widget.tier;
+  List<String> get scopes => widget.scopes;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text.rich(
-          TextSpan(
-            children: [
+    final children = <Widget>[
+      Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: tr(oauthTierLabel(tier)),
+              style: RaftTypography.inherited(
+                t,
+                size: 14,
+                line: 20,
+                weight: FontWeight.w700,
+                color: t.ink,
+              ),
+            ),
+            if (tier == OAuthScopeTier.identity)
               TextSpan(
-                text: tr(oauthTierLabel(tier)),
+                text: tr(
+                  ' — Who you are and your basic profile · no content access.',
+                ),
                 style: RaftTypography.inherited(
                   t,
                   size: 14,
                   line: 20,
-                  weight: FontWeight.w700,
-                  color: t.ink,
+                  color: t.muted,
                 ),
               ),
-              if (tier == OAuthScopeTier.identity)
-                TextSpan(
-                  text: tr(
-                    ' — Who you are and your basic profile · no content access.',
-                  ),
-                  style: RaftTypography.inherited(
-                    t,
-                    size: 14,
-                    line: 20,
-                    color: t.muted,
-                  ),
+          ],
+        ),
+      ),
+      for (final scope in scopes)
+        Padding(
+          key: ValueKey('human-login-scope-$scope'),
+          padding: const EdgeInsets.only(top: RaftSpace.x2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: RaftSpace.x1,
+            children: [
+              Text(
+                scope,
+                style: RaftTypography.mono(t, size: 12, line: 16, color: t.ink),
+              ),
+              Text(
+                tr(oauthScopeCopy(scope)),
+                style: RaftTypography.inherited(
+                  t,
+                  size: 13,
+                  line: 18,
+                  color: t.muted,
                 ),
+              ),
             ],
           ),
         ),
-        for (final scope in scopes)
-          Padding(
-            key: ValueKey('human-login-scope-$scope'),
-            padding: const EdgeInsets.only(top: RaftSpace.x2),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: RaftSpace.x1,
-              children: [
-                Text(
-                  scope,
-                  style: RaftTypography.mono(
-                    t,
-                    size: 12,
-                    line: 16,
-                    color: t.ink,
-                  ),
-                ),
-                Text(
-                  tr(oauthScopeCopy(scope)),
-                  style: RaftTypography.inherited(
-                    t,
-                    size: 13,
-                    line: 18,
-                    color: t.muted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
+    ];
+    if (!widget.collapsible) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      );
+    }
+    return RaftCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: RaftSpace.x3,
+        vertical: RaftSpace.x2,
+      ),
+      child: RaftCollapsibleSectionHeader(
+        label:
+            tr(oauthTierLabel(tier)) +
+            tr(' — Who you are and your basic profile · no content access.'),
+        labelWidget: children.first,
+        expanded: expanded,
+        leadingDisclosure: true,
+        disclosureKey: const ValueKey('human-login-identity-disclosure'),
+        onExpandedChanged: (value) => setState(() => expanded = value),
+        gap: RaftSpace.x2,
+        children: children.skip(1).toList(),
+      ),
     );
   }
 }

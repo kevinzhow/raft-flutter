@@ -3,6 +3,62 @@
   "_doc": "State parity inventory (loading / empty / error / partial) per screen and panel. Read by apps/raft_flutter/test/state_parity_guard_test.dart. screens[].states[]: state = loading|empty|error|partial; variant = optional short text; web = yes|no (does the Web component render a DISTINCT such state); flutter = yes|partial|missing; parityCase = case ids or globs without the theme suffix (e.g. components.list-pages.saved.phone-*); status = covered (needs >=1 parityCase that resolves) | gap (needs justification and size S|M|L) | intentional / na (need justification) | fixing (being fixed in the current branch: needs justification and parityCase; resolution is skipped until it is flipped to covered). Optional: gapKind = case-missing (Flutter has it, no case) | impl-diff (Flutter differs from Web) | invalid-case (case exists but the Web capture does not show the state); caseValidity = react-checked (the cached React capture was inspected and shows the state) | invalid | unchecked. navigationCoverage maps every NavigationRegistry section id and settings tab id to the screen ids that cover it (or a justification string). Add a screen entry (and its states) whenever a screen or panel is added; a registry id that is not mapped fails the guard.",
   "screens": [
     {
+      "id": "integrations.private-app-invite",
+      "title": "Private App invitation review and explicit install",
+      "webEntry": "packages/web/src/pages/IntegrationInvitePage.tsx (Web 1.21.23)",
+      "flutterEntry": "apps/raft_flutter/lib/features/private_app_invite_view.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "invite fetch",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.private-app-invite.*.loading.*"
+          ],
+          "status": "fixing",
+          "caseValidity": "unchecked",
+          "justification": "Real Web page and native view use shared named API answers; capture inspection and pixel/geometry verdict remain separate from passing action regressions."
+        },
+        {
+          "state": "empty",
+          "variant": "no manageable server",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.private-app-invite.*.no-admin.*"
+          ],
+          "status": "fixing",
+          "caseValidity": "unchecked",
+          "justification": "Real Web page and native view use shared named API answers; capture inspection and pixel/geometry verdict remain separate from passing action regressions."
+        },
+        {
+          "state": "error",
+          "variant": "expired or missing invitation",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.private-app-invite.*.error.*"
+          ],
+          "status": "fixing",
+          "caseValidity": "unchecked",
+          "justification": "Real Web page and native view use shared named API answers; capture inspection and pixel/geometry verdict remain separate from passing action regressions."
+        },
+        {
+          "state": "partial",
+          "variant": "installed target with available settings",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "components.private-app-invite.*.installed.*"
+          ],
+          "status": "fixing",
+          "caseValidity": "unchecked",
+          "justification": "Real Web page and native view use shared named API answers; capture inspection and pixel/geometry verdict remain separate from passing action regressions."
+        }
+      ]
+    },
+    {
       "id": "artifact.native-download",
       "title": "Artifact Android download and save",
       "webEntry": "Android WebView DownloadListener and system DocumentsUI; native-only orchestration (Artifact service source is not public)",
@@ -3512,12 +3568,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/app_root.dart#function:runRaftAppRoot": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/app_root.dart#method:RaftApp.createState": {
         "role": "unresolved",
@@ -8127,12 +8177,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/human_login_sheet.dart#class:_ConsentCard": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "apps/raft_flutter/lib/features/human_login_sheet.dart#class:_HumanLoginSheetState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -8164,12 +8208,6 @@
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/human_login_sheet.dart#method:_AppCard.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/human_login_sheet.dart#method:_ConsentCard.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -42795,6 +42833,208 @@
         "familyRefs": [],
         "owner": "task292 Activity pagination",
         "reason": "Existing scoped builder at its actual resolved identity after Activity pagination imports. Prior unresolved ownership and visual-acceptance limits remain unchanged."
+      },
+      "apps/raft_flutter/lib/features/human_login_sheet.dart#class:RequestedAppScopes": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/human_login_sheet.dart#method:RequestedAppScopes.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/custom_protocol_link.dart#function:openMessageLink": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Application-owned invitation routing and state composition, separate from canonical design-system paint ownership. It delegates presentation to RaftPrivateAppInvitePage and existing families; no wrapper exemption or visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/private_app_invite.dart#class:PrivateAppInviteScope": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Application-owned invitation routing and state composition, separate from canonical design-system paint ownership. It delegates presentation to RaftPrivateAppInvitePage and existing families; no wrapper exemption or visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/private_app_invite.dart#method:PrivateAppInviteScope.open": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Application-owned invitation routing and state composition, separate from canonical design-system paint ownership. It delegates presentation to RaftPrivateAppInvitePage and existing families; no wrapper exemption or visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/private_app_invite.dart#method:PrivateAppInviteScope.updateShouldNotify": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Application-owned invitation routing and state composition, separate from canonical design-system paint ownership. It delegates presentation to RaftPrivateAppInvitePage and existing families; no wrapper exemption or visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/private_app_invite_view.dart#class:PrivateAppInviteView": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "banner",
+          "select",
+          "button"
+        ],
+        "owner": "Cody",
+        "reason": "Private App invitation composes existing canonical Card/Banner/Select/Button families and the shared requested-scope consent. Root-flow and SDK state tests are functional evidence; Web comparison is recorded separately."
+      },
+      "apps/raft_flutter/lib/features/private_app_invite_view.dart#class:_PrivateAppInviteState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "banner",
+          "select",
+          "button"
+        ],
+        "owner": "Cody",
+        "reason": "Application-owned invitation routing and state composition, separate from canonical design-system paint ownership. It delegates presentation to RaftPrivateAppInvitePage and existing families; no wrapper exemption or visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/private_app_invite_view.dart#method:PrivateAppInviteView.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "banner",
+          "select",
+          "button"
+        ],
+        "owner": "Cody",
+        "reason": "Application-owned invitation routing and state composition, separate from canonical design-system paint ownership. It delegates presentation to RaftPrivateAppInvitePage and existing families; no wrapper exemption or visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/private_app_invite_view.dart#method:_PrivateAppInviteState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "banner",
+          "select",
+          "button"
+        ],
+        "owner": "Cody",
+        "reason": "Private App invitation composes existing canonical Card/Banner/Select/Button families and the shared requested-scope consent. Root-flow and SDK state tests are functional evidence; Web comparison is recorded separately."
+      },
+      "apps/raft_flutter/lib/features/server_invite_home.dart#function:buildServerInviteHome": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "banner",
+          "select",
+          "button"
+        ],
+        "owner": "Cody",
+        "reason": "Private App invitation composes existing canonical Card/Banner/Select/Button families and the shared requested-scope consent. Root-flow and SDK state tests are functional evidence; Web comparison is recorded separately."
+      },
+      "packages/raft_ui/lib/private_app_invite_previews.dart#class:_InvitePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Interactive SDK preview of the canonical invitation composition. No production API, style exemption or visual acceptance claim."
+      },
+      "packages/raft_ui/lib/private_app_invite_previews.dart#class:_InvitePreviewState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Interactive SDK preview of the canonical invitation composition. No production API, style exemption or visual acceptance claim."
+      },
+      "packages/raft_ui/lib/private_app_invite_previews.dart#function:privateAppInvitePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Interactive SDK preview of the canonical invitation composition. No production API, style exemption or visual acceptance claim."
+      },
+      "packages/raft_ui/lib/private_app_invite_previews.dart#method:_InvitePreview.createState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Interactive SDK preview of the canonical invitation composition. No production API, style exemption or visual acceptance claim."
+      },
+      "packages/raft_ui/lib/private_app_invite_previews.dart#method:_InvitePreviewState.build": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "Cody",
+        "reason": "Interactive SDK preview of the canonical invitation composition. No production API, style exemption or visual acceptance claim."
+      },
+      "packages/raft_ui/lib/src/private_app_invite_page.dart#class:RaftPrivateAppInvitePage": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "banner",
+          "select",
+          "button"
+        ],
+        "owner": "Cody",
+        "reason": "Private App invitation composes existing canonical Card/Banner/Select/Button families and the shared requested-scope consent. Root-flow and SDK state tests are functional evidence; Web comparison is recorded separately."
+      },
+      "packages/raft_ui/lib/src/private_app_invite_page.dart#method:RaftPrivateAppInvitePage.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "banner",
+          "select",
+          "button"
+        ],
+        "owner": "Cody",
+        "reason": "Private App invitation composes existing canonical Card/Banner/Select/Button families and the shared requested-scope consent. Root-flow and SDK state tests are functional evidence; Web comparison is recorded separately."
+      },
+      "apps/raft_flutter/lib/app_bootstrap.dart#function:runRaftAppRoot": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/list_items.dart#local-function:CLASS:RaftAvatarListRow@2459/METHOD:build@3108/FUNCTION:gapped@3330": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 scoped source registration",
+        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
+      },
+      "packages/raft_ui/lib/src/list_items.dart#local-function:CLASS:RaftAvatarListRow@2459/METHOD:build@3108/FUNCTION:gapped@4456": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 scoped source registration",
+        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
+      },
+      "packages/raft_ui/lib/src/list_items.dart#local-function:CLASS:RaftAvatarListRow@2459/METHOD:build@3108/FUNCTION:nameText@4994": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 scoped source registration",
+        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
+      },
+      "apps/raft_flutter/lib/features/human_login_sheet.dart#class:_TierGroupState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Cody",
+        "reason": "Requested-scope consent composes canonical Card and the existing collapsible section header. The opt-in private-invite identity group is collapsible; default human-login consent retains its existing presentation. Functional coverage does not grant visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/human_login_sheet.dart#method:_TierGroup.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Cody",
+        "reason": "Requested-scope consent composes canonical Card and the existing collapsible section header. The opt-in private-invite identity group is collapsible; default human-login consent retains its existing presentation. Functional coverage does not grant visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/human_login_sheet.dart#method:_TierGroupState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "Cody",
+        "reason": "Requested-scope consent composes canonical Card and the existing collapsible section header. The opt-in private-invite identity group is collapsible; default human-login consent retains its existing presentation. Functional coverage does not grant visual acceptance."
+      },
+      "packages/raft_ui/lib/src/private_app_invite_page.dart#local-function:CLASS:RaftPrivateAppInvitePage@788/METHOD:build@1728/FUNCTION:text@1864": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "banner",
+          "select",
+          "button"
+        ],
+        "owner": "Cody",
+        "reason": "Private App invitation composes existing canonical Card/Banner/Select/Button families and the shared requested-scope consent. Root-flow and SDK state tests are functional evidence; Web comparison is recorded separately."
       }
     },
     "entries": {
@@ -45305,6 +45545,17 @@
           "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@67309/METHOD:build@73719/FUNCTION:toggle@73949"
         ],
         "reason": "Actual resolved dropdown toggle surface factory at the new final125 lexical position. Earlier entries and IDs remain historical; real mounted-entry/state/input and paired visual acceptance are still unreviewed."
+      },
+      "screen:integrations.private-app-invite": {
+        "owner": "Cody",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "integrations.private-app-invite",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/private_app_invite_view.dart#method:_PrivateAppInviteState.build",
+          "packages/raft_ui/lib/src/private_app_invite_page.dart#method:RaftPrivateAppInvitePage.build"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Root-flow tests mount the real review/install route. The new paired Web cases must still be inspected and compared; this registration grants no current visual pass."
       }
     },
     "requirements": {

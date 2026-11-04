@@ -1,0 +1,110 @@
+{
+ "description": "Named isolated private-App invitation. No production credentials or installation.",
+ "user": {
+  "id": "alice",
+  "name": "alice",
+  "email": "alice@example.invalid",
+  "emailVerified": true
+ },
+ "routes": {},
+ "routeSets": {
+  "review": {
+   "GET /integration-invites/parity-private": {
+    "client": {
+     "id": "private-app",
+     "clientId": "private-client",
+     "name": "Shared Calendar",
+     "description": "A calendar shared by its publisher.",
+     "homepageUrl": "https://calendar.example.invalid",
+     "returnUrl": "https://calendar.example.invalid/callback",
+     "allowedScopes": [
+      "openid",
+      "profile"
+     ],
+     "publisherName": "Publisher",
+     "sourceServerName": "Design"
+    },
+    "link": {
+     "id": "share",
+     "expiresAt": null
+    },
+    "manageableServers": [
+     {
+      "id": "design",
+      "name": "Design",
+      "slug": "design",
+      "role": "owner",
+      "installedAt": null
+     }
+    ]
+   }
+  },
+  "installed": {
+   "GET /integration-invites/parity-private": {
+    "client": {
+     "id": "private-app",
+     "clientId": "private-client",
+     "name": "Shared Calendar",
+     "description": "A calendar shared by its publisher.",
+     "homepageUrl": "https://calendar.example.invalid",
+     "returnUrl": "https://calendar.example.invalid/callback",
+     "allowedScopes": [
+      "openid",
+      "profile"
+     ],
+     "publisherName": "Publisher",
+     "sourceServerName": "Design"
+    },
+    "link": {
+     "id": "share",
+     "expiresAt": null
+    },
+    "manageableServers": [
+     {
+      "id": "design",
+      "name": "Design",
+      "slug": "design",
+      "role": "owner",
+      "installedAt": "2026-11-04T00:00:00Z"
+     }
+    ]
+   }
+  },
+  "no-admin": {
+   "GET /integration-invites/parity-private": {
+    "client": {
+     "id": "private-app",
+     "clientId": "private-client",
+     "name": "Shared Calendar",
+     "description": "A calendar shared by its publisher.",
+     "homepageUrl": "https://calendar.example.invalid",
+     "returnUrl": "https://calendar.example.invalid/callback",
+     "allowedScopes": [
+      "openid",
+      "profile"
+     ],
+     "publisherName": "Publisher",
+     "sourceServerName": "Design"
+    },
+    "link": {
+     "id": "share",
+     "expiresAt": null
+    },
+    "manageableServers": []
+   }
+  },
+  "loading": {
+   "GET /integration-invites/parity-private": {
+    "$pending": true
+   }
+  },
+  "error": {
+   "GET /integration-invites/parity-private": {
+    "$status": 404,
+    "$body": {
+     "error": "Private app invite not found"
+    }
+   }
+  }
+ }
+}

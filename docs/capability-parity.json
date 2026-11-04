@@ -8290,14 +8290,27 @@
    "area": "integrations-apps-mcp",
    "capability": "Open a private-app share link (invite) and see app details, publisher and expiry",
    "background": false,
-   "status": "missing",
+   "status": "partial",
    "webEntry": "pages/IntegrationInvitePage (route INTEGRATION_INVITE_ROUTE, /integration-invites/:token)",
    "gate": "Signed-in user; install needs owner/admin on target server",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "",
-   "impact": "Flutter creates and copies the invite URL (connected_app_editor.dart) but cannot open one; recipients who open it on mobile land in the browser. Installing a privately shared app is the only way to get it (it is hidden from marketplace). No Flutter route, deep-link handler or screen exists for this page; a mobile user can still complete it in a mobile browser.",
-   "size": "M"
+   "flutterEntry": "app_root.dart sessionHome / receiveAppLocation -> PrivateAppInviteView: review publisher/scopes/expiry, choose an authorized server, explicitly install, then open installed settings/setup",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/private_app_invite_view.dart",
+     "needle": "class PrivateAppInviteView"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/private_app_invite_view.dart",
+     "needle": "'$path/install'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/app_root.dart",
+     "needle": "PrivateAppInviteLink.parse(requestedLocation, origin)"
+    }
+   ],
+   "justification": "The real application root and in-app links reach the invitation; signed-out login resumes review without installing. Explicit installation uses the chosen server context, rejects duplicate clicks, fences stale sessions, refreshes manager choices on membership changes and exposes settings only after installation is confirmed. OS HTTPS association/receiver integration and paired visual acceptance remain separate unfinished work.",
+   "impact": "An in-app link or initial application route can now review and install the invitation. Opening a link from another application still needs native link registration and the domain association for this client identity.",
+   "size": "S"
   },
   {
    "kind": "endpoint",
@@ -8733,14 +8746,27 @@
    "area": "integrations-apps-mcp",
    "capability": "Install a privately shared app to a chosen server from an invite link",
    "background": false,
-   "status": "missing",
+   "status": "partial",
    "webEntry": "pages/IntegrationInvitePage > 'Install app' with server select; 'Open settings' once installed",
    "gate": "Owner/admin of target server ('needAdmin' banner otherwise)",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "",
-   "impact": "Admins cannot accept a private app invite from the app. No Flutter route, deep-link handler or screen exists for this page; a mobile user can still complete it in a mobile browser.",
-   "size": "M"
+   "flutterEntry": "app_root.dart sessionHome / receiveAppLocation -> PrivateAppInviteView: review publisher/scopes/expiry, choose an authorized server, explicitly install, then open installed settings/setup",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/private_app_invite_view.dart",
+     "needle": "class PrivateAppInviteView"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/private_app_invite_view.dart",
+     "needle": "'$path/install'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/app_root.dart",
+     "needle": "PrivateAppInviteLink.parse(requestedLocation, origin)"
+    }
+   ],
+   "justification": "The real application root and in-app links reach the invitation; signed-out login resumes review without installing. Explicit installation uses the chosen server context, rejects duplicate clicks, fences stale sessions, refreshes manager choices on membership changes and exposes settings only after installation is confirmed. OS HTTPS association/receiver integration and paired visual acceptance remain separate unfinished work.",
+   "impact": "An in-app link or initial application route can now review and install the invitation. Opening a link from another application still needs native link registration and the domain association for this client identity.",
+   "size": "S"
   },
   {
    "kind": "endpoint",
@@ -9468,14 +9494,27 @@
    "area": "integrations-apps-mcp",
    "capability": "Open a private integration-app share link (/integration-invites/:token) to review scopes and install the app on a server you manage",
    "background": false,
-   "status": "missing",
+   "status": "partial",
    "webEntry": "App.tsx route INTEGRATION_INVITE_ROUTE -> pages/IntegrationInvitePage.tsx (GET /integration-invites/:token, POST .../install)",
    "gate": "Signed-in user with a manageable server",
-   "flutterEntry": "Flutter can create and copy such links (connected_app_editor.dart) but has no page/route to open or accept one",
-   "justification": "",
-   "impact": "Server owners/admins receiving an app share link; each link recipient is forced to the web. Occasional.",
-   "size": "M",
-   "flutterRefs": []
+   "flutterEntry": "app_root.dart sessionHome / receiveAppLocation -> PrivateAppInviteView: review publisher/scopes/expiry, choose an authorized server, explicitly install, then open installed settings/setup",
+   "justification": "The real application root and in-app links reach the invitation; signed-out login resumes review without installing. Explicit installation uses the chosen server context, rejects duplicate clicks, fences stale sessions, refreshes manager choices on membership changes and exposes settings only after installation is confirmed. OS HTTPS association/receiver integration and paired visual acceptance remain separate unfinished work.",
+   "impact": "An in-app link or initial application route can now review and install the invitation. Opening a link from another application still needs native link registration and the domain association for this client identity.",
+   "size": "S",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/private_app_invite_view.dart",
+     "needle": "class PrivateAppInviteView"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/private_app_invite_view.dart",
+     "needle": "'$path/install'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/app_root.dart",
+     "needle": "PrivateAppInviteLink.parse(requestedLocation, origin)"
+    }
+   ]
   },
   {
    "kind": "ui",
@@ -9749,14 +9788,27 @@
    "area": "integrations-apps-mcp",
    "capability": "Accept a private app share link: see app/publisher/expiry, choose target server, Install app, Open settings",
    "background": false,
-   "status": "missing",
+   "status": "partial",
    "webEntry": "pages/IntegrationInvitePage",
    "gate": "Owner/admin on a target server",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "",
-   "impact": "Cannot open or accept private app invites in the app; creating/copying them is supported. No Flutter route, deep-link handler or screen exists for this page; a mobile user can still complete it in a mobile browser.",
-   "size": "M"
+   "flutterEntry": "app_root.dart sessionHome / receiveAppLocation -> PrivateAppInviteView: review publisher/scopes/expiry, choose an authorized server, explicitly install, then open installed settings/setup",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/private_app_invite_view.dart",
+     "needle": "class PrivateAppInviteView"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/private_app_invite_view.dart",
+     "needle": "'$path/install'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/app_root.dart",
+     "needle": "PrivateAppInviteLink.parse(requestedLocation, origin)"
+    }
+   ],
+   "justification": "The real application root and in-app links reach the invitation; signed-out login resumes review without installing. Explicit installation uses the chosen server context, rejects duplicate clicks, fences stale sessions, refreshes manager choices on membership changes and exposes settings only after installation is confirmed. OS HTTPS association/receiver integration and paired visual acceptance remain separate unfinished work.",
+   "impact": "An in-app link or initial application route can now review and install the invitation. Opening a link from another application still needs native link registration and the domain association for this client identity.",
+   "size": "S"
   },
   {
    "kind": "ui",
@@ -14198,7 +14250,7 @@
    "flutterEntry": "app_root.dart invite route loadInfo -> invite_accept_view.dart (InviteJoined, Sign in / Create account / Go to Raft)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/app_root.dart",
+     "file": "apps/raft_flutter/lib/features/server_invite_home.dart",
      "needle": "/auth/invite-info"
     },
     {
@@ -14342,7 +14394,7 @@
    "flutterEntry": "app_root.dart invite accept -> invite_accept_view.dart",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/app_root.dart",
+     "file": "apps/raft_flutter/lib/features/server_invite_home.dart",
      "needle": "/auth/accept-invite"
     },
     {
@@ -14757,7 +14809,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/app_root.dart",
-     "needle": "onGoToRaft: clearInvite"
+     "needle": "onClose: clearInvite"
     }
    ],
    "justification": "",

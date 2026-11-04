@@ -382,6 +382,9 @@ class RaftClient {
   int _generation = 0;
   int _authenticationGeneration = 0;
   int get generation => _generation;
+
+  /// Account authority lifetime, independent of the selected workspace.
+  int get authenticationGeneration => _authenticationGeneration;
   bool get signedIn => _session != null;
   io.Socket? _socket;
   Future<void>? _refreshing;
@@ -1037,6 +1040,9 @@ class RaftClient {
 
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       request('GET', path, query: query);
+
+  /// Read an account-owned resource without attaching the active workspace.
+  Future<dynamic> getForAccount(String path) => _accountRequest('GET', path);
 
   /// Read a picker directory without changing the active workspace. Authentication
   /// changes still fence the response and refresh/retry preserves this server.

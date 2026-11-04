@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
@@ -99,11 +100,32 @@ class AppSetupState {
 /// own back end. A different server or app gets a fresh state.
 class AppSetupPanel extends StatefulWidget {
   AppSetupPanel({
-    required this.controller,
+    required WorkspaceController this.controller,
     required this.clientId,
     this.open = managementLaunch,
-  }) : super(key: ValueKey('app-setup:${controller.server?.id}:$clientId'));
-  final WorkspaceController controller;
+  }) : client = null,
+       serverId = null,
+       super(key: ValueKey('app-setup:${controller.server?.id}:$clientId'));
+
+  /// An installation chosen outside the active workspace (a private App
+  /// invite). Reads do not change the current account or server selection.
+  AppSetupPanel.forServer({
+    required RaftClient this.client,
+    required String this.serverId,
+    required this.clientId,
+    this.open = managementLaunch,
+  }) : controller = null,
+       super(
+         key: ValueKey((
+           client,
+           client.authenticationGeneration,
+           serverId,
+           clientId,
+         )),
+       );
+  final WorkspaceController? controller;
+  final RaftClient? client;
+  final String? serverId;
   final String clientId;
   final Future<void> Function(String url) open;
   @override
@@ -115,6 +137,10 @@ class _AppSetupPanelState extends State<AppSetupPanel>
   AppSetupState? state;
   bool failed = false;
   int _request = 0;
+  RaftClient get api => widget.controller?.client ?? widget.client!;
+  Object get identity => widget.controller == null
+      ? (api, api.user?.id, api.authenticationGeneration, widget.serverId)
+      : pageIdentity(widget.controller!);
 
   @override
   void initState() {
@@ -136,17 +162,16 @@ class _AppSetupPanelState extends State<AppSetupPanel>
 
   Future<void> _load() async {
     final request = ++_request;
-    final identity = pageIdentity(widget.controller);
+    final expected = identity;
     try {
+      final path = '/integrations/clients/${widget.clientId}/setup';
       final data = AppSetupState.parse(
-        await widget.controller.client.get(
-          '/integrations/clients/${widget.clientId}/setup',
-        ),
+        widget.serverId == null
+            ? await api.get(path)
+            : await api.getForServer(widget.serverId!, path),
       );
       if (data == null) throw const FormatException('app setup state');
-      if (!mounted ||
-          request != _request ||
-          identity != pageIdentity(widget.controller)) {
+      if (!mounted || request != _request || expected != identity) {
         return;
       }
       setState(() {
@@ -154,7 +179,7 @@ class _AppSetupPanelState extends State<AppSetupPanel>
         failed = false;
       });
     } catch (_) {
-      if (mounted && request == _request) {
+      if (mounted && request == _request && expected == identity) {
         setState(() {
           state = null;
           failed = true;

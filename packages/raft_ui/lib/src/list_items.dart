@@ -28,6 +28,7 @@ import 'recipes/recipe_runtime.dart';
 import 'panel_layout.dart';
 import 'text_measure.dart';
 import 'text_scaling.dart' show RaftScaled;
+import 'space.dart';
 import 'localization.dart' show raftText;
 import 'raft/list_row.dart';
 import 'page_tokens.dart';
@@ -366,6 +367,8 @@ class RaftCollapsibleSectionHeader extends StatefulWidget {
     this.icon,
     this.count,
     this.action,
+    this.labelWidget,
+    this.leadingDisclosure = false,
     this.disclosureKey,
     this.gap = 8,
   });
@@ -379,6 +382,11 @@ class RaftCollapsibleSectionHeader extends StatefulWidget {
 
   /// Stays outside the disclosure target so it keeps its own action.
   final Widget? action;
+
+  /// A rich summary, such as a permission name followed by its description.
+  /// The plain label remains the disclosure's accessible name.
+  final Widget? labelWidget;
+  final bool leadingDisclosure;
   final Key? disclosureKey;
 
   /// Gap between the header row and [children] while expanded.
@@ -453,26 +461,37 @@ class _RaftCollapsibleSectionHeaderState
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
     // The chevron turns over the same beat as the fold it announces.
     final duration = reducedMotion ? Duration.zero : _openDuration;
-    final header = Row(
-      children: [
-        Expanded(
-          child: RaftSectionHeader(
+    final label = Expanded(
+      child:
+          widget.labelWidget ??
+          RaftSectionHeader(
             label: widget.label,
             icon: widget.icon,
             count: widget.count,
           ),
-        ),
-        const SizedBox(width: 8),
-        AnimatedRotation(
-          turns: widget.expanded ? .25 : 0,
-          duration: duration,
-          child: RaftIcon(
-            RaftGlyph.chevronRight,
-            size: 12,
-            color: t.semantic.foregroundMuted,
-          ),
-        ),
-      ],
+    );
+    final marker = AnimatedRotation(
+      turns: widget.expanded ? .25 : 0,
+      duration: duration,
+      child: RaftIcon(
+        RaftGlyph.chevronRight,
+        size: 12,
+        color: t.semantic.foregroundMuted,
+      ),
+    );
+    final leadingMarker = Padding(
+      padding: EdgeInsets.only(
+        top: widget.labelWidget == null ? 0 : RaftSpace.x1,
+      ),
+      child: marker,
+    );
+    final header = Row(
+      crossAxisAlignment: widget.leadingDisclosure
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
+      children: widget.leadingDisclosure
+          ? [leadingMarker, const SizedBox(width: RaftSpace.x1), label]
+          : [label, const SizedBox(width: RaftSpace.x2), marker],
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

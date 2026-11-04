@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:path_provider/path_provider.dart';
 
-import 'app_root.dart';
+import 'app_bootstrap.dart';
 import 'data/attachment_disk_cache.dart';
 import 'data/avatar_image_store.dart';
 import 'data/cache_budget.dart';

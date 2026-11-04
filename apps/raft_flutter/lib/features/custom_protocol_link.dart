@@ -6,6 +6,7 @@ import '../platform/attachment_html_webview.dart'
     show attachmentHtmlWebViewSupported;
 import 'artifact_link.dart';
 import 'artifact_viewer.dart';
+import 'private_app_invite.dart';
 
 /// Web `markdownSanitizeSchema.ts` `MARKDOWN_EXTRA_HREF_PROTOCOLS`: the custom
 /// URL schemes a message body may link to, on top of http, https and mailto.
@@ -63,6 +64,8 @@ bool? debugArtifactViewerSupported;
 Future<void> openMessageLink(BuildContext context, String url) async {
   final uri = Uri.tryParse(url);
   if (uri == null) return;
+  if (await PrivateAppInviteScope.open(context, uri)) return;
+  if (!context.mounted) return;
   // Linux and Windows have no platform WebView: the browser opens it, as it
   // did before.
   if (ArtifactLinks.matches(uri) &&
