@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -6,10 +7,19 @@ import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_pla
 /// A preview owns its desktop browser environment. It never uses a login
 /// viewer's profile or the default WebView2 directory beside the executable.
 class DesktopHtmlEnvironment {
-  DesktopHtmlEnvironment({this.platform, this.directory});
+  DesktopHtmlEnvironment({this.platform, this.directory}) {
+    final browser = platform;
+    if (browser == null) return;
+    final previous = browser.onBrowserProcessExited;
+    browser.onBrowserProcessExited = (detail) {
+      if (!_browserExited.isCompleted) _browserExited.complete();
+      previous?.call(detail);
+    };
+  }
 
   final PlatformWebViewEnvironment? platform;
   final Directory? directory;
+  final _browserExited = Completer<void>();
 
   static Future<DesktopHtmlEnvironment> create(TargetPlatform target) async {
     // WPE creates a fresh ephemeral network session for each incognito view.
@@ -44,6 +54,14 @@ class DesktopHtmlEnvironment {
   }
 
   Future<void> dispose() async {
+    if (platform != null) {
+      // Keep the native observer alive until WebView2 releases its files.
+      // Disposing the environment first removes BrowserProcessExited.
+      await _browserExited.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {},
+      );
+    }
     await platform?.dispose();
     final folder = directory;
     if (folder == null) return;

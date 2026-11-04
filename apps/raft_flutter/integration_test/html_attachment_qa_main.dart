@@ -44,6 +44,7 @@ window.qaStorage='allowed';try{localStorage.setItem('qa','1')}catch(_){qaStorage
 PlatformInAppWebViewController? _controller;
 final _requests = <Map<String, Object?>>[];
 final _externalRequests = <String>[];
+final _cleanupResults = <Map<String, Object?>>[];
 bool _loaded = false, _environmentDisposed = false;
 String? _failure, _profile;
 late WorkspaceController _workspace;
@@ -146,6 +147,7 @@ Future<Map<String, Object?>> _snapshot() async {
     'profile': _profile,
     'selectedInteractive': attachmentHtmlWebViewSupported,
     'environmentDisposed': _environmentDisposed,
+    'cleanupResults': List.of(_cleanupResults),
     'requests': List.of(_requests),
     'externalRequests': List.of(_externalRequests),
     'navigationObserverReady': _navigationObserverReady,
@@ -259,7 +261,21 @@ class _QaEnvironment extends DesktopHtmlEnvironment {
   final DesktopHtmlEnvironment delegate;
   @override
   Future<void> dispose() async {
-    await delegate.dispose();
-    _environmentDisposed = true;
+    final timer = Stopwatch()..start();
+    String? failure;
+    try {
+      await delegate.dispose();
+      if (_profile == directory?.path) _environmentDisposed = true;
+    } catch (error) {
+      failure = error.runtimeType.toString();
+      rethrow;
+    } finally {
+      _cleanupResults.add({
+        'profile': directory?.path,
+        'elapsedMs': timer.elapsedMilliseconds,
+        'completed': failure == null,
+        'failure': failure,
+      });
+    }
   }
 }
