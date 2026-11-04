@@ -1343,6 +1343,13 @@ final auditSurfaces = <AuditSurface>[
     representative: true,
   ),
   AuditSurface(
+    'messageReadStatusPreview',
+    'DM read status',
+    messageReadStatusPreview,
+    Size(640, 440),
+    representative: true,
+  ),
+  AuditSurface(
     'composerPreview',
     'Composer',
     composerPreview,

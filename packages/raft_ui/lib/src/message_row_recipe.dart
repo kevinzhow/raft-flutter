@@ -481,6 +481,7 @@ class RaftMessageRow extends StatefulWidget {
     this.translation,
     this.footer,
     this.inlineReplies,
+    this.readStatus,
     this.toolbar,
     this.selectionLeading,
     this.onAuthor,
@@ -520,6 +521,9 @@ class RaftMessageRow extends StatefulWidget {
   final List<RaftMessageSemanticsAction> semanticsActions;
   final Widget content;
   final Widget? avatar, metadata, attachments, footer, inlineReplies, toolbar;
+
+  /// Conversation status after every message-owned footer/reply surface.
+  final Widget? readStatus;
 
   /// Web MessageItem translation status (`mt-0`): after the attachments,
   /// before the footer.
@@ -1218,17 +1222,20 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                                       tier: widget.sizeTier,
                                       child: widget.inlineReplies!,
                                     ),
+                                  ?widget.readStatus,
                                   // `mb-px`: the last block's frame sits one
                                   // pixel above the baseline the followed-by
                                   // rhythm is measured from (the reply card
                                   // always; footer, attachments and images
                                   // when another row follows).
-                                  if (recipe.trailingPixel(
-                                    attachments: widget.attachments != null,
-                                    translation: widget.translation != null,
-                                    footer: widget.footer != null,
-                                    inlineReplies: widget.inlineReplies != null,
-                                  ))
+                                  if (widget.readStatus == null &&
+                                      recipe.trailingPixel(
+                                        attachments: widget.attachments != null,
+                                        translation: widget.translation != null,
+                                        footer: widget.footer != null,
+                                        inlineReplies:
+                                            widget.inlineReplies != null,
+                                      ))
                                     // ignore: raft_lints/off_grid_spacing -- Web `mb-px`
                                     const SizedBox(height: 1),
                                 ],

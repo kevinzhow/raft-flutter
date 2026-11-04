@@ -73,6 +73,16 @@ Widget panelPreview() => const Padding(
 );
 @RaftPreviews('Message')
 Widget messagePreview() => const _InteractivePreview('Message');
+@RaftPreviews('DM read status')
+Widget messageReadStatusPreview() => const Padding(
+  padding: EdgeInsets.all(24),
+  child: RaftMessageTile(
+    author: 'Alice',
+    timestamp: '10:00 AM',
+    content: 'A private message without an @mention.',
+    readStatus: RaftMessageReadStatus(),
+  ),
+);
 @RaftPreviews('Composer')
 Widget composerPreview() => const _InteractivePreview('Composer');
 @RaftPreviews('Empty state')

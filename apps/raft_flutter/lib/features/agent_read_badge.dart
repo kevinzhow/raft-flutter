@@ -45,7 +45,12 @@ bool agentReadEligible(
     channel.type != 'joint' &&
     channel.type != 'thread';
 
-final _asked = Expando<Set<String>>('read receipt scopes asked');
+class _ReadFrontierRequests {
+  Object? identity;
+  final scopes = <String>{};
+}
+
+final _asked = Expando<_ReadFrontierRequests>('read receipt scopes asked');
 final _watched = Expando<bool>('read receipts watched');
 
 /// Reads the channel's read frontiers once per session, and repaints the rows
@@ -55,8 +60,22 @@ void watchReadFrontiers(WorkspaceController w, String channelId) {
   if (_watched[w] != true) {
     _watched[w] = true;
     receipts.addListener(w.notifyListeners);
+    w.services.disposeWithSession(
+      () => receipts.removeListener(w.notifyListeners),
+    );
   }
-  final asked = _asked[w] ??= {};
-  if (!asked.add(channelId)) return;
+  final asked = _asked[w] ??= _ReadFrontierRequests();
+  final identity = (
+    w.client.origin,
+    w.client.user?.id,
+    w.client.generation,
+    w.client.serverId,
+  );
+  if (asked.identity != identity) {
+    asked.identity = identity;
+    asked.scopes.clear();
+  }
+  if (!asked.scopes.add(channelId)) return;
+  if (receipts.scope(channelId) != null) return;
   unawaited(receipts.hydrate(channelId));
 }

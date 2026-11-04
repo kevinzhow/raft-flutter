@@ -48,3 +48,42 @@ Widget? channelFooterReplacement(
     ),
   };
 }
+
+/// ThreadPanel's parent-channel policy, shared with the conversation footer
+/// owner rather than retaining conversation state decisions in ChatView.
+Widget? threadFooterReplacement(
+  BuildContext context,
+  WorkspaceController w,
+  DateTime now, {
+  required bool selectionActive,
+  required VoidCallback? onViewBilling,
+  required Future<void> Function() onJoin,
+}) {
+  final parent = w.messageDomain.threadSourceChannel;
+  if (parent == null) return null;
+  final guest = w.server?.string('role') == 'guest';
+  final joined = parent.joined;
+  final guestJoinable = parent.json['guestJoinable'] == true;
+  if (guest && (joined || !guestJoinable)) {
+    return const RaftChannelBannerFooter(
+      message: 'Guest access is read-only. You can read and follow this thread, but you cannot reply or react.',
+    );
+  }
+  if (selectionActive) return null;
+  if (jointChannelReadOnly(parent.json, now)) {
+    return RaftChannelBannerFooter(
+      message: "This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server's admin upgrades or a free server leaves.",
+      linkLabel: onViewBilling == null ? null : 'View Billing',
+      onLink: onViewBilling,
+    );
+  }
+  if (joined) return null;
+  return RaftChannelJoinFooter(
+    channelName: parent.name,
+    label: guest ? 'Join channel' : 'Join channel to reply',
+    onJoin: onJoin,
+    explanation: guest
+        ? 'Joining follows the parent channel. Guest access remains read-only.'
+        : null,
+  );
+}

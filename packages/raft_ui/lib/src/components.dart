@@ -1564,6 +1564,7 @@ class RaftMessageTile extends StatelessWidget {
     this.onLink,
     this.threadLabel,
     this.threadPreview,
+    this.readStatus,
     this.taskReference,
     this.savedIndicator,
     this.threadRepliesBadge,
@@ -1641,6 +1642,9 @@ class RaftMessageTile extends StatelessWidget {
   /// Business adapters may supply a richer body without replacing message
   /// actions, thread controls, attachments, or reactions.
   final Widget? body, threadPreview, taskReference;
+
+  /// A separate status line after the footer and inline replies, not a badge.
+  final Widget? readStatus;
 
   /// Web `MessageItemSavedIndicator`: shown in the footer of a saved message.
   final Widget? savedIndicator;
@@ -1864,6 +1868,7 @@ class RaftMessageTile extends StatelessWidget {
                 ),
       translation: translation,
       inlineReplies: threadPreview,
+      readStatus: readStatus,
       footer:
           taskReference == null &&
               savedIndicator == null &&

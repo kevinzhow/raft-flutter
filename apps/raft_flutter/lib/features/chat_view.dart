@@ -72,6 +72,7 @@ import 'message_task_projection.dart';
 import 'saved_sidebar_entry.dart';
 import 'attachment_comment_ref.dart';
 import 'composer_slot.dart';
+import 'dm_read_status.dart';
 
 /// Controlled mounted-viewport action; no route, controller or data ownership.
 class ChatViewportHandle {
@@ -2682,6 +2683,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   Widget messageTile(
     RaftMessage m, {
     bool parent = false,
+    bool dmRead = false,
     Widget? selectionLeading,
     bool continuation = false,
     RaftMessageFollowedBy? followedBy,
@@ -2790,6 +2792,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               if (!pending) _messages.threads.openThread(m);
             },
       threadPreview: inlineThreadReplies(m, parentTile: parent),
+      readStatus: dmRead ? const RaftMessageReadStatus() : null,
       taskReference: taskReference(m),
       threadRepliesBadge: threadRepliesBadge(m, parentTile: parent),
       threadLabel: _messages.threadSummaries[m.id] is Map
@@ -2882,35 +2885,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
 
   /// Web ThreadPanel footer chain: guest read-only / joint locked banners and
   /// the "Join channel to reply" CTA replace the composer (null = composer).
-  Widget? threadFooterWidget() {
-    final parent = _messages.threadSourceChannel;
-    if (parent == null) return null;
-    final guest = w.server?.string('role') == 'guest';
-    final joined = parent.joined;
-    final guestJoinable = parent.json['guestJoinable'] == true;
-    if (guest && (joined || !guestJoinable)) {
-      return const RaftChannelBannerFooter(
-        message: 'Guest access is read-only. You can read and follow this thread, but you cannot reply or react.',
-      );
-    }
-    if (selection.active) return null;
-    if (jointChannelReadOnly(parent.json, sourceTimeNow())) {
-      return RaftChannelBannerFooter(
-        message: "This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server's admin upgrades or a free server leaves.",
-        linkLabel: widget.onViewBilling == null ? null : 'View Billing',
-        onLink: widget.onViewBilling,
-      );
-    }
-    if (joined) return null;
-    return RaftChannelJoinFooter(
-      channelName: parent.name,
-      label: guest ? 'Join channel' : 'Join channel to reply',
-      onJoin: _messages.joinThreadParentChannel,
-      explanation: guest
-          ? 'Joining follows the parent channel. Guest access remains read-only.'
-          : null,
-    );
-  }
+  Widget? threadFooterWidget() => threadFooterReplacement(
+    context,
+    w,
+    sourceTimeNow(),
+    selectionActive: selection.active,
+    onViewBilling: widget.onViewBilling,
+    onJoin: _messages.joinThreadParentChannel,
+  );
 
   /// ChatPanel `contextLoadError` banner above the history state: the jump
   /// target is missing ("Message not found") or hidden by the plan cutoff.
@@ -3015,7 +2997,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     return index < systemStates!.length ? systemStates![index] : null;
   }
 
-  Widget datedTile(RaftMessage message, {bool captureFocus = true}) {
+  Widget datedTile(
+    RaftMessage message, {
+    bool captureFocus = true,
+    bool dmRead = false,
+  }) {
     final stamp = message.createdAt;
     final key = _messages.messageKey(message);
     final index = windowIndexOf(key);
@@ -3100,6 +3086,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             child: tile(
               message,
               captureFocus: captureFocus,
+              dmRead: dmRead,
               continuation: continuation,
               followedBy: followedBy,
               followsSystem: followsSystem,
@@ -3166,6 +3153,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   Widget tile(
     RaftMessage m, {
     bool parent = false,
+    bool dmRead = false,
     bool captureFocus = true,
     bool continuation = false,
     RaftMessageFollowedBy? followedBy,
@@ -3178,6 +3166,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final body = messageTile(
       m,
       parent: parent,
+      dmRead: dmRead,
       continuation: continuation,
       followedBy: followedBy,
       followsSystem: followsSystem,
@@ -3219,6 +3208,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   Widget buildTimeline() {
     final timelineAdapter = adapter;
     final messages = timelineAdapter.messages;
+    final dmReadId = dmReadStatusMessageId(w, rows, thread: widget.thread);
     final measuredRows = raftRowExtents.scope(rowExtentScope(context));
     final loading = widget.thread
         ? _messages.state.threadLoading
@@ -3332,7 +3322,12 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 w,
                 messages,
                 i,
-                style: (rowStyle, constraints.maxWidth, systemStateAt(i)),
+                style: (
+                  rowStyle,
+                  constraints.maxWidth,
+                  systemStateAt(i),
+                  source(messages[i]).id == dmReadId,
+                ),
                 source: source,
                 summaries: _messages.threadSummaries,
                 highlighted: _messages.state.highlightedMessageId,
@@ -3350,7 +3345,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 controller: w,
                 thread: widget.thread,
                 newerId: source(messages[index]).id,
-                child: datedTile(source(messages[index])),
+                child: datedTile(
+                  source(messages[index]),
+                  dmRead: source(messages[index]).id == dmReadId,
+                ),
               ),
               estimateRow: (index) => estimateRow(
                 measuredRows,

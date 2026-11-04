@@ -6734,19 +6734,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4432/METHOD:attachmentGallery@68977/FUNCTION:view@70131": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4432/METHOD:buildTimeline@116899/FUNCTION:timelineFor@120322": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4432/METHOD:senderAvatar@80627/FUNCTION:avatar@83187": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -40159,12 +40147,6 @@
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4432/METHOD:buildTimeline@116805/FUNCTION:timelineFor@120228": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
       "apps/raft_flutter/lib/features/create_agent_dialog.dart#local-function:CLASS:_CreateAgentDialogState@4825/METHOD:build@24564/FUNCTION:fields@32776": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -43144,6 +43126,51 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4462/METHOD:attachmentGallery@69007/FUNCTION:view@70161": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4462/METHOD:senderAvatar@80657/FUNCTION:avatar@83217": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4462/METHOD:buildTimeline@115994/FUNCTION:timelineFor@119493": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "apps/raft_flutter/lib/features/channel_footer_widgets.dart#function:threadFooterReplacement": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "banner",
+          "button"
+        ],
+        "owner": "Conversation footer / message row",
+        "reason": "Existing thread-parent guest/joint/join policy relocated unchanged from ChatView into its footer owner. Canonical SDK footer composition; no baseline, permission or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/previews.dart#function:messageReadStatusPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "DM read status / message row",
+        "reason": "SDK fixture for the MessageItem DM status line. A preview does not establish product mounting, native accessibility or Web visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_read_status.dart#class:RaftMessageReadStatus": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "DM read status / message row",
+        "reason": "Source MessageItem status composition after footer and inline replies, using the generated caption, spacing and foreground tokens. This is not a canonical-family binding or a current visual PASS."
+      },
+      "packages/raft_ui/lib/src/message_read_status.dart#method:RaftMessageReadStatus.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "DM read status / message row",
+        "reason": "Owns the independent DM status line, not the generic footer chip. Production visibility stays in the app adapter; current Web and native acceptance remain separate."
       }
     },
     "entries": {
