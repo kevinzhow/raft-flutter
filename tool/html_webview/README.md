@@ -262,6 +262,12 @@ button before constructing the Up event, while preserving other held buttons
 and keyboard modifiers. The old adapter reported a still-pressed button in
 `mouseup.buttons`, preventing a complete pointer-up sequence.
 
+Linux consumers require CMake 3.24 or newer and the distribution's
+`nlohmann-json3-dev` 3.11.3 or newer. Configure resolves that installed package
+before the plugin's unpinned FetchContent fallback; it does not fetch JSON
+sources. The pinned Noble development package can also be extracted into a
+private prefix selected through `CMAKE_PREFIX_PATH` for an offline build.
+
 The preview's explicit `allowFileAccess: false` also cancels native file chooser
 requests before either the Dart callback or GTK fallback. This is required
 because the pinned Linux plugin's chooser-mode decoder does not support Linux;
@@ -300,6 +306,14 @@ without `--download`. The shared Pub cache and package_config are never patched.
 Use Pub's supported root workspace `dependency_overrides` path to the generated
 directory. Launcher and CI preparation must run before resolving that path; the
 preparer itself does not edit the workspace manifest, lockfile or package graph.
+
+The root workspace declares this override. `tool/flutter` prepares and verifies
+it before dependency, analysis, test and build commands on every host platform;
+Pub needs the directory even when that host does not run the Linux plugin.
+`--offline` and `--no-pub` require the already authenticated private archive and
+never fetch it. Version/doctor/cache-management commands do not prepare it.
+The adapter checks POSIX permission bits on POSIX hosts; NTFS preparation keeps
+the same full byte, file-identity and link checks without claiming POSIX modes.
 The CMake native adapter still applies to its separate build copy.
 
 `linux_html_pointer_test.dart` exercises the actual plugin widget through delayed

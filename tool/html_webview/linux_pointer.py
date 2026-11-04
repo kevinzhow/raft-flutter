@@ -14,6 +14,17 @@ ARCHIVE_SHA256 = '2e1a3b09bb911fb5a8bb155cb7f1eb1428a19b6e20363b9db48beef428b8ce
 TARGET = 'lib/src/in_app_webview/custom_platform_view.dart'
 RECEIPT = '.raft-pointer-adapter.json'
 MAX_ARCHIVE = 8 * 1024 * 1024
+WORKSPACE_PATH = Path('.dart_tool/raft_plugins/flutter_inappwebview_linux')
+
+
+def linked_path(path):
+    return path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction())
+
+
+def package_mode_matches(path):
+    # NTFS does not round-trip POSIX permission bits through chmod/stat.
+    # File identity, single-link ownership and every byte are checked there too.
+    return os.name != 'posix' or path.stat().st_mode & 0o7777 == 0o644
 
 
 def sha(data):
@@ -92,7 +103,8 @@ def entries(archive):
     with tarfile.open(archive, 'r:gz') as tar:
         for member in tar:
             name = PurePosixPath(member.name)
-            if name.is_absolute() or '..' in name.parts or '\\' in member.name:
+            if (name.is_absolute() or '..' in name.parts or '\\' in member.name
+                    or ':' in member.name or name.as_posix() != member.name):
                 raise ValueError('Unsafe Pub archive path')
             if member.isdir():
                 continue
@@ -109,7 +121,7 @@ def entries(archive):
 
 def prepare(archive, destination):
     archive, destination = Path(archive), Path(destination).absolute()
-    if any(parent.is_symlink() for parent in [destination, *destination.parents]):
+    if any(linked_path(parent) for parent in [destination, *destination.parents]):
         raise ValueError('Generated plugin paths cannot traverse symbolic links')
     original = entries(archive)
     adapted = {**original, TARGET: patch(original[TARGET].decode()).encode()}
@@ -119,12 +131,12 @@ def prepare(archive, destination):
                'output': {n: sha(v) for n, v in adapted.items()},
                'fileModes': {n: 0o644 for n in original}}
     if os.path.lexists(destination):
-        if destination.is_symlink() or not destination.is_dir():
+        if linked_path(destination) or not destination.is_dir():
             raise ValueError('Existing generated plugin is not a private directory; preserve it')
         contents = list(destination.rglob('*'))
         files = {p.relative_to(destination).as_posix(): p for p in contents if not p.is_dir()}
-        if (set(files) != {*adapted, RECEIPT} or any(p.is_symlink() for p in contents)
-                or any(p.stat().st_nlink != 1 or p.stat().st_mode & 0o7777 != 0o644
+        if (set(files) != {*adapted, RECEIPT} or any(linked_path(p) for p in contents)
+                or any(p.stat().st_nlink != 1 or not package_mode_matches(p)
                        for p in files.values())):
             raise ValueError('Existing generated plugin differs; preserve it and use a new destination')
         if json.loads(files[RECEIPT].read_text()) != receipt or any(sha(files[n].read_bytes()) != sha(v) for n, v in adapted.items()):
@@ -155,6 +167,25 @@ def download(destination):
     destination.parent.mkdir(parents=True, exist_ok=True)
     with destination.open('xb') as output:
         output.write(data)
+
+
+def ensure_workspace(root, arguments):
+    """Materialize Pub's declared local override before commands that use it."""
+    if not arguments:
+        return
+    command = arguments[0]
+    package_command = command == 'pub' and len(arguments) > 1 and arguments[1] in {
+        'get', 'upgrade', 'downgrade', 'deps', 'outdated',
+    }
+    if not package_command and command not in {'analyze', 'test', 'build', 'run', 'drive', 'gen-l10n'}:
+        return
+    root = Path(root)
+    archive = root / '.local/pub-archives' / f'{PACKAGE}-{VERSION}.tar.gz'
+    if not os.path.lexists(archive):
+        if '--offline' in arguments or '--no-pub' in arguments:
+            raise ValueError('Pinned Linux plugin archive is absent; prepare it with tool/flutter pub get before offline use')
+        download(archive)
+    return prepare(archive, root / WORKSPACE_PATH)
 
 
 if __name__ == '__main__':

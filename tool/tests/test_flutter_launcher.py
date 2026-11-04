@@ -39,6 +39,7 @@ class FlutterLauncherTests(unittest.TestCase):
             'android_app': SimpleNamespace(SafetyError=RuntimeError, flutter_guard=Mock()),
             'parity_case_map': SimpleNamespace(write=Mock()),
             'gen_l10n_index': SimpleNamespace(write=Mock()),
+            'html_webview.linux_pointer': SimpleNamespace(ensure_workspace=Mock()),
         }
         probe = probe or subprocess.CompletedProcess([], 0, json.dumps({'frameworkVersion': VERSION}))
         environment = {'RAFT_FLUTTER_BIN': str(launcher or self.launcher),
@@ -75,6 +76,7 @@ class FlutterLauncherTests(unittest.TestCase):
         result.modules['android_app'].flutter_guard.assert_called_once_with(args)
         result.modules['parity_case_map'].write.assert_called_once_with()
         result.modules['gen_l10n_index'].write.assert_called_once_with()
+        result.modules['html_webview.linux_pointer'].ensure_workspace.assert_called_once_with(ROOT, args)
 
     def test_native_tool_gets_sdk_root_and_bundled_git_without_changing_parent(self):
         mingit = self.sdk / 'bin/mingit/cmd'
@@ -121,6 +123,7 @@ class FlutterLauncherTests(unittest.TestCase):
         self.assertIn('requires Flutter', result.code)
         result.child.assert_not_called()
         result.execute.assert_not_called()
+        result.modules['html_webview.linux_pointer'].ensure_workspace.assert_not_called()
 
     def test_unverifiable_sdk_never_runs_the_requested_command(self):
         result = self.invoke(['test'], probe=subprocess.CompletedProcess([], 0, 'not json'))

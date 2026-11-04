@@ -1,5 +1,5 @@
 # Project-level configuration.
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.24)
 project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
@@ -98,6 +98,10 @@ set(ENV{PKG_CONFIG_PATH} "${RAFT_MPV_PKGCONFIG}:$ENV{PKG_CONFIG_PATH}")
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
+# Resolve the distribution's development headers before the pinned WPE plugin
+# considers its unpinned FetchContent fallback. No configure-time JSON download.
+find_package(nlohmann_json 3.11.3 CONFIG REQUIRED)
+set(FETCHCONTENT_TRY_FIND_PACKAGE_MODE ALWAYS)
 include(flutter/generated_plugins.cmake)
 include(raft_wpe_compat.cmake)
 raft_fix_wpe_compatibility()
@@ -143,7 +147,10 @@ endforeach(bundled_library)
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
-   COMPONENT Runtime)
+   COMPONENT Runtime
+   # Flutter tests leave a sibling absolute-path manifest here. The app uses
+   # data/flutter_assets/NativeAssetsManifest.json from its normal asset bundle.
+   PATTERN "native_assets.json" EXCLUDE)
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.

@@ -4,6 +4,7 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
 import tarfile
 import tempfile
 import unittest
@@ -45,7 +46,8 @@ class PointerPreparationTest(unittest.TestCase):
         for name, data in self.files.items():
             self.assertEqual((self.output / name).read_bytes(),
                              data.replace(b'original', b'adapted') if name == pointer.TARGET else data)
-            self.assertEqual((self.output / name).stat().st_mode & 0o7777, 0o644)
+            if os.name == 'posix':
+                self.assertEqual((self.output / name).stat().st_mode & 0o7777, 0o644)
 
     def test_bad_archive_pin_creates_nothing(self):
         self.archive_files()
@@ -63,6 +65,7 @@ class PointerPreparationTest(unittest.TestCase):
             pointer.prepare(self.archive, self.output)
         self.assertEqual(file.read_bytes(), b'keep this failed or locally modified output')
 
+    @unittest.skipUnless(os.name == 'posix', 'Uses POSIX links without Windows administrator permissions')
     def test_extra_symlink_directory_and_hardlink_are_rejected(self):
         self.archive_files()
         pointer.prepare(self.archive, self.output)
@@ -83,11 +86,12 @@ class PointerPreparationTest(unittest.TestCase):
         self.archive_files()
         pointer.prepare(self.archive, self.output)
         file = self.output / pointer.TARGET
-        file.chmod(0o666)
-        with self.assertRaisesRegex(ValueError, 'differs; preserve'):
-            pointer.prepare(self.archive, self.output)
-        self.assertEqual(file.stat().st_mode & 0o7777, 0o666)
-        file.chmod(0o644)
+        if os.name == 'posix':
+            file.chmod(0o666)
+            with self.assertRaisesRegex(ValueError, 'differs; preserve'):
+                pointer.prepare(self.archive, self.output)
+            self.assertEqual(file.stat().st_mode & 0o7777, 0o666)
+            file.chmod(0o644)
         record = self.output / pointer.RECEIPT
         value = json.loads(record.read_text())
         value['archiveSha256'] = 'untrusted replacement'
@@ -95,6 +99,7 @@ class PointerPreparationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'differs; preserve'):
             pointer.prepare(self.archive, self.output)
 
+    @unittest.skipUnless(os.name == 'posix', 'Uses POSIX symlinks without Windows administrator permissions')
     def test_destination_parent_symlink_is_never_traversed(self):
         self.archive_files()
         alias = self.root / 'alias'
@@ -104,10 +109,12 @@ class PointerPreparationTest(unittest.TestCase):
         self.assertFalse(self.output.exists())
 
     def test_archive_links_traversal_duplicates_and_permissions_fail_closed(self):
-        for kind in ['link', 'parent', 'duplicate', 'mode']:
+        for kind in ['link', 'parent', 'duplicate', 'mode', 'drive', 'alias']:
             with self.subTest(kind=kind):
                 entry = tarfile.TarInfo('../escape' if kind == 'parent' else
-                                        pointer.TARGET if kind == 'duplicate' else 'extra')
+                                        pointer.TARGET if kind == 'duplicate' else
+                                        'C:/escape' if kind == 'drive' else
+                                        './alias' if kind == 'alias' else 'extra')
                 entry.size = 1
                 entry.mode = 0o600 if kind == 'mode' else 0o644
                 if kind == 'link':
@@ -118,6 +125,43 @@ class PointerPreparationTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     pointer.prepare(self.archive, self.output)
                 self.assertFalse(self.output.exists())
+
+    def test_offline_and_no_pub_never_download_missing_input(self):
+        with mock.patch.object(pointer, 'download') as download:
+            for args in (['pub', 'get', '--offline'], ['build', 'linux', '--no-pub']):
+                with self.subTest(args=args), self.assertRaisesRegex(ValueError, 'absent'):
+                    pointer.ensure_workspace(self.root, args)
+            download.assert_not_called()
+        self.assertFalse((self.root / pointer.WORKSPACE_PATH).exists())
+
+    def test_version_doctor_and_cache_commands_do_not_materialize_a_package(self):
+        with mock.patch.object(pointer, 'download') as download, mock.patch.object(pointer, 'prepare') as prepare:
+            for args in ([], ['--version'], ['doctor'], ['pub', 'cache', 'repair']):
+                pointer.ensure_workspace(self.root, args)
+            download.assert_not_called()
+            prepare.assert_not_called()
+
+    def test_offline_pub_reuses_the_authenticated_private_archive(self):
+        self.archive_files()
+        cache = self.root / '.local/pub-archives' / f'{pointer.PACKAGE}-{pointer.VERSION}.tar.gz'
+        cache.parent.mkdir(parents=True)
+        shutil.copy2(self.archive, cache)
+        with mock.patch.object(pointer, 'download') as download:
+            result = pointer.ensure_workspace(self.root, ['pub', 'get', '--offline'])
+            self.assertEqual(result, pointer.ensure_workspace(self.root, ['test', '--no-pub']))
+            download.assert_not_called()
+        self.assertTrue((self.root / pointer.WORKSPACE_PATH / pointer.RECEIPT).is_file())
+
+    def test_windows_mode_semantics_do_not_disable_identity_checks(self):
+        file = self.root / 'input.dart'
+        file.write_text('public source')
+        file.chmod(0o666)
+        with mock.patch.object(pointer.os, 'name', 'nt'):
+            self.assertTrue(pointer.package_mode_matches(file))
+        fake_junction = mock.Mock()
+        fake_junction.is_symlink.return_value = False
+        fake_junction.is_junction.return_value = True
+        self.assertTrue(pointer.linked_path(fake_junction))
 
 
 if __name__ == '__main__':
