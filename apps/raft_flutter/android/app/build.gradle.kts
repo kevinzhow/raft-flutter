@@ -1,7 +1,40 @@
+import java.net.URI
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Use the same explicit frontend and HTTPS switch as Dart. No wildcard hosts
+// or global HTTP handler; development/isolated builds may opt out explicitly.
+val raftDartDefines = (project.findProperty("dart-defines") as String?)
+    ?.split(",")?.associate { encoded ->
+        val pair = String(Base64.getDecoder().decode(encoded), Charsets.UTF_8).split("=", limit = 2)
+        pair[0] to pair.getOrElse(1) { "" }
+    } ?: emptyMap()
+val raftAppLinksEnabled = raftDartDefines["RAFT_APP_LINKS"] ?: "true"
+require(raftAppLinksEnabled in setOf("true", "false")) { "Invalid RAFT_APP_LINKS value" }
+val raftApi = raftDartDefines["RAFT_ORIGIN"] ?: "https://api.raft.build"
+val raftApiUri = runCatching { URI(raftApi) }.getOrNull()
+val raftFrontend = raftDartDefines["RAFT_FRONTEND_ORIGIN"] ?: when (raftApi.trimEnd('/')) {
+    "https://api.raft.build" -> "https://app.raft.build"
+    "https://api.slock.ai" -> "https://app.slock.ai"
+    else -> raftApi
+}
+val raftFrontendUri = runCatching { URI(raftFrontend) }.getOrNull()
+if (raftAppLinksEnabled == "true") {
+    require(raftApiUri != null && raftApiUri.scheme in listOf("http", "https") &&
+        !raftApiUri.host.isNullOrBlank() && raftApiUri.userInfo == null &&
+        raftApiUri.query == null && raftApiUri.fragment == null &&
+        raftApiUri.path in listOf("", "/")) { "App links require a plain RAFT_ORIGIN" }
+    require(raftFrontendUri != null && raftFrontendUri.scheme == "https" &&
+        !raftFrontendUri.host.isNullOrBlank() && raftFrontendUri.port in listOf(-1, 443) &&
+        raftFrontendUri.userInfo == null && raftFrontendUri.query == null &&
+        raftFrontendUri.fragment == null && raftFrontendUri.path in listOf("", "/")) {
+        "HTTPS app links require a plain HTTPS RAFT_FRONTEND_ORIGIN"
+    }
 }
 
 android {
@@ -20,6 +53,8 @@ android {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         // Performance labs build an isolated test app next to the real one
         // (`-PraftApplicationIdSuffix=.linkperf`); normal builds keep the id.
+        manifestPlaceholders["raftAppLinksEnabled"] = raftAppLinksEnabled
+        manifestPlaceholders["raftAppLinksHost"] = raftFrontendUri?.host?.lowercase() ?: "app.raft.build"
         applicationId =
             "app.raft.raft_flutter" +
                 ((project.findProperty("raftApplicationIdSuffix") as String?) ?: "")

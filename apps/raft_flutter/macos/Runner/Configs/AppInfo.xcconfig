@@ -12,3 +12,6 @@ PRODUCT_BUNDLE_IDENTIFIER = app.raft.raftFlutter
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 app.raft. All rights reserved.
+
+// Must match RAFT_FRONTEND_ORIGIN when building a custom frontend.
+RAFT_APP_LINK_HOST = app.raft.build

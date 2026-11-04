@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import app_links
 
 protocol RaftPreferencesWindow: AnyObject {
   var canOpenPreferences: Bool { get }
@@ -27,6 +28,22 @@ class AppDelegate: FlutterAppDelegate, NSMenuItemValidation {
     // including when a cold launch finishes after the user has switched apps.
     retainedMainWindow = mainFlutterWindow
     retainedMainWindow?.order(.below, relativeTo: 0)
+  }
+
+  // app_links 7.2.2 handles custom URLs but needs the host to forward
+  // NSUserActivity universal links, including an entry before Dart listens.
+  override func application(
+    _ application: NSApplication, continue userActivity: NSUserActivity,
+    restorationHandler: @escaping ([any NSUserActivityRestoring]) -> Void
+  ) -> Bool {
+    guard let url = AppLinks.shared.getUniversalLink(userActivity),
+      let host = Bundle.main.object(forInfoDictionaryKey: "RaftAppLinkHost") as? String,
+      url.scheme == "https", url.user == nil, url.password == nil, url.host?.lowercased() == host.lowercased()
+    else { return false }
+    AppLinks.shared.handleLink(link: url.absoluteString)
+    _ = restoreMainWindow()
+    // Keep propagation to other plugins, as the app_links host contract requires.
+    return false
   }
 
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

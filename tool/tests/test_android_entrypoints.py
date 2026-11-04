@@ -31,8 +31,17 @@ class AndroidEntrypointsTest(unittest.TestCase):
         self.assertIn('android.intent.category.INFO', categories)
         self.assertNotIn('android.intent.category.LAUNCHER', categories)
         self.assertIn('android.intent.category.BROWSABLE', categories)
-        aliases = application.findall('activity-alias')
+        all_aliases = application.findall('activity-alias')
+        aliases = [alias for alias in all_aliases if any(
+            category.get(ANDROID + 'name') == 'android.intent.category.LAUNCHER'
+            for category in alias.findall('intent-filter/category'))]
+        # The five icon aliases remain isolated launcher entries. The one
+        # HTTPS alias is independently checked and shares the permanent owner.
         self.assertEqual(len(aliases), 5)
+        links = [alias for alias in all_aliases if alias not in aliases]
+        self.assertEqual([alias.get(ANDROID + 'name') for alias in links], ['.AppLinksEntry'])
+        self.assertEqual(links[0].get(ANDROID + 'targetActivity'), '.MainActivity')
+        self.assertEqual(links[0].get(ANDROID + 'enabled'), '${raftAppLinksEnabled}')
         for alias in aliases:
             self.assertIn('android.intent.category.LAUNCHER', {
                 c.get(ANDROID + 'name') for c in alias.findall('intent-filter/category')})

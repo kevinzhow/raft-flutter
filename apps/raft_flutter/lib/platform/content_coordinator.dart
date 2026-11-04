@@ -45,8 +45,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
        notifications = notifications ?? NativeNotificationService();
   final NativeNotificationService notifications;
 
-  /// Raft https links open the app (see [RaftAppLinks]); off until the domain
-  /// serves the association files.
+  /// This build accepts allowlisted HTTPS entries; OS association is separate.
   final bool appLinks;
   final MacOSDockUnread? _providedDockUnread;
   final WindowsTray? _providedTray;
@@ -89,6 +88,22 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   bool _closed = false;
   bool _workspaceBindingResolved = false;
   Uri? _pendingLink;
+  Uri? _pendingPrivateAppInvite;
+  Future<void> Function(Uri)? _onPrivateAppInvite;
+
+  /// The root owns invite presentation and active-coordinator validation. One
+  /// bounded entry can arrive before it attaches, including a signed-out launch.
+  set onPrivateAppInvite(Future<void> Function(Uri)? handler) {
+    if (_closed) return;
+    _onPrivateAppInvite = handler;
+    final pending = _pendingPrivateAppInvite;
+    if (handler != null && pending != null) {
+      _pendingPrivateAppInvite = null;
+      unawaited(
+        Future<void>.sync(() => handler(pending)).catchError((Object _) {}),
+      );
+    }
+  }
 
   /// The content link kept until the account is restored.
   @visibleForTesting
@@ -316,8 +331,35 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     }
     if (notifications.receiveWindowsActivation(uri)) return;
     // raft://v1/join/<token>: an invite opens the invite page, signed in or not.
-    final appLink = RaftAppLinks.accepts(uri, on: appLinks);
-    if (uri.scheme == 'raft' && uri.host == 'v1' || appLink) {
+    final owner = _workspace;
+    final appLink = RaftAppLinks.accepts(
+      uri,
+      on: appLinks,
+      api: owner?.client.origin,
+      frontend: owner == null
+          ? null
+          : ContentLinks.originFor(owner.client.origin).origin,
+    );
+    final native =
+        uri.scheme == 'raft' &&
+        uri.host == 'v1' &&
+        !uri.hasPort &&
+        uri.userInfo.isEmpty &&
+        uri.toString().length <= 2048;
+    if (!native && !appLink) return;
+    if (uri.pathSegments.firstOrNull == 'integration-invites') {
+      if (!RaftAppLinks.isPrivateInvite(uri)) return;
+      final handler = _onPrivateAppInvite;
+      if (handler == null) {
+        _pendingPrivateAppInvite = uri;
+      } else {
+        unawaited(
+          Future<void>.sync(() => handler(uri)).catchError((Object _) {}),
+        );
+      }
+      return;
+    }
+    if (native || appLink) {
       final invite = InviteLink.fromLocation(uri);
       if (invite != null && uri.toString().length <= 2048) {
         InviteRequests.instance.open(invite);
@@ -762,6 +804,9 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   Future<void> dispose() async {
     if (_closed) return;
     _closed = true;
+    _onPrivateAppInvite = null;
+    _pendingPrivateAppInvite = null;
+    _pendingLink = null;
     _liveRecovery?.dispose();
     onForegroundChanged = null;
     WidgetsBinding.instance.removeObserver(this);

@@ -1,0 +1,25 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "<OWNER_VERIFIED_APP_ID_PREFIX>.app.raft.raftFlutter"
+        ],
+        "components": [
+          {
+            "/": "/s/*/channel/*"
+          },
+          {
+            "/": "/s/*/dm/*"
+          },
+          {
+            "/": "/join/*"
+          },
+          {
+            "/": "/integration-invites/*"
+          }
+        ]
+      }
+    ]
+  }
+}

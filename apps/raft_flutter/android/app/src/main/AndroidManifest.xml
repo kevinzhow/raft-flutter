@@ -62,18 +62,12 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="raft" android:host="v1" android:pathPrefix="/join/" />
             </intent-filter>
-            <!-- Raft https links open the app (Android App Links): NOT enabled.
-                 It needs https://app.raft.build/.well-known/assetlinks.json for
-                 this package and the release key, and the dart define RAFT_APP_LINKS=true
-                 (lib/platform/raft_app_links.dart, docs/deployment.md). Then:
-            <intent-filter android:autoVerify="true">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="app.raft.build" android:pathPrefix="/s/" />
-                <data android:scheme="https" android:host="app.raft.build" android:pathPrefix="/join/" />
+                <data android:scheme="raft" android:host="v1" android:pathPrefix="/integration-invites/" />
             </intent-filter>
-            -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
@@ -81,6 +75,23 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
+        <!-- One target Activity for cold/warm links. The alias lets the build
+             disable HTTPS receiving without disabling OAuth, shares or startup.
+             OS verification additionally requires this package + signing key. -->
+        <activity-alias android:name=".AppLinksEntry"
+            android:targetActivity=".MainActivity"
+            android:enabled="${raftAppLinksEnabled}" android:exported="true">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="${raftAppLinksHost}" />
+                <data android:pathPattern="/s/.*/channel/.*" />
+                <data android:pathPattern="/s/.*/dm/.*" />
+                <data android:pathPrefix="/join/" />
+                <data android:pathPrefix="/integration-invites/" />
+            </intent-filter>
+        </activity-alias>
         <activity android:name=".YellowIconEntry" android:exported="false"
             android:theme="@style/IconLaunchYellow" />
         <activity-alias android:name=".IconYellow" android:targetActivity=".YellowIconEntry"

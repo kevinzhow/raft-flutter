@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.raft.raft_flutter",
+      "sha256_cert_fingerprints": [
+        "56:5C:29:87:7E:7E:DC:82:FF:44:9B:8F:44:06:E7:B9:8E:F2:FC:E1:1E:67:A2:55:5D:14:2B:E1:30:6C:CD:33"
+      ]
+    }
+  }
+]

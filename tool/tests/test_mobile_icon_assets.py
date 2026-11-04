@@ -69,7 +69,12 @@ class MobileIconAssetsTest(unittest.TestCase):
             self.assertTrue(any(x.get(a+'host') == 'v1' and x.get(a+'pathPrefix') == prefix for x in data))
         actions = {x.attrib[a+'name'] for x in main.findall('intent-filter/action')}
         self.assertTrue({'android.intent.action.SEND', 'android.intent.action.SEND_MULTIPLE'} <= actions)
-        aliases = app.findall('activity-alias')
+        all_aliases = app.findall('activity-alias')
+        aliases = [alias for alias in all_aliases if any(
+            category.get(a+'name') == 'android.intent.category.LAUNCHER'
+            for category in alias.findall('intent-filter/category'))]
+        self.assertEqual([alias.get(a+'name') for alias in all_aliases if alias not in aliases],
+                         ['.AppLinksEntry'])
         self.assertEqual(len(aliases), 5)
         self.assertEqual([x.attrib[a+'name'] for x in aliases if x.attrib[a+'enabled'] == 'true'], ['.IconYellow'])
         for alias in aliases:

@@ -16,14 +16,20 @@ void main() {
   const channel = 'https://app.raft.build/s/acme/channel/c1?msg=m1';
 
   group('which https links are Raft links (RaftAppLinks)', () {
-    test('the switch is off in every build until the domain is ready', () {
-      expect(RaftAppLinks.enabled, isFalse);
-      expect(RaftAppLinks.accepts(Uri.parse(channel)), isFalse);
-      expect(
-        RaftAppLinks.accepts(Uri.parse('https://app.raft.build/join/t')),
-        isFalse,
-      );
-    });
+    test(
+      'receiving is enabled, while an explicit build override can opt out',
+      () {
+        expect(RaftAppLinks.enabled, isTrue);
+        expect(RaftAppLinks.accepts(Uri.parse(channel)), isTrue);
+        expect(
+          RaftAppLinks.accepts(
+            Uri.parse('https://app.raft.build/join/t'),
+            on: false,
+          ),
+          isFalse,
+        );
+      },
+    );
 
     test('on: message links and invites of the production hosts only', () {
       bool ok(String url) => RaftAppLinks.accepts(Uri.parse(url), on: true);

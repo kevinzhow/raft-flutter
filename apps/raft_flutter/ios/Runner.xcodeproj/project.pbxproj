@@ -661,6 +661,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.raft.raftFlutter;
+				RAFT_APP_LINK_HOST = app.raft.build;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RAFT_APP_GROUP = group.app.raft.raftFlutter;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -869,6 +870,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.raft.raftFlutter;
+				RAFT_APP_LINK_HOST = app.raft.build;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RAFT_APP_GROUP = group.app.raft.raftFlutter;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -894,6 +896,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.raft.raftFlutter;
+				RAFT_APP_LINK_HOST = app.raft.build;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RAFT_APP_GROUP = group.app.raft.raftFlutter;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
