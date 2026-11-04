@@ -446,3 +446,32 @@ plugin versions may differ. The builder supplies the signed Noble nlohmann-json3
 config. Upstream FetchContent without URL_HASH must not become an implicit
 unverified network dependency. Native consumer compilation still needs its own
 real validation before claiming support on a particular machine.
+
+### Normal release workflow
+
+`release.yml` separates the requested Linux tar/AppImage entries from the
+Windows, macOS and Android matrix. When either Linux format was selected, one
+`html-sdk` job builds the source-defined x86_64 Noble image and invokes the SDK
+CLI once with `--max-seconds 10800`; its job limit is 210 minutes. No binary
+cache supplies a new pin. The producer verifies the archive bytes and complete
+sealed prefix before emitting the archive and content-manifest SHA256 values.
+The normal workflow artifact ID and these two same-run outputs go to both
+Linux consumers; downloaded `result.json` is diagnostic metadata, not authority
+for selecting a pin.
+
+Each consumer requires a nonempty artifact ID and both pins before downloading,
+restores into a new private prefix, compares the returned manifest hash to the
+producer's expected hash, then exports `PKG_CONFIG_PATH`, `LIBRARY_PATH`,
+`RAFT_HTML_WEBVIEW_SDK` and `RAFT_HTML_WEBVIEW_MANIFEST_SHA256`. Both formats use
+the Noble 24.04 hosted runner and its signed APT development packages, including
+libsoup 3, json-glib and nlohmann-json 3.11.3. The tar platform remains disabled
+by default; manually selecting it uses the same Noble graph. The consumers keep
+their 60-minute limit. Existing per-platform publishing, Android signing,
+macOS signing and AppImage startup/compatibility requirements still apply.
+
+The independent-platform jobs have no SDK dependency. An SDK failure therefore
+blocks the selected Linux formats without holding or skipping the other
+platforms. Failed source-build logs and receipts are uploaded separately when
+the runner can finish its diagnostic steps. These workflow/dataflow and tool
+tests do not establish a successful Actions source build, packaged renderer,
+native acceptance or release; those require the actual run and artifact readback.

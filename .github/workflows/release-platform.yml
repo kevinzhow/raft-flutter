@@ -21,6 +21,15 @@ on:
       publish:
         type: boolean
         required: true
+      html_sdk_artifact_id:
+        type: string
+        default: ''
+      html_sdk_archive_sha256:
+        type: string
+        default: ''
+      html_sdk_manifest_sha256:
+        type: string
+        default: ''
     secrets:
       RAFT_ANDROID_KEYSTORE_BASE64:
         required: false
@@ -57,7 +66,7 @@ jobs:
       RAFT_FEEDBACK_EXPORT_URL: ${{ vars.RAFT_FEEDBACK_EXPORT_URL }}
     steps:
       - name: Verify the hosted native release architecture
-        if: inputs.platform == 'macos' || inputs.platform == 'appimage'
+        if: inputs.platform == 'macos' || inputs.platform == 'appimage' || inputs.platform == 'linux'
         shell: bash
         env:
           RELEASE_PLATFORM: ${{ inputs.platform }}
@@ -79,6 +88,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - id: html-sdk-contract
+        name: Require the same-run x86_64 SDK artifact and both pins
+        if: inputs.platform == 'linux' || inputs.platform == 'appimage'
+        env:
+          HTML_SDK_ARTIFACT_ID: ${{ inputs.html_sdk_artifact_id }}
+          HTML_SDK_ARCHIVE_SHA256: ${{ inputs.html_sdk_archive_sha256 }}
+          HTML_SDK_MANIFEST_SHA256: ${{ inputs.html_sdk_manifest_sha256 }}
+          HTML_SDK_ARCH: ${{ inputs.arch }}
+        run: |
+          python - <<'PY'
+          import os, re
+          if (os.environ['HTML_SDK_ARCH'] != 'x64'
+                  or not re.fullmatch(r'[1-9][0-9]*', os.environ['HTML_SDK_ARTIFACT_ID'])
+                  or not all(re.fullmatch(r'[0-9a-f]{64}', os.environ[name])
+                             for name in ('HTML_SDK_ARCHIVE_SHA256', 'HTML_SDK_MANIFEST_SHA256'))):
+              raise ValueError('Linux needs one same-run x86_64 source SDK artifact and both producer pins')
+          PY
       - uses: subosito/flutter-action@v2
         with:
           flutter-version-file: .fvmrc
@@ -154,7 +180,7 @@ jobs:
         if: inputs.platform == 'linux' || inputs.platform == 'appimage'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev patchelf poppler-utils zsync
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev patchelf poppler-utils zsync libsoup-3.0-dev libjson-glib-dev nlohmann-json3-dev libepoxy-dev libwayland-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
           if [ '${{ inputs.platform }}' = appimage ]; then
             python tool/prepare-media-appimage
           else
@@ -163,6 +189,44 @@ jobs:
       - name: Install AppImage startup test tools
         if: inputs.platform == 'appimage'
         run: sudo apt-get install -y libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
+      - name: Download the same-run source-built Linux HTML SDK
+        if: inputs.platform == 'linux' || inputs.platform == 'appimage'
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ inputs.html_sdk_artifact_id }}
+          path: build/html-sdk-download
+      - id: html-sdk-restore
+        name: Restore the Linux HTML SDK using both producer pins
+        if: inputs.platform == 'linux' || inputs.platform == 'appimage'
+        shell: bash
+        env:
+          HTML_SDK_ARCHIVE_SHA256: ${{ inputs.html_sdk_archive_sha256 }}
+          HTML_SDK_MANIFEST_SHA256: ${{ inputs.html_sdk_manifest_sha256 }}
+          HTML_SDK_DESTINATION: ${{ runner.temp }}/raft-html-wpe-sdk
+          HTML_SDK_RESTORE_JSON: build/html-sdk-restore.json
+        run: |
+          python -m tool.html_webview.sdk restore \
+            --archive build/html-sdk-download/sdk.tar.gz --sha256 "$HTML_SDK_ARCHIVE_SHA256" \
+            --destination "$HTML_SDK_DESTINATION" > "$HTML_SDK_RESTORE_JSON"
+          python - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          result = json.loads(Path(os.environ['HTML_SDK_RESTORE_JSON']).read_text())
+          archive_pin, manifest_pin = os.environ['HTML_SDK_ARCHIVE_SHA256'], os.environ['HTML_SDK_MANIFEST_SHA256']
+          prefix = Path(os.environ['HTML_SDK_DESTINATION']).resolve()
+          if (not all(re.fullmatch(r'[0-9a-f]{64}', p) for p in (archive_pin, manifest_pin))
+                  or result.get('archiveSha256') != archive_pin or result.get('manifestSha256') != manifest_pin
+                  or result.get('prefix') != str(prefix) or not prefix.is_dir()):
+              raise ValueError('Restored SDK differs from the trusted same-run producer pins')
+          values = {'RAFT_HTML_WEBVIEW_SDK': str(prefix), 'RAFT_HTML_WEBVIEW_MANIFEST_SHA256': manifest_pin,
+                    'PKG_CONFIG_PATH': str(prefix / 'lib/pkgconfig'), 'LIBRARY_PATH': str(prefix / 'lib')}
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as output:
+              for key, value in values.items():
+                  previous = os.environ.get(key)
+                  if key in {'PKG_CONFIG_PATH', 'LIBRARY_PATH'} and previous:
+                      value += ':' + previous
+                  output.write(f'{key}={value}\n')
+          PY
       - name: Resolve locked dependencies
         run: python tool/flutter pub get --enforce-lockfile
       - name: Build and package desktop

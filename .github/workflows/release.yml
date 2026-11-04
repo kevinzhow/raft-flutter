@@ -29,6 +29,10 @@ jobs:
       matrix: ${{ steps.plan.outputs.matrix }}
       version: ${{ steps.plan.outputs.version }}
       build_number: ${{ steps.plan.outputs.build_number }}
+      independent_matrix: ${{ steps.sdk-plan.outputs.independent_matrix }}
+      linux_matrix: ${{ steps.sdk-plan.outputs.linux_matrix }}
+      has_independent: ${{ steps.sdk-plan.outputs.has_independent }}
+      has_linux: ${{ steps.sdk-plan.outputs.has_linux }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,6 +46,28 @@ jobs:
         env:
           RELEASE_PLATFORMS: ${{ inputs.platforms }}
         run: python tool/release.py plan
+      - id: sdk-plan
+        name: Separate Linux SDK consumers from independent platforms
+        env:
+          RELEASE_MATRIX: ${{ steps.plan.outputs.matrix }}
+        run: |
+          python - <<'PY'
+          import json, os
+          rows = json.loads(os.environ['RELEASE_MATRIX'])['include']
+          independent = [r for r in rows if r['platform'] not in {'linux', 'appimage'}]
+          # Both consumers use the SDK's Noble development/runtime graph.
+          # This does not enable the currently disabled Linux tar platform.
+          linux = [{**r, 'runner': 'ubuntu-24.04'} for r in rows if r['platform'] in {'linux', 'appimage'}]
+          values = {
+              'independent_matrix': json.dumps({'include': independent}, separators=(',', ':')),
+              'linux_matrix': json.dumps({'include': linux}, separators=(',', ':')),
+              'has_independent': str(bool(independent)).lower(),
+              'has_linux': str(bool(linux)).lower(),
+          }
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              for key, value in values.items():
+                  output.write(f'{key}={value}\n')
+          PY
 
 
   prepare-release:
@@ -64,12 +90,13 @@ jobs:
   platform:
     if: >-
       ${{ !cancelled() && needs.plan.result == 'success' &&
+          needs.plan.outputs.has_independent == 'true' &&
           (github.event_name != 'push' || needs.prepare-release.result == 'success') }}
     needs: [plan, prepare-release]
     name: ${{ matrix.platform }} (${{ matrix.arch }})
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.independent_matrix) }}
     # The called build job explicitly reduces this to read. Only its tag-only
     # publisher receives write permission; PR/manual jobs never publish.
     permissions:
@@ -88,3 +115,125 @@ jobs:
       RAFT_ANDROID_KEY_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.RAFT_ANDROID_KEY_PASSWORD || '' }}
       RAFT_ANDROID_KEY_ALIAS: ${{ github.event_name != 'pull_request' && secrets.RAFT_ANDROID_KEY_ALIAS || '' }}
       SPARKLE_ED_PRIVATE_KEY: ${{ github.event_name == 'push' && secrets.SPARKLE_ED_PRIVATE_KEY || '' }}
+
+  html-sdk:
+    name: Build Linux HTML SDK once (x86_64 source)
+    if: >-
+      ${{ !cancelled() && needs.plan.result == 'success' &&
+          needs.plan.outputs.has_linux == 'true' &&
+          (github.event_name != 'push' || needs.prepare-release.result == 'success') }}
+    needs: [plan, prepare-release]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    permissions:
+      contents: read
+    outputs:
+      artifact_id: ${{ steps.sdk-artifact.outputs.artifact-id }}
+      archive_sha256: ${{ steps.sdk-pins.outputs.archive_sha256 }}
+      manifest_sha256: ${{ steps.sdk-pins.outputs.manifest_sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - id: source
+        name: Fetch the pinned WPE source archive
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          from tool.html_webview.prepare_source import ARCHIVE_SHA256, VERSION, sha256
+          archive = Path('build/html-sdk-inputs/wpewebkit.tar.xz')
+          archive.parent.mkdir(parents=True)
+          subprocess.run(['curl', '--fail', '--location', '--proto', '=https', '--tlsv1.2',
+                          '--connect-timeout', '10', '--max-time', '180',
+                          '--output', str(archive), f'https://wpewebkit.org/releases/wpewebkit-{VERSION}.tar.xz'],
+                         check=True, timeout=190)
+          if sha256(archive) != ARCHIVE_SHA256:
+              raise ValueError('WPE source differs from the reviewed archive pin')
+          PY
+      - id: source-build
+        name: Build one capped Noble SDK image and sealed source payload
+        env:
+          DOCKER_BUILDKIT: '0'
+        run: |
+          timeout --kill-after=30s 1200s docker build --platform linux/amd64 --pull --no-cache \
+            --cpuset-cpus=0,1 --cpu-period=100000 --cpu-quota=200000 \
+            --memory=16g --memory-swap=16g \
+            --build-arg RAFT_HTML_SDK_BUILD_ID="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --build-arg RAFT_HTML_SDK_ENFORCE_LIMITS=1 \
+            --iidfile build/html-sdk-image-id \
+            -f tool/html_webview/Dockerfile tool/html_webview
+          image=$(cat build/html-sdk-image-id)
+          python -m tool.html_webview.sdk build \
+            --archive build/html-sdk-inputs/wpewebkit.tar.xz \
+            --work build/html-sdk --image "$image" --max-seconds 10800
+      - id: sdk-pins
+        name: Verify the source result before exporting same-run pins
+        run: |
+          python - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          from tool.html_webview import payload
+          work = Path('build/html-sdk')
+          result = json.loads((work / 'result.json').read_text())
+          if result.get('state') != 'sdk-ready' or result.get('archive') != 'sdk.tar.gz' or result.get('prefix') != 'sdk':
+              raise ValueError('The source build has no complete SDK result')
+          archive_pin, manifest_pin = result.get('archiveSha256'), result.get('manifestSha256')
+          if not all(re.fullmatch(r'[0-9a-f]{64}', p or '') for p in (archive_pin, manifest_pin)):
+              raise ValueError('The source build has invalid SDK pins')
+          archive = work / 'sdk.tar.gz'
+          if archive.is_symlink() or payload.sha256(archive) != archive_pin:
+              raise ValueError('The source SDK archive differs from its build result')
+          payload.verify(work / 'sdk', manifest_pin)
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'archive_sha256={archive_pin}\nmanifest_sha256={manifest_pin}\n')
+          PY
+      - id: sdk-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-html-wpe-sdk-x64
+          path: |
+            build/html-sdk/sdk.tar.gz
+            build/html-sdk/result.json
+            build/html-sdk/sdk/share/raft-html-webview/payload.json
+          if-no-files-found: error
+          retention-days: 2
+      - name: Preserve source build and SDK verification diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-html-wpe-sdk-diagnostics
+          path: |
+            build/html-sdk/*.log
+            build/html-sdk/*.json
+            build/html-sdk/*.tsv
+            build/html-sdk/prepared/*.log
+            build/html-sdk/prepared/source-inputs.json
+            build/html-sdk-image-id
+          if-no-files-found: warn
+          retention-days: 14
+
+  linux-platform:
+    if: >-
+      ${{ !cancelled() && needs.plan.result == 'success' &&
+          needs.plan.outputs.has_linux == 'true' && needs.html-sdk.result == 'success' &&
+          (github.event_name != 'push' || needs.prepare-release.result == 'success') }}
+    needs: [plan, prepare-release, html-sdk]
+    name: ${{ matrix.platform }} (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.linux_matrix) }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-platform.yml
+    with:
+      platform: ${{ matrix.platform }}
+      arch: ${{ matrix.arch }}
+      runner: ${{ matrix.runner }}
+      version: ${{ needs.plan.outputs.version }}
+      build_number: ${{ needs.plan.outputs.build_number }}
+      publish: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+      html_sdk_artifact_id: ${{ needs.html-sdk.outputs.artifact_id }}
+      html_sdk_archive_sha256: ${{ needs.html-sdk.outputs.archive_sha256 }}
+      html_sdk_manifest_sha256: ${{ needs.html-sdk.outputs.manifest_sha256 }}
