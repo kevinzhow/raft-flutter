@@ -43013,7 +43013,7 @@
         "owner": "Cody",
         "reason": "Requested-scope consent composes canonical Card and the existing collapsible section header. The opt-in private-invite identity group is collapsible; default human-login consent retains its existing presentation. Functional coverage does not grant visual acceptance."
       },
-      "packages/raft_ui/lib/src/private_app_invite_page.dart#local-function:CLASS:RaftPrivateAppInvitePage@788/METHOD:build@1728/FUNCTION:text@1864": {
+      "packages/raft_ui/lib/src/private_app_invite_page.dart#local-function:CLASS:RaftPrivateAppInvitePage@738/METHOD:build@1678/FUNCTION:text@1814": {
         "role": "entry_composition",
         "familyRefs": [
           "card",

@@ -482,18 +482,32 @@ class RequestedAppScopes extends StatelessWidget {
       spacing: RaftSpace.x1,
       children: [
         if (collapseIdentity)
-          RaftSectionEyebrow(tr('Requested access'), color: t.ink)
+          RaftCssText(
+            tr('Requested access'),
+            style: RaftSectionEyebrow.style(t, color: t.ink),
+          )
         else
           RaftDialogSectionEyebrow('Requested access', color: t.ink),
-        Text(
-          tr(intro),
-          style: RaftTypography.inherited(
-            t,
-            size: 14,
-            line: 20,
-            color: t.muted,
+        if (collapseIdentity)
+          RaftCssText(
+            tr(intro),
+            style: RaftTypography.inherited(
+              t,
+              size: 14,
+              line: 20,
+              color: t.muted,
+            ),
+          )
+        else
+          Text(
+            tr(intro),
+            style: RaftTypography.inherited(
+              t,
+              size: 14,
+              line: 20,
+              color: t.muted,
+            ),
           ),
-        ),
         const SizedBox(height: RaftSpace.x1),
         RaftCard(
           padding: const EdgeInsets.all(RaftSpace.x3),
@@ -568,35 +582,34 @@ class _TierGroupState extends State<_TierGroup> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
-    final children = <Widget>[
-      Text.rich(
+    final summary = TextSpan(
+      children: [
         TextSpan(
-          children: [
-            TextSpan(
-              text: tr(oauthTierLabel(tier)),
-              style: RaftTypography.inherited(
-                t,
-                size: 14,
-                line: 20,
-                weight: FontWeight.w700,
-                color: t.ink,
-              ),
-            ),
-            if (tier == OAuthScopeTier.identity)
-              TextSpan(
-                text: tr(
-                  ' — Who you are and your basic profile · no content access.',
-                ),
-                style: RaftTypography.inherited(
-                  t,
-                  size: 14,
-                  line: 20,
-                  color: t.muted,
-                ),
-              ),
-          ],
+          text: tr(oauthTierLabel(tier)),
+          style: RaftTypography.inherited(
+            t,
+            size: 14,
+            line: 20,
+            weight: FontWeight.w700,
+            color: t.ink,
+          ),
         ),
-      ),
+        if (tier == OAuthScopeTier.identity)
+          TextSpan(
+            text: tr(
+              ' — Who you are and your basic profile · no content access.',
+            ),
+            style: RaftTypography.inherited(
+              t,
+              size: 14,
+              line: 20,
+              color: t.muted,
+            ),
+          ),
+      ],
+    );
+    final children = <Widget>[
+      Text.rich(summary),
       for (final scope in scopes)
         Padding(
           key: ValueKey('human-login-scope-$scope'),
@@ -637,7 +650,7 @@ class _TierGroupState extends State<_TierGroup> {
         label:
             tr(oauthTierLabel(tier)) +
             tr(' — Who you are and your basic profile · no content access.'),
-        labelWidget: children.first,
+        labelSpan: summary,
         expanded: expanded,
         leadingDisclosure: true,
         disclosureKey: const ValueKey('human-login-identity-disclosure'),

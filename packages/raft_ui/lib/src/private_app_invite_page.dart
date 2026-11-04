@@ -9,7 +9,6 @@ import 'banner.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
-import 'list_items.dart' show RaftSectionEyebrow;
 import 'panel_layout.dart' show RaftCssText;
 import 'recipes/button_variants.g.dart';
 import 'separator.dart';
@@ -68,7 +67,9 @@ class RaftPrivateAppInvitePage extends StatelessWidget {
               t,
               size: type.fontSize,
               line: type.lineHeight,
-              weight: classes.contains('font-medium')
+              weight: classes.contains('font-bold')
+                  ? FontWeight.w700
+                  : classes.contains('font-medium')
                   ? FontWeight.w500
                   : FontWeight.values[(type.fontWeight ?? 400) ~/ 100 - 1],
               color: classes.contains('text-foreground-hint')
@@ -116,7 +117,11 @@ class RaftPrivateAppInvitePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RaftSectionEyebrow(tr('Private app invite')),
+                text(tr('Private app invite'), [
+                  'text-footnote',
+                  'font-bold',
+                  'text-foreground-hint',
+                ]),
                 const SizedBox(height: RaftSpace.x1),
                 text(tr('Install connected app'), ['text-title']),
               ],
@@ -139,20 +144,7 @@ class RaftPrivateAppInvitePage extends StatelessWidget {
             ]),
           ),
         ),
-      if (error case final String value)
-        RaftBanner(
-          description: value,
-          centerAction: true,
-          action: RaftButton(
-            key: const ValueKey('private-app-invite-retry'),
-            glyph: RaftGlyph.refreshCw,
-            tooltip: tr('Retry'),
-            semanticLabel: tr('Retry'),
-            uiSize: RaftButtonSize.iconXs,
-            uiVariant: RaftButtonVariant.ghost,
-            onPressed: onRetry,
-          ),
-        ),
+      if (error case final String value) RaftBanner(description: value),
       if (name != null) ...[
         if (installed)
           RaftBanner(
@@ -240,7 +232,11 @@ class RaftPrivateAppInvitePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: RaftSpace.x3,
               children: [
-                RaftSectionEyebrow(tr('Install target')),
+                text(tr('Install target'), [
+                  'text-footnote',
+                  'font-bold',
+                  'text-foreground-hint',
+                ]),
                 if (MediaQuery.sizeOf(context).width >=
                         RaftLayoutMetrics.desktopBreakpoint &&
                     !RaftScaled.grows(context))
@@ -320,14 +316,31 @@ class RaftPrivateAppInvitePage extends StatelessWidget {
             Positioned(
               top: MediaQuery.paddingOf(context).top + RaftSpace.x2,
               right: MediaQuery.paddingOf(context).right + RaftSpace.x2,
-              child: RaftButton(
-                key: const ValueKey('private-app-invite-close'),
-                glyph: RaftGlyph.x,
-                tooltip: tr('Go to Raft'),
-                semanticLabel: tr('Go to Raft'),
-                onPressed: onClose,
-                uiSize: RaftButtonSize.iconSm,
-                uiVariant: RaftButtonVariant.ghost,
+              // Native navigation/retry chrome stays outside the Web card's
+              // layout, including the Banner's responsive action slot.
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (error != null)
+                    RaftButton(
+                      key: const ValueKey('private-app-invite-retry'),
+                      glyph: RaftGlyph.refreshCw,
+                      tooltip: tr('Retry'),
+                      semanticLabel: tr('Retry'),
+                      uiSize: RaftButtonSize.iconSm,
+                      uiVariant: RaftButtonVariant.ghost,
+                      onPressed: onRetry,
+                    ),
+                  RaftButton(
+                    key: const ValueKey('private-app-invite-close'),
+                    glyph: RaftGlyph.x,
+                    tooltip: tr('Go to Raft'),
+                    semanticLabel: tr('Go to Raft'),
+                    onPressed: onClose,
+                    uiSize: RaftButtonSize.iconSm,
+                    uiVariant: RaftButtonVariant.ghost,
+                  ),
+                ],
               ),
             ),
           ],

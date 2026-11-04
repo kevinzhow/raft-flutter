@@ -35,7 +35,7 @@ class _InvitePreviewState extends State<_InvitePreview> {
     installed: installed.contains(selected),
     scopes: RaftCollapsibleSectionHeader(
       label: 'Identity',
-      labelWidget: const Text('Identity — Basic profile information'),
+      labelSpan: const TextSpan(text: 'Identity — Basic profile information'),
       expanded: identityExpanded,
       leadingDisclosure: true,
       onExpandedChanged: (value) => setState(() => identityExpanded = value),

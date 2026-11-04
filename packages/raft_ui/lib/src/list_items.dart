@@ -368,10 +368,11 @@ class RaftCollapsibleSectionHeader extends StatefulWidget {
     this.count,
     this.action,
     this.labelWidget,
+    this.labelSpan,
     this.leadingDisclosure = false,
     this.disclosureKey,
     this.gap = 8,
-  });
+  }) : assert(labelWidget == null || labelSpan == null);
 
   final String label;
   final bool expanded;
@@ -386,6 +387,11 @@ class RaftCollapsibleSectionHeader extends StatefulWidget {
   /// A rich summary, such as a permission name followed by its description.
   /// The plain label remains the disclosure's accessible name.
   final Widget? labelWidget;
+
+  /// Inline summary copy. With [leadingDisclosure], the marker occupies only
+  /// the first line, matching HTML `summary`; wrapped lines use the full width.
+  /// The plain [label] remains the accessible name.
+  final InlineSpan? labelSpan;
   final bool leadingDisclosure;
   final Key? disclosureKey;
 
@@ -464,6 +470,7 @@ class _RaftCollapsibleSectionHeaderState
     final label = Expanded(
       child:
           widget.labelWidget ??
+          (widget.labelSpan == null ? null : Text.rich(widget.labelSpan!)) ??
           RaftSectionHeader(
             label: widget.label,
             icon: widget.icon,
@@ -485,14 +492,47 @@ class _RaftCollapsibleSectionHeaderState
       ),
       child: marker,
     );
-    final header = Row(
-      crossAxisAlignment: widget.leadingDisclosure
-          ? CrossAxisAlignment.start
-          : CrossAxisAlignment.center,
-      children: widget.leadingDisclosure
-          ? [leadingMarker, const SizedBox(width: RaftSpace.x1), label]
-          : [label, const SizedBox(width: RaftSpace.x2), marker],
-    );
+    final header = widget.leadingDisclosure && widget.labelSpan != null
+        ? RaftCssText.rich(
+            TextSpan(
+              children: [
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: SizedBox(
+                    width: 14,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: AnimatedRotation(
+                        turns: widget.expanded ? .25 : 0,
+                        duration: duration,
+                        child: RaftIcon(
+                          RaftGlyph.play,
+                          size: 12,
+                          filled: true,
+                          strokeWidth: 0,
+                          color: t.ink,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                widget.labelSpan!,
+              ],
+            ),
+            style: RaftTypography.inherited(
+              t,
+              size: RaftTypeScale.callout.fontSize,
+              line: RaftTypeScale.callout.lineHeight,
+            ),
+          )
+        : Row(
+            crossAxisAlignment: widget.leadingDisclosure
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
+            children: widget.leadingDisclosure
+                ? [leadingMarker, const SizedBox(width: RaftSpace.x1), label]
+                : [label, const SizedBox(width: RaftSpace.x2), marker],
+          );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
