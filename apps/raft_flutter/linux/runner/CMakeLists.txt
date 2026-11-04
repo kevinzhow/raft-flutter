@@ -13,6 +13,7 @@ add_executable(${BINARY_NAME}
   "shared_egl_display.cc"
   "shared_egl_termination.cc"
   "desktop_quit_cleanup.cc"
+  "desktop_view_close.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
 

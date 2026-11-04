@@ -16,6 +16,7 @@
 #include "desktop_caption_bar.h"
 #include "image_clipboard.h"
 #include "shared_egl_display.h"
+#include "desktop_view_close.h"
 #ifdef RAFT_MULTIWINDOW_QA
 #include "desktop_qa_identity.h"
 #endif
@@ -280,6 +281,7 @@ static void register_child_window(FlPluginRegistry* registry) {
   title_bar->caption = new DesktopCaptionBar(window);
   gtk_window_set_title(window, "Raft");
   register_window_channels(view, window, title_bar, true);
+  raft_desktop_destroy_child_view_after_close(view, window);
 }
 
 // Called when first Flutter frame received.
