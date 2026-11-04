@@ -2159,6 +2159,7 @@ class RaftWorkspaceTreeView extends StatelessWidget {
     super.key,
     required this.path,
     required this.nodes,
+    this.showPath = true,
     this.loading = false,
     this.error,
     this.errorFinal = false,
@@ -2190,6 +2191,9 @@ class RaftWorkspaceTreeView extends StatelessWidget {
   final Widget? preview;
   final String path;
   final List<RaftWorkspaceNode> nodes;
+
+  /// Cloud workspaces have no local Computer path to display or copy.
+  final bool showPath;
   final bool loading, showHidden;
   final String? error;
   final VoidCallback? onCopyPath, onToggleHidden, onRefresh;
@@ -2207,7 +2211,7 @@ class RaftWorkspaceTreeView extends StatelessWidget {
         ? t.colors['foreground-hint']!
         : raftPanelInk(t, .4, t.colors['foreground-placeholder']!);
     final wide = MediaQuery.sizeOf(context).width >= 768;
-    final pathBar = errorFinal
+    final pathBar = errorFinal || !showPath
         ? const SizedBox.shrink()
         : Container(
             height: 37,

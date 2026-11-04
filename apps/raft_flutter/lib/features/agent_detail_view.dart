@@ -39,11 +39,12 @@ import 'agent_activity_refs.dart';
 import 'agent_trajectory_log.dart';
 import 'tool_display.dart';
 import 'runtime_usage_chip.dart';
-import 'agent_metadata_catalog.dart';
 import 'agent_runtime_catalog.dart' show reasoningEfforts, runtimeInfos;
 import 'agent_runtime_labels.dart'
     show isRuntimeDeprecated, runtimeLabelWithStatus;
 import 'agent_metadata_projection.dart';
+import 'model_label_catalog.dart';
+import 'model_label_listener.dart';
 import 'mcp_views.dart';
 import 'panel_width_store.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
@@ -246,7 +247,11 @@ SourceTimeFormatter agentTimeFormatter(
       : null,
 );
 
-class _AgentDetailPanelState extends State<AgentDetailPanel> {
+class _AgentDetailPanelState extends State<AgentDetailPanel>
+    with ModelLabelCatalogListener<AgentDetailPanel> {
+  @override
+  WorkspaceController? get modelLabelWorkspace =>
+      _bounded ? null : widget.controller;
   late AgentDetailTab tab = widget.initialTab;
 
   Map<String, dynamic> get a => widget.agent;
@@ -774,6 +779,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         key: ValueKey('agent-workspace-$agentId'),
         controller: w,
         agentId: agentId,
+        hosted: external,
       ),
       AgentDetailTab.apps => AgentAppAccessView(
         controller: w,
@@ -1345,7 +1351,12 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                   badge: RaftRecipeBadge(
                     model.isEmpty
                         ? raftText(context, 'Default')
-                        : sourceRuntimeModelLabels[runtime]?[model] ?? model,
+                        : modelDisplayLabel(
+                            widget.controller,
+                            machineId: a['machineId'] as String?,
+                            runtime: runtime,
+                            model: model,
+                          ),
                     variant: RaftBadgeRecipeVariant.accent,
                   ),
                 ),
@@ -2230,9 +2241,11 @@ class AgentWorkspaceTab extends StatefulWidget {
     super.key,
     required this.controller,
     required this.agentId,
+    this.hosted = false,
   });
   final WorkspaceController controller;
   final String agentId;
+  final bool hosted;
   @override
   State<AgentWorkspaceTab> createState() => _AgentWorkspaceTabState();
 }
@@ -2530,6 +2543,7 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
                     ).shortDateTime(openMeta!['modifiedAt']),
             ),
       path: path,
+      showPath: !widget.hosted,
       nodes: [...nodes('', 0), ?hint('', 0)],
       loading: loading,
       // Web: fixed catalog messages, not the server's text.

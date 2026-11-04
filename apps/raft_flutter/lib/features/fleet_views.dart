@@ -1315,6 +1315,11 @@ class _FleetDetailState extends State<FleetDetail> {
     }
     final target = upgradeTarget();
     if (!mounted) return;
+    if (!widget.computers && command == 'start') {
+      await w.command('POST', '$base/start', data: {});
+      if (current) await load();
+      return;
+    }
     if (!widget.computers && command == 'stop') {
       // AgentDetailPanel `ConfirmDialog` "Stop Agent" (confirm colour orange).
       await webConfirm(

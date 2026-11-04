@@ -189,15 +189,18 @@ class ModelLabelCatalogStore implements Listenable {
 }
 
 /// A model's display name: the server's catalog for that Computer's runtime,
-/// else the bundled table, else the id itself (Web agentModelName / profile
-/// card chain). Reading never starts a load; callers [ModelLabelCatalogStore.load]
+/// else the supplied runtime-source label, bundled table, or id (Web
+/// agentModelName / profile card chain). Reading never starts a load; callers
+/// [ModelLabelCatalogStore.load]
 /// when their surface opens.
 String modelDisplayLabel(
   WorkspaceController w, {
   required String? machineId,
   required String runtime,
   required String model,
+  String? fallback,
 }) =>
     ModelLabelCatalogStore.of(w).label(machineId, runtime, model) ??
+    fallback ??
     sourceRuntimeModelLabels[runtime]?[model] ??
     model;

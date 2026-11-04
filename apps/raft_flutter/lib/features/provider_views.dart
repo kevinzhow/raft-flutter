@@ -5,6 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/user_error.dart';
+import '../data/raft_location.dart' show RaftProfileKind;
 import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
@@ -213,7 +214,8 @@ class _ProviderConnectionsState
 
   Future<void> assigned(Map<String, dynamic> connection) async {
     if (!mounted) return;
-    String? detachId;
+    String? detachId, openAgentId;
+    final sourceAuthority = authority;
     // The dialog opens at once and fills in when the list answers.
     await scopedDialog<void>(
       (dialog) => _LoadedDialog<Map<String, dynamic>>(
@@ -247,7 +249,13 @@ class _ProviderConnectionsState
                     const Text('No agents use this connection.'),
                   for (final a in managementRows(data?['agents']))
                     RaftListRow(
-                      interactive: false,
+                      interactive: a['deleted'] != true,
+                      onPressed: a['deleted'] == true || a['id'] is! String
+                          ? null
+                          : () {
+                              openAgentId = a['id'] as String;
+                              Navigator.pop(context);
+                            },
                       children: [
                         RaftListRowBody(
                           children: [
@@ -287,6 +295,8 @@ class _ProviderConnectionsState
         ),
       ),
     );
+    if (!mounted || sourceAuthority != authority) return;
+    if (openAgentId != null) w.openProfile(RaftProfileKind.agent, openAgentId!);
     if (detachId != null) {
       await confirm(
         'Detach Deleted Agent',

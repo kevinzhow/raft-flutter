@@ -21,6 +21,8 @@ import 'agent_runtime_catalog.dart';
 import 'agent_runtime_labels.dart';
 import 'agent_runtime_draft.dart';
 import 'agent_runtime_model_field.dart';
+import 'model_label_catalog.dart';
+import 'model_label_listener.dart';
 import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
 import 'private_route_guard.dart';
@@ -116,8 +118,11 @@ class AgentRuntimeEditor extends StatefulWidget {
   State<AgentRuntimeEditor> createState() => _AgentRuntimeEditorState();
 }
 
-class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
+class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
+    with ModelLabelCatalogListener<AgentRuntimeEditor> {
   WorkspaceController get w => widget.controller;
+  @override
+  WorkspaceController get modelLabelWorkspace => w;
   Map<String, dynamic> get agent => widget.agent;
   String get agentId => '${agent['id']}';
   String? get machineId =>
@@ -387,7 +392,12 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
     final reasoning = supportsRuntimeReasoning(runtime)
         ? reasoningLabel(context)
         : tr('Not available');
-    final modelLabel = runtimeModelLabel(runtime, draft.model);
+    final modelLabel = modelDisplayLabel(
+      w,
+      machineId: machineId,
+      runtime: runtime,
+      model: draft.model,
+    );
 
     if (runtimeChanged) {
       final from = runtimeDisplayName(base.runtime);
@@ -883,6 +893,13 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
         ],
         child: RuntimeModelCombobox(
           key: const ValueKey('runtime-editor-model'),
+          displayLabel: (id, fallback) => modelDisplayLabel(
+            w,
+            machineId: machineId,
+            runtime: runtime,
+            model: id,
+            fallback: fallback,
+          ),
           runtime: runtime,
           models: proj.models,
           live: proj.live,

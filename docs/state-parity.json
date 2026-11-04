@@ -40147,12 +40147,6 @@
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "apps/raft_flutter/lib/features/create_agent_dialog.dart#local-function:CLASS:_CreateAgentDialogState@4825/METHOD:build@24564/FUNCTION:fields@32776": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
       "apps/raft_flutter/lib/features/human_login_servers.dart#local-function:CLASS:_HumanLoginServerFieldState@2734/METHOD:_marketplace@5180/FUNCTION:rowWidgets@5634": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -40244,12 +40238,6 @@
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 1 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
-      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@72197/METHOD:build@73548/FUNCTION:message@77120": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
       "packages/raft_ui/lib/src/appearance_picker.dart#local-function:CLASS:RaftAppearanceModeCards@3702/METHOD:build@3971/FUNCTION:card@4070": {
         "role": "entry_composition",
@@ -43171,6 +43159,18 @@
         "familyRefs": [],
         "owner": "DM read status / message row",
         "reason": "Owns the independent DM status line, not the generic footer chip. Production visibility stays in the app adapter; current Web and native acceptance remain separate."
+      },
+      "apps/raft_flutter/lib/features/create_agent_dialog.dart#local-function:CLASS:_CreateAgentDialogState@4896/METHOD:build@24962/FUNCTION:fields@33174": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@72197/METHOD:build@73669/FUNCTION:message@77254": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       }
     },
     "entries": {

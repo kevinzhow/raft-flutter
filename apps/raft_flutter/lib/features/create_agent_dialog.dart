@@ -16,6 +16,8 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart' show WorkspaceEntityKind;
 import 'agent_metadata_catalog.dart';
+import 'model_label_catalog.dart';
+import 'model_label_listener.dart';
 import 'agent_hosted_create.dart';
 import 'agent_runtime_labels.dart' show creatableRuntimeIds;
 import 'delete_server_confirm.dart';
@@ -145,8 +147,11 @@ class CreateAgentDialog extends StatefulWidget {
   State<CreateAgentDialog> createState() => _CreateAgentDialogState();
 }
 
-class _CreateAgentDialogState extends State<CreateAgentDialog> {
+class _CreateAgentDialogState extends State<CreateAgentDialog>
+    with ModelLabelCatalogListener<CreateAgentDialog> {
   WorkspaceController get w => widget.controller;
+  @override
+  WorkspaceController get modelLabelWorkspace => w;
   late final int generation;
   late final String openingAuthority;
   bool get currentAuthority =>
@@ -697,7 +702,13 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
             for (final m in models ?? const <Map<String, dynamic>>[])
               RaftAgentSelectOption(
                 '${m['id'] ?? ''}',
-                '${m['label'] ?? m['id']}',
+                modelDisplayLabel(
+                  w,
+                  machineId: machineId,
+                  runtime: 'claude',
+                  model: '${m['id'] ?? ''}',
+                  fallback: '${m['label'] ?? m['id']}',
+                ),
               ),
           ],
           onChanged: busy ? null : (v) => setState(() => preAdmissionModel = v),

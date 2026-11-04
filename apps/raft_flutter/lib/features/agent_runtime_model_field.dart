@@ -19,10 +19,14 @@ List<RaftComboboxItem> runtimeModelComboboxItems(
   required bool live,
   required String model,
   required bool customModelMode,
+  String Function(String id, String fallback)? displayLabel,
 }) {
   RaftComboboxItem listed(String id, String label) =>
       RaftComboboxItem(id, label, hint: id, keywords: id);
-  final items = [for (final m in models) listed(m.id, m.label)];
+  final items = [
+    for (final m in models)
+      listed(m.id, displayLabel?.call(m.id, m.label) ?? m.label),
+  ];
   if (live &&
       !customModelMode &&
       model.isNotEmpty &&
@@ -67,10 +71,12 @@ class RuntimeModelCombobox extends StatelessWidget {
     required this.enabled,
     required this.invalid,
     required this.onChanged,
+    this.displayLabel,
   });
 
   final String runtime, model;
   final List<RuntimeModelInfo> models;
+  final String Function(String id, String fallback)? displayLabel;
   final bool live, customModelMode, customAllowed, enabled, invalid;
 
   /// The picked or typed model id and whether it was typed ("custom").
@@ -85,6 +91,7 @@ class RuntimeModelCombobox extends StatelessWidget {
       live: live,
       model: model,
       customModelMode: customModelMode,
+      displayLabel: displayLabel,
     );
     // Only the stored-but-unlisted row carries a description.
     final unlisted = items.any((o) => o.id == model && o.description != null);

@@ -143,8 +143,9 @@ void main() {
     }
   });
 
-  testWidgets('start confirmation opens from the row on screen and reads '
-      'only when confirmed', (t) async {
+  testWidgets('start sends its request without a preliminary read or dialog', (
+    t,
+  ) async {
     final (w, api) = await mount(t);
     await expectOpensWithoutNetwork(
       t,
@@ -157,12 +158,16 @@ void main() {
       ),
     );
     api.hangAll = true;
+    final before = api.calls.length;
     final start = find.byKey(const Key('agent-profile-inline-start-stop'));
     expect(start, findsWidgets);
     await t.tap(start.first);
     await frames(t, 6);
-    expect(find.byType(RaftFormDialog), findsOneWidget);
-    expect(find.text('Start Agent'), findsWidgets);
+    final requests = api.calls.skip(before).toList();
+    expect(requests, hasLength(1));
+    expect(requests.single.method, 'POST');
+    expect(requests.single.path, '/agents/a1/start');
+    expect(find.byType(RaftFormDialog), findsNothing);
     api.hangAll = false;
   });
 
