@@ -41,6 +41,7 @@ window.qaStorage='allowed';try{localStorage.setItem('qa','1')}catch(_){qaStorage
 
 PlatformInAppWebViewController? _controller;
 final _requests = <Map<String, Object?>>[];
+final _externalRequests = <String>[];
 bool _loaded = false, _environmentDisposed = false;
 String? _failure, _profile;
 late WorkspaceController _workspace;
@@ -141,6 +142,7 @@ Future<Map<String, Object?>> _snapshot() async {
     'selectedInteractive': attachmentHtmlWebViewSupported,
     'environmentDisposed': _environmentDisposed,
     'requests': List.of(_requests),
+    'externalRequests': List.of(_externalRequests),
   };
 }
 
@@ -205,6 +207,10 @@ class _QaPageState extends State<_QaPage> {
                     open = false;
                   }),
                   onDownload: () async {},
+                  openExternal: (uri) async {
+                    _externalRequests.add(uri.toString());
+                    return true;
+                  },
                   loader: AttachmentHtmlLoader(dio: _directTransport()),
                   page: true,
                   webViewBuilder: (_, uri, events) =>
