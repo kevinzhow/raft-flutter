@@ -141,6 +141,30 @@ class PointerPreparationTest(unittest.TestCase):
             download.assert_not_called()
             prepare.assert_not_called()
 
+    def test_global_options_do_not_skip_package_preparation(self):
+        arguments = (
+            ['--verbose', 'pub', 'get', '--offline'],
+            ['--verbose', 'build', 'linux', '--no-pub'],
+            ['-v', '--device-id', 'linux', 'test', '--no-pub'],
+            ['--packages=build', '--wrap-column', '80', 'pub', 'get', '--offline'],
+        )
+        with mock.patch.object(pointer, 'download') as download:
+            for args in arguments:
+                with self.subTest(args=args), self.assertRaisesRegex(ValueError, 'absent'):
+                    pointer.ensure_workspace(self.root, args)
+            download.assert_not_called()
+
+    def test_global_option_values_and_help_do_not_become_commands(self):
+        with mock.patch.object(pointer, 'download') as download, mock.patch.object(pointer, 'prepare') as prepare:
+            for args in (
+                ['--verbose', 'doctor'], ['--verbose', 'pub', 'cache', 'repair'],
+                ['--packages', 'build', 'doctor'], ['--device-id', 'test', 'doctor'],
+                ['--help', 'build'], ['--version', 'pub', 'get'],
+            ):
+                pointer.ensure_workspace(self.root, args)
+            download.assert_not_called()
+            prepare.assert_not_called()
+
     def test_offline_pub_reuses_the_authenticated_private_archive(self):
         self.archive_files()
         cache = self.root / '.local/pub-archives' / f'{pointer.PACKAGE}-{pointer.VERSION}.tar.gz'

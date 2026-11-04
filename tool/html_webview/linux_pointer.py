@@ -171,6 +171,18 @@ def download(destination):
 
 def ensure_workspace(root, arguments):
     """Materialize Pub's declared local override before commands that use it."""
+    # Flutter accepts global flags before its command. Consume the pinned SDK's
+    # value options as pairs so a device or package path cannot become a command.
+    value_options = {'-d', '--device-id', '--packages', '--wrap-column',
+                     '--local-engine-src-path', '--local-engine',
+                     '--local-engine-host', '--local-web-sdk', '--debug-logs-dir'}
+    index = 0
+    while index < len(arguments) and arguments[index].startswith('-'):
+        option = arguments[index]
+        if option in {'--help', '-h', '--version'}:
+            return
+        index += 2 if option in value_options else 1
+    arguments = arguments[index:]
     if not arguments:
         return
     command = arguments[0]
