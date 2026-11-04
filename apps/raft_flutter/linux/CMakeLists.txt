@@ -99,6 +99,8 @@ set(ENV{PKG_CONFIG_PATH} "${RAFT_MPV_PKGCONFIG}:$ENV{PKG_CONFIG_PATH}")
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)
+include(raft_wpe_compat.cmake)
+raft_fix_wpe_compatibility()
 if(TARGET media_kit_video_plugin)
   target_link_options(media_kit_video_plugin PRIVATE "-Wl,--disable-new-dtags" "-Wl,-rpath-link,${RAFT_MEDIA_BUNDLE}/libs")
   set_target_properties(media_kit_video_plugin PROPERTIES
