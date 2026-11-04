@@ -194,6 +194,12 @@ Future<DesktopWindowPeer> _create(
     }
   });
   try {
+    // Linux's independent engines share the GTK EGLDisplay. The host must
+    // protect that lifetime before another engine can be created or closed.
+    if (defaultTargetPlatform == TargetPlatform.linux) {
+      await _host.invokeMethod<void>('prepareOpen');
+    }
+    broker.snapshot(binding); // The native check may outlive account authority.
     final window = await WindowController.create(
       WindowConfiguration(
         arguments: jsonEncode({

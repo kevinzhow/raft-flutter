@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_client/raft_client.dart' show RaftApiException;
 import 'package:raft_flutter/platform/desktop_window_runtime.dart';
 
 import 'app_global_server_selector_test.dart' show RootCache;
@@ -17,6 +18,8 @@ void main() {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     const windows = MethodChannel('mixin.one/desktop_multi_window');
     const channels = MethodChannel('mixin.one/desktop_multi_window/channels');
+    const host = MethodChannel('app.raft/desktop-window');
+    var protectedDisplay = false;
     Map<dynamic, dynamic>? created, registration;
     final creating = Completer<void>();
     messenger.setMockMethodCallHandler(windows, (call) async {
@@ -24,6 +27,7 @@ void main() {
         case 'getWindowDefinition':
           return {'windowId': 'main', 'windowArgument': ''};
         case 'createWindow':
+          expect(protectedDisplay, isTrue);
           created = call.arguments;
           creating.complete();
           return 'child-1';
@@ -35,6 +39,10 @@ void main() {
     });
     messenger.setMockMethodCallHandler(channels, (call) async {
       if (call.method == 'registerMethodHandler') registration = call.arguments;
+      return null;
+    });
+    messenger.setMockMethodCallHandler(host, (call) async {
+      if (call.method == 'prepareOpen') protectedDisplay = true;
       return null;
     });
     final (client, _) = await owner();
@@ -80,8 +88,78 @@ void main() {
     await client.dispose();
     messenger.setMockMethodCallHandler(windows, null);
     messenger.setMockMethodCallHandler(channels, null);
+    messenger.setMockMethodCallHandler(host, null);
     debugDefaultTargetPlatformOverride = null;
   });
+
+  for (final revoked in [false, true]) {
+    test(
+      revoked
+          ? 'Linux refuses a stale engine open after held display preparation'
+          : 'Linux refuses engine creation when shared display protection is unavailable',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        const windows = MethodChannel('mixin.one/desktop_multi_window');
+        const channels = MethodChannel(
+          'mixin.one/desktop_multi_window/channels',
+        );
+        const host = MethodChannel('app.raft/desktop-window');
+        final checked = Completer<void>();
+        final protection = Completer<void>();
+        final creationAttempt = Completer<void>();
+        var created = 0;
+        messenger.setMockMethodCallHandler(windows, (call) async {
+          if (call.method == 'getWindowDefinition') {
+            return {'windowId': 'main', 'windowArgument': ''};
+          }
+          if (call.method == 'createWindow') {
+            created++;
+            creationAttempt.complete();
+            throw PlatformException(code: 'unexpected_engine_creation');
+          }
+          return null;
+        });
+        messenger.setMockMethodCallHandler(channels, (_) async => null);
+        messenger.setMockMethodCallHandler(host, (call) async {
+          if (call.method == 'prepareOpen') {
+            checked.complete();
+            await protection.future;
+          }
+          return null;
+        });
+        final (client, _) = await owner();
+        final runtime = (await initializeDesktopWindows(const []))!;
+        addTearDown(() async {
+          await runtime.dispose();
+          await client.dispose();
+          for (final channel in [windows, channels, host]) {
+            messenger.setMockMethodCallHandler(channel, null);
+          }
+          debugDefaultTargetPlatformOverride = null;
+        });
+        runtime.bind(client, null, cache: RootCache());
+        final outcome = runtime
+            .openServer(beta)
+            .then<Object?>((_) => null, onError: (Object error) => error);
+        await Future.any([checked.future, creationAttempt.future]);
+        expect(created, 0);
+        expect(checked.isCompleted, isTrue);
+        if (revoked) {
+          runtime.bind(null, null);
+          protection.complete();
+          expect(await outcome, isA<RaftApiException>());
+        } else {
+          protection.completeError(
+            PlatformException(code: 'desktop_display_unavailable'),
+          );
+          expect(await outcome, isA<PlatformException>());
+        }
+        expect(created, 0);
+      },
+    );
+  }
 
   test('malformed native routes close their own window without exposing input or reading a session', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;

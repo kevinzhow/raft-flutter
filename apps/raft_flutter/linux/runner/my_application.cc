@@ -15,6 +15,7 @@
 #include <desktop_multi_window/desktop_multi_window_plugin.h>
 #include "desktop_caption_bar.h"
 #include "image_clipboard.h"
+#include "shared_egl_display.h"
 #ifdef RAFT_MULTIWINDOW_QA
 #include "desktop_qa_identity.h"
 #endif
@@ -95,6 +96,7 @@ static gboolean desktop_delete_requested(GtkWidget*, GdkEvent*, gpointer data) {
 }
 
 static void register_window_channels(FlView* view, GtkWindow* window, TitleBar* title_bar, bool child = false) {
+  raft_shared_egl_watch_engine(fl_view_get_engine(view));
 #ifdef RAFT_MULTIWINDOW_QA
   raft_qa_observe_window(view, window, child);
 #else
@@ -249,6 +251,14 @@ static void register_window_channels(FlView* view, GtkWindow* window, TitleBar* 
         } else if (g_strcmp0(method, "focus") == 0) {
           gtk_window_present(target);
           fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "prepareOpen") == 0) {
+          if (raft_shared_egl_prepare_open(target)) {
+            fl_method_call_respond_success(call, nullptr, nullptr);
+          } else {
+            fl_method_call_respond_error(call, "desktop_display_unavailable",
+                "Another window is unavailable on this display. Use the current window.",
+                nullptr, nullptr);
+          }
         } else if (g_strcmp0(method, "close") == 0 || g_strcmp0(method, "forceClose") == 0) {
           if (g_strcmp0(method, "forceClose") == 0) {
             auto* guard = static_cast<DesktopCloseGuard*>(g_object_get_data(G_OBJECT(target), "raft-desktop-close-guard"));
