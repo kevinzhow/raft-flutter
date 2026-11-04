@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 
 import 'attachment_html_webview_events.dart';
@@ -56,7 +57,14 @@ class DesktopHtmlPolicy {
     // from a real gesture before the owner's URL policy can open a browser.
     final target = Uri.tryParse(url);
     final fragment = target?.replace(fragment: '') == uri.replace(fragment: '');
-    if ((fragment || action.hasGesture == true) && events.onNavigation(url)) {
+    // WebView2's pinned adapter serializes its native link classification,
+    // derived from IsUserInitiated, rather than Android's hasGesture field.
+    final gesture =
+        action.hasGesture ??
+        (defaultTargetPlatform == TargetPlatform.windows &&
+            action.isRedirect != true &&
+            action.navigationType == NavigationType.LINK_ACTIVATED);
+    if ((fragment || gesture) && events.onNavigation(url)) {
       return NavigationActionPolicy.ALLOW;
     }
     return NavigationActionPolicy.CANCEL;

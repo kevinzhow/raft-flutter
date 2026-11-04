@@ -57,6 +57,9 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+include(raft_webview2_navigation.cmake)
+raft_fix_webview2_navigation()
+
 # Plugin libraries Raft never loads on Windows, each importing a DLL no user
 # machine has: package:jni's dartjni.dll needs jvm.dll, and media_kit's
 # prebuilt ANGLE zlib.dll links the debug CRT. tool/windows_dependencies.py

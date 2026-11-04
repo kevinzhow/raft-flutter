@@ -18,6 +18,8 @@ import 'package:raft_flutter/platform/attachment_html_desktop_environment.dart';
 import 'package:raft_flutter/platform/attachment_html_webview.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+part 'html_attachment_qa_navigation.dart';
+
 const _csp =
     "default-src 'none'; sandbox allow-scripts; "
     "script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; "
@@ -79,6 +81,9 @@ Future<void> main() async {
         ..set('Cache-Control', 'no-store')
         ..set('Set-Cookie', 'qa_preview=fixture; HttpOnly; SameSite=Strict');
       request.response.write(_document);
+    } else if (request.uri.path == '/qa/script-navigation' &&
+        request.method == 'POST') {
+      await _attemptQaScriptNavigation(request);
     } else if (request.uri.path == '/qa/status') {
       request.response.headers.contentType = ContentType.json;
       request.response.write(jsonEncode(await _snapshot()));
@@ -143,6 +148,10 @@ Future<Map<String, Object?>> _snapshot() async {
     'environmentDisposed': _environmentDisposed,
     'requests': List.of(_requests),
     'externalRequests': List.of(_externalRequests),
+    'navigationObserverReady': _navigationObserverReady,
+    'navigationObserverFailure': _navigationObserverFailure,
+    'navigationRequests': List.of(_navigationRequests),
+    'scriptNavigationAttempts': _scriptNavigationAttempts,
   };
 }
 
@@ -217,8 +226,10 @@ class _QaPageState extends State<_QaPage> {
                       DesktopAttachmentHtmlWebView(
                         uri: uri,
                         environmentFactory: environment,
-                        onControllerCreated: (controller) =>
-                            _controller = controller,
+                        onControllerCreated: (controller) {
+                          _controller = controller;
+                          unawaited(_watchQaNavigation(controller));
+                        },
                         events: AttachmentHtmlWebViewEvents(
                           onNavigation: events.onNavigation,
                           onProgress: events.onProgress,
