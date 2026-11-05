@@ -10,7 +10,6 @@ from android_app import SafetyError, flutter_guard
 import gen_l10n_index
 import parity_case_map
 from flutter_launcher import sdk_probe_report, windows_sdk_command
-from html_webview.linux_pointer import ensure_workspace
 
 try:
     flutter_guard(sys.argv[1:])
@@ -47,10 +46,6 @@ except (ValueError, KeyError, TypeError):
     sys.exit('Cannot verify the selected Flutter SDK.')
 if actual != version:
     sys.exit(f'This repository requires Flutter {version}; selected SDK is {actual}.')
-try:
-    ensure_workspace(root, sys.argv[1:])
-except (OSError, ValueError) as error:
-    sys.exit(f'Pinned Linux WebView preparation failed: {error}')
 if os.name == 'nt':
     command, environment = windows_sdk_command(executable, sys.argv[1:], os.environ)
     sys.exit(subprocess.call(command, env=environment))

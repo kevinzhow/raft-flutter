@@ -14,9 +14,5 @@ workspace:
   - packages/flutter_chat_ui
   - packages/flutter_dynamic_icon_plus
   - packages/raft_updater
+  - packages/raft_system_webview
   - tool/ds_audit
-dependency_overrides:
-  # One pointer-order fix; tool/flutter verifies the fixed Pub archive and
-  # prepares this private copy before resolving/building. Shared cache untouched.
-  flutter_inappwebview_linux:
-    path: .dart_tool/raft_plugins/flutter_inappwebview_linux

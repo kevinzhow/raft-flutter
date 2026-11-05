@@ -76,7 +76,7 @@ class FlutterLauncherTests(unittest.TestCase):
         result.modules['android_app'].flutter_guard.assert_called_once_with(args)
         result.modules['parity_case_map'].write.assert_called_once_with()
         result.modules['gen_l10n_index'].write.assert_called_once_with()
-        result.modules['html_webview.linux_pointer'].ensure_workspace.assert_called_once_with(ROOT, args)
+        result.modules['html_webview.linux_pointer'].ensure_workspace.assert_not_called()
 
     def test_native_tool_gets_sdk_root_and_bundled_git_without_changing_parent(self):
         mingit = self.sdk / 'bin/mingit/cmd'
