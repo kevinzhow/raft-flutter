@@ -104,7 +104,10 @@ class LaunchThemeResourcesTest(unittest.TestCase):
             self.assertIn(f"'{key}'", prefs)
             self.assertIn(f'"flutter.{key}"', kotlin)
         self.assertIn('NativeLaunchTheme.instance.set(value)', main)
-        self.assertIn('NativeLaunchTheme.instance.set(appearance)', main)
+        self.assertIn('appearance.save(value)', main)
+        self.assertIn('NativeLaunchTheme.instance.set(appearance.value)', main)
+        self.assertLess(main.index('appearance.adopt(p);'),
+                        main.index('NativeLaunchTheme.instance.set(appearance.value)'))
         keep = (RES / 'raw/keep.xml').read_text()
         self.assertIn('@style/RaftSplash_*', keep)
         self.assertIn('@color/raft_canvas_*', keep)

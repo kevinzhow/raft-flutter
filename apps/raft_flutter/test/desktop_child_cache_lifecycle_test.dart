@@ -9,8 +9,29 @@ import 'package:raft_flutter/platform/desktop_windows.dart';
 import 'app_global_server_selector_test.dart' show RootCache;
 import 'desktop_window_broker_test.dart' show owner, Peer, beta;
 
+String? executableOnPath(String name) {
+  for (final directory in (Platform.environment['PATH'] ?? '').split(
+    Platform.isWindows ? ';' : ':',
+  )) {
+    if (directory.isEmpty) continue;
+    final executable = File(p.join(directory, name));
+    if (executable.existsSync() && (executable.statSync().mode & 0x49) != 0) {
+      return executable.path;
+    }
+  }
+  return null;
+}
+
+final statExecutable = executableOnPath('stat');
+final chmodExecutable = executableOnPath('chmod');
+final idExecutable = executableOnPath('id');
+
 Future<String?> identity(String path) async {
-  final result = await Process.run('/usr/bin/stat', ['-Lc', '%d:%i', path]);
+  final result = await Process.run(statExecutable!, [
+    if (Platform.isMacOS) '-f' else '-Lc',
+    '%d:%i',
+    path,
+  ]);
   return result.exitCode == 0 ? '${result.stdout}'.trim() : null;
 }
 
@@ -30,6 +51,23 @@ Future<void> cleaned(DesktopSessionBroker broker, String id) async {
 }
 
 void main() {
+  if ((!Platform.isLinux && !Platform.isMacOS) || statExecutable == null) {
+    test(
+      'physical cache identity requires a POSIX stat executable',
+      () {},
+      skip: 'A physical directory identity oracle is unavailable on this host.',
+    );
+    return;
+  }
+  final uid = Platform.isLinux && idExecutable != null
+      ? Process.runSync(idExecutable!, ['-u'])
+      : null;
+  final uidValue = int.tryParse('${uid?.stdout}'.trim());
+  final canDenyDeletion =
+      chmodExecutable != null &&
+      uid?.exitCode == 0 &&
+      uidValue != null &&
+      uidValue > 0;
   late Directory parent;
   setUp(() async {
     parent = await Directory.systemTemp.createTemp(
@@ -231,21 +269,19 @@ void main() {
       final locked = await Directory(p.join(lease.root.path, 'locked'))
           .create();
       await File(p.join(locked.path, 'keep')).writeAsString('retained');
-      await Process.run('/usr/bin/chmod', ['000', locked.path]);
+      await Process.run(chmodExecutable!, ['000', locked.path]);
       try {
         expect(await lease.remove(), isFalse);
         expect(lease.outcome, 'cleanup_failed');
         expect(await Directory(lease.retainedPath).exists(), isTrue);
       } finally {
-        await Process.run('/usr/bin/chmod', [
+        await Process.run(chmodExecutable!, [
           '700',
           p.join(lease.retainedPath, 'locked'),
         ]);
       }
     },
-    skip:
-        !Platform.isLinux ||
-        Process.runSync('/usr/bin/id', ['-u']).stdout.toString().trim() == '0',
+    skip: !canDenyDeletion,
   );
   test('creation failure never becomes an unhandled cleanup future or deletion grant', () async {
     final (client, _) = await owner();
