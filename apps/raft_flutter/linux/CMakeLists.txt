@@ -73,6 +73,10 @@ add_subdirectory("runner")
 # The UI/browser/media stack belongs to the distribution, including libmpv
 # loaded by media_kit. No private SDK or media closure is copied into the app.
 pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)
+# media_kit_video 2.0.1 gates its real texture sources on this upstream flag.
+# The removed bundled-libs plugin used to define it; the required system mpv
+# now supplies that contract, including when an old CMake cache says OFF.
+set(MEDIA_KIT_LIBS_AVAILABLE ON)
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)

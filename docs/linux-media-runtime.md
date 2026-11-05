@@ -36,7 +36,9 @@ only the app, pinned Flutter engine, app plugins, Dart SQLite native asset and
 the exact `lib/raft-webview/libraft_system_webview_extension.so` app adapter.
 That small module observes native WebKit events through system APIs; it is not
 a browser engine and does not carry a private WebKit/GTK library. A package with
-the native WebView plugin but without this matching module is rejected.
+the native WebView plugin but without this matching module is rejected. The video
+plugin must link the system `libmpv.so.2`; a stub build is rejected, and the HTML
+plugin must link `libwebkit2gtk-4.1.so.0`.
 That private `libsqlite3.so` has no SONAME; system `libsqlite3.so.0`, GTK, GLib,
 WebKit, libmpv, private loaders and obsolete browser plugins are rejected.
 
@@ -45,7 +47,9 @@ Each application ELF gets a relative `DT_RUNPATH` (`$ORIGIN/lib` for the app,
 selects a second system ABI. Dependencies must resolve in the app or distribution
 library directories; missing libraries and an AppImage GLIBC requirement newer
 than 2.39 stop packaging. The launcher keeps host module paths unchanged and
-preserves unset/empty host values for the Dart child-process sanitizer.
+preserves unset/empty host values for the Dart child-process sanitizer. Before
+starting the app it checks the runner and app-owned shared modules, including
+the separately loaded WebExtension, for missing distribution dependencies.
 
 The staging directory includes `linux-dependency-checks.json` and
 `linux-system-runtime.json`, with the app-private inventory, required external

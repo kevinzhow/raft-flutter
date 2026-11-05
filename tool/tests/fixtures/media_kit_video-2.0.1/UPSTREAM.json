@@ -1,0 +1,19 @@
+{
+  "package": "media_kit_video",
+  "version": "2.0.1",
+  "archiveSHA256": "afaa509e7b7e0bf247557a3a740cde903a52c34ace9810f94500e127bd7b043d",
+  "source": "https://pub.dev/api/archives/media_kit_video-2.0.1.tar.gz",
+  "files": {
+    "CMakeLists.txt": {
+      "upstreamPath": "linux/CMakeLists.txt",
+      "sha256": "6d77316c0e3cbb17305aca645bc1895bba73a6ce282dd3399d08ffe9cd8b841d",
+      "modified": false
+    },
+    "LICENSE": {
+      "upstreamPath": "LICENSE",
+      "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331",
+      "modified": false
+    }
+  },
+  "purpose": "Configuration-only regression for the real upstream video source-selection contract. No upstream native sources or libraries are built by this fixture."
+}

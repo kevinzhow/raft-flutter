@@ -85,12 +85,15 @@ class SystemRuntimeTests(unittest.TestCase):
                 runtime.inventory(self.bundle)
             path.unlink()
 
-    def launch(self, listing='libc.so.6 => /lib/libc.so.6', ldd_exit=0):
+    def launch(self, listing='libc.so.6 => /lib/libc.so.6', ldd_exit=0, *, plugin_failure=False):
         tools = self.root / 'tools'
         tools.mkdir()
         ldd = tools / 'ldd'
-        ldd.write_text('#!/bin/sh\nprintf "%s\\n" ' + shlex.quote(listing) + '\nexit ' + str(ldd_exit) + '\n')
+        plugin_check = ('case \"$1\" in */lib/libmedia_kit_video_plugin.so) printf \"%s\\n\" \"libmpv.so.2 => not found\"; exit 0;; esac\n' if plugin_failure else '')
+        ldd.write_text('#!/bin/sh\n' + plugin_check + 'printf "%s\\n" ' + shlex.quote(listing) + '\nexit ' + str(ldd_exit) + '\n')
         ldd.chmod(0o755)
+        if plugin_failure:
+            (self.bundle / 'lib/libmedia_kit_video_plugin.so').write_bytes(b'\x7fELFdynamic-plugin')
         app = self.bundle / 'raft_flutter'
         app.write_text('#!' + sys.executable + '\nimport json,os,sys\nprint(json.dumps({"args":sys.argv[1:], "environment":dict(os.environ)}))\n')
         app.chmod(0o755)
@@ -116,6 +119,13 @@ class SystemRuntimeTests(unittest.TestCase):
             self.assertEqual(output['environment']['RAFT_APPIMAGE_HOST_' + key], env.get(key, ''))
         self.assertNotIn('LD_LIBRARY_PATH', output['environment'])
         self.assertNotIn('GIO_LAUNCH_DESKTOP', output['environment'])
+
+    def test_healthy_runner_does_not_hide_missing_dynamically_loaded_media_library(self):
+        result, _ = self.launch(plugin_failure=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, '')
+        self.assertIn('libmpv.so.2 => not found', result.stderr)
+        self.assertIn('thin Linux package', result.stderr)
 
     def test_missing_or_incompatible_system_library_blocks_app_with_install_instructions(self):
         for listing, code in [('libwebkit2gtk-4.1.so.0 => not found', 0),

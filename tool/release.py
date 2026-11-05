@@ -149,7 +149,8 @@ def sdk():
 
 
 def copy_docs(destination):
-    for name in ['THIRD_PARTY_NOTICES.md', 'docs/licenses', 'docs/linux-media-runtime.md']:
+    for name in ['README.md', 'THIRD_PARTY_NOTICES.md', 'docs/licenses',
+                 'docs/linux-media-runtime.md', 'docs/source-reference.json']:
         source, target = ROOT / name, destination / name
         target.parent.mkdir(parents=True, exist_ok=True)
         if source.is_dir():
@@ -198,6 +199,8 @@ def linux_package(stage, suffix=''):
     checks, system = {}, set()
     env = {key: value for key, value in os.environ.items() if key not in {'LD_LIBRARY_PATH', 'LD_PRELOAD'}}
     for path in elfs:
+        if path.name in runtime.LINKED_SYSTEM_ABIS:
+            runtime.verify_linked_system_abi(path, capture(['patchelf', '--print-needed', path]))
         private_no_soname = path.name == 'libsqlite3.so' or path.relative_to(stage).as_posix() == 'lib/' + runtime.WEB_EXTENSION
         if private_no_soname and capture(['patchelf', '--print-soname', path]).strip():
             raise ValueError('App-private SQLite/WebExtension must not claim a system SONAME')

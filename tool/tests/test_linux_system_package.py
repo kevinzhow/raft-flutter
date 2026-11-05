@@ -66,6 +66,21 @@ class SystemLinuxPackageTests(unittest.TestCase):
             self.package(needed='libdartjni.so\n')
         self.assertFalse((self.stage / 'run-raft').exists())
 
+    def test_stub_video_plugin_is_rejected_instead_of_silently_losing_video(self):
+        (self.bundle / 'lib/libmedia_kit_video_plugin.so').write_bytes(b'\x7fELFstub')
+        with self.assertRaisesRegex(ValueError, 'libmpv.so.2'):
+            self.package(needed='libgtk-3.so.0\n')
+        self.assertFalse((self.stage / 'run-raft').exists())
+
+    def test_browser_plugin_must_link_the_declared_system_webkit_api(self):
+        (self.bundle / 'lib/libraft_system_webview_plugin.so').write_bytes(b'\x7fELFplugin')
+        extension = self.bundle / 'lib/raft-webview/libraft_system_webview_extension.so'
+        extension.parent.mkdir()
+        extension.write_bytes(b'\x7fELFextension')
+        with self.assertRaisesRegex(ValueError, 'libwebkit2gtk-4.1.so.0'):
+            self.package(needed='libWPEWebKit-2.0.so.1\n')
+        self.assertFalse((self.stage / 'run-raft').exists())
+
     def test_normal_entry_creates_wrapper_without_private_system_environment(self):
         self.package()
         wrapper = (self.stage / 'run-raft').read_text()

@@ -48,8 +48,10 @@ class AppImageSystemPackageTests(unittest.TestCase):
         if '--appimage-extract-and-run' in args:
             Path(args[-1]).write_bytes(b'fake packaging output')
 
-    def package(self, *, soname=''):
+    def package(self, *, soname='', stub_browser=False):
         def output(command):
+            if '--print-needed' in command:
+                return '' if stub_browser else 'libwebkit2gtk-4.1.so.0\n'
             return soname if '--print-soname' in command else 'Name: GLIBC_2.39'
         with patch.object(appimage, 'dependencies', return_value={'libc.so.6': Path('/lib/libc.so.6')}), \
                 patch.object(appimage, 'download_tool', side_effect=lambda name, record, folder: folder / name):
@@ -95,6 +97,11 @@ class AppImageSystemPackageTests(unittest.TestCase):
         extension = self.stage / 'lib/raft-webview/libraft_system_webview_extension.so'
         with self.assertRaisesRegex(ValueError, 'SONAME'):
             self.package(soname='libwebkit2gtk-4.1.so.0')
+        self.assertFalse(self.artifact.exists())
+
+    def test_stub_browser_cannot_bypass_appimage_entry_contract(self):
+        with self.assertRaisesRegex(ValueError, 'libwebkit2gtk-4.1.so.0'):
+            self.package(stub_browser=True)
         self.assertFalse(self.artifact.exists())
 
     def test_thick_payload_stops_before_native_commands_or_tool_download(self):

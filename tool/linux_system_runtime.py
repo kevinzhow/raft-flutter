@@ -8,6 +8,8 @@ POLICY = 'system-gtk3-webkitgtk-4.1-v1'
 APP_LIBRARIES = {'libflutter_linux_gtk.so', 'libapp.so', 'libsqlite3.so'}
 WEB_EXTENSION = 'raft-webview/libraft_system_webview_extension.so'
 OBSOLETE_PLUGINS = {'libflutter_inappwebview_linux_plugin.so', 'libmedia_kit_libs_linux_plugin.so'}
+LINKED_SYSTEM_ABIS = {'libmedia_kit_video_plugin.so': 'libmpv.so.2',
+                      'libraft_system_webview_plugin.so': 'libwebkit2gtk-4.1.so.0'}
 PACKAGES = {
     'ubuntu-24.04': ['libgtk-3-0t64', 'libwebkit2gtk-4.1-0', 'libsoup-3.0-0',
                     'libsecret-1-0', 'libmpv2', 'poppler-utils', 'glib-networking',
@@ -55,6 +57,13 @@ def inventory(stage, executable='raft_flutter'):
     return sorted(set(libraries)), sorted(elfs)
 
 
+def verify_linked_system_abi(path, needed):
+    """Refuse a stub video plugin or a browser linked to the retired engine."""
+    required = LINKED_SYSTEM_ABIS.get(Path(path).name)
+    if required and required not in {name.strip() for name in needed.splitlines()}:
+        raise ValueError(Path(path).name + ' must link the distribution ' + required)
+
+
 def rpath(path, stage):
     relative = os.path.relpath(Path(stage) / 'lib', Path(path).parent)
     return '$ORIGIN' if relative == '.' else '$ORIGIN/' + Path(relative).as_posix()
@@ -80,12 +89,16 @@ def launcher(executable='raft_flutter', prefix='$app_dir'):
             'app_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\n' +
             host_environment_capture() +
             '# System GTK/WebKit/media and their child processes keep host module paths.\n'
-            'if command -v ldd >/dev/null 2>&1; then\n'
-            '  if ! runtime_check=$(LC_ALL=C ldd "' + prefix + '/' + executable + '" 2>&1); then\n'
+            'if ! command -v ldd >/dev/null 2>&1; then\n'
+            '  printf "%s\\n" ' + shlex.quote(INSTRUCTIONS) + ' "Missing distribution ldd tool" >&2; exit 1\nfi\n'
+            # Include app-owned dynamically loaded modules, not just the runner.
+            'for runtime_elf in "' + prefix + '/' + executable + '" "' + prefix + '/lib/"*.so "' + prefix + '/lib/raft-webview/"*.so; do\n'
+            '  [ -f "$runtime_elf" ] || continue\n'
+            '  if ! runtime_check=$(LC_ALL=C ldd "$runtime_elf" 2>&1); then\n'
             '    printf "%s\\n" ' + shlex.quote(INSTRUCTIONS) + ' "$runtime_check" >&2\n    exit 1\n  fi\n'
             '  case "$runtime_check" in\n'
             '    *"not found"*) printf "%s\\n" ' + shlex.quote(INSTRUCTIONS) + ' "$runtime_check" >&2; exit 1;;\n'
-            '  esac\nfi\n'
+            '  esac\ndone\n'
             'exec "' + prefix + '/' + executable + '" "$@"\n')
 
 
@@ -93,6 +106,8 @@ def receipt(libraries, dependencies):
     return {'policy': POLICY, 'engine': 'distribution WebKitGTK API4.1 (GTK3/libsoup3)',
             'appPrivateLibraries': libraries, 'bundledSystemLibraries': [],
             'systemSONAMEs': sorted(dependencies), 'distributionPackages': PACKAGES,
+            'requiredPluginSONAMEs': LINKED_SYSTEM_ABIS,
+            'launchDependencyChecks': 'runner plus every app-owned shared module, including WebExtension',
             'runtimePrerequisites': INSTRUCTIONS,
             'privateSQLite': 'Dart native asset libsqlite3.so has no system SONAME; libsqlite3.so.0 is not shipped',
             'nativeWebExtension': {'path': 'lib/' + WEB_EXTENSION, 'kind': 'app-owned adapter, not browser engine',

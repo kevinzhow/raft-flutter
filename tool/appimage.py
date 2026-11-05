@@ -171,6 +171,8 @@ def package(stage, artifact, root, run, capture_output, file_digest):
     env = {key: value for key, value in os.environ.items() if key not in {'LD_LIBRARY_PATH', 'LD_PRELOAD'}}
     needed_glibc, host_libraries = (0, 0), set()
     for path in files:
+        if path.name in system_runtime.LINKED_SYSTEM_ABIS:
+            system_runtime.verify_linked_system_abi(path, capture_output(['patchelf', '--print-needed', path]))
         private_no_soname = path.name == 'libsqlite3.so' or path.relative_to(stage).as_posix() == 'lib/' + system_runtime.WEB_EXTENSION
         if private_no_soname and capture_output(['patchelf', '--print-soname', path]).strip():
             raise ValueError('Private SQLite/WebExtension must not shadow a system SONAME')
