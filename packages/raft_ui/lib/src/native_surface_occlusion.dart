@@ -41,20 +41,39 @@ class RaftNativeSurfaceOcclusion implements Listenable {
     }
   }
 
-  final _bounds = <Object, Rect>{};
+  final _entries = <Object, ({Rect bounds, bool blocksInput})>{};
   bool _notificationQueued = false;
 
   /// Bounds use the view's global logical coordinate space, before GTK scaling.
   bool overlaps(Rect viewLogicalBounds) =>
       !viewLogicalBounds.isEmpty &&
-      _bounds.values.any((bounds) => bounds.overlaps(viewLogicalBounds));
+      _entries.values.any((entry) => entry.bounds.overlaps(viewLogicalBounds));
 
-  void _replace(Object token, Rect? bounds) {
-    if (_bounds[token] == bounds) return;
-    if (bounds == null || bounds.isEmpty) {
-      if (_bounds.remove(token) == null) return;
+  /// Whether an interactive overlay occupies the native surface's input area.
+  /// Passive painted overlays still participate in [overlaps].
+  bool blocksInput(Rect viewLogicalBounds) =>
+      !viewLogicalBounds.isEmpty &&
+      _entries.values.any(
+        (entry) =>
+            entry.blocksInput && entry.bounds.overlaps(viewLogicalBounds),
+      );
+
+  void _setBlocksInput(Object token, bool blocksInput) {
+    final entry = _entries[token];
+    if (entry != null) {
+      _replace(token, entry.bounds, blocksInput: blocksInput);
+    }
+  }
+
+  void _replace(Object token, Rect? bounds, {bool blocksInput = true}) {
+    final entry = bounds == null || bounds.isEmpty
+        ? null
+        : (bounds: bounds, blocksInput: blocksInput);
+    if (_entries[token] == entry) return;
+    if (entry == null) {
+      _entries.remove(token);
     } else {
-      _bounds[token] = bounds;
+      _entries[token] = entry;
     }
     if (_notificationQueued) return;
     _notificationQueued = true;
@@ -72,12 +91,21 @@ class RaftNativeSurfaceOcclusion implements Listenable {
 /// Paint observer for canonical overlay content. Adds no layout, pixels,
 /// semantics or input behavior. Put it around the popup, not its full viewport.
 class RaftNativeSurfaceOccluder extends SingleChildRenderObjectWidget {
-  const RaftNativeSurfaceOccluder({super.key, required super.child});
+  const RaftNativeSurfaceOccluder({
+    super.key,
+    required super.child,
+    this.blocksInput = true,
+  });
+
+  /// Whether the painted content also blocks native pointer input. This only
+  /// describes the child's existing behavior; it does not intercept input.
+  final bool blocksInput;
 
   @override
   RenderObject createRenderObject(BuildContext context) => _OccluderBox(
     RaftNativeSurfaceOcclusion.forView(context),
     TickerMode.valuesOf(context).enabled,
+    blocksInput,
   );
 
   @override
@@ -87,23 +115,33 @@ class RaftNativeSurfaceOccluder extends SingleChildRenderObjectWidget {
   ) => renderObject.configure(
     RaftNativeSurfaceOcclusion.forView(context),
     TickerMode.valuesOf(context).enabled,
+    blocksInput,
   );
 }
 
 class _OccluderBox extends RenderProxyBox {
-  _OccluderBox(this._registry, this._active);
+  _OccluderBox(this._registry, this._active, this._blocksInput);
   RaftNativeSurfaceOcclusion _registry;
-  bool _active;
+  bool _active, _blocksInput;
   final Object _token = Object();
   bool _queued = false;
 
-  void configure(RaftNativeSurfaceOcclusion registry, bool active) {
+  void configure(
+    RaftNativeSurfaceOcclusion registry,
+    bool active,
+    bool blocksInput,
+  ) {
     if (registry != _registry) {
       _registry._replace(_token, null);
       _registry = registry;
     }
     _active = active;
-    if (!active) _registry._replace(_token, null);
+    _blocksInput = blocksInput;
+    if (!active) {
+      _registry._replace(_token, null);
+    } else {
+      _registry._setBlocksInput(_token, blocksInput);
+    }
     markNeedsPaint();
   }
 
@@ -139,7 +177,11 @@ class _OccluderBox extends RenderProxyBox {
       child = parent;
       parent = parent.parent;
     }
-    _registry._replace(_token, bounds.isFinite ? bounds : null);
+    _registry._replace(
+      _token,
+      bounds.isFinite ? bounds : null,
+      blocksInput: _blocksInput,
+    );
   }
 
   @override

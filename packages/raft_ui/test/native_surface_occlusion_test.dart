@@ -52,12 +52,17 @@ void main() {
       ),
     );
     expect(registry.overlaps(const Rect.fromLTWH(120, 110, 10, 10)), isTrue);
+    expect(registry.blocksInput(const Rect.fromLTWH(120, 110, 10, 10)), isTrue);
     expect(registry.overlaps(const Rect.fromLTWH(200, 110, 10, 10)), isFalse);
     await tester.tapAt(const Offset(120, 120));
     expect(taps, 1);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
     expect(registry.overlaps(const Rect.fromLTWH(120, 110, 10, 10)), isFalse);
+    expect(
+      registry.blocksInput(const Rect.fromLTWH(120, 110, 10, 10)),
+      isFalse,
+    );
   });
 
   testWidgets('clipped overflow does not hide unrelated native content', (
@@ -118,12 +123,15 @@ void main() {
     );
     const probe = Rect.fromLTWH(10, 10, 10, 10);
     expect(registry.overlaps(probe), isTrue);
+    expect(registry.blocksInput(probe), isTrue);
     update(() => active = false);
     await tester.pumpAndSettle();
     expect(registry.overlaps(probe), isFalse);
+    expect(registry.blocksInput(probe), isFalse);
     update(() => active = true);
     await tester.pumpAndSettle();
     expect(registry.overlaps(probe), isTrue);
+    expect(registry.blocksInput(probe), isTrue);
   });
 
   testWidgets('canonical tooltip registers its real portal and retires', (
@@ -146,12 +154,22 @@ void main() {
     final bounds = tester.getRect(find.text('Canonical native cover'));
     try {
       expect(registry.overlaps(bounds), isTrue);
+      expect(registry.blocksInput(bounds), isFalse);
+      expect(
+        tester
+            .widgetList<RaftNativeSurfaceOccluder>(
+              find.byType(RaftNativeSurfaceOccluder),
+            )
+            .every((occluder) => !occluder.blocksInput),
+        isTrue,
+      );
       expect(registry.overlaps(const Rect.fromLTWH(1, 1, 10, 10)), isFalse);
     } finally {
       await pointer.removePointer();
       await tester.pumpAndSettle();
     }
     expect(registry.overlaps(bounds), isFalse);
+    expect(registry.blocksInput(bounds), isFalse);
   });
 
   testWidgets('canonical popover keeps its click and retires on close', (
@@ -189,10 +207,12 @@ void main() {
     final bounds = tester.getRect(find.text('Choose value'));
     try {
       expect(registry.overlaps(bounds), isTrue);
+      expect(registry.blocksInput(bounds), isTrue);
       await tester.tap(find.text('Choose value'));
       await tester.pumpAndSettle();
       expect(selected, isTrue);
       expect(registry.overlaps(bounds), isFalse);
+      expect(registry.blocksInput(bounds), isFalse);
     } finally {
       menu.close();
       await tester.pumpAndSettle();

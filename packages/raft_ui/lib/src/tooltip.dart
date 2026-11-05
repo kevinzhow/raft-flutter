@@ -554,6 +554,7 @@ class _RaftTooltipState extends State<RaftTooltip>
                                 ? .99 + .01 * value
                                 : .97 + .03 * value,
                             child: RaftNativeSurfaceOccluder(
+                              blocksInput: false,
                               child: _TooltipSurface(recipe, widget.message),
                             ),
                           ),
@@ -565,6 +566,7 @@ class _RaftTooltipState extends State<RaftTooltip>
                           child: Opacity(
                             opacity: value,
                             child: RaftNativeSurfaceOccluder(
+                              blocksInput: false,
                               child: CustomPaint(
                                 size: const Size(12, 6),
                                 painter: _TooltipArrow(recipe, placement),
