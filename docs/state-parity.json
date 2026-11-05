@@ -43456,7 +43456,7 @@
           "htmlRegionComments"
         ],
         "owner": "task299 HTML region comments",
-        "reason": "Private clipped painter owned only by the canonical HTML marker; its dashed border delegates to the existing primitive.",
+        "reason": "Clipped painter owned only by the canonical HTML marker; Flutter and native adapters use its shared borderSegments recipe.",
         "delegatesTo": [
           "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionMarker"
         ]

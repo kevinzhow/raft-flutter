@@ -522,7 +522,7 @@
         "RaftHtmlHintRasterBoundary"
       ],
       "deprecated": {},
-      "note": "Host-owned region capture, instruction and flash parts of Web HtmlPreviewBody at db5e399. Geometry is supplied by a native host facade; uploaded HTML receives no app bridge. Generated semantic tokens and existing dashed-border primitive supply paint. Registration is not visual or native acceptance.",
+      "note": "Host-owned region capture, instruction and flash parts of Web HtmlPreviewBody at db5e399. Geometry is supplied by a native host facade; uploaded HTML receives no app bridge. Generated semantic tokens and the shared HTML marker borderSegments recipe supply the same geometry to Flutter and native paint. Registration is not visual or native acceptance.",
       "canonicalBindings": {
         "RaftHtmlRegionCommentSurface": {
           "declarationId": "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionCommentSurface",
