@@ -88,6 +88,7 @@ class DesktopSessionBroker implements DesktopWindows {
   Future<void> Function()? _onLogout;
   DesktopDraftOwner _drafts = DesktopDraftOwner();
   Future<bool> Function()? _prepareClose;
+  _DesktopExitAttempt? _exit;
   Future<void> _retiredDrafts = Future.value();
   @override
   WorkspaceCache? get draftCache => null;
@@ -272,20 +273,64 @@ class DesktopSessionBroker implements DesktopWindows {
       Future.wait([_retiredDrafts, _drafts.retire()]);
 
   @override
-  void cancelClose() {}
+  void cancelClose() {
+    final attempt = _exit;
+    if (attempt == null || attempt.cancelled) return;
+    attempt.cancelled = true;
+    if (attempt.result.isCompleted) unawaited(_cancelExit(attempt));
+  }
 
   @override
-  Future<bool> prepareExit() async {
+  Future<bool> prepareExit() {
+    final existing = _exit;
+    if (existing != null) {
+      return existing.cancelled ? Future.value(false) : existing.result.future;
+    }
+    final attempt = _exit = _DesktopExitAttempt();
+    unawaited(
+      _prepareExit(attempt).then<void>((accepted) async {
+        if (accepted && attempt.cancelled) {
+          await _cancelExit(attempt);
+          accepted = false;
+        }
+        attempt.result.complete(accepted);
+      }, onError: attempt.result.completeError),
+    );
+    return attempt.result.future;
+  }
+
+  Future<void> _cancelExit(_DesktopExitAttempt attempt) async {
+    for (final peer in attempt.peers) {
+      try {
+        await peer.cancelClose();
+      } catch (_) {
+        /* Retired engine. */
+      }
+    }
+    if (identical(_exit, attempt)) _exit = null;
+  }
+
+  Future<bool> _prepareExit(_DesktopExitAttempt attempt) async {
+    final client = _client, epoch = _epoch;
+    bool current() =>
+        identical(_exit, attempt) &&
+        !attempt.cancelled &&
+        !_disposed &&
+        epoch == _epoch &&
+        (client == null || _current(client, epoch));
+    final entries = _windows.values.toList();
     var accepted = false;
     try {
+      // A native create already in flight has no save/veto endpoint yet.
+      if (entries.any((entry) => entry.peer == null)) return false;
+      attempt.peers.addAll(entries.map((entry) => entry.peer).nonNulls);
       final prepared = await Future.wait(
-        _windows.values.toList().map(
-          (entry) async => await entry.peer?.prepareClose() == true,
-        ),
+        attempt.peers.map((peer) => peer.prepareClose()),
       );
-      if (prepared.any((accepted) => !accepted)) return false;
-      if (await _prepareClose?.call() != true) return false;
+      if (!current() || prepared.any((accepted) => !accepted)) return false;
+      if (await _prepareClose?.call() != true || !current()) return false;
       await _drafts.settled;
+      if (!current()) return false;
       if (createCache != null) {
         final retiring = <Future<void>>[];
         for (final entry in _windows.entries.toList()) {
@@ -300,17 +345,10 @@ class DesktopSessionBroker implements DesktopWindows {
         }
         await Future.wait(retiring).timeout(const Duration(seconds: 10));
       }
-      return accepted = true;
+      return accepted = current();
     } finally {
-      if (!accepted) {
-        for (final entry in _windows.values.toList()) {
-          try {
-            await entry.peer?.cancelClose();
-          } catch (_) {
-            /* Retired engine. */
-          }
-        }
-      }
+      // Success stays sealed until the host exits or explicitly cancels.
+      if (!accepted) await _cancelExit(attempt);
     }
   }
 
@@ -380,13 +418,15 @@ class DesktopSessionBroker implements DesktopWindows {
     return _openShared(server, () => identical(_windows[binding], requester));
   }
 
-  Future<void> _openShared(RaftRecord server, bool Function() requested) =>
-      _opening.putIfAbsent(
-        server.id,
-        () => _open(server.id, requested).whenComplete(() {
-          _opening.remove(server.id);
-        }),
-      );
+  Future<void> _openShared(RaftRecord server, bool Function() requested) {
+    if (_exit != null) return Future.error(const RaftApiException.staleScope());
+    return _opening.putIfAbsent(
+      server.id,
+      () => _open(server.id, requested).whenComplete(() {
+        _opening.remove(server.id);
+      }),
+    );
+  }
 
   Future<void> _open(String serverId, bool Function() requested) async {
     final client = _client, epoch = _epoch;
@@ -399,7 +439,7 @@ class DesktopSessionBroker implements DesktopWindows {
       );
     }
     final servers = await client.accountServers();
-    if ((!_current(client, epoch) || !requested())) {
+    if (_exit != null || (!_current(client, epoch) || !requested())) {
       throw const RaftApiException.staleScope();
     }
     final candidates = servers.where((server) => server.id == serverId);
@@ -550,6 +590,8 @@ class DesktopSessionBroker implements DesktopWindows {
   }
 
   void _revoke() {
+    _exit?.cancelled = true;
+    _exit = null;
     _retiredDrafts = Future.wait([_retiredDrafts, _drafts.retire()]);
     _epoch++;
     _revision = _credentialRevision = 0;
@@ -573,6 +615,12 @@ class DesktopSessionBroker implements DesktopWindows {
     _revoke();
     await releaseNative?.call();
   }
+}
+
+class _DesktopExitAttempt {
+  final result = Completer<bool>();
+  final peers = <DesktopWindowPeer>[];
+  bool cancelled = false;
 }
 
 class _WindowBinding {
