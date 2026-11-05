@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 import 'geometry.dart';
+import 'snapshot.dart';
 
 /// The host owns all methods. Uploaded HTML receives no message channel or
 /// callable application object. Browser events contain no credentials.
 class SystemWebViewController {
-  SystemWebViewController._(this._channel);
+  SystemWebViewController._(this._channel, this.supportsSnapshots);
+  final bool supportsSnapshots;
   static const rootChannel = MethodChannel('app.raft/system_webview');
   final MethodChannel _channel;
   final _events = StreamController<Map<Object?, Object?>>.broadcast(sync: true);
@@ -36,6 +38,7 @@ class SystemWebViewController {
     }
     final result = SystemWebViewController._(
       MethodChannel('app.raft/system_webview/${value['id']}'),
+      value['snapshot'] == true,
     );
     result._channel.setMethodCallHandler((call) async {
       if (!result._closed && call.method == 'event' && call.arguments is Map) {
@@ -52,6 +55,26 @@ class SystemWebViewController {
     return value;
   }
 
+  /// An accepted host scroll/jump changed document pixels without a GTK event.
+  /// Uploaded pages receive no reference to this host controller.
+  void markSnapshotDirty() {
+    if (!_closed) _events.add({'type': 'snapshotDirty'});
+  }
+
+  Future<Map<Object?, Object?>?> inspect() =>
+      _invoke<Map<Object?, Object?>>('inspect');
+  Future<void> updateRegionOverlay(Map<String, Object?> frame) =>
+      _invoke<void>('regionOverlay', frame);
+
+  Future<SystemWebViewSnapshot?> snapshot() async {
+    if (!supportsSnapshots || _closed) return null;
+    final sequence = _layoutSequence;
+    final frame = await _invoke<Object?>('snapshot');
+    return sequence == _layoutSequence
+        ? SystemWebViewSnapshot.parse(frame, sequence)
+        : null;
+  }
+
   Future<void> load(Uri uri) => _invoke<void>('load', {'url': uri.toString()});
   Future<Object?> evaluate(String source) =>
       _invoke<Object?>('evaluate', {'source': source});
@@ -66,6 +89,7 @@ class SystemWebViewController {
   Future<void> dispose() => _disposing ??= _dispose();
   Future<void> _dispose() async {
     _closed = true;
+    _events.add({'type': 'closed'});
     _channel.setMethodCallHandler(null);
     try {
       await _channel.invokeMethod<void>('dispose');
