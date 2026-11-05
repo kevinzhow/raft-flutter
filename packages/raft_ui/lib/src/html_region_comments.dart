@@ -4,7 +4,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'attachment_comment_scope.dart';
-import 'feedback_inbox.dart' show RaftDashedBorderPainter;
+import 'html_region_hint_raster.dart';
+import 'html_region_marker.dart';
+import 'html_region_native_binding.dart';
+import 'html_region_native_types.dart';
 import 'html_region_geometry.dart';
 import 'interaction.dart';
 import 'localization.dart';
@@ -31,6 +34,13 @@ class RaftHtmlRegionCommentSurface extends StatefulWidget {
 
 class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  late final native = RaftHtmlNativeRegionBinding(nativeInput, () {
+    captureRevision++;
+    geometryRevision++;
+    start = null;
+    drag = null;
+  });
+  final paneKey = GlobalKey(), hintKey = GlobalKey();
   RaftAttachmentCommentState? session;
   RaftHtmlGeometry? geometry;
   RaftHtmlRegion? flashing;
@@ -83,6 +93,7 @@ class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
   }
 
   void bind() {
+    native.bind(widget.enabled ? widget.controller : null);
     if (widget.enabled && widget.controller != null) {
       session?.jumpHandler = startJump;
       session?.asyncJumpHandler = jump;
@@ -103,6 +114,7 @@ class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
   }
 
   void retire() {
+    native.invalidate();
     binding++;
     captureRevision++;
     jumpRevision++;
@@ -123,6 +135,8 @@ class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
     if (!foreground) {
       retire();
       if (mounted) setState(() {});
+    } else if (widget.controller is RaftHtmlNativeRegionController && mounted) {
+      setState(() {});
     }
   }
 
@@ -131,6 +145,7 @@ class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
     detach();
     WidgetsBinding.instance.removeObserver(this);
     animation.dispose();
+    native.dispose();
     super.dispose();
   }
 
@@ -219,32 +234,72 @@ class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
     }
   }
 
-  Future<void> scroll(PointerScrollEvent event) async {
+  Future<void> scroll(PointerScrollEvent event) => scrollAt(event.scrollDelta);
+
+  Future<void> scrollAt(Offset delta) async {
     final owner = widget.controller;
     if (!current || owner == null) return;
     final ticket = binding, revision = ++geometryRevision;
-    final value = await owner.scrollBy(event.scrollDelta, host);
+    final value = await owner.scrollBy(delta, host);
     if (valid(ticket, owner) && revision == geometryRevision && value != null)
       setState(() => geometry = value);
   }
 
-  void down(PointerDownEvent event) {
+  void down(PointerDownEvent event) => downAt(event.localPosition);
+
+  void downAt(Offset position) {
     if (!current || session?.commentMode != true) return;
     captureRevision++;
     setState(() {
-      start = event.localPosition;
+      start = position;
       drag = Rect.fromPoints(start!, start!);
     });
   }
 
-  void up(PointerUpEvent event) {
+  void up(PointerUpEvent event) => upAt(event.localPosition);
+
+  void upAt(Offset position) {
     final first = start;
     setState(() {
       start = null;
       drag = null;
     });
-    if (first != null)
-      unawaited(capture(Rect.fromPoints(first, event.localPosition)));
+    if (first != null) unawaited(capture(Rect.fromPoints(first, position)));
+  }
+
+  void cancelDrag() => setState(() {
+    start = null;
+    drag = null;
+    captureRevision++;
+  });
+
+  void nativeInput(RaftHtmlNativeRegionInput event) {
+    if (!current ||
+        session?.commentMode != true ||
+        !RaftInteraction.of(context).pointer ||
+        !TickerMode.valuesOf(context).enabled)
+      return;
+    final position = Offset(
+      event.position.dx * host.width,
+      event.position.dy * host.height,
+    );
+    switch (event.phase) {
+      case RaftHtmlNativeRegionPhase.down:
+        downAt(position);
+      case RaftHtmlNativeRegionPhase.move:
+        if (start != null)
+          setState(() => drag = Rect.fromPoints(start!, position));
+      case RaftHtmlNativeRegionPhase.up:
+        upAt(position);
+      case RaftHtmlNativeRegionPhase.cancel:
+        cancelDrag();
+      case RaftHtmlNativeRegionPhase.scroll:
+        unawaited(
+          scrollAt(
+            Offset(event.delta.dx * host.width, event.delta.dy * host.height),
+          ),
+        );
+    }
   }
 
   @override
@@ -252,6 +307,11 @@ class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
     builder: (context, constraints) {
       final size = constraints.biggest;
       if (host != size) {
+        if (widget.controller is RaftHtmlNativeRegionController) {
+          start = null;
+          drag = null;
+          native.invalidate();
+        }
         host = size;
         captureRevision++;
         geometryRevision++;
@@ -264,7 +324,50 @@ class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
       final canCapture =
           widget.enabled && session?.commentMode == true && pointer;
       final g = geometry, region = flashing;
+      final nativeLayer = widget.controller is RaftHtmlNativeRegionController;
+      final usableHost =
+          host.width > 0 &&
+          host.height > 0 &&
+          host.width.isFinite &&
+          host.height.isFinite;
+      if (nativeLayer) {
+        native.update(
+          viewport: host,
+          captureEnabled:
+              canCapture &&
+              current &&
+              usableHost &&
+              TickerMode.valuesOf(context).enabled,
+          markers: [
+            if (usableHost && g != null && region != null)
+              RaftHtmlRegionMarkerRecipe.resolve(
+                context,
+                g.local(region, host, minimum: RaftScale.space(3.5)),
+                progress: animation.value * 1800 / 1600,
+              ).normalized(host),
+            if (usableHost && canCapture && drag != null)
+              RaftHtmlRegionMarkerRecipe.resolve(
+                context,
+                drag!,
+                drag: true,
+              ).normalized(host),
+          ],
+          paneKey: paneKey,
+          hintKey: hintKey,
+          hintSignature: (
+            Theme.of(context),
+            Localizations.maybeLocaleOf(context),
+            MediaQuery.textScalerOf(context),
+            View.of(context).devicePixelRatio,
+            Directionality.of(context),
+            host,
+            current,
+            geometry != null,
+          ),
+        );
+      }
       return ClipRect(
+        key: paneKey,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -282,23 +385,26 @@ class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
                 child: Listener(
                   key: const ValueKey('html-region-capture'),
                   behavior: HitTestBehavior.opaque,
-                  onPointerDown: down,
-                  onPointerMove: (event) {
-                    if (start != null)
-                      setState(
-                        () =>
-                            drag = Rect.fromPoints(start!, event.localPosition),
-                      );
-                  },
-                  onPointerUp: up,
-                  onPointerCancel: (_) => setState(() {
-                    start = null;
-                    drag = null;
-                    captureRevision++;
-                  }),
-                  onPointerSignal: (event) {
-                    if (event is PointerScrollEvent) unawaited(scroll(event));
-                  },
+                  onPointerDown: nativeLayer ? null : down,
+                  onPointerMove: nativeLayer
+                      ? null
+                      : (event) {
+                          if (start != null)
+                            setState(
+                              () => drag = Rect.fromPoints(
+                                start!,
+                                event.localPosition,
+                              ),
+                            );
+                        },
+                  onPointerUp: nativeLayer ? null : up,
+                  onPointerCancel: nativeLayer ? null : (_) => cancelDrag(),
+                  onPointerSignal: nativeLayer
+                      ? null
+                      : (event) {
+                          if (event is PointerScrollEvent)
+                            unawaited(scroll(event));
+                        },
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -310,9 +416,20 @@ class _HtmlRegionState extends State<RaftHtmlRegionCommentSurface>
                         alignment: Alignment.topCenter,
                         child: Padding(
                           padding: EdgeInsets.only(top: RaftScale.space(3)),
-                          child: RaftHtmlRegionHint(
-                            available: current && geometry != null,
-                          ),
+                          child: nativeLayer
+                              ? RaftHtmlHintRasterBoundary(
+                                  key: hintKey,
+                                  shadows: RaftTokens.of(context)
+                                      .themeShadows
+                                      .lg
+                                      .outer,
+                                  child: RaftHtmlRegionHint(
+                                    available: current && geometry != null,
+                                  ),
+                                )
+                              : RaftHtmlRegionHint(
+                                  available: current && geometry != null,
+                                ),
                         ),
                       ),
                     ],
@@ -378,79 +495,16 @@ class RaftHtmlRegionMarker extends StatelessWidget {
   final double progress;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final strength = progress <= .35
-        ? 1.0
-        : progress >= 1
-        ? 0.0
-        : 1 - Curves.easeOut.transform((progress - .35) / .65);
-    final base = t.ui[drag ? 'brand-soft' : 'info-soft'];
     return CustomPaint(
       key: ValueKey(drag ? 'html-region-drag' : 'html-region-flash'),
-      painter: _RegionPainter(
-        rect,
-        base.withValues(alpha: base.a * (drag ? .5 : strength)),
-        t.ui['line-seam'],
-        RaftScale.space(.25),
-        drag,
-        RaftScale.space(.5),
+      painter: RaftHtmlRegionMarkerPainter(
+        RaftHtmlRegionMarkerRecipe.resolve(
+          context,
+          rect,
+          drag: drag,
+          progress: progress,
+        ),
       ),
     );
   }
-}
-
-class _RegionPainter extends CustomPainter {
-  const _RegionPainter(
-    this.rect,
-    this.fill,
-    this.border,
-    this.width,
-    this.dashed,
-    this.radius,
-  );
-  final Rect rect;
-  final Color fill, border;
-  final double width, radius;
-  final bool dashed;
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.clipRect(Offset.zero & size);
-    if (rect.overlaps(Offset.zero & size)) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          rect,
-          dashed ? Radius.zero : Radius.circular(radius),
-        ),
-        Paint()..color = fill,
-      );
-      if (dashed) {
-        canvas.save();
-        canvas.translate(rect.left, rect.top);
-        RaftDashedBorderPainter(border, width).paint(canvas, rect.size);
-        canvas.restore();
-      } else {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            rect.deflate(width / 2),
-            Radius.circular(radius),
-          ),
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = width
-            ..color = border,
-        );
-      }
-    }
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_RegionPainter old) =>
-      rect != old.rect ||
-      fill != old.fill ||
-      border != old.border ||
-      width != old.width ||
-      dashed != old.dashed ||
-      radius != old.radius;
 }
