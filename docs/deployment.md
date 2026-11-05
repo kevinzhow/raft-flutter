@@ -33,9 +33,11 @@ Run from `apps/raft_flutter` with `../../tool/flutter` and the pinned SDK. Relea
 ```sh
 ../../tool/flutter build apk --release --dart-define=RAFT_ORIGIN=https://raft.example.com           # Android universal APK
 ../../tool/flutter build apk --release --split-per-abi --target-platform android-arm64 --build-number <n>  # ARM64 split APK
-../../tool/prepare-media-linux && ../../tool/flutter build linux --release                          # Linux (x86_64 bundle)
+../../tool/flutter build linux --release                                                            # Linux x86_64; install system development packages first
 ../../tool/flutter build macos --release                                                            # macOS app Raft.app (arm64)
 ```
+
+Linux uses distribution WebKitGTK 4.1, GTK3 and libmpv; see [system runtime prerequisites](linux-media-runtime.md). The browser engine and system media libraries are not built or bundled by this project.
 
 ## Signing and packaging
 

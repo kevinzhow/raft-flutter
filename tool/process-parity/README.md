@@ -20,9 +20,9 @@ input is not a completed platform/matrix claim.
 
 ## Run
 
-Use the Flutter SDK pinned in `.fvmrc` and installed pinned Source dependencies. Prepare the
-private Linux media bundle with `./tool/prepare-media-linux` before its first
-build. Coordinate Linux integration ownership with other workers. This runner
+Use the Flutter SDK pinned in `.fvmrc` and installed pinned Source dependencies. Install distribution
+GTK3, WebKitGTK4.1 and libmpv development packages before the first Linux
+build; see `docs/linux-media-runtime.md`. Coordinate Linux integration ownership with other workers. This runner
 uses private Xvfb; no Android5580, real account/backend or shared native fixture.
 
 ```sh

@@ -22,11 +22,11 @@ one player (one stream, one buffer, one position); see [Streaming and sessions](
 | iOS      | `video_player` -> AVPlayer | Same; viewer HDR/EDR through `AVPlayerLayer` (cards are SDR) |
 | macOS    | `video_player` -> AVPlayer | Same; viewer HDR through `AVPlayerLayer` |
 | Windows  | media_kit (libmpv + bundled FFmpeg), `NativeAttachmentPlayer` | Media Foundation needs the optional HEVC extension |
-| Linux    | media_kit (libmpv + bundled FFmpeg), `NativeAttachmentPlayer` | Stock GStreamer (Fedora) has no H.264/HEVC; `tool/prepare-media-linux` still supplies the runtime ([Linux runtime](linux-media-runtime.md)) |
+| Linux | media_kit with distribution libmpv, `NativeAttachmentPlayer` | Codec availability follows the installed distribution packages; no private media/GTK closure ([Linux runtime](linux-media-runtime.md)) |
 
 ## Dependencies
 
-`pubspec.yaml` depends on `media_kit`, `media_kit_video`, `media_kit_libs_linux`, `media_kit_libs_windows_video` and
+`pubspec.yaml` depends on `media_kit`, `media_kit_video`, `media_kit_libs_windows_video` and
 `video_player`. It does **not** depend on `media_kit_libs_video` (the umbrella pulls `media_kit_libs_android_video`,
 `media_kit_libs_ios_video` and `media_kit_libs_macos_video`, i.e. libmpv/FFmpeg on every platform). `media_kit_video`
 still registers a native plugin on Android, iOS and macOS; without a libs package its Apple podspecs build the stub

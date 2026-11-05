@@ -19,10 +19,12 @@ The second command is a separate package that whole-project analysis needs; it n
 
 ```sh
 cd apps/raft_flutter
-../../tool/flutter run -d linux     # Linux; run tool/prepare-media-linux first
+../../tool/flutter run -d linux     # Linux; install distribution GTK3/WebKitGTK4.1/libmpv development packages first
 ../../tool/flutter run -d macos     # macOS (Apple Silicon)
 ../../tool/flutter run -d <serial>  # Android emulator (see the install warning below)
 ```
+
+Linux setup and runtime package names are listed in [Linux system runtime](linux-media-runtime.md).
 
 The app talks to the official API `https://api.raft.build` by default; pass `--dart-define=RAFT_ORIGIN=http://localhost:13041` for a local server (or any other origin), or edit the origin on the login screen (see [Self-deploy](deployment.md)). For a local server see [local server stack](local-test-stack.md): `tool/raft-stack [--config PATH] start|stop|status|ports|flags` wraps the raft-source `raftdev` launcher and needs a git-ignored `.local/stack.json` (or another config passed with `--config`, to run several Raft versions side by side).
 

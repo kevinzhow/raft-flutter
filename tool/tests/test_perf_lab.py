@@ -714,6 +714,7 @@ class ReceiptAndNaturalLoadTest(unittest.TestCase):
                  patch.object(lab.platform, 'system', return_value='Linux'), patch.object(lab, 'flutter_guard'), \
                  patch.object(lab, 'source_snapshot', return_value={'digest': 'a'}), \
                  patch.object(lab, 'flutter_toolchain', return_value=TOOLCHAIN), \
+                 patch.object(lab, 'capture', return_value=''), \
                  patch.object(lab.subprocess, 'run') as compiler, contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(lab.build(args), 1)
                 compiler.assert_not_called()
@@ -722,18 +723,28 @@ class ReceiptAndNaturalLoadTest(unittest.TestCase):
             self.assertEqual(cache.read_text(), 'CMAKE_INSTALL_PREFIX:PATH=/usr/local\n')
             self.assertIn('reset this worktree cache', (args.out / 'build.log').read_text())
 
-    def test_missing_media_and_escaped_build_directory_fail_preflight(self):
+    def test_distribution_libraries_build_without_a_private_media_cache(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             app = root / 'app'
-            with patch.object(lab, 'ROOT', root), patch.object(lab, 'APP', app):
-                with self.assertRaisesRegex(ValueError, 'media runtime is missing'):
+            app.mkdir()
+            with patch.object(lab, 'ROOT', root), patch.object(lab, 'APP', app), \
+                 patch.object(lab, 'capture', return_value=''):
+                lab.linux_build_preflight()
+            self.assertFalse((root / '.local/media-linux').exists())
+
+    def test_missing_system_packages_and_escaped_build_directory_fail_preflight(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            app = root / 'app'
+            with patch.object(lab, 'ROOT', root), patch.object(lab, 'APP', app), \
+                 patch.object(lab, 'capture', side_effect=subprocess.CalledProcessError(1, 'pkg-config')):
+                with self.assertRaisesRegex(ValueError, 'distribution GTK3'):
                     lab.linux_build_preflight()
-                media = root / '.local/media-linux/bundle/libs/libmpv.so.2'
-                media.parent.mkdir(parents=True)
-                media.write_bytes(b'fixture')
-                (app / 'build').mkdir(parents=True)
-                (app / 'build/linux').symlink_to(root / 'elsewhere', target_is_directory=True)
+            (app / 'build').mkdir(parents=True)
+            (app / 'build/linux').symlink_to(root / 'elsewhere', target_is_directory=True)
+            with patch.object(lab, 'ROOT', root), patch.object(lab, 'APP', app), \
+                 patch.object(lab, 'capture', return_value=''):
                 with self.assertRaisesRegex(ValueError, 'escapes this app directory'):
                     lab.linux_build_preflight()
 

@@ -54,10 +54,7 @@ def adapt_tree(tree: Path):
         text = text.replace('final client = LabClient(api);', 'final client = LabClient(api, origin: origin);')
         text = text.replace("LabClient(LabAdapter adapter)\n    : super(origin: 'https://example.invalid',", "LabClient(LabAdapter adapter, {String origin = 'https://example.invalid'})\n    : super(origin: origin,")
         fixtures.write_text(text)
-    media = tree / '.local/media-linux'
-    if not media.exists() and (ROOT / '.local/media-linux').exists():
-        media.parent.mkdir(exist_ok=True)
-        media.symlink_to((ROOT / '.local/media-linux').resolve())
+
 
 
 class Host(threading.Thread):

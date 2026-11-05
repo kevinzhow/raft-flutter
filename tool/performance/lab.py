@@ -1135,8 +1135,10 @@ def flutter_toolchain():
 def linux_build_preflight():
     # A failed first configure can leave /usr/local cached as the install
     # prefix. A retry must not install outside this worktree's bundle.
-    if not (ROOT / '.local/media-linux/bundle/libs/libmpv.so.2').is_file():
-        raise ValueError('Prepared Linux media runtime is missing. Run tool/prepare-media-linux before building.')
+    try:
+        capture(['pkg-config', '--exists', 'gtk+-3.0', 'webkit2gtk-4.1', 'mpv'])
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ValueError('Linux build requires distribution GTK3, WebKitGTK4.1 and libmpv development packages.') from error
     build_root = APP / 'build/linux'
     if not build_root.resolve().is_relative_to(APP.resolve()):
         raise ValueError(f'Linux build directory escapes this app directory: {build_root}')

@@ -12,8 +12,8 @@ if [ -e "$out" ]; then
   echo "Refusing to overwrite process evidence: $out" >&2
   exit 2
 fi
-if [ ! -f "$root/.local/media-linux/bundle/libs/libmpv.so.2" ]; then
-  echo 'Prepare this checkout media runtime with ./tool/prepare-media-linux first.' >&2
+if ! pkg-config --exists gtk+-3.0 webkit2gtk-4.1 mpv; then
+  echo 'Install distribution GTK3, WebKitGTK4.1 and libmpv development packages first.' >&2
   exit 2
 fi
 requirement="$(python3 - "$fixture" <<'PYREQ'
