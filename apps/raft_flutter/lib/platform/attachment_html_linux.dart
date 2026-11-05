@@ -155,7 +155,8 @@ class _LinuxHtmlState extends State<LinuxAttachmentHtmlWebView> {
       controller: current,
       visible: loaded && !failed && !closed,
       occlusion: occlusion,
-      isOccluded: occlusion.overlaps,
+      isOccluded: occlusion.blocksInput,
+      isPaintOccluded: occlusion.overlaps,
     );
   }
 }

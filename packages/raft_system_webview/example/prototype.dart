@@ -246,7 +246,10 @@ class _PrototypeState extends State<_Prototype> {
                         visible: loaded,
                         occlusion: RaftNativeSurfaceOcclusion.forView(context),
                         isOccluded: RaftNativeSurfaceOcclusion.forView(context)
-                            .overlaps,
+                            .blocksInput,
+                        isPaintOccluded: RaftNativeSurfaceOcclusion.forView(
+                          context,
+                        ).overlaps,
                       ),
                   ],
                 ),

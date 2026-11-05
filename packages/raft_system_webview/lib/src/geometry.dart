@@ -8,9 +8,13 @@ class SystemWebViewLayout {
     this.frame,
     this.clip, {
     this.paintOccluded = false,
-  });
+    Rect? viewFrame,
+  }) : viewFrame = viewFrame ?? frame;
   static const hidden = SystemWebViewLayout(Rect.zero, Rect.zero);
   final Rect frame, clip;
+
+  /// Original Flutter view coordinates for SDK queries; never sent to GTK.
+  final Rect viewFrame;
 
   /// Keep the mapped GTK input surface while Flutter paints a passive overlay
   /// over the private report snapshot. Interactive overlays still hide it.
@@ -105,6 +109,7 @@ class SystemWebViewLayout {
       convert(frame),
       convert(clip),
       paintOccluded: isPaintOccluded?.call(frame) ?? false,
+      viewFrame: frame,
     );
     if ([result.frame, result.clip].any(
       (r) => [r.left, r.top, r.right, r.bottom].any((n) => n.abs() > 1000000),
@@ -119,7 +124,8 @@ class SystemWebViewLayout {
       other is SystemWebViewLayout &&
       other.frame == frame &&
       other.clip == clip &&
-      other.paintOccluded == paintOccluded;
+      other.paintOccluded == paintOccluded &&
+      other.viewFrame == viewFrame;
   @override
-  int get hashCode => Object.hash(frame, clip, paintOccluded);
+  int get hashCode => Object.hash(frame, clip, paintOccluded, viewFrame);
 }

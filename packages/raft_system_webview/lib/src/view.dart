@@ -77,7 +77,7 @@ class _SystemWebViewState extends State<SystemWebView>
       _last.visible &&
       _foreground &&
       _routeActive &&
-      !(widget.isOccluded?.call(_last.frame) ?? false);
+      !(widget.isOccluded?.call(_last.viewFrame) ?? false);
 
   void _releaseFlutterFocus(SystemWebViewController owner) {
     if (!_acceptsNativeFocus(owner)) return;

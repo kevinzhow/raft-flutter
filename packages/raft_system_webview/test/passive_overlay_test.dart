@@ -106,6 +106,8 @@ void main() {
       expect(result.visible, true);
       expect(result.paintOccluded, true);
       expect(result.frame, const Rect.fromLTWH(60, 80, 200, 160));
+      expect(result.viewFrame, observed);
+      expect(result.data.containsKey('viewFrame'), false);
       expect(result, isNot(SystemWebViewLayout(result.frame, result.clip)));
       expect(result.data['paintOccluded'], true);
     },
