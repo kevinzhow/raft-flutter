@@ -29,6 +29,8 @@ void main() {
   testWidgets('painted bounds yield only their occupied area and retire', (
     tester,
   ) async {
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetDevicePixelRatio);
     var taps = 0;
     final registry = await pumpHost(
       tester,
@@ -142,10 +144,13 @@ void main() {
     await pointer.moveTo(tester.getCenter(find.text('Trigger')));
     await tester.pumpAndSettle();
     final bounds = tester.getRect(find.text('Canonical native cover'));
-    expect(registry.overlaps(bounds), isTrue);
-    expect(registry.overlaps(const Rect.fromLTWH(1, 1, 10, 10)), isFalse);
-    await pointer.removePointer();
-    await tester.pumpAndSettle();
+    try {
+      expect(registry.overlaps(bounds), isTrue);
+      expect(registry.overlaps(const Rect.fromLTWH(1, 1, 10, 10)), isFalse);
+    } finally {
+      await pointer.removePointer();
+      await tester.pumpAndSettle();
+    }
     expect(registry.overlaps(bounds), isFalse);
   });
 
@@ -182,10 +187,44 @@ void main() {
     await tester.tap(find.text('Open popup'));
     await tester.pumpAndSettle();
     final bounds = tester.getRect(find.text('Choose value'));
-    expect(registry.overlaps(bounds), isTrue);
-    await tester.tap(find.text('Choose value'));
-    await tester.pumpAndSettle();
-    expect(selected, isTrue);
-    expect(registry.overlaps(bounds), isFalse);
+    try {
+      expect(registry.overlaps(bounds), isTrue);
+      await tester.tap(find.text('Choose value'));
+      await tester.pumpAndSettle();
+      expect(selected, isTrue);
+      expect(registry.overlaps(bounds), isFalse);
+    } finally {
+      menu.close();
+      await tester.pumpAndSettle();
+    }
   });
+  testWidgets(
+    'native listener ownership ends without retaining retired bounds',
+    (tester) async {
+      final registry = await pumpHost(tester, const SizedBox.shrink());
+      var notifications = 0;
+      void changed() => notifications++;
+      registry.addListener(changed);
+      await pumpHost(
+        tester,
+        const Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: RaftNativeSurfaceOccluder(
+              child: ColoredBox(color: Colors.blue),
+            ),
+          ),
+        ),
+      );
+      expect(notifications, greaterThan(0));
+      final before = notifications;
+      registry.removeListener(changed);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      expect(notifications, before);
+      expect(registry.overlaps(const Rect.fromLTWH(1, 1, 10, 10)), isFalse);
+    },
+  );
 }

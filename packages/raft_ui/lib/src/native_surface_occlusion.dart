@@ -8,12 +8,37 @@ import 'package:flutter/widgets.dart';
 /// This is layout coordination, not a platform service. Each Flutter view owns
 /// its own registry. Entries disappear with the actual overlay render object;
 /// a tooltip in another part of the window does not hide unrelated content.
-class RaftNativeSurfaceOcclusion extends ChangeNotifier {
+class RaftNativeSurfaceOcclusion implements Listenable {
   RaftNativeSurfaceOcclusion._();
   static final _views = Expando<RaftNativeSurfaceOcclusion>();
   static RaftNativeSurfaceOcclusion forView(BuildContext context) {
     final FlutterView view = View.of(context);
     return _views[view] ??= RaftNativeSurfaceOcclusion._();
+  }
+
+  // This view-keyed value has no resource or disposable lifetime. Subscribers
+  // own their listeners; ephemeral overlays own their bounds until detach.
+  final _listeners = <VoidCallback>{};
+  @override
+  void addListener(VoidCallback listener) => _listeners.add(listener);
+  @override
+  void removeListener(VoidCallback listener) => _listeners.remove(listener);
+
+  void _notify() {
+    for (final listener in List<VoidCallback>.of(_listeners)) {
+      if (!_listeners.contains(listener)) continue;
+      try {
+        listener();
+      } catch (exception, stack) {
+        FlutterError.reportError(
+          FlutterErrorDetails(
+            exception: exception,
+            stack: stack,
+            library: 'Raft native surface visibility',
+          ),
+        );
+      }
+    }
   }
 
   final _bounds = <Object, Rect>{};
@@ -37,7 +62,7 @@ class RaftNativeSurfaceOcclusion extends ChangeNotifier {
     // so listeners can request painting without rebuilding during traversal.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _notificationQueued = false;
-      notifyListeners();
+      _notify();
     });
     // ignore: raft_lints/avoid_unreviewed_idle_work -- One frame after an overlay changes; the callback does not request another frame.
     WidgetsBinding.instance.ensureVisualUpdate();
