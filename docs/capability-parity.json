@@ -11429,7 +11429,7 @@
      "needle": "class RaftHtmlRegionCommentSurface"
     }
    ],
-   "justification": "Markdown section and HTML region capture, Remove Anchor without draft loss, existing POST payload, stored Web-shaped jump/flash, ordering and authority retirement are implemented. HTML geometry uses bounded host-to-document evaluation without a document-to-App bridge. Native HTML overlay/DOM geometry, paired visual alignment and service cross-client round trips remain pending.",
+   "justification": "Markdown section and HTML region capture, Remove Anchor without draft loss, existing POST payload, stored Web-shaped jump/flash, ordering and authority retirement are implemented. HTML geometry uses bounded host-to-document evaluation without a document-to-App bridge. Cross-client and platform execution coverage is reported separately in the PR. Reliable first-comment live refresh still depends on an upstream notification after the attachment reference is committed.",
    "impact": "Native renderer and cross-client comment acceptance remain pending.",
    "size": "M"
   },
@@ -11588,7 +11588,7 @@
      "needle": "class RaftHtmlRegionCommentSurface"
     }
    ],
-   "justification": "Text, row, video, Markdown section and fine-pointer HTML region owners feed the existing comment composer. Stored anchors retain document ordering and jump/flash; Remove Anchor retains the draft. HTML geometry uses bounded host-to-document evaluation without an App bridge. Native renderer and cross-client acceptance remain pending.",
+   "justification": "Text, row, video, Markdown section and fine-pointer HTML region owners feed the existing comment composer. Stored anchors retain document ordering and jump/flash; Remove Anchor retains the draft. Scoped events refresh known comment threads without replacing drafts. Unknown-first-thread notification timing and platform acceptance remain separate from these implementation claims.",
    "impact": "Native renderer and cross-client comment acceptance remain pending.",
    "size": "M"
   },
@@ -11704,7 +11704,7 @@
      "needle": "WebViewPlatform.instance != null"
     }
    ],
-   "justification": "Windows uses isolated ephemeral WebView2 with user-gesture-only external-link mediation. Linux uses sandboxed WPE with contained runtime paths, but its packaged engine and native runtime acceptance remain in progress. Authenticated ArtifactViewer capability stays separate from this untrusted HTML renderer.",
+   "justification": "Windows uses isolated ephemeral WebView2 with user-gesture-only external-link mediation. Linux uses sandboxed WPE with contained runtime paths, matching packaged image loaders and a normal portable launcher. File selection, script-initiated external links, network and storage are restricted. Authenticated ArtifactViewer capability stays separate. Platform execution and untested cases are reported separately in the PR.",
    "impact": "Linux interactive HTML cannot be called delivered until the actual packaged engine and native preview pass acceptance.",
    "size": "M"
   },
@@ -16274,7 +16274,7 @@
      "needle": "onActivate(row.onAuxiliary)"
     }
    ],
-   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. Actual native engines/IPC, platform plugin interactions and packaged acceptance remain pending; the existing Linux browser fallback is retained when no native service is installed.",
+   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. An exit attempt gates new windows and preserves rollback when a child cannot prepare. Platform engines, IPC and packaged runtime acceptance are reported separately; the Linux browser fallback remains when no native service is installed.",
    "impact": "Native acceptance is still required on desktop platforms.",
    "size": "L"
   },
@@ -17539,7 +17539,7 @@
      "needle": "onActivate(row.onAuxiliary)"
     }
    ],
-   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. Actual native engines/IPC, platform plugin interactions and packaged acceptance remain pending; the existing Linux browser fallback is retained when no native service is installed.",
+   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. An exit attempt gates new windows and preserves rollback when a child cannot prepare. Platform engines, IPC and packaged runtime acceptance are reported separately; the Linux browser fallback remains when no native service is installed.",
    "impact": "Native acceptance is still required on desktop platforms.",
    "size": "L"
   },
