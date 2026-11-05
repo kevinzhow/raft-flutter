@@ -1,3 +1,4 @@
+import 'native_surface_occlusion.dart';
 import 'hover_region.dart';
 
 import 'dart:async';
@@ -552,7 +553,9 @@ class _RaftTooltipState extends State<RaftTooltip>
                             scale: closing
                                 ? .99 + .01 * value
                                 : .97 + .03 * value,
-                            child: _TooltipSurface(recipe, widget.message),
+                            child: RaftNativeSurfaceOccluder(
+                              child: _TooltipSurface(recipe, widget.message),
+                            ),
                           ),
                         ),
                       ),
@@ -561,9 +564,11 @@ class _RaftTooltipState extends State<RaftTooltip>
                           id: 1,
                           child: Opacity(
                             opacity: value,
-                            child: CustomPaint(
-                              size: const Size(12, 6),
-                              painter: _TooltipArrow(recipe, placement),
+                            child: RaftNativeSurfaceOccluder(
+                              child: CustomPaint(
+                                size: const Size(12, 6),
+                                painter: _TooltipArrow(recipe, placement),
+                              ),
                             ),
                           ),
                         ),

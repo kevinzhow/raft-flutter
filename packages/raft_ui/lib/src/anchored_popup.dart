@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'native_surface_occlusion.dart';
+
 /// Retains the caller's typography and local themes across a popover route.
 /// Capture before pushing the route, then wrap content built below its themes.
 CapturedThemes captureRaftPopoverThemes(
@@ -133,7 +135,9 @@ class _RaftAnchoredPopupState extends State<RaftAnchoredPopup>
         snap: widget.snapToPixel,
         insets: insets,
       ),
-      child: SingleChildScrollView(child: widget.child),
+      child: RaftNativeSurfaceOccluder(
+        child: SingleChildScrollView(child: widget.child),
+      ),
     );
   }
 }
