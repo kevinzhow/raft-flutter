@@ -235,10 +235,6 @@ void NativeView::Handle(FlMethodCall* call) {
     else Error(call, "snapshot_unavailable");
     return;
   }
-  if (g_str_equal(method, "hasFocus")) {
-    g_autoptr(FlValue) value = fl_value_new_bool(gtk_widget_has_focus(GTK_WIDGET(web_)));
-    Reply(call, value); return;
-  }
   if (g_str_equal(method, "inspect")) {
     g_autoptr(FlValue) state = fl_value_new_map();
     fl_value_set_string_take(state, "id", fl_value_new_int(id_));

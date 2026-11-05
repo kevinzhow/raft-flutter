@@ -24,13 +24,7 @@ p{font-size:22px;line-height:1.7;margin:12px 0}h2{font-size:22px;margin:0}
 </div><div class="spacer"></div>
 <section class="tail" id="gamma"><h2>底部定位区</h2><p>滚动之后点击评论中的位置，应该回到所选区域并显示高亮。</p></section>
 <script>
-window.qaClicks=[];window.qaInputs=[];window.qaAllInputs=[];window.qaReflows=0;
-for(const type of ['pointerdown','mousedown','pointerup','mouseup','click','keydown','keyup'])document.addEventListener(type,e=>{
- qaAllInputs.push({type,id:e.target.id||null,tag:e.target.tagName,trusted:e.isTrusted,
-  clientX:e.clientX,clientY:e.clientY,screenX:e.screenX,screenY:e.screenY,
-  key:e.key,defaultPrevented:e.defaultPrevented});
- if(qaAllInputs.length>48)qaAllInputs.shift();
-},true);
+window.qaClicks=[];window.qaInputs=[];window.qaReflows=0;
 for(const type of ['pointerdown','pointerup','click'])document.addEventListener(type,e=>{
  const id=e.target.closest('button')?.id;
  if(id){qaInputs.push({type,id,trusted:e.isTrusted});if(qaInputs.length>24)qaInputs.shift()}

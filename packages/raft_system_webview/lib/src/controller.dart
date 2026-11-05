@@ -64,10 +64,6 @@ class SystemWebViewController {
   Future<Map<Object?, Object?>?> inspect() =>
       _invoke<Map<Object?, Object?>>('inspect');
 
-  /// Confirms current GTK focus without treating a queued event as ownership.
-  Future<bool> hasNativeFocus() async =>
-      await _invoke<bool>('hasFocus') == true;
-
   Future<void> updateRegionOverlay(Map<String, Object?> frame) =>
       _invoke<void>('regionOverlay', frame);
 

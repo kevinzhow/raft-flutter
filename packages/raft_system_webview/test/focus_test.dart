@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,11 +9,7 @@ void main() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   const channel = MethodChannel('app.raft/system_webview/17');
   const codec = StandardMethodCodec();
-  Completer<bool>? confirmation;
-  var nativeFocused = true;
   setUp(() {
-    confirmation = null;
-    nativeFocused = true;
     messenger.setMockMethodCallHandler(
       SystemWebViewController.rootChannel,
       (_) async => {
@@ -25,12 +19,7 @@ void main() {
         'sandboxed': true,
       },
     );
-    messenger.setMockMethodCallHandler(channel, (call) async {
-      if (call.method == 'hasFocus') {
-        return confirmation?.future ?? nativeFocused;
-      }
-      return null;
-    });
+    messenger.setMockMethodCallHandler(channel, (_) async => null);
   });
   tearDown(() {
     messenger.setMockMethodCallHandler(
@@ -49,18 +38,17 @@ void main() {
   Future<void> mount(
     WidgetTester tester,
     SystemWebViewController controller,
-    FocusNode editor,
-    FocusNode other,
-  ) async {
+    FocusNode editor, {
+    bool visible = true,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: Column(
             children: [
               TextField(focusNode: editor),
-              TextField(focusNode: other),
               Expanded(
-                child: SystemWebView(controller: controller, visible: true),
+                child: SystemWebView(controller: controller, visible: visible),
               ),
             ],
           ),
@@ -68,81 +56,40 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.tap(find.byType(TextField).first);
+    await tester.tap(find.byType(TextField));
     await tester.pump();
     expect(editor.hasFocus, true);
   }
 
-  testWidgets('a native click releases the previous Flutter editor focus', (
+  testWidgets('native and Flutter input hand off focus in event order', (
     tester,
   ) async {
     final controller = await SystemWebViewController.create();
-    final editor = FocusNode(), other = FocusNode();
-    await mount(tester, controller, editor, other);
-    await event(false);
-    await tester.pump();
-    expect(editor.hasFocus, true);
+    final editor = FocusNode();
+    await mount(tester, controller, editor);
     await event(true);
     await tester.pump();
     expect(editor.hasFocus, false);
+    await event(false);
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    expect(editor.hasFocus, true);
     await tester.pumpWidget(const SizedBox());
     await controller.dispose();
     editor.dispose();
-    other.dispose();
   });
 
-  testWidgets('a delayed native confirmation preserves a newer editor', (
+  testWidgets('a hidden native pane cannot take current editor focus', (
     tester,
   ) async {
     final controller = await SystemWebViewController.create();
-    final editor = FocusNode(), other = FocusNode();
-    await mount(tester, controller, editor, other);
-    confirmation = Completer<bool>();
-    await event(true);
-    await tester.pump();
-    await tester.tap(find.byType(TextField).last);
-    await tester.pump();
-    expect(other.hasFocus, true);
-    confirmation!.complete(true);
-    await tester.pump();
-    expect(other.hasFocus, true);
-    await tester.pumpWidget(const SizedBox());
-    await controller.dispose();
-    editor.dispose();
-    other.dispose();
-  });
-
-  testWidgets('a stale native focus event cannot clear the current editor', (
-    tester,
-  ) async {
-    final controller = await SystemWebViewController.create();
-    final editor = FocusNode(), other = FocusNode();
-    await mount(tester, controller, editor, other);
-    nativeFocused = false;
+    final editor = FocusNode();
+    await mount(tester, controller, editor, visible: false);
     await event(true);
     await tester.pump();
     expect(editor.hasFocus, true);
     await tester.pumpWidget(const SizedBox());
     await controller.dispose();
     editor.dispose();
-    other.dispose();
-  });
-
-  testWidgets('retiring a native pane cancels its pending focus confirmation', (
-    tester,
-  ) async {
-    final controller = await SystemWebViewController.create();
-    final editor = FocusNode(), other = FocusNode();
-    await mount(tester, controller, editor, other);
-    confirmation = Completer<bool>();
-    await event(true);
-    await tester.pump();
-    await controller.dispose();
-    confirmation!.complete(true);
-    await tester.pump();
-    expect(editor.hasFocus, true);
-    await tester.pumpWidget(const SizedBox());
-    editor.dispose();
-    other.dispose();
   });
 }

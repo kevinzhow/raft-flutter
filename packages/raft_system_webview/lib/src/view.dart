@@ -47,7 +47,7 @@ class _SystemWebViewState extends State<SystemWebView>
       (event) {
         if (owner != widget.controller) return;
         if (event['type'] == 'focus' && event['focused'] == true) {
-          unawaited(_releaseFlutterFocus(owner));
+          _releaseFlutterFocus(owner);
         }
         if (event['type'] == 'closed') {
           _snapshot.dispose();
@@ -76,7 +76,7 @@ class _SystemWebViewState extends State<SystemWebView>
       _routeActive &&
       !(widget.isOccluded?.call(_last.frame) ?? false);
 
-  Future<void> _releaseFlutterFocus(SystemWebViewController owner) async {
+  void _releaseFlutterFocus(SystemWebViewController owner) {
     if (!_acceptsNativeFocus(owner)) return;
     final focus = FocusManager.instance.primaryFocus;
     final focusContext = focus?.context;
@@ -85,19 +85,10 @@ class _SystemWebViewState extends State<SystemWebView>
         View.maybeOf(focusContext) != View.maybeOf(context)) {
       return;
     }
-    try {
-      final nativeFocused = await owner.hasNativeFocus();
-      // The host reply may follow another real Flutter click or pane removal.
-      // Never clear that newer editor's focus because of an older GTK event.
-      if (nativeFocused &&
-          _acceptsNativeFocus(owner) &&
-          identical(FocusManager.instance.primaryFocus, focus) &&
-          focus.hasFocus) {
-        focus.unfocus();
-      }
-    } catch (_) {
-      // A retired or unsupported host cannot take focus from the application.
-    }
+    // GTK emits focus-out before forwarding a real Flutter-side press. Handle
+    // its notifications synchronously, without a second round-trip that can
+    // clear an editor the user has already clicked again.
+    focus.unfocus();
   }
 
   void _snapshotChanged() {
