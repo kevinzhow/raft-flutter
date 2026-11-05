@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -114,4 +117,77 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+  testWidgets('a resize frame never paints the preceding viewport stretched', (
+    tester,
+  ) async {
+    final controller = await SystemWebViewController.create();
+    final boundary = GlobalKey();
+    var width = 300.0;
+    late StateSetter change;
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: RepaintBoundary(
+            key: boundary,
+            child: SizedBox(
+              width: 300,
+              height: 200,
+              child: ColoredBox(
+                color: const Color(0xffffffff),
+                child: StatefulBuilder(
+                  builder: (context, set) {
+                    change = set;
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: SizedBox(
+                        width: width,
+                        height: 200,
+                        child: SystemWebView(
+                          controller: controller,
+                          visible: true,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    for (var i = 0; i < 10; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+      if (tester.widget<RawImage>(find.byType(RawImage)).image != null) break;
+    }
+    expect(tester.widget<RawImage>(find.byType(RawImage)).image, isNotNull);
+    Future<List<int>> pixel() async {
+      final image =
+          await (boundary.currentContext!.findRenderObject()!
+                  as RenderRepaintBoundary)
+              .toImage(pixelRatio: 1);
+      try {
+        final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        return data!.buffer.asUint8List(data.offsetInBytes, 4).toList();
+      } finally {
+        image.dispose();
+      }
+    }
+
+    expect(await tester.runAsync(pixel), [255, 0, 0, 255]);
+    delayed = Completer<Object?>();
+    change(() => width = 150);
+    await tester.pump();
+    // This reads the just-painted layer, before another Flutter rebuild can
+    // replace the old child. A post-frame cache clear alone cannot pass it.
+    expect(await tester.runAsync(pixel), [255, 255, 255, 255]);
+    delayed!.complete(packet(sequence));
+    await controller.dispose();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

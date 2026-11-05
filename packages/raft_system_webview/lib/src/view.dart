@@ -33,6 +33,7 @@ class _SystemWebViewState extends State<SystemWebView>
   bool _foreground = true;
   bool _routeActive = true;
   Size _viewportSize = Size.zero;
+  Size _imageViewport = Size.zero;
   StreamSubscription<Map<Object?, Object?>>? _events;
   late SystemWebViewSnapshotCache _snapshot;
 
@@ -63,6 +64,7 @@ class _SystemWebViewState extends State<SystemWebView>
   }
 
   void _snapshotChanged() {
+    _imageViewport = _snapshot.image == null ? Size.zero : _viewportSize;
     if (!mounted) return;
     if (WidgetsBinding.instance.schedulerPhase ==
         SchedulerPhase.persistentCallbacks) {
@@ -185,6 +187,7 @@ class _SystemWebViewState extends State<SystemWebView>
   Widget build(BuildContext context) => _GeometryObserver(
     onLayout: _report,
     onViewportSize: _viewportMeasured,
+    snapshotViewport: _imageViewport,
     isOccluded: widget.isOccluded,
     child: widget.visible && !widget.controller.closed
         ? RawImage(image: _snapshot.image, fit: BoxFit.fill) // ignore: raft_lints/avoid_raw_image_decode -- Private bounded native snapshot cache owns this image; no ImageProvider or shared ImageCache entry is created.
@@ -196,15 +199,17 @@ class _GeometryObserver extends SingleChildRenderObjectWidget {
   const _GeometryObserver({
     required this.onLayout,
     required this.onViewportSize,
+    required this.snapshotViewport,
     this.isOccluded,
     required super.child,
   });
   final bool Function(Rect viewLogicalBounds)? isOccluded;
   final ValueChanged<SystemWebViewLayout> onLayout;
   final ValueChanged<Size> onViewportSize;
+  final Size snapshotViewport;
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _GeometryBox(onLayout, onViewportSize, isOccluded);
+      _GeometryBox(onLayout, onViewportSize, snapshotViewport, isOccluded);
   @override
   void updateRenderObject(
     BuildContext context,
@@ -212,16 +217,23 @@ class _GeometryObserver extends SingleChildRenderObjectWidget {
   ) {
     renderObject.onLayout = onLayout;
     renderObject.onViewportSize = onViewportSize;
+    renderObject.snapshotViewport = snapshotViewport;
     renderObject.isOccluded = isOccluded;
     renderObject.markNeedsPaint();
   }
 }
 
 class _GeometryBox extends RenderProxyBox {
-  _GeometryBox(this.onLayout, this.onViewportSize, this.isOccluded);
+  _GeometryBox(
+    this.onLayout,
+    this.onViewportSize,
+    this.snapshotViewport,
+    this.isOccluded,
+  );
   bool Function(Rect viewLogicalBounds)? isOccluded;
   ValueChanged<SystemWebViewLayout> onLayout;
   ValueChanged<Size> onViewportSize;
+  Size snapshotViewport;
   bool _scheduled = false;
   @override
   bool get isRepaintBoundary => true;
@@ -308,7 +320,7 @@ class _GeometryBox extends RenderProxyBox {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    super.paint(context, offset);
+    if (snapshotViewport == size) super.paint(context, offset);
     if (_scheduled) return;
     _scheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
