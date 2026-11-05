@@ -65,4 +65,57 @@ void main() {
     expect(observed, const Rect.fromLTWH(30, 40, 100, 80));
     expect(result.visible, false);
   });
+  test(
+    'a pane fully inside actual rounded safe bounds keeps its rectangle',
+    () {
+      final clip = RRect.fromRectAndRadius(
+        const Rect.fromLTWH(0, 0, 400, 300),
+        const Radius.circular(20),
+      );
+      expect(
+        SystemWebViewLayout.roundedClipForFrame(
+          frameInClip: const Rect.fromLTWH(10, 40, 380, 240),
+          clip: clip,
+          clipToView: Matrix4.translationValues(50, 60, 0),
+        ),
+        const Rect.fromLTWH(50, 60, 400, 300),
+      );
+    },
+  );
+  test('a pane intersecting a rounded corner stays hidden', () {
+    final clip = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(0, 0, 400, 300),
+      const Radius.circular(20),
+    );
+    expect(
+      SystemWebViewLayout.roundedClipForFrame(
+        frameInClip: const Rect.fromLTWH(0, 40, 400, 260),
+        clip: clip,
+        clipToView: Matrix4.identity(),
+      ),
+      isNull,
+    );
+  });
+  test('rotated rounded ancestors and nonfinite frames are never admitted', () {
+    final clip = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(0, 0, 400, 300),
+      const Radius.circular(20),
+    );
+    expect(
+      SystemWebViewLayout.roundedClipForFrame(
+        frameInClip: const Rect.fromLTWH(10, 40, 380, 240),
+        clip: clip,
+        clipToView: Matrix4.rotationZ(.1),
+      ),
+      isNull,
+    );
+    expect(
+      SystemWebViewLayout.roundedClipForFrame(
+        frameInClip: const Rect.fromLTRB(double.nan, 40, 390, 280),
+        clip: clip,
+        clipToView: Matrix4.identity(),
+      ),
+      isNull,
+    );
+  });
 }

@@ -13,6 +13,48 @@ class SystemWebViewLayout {
     'clip': [clip.left, clip.top, clip.width, clip.height],
   };
 
+  /// A rectangular GTK child may sit below a rounded Flutter ancestor only
+  /// when its entire original frame fits the actual RRect's safe inner box.
+  /// This accepts no curved edge, custom shape, rotation or perspective.
+  static Rect? roundedClipForFrame({
+    required Rect frameInClip,
+    required RRect clip,
+    required Matrix4 clipToView,
+  }) {
+    if (!frameInClip.isFinite ||
+        frameInClip.isEmpty ||
+        !clip.outerRect.isFinite ||
+        clip.outerRect.isEmpty ||
+        [
+          clip.tlRadiusX,
+          clip.tlRadiusY,
+          clip.trRadiusX,
+          clip.trRadiusY,
+          clip.blRadiusX,
+          clip.blRadiusY,
+          clip.brRadiusX,
+          clip.brRadiusY,
+        ].any((v) => !v.isFinite || v < 0))
+      return null;
+    const identity = <double>[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    for (var i = 0; i < 16; i++) {
+      final value = clipToView.storage[i];
+      if (!value.isFinite ||
+          (i != 12 && i != 13 && (value - identity[i]).abs() > 1e-7))
+        return null;
+    }
+    final safe = clip.scaleRadii().safeInnerRect;
+    if (safe.isEmpty ||
+        frameInClip.left < safe.left ||
+        frameInClip.top < safe.top ||
+        frameInClip.right > safe.right ||
+        frameInClip.bottom > safe.bottom)
+      return null;
+    return clip.outerRect.shift(
+      Offset(clipToView.storage[12], clipToView.storage[13]),
+    );
+  }
+
   static SystemWebViewLayout resolve({
     required Rect local,
     required Matrix4 transform,
