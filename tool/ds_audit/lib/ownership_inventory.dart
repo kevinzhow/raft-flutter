@@ -76,6 +76,11 @@ class OwnershipInventory {
       frameworkType(e, name) ||
       e.allSupertypes.any((t) => frameworkType(t.element, name));
 
+  bool paintOwnerType(InterfaceElement e) =>
+      subtype(e, 'State') ||
+      subtype(e, 'CustomPainter') ||
+      subtype(e, 'RenderObject');
+
   bool widgetType(DartType? type) {
     if (type is! InterfaceType) return false;
     if (subtype(type.element, 'Widget')) return true;
@@ -331,7 +336,8 @@ class OwnershipVisitor extends RecursiveAstVisitor<void> {
   void visitInstanceCreationExpression(InstanceCreationExpression node) {
     final constructor = node.constructorName.element;
     final e = constructor?.enclosingElement;
-    if (e != null && inventory.subtype(e, 'Widget')) {
+    if (e != null &&
+        (inventory.subtype(e, 'Widget') || inventory.paintOwnerType(e))) {
       reference(node, e, kind: 'constructor_call');
     }
     if (e != null &&
@@ -421,9 +427,7 @@ class OwnershipVisitor extends RecursiveAstVisitor<void> {
     if (e != null) {
       if (inventory.subtype(e, 'Widget')) {
         declare(node, e, 'widget');
-      } else if (inventory.subtype(e, 'State') ||
-          inventory.subtype(e, 'CustomPainter') ||
-          inventory.subtype(e, 'RenderObject')) {
+      } else if (inventory.paintOwnerType(e)) {
         declare(node, e, 'paint_owner');
       }
       final id = inventory.idOf(e);

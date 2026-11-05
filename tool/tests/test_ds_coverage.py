@@ -432,5 +432,67 @@ class ResolvedReviewRegressionTest(unittest.TestCase):
         self.assertEqual(self.wrapper_result('ActualWrapper')['errors'], [])
 
 
+class ResolvedPaintOwnerConstructorTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        loader = importlib.machinery.SourceFileLoader('ds_paint_owner_cli', str(ROOT / 'tool/ds-audit'))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        cli = importlib.util.module_from_spec(spec)
+        loader.exec_module(cli)
+        cls.file = 'packages/raft_ui/test/fixtures/ds_audit_ownership/paint_owner_constructors.dart'
+        cls.report = cli.run_scanner([cls.file], contract=[], bypass=[], inventory=True,
+                                     inventory_paths=[cls.file])['ownership']
+
+    def test_semantic_painter_state_and_render_constructors_are_references(self):
+        declarations = {row['id']: row for row in self.report['declarations']}
+        for name, owner in [('_RealPainter', 'CanonicalPaintWidget.build'),
+                            ('_PaintState', 'StatefulMarker.createState'),
+                            ('_RealRender', 'RenderMarker.createRenderObject')]:
+            target = self.file + '#class:' + name
+            self.assertEqual(declarations[target]['kind'], 'paint_owner')
+            refs = [row for row in self.report['references']
+                    if row['target'] == target and row['kind'] == 'constructor_call']
+            self.assertTrue(refs, target)
+            self.assertTrue(all(row['owner'] == self.file + '#method:' + owner for row in refs))
+        painter = [row for row in self.report['references']
+                   if row['target'] == self.file + '#class:_RealPainter']
+        self.assertEqual(len(painter), 2, 'Default and named constructors resolve to the same painter')
+
+    def internal_part(self, owner):
+        painter = self.file + '#class:_RealPainter'
+        canonical = self.file + '#class:' + owner
+        pending = {'role': 'unresolved', 'familyRefs': [], 'owner': 'fixture',
+                   'reason': 'Fixture does not establish a mounted visual claim.'}
+        rows = {row['id']: dict(pending) for row in self.report['declarations']}
+        rows[canonical] = {'role': 'canonical_component', 'familyRefs': ['paint-fixture'], 'owner': 'fixture'}
+        rows[painter] = {'role': 'internal_part', 'familyRefs': ['paint-fixture'],
+                         'owner': 'fixture', 'delegatesTo': [canonical]}
+        ledger = {'designSystemCoverage': {
+            'schemaVersion': 1, 'canonicalRegistry': 'tool/ds-audit-families.json',
+            'declarations': rows, 'entries': {}, 'requirements': {}, 'knownStateAtoms': {},
+            'stateUses': {}, 'evidence': {}, 'currentClaims': {},
+        }}
+        registry = {'families': {'paint-fixture': {'canonical': [owner], 'deprecated': {},
+                    'canonicalBindings': {owner: {'declarationId': canonical, 'role': 'public_api'}}}},
+                    'recipes': {}}
+        return coverage.validate(ROOT, registry, ledger, self.report, [self.file])
+
+    def test_canonical_constructor_proves_the_internal_painter_owner(self):
+        result = self.internal_part('CanonicalPaintWidget')
+        self.assertEqual(result['errors'], [])
+        self.assertEqual(result['visualPasses'], 0)
+
+    def test_a_type_annotation_cannot_prove_an_internal_painter_owner(self):
+        result = self.internal_part('AnnotationOnlyPaintWidget')
+        self.assertTrue(any('canonical owner does not resolve to this internal part' in error
+                            for error in result['errors']), result)
+        self.assertEqual(result['visualPasses'], 0)
+
+    def test_local_custom_painter_name_is_not_a_framework_paint_owner(self):
+        identity = self.file + '#class:CustomPainter'
+        self.assertFalse(any(row['id'] == identity for row in self.report['declarations']))
+        self.assertFalse(any(row['target'] == identity for row in self.report['references']))
+
+
 if __name__ == '__main__':
     unittest.main()
