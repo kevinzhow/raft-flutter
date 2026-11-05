@@ -20,9 +20,16 @@ void main() {
 
   test('app start-up installs the resolver and the process-wide overrides', () {
     final main = read('apps/raft_flutter/lib/main.dart');
-    expect(main, contains('startSystemProxy('));
-    // Avatars are fetched by our own proxy-aware fetcher and kept on disk.
-    expect(main, contains('installAvatarImageCache('));
+    expect(main, contains('await startSystemProxy('));
+    // Cache bootstrap installs the proxy-aware avatar fetcher after the hook.
+    expect(main, contains("import 'app_cache_bootstrap.dart';"));
+    expect(main, contains('await initializeAppCaches('));
+    expect(
+      main.indexOf('await initializeAppCaches('),
+      greaterThan(main.indexOf('await startSystemProxy(')),
+    );
+    final caches = read('apps/raft_flutter/lib/app_cache_bootstrap.dart');
+    expect(caches, contains('installAvatarImageCache('));
     final boot = read(
       'apps/raft_flutter/lib/platform/system_proxy_bootstrap.dart',
     );
