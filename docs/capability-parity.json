@@ -11693,7 +11693,7 @@
    "status": "partial",
    "webEntry": "MediaPreviewHost HTML surface",
    "gate": "preview gate enabled",
-   "flutterEntry": "attachment_html_desktop.dart selects isolated WebView2 on Windows and WPE on Linux; WK remains on its existing renderer; attachment_html_preview.dart owns the preview lifecycle",
+   "flutterEntry": "attachment_html_desktop.dart selects WebView2 on Windows; attachment_html_linux.dart uses distribution WebKitGTK4.1/GTK3 on Linux; Android and WK remain on their existing renderers",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/platform/attachment_html_desktop.dart",
@@ -11704,8 +11704,8 @@
      "needle": "WebViewPlatform.instance != null"
     }
    ],
-   "justification": "Windows uses isolated ephemeral WebView2 with user-gesture-only external-link mediation. Linux uses sandboxed WPE with contained runtime paths, matching packaged image loaders and a normal portable launcher. File selection, script-initiated external links, network and storage are restricted. Authenticated ArtifactViewer capability stays separate. Platform execution and untested cases are reported separately in the PR.",
-   "impact": "Linux interactive HTML cannot be called delivered until the actual packaged engine and native preview pass acceptance.",
+   "justification": "Linux links the distribution WebKitGTK 4.1 engine and uses an ephemeral sandboxed context. App-owned native adapters mediate trusted main-frame links, input, bounded snapshots and SDK-owned region overlays. No browser engine or private GTK/GLib/media closure is built or shipped. Windows keeps ephemeral WebView2; mobile and Apple renderers are unchanged. File selection, script-driven external links, network and storage remain restricted. Current native prototype evidence and final application/package acceptance are distinct.",
+   "impact": "System-backend Linux application and thin distribution package acceptance must complete before this replacement can be called delivered.",
    "size": "M"
   },
   {
