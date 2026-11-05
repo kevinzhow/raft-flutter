@@ -9,8 +9,9 @@ import 'geometry.dart';
 import 'snapshot.dart';
 
 /// A Flutter layout placeholder for a native GTK widget. [visible] is a
-/// caller-owned fence: keep it false for loading/error surfaces and whenever a
-/// Flutter overlay covers the report. Native GTK cannot paint behind Flutter.
+/// caller-owned fence: keep it false for loading/error surfaces. Interactive
+/// Flutter overlays hide native input. Passive overlays retain mapped input
+/// while Flutter paints the report snapshot beneath the overlay.
 class SystemWebView extends StatefulWidget {
   const SystemWebView({
     super.key,
@@ -18,11 +19,13 @@ class SystemWebView extends StatefulWidget {
     required this.visible,
     this.occlusion,
     this.isOccluded,
+    this.isPaintOccluded,
   });
   final SystemWebViewController controller;
   final bool visible;
   final Listenable? occlusion;
   final bool Function(Rect viewLogicalBounds)? isOccluded;
+  final bool Function(Rect viewLogicalBounds)? isPaintOccluded;
   @override
   State<SystemWebView> createState() => _SystemWebViewState();
 }
@@ -171,7 +174,10 @@ class _SystemWebViewState extends State<SystemWebView>
     unawaited(() async {
       try {
         await owner.layout(effective);
-        if (mounted && owner == widget.controller && viewportChanged) {
+        if (mounted &&
+            owner == widget.controller &&
+            (viewportChanged ||
+                previous.paintOccluded != effective.paintOccluded)) {
           _refreshSnapshot();
         }
       } catch (_) {
@@ -217,6 +223,7 @@ class _SystemWebViewState extends State<SystemWebView>
     onViewportSize: _viewportMeasured,
     snapshotViewport: _imageViewport,
     isOccluded: widget.isOccluded,
+    isPaintOccluded: widget.isPaintOccluded,
     child: widget.visible && !widget.controller.closed
         ? RawImage(image: _snapshot.image, fit: BoxFit.fill) // ignore: raft_lints/avoid_raw_image_decode -- Private bounded native snapshot cache owns this image; no ImageProvider or shared ImageCache entry is created.
         : const SizedBox.shrink(),
@@ -229,15 +236,22 @@ class _GeometryObserver extends SingleChildRenderObjectWidget {
     required this.onViewportSize,
     required this.snapshotViewport,
     this.isOccluded,
+    this.isPaintOccluded,
     required super.child,
   });
   final bool Function(Rect viewLogicalBounds)? isOccluded;
+  final bool Function(Rect viewLogicalBounds)? isPaintOccluded;
   final ValueChanged<SystemWebViewLayout> onLayout;
   final ValueChanged<Size> onViewportSize;
   final Size snapshotViewport;
   @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _GeometryBox(onLayout, onViewportSize, snapshotViewport, isOccluded);
+  RenderObject createRenderObject(BuildContext context) => _GeometryBox(
+    onLayout,
+    onViewportSize,
+    snapshotViewport,
+    isOccluded,
+    isPaintOccluded,
+  );
   @override
   void updateRenderObject(
     BuildContext context,
@@ -247,6 +261,7 @@ class _GeometryObserver extends SingleChildRenderObjectWidget {
     renderObject.onViewportSize = onViewportSize;
     renderObject.snapshotViewport = snapshotViewport;
     renderObject.isOccluded = isOccluded;
+    renderObject.isPaintOccluded = isPaintOccluded;
     renderObject.markNeedsPaint();
   }
 }
@@ -257,8 +272,10 @@ class _GeometryBox extends RenderProxyBox {
     this.onViewportSize,
     this.snapshotViewport,
     this.isOccluded,
+    this.isPaintOccluded,
   );
   bool Function(Rect viewLogicalBounds)? isOccluded;
+  bool Function(Rect viewLogicalBounds)? isPaintOccluded;
   ValueChanged<SystemWebViewLayout> onLayout;
   ValueChanged<Size> onViewportSize;
   Size snapshotViewport;
@@ -339,6 +356,7 @@ class _GeometryBox extends RenderProxyBox {
         viewport: Offset.zero & root.size,
         clips: clips,
         isOccluded: isOccluded,
+        isPaintOccluded: isPaintOccluded,
         scale:
             root.configuration.devicePixelRatio /
             root.flutterView.devicePixelRatio,

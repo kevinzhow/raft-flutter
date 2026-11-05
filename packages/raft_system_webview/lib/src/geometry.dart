@@ -4,13 +4,22 @@ import 'package:flutter/rendering.dart';
 /// Unsupported transforms and clips hide the native view instead of letting
 /// native painting or pointer input escape the Flutter content rectangle.
 class SystemWebViewLayout {
-  const SystemWebViewLayout(this.frame, this.clip);
+  const SystemWebViewLayout(
+    this.frame,
+    this.clip, {
+    this.paintOccluded = false,
+  });
   static const hidden = SystemWebViewLayout(Rect.zero, Rect.zero);
   final Rect frame, clip;
+
+  /// Keep the mapped GTK input surface while Flutter paints a passive overlay
+  /// over the private report snapshot. Interactive overlays still hide it.
+  final bool paintOccluded;
   bool get visible => !frame.isEmpty && !clip.isEmpty;
   Map<String, Object> get data => {
     'frame': [frame.left, frame.top, frame.width, frame.height],
     'clip': [clip.left, clip.top, clip.width, clip.height],
+    'paintOccluded': paintOccluded,
   };
 
   /// A rectangular GTK child may sit below a rounded Flutter ancestor only
@@ -62,6 +71,7 @@ class SystemWebViewLayout {
     required Iterable<Rect> clips,
     required double scale,
     bool Function(Rect viewLogicalBounds)? isOccluded,
+    bool Function(Rect viewLogicalBounds)? isPaintOccluded,
   }) {
     if (!local.isFinite || local.isEmpty || !scale.isFinite || scale <= 0) {
       return hidden;
@@ -91,7 +101,11 @@ class SystemWebViewLayout {
       r.width * scale,
       r.height * scale,
     );
-    final result = SystemWebViewLayout(convert(frame), convert(clip));
+    final result = SystemWebViewLayout(
+      convert(frame),
+      convert(clip),
+      paintOccluded: isPaintOccluded?.call(frame) ?? false,
+    );
     if ([result.frame, result.clip].any(
       (r) => [r.left, r.top, r.right, r.bottom].any((n) => n.abs() > 1000000),
     )) {
@@ -104,7 +118,8 @@ class SystemWebViewLayout {
   bool operator ==(Object other) =>
       other is SystemWebViewLayout &&
       other.frame == frame &&
-      other.clip == clip;
+      other.clip == clip &&
+      other.paintOccluded == paintOccluded;
   @override
-  int get hashCode => Object.hash(frame, clip);
+  int get hashCode => Object.hash(frame, clip, paintOccluded);
 }
