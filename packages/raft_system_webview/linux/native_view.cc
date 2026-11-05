@@ -257,7 +257,7 @@ void NativeView::Handle(FlMethodCall* call) {
       fl_value_set_string_take(row,"eventWidgetType",fl_value_new_string(sample.widget_type.c_str()));
       fl_value_append_take(inputs,row);
     }
-    fl_value_set_string_take(state,"recentInput",inputs);
+    fl_value_set_string_take(state,"recentInput",g_steal_pointer(&inputs));
     fl_value_set_string_take(state, "layoutSequence", fl_value_new_int(sequence_));
     auto rect=[](const GdkRectangle& r) {
       FlValue* values=fl_value_new_list();
