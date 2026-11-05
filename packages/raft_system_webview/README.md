@@ -44,14 +44,21 @@ those overlays close. Capture/region drawing uses its own native overlay adapter
 
 The first document is one exact nonredirected host GET. Later navigation is
 cancelled unless the system engine reports a real link-click gesture and the
-small application WebExtension reports the matching trusted main-frame DOM click.
+small application WebExtension reports the matching trusted main-frame DOM click
+for an empty or `_self` resolved target. Resolved targets include `base[target]`;
+named frames, `_parent`, `_top` and unknown targets are denied without a proof.
 The extension uses a private ScriptWorld, deletes its temporary private global
 after installing its closure, and exports no main-world object, app callback or
 UserContentManager message handler. Script, iframe, redirect, POST, replay,
 unknown, expired and mismatched actions are refused. A single native decision
 may wait at most 500 ms for its matching proof; a proof is usable once within
-750 ms. An external link is cancelled in the renderer before being handed to
-the app's existing URL policy; the report remains open. Same-document fragments
+750 ms. The sandbox deliberately denies popups, so a `_blank` link may produce
+no navigation action. Its private-world trusted main-frame click prevents the
+default and hands off that exact link once to the app's existing URL policy,
+without opening a popup or inventing a navigation action. Every proof includes
+the resolved target and a monotonically increasing trusted-click sequence.
+An external link is cancelled in the renderer before handoff; the report remains
+open. Same-document fragments
 may stay inside the renderer. The module lives at
 `lib/raft-webview/libraft_system_webview_extension.so`, dynamically linked only
 to system libraries and located relative to the loaded application plugin.

@@ -45,19 +45,29 @@ void TrustedNavigation::Complete() {
   Cancel();
   // Cancel before handing out the callback: it cannot be replayed by a page
   // script or by reentrant application code after a real click.
-  if (matched && WithoutFragment(requested) != WithoutFragment(document_)) handoff_(requested);
+  if (matched && WithoutFragment(requested) != WithoutFragment(document_)) handoff_(requested, "matched-native-self-link");
 }
 bool TrustedNavigation::Message(WebKitUserMessage* message) {
-  if (g_strcmp0(webkit_user_message_get_name(message), "raft-attachment-trusted-link-v1")) return false;
+  if (g_strcmp0(webkit_user_message_get_name(message), "raft-attachment-trusted-link-v2")) return false;
   GVariant* value = webkit_user_message_get_parameters(message);
-  if (!value || !g_variant_is_of_type(value, G_VARIANT_TYPE("(sttss)"))) { Cancel(); return true; }
-  const char *nonce, *frame_uri, *target; guint64 page, frame;
-  g_variant_get(value, "(&stt&s&s)", &nonce, &page, &frame, &frame_uri, &target);
+  if (!value || !g_variant_is_of_type(value, G_VARIANT_TYPE("(sttssst)"))) { Cancel(); return true; }
+  const char *nonce, *frame_uri, *target, *target_frame; guint64 page, frame, sequence;
+  g_variant_get(value, "(&stt&s&s&st)", &nonce, &page, &frame, &frame_uri, &target, &target_frame, &sequence);
   (void)frame;
   if (nonce_ != nonce || page != webkit_web_view_get_page_id(view_) ||
       WithoutFragment(frame_uri) != WithoutFragment(document_) ||
       WithoutFragment(webkit_web_view_get_uri(view_) ? webkit_web_view_get_uri(view_) : "") != WithoutFragment(document_) ||
-      !Http(target)) { Cancel(); return true; }
+      !Http(target) || sequence <= trusted_sequence_ ||
+      (g_strcmp0(target_frame, "") && g_ascii_strcasecmp(target_frame, "_self") &&
+       g_ascii_strcasecmp(target_frame, "_blank"))) { Cancel(); return true; }
+  trusted_sequence_ = sequence;
+  if (!g_ascii_strcasecmp(target_frame, "_blank")) {
+    // sandbox allow-scripts deliberately excludes allow-popups, so WebKit may
+    // never produce NEW_WINDOW_ACTION. The private-world native main-frame
+    // trusted click is the authority; it already prevented default. No popup
+    // or invented navigation action is created to hand the URL to its owner.
+    Cancel(); handoff_(target, "trusted-main-frame-blank-click"); return true;
+  }
   if (!proof_.empty() && g_get_monotonic_time() - proof_at_ > kProofMicroseconds) {
     proof_.clear(); proof_at_ = 0;
   }

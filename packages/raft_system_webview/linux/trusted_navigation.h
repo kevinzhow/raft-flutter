@@ -8,7 +8,7 @@
 // engine navigation. A page receives no callable application bridge.
 class TrustedNavigation {
  public:
-  using Handoff = std::function<void(const std::string&)>;
+  using Handoff = std::function<void(const std::string&, const char* authority)>;
   TrustedNavigation(WebKitWebView* view, std::string nonce, std::string document, Handoff handoff);
   ~TrustedNavigation();
   bool Message(WebKitUserMessage* message);
@@ -21,6 +21,7 @@ class TrustedNavigation {
   std::string nonce_, document_, proof_, requested_;
   Handoff handoff_;
   gint64 proof_at_ = 0;
+  guint64 trusted_sequence_ = 0;
   guint timer_ = 0;
   WebKitPolicyDecision* pending_ = nullptr;
 };

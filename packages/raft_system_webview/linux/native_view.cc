@@ -184,10 +184,11 @@ void NativeView::Handle(FlMethodCall* call) {
       Error(call, "invalid_url"); return;
     }
     url_ = url; initial_ = true;
-    navigation_ = std::make_unique<TrustedNavigation>(web_, nonce_, url_, [this](const std::string& link) {
+    navigation_ = std::make_unique<TrustedNavigation>(web_, nonce_, url_, [this](const std::string& link, const char* authority) {
       if (closed_ || !loaded_ || failed_) return;
       g_autoptr(FlValue) fields = fl_value_new_map();
       fl_value_set_string_take(fields, "url", fl_value_new_string(link.c_str()));
+      fl_value_set_string_take(fields, "authority", fl_value_new_string(authority));
       Event("navigation", fields);
     });
     webkit_web_view_load_uri(web_, url);

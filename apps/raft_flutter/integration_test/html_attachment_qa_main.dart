@@ -36,6 +36,11 @@ canvas{border:2px solid #172554;display:block;margin-top:20px}</style>
 <button id="increment" onclick="count.textContent=Number(count.textContent)+1">Increment</button>
 <strong id="count">0</strong><canvas id="chart" width="320" height="120"></canvas>
 <p><input id="file" type="file"> <a id="external" href="https://example.com">External link</a></p>
+<p><a id="externalBlank" target="_blank" href="https://example.com/blank">External blank link</a></p>
+<p><a id="namedFrame" target="qaChild" href="https://example.com/named">Named frame link</a></p>
+<iframe name="qaChild" title="Forbidden target" srcdoc="<p>Child target</p>" style="width:240px;height:36px"></iframe>
+<p><button id="scriptPopup" onclick="window.open('https://example.com/script-popup','_blank')">Script popup</button></p>
+<form action="https://example.com/post" method="post"><button id="post" type="submit">POST navigation</button></form>
 <script>
 window.qaLastClick=null;window.qaScriptNavigationFired=0;
 window.qaPointerEvents=[];window.qaScriptNavigationRequested=false;
@@ -296,7 +301,7 @@ class _QaPageState extends State<_QaPage> {
                             if (event['type'] == 'navigation') {
                               _navigationRequests.add({
                                 'url': event['url'],
-                                'reason': 'native-trusted-main-frame-link',
+                                'reason': event['authority'],
                               });
                             }
                           });
