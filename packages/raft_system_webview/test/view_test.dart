@@ -112,4 +112,36 @@ void main() {
       await controller.dispose();
     },
   );
+  testWidgets('a changed canonical overlay hides and restores the same view', (
+    tester,
+  ) async {
+    final controller = await SystemWebViewController.create();
+    final occlusion = ValueNotifier(false);
+    final observed = <Rect>[];
+    await tester.pumpWidget(
+      host(
+        SystemWebView(
+          controller: controller,
+          visible: true,
+          occlusion: occlusion,
+          isOccluded: (bounds) {
+            observed.add(bounds);
+            return occlusion.value;
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(layouts.last['visible'], true);
+    expect(observed.last, const Rect.fromLTWH(0, 0, 300, 200));
+    occlusion.value = true;
+    await tester.pump();
+    expect(layouts.last['visible'], false);
+    occlusion.value = false;
+    await tester.pump();
+    expect(layouts.last['visible'], true);
+    await tester.pumpWidget(const SizedBox());
+    await controller.dispose();
+    occlusion.dispose();
+  });
 }

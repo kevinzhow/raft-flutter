@@ -14,9 +14,13 @@ class SystemWebView extends StatefulWidget {
     super.key,
     required this.controller,
     required this.visible,
+    this.occlusion,
+    this.isOccluded,
   });
   final SystemWebViewController controller;
   final bool visible;
+  final Listenable? occlusion;
+  final bool Function(Rect viewLogicalBounds)? isOccluded;
   @override
   State<SystemWebView> createState() => _SystemWebViewState();
 }
@@ -30,6 +34,13 @@ class _SystemWebViewState extends State<SystemWebView>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.occlusion?.addListener(_occlusionChanged);
+  }
+
+  void _occlusionChanged() {
+    context.findRenderObject()?.markNeedsPaint();
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- One frame follows an actual overlay change; there is no repeating native-visibility poll.
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   @override
@@ -65,6 +76,10 @@ class _SystemWebViewState extends State<SystemWebView>
   @override
   void didUpdateWidget(SystemWebView old) {
     super.didUpdateWidget(old);
+    if (old.occlusion != widget.occlusion) {
+      old.occlusion?.removeListener(_occlusionChanged);
+      widget.occlusion?.addListener(_occlusionChanged);
+    }
     if (old.controller != widget.controller) {
       unawaited(
         old.controller
@@ -78,33 +93,38 @@ class _SystemWebViewState extends State<SystemWebView>
 
   @override
   void dispose() {
+    widget.occlusion?.removeListener(_occlusionChanged);
     WidgetsBinding.instance.removeObserver(this);
     _report(SystemWebViewLayout.hidden);
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => _GeometryObserver(onLayout: _report);
+  Widget build(BuildContext context) =>
+      _GeometryObserver(onLayout: _report, isOccluded: widget.isOccluded);
 }
 
 class _GeometryObserver extends LeafRenderObjectWidget {
-  const _GeometryObserver({required this.onLayout});
+  const _GeometryObserver({required this.onLayout, this.isOccluded});
+  final bool Function(Rect viewLogicalBounds)? isOccluded;
   final ValueChanged<SystemWebViewLayout> onLayout;
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _GeometryBox(onLayout);
+      _GeometryBox(onLayout, isOccluded);
   @override
   void updateRenderObject(
     BuildContext context,
     covariant _GeometryBox renderObject,
   ) {
     renderObject.onLayout = onLayout;
+    renderObject.isOccluded = isOccluded;
     renderObject.markNeedsPaint();
   }
 }
 
 class _GeometryBox extends RenderBox {
-  _GeometryBox(this.onLayout);
+  _GeometryBox(this.onLayout, this.isOccluded);
+  bool Function(Rect viewLogicalBounds)? isOccluded;
   ValueChanged<SystemWebViewLayout> onLayout;
   bool _scheduled = false;
   @override
@@ -159,6 +179,7 @@ class _GeometryBox extends RenderBox {
         transform: getTransformTo(root.child),
         viewport: Offset.zero & root.size,
         clips: clips,
+        isOccluded: isOccluded,
         scale:
             root.configuration.devicePixelRatio /
             root.flutterView.devicePixelRatio,

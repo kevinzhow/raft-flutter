@@ -19,6 +19,7 @@ class SystemWebViewLayout {
     required Rect viewport,
     required Iterable<Rect> clips,
     required double scale,
+    bool Function(Rect viewLogicalBounds)? isOccluded,
   }) {
     if (!local.isFinite || local.isEmpty || !scale.isFinite || scale <= 0) {
       return hidden;
@@ -41,7 +42,7 @@ class SystemWebViewLayout {
       if (!value.isFinite) return hidden;
       clip = clip.intersect(value);
     }
-    if (clip.isEmpty) return hidden;
+    if (clip.isEmpty || isOccluded?.call(frame) == true) return hidden;
     Rect convert(Rect r) => Rect.fromLTWH(
       r.left * scale,
       r.top * scale,

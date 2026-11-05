@@ -49,4 +49,20 @@ void main() {
     );
     expect(resolve(scale: 1000000).visible, false);
   });
+  test('occlusion sees original view coordinates before GTK scaling', () {
+    Rect? observed;
+    final result = SystemWebViewLayout.resolve(
+      local: const Rect.fromLTWH(0, 0, 100, 80),
+      transform: Matrix4.translationValues(30, 40, 0),
+      viewport: const Rect.fromLTWH(0, 0, 800, 600),
+      clips: const [],
+      scale: 2,
+      isOccluded: (rect) {
+        observed = rect;
+        return rect.overlaps(const Rect.fromLTWH(50, 60, 10, 10));
+      },
+    );
+    expect(observed, const Rect.fromLTWH(30, 40, 100, 80));
+    expect(result.visible, false);
+  });
 }
