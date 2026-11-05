@@ -43450,7 +43450,7 @@
         "owner": "task299 HTML region comments",
         "reason": "Host geometry/comment composition or lifecycle adapter. No audit threshold, native execution or visual acceptance is granted."
       },
-      "packages/raft_ui/lib/src/html_region_comments.dart#class:_RegionPainter": {
+      "packages/raft_ui/lib/src/html_region_marker.dart#class:RaftHtmlRegionMarkerPainter": {
         "role": "internal_part",
         "familyRefs": [
           "htmlRegionComments"
@@ -43594,6 +43594,116 @@
         "familyRefs": [],
         "owner": "task299 scoped source registration",
         "reason": "Shared pinned details-frame composition used by opt-in private-app permission disclosures; frozen looks delegate to the existing Card. This source registration grants no family exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/platform/attachment_html_linux.dart#class:LinuxAttachmentHtmlWebView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "apps/raft_flutter/lib/platform/attachment_html_linux.dart#class:_LinuxHtmlState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "apps/raft_flutter/lib/platform/attachment_html_linux.dart#method:LinuxAttachmentHtmlWebView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "apps/raft_flutter/lib/platform/attachment_html_linux.dart#method:_LinuxHtmlState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "apps/raft_flutter/lib/platform/attachment_html_linux.dart#method:_LinuxHtmlState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "packages/raft_system_webview/lib/src/view.dart#class:SystemWebView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "packages/raft_system_webview/lib/src/view.dart#class:_GeometryBox": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "packages/raft_system_webview/lib/src/view.dart#class:_GeometryObserver": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "packages/raft_system_webview/lib/src/view.dart#class:_SystemWebViewState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "packages/raft_system_webview/lib/src/view.dart#method:SystemWebView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "packages/raft_system_webview/lib/src/view.dart#method:_SystemWebViewState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "packages/raft_system_webview/lib/src/view.dart#method:_SystemWebViewState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody (task305 system WebKitGTK)",
+        "reason": "Operating-system HTML surface and lifecycle/geometry transport, not a new application visual recipe. Document CSS remains renderer-owned; canonical shell, region and overlay components retain their existing owners. This source registration grants no style exemption or visual/native acceptance."
+      },
+      "packages/raft_ui/lib/src/html_region_hint_raster.dart#class:RaftHtmlHintRasterBoundary": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "Cody (task305 shared composition)",
+        "reason": "Bounded raster transport of the original canonical hint widget and shadow; no native duplicate typography, layout or theme recipe."
+      },
+      "packages/raft_ui/lib/src/html_region_hint_raster.dart#class:_HintRasterBoundary": {
+        "role": "internal_part",
+        "familyRefs": [
+          "htmlRegionComments"
+        ],
+        "owner": "Cody (task305 shared composition)",
+        "reason": "The canonical hint raster boundary owns this render layer and image capture; no independent UI.",
+        "delegatesTo": [
+          "packages/raft_ui/lib/src/html_region_hint_raster.dart#class:RaftHtmlHintRasterBoundary"
+        ]
+      },
+      "packages/raft_ui/lib/src/native_surface_occlusion.dart#class:RaftNativeSurfaceOccluder": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "nativeSurfaceOcclusion"
+        ],
+        "owner": "Cody (task305 shared composition)",
+        "reason": "Shared non-drawing paint-bound observer used by canonical tooltip and popover content; no page-specific styling."
+      },
+      "packages/raft_ui/lib/src/native_surface_occlusion.dart#class:_OccluderBox": {
+        "role": "internal_part",
+        "familyRefs": [
+          "nativeSurfaceOcclusion"
+        ],
+        "owner": "Cody (task305 shared composition)",
+        "reason": "Render proxy owned by the canonical observer. Bounds and attachment lifetime only; it draws no independent pixels.",
+        "delegatesTo": [
+          "packages/raft_ui/lib/src/native_surface_occlusion.dart#class:RaftNativeSurfaceOccluder"
+        ]
       }
     },
     "entries": {

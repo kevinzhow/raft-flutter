@@ -518,7 +518,8 @@
       "canonical": [
         "RaftHtmlRegionCommentSurface",
         "RaftHtmlRegionHint",
-        "RaftHtmlRegionMarker"
+        "RaftHtmlRegionMarker",
+        "RaftHtmlHintRasterBoundary"
       ],
       "deprecated": {},
       "note": "Host-owned region capture, instruction and flash parts of Web HtmlPreviewBody at db5e399. Geometry is supplied by a native host facade; uploaded HTML receives no app bridge. Generated semantic tokens and existing dashed-border primitive supply paint. Registration is not visual or native acceptance.",
@@ -534,6 +535,23 @@
         "RaftHtmlRegionMarker": {
           "declarationId": "packages/raft_ui/lib/src/html_region_comments.dart#class:RaftHtmlRegionMarker",
           "role": "paint_part"
+        },
+        "RaftHtmlHintRasterBoundary": {
+          "declarationId": "packages/raft_ui/lib/src/html_region_hint_raster.dart#class:RaftHtmlHintRasterBoundary",
+          "role": "paint_part"
+        }
+      }
+    },
+    "nativeSurfaceOcclusion": {
+      "canonical": [
+        "RaftNativeSurfaceOccluder"
+      ],
+      "deprecated": {},
+      "note": "Non-drawing compositing observer for the existing canonical tooltip/popover surfaces. It changes neither layout, input nor recipes, and supplies view-local occlusion bounds to native adapters. Ownership registration does not grant visual acceptance.",
+      "canonicalBindings": {
+        "RaftNativeSurfaceOccluder": {
+          "declarationId": "packages/raft_ui/lib/src/native_surface_occlusion.dart#class:RaftNativeSurfaceOccluder",
+          "role": "placement_part"
         }
       }
     }
