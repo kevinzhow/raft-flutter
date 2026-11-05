@@ -230,7 +230,13 @@ class _PrototypeState extends State<_Prototype> {
                       ),
                     ),
                     if (controller case final current?)
-                      SystemWebView(controller: current, visible: loaded),
+                      SystemWebView(
+                        controller: current,
+                        visible: loaded,
+                        occlusion: RaftNativeSurfaceOcclusion.forView(context),
+                        isOccluded: RaftNativeSurfaceOcclusion.forView(context)
+                            .overlaps,
+                      ),
                   ],
                 ),
               ),
