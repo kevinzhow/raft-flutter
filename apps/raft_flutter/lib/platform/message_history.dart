@@ -12,6 +12,7 @@ import '../data/history_capacity.dart';
 import '../data/history_memory.dart';
 import '../data/history_body_proofs.dart';
 import '../data/reading_positions.dart';
+import '../data/history_damaged_body.dart';
 import '../data/workspace_cache_codec.dart';
 import 'history_capacity.dart';
 import 'history_positions.dart';
@@ -331,7 +332,8 @@ class SqliteMessageHistory implements MessageHistoryStorage {
       ))
         row.read<String>('message_id'): null,
       for (var i = 0; i < live.length; i++)
-        live[i].read<String>('message_id'): payloads[i],
+        if (!historyBodyDamaged(payloads[i]))
+          live[i].read<String>('message_id'): payloads[i],
     };
   });
 
@@ -951,6 +953,7 @@ class SqliteMessageHistory implements MessageHistoryStorage {
     final targetRow = (await decodeWorkspaceTranslations([
       row.read<String>('payload'),
     ])).single;
+    if (historyBodyDamaged(targetRow)) return null;
     return MessageHistoryPage(
       {
         'messages': [
@@ -996,6 +999,7 @@ class SqliteMessageHistory implements MessageHistoryStorage {
     BigInt? after,
     int limit = 50,
     bool fragments = false,
+    void Function()? damaged,
   }) async {
     if (limit < 1 || limit > 500 || before != null && after != null) {
       throw ArgumentError('Invalid history page.');
@@ -1065,6 +1069,10 @@ class SqliteMessageHistory implements MessageHistoryStorage {
       final decoded = await decodeWorkspaceTranslations(
         rows.take(limit).map((r) => r.read<String>('payload')).toList().reversed.toList(),
       );
+      if (historyAnyBodyDamaged(decoded)) {
+        damaged?.call();
+        return null;
+      }
       await _touchRows(scope, decoded);
       return LocalMessageHistoryPage(
         decoded,
@@ -1120,6 +1128,10 @@ class SqliteMessageHistory implements MessageHistoryStorage {
     final decoded = await decodeWorkspaceTranslations(
       forward ? payloads : payloads.reversed.toList(),
     );
+    if (historyAnyBodyDamaged(decoded)) {
+      damaged?.call();
+      return null;
+    }
     await _touchRows(scope, decoded);
     return LocalMessageHistoryPage(
       decoded,
@@ -1203,12 +1215,11 @@ class SqliteMessageHistory implements MessageHistoryStorage {
       if (current != null &&
           current.read<int>('revision') > requestedRevision) {
         if (current.read<int>('tombstone') == 0) {
-          merged.add(
-            Map<String, dynamic>.from(
-              await decodeWorkspaceCache(current.read<String>('payload'))
-                  as Map,
-            ),
+          final saved = Map<String, dynamic>.from(
+            await decodeWorkspaceCache(current.read<String>('payload')) as Map,
           );
+          // A blanked body never outranks the server's row.
+          merged.add(historyBodyDamaged(saved) ? row : saved);
         }
       } else {
         merged.add(row);
@@ -1241,7 +1252,7 @@ class SqliteMessageHistory implements MessageHistoryStorage {
     for (final row in await decodeWorkspaceTranslations(
       arrivals.map((r) => r.read<String>('payload')).toList(),
     )) {
-      if (ids.add(row['id'])) merged.add(row);
+      if (!historyBodyDamaged(row) && ids.add(row['id'])) merged.add(row);
     }
     merged.sort(
       (a, b) =>
@@ -1581,6 +1592,7 @@ class SqliteMessageHistory implements MessageHistoryStorage {
         authority: '',
       ),
     );
+    var damaged = false;
     Future<Map<String, dynamic>?> markerWindow() async {
       final records = await _query(
         "SELECT payload FROM workspace_cache WHERE origin=? AND principal=? AND server=? AND kind=? AND ${kind == 'window' ? 'id=?' : "json_extract(payload,'\$.parentMessageId')=?"}",
@@ -1602,6 +1614,7 @@ class SqliteMessageHistory implements MessageHistoryStorage {
       final local = await _readPage(
         scope,
         limit: (marker['windowSize'] as int?) ?? 50,
+        damaged: () => damaged = true,
       );
       return local == null
           ? null
@@ -1624,8 +1637,12 @@ class SqliteMessageHistory implements MessageHistoryStorage {
     // 500-row rollback snapshot on every visit.
     final present = await markerWindow();
     if (present != null) return present;
+    // Blanked rows are a cache miss; the rollback snapshot must not stand in.
+    if (damaged) return null;
     final legacy = await readLegacy(origin, principal, server, kind, id);
     if (legacy is! Map) return null;
+    final held = legacy['messages'];
+    if (held is List && historyAnyBodyDamaged(held)) return null;
     final channel = kind == 'thread-window' ? legacy['threadChannelId'] : id;
     final parent = legacy['parentChannelId'];
     if (channel is! String || parent is! String) {

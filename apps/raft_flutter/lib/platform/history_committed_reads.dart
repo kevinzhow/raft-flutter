@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../data/history_damaged_body.dart';
 import '../data/message_history.dart';
 import '../data/workspace_cache_codec.dart';
 import 'history_summaries.dart';
@@ -142,6 +143,8 @@ class SqliteCommittedHistoryReads {
     final messages = await decodeWorkspaceTranslations(
       payloads.take(size).toList().reversed.toList(),
     );
+    // Rows blanked by an older client are a miss, not a complete window.
+    if (historyAnyBodyDamaged(messages)) return null;
     final empty = rows.first.read<int>('empty') == 1;
     // Reply previews are read right after the rows, from the read executor;
     // a parent evicted in between simply has no preview.
