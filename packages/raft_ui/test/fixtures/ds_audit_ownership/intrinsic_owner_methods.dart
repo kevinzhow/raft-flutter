@@ -2,6 +2,14 @@
 import 'package:flutter/widgets.dart' as fw;
 import 'package:flutter/rendering.dart' as render;
 
+// Keep the scanned implementations referenced without constructing them or
+// adding a false canonical-widget delegation to this ownership fixture.
+const intrinsicPainterFixtureTypes = <Type>[
+  _DelegatingPainter,
+  _DelegatingBoxPainter,
+  _DelegatingRender,
+];
+
 class IntrinsicStatefulMarker extends fw.StatefulWidget {
   const IntrinsicStatefulMarker({super.key});
   @override
