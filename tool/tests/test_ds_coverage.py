@@ -494,5 +494,58 @@ class ResolvedPaintOwnerConstructorTest(unittest.TestCase):
         self.assertFalse(any(row['target'] == identity for row in self.report['references']))
 
 
+
+class ResolvedIntrinsicOwnerTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        loader = importlib.machinery.SourceFileLoader('ds_intrinsic_owner_cli', str(ROOT / 'tool/ds-audit'))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        cli = importlib.util.module_from_spec(spec)
+        loader.exec_module(cli)
+        cls.file = 'packages/raft_ui/test/fixtures/ds_audit_ownership/intrinsic_owner_methods.dart'
+        cls.report = cli.run_scanner([cls.file], contract=[], bypass=[], inventory=True,
+                                     inventory_paths=[cls.file])['ownership']
+
+    def test_framework_hooks_keep_exact_reference_and_enclosing_class_without_synthetic_entries(self):
+        declarations = {row['id']: row for row in self.report['declarations']}
+        for member, target in [('IntrinsicStatefulMarker.createState', '_IntrinsicState'),
+                               ('RenderMarker.createRenderObject', '_RealRender'),
+                               ('_DelegatingPainter.paint', '_RealPainter'),
+                               ('_DelegatingBoxPainter.paint', '_RealPainter'),
+                               ('_DelegatingRender.paint', '_RealPainter')]:
+            identity = self.file + '#method:' + member
+            refs = [row for row in self.report['references']
+                    if row['owner'] == identity and row['target'] == self.file + '#class:' + target
+                    and row['kind'] == 'constructor_call']
+            self.assertTrue(refs, member)
+            self.assertTrue(all(row.get('ownerClass') == self.file + '#class:' + member.split('.')[0]
+                                for row in refs), refs)
+            self.assertNotIn(identity, declarations, 'Framework hooks are part of their enclosing render owner')
+
+    def test_ordinary_and_same_named_non_framework_helpers_still_materialize(self):
+        declarations = {row['id']: row for row in self.report['declarations']}
+        for member in ['UnrelatedHooks.createState', 'UnrelatedHooks.createRenderObject',
+                       'UnrelatedHooks.paint', '_DelegatingPainter.helper']:
+            identity = self.file + '#method:' + member
+            self.assertEqual(declarations[identity]['kind'], 'render_or_state_owner')
+            refs = [row for row in self.report['references'] if row['owner'] == identity]
+            self.assertTrue(refs, member)
+            self.assertTrue(all('ownerClass' not in row for row in refs), member)
+        local = [row for row in declarations.values()
+                 if row['name'] == 'drawLocal' and row['kind'] == 'render_or_state_owner']
+        self.assertEqual(len(local), 1)
+        self.assertTrue(any(row['owner'] == local[0]['id'] and row['kind'] == 'constructor_call'
+                            for row in self.report['references']))
+
+    def test_hook_reference_proves_its_real_enclosing_owner_without_method_registration(self):
+        declarations = {row['id']: row for row in self.report['declarations']}
+        identity = self.file + '#method:_DelegatingPainter.paint'
+        ref = next(row for row in self.report['references']
+                   if row['owner'] == identity and row['kind'] == 'constructor_call')
+        self.assertNotIn(identity, declarations)
+        self.assertTrue(coverage.owns_reference(ref, self.file + '#class:_DelegatingPainter', declarations))
+        self.assertFalse(coverage.owns_reference(ref, self.file + '#class:CanonicalPaintWidget', declarations))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -219,13 +219,53 @@ class OwnershipVisitor extends RecursiveAstVisitor<void> {
     }
   }
 
+  InterfaceElement? intrinsicPaintOwner(AstNode node) {
+    for (var n = node.parent; n != null; n = n.parent) {
+      // A nested named helper is its own owner, even inside a framework hook.
+      if (n is FunctionDeclaration || n is ClassDeclaration) return null;
+      if (n is MethodDeclaration) {
+        final method = n.declaredFragment?.element;
+        final enclosing = method?.enclosingElement;
+        if (method == null ||
+            method.isStatic ||
+            enclosing is! InterfaceElement) {
+          return null;
+        }
+        final hook = switch (method.name) {
+          'createState' => inventory.subtype(enclosing, 'StatefulWidget'),
+          'createRenderObject' => inventory.subtype(
+            enclosing,
+            'RenderObjectWidget',
+          ),
+          'paint' => [
+            'CustomPainter',
+            'BoxPainter',
+            'RenderObject',
+          ].any((name) => inventory.subtype(enclosing, name)),
+          _ => false,
+        };
+        return hook ? enclosing : null;
+      }
+    }
+    return null;
+  }
+
   void reference(AstNode node, Element? element, {required String kind}) {
     if (element is ConstructorElement) element = element.enclosingElement;
     final id = inventory.idOf(element);
     if (id == null) return;
-    ensureOwner(node);
+    final enclosing =
+        kind == 'constructor_call' &&
+            element is InterfaceElement &&
+            inventory.paintOwnerType(element)
+        ? intrinsicPaintOwner(node)
+        : null;
+    // Constructing a hook's implementation does not create another render API.
+    // Retain the exact method reference and its resolved enclosing class.
+    if (enclosing == null) ensureOwner(node);
     inventory.references.add({
       'owner': owner(node),
+      if (enclosing != null) 'ownerClass': inventory.idOf(enclosing),
       'target': id,
       'kind': kind,
       'file': file,
