@@ -1,16 +1,14 @@
 # Pinned desktop_multi_window0.3.1. Adapt only a private build-local copy;
 # never write into pub-cache or replace the existing channel/handler owners.
+set(RAFT_DESKTOP_WINDOW_COPY_HELPER "${CMAKE_CURRENT_LIST_DIR}/../../../../tool/desktop_window_creation.py")
 function(raft_copy_window_control original destination)
-  file(SHA256 "${original}" control_sha)
-  if(NOT control_sha STREQUAL "d473daf57d9ae48a670672b21cbd21258febaf70814c2d2a96f4bd6b10ab3588")
-    message(FATAL_ERROR "desktop_multi_window control source changed; review the closing gate")
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  execute_process(COMMAND "${Python3_EXECUTABLE}" -I "${RAFT_DESKTOP_WINDOW_COPY_HELPER}"
+    --source "${original}" --destination "${destination}"
+    RESULT_VARIABLE copy_result ERROR_VARIABLE copy_error)
+  if(NOT copy_result EQUAL 0)
+    message(FATAL_ERROR "The private creation-control copy was refused: ${copy_error}")
   endif()
-  file(READ "${original}" control)
-  set(declaration "extern \"C\" bool raft_desktop_window_creation_allowed() __attribute__((weak));\n")
-  set(branch "  if (strcmp(method, \"createWindow\") == 0) {")
-  set(guard "${branch}\n    if (raft_desktop_window_creation_allowed && !raft_desktop_window_creation_allowed()) {\n      fl_method_call_respond_error(method_call, \"desktop_app_closing\",\n          \"Application is closing.\", nullptr, nullptr);\n      return;\n    }")
-  string(REPLACE "${branch}" "${guard}" control "${control}")
-  file(WRITE "${destination}" "${declaration}${control}")
 endfunction()
 
 function(raft_guard_window_creation runner)

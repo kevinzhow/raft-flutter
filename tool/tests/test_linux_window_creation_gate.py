@@ -15,9 +15,9 @@ SHA = 'd473daf57d9ae48a670672b21cbd21258febaf70814c2d2a96f4bd6b10ab3588'
 
 @unittest.skipUnless(sys.platform == 'linux', 'Pinned Linux window-control host')
 class LinuxWindowCreationGate(unittest.TestCase):
-    def adapt(self, work, original=ORIGINAL):
+    def adapt(self, work, original=ORIGINAL, destination=None):
         script = work / 'adapt.cmake'
-        output = work / 'control.cc'
+        output = destination or work / 'control.cc'
         script.write_text(f'include("{ADAPTER}")\nraft_copy_window_control("{original}" "{output}")\n')
         result = subprocess.run(['cmake', '-P', str(script)], capture_output=True, text=True, timeout=5)
         return result, output
@@ -48,6 +48,58 @@ class LinuxWindowCreationGate(unittest.TestCase):
             result, output = self.adapt(work, original)
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse(output.exists())
+
+    def test_output_links_and_special_files_fail_without_modifying_them(self):
+        for kind in ['symlink', 'hardlink', 'fifo', 'directory']:
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory(prefix='raft-create-output-') as folder:
+                work = Path(folder)
+                protected = work / 'protected.cc'
+                protected.write_bytes(b'Keep this distinct protected input.\n')
+                original = protected.read_bytes()
+                output = work / 'control.cc'
+                if kind == 'symlink':
+                    output.symlink_to(protected)
+                elif kind == 'hardlink':
+                    os.link(protected, output)
+                elif kind == 'fifo':
+                    os.mkfifo(output, 0o600)
+                else:
+                    output.mkdir()
+                identity = output.lstat()
+                result, _ = self.adapt(work)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(protected.read_bytes(), original)
+                self.assertEqual((output.lstat().st_dev, output.lstat().st_ino),
+                                 (identity.st_dev, identity.st_ino))
+
+    def test_output_parent_symlink_is_never_traversed(self):
+        with tempfile.TemporaryDirectory(prefix='raft-create-parent-') as folder:
+            work = Path(folder)
+            real = work / 'real'
+            real.mkdir()
+            alias = work / 'alias'
+            alias.symlink_to(real, target_is_directory=True)
+            result, _ = self.adapt(work, destination=alias / 'control.cc')
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertFalse((real / 'control.cc').exists())
+
+    def test_equal_generated_output_is_reused_and_different_bytes_are_preserved(self):
+        with tempfile.TemporaryDirectory(prefix='raft-create-reuse-') as folder:
+            work = Path(folder)
+            result, output = self.adapt(work)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            before = output.stat()
+            expected = output.read_bytes()
+            result, _ = self.adapt(work)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(output.read_bytes(), expected)
+            self.assertEqual((output.stat().st_ino, output.stat().st_mtime_ns),
+                             (before.st_ino, before.st_mtime_ns))
+            output.write_bytes(b'Preserve an unexpected local generated file.\n')
+            changed = output.read_bytes()
+            result, _ = self.adapt(work)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(output.read_bytes(), changed)
 
     def test_actual_plugin_target_uses_copy_and_only_one_exported_predicate(self):
         with tempfile.TemporaryDirectory(prefix='raft-create-cmake-') as folder:
