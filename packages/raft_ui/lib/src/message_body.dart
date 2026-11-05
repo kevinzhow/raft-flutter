@@ -16,7 +16,8 @@ import 'package:flutter/foundation.dart'
     show compute, defaultTargetPlatform, kIsWeb, listEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show SelectedContent;
+import 'package:flutter/rendering.dart'
+    show SelectedContent, SelectionEdgeUpdateEvent, SelectionResult;
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
@@ -803,6 +804,23 @@ class _JoinedSelectionState extends State<_JoinedSelection> {
 class _JoinedDelegate extends StaticSelectionContainerDelegate {
   _JoinedDelegate(this.separator);
   String separator;
+
+  @override
+  SelectionResult handleSelectionEdgeUpdate(SelectionEdgeUpdateEvent event) {
+    final result = super.handleSelectionEdgeUpdate(event);
+    if (!hasSize) return result;
+    // A horizontal Scrollable classifies an outside edge by x even when it
+    // belongs to a later paragraph. Respect this block's vertical position so
+    // the parent can clear inactive code selections. Keep normal child event
+    // dispatch for cross-block selection and horizontal edge scrolling.
+    final point = MatrixUtils.transformPoint(
+      Matrix4.inverted(getTransformTo(null)),
+      event.globalPosition,
+    );
+    if (point.dy < 0) return SelectionResult.previous;
+    if (point.dy > containerSize.height) return SelectionResult.next;
+    return result;
+  }
 
   /// A container with no selection reports null (the region treats that as
   /// "nothing here"); one whose children report an empty selection reports an

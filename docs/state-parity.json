@@ -43322,31 +43322,31 @@
         "owner": "task299 Markdown section comments",
         "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@12995/METHOD:build@17227/FUNCTION:anchoredOther@20262": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13042/METHOD:build@17274/FUNCTION:anchoredOther@20309": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "task299 Markdown section comments",
         "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@12995/METHOD:build@17227/FUNCTION:compactProse@19785": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13042/METHOD:build@17274/FUNCTION:compactProse@19832": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@12995/METHOD:build@17227/FUNCTION:selectable@20147": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13042/METHOD:build@17274/FUNCTION:selectable@20194": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@33881/METHOD:build@34463/FUNCTION:failed@34619": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@34692/METHOD:build@35274/FUNCTION:failed@35430": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@49588/METHOD:build@50084/FUNCTION:<anonymous>@50193/FUNCTION:control@51430": {
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@50399/METHOD:build@50895/FUNCTION:<anonymous>@51004/FUNCTION:control@52241": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

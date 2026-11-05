@@ -11,6 +11,28 @@ import 'package:raft_ui/src/markdown_comment_anchors.dart';
 const document =
     '# Guide\n\nBefore usage.\n\n## **Usage** `API`\n\nSelect this paragraph.\n\n## Usage API\n\nSecond usage paragraph.';
 
+const fencedDocument = '''
+# Anchor Roundtrip QA
+
+A synthetic attachment, containing no account data.
+
+## Shared Section
+
+First occurrence: alpha target. The second section must not jump here.
+
+```text
+## This is a code example, not a real heading
+```
+
+## Shared Section
+
+Second occurrence: beta target. Web and Flutter must preserve this exact section.
+
+### 中文标题 Café
+
+Unicode target: 你好，世界。The stored heading must match the original Web outline.
+''';
+
 Future<RaftAttachmentCommentState> open(
   WidgetTester t,
   String source, {
@@ -101,6 +123,89 @@ void main() {
         raftMarkdownDocumentParser = (s) async => raftParseMarkdownDocument(s),
   );
   tearDownAll(() => raftMarkdownDocumentParser = parser);
+
+  for (final selection in [
+    ('Second occurrence:', 'shared-section-2'),
+    ('Unicode target:', '中文标题-cafe'),
+  ]) {
+    for (final reverse in [false, true]) {
+      testWidgets(
+        'desktop selection after a fence belongs to ${selection.$2}, reverse=$reverse',
+        (t) async {
+          final session = await open(
+            t,
+            fencedDocument,
+            platform: TargetPlatform.linux,
+            size: const Size(856, 944),
+          );
+          await select(t, selection.$1, reverse: reverse);
+          expect(session.pendingAnchor?['data']['headingId'], selection.$2);
+          expect(session.pendingAnchor?['data']['quote'], selection.$1);
+        },
+      );
+    }
+  }
+
+  testWidgets('reverse selection across a fence keeps the intervening code', (
+    t,
+  ) async {
+    final session = await open(
+      t,
+      fencedDocument,
+      platform: TargetPlatform.linux,
+    );
+    final first = textRect(t, 'First occurrence:');
+    final last = textRect(t, 'Unicode target:');
+    final gesture = await t.startGesture(
+      Offset(last.right - 1, last.center.dy),
+      kind: PointerDeviceKind.mouse,
+    );
+    await t.pump();
+    await gesture.moveTo(Offset(first.left + 1, first.center.dy));
+    await t.pump();
+    await gesture.up();
+    await t.pump();
+    await t.pump();
+    expect(session.pendingAnchor?['data']['headingId'], 'shared-section');
+    final quote = session.pendingAnchor?['data']['quote'] as String;
+    expect(quote, startsWith('First occurrence:'));
+    expect(quote, contains('## This is a code example, not a real heading'));
+    expect(quote, contains('Second occurrence: beta target.'));
+    expect(quote, endsWith('Unicode target:'));
+  });
+  testWidgets('a horizontal code selection still scrolls at its right edge', (
+    t,
+  ) async {
+    final code = List.filled(12, '0123456789_abcdefghij_').join();
+    final session = await open(
+      t,
+      '# Code\n\n```text\n$code\n```\n\nAfter paragraph.',
+      platform: TargetPlatform.linux,
+      size: const Size(390, 844),
+    );
+    final viewport = find.byWidgetPredicate(
+      (w) => w is SingleChildScrollView && w.scrollDirection == Axis.horizontal,
+    );
+    expect(viewport, findsOneWidget);
+    final rect = t.getRect(viewport);
+    final scroll = t.state<ScrollableState>(
+      find.descendant(of: viewport, matching: find.byType(Scrollable)),
+    );
+    final before = scroll.position.pixels;
+    final gesture = await t.startGesture(
+      Offset(rect.left + 20, rect.center.dy),
+      kind: PointerDeviceKind.mouse,
+    );
+    await t.pump();
+    await gesture.moveTo(Offset(rect.right + 24, rect.center.dy));
+    for (var i = 0; i < 6; i++) {
+      await t.pump(const Duration(milliseconds: 50));
+    }
+    expect(scroll.position.pixels, greaterThan(before));
+    await gesture.up();
+    await t.pump();
+    expect(session.pendingAnchor?['data']['headingId'], 'code');
+  });
 
   for (final size in [const Size(856, 944), const Size(944, 856)]) {
     testWidgets(
