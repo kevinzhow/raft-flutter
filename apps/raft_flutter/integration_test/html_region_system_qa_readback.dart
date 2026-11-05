@@ -62,6 +62,13 @@ const htmlRegionSystemQaDocumentReadback = '''JSON.stringify((()=>{
   origin:self.origin,appBridge:typeof window.flutter_inappwebview,
   buttons:{increment:rect('increment'),reflow:rect('reflow')},
   blocks:{alpha:rect('alpha'),beta:rect('beta'),quote:rect('quote'),gamma:rect('gamma')},
-  clicks:window.qaClicks,inputs:window.qaInputs,reflows:window.qaReflows
+  clicks:window.qaClicks,inputs:window.qaInputs,allInputs:window.qaAllInputs,reflows:window.qaReflows,
+  pageFocus:document.hasFocus(),visibility:document.visibilityState,
+  activeElement:{tag:document.activeElement?.tagName,id:document.activeElement?.id},
+  point96x107:(()=>{const e=document.elementFromPoint(96,107);return e?{
+   tag:e.tagName,id:e.id,pointerEvents:getComputedStyle(e).pointerEvents,
+   disabled:e.disabled===true}:null})(),
+  visualViewport:window.visualViewport?{scale:visualViewport.scale,
+   offsetLeft:visualViewport.offsetLeft,offsetTop:visualViewport.offsetTop}:null
  };
 })())''';
