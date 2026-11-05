@@ -1,6 +1,8 @@
 // Native desktop window actions; no Web visual-parity claim.
 const Map<String, String> zhCatalogDesktopWindows = {
   'Open in new window': '在新窗口中打开',
+  'Another window is unavailable on this display. Select the server in this window instead.':
+      '当前显示器无法打开独立窗口。请改为在当前窗口中选择服务器。',
   'Could not open the server window. Try again.': '无法打开服务器窗口，请重试。',
   'This window’s session has ended.': '此窗口的会话已结束。',
   'This window still has unsaved drafts': '这个窗口还有未保存的草稿',
