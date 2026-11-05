@@ -46,6 +46,9 @@ class _SystemWebViewState extends State<SystemWebView>
     _events = owner.events.listen(
       (event) {
         if (owner != widget.controller) return;
+        if (event['type'] == 'focus' && event['focused'] == true) {
+          unawaited(_releaseFlutterFocus(owner));
+        }
         if (event['type'] == 'closed') {
           _snapshot.dispose();
           _snapshotChanged();
@@ -61,6 +64,40 @@ class _SystemWebViewState extends State<SystemWebView>
         _snapshotChanged();
       },
     );
+  }
+
+  bool _acceptsNativeFocus(SystemWebViewController owner) =>
+      mounted &&
+      owner == widget.controller &&
+      !owner.closed &&
+      widget.visible &&
+      _last.visible &&
+      _foreground &&
+      _routeActive &&
+      !(widget.isOccluded?.call(_last.frame) ?? false);
+
+  Future<void> _releaseFlutterFocus(SystemWebViewController owner) async {
+    if (!_acceptsNativeFocus(owner)) return;
+    final focus = FocusManager.instance.primaryFocus;
+    final focusContext = focus?.context;
+    if (focus == null ||
+        focusContext == null ||
+        View.maybeOf(focusContext) != View.maybeOf(context)) {
+      return;
+    }
+    try {
+      final nativeFocused = await owner.hasNativeFocus();
+      // The host reply may follow another real Flutter click or pane removal.
+      // Never clear that newer editor's focus because of an older GTK event.
+      if (nativeFocused &&
+          _acceptsNativeFocus(owner) &&
+          identical(FocusManager.instance.primaryFocus, focus) &&
+          focus.hasFocus) {
+        focus.unfocus();
+      }
+    } catch (_) {
+      // A retired or unsupported host cannot take focus from the application.
+    }
   }
 
   void _snapshotChanged() {
