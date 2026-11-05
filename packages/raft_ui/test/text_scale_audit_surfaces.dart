@@ -39,6 +39,7 @@ import 'package:raft_ui/html_previews.dart';
 import 'package:raft_ui/html_region_comment_previews.dart';
 import 'package:raft_ui/inline_badge_previews.dart';
 import 'package:raft_ui/inline_thread_surface_previews.dart';
+import 'package:raft_ui/language_settings_previews.dart';
 import 'package:raft_ui/legacy_input_previews.dart';
 import 'package:raft_ui/media_browser_previews.dart';
 import 'package:raft_ui/video_poster_card_previews.dart';
@@ -61,6 +62,7 @@ import 'package:raft_ui/choice_dialog_previews.dart';
 import 'package:raft_ui/dropdown_menu_role_previews.dart';
 import 'package:raft_ui/menu_popup_backend_previews.dart';
 import 'package:raft_ui/previews.dart';
+import 'package:raft_ui/private_app_invite_previews.dart';
 import 'package:raft_ui/pull_to_refresh_previews.dart';
 import 'package:raft_ui/quick_reaction_picker_previews.dart';
 import 'package:raft_ui/quick_switcher_previews.dart';
@@ -102,6 +104,20 @@ class AuditSurface {
 }
 
 final auditSurfaces = <AuditSurface>[
+  AuditSurface(
+    'languageSettingsReferencePreview',
+    'Language & Region',
+    languageSettingsReferencePreview,
+    Size(390, 844),
+    representative: true,
+  ),
+  AuditSurface(
+    'privateAppInvitePreview',
+    'Private app invitation',
+    privateAppInvitePreview,
+    Size(768, 900),
+    representative: true,
+  ),
   AuditSurface(
     'choiceDialogPreview',
     'Native chooser · typed selection',

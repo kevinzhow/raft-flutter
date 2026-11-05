@@ -114,10 +114,15 @@ void main() {
           expect(find.text('null'), findsNothing);
           // A revisit never re-reads the shared lists; only detail-only
           // fields (agent runtime profile and, like Web's embedded
-          // AgentSkills, its `/skills` list; member profile) are fetched,
-          // and none of them gates the first frame.
+          // AgentSkills, its `/skills` list; member profile) are fetched.
+          // The model-label catalog also hydrates independently; none of
+          // these held requests gates the first frame.
           expect(w.pending.keys, switch (kind) {
-            'agent' => unorderedEquals(['/agents/a', '/agents/a/skills']),
+            'agent' => unorderedEquals([
+              '/agents/a',
+              '/agents/a/skills',
+              '/servers/s/model-label-catalog',
+            ]),
             'computer' => isEmpty,
             _ => ['/servers/s/members/u/profile'],
           });

@@ -297,7 +297,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
             child: DefaultTextStyle.merge(
               maxLines: 1,
               softWrap: false,
-              overflow: TextOverflow.clip,
+              overflow: TextOverflow.ellipsis,
               child:
                   selected?.child ??
                   Text(hasValue ? widget.unmatchedLabel! : widget.placeholder),
