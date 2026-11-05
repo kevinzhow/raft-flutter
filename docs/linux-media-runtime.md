@@ -1,39 +1,63 @@
-# Linux attachment media runtime
+# Linux browser and attachment runtime
 
-Only Windows and Linux play media through this libmpv runtime; Android, iOS and macOS use the system player (see [media playback](media-playback.md)).
+Windows and Linux use media_kit/libmpv for attachment media; Android, iOS and
+macOS use their system player (see [media playback](media-playback.md)). On
+Linux, libmpv and its codec/driver dependencies now come from the distribution.
+The app no longer downloads a private media closure before a build or installs
+that closure into its bundle. Build with the distribution's `libmpv-dev` and
+`libwebkit2gtk-4.1-dev` development packages on Ubuntu, or the corresponding
+Fedora `mpv-devel` and `webkit2gtk4.1-devel` packages.
 
-Run `tool/prepare-media-linux` before a Linux build. This downloads seven pinned Ubuntu amd64 packages into `.local/media-linux`, extracts them locally, and copies libmpv's resolved codec dependency closure together with every package's distribution copyright notice. It does not install or upgrade system packages. CMake puts these generated libraries under the application's `lib` directory and notices under `data/notices/raft-media`; its relative RPATH applies to transitive decoder dependencies.
+The Linux HTML viewer uses system WebKitGTK API 4.1: GTK3 and libsoup3. GTK, GLib,
+GIO, Pango, GdkPixbuf, GStreamer, TLS modules, WebKit child processes and libmpv
+must belong to the same installed distribution stack. There is no WPE source
+builder, restored browser SDK, older WebKit fallback or private GTK/media stack.
+The AppImage remains available as a thin app package; it is not self-contained.
 
-The prepared bundle currently contains 208 libraries. `manifest.json` records each library's provider/version/SHA-256 and downloaded package hashes. `ldd-bundle.txt` confirms no unresolved library on this build host. This is a host-matched Ubuntu resolute amd64 runtime: the OS still supplies glibc, its loader, audio/display devices and device drivers. Portability to another distribution or older glibc has not been proven. Binary artifacts stay ignored; rebuild the bundle on its supported build environment.
+Ubuntu 24.04 x86-64 and Fedora 44 are the declared runtime targets. Install the
+runtime prerequisites listed in [release CI](release-ci.md#linux-appimage),
+including WebKitGTK4.1, libmpv, Secret Service client libraries, GStreamer plugins,
+GLib networking and the SVG loader. Media formats depend on the installed
+codecs. The display, audio, notification, Secret Service and graphics drivers
+remain host services. Packaging does not install packages or alter a user profile.
 
-Downloaded packages are pinned to `libmpv2 0.41.0-2ubuntu4`, `libmpv-dev 0.41.0-2ubuntu4`, `libmujs3 1.3.8-2`, `liblua5.2-0 5.2.4-4`, `libsndio7.0 1.10.0-0.2`, `libsixel1 1.10.5-1build1`, and `libxpresent1 1.0.1-1build1`. These use Ubuntu's configured, signed package indexes. The manifest includes official Launchpad source-package links. For copied host libraries, retrieve the matching source package using the source name/version reported by `dpkg-query -W -f='${source:Package} ${source:Version}' <package>` and `apt-get source <source>=<version>`; [Ubuntu's source archive](https://launchpad.net/ubuntu/+source) supplies the original source packages. Distribution copyright notices include upstream locations and license terms; they are preserved with the application. Several media components use GPL licenses. Distributors must review those included terms and provide the corresponding source for the versions they distribute.
-
-PDF page rendering uses Android's `PdfRenderer` and Linux's installed Poppler `pdfinfo`/`pdftoppm` utilities. Linux requires `poppler-utils` from its distribution; it is a separate OS dependency, not silently downloaded during a preview.
+PDF previews use Android's `PdfRenderer` and the distribution's Poppler
+`pdfinfo`/`pdftoppm` on Linux (`poppler-utils`); no helper is downloaded silently
+when a preview opens. The CI extract gate still converts a real colored PDF page,
+and decodes a known SVG through system GdkPixbuf with a pixel oracle. System GIO
+must spawn a harmless child with the original host environment.
 
 Video is streamed: the decoder receives the attachment's signed `http(s)` URL through `loadfile` and reads it itself (bounded in-memory read-ahead, `cache-on-disk=no`; nothing is saved except by the Download action), through the app's proxy decision (`http-proxy`, set at run time). The protocol whitelist is the fixed `file, http, https, tcp, tls, crypto` (`proxy_hook_guard_test`); network references, automatic extra audio/subtitle files, scripts and yt-dlp stay disabled, and the player does not autoplay. A 401/403/410 from the host triggers one fresh signature (`AttachmentSource.refresh`). Closing, logout, authority loss and backgrounding stop playback; the player is disposed with its last holder ([streaming and sessions](media-playback.md#streaming-and-sessions)). No signed URL enters the persistent application cache. A local file (the audio viewer's cached copy) is still opened with the `file` protocol.
 
-Pinned download SHA-256 records (no binary artifacts are committed):
+## Packaging and evidence
 
-| Package | SHA-256 |
-| --- | --- |
-| libmpv-dev | `366c01526e737eab9bd053795ebec8729178ca08ca8f519346a59858e5278b86` |
-| libmpv2 | `7ab4e586007e65956669fc3a5bd3a870b6f46dd671de20a0572ce7f4ff0fd3d5` |
-| libmujs3 | `84a4eac3add5f1ba35f50e8dca8180368a5123b1e732212d1a11c9607336c564` |
-| liblua5.2-0 | `1d667717e43ddf79c3d3761a0a4e5c2f92a9970d8b0aeb396ba71835821f095f` |
-| libsndio7.0 | `64a89ce28e11f55c02cdae8e959e9bf84c97128d2c04a2881675b76058d6dddb` |
-| libsixel1 | `4062a008194d5a336e9bdd11bfb454db0c3d5670a481c4922bc5bcefaa3b4cf2` |
-| libxpresent1 | `ae77a5987dfacb8ab2a0230cfccfc8d43f0927f9c23fb8796cba370075a42a59` |
+`tool/release.py` stages the normal production entry. Its thin inventory allows
+only the app, pinned Flutter engine, app plugins, Dart SQLite native asset and
+the exact `lib/raft-webview/libraft_system_webview_extension.so` app adapter.
+That small module observes native WebKit events through system APIs; it is not
+a browser engine and does not carry a private WebKit/GTK library. A package with
+the native WebView plugin but without this matching module is rejected.
+That private `libsqlite3.so` has no SONAME; system `libsqlite3.so.0`, GTK, GLib,
+WebKit, libmpv, private loaders and obsolete browser plugins are rejected.
 
-The local development package supplies mpv headers. A generated, relocated pkg-config file describes only the public dynamic client ABI used by media_kit_video; it does not require the unused codec/static-link development headers. Host pkg-config configuration and the Dart package cache remain unchanged.
+Each application ELF gets a relative `DT_RUNPATH` (`$ORIGIN/lib` for the app,
+`$ORIGIN` for plugins, `$ORIGIN/..` for the WebExtension). No transitive `DT_RPATH` or process-wide library override
+selects a second system ABI. Dependencies must resolve in the app or distribution
+library directories; missing libraries and an AppImage GLIBC requirement newer
+than 2.39 stop packaging. The launcher keeps host module paths unchanged and
+preserves unset/empty host values for the Dart child-process sanitizer.
 
-## Delivery staging checks
+The staging directory includes `linux-dependency-checks.json` and
+`linux-system-runtime.json`, with the app-private inventory, required external
+SONAMEs, distribution prerequisites and explicit native-acceptance scope. These
+receipts describe build-host lookup; they do not establish login, HTML, playback,
+PDF or another distribution's runtime success. The four published AppImage gates
+remain Ubuntu direct/extract and Fedora X11/native Wayland at 2× display scale.
+Signatures, update metadata, no-clobber publication and source/build identity
+checks remain independent release requirements.
 
-`tool/build-deliverables` builds the release entry point `lib/main.dart` after engineering, Linux and Android runs have passed against the same source hash. It does not pass authentication fixtures or test defines. The Linux generated Dart defines are checked before packaging; unexpected non-Flutter defines stop delivery. Android artifacts use the local debug signing key for acceptance, and are not store releases.
-
-The staging copy normalizes every shipped ELF to relative DT_RPATH (`$ORIGIN/lib` for the executable, `$ORIGIN` for libraries), using a locally extracted Ubuntu `patchelf 0.18.0-1.4build1` package with SHA-256 `dd6cde91e0a77a73335a93a4ce41801f21dac36d2158539093c241e46e11b9fc`. It does not modify the build output or install a system package. The JNI native asset pulled in through `path_provider_android` is excluded only after checking that no shipped ELF needs `libdartjni.so`; Linux uses `path_provider_linux` and its native media controller. This avoids shipping an unused binary whose lookup path points at the build machine's Java installation.
-
-Staging verifies the prepared media hashes and copyright notices, then records both the prepared hash and the delivered hash after RPATH edits. The executable, libmpv and video plugin must resolve without missing dependencies or libraries from the development tree. The archive includes these dependency checks and the media source/version notices. These checks establish binary dependency lookup on the build host; they do not prove another distribution's ABI or a release login/playback flow. A relocated debug copy passed the staging checks for 217 ELF files; final release build and actual release execution remain separately reported.
-
-The supplied desktop entry uses `Exec=raft_flutter %u` rather than embedding the build directory. For optional desktop and `raft:` URI registration, put the installed executable on PATH or set this entry to its installed absolute path before placing it in the XDG applications directory. Normal launching from the extracted directory uses `./raft_flutter`.
-
-The delivery manifest binds the source hash to engineering logs, native run IDs, original checkpoint inventories, PNG hashes and artifact checksums. Android's real notification shade/click receipt must belong to that same run and source hash. The report publisher checks the artifact bytes against these checksums and preserves the original per-platform TSV files; missing, corrupt or stale native evidence cannot produce a passing summary.
+Run an extracted Linux package through `./run-raft`. An AppImage uses its normal
+AppRun entry, directly or with `--appimage-extract-and-run` when FUSE is unavailable.
+Keep the full directory together. An old private-engine release tag cannot be
+rebuilt as the new runtime under the old source identity; its assets remain
+untouched, and the new system runtime needs its own source/tag.

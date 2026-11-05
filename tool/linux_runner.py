@@ -67,7 +67,7 @@ def verify(source):
     python = subprocess.check_output([tools['python'], '--version'], text=True).strip()
     if flutter != expected or not python.startswith('Python 3.12.'):
         raise ValueError(f'Linux release toolchain differs from its pins: Flutter {flutter}, {python}')
-    subprocess.run([tools['pkg-config'], '--exists', 'gtk+-3.0', 'libsecret-1', 'jsoncpp', 'mpv'], check=True)
+    subprocess.run([tools['pkg-config'], '--exists', 'gtk+-3.0', 'libsecret-1', 'jsoncpp', 'mpv', 'webkit2gtk-4.1'], check=True)
     os.environ['RAFT_FLUTTER_BIN'] = tools['flutter']
     receipt = {'platform': 'linux-x64', 'distribution': 'Ubuntu 24.04',
                'flutter': flutter, 'python': python, 'storageFilesystems': storage,

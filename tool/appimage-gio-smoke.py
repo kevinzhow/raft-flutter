@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Exercise a packaged GIO desktop launcher with a harmless executable."""
+"""Exercise the distribution GIO desktop launcher with a harmless executable."""
 import ctypes
+import ctypes.util
 import json
 import os
 import shlex
@@ -16,10 +17,9 @@ class GError(ctypes.Structure):
 
 
 def main():
-    payload = Path(sys.argv[1]).resolve()
-    gio = ctypes.CDLL(str(payload / 'lib/libgio-2.0.so.0'))
-    glib = ctypes.CDLL(str(payload / 'lib/libglib-2.0.so.0'))
-    gobject = ctypes.CDLL(str(payload / 'lib/libgobject-2.0.so.0'))
+    gio = ctypes.CDLL(ctypes.util.find_library('gio-2.0') or 'libgio-2.0.so.0')
+    glib = ctypes.CDLL(ctypes.util.find_library('glib-2.0') or 'libglib-2.0.so.0')
+    gobject = ctypes.CDLL(ctypes.util.find_library('gobject-2.0') or 'libgobject-2.0.so.0')
     error_pointer = ctypes.POINTER(GError)
     gio.g_app_info_create_from_commandline.argtypes = [
         ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(error_pointer)]
@@ -31,17 +31,14 @@ def main():
     gobject.g_object_unref.argtypes = [ctypes.c_void_p]
     keys = ('PATH', 'LD_LIBRARY_PATH', 'GIO_MODULE_DIR',
             'GSETTINGS_SCHEMA_DIR', 'GIO_LAUNCH_DESKTOP', 'GTK_IM_MODULE_FILE', 'GDK_PIXBUF_MODULE_FILE')
-    expected = {key: os.environ.get('RAFT_APPIMAGE_HOST_' + key, '')
-                for key in keys
-                if os.environ.get('RAFT_APPIMAGE_HOST_' + key + '_SET') == 'x'}
+    expected = {key: os.environ[key] for key in keys if key in os.environ}
     with tempfile.TemporaryDirectory(prefix='raft-gio-child-check-') as temporary:
         output = Path(temporary) / 'child-environment.json'
         # Only this throwaway child sees/writes the selected environment.
         # No browser, account or user file is opened.
         child_code = ('import json,os; from pathlib import Path; '
                       f'keys={keys!r}; '
-                      'value={k:v for k,v in os.environ.items() if k in keys '
-                      'or k.startswith("RAFT_APPIMAGE_HOST_")}; '
+                      'value={k:v for k,v in os.environ.items() if k in keys}; '
                       f'path=Path({str(output)!r}); staged=path.with_suffix(".pending"); '
                       'staged.write_text(json.dumps(value)); staged.replace(path)')
         command = shlex.join([sys.executable, '-c', child_code]).encode()
@@ -58,7 +55,7 @@ def main():
                 time.sleep(0.05)
             if not output.exists() or json.loads(output.read_text()) != expected:
                 raise ValueError('Desktop child did not recover the original host environment')
-            print('Bundled GIO desktop launcher executed the child with the original host environment')
+            print('Distribution GIO desktop launcher executed the child with the original host environment')
         finally:
             if info:
                 gobject.g_object_unref(info)

@@ -48,6 +48,16 @@ class ReleaseBackfillTests(unittest.TestCase):
                     side_effect=[s + '\n' for s in responses]), self.assertRaises(ValueError):
                 backfill.checked_source(Path('/source'), self.tag, self.commit)
 
+    def test_legacy_private_engine_tag_is_rejected_without_build_side_effects(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder)
+            with self.assertRaisesRegex(ValueError, 'retired private engine'):
+                backfill.require_system_source(source)
+            policy = source / 'tool/linux_system_runtime.py'
+            policy.parent.mkdir()
+            policy.write_text("POLICY = 'system-gtk3-webkitgtk-4.1-v1'\n")
+            backfill.require_system_source(source)
+
     def test_normal_publisher_still_rejects_manual_events(self):
         with patch.dict(backfill.release.os.environ, {'GITHUB_EVENT_NAME': 'workflow_dispatch'}), \
                 self.assertRaisesRegex(ValueError, 'version-tag push'):
@@ -67,13 +77,12 @@ class ReleaseBackfillTests(unittest.TestCase):
                     patch.object(backfill, 'checked_source'), \
                     patch.object(backfill, 'existing_release', return_value=remote), \
                     patch.object(backfill, 'verify_hosted_runner') as verify_runner, \
+                    patch.object(backfill, 'require_system_source'), \
                     patch.object(backfill.release, 'verify_artifacts'), \
                     patch.object(backfill.subprocess, 'run') as run:
                 backfill.main()
                 verify_runner.assert_called_once_with(Path('/source'), platform)
-                self.assertEqual(run.call_count, 4 if platform == 'appimage' else 3)
-                if platform == 'appimage':
-                    self.assertEqual(Path(run.call_args_list[1].args[0][1]).name, 'prepare-media-appimage')
+                self.assertEqual(run.call_count, 3)
                 for call in run.call_args_list:
                     env = call.kwargs['env']
                     self.assertEqual(env['GITHUB_SHA'], self.commit)

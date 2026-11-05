@@ -265,14 +265,37 @@ Compilation, signatures and asset publication do not establish device functional
 
 ## Linux AppImage
 
-`python tool/release.py build appimage` builds the production Linux entry on
-Ubuntu 24.04. `tool/prepare-media-appimage` prepares that distribution's media
-libraries separately from the Ubuntu 26.04 development pins. GTK, Secret Service
-client libraries, media codecs and PDF helpers are included with SHA-256/source
-package provenance and copyright notices. The host provides glibc, desktop
-services and graphics drivers; the vendored official AppImage exclusion list
-prevents bundling incompatible device libraries. Every ELF is checked for missing
-libraries and a maximum glibc requirement of 2.39 before packaging.
+`python tool/release.py build appimage` builds a **thin** production Linux
+AppImage on Ubuntu 24.04. The package contains Raft, Flutter, plugins and the
+Dart SQLite native asset. It uses a coherent distribution-owned GTK3/WebKitGTK
+API 4.1 (libsoup3), GLib/GIO, Pango, GdkPixbuf, GStreamer/TLS, libmpv and Poppler
+stack. It does not build WPE, ship another browser/system ABI, restore a private
+engine SDK or fall back to WebKit API 4.0. Each app ELF has an app-local RUNPATH;
+AppRun leaves system module paths unchanged and never adds a global library path.
+Every ELF is checked for missing libraries, system resolution and a maximum
+glibc requirement of 2.39 before packaging. The SQLite native asset has no
+system SONAME and cannot replace the distribution's `libsqlite3.so.0`.
+
+Install these distribution runtime prerequisites before starting the AppImage:
+
+```sh
+# Ubuntu 24.04 (official signed APT repositories)
+sudo apt-get install libgtk-3-0t64 libwebkit2gtk-4.1-0 libsoup-3.0-0 \
+  libsecret-1-0 libmpv2 poppler-utils glib-networking librsvg2-common \
+  gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+# Fedora 44 (official signed RPM repositories)
+sudo dnf install gtk3 webkit2gtk4.1 libsoup3 libsecret mpv-libs poppler-utils \
+  glib-networking librsvg2 gstreamer1-plugins-base gstreamer1-plugins-good
+```
+
+The normal desktop display/Secret Service/notification services and GPU drivers
+remain host services. Codec availability follows the installed distribution
+packages. `linux-system-runtime.json` declares the policy, app-private inventory
+and external SONAMEs; it is not a claim that the AppImage contains those system
+libraries. Missing ELF dependencies stop the launcher with installation guidance.
+No profile is imported, migrated or deleted by packaging. New native code and
+system-runtime packaging require a new source/tag: backfill rejects retired
+private-engine tags before setup, preserving their already published assets.
 
 The latest reviewed official appimagetool and type2-runtime snapshots are recorded
 in `packaging/appimage/tools.json` with source commits and verified SHA-256. CI
@@ -308,12 +331,12 @@ chmod +x raft-flutter-VERSION-appimage-x64.AppImage
 ./raft-flutter-VERSION-appimage-x64.AppImage --appimage-extract-and-run
 ```
 
-Verify the release SHA-256 before execution. AppImage is unsigned and has no
-Flatpak sandbox; it uses the native application's normal data locations and
+Verify the release SHA-256 before execution. The AppImage has an Ed25519 update signature, not an OS code-signing signature
+or a Flatpak sandbox; it uses the native application's normal data locations and
 host Secret Service, notification and display services. Packaging does not
-import, migrate or delete an existing profile. Ubuntu 24.04's ABI baseline permits
-many newer desktop distributions, but does not establish compatibility with older
-systems, every GPU, or all desktop configurations.
+import, migrate or delete an existing profile. The declared system-runtime targets are Ubuntu 24.04 and Fedora 44. Other
+distributions, older systems, every GPU and all desktop configurations are not
+established by this packaging policy.
 
 ### Isolated test AppImage
 
@@ -333,7 +356,8 @@ path_provider_linux has a legacy data directory of that name; AppRun also create
 the id's data and cache directories first. The shown
 version is `X.Y.Z-isolated`. Release CI never sets the variable.
 
-CI runs the actual release file directly and in extract-and-run mode at 2× scale.
+CI explicitly installs the system WebKitGTK4.1/media prerequisites on each
+distribution, then runs the actual release file directly and in extract-and-run mode at 2× scale.
 A Fedora 44 container without `/dev/fuse` additionally runs the downloaded artifact
 in X11 and under KDE's KWin native Wayland compositor. The compatibility floor
 uses only Fedora's official `fedora` release repository for the complete dependency

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import shutil
 import sys
 import subprocess
 import tempfile
@@ -35,6 +36,8 @@ def main():
             subprocess.run([str(artifact), '--appimage-extract'], cwd=temporary,
                            stdout=subprocess.DEVNULL, check=True)
             payload = Path(temporary) / 'squashfs-root/raft'
+            import linux_system_runtime
+            linux_system_runtime.inventory(payload)
             checked = 0
             for path in payload.rglob('*'):
                 if not path.is_file():
@@ -46,8 +49,11 @@ def main():
                 if 'not found' in listing or 'version `' in listing:
                     raise ValueError(f'Downloaded payload cannot resolve {path}: {listing}')
                 checked += 1
-            for name in ('pdfinfo', 'pdftoppm'):
-                subprocess.run([str(payload / 'bin' / name), '-v'], check=True)
+            helpers = {name: shutil.which(name) for name in ('pdfinfo', 'pdftoppm')}
+            if not all(helpers.values()):
+                raise ValueError('Thin AppImage requires the distribution poppler-utils package')
+            for helper in helpers.values():
+                subprocess.run([helper, '-v'], check=True)
             # A real page conversion, rather than accepting a helper's existence.
             pdf = Path(temporary) / 'page.pdf'
             objects = [b'<< /Type /Catalog /Pages 2 0 R >>',
@@ -65,22 +71,13 @@ def main():
             data += b''.join(f'{offset:010d} 00000 n \n'.encode() for offset in offsets[1:])
             data += f'trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n{startxref}\n%%EOF\n'.encode()
             pdf.write_bytes(data)
-            subprocess.run([str(payload / 'bin/pdftoppm'), '-png', '-singlefile', str(pdf), str(Path(temporary) / 'page')], check=True)
+            subprocess.run([helpers['pdftoppm'], '-png', '-singlefile', str(pdf), str(Path(temporary) / 'page')], check=True)
             colors = int(capture(['identify', '-format', '%k', Path(temporary) / 'page.png']))
             if colors < 2:
-                raise ValueError('Bundled PDF tool did not render the colored page')
-            # Reproduce the Fedora failure using the actual bundled GLib and
-            # launcher, without opening a browser or accessing any account.
-            desktop_env = dict(os.environ,
-                LD_LIBRARY_PATH=str(payload / 'lib'),
-                GIO_MODULE_DIR=str(payload / 'lib/gio/modules'),
-                GSETTINGS_SCHEMA_DIR=str(payload.parent / 'usr/share/glib-2.0/schemas'),
-                GIO_LAUNCH_DESKTOP=str(payload / 'bin/raft-gio-launch-desktop'))
-            for key in ('PATH', 'LD_LIBRARY_PATH', 'GIO_MODULE_DIR',
-                        'GSETTINGS_SCHEMA_DIR', 'GIO_LAUNCH_DESKTOP', 'GTK_IM_MODULE_FILE', 'GDK_PIXBUF_MODULE_FILE'):
-                prefix = 'RAFT_APPIMAGE_HOST_' + key
-                desktop_env[prefix + '_SET'] = 'x' if key in os.environ else ''
-                desktop_env[prefix] = os.environ.get(key, '')
+                raise ValueError('System PDF tool did not render the colored page')
+            # One distribution-owned GLib/GIO/GdkPixbuf stack. No payload
+            # LD_LIBRARY_PATH, module cache or private desktop launcher.
+            desktop_env = dict(os.environ)
             for key in ('XDG_DATA_HOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME'):
                 folder = Path(temporary) / key
                 folder.mkdir()
@@ -92,7 +89,8 @@ def main():
             (args.output / 'payload-check.json').write_text(json.dumps({
                 'commit': receipt['commit'], 'elfFilesChecked': checked,
                 'pdfPageRendered': True, 'pdfColors': colors,
-                'desktopLauncherSpawned': True, 'desktopEnvironmentRestored': True,
+                'desktopLauncherSpawned': True, 'desktopEnvironmentPreserved': True,
+                'systemRuntimePolicy': 'system-gtk3-webkitgtk-4.1-v1',
                 'nativeSvgDecoded': True}, indent=2) + '\n')
     if args.mode != 'direct' and Path('/dev/fuse').exists():
         # Extract mode still never opens /dev/fuse; containers additionally prove

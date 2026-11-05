@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Decode a known SVG through the packaged GdkPixbuf modules and cache."""
+"""Decode a known SVG through the distribution GdkPixbuf SVG module."""
 import ctypes
+import ctypes.util
 import os
 from pathlib import Path
-import sys
 import tempfile
 
 
@@ -13,11 +13,9 @@ class GError(ctypes.Structure):
 
 
 def main():
-    payload = Path(sys.argv[1]).resolve()
-    os.environ['GDK_PIXBUF_MODULE_FILE'] = str(payload / 'lib/loaders.cache')
-    pixbuf = ctypes.CDLL(str(payload / 'lib/libgdk_pixbuf-2.0.so.0'))
-    glib = ctypes.CDLL(str(payload / 'lib/libglib-2.0.so.0'))
-    gobject = ctypes.CDLL(str(payload / 'lib/libgobject-2.0.so.0'))
+    pixbuf = ctypes.CDLL(ctypes.util.find_library('gdk_pixbuf-2.0') or 'libgdk_pixbuf-2.0.so.0')
+    glib = ctypes.CDLL(ctypes.util.find_library('glib-2.0') or 'libglib-2.0.so.0')
+    gobject = ctypes.CDLL(ctypes.util.find_library('gobject-2.0') or 'libgobject-2.0.so.0')
     error_pointer = ctypes.POINTER(GError)
     pixbuf.gdk_pixbuf_new_from_file.argtypes = [ctypes.c_char_p, ctypes.POINTER(error_pointer)]
     pixbuf.gdk_pixbuf_new_from_file.restype = ctypes.c_void_p
@@ -43,8 +41,8 @@ def main():
             pixels = pixbuf.gdk_pixbuf_get_pixels(result)
             offset = 16 * pixbuf.gdk_pixbuf_get_rowstride(result) + 16 * pixbuf.gdk_pixbuf_get_n_channels(result)
             if (width, height) != (32, 32) or list(pixels[offset:offset + 3]) != [0, 0, 255]:
-                raise ValueError('Packaged SVG loader did not decode the expected blue pixels')
-            print('Packaged native SVG loader decoded 32x32 and the expected blue pixels')
+                raise ValueError('Distribution SVG loader did not decode the expected blue pixels')
+            print('Distribution native SVG loader decoded 32x32 and the expected blue pixels')
         finally:
             if result:
                 gobject.g_object_unref(result)

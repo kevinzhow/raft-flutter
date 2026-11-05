@@ -42,6 +42,15 @@ def checked_source(source, tag, commit):
         raise ValueError('The original release source has tracked modifications')
 
 
+def require_system_source(source):
+    # A workflow revision may change setup, never the clean tagged product.
+    # Refuse old WPE tags before setup/build instead of rebuilding a different
+    # engine and labelling it with the original release identity.
+    policy = Path(source) / 'tool/linux_system_runtime.py'
+    if not policy.is_file() or "system-gtk3-webkitgtk-4.1-v1" not in policy.read_text():
+        raise ValueError('This original tag requires a retired private engine. Keep its published assets; use a new system-runtime source/tag.')
+
+
 def existing_release(tag):
     repository = release.repository()
     request = Request(f'https://api.github.com/repos/{repository}/releases/tags/{quote(tag, safe="")}',
@@ -85,7 +94,7 @@ def verify_hosted_runner(source, selected_platform):
             raise ValueError('Hosted macOS packaging gems differ from release pins')
     else:
         subprocess.run([tools['pkg-config'], '--exists', 'gtk+-3.0', 'libsecret-1',
-                        'jsoncpp', 'mpv'], check=True)
+                        'jsoncpp', 'mpv', 'webkit2gtk-4.1'], check=True)
     os.environ['RAFT_FLUTTER_BIN'] = tools['flutter']
 
 
@@ -101,6 +110,8 @@ def main():
     source = args.source.resolve()
     checked_source(source, tag, commit)
     identity = validate_release(existing_release(tag), tag, commit, number, platform)
+    if platform == 'appimage':
+        require_system_source(source)
     os.chdir(source)
     # Only the helper comes from the workflow revision. Product and packaging
     # inputs are the original, clean tag checkout, never the runner wiring branch.
@@ -111,8 +122,6 @@ def main():
                    GITHUB_EVENT_NAME='workflow_dispatch', RELEASE_VERSION=identity['version'],
                    RELEASE_BUILD_NUMBER=number)
         commands = [[sys.executable, source / 'tool/release.py', 'sdk']]
-        if platform == 'appimage':
-            commands.append([sys.executable, source / 'tool/prepare-media-appimage'])
         commands.extend(([sys.executable, source / 'tool/flutter', 'pub', 'get', '--enforce-lockfile'],
                          [sys.executable, source / 'tool/release.py', 'build', platform]))
         for command in commands:

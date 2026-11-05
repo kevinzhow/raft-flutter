@@ -70,14 +70,9 @@ pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 
-# libmpv is loaded by media_kit at runtime. Preserve transitive lookup in the
-# relocatable bundle, including codecs that libmpv loads through dlopen.
-target_link_options(${BINARY_NAME} PRIVATE "-Wl,--disable-new-dtags")
-set(RAFT_MEDIA_BUNDLE "${CMAKE_CURRENT_SOURCE_DIR}/../../../.local/media-linux/bundle")
-target_link_options(${BINARY_NAME} PRIVATE "-Wl,-rpath-link,${RAFT_MEDIA_BUNDLE}/libs")
-if(NOT EXISTS "${RAFT_MEDIA_BUNDLE}/libs/libmpv.so.2")
-  message(FATAL_ERROR "Prepare the Linux media runtime with tool/prepare-media-linux before building.")
-endif()
+# The UI/browser/media stack belongs to the distribution, including libmpv
+# loaded by media_kit. No private SDK or media closure is copied into the app.
+pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
@@ -92,35 +87,11 @@ set_target_properties(${BINARY_NAME}
 )
 
 
-# Local development package discovery; leave host pkg-config and pub-cache intact.
-set(RAFT_MPV_PKGCONFIG "${CMAKE_CURRENT_SOURCE_DIR}/../../../.local/media-linux/root/usr/lib/x86_64-linux-gnu/pkgconfig")
-set(ENV{PKG_CONFIG_PATH} "${RAFT_MPV_PKGCONFIG}:$ENV{PKG_CONFIG_PATH}")
-
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
-# Resolve the distribution's development headers before the pinned WPE plugin
-# considers its unpinned FetchContent fallback. No configure-time JSON download.
-find_package(nlohmann_json 3.11.3 CONFIG REQUIRED)
-set(FETCHCONTENT_TRY_FIND_PACKAGE_MODE ALWAYS)
 include(flutter/generated_plugins.cmake)
-include(raft_wpe_compat.cmake)
-raft_fix_wpe_compatibility()
-# The plugin's $ORIGIN runtime path is intentionally relocatable. Resolve its
-# SDK dependencies while linking the app without relying on LD_LIBRARY_PATH.
-pkg_get_variable(RAFT_WPE_LINK_DIRECTORY wpe-webkit-2.0 libdir)
-if(NOT IS_DIRECTORY "${RAFT_WPE_LINK_DIRECTORY}")
-  message(FATAL_ERROR "The Linux HTML SDK library directory is missing.")
-endif()
-target_link_options(${BINARY_NAME} PRIVATE "-Wl,-rpath-link,${RAFT_WPE_LINK_DIRECTORY}")
 include(runner/desktop_window_creation.cmake)
 raft_guard_window_creation(${BINARY_NAME})
-if(TARGET media_kit_video_plugin)
-  target_link_options(media_kit_video_plugin PRIVATE "-Wl,--disable-new-dtags" "-Wl,-rpath-link,${RAFT_MEDIA_BUNDLE}/libs")
-  set_target_properties(media_kit_video_plugin PROPERTIES
-    BUILD_WITH_INSTALL_RPATH TRUE INSTALL_RPATH "$ORIGIN")
-endif()
-
-
 # === Installation ===
 # By default, "installing" just makes a relocatable bundle in the build
 # directory.
@@ -151,6 +122,14 @@ foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endforeach(bundled_library)
+
+# App-owned event adapter for the system WebKit process. Install only after the
+# bundle-clean operation above, at the exact directory the plugin resolves.
+if(TARGET raft_system_webview_extension)
+  install(TARGETS raft_system_webview_extension
+    LIBRARY DESTINATION "${INSTALL_BUNDLE_LIB_DIR}/raft-webview"
+    COMPONENT Runtime)
+endif()
 
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
@@ -199,9 +178,3 @@ install(FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png"
   DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/icons/hicolor/256x256/apps"
   RENAME "${APPLICATION_ID}.png" COMPONENT Runtime)
-
-# Native media binaries remain generated/ignored; notices travel with the app.
-install(DIRECTORY "${RAFT_MEDIA_BUNDLE}/libs/"
-  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime)
-install(DIRECTORY "${RAFT_MEDIA_BUNDLE}/notices/"
-  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/notices/raft-media" COMPONENT Runtime)

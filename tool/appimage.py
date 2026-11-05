@@ -1,12 +1,11 @@
-"""Build a relocatable AppImage on Ubuntu 24.04; keep graphics drivers on the host."""
+"""Build a thin AppImage with one distribution-owned GTK/WebKit/media ABI."""
 import hashlib
-import importlib
+import linux_system_runtime as system_runtime
 import json
 import os
 from pathlib import Path
 import re
 import shutil
-import shlex
 import subprocess
 import urllib.request
 
@@ -34,18 +33,9 @@ OFFICIAL_UPDATE_INFORMATION = (
     f'gh-releases-zsync|{UPDATE_OWNER}|{UPDATE_REPOSITORY}|latest|{UPDATE_ASSET_PATTERN}')
 # The runtime reserves 1024 bytes for the string (AppImageSpec `.upd_info`).
 UPDATE_INFORMATION_LIMIT = 1023
-HOST_LAUNCH_VARIABLES = ('PATH', 'LD_LIBRARY_PATH', 'GIO_MODULE_DIR',
-                         'GSETTINGS_SCHEMA_DIR', 'GIO_LAUNCH_DESKTOP', 'GTK_IM_MODULE_FILE',
-                         'GDK_PIXBUF_MODULE_FILE')
 
 
-# libmpv links the VA-API client libraries. A VA driver (iHD, radeonsi) must be
-# built against a libva no newer than the one that loads it, and libva searches
-# the driver directory it was compiled with, so a bundled Ubuntu libva cannot
-# load a Fedora driver. Prefer the host's; ship these only as a fallback that
-# AppRun adds to the library path when the host lacks them.
-LIBVA_LIBRARIES = ('libva.so.2', 'libva-drm.so.2', 'libva-x11.so.2', 'libva-wayland.so.2')
-HOST_LIBRARY_DIRECTORIES = ('/usr/lib64', '/usr/lib/x86_64-linux-gnu', '/usr/lib')
+HOST_LIBRARY_DIRECTORIES = ('/usr/lib64', '/usr/lib/x86_64-linux-gnu', '/usr/lib', '/lib', '/lib64')
 
 
 def update_information(suffix=APP_ID_SUFFIX, environ=os.environ):
@@ -108,43 +98,6 @@ def make_zsync(artifact, zsyncmake='zsyncmake'):
     return target
 
 
-def host_libva_check():
-    names = ' '.join(LIBVA_LIBRARIES)
-    dirs = ' '.join(HOST_LIBRARY_DIRECTORIES)
-    return f'''host_libva=1
-for lib in {names}; do
-  found=0
-  for dir in {dirs}; do
-    if [ -e "$dir/$lib" ]; then found=1; break; fi
-  done
-  if [ "$found" = 0 ]; then host_libva=0; fi
-done
-'''
-
-
-GTK3_IM_CACHES = (
-    '/usr/lib64/gtk-3.0/3.0.0/immodules.cache',
-    '/usr/lib/x86_64-linux-gnu/gtk-3.0/3.0.0/immodules.cache',
-    '/usr/lib/gtk-3.0/3.0.0/immodules.cache',
-)
-
-
-def input_method_cache_setup(candidates=GTK3_IM_CACHES):
-    dollar = chr(36)
-    # These are host GTK3 module caches for the installed input-method bridge.
-    # Preserve an explicit value, including an intentionally empty value.
-    return '\n'.join([
-        'if [ -z "' + dollar + '{GTK_IM_MODULE_FILE+x}" ]; then',
-        '  for module_cache in ' + ' '.join(shlex.quote(path) for path in candidates) + '; do',
-        '    if [ -r "' + dollar + 'module_cache" ]; then',
-        '      export GTK_IM_MODULE_FILE="' + dollar + 'module_cache"',
-        '      break',
-        '    fi',
-        '  done',
-        'fi',
-    ]) + '\n'
-
-
 def isolated_directory_setup(app_id, suffix):
     """Create this id's XDG data and cache directories before the app starts.
 
@@ -163,53 +116,6 @@ def isolated_directory_setup(app_id, suffix):
     ]) + '\n'
 
 
-def host_environment_capture(variables=HOST_LAUNCH_VARIABLES):
-    lines = []
-    for key in variables:
-        lines.append('export RAFT_APPIMAGE_HOST_' + key + '_SET="' +
-                     chr(36) + '{' + key + '+x}"')
-        lines.append('export RAFT_APPIMAGE_HOST_' + key + '="' +
-                     chr(36) + '{' + key + '-}"')
-    return '\n'.join(lines) + '\n'
-
-
-def desktop_launcher_wrapper(variables=HOST_LAUNCH_VARIABLES):
-    # Host programs must not load Ubuntu AppImage libraries or GIO modules.
-    dollar = chr(36)
-    lines = ['#!/bin/sh', 'set -eu',
-             'helper_dir=' + dollar + '(CDPATH= cd -- "' + dollar +
-             '(dirname -- "' + dollar + '0")" && pwd)',
-             'launcher="' + dollar + '{RAFT_APPIMAGE_HOST_GIO_LAUNCH_DESKTOP:-' +
-             dollar + 'helper_dir/gio-launch-desktop}"']
-    for key in variables:
-        prefix = 'RAFT_APPIMAGE_HOST_' + key
-        lines.extend([
-            'if [ "' + dollar + '{' + prefix + '_SET:-}" = x ]; then',
-            '  export ' + key + '="' + dollar + '{' + prefix + '-}"',
-            'else',
-            '  unset ' + key,
-            'fi',
-            'unset ' + prefix + ' ' + prefix + '_SET'])
-    lines.append('unset APPDIR APPIMAGE ARGV0 OWD')
-    lines.append('exec "' + dollar + 'launcher" "' + dollar + '@"')
-    return '\n'.join(lines) + '\n'
-
-
-def image_loader_cache(text, modules):
-    """Use module basenames; the bundled GModule finds them in private lib RPATH.
-
-    Ubuntu's Linux GdkPixbuf is not built with Windows-style relocatable paths.
-    CI must decode an SVG using the extracted library, not a host replacement.
-    """
-    for module in modules:
-        text = text.replace('"' + str(module) + '"', '"' + module.name + '"')
-    paths = re.findall(r'^"([^"\n]+\.so)"$', text, re.M)
-    if set(paths) != {module.name for module in modules}:
-        raise ValueError('Image loader cache does not match the packaged modules')
-    # Build directory comments are unnecessary and would be misleading on hosts.
-    return '\n'.join(line for line in text.splitlines() if not line.startswith('#')) + '\n'
-
-
 def capture(args, **kwargs):
     return subprocess.check_output([str(x) for x in args], text=True, **kwargs).strip()
 
@@ -219,80 +125,12 @@ def digest(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def exclusions():
-    vendor = {line.split('#')[0].strip() for line in
-              (ROOT / 'packaging/appimage/excludelist').read_text().splitlines()
-              if line.split('#')[0].strip()}
-    # Ubuntu's libmpv/libavdevice link JACK even for ordinary playback. JACK
-    # is optional on KDE/Fedora, so bundle its client instead of requiring users
-    # to install a music-production backend just to open the application.
-    return (vendor | {'libGLESv2.so.2', 'libvulkan.so.1'}) - {'libjack.so.0'}
-
-
-def elf(path):
-    with path.open('rb') as stream:
-        return stream.read(4) == b'\x7fELF'
-
-
 def dependencies(path, env=None):
     listing = capture(['ldd', path], env=env)
     if 'not found' in listing or 'version `' in listing:
         raise ValueError(f'Unresolved dependencies for {path}: {listing}')
     return {name: Path(target) for name, target in
             re.findall(r'^\s*(\S+) => (/\S+)', listing, re.M)}
-
-
-def provenance(name, source, notices):
-    source = source.resolve()
-    # Handle merged-/usr packages whose recorded path differs from realpath.
-    candidates = [source]
-    if str(source).startswith('/usr/lib/'):
-        candidates.append(Path(str(source).removeprefix('/usr')))
-    owner = None
-    for candidate in candidates:
-        result = subprocess.run(['dpkg-query', '-S', str(candidate)], capture_output=True, text=True)
-        if result.returncode == 0:
-            owner = result.stdout.splitlines()[0].split(': ')[0]
-            break
-    if owner is None:
-        raise ValueError(f'No distribution provenance for {source}')
-    doc = Path('/usr/share/doc') / owner.split(':')[0] / 'copyright'
-    if not doc.is_file():
-        raise ValueError(f'No copyright notice for {owner}')
-    shutil.copy2(doc, notices / (owner.replace(':', '_') + '.copyright'))
-    version = capture(['dpkg-query', '-W', '-f=${Version}', owner])
-    source_package = capture(['dpkg-query', '-W', '-f=${source:Package}', owner])
-    source_version = capture(['dpkg-query', '-W', '-f=${source:Version}', owner])
-    return {'library': name, 'package': owner, 'version': version,
-            'sourcePackage': source_package, 'sourceVersion': source_version,
-            'sourceUrl': f'https://launchpad.net/ubuntu/+source/{source_package}/{source_version}',
-            'sha256': digest(source)}
-
-
-def prepare_media():
-    """Separate release preparation; never change the Ubuntu 26 development pins."""
-    os_release = Path('/etc/os-release').read_text()
-    if 'VERSION_ID="24.04"' not in os_release or capture(['dpkg', '--print-architecture']) != 'amd64':
-        raise ValueError('AppImage media preparation requires Ubuntu 24.04 amd64')
-    folder = ROOT / '.local/media-linux/bundle'
-    if folder.exists():
-        raise ValueError('Refusing to reuse media preparation from another build')
-    libs, notices = folder / 'libs', folder / 'notices'
-    libs.mkdir(parents=True)
-    notices.mkdir()
-    mpv = Path('/usr/lib/x86_64-linux-gnu/libmpv.so.2')
-    sources = {'libmpv.so.2': mpv, **dependencies(mpv)}
-    rows = []
-    for name, path in sorted(sources.items()):
-        if name in exclusions():
-            continue
-        rows.append(provenance(name, path, notices))
-        shutil.copy2(path.resolve(), libs / name)
-    (notices / 'manifest.json').write_text(json.dumps({
-        'platform': 'Ubuntu 24.04 amd64 AppImage build; host glibc and device drivers',
-        'libraries': rows, 'packages': [],
-        'sourcePackages': 'Exact source package names, versions, SHA-256 and distribution copyright notices accompany every bundled library.'}, indent=2) + '\n')
-    print(f'Prepared {len(rows)} Ubuntu 24.04 media libraries with provenance')
 
 
 def download_tool(name, record, folder):
@@ -320,75 +158,29 @@ def glibc_requirement(text):
 
 
 def package(stage, artifact, root, run, capture_output, file_digest):
+    """Thin AppImage: package the app and declare distribution runtime dependencies."""
     work = stage.parent / 'appimage'
     appdir = work / 'Raft.AppDir'
     appdir.mkdir(parents=True)
     shutil.move(str(stage), appdir / 'raft')
     stage = appdir / 'raft'
-    html_payload = importlib.import_module('html_webview.payload')
-    html_runtime = html_payload.optional_runtime(stage)
     (stage / 'RUN.txt').unlink()
     if EXECUTABLE != BASE_EXECUTABLE:
         (stage / BASE_EXECUTABLE).rename(stage / EXECUTABLE)
-    notices = stage / 'data/notices/raft-media'
-    manifest_path = notices / 'manifest.json'
-    manifest = json.loads(manifest_path.read_text())
-    records = {row['library']: row for row in manifest['libraries']}
-    host_libraries = set()
-    # Discard all device/base libraries even when a media dependency pulled them in.
-    for path in (stage / 'lib').iterdir():
-        if path.name in exclusions():
-            path.unlink()
-            records.pop(path.name, None)
-            host_libraries.add(path.name)
-    helpers = stage / 'bin'
-    helpers.mkdir()
-    commands = []
-    for name in ('pdfinfo', 'pdftoppm', 'gio-launch-desktop'):
-        # Bundled GLib otherwise calls its Ubuntu build-time libexec path,
-        # which does not exist on Fedora/KDE. Its tiny launch helper uses libc
-        # only, so ship the matching distribution helper with provenance.
-        source = (Path('/usr/lib/x86_64-linux-gnu/glib-2.0/gio-launch-desktop')
-                  if name == 'gio-launch-desktop' else Path(shutil.which(name) or ''))
-        if not source.is_file() or not os.access(source, os.X_OK):
-            raise ValueError(f'Missing desktop/PDF helper {name}')
-        row = provenance(name, source, notices)
-        row['name'] = row.pop('library')
-        commands.append(row)
-        shutil.copy2(source, helpers / name)
-    loader_dir = Path('/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders')
-    loaders = sorted(loader_dir.glob('libpixbufloader-*.so'))
-    if not any(path.name == 'libpixbufloader-svg.so' for path in loaders):
-        raise ValueError('Missing matching GdkPixbuf SVG loader')
-    for source in loaders:
-        records[source.name] = provenance(source.name, source, notices)
-        shutil.copy2(source, stage / 'lib' / source.name)
-    cache_text = capture(['/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders', *loaders])
-    (stage / 'lib/loaders.cache').write_text(image_loader_cache(cache_text, loaders))
+    libraries, files = system_runtime.inventory(stage, EXECUTABLE)
     env = {key: value for key, value in os.environ.items() if key not in {'LD_LIBRARY_PATH', 'LD_PRELOAD'}}
-    files = [path for path in stage.rglob('*') if path.is_file() and elf(path)]
-    # ldd resolves the recursive closure, including GTK and Secret Service plugins.
-    for executable in files:
-        for name, path in dependencies(executable, env=env).items():
-            if name in exclusions():
+    needed_glibc, host_libraries = (0, 0), set()
+    for path in files:
+        private_no_soname = path.name == 'libsqlite3.so' or path.relative_to(stage).as_posix() == 'lib/' + system_runtime.WEB_EXTENSION
+        if private_no_soname and capture_output(['patchelf', '--print-soname', path]).strip():
+            raise ValueError('Private SQLite/WebExtension must not shadow a system SONAME')
+        run(['patchelf', '--set-rpath', system_runtime.rpath(path, stage), path])
+        needed_glibc = max(needed_glibc, glibc_requirement(capture_output(['readelf', '--version-info', path])))
+        for name, resolved in dependencies(path, env=env).items():
+            if not resolved.resolve().is_relative_to(stage.resolve()):
+                if not any(resolved.resolve().is_relative_to(Path(directory)) for directory in HOST_LIBRARY_DIRECTORIES):
+                    raise ValueError('AppImage dependency is outside the app/distribution: ' + str(resolved))
                 host_libraries.add(name)
-                continue
-            target = stage / 'lib' / name
-            if not target.exists():
-                records[name] = provenance(name, path, notices)
-                shutil.copy2(path.resolve(), target)
-    fallback = stage / 'lib-fallback'
-    fallback.mkdir()
-    for name in LIBVA_LIBRARIES:
-        if (stage / 'lib' / name).exists():
-            shutil.move(str(stage / 'lib' / name), fallback / name)
-    # Avoid loading host GIO modules into the bundled GLib ABI.
-    (stage / 'lib/gio/modules').mkdir(parents=True, exist_ok=bool(html_runtime))
-    schemas = appdir / 'usr/share/glib-2.0/schemas'
-    schemas.mkdir(parents=True)
-    shutil.copy2('/usr/share/glib-2.0/schemas/gschemas.compiled', schemas)
-    if Path('/usr/share/poppler').is_dir():
-        shutil.copytree('/usr/share/poppler', appdir / 'usr/share/poppler', symlinks=False)
     icon = root / 'apps/raft_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png'
     shutil.copy2(icon, appdir / f'{APP_ID}.png')
     (appdir / '.DirIcon').symlink_to(f'{APP_ID}.png')
@@ -400,55 +192,18 @@ def package(stage, artifact, root, run, capture_output, file_digest):
     metadata.mkdir(parents=True)
     base_metainfo = (root / 'packaging/appimage' / f'{BASE_APP_ID}.metainfo.xml').read_text()
     (metadata / f'{APP_ID}.metainfo.xml').write_text(
-        base_metainfo.replace(BASE_APP_ID, APP_ID).replace(
-            '<name>Raft</name>', '<name>Raft (isolated build)</name>')
+        base_metainfo.replace(BASE_APP_ID, APP_ID).replace('<name>Raft</name>', '<name>Raft (isolated build)</name>')
         if APP_ID_SUFFIX else base_metainfo)
     launcher = appdir / 'AppRun'
-    launch_variables = HOST_LAUNCH_VARIABLES + (html_payload.LAUNCH_VARIABLES if html_runtime else ())
-    html_environment = html_payload.launch_environment('$app_dir/raft', html_runtime['manifestSha256']) if html_runtime else ''
-    launcher.write_text('''#!/bin/sh
-set -eu
-app_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-''' + host_environment_capture(launch_variables) + input_method_cache_setup() + host_libva_check() + isolated_directory_setup(APP_ID, APP_ID_SUFFIX) + '''export PATH="$app_dir/raft/bin:$PATH"
-export LD_LIBRARY_PATH="$app_dir/raft/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-if [ "$host_libva" = 0 ]; then
-  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$app_dir/raft/lib-fallback"
-fi
-export GIO_MODULE_DIR="$app_dir/raft/lib/gio/modules"
-export GSETTINGS_SCHEMA_DIR="$app_dir/usr/share/glib-2.0/schemas"
-export GIO_LAUNCH_DESKTOP="$app_dir/raft/bin/raft-gio-launch-desktop"
-export GDK_PIXBUF_MODULE_FILE="$app_dir/raft/lib/loaders.cache"
-''' + html_environment + '''exec "$app_dir/raft/''' + EXECUTABLE + '''" "$@"
-''')
+    text = system_runtime.launcher(EXECUTABLE, '$app_dir/raft')
+    text = text.replace('# System GTK', isolated_directory_setup(APP_ID, APP_ID_SUFFIX) + '# System GTK', 1)
+    launcher.write_text(text)
     launcher.chmod(0o755)
-    desktop_wrapper = helpers / 'raft-gio-launch-desktop'
-    desktop_wrapper.write_text(desktop_launcher_wrapper(launch_variables))
-    desktop_wrapper.chmod(0o755)
-    files = [path for path in stage.rglob('*') if path.is_file() and elf(path)]
-    needed_glibc = (0, 0)
-    for path in files:
-        rpath = (html_payload.relative_rpath(path, stage) if html_runtime else
-                 '$ORIGIN/../lib' if path.parent == helpers else '$ORIGIN/lib' if path.name == EXECUTABLE else '$ORIGIN')
-        run(['patchelf', '--force-rpath', '--set-rpath', rpath, path])
-        needed_glibc = max(needed_glibc, glibc_requirement(capture_output(['readelf', '--version-info', path])))
-        dependencies(path, env=env)
-    for row in records.values():
-        row.setdefault('preparedSha256', row['sha256'])
-        placed = stage / 'lib-fallback' if row['library'] in LIBVA_LIBRARIES else stage / 'lib'
-        row['sha256'] = file_digest(placed / row['library'])
-    for row in commands:
-        row['sha256'] = file_digest(helpers / row['name'])
-    manifest.update(libraries=sorted(records.values(), key=lambda row: row['library']),
-                    commands=commands, imageLoaderModules=[path.name for path in loaders],
-                    hostProvidedLibraries=sorted(host_libraries))
-    manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
-    html_payload.record_packaged(stage, html_runtime, {
-        'lib/' + name: 'lib-fallback/' + name for name in LIBVA_LIBRARIES
-        if html_runtime and 'lib/' + name in html_runtime['paths'] and (stage / 'lib-fallback' / name).exists()
-    })
+    policy = system_runtime.receipt(libraries, host_libraries)
+    (stage / 'linux-system-runtime.json').write_text(json.dumps(policy, indent=2) + '\n')
     tools = json.loads((root / 'packaging/appimage/tools.json').read_text())
     tool_notices = stage / 'data/notices/appimage-runtime'
-    tool_notices.mkdir()
+    tool_notices.mkdir(parents=True)
     shutil.copy2(root / 'packaging/appimage/runtime.LICENSE', tool_notices / 'LICENSE')
     (tool_notices / 'source.json').write_text(json.dumps(tools['runtime'], indent=2) + '\n')
     cache = root / '.local/appimage-tools'
@@ -459,22 +214,14 @@ export GDK_PIXBUF_MODULE_FILE="$app_dir/raft/lib/loaders.cache"
     command = [tool, '--appimage-extract-and-run', '--runtime-file', runtime]
     if information:
         command += ['--updateinformation', information]
-    # With zsyncmake installed appimagetool also writes <artifact>.zsync into its
-    # working directory; run it in the scratch folder so no stray file lands in
-    # the checkout (release.py makes the published .zsync itself).
     run([*command, appdir, artifact], env=dict(env, ARCH='x86_64'), cwd=work)
     artifact.chmod(0o755)
-    result = {'runtime': tools['runtime'], 'appimagetool': tools['appimagetool'],
+    return {'runtime': tools['runtime'], 'appimagetool': tools['appimagetool'],
             'buildSystem': 'Ubuntu 24.04 x86_64',
             'maximumGlibcRequired': '.'.join(map(str, needed_glibc)),
             'elfFilesChecked': len(files), 'hostProvidedLibraries': sorted(host_libraries),
-            'pdfHelpers': ['pdfinfo', 'pdftoppm'],
-            'imageLoaderModules': [path.name for path in loaders],
+            'systemRuntime': policy, 'pdfHelpers': ['system pdfinfo', 'system pdftoppm'],
+            'imageLoaderModules': 'distribution GdkPixbuf/SVG modules',
             'updateInformation': information or None,
-            'desktopLauncher': 'raft-gio-launch-desktop (bundled helper, restored host environment)',
+            'desktopLauncher': 'distribution GIO; host environment is unchanged',
             'launchModes': ['direct (static FUSE 3 library)', '--appimage-extract-and-run (no FUSE)']}
-    if html_runtime:
-        result['htmlRuntime'] = {'sourceManifestSha256': html_runtime['manifestSha256'],
-                                 'identity': html_runtime['identity'],
-                                 'packagedReceiptSha256': file_digest(stage / html_payload.PACKAGED)}
-    return result

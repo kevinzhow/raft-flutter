@@ -177,97 +177,53 @@ def windows_package(stage):
 
 
 def linux_package(stage, suffix=''):
+    """Stage only the app/Flutter/plugins; GTK, WebKit and media are system ABIs."""
+    runtime = tool_module('linux_system_runtime')
     shutil.copytree(APP / 'build/linux/x64/release/bundle', stage, symlinks=True)
-    for path in stage.rglob('*'):
-        if path.is_symlink() and not path.resolve().is_relative_to(stage.resolve()):
-            raise ValueError('Linux bundle contains an external symlink')
-    html_payload = tool_module('html_webview.payload')
-    html_runtime = html_payload.optional_runtime(stage)
-    manifest_path = stage / 'data/notices/raft-media/manifest.json'
-    manifest = json.loads(manifest_path.read_text())
-    for record in manifest['libraries']:
-        path = stage / 'lib' / record['library']
-        notice = manifest_path.parent / (record['package'].replace(':', '_') + '.copyright')
-        if not notice.is_file() or digest(path) != record['sha256']:
-            raise ValueError('Linux media provenance or notice mismatch')
-    elfs = []
-    for path in stage.rglob('*'):
-        if path.is_file():
-            with path.open('rb') as stream:
-                if stream.read(4) == b'\x7fELF':
-                    elfs.append(path)
+    # path_provider_android can contribute an unused JNI asset to a Linux
+    # Flutter bundle. Preserve the existing dependency guard before omitting it;
+    # it is not an application plugin or a host Java runtime dependency.
     jni = stage / 'lib/libdartjni.so'
-    if any('libdartjni.so' in capture(['patchelf', '--print-needed', p]).splitlines() for p in elfs):
-        raise ValueError('Unexpected Linux JNI dependency')
-    if jni.exists():
+    if jni.exists() or jni.is_symlink():
+        if jni.is_symlink() or not jni.is_file():
+            raise ValueError('Unexpected Linux JNI asset identity')
+        for path in stage.rglob('*'):
+            if path.is_file() and not path.is_symlink():
+                with path.open('rb') as stream:
+                    is_elf = stream.read(4) == b'\x7fELF'
+                if is_elf and 'libdartjni.so' in capture(['patchelf', '--print-needed', path]).splitlines():
+                    raise ValueError('Unexpected Linux JNI dependency')
         jni.unlink()
-        elfs.remove(jni)
+    libraries, elfs = runtime.inventory(stage)
+    checks, system = {}, set()
+    env = {key: value for key, value in os.environ.items() if key not in {'LD_LIBRARY_PATH', 'LD_PRELOAD'}}
     for path in elfs:
-        rpath = (html_payload.relative_rpath(path, stage) if html_runtime else
-                 '$ORIGIN/lib' if path.name == 'raft_flutter' else '$ORIGIN')
-        run(['patchelf', '--force-rpath', '--set-rpath', rpath, path])
-    checks = {}
-    env = {k: v for k, v in os.environ.items() if k not in {'LD_LIBRARY_PATH', 'LD_PRELOAD'}}
-    checked_paths = [stage / 'raft_flutter', stage / 'lib/libmpv.so.2', stage / 'lib/libmedia_kit_video_plugin.so']
-    if html_runtime:
-        checked_paths.extend(path for path in elfs if path not in checked_paths)
-    for path in checked_paths:
+        private_no_soname = path.name == 'libsqlite3.so' or path.relative_to(stage).as_posix() == 'lib/' + runtime.WEB_EXTENSION
+        if private_no_soname and capture(['patchelf', '--print-soname', path]).strip():
+            raise ValueError('App-private SQLite/WebExtension must not claim a system SONAME')
+        # RUNPATH applies to these app-private dependencies only, not transitively
+        # to the distribution WebKit/GTK dependency graph or its child processes.
+        run(['patchelf', '--set-rpath', runtime.rpath(path, stage), path])
         listing = subprocess.check_output(['ldd', str(path)], text=True, env=env)
-        if 'not found' in listing:
-            raise ValueError('Incomplete relocated Linux dependency closure')
-        for resolved in re.findall(r'=> (/\S+)', listing):
+        if 'not found' in listing or 'version `' in listing:
+            raise ValueError('Missing/incompatible system Linux runtime: ' + listing)
+        for name, resolved in re.findall(r'^\s*(\S+) => (/\S+)', listing, re.M):
             target = Path(resolved).resolve()
-            if target.is_relative_to(ROOT) and not target.is_relative_to(stage.resolve()):
-                raise ValueError('Linux library resolves into the build tree')
+            if target.is_relative_to(stage.resolve()):
+                continue
+            if not any(target.is_relative_to(Path(root)) for root in ('/usr/lib', '/lib', '/lib64', '/usr/lib64')):
+                raise ValueError('Linux library resolves outside the bundle/distribution: ' + str(target))
+            system.add(name)
         checks[str(path.relative_to(stage))] = listing
-    for row in manifest['libraries']:
-        row['preparedSha256'] = row['sha256']
-        row['sha256'] = digest(stage / 'lib' / row['library'])
-    manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
-    html_payload.record_packaged(stage, html_runtime)
     (stage / 'linux-dependency-checks.json').write_text(json.dumps(checks, indent=2) + '\n')
+    (stage / 'linux-system-runtime.json').write_text(json.dumps(runtime.receipt(libraries, system), indent=2) + '\n')
+    launcher = stage / 'run-raft'
+    launcher.write_text(runtime.launcher())
+    launcher.chmod(0o755)
     desktop = stage / f'data/applications/app.raft.raft_flutter{suffix}.desktop'
-    desktop.write_text(re.sub(r'^Exec=.*$', 'Exec=raft_flutter %u', desktop.read_text(), flags=re.M))
+    desktop.write_text(re.sub(r'^Exec=.*$', 'Exec=run-raft %u', desktop.read_text(), flags=re.M))
     copy_docs(stage)
-    (stage / 'RUN.txt').write_text(
-        'Run ./raft_flutter from this directory. Ubuntu 26.04 x86_64; requires compatible glibc, GTK and graphics drivers.\n'
-        'PDF preview requires installed poppler-utils. Media notices/source versions are in data/notices/raft-media.\n'
-        'For desktop registration put raft_flutter on PATH or adjust data/applications/app.raft.raft_flutter.desktop.\n'
-        'Other distributions and full-app acceptance on this CI build have not been verified.\n')
-    if html_runtime:
-        appimage = tool_module('appimage')
-        loader_names = manifest.get('imageLoaderModules', [])
-        library_names = {row['library'] for row in manifest['libraries']}
-        if (len(set(loader_names)) != len(loader_names) or
-                any(Path(name).name != name or name not in library_names for name in loader_names)):
-            raise ValueError('Image loader modules must be distinct, proven bundled basenames')
-        loaders = [stage / 'lib' / name for name in loader_names]
-        if loaders:
-            cache = appimage.capture([
-                '/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders', *loaders], env=env)
-            (stage / 'lib/loaders.cache').write_text(appimage.image_loader_cache(cache, loaders))
-        image_environment = 'export GDK_PIXBUF_MODULE_FILE="$app_dir/lib/loaders.cache"\n' if loaders else ''
-        launch_variables = appimage.HOST_LAUNCH_VARIABLES + html_payload.LAUNCH_VARIABLES
-        launcher = stage / 'run-raft'
-        launcher.write_text('#!/bin/sh\nset -eu\n'
-                            'app_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\n' +
-                            appimage.host_environment_capture(launch_variables) + image_environment +
-                            html_payload.launch_environment('$app_dir', html_runtime['manifestSha256']) +
-                            'export GIO_LAUNCH_DESKTOP="$app_dir/libexec/raft-html-webview/raft-gio-launch-desktop"\n'
-                            'exec "$app_dir/raft_flutter" "$@"\n')
-        launcher.chmod(0o755)
-        wrapper = stage / 'libexec/raft-html-webview/raft-gio-launch-desktop'
-        wrapper.write_text(appimage.desktop_launcher_wrapper(launch_variables))
-        wrapper.chmod(0o755)
-        desktop.write_text(desktop.read_text().replace('Exec=raft_flutter %u', 'Exec=run-raft %u'))
-        instructions_path = stage / 'RUN.txt'
-        instructions_path.write_text(instructions_path.read_text().replace(
-            'Run ./raft_flutter', 'Run ./run-raft').replace('put raft_flutter on PATH', 'put run-raft on PATH').replace(
-            'Ubuntu 26.04 x86_64', 'Ubuntu 24.04 x86_64'))
-        with (stage / 'RUN.txt').open('a') as instructions:
-            instructions.write('Use ./run-raft to select the matching HTML TLS/media modules. '
-                               'Embedded HTML requires the distribution-installed bubblewrap package at /usr/bin/bwrap. '
-                               'HTML sandboxing fails closed when that prerequisite is unavailable.\n')
+    (stage / 'RUN.txt').write_text('Run ./run-raft from this directory.\n' + runtime.INSTRUCTIONS + '\n')
 
 
 def zip_folder(stage, destination):

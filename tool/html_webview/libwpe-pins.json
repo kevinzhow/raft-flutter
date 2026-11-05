@@ -1,9 +1,0 @@
-{
-  "version": "1.16.3-2",
-  "architecture": "amd64",
-  "baseUrl": "https://deb.debian.org/debian/pool/main/libw/libwpe/",
-  "packages": {
-    "libwpe-1.0-1": {"size": 20652, "sha256": "2fc89dd4a3ed2bcd970917d2884ff039669a397effe0169b57c9e53cf1bbe354"},
-    "libwpe-1.0-dev": {"size": 36304, "sha256": "1da5bbf3f2b865ece6a30567dfd20f097ba46da8b330dfd9bda0ec8de621a51e"}
-  }
-}

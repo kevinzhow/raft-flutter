@@ -10,9 +10,12 @@ fi
 mkdir -p /evidence/fedora
 dnf --repo=fedora --setopt=allow_downgrade=True install -y python3 dbus-daemon dbus-tools gnome-keyring xorg-x11-server-Xvfb xwininfo ImageMagick \
   kwin-wayland libkscreen mesa-dri-drivers mesa-libEGL mesa-libGL libglvnd-egl libglvnd-glx \
-  fontconfig freetype harfbuzz libwayland-client alsa-lib pipewire-libs libstdc++
+  fontconfig freetype harfbuzz libwayland-client alsa-lib pipewire-libs libstdc++ \
+  gtk3 webkit2gtk4.1 libsoup3 libsecret mpv-libs poppler-utils glib-networking librsvg2 \
+  gstreamer1-plugins-base gstreamer1-plugins-good
 rpm -q --qf '%{NAME} %{EPOCHNUM}:%{VERSION}-%{RELEASE}.%{ARCH}\n' \
   kwin kwin-common kwin-libs libkscreen qt6-qtbase xorg-x11-server-Xvfb \
+  gtk3 webkit2gtk4.1 libsoup3 glib2 mpv-libs poppler-utils \
   | tee /evidence/fedora/kde-package-versions.txt
 kwin_version=$(rpm -q --qf '%{VERSION}' kwin)
 qtbase_version=$(rpm -q --qf '%{VERSION}' qt6-qtbase)

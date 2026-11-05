@@ -62,6 +62,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Reject legacy private-engine AppImage backfills before setup
+        if: inputs.platform == 'appimage'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PYGUARD'
+          import os, sys
+          from pathlib import Path
+          sys.path.insert(0, 'workflow/tool')
+          import release_backfill as backfill
+          source = Path('source').resolve()
+          tag, commit, number = (os.environ[key] for key in ('BACKFILL_TAG', 'BACKFILL_COMMIT', 'BACKFILL_BUILD_NUMBER'))
+          backfill.checked_source(source, tag, commit)
+          backfill.validate_release(backfill.existing_release(tag), tag, commit, number, 'appimage')
+          backfill.require_system_source(source)
+          PYGUARD
       - uses: subosito/flutter-action@v2
         with:
           flutter-version-file: source/.fvmrc
@@ -87,7 +103,7 @@ jobs:
         if: inputs.platform == 'appimage'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev patchelf poppler-utils zsync libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev glib-networking gstreamer1.0-plugins-base gstreamer1.0-plugins-good patchelf poppler-utils zsync libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
       - name: Build the exact original source and build number
         env:
           GH_TOKEN: ${{ github.token }}
@@ -122,7 +138,7 @@ jobs:
       - name: Install the original AppImage startup dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fuse3 libgtk-3-0t64 libsecret-1-0 libmpv2 poppler-utils libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
+          sudo apt-get install -y fuse3 libgtk-3-0t64 libwebkit2gtk-4.1-0 libsoup-3.0-0 glib-networking gstreamer1.0-plugins-base gstreamer1.0-plugins-good libsecret-1-0 libmpv2 poppler-utils libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
       - name: Restore executable permission on the downloaded AppImage
         run: chmod +x source/build/release/*.AppImage
       - name: Run the original production AppImage at 2x display scale
