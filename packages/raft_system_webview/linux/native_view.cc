@@ -149,6 +149,7 @@ void NativeView::Bind() {
 void NativeView::Close() {
   if (closed_) return;
   closed_ = true;
+  SetPaintOccluded(false);
   if (cancellable_) g_cancellable_cancel(cancellable_);
   navigation_.reset();
   if (snapshot_) snapshot_->Close();
@@ -199,11 +200,14 @@ void NativeView::Handle(FlMethodCall* call) {
   if (g_str_equal(method, "layout")) {
     FlValue* serial = Field(args, "sequence");
     FlValue* visible = Field(args, "visible");
+    FlValue* paint_occluded = Field(args, "paintOccluded");
     GdkRectangle frame, clip;
     if (!serial || fl_value_get_type(serial) != FL_VALUE_TYPE_INT ||
         fl_value_get_int(serial) <= sequence_ || !visible || fl_value_get_type(visible) != FL_VALUE_TYPE_BOOL ||
+        (paint_occluded && fl_value_get_type(paint_occluded) != FL_VALUE_TYPE_BOOL) ||
         !Rect(args, "frame", &frame) || !Rect(args, "clip", &clip)) {
       if (region_) region_->Visibility(false);
+      SetPaintOccluded(false);
       last_clip_ = {0,0,0,0};
       host_->Layout(id_, clip_, {0, 0, 0, 0}, false);
       Error(call, "invalid_layout"); return;
@@ -217,6 +221,7 @@ void NativeView::Handle(FlMethodCall* call) {
       gtk_layout_move(GTK_LAYOUT(clip_), region_->widget(), frame.x - intersection.x, frame.y - intersection.y);
       gtk_layout_set_size(GTK_LAYOUT(clip_), intersection.width, intersection.height);
     }
+    SetPaintOccluded(show && paint_occluded && fl_value_get_bool(paint_occluded));
     last_frame_ = frame;
     last_clip_ = show ? intersection : GdkRectangle{0,0,0,0};
     if (region_) region_->Visibility(show);
@@ -271,6 +276,9 @@ void NativeView::Handle(FlMethodCall* call) {
     fl_value_set_string_take(state, "flutterInputReady", fl_value_new_bool(host_->InputReady()));
     fl_value_set_string_take(state, "nativeAllocation", rect({0,0,gtk_widget_get_allocated_width(GTK_WIDGET(web_)),gtk_widget_get_allocated_height(GTK_WIDGET(web_))}));
     fl_value_set_string_take(state, "visible", fl_value_new_bool(gtk_widget_get_visible(clip_)));
+    fl_value_set_string_take(state, "paintOccluded", fl_value_new_bool(paint_occluded_));
+    fl_value_set_string_take(state, "opacity", fl_value_new_float(gtk_widget_get_opacity(clip_)));
+    fl_value_set_string_take(state, "mapped", fl_value_new_bool(gtk_widget_get_mapped(clip_)));
     fl_value_set_string_take(state, "focused", fl_value_new_bool(gtk_widget_has_focus(GTK_WIDGET(web_))));
     fl_value_set_string_take(state, "gtkFocus", host_->FocusState());
     fl_value_set_string_take(state, "ephemeral", fl_value_new_bool(webkit_web_context_is_ephemeral(context_)));
@@ -409,6 +417,7 @@ void NativeView::AfterInput(GtkWidget*, GdkEvent* event, gpointer data) {
 void NativeView::Fail() {
   if (closed_ || failed_) return;
   failed_ = true; loaded_ = false;
+  SetPaintOccluded(false);
   if (web_) webkit_web_view_stop_loading(web_);
   if (cancellable_) g_cancellable_cancel(cancellable_);
   navigation_.reset();
@@ -459,4 +468,11 @@ void NativeView::FocusChanged(GObject*, GParamSpec*, gpointer data) {
   g_autoptr(FlValue) fields = fl_value_new_map();
   fl_value_set_string_take(fields, "focused", fl_value_new_bool(gtk_widget_has_focus(GTK_WIDGET(self->web_))));
   self->Event("focus", fields);
+}
+
+void NativeView::SetPaintOccluded(bool occluded) {
+  paint_occluded_ = occluded;
+  // Opacity affects painting only. A passive Flutter overlay must not unmap
+  // the genuine WebKit widget or remove the user's native input rectangle.
+  if (clip_) gtk_widget_set_opacity(clip_, occluded ? 0.0 : 1.0);
 }

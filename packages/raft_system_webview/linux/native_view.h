@@ -24,6 +24,7 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   void Handle(FlMethodCall* call);
   void Event(const char* type, FlValue* fields = nullptr);
   void Fail();
+  void SetPaintOccluded(bool occluded);
   static gboolean Policy(WebKitWebView*, WebKitPolicyDecision*, WebKitPolicyDecisionType, gpointer);
   static void Loaded(WebKitWebView*, WebKitLoadEvent, gpointer);
   static gboolean Failed(WebKitWebView*, WebKitLoadEvent, gchar*, GError*, gpointer);
@@ -54,6 +55,7 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   };
   std::deque<InputSample> input_samples_;
   int64_t input_sample_sequence_ = 0;
+  bool paint_occluded_ = false;
   int pending_evaluations_ = 0;
   GdkRectangle last_frame_{0,0,0,0}, last_clip_{0,0,0,0};
   std::function<void()> retire_;

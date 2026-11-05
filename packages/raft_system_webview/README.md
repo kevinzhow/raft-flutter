@@ -19,8 +19,11 @@ refuses creation. `app.raft/system_webview/<id>` accepts:
 
 - `load({url})`: one host-authorized HTTP(S) document. Its actual response must
   have the attachment's opaque-origin sandbox CSP before execution is allowed.
-- `layout({sequence, frame, clip, visible})`: monotonic GTK logical-pixel
-  geometry; native painting and input share the clipped rectangle.
+- `layout({sequence, frame, clip, visible, paintOccluded?})`: monotonic GTK logical-pixel
+  geometry; native painting and input share the clipped rectangle. Optional
+  `paintOccluded` defaults to false and yields painting to a passive Flutter
+  overlay while retaining the mapped native input area. Blocking overlays still
+  use `visible: false`.
 - `evaluate({source})` and `currentUri`: host-initiated, bounded result requests.
   There is no object or script-message handler callable by uploaded HTML.
 - `inspect`: host readback of live GTK visibility/focus and ephemeral/sandbox state.
