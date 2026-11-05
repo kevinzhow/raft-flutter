@@ -67,8 +67,15 @@ NativeHost::NativeHost(FlView* view) : view_(GTK_WIDGET(view)) {
   g_object_add_weak_pointer(G_OBJECT(input_), reinterpret_cast<gpointer*>(&input_));
   g_signal_connect(overlay_, "get-child-position", G_CALLBACK(Position), this);
   g_signal_connect(input_, "size-allocate", G_CALLBACK(Allocated), this);
+  // Observe the actual Flutter-side input before its specific handler can
+  // consume it. Native widgets are siblings of this input subtree, so their
+  // own real clicks retain GTK's normal WebKit focus handling.
+  input_event_signal_ = g_signal_lookup("event", GTK_TYPE_WIDGET);
+  if (input_event_signal_) input_event_hook_ = g_signal_add_emission_hook(
+    input_event_signal_, 0, FlutterInput, this, nullptr);
 }
 NativeHost::~NativeHost() {
+  if (input_event_hook_) g_signal_remove_emission_hook(input_event_signal_, input_event_hook_);
   rectangles_.clear();
   UpdateInput();
   if (overlay_) {
@@ -129,4 +136,29 @@ void NativeHost::UpdateInput() {
   }
   gtk_widget_input_shape_combine_region(input_, rectangles_.empty() ? nullptr : region);
   cairo_region_destroy(region);
+}
+
+gboolean NativeHost::FlutterInput(GSignalInvocationHint*, guint count, const GValue* args, gpointer data) {
+  auto* self = static_cast<NativeHost*>(data);
+  if (count < 2 || !self->view_ || !self->input_) return TRUE;
+  auto* widget = GTK_WIDGET(g_value_get_object(&args[0]));
+  if (widget != self->input_ && !gtk_widget_is_ancestor(widget, self->input_)) return TRUE;
+  auto* event = static_cast<GdkEvent*>(g_value_get_boxed(&args[1]));
+  if (event && (event->type == GDK_BUTTON_PRESS || event->type == GDK_TOUCH_BEGIN) &&
+      gtk_widget_get_can_focus(self->view_)) gtk_widget_grab_focus(self->view_);
+  // TRUE retains this observation hook; it cannot consume the GTK event.
+  return TRUE;
+}
+FlValue* NativeHost::FocusState() const {
+  auto* result = fl_value_new_map();
+  fl_value_set_string_take(result, "flutterCanFocus", fl_value_new_bool(view_ && gtk_widget_get_can_focus(view_)));
+  fl_value_set_string_take(result, "flutterHasFocus", fl_value_new_bool(view_ && gtk_widget_has_focus(view_)));
+  GtkWidget* top = view_ ? gtk_widget_get_toplevel(view_) : nullptr;
+  if (top && GTK_IS_WINDOW(top)) {
+    auto* focus = gtk_window_get_focus(GTK_WINDOW(top));
+    fl_value_set_string_take(result, "toplevelActive", fl_value_new_bool(gtk_window_is_active(GTK_WINDOW(top))));
+    fl_value_set_string_take(result, "toplevelHasFocus", fl_value_new_bool(gtk_window_has_toplevel_focus(GTK_WINDOW(top))));
+    fl_value_set_string_take(result, "focusWidgetType", fl_value_new_string(focus ? G_OBJECT_TYPE_NAME(focus) : "none"));
+  }
+  return result;
 }

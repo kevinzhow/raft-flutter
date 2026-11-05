@@ -126,6 +126,7 @@ NativeView::NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenge
   g_signal_connect(web_, "user-message-received", G_CALLBACK(Message), this);
   g_signal_connect(web_, "event-after", G_CALLBACK(AfterInput), this);
   g_signal_connect(web_, "event", G_CALLBACK(ObserveInput), this);
+  g_signal_connect(web_, "notify::has-focus", G_CALLBACK(FocusChanged), this);
   g_signal_connect(web_, "load-changed", G_CALLBACK(Loaded), this);
   g_signal_connect(web_, "load-failed", G_CALLBACK(Failed), this);
   g_signal_connect(web_, "notify::estimated-load-progress", G_CALLBACK(Progress), this);
@@ -234,6 +235,10 @@ void NativeView::Handle(FlMethodCall* call) {
     else Error(call, "snapshot_unavailable");
     return;
   }
+  if (g_str_equal(method, "hasFocus")) {
+    g_autoptr(FlValue) value = fl_value_new_bool(gtk_widget_has_focus(GTK_WIDGET(web_)));
+    Reply(call, value); return;
+  }
   if (g_str_equal(method, "inspect")) {
     g_autoptr(FlValue) state = fl_value_new_map();
     fl_value_set_string_take(state, "id", fl_value_new_int(id_));
@@ -271,6 +276,7 @@ void NativeView::Handle(FlMethodCall* call) {
     fl_value_set_string_take(state, "nativeAllocation", rect({0,0,gtk_widget_get_allocated_width(GTK_WIDGET(web_)),gtk_widget_get_allocated_height(GTK_WIDGET(web_))}));
     fl_value_set_string_take(state, "visible", fl_value_new_bool(gtk_widget_get_visible(clip_)));
     fl_value_set_string_take(state, "focused", fl_value_new_bool(gtk_widget_has_focus(GTK_WIDGET(web_))));
+    fl_value_set_string_take(state, "gtkFocus", host_->FocusState());
     fl_value_set_string_take(state, "ephemeral", fl_value_new_bool(webkit_web_context_is_ephemeral(context_)));
     fl_value_set_string_take(state, "sandboxed", fl_value_new_bool(webkit_web_context_get_sandbox_enabled(context_)));
     WebKitWebsiteDataManager* manager = webkit_web_context_get_website_data_manager(context_);
@@ -449,4 +455,12 @@ gboolean NativeView::ObserveInput(GtkWidget*, GdkEvent* event, gpointer data) {
   while(self->input_samples_.size()>16)self->input_samples_.pop_front();
   // Observation does not retarget, delay, consume, queue or synthesize input.
   return FALSE;
+}
+
+void NativeView::FocusChanged(GObject*, GParamSpec*, gpointer data) {
+  auto* self = static_cast<NativeView*>(data);
+  if (self->closed_) return;
+  g_autoptr(FlValue) fields = fl_value_new_map();
+  fl_value_set_string_take(fields, "focused", fl_value_new_bool(gtk_widget_has_focus(GTK_WIDGET(self->web_))));
+  self->Event("focus", fields);
 }

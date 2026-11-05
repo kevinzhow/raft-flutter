@@ -24,6 +24,7 @@ refuses creation. `app.raft/system_webview/<id>` accepts:
 - `evaluate({source})` and `currentUri`: host-initiated, bounded result requests.
   There is no object or script-message handler callable by uploaded HTML.
 - `inspect`: host readback of live GTK visibility/focus and ephemeral/sandbox state.
+- `hasFocus`: current GTK focus for a host-side check before clearing stale Flutter focus.
 - `snapshot`: one bounded host-only visible-region PNG request; layout changes,
   closure and cancellation reject stale results. Maximum 16 Mi pixels, 8192
   pixels per side and 8 MiB PNG; caller owns its private decoded image.
@@ -31,7 +32,7 @@ refuses creation. `app.raft/system_webview/<id>` accepts:
   view and releases the ephemeral context. Dart retires event handling first.
 
 Native `event` messages report loading progress, document completion, a
-sanitized failure and real-input `snapshotDirty` notifications. URLs and browser errors are not printed to application logs.
+sanitized failure, host-only `focus({focused})` changes and real-input `snapshotDirty` notifications. URLs and browser errors are not printed to application logs.
 
 The view supports rectangular clips and translation-only geometry. Unsupported
 geometry hides native pixels and input. A view-local occlusion callback comes
@@ -39,6 +40,11 @@ from the SDK's canonical tooltip and popup placement; it never adds page offsets
 A caller supplies a private snapshot as the static background while the native
 surface yields to Flutter overlays, and restores the same live controller after
 those overlays close. Capture/region drawing uses its own native overlay adapter.
+
+A real press in Flutter's input subtree returns GTK focus to its FlView before
+Flutter handles the press. A native sibling keeps normal WebKit focus handling;
+its focus event lets the Flutter host clear its previous text focus after checking
+`hasFocus`. This boundary neither creates pointer events nor changes key handling.
 
 ## Native link authority
 

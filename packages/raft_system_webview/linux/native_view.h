@@ -28,6 +28,7 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   static void Loaded(WebKitWebView*, WebKitLoadEvent, gpointer);
   static gboolean Failed(WebKitWebView*, WebKitLoadEvent, gchar*, GError*, gpointer);
   static void Progress(GObject*, GParamSpec*, gpointer);
+  static void FocusChanged(GObject*, GParamSpec*, gpointer);
   static gboolean Message(WebKitWebView*, WebKitUserMessage*, gpointer);
   static void AfterInput(GtkWidget*, GdkEvent*, gpointer);
   static gboolean ObserveInput(GtkWidget*, GdkEvent*, gpointer);
