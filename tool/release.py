@@ -236,11 +236,22 @@ def linux_package(stage, suffix=''):
         'Other distributions and full-app acceptance on this CI build have not been verified.\n')
     if html_runtime:
         appimage = tool_module('appimage')
+        loader_names = manifest.get('imageLoaderModules', [])
+        library_names = {row['library'] for row in manifest['libraries']}
+        if (len(set(loader_names)) != len(loader_names) or
+                any(Path(name).name != name or name not in library_names for name in loader_names)):
+            raise ValueError('Image loader modules must be distinct, proven bundled basenames')
+        loaders = [stage / 'lib' / name for name in loader_names]
+        if loaders:
+            cache = appimage.capture([
+                '/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders', *loaders], env=env)
+            (stage / 'lib/loaders.cache').write_text(appimage.image_loader_cache(cache, loaders))
+        image_environment = 'export GDK_PIXBUF_MODULE_FILE="$app_dir/lib/loaders.cache"\n' if loaders else ''
         launch_variables = appimage.HOST_LAUNCH_VARIABLES + html_payload.LAUNCH_VARIABLES
         launcher = stage / 'run-raft'
         launcher.write_text('#!/bin/sh\nset -eu\n'
                             'app_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\n' +
-                            appimage.host_environment_capture(launch_variables) +
+                            appimage.host_environment_capture(launch_variables) + image_environment +
                             html_payload.launch_environment('$app_dir', html_runtime['manifestSha256']) +
                             'export GIO_LAUNCH_DESKTOP="$app_dir/libexec/raft-html-webview/raft-gio-launch-desktop"\n'
                             'exec "$app_dir/raft_flutter" "$@"\n')
