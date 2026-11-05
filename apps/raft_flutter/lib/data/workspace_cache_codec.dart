@@ -72,7 +72,15 @@ final _signedQuery = RegExp(
   caseSensitive: false,
 );
 
-dynamic _cacheSafe(dynamic value) {
+/// Text a person wrote (a message body, its translation, a composer draft).
+/// The server returns it verbatim to everyone in the conversation, so the
+/// cache keeps it as written: a message that merely mentions `?token=` (or
+/// pastes a link carrying one) must not come back empty after a reload.
+/// Signed-URL redaction applies to every other string.
+const _proseKeys = {'content', 'translatedContent', 'translation', 'text'};
+
+dynamic _cacheSafe(dynamic value, {String? key}) {
+  if (value is String && _proseKeys.contains(key)) return value;
   if (value is Map) {
     return {
       for (final e in value.entries)
@@ -89,7 +97,7 @@ dynamic _cacheSafe(dynamic value) {
           'downloadUrl',
           'uploadUrl',
         }.contains(e.key))
-          e.key.toString(): _cacheSafe(e.value),
+          e.key.toString(): _cacheSafe(e.value, key: e.key.toString()),
     };
   }
   if (value is List) return value.map(_cacheSafe).toList();

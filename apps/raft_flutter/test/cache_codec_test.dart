@@ -43,6 +43,60 @@ void main() {
       expect(value['messages'][0]['accessToken'], 'test-only');
     });
   }
+  test(
+    'message text that mentions a signed query survives the cache',
+    () async {
+      // Kevin 2026-11-05: an agent message with a login link (`?token=`) or
+      // one that only quoted `?token=` in prose came back with an empty body
+      // after the window was restored from disk.
+      const link = 'Login: http://100.64.0.1:8686/?token=test-only';
+      const prose = 'This message has a link with `?token=` and a path.';
+      const translated =
+          'Translation keeps http://example.invalid/?token=test-only';
+      final payload = await encodeWorkspaceCache({
+        'messages': [
+          {'id': 'm1', 'content': link},
+          {'id': 'm2', 'content': prose},
+          {
+            'id': 'm3',
+            'content': 'plain',
+            'attachments': [
+              {'id': 'a1', 'url': 'https://example.invalid/a1?token=test-only'},
+            ],
+          },
+        ],
+        'translations': [
+          {'messageId': 'm1', 'translatedContent': translated},
+        ],
+        'drafts': {
+          'c1': {'text': 'draft with ?token=test-only'},
+        },
+      });
+      final decoded = await decodeWorkspaceCache(payload);
+      final messages = decoded['messages'] as List;
+      expect(messages[0]['content'], link);
+      expect(messages[1]['content'], prose);
+      // Signed URLs outside written text are still dropped.
+      expect(messages[2]['attachments'][0]['url'], isNull);
+      expect(decoded['translations'][0]['translatedContent'], translated);
+      expect(decoded['drafts']['c1']['text'], 'draft with ?token=test-only');
+    },
+  );
+
+  test('translation batches keep text that mentions a signed query', () async {
+    const translated = 'see http://example.invalid/?token=test-only';
+    final payloads = await encodeWorkspaceTranslations([
+      {
+        'messageId': 'm1',
+        'translatedContent': translated,
+        'content': 'orig ?token=x',
+      },
+    ]);
+    final decoded = await decodeWorkspaceTranslations(payloads);
+    expect(decoded.single['translatedContent'], translated);
+    expect(decoded.single['content'], 'orig ?token=x');
+  });
+
   test('the public unsigned thumbnailUrl survives the cache; a signed URL does not', () async {
     // The server builds thumbnailUrl from its public CDN base and the
     // thumbnail key (no signature), so a restored message keeps it.
