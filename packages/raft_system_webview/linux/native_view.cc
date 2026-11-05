@@ -125,6 +125,7 @@ NativeView::NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenge
   g_signal_connect(web_, "decide-policy", G_CALLBACK(Policy), this);
   g_signal_connect(web_, "user-message-received", G_CALLBACK(Message), this);
   g_signal_connect(web_, "event-after", G_CALLBACK(AfterInput), this);
+  g_signal_connect(web_, "event", G_CALLBACK(ObserveInput), this);
   g_signal_connect(web_, "load-changed", G_CALLBACK(Loaded), this);
   g_signal_connect(web_, "load-failed", G_CALLBACK(Failed), this);
   g_signal_connect(web_, "notify::estimated-load-progress", G_CALLBACK(Progress), this);
@@ -237,6 +238,26 @@ void NativeView::Handle(FlMethodCall* call) {
     g_autoptr(FlValue) state = fl_value_new_map();
     fl_value_set_string_take(state, "id", fl_value_new_int(id_));
     fl_value_set_string_take(state, "loaded", fl_value_new_bool(loaded_));
+    g_autoptr(FlValue) inputs = fl_value_new_list();
+    for (const auto& sample : input_samples_) {
+      FlValue* row = fl_value_new_map();
+      fl_value_set_string_take(row,"type",fl_value_new_string(sample.type.c_str()));
+      fl_value_set_string_take(row,"time",fl_value_new_int(sample.time));
+      fl_value_set_string_take(row,"sequence",fl_value_new_int(sample.sequence));
+      fl_value_set_string_take(row,"layoutSequence",fl_value_new_int(sample.layout));
+      fl_value_set_string_take(row,"x",fl_value_new_float(sample.x));
+      fl_value_set_string_take(row,"y",fl_value_new_float(sample.y));
+      fl_value_set_string_take(row,"rootX",fl_value_new_float(sample.root_x));
+      fl_value_set_string_take(row,"rootY",fl_value_new_float(sample.root_y));
+      fl_value_set_string_take(row,"windowOriginX",fl_value_new_int(sample.origin_x));
+      fl_value_set_string_take(row,"windowOriginY",fl_value_new_int(sample.origin_y));
+      fl_value_set_string_take(row,"deviceNowX",fl_value_new_int(sample.device_x));
+      fl_value_set_string_take(row,"deviceNowY",fl_value_new_int(sample.device_y));
+      fl_value_set_string_take(row,"isWebViewWindow",fl_value_new_bool(sample.web_window));
+      fl_value_set_string_take(row,"eventWidgetType",fl_value_new_string(sample.widget_type.c_str()));
+      fl_value_append_take(inputs,row);
+    }
+    fl_value_set_string_take(state,"recentInput",inputs);
     fl_value_set_string_take(state, "layoutSequence", fl_value_new_int(sequence_));
     auto rect=[](const GdkRectangle& r) {
       FlValue* values=fl_value_new_list();
@@ -385,4 +406,33 @@ gboolean NativeView::TlsFailed(WebKitWebView*, gchar*, GTlsCertificate*, GTlsCer
 }
 void NativeView::Terminated(WebKitWebView*, WebKitWebProcessTerminationReason, gpointer data) {
   static_cast<NativeView*>(data)->Fail();
+}
+
+gboolean NativeView::ObserveInput(GtkWidget*, GdkEvent* event, gpointer data) {
+  auto* self = static_cast<NativeView*>(data);
+  if (self->closed_ || !event) return FALSE;
+  const char* type;
+  switch (event->type) {
+    case GDK_MOTION_NOTIFY:type="motion";break;
+    case GDK_BUTTON_PRESS:type="down";break;
+    case GDK_BUTTON_RELEASE:type="up";break;
+    case GDK_ENTER_NOTIFY:type="enter";break;
+    case GDK_LEAVE_NOTIFY:type="leave";break;
+    default:return FALSE;
+  }
+  InputSample sample{};sample.type=type;sample.time=gdk_event_get_time(event);
+  sample.sequence=++self->input_sample_sequence_;sample.layout=self->sequence_;
+  if (!gdk_event_get_coords(event,&sample.x,&sample.y) ||
+      !gdk_event_get_root_coords(event,&sample.root_x,&sample.root_y)) return FALSE;
+  auto* window=gdk_event_get_window(event);
+  if(window){gdk_window_get_origin(window,&sample.origin_x,&sample.origin_y);
+    gpointer widget=nullptr;gdk_window_get_user_data(window,&widget);
+    if(widget&&GTK_IS_WIDGET(widget))sample.widget_type=G_OBJECT_TYPE_NAME(widget);
+  }
+  sample.web_window=window==gtk_widget_get_window(GTK_WIDGET(self->web_));
+  if(auto* device=gdk_event_get_device(event))gdk_device_get_position(device,nullptr,&sample.device_x,&sample.device_y);
+  self->input_samples_.push_back(std::move(sample));
+  while(self->input_samples_.size()>16)self->input_samples_.pop_front();
+  // Observation does not retarget, delay, consume, queue or synthesize input.
+  return FALSE;
 }

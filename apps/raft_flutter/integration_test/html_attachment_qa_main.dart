@@ -49,7 +49,8 @@ for(const type of ['pointerdown','mousedown','pointerup','mouseup','click']){
     const target=event.target.closest('button,input,a');
     if(target){
       qaPointerEvents.push({type,id:target.id,trusted:event.isTrusted,
-        button:event.button,buttons:event.buttons});
+        button:event.button,buttons:event.buttons,clientX:event.clientX,clientY:event.clientY,
+        screenX:event.screenX,screenY:event.screenY});
       if(qaPointerEvents.length>24)qaPointerEvents.shift();
     }
   },true);
@@ -65,7 +66,7 @@ window.setInterval(()=>{
 },50);
 document.addEventListener('click',event=>{
   const target=event.target.closest('button,input,a');
-  if(target)window.qaLastClick={id:target.id,trusted:event.isTrusted};
+  if(target)window.qaLastClick={id:target.id,trusted:event.isTrusted,clientX:event.clientX,clientY:event.clientY,screenX:event.screenX,screenY:event.screenY};
 },true);
 const ctx=chart.getContext('2d');ctx.fillStyle='#1e40af';ctx.fillRect(0,0,320,120);
 window.qaNetwork='pending';fetch('/qa-exfil').then(()=>qaNetwork='allowed',()=>qaNetwork='blocked');
