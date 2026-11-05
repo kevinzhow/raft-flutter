@@ -6,6 +6,8 @@
 #include <functional>
 #include <string>
 #include "native_host.h"
+#include "trusted_navigation.h"
+#include "native_snapshot.h"
 
 class NativeView : public std::enable_shared_from_this<NativeView> {
  public:
@@ -23,6 +25,8 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   static void Loaded(WebKitWebView*, WebKitLoadEvent, gpointer);
   static gboolean Failed(WebKitWebView*, WebKitLoadEvent, gchar*, GError*, gpointer);
   static void Progress(GObject*, GParamSpec*, gpointer);
+  static gboolean Message(WebKitWebView*, WebKitUserMessage*, gpointer);
+  static void AfterInput(GtkWidget*, GdkEvent*, gpointer);
   int64_t id_, sequence_ = 0;
   NativeHost* host_;
   WebKitWebContext* context_ = nullptr;
@@ -30,7 +34,10 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   GtkWidget* clip_ = nullptr;
   FlMethodChannel* channel_ = nullptr;
   GCancellable* cancellable_ = nullptr;
-  std::string url_;
+  std::string url_, nonce_;
+  std::unique_ptr<TrustedNavigation> navigation_;
+  std::shared_ptr<NativeSnapshot> snapshot_;
+  int pending_evaluations_ = 0;
   std::function<void()> retire_;
   bool closed_ = false, initial_ = false, loaded_ = false, failed_ = false, response_ = false;
 };

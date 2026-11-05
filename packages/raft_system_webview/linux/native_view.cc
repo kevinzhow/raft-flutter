@@ -1,4 +1,5 @@
 #include "native_view.h"
+#include "extension_paths.h"
 #include <libsoup/soup.h>
 #include <algorithm>
 #include <cmath>
@@ -83,7 +84,14 @@ bool Sandboxed(WebKitURIResponse* response) {
 
 NativeView::NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenger) : id_(id), host_(host) {
   if (!host->available() || g_getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS")) return;
+  const auto extension_directory = RaftWebviewExtensionDirectory();
+  if (extension_directory.empty()) return;
+  g_autofree char* nonce = g_uuid_string_random();
+  nonce_ = nonce;
   context_ = webkit_web_context_new_ephemeral();
+  webkit_web_context_set_web_extensions_directory(context_, extension_directory.c_str());
+  webkit_web_context_set_web_extensions_initialization_user_data(context_, g_variant_new_string(nonce_.c_str()));
+  webkit_web_context_add_path_to_sandbox(context_, extension_directory.c_str(), TRUE);
   webkit_web_context_set_sandbox_enabled(context_, TRUE);
   if (!webkit_web_context_get_sandbox_enabled(context_)) return;
   // A new manager contains no application script-message handlers or scripts.
@@ -108,7 +116,12 @@ NativeView::NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenge
   std::string name = "app.raft/system_webview/" + std::to_string(id);
   channel_ = fl_method_channel_new(messenger, name.c_str(), FL_METHOD_CODEC(codec));
   cancellable_ = g_cancellable_new();
+  snapshot_ = std::make_shared<NativeSnapshot>(web_, cancellable_, [this](int64_t sequence) {
+    return !closed_ && loaded_ && !failed_ && sequence_ == sequence;
+  });
   g_signal_connect(web_, "decide-policy", G_CALLBACK(Policy), this);
+  g_signal_connect(web_, "user-message-received", G_CALLBACK(Message), this);
+  g_signal_connect(web_, "event-after", G_CALLBACK(AfterInput), this);
   g_signal_connect(web_, "load-changed", G_CALLBACK(Loaded), this);
   g_signal_connect(web_, "load-failed", G_CALLBACK(Failed), this);
   g_signal_connect(web_, "notify::estimated-load-progress", G_CALLBACK(Progress), this);
@@ -131,6 +144,9 @@ void NativeView::Close() {
   if (closed_) return;
   closed_ = true;
   if (cancellable_) g_cancellable_cancel(cancellable_);
+  navigation_.reset();
+  if (snapshot_) snapshot_->Close();
+  snapshot_.reset();
   if (web_) {
     g_signal_handlers_disconnect_by_data(web_, this);
     webkit_web_view_stop_loading(web_);
@@ -163,6 +179,12 @@ void NativeView::Handle(FlMethodCall* call) {
       Error(call, "invalid_url"); return;
     }
     url_ = url; initial_ = true;
+    navigation_ = std::make_unique<TrustedNavigation>(web_, nonce_, url_, [this](const std::string& link) {
+      if (closed_ || !loaded_ || failed_) return;
+      g_autoptr(FlValue) fields = fl_value_new_map();
+      fl_value_set_string_take(fields, "url", fl_value_new_string(link.c_str()));
+      Event("navigation", fields);
+    });
     webkit_web_view_load_uri(web_, url);
     Reply(call); return;
   }
@@ -188,22 +210,42 @@ void NativeView::Handle(FlMethodCall* call) {
     host_->Layout(id_, clip_, show ? intersection : GdkRectangle{0, 0, 0, 0}, show);
     Reply(call); return;
   }
+  if (g_str_equal(method, "snapshot")) {
+    if (snapshot_) snapshot_->Capture(call, sequence_);
+    else Error(call, "snapshot_unavailable");
+    return;
+  }
+  if (g_str_equal(method, "inspect")) {
+    g_autoptr(FlValue) state = fl_value_new_map();
+    fl_value_set_string_take(state, "id", fl_value_new_int(id_));
+    fl_value_set_string_take(state, "loaded", fl_value_new_bool(loaded_));
+    fl_value_set_string_take(state, "visible", fl_value_new_bool(gtk_widget_get_visible(clip_)));
+    fl_value_set_string_take(state, "focused", fl_value_new_bool(gtk_widget_has_focus(GTK_WIDGET(web_))));
+    fl_value_set_string_take(state, "ephemeral", fl_value_new_bool(webkit_web_context_is_ephemeral(context_)));
+    fl_value_set_string_take(state, "sandboxed", fl_value_new_bool(webkit_web_context_get_sandbox_enabled(context_)));
+    WebKitWebsiteDataManager* manager = webkit_web_context_get_website_data_manager(context_);
+    fl_value_set_string_take(state, "persistentDataDirectory", fl_value_new_bool(webkit_website_data_manager_get_base_data_directory(manager) != nullptr));
+    fl_value_set_string_take(state, "persistentCacheDirectory", fl_value_new_bool(webkit_website_data_manager_get_base_cache_directory(manager) != nullptr));
+    Reply(call, state); return;
+  }
   if (g_str_equal(method, "currentUri")) {
     g_autoptr(FlValue) uri = fl_value_new_string(webkit_web_view_get_uri(web_) ? webkit_web_view_get_uri(web_) : "");
     Reply(call, uri); return;
   }
   if (g_str_equal(method, "evaluate")) {
     const char* source = String(args, "source");
-    if (!loaded_ || !source || strlen(source) > 65536) { Error(call, "invalid_evaluation"); return; }
+    if (!loaded_ || pending_evaluations_ >= 2 || !source || strlen(source) > 65536) { Error(call, "invalid_evaluation"); return; }
     struct Pending { std::weak_ptr<NativeView> view; FlMethodCall* call; };
     auto* pending = new Pending{weak_from_this(), FL_METHOD_CALL(g_object_ref(call))};
+    pending_evaluations_++;
     webkit_web_view_evaluate_javascript(web_, source, -1, nullptr, nullptr, cancellable_,
       [](GObject* object, GAsyncResult* result, gpointer data) {
         std::unique_ptr<Pending> pending(static_cast<Pending*>(data));
         g_autoptr(GError) error = nullptr;
         g_autoptr(JSCValue) value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error);
         auto owner = pending->view.lock();
-        if (!owner || owner->closed_ || error) Error(pending->call, "evaluation_failed");
+        if (owner) owner->pending_evaluations_--;
+        if (!owner || owner->closed_ || error || !value) Error(pending->call, "evaluation_failed");
         else {
           g_autofree char* text = jsc_value_is_string(value) ? jsc_value_to_string(value) : jsc_value_to_json(value, 0);
           if (!text || strlen(text) > 16384) Error(pending->call, "invalid_result");
@@ -229,13 +271,17 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
     const char* uri = webkit_uri_request_get_uri(request);
     const char* method = webkit_uri_request_get_http_method(request);
     // The first exact URI is an app-owned load before any document executes.
-    // GTK 2.52 does not expose target frame info. Do not invent isMainFrame:
-    // every later navigation, including script/redirect/new-window, is denied.
+    // GTK 2.52 has no target-frame accessor. Later links require the separate
+    // native main-frame/private-world click proof; never invent isMainFrame.
     bool initial = self->initial_ && !self->closed_ && g_strcmp0(uri, self->url_.c_str()) == 0 &&
       g_strcmp0(method, "GET") == 0 && !webkit_navigation_action_is_redirect(action);
     self->initial_ = false;
     if (initial) webkit_policy_decision_use(decision);
-    else webkit_policy_decision_ignore(decision);
+    else if (self->loaded_ && !self->failed_ && self->navigation_) self->navigation_->Decide(decision, action);
+    else {
+      webkit_policy_decision_ignore(decision);
+      if (!self->failed_) { self->failed_ = true; self->Event("failed"); }
+    }
     return TRUE;
   }
   if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE) {
@@ -276,4 +322,20 @@ void NativeView::Progress(GObject*, GParamSpec*, gpointer data) {
   g_autoptr(FlValue) fields = fl_value_new_map();
   fl_value_set_string_take(fields, "percent", fl_value_new_int(std::lround(webkit_web_view_get_estimated_load_progress(self->web_) * 100)));
   self->Event("progress", fields);
+}
+
+gboolean NativeView::Message(WebKitWebView*, WebKitUserMessage* message, gpointer data) {
+  auto* self = static_cast<NativeView*>(data);
+  return self->navigation_ && !self->closed_ && self->loaded_ && !self->failed_ && self->navigation_->Message(message);
+}
+
+void NativeView::AfterInput(GtkWidget*, GdkEvent* event, gpointer data) {
+  auto* self = static_cast<NativeView*>(data);
+  if (!self->loaded_ || self->closed_ || self->failed_ || !event) return;
+  switch (event->type) {
+    case GDK_BUTTON_RELEASE: case GDK_SCROLL: case GDK_KEY_RELEASE:
+    case GDK_TOUCH_END: case GDK_TOUCH_CANCEL:
+      self->Event("snapshotDirty"); break;
+    default: break;
+  }
 }

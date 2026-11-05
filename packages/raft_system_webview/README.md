@@ -23,29 +23,38 @@ refuses creation. `app.raft/system_webview/<id>` accepts:
   geometry; native painting and input share the clipped rectangle.
 - `evaluate({source})` and `currentUri`: host-initiated, bounded result requests.
   There is no object or script-message handler callable by uploaded HTML.
-- `dispose`: cancels evaluation/loading, disconnects signals, destroys the GTK
+- `inspect`: host readback of live GTK visibility/focus and ephemeral/sandbox state.
+- `snapshot`: one bounded host-only visible-region PNG request; layout changes,
+  closure and cancellation reject stale results. Maximum 16 Mi pixels, 8192
+  pixels per side and 8 MiB PNG; caller owns its private decoded image.
+- `dispose`: cancels evaluation/loading/snapshots, disconnects signals, destroys the GTK
   view and releases the ephemeral context. Dart retires event handling first.
 
-Native `event` messages report loading progress, document completion and a
-sanitized failure. URLs and browser errors are not printed to application logs.
+Native `event` messages report loading progress, document completion, a
+sanitized failure and real-input `snapshotDirty` notifications. URLs and browser errors are not printed to application logs.
 
-The first prototype supports rectangular clips and translation-only geometry.
-Unsupported geometry hides the native widget. It also hides when Flutter
-retires the route, widget or foreground state. A caller must keep `visible`
-false while loading or displaying an error and while a canonical Flutter
-overlay covers the pane: GTK airspace is not automatically occluded by Flutter
-OverlayEntries. Do not remove that fence merely because a route test passes.
+The view supports rectangular clips and translation-only geometry. Unsupported
+geometry hides native pixels and input. A view-local occlusion callback comes
+from the SDK's canonical tooltip and popup placement; it never adds page offsets.
+A caller supplies a private snapshot as the static background while the native
+surface yields to Flutter overlays, and restores the same live controller after
+those overlays close. Capture/region drawing uses its own native overlay adapter.
 
-## Delivery boundary
+## Native link authority
 
-The initial prototype cancels every navigation except the first exact,
-nonredirected GET initiated by the host. WebKitGTK 2.52's navigation action has
-no target-frame accessor, so it must not report invented `isMainFrame` data.
-External links and native region capture/flash are follow-up adapter work, not
-claims established by these protocol and geometry tests. The planned native
-WebExtension uses a private script world and verified native main-frame/trusted
-input information, with no exported page API and one bounded navigation
-decision; unknown, replayed, expired and scripted actions remain denied.
+The first document is one exact nonredirected host GET. Later navigation is
+cancelled unless the system engine reports a real link-click gesture and the
+small application WebExtension reports the matching trusted main-frame DOM click.
+The extension uses a private ScriptWorld, deletes its temporary private global
+after installing its closure, and exports no main-world object, app callback or
+UserContentManager message handler. Script, iframe, redirect, POST, replay,
+unknown, expired and mismatched actions are refused. A single native decision
+may wait at most 500 ms for its matching proof; a proof is usable once within
+750 ms. An external link is cancelled in the renderer before being handed to
+the app's existing URL policy; the report remains open. Same-document fragments
+may stay inside the renderer. The module lives at
+`lib/raft-webview/libraft_system_webview_extension.so`, dynamically linked only
+to system libraries and located relative to the loaded application plugin.
 
 An AppImage must use a coherent system GTK/GLib/WebKit/media dependency set.
 Loading this system widget alongside a separately bundled GTK/GLib closure is

@@ -28,6 +28,7 @@ static void Method(FlMethodChannel*, FlMethodCall* call, gpointer data) {
       g_autoptr(FlValue) result = fl_value_new_map();
       fl_value_set_string_take(result, "id", fl_value_new_int(id));
       fl_value_set_string_take(result, "protocol", fl_value_new_int(1));
+      fl_value_set_string_take(result, "snapshot", fl_value_new_bool(true));
       fl_value_set_string_take(result, "ephemeral", fl_value_new_bool(true));
       fl_value_set_string_take(result, "sandboxed", fl_value_new_bool(true));
       response = FL_METHOD_RESPONSE(fl_method_success_response_new(result));
