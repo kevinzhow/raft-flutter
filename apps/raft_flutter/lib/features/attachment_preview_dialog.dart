@@ -195,6 +195,7 @@ class AttachmentPreviewDialog extends StatefulWidget {
     required this.controller,
     required this.metadata,
     this.channelId,
+    this.hostMessageId,
     required this.authorized,
     required this.onClose,
     required this.onDownload,
@@ -210,6 +211,7 @@ class AttachmentPreviewDialog extends StatefulWidget {
   final WorkspaceController controller;
   final Map<String, dynamic> metadata;
   final String? channelId;
+  final String? hostMessageId;
   final bool Function() authorized;
   final VoidCallback onClose;
   final Future<void> Function() onDownload;
@@ -447,19 +449,21 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
         // opens the attachment's URL itself.
         final owner =
             widget.channelId ?? widget.metadata['channelId'] as String?;
-        final acquired = widget.controller.attachmentMedia.playerSessions.acquire(
-          attachmentMediaKey(widget.metadata),
-          scope: widget.controller.attachmentImageScope,
-          channelId: owner,
-          viewer: true,
-          create:
-              widget.playerFactory ?? () => createAttachmentPlayer(video: true),
-          source: () => attachmentStreamSource(
-            widget.controller,
-            '${widget.metadata['id']}',
-            channelId: owner,
-          ),
-        );
+        final acquired = widget.controller.attachmentMedia.playerSessions
+            .acquire(
+              attachmentMediaKey(widget.metadata),
+              scope: widget.controller.attachmentImageScope,
+              channelId: owner,
+              viewer: true,
+              create:
+                  widget.playerFactory ??
+                  () => createAttachmentPlayer(video: true),
+              source: () => attachmentStreamSource(
+                widget.controller,
+                '${widget.metadata['id']}',
+                channelId: owner,
+              ),
+            );
         hold = acquired;
         bindPlayer(acquired.player);
         await acquired.ready;
@@ -551,7 +555,9 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
       ),
       resolveUrl: resolveUrl,
       refreshUrl: () {
-        widget.controller.attachmentMedia.invalidateUrl('${widget.metadata['id']}');
+        widget.controller.attachmentMedia.invalidateUrl(
+          '${widget.metadata['id']}',
+        );
         return widget.controller.attachmentMedia.url(
           '${widget.metadata['id']}',
           channelId: owner,
@@ -570,12 +576,9 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
 
   /// What the user is told for each refusal reason of the preview service.
   static String refusalMessage(Object? reason) => switch (reason) {
-    'too_large' =>
-      'This file exceeds the server preview size limit. Download the original file to view it.',
-    'unreadable' =>
-      'The file could not be read and may be damaged. Download the original file to view it.',
-    'unsupported' =>
-      'This file format is not supported for preview. Download the original file to view it.',
+    'too_large' => 'This file exceeds the server preview size limit. Download the original file to view it.',
+    'unreadable' => 'The file could not be read and may be damaged. Download the original file to view it.',
+    'unsupported' => 'This file format is not supported for preview. Download the original file to view it.',
     _ => 'Preview unavailable. Download the original file.',
   };
 
@@ -783,7 +786,8 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
 
   Future<bool> detectHdr() async {
     final key = attachmentMediaKey(widget.metadata);
-    final verdicts = widget.controller.attachmentMedia.playerSessions.hdrVerdicts;
+    final verdicts =
+        widget.controller.attachmentMedia.playerSessions.hdrVerdicts;
     final known = verdicts[key];
     if (known != null) return known;
     final owner = widget.channelId ?? widget.metadata['channelId'] as String?;
@@ -1167,6 +1171,7 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
         ? (_, sheet) => AttachmentCommentsView(
             controller: widget.controller,
             attachmentId: widget.metadata['id'] as String,
+            hostMessageId: widget.hostMessageId,
             filename: '${widget.metadata['filename'] ?? ''}',
             authorized: () => current,
             sheet: sheet,

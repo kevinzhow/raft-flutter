@@ -25,6 +25,7 @@ class HtmlAttachmentPreviewDialog extends StatefulWidget {
     required this.onClose,
     required this.onDownload,
     this.onShare,
+    this.hostMessageId,
     this.page = false,
     this.loader,
     this.openExternal,
@@ -33,6 +34,7 @@ class HtmlAttachmentPreviewDialog extends StatefulWidget {
   });
   final WorkspaceController controller;
   final Map<String, dynamic> metadata;
+  final String? hostMessageId;
   final bool Function() authorized;
   final VoidCallback onClose;
   final Future<void> Function() onDownload;
@@ -425,6 +427,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
         ? (_, sheet) => AttachmentCommentsView(
             controller: widget.controller,
             attachmentId: widget.metadata['id'] as String,
+            hostMessageId: widget.hostMessageId,
             filename: '${widget.metadata['filename'] ?? 'HTML'}',
             authorized: () => current,
             sheet: sheet,

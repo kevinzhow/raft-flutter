@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
+import 'attachment_comment_updates.dart';
 import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
 import 'private_route_guard.dart';
@@ -71,12 +72,16 @@ class AttachmentCommentsView extends StatefulWidget {
     required this.controller,
     required this.attachmentId,
     required this.filename,
+    this.hostMessageId,
     this.pendingAnchor,
     this.authorized,
     this.sheet,
   });
   final WorkspaceController controller;
   final String attachmentId, filename;
+
+  /// Exact message that owns this attachment, supplied by its authorized opener.
+  final String? hostMessageId;
   final Map<String, dynamic>? pendingAnchor;
   final bool Function()? authorized;
 
@@ -90,6 +95,8 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
   WorkspaceController get w => widget.controller;
   List<Map<String, dynamic>>? comments;
   Map<String, dynamic>? viewer;
+  String? threadChannelId;
+  AttachmentCommentUpdates? updates;
   // ignore: raft_lints/avoid_imperative_notice_state -- Load error: cleared by a successful load, a rebind to another attachment/controller and a scope revocation.
   String? error;
   bool anchorCleared = false;
@@ -105,23 +112,39 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
   }
 
   void bind() {
+    updates?.dispose();
     authority = workspaceAuthority(w);
     revoked = false;
     comments = null;
     viewer = null;
+    threadChannelId = null;
     // Comments this attachment showed before (same workspace authority) are
     // on screen at once and revalidated in place.
     final known = readPageSnapshot(w, _snapshotKey(widget.attachmentId));
     if (known != null && known['authority'] == authority) {
       comments = known['comments'] as List<Map<String, dynamic>>?;
       viewer = known['viewer'] as Map<String, dynamic>?;
+      threadChannelId = known['threadChannelId'] as String?;
     }
     error = null;
     anchorCleared = false;
     draft = '';
     ++binding;
     w.addListener(scopeChanged);
+    bindUpdates();
     load();
+  }
+
+  void bindUpdates() {
+    updates?.dispose();
+    final owner = w, id = widget.attachmentId, revision = binding;
+    updates = AttachmentCommentUpdates(
+      events: owner.client.events,
+      hostMessageId: widget.hostMessageId,
+      serverId: owner.server?.id,
+      current: () => accepts(owner, id, revision),
+      reload: load,
+    )..snapshot(threadChannelId, comments ?? const []);
   }
 
   @override
@@ -132,6 +155,7 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
       oldWidget.controller.removeListener(scopeChanged);
       bind();
     } else {
+      if (oldWidget.hostMessageId != widget.hostMessageId) bindUpdates();
       scopeChanged();
     }
   }
@@ -140,6 +164,7 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
   void dispose() {
     ++binding;
     ++request;
+    updates?.dispose();
     w.removeListener(scopeChanged);
     super.dispose();
   }
@@ -154,6 +179,7 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
     if (current || !mounted || revoked) return;
     ++binding;
     ++request;
+    updates?.dispose();
     setState(() {
       revoked = true;
       comments = null;
@@ -172,6 +198,8 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
     if (!current) return;
     final owner = w, id = widget.attachmentId, revision = binding;
     final ticket = ++request;
+    final readingUpdates = updates;
+    readingUpdates?.beginRead();
     try {
       final data = await owner.query('/attachments/$id/comments');
       if (!accepts(owner, id, revision) || ticket != request) return;
@@ -185,12 +213,17 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
         viewer = data is Map && data['viewer'] is Map
             ? Map<String, dynamic>.from(data['viewer'])
             : null;
+        threadChannelId = data is Map && data['threadChannelId'] is String
+            ? data['threadChannelId'] as String
+            : null;
         error = null;
       });
+      updates?.snapshot(threadChannelId, comments!);
       writePageSnapshot(owner, _snapshotKey(id), identity, {
         'authority': authority,
         'comments': comments,
         'viewer': viewer,
+        'threadChannelId': threadChannelId,
       });
     } catch (_) {
       // A failed revalidation keeps the comments already on screen.
@@ -199,6 +232,8 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
           comments == null) {
         setState(() => error = raftText(context, 'Failed to load comments'));
       }
+    } finally {
+      readingUpdates?.endRead();
     }
   }
 

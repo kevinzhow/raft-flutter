@@ -40111,7 +40111,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/attachment_view.dart#local-function:CLASS:_AttachmentViewState@3953/METHOD:previewImage@37239/FUNCTION:image@37472": {
+      "apps/raft_flutter/lib/features/attachment_view.dart#local-function:CLASS:_AttachmentViewState@3953/METHOD:previewImage@37337/FUNCTION:image@37570": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
