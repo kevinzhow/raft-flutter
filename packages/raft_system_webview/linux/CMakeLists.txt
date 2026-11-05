@@ -5,7 +5,7 @@ pkg_check_modules(WEBKIT REQUIRED IMPORTED_TARGET webkit2gtk-4.1>=2.40)
 pkg_check_modules(WEBKIT_EXTENSION REQUIRED IMPORTED_TARGET webkit2gtk-web-extension-4.1>=2.40)
 set(PLUGIN_NAME raft_system_webview_plugin)
 add_library(${PLUGIN_NAME} SHARED raft_system_webview_plugin.cc native_host.cc native_view.cc
-  trusted_navigation.cc extension_paths.cc native_snapshot.cc)
+  trusted_navigation.cc extension_paths.cc native_snapshot.cc native_region_overlay.cc)
 apply_standard_settings(${PLUGIN_NAME})
 target_compile_features(${PLUGIN_NAME} PRIVATE cxx_std_17)
 target_compile_options(${PLUGIN_NAME} PRIVATE -Wno-deprecated-declarations)

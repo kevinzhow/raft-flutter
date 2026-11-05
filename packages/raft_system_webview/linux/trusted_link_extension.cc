@@ -47,7 +47,10 @@ void WindowCleared(WebKitScriptWorld* world, WebKitWebPage* page, WebKitFrame* f
       const target = event.target instanceof Element ? event.target : event.target?.parentElement;
       const link = target?.closest('a[href]');
       if (!link || link.hasAttribute('download')) return;
-      report(event, link.href);
+      const uri = link.href;
+      // Wait until all page listeners have had a chance to prevent default.
+      // Policy decisions are bounded while this isolated-world proof arrives.
+      queueMicrotask(() => { if (!event.defaultPrevented) report(event, uri); });
     }, true);
   })())JS";
   g_autoptr(JSCValue) installed = jsc_context_evaluate(context, listener, -1);

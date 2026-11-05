@@ -12,6 +12,8 @@ class NativeHost {
   explicit NativeHost(FlView* view);
   ~NativeHost();
   bool available() const { return overlay_ != nullptr; }
+  bool HasInputRect(int64_t id) const { return rectangles_.count(id) != 0; }
+  bool InputReady() const { return input_ && gtk_widget_get_realized(input_) && gtk_widget_get_has_window(input_); }
   bool Attach(int64_t id, GtkWidget* widget);
   void Layout(int64_t id, GtkWidget* widget, const GdkRectangle& clip, bool visible);
   void Detach(int64_t id, GtkWidget* widget);

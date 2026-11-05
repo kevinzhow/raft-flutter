@@ -57,7 +57,6 @@ gboolean DenyDialog(WebKitWebView*, WebKitScriptDialog* dialog, gpointer) {
 WebKitWebView* DenyWindow(WebKitWebView*, WebKitNavigationAction*, gpointer) { return nullptr; }
 void DenyDownload(WebKitWebContext*, WebKitDownload* download, gpointer) { webkit_download_cancel(download); }
 gboolean DenyContext(WebKitWebView*, WebKitContextMenu*, GdkEvent*, WebKitHitTestResult*, gpointer) { return TRUE; }
-gboolean DenyTls(WebKitWebView*, gchar*, GTlsCertificate*, GTlsCertificateFlags, gpointer) { return TRUE; }
 bool Sandboxed(WebKitURIResponse* response) {
   SoupMessageHeaders* headers = webkit_uri_response_get_http_headers(response);
   const char* csp = headers ? soup_message_headers_get_one(headers, "Content-Security-Policy") : nullptr;
@@ -109,7 +108,11 @@ NativeView::NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenge
   webkit_cookie_manager_set_accept_policy(webkit_web_context_get_cookie_manager(context_), WEBKIT_COOKIE_POLICY_ACCEPT_NEVER);
   clip_ = gtk_layout_new(nullptr, nullptr);
   g_object_ref_sink(clip_);
-  gtk_layout_put(GTK_LAYOUT(clip_), GTK_WIDGET(web_), 0, 0);
+  region_ = std::make_unique<NativeRegionOverlay>(GTK_WIDGET(web_), [this](FlValue* fields) {
+    if (!closed_ && loaded_ && !failed_) Event("regionInput", fields);
+  });
+  gtk_layout_put(GTK_LAYOUT(clip_), region_->widget(), 0, 0);
+  gtk_widget_show(region_->widget());
   gtk_widget_show(GTK_WIDGET(web_));
   if (!host_->Attach(id_, clip_)) { gtk_widget_destroy(clip_); g_clear_object(&clip_); return; }
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
@@ -131,7 +134,8 @@ NativeView::NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenge
   g_signal_connect(web_, "script-dialog", G_CALLBACK(DenyDialog), this);
   g_signal_connect(web_, "create", G_CALLBACK(DenyWindow), this);
   g_signal_connect(web_, "context-menu", G_CALLBACK(DenyContext), this);
-  g_signal_connect(web_, "load-failed-with-tls-errors", G_CALLBACK(DenyTls), this);
+  g_signal_connect(web_, "load-failed-with-tls-errors", G_CALLBACK(TlsFailed), this);
+  g_signal_connect(web_, "web-process-terminated", G_CALLBACK(Terminated), this);
   g_signal_connect(context_, "download-started", G_CALLBACK(DenyDownload), this);
 }
 NativeView::~NativeView() { Close(); }
@@ -152,6 +156,7 @@ void NativeView::Close() {
     webkit_web_view_stop_loading(web_);
   }
   if (context_) g_signal_handlers_disconnect_by_data(context_, this);
+  region_.reset();
   if (clip_) { host_->Detach(id_, clip_); gtk_widget_destroy(clip_); }
   g_clear_object(&clip_);
   g_clear_object(&web_);
@@ -195,6 +200,8 @@ void NativeView::Handle(FlMethodCall* call) {
     if (!serial || fl_value_get_type(serial) != FL_VALUE_TYPE_INT ||
         fl_value_get_int(serial) <= sequence_ || !visible || fl_value_get_type(visible) != FL_VALUE_TYPE_BOOL ||
         !Rect(args, "frame", &frame) || !Rect(args, "clip", &clip)) {
+      if (region_) region_->Visibility(false);
+      last_clip_ = {0,0,0,0};
       host_->Layout(id_, clip_, {0, 0, 0, 0}, false);
       Error(call, "invalid_layout"); return;
     }
@@ -203,12 +210,22 @@ void NativeView::Handle(FlMethodCall* call) {
     bool show = loaded_ && fl_value_get_bool(visible) &&
       gdk_rectangle_intersect(&frame, &clip, &intersection);
     if (show) {
-      gtk_widget_set_size_request(GTK_WIDGET(web_), frame.width, frame.height);
-      gtk_layout_move(GTK_LAYOUT(clip_), GTK_WIDGET(web_), frame.x - intersection.x, frame.y - intersection.y);
+      gtk_widget_set_size_request(region_->widget(), frame.width, frame.height);
+      gtk_layout_move(GTK_LAYOUT(clip_), region_->widget(), frame.x - intersection.x, frame.y - intersection.y);
       gtk_layout_set_size(GTK_LAYOUT(clip_), intersection.width, intersection.height);
     }
+    last_frame_ = frame;
+    last_clip_ = show ? intersection : GdkRectangle{0,0,0,0};
+    if (region_) region_->Visibility(show);
     host_->Layout(id_, clip_, show ? intersection : GdkRectangle{0, 0, 0, 0}, show);
     Reply(call); return;
+  }
+  if (g_str_equal(method, "regionOverlay")) {
+    if (!region_ || !region_->Update(args)) {
+      if (region_) region_->Clear();
+      Error(call, "invalid_overlay");
+    } else Reply(call);
+    return;
   }
   if (g_str_equal(method, "snapshot")) {
     if (snapshot_) snapshot_->Capture(call, sequence_);
@@ -219,6 +236,17 @@ void NativeView::Handle(FlMethodCall* call) {
     g_autoptr(FlValue) state = fl_value_new_map();
     fl_value_set_string_take(state, "id", fl_value_new_int(id_));
     fl_value_set_string_take(state, "loaded", fl_value_new_bool(loaded_));
+    fl_value_set_string_take(state, "layoutSequence", fl_value_new_int(sequence_));
+    auto rect=[](const GdkRectangle& r) {
+      FlValue* values=fl_value_new_list();
+      for(int value:{r.x,r.y,r.width,r.height})fl_value_append_take(values,fl_value_new_int(value));
+      return values;
+    };
+    fl_value_set_string_take(state, "frame", rect(last_frame_));
+    fl_value_set_string_take(state, "clip", rect(last_clip_));
+    fl_value_set_string_take(state, "inputRectActive", fl_value_new_bool(host_->HasInputRect(id_)));
+    fl_value_set_string_take(state, "flutterInputReady", fl_value_new_bool(host_->InputReady()));
+    fl_value_set_string_take(state, "nativeAllocation", rect({0,0,gtk_widget_get_allocated_width(GTK_WIDGET(web_)),gtk_widget_get_allocated_height(GTK_WIDGET(web_))}));
     fl_value_set_string_take(state, "visible", fl_value_new_bool(gtk_widget_get_visible(clip_)));
     fl_value_set_string_take(state, "focused", fl_value_new_bool(gtk_widget_has_focus(GTK_WIDGET(web_))));
     fl_value_set_string_take(state, "ephemeral", fl_value_new_bool(webkit_web_context_is_ephemeral(context_)));
@@ -280,7 +308,7 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
     else if (self->loaded_ && !self->failed_ && self->navigation_) self->navigation_->Decide(decision, action);
     else {
       webkit_policy_decision_ignore(decision);
-      if (!self->failed_) { self->failed_ = true; self->Event("failed"); }
+      self->Fail();
     }
     return TRUE;
   }
@@ -294,9 +322,8 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
       self->response_ = true;
       webkit_policy_decision_use(decision);
     } else {
-      self->failed_ = true;
       webkit_policy_decision_ignore(decision);
-      self->Event("failed");
+      self->Fail();
     }
     return TRUE;
   }
@@ -313,12 +340,13 @@ gboolean NativeView::Failed(WebKitWebView*, WebKitLoadEvent, gchar* uri, GError*
   auto* self = static_cast<NativeView*>(data);
   if (!self->loaded_ && g_strcmp0(uri, self->url_.c_str()) == 0 &&
       !(error->domain == WEBKIT_NETWORK_ERROR && error->code == WEBKIT_NETWORK_ERROR_CANCELLED)) {
-    self->failed_ = true; self->Event("failed");
+    self->Fail();
   }
   return TRUE;
 }
 void NativeView::Progress(GObject*, GParamSpec*, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
+  if (self->closed_ || self->failed_ || self->loaded_) return;
   g_autoptr(FlValue) fields = fl_value_new_map();
   fl_value_set_string_take(fields, "percent", fl_value_new_int(std::lround(webkit_web_view_get_estimated_load_progress(self->web_) * 100)));
   self->Event("progress", fields);
@@ -338,4 +366,22 @@ void NativeView::AfterInput(GtkWidget*, GdkEvent* event, gpointer data) {
       self->Event("snapshotDirty"); break;
     default: break;
   }
+}
+
+void NativeView::Fail() {
+  if (closed_ || failed_) return;
+  failed_ = true; loaded_ = false;
+  if (web_) webkit_web_view_stop_loading(web_);
+  if (cancellable_) g_cancellable_cancel(cancellable_);
+  navigation_.reset();
+  if (region_) { region_->Clear(); region_->Visibility(false); }
+  last_clip_ = {0,0,0,0};
+  if (clip_) host_->Layout(id_, clip_, last_clip_, false);
+  Event("failed");
+}
+gboolean NativeView::TlsFailed(WebKitWebView*, gchar*, GTlsCertificate*, GTlsCertificateFlags, gpointer data) {
+  static_cast<NativeView*>(data)->Fail(); return TRUE;
+}
+void NativeView::Terminated(WebKitWebView*, WebKitWebProcessTerminationReason, gpointer data) {
+  static_cast<NativeView*>(data)->Fail();
 }

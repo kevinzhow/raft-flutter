@@ -8,6 +8,7 @@
 #include "native_host.h"
 #include "trusted_navigation.h"
 #include "native_snapshot.h"
+#include "native_region_overlay.h"
 
 class NativeView : public std::enable_shared_from_this<NativeView> {
  public:
@@ -21,12 +22,15 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   static void Method(FlMethodChannel*, FlMethodCall*, gpointer);
   void Handle(FlMethodCall* call);
   void Event(const char* type, FlValue* fields = nullptr);
+  void Fail();
   static gboolean Policy(WebKitWebView*, WebKitPolicyDecision*, WebKitPolicyDecisionType, gpointer);
   static void Loaded(WebKitWebView*, WebKitLoadEvent, gpointer);
   static gboolean Failed(WebKitWebView*, WebKitLoadEvent, gchar*, GError*, gpointer);
   static void Progress(GObject*, GParamSpec*, gpointer);
   static gboolean Message(WebKitWebView*, WebKitUserMessage*, gpointer);
   static void AfterInput(GtkWidget*, GdkEvent*, gpointer);
+  static gboolean TlsFailed(WebKitWebView*, gchar*, GTlsCertificate*, GTlsCertificateFlags, gpointer);
+  static void Terminated(WebKitWebView*, WebKitWebProcessTerminationReason, gpointer);
   int64_t id_, sequence_ = 0;
   NativeHost* host_;
   WebKitWebContext* context_ = nullptr;
@@ -37,7 +41,9 @@ class NativeView : public std::enable_shared_from_this<NativeView> {
   std::string url_, nonce_;
   std::unique_ptr<TrustedNavigation> navigation_;
   std::shared_ptr<NativeSnapshot> snapshot_;
+  std::unique_ptr<NativeRegionOverlay> region_;
   int pending_evaluations_ = 0;
+  GdkRectangle last_frame_{0,0,0,0}, last_clip_{0,0,0,0};
   std::function<void()> retire_;
   bool closed_ = false, initial_ = false, loaded_ = false, failed_ = false, response_ = false;
 };

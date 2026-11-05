@@ -55,8 +55,19 @@ Future<void> main() async {
             document = 'evaluation-failed';
           }
         }
+        Object? native;
+        final active = _active;
+        if (active != null && !active.closed) {
+          try {
+            native = await active.inspect();
+          } catch (_) {
+            native = {'retired': true};
+          }
+        }
         request.response.headers.contentType = ContentType.json;
-        request.response.write(jsonEncode({..._state, 'document': document}));
+        request.response.write(
+          jsonEncode({..._state, 'document': document, 'native': native}),
+        );
       } else {
         request.response.statusCode = 404;
       }
