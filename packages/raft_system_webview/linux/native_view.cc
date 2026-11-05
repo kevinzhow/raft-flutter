@@ -329,15 +329,26 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
     if (initial) webkit_policy_decision_use(decision);
     else if (self->loaded_ && !self->failed_ && self->navigation_) self->navigation_->Decide(decision, action);
     else {
+      // GTK does not expose the target frame for navigation decisions. A
+      // denied child load can arrive before the main load finishes; refusing
+      // that decision must not revoke the independently validated main page.
+      g_debug("Raft system preview: refused navigation during main load (kind=%d, redirect=%d, response=%d)",
+        webkit_navigation_action_get_navigation_type(action),
+        webkit_navigation_action_is_redirect(action), self->response_);
       webkit_policy_decision_ignore(decision);
-      self->Fail();
     }
     return TRUE;
   }
   if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE) {
     auto* response = WEBKIT_RESPONSE_POLICY_DECISION(decision);
+    // Only the main resource is the isolation contract. Child resources are
+    // refused independently and never become an alternate accepted document.
+    if (!webkit_response_policy_decision_is_main_frame_main_resource(response)) {
+      g_debug("Raft system preview: refused non-main response");
+      webkit_policy_decision_ignore(decision); return TRUE;
+    }
     WebKitURIRequest* request = webkit_response_policy_decision_get_request(response);
-    if (webkit_response_policy_decision_is_main_frame_main_resource(response) &&
+    if (
         g_strcmp0(webkit_uri_request_get_uri(request), self->url_.c_str()) == 0 &&
         webkit_response_policy_decision_is_mime_type_supported(response) &&
         Sandboxed(webkit_response_policy_decision_get_response(response))) {
@@ -353,10 +364,13 @@ gboolean NativeView::Policy(WebKitWebView*, WebKitPolicyDecision* decision, WebK
 }
 void NativeView::Loaded(WebKitWebView*, WebKitLoadEvent event, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
-  if (event == WEBKIT_LOAD_FINISHED && !self->loaded_ && !self->failed_ && self->response_ &&
-      g_strcmp0(webkit_web_view_get_uri(self->web_), self->url_.c_str()) == 0) {
-    self->loaded_ = true; self->Event("loaded");
+  if (event != WEBKIT_LOAD_FINISHED || self->loaded_ || self->failed_ || self->closed_) return;
+  // An ignored redirect or cancelled initial main load must terminate as a
+  // failure. Child-policy rejection alone cannot manufacture this response.
+  if (!self->response_ || g_strcmp0(webkit_web_view_get_uri(self->web_), self->url_.c_str())) {
+    self->Fail(); return;
   }
+  self->loaded_ = true; self->Event("loaded");
 }
 gboolean NativeView::Failed(WebKitWebView*, WebKitLoadEvent, gchar* uri, GError* error, gpointer data) {
   auto* self = static_cast<NativeView*>(data);
