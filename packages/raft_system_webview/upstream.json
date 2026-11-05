@@ -1,0 +1,36 @@
+{
+  "repository": "https://github.com/abandoft/webview_all",
+  "commit": "ab32ceb7f0bb0585432986908875c0a5fe0df9a6",
+  "files": [
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/abandoft/webview_all/ab32ceb7f0bb0585432986908875c0a5fe0df9a6/LICENSE",
+      "sha256": "6901aa2e1d048a4693f4ff625fc1dd5f84b181e983b1c3396d1e97952ff85e88",
+      "size": 1084
+    },
+    {
+      "path": "webview_all_linux/linux/src/platform/flutter_view.cc",
+      "url": "https://raw.githubusercontent.com/abandoft/webview_all/ab32ceb7f0bb0585432986908875c0a5fe0df9a6/webview_all_linux/linux/src/platform/flutter_view.cc",
+      "sha256": "bc11d2a05ee8ccfb6329b5b3dbbf7335967569e6a88ec50f0f98bef9f48cbc3f",
+      "size": 14858
+    },
+    {
+      "path": "webview_all_linux/linux/src/platform/webview_clip.cc",
+      "url": "https://raw.githubusercontent.com/abandoft/webview_all/ab32ceb7f0bb0585432986908875c0a5fe0df9a6/webview_all_linux/linux/src/platform/webview_clip.cc",
+      "sha256": "fafddef398b1e8e3183b342c3fb983577874286ee0aef104265b0c88a0204aff",
+      "size": 5966
+    },
+    {
+      "path": "webview_all_linux/lib/src/linux_webview_widget.dart",
+      "url": "https://raw.githubusercontent.com/abandoft/webview_all/ab32ceb7f0bb0585432986908875c0a5fe0df9a6/webview_all_linux/lib/src/linux_webview_widget.dart",
+      "sha256": "f9eef25ce7e3a58196430d1a2b17f15bfe0e76c7d4b216215c9bea76a0d03d3e",
+      "size": 21716
+    },
+    {
+      "path": "webview_all_linux/linux/src/webview/webview_environment.cc",
+      "url": "https://raw.githubusercontent.com/abandoft/webview_all/ab32ceb7f0bb0585432986908875c0a5fe0df9a6/webview_all_linux/linux/src/webview/webview_environment.cc",
+      "sha256": "112346ffa0959d509757fe6a696a4f805eae9b7c88a1b5f5eb03480620f49bcb",
+      "size": 5965
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+name: raft_system_webview
+description: A Linux GTK3 view for isolated HTML attachment previews.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ^3.13.5
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  raft_ui: ^0.1.0
+  flutter_test:
+    sdk: flutter
+flutter:
+  plugin:
+    platforms:
+      linux:
+        pluginClass: RaftSystemWebviewPlugin
