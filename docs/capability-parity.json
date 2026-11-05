@@ -10811,7 +10811,7 @@
    "gate": "",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "Multi-window/new-tab browser mechanic; the app has a single window per account and mirrors task open state via route query instead.",
+   "justification": "Standalone task/thread pop-out windows are not exposed. Native server windows retain their own navigation, while task open state within each window uses the existing route query.",
    "impact": "",
    "size": ""
   },
@@ -16274,7 +16274,7 @@
      "needle": "onActivate(row.onAuxiliary)"
     }
    ],
-   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. An exit attempt gates new windows and preserves rollback when a child cannot prepare. Platform engines, IPC and packaged runtime acceptance are reported separately; the Linux browser fallback remains when no native service is installed.",
+   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. An exit attempt gates new windows and preserves rollback when a child cannot prepare. On macOS, application termination consults the primary engine even after child creation; closing the primary hides its live window without unregistering the broker, and child menu Close uses the shared Dart close policy. Platform engines, IPC and packaged runtime acceptance are reported separately; the Linux browser fallback remains when no native service is installed.",
    "impact": "Native acceptance is still required on desktop platforms.",
    "size": "L"
   },
@@ -17539,7 +17539,7 @@
      "needle": "onActivate(row.onAuxiliary)"
     }
    ],
-   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. An exit attempt gates new windows and preserves rollback when a child cannot prepare. Platform engines, IPC and packaged runtime acceptance are reported separately; the Linux browser fallback remains when no native service is installed.",
+   "justification": "Native server-window creation, reuse/focus, paired session authority, independent navigation, child draft acknowledgement and close veto are implemented. An exit attempt gates new windows and preserves rollback when a child cannot prepare. On macOS, application termination consults the primary engine even after child creation; closing the primary hides its live window without unregistering the broker, and child menu Close uses the shared Dart close policy. Platform engines, IPC and packaged runtime acceptance are reported separately; the Linux browser fallback remains when no native service is installed.",
    "impact": "Native acceptance is still required on desktop platforms.",
    "size": "L"
   },

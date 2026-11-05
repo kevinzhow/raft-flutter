@@ -314,7 +314,7 @@
                         <items>
                             <menuItem title="Close" keyEquivalent="w" id="close-main-window">
                                 <connections>
-                                    <action selector="performClose:" target="-1" id="close-main-action"/>
+                                    <action selector="closeWindow:" target="Voe-Tx-rLC" id="close-main-action"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Minimize" keyEquivalent="m" id="OY7-WF-poV">

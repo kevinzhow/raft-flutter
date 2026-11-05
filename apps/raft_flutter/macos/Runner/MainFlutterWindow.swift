@@ -7,13 +7,14 @@ import CFNetwork
 import AVFoundation
 import ImageIO
 
-class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftUpdatesWindow {
+class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftUpdatesWindow, RaftApplicationExitWindow {
   private var attachmentFilesChannel: AttachmentFilesChannel?
   private var interactionChannel: FlutterMethodChannel?
   private var memoryChannel: FlutterMethodChannel?
   fileprivate var titleBar: RaftTitleBar?
   private var proxyChannel: FlutterMethodChannel?
   private var windowChannel: FlutterMethodChannel?
+  private var applicationExitChannel: FlutterMethodChannel?
   private var windowCommandsReady = false
   private(set) var canOpenPreferences = false
   private(set) var canPasteIntoFlutter = false
@@ -281,6 +282,22 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     return event.isARepeat
   }
 
+  // Keep the primary engine in desktop_multi_window's native registry. Calling
+  // NSWindow.close emits willClose, which unregisters this still-live engine
+  // and prevents it from observing later child-window removals.
+  override func close() {
+    orderOut(nil)
+  }
+
+  func requestApplicationExit(_ completion: @escaping (Bool) -> Void) {
+    guard let channel = applicationExitChannel else { completion(false); return }
+    // Use the framework's existing exit observer chain in the primary engine:
+    // DesktopSessionBroker saves/vetoes every child before closing root caches.
+    channel.invokeMethod("System.requestAppExit", arguments: nil) { response in
+      completion((response as? [String: Any])?["response"] as? String == "exit")
+    }
+  }
+
   override func performClose(_ sender: Any?) {
     if Self.isRepeatedCloseKey(NSApp.currentEvent) { return }
     // Menu actions share Flutter's close policy with the keyboard fallback.
@@ -424,6 +441,9 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     titleBar = RaftTitleBar(
       window: self, messenger: flutterViewController.engine.binaryMessenger)
 
+    applicationExitChannel = FlutterMethodChannel(
+      name: "flutter/platform", binaryMessenger: flutterViewController.engine.binaryMessenger,
+      codec: FlutterJSONMethodCodec.sharedInstance())
     RaftChildWindow.installBrokerHost(controller: flutterViewController, window: self)
     FlutterMultiWindowPlugin.setOnWindowCreatedCallback { controller in
       RegisterRaftChildPlugins(registry: controller)
@@ -1044,6 +1064,19 @@ final class RaftVideoFrame {
 /// notification, updater and credential ownership stay in the primary engine.
 final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, NSWindowDelegate {
   private var commandChannel: FlutterMethodChannel?
+  private weak var window: NSWindow?
+  init(window: NSWindow, commandChannel: FlutterMethodChannel) {
+    self.window = window
+    self.commandChannel = commandChannel
+    super.init()
+  }
+  func closeFromMenu() {
+    if MainFlutterWindow.isRepeatedCloseKey(NSApp.currentEvent) { return }
+    guard let channel = commandChannel else { window?.performClose(nil); return }
+    channel.invokeMethod("closeRequested", arguments: nil) { [weak self] response in
+      if response as? Bool != true { self?.window?.performClose(nil) }
+    }
+  }
   private(set) var canOpenPreferences = false
   private(set) var canPasteIntoFlutter = false
   func openPreferences() { commandChannel?.invokeMethod("openPreferences", arguments: nil) }
@@ -1106,8 +1139,9 @@ final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, N
 
   static func attach(_ controller: FlutterViewController) {
     guard let window = controller.view.window else { return }
-    let host = RaftChildWindow()
     let messenger = controller.engine.binaryMessenger
+    let host = RaftChildWindow(window: window, commandChannel: FlutterMethodChannel(
+      name: "app.raft/window", binaryMessenger: messenger))
     let identity = ObjectIdentifier(window)
     children[identity] = host
     window.title = "Raft"
@@ -1117,7 +1151,8 @@ final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, N
     host.channels.append(host.brokerChannel!)
     window.delegate = host
     func channel(_ name: String, handler: @escaping FlutterMethodCallHandler) {
-      let value = FlutterMethodChannel(name: name, binaryMessenger: messenger)
+      let value = name == "app.raft/window" ? host.commandChannel!
+        : FlutterMethodChannel(name: name, binaryMessenger: messenger)
       value.setMethodCallHandler(handler)
       host.channels.append(value)
     }
@@ -1136,7 +1171,6 @@ final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, N
       default: result(FlutterMethodNotImplemented)
       }
     }
-    host.commandChannel = host.channels.last
     channel("app.raft/device-memory") { call, result in
       if call.method == "snapshot" {
         result(["totalBytes": Int64(ProcessInfo.processInfo.physicalMemory)])

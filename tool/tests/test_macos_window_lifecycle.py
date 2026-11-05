@@ -1,5 +1,5 @@
 """Compile the real AppDelegate and run native Cocoa contract tests offscreen."""
-import json
+from contextlib import nullcontext
 import os
 from pathlib import Path
 import subprocess
@@ -7,45 +7,53 @@ import sys
 import tempfile
 import unittest
 
+try:
+    from .test_macos_multiwindow_lifecycle import native_plugin_sources, pinned_flutter_executable
+except ImportError:  # Also support running this file directly.
+    from test_macos_multiwindow_lifecycle import native_plugin_sources, pinned_flutter_executable
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
 @unittest.skipUnless(sys.platform == 'darwin', 'Requires macOS Cocoa and the pinned Flutter SDK')
 class MacOSWindowLifecycleTests(unittest.TestCase):
     def test_native_window_lifecycle(self):
-        version = json.loads((ROOT / '.fvmrc').read_text())['flutter']
-        candidates = [Path(os.environ['RAFT_FLUTTER_BIN'])] if os.environ.get('RAFT_FLUTTER_BIN') else [
-            ROOT / '.fvm/flutter_sdk/bin/flutter',
-            Path.home() / 'flutter-sdks/versions' / version / 'bin/flutter',
-            Path.home() / 'fvm/versions' / version / 'bin/flutter',
-        ]
-        executable = next((p.resolve() for p in candidates if p.is_file()), None)
+        executable = pinned_flutter_executable()
         if executable is None:
             self.skipTest('Install the pinned Flutter SDK before running native window tests')
-        engine = executable.parent.parent / 'bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework'
-        framework = engine / 'macos-arm64_x86_64'
+        framework = executable.parent.parent / 'bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework/macos-arm64_x86_64'
         self.assertTrue((framework / 'FlutterMacOS.framework').exists(), 'Build macOS once to fetch its engine')
-        with tempfile.TemporaryDirectory(prefix='raft-window-lifecycle-') as temporary:
+        plugins = native_plugin_sources()
+        for name, sources in plugins.items():
+            self.assertTrue(sources, f'Run pub get to install {name}')
+        output = os.environ.get('RAFT_MACOS_CONTRACT_OUTPUT')
+        if output:
+            Path(output).mkdir(exist_ok=False)
+        storage = nullcontext(output) if output else tempfile.TemporaryDirectory(prefix='raft-window-lifecycle-')
+        with storage as temporary:
             directory = Path(temporary)
             common = ['-F', str(framework), '-framework', 'FlutterMacOS', '-framework', 'Cocoa',
                       '-module-cache-path', str(directory / 'module-cache')]
-            plugin_link = ['-I', str(directory), '-L', str(directory), '-ldesktop_drop']
+            plugin_link = ['-I', str(directory), '-L', str(directory)]
+            commands = []
+            for name, sources in plugins.items():
+                commands.append(['xcrun', 'swiftc', '-parse-as-library', '-emit-library', '-emit-module',
+                                 '-module-name', name, *map(str, sources),
+                                 '-emit-module-path', str(directory / f'{name}.swiftmodule'),
+                                 *common, '-o', str(directory / f'lib{name}.dylib')])
+                plugin_link.append(f'-l{name}')
             library = directory / 'libRaftMacAppDelegate.dylib'
             binary = directory / 'window-tests'
-            # MainFlutterWindow imports the real desktop_drop helper. Keep the
-            # same native module and registration available in this contract.
+            # Compile the current host imports, with unrelated plugin startup
+            # disabled. These lifecycle spies never construct an app controller.
             registry = directory / 'GeneratedPluginRegistry.swift'
             registry.write_text(
                 'import FlutterMacOS\nimport desktop_drop\n'
                 'func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {\n'
                 '  DesktopDropPlugin.register(with: registry.registrar(forPlugin: "DesktopDropPlugin"))\n'
-                '}\n')
-            commands = [
-                ['xcrun', 'swiftc', '-parse-as-library', '-emit-library', '-emit-module',
-                 '-module-name', 'desktop_drop',
-                 str(ROOT / 'packages/desktop_drop/macos/desktop_drop/Sources/desktop_drop/DesktopDropPlugin.swift'),
-                 '-emit-module-path', str(directory / 'desktop_drop.swiftmodule'),
-                 *common, '-o', str(directory / 'libdesktop_drop.dylib')],
+                '}\n'
+                'func RegisterRaftChildPlugins(registry: FlutterPluginRegistry) {}\n')
+            commands.extend([
                 ['xcrun', 'swiftc', '-parse-as-library', '-emit-library', '-emit-module',
                  '-enable-testing', '-module-name', 'RaftMacAppDelegate',
                  str(ROOT / 'apps/raft_flutter/macos/Runner/AppDelegate.swift'),
@@ -62,9 +70,11 @@ class MacOSWindowLifecycleTests(unittest.TestCase):
                  '-Xlinker', '-rpath', '-Xlinker', str(framework),
                  ],
                 [str(binary)],
-            ]
+            ])
             for command in commands:
                 result = subprocess.run(command, capture_output=True, text=True, timeout=120)
+                if result.returncode or command == [str(binary)]:
+                    print(result.stdout + result.stderr, flush=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 if command == [str(binary)]:
                     self.assertIn('13 cases, 0 failed assertions', result.stdout)

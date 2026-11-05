@@ -17,11 +17,44 @@ protocol RaftUpdatesWindow: AnyObject {
   func checkForUpdates()
 }
 
+// Application exit belongs to the primary engine. FlutterAppDelegate's default
+// termination handler is replaced whenever a child FlutterEngine is created.
+protocol RaftApplicationExitWindow: AnyObject {
+  func requestApplicationExit(_ completion: @escaping (Bool) -> Void)
+}
+
 @main
 class AppDelegate: FlutterAppDelegate, NSMenuItemValidation {
   // Flutter's outlet is weak. Keep the existing window and engine alive when
   // the user closes it, so reopening preserves the current workspace and draft.
   private var retainedMainWindow: NSWindow?
+  private var terminationPending = false
+
+  override func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+    if terminationPending { return .terminateLater }
+    guard let primary = (retainedMainWindow ?? mainFlutterWindow) as? RaftApplicationExitWindow else {
+      return .terminateNow
+    }
+    terminationPending = true
+    primary.requestApplicationExit { [weak self, weak sender] accepted in
+      // A synchronous plugin error must still reply after AppKit has received
+      // terminateLater. Failure keeps the application and all drafts alive.
+      DispatchQueue.main.async {
+        guard let self, self.terminationPending else { return }
+        self.terminationPending = false
+        sender?.reply(toApplicationShouldTerminate: accepted)
+      }
+    }
+    return .terminateLater
+  }
+
+  @objc func closeWindow(_ sender: Any?) {
+    if let child = RaftChildWindow.commands(for: NSApp.keyWindow) {
+      child.closeFromMenu()
+    } else {
+      NSApp.keyWindow?.performClose(sender)
+    }
+  }
 
   override func applicationDidFinishLaunching(_ notification: Notification) {
     // The nib starts invisible. Show behind existing windows without activation,
