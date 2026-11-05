@@ -24,7 +24,6 @@ refuses creation. `app.raft/system_webview/<id>` accepts:
 - `evaluate({source})` and `currentUri`: host-initiated, bounded result requests.
   There is no object or script-message handler callable by uploaded HTML.
 - `inspect`: host readback of live GTK visibility/focus and ephemeral/sandbox state.
-- `hasFocus`: current GTK focus for a host-side check before clearing stale Flutter focus.
 - `snapshot`: one bounded host-only visible-region PNG request; layout changes,
   closure and cancellation reject stale results. Maximum 16 Mi pixels, 8192
   pixels per side and 8 MiB PNG; caller owns its private decoded image.
@@ -43,8 +42,9 @@ those overlays close. Capture/region drawing uses its own native overlay adapter
 
 A real press in Flutter's input subtree returns GTK focus to its FlView before
 Flutter handles the press. A native sibling keeps normal WebKit focus handling;
-its focus event lets the Flutter host clear its previous text focus after checking
-`hasFocus`. This boundary neither creates pointer events nor changes key handling.
+its ordered focus event lets the Flutter host clear its previous text focus in
+the current view and visible scope. This boundary neither creates pointer events
+nor changes key handling.
 
 ## Native link authority
 
