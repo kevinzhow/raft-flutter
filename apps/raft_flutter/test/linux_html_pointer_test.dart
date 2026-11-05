@@ -1,218 +1,241 @@
+// GTK owns actual pointer/focus dispatch. These widget cases guard publication
+// and retirement of its native input rectangle; they do not synthesize GTK
+// events or claim a real first click. html_attachment_qa_main.dart retains the
+// native DOM Down/Up/click trusted-order readback for actual runtime acceptance.
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// Exercise the maintained plugin's actual texture widget and channel ordering.
-// ignore: implementation_imports
-import 'package:flutter_inappwebview_linux/src/in_app_webview/custom_platform_view.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/platform/attachment_html_linux.dart';
+import 'package:raft_flutter/platform/attachment_html_webview_events.dart';
+import 'package:raft_system_webview/raft_system_webview.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  const manager = MethodChannel(
-    'com.pichillilorenzo/flutter_inappwebview_manager',
-  );
-  const native = MethodChannel('com.pichillilorenzo/custom_platform_view_1');
-  const events = MethodChannel(
-    'com.pichillilorenzo/custom_platform_view_1_events',
-  );
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  const native = MethodChannel('app.raft/system_webview/7');
+  const codec = StandardMethodCodec();
   final calls = <MethodCall>[];
-  Completer<void>? pendingFocus;
-  late FocusNode outside;
+  final failures = <String>[];
+  final geometry = <RaftHtmlRegionController>[];
+  final navigation = <String>[];
+  var loads = 0;
+  Completer<Map<String, Object?>>? creating;
+  var metadata = <String, Object?>{};
+  final uri = Uri.parse(
+    'http://127.0.0.1:17821/api/attachments/qa/html-preview?previewToken=synthetic',
+  );
 
   setUp(() {
     calls.clear();
-    pendingFocus = null;
-    outside = FocusNode();
-    final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(manager, (call) async {
-      return call.method == 'createInAppWebView' ? 1 : null;
-    });
-    messenger.setMockMethodCallHandler(events, (_) async => null);
+    failures.clear();
+    geometry.clear();
+    navigation.clear();
+    loads = 0;
+    creating = null;
+    metadata = {'id': 7, 'protocol': 1, 'ephemeral': true, 'sandboxed': true};
+    messenger.setMockMethodCallHandler(
+      SystemWebViewController.rootChannel,
+      (_) async => creating == null ? metadata : await creating!.future,
+    );
     messenger.setMockMethodCallHandler(native, (call) async {
       calls.add(call);
-      if (call.method == 'setFocused' && call.arguments == true) {
-        await pendingFocus?.future;
-      }
       return null;
     });
   });
-
   tearDown(() {
-    final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    for (final channel in [manager, native, events]) {
-      messenger.setMockMethodCallHandler(channel, null);
-    }
+    messenger.setMockMethodCallHandler(
+      SystemWebViewController.rootChannel,
+      null,
+    );
+    messenger.setMockMethodCallHandler(native, null);
   });
+  Future<void> event(
+    String type, [
+    Map<String, Object?> fields = const {},
+  ]) async {
+    await messenger.handlePlatformMessage(
+      native.name,
+      codec.encodeMethodCall(MethodCall('event', {'type': type, ...fields})),
+      (_) {},
+    );
+  }
 
-  Future<void> show(WidgetTester tester, {bool focused = false}) async {
-    addTearDown(() async {
-      if (pendingFocus != null && !pendingFocus!.isCompleted) {
-        pendingFocus!.complete();
-        await tester.pump();
-      }
-      await tester.pumpWidget(const SizedBox());
-      await tester.pump();
-      outside.dispose();
-    });
+  Future<void> show(WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: Column(
-          children: [
-            Focus(focusNode: outside, child: const SizedBox(height: 10)),
-            const Expanded(child: CustomPlatformView()),
-          ],
+        theme: raftTheme().copyWith(platform: TargetPlatform.linux),
+        home: SizedBox(
+          width: 300,
+          height: 200,
+          child: LinuxAttachmentHtmlWebView(
+            uri: uri,
+            events: AttachmentHtmlWebViewEvents(
+              onNavigation: (url) {
+                navigation.add(url);
+                return false;
+              },
+              onLoaded: () => loads++,
+              onFailed: failures.add,
+              onGeometryReady: geometry.add,
+            ),
+          ),
         ),
       ),
     );
     await tester.pump();
-    await tester.pump();
-    final focus = tester
-        .widgetList<Focus>(find.byType(Focus))
-        .singleWhere(
-          (widget) =>
-              widget.debugLabel ==
-              'flutter_inappwebview_linux_custom_platform_view',
-        );
-    if (focused) {
-      focus.focusNode!.requestFocus();
-    } else {
-      outside.requestFocus();
-    }
-    await tester.pump();
-    expect(focus.focusNode!.hasFocus, focused);
-    calls.clear();
-    if (!focused) pendingFocus = Completer<void>();
   }
 
-  List<MethodCall> inputCalls() => calls
-      .where(
-        (call) =>
-            call.method == 'setCursorPos' ||
-            call.method == 'sendTouchEvent' ||
-            (call.method == 'setPointerButton' &&
-                [1, 4, 6].contains((call.arguments as Map)['kind'])),
-      )
-      .toList();
-
-  List<int> kinds(String method, String field) => calls
-      .where((call) => call.method == method)
-      .map((call) => (call.arguments as Map)[field] as int)
-      .where((kind) => method != 'setPointerButton' || ![2, 3].contains(kind))
-      .toList();
-
-  testWidgets('mouse Up and Move wait for the first native focus', (
-    tester,
-  ) async {
-    await show(tester);
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await gesture.down(tester.getCenter(find.byType(CustomPlatformView)));
-    await gesture.moveBy(const Offset(2, 0));
-    await gesture.up();
-    await tester.pump();
-    expect(inputCalls(), isEmpty);
-    pendingFocus!.complete();
-    await tester.pump();
-    expect(kinds('setPointerButton', 'kind'), [1, 4]);
-    expect(calls.where((call) => call.method == 'setCursorPos').length, 2);
-  });
-
-  testWidgets('touch Down Move Up retain order across delayed focus', (
-    tester,
-  ) async {
-    await show(tester);
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.touch);
-    await gesture.down(tester.getCenter(find.byType(CustomPlatformView)));
-    await gesture.moveBy(const Offset(2, 0));
-    await gesture.up();
-    await tester.pump();
-    expect(inputCalls(), isEmpty);
-    pendingFocus!.complete();
-    await tester.pump();
-    expect(kinds('sendTouchEvent', 'type'), [0, 2, 1]);
-  });
-
-  testWidgets('Cancel cannot overtake a pending mouse Down', (tester) async {
-    await show(tester);
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await gesture.down(tester.getCenter(find.byType(CustomPlatformView)));
-    await gesture.cancel();
-    await tester.pump();
-    expect(inputCalls(), isEmpty);
-    pendingFocus!.complete();
-    await tester.pump();
-    expect(kinds('setPointerButton', 'kind'), [1, 6]);
-  });
-
-  testWidgets('already-focused fast first click remains a single click', (
-    tester,
-  ) async {
-    await show(tester, focused: true);
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await gesture.down(tester.getCenter(find.byType(CustomPlatformView)));
-    await gesture.up();
-    await tester.pump();
-    expect(kinds('setPointerButton', 'kind'), [1, 4]);
-    expect(calls.where((call) => call.method == 'setFocused'), isEmpty);
-    expect(
-      (calls.firstWhere((call) => call.method == 'setPointerButton').arguments
-          as Map)['clickCount'],
-      1,
-    );
-  });
-
-  testWidgets('failed focus drops that gesture and permits the next one', (
-    tester,
-  ) async {
-    await show(tester);
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await gesture.down(tester.getCenter(find.byType(CustomPlatformView)));
-    await gesture.moveBy(const Offset(2, 0));
-    await gesture.up();
-    pendingFocus!.completeError(PlatformException(code: 'focus-denied'));
-    await tester.pump();
-    expect(tester.takeException(), isA<PlatformException>());
-    expect(inputCalls(), isEmpty);
-    pendingFocus = Completer<void>()..complete();
-    final retry = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await retry.down(tester.getCenter(find.byType(CustomPlatformView)));
-    await retry.up();
-    await tester.pump();
-    expect(kinds('setPointerButton', 'kind'), [1, 4]);
-  });
-
-  testWidgets('dispose releases the queue without native focus completing', (
-    tester,
-  ) async {
-    await show(tester);
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await gesture.down(tester.getCenter(find.byType(CustomPlatformView)));
-    await gesture.moveBy(const Offset(2, 0));
-    await gesture.up();
+  Future<void> remove(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox());
-    await tester.pump();
-    expect(inputCalls(), isEmpty);
-    pendingFocus!.complete();
-    await tester.pump();
-    expect(inputCalls(), isEmpty);
-    expect(tester.takeException(), isNull);
-  });
+    await tester.pumpAndSettle();
+  }
 
-  testWidgets('late focus failure after dispose cannot send input or escape', (
-    tester,
-  ) async {
-    await show(tester);
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.touch);
-    await gesture.down(tester.getCenter(find.byType(CustomPlatformView)));
-    await gesture.up();
-    await tester.pumpWidget(const SizedBox());
-    await tester.pump();
-    pendingFocus!.completeError(PlatformException(code: 'late-focus-denied'));
-    await tester.pump();
-    expect(inputCalls(), isEmpty);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'first document and native input publication wait for isolation and load',
+    (tester) async {
+      await show(tester);
+      expect(calls.where((c) => c.method == 'load').single.arguments, {
+        'url': uri.toString(),
+      });
+      expect(
+        tester.widget<SystemWebView>(find.byType(SystemWebView)).visible,
+        false,
+      );
+      expect(geometry, isEmpty);
+      await event('loaded');
+      await tester.pump();
+      expect(
+        tester.widget<SystemWebView>(find.byType(SystemWebView)).visible,
+        true,
+      );
+      expect(geometry.single.active, true);
+      expect(loads, 1);
+      await event('loaded');
+      await tester.pump();
+      expect(loads, 1);
+      await remove(tester);
+      expect(geometry.single.active, false);
+      expect(calls.where((c) => c.method == 'dispose').length, 1);
+    },
+  );
+
+  testWidgets(
+    'first fast mouse gesture is never duplicated through Dart forwarding',
+    (tester) async {
+      await show(tester);
+      await event('loaded');
+      await tester.pump();
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.down(tester.getCenter(find.byType(SystemWebView)));
+      await mouse.moveBy(const Offset(2, 0));
+      await mouse.up();
+      await tester.pump();
+      expect(
+        calls.where(
+          (c) => [
+            'setFocused',
+            'setCursorPos',
+            'setPointerButton',
+            'sendTouchEvent',
+          ].contains(c.method),
+        ),
+        isEmpty,
+      );
+      expect(calls.where((c) => c.method == 'load').length, 1);
+      await remove(tester);
+    },
+  );
+
+  testWidgets(
+    'touch cancellation while loading cannot queue a later native gesture',
+    (tester) async {
+      await show(tester);
+      final touch = await tester.createGesture(kind: PointerDeviceKind.touch);
+      await touch.down(tester.getCenter(find.byType(SystemWebView)));
+      await touch.moveBy(const Offset(2, 0));
+      await touch.cancel();
+      await event('loaded');
+      await tester.pump();
+      expect(
+        calls.where(
+          (c) => c.method == 'sendTouchEvent' || c.method == 'setPointerButton',
+        ),
+        isEmpty,
+      );
+      await remove(tester);
+    },
+  );
+
+  testWidgets(
+    'missing isolation refuses the first request and closes native state',
+    (tester) async {
+      metadata.remove('sandboxed');
+      await show(tester);
+      expect(calls.where((c) => c.method == 'load'), isEmpty);
+      expect(calls.where((c) => c.method == 'dispose').length, 1);
+      expect(failures, ['the system preview could not be isolated']);
+      await remove(tester);
+    },
+  );
+
+  testWidgets(
+    'late creation after removal only disposes, without input or fetch',
+    (tester) async {
+      creating = Completer<Map<String, Object?>>();
+      await show(tester);
+      await remove(tester);
+      creating!.complete(metadata);
+      await tester.pump();
+      expect(calls.map((c) => c.method), ['dispose']);
+      expect(failures, isEmpty);
+      expect(loads, 0);
+    },
+  );
+
+  testWidgets(
+    'native failure retires pixels and only current loaded links reach the owner',
+    (tester) async {
+      await show(tester);
+      await event('navigation', {'url': 'https://example.com/'});
+      expect(navigation, isEmpty);
+      await event('loaded');
+      await tester.pump();
+      await event('navigation', {'url': 'https://example.com/'});
+      expect(navigation, ['https://example.com/']);
+      await event('failed');
+      await tester.pump();
+      expect(
+        tester.widget<SystemWebView>(find.byType(SystemWebView)).visible,
+        false,
+      );
+      await event('navigation', {'url': 'https://example.com/late'});
+      await event('loaded');
+      expect(navigation, ['https://example.com/']);
+      expect(loads, 1);
+      expect(failures.length, 1);
+      await remove(tester);
+    },
+  );
+
+  testWidgets(
+    'late native events after dispose cannot revive readiness or dispatch a link',
+    (tester) async {
+      await show(tester);
+      await event('loaded');
+      await tester.pump();
+      await remove(tester);
+      await event('failed');
+      await event('loaded');
+      await event('navigation', {'url': 'https://example.com/late'});
+      expect(loads, 1);
+      expect(failures, isEmpty);
+      expect(navigation, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

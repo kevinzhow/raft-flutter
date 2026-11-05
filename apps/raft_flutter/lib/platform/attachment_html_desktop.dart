@@ -2,23 +2,24 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_inappwebview_linux/flutter_inappwebview_linux.dart';
 import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 
 import 'attachment_html_desktop_environment.dart';
+import 'attachment_html_linux.dart';
+
+import 'package:raft_system_webview/raft_system_webview.dart';
+
 import 'attachment_html_geometry.dart';
 import 'attachment_html_desktop_policy.dart';
 import 'attachment_html_webview_events.dart';
 
 bool get attachmentHtmlDesktopSupported =>
     !kIsWeb &&
-    const {
-      TargetPlatform.linux,
-      TargetPlatform.windows,
-    }.contains(defaultTargetPlatform) &&
-    InAppWebViewPlatform.instance != null;
+    (defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.windows &&
+            InAppWebViewPlatform.instance != null);
 
-/// Inline WPE/WebView2 renderer; mobile keeps its existing system WebView.
+/// Inline system WebKitGTK / WebView2 renderer; mobile keeps its system WebView.
 class DesktopAttachmentHtmlWebView extends StatefulWidget {
   const DesktopAttachmentHtmlWebView({
     super.key,
@@ -26,6 +27,8 @@ class DesktopAttachmentHtmlWebView extends StatefulWidget {
     required this.events,
     this.environmentFactory = DesktopHtmlEnvironment.create,
     this.onControllerCreated,
+    this.onSystemControllerCreated,
+    this.onSystemDisposed,
   });
 
   final Uri uri;
@@ -34,6 +37,10 @@ class DesktopAttachmentHtmlWebView extends StatefulWidget {
   environmentFactory;
   @visibleForTesting
   final void Function(PlatformInAppWebViewController)? onControllerCreated;
+  @visibleForTesting
+  final void Function(SystemWebViewController)? onSystemControllerCreated;
+  @visibleForTesting
+  final VoidCallback? onSystemDisposed;
 
   @override
   State<DesktopAttachmentHtmlWebView> createState() => _DesktopHtmlState();
@@ -61,6 +68,7 @@ class _DesktopHtmlState extends State<DesktopAttachmentHtmlWebView> {
   @override
   void initState() {
     super.initState();
+    if (defaultTargetPlatform == TargetPlatform.linux) return;
     // Plugin diagnostics can include signed preview URLs; don't log them.
     PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
     PlatformWebViewEnvironment.debugLoggingSettings.enabled = false;
@@ -75,13 +83,10 @@ class _DesktopHtmlState extends State<DesktopAttachmentHtmlWebView> {
         return;
       }
       environment = created;
-      var params = policy.params(
+      final params = policy.params(
         environment: created.platform,
         onCreated: (controller) => unawaited(attach(controller)),
       );
-      if (defaultTargetPlatform == TargetPlatform.linux) {
-        params = _LinuxHtmlParams(params);
-      }
       final renderer = PlatformInAppWebViewWidget(params);
       if (!policy.closed) setState(() => view = renderer);
     } catch (_) {
@@ -151,17 +156,12 @@ class _DesktopHtmlState extends State<DesktopAttachmentHtmlWebView> {
 
   @override
   Widget build(BuildContext context) =>
-      view?.build(context) ?? const SizedBox.expand();
-}
-
-/// The pinned Linux adapter omits this newer callback while copying generic
-/// creation params. Preserve it so a document cannot open a local file picker.
-class _LinuxHtmlParams extends LinuxInAppWebViewWidgetCreationParams {
-  _LinuxHtmlParams(this.source)
-    : super.fromPlatformInAppWebViewWidgetCreationParams(source);
-  final PlatformInAppWebViewWidgetCreationParams source;
-
-  @override
-  FutureOr<ShowFileChooserResponse?> Function(dynamic, ShowFileChooserRequest)?
-  get onShowFileChooser => source.onShowFileChooser;
+      defaultTargetPlatform == TargetPlatform.linux
+      ? LinuxAttachmentHtmlWebView(
+          uri: widget.uri,
+          events: widget.events,
+          onControllerCreated: widget.onSystemControllerCreated,
+          onDisposed: widget.onSystemDisposed,
+        )
+      : view?.build(context) ?? const SizedBox.expand();
 }

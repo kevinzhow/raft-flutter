@@ -22,7 +22,8 @@ class DesktopHtmlEnvironment {
   final _browserExited = Completer<void>();
 
   static Future<DesktopHtmlEnvironment> create(TargetPlatform target) async {
-    // WPE creates a fresh ephemeral network session for each incognito view.
+    // System WebKitGTK owns a separate native ephemeral context; this profile
+    // directory adapter is used only by WebView2.
     if (target != TargetPlatform.windows) return DesktopHtmlEnvironment();
     final directory = await Directory.systemTemp.createTemp('raft-html-');
     PlatformWebViewEnvironment? environment;

@@ -10,6 +10,7 @@ import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_platform_interface.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_system_webview/raft_system_webview.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/attachment_html_preview.dart';
 import 'package:raft_flutter/platform/attachment_html.dart';
@@ -49,8 +50,8 @@ for(const type of ['pointerdown','mousedown','pointerup','mouseup','click']){
   },true);
 }
 // This timer belongs to document loading, not a host JavaScript evaluation.
-// WPE's evaluate_javascript API forces a user gesture; a timer created by that
-// API cannot serve as a negative test for document-owned scripted navigation.
+// A native evaluation may carry user-gesture authority; a timer created by
+// that API cannot establish a document-owned scripted-navigation negative.
 window.setInterval(()=>{
   if(!window.qaScriptNavigationRequested)return;
   window.qaScriptNavigationRequested=false;
@@ -67,6 +68,16 @@ window.qaStorage='allowed';try{localStorage.setItem('qa','1')}catch(_){qaStorage
 </script>''';
 
 PlatformInAppWebViewController? _controller;
+SystemWebViewController? _systemController;
+
+Future<Object?> _evaluateDocument(String source) {
+  final system = _systemController;
+  if (system != null) return system.evaluate(source);
+  final windows = _controller;
+  if (windows != null) return windows.evaluateJavascript(source: source);
+  throw StateError('The QA renderer is not open.');
+}
+
 final _requests = <Map<String, Object?>>[];
 final _externalRequests = <String>[];
 final _cleanupResults = <Map<String, Object?>>[];
@@ -148,35 +159,41 @@ Future<void> main() async {
 
 Future<Map<String, Object?>> _snapshot() async {
   dynamic document;
-  final controller = _controller;
-  if (controller != null && _loaded) {
+  final system = _systemController;
+  if ((_controller != null || system != null) && _loaded) {
     try {
-      document = await controller.evaluateJavascript(
-        source: '''JSON.stringify({
+      document = await _evaluateDocument('''JSON.stringify({
         title:document.title,counter:Number(document.querySelector('#count').textContent),
         headingBackground:getComputedStyle(document.querySelector('h1')).backgroundColor,
         canvasPixel:Array.from(document.querySelector('#chart').getContext('2d').getImageData(1,1,1,1).data),
         appBridge:typeof window.flutter_inappwebview,
+        nativeBridge:typeof window.__raftTrustedClick,
         network:window.qaNetwork,storage:window.qaStorage,origin:self.origin,
         lastClick:window.qaLastClick,scriptNavigationFired:window.qaScriptNavigationFired,
         pointerEvents:window.qaPointerEvents,
         fileCount:document.querySelector('#file').files.length
-      })''',
-      );
+      })''');
       if (document is String) document = jsonDecode(document);
     } catch (_) {
       document = {'readback': 'unavailable'};
+    }
+  }
+  Map<Object?, Object?>? nativeState;
+  if (system != null) {
+    try {
+      nativeState = await system.inspect();
+    } catch (_) {
+      nativeState = {'retired': true};
     }
   }
   return {
     'loaded': _loaded,
     'failure': _failure,
     'document': document,
+    'systemNativeState': nativeState,
     'nativeViewFocus': [
-      for (final node in FocusManager.instance.rootScope.descendants)
-        if (node.debugLabel ==
-            'flutter_inappwebview_linux_custom_platform_view')
-          {'identity': identityHashCode(node), 'hasFocus': node.hasFocus},
+      if (nativeState != null)
+        {'id': nativeState['id'], 'hasFocus': nativeState['focused']},
     ],
     'profile': _profile,
     'selectedInteractive': attachmentHtmlWebViewSupported,
@@ -185,6 +202,7 @@ Future<Map<String, Object?>> _snapshot() async {
     'requests': List.of(_requests),
     'externalRequests': List.of(_externalRequests),
     'navigationObserverReady': _navigationObserverReady,
+    'inputContract': 'Actual first native pointer Down/Up/click remain trusted, ordered and single; Flutter does not synthesize GTK pointer input.',
     'navigationObserverFailure': _navigationObserverFailure,
     'navigationRequests': List.of(_navigationRequests),
     'scriptNavigationAttempts': _scriptNavigationAttempts,
@@ -218,6 +236,7 @@ class _QaPageState extends State<_QaPage> {
             TextButton(
               onPressed: () => setState(() {
                 _controller = null;
+                _systemController = null;
                 _loaded = false;
                 open = false;
               }),
@@ -248,6 +267,7 @@ class _QaPageState extends State<_QaPage> {
                   authorized: () => open,
                   onClose: () => setState(() {
                     _controller = null;
+                    _systemController = null;
                     _loaded = false;
                     open = false;
                   }),
@@ -266,6 +286,29 @@ class _QaPageState extends State<_QaPage> {
                           _controller = controller;
                           unawaited(_watchQaNavigation(controller));
                         },
+                        onSystemControllerCreated: (controller) {
+                          _systemController = controller;
+                          _profile = null;
+                          _environmentDisposed = false;
+                          _navigationObserverReady = true;
+                          controller.events.listen((event) {
+                            if (_systemController != controller) return;
+                            if (event['type'] == 'navigation') {
+                              _navigationRequests.add({
+                                'url': event['url'],
+                                'reason': 'native-trusted-main-frame-link',
+                              });
+                            }
+                          });
+                        },
+                        onSystemDisposed: () {
+                          _environmentDisposed = true;
+                          _cleanupResults.add({
+                            'backend': 'system-webkitgtk',
+                            'completed': true,
+                            'profile': null,
+                          });
+                        },
                         events: AttachmentHtmlWebViewEvents(
                           onNavigation: events.onNavigation,
                           onProgress: events.onProgress,
@@ -275,6 +318,7 @@ class _QaPageState extends State<_QaPage> {
                             debugPrint('[raft-html-qa] loaded');
                           },
                           onFailed: (reason) {
+                            _loaded = false;
                             _failure = reason;
                             events.onFailed(reason);
                             debugPrint('[raft-html-qa] failed:$reason');

@@ -279,7 +279,7 @@ void main() {
     expect(failed, 0);
   });
 
-  for (final platform in [TargetPlatform.linux, TargetPlatform.windows]) {
+  for (final platform in [TargetPlatform.windows]) {
     testWidgets(
       '$platform renderer loads only after lockdown and releases on close',
       (tester) async {
@@ -353,20 +353,25 @@ void main() {
   testWidgets('closing during environment creation disposes the late profile', (
     tester,
   ) async {
-    final ready = Completer<DesktopHtmlEnvironment>();
-    final pending = _PendingEnvironment();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DesktopAttachmentHtmlWebView(
-          uri: uri,
-          events: events(),
-          environmentFactory: (_) => ready.future,
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    try {
+      final ready = Completer<DesktopHtmlEnvironment>();
+      final pending = _PendingEnvironment();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DesktopAttachmentHtmlWebView(
+            uri: uri,
+            events: events(),
+            environmentFactory: (_) => ready.future,
+          ),
         ),
-      ),
-    );
-    await tester.pumpWidget(const SizedBox.shrink());
-    ready.complete(pending);
-    await tester.pump();
-    expect(pending.disposed, isTrue);
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      ready.complete(pending);
+      await tester.pump();
+      expect(pending.disposed, isTrue);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 }
