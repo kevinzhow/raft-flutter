@@ -9,6 +9,8 @@ import 'package:raft_flutter/features/workspace_browser.dart';
 import 'package:raft_flutter/platform/content_links.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'support/web_link_origin_guard.dart';
+
 /// A release build passes no RAFT_FRONTEND_ORIGIN / RAFT_ORIGIN define to the
 /// Dart compiler for link construction (`flutter test` passes none either), so
 /// these tests exercise exactly what the shipped app does. The API origin does
@@ -187,23 +189,10 @@ void main() {
   });
 
   test('Web links are never built from the bare API origin', () {
-    // Every lib file that puts a Web path after an origin must go through
-    // ContentLinks (or take an already-resolved Web origin as a parameter).
-    final web = RegExp(r"""/join/\$|/integration-invites/|/download'|/s/\$""");
     final offenders = <String>[];
     for (final file in Directory('lib').listSync(recursive: true)) {
       if (file is! File || !file.path.endsWith('.dart')) continue;
-      final lines = file.readAsLinesSync().where(
-        (line) => !line.trimLeft().startsWith('//'),
-      );
-      if (!lines.any(web.hasMatch)) continue;
-      // app_root.dart builds in-app router locations (Uri(path: '/s/..')), not
-      // browser URLs; app_update.dart builds GitHub release asset URLs.
-      final text = lines.join('\n');
-      if (!text.contains('ContentLinks') &&
-          !text.contains('webOrigin') &&
-          !file.path.endsWith('app_root.dart') &&
-          !file.path.endsWith('app_update.dart')) {
+      if (bareApiWebLinks(file.readAsStringSync()).isNotEmpty) {
         offenders.add(file.path);
       }
     }
