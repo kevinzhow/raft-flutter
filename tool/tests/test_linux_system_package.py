@@ -77,7 +77,7 @@ class SystemLinuxPackageTests(unittest.TestCase):
         extension = self.bundle / 'lib/raft-webview/libraft_system_webview_extension.so'
         extension.parent.mkdir()
         extension.write_bytes(b'\x7fELFextension')
-        with self.assertRaisesRegex(ValueError, 'libwebkit2gtk-4.1.so.0'):
+        with self.assertRaisesRegex(ValueError, 'WPE'):
             self.package(needed='libWPEWebKit-2.0.so.1\n')
         self.assertFalse((self.stage / 'run-raft').exists())
 

@@ -48,12 +48,22 @@ class AppImageSystemPackageTests(unittest.TestCase):
         if '--appimage-extract-and-run' in args:
             Path(args[-1]).write_bytes(b'fake packaging output')
 
-    def package(self, *, soname='', stub_browser=False):
+    def package(self, *, soname='', stub_browser=False, core_needed='', core_dependency=None):
         def output(command):
             if '--print-needed' in command:
-                return '' if stub_browser else 'libwebkit2gtk-4.1.so.0\n'
+                if Path(command[-1]).name == appimage.EXECUTABLE:
+                    return core_needed
+                return ('libwebkit2gtk-4.1.so.0\n' if not stub_browser and
+                        Path(command[-1]).name == 'libraft_system_webview_plugin.so' else '')
             return soname if '--print-soname' in command else 'Name: GLIBC_2.39'
-        with patch.object(appimage, 'dependencies', return_value={'libc.so.6': Path('/lib/libc.so.6')}), \
+        def dependencies(path, **kwargs):
+            result = {'libc.so.6': Path('/lib/libc.so.6')}
+            if Path(path).name == 'libraft_system_webview_plugin.so':
+                result['libwebkit2gtk-4.1.so.0'] = Path('/usr/lib/libwebkit2gtk-4.1.so.0')
+            elif core_dependency and Path(path).name == appimage.EXECUTABLE:
+                result[core_dependency] = Path('/usr/lib') / core_dependency
+            return result
+        with patch.object(appimage, 'dependencies', side_effect=dependencies), \
                 patch.object(appimage, 'download_tool', side_effect=lambda name, record, folder: folder / name):
             return appimage.package(self.stage, self.artifact, self.root,
                                     self.run_command, output, lambda _: 'fixture')
@@ -102,6 +112,16 @@ class AppImageSystemPackageTests(unittest.TestCase):
     def test_stub_browser_cannot_bypass_appimage_entry_contract(self):
         with self.assertRaisesRegex(ValueError, 'libwebkit2gtk-4.1.so.0'):
             self.package(stub_browser=True)
+        self.assertFalse(self.artifact.exists())
+
+    def test_core_must_not_link_an_optional_backend(self):
+        with self.assertRaisesRegex(ValueError, 'Core ELF.*optional'):
+            self.package(core_needed='libmedia_kit_video_plugin.so')
+        self.assertFalse(self.artifact.exists())
+
+    def test_core_cannot_pull_optional_runtime_through_a_dependency(self):
+        with self.assertRaisesRegex(ValueError, 'Core ELF.*optional'):
+            self.package(core_dependency='libsoup-3.0.so.0')
         self.assertFalse(self.artifact.exists())
 
     def test_thick_payload_stops_before_native_commands_or_tool_download(self):

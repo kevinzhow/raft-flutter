@@ -148,8 +148,10 @@ jobs:
         run: |
           python -m unittest discover -s tool/tests -p test_linux_system_package.py -v
           python -m unittest discover -s tool/tests -p test_linux_system_runtime.py -v
+          python -m unittest discover -s tool/tests -p test_linux_optional_runtime.py -v
           if [ '${{ inputs.platform }}' = appimage ]; then
             python -m unittest discover -s tool/tests -p test_appimage.py -v
+            python -m unittest discover -s tool/tests -p test_appimage_optional_runtime.py -v
           fi
       - name: Install Linux build and media dependencies
         if: inputs.platform == 'linux' || inputs.platform == 'appimage'

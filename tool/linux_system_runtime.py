@@ -1,15 +1,22 @@
-"""One distribution-owned GTK/WebKit/media ABI; no bundled system libraries."""
+"""Distribution ABI: core GTK at startup, optional browser/media on demand."""
 from pathlib import Path
 import os
 import re
 import shlex
 
 POLICY = 'system-gtk3-webkitgtk-4.1-v1'
+FEATURE_STARTUP_POLICY = 'optional-on-demand-v1'
 APP_LIBRARIES = {'libflutter_linux_gtk.so', 'libapp.so', 'libsqlite3.so'}
 WEB_EXTENSION = 'raft-webview/libraft_system_webview_extension.so'
 OBSOLETE_PLUGINS = {'libflutter_inappwebview_linux_plugin.so', 'libmedia_kit_libs_linux_plugin.so'}
 LINKED_SYSTEM_ABIS = {'libmedia_kit_video_plugin.so': 'libmpv.so.2',
                       'libraft_system_webview_plugin.so': 'libwebkit2gtk-4.1.so.0'}
+OPTIONAL_LIBRARIES = {
+    'libraft_system_webview_plugin.so': 'webkit',
+    WEB_EXTENSION: 'webkit',
+    'libmedia_kit_video_plugin.so': 'mpv',
+}
+OPTIONAL_SYSTEM_ABIS = {*LINKED_SYSTEM_ABIS.values(), 'libjavascriptcoregtk-4.1.so.0', 'libsoup-3.0.so.0'}
 PACKAGES = {
     'ubuntu-24.04': ['libgtk-3-0t64', 'libwebkit2gtk-4.1-0', 'libsoup-3.0-0',
                     'libsecret-1-0', 'libmpv2', 'poppler-utils', 'glib-networking',
@@ -18,8 +25,12 @@ PACKAGES = {
                   'poppler-utils', 'glib-networking', 'librsvg2',
                   'gstreamer1-plugins-base', 'gstreamer1-plugins-good'],
 }
-INSTRUCTIONS = ('This is a thin Linux package. Install the distribution GTK3, WebKitGTK4.1, '
-                'libsoup3, libsecret, libmpv2, Poppler and GStreamer runtime packages. '
+CORE_INSTRUCTIONS = ('This thin Linux package requires the distribution GTK3, libsecret and '
+                     'the core libraries listed below to start. WebKitGTK4.1, libmpv2 and '
+                     'Poppler are optional features; their absence must not block startup.')
+INSTRUCTIONS = (CORE_INSTRUCTIONS + ' Install WebKitGTK4.1/libsoup3 for interactive HTML, '
+                'libmpv2 for audio/video and Poppler for PDF previews when needed. '
+                'The app provides installation guidance and rechecks these features on request. '
                 'Ubuntu24.04 and Fedora44 are the declared runtime targets; codec support '
                 'follows the installed distribution packages. No browser or system ABI is bundled.')
 
@@ -58,10 +69,19 @@ def inventory(stage, executable='raft_flutter'):
 
 
 def verify_linked_system_abi(path, needed):
-    """Refuse a stub video plugin or a browser linked to the retired engine."""
-    required = LINKED_SYSTEM_ABIS.get(Path(path).name)
-    if required and required not in {name.strip() for name in needed.splitlines()}:
+    """Keep real backends and prohibit core's load-time link to optional ABIs."""
+    name = Path(path).name
+    dependencies = {value.strip() for value in needed.splitlines()}
+    if any(value.startswith(('libWPE', 'libwpe')) for value in dependencies):
+        raise ValueError('Retired WPE engine must not be linked: ' + name)
+    required = LINKED_SYSTEM_ABIS.get(name)
+    if required and required not in dependencies:
         raise ValueError(Path(path).name + ' must link the distribution ' + required)
+    if required or name == Path(WEB_EXTENSION).name:
+        return
+    forbidden = dependencies & (OPTIONAL_SYSTEM_ABIS | set(LINKED_SYSTEM_ABIS))
+    if forbidden:
+        raise ValueError('Core ELF must not link optional runtime/backend: ' + name + ': ' + ', '.join(sorted(forbidden)))
 
 
 def rpath(path, stage):
@@ -88,26 +108,33 @@ def launcher(executable='raft_flutter', prefix='$app_dir'):
     return ('#!/bin/sh\nset -eu\n'
             'app_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\n' +
             host_environment_capture() +
-            '# System GTK/WebKit/media and their child processes keep host module paths.\n'
+            '# System GTK and optional WebKit/media keep host module paths.\n'
             'if ! command -v ldd >/dev/null 2>&1; then\n'
-            '  printf "%s\\n" ' + shlex.quote(INSTRUCTIONS) + ' "Missing distribution ldd tool" >&2; exit 1\nfi\n'
-            # Include app-owned dynamically loaded modules, not just the runner.
+            '  printf "%s\\n" ' + shlex.quote(CORE_INSTRUCTIONS) + ' "Missing distribution ldd tool" >&2; exit 1\nfi\n'
+            # Only these exact full backends are loaded on demand by the native
+            # coordinator. Every other module remains a mandatory core check.
             'for runtime_elf in "' + prefix + '/' + executable + '" "' + prefix + '/lib/"*.so "' + prefix + '/lib/raft-webview/"*.so; do\n'
             '  [ -f "$runtime_elf" ] || continue\n'
+            '  case "$runtime_elf" in\n    ' + '|'.join('"' + prefix + '/lib/' + value + '"' for value in OPTIONAL_LIBRARIES) + ') continue;;\n  esac\n'
             '  if ! runtime_check=$(LC_ALL=C ldd "$runtime_elf" 2>&1); then\n'
-            '    printf "%s\\n" ' + shlex.quote(INSTRUCTIONS) + ' "$runtime_check" >&2\n    exit 1\n  fi\n'
+            '    printf "%s\\n" ' + shlex.quote(CORE_INSTRUCTIONS) + ' "$runtime_check" >&2\n    exit 1\n  fi\n'
             '  case "$runtime_check" in\n'
-            '    *"not found"*) printf "%s\\n" ' + shlex.quote(INSTRUCTIONS) + ' "$runtime_check" >&2; exit 1;;\n'
+            '    *"not found"*) printf "%s\\n" ' + shlex.quote(CORE_INSTRUCTIONS) + ' "$runtime_check" >&2; exit 1;;\n'
             '  esac\ndone\n'
             'exec "' + prefix + '/' + executable + '" "$@"\n')
 
 
 def receipt(libraries, dependencies):
     return {'policy': POLICY, 'engine': 'distribution WebKitGTK API4.1 (GTK3/libsoup3)',
+            'featureStartupPolicy': FEATURE_STARTUP_POLICY,
             'appPrivateLibraries': libraries, 'bundledSystemLibraries': [],
             'systemSONAMEs': sorted(dependencies), 'distributionPackages': PACKAGES,
             'requiredPluginSONAMEs': LINKED_SYSTEM_ABIS,
-            'launchDependencyChecks': 'runner plus every app-owned shared module, including WebExtension',
+            'launchDependencyChecks': 'runner and all core shared modules; exact optional backends checked on demand',
+            'optionalLibraries': {path: feature for path, feature in OPTIONAL_LIBRARIES.items() if path in libraries},
+            'optionalFeatures': {'webkit': {'soname': 'libwebkit2gtk-4.1.so.0', 'scope': 'interactive HTML'},
+                                 'mpv': {'soname': 'libmpv.so.2', 'scope': 'audio/video'},
+                                 'poppler': {'commands': ['pdfinfo', 'pdftoppm'], 'scope': 'PDF preview'}},
             'runtimePrerequisites': INSTRUCTIONS,
             'privateSQLite': 'Dart native asset libsqlite3.so has no system SONAME; libsqlite3.so.0 is not shipped',
             'nativeWebExtension': {'path': 'lib/' + WEB_EXTENSION, 'kind': 'app-owned adapter, not browser engine',

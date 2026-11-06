@@ -199,8 +199,7 @@ def linux_package(stage, suffix=''):
     checks, system = {}, set()
     env = {key: value for key, value in os.environ.items() if key not in {'LD_LIBRARY_PATH', 'LD_PRELOAD'}}
     for path in elfs:
-        if path.name in runtime.LINKED_SYSTEM_ABIS:
-            runtime.verify_linked_system_abi(path, capture(['patchelf', '--print-needed', path]))
+        runtime.verify_linked_system_abi(path, capture(['patchelf', '--print-needed', path]))
         private_no_soname = path.name == 'libsqlite3.so' or path.relative_to(stage).as_posix() == 'lib/' + runtime.WEB_EXTENSION
         if private_no_soname and capture(['patchelf', '--print-soname', path]).strip():
             raise ValueError('App-private SQLite/WebExtension must not claim a system SONAME')
@@ -210,7 +209,9 @@ def linux_package(stage, suffix=''):
         listing = subprocess.check_output(['ldd', str(path)], text=True, env=env)
         if 'not found' in listing or 'version `' in listing:
             raise ValueError('Missing/incompatible system Linux runtime: ' + listing)
-        for name, resolved in re.findall(r'^\s*(\S+) => (/\S+)', listing, re.M):
+        resolved_dependencies = re.findall(r'^\s*(\S+) => (/\S+)', listing, re.M)
+        runtime.verify_linked_system_abi(path, '\n'.join(name for name, _ in resolved_dependencies))
+        for name, resolved in resolved_dependencies:
             target = Path(resolved).resolve()
             if target.is_relative_to(stage.resolve()):
                 continue

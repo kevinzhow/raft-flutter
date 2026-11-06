@@ -12,10 +12,42 @@ import sys
 import subprocess
 import tempfile
 import time
+import linux_optional_runtime as optional
 
 
 def capture(args):
     return subprocess.check_output([str(x) for x in args], text=True).strip()
+
+
+def pdf_probe(temporary, expected):
+    helpers = {name: shutil.which(name) for name in ('pdfinfo', 'pdftoppm')}
+    if not all(helpers.values()):
+        if expected == 'missing':
+            return {'pdfPageRendered': False, 'pdfFeatureUnavailableExpected': True}
+        raise ValueError('PDF preview requires the optional distribution poppler-utils package')
+    for helper in helpers.values():
+        subprocess.run([helper, '-v'], check=True)
+    pdf = Path(temporary) / 'page.pdf'
+    objects = [b'<< /Type /Catalog /Pages 2 0 R >>',
+               b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+               b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Contents 4 0 R >>']
+    drawing = b'0 0 1 rg 10 10 80 80 re f\n'
+    objects.append(b'<< /Length ' + str(len(drawing)).encode() + b' >>\nstream\n' + drawing + b'endstream')
+    data = b'%PDF-1.4\n'
+    offsets = [0]
+    for index, obj in enumerate(objects, 1):
+        offsets.append(len(data))
+        data += str(index).encode() + b' 0 obj\n' + obj + b'\nendobj\n'
+    startxref = len(data)
+    data += b'xref\n0 5\n0000000000 65535 f \n'
+    data += b''.join(f'{offset:010d} 00000 n \n'.encode() for offset in offsets[1:])
+    data += f'trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n{startxref}\n%%EOF\n'.encode()
+    pdf.write_bytes(data)
+    subprocess.run([helpers['pdftoppm'], '-png', '-singlefile', str(pdf), str(Path(temporary) / 'page')], check=True)
+    colors = int(capture(['identify', '-format', '%k', Path(temporary) / 'page.png']))
+    if colors < 2:
+        raise ValueError('System PDF tool did not render the colored page')
+    return {'pdfPageRendered': True, 'pdfColors': colors, 'pdfFeatureUnavailableExpected': False}
 
 
 def main():
@@ -23,6 +55,8 @@ def main():
     parser.add_argument('--artifact', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--mode', choices=['direct', 'extract', 'wayland'], required=True)
+    for feature in optional.FEATURES:
+        parser.add_argument('--expect-' + feature, choices=['available', 'missing'], default='available')
     args = parser.parse_args()
     if os.environ.get('GITHUB_ACTIONS') != 'true':
         raise ValueError('Production startup checks are limited to disposable CI environments')
@@ -31,6 +65,10 @@ def main():
     receipt = json.loads(artifact.with_suffix('.json').read_text())
     if hashlib.sha256(artifact.read_bytes()).hexdigest() != receipt['sha256']:
         raise ValueError('Downloaded AppImage differs from the source-bound receipt')
+    expected = {feature: getattr(args, 'expect_' + feature) for feature in optional.FEATURES}
+    features = optional.feature_state()
+    (args.output / f'{args.mode}-features.json').write_text(json.dumps(features, indent=2) + '\n')
+    optional.require_state(features, expected)
     if args.mode == 'extract':
         with tempfile.TemporaryDirectory(prefix='raft-appimage-pdf-ci-') as temporary:
             subprocess.run([str(artifact), '--appimage-extract'], cwd=temporary,
@@ -38,7 +76,7 @@ def main():
             payload = Path(temporary) / 'squashfs-root/raft'
             import linux_system_runtime
             linux_system_runtime.inventory(payload)
-            checked = 0
+            checked, elf_checks = 0, []
             for path in payload.rglob('*'):
                 if not path.is_file():
                     continue
@@ -46,35 +84,9 @@ def main():
                     if stream.read(4) != b'\x7fELF':
                         continue
                 listing = capture(['ldd', path])
-                if 'not found' in listing or 'version `' in listing:
-                    raise ValueError(f'Downloaded payload cannot resolve {path}: {listing}')
+                elf_checks.append(optional.check_elf_listing(path.relative_to(payload), listing, expected))
                 checked += 1
-            helpers = {name: shutil.which(name) for name in ('pdfinfo', 'pdftoppm')}
-            if not all(helpers.values()):
-                raise ValueError('Thin AppImage requires the distribution poppler-utils package')
-            for helper in helpers.values():
-                subprocess.run([helper, '-v'], check=True)
-            # A real page conversion, rather than accepting a helper's existence.
-            pdf = Path(temporary) / 'page.pdf'
-            objects = [b'<< /Type /Catalog /Pages 2 0 R >>',
-                       b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-                       b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Contents 4 0 R >>']
-            drawing = b'0 0 1 rg 10 10 80 80 re f\n'
-            objects.append(b'<< /Length ' + str(len(drawing)).encode() + b' >>\nstream\n' + drawing + b'endstream')
-            data = b'%PDF-1.4\n'
-            offsets = [0]
-            for index, obj in enumerate(objects, 1):
-                offsets.append(len(data))
-                data += str(index).encode() + b' 0 obj\n' + obj + b'\nendobj\n'
-            startxref = len(data)
-            data += b'xref\n0 5\n0000000000 65535 f \n'
-            data += b''.join(f'{offset:010d} 00000 n \n'.encode() for offset in offsets[1:])
-            data += f'trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n{startxref}\n%%EOF\n'.encode()
-            pdf.write_bytes(data)
-            subprocess.run([helpers['pdftoppm'], '-png', '-singlefile', str(pdf), str(Path(temporary) / 'page')], check=True)
-            colors = int(capture(['identify', '-format', '%k', Path(temporary) / 'page.png']))
-            if colors < 2:
-                raise ValueError('System PDF tool did not render the colored page')
+            pdf_result = pdf_probe(temporary, expected['poppler'])
             # One distribution-owned GLib/GIO/GdkPixbuf stack. No payload
             # LD_LIBRARY_PATH, module cache or private desktop launcher.
             desktop_env = dict(os.environ)
@@ -88,9 +100,10 @@ def main():
                             str(payload)], env=desktop_env, check=True)
             (args.output / 'payload-check.json').write_text(json.dumps({
                 'commit': receipt['commit'], 'elfFilesChecked': checked,
-                'pdfPageRendered': True, 'pdfColors': colors,
+                'elfChecks': elf_checks, **pdf_result,
                 'desktopLauncherSpawned': True, 'desktopEnvironmentPreserved': True,
                 'systemRuntimePolicy': 'system-gtk3-webkitgtk-4.1-v1',
+                'featureStartupPolicy': 'optional-on-demand-v1', 'expectedFeatures': expected,
                 'nativeSvgDecoded': True}, indent=2) + '\n')
     if args.mode != 'direct' and Path('/dev/fuse').exists():
         # Extract mode still never opens /dev/fuse; containers additionally prove

@@ -1,4 +1,4 @@
-"""Build a thin AppImage with one distribution-owned GTK/WebKit/media ABI."""
+"""Build a thin AppImage with core GTK and optional system browser/media."""
 import hashlib
 import linux_system_runtime as system_runtime
 import json
@@ -171,14 +171,15 @@ def package(stage, artifact, root, run, capture_output, file_digest):
     env = {key: value for key, value in os.environ.items() if key not in {'LD_LIBRARY_PATH', 'LD_PRELOAD'}}
     needed_glibc, host_libraries = (0, 0), set()
     for path in files:
-        if path.name in system_runtime.LINKED_SYSTEM_ABIS:
-            system_runtime.verify_linked_system_abi(path, capture_output(['patchelf', '--print-needed', path]))
+        system_runtime.verify_linked_system_abi(path, capture_output(['patchelf', '--print-needed', path]))
         private_no_soname = path.name == 'libsqlite3.so' or path.relative_to(stage).as_posix() == 'lib/' + system_runtime.WEB_EXTENSION
         if private_no_soname and capture_output(['patchelf', '--print-soname', path]).strip():
             raise ValueError('Private SQLite/WebExtension must not shadow a system SONAME')
         run(['patchelf', '--set-rpath', system_runtime.rpath(path, stage), path])
         needed_glibc = max(needed_glibc, glibc_requirement(capture_output(['readelf', '--version-info', path])))
-        for name, resolved in dependencies(path, env=env).items():
+        resolved_dependencies = dependencies(path, env=env)
+        system_runtime.verify_linked_system_abi(path, '\n'.join(resolved_dependencies))
+        for name, resolved in resolved_dependencies.items():
             if not resolved.resolve().is_relative_to(stage.resolve()):
                 if not any(resolved.resolve().is_relative_to(Path(directory)) for directory in HOST_LIBRARY_DIRECTORIES):
                     raise ValueError('AppImage dependency is outside the app/distribution: ' + str(resolved))

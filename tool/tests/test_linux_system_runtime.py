@@ -120,12 +120,10 @@ class SystemRuntimeTests(unittest.TestCase):
         self.assertNotIn('LD_LIBRARY_PATH', output['environment'])
         self.assertNotIn('GIO_LAUNCH_DESKTOP', output['environment'])
 
-    def test_healthy_runner_does_not_hide_missing_dynamically_loaded_media_library(self):
+    def test_missing_on_demand_media_backend_does_not_prevent_core_startup(self):
         result, _ = self.launch(plugin_failure=True)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(result.stdout, '')
-        self.assertIn('libmpv.so.2 => not found', result.stderr)
-        self.assertIn('thin Linux package', result.stderr)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['args'], ['a b', 'quote"$', 'raft://fixture'])
 
     def test_missing_or_incompatible_system_library_blocks_app_with_install_instructions(self):
         for listing, code in [('libwebkit2gtk-4.1.so.0 => not found', 0),
