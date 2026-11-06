@@ -27,6 +27,7 @@ class Desktop:
     def __init__(self, output, env):
         self.output, self.env = output, env
         self.actions, self.serial = [], 0
+        self.window = None
 
     def run(self, *argv):
         return capture(argv, env=self.env, timeout=20)
@@ -82,7 +83,9 @@ class Desktop:
             time.sleep(.5)
 
     def scroll(self, down, ticks):
-        window = self.run('xdotool', 'getwindowfocus').strip()
+        if self.window is None:
+            raise AssertionError('Bind the actual application window before scrolling')
+        window = self.window
         geometry = dict(line.split('=', 1) for line in self.run(
             'xdotool', 'getwindowgeometry', '--shell', window).splitlines() if '=' in line)
         x = int(geometry['X']) + int(geometry['WIDTH']) * 3 // 4
@@ -91,6 +94,23 @@ class Desktop:
                              'ticks': ticks, 'x': x, 'y': y, 'window': window})
         self.run('xdotool', 'mousemove', '--sync', x, y, 'click', '--repeat', ticks,
                  '--delay', '80', '5' if down else '4')
+
+    def bind_window(self, pid):
+        windows = self.run('xdotool', 'search', '--onlyvisible', '--pid', pid).split()
+        candidates = []
+        for window in windows:
+            geometry = dict(line.split('=', 1) for line in self.run(
+                'xdotool', 'getwindowgeometry', '--shell', window).splitlines() if '=' in line)
+            candidates.append((int(geometry['WIDTH']) * int(geometry['HEIGHT']), window))
+        if not candidates:
+            raise AssertionError('Actual runner has no visible top-level window')
+        self.window = max(candidates)[1]
+        # This private Xvfb has no window manager. Establish the top-level
+        # keyboard focus a desktop window manager normally assigns; never focus
+        # a WebKit child or a document element to prime its input behavior.
+        self.run('xdotool', 'windowfocus', '--sync', self.window)
+        self.actions.append({'kind': 'private desktop top-level focus', 'pid': pid,
+                             'window': self.window})
 
     def click(self, phrase, label, below=0, last=False):
         file, match = self.find(phrase, label, last=last)
@@ -223,6 +243,7 @@ def main(args):
         assert not any('install command' in row['text'].lower() or 'system dependencies' in row['text'].lower()
                        for row in initial_rows), 'Startup must not show dependency installation UI'
         actual_runner = wait_value(lambda: runner_identity(app.pid), 'Actual product runner was not found')
+        desktop.bind_window(actual_runner['pid'])
         (args.output / 'actual-runner-before.json').write_text(json.dumps(actual_runner, indent=2) + '\n')
         assertions.append({'id': 'startup-has-no-install-modal', 'result': 'PASS'})
         desktop.click('Email', 'login-email', below=55)
