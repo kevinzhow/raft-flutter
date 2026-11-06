@@ -15,7 +15,9 @@ add_executable(${BINARY_NAME}
   "desktop_quit_cleanup.cc"
   "desktop_view_close.cc"
   "desktop_view_retirement.cc"
-  "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
+  "optional_backend.cc"
+  "linux_optional_plugins.cc"
+  "${RAFT_PLUGIN_REGISTRANT}"
 )
 
 # Apply the standard set of build settings. This can be removed for applications

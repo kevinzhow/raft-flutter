@@ -68,6 +68,8 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
 
 # Application build; see runner/CMakeLists.txt.
+include(runner/optional_plugins.cmake)
+raft_prepare_optional_registrant(RAFT_PLUGIN_REGISTRANT)
 add_subdirectory("runner")
 
 # The UI/browser/media stack belongs to the distribution, including libmpv
@@ -94,6 +96,7 @@ set_target_properties(${BINARY_NAME}
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)
+raft_unlink_optional_plugins(${BINARY_NAME})
 include(runner/desktop_window_creation.cmake)
 raft_guard_window_creation(${BINARY_NAME})
 # === Installation ===
