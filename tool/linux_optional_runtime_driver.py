@@ -65,7 +65,7 @@ class Desktop:
         file.with_suffix('.json').write_text(json.dumps(observed, indent=2) + '\n')
         return file, observed
 
-    def find(self, phrase, label, timeout=30, last=False):
+    def find(self, phrase, label, timeout=30, last=False, scroll=False):
         deadline = time.monotonic() + timeout
         while True:
             file, rows = self.snapshot(label)
@@ -77,7 +77,20 @@ class Desktop:
                 return file, matches[-1 if last else 0]
             if time.monotonic() >= deadline:
                 raise AssertionError(f'Visible text not found: {phrase}; last screenshot {file.name}')
+            if scroll:
+                self.scroll(down=True, ticks=2)
             time.sleep(.5)
+
+    def scroll(self, down, ticks):
+        window = self.run('xdotool', 'getwindowfocus').strip()
+        geometry = dict(line.split('=', 1) for line in self.run(
+            'xdotool', 'getwindowgeometry', '--shell', window).splitlines() if '=' in line)
+        x = int(geometry['X']) + int(geometry['WIDTH']) * 3 // 4
+        y = int(geometry['Y']) + int(geometry['HEIGHT']) * 3 // 4
+        self.actions.append({'kind': 'XTEST scroll', 'direction': 'down' if down else 'up',
+                             'ticks': ticks, 'x': x, 'y': y, 'window': window})
+        self.run('xdotool', 'mousemove', '--sync', x, y, 'click', '--repeat', ticks,
+                 '--delay', '80', '5' if down else '4')
 
     def click(self, phrase, label, below=0, last=False):
         file, match = self.find(phrase, label, last=last)
@@ -250,7 +263,7 @@ def main(args):
         for feature, status in expected.items():
             if status == 'missing':
                 package = before['packages'][feature]['package']
-                desktop.find(package, 'missing-' + feature)
+                desktop.find(package, 'missing-' + feature, scroll=True)
                 assertions.append({'id': 'install-guidance-' + feature, 'result': 'PASS', 'package': package})
         (args.output / 'before-restore-pid.json').write_text(json.dumps(actual_runner) + '\n')
         if args.scenario != 'restored':
@@ -263,6 +276,7 @@ def main(args):
             after = optional.feature_state()
             optional.require_state(after, dict.fromkeys(optional.FEATURES, 'available'))
             (args.output / 'environment-restored.json').write_text(json.dumps(after, indent=2) + '\n')
+            desktop.scroll(down=False, ticks=30)
             desktop.click('Check dependencies', 'recheck-dependencies')
         def all_available():
             _, rows = desktop.snapshot('all-dependencies-status')

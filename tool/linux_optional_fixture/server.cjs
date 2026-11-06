@@ -39,7 +39,8 @@ const csp = "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inlin
 const attachmentTypes = {html: ['report.html', 'text/html'], audio: ['tone.wav', 'audio/wav'], pdf: ['page.pdf', 'application/pdf']};
 function attachment(id) {
   const [filename, mimeType] = attachmentTypes[id];
-  return {id, filename, originalFilename: filename, mimeType, size: 256, status: 'ready'};
+  const bytes = id === 'html' ? Buffer.from(html) : id === 'audio' ? audio() : pdf();
+  return {id, filename, originalFilename: filename, mimeType, sizeBytes: bytes.length, status: 'ready'};
 }
 function audio() {
   const samples = 22050, buffer = Buffer.alloc(44 + samples * 2);
@@ -123,8 +124,10 @@ const service = http.createServer(async (request, response) => {
     }
     if (route === '/api/attachments/urls') {
       const value = await body(request);
-      return json(response, 200, {urls: Object.fromEntries((value.attachmentIds || []).map(id => [id, `${origin}/files/${id}`]))});
+      return json(response, 200, {urls: (value.attachmentIds || []).map(id => ({
+        id, url: `${origin}/files/${id}`, expiresAt: new Date(Date.now() + 300000).toISOString()}))});
     }
+    if (route === '/api/messages/attachment-preview/enabled') return json(response, 200, {enabled: true});
     if (route === '/api/channels/unread') return json(response, 200, {channels: {}});
     if (route === '/api/channels/inbox') return json(response, 200, {items: [], hasMore: false, totalUnreadCount: 0});
     if (route === `/api/servers/${server.id}/setup`) return json(response, 200, {phase: 'ready', blocksChat: false});
