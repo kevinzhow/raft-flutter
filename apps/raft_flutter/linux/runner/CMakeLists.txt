@@ -17,6 +17,7 @@ add_executable(${BINARY_NAME}
   "desktop_view_retirement.cc"
   "optional_backend.cc"
   "linux_optional_plugins.cc"
+  "webview_host_bootstrap.cc"
   "${RAFT_PLUGIN_REGISTRANT}"
 )
 

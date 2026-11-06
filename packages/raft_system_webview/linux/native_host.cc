@@ -1,6 +1,7 @@
 // GTK overlay/input routing adapted from webview_all_linux ab32ceb7f0bb0585432986908875c0a5fe0df9a6.
 // Copyright 2021-2026 Abandoft. See ../LICENSE.upstream and upstream.json.
 #include "native_host.h"
+#include "host_bootstrap.h"
 #include <algorithm>
 
 namespace {
@@ -8,36 +9,10 @@ constexpr const char* kOverlay = "raft-system-webview-overlay";
 constexpr const char* kContent = "raft-system-webview-content";
 constexpr const char* kClip = "raft-system-webview-clip";
 
-// Reparenting an already-realized FlView destroys its GL surface. Install the
-// same inner overlay as the reviewed upstream, before the runner realizes it.
-gboolean ParentSet(GSignalInvocationHint*, guint count, const GValue* args, gpointer) {
-  if (count == 0) return TRUE;
-  auto* object = G_OBJECT(g_value_get_object(&args[0]));
-  if (!object || !FL_IS_VIEW(object) || g_object_get_data(object, kOverlay)) return TRUE;
-  auto* view = GTK_WIDGET(object);
-  if (GTK_IS_OVERLAY(gtk_widget_get_parent(view)) || gtk_widget_get_realized(view)) return TRUE;
-  GList* children = gtk_container_get_children(GTK_CONTAINER(view));
-  if (!children || children->next) { g_list_free(children); return TRUE; }
-  auto* content = GTK_WIDGET(children->data);
-  g_object_ref(content);
-  gtk_container_remove(GTK_CONTAINER(view), content);
-  GtkWidget* overlay = gtk_overlay_new();
-  gtk_widget_set_hexpand(overlay, TRUE);
-  gtk_widget_set_vexpand(overlay, TRUE);
-  gtk_container_add(GTK_CONTAINER(overlay), content);
-  gtk_container_add(GTK_CONTAINER(view), overlay);
-  gtk_widget_show(overlay);
-  g_object_set_data_full(object, kOverlay, g_object_ref(overlay), g_object_unref);
-  g_object_set_data_full(object, kContent, g_object_ref(content), g_object_unref);
-  g_object_unref(content);
-  g_list_free(children);
-  return TRUE;
-}
+// Kept for ordinary developer runners that eagerly link this plugin. The
+// optional Linux runner installs the same idempotent hook before any FlView.
 __attribute__((constructor)) void InstallOverlayHook() {
-  gpointer klass = g_type_class_ref(GTK_TYPE_WIDGET);
-  guint signal = g_signal_lookup("parent-set", GTK_TYPE_WIDGET);
-  if (signal) g_signal_add_emission_hook(signal, 0, ParentSet, nullptr, nullptr);
-  g_type_class_unref(klass);
+  RaftInstallWebviewHostBootstrap();
 }
 GtkWidget* InputWidget(GtkWidget* widget) {
   if (!widget || GTK_IS_EVENT_BOX(widget)) return widget;
