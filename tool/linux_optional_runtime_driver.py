@@ -66,12 +66,15 @@ class Desktop:
         file.with_suffix('.json').write_text(json.dumps(observed, indent=2) + '\n')
         return file, observed
 
-    def find(self, phrase, label, timeout=30, last=False, scroll=False):
+    def find(self, phrase, label, timeout=30, last=False, scroll=False,
+             min_y=None, max_y=None):
         deadline = time.monotonic() + (max(timeout, 60) if scroll else timeout)
         while True:
             file, rows = self.snapshot(label)
             matches = sorted(
-                (row for row in rows if phrase.casefold() in row['text'].casefold()),
+                (row for row in rows if phrase.casefold() in row['text'].casefold()
+                 and (min_y is None or row['box'][1] >= min_y)
+                 and (max_y is None or row['box'][3] <= max_y)),
                 key=lambda row: (row['box'][1], row['box'][0]),
             )
             if matches:
@@ -146,6 +149,16 @@ def wait_value(check, description, timeout=25):
         if time.monotonic() >= deadline:
             raise AssertionError(description)
         time.sleep(.2)
+
+
+def saved_outgoing(state, expected):
+    """Reject a partial/duplicate POST instead of accepting a sent counter."""
+    if not state['sent']:
+        return None
+    own = [row for row in state['messages'] if row['senderId'] == 'optional-human']
+    if state['sent'] != 1 or len(own) != 1 or own[0]['content'] != expected:
+        raise AssertionError(f'Outgoing HTTP body differs: {[row["content"] for row in own]!r}')
+    return own[0]
 
 
 def birth(pid):
@@ -257,12 +270,22 @@ def main(args):
         desktop.click('general', 'channel-choice')
         desktop.find('Core messaging is independent', 'core-chat')
         outgoing = 'Optional outgoing proof'
+        _, composer = desktop.find('Message #general', 'composer-empty', last=True)
+        composer_y = composer['box'][1]
         desktop.click('Message', 'composer', last=True)
         desktop.type(outgoing)
+        # XTEST returning does not guarantee Flutter has consumed every key.
+        # Wait for the actual composer paint before submitting; afterwards its
+        # remaining text cannot serve as proof of a visible message bubble.
+        desktop.find(outgoing, 'composer-full-text', min_y=composer_y - 10)
         desktop.key('Return')
-        wait_value(lambda: request(origin, '/qa/state')['sent'] == 1,
-                   'Actual composer did not POST exactly one message')
-        desktop.find(outgoing, 'sent-visible')
+        saved = wait_value(lambda: saved_outgoing(request(origin, '/qa/state'), outgoing),
+                           'Actual composer did not POST the exact complete message')
+        desktop.find(outgoing, 'sent-visible', max_y=composer_y - 1)
+        desktop.find('Message #general', 'composer-cleared', min_y=composer_y - 10)
+        assertions.append({'id': 'exact-outgoing-body-and-visible-message', 'result': 'PASS',
+                           'messageId': saved['id'], 'content': saved['content'],
+                           'composerTop': composer_y})
         incoming = 'Optional incoming proof'
         delivered = request(origin, '/qa/receive', {'content': incoming})
         desktop.find(incoming, 'received-visible')
