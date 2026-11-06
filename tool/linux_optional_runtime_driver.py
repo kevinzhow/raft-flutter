@@ -12,6 +12,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import time
@@ -181,11 +182,13 @@ def main(args):
                                  text=True, env=env, timeout=10)
         if keyring.returncode:
             raise AssertionError('Private Secret Service could not start')
-        alias = capture(['gdbus', 'call', '--session', '--dest', 'org.freedesktop.secrets',
-                         '--object-path', '/org/freedesktop/secrets', '--method',
-                         'org.freedesktop.Secret.Service.ReadAlias', 'default'], env=env, timeout=10)
+        alias = capture(['dbus-send', '--session', '--print-reply',
+                         '--dest=org.freedesktop.secrets', '/org/freedesktop/secrets',
+                         'org.freedesktop.Secret.Service.ReadAlias', 'string:default'],
+                        env=env, timeout=10)
         (args.output / 'private-keyring-alias.txt').write_text(alias)
-        if "objectpath '/'" in alias:
+        collection = re.search(r'object path "([^"]+)"', alias)
+        if collection is None or collection[1] == '/':
             raise AssertionError('Private keyring has no initialized default collection')
         app = launch([str(args.artifact.resolve()), '--appimage-extract-and-run'], 'app')
         # The Email label belongs to the actual AuthView. XTEST clicks into its
