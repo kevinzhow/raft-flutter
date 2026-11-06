@@ -3418,6 +3418,50 @@
           "justification": "A Marketplace app waiting for an install: the commit zone says who may install; a person with installation.canInstall gets 'Install and continue' (install, then authorize, as separate steps of one explicit press), anyone else Web's explanation and no button. Widget tests (human_login_install_test.dart) cover both, a failed install and a refused login after the install."
         }
       ]
+    },
+    {
+      "id": "settings.linux-dependencies",
+      "title": "Linux optional attachment dependencies",
+      "webEntry": "No Web counterpart: distribution runtime installation is native-only",
+      "flutterEntry": "apps/raft_flutter/lib/features/linux_dependencies_settings.dart; linux_dependency_notice.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "explicit feature or settings check",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "intentional",
+          "justification": "Uses the canonical busy Button. Initial settings reads known status only; no startup modal or implicit plugin load."
+        },
+        {
+          "state": "empty",
+          "variant": "unchecked or every optional runtime available",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "intentional",
+          "justification": "No install notice is shown while availability is unchecked or when the needed runtime is available."
+        },
+        {
+          "state": "error",
+          "variant": "a required optional feature package is missing",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "intentional",
+          "justification": "Canonical Button and settings recipes show a verified distribution install command and Check again; HTML retains static reading and browser actions. Widget regressions prove recovery and absence when not needed; actual runtime proof is recorded separately."
+        },
+        {
+          "state": "partial",
+          "variant": "other features remain usable",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "intentional",
+          "justification": "Only the affected attachment is gated. Chat and ordinary application services do not wait for optional packages; failed probes are retried after installation."
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -43704,9 +43748,55 @@
         "delegatesTo": [
           "packages/raft_ui/lib/src/native_surface_occlusion.dart#class:RaftNativeSurfaceOccluder"
         ]
+      },
+      "apps/raft_flutter/lib/features/linux_dependencies_settings.dart#class:LinuxDependenciesSettings": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody task308 optional Linux dependencies",
+        "reason": "App-owned composition of canonical settings, selection and Button components with the platform dependency service. No new design-system primitive, style exemption, or current visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/linux_dependencies_settings.dart#class:_LinuxDependenciesSettingsState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody task308 optional Linux dependencies",
+        "reason": "App-owned composition of canonical settings, selection and Button components with the platform dependency service. No new design-system primitive, style exemption, or current visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/linux_dependencies_settings.dart#method:LinuxDependenciesSettings.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody task308 optional Linux dependencies",
+        "reason": "App-owned composition of canonical settings, selection and Button components with the platform dependency service. No new design-system primitive, style exemption, or current visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/linux_dependencies_settings.dart#method:_LinuxDependenciesSettingsState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody task308 optional Linux dependencies",
+        "reason": "App-owned composition of canonical settings, selection and Button components with the platform dependency service. No new design-system primitive, style exemption, or current visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/linux_dependency_notice.dart#class:LinuxDependencyNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody task308 optional Linux dependencies",
+        "reason": "App-owned composition of canonical settings, selection and Button components with the platform dependency service. No new design-system primitive, style exemption, or current visual acceptance is granted."
+      },
+      "apps/raft_flutter/lib/features/linux_dependency_notice.dart#method:LinuxDependencyNotice.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Cody task308 optional Linux dependencies",
+        "reason": "App-owned composition of canonical settings, selection and Button components with the platform dependency service. No new design-system primitive, style exemption, or current visual acceptance is granted."
       }
     },
     "entries": {
+      "screen:settings.linux-dependencies": {
+        "owner": "Cody task308",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.linux-dependencies",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/linux_dependencies_settings.dart#class:LinuxDependenciesSettings"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Linux-only Desktop settings and affected attachment notices reuse shared component recipes. Widget and native runtime evidence do not establish complete visual parity."
+      },
       "screen:artifact.native-download": {
         "owner": "Artifact download",
         "kind": "route_or_panel_candidate",
@@ -46246,6 +46336,12 @@
       }
     },
     "requirements": {
+      "screen:settings.linux-dependencies:applicability": {
+        "entryId": "screen:settings.linux-dependencies",
+        "applicability": "unknown",
+        "owner": "Cody task308",
+        "reason": "Native package availability has no Web counterpart. Check existing themes, mouse and expanded touch layouts, text scaling, busy/missing/available states separately; no visual pass claimed."
+      },
       "screen:artifact.native-download:applicability": {
         "entryId": "screen:artifact.native-download",
         "applicability": "unknown",

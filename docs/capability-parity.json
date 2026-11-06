@@ -11693,7 +11693,7 @@
    "status": "partial",
    "webEntry": "MediaPreviewHost HTML surface",
    "gate": "preview gate enabled",
-   "flutterEntry": "attachment_html_desktop.dart selects WebView2 on Windows; attachment_html_linux.dart uses distribution WebKitGTK4.1/GTK3 on Linux; Android and WK remain on their existing renderers",
+   "flutterEntry": "attachment_html_desktop.dart selects WebView2 on Windows; attachment_html_linux.dart uses system WebKitGTK4.1 on Linux after LinuxDependencies.ensure; absent WebKit keeps the static HTML/browser fallback",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/platform/attachment_html_desktop.dart",
@@ -11704,8 +11704,8 @@
      "needle": "WebViewPlatform.instance != null"
     }
    ],
-   "justification": "Linux links the distribution WebKitGTK 4.1 engine and uses an ephemeral sandboxed context. App-owned native adapters mediate trusted main-frame links, input, bounded snapshots and SDK-owned region overlays. No browser engine or private GTK/GLib/media closure is built or shipped. Windows keeps ephemeral WebView2; mobile and Apple renderers are unchanged. File selection, script-driven external links, network and storage remain restricted. Current native prototype evidence and final application/package acceptance are distinct.",
-   "impact": "System-backend Linux application and thin distribution package acceptance must complete before this replacement can be called delivered.",
+   "justification": "Linux loads the genuine system WebKitGTK4.1 backend on demand, using an ephemeral sandboxed context when available. Missing WebKit does not prevent startup; settings and the affected attachment offer package installation guidance and retry. HTML region interaction requires the available native renderer. No browser engine or private system ABI is built or shipped. Windows/mobile/Apple retain their existing renderers. Native runtime and visual acceptance remain distinct from widget checks.",
+   "impact": "Optional Linux feature execution and same-process recovery require actual missing/restored runtime proof; remaining HTML visual differences are tracked separately.",
    "size": "M"
   },
   {

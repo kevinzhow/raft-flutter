@@ -160,7 +160,7 @@ requires adjusting the corresponding native build and packaging implementation.
 | Windows x64 | `windows-2022` | Complete portable ZIP plus a per-user Inno Setup installer (`-setup.exe`, the WinSparkle update vehicle) | No Authenticode signature. MSVC runtime included; system Toast needs no Windows App Runtime. Keep all DLLs and `data/`; first launch registers the current-user notification identity and protocol. Device acceptance is separate from hosted CI. |
 | Android ARM64 | `ubuntu-24.04` | Signed split APK | SDK 37 / build tools 37.0.0, Java 17. Requires all signing secrets below; missing secrets fail instead of producing a debug-signed release. No Play Store/AAB upload. |
 | Linux x64 tar (disabled) | Not scheduled | `.tar.gz` | Disabled in `tool/release-platforms.json`; not part of the release inventory. No tar distribution acceptance is claimed. |
-| Linux x64 AppImage | `ubuntu-24.04` | `.AppImage` | Thin app/Flutter/plugin/SQLite payload; distribution GTK3, WebKitGTK 4.1, libmpv and Poppler required. Reviewed static AppImage runtime, glibc ≤ 2.39, direct and no-FUSE startup checks, plus Fedora KDE Wayland compatibility checks. |
+| Linux x64 AppImage | `ubuntu-24.04` | `.AppImage` | Thin app/Flutter/plugin/SQLite payload; distribution GTK3/core desktop runtime required, WebKitGTK4.1/libmpv/Poppler optional per attachment feature. Reviewed static AppImage runtime, glibc ≤ 2.39, direct and no-FUSE startup checks, plus Fedora KDE Wayland compatibility checks. |
 | macOS ARM64 | `macos-15` | `.app` ZIP via `ditto` | Existing ad-hoc signing; embeds Sparkle 2. No Developer ID/notarization; Gatekeeper distribution acceptance is pending. No Intel build. |
 
 ## In-app update feeds
@@ -276,7 +276,9 @@ Every ELF is checked for missing libraries, system resolution and a maximum
 glibc requirement of 2.39 before packaging. The SQLite native asset has no
 system SONAME and cannot replace the distribution's `libsqlite3.so.0`.
 
-Install these distribution runtime prerequisites before starting the AppImage:
+The following commands enable the complete attachment feature set. GTK and
+core desktop libraries are required at startup; WebKit, mpv and Poppler can
+instead be installed when the corresponding feature is first used:
 
 ```sh
 # Ubuntu 24.04 (official signed APT repositories)
@@ -292,7 +294,11 @@ The normal desktop display/Secret Service/notification services and GPU drivers
 remain host services. Codec availability follows the installed distribution
 packages. `linux-system-runtime.json` declares the policy, app-private inventory
 and external SONAMEs; it is not a claim that the AppImage contains those system
-libraries. Missing ELF dependencies stop the launcher with installation guidance.
+libraries. Missing core ELF dependencies stop the launcher with installation
+guidance. The optional WebKit/media modules and WebExtension are checked fully
+at package time, but are loaded on demand at runtime. Their absence leaves core
+features usable and shows install/recheck actions in Settings → Desktop and the
+affected attachment. See [optional dependencies](linux-media-runtime.md#installing-optional-features).
 No profile is imported, migrated or deleted by packaging. New native code and
 system-runtime packaging require a new source/tag: backfill rejects retired
 private-engine tags before setup, preserving their already published assets.
@@ -358,6 +364,11 @@ version is `X.Y.Z-isolated`. Release CI never sets the variable.
 
 CI explicitly installs the system WebKitGTK4.1/media prerequisites on each
 distribution, then runs the actual release file directly and in extract-and-run mode at 2× scale.
+These fully provisioned checks do not prove optional-dependency behavior.
+`tool/appimage-optional-test.sh` provisions separate Ubuntu/Fedora cases with
+WebKit absent, mpv absent, both absent, and all restored. The optional native
+driver records user input and independent fixture data; environment/startup
+results alone are explicitly marked as insufficient for feature acceptance.
 A Fedora 44 container without `/dev/fuse` additionally runs the downloaded artifact
 in X11 and under KDE's KWin native Wayland compositor. The compatibility floor
 uses only Fedora's official `fedora` release repository for the complete dependency

@@ -1,0 +1,8 @@
+{
+  "name": "raft-linux-optional-runtime-fixture",
+  "private": true,
+  "description": "Loopback HTTP and Socket.IO fixture for the production Linux dependency acceptance driver.",
+  "dependencies": {
+    "socket.io": "4.8.3"
+  }
+}
