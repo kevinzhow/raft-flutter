@@ -65,7 +65,7 @@ if [[ "$distribution" == ubuntu ]]; then
 else
   dnf --repo=fedora --setopt=allow_downgrade=True install -y python3 nodejs npm binutils dbus-daemon dbus-tools \
     gnome-keyring xorg-x11-server-Xvfb xorg-x11-xauth xwininfo xdotool ImageMagick tesseract \
-    gtk3 libsecret librsvg2 mesa-dri-drivers mesa-libEGL mesa-libGL sudo shadow-utils util-linux
+    gtk3 libsecret librsvg2 mesa-dri-drivers mesa-libEGL mesa-libGL libglvnd-gles sudo shadow-utils util-linux
   mkdir -p /var/cache/raft-optional-rpms
   # `download`, unlike transaction --downloadonly, persists these files across
   # subsequent installs. Installed core dependencies stay frozen in this image.
