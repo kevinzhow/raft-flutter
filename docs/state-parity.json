@@ -3423,7 +3423,7 @@
       "id": "settings.linux-dependencies",
       "title": "Linux optional attachment dependencies",
       "webEntry": "No Web counterpart: distribution runtime installation is native-only",
-      "flutterEntry": "apps/raft_flutter/lib/features/linux_dependencies_settings.dart; linux_dependency_notice.dart",
+      "flutterEntry": "apps/raft_flutter/lib/features/linux_dependencies_settings.dart",
       "states": [
         {
           "state": "loading",
