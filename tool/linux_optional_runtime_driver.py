@@ -57,7 +57,10 @@ class Desktop:
         deadline = time.monotonic() + timeout
         while True:
             file, rows = self.snapshot(label)
-            matches = [row for row in rows if phrase.casefold() in row['text'].casefold()]
+            matches = sorted(
+                (row for row in rows if phrase.casefold() in row['text'].casefold()),
+                key=lambda row: (row['box'][1], row['box'][0]),
+            )
             if matches:
                 return file, matches[-1 if last else 0]
             if time.monotonic() >= deadline:
