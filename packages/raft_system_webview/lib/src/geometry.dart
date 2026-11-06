@@ -98,7 +98,8 @@ class SystemWebViewLayout {
       if (!value.isFinite) return hidden;
       clip = clip.intersect(value);
     }
-    if (clip.isEmpty || isOccluded?.call(frame) == true) return hidden;
+    if (clip.isEmpty) return hidden;
+    final blocked = isOccluded?.call(frame) ?? false;
     Rect convert(Rect r) => Rect.fromLTWH(
       r.left * scale,
       r.top * scale,
@@ -107,8 +108,8 @@ class SystemWebViewLayout {
     );
     final result = SystemWebViewLayout(
       convert(frame),
-      convert(clip),
-      paintOccluded: isPaintOccluded?.call(frame) ?? false,
+      blocked ? Rect.zero : convert(clip),
+      paintOccluded: !blocked && (isPaintOccluded?.call(frame) ?? false),
       viewFrame: frame,
     );
     if ([result.frame, result.clip].any(

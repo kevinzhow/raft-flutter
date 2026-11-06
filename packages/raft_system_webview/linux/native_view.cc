@@ -127,6 +127,7 @@ NativeView::NativeView(int64_t id, NativeHost* host, FlBinaryMessenger* messenge
   g_signal_connect(web_, "event-after", G_CALLBACK(AfterInput), this);
   g_signal_connect(web_, "event", G_CALLBACK(ObserveInput), this);
   g_signal_connect(web_, "notify::has-focus", G_CALLBACK(FocusChanged), this);
+  g_signal_connect_after(web_, "size-allocate", G_CALLBACK(Allocated), this);
   g_signal_connect(web_, "load-changed", G_CALLBACK(Loaded), this);
   g_signal_connect(web_, "load-failed", G_CALLBACK(Failed), this);
   g_signal_connect(web_, "notify::estimated-load-progress", G_CALLBACK(Progress), this);
@@ -216,6 +217,7 @@ void NativeView::Handle(FlMethodCall* call) {
     GdkRectangle intersection;
     bool show = loaded_ && fl_value_get_bool(visible) &&
       gdk_rectangle_intersect(&frame, &clip, &intersection);
+    if (frame.width > 0 && frame.height > 0) snapshot_->SetViewport(frame.width, frame.height);
     if (show) {
       gtk_widget_set_size_request(region_->widget(), frame.width, frame.height);
       gtk_layout_move(GTK_LAYOUT(clip_), region_->widget(), frame.x - intersection.x, frame.y - intersection.y);
@@ -468,6 +470,12 @@ void NativeView::FocusChanged(GObject*, GParamSpec*, gpointer data) {
   g_autoptr(FlValue) fields = fl_value_new_map();
   fl_value_set_string_take(fields, "focused", fl_value_new_bool(gtk_widget_has_focus(GTK_WIDGET(self->web_))));
   self->Event("focus", fields);
+}
+
+void NativeView::Allocated(GtkWidget*, GtkAllocation*, gpointer data) {
+  auto* self = static_cast<NativeView*>(data);
+  if (!self->closed_ && self->loaded_ && !self->failed_ && self->snapshot_ &&
+      self->snapshot_->ViewportAllocated()) self->Event("snapshotDirty");
 }
 
 void NativeView::SetPaintOccluded(bool occluded) {

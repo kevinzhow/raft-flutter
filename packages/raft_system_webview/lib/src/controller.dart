@@ -17,6 +17,7 @@ class SystemWebViewController {
   bool _closed = false;
   Future<void>? _disposing;
   int _layoutSequence = 0;
+  int _viewportWidth = 0, _viewportHeight = 0;
   bool get closed => _closed;
 
   static Future<SystemWebViewController> create() async {
@@ -71,8 +72,28 @@ class SystemWebViewController {
     if (!supportsSnapshots || _closed) return null;
     final sequence = _layoutSequence;
     final frame = await _invoke<Object?>('snapshot');
-    return sequence == _layoutSequence
+    final snapshot = sequence == _layoutSequence
         ? SystemWebViewSnapshot.parse(frame, sequence)
+        : null;
+    if (snapshot == null ||
+        frame is! Map ||
+        _viewportWidth <= 0 ||
+        _viewportHeight <= 0) {
+      return null;
+    }
+    // A method reply can carry the new sequence while WebKit still captured
+    // its preceding allocation. Bind its explicit native viewport and scale;
+    // a proportional resize must not mistake old pixels for a HiDPI image.
+    final scale = frame['scale'];
+    return frame['viewportWidth'] is int &&
+            frame['viewportHeight'] is int &&
+            frame['viewportWidth'] == _viewportWidth &&
+            frame['viewportHeight'] == _viewportHeight &&
+            scale is int &&
+            scale > 0 &&
+            snapshot.width == _viewportWidth * scale &&
+            snapshot.height == _viewportHeight * scale
+        ? snapshot
         : null;
   }
 
@@ -81,11 +102,18 @@ class SystemWebViewController {
       _invoke<Object?>('evaluate', {'source': source});
   Future<Uri?> currentUri() async =>
       Uri.tryParse(await _invoke<String>('currentUri') ?? '');
-  Future<void> layout(SystemWebViewLayout value) => _invoke<void>('layout', {
-    ...value.data,
-    'sequence': ++_layoutSequence,
-    'visible': value.visible,
-  });
+  Future<void> layout(SystemWebViewLayout value) {
+    if (value.frame.isFinite && !value.frame.isEmpty) {
+      // Match NativeView::Rect's inward rounding of the two edges.
+      _viewportWidth = value.frame.right.floor() - value.frame.left.ceil();
+      _viewportHeight = value.frame.bottom.floor() - value.frame.top.ceil();
+    }
+    return _invoke<void>('layout', {
+      ...value.data,
+      'sequence': ++_layoutSequence,
+      'visible': value.visible,
+    });
+  }
 
   Future<void> dispose() => _disposing ??= _dispose();
   Future<void> _dispose() async {

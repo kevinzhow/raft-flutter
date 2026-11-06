@@ -28,13 +28,17 @@ refuses creation. `app.raft/system_webview/<id>` accepts:
   There is no object or script-message handler callable by uploaded HTML.
 - `inspect`: host readback of live GTK visibility/focus and ephemeral/sandbox state.
 - `snapshot`: one bounded host-only visible-region PNG request; layout changes,
-  closure and cancellation reject stale results. Maximum 16 Mi pixels, 8192
+  closure and cancellation reject stale results. The response binds its
+  `viewportWidth`, `viewportHeight` and integer GTK `scale` to the exact native
+  allocation and PNG dimensions. Maximum 16 Mi pixels, 8192
   pixels per side and 8 MiB PNG; caller owns its private decoded image.
 - `dispose`: cancels evaluation/loading/snapshots, disconnects signals, destroys the GTK
   view and releases the ephemeral context. Dart retires event handling first.
 
 Native `event` messages report loading progress, document completion, a
-sanitized failure, host-only `focus({focused})` changes and real-input `snapshotDirty` notifications. URLs and browser errors are not printed to application logs.
+sanitized failure, host-only `focus({focused})` changes and `snapshotDirty`
+notifications after real input or completion of the requested native size
+allocation. URLs and browser errors are not printed to application logs.
 
 The view supports rectangular clips and translation-only geometry. Unsupported
 geometry hides native pixels and input. A view-local occlusion callback comes

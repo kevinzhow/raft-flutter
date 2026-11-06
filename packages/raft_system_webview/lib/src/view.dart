@@ -165,10 +165,13 @@ class _SystemWebViewState extends State<SystemWebView>
         : SystemWebViewLayout.hidden;
     if (_last == effective || widget.controller.closed) return;
     final previous = _last;
+    final sizeChanged =
+        !effective.frame.isEmpty &&
+        !previous.frame.isEmpty &&
+        previous.frame.size != effective.frame.size;
     final viewportChanged =
-        effective.visible &&
-        (!previous.visible || previous.frame.size != effective.frame.size);
-    if (viewportChanged) _snapshot.invalidate();
+        sizeChanged || (effective.visible && !previous.visible);
+    if (viewportChanged) _snapshot.invalidate(clearImage: sizeChanged);
     _last = effective;
     final owner = widget.controller;
     unawaited(() async {

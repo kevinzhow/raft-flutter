@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
@@ -9,6 +8,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_system_webview/raft_system_webview.dart';
 
+import 'snapshot_viewport_test.dart' show image;
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger =
@@ -16,18 +17,20 @@ void main() {
   const channel = MethodChannel('app.raft/system_webview/11');
   var sequence = 0, snapshots = 0;
   Completer<Object?>? delayed;
-  final png = base64Decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
-  );
+  late Uint8List png;
   Map<String, Object> packet(int serial) => {
     'png': png,
-    'width': 1,
-    'height': 1,
+    'width': 300,
+    'height': 200,
     'sequence': serial,
+    'viewportWidth': 300,
+    'viewportHeight': 200,
+    'scale': 1,
   };
-  setUp(() {
+  setUp(() async {
     sequence = snapshots = 0;
     delayed = null;
+    png = await image(300, 200);
     messenger.setMockMethodCallHandler(
       SystemWebViewController.rootChannel,
       (_) async => {
@@ -99,7 +102,14 @@ void main() {
       await tester.pumpWidget(
         Directionality(
           textDirection: TextDirection.ltr,
-          child: SystemWebView(controller: controller, visible: true),
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 300,
+              height: 200,
+              child: SystemWebView(controller: controller, visible: true),
+            ),
+          ),
         ),
       );
       for (var i = 0; i < 10; i++) {
