@@ -35,22 +35,33 @@ class Desktop:
         self.serial += 1
         file = self.output / f'{self.serial:03d}-{label}.png'
         self.run('import', '-window', 'root', file)
-        tsv = self.run('tesseract', file, 'stdout', '--psm', '11', 'tsv')
-        file.with_suffix('.tsv').write_text(tsv)
-        rows = list(csv.DictReader(io.StringIO(tsv), delimiter='\t'))
+        # Sparse OCR ignores text enclosed by long button borders. Preserve
+        # the original and supplement it with a same-size analysis image that
+        # removes long lines. All reported coordinates remain original pixels.
+        ink, clean = file.with_suffix('.ink.png'), file.with_suffix('.borderless.png')
+        self.run('convert', file, '-colorspace', 'Gray', '-threshold', '35%', '-negate', ink)
+        self.run('convert', ink, '(', ink, '-morphology', 'Open', 'Rectangle:80x1', ')',
+                 '-compose', 'MinusSrc', '-composite',
+                 '(', ink, '-morphology', 'Open', 'Rectangle:1x80', ')',
+                 '-compose', 'MinusSrc', '-composite', '-negate', clean)
         lines = {}
-        for row in rows:
-            if row['text'].strip():
-                key = tuple(row[key] for key in ('page_num', 'block_num', 'par_num', 'line_num'))
-                lines.setdefault(key, []).append(row)
+        for mode, source in [('original', file), ('borderless', clean)]:
+            tsv = self.run('tesseract', source, 'stdout', '--psm', '11', 'tsv')
+            file.with_suffix('.' + mode + '.tsv').write_text(tsv)
+            for row in csv.DictReader(io.StringIO(tsv), delimiter='\t'):
+                if row['text'].strip():
+                    key = (mode, *(row[key] for key in ('page_num', 'block_num', 'par_num', 'line_num')))
+                    lines.setdefault(key, []).append(row)
         observed = []
         for words in lines.values():
             left = min(int(word['left']) for word in words)
             top = min(int(word['top']) for word in words)
             right = max(int(word['left']) + int(word['width']) for word in words)
             bottom = max(int(word['top']) + int(word['height']) for word in words)
-            observed.append({'text': ' '.join(word['text'] for word in words),
-                             'box': [left, top, right, bottom]})
+            text = ' '.join(word['text'] for word in words)
+            if not any(row['text'] == text and abs(row['box'][0] - left) < 10 and
+                       abs(row['box'][1] - top) < 10 for row in observed):
+                observed.append({'text': text, 'box': [left, top, right, bottom]})
         file.with_suffix('.json').write_text(json.dumps(observed, indent=2) + '\n')
         return file, observed
 
