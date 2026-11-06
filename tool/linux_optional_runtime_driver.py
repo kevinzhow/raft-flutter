@@ -178,7 +178,8 @@ def main(args):
             raise AssertionError('Private Secret Service could not start')
         app = launch([str(args.artifact.resolve()), '--appimage-extract-and-run'], 'app')
         # The Email label belongs to the actual AuthView. XTEST clicks into its
-        # visible field, then tabs through the actual password/submit controls.
+        # visible fields. Focus traversal includes the forgot-password link,
+        # so the password and submit button are selected from their visible UI.
         _, initial = desktop.find('Email', 'login-visible')
         _, initial_rows = desktop.snapshot('login-without-startup-prompt')
         assert not any('install command' in row['text'].lower() or 'system dependencies' in row['text'].lower()
@@ -188,9 +189,9 @@ def main(args):
         assertions.append({'id': 'startup-has-no-install-modal', 'result': 'PASS'})
         desktop.click('Email', 'login-email', below=55)
         desktop.type('runtime@fixture.invalid')
-        desktop.key('Tab')
+        desktop.click('Password', 'login-password', below=55)
         desktop.type('synthetic-password')
-        desktop.key('Return')
+        desktop.click('Sign In', 'login-submit', last=True)
         wait_value(lambda: request(origin, '/qa/state')['authenticated'], 'Visible login did not reach fixture')
         assertions.append({'id': 'visible-login', 'result': 'PASS'})
         desktop.click('Optional Runtime QA', 'server-choice')
