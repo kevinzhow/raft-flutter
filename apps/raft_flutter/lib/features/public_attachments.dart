@@ -5,6 +5,10 @@
 // reauthorizes every request; nothing here calls the member attachment API
 // (`/attachments/:id/url`, previews, comments).
 import 'dart:async';
+
+import '../platform/linux_dependencies.dart';
+import 'linux_dependency_notice.dart';
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -502,6 +506,7 @@ class _PublicPdfPreviewState extends State<_PublicPdfPreview> {
   SharedFileLease? lease;
   Uint8List? pageBytes;
   int page = 0, pageCount = 0;
+  LinuxDependencyMissing? dependency;
   bool loading = true;
   // ignore: raft_lints/avoid_imperative_notice_state -- Preview failure panel: terminal for the dialog's life (the PDF is fetched once), gone with the dialog.
   String? error;
@@ -534,7 +539,11 @@ class _PublicPdfPreviewState extends State<_PublicPdfPreview> {
 
   Future<void> loadPage(int next) async {
     if (lease == null) return;
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      dependency = null;
+      error = null;
+    });
     try {
       final value = await NativePdfRenderer().render(
         lease!.file,
@@ -549,6 +558,13 @@ class _PublicPdfPreviewState extends State<_PublicPdfPreview> {
         pageCount = value.pageCount;
         loading = false;
       });
+    } on LinuxDependencyMissing catch (missing) {
+      if (mounted) {
+        setState(() {
+          loading = false;
+          dependency = missing;
+        });
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -578,7 +594,13 @@ class _PublicPdfPreviewState extends State<_PublicPdfPreview> {
       child: Column(
         children: [
           Expanded(
-            child: loading && pageBytes == null
+            child: dependency != null
+                ? LinuxDependencyNotice(
+                    feature: LinuxDependency.poppler,
+                    onRetry: () => unawaited(loadPage(page)),
+                    onDownload: widget.onDownload,
+                  )
+                : loading && pageBytes == null
                 ? const Center(child: RaftSpinner())
                 : error != null
                 ? RaftLoadError(

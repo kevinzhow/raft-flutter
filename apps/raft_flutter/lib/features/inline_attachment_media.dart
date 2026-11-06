@@ -12,6 +12,8 @@ import '../platform/attachment_player_factory.dart';
 import '../platform/attachment_player_sessions.dart';
 import '../platform/attachment_stream.dart';
 import '../platform/media_failure.dart';
+import '../platform/linux_dependencies.dart';
+import 'linux_dependency_notice.dart';
 import '../platform/video_frame_probe.dart';
 import '../platform/video_frame_scheduler.dart';
 import 'media_failure_text.dart';
@@ -81,6 +83,7 @@ mixin InlineMediaLoader<T extends StatefulWidget> on State<T> {
 
   /// Why the media failed (set with [RaftInlineMediaState.failed]).
   MediaFailure? failure;
+  LinuxDependencyMissing? dependency;
   bool disposed = false;
 
   String get filename => '${metadata['filename'] ?? 'attachment'}';
@@ -158,8 +161,15 @@ mixin InlineMediaLoader<T extends StatefulWidget> on State<T> {
         mediaState == RaftInlineMediaState.ready) {
       return;
     }
-    setState(() => mediaState = RaftInlineMediaState.loading);
+    setState(() {
+      mediaState = RaftInlineMediaState.loading;
+      dependency = null;
+    });
     try {
+      if (LinuxDependencies.instance.supported) {
+        await LinuxDependencies.instance.ensure(LinuxDependency.mpv);
+        if (!current) return;
+      }
       final owner = channelId ?? metadata['channelId'] as String?;
       // One player per attachment for the session, shared with the viewer: a
       // clip scrolled out of view and back, or opened full screen, continues
@@ -219,7 +229,8 @@ mixin InlineMediaLoader<T extends StatefulWidget> on State<T> {
       if (current) {
         setState(() {
           mediaState = RaftInlineMediaState.failed;
-          failure = failureOfError(error);
+          dependency = error is LinuxDependencyMissing ? error : null;
+          failure = dependency == null ? failureOfError(error) : null;
         });
       }
     }
@@ -677,25 +688,31 @@ class _InlineAudioAttachmentState extends State<InlineAudioAttachment>
   }
 
   @override
-  Widget build(BuildContext context) => RaftInlineAudio(
-    filename: filename,
-    state: widget.pending ? RaftInlineMediaState.loading : mediaState,
-    playing: playback.playing,
-    position: playback.position,
-    duration: playback.duration,
-    volume: (playback.volume / 100).clamp(0.0, 1.0),
-    onDownload: widget.pending ? null : widget.onDownload,
-    onTogglePlay: () => unawaited(togglePlay()),
-    onSeek: (v) => guarded((p) => p.seek(v)),
-    onVolume: (v) => guarded((p) => p.volume(v * 100)),
-    failureMessage: mediaState == RaftInlineMediaState.failed
-        ? mediaFailureMessage(context, failure, video: false)
-        : null,
-    onRetry: failedActions.retry ? () => unawaited(retry()) : null,
-    onNetworkSettings: failedActions.networkSettings
-        ? widget.onNetworkSettings
-        : null,
-  );
+  Widget build(BuildContext context) => dependency != null && current
+      ? LinuxDependencyNotice(
+          feature: LinuxDependency.mpv,
+          onRetry: () => unawaited(retry()),
+          onDownload: widget.onDownload,
+        )
+      : RaftInlineAudio(
+          filename: filename,
+          state: widget.pending ? RaftInlineMediaState.loading : mediaState,
+          playing: playback.playing,
+          position: playback.position,
+          duration: playback.duration,
+          volume: (playback.volume / 100).clamp(0.0, 1.0),
+          onDownload: widget.pending ? null : widget.onDownload,
+          onTogglePlay: () => unawaited(togglePlay()),
+          onSeek: (v) => guarded((p) => p.seek(v)),
+          onVolume: (v) => guarded((p) => p.volume(v * 100)),
+          failureMessage: mediaState == RaftInlineMediaState.failed
+              ? mediaFailureMessage(context, failure, video: false)
+              : null,
+          onRetry: failedActions.retry ? () => unawaited(retry()) : null,
+          onNetworkSettings: failedActions.networkSettings
+              ? widget.onNetworkSettings
+              : null,
+        );
 
   MediaFailureActions get failedActions =>
       mediaState == RaftInlineMediaState.failed

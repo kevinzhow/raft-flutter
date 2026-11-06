@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 
 import 'attachment_player.dart';
+import 'linux_dependencies.dart';
 import 'attachment_player_log.dart';
 import 'media_failure.dart';
 import 'media_probe.dart';
@@ -601,6 +602,10 @@ class LibmpvFrameSession implements MpvFrameSession {
   Future<void> open(MpvFrameRequest request) => _opening = _open(request);
 
   Future<void> _open(MpvFrameRequest request) async {
+    if (LinuxDependencies.instance.supported) {
+      await LinuxDependencies.instance.ensure(LinuxDependency.mpv);
+      if (_disposed) return;
+    }
     final player = _player = _pool.acquire();
     final native = player.native;
     final url = request.url;

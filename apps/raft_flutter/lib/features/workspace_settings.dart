@@ -17,6 +17,8 @@ import '../platform/app_update.dart';
 import '../platform/client_release_notes.dart';
 import '../platform/content_links.dart';
 import '../platform/linux_uri_scheme.dart';
+import '../platform/linux_dependencies.dart';
+import 'linux_dependencies_settings.dart';
 import '../platform/native_notifications.dart';
 import 'account_settings.dart';
 import 'app_image_update_text.dart';
@@ -259,12 +261,21 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
               controller: w,
             ),
           ),
-        if (LinuxUriSchemeRegistration.instance.supported)
+        if (LinuxUriSchemeRegistration.instance.supported ||
+            LinuxDependencies.instance.supported)
           RaftSettingsDestination(
             'desktop',
             'Desktop',
             RaftGlyph.monitor,
-            (_) => const DesktopLinksSettings(),
+            (_) => RaftGapColumn(
+              gap: RaftSpace.x6,
+              children: [
+                if (LinuxUriSchemeRegistration.instance.supported)
+                  const DesktopLinksSettings(),
+                if (LinuxDependencies.instance.supported)
+                  const LinuxDependenciesSettings(),
+              ],
+            ),
           ),
         if (w.server != null) ...[
           RaftSettingsDestination(

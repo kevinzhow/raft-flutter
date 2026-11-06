@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -12,6 +13,7 @@ import 'attachment_files.dart';
 import 'attachment_http.dart';
 import 'cache_staging.dart';
 import 'native_sharing.dart';
+import 'linux_dependencies.dart';
 
 /// Private local inputs prevent native decoders retaining signed URL handles.
 class AttachmentPreviewFiles {
@@ -33,9 +35,8 @@ class AttachmentPreviewFiles {
     if (!authorized() || cancel.isCancelled) return null;
     final root = await stagingDirectory();
     if (!authorized() || cancel.isCancelled) return null;
-    final previews = await Directory(
-      p.join(root.path, 'raft-previews'),
-    ).create(recursive: true);
+    final previews = await Directory(p.join(root.path, 'raft-previews'))
+        .create(recursive: true);
     final folder = await previews.createTemp('preview-');
     final file = File(
       p.join(folder.path, AttachmentFiles.safeFilename(filename)),
@@ -241,6 +242,10 @@ class NativePdfRenderer {
     }
     if (!Platform.isLinux) {
       throw UnsupportedError('PDF preview is unavailable.');
+    }
+    await LinuxDependencies.instance.ensure(LinuxDependency.poppler);
+    if (!authorized() || cancel.isCancelled) {
+      throw StateError('The preview closed.');
     }
     final info = await _run('pdfinfo', [file.path], cancel);
     final count = int.tryParse(

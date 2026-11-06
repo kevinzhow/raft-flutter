@@ -13,6 +13,8 @@ import '../data/attachment_image_store.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/media_failure.dart';
+import '../platform/linux_dependencies.dart';
+import 'linux_dependency_notice.dart';
 import 'media_failure_text.dart';
 import '../platform/attachment_files.dart';
 import '../platform/local_document.dart';
@@ -241,6 +243,7 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     with WidgetsBindingObserver {
   final cancel = CancelToken();
   SharedFileLease? lease;
+  LinuxDependencyMissing? dependency;
 
   /// The shared stream (the card's player when one exists) and, for an HDR
   /// video, the viewer's own native-view player ([hdrHold]); [player] is the
@@ -340,6 +343,7 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
       loading = true;
       error = null;
       mediaFailure = null;
+      dependency = null;
       fetchFailed = false;
       unavailable = null;
       unavailableRetry = null;
@@ -391,6 +395,13 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     final ticket = ++request;
     try {
       if (!current) return;
+      if (LinuxDependencies.instance.supported &&
+          (kind == 'audio' || kind == 'video' || kind == 'pdf')) {
+        await LinuxDependencies.instance.ensure(
+          kind == 'pdf' ? LinuxDependency.poppler : LinuxDependency.mpv,
+        );
+        if (!current || ticket != request) return;
+      }
       if (kind == 'document' && localAgain != null) {
         await showLocally(ticket, localAgain);
       } else if (kind == 'document') {
@@ -491,6 +502,15 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
         throw const FormatException('The file cannot be previewed.');
       }
     } catch (failure) {
+      if (failure is LinuxDependencyMissing) {
+        if (current && ticket == request) {
+          setState(() {
+            dependency = failure;
+            fetchFailed = false;
+          });
+        }
+        return;
+      }
       if (current && ticket == request && localFetch && lease == null) {
         // The original could not be fetched: the specific reason, and a retry.
         logUserError(
@@ -1182,6 +1202,12 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
         Expanded(
           child: !current
               ? const SizedBox.shrink()
+              : dependency != null
+              ? LinuxDependencyNotice(
+                  feature: dependency!.feature,
+                  onRetry: retry,
+                  onDownload: () => unawaited(widget.onDownload()),
+                )
               : fetching || fetchFailed
               ? Center(child: transferPanel(context))
               : loading

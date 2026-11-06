@@ -1,4 +1,8 @@
 import 'dart:async';
+
+import '../platform/linux_dependencies.dart';
+import 'linux_dependency_notice.dart';
+
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -80,7 +84,9 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
 
   /// Failures that Retry cannot fix, and whether the browser can still help.
   bool retryable = true, browserOffered = true;
-  bool get webView => widget.useWebView ?? attachmentHtmlWebViewSupported;
+  LinuxDependencyMissing? dependency;
+  bool get wantsWebView => widget.useWebView ?? attachmentHtmlWebViewSupported;
+  bool get webView => wantsWebView && dependency == null;
   bool get current => mounted && source == identity && widget.authorized();
   bool accepts(int ticket) => current && ticket == request;
   bool get commentsEnabled =>
@@ -165,6 +171,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
     setState(() {
       loading = true;
       error = null;
+      dependency = null;
       html = null;
       webUri = null;
       geometry = null;
@@ -174,6 +181,15 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
     progress.value = RaftTransferProgress.connecting;
     lastReported = -1;
     try {
+      if (wantsWebView && LinuxDependencies.instance.supported) {
+        try {
+          await LinuxDependencies.instance.ensure(LinuxDependency.webkit);
+        } on LinuxDependencyMissing catch (missing) {
+          if (!accepts(ticket)) return;
+          setState(() => dependency = missing);
+        }
+        if (!accepts(ticket)) return;
+      }
       if (!webView) {
         // A document already opened on this device shows from the cache: no
         // preview-URL request and no download.
@@ -435,6 +451,12 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
         : null,
     child: Column(
       children: [
+        if (dependency != null && current)
+          LinuxDependencyNotice(
+            feature: LinuxDependency.webkit,
+            busy: loading,
+            onRetry: current ? load : null,
+          ),
         if (error != null && (html != null || webUri != null))
           errorLine(context),
         Expanded(

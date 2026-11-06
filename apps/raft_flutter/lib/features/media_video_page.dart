@@ -12,6 +12,8 @@ import '../platform/attachment_player_factory.dart';
 import '../platform/attachment_player_sessions.dart';
 import '../platform/attachment_stream.dart';
 import '../platform/media_failure.dart';
+import '../platform/linux_dependencies.dart';
+import 'linux_dependency_notice.dart';
 import '../platform/mp4_hdr_probe.dart';
 import 'attachment_preview_dialog.dart' show HdrDetector;
 import 'media_failure_text.dart';
@@ -86,6 +88,7 @@ class MediaVideoStage extends ChangeNotifier {
 
   /// Why the video cannot be played (null: it can).
   MediaFailure? failure;
+  LinuxDependencyMissing? dependency;
 
   /// The player is being prepared.
   bool opening = false;
@@ -171,9 +174,18 @@ class MediaVideoStage extends ChangeNotifier {
   Future<void> prepare() async {
     if (!_usable || hold != null) return;
     failure = null;
+    dependency = null;
     opening = true;
     notifyListeners();
     try {
+      if (LinuxDependencies.instance.supported) {
+        await LinuxDependencies.instance.ensure(LinuxDependency.mpv);
+        if (!_usable || !isCurrent) {
+          opening = false;
+          if (!_disposed) notifyListeners();
+          return;
+        }
+      }
       final acquired = sessions.acquire(
         key,
         scope: controller.attachmentImageScope,
@@ -213,7 +225,8 @@ class MediaVideoStage extends ChangeNotifier {
       if (_disposed) return;
       opening = false;
       playRequested = false;
-      failure = failureOfError(error);
+      dependency = error is LinuxDependencyMissing ? error : null;
+      failure = dependency == null ? failureOfError(error) : null;
       notifyListeners();
     }
   }
@@ -643,6 +656,19 @@ class _MediaVideoPageState extends State<MediaVideoPage> {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: stage,
     builder: (context, _) {
+      if (stage.dependency != null) {
+        return ColoredBox(
+          color: RaftTokens.of(context).canvas,
+          child: LinuxDependencyNotice(
+            feature: LinuxDependency.mpv,
+            busy: stage.opening,
+            onRetry: stage.retry,
+            onDownload: widget.onDownload == null
+                ? null
+                : () => unawaited(widget.onDownload!()),
+          ),
+        );
+      }
       final failure = stage.failure;
       // ds-allow: video stage is black by design (Web VideoPreviewBody)
       const black = Color(0xFF000000);
