@@ -12,8 +12,8 @@ Active macOS builds use the standard `macos-15` ARM64 runner; AppImage builds
 use `ubuntu-24.04` x64. The jobs install Python 3.12, the exact `.fvmrc` Flutter
 SDK and, on macOS, Ruby 3.3 with CocoaPods 1.16.2 and JSON 2.18.0. Native host
 architecture and the Ubuntu 24.04 ABI baseline are checked before packaging.
-The disabled `linux` tarball entry keeps its Ubuntu 26.04 media contract; this
-routing change does not enable it or migrate its package dependencies.
+The disabled `linux` tarball entry is not scheduled and has no release acceptance.
+The enabled AppImage uses distribution runtime packages under the Ubuntu 24.04 ABI baseline.
 
 The manual **Backfill an existing platform release** workflow uses these hosted
 runners too. It installs tooling from the original tag checkout's `.fvmrc`,
@@ -159,8 +159,8 @@ requires adjusting the corresponding native build and packaging implementation.
 | --- | --- | --- | --- |
 | Windows x64 | `windows-2022` | Complete portable ZIP plus a per-user Inno Setup installer (`-setup.exe`, the WinSparkle update vehicle) | No Authenticode signature. MSVC runtime included; system Toast needs no Windows App Runtime. Keep all DLLs and `data/`; first launch registers the current-user notification identity and protocol. Device acceptance is separate from hosted CI. |
 | Android ARM64 | `ubuntu-24.04` | Signed split APK | SDK 37 / build tools 37.0.0, Java 17. Requires all signing secrets below; missing secrets fail instead of producing a debug-signed release. No Play Store/AAB upload. |
-| Linux x64 | `ubuntu-26.04` | Relocatable `.tar.gz` | Uses existing pinned Ubuntu Resolute media preparation; package/hash drift fails. Bundles library notices/provenance and verifies ELF lookup. Ubuntu 26.04 glibc/GTK/drivers required; other distributions are unverified. Review media GPL terms and supply matching source before enabling distribution. |
-| Linux x64 AppImage | `ubuntu-24.04` | `.AppImage` | Bundled GTK/media/PDF tools; latest reviewed static AppImage runtime, glibc ≤ 2.39, direct and no-FUSE startup checks, plus Fedora KDE Wayland compatibility checks. |
+| Linux x64 tar (disabled) | Not scheduled | `.tar.gz` | Disabled in `tool/release-platforms.json`; not part of the release inventory. No tar distribution acceptance is claimed. |
+| Linux x64 AppImage | `ubuntu-24.04` | `.AppImage` | Thin app/Flutter/plugin/SQLite payload; distribution GTK3, WebKitGTK 4.1, libmpv and Poppler required. Reviewed static AppImage runtime, glibc ≤ 2.39, direct and no-FUSE startup checks, plus Fedora KDE Wayland compatibility checks. |
 | macOS ARM64 | `macos-15` | `.app` ZIP via `ditto` | Existing ad-hoc signing; embeds Sparkle 2. No Developer ID/notarization; Gatekeeper distribution acceptance is pending. No Intel build. |
 
 ## In-app update feeds
