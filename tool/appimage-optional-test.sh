@@ -25,8 +25,14 @@ if $restore_only; then
       -o Binary::apt-get::APT::Keep-Downloaded-Packages=true --no-download \
       install -y --no-install-recommends libwebkit2gtk-4.1-0 libmpv2 poppler-utils
   else
+    shopt -s nullglob
+    optional_archives=(/var/cache/raft-optional-rpms/*.x86_64.rpm /var/cache/raft-optional-rpms/*.noarch.rpm)
+    if [[ ${#optional_archives[@]} -eq 0 ]]; then
+      echo 'No x86_64/noarch offline recovery packages were cached' >&2
+      exit 1
+    fi
     dnf --disablerepo='*' --setopt=allow_downgrade=True --setopt=localpkg_gpgcheck=True \
-      install -y /var/cache/raft-optional-rpms/*.rpm
+      install -y "${optional_archives[@]}"
   fi
   exit
 fi
@@ -63,7 +69,7 @@ else
   mkdir -p /var/cache/raft-optional-rpms
   # `download`, unlike transaction --downloadonly, persists these files across
   # subsequent installs. Installed core dependencies stay frozen in this image.
-  dnf --repo=fedora download --resolve --destdir=/var/cache/raft-optional-rpms \
+  dnf --repo=fedora download --resolve --arch=x86_64,noarch --destdir=/var/cache/raft-optional-rpms \
     webkit2gtk4.1 mpv-libs poppler-utils
   case "$scenario" in
     missing-webkit) dnf --repo=fedora --setopt=allow_downgrade=True install -y mpv-libs;;
