@@ -145,6 +145,7 @@ def main(args):
     fixture_source = Path(__file__).with_name('linux_optional_fixture') / 'server.cjs'
     desktop = Desktop(args.output, env)
     processes, logs, assertions = [], [], []
+    origin = None
     outcome = {'artifact': receipt['sha256'], 'commit': receipt['commit'], 'scenario': args.scenario,
                'fixtureSourceSha256': hashlib.sha256(fixture_source.read_bytes()).hexdigest(),
                'targetedUseCase': 'FAIL', 'assertions': assertions}
@@ -194,7 +195,7 @@ def main(args):
         desktop.type('runtime@fixture.invalid')
         desktop.click('Password', 'login-password', below=55)
         desktop.type('synthetic-password')
-        desktop.click('Sign In', 'login-submit', last=True)
+        desktop.key('Return')
         wait_value(lambda: request(origin, '/qa/state')['authenticated'], 'Visible login did not reach fixture')
         assertions.append({'id': 'visible-login', 'result': 'PASS'})
         desktop.click('Optional Runtime QA', 'server-choice')
@@ -259,6 +260,12 @@ def main(args):
                        unrun=['HTML script input', 'decoded media playback', 'PDF rendered page'])
     except BaseException as error:
         outcome['error'] = type(error).__name__ + ': ' + str(error)
+        if origin:
+            try:
+                (args.output / 'first-failure-service-state.json').write_text(
+                    json.dumps(request(origin, '/qa/state'), indent=2) + '\n')
+            except BaseException:
+                pass
         try:
             desktop.snapshot('first-failure')
         except BaseException:
