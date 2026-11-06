@@ -44,7 +44,9 @@ jobs:
           python -m unittest discover -s tool/tests -p 'test_windows_installer.py' -v
       - id: plan
         env:
-          RELEASE_PLATFORMS: ${{ inputs.platforms }}
+          # Ship the cache repair without restarting the stopped WPE build.
+          # Linux returns with the separately validated system renderer.
+          RELEASE_PLATFORMS: ${{ inputs.platforms || 'windows,android,macos' }}
         run: python tool/release.py plan
       - id: sdk-plan
         name: Separate Linux SDK consumers from independent platforms
