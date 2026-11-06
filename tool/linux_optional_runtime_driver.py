@@ -67,7 +67,7 @@ class Desktop:
         return file, observed
 
     def find(self, phrase, label, timeout=30, last=False, scroll=False):
-        deadline = time.monotonic() + timeout
+        deadline = time.monotonic() + (max(timeout, 60) if scroll else timeout)
         while True:
             file, rows = self.snapshot(label)
             matches = sorted(
@@ -79,7 +79,7 @@ class Desktop:
             if time.monotonic() >= deadline:
                 raise AssertionError(f'Visible text not found: {phrase}; last screenshot {file.name}')
             if scroll:
-                self.scroll(down=True, ticks=2)
+                self.scroll(down=True, ticks=4)
             time.sleep(.5)
 
     def scroll(self, down, ticks):
