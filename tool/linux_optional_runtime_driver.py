@@ -177,9 +177,16 @@ def main(args):
             (location / 'shared_preferences.json').write_text(json.dumps({
                 'flutter.raft.origin': origin, 'flutter.raft.mode': 'light'}))
         keyring = subprocess.run(['gnome-keyring-daemon', '--unlock', '--components=secrets'],
-                                 input='', capture_output=True, text=True, env=env, timeout=10)
+                                 input='synthetic-private-keyring', capture_output=True,
+                                 text=True, env=env, timeout=10)
         if keyring.returncode:
             raise AssertionError('Private Secret Service could not start')
+        alias = capture(['gdbus', 'call', '--session', '--dest', 'org.freedesktop.secrets',
+                         '--object-path', '/org/freedesktop/secrets', '--method',
+                         'org.freedesktop.Secret.Service.ReadAlias', 'default'], env=env, timeout=10)
+        (args.output / 'private-keyring-alias.txt').write_text(alias)
+        if "objectpath '/'" in alias:
+            raise AssertionError('Private keyring has no initialized default collection')
         app = launch([str(args.artifact.resolve()), '--appimage-extract-and-run'], 'app')
         # The Email label belongs to the actual AuthView. XTEST clicks into its
         # visible fields. Focus traversal includes the forgot-password link,
