@@ -100,7 +100,10 @@ retyped endpoint / field is used by the app.
 ## Re-running visual cases against the new Web tree
 
 The report lists the affected case ids and the commands. They need a private clone of the new tag with `pnpm install`
-(the harness reads the Source commit from `git rev-parse HEAD`, so never point it at a checkout someone else uses):
+(the harness reads the Source commit from `git rev-parse HEAD`, so never point it at a checkout someone else uses). Before
+the pin moves, pass it explicitly; once `docs/source-reference.json` names the new commit, `tool/raft-source prepare`
+creates the default checkout and the variable is no longer needed
+([The raft-source checkout](parity-and-alignment.md#the-raft-source-checkout)):
 `PARITY_RAFT_SOURCE=<clone> tool/parity run --cases '<ids>'` and
 `PARITY_RAFT_SOURCE=<clone> tool/parity-ext/run run --cases '<globs>'`. The React cache key contains the Source commit, so captures
 are re-taken. A drop on a case whose Web component changed means a visual follow-up row. The tool does not run captures itself.

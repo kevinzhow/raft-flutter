@@ -715,12 +715,12 @@ class Run:
 
     def visual_job(self):
         """Fast subset of the three-level visual suite (tool/nightly_visual.py); never ends the night."""
-        source = nightly_visual.source_dir(HOME)
-        if source is None:
-            self.data['visual'] = {'error': '未运行：没有固定的 Web 源码检出（RAFT_PARITY_SOURCE 或 ~/.cache/raft-flutter/raft-source-23）'}
+        problem = nightly_visual.source_problem(self.worktree, HOME)
+        if problem:
+            self.data['visual'] = {'error': '未运行：固定的 Web 源码检出不可用（tool/raft-source check）：' + ' '.join(problem.split())}
             return
         out = self.out / 'visual'
-        env = nightly_visual.environment(self.env, source)
+        env = dict(self.env)
         env.setdefault('PARITY_TOOLCHAIN_PATHS', str(HOME / 'github/raft-flutter/.local/toolchain-paths.txt'))
         done = run(nightly_visual.command(self.worktree, out), self.worktree, self.out / 'visual.log',
                    min(self.args.visual_timeout_minutes * 60, self.remaining()), env)

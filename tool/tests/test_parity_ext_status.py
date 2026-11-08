@@ -29,6 +29,7 @@ class CaptureExitTests(unittest.TestCase):
                  patch.object(adapter, 'ext_cases', return_value=[{'id': 'sample'}]), \
                  patch.object(adapter.parity, 'select', side_effect=lambda cases, _: cases), \
                  patch.object(adapter, 'react_capture', return_value=environment_failed), \
+                 patch.object(adapter.reference_contract, 'validate_reference', return_value={'webCommit': 'pinned'}), \
                  patch.object(adapter, 'cli', side_effect=lambda *a, **k: (out / 'site').mkdir(exist_ok=True)), \
                  patch.object(adapter.parity, 'SITE', out / 'site'), \
                  patch.object(adapter.parity, 'git', return_value='source'), \

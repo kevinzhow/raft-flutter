@@ -23,14 +23,13 @@ import subprocess
 import sys
 import urllib.request
 import parity_case_map
+import raft_source
 from parity_reference_defects import admitted_defects, annotate_site
 from parity_baseline_repairs import (repair_definition,
                                     capture_is_current, preserve_capture, repair_annotations, prepare_cases)
 
 root = pathlib.Path(__file__).resolve().parent.parent
-RAFT_SOURCE = pathlib.Path(os.environ.get(
-    'PARITY_RAFT_SOURCE',
-    '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source')).resolve()
+RAFT_SOURCE = raft_source.raft_source_dir().resolve()  # validated by main() before a command reads it
 VT = RAFT_SOURCE / 'packages/visual-testing'
 SHARED = VT / 'shared'
 OUT = pathlib.Path(os.environ.get('PARITY_OUT', root / 'build/parity'))
@@ -828,6 +827,14 @@ def verify(url):
         sys.exit(f'publish verification failed: {url}')
 
 
+def require_source():
+    """Exit with the resolver's explanation unless RAFT_SOURCE is the pinned, installed checkout."""
+    try:
+        raft_source.require()
+    except raft_source.RaftSourceError as error:
+        sys.exit(str(error))
+
+
 def main():
     p = argparse.ArgumentParser(prog='tool/parity', description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -861,6 +868,8 @@ def main():
     s = sub.add_parser('summary')
     s.set_defaults(fn=lambda a: summarize())
     a = p.parse_args()
+    if a.cmd in ('run', 'probe', 'render-evidence'):
+        require_source()
     a.fn(a)
 
 
