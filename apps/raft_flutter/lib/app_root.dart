@@ -536,11 +536,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
                 if (!destinationCurrent() || w.channel?.id != id) {
                   throw const RaftApiException('The conversation changed.');
                 }
-                // selectChannel already navigated to this conversation's chat.
-                // Navigating again (setSection) bumps the navigation revision
-                // and retires the history read that selectChannel still has in
-                // flight: the page stayed on "Loading messages…" and a sent
-                // message never showed until the conversation was reopened.
+                // No setSection('chat'): it would retire selectChannel's read.
                 w.closeThread();
                 final files = <SharedDraftAttachment>[];
                 for (final file in await restoring) {
