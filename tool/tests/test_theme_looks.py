@@ -193,12 +193,15 @@ class SuiteTests(unittest.TestCase):
         self.assertEqual(command[command.index('--theme') + 1], 'brutal')
         self.assertEqual(command[command.index('--cases') + 1], 'a.*')
 
-    def test_web_source_needs_the_shared_cases(self):
+    def test_web_source_needs_a_prepared_checkout(self):
         with tempfile.TemporaryDirectory() as tmp:
-            self.assertIsNone(suite.web_source({'PARITY_RAFT_SOURCE': tmp}))
-            (Path(tmp) / 'packages/visual-testing/shared').mkdir(parents=True)
-            (Path(tmp) / 'packages/visual-testing/shared/sharedCases.json').write_text('{}')
-            self.assertEqual(suite.web_source({'PARITY_RAFT_SOURCE': tmp}), Path(tmp))
+            source, problem = suite.web_source({'PARITY_RAFT_SOURCE': tmp})
+            self.assertIsNone(source)
+            self.assertIn('packages/visual-testing/shared/sharedCases.json', problem)
+            for need in suite.raft_source.NEEDED:
+                (Path(tmp) / need).parent.mkdir(parents=True, exist_ok=True)
+                (Path(tmp) / need).write_text('{}')
+            self.assertEqual(suite.web_source({'PARITY_RAFT_SOURCE': tmp}), (Path(tmp), None))
 
     def test_the_summary_names_failed_steps(self):
         lines = suite.format_summary([{'name': 'dart-tests', 'status': 'PASS', 'detail': 'x'}, {'name': 'visual-brutal', 'status': 'FAIL', 'detail': 'y'}], ('brutal',), 'all')

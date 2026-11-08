@@ -119,13 +119,13 @@ def sha256(path):
 
 
 def raft_source():
-    default = pathlib.Path(
-        '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab'
-        '/work/raft-source')
-    source = pathlib.Path(os.environ.get('PARITY_RAFT_SOURCE', default))
-    if not source.is_dir():
-        die(f'raft-source checkout not found at {source}; set PARITY_RAFT_SOURCE')
-    return source
+    """The pinned raft-source checkout (tool/raft_source.py), or exit with the fix."""
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import raft_source as resolver
+    try:
+        return resolver.require()
+    except resolver.RaftSourceError as error:
+        die(str(error))
 
 
 def shared_dir():

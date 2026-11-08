@@ -10,10 +10,10 @@ import { createRequire } from 'node:module';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { readFileSync, appendFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { raftSourceDir } from '../raft_source.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const sourceRoot = process.env.RAFT_SOURCE ??
-  '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source';
+const sourceRoot = raftSourceDir({ needs: ['packages/web/package.json'] });
 const web = `${sourceRoot}/packages/web`;
 const port = Number(process.argv[2] ?? 15260);
 const fixturePath = process.env.RAFT_DESKTOP_FIXTURE ?? resolve(here, 'desktop-fixture.json');

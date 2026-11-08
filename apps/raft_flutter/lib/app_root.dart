@@ -479,8 +479,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
                 if (!destinationCurrent() || w.channel?.id != id) {
                   throw const RaftApiException('The conversation changed.');
                 }
+                // No setSection('chat'): it would retire selectChannel's read.
                 w.closeThread();
-                w.setSection('chat');
                 final files = <SharedDraftAttachment>[];
                 for (final file in await restoring) {
                   if (file == null || !destinationCurrent()) {

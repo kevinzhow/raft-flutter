@@ -15,14 +15,16 @@ rows" would otherwise read as success.
 from __future__ import annotations
 
 import json
-import os
 import pathlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'tool'))
+import raft_source  # noqa: E402
 SCORER = ROOT / 'tool' / 'p2-score.mjs'
 # The P2 baseline lives outside the repository; the test skips when it is absent
 # so a checkout without the data disk can still run the suite.
@@ -95,11 +97,9 @@ class P2ScoreSelfCheck(unittest.TestCase):
                 'for (let i = 0; i < 400; i += 4) { raw[i] = 0; raw[i+1] = 0; raw[i+2] = 0; }\n'
                 'await sharp(raw, { raw: { width, height, channels: 4 } }).png()'
                 '.toFile(dst);\n')
-            # Same resolution the scorer itself uses, via PARITY_RAFT_SOURCE.
-            source = pathlib.Path(os.environ.get(
-                'PARITY_RAFT_SOURCE',
-                '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab'
-                '/work/raft-source'))
+            # Same checkout the scorer itself uses (tool/raft_source.py); a missing or
+            # wrong one fails here with the resolver's explanation.
+            source = raft_source.require(needs=(raft_source.SHARP,))
             sharp = source / 'packages/visual-testing/node_modules/sharp'
             result = subprocess.run(
                 [node(), str(script), str(sharp), str(base / name), str(cur / name)],

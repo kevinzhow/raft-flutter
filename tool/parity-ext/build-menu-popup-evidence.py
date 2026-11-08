@@ -2,20 +2,17 @@
 """Add current-Raft real popup/Dialog evidence; preserve existing cases."""
 import copy
 import json
-import os
 import pathlib
 import sys
 
 ORDER = 2000  # after build-list-pages.py; no change to historical builders
 here = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(here))
-from builders import manifest_path  # noqa: E402
+from builders import manifest_path, raft_source  # noqa: E402
 
 path = manifest_path()
 manifest = json.loads(path.read_text())
-source = pathlib.Path(os.environ.get(
-    'PARITY_RAFT_SOURCE', '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'))
-shared = json.loads((source / 'packages/visual-testing/shared/sharedCases.json').read_text())
+shared = json.loads((raft_source() / 'packages/visual-testing/shared/sharedCases.json').read_text())
 files_base = next(c for c in shared['cases'] if c['id'] == 'components.thread.files.list')
 tasks_base = next(c for c in manifest['cases']
                   if c['id'] == 'components.list-pages.tasks.desktop-filter-assignee.brutal')

@@ -2,34 +2,34 @@
 
 Runs `tool/parity-ext/run regress --fast` (L1 frame cases + key L2 pages, phone and desktop widths, light mode) for the
 three looks: Raft against the pinned Web v1.21.23 render, Elegant and Brutal against their frozen a57b9dab originals
-(docs/parity.md "Visual suite levels"). The job needs the pinned Web source checkout (`RAFT_PARITY_SOURCE`, default
-~/.cache/raft-flutter/raft-source-23) and the Node toolchain list (`PARITY_TOOLCHAIN_PATHS`); without them it records
-why it did not run. The summary compares every score with the previous night's and lists the drops.
+(docs/parity.md "Visual suite levels"). The job needs the pinned Web source checkout (tool/raft_source.py:
+`PARITY_RAFT_SOURCE`, else the checkout of the commit in docs/source-reference.json; `tool/raft-source prepare` makes
+it) and the Node toolchain list (`PARITY_TOOLCHAIN_PATHS`); without them it records why it did not run. The summary
+compares every score with the previous night's and lists the drops.
 """
 import json
-import os
 import pathlib
 import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import raft_source  # noqa: E402
 
 DROP = 0.01  # a case that lost at least one point since the previous night is a regression to look at
 PASS_LINE = 0.96
 
 
-def source_dir(home):
-    value = os.environ.get('RAFT_PARITY_SOURCE')
-    path = pathlib.Path(value) if value else pathlib.Path(home) / '.cache/raft-flutter/raft-source-23'
-    return path if (path / 'packages/visual-testing/shared/sharedCases.json').is_file() else None
+def source_problem(worktree, home=None):
+    """None when the worktree's pinned Web source checkout is usable, else why not (the resolver's message)."""
+    try:
+        raft_source.require(root=worktree, home=home)
+    except raft_source.RaftSourceError as error:
+        return str(error)
+    return None
 
 
 def command(worktree, out):
     return [sys.executable, str(pathlib.Path(worktree) / 'tool/parity-ext/run'), 'regress', '--fast', '--theme', 'all',
             '--out', str(out)]
-
-
-def environment(base_env, source):
-    env = dict(base_env)
-    env['PARITY_RAFT_SOURCE'] = str(source)
-    return env
 
 
 def summarize(summary_file, previous_scores=None):

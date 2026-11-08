@@ -71,6 +71,7 @@ if sys.version_info < (3, 11):
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))  # also when loaded by the host tests
 import affected_tests  # noqa: E402
 import gate_events  # noqa: E402
+import raft_source  # noqa: E402
 import test_budget  # noqa: E402
 import theme_looks  # noqa: E402
 from test_events import file_durations, parse_test_events  # noqa: E402,F401  (also used through this module by the host tests)
@@ -991,8 +992,17 @@ def supervise(futures, shard_logs, event_files, watch, emit, static=None):
             kill_children()
 
 
+def raft_source_line(env):
+    """Which upstream checkout the parity host tests read (tool/raft_source.py); a notice, never a failure here."""
+    try:
+        return f'check-project: {raft_source.describe(env)}'
+    except Exception as error:  # noqa: BLE001  (the line must not break the gate)
+        return f'check-project: raft-source not resolved ({type(error).__name__}: {error})'
+
+
 def run_gate(check_env, emit, started):
     """Run every check; returns {'ok', 'failures', 'stop', 'failed_checks'}. Events: START, FAIL-FIRST, ABORT."""
+    print(raft_source_line(check_env), file=sys.stderr, flush=True)
     stamp = lambda: subprocess.check_output(tool_command('source-hash'), text=True, env=check_env).strip()
     source_hash = stamp()
     local.mkdir(exist_ok=True)
