@@ -4,7 +4,8 @@
 committing it: every tool/parity-ext/build-*.py is discovered automatically and
 executed (build-cases.py first, then by the optional `ORDER = n` constant at the
 top of the builder, then by file name); each writes to the path in $PARITY_EXT_MANIFEST.
-Builders import `manifest_path()` from here instead of hard-coding a path.
+Builders import `manifest_path()` from here instead of hard-coding a path, and
+`raft_source()` for the pinned raft-source checkout (tool/raft_source.py).
 """
 import os
 import pathlib
@@ -22,6 +23,16 @@ def manifest_path():
         sys.exit('PARITY_EXT_MANIFEST is not set: builders run through `tool/parity-ext/run`, '
                  'which generates the manifest (it is no longer committed)')
     return pathlib.Path(value)
+
+
+def raft_source():
+    """The pinned raft-source checkout whose shared fixtures the builders read; exits with the fix otherwise."""
+    sys.path.insert(0, str(EXT.parent))
+    import raft_source as resolver  # tool/raft_source.py
+    try:
+        return resolver.require(needs=(resolver.SHARED_CASES,))
+    except resolver.RaftSourceError as error:
+        sys.exit(str(error))
 
 
 DEFAULT_ORDER = 1000
@@ -63,7 +74,9 @@ def build_manifest(out, ext=EXT, env=None):
             r = subprocess.run([sys.executable, str(ext / name)], cwd=ext.parents[1], env=run_env,
                                stdout=sink, stderr=subprocess.STDOUT)
             if r.returncode != 0:
-                sys.exit(f'builder {name} failed (exit {r.returncode}); see {log}')
+                sink.flush()
+                tail = log.read_text().splitlines()[-12:]  # the reason, e.g. an unusable raft-source checkout
+                sys.exit('\n'.join([f'builder {name} failed (exit {r.returncode}); see {log}', *tail]))
     if not target.is_file():
         sys.exit(f'no builder wrote {target}; see {log}')
     return target

@@ -20,13 +20,12 @@ apps/raft_flutter/test/parity/cases/ext_members.dart. Both read
 tool/parity-ext/fixtures/members.json.
 """
 import json
-import os
 import pathlib
 import sys
 
 here = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(here))
-from builders import manifest_path  # noqa: E402
+from builders import manifest_path, raft_source  # noqa: E402
 THEMES = {'brutal': 'brutal-light', 'elegant': 'elegant-light', 'elegant-dark': 'elegant-dark'}
 DESKTOP = {'width': 1280, 'height': 800, 'density': 1}
 MOBILE = {'width': 390, 'height': 844, 'density': 3}
@@ -38,8 +37,7 @@ CREATED = '2026-06-18T00:00:00.000Z'
 SRC = 'packages/web/src/components/'
 
 # ---------------------------------------------------------------- fixture
-RAFT_SOURCE = pathlib.Path(os.environ.get(
-    'PARITY_RAFT_SOURCE', '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'))
+RAFT_SOURCE = raft_source()
 ACTIVITY_FIXTURE = json.loads((RAFT_SOURCE / 'packages/visual-testing/shared/activityResultsFixture.json').read_text())
 ACTIVITY_FIXTURE.pop('comment', None)
 INBOX_EMPTY = {'items': [], 'hasMore': False, 'totalCount': 0, 'totalUnreadCount': 0}

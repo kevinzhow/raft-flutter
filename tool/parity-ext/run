@@ -1062,6 +1062,7 @@ def main():
     pub.add_argument('--no-verify', action='store_true')
     pub.set_defaults(fn=cmd_publish)
     a = p.parse_args()
+    parity.require_source()  # every command builds the manifest from the shared Web cases
     write_sampled_manifest()
     a.fn(a)
 

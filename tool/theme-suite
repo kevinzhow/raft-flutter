@@ -8,8 +8,8 @@ the other looks. It runs
      about that look) and the files that declare per-look cases (a look-aware `raftThemeMatrix`, `raftLookSkip`),
      with RAFT_TEST_LOOKS / RAFT_TEST_MODES set so those files declare the legacy cases; and
   2. the frozen-baseline visual regression for each look: `tool/parity-ext/run regress --theme <look>` (the Flutter
-     render against the frozen a57b9dab original). It needs the pinned Web source checkout (PARITY_RAFT_SOURCE,
-     RAFT_PARITY_SOURCE, or ~/.cache/raft-flutter/raft-source-23) and the Node toolchain the parity tools use.
+     render against the frozen a57b9dab original). It needs the pinned Web source checkout (tool/raft_source.py:
+     PARITY_RAFT_SOURCE, else the checkout of docs/source-reference.json's commit) and the parity Node toolchain.
 
 Run it when a change touches the theme engine, packages/raft_theme, the theme adapters or packs, recipes or recipe
 binding, or a legacy-look file (the list is THEME_ENGINE_PATHS in tool/theme_looks.py; check-project, preflight
@@ -44,6 +44,7 @@ import time
 
 TOOL = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOL))
+import raft_source  # noqa: E402
 import test_events  # noqa: E402
 import theme_looks  # noqa: E402
 
@@ -122,11 +123,11 @@ def tests_verdict(code, counts, timed_out=False):
 
 
 def web_source(env=None, home=None):
-    """The pinned Web source checkout the visual regression needs, or None."""
-    env = os.environ if env is None else env
-    value = env.get('PARITY_RAFT_SOURCE') or env.get('RAFT_PARITY_SOURCE')
-    path = pathlib.Path(value) if value else pathlib.Path(home or pathlib.Path.home()) / '.cache/raft-flutter/raft-source-23'
-    return path if (path / 'packages/visual-testing/shared/sharedCases.json').is_file() else None
+    """(checkout, None) when the pinned Web source the visual regression needs is usable, else (None, why not)."""
+    try:
+        return raft_source.require(env, home=home), None
+    except raft_source.RaftSourceError as error:
+        return None, str(error)
 
 
 def visual_command(look, mode, out, cases=None):
@@ -240,11 +241,10 @@ def engine_step(args, out):
 
 
 def visual_steps(args, looks, out):
-    source = web_source()
+    source, problem = web_source()
     if source is None:
-        return [{'name': 'visual', 'status': 'FAIL', 'detail': 'not run: the pinned Web source checkout is missing; set PARITY_RAFT_SOURCE '
-                 '(or RAFT_PARITY_SOURCE, or ~/.cache/raft-flutter/raft-source-23), or pass --tests-only'}]
-    env = dict(os.environ, PARITY_RAFT_SOURCE=str(source), PYTHONUTF8='1')
+        return [{'name': 'visual', 'status': 'FAIL', 'detail': 'not run (or pass --tests-only): ' + ' '.join(problem.split())}]
+    env = dict(os.environ, PYTHONUTF8='1')
     baseline = json.loads(pathlib.Path(args.baseline).read_text()).get('rows') if args.baseline else None
     steps = []
     for look in looks:
@@ -310,9 +310,9 @@ def main(argv=None):
             for name in files:
                 print(f'    {name}')
         if not args.tests_only:
-            source = web_source()
+            source, problem = web_source()
             print(f"  visual: {' '.join(shlex_quote(c) for c in visual_command('<look>', args.mode, '<out>', args.cases))}")
-            print(f"    Web source: {source if source else 'MISSING (set PARITY_RAFT_SOURCE)'}")
+            print(f"    Web source: {source if source else 'NOT USABLE: ' + ' '.join(problem.split())}")
         return 0
     out = pathlib.Path(args.out)
     out = out if out.is_absolute() else root / out

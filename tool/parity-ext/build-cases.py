@@ -26,7 +26,7 @@ import sys
 
 here = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(here))
-from builders import manifest_path  # noqa: E402  (tool/parity-ext/builders.py)
+from builders import manifest_path, raft_source  # noqa: E402  (tool/parity-ext/builders.py)
 THEMES = {'brutal': 'brutal-light', 'elegant': 'elegant-light', 'elegant-dark': 'elegant-dark'}
 SID = 'visual-server'
 
@@ -74,9 +74,7 @@ lists = {
 }
 # The two official fixture agents (fixtureData.agents.cindy/productUx), placed
 # on computer-mbp with the activity the official render host seeds.
-OFFICIAL = json.loads((pathlib.Path(__import__('os').environ.get(
-    'PARITY_RAFT_SOURCE', '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'))
-    / 'packages/visual-testing/shared/fixtureData.json').read_text())
+OFFICIAL = json.loads((raft_source() / 'packages/visual-testing/shared/fixtureData.json').read_text())
 agents = []
 for key, activity, detail in [('cindy', 'working', 'Capturing visual testing baselines'), ('productUx', 'online', None)]:
     a = OFFICIAL['agents'][key]

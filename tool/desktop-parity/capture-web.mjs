@@ -12,11 +12,11 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { measureDesktopRegions } from './measure-regions.mjs';
+import { raftSourceDir } from '../raft_source.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../..');
-const sourceRoot = process.env.RAFT_SOURCE ??
-  '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source';
+const sourceRoot = raftSourceDir({ needs: ['packages/web/node_modules/@playwright/test/package.json'] });
 const require = createRequire(`${sourceRoot}/packages/web/package.json`);
 const { chromium } = require('@playwright/test');
 

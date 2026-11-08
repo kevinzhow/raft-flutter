@@ -2,7 +2,35 @@
 
 Visual parity is measured against the real Web client, rendered from a raft-source checkout, using raft-source's own visual-testing tool. Flutter plugs in as a provider and the official CLI does the diff and scoring.
 
-Requirements (the scripts have maintainer-machine defaults that you must override): a read-only raft-source checkout (`PARITY_RAFT_SOURCE`), a text file listing absolute paths of Node 24 and pnpm binaries (`PARITY_TOOLCHAIN_PATHS`; `tool/raft-stack` can create one), and for publishing a reports directory (`PARITY_REPORTS_ROOT`) and base URL (`PARITY_BASE_URL`). The raft-source checkout is never edited.
+Requirements (the scripts have maintainer-machine defaults that you must override): a read-only raft-source checkout at the pinned commit (see [The raft-source checkout](#the-raft-source-checkout)), a text file listing absolute paths of Node 24 and pnpm binaries (`PARITY_TOOLCHAIN_PATHS`; `tool/raft-stack` can create one), and for publishing a reports directory (`PARITY_REPORTS_ROOT`) and base URL (`PARITY_BASE_URL`). The raft-source checkout is never edited.
+
+
+## The raft-source checkout
+
+Every parity and generator tool reads the same checkout, resolved by `tool/raft_source.py` (Node scripts ask it through
+`tool/raft_source.mjs`, shell scripts through `tool/raft-source path`):
+
+1. `PARITY_RAFT_SOURCE`, when set, is used as given: an explicit override, so any revision is accepted, but the files
+   the tool reads must exist.
+2. Otherwise the commit pinned in `docs/source-reference.json` picks a checkout under `~/.cache/raft-flutter/`:
+   `raft-source-<first 12 hex digits of the commit>`, else the first other `raft-source-*` directory (by name) whose
+   HEAD is that commit and that has `node_modules` installed.
+
+The checkout must be at the pinned commit (unless overridden) and contain `packages/visual-testing/shared/sharedCases.json`,
+`packages/web/node_modules/@botiverse/raft-ui`, `@playwright/test` and the visual-testing `sharp`. Otherwise the tool
+stops and names the path, the expected and actual commit, the missing files and the fix; it never falls back to
+another revision. The tests that need the checkout fail the same way.
+
+```bash
+tool/raft-source check     # the resolved checkout, its commit, and whether it is usable
+tool/raft-source prepare   # clone the pinned commit from ~/.cache/raft-flutter/raft-source-mirror.git into
+                           # ~/.cache/raft-flutter/raft-source-<12 hex> and run `pnpm install --frozen-lockfile`
+```
+
+`prepare` uses the Node 24 / pnpm listed in `PARITY_TOOLCHAIN_PATHS` (default `.local/toolchain-paths.txt`), creates or
+fetches the mirror only when it lacks the commit (`tool/upstream_sync.py` owns it), never touches a directory at another
+commit, and finishes an interrupted install when rerun. `tool/check-project` prints the resolved checkout and its commit
+when it starts. After `docs/source-reference.json` moves to a new upstream commit, run `prepare` once.
 
 ## Official suite: `tool/parity`
 

@@ -5,6 +5,7 @@ import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { lookup, startRuntime } from './fixture-runtime.mjs';
+import { raftSourceDir } from '../raft_source.mjs';
 
 test('query-specific read windows beat general routes without inventing missing rows', () => {
   const routes = { 'GET /messages/a': { window: 'tail' }, 'GET /messages/a?after=5': { window: 'new' }, 'GET /messages/a?after=5&limit=20': { window: 'page' } };
@@ -17,7 +18,7 @@ test('held success and explicit denial retain request chronology and do not leak
   const dir = mkdtempSync(join(tmpdir(), 'raft-process-runtime-'));
   const fixturePath = join(dir, 'fixture.json');
   writeFileSync(fixturePath, JSON.stringify({ routes: { 'GET /test-target': { id: 'target' }, 'GET /test-parent': { id: 'parent' }, 'GET /test-replies': { id: 'replies' }, 'GET /test-denial': { __status: 403, body: { error: 'FORBIDDEN' } } } }));
-  const source = process.env.RAFT_SOURCE ?? '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source';
+  const source = raftSourceDir({ needs: ['packages/web/package.json'] });
   const runtime = await startRuntime({ source, fixturePath, out: join(dir, 'run'), port: Number(process.env.RAFT_PROCESS_TEST_PORT ?? 15414) });
   const getState = async () => (await fetch(`${runtime.base}/__process/state`)).json();
   const waitFor = async check => { for (let i = 0; i < 100; i++) { const state = await getState(); if (check(state)) return state; await new Promise(r => setTimeout(r, 10)); } throw new Error('Runtime gate timeout'); };

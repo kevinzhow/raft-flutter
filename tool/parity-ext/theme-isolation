@@ -47,11 +47,16 @@ def main():
     p.add_argument('--cases', help='comma list of case ids (default: the representative set)')
     p.add_argument('--looks', default='raft-light,raft-dark,elegant-light,elegant-dark,brutal-light,brutal-dark')
     p.add_argument('--fast', action='store_true', help='4 surfaces only')
-    p.add_argument('--shared', default=(os.environ['PARITY_RAFT_SOURCE'] + '/packages/visual-testing/shared')
-                   if os.environ.get('PARITY_RAFT_SOURCE') else None, help='official shared fixtures (default: $PARITY_RAFT_SOURCE/packages/visual-testing/shared)')
+    p.add_argument('--shared', help='official shared fixtures (default: packages/visual-testing/shared of the pinned '
+                   'raft-source checkout, tool/raft_source.py)')
     a = p.parse_args()
     if not a.shared:
-        sys.exit('set PARITY_RAFT_SOURCE (the pinned raft-source checkout) or --shared')
+        sys.path.insert(0, str(ROOT / 'tool'))
+        import raft_source
+        try:
+            a.shared = str(raft_source.require(needs=(raft_source.SHARED_CASES,)) / 'packages/visual-testing/shared')
+        except raft_source.RaftSourceError as error:
+            sys.exit(str(error))
     out = pathlib.Path(a.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     for stale in ('leaks.jsonl', 'done.jsonl'):
