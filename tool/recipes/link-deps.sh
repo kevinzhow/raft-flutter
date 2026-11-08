@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # Link the offline JS dependencies used by the recipe pipeline into
-# tool/recipes/node_modules (gitignored). Override the pnpm store with
+# tool/recipes/node_modules (gitignored). The pnpm store defaults to the one of
+# the pinned raft-source checkout (tool/raft-source path); override it with
 # RAFT_PNPM_STORE=/path/to/node_modules/.pnpm.
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-store="${RAFT_PNPM_STORE:-/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source/node_modules/.pnpm}"
+if [[ -z "${RAFT_PNPM_STORE:-}" ]]; then
+  source_dir="$(python3 "$here/../raft-source" path --need node_modules/.pnpm)"
+  RAFT_PNPM_STORE="$source_dir/node_modules/.pnpm"
+fi
+store="$RAFT_PNPM_STORE"
 # Directory-name globs inside the pnpm store; the newest match wins, so a
 # raft-source revision that bumps tailwindcss / postcss / acorn needs no edit.
 declare -A deps=(

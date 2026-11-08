@@ -1557,7 +1557,6 @@ def import_raft_ui_071(package_dir):
 
 
 # ─── Chrome oracle sampling ──────────────────────────────────────────────────
-RAFT_SOURCE_DEFAULT = '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'
 CHROMIUM_ARGS = ['--disable-lcd-text', '--font-render-hinting=none']  # tool/parity CHROMIUM_TEXT_ARGS['android']
 ORACLE_SCOPES = (('brutal', {'theme': 'brutal'}), ('elegantLight', {'theme': 'elegant', 'class': 'light'}),
                  ('elegantDark', {'theme': 'elegant', 'class': 'dark'}))
@@ -1587,6 +1586,16 @@ def recipe_literals():
     for path in recipe_files():
         found.update(re.findall(r"CssColor\(0x[0-9A-Fa-f]{8}, '([^']+)'\)", path.read_text()))
     return sorted(found)
+
+
+def pinned_raft_source():
+    """The pinned raft-source checkout (tool/raft_source.py), or exit with the fix."""
+    sys.path.insert(0, str(ROOT / 'tool'))
+    import raft_source
+    try:
+        return raft_source.require()
+    except raft_source.RaftSourceError as error:
+        raise SystemExit(f'gen-tokens: {error}')
 
 
 def sample_chrome(raft_source):
@@ -1735,7 +1744,7 @@ def main(argv=None):
         import_raft_ui_071(args.import_raft_ui_071)
     verify_manifest()
     if args.sample_chrome:
-        sample_chrome(args.raft_source or RAFT_SOURCE_DEFAULT)
+        sample_chrome(args.raft_source or pinned_raft_source())
     if args.oracle:
         rows = oracle_report()
         for r in rows:

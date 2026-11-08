@@ -36,7 +36,6 @@ Extension ids are written without the theme suffix and may be globs.
 import argparse
 import fnmatch
 import json
-import os
 import pathlib
 import re
 import sys
@@ -46,8 +45,6 @@ HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 DEFAULT_DOC = ROOT / 'build/parity-ext/page-inventory.md'
 CASE_MAP = ROOT / 'build/parity-ext/visual-testing-results/android-case-map.json'
-RAFT_SOURCE = pathlib.Path(os.environ.get(
-    'PARITY_RAFT_SOURCE', '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'))
 W = 'packages/web/src/'
 
 OFFICIAL_UI = ('components.tokens.palette', 'components.ui.*')
@@ -871,9 +868,9 @@ def render(ctx=None):
 
 
 def official_ids():
-    shared = RAFT_SOURCE / 'packages/visual-testing/shared/sharedCases.json'
-    if not shared.is_file():
-        return None
+    sys.path.insert(0, str(HERE))
+    import builders
+    shared = builders.raft_source() / 'packages/visual-testing/shared/sharedCases.json'
     return [c['id'] for c in json.loads(shared.read_text())['cases']]
 
 

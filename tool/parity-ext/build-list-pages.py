@@ -16,20 +16,18 @@ Ids: components.list-pages.<panel>.<key>.<theme>. React: tool/parity-ext/host/Li
 apps/raft_flutter/test/parity/cases/ext_list_pages.dart (keyed by the case's `extCase`).
 """
 import json
-import os
 import pathlib
 import sys
 
 here = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(here))
-from builders import manifest_path  # noqa: E402
+from builders import manifest_path, raft_source  # noqa: E402
 THEMES = {'brutal': 'brutal-light', 'elegant': 'elegant-light', 'elegant-dark': 'elegant-dark'}
 DESKTOP = {'width': 1280, 'height': 800, 'density': 1}
 MOBILE = {'width': 390, 'height': 844, 'density': 3}
 PREFIX = 'components.list-pages.'
 SRC = 'packages/web/src/components/'
-RAFT_SOURCE = pathlib.Path(os.environ.get(
-    'PARITY_RAFT_SOURCE', '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'))
+RAFT_SOURCE = raft_source()
 SHARED = RAFT_SOURCE / 'packages/visual-testing/shared'
 
 

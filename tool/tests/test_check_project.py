@@ -87,6 +87,16 @@ class HistoryWeightTests(unittest.TestCase):
         self.assertEqual(max(p['weight'] for p in balanced), 104.0)
 
 
+class RaftSourceLineTests(unittest.TestCase):
+    def test_the_gate_names_the_resolved_checkout_and_never_fails_on_it(self):
+        with tempfile.TemporaryDirectory() as home:
+            line = check.raft_source_line({'PARITY_RAFT_SOURCE': home})
+        self.assertTrue(line.startswith(f'check-project: raft-source {home} at no checkout (pinned '), line)
+        self.assertIn('NOT USABLE', line)
+        with unittest.mock.patch.object(check.raft_source, 'describe', side_effect=OSError('boom')):
+            self.assertEqual(check.raft_source_line({}), 'check-project: raft-source not resolved (OSError: boom)')
+
+
 class StructurePreflightTests(unittest.TestCase):
     def test_growth_stops_before_assets_or_tests_and_records_a_failed_run(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -5,12 +5,16 @@ Sources (raft-source packages/web): public/brand/raft-icon.svg, public/brand/raf
 src/assets/icons/provider_{google,github,apple}.svg. Only <path d fill> elements are used
 (the files contain nothing else).
 """
-import os, pathlib, re
+import pathlib, re, sys
 
 root = pathlib.Path(__file__).resolve().parents[2]
-web = pathlib.Path(os.environ.get(
-    'PARITY_RAFT_SOURCE',
-    '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source')) / 'packages/web'
+sys.path.insert(0, str(root / 'tool'))
+import raft_source  # noqa: E402  (tool/raft_source.py)
+
+try:
+    web = raft_source.require(needs=('packages/web/public/brand/raft-icon.svg',)) / 'packages/web'
+except raft_source.RaftSourceError as error:
+    sys.exit(str(error))
 marks = [
     ('raftIcon', web / 'public/brand/raft-icon.svg'),
     ('raftLogo', web / 'public/brand/raft-logo.svg'),

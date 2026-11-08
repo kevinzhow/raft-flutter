@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""Find, check or prepare the raft-source checkout pinned in docs/source-reference.json (tool/raft_source.py).
+
+  tool/raft-source check              print the resolved checkout and whether it is usable (exit 1 if not)
+  tool/raft-source path [--need REL]  print the usable checkout path, else the reason on stderr (exit 1)
+  tool/raft-source prepare [--dest DIR] [--no-install]
+                                      clone the pinned commit from ~/.cache/raft-flutter/raft-source-mirror.git
+                                      (created or fetched only when it lacks the commit) into
+                                      ~/.cache/raft-flutter/raft-source-<12 hex> and run `pnpm install
+                                      --frozen-lockfile` there with the PARITY_TOOLCHAIN_PATHS Node/pnpm
+
+`prepare` never touches an existing directory at another commit; rerunning it finishes an interrupted install.
+PARITY_RAFT_SOURCE overrides the resolved checkout for every tool (any revision; the files must exist).
+"""
+import argparse
+import os
+import pathlib
+import subprocess
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import raft_source  # noqa: E402
+
+ROOT = raft_source.ROOT
+
+
+def toolchain_env(env=None):
+    """os.environ with the Node 24 / pnpm binaries of PARITY_TOOLCHAIN_PATHS first on PATH (as tool/parity does)."""
+    env = {k: v for k, v in (os.environ if env is None else env).items() if not k.lower().startswith('npm_config_')}
+    listing = pathlib.Path(env.get('PARITY_TOOLCHAIN_PATHS') or ROOT / '.local/toolchain-paths.txt')
+    if listing.is_file():
+        bins = [str(pathlib.Path(line.strip()).parent) for line in listing.read_text().splitlines() if line.strip()]
+        env['PATH'] = os.pathsep.join([*dict.fromkeys(bins), env.get('PATH', '')])
+    return env
+
+
+def has_commit(mirror, commit):
+    return subprocess.run(['git', f'--git-dir={mirror}', 'cat-file', '-e', f'{commit}^{{commit}}'],
+                          capture_output=True).returncode == 0
+
+
+def say(line):
+    print(line, flush=True)
+
+
+def prepare(dest=None, *, install=True, mirror=None, root=ROOT, home=None, run=subprocess.run, log=say):
+    commit = raft_source.pinned_commit(root)
+    dest = pathlib.Path(dest).expanduser() if dest else raft_source.canonical_dir(commit, home)
+    if dest.exists():
+        actual = raft_source.head_commit(dest)
+        if actual != commit:
+            raise raft_source.RaftSourceError(
+                f'{dest} already exists at {actual or "no git checkout"}, not the pinned {commit}; '
+                'it is left alone: remove it yourself or pass --dest')
+    else:
+        import upstream_sync  # the mirror owner: same path, remote and clone/fetch rules
+        mirror = pathlib.Path(mirror or upstream_sync.DEFAULT_MIRROR)
+        if not has_commit(mirror, commit):
+            log(f'raft-source: updating the mirror {mirror}')
+            upstream_sync.ensure_mirror(mirror)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        log(f'raft-source: cloning {commit} into {dest}')
+        run(['git', 'clone', '--quiet', '--no-checkout', str(mirror), str(dest)], check=True)
+        run(['git', '-C', str(dest), 'checkout', '--quiet', '--detach', commit], check=True)
+    if install and raft_source.missing_files(dest):
+        log(f'raft-source: pnpm install --frozen-lockfile in {dest}')
+        run(['pnpm', 'install', '--frozen-lockfile'], cwd=dest, env=toolchain_env(), check=True)
+    found = raft_source.problems(dest, {}, root=root, needs=raft_source.NEEDED if install else ())
+    if found:
+        raise raft_source.RaftSourceError('\n'.join(found))
+    return dest
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(prog='tool/raft-source', description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest='cmd', required=True)
+    sub.add_parser('check')
+    path = sub.add_parser('path')
+    path.add_argument('--need', action='append', help='file the caller reads, relative to the checkout '
+                      '(repeatable; default: everything a prepared checkout has)')
+    prep = sub.add_parser('prepare')
+    prep.add_argument('--dest', help='target directory (default: ~/.cache/raft-flutter/raft-source-<12 hex of the pin>)')
+    prep.add_argument('--no-install', action='store_true', help='clone only, skip pnpm install')
+    a = p.parse_args(argv)
+    try:
+        if a.cmd == 'check':
+            print(raft_source.describe())
+            for line in raft_source.problems(raft_source.raft_source_dir()):
+                print(line)
+            raft_source.require()
+        elif a.cmd == 'path':
+            needs = tuple(a.need) if a.need else raft_source.NEEDED
+            print(raft_source.require(needs=needs))
+        else:
+            dest = prepare(a.dest, install=not a.no_install)
+            print(f'raft-source: ready at {dest}')
+    except raft_source.RaftSourceError as error:
+        sys.exit(str(error) if a.cmd != 'check' else 1)
+    except subprocess.CalledProcessError as error:
+        sys.exit(f'raft-source prepare: {" ".join(error.cmd)} failed (exit {error.returncode}); rerun to resume')
+
+
+if __name__ == '__main__':
+    main()

@@ -5,6 +5,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
+import { raftSourceDir } from '../raft_source.mjs';
 import { execFileSync } from 'node:child_process';
 import { createArtifactHandoff } from './artifact-handoff.mjs';
 
@@ -113,7 +114,7 @@ export async function startRuntime({ source, fixturePath, out, port }) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [fixturePath, out, port = '15413'] = process.argv.slice(2);
   if (!fixturePath || !out) throw new Error('fixture-runtime.mjs FIXTURE OUTPUT [PORT]');
-  const source = process.env.RAFT_SOURCE ?? '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source';
+  const source = raftSourceDir({ needs: ['packages/web/package.json'] });
   const runtime = await startRuntime({ source, fixturePath: resolve(fixturePath), out: resolve(out), port: Number(port) });
   console.log(JSON.stringify({ base: runtime.base }));
   const stop = async () => { await runtime.server.close(); process.exit(0); };

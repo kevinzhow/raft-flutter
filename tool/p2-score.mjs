@@ -12,9 +12,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { raftSourceDir } from './raft_source.mjs';
 
 const require = createRequire(import.meta.url);
-const sharp = require('/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source/packages/visual-testing/node_modules/sharp');
+const source = raftSourceDir({ needs: ['packages/visual-testing/node_modules/sharp/package.json'] });
+const sharp = require(path.join(source, 'packages/visual-testing/node_modules/sharp'));
 
 async function rgbaBuffer(file, width, height, mode) {
   let p = sharp(file);

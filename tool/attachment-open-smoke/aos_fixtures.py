@@ -5,12 +5,15 @@
 `/__manifest` and the integration test reads. Sources are generated with ffmpeg, ImageMagick and Python only
 (no private or third-party media); re-running reuses files that are already there.
 """
-import csv, io, json, os, shutil, struct, subprocess, zipfile
+import csv, io, json, os, shutil, struct, subprocess, sys, zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-HEIC_SAMPLE = [
-    Path('/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source/packages/server/src/routes/fixtures/preview-sample.heic'),
+sys.path.insert(0, str(ROOT / 'tool'))
+import raft_source  # noqa: E402  (tool/raft_source.py)
+
+HEIC_SAMPLE = [  # the first one that exists is used
+    raft_source.raft_source_dir() / 'packages/server/src/routes/fixtures/preview-sample.heic',
     Path('/home/kevinzhow/flutter-sdks/3.41.9/engine/src/flutter/testing/resources/grill_chicken.heic'),
 ]
 MB = 1024 * 1024

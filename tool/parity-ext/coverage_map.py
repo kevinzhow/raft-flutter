@@ -20,7 +20,6 @@ import argparse
 import fnmatch
 import importlib.util
 import json
-import os
 import pathlib
 import re
 import sys
@@ -71,10 +70,7 @@ def manifests():
     with tempfile.TemporaryDirectory() as tmp:
         builders.build_manifest(pathlib.Path(tmp))
         ext = json.loads((pathlib.Path(tmp) / 'cases.json').read_text())['cases']
-    source = os.environ.get('PARITY_RAFT_SOURCE')
-    if not source:
-        sys.exit('set PARITY_RAFT_SOURCE to the pinned raft-source checkout')
-    official = json.loads(pathlib.Path(source).joinpath('packages/visual-testing/shared/sharedCases.json').read_text())['cases']
+    official = json.loads((builders.raft_source() / 'packages/visual-testing/shared/sharedCases.json').read_text())['cases']
     return ext, official
 
 

@@ -363,7 +363,8 @@ tool/parity publish                   # copy site to the report hub, update late
 tool/parity summary                   # recompute build/parity/summary.json from the last diff
 ```
 
-Environment overrides: `PARITY_RAFT_SOURCE` (raft-source checkout),
+Environment overrides: `PARITY_RAFT_SOURCE` (raft-source checkout; default: the checkout of the commit pinned in
+`docs/source-reference.json`, see [The raft-source checkout](parity-and-alignment.md#the-raft-source-checkout)),
 `PARITY_OUT` (default `build/parity`), `PARITY_TOOLCHAIN_PATHS` (file listing
 the Node 24 / pnpm 10 binaries), `PARITY_REPORTS_ROOT`, `PARITY_BASE_URL`,
 `PARITY_WEB_PORT` (Vite port for the React provider, default 4391),
@@ -383,7 +384,7 @@ tool/theme-suite --look brutal --visual-only --cases 'components.ui.button.*'
 tool/theme-suite --look all --plan               # what would run, nothing run
 ```
 
-The visual half needs the pinned Web source (`PARITY_RAFT_SOURCE`, `RAFT_PARITY_SOURCE`, or `~/.cache/raft-flutter/raft-source-23`) and the Node toolchain the other parity tools use; without the source the step fails and says so (`--tests-only` skips it). Scores are reported, not judged, unless `--baseline <earlier regress-summary.json>` is given, in which case a case that lost one point fails the step. Results: `.local/theme-suite/visual-<look>/regress-summary.{md,json}`.
+The visual half needs the pinned Web source ([the raft-source checkout](parity-and-alignment.md#the-raft-source-checkout): `PARITY_RAFT_SOURCE`, else the checkout of the pinned commit; `tool/raft-source prepare` creates it) and the Node toolchain the other parity tools use; without the source the step fails and says so (`--tests-only` skips it). Scores are reported, not judged, unless `--baseline <earlier regress-summary.json>` is given, in which case a case that lost one point fails the step. Results: `.local/theme-suite/visual-<look>/regress-summary.{md,json}`.
 
 **Run it when** a change touches the theme engine, `packages/raft_theme`, the theme adapters or packs, recipes or recipe binding, or a legacy-look file (`THEME_ENGINE_PATHS` in `tool/theme_looks.py`); `check-project`, `preflight` and the pre-gate script print a notice when a diff does. The nightly runs its Dart half every night and keeps its own fast visual job (`tool/nightly_visual.py`). The details are in [Development](development.md#looks-the-checks-test-the-raft-look-only).
 
