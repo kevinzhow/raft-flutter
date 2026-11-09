@@ -233,6 +233,22 @@ RootFixture richFixture() {
   f.overrides['GET /messages/context/ma'] = (_) => {
     'messages': [_message('ma', 'Accepted a')],
   };
+  // A cold start onto `?thread=ca:ma` opens the thread, so the audited page
+  // is the loaded thread rather than an unresolved one.
+  f.overrides['GET /channels/ca/threads/ma'] = (_) => {
+    'threadChannelId': 'thread-ma',
+  };
+  f.overrides['GET /messages/channel/thread-ma'] = (_) => {
+    'messages': [
+      {
+        ..._message('reply-ma', 'Accepted thread reply', seq: 7),
+        'channelId': 'thread-ma',
+      },
+    ],
+    'hasMore': false,
+    'hasNewer': false,
+  };
+  f.overrides['POST /channels/thread-ma/read'] = (_) => {};
   f.overrides['GET /messages/channel/ca'] = (_) => {
     'messages': [
       for (var i = 1; i <= 6; i++)

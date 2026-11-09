@@ -35,6 +35,7 @@ import 'features/private_app_invite.dart';
 import 'features/private_app_invite_view.dart';
 import 'features/global_server_selector.dart';
 import 'features/public_server_view.dart';
+import 'features/workspace_history_controls.dart';
 import 'features/workspace_view.dart';
 import 'features/auth_view.dart';
 import 'features/session_recovery_view.dart';
@@ -1676,17 +1677,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         if (routeChanged) {
           w.navigation.navigate(target, kind: RaftNavigationKind.replace);
         }
-        // The accepted route wins over a different cached selection. Resolve
-        // without blocking the cached first frame or rewriting that route.
-        if ({RaftRoute.channel, RaftRoute.dm}.contains(target.route) &&
-            (routeChanged || w.channel?.id != target.entityId)) {
-          unawaited(
-            w.resolveConversationChannel(
-              target.entityId!,
-              preserveThread: target.thread != null,
-            ),
-          );
-        }
+        restoreAcceptedConversation(w, target, routeChanged: routeChanged);
       }
       showServerSelector = false;
       chooserReturn = serverSwitchLocation = serverSwitchReturn = null;

@@ -57,6 +57,41 @@ Future<void> visitWorkspaceHistory(
   }
 }
 
+/// A conversation route the app root accepted over the cache-painted workspace
+/// (a remembered surface, a cold link). The accepted route wins over a
+/// different cached selection: resolve without blocking the cached first frame
+/// or rewriting that route. A thread it names is already on screen (the
+/// phone's page, the wide panel); a cold start after iOS reclaimed the app has
+/// no thread open, so read it, or the page stays "No replies yet".
+void restoreAcceptedConversation(
+  WorkspaceController w,
+  RaftLocation target, {
+  required bool routeChanged,
+}) {
+  if (!{RaftRoute.channel, RaftRoute.dm}.contains(target.route)) return;
+  final thread = target.thread;
+  if (routeChanged || w.channel?.id != target.entityId) {
+    unawaited(
+      w.resolveConversationChannel(
+        target.entityId!,
+        preserveThread: thread != null,
+      ),
+    );
+  }
+  if (thread == null || w.threadIdentity?.parentMessageId == thread.itemId) {
+    return;
+  }
+  unawaited(
+    w.openThreadIdentity(
+      parentChannelId: thread.channelId,
+      parentMessageId: thread.itemId,
+      focusedMessageId: target.threadFocusedMessageId,
+      initialThreadChannelId: target.knownThreadChannelId,
+      navigate: false,
+    ),
+  );
+}
+
 String _historyLabel(
   BuildContext context,
   WorkspaceController w,
