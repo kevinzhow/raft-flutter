@@ -1,9 +1,18 @@
 import Flutter
 import UIKit
+import UserNotifications
 import XCTest
 import workmanager_apple
 
 class RunnerTests: XCTestCase {
+  @MainActor
+  func testAppDelegateReceivesNotificationCenterCallbacks() {
+    // flutter_local_notifications presents foreground alerts and reports taps
+    // only through the app delegate. Without it iOS silently drops every
+    // notification posted while Raft is open, including the settings test.
+    XCTAssertTrue(UNUserNotificationCenter.current().delegate === UIApplication.shared.delegate)
+  }
+
   func testNativePermissionUsageDescriptions() throws {
     for key in ["NSPhotoLibraryUsageDescription", "NSPhotoLibraryAddUsageDescription", "NSLocalNetworkUsageDescription"] {
       let text = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: key) as? String, key)

@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import UserNotifications
 import workmanager_apple
 
 @main
@@ -8,6 +9,9 @@ import workmanager_apple
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // flutter_local_notifications presents foreground alerts and reports taps
+    // through the app delegate only on iOS. It must be set before launch ends.
+    UNUserNotificationCenter.current().delegate = self
     // Restore alone only covers tasks persisted by a previous launch. The first
     // notification opt-in also needs its handler before Dart submits the task.
     WorkmanagerPlugin.registerPeriodicTask(
