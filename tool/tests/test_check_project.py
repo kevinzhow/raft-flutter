@@ -308,13 +308,17 @@ class RunTmpTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             local = Path(tmp) / '.local'
             local.mkdir()
-            dead = local / 'tmp-4000000'  # no such pid
+            dead = local / 'tmp-4000000'
             dead.mkdir()
             (dead / 'flutter_tools.x').mkdir()
-            alive = local / 'tmp-1'  # pid 1 exists
+            alive = local / 'tmp-1'
             alive.mkdir()
             (local / 'tmp-notanumber').mkdir()
-            run = check.make_run_tmp(local, pid=777)
+            # PID allocation belongs to the host; even a large PID can be live.
+            with unittest.mock.patch.object(
+                check, 'pid_alive', side_effect={4000000: False, 1: True}.__getitem__,
+            ):
+                run = check.make_run_tmp(local, pid=777)
             self.assertEqual(run, local / 'tmp-777')
             self.assertTrue(run.is_dir())
             self.assertFalse(dead.exists())
