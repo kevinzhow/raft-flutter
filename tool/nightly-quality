@@ -531,7 +531,7 @@ class Run:
                 self.note(f'tool/raft_lints: pub get --enforce-lockfile failed ({name}); lint rules are not part of this run')
         return done['code'] == 0
 
-    def run_suite(self, name, cwd, files, timeout, lcov, coverage_package=False, seed=None):
+    def run_suite(self, name, cwd, files, timeout, lcov, coverage_package=False, seed=None, dds=True):
         events = self.out / f'{name}.events.json'
         log_path = self.out / f'{name}.log'
         for stale in (events, lcov):
@@ -544,6 +544,12 @@ class Run:
             cmd += ['--coverage-package', COVERAGE_PACKAGES]
         if seed is not None:
             cmd += ['--test-randomize-ordering-seed', str(seed)]
+        if not dds:
+            # The app suite stopped loading test files after about half an hour on four nights in a row
+            # (2026-11-07..10) and was killed at the 90 minute limit with 74 tests never run. With the Dart
+            # Development Service off the same suite, same seed, finished in 33m33s (9328 passed, 28 skipped)
+            # and still produced coverage (Cody, #raft-flutter d291162a). Why DDS stalls is not known yet.
+            cmd += ['--no-dds']
         cmd += files
         done = run(cmd, cwd, log_path, min(timeout, self.remaining()), self.env)
         lines = events.read_text(errors='replace').splitlines() if events.is_file() else []
@@ -576,7 +582,8 @@ class Run:
         app = self.worktree / APP
         suites = []
         files = self.args.app_tests or ['test/']
-        suites.append(self.run_suite('app', app, files, self.args.app_timeout_minutes * 60, self.out / 'app.lcov', True, self.args.seed))
+        suites.append(self.run_suite('app', app, files, self.args.app_timeout_minutes * 60, self.out / 'app.lcov', True, self.args.seed,
+                                     dds=False))
         if not self.args.skip_packages:
             for package in self.package_dirs():
                 if self.remaining() < 120:
