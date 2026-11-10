@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
+import 'package:raft_flutter/platform/desktop_title_bar.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
@@ -124,6 +125,8 @@ Future<void> _transitionFrames(
 }
 
 void main() {
+  tearDownAll(() => DesktopTitleBarController.platform.state.dispose());
+
   for (final (platform, input, theme) in [
     (TargetPlatform.iOS, _EntryInput.touch, 'dark'),
     (TargetPlatform.iOS, _EntryInput.touch, 'light'),
