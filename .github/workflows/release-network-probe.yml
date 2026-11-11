@@ -1,0 +1,41 @@
+name: Probe Ubuntu release network
+on:
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Bounded DNS and signed HTTPS probes
+        shell: bash
+        run: |
+          set -u
+          probe_dir=$(mktemp -d "$RUNNER_TEMP/raft-release-network.XXXXXX")
+          trap 'rm -rf "$probe_dir"' EXIT
+          keyring=/usr/share/keyrings/ubuntu-archive-keyring.gpg
+          for target in \
+            'archive.ubuntu.com https://archive.ubuntu.com/ubuntu/dists/noble/InRelease 1' \
+            'security.ubuntu.com https://security.ubuntu.com/ubuntu/dists/noble-security/InRelease 1' \
+            'mirrors.edge.kernel.org https://mirrors.edge.kernel.org/ubuntu/dists/noble/InRelease 1' \
+            'api.github.com https://api.github.com/ 0'; do
+            read -r domain url signed <<< "$target"
+            dns_exit=0
+            timeout 8s getent ahostsv4 "$domain" >/dev/null 2>&1 || dns_exit=$?
+            https_exit=0
+            curl -q -4 --silent --fail --location --max-redirs 3 \
+              --proto '=https' --proto-redir '=https' --connect-timeout 8 --max-time 12 \
+              --max-filesize 1048576 --output "$probe_dir/response" "$url" \
+              >/dev/null 2>&1 || https_exit=$?
+            signature_checked=false
+            signature_verified=false
+            if [[ "$signed" = 1 && "$https_exit" = 0 && -s "$keyring" ]] && command -v gpgv >/dev/null 2>&1; then
+              signature_checked=true
+              if timeout 8s gpgv --homedir "$probe_dir" --keyring "$keyring" "$probe_dir/response" >/dev/null 2>&1; then
+                signature_verified=true
+              fi
+            fi
+            printf 'domain=%s dns_exit=%s https_exit=%s signature_checked=%s signature_verified=%s\n' \
+              "$domain" "$dns_exit" "$https_exit" "$signature_checked" "$signature_verified"
+            rm -f "$probe_dir/response"
+          done
