@@ -11,8 +11,8 @@ import '../data/workspace_controller.dart';
 /// The three Web v1.21.23 flags that gate the unread surfaces of the sidebar
 /// and Activity (`serverFeatureFlags.ts`): followed-thread unread folded onto
 /// the parent channel, the sidebar "Mark All as Read" and the Activity
-/// conversation list. Every one defaults off, so a server that does not name
-/// the flag (or an older server) keeps today's rows exactly.
+/// conversation list. Every one defaults off until evaluated. A missing or
+/// invalid evaluation keeps the last accepted value instead of turning it off.
 ///
 /// One evaluation per server identity, remembered on the device so the first
 /// frame of the next launch already has the final layout. A transient failure
@@ -120,14 +120,21 @@ class ActivityRolloutFlags extends ChangeNotifier {
       );
       if (_ended || authority != _authority || ticket != _request) return;
       final rows = value is Map ? value['evaluations'] : null;
-      _accept({
-        for (final key in keys)
-          key:
-              rows is List &&
-              rows.whereType<Map>().any(
-                (row) => row['key'] == key && row['enabled'] == true,
-              ),
-      });
+      if (rows is! List) return;
+      final accepted = <String, bool>{};
+      // The server returns one evaluation per requested key, including an
+      // explicit false for an unknown flag. Missing, invalid or duplicate
+      // results are unknown; they must not replace an accepted value.
+      for (final key in keys) {
+        final matches = rows
+            .whereType<Map>()
+            .where((row) => row['key'] == key)
+            .toList(growable: false);
+        if (matches.length != 1) continue;
+        final enabled = matches.single['enabled'];
+        if (enabled is bool) accepted[key] = enabled;
+      }
+      _accept(accepted);
     } catch (error) {
       // Unknown is not permission: only a denial turns accepted flags off.
       if (!_ended &&
@@ -140,8 +147,10 @@ class ActivityRolloutFlags extends ChangeNotifier {
     }
   }
 
-  void _accept(Map<String, bool> next) {
-    FeatureFlagMemory.write(_memoryScope, next);
+  void _accept(Map<String, bool> accepted) {
+    if (accepted.isEmpty) return;
+    FeatureFlagMemory.write(_memoryScope, accepted);
+    final next = {..._enabled, ...accepted};
     if (mapEquals(next, _enabled)) return;
     _enabled = next;
     notifyListeners();

@@ -146,9 +146,10 @@ void main() {
       api.routes['GET /channels/threads/followed'] = (_) => {
         'threads': threads,
       };
-      api.routes['POST /feature-flags/evaluate'] = (_) => {
+      api.routes['POST /feature-flags/evaluate'] = (request) => {
         'evaluations': [
-          for (final key in flags) {'key': key, 'enabled': true},
+          for (final key in (request.data as Map)['keys'] as List)
+            {'key': key, 'enabled': flags.contains(key)},
         ],
       };
       api.routes['GET /servers/s1/setup-projection'] = (_) => {
