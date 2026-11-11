@@ -101,9 +101,17 @@ jobs:
           command -v codesign
       - name: Install Ubuntu 24.04 build and AppImage tools
         if: inputs.platform == 'appimage'
+        timeout-minutes: 10
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev glib-networking gstreamer1.0-plugins-base gstreamer1.0-plugins-good patchelf poppler-utils zsync libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
+          # Hosted images can select the Azure mirror through either APT sources or mirror lists.
+          for source in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources /etc/apt/apt-mirrors*.txt; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's|://azure\.archive\.ubuntu\.com/ubuntu|://archive.ubuntu.com/ubuntu|g' "$source"
+            fi
+          done
+          raft_apt_options=(-o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20)
+          sudo apt-get update "${raft_apt_options[@]}" --error-on=any
+          sudo apt-get install -y "${raft_apt_options[@]}" clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev libjson-glib-dev nlohmann-json3-dev libepoxy-dev libwayland-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev glib-networking gstreamer1.0-plugins-base gstreamer1.0-plugins-good patchelf poppler-utils zsync libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
       - name: Build the exact original source and build number
         env:
           GH_TOKEN: ${{ github.token }}
@@ -136,9 +144,17 @@ jobs:
           name: release-backfill-${{ inputs.platform }}-${{ inputs.release_tag }}
           path: source/build/release
       - name: Install the original AppImage startup dependencies
+        timeout-minutes: 10
         run: |
-          sudo apt-get update
-          sudo apt-get install -y fuse3 libgtk-3-0t64 libwebkit2gtk-4.1-0 libsoup-3.0-0 glib-networking gstreamer1.0-plugins-base gstreamer1.0-plugins-good libsecret-1-0 libmpv2 poppler-utils libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
+          # Hosted images can select the Azure mirror through either APT sources or mirror lists.
+          for source in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources /etc/apt/apt-mirrors*.txt; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's|://azure\.archive\.ubuntu\.com/ubuntu|://archive.ubuntu.com/ubuntu|g' "$source"
+            fi
+          done
+          raft_apt_options=(-o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20)
+          sudo apt-get update "${raft_apt_options[@]}" --error-on=any
+          sudo apt-get install -y "${raft_apt_options[@]}" fuse3 libgtk-3-0t64 libwebkit2gtk-4.1-0 libsoup-3.0-0 glib-networking gstreamer1.0-plugins-base gstreamer1.0-plugins-good libsecret-1-0 libmpv2 poppler-utils libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
       - name: Restore executable permission on the downloaded AppImage
         run: chmod +x source/build/release/*.AppImage
       - name: Run the original production AppImage at 2x display scale

@@ -155,15 +155,24 @@ jobs:
           fi
       - name: Install Linux build and media dependencies
         if: inputs.platform == 'linux' || inputs.platform == 'appimage'
+        timeout-minutes: 10
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev patchelf poppler-utils zsync libsoup-3.0-dev libjson-glib-dev nlohmann-json3-dev libepoxy-dev libwayland-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libwebkit2gtk-4.1-dev glib-networking gstreamer1.0-plugins-good
+          # Hosted images can select the Azure mirror through either APT sources or mirror lists.
+          for source in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources /etc/apt/apt-mirrors*.txt; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's|://azure\.archive\.ubuntu\.com/ubuntu|://archive.ubuntu.com/ubuntu|g' "$source"
+            fi
+          done
+          raft_apt_options=(-o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20)
+          sudo apt-get update "${raft_apt_options[@]}" --error-on=any
+          sudo apt-get install -y "${raft_apt_options[@]}" clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libmpv2 libmpv-dev patchelf poppler-utils zsync libsoup-3.0-dev libjson-glib-dev nlohmann-json3-dev libepoxy-dev libwayland-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libwebkit2gtk-4.1-dev glib-networking gstreamer1.0-plugins-good
           # apt verifies the distribution repositories; never restore a private engine/media SDK.
           pkg-config --modversion gtk+-3.0 webkit2gtk-4.1 mpv
           dpkg-query -W libwebkit2gtk-4.1-0 libgtk-3-0t64 libmpv2 libglib2.0-0t64 libsoup-3.0-0
       - name: Install AppImage startup test tools
         if: inputs.platform == 'appimage'
-        run: sudo apt-get install -y libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
+        timeout-minutes: 10
+        run: sudo apt-get install -y -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 libgdk-pixbuf2.0-bin librsvg2-common xvfb x11-utils imagemagick desktop-file-utils gnome-keyring at-spi2-core
       - name: Resolve locked dependencies
         run: python tool/flutter pub get --enforce-lockfile
       - name: Build and package desktop
