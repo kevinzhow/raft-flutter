@@ -390,7 +390,6 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "used": "已使用",
   "value": "value",
   "verification expired": "验证已过期",
-  "via Raft": "via Raft",
   "you": "你",
   "your computer": "你的计算机",
   "your connected sign-in provider": "已连接的登录服务",

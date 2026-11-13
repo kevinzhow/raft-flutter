@@ -342,10 +342,8 @@ class RaftImageReview extends StatelessWidget {
     this.onSave,
     this.onShare,
     this.onCopy,
-    this.onShareLink,
     this.copying = false,
     this.copied = false,
-    this.sharingLink = false,
     this.busy = false,
     this.error,
   });
@@ -354,9 +352,9 @@ class RaftImageReview extends StatelessWidget {
   final VoidCallback? onSave, onShare;
 
   /// Web SelectShareLightbox "Copy image" (only where the clipboard takes a
-  /// PNG) and "Share to X" (uploads a public share page for the image).
-  final VoidCallback? onCopy, onShareLink;
-  final bool copying, copied, sharingLink;
+  /// PNG).
+  final VoidCallback? onCopy;
+  final bool copying, copied;
   final bool busy;
   final String? error;
   @override
@@ -425,7 +423,7 @@ class RaftImageReview extends StatelessWidget {
                 RaftButton(
                   label: 'Save Image',
                   icon: Icons.download_outlined,
-                  busy: busy && !copying && !sharingLink,
+                  busy: busy && !copying,
                   onPressed: onSave,
                 ),
               if (onShare != null)
@@ -434,14 +432,6 @@ class RaftImageReview extends StatelessWidget {
                   icon: Icons.share_outlined,
                   secondary: true,
                   onPressed: busy ? null : onShare,
-                ),
-              if (onShareLink != null)
-                RaftButton(
-                  key: const ValueKey('image-review-share-link'),
-                  label: sharingLink ? 'Sharing…' : 'Share to X',
-                  icon: Icons.ios_share,
-                  busy: sharingLink,
-                  onPressed: busy ? null : onShareLink,
                 ),
             ],
           ),

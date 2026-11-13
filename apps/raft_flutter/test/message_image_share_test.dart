@@ -1,15 +1,14 @@
-// Web SelectShareLightbox + screenshotBudget (v1.21.23): the share preview
-// copies the PNG to the clipboard, "Share to X" uploads it as a share
-// artifact and opens the X intent, and an over-budget or empty render says so.
+// Web SelectShareLightbox + screenshotBudget (v1.24.0): the share preview
+// copies the PNG to the clipboard, saves or shares it natively, and an
+// over-budget or empty render says so. "Share to X" is retired (the server
+// answers 410 SHARE_ARTIFACT_RETIRED), so the preview never offers it.
 import 'dart:typed_data';
 
-import 'package:dio/dio.dart' show FormData;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/message_image_export.dart';
 import 'package:raft_flutter/features/message_selection.dart';
-import 'package:raft_flutter/features/message_share_artifact.dart';
 import 'package:raft_flutter/features/screenshot_budget.dart';
 import 'package:raft_flutter/platform/image_clipboard.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -59,22 +58,11 @@ void main() {
         ScreenshotInvalidReason.zeroSize,
       );
     });
-
-    test('the X intent carries the page URL and "via Raft"', () {
-      expect(
-        shareArtifactXIntentUrl(
-          'https://app.example/share/abc',
-          'via Raft',
-        ).toString(),
-        'https://twitter.com/intent/tweet?url=https%3A%2F%2Fapp.example%2Fshare%2Fabc&text=via%20Raft',
-      );
-    });
   });
 
   Future<(MessageAdapter, Future<bool?>)> open(
     WidgetTester t, {
     required ImageClipboard clipboard,
-    required Future<bool> Function(Uri) openExternal,
     String role = 'owner',
     Locale locale = const Locale('en'),
     bool thread = false,
@@ -106,7 +94,6 @@ void main() {
                   ],
                   width: 500,
                   clipboard: clipboard,
-                  openExternal: openExternal,
                 );
               },
               child: const Text('Export'),
@@ -140,7 +127,6 @@ void main() {
         supportedOverride: true,
         write: (png) async => copied = Uint8List.fromList(png),
       ),
-      openExternal: (_) async => true,
     );
     expect(find.text('Copy image'), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('image-review-copy')));
@@ -160,7 +146,6 @@ void main() {
           supportedOverride: true,
           write: (_) async => throw StateError('blocked'),
         ),
-        openExternal: (_) async => true,
       );
       await t.tap(find.byKey(const ValueKey('image-review-copy')));
       await t.pump();
@@ -173,106 +158,41 @@ void main() {
       await t.pumpWidget(const SizedBox());
       await t.pump(const Duration(seconds: 1));
 
-      await open(
-        t,
-        clipboard: const ImageClipboard(supportedOverride: false),
-        openExternal: (_) async => true,
-      );
+      await open(t, clipboard: const ImageClipboard(supportedOverride: false));
       expect(find.byKey(const ValueKey('image-review-copy')), findsNothing);
     },
   );
 
   testWidgets(
-    'Share to X uploads the PNG as a share artifact and opens the intent',
-    (t) async {
-      Uri? intent;
-      final (box, result) = await open(
-        t,
-        clipboard: const ImageClipboard(supportedOverride: false),
-        openExternal: (uri) async {
-          intent = uri;
-          return true;
-        },
-      );
-      box.routes['POST /share-artifacts/message-selection'] = (_) => {
-        'id': 'art1',
-        'url': 'https://app.example/share/art1',
-        'imageUrl': 'https://app.example/share/art1.png',
-      };
-      await t.tap(find.byKey(const ValueKey('image-review-share-link')));
-      for (var i = 0; i < 50 && intent == null; i++) {
-        await t.pump();
-        await t.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 20)),
-        );
-      }
-      await t.pumpAndSettle();
-      final upload = box.calls.singleWhere(
-        (c) => c.path == '/share-artifacts/message-selection',
-      );
-      final form = upload.data as FormData;
-      expect(form.fields.single.key, 'channelId');
-      expect(form.fields.single.value, 'c1');
-      final file = form.files.single;
-      expect(file.key, 'image');
-      expect(file.value.contentType.toString(), 'image/png');
-      expect(file.value.length, greaterThan(1000));
-      expect(
-        intent.toString(),
-        contains('https%3A%2F%2Fapp.example%2Fshare%2Fart1'),
-      );
-      expect(intent.toString(), endsWith('&text=via%20Raft'));
-      // Like Save: the review closes and the selection ends.
-      expect(find.byType(MessageImageReview), findsNothing);
-      expect(await t.runAsync(() => result), isTrue);
-    },
-  );
-
-  testWidgets(
-    'an answer without a share page keeps the preview and says Share failed',
+    'the review has no Share to X and makes no share-artifacts request',
     (t) async {
       final (box, _) = await open(
         t,
-        clipboard: const ImageClipboard(supportedOverride: false),
-        openExternal: (_) async => fail('no intent without an artifact'),
+        clipboard: const ImageClipboard(supportedOverride: true),
       );
-      // An answer without a share page is not a share.
-      box.routes['POST /share-artifacts/message-selection'] = (_) => {};
-      await t.tap(find.byKey(const ValueKey('image-review-share-link')));
-      await t.pump();
-      for (
-        var i = 0;
-        i < 240 &&
-            !box.calls.any(
-              (c) => c.path == '/share-artifacts/message-selection',
-            );
-        i++
-      ) {
-        await t.pump(const Duration(milliseconds: 500));
-        await t.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 25)),
-        );
-      }
-      for (var i = 0; i < 10; i++) {
-        await t.pump(const Duration(milliseconds: 500));
-        await t.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 25)),
-        );
-      }
-      expect(find.byType(MessageImageReview), findsOneWidget);
-      await t.pump();
-      expect(find.text('Share failed', findRichText: true), findsOneWidget);
+      expect(find.text('Share to X'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('image-review-share-link')),
+        findsNothing,
+      );
+      // Save and Copy stay.
+      expect(find.text('Save Image'), findsOneWidget);
+      expect(find.text('Copy image'), findsOneWidget);
+      await t.pumpAndSettle();
+      expect(
+        box.calls.where((c) => c.path.startsWith('/share-artifacts')),
+        isEmpty,
+      );
     },
   );
 
-  testWidgets('zh: the new buttons are Chinese', (t) async {
+  testWidgets('zh: the buttons are Chinese', (t) async {
     await open(
       t,
       clipboard: const ImageClipboard(supportedOverride: true),
-      openExternal: (_) async => true,
       locale: const Locale('zh', 'CN'),
     );
     expect(find.text('复制图片'), findsOneWidget);
-    expect(find.text('分享到 X'), findsOneWidget);
+    expect(find.text('分享到 X'), findsNothing);
   });
 }

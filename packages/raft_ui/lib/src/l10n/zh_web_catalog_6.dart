@@ -459,11 +459,9 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
   "Share an idea or report a problem.": "分享想法或报告问题。",
   "Share failed": "分享失败",
   "Share preview": "分享预览",
-  "Share to X": "分享到 X",
   "Share usage data": "共享使用数据",
   "Shared": "共享",
   "Shared by": "分享自",
-  "Sharing…": "分享中…",
   "She reads this before she says hello, and starts you somewhere that fits your work.":
       "她会在打招呼前先读这些，再按你的工作给你一个合适的起点。",
   "Show Recovery Guide": "显示恢复指南",
