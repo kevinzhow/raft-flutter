@@ -21,10 +21,10 @@ class SourceServerUnread {
 class SourceServerUnreadStore extends ChangeNotifier {
   SourceServerUnreadStore(this.workspace) {
     // The summary is a RisingWave read: a stale answer re-reads through here.
-    RwFreshnessStore.ofClient(workspace.client)
-        .register(RwSurface.summary, refresh);
+    _freshness.register(RwSurface.summary, refresh);
   }
   final WorkspaceController workspace;
+  late final _freshness = RwFreshnessStore.acquire(workspace.client);
   String? _scope;
   int _request = 0;
   bool _disposed = false;
@@ -153,8 +153,9 @@ class SourceServerUnreadStore extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    RwFreshnessStore.peek(workspace.client)
-        ?.unregister(RwSurface.summary, refresh);
+    _freshness
+      ..unregister(RwSurface.summary, refresh)
+      ..release();
     ++_request;
     _sweep?.dispose();
     unawaited(_prefsEvents?.cancel());
