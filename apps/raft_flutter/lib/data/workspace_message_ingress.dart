@@ -39,6 +39,27 @@ bool consumeWorkspaceMessageEvent(
   // Web liveGapFill setGapFillReader: a scheduled fill reads its channel.
   LiveGapFill.of(ledger).reader ??= (id) =>
       unawaited(MessageGapSync.run(messages, id));
+  if (event.name == 'thread:updated' && event.payload is Map) {
+    // Web v1.24 threadLiveReplies.ts: `message:new` of a thread under a DM or
+    // private parent reaches only its followers, so the open thread also
+    // takes its reply from `thread:updated`; the ledger keeps it once.
+    final reply = (event.payload as Map)['latestReply'];
+    final id = presentation.threadChannelId;
+    if (reply is Map &&
+        id != null &&
+        reply['channelId'] == id &&
+        reply['id'] is String &&
+        !context.isChannelRevoked(id) &&
+        !ledger.contains(id, reply['id']) &&
+        !windows.contextHasNewer(id)) {
+      final row = Map<String, dynamic>.from(reply);
+      presentation.storeMessage(row);
+      ledger.ingest([row], expectedGeneration: ledger.generation);
+      windows.reveal(liveWindowWrite, id, [row['id']]);
+      presentation.saveMessageWindow(id, thread: true);
+    }
+    return true;
+  }
   if (event.name == ThreadReplyUpdatedEvent.name) {
     final update = ThreadReplyUpdatedEvent.read(event.payload);
     // Merge-only: the inline preview, never the conversation's rows.
