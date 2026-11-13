@@ -65,6 +65,9 @@ class SourceServerUnreadStore extends ChangeNotifier {
       () => unawaited(refresh()),
     );
     _prefsEvents ??= workspace.client.events.listen((event) {
+      // Web v1.24 socketBridge `activity:changed`: object rows of a server
+      // changed for this person; the cross-server summary reads again.
+      if (event.name == 'activity:changed') return unawaited(refresh());
       if (event.name != 'notification_prefs:updated') return;
       final update = readNotificationPrefsUpdate(event.payload);
       if (update != null && update['type'] == 'server') unawaited(refresh());

@@ -1436,8 +1436,7 @@ class _WorkspaceSessionBindings
     event,
     context: this,
     presentation: this,
-    ledger: w.messageDomain.ledger,
-    windows: w.messageWindows,
+    messages: w.messageDomain,
   );
   @override
   void confirmMessageSend(Map<String, dynamic> row) =>

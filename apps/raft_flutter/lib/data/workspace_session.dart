@@ -17,6 +17,8 @@ import 'workspace_session_context.dart';
 import 'workspace_server_directory.dart';
 import 'workspace_session_features.dart';
 import 'heartbeat_gate.dart';
+import 'workspace_live_sync.dart';
+import 'workspace_session_read_events.dart';
 
 /// Receiver-local session, directory, connection and feature-flag policy.
 /// The composition root supplies separate typed ports; it is never retained as
@@ -293,7 +295,7 @@ class WorkspaceSession
     if (due('gap', freshness: const Duration(seconds: 3))) {
       unawaited(messages.syncVisibleScopes());
     }
-    if (due('channels')) {
+    if (!WorkspaceLiveSync.of(client).bySync && due('channels')) {
       unawaited(directory.refreshChannels(quietErrors: true));
     }
     if (due('unread')) unawaited(directory.refreshUnread());
@@ -333,7 +335,9 @@ class WorkspaceSession
     // Returning to the foreground (alt-tab on a desktop does it often): the
     // counts, sidebar and directory read less than 15 s ago are still fresh.
     if (due('unread')) unawaited(directory.refreshUnread());
-    if (due('sidebar')) directory.loadSidebar();
+    if (!WorkspaceLiveSync.of(client).resumed(this) && due('sidebar')) {
+      directory.loadSidebar();
+    }
     if (entityDirectory.started && due('authors')) {
       entityDirectory.revalidateLive();
     }
@@ -375,6 +379,7 @@ class WorkspaceSession
       return;
     }
     _lastServerEvent = DateTime.now();
+    if (ownsClient) WorkspaceLiveSync.of(client).receive(this, event);
     // Presence patches are owned by the entity directory; presentation
     // adapters observe that accepted state; no workspace state changes, so nothing is notified.
     if (presenceEvents.contains(event.name)) return;
@@ -393,7 +398,9 @@ class WorkspaceSession
         entries.recoverMembership(coalesce: true, quietErrors: true);
       }
       if (due('syncFlag')) entries.refreshMessageSyncFlag();
-      if (due('sidebar')) directory.loadSidebar();
+      if (!WorkspaceLiveSync.of(client).bySync && due('sidebar')) {
+        directory.loadSidebar();
+      }
       // The shared entity directory owns reconnect revalidation for every surface.
     }
     if (event.name == 'rooms:joined') roomsJoined();
@@ -486,30 +493,7 @@ class WorkspaceSession
         }
       }
     }
-    if (event.name == 'read_state:updated' ||
-        event.name == 'read_state:updated_bulk') {
-      final payload = event.payload;
-      if (payload is Map && client.serverId != null && client.user != null) {
-        final updates = event.name.endsWith('_bulk')
-            ? (payload['scopes'] as List? ?? [])
-            : [payload];
-        for (final update in updates) {
-          if (update is Map) {
-            final fact = {...update, 'serverId': payload['serverId']};
-            final outcome = readState.consumeUpdate(
-              fact,
-              serverId: client.serverId!,
-              principalId: client.user!.id,
-            );
-            if (outcome == 'accepted' && fact['scopeId'] is String) {
-              directory.projectReadState(fact['scopeId'] as String);
-              messages.applyReadStateHint(fact);
-            }
-          }
-        }
-      }
-      directory.persistReadState();
-    }
+    consumeReadStateEvent(this, event);
     if (event.name == 'reaction_viewer:updated' && client.serverId != null) {
       messages.acceptReactionViewer(event.payload, serverId: client.serverId!);
     }

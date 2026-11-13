@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:raft_client/raft_client.dart';
 
 import 'conversation_window.dart';
+import 'message_gap_sync.dart';
 import 'message_window_snapshot.dart';
 import 'message_history_pages.dart';
 import 'message_history_navigation.dart';
@@ -52,87 +53,7 @@ class WorkspaceMessageNavigation {
     }
   }
 
-  Future<bool> syncGap(String id) async {
-    final thread = id == m.state.threadChannelId;
-    var cursor = m.messageWindows.newestVisibleSequence(id);
-    if (cursor == BigInt.zero) return true;
-    final owner = thread ? m.threadParentChannelId : id;
-    final request = m.windowRequest(
-      id,
-      thread: thread,
-      allowed: () => thread
-          ? m.state.threadChannelId == id &&
-                !m.messageWindows.contextHasNewer(id)
-          : m.presentation.channel?.id == id && !m.state.hasNewer,
-    );
-    try {
-      while (true) {
-        final page = await MessageHistoryPages.read(
-          m,
-          request,
-          id,
-          thread: thread,
-          after: cursor,
-          limit: WorkspaceMessages.gapPageLimit,
-          localFirst: false,
-          remote: () async => {
-            'messages': await m.transport.client.get(
-              '/messages/sync',
-              query: {
-                'since_seq': '$cursor',
-                'channel_id': id,
-                'limit': WorkspaceMessages.gapPageLimit,
-              },
-            ),
-          },
-        );
-        if (!request.current) return false;
-        final listed = page['messages'] is List
-            ? page['messages'] as List
-            : const [];
-        final rows = [
-          for (final row in listed.whereType<Map>())
-            if (row['channelId'] == id && row['id'] is String)
-              Map<String, dynamic>.from(row),
-        ];
-        if (rows.isEmpty) break;
-        final arrived = [
-          for (final row in rows)
-            if (!m.ledger.contains(id, row['id'] as String)) row,
-        ];
-        m.messageWindows.acceptRows(request, id, rows);
-        if (!await MessageHistoryPages.record(m, request, page)) return false;
-        if (!request.current) return false;
-        var next = cursor;
-        for (final row in rows) {
-          final seq = RaftMessage(row).seq;
-          if (seq > next) next = seq;
-        }
-        if (m.channels.mayMarkRead(id) && !m.channels.scrolledAway.away(id)) {
-          unawaited(m.entries.markRead(id));
-        } else {
-          arrived.forEach(m.channels.receiveUnread);
-        }
-        unawaited(m.saveWindow(id, thread: thread));
-        m.context.changed();
-        if (listed.length < WorkspaceMessages.gapPageLimit || next <= cursor) {
-          break;
-        }
-        cursor = next;
-      }
-      return true;
-    } on RaftApiException catch (e) {
-      // Lost access is decided by the channel read and its revocation path.
-      if (request.current &&
-          owner != null &&
-          (e.status == 403 || e.status == 404)) {
-        unawaited(m.entries.refreshChannel(owner));
-      }
-      return false;
-    } catch (_) {
-      return false;
-    }
-  }
+  Future<bool> syncGap(String id) => MessageGapSync.run(m, id);
 
   Future<void> older({bool thread = false}) =>
       m.windowReceiver.olderLocal(thread);

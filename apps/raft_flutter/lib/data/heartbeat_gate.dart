@@ -3,6 +3,8 @@
 // visible scopes.
 import 'dart:async';
 
+import 'package:raft_sync/raft_sync.dart';
+
 import 'workspace_session.dart';
 
 /// Server v1.24 socket/index.ts joinMemberConversationRooms: after connecting
@@ -35,6 +37,12 @@ class HeartbeatGate {
     }
     final seq = payload is Map ? BigInt.tryParse('${payload['seq']}') : null;
     final synced = session.gapSyncedThrough, ledger = session.ledger;
+    // Web heartbeatNeedsScopeSync: a visible scope still showing live rows
+    // whose hole is unconfirmed is re-read whatever the seq says.
+    final channel = session.channel?.id;
+    if (channel != null && LiveGapFill.of(ledger).owes(channel)) {
+      return unawaited(session.messages.syncVisibleScopes());
+    }
     if (seq == null ||
         seq <= ledger.watermark ||
         synced != null && synced.$1 == ledger.generation && seq <= synced.$2) {
