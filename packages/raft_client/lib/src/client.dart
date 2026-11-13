@@ -2014,6 +2014,18 @@ class RaftClient {
     _socket?.emit('sync:resume', {'lastSeq': seq.toInt()});
   }
 
+  /// `sync:resume` of a round's first resume (server v1.24 syncResume.ts):
+  /// [sinceHorizon] is the `horizon` the previous round's answer carried, so
+  /// the server also sends messages that committed late behind it. Without a
+  /// horizon it is the plain [resume].
+  void resumeSince(BigInt seq, String? sinceHorizon) {
+    if (sinceHorizon == null) return resume(seq);
+    _socket?.emit('sync:resume', {
+      'lastSeq': seq.toInt(),
+      'sinceHorizon': sinceHorizon,
+    });
+  }
+
   /// Pause the live transport while preserving credentials and history.
   void suspendConnection() {
     _authRetry?.cancel();
