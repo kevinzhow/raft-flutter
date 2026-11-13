@@ -43,7 +43,7 @@ void main() {
     await events.close();
   });
 
-  test('user:profile-updated patches that member in place, no list read', () {
+  test('[BP-RT-073] user:profile-updated patches that member in place, no list read', () {
     final other = directory.member('other');
     var notified = 0;
     directory.addListener(() => notified++);
@@ -77,7 +77,7 @@ void main() {
     expect(notified, 1);
   });
 
-  test('[BP-RT-025] agent:activity_state moves the coarse activity with the '
+  test('[BP-RT-025] [BP-RT-075] agent:activity_state moves the coarse activity with the '
       'serverSeq order of agent:activity', () {
     events.add(
       const RaftEvent('agent:activity_state', {

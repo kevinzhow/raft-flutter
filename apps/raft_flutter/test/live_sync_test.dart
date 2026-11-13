@@ -149,7 +149,7 @@ void main() {
       expect(c.client.wire.where((e) => e.startsWith('sync')), isEmpty);
     });
 
-    test('a failed fill retries after 1 s', () async {
+    test('[BP-RT-046] a failed fill retries after 1 s', () async {
       final c = _Case();
       addTearDown(c.close);
       await c.seed();
@@ -183,29 +183,32 @@ void main() {
       expect(c.shown, contains('m101'));
     });
 
-    test('a channel this person lost stops reading /messages/sync', () async {
-      final c = _Case();
-      addTearDown(c.close);
-      await c.seed();
-      c.client.syncFailures.add(
-        RaftApiException.response(
-          'Access denied',
-          status: 403,
-          body: {'error': 'Access denied'},
-        ),
-      );
-      c.live(102);
-      await c.settle();
-      expect(ChannelAccessLoss.of(c.client).isLost('chat'), isTrue);
-      c.client.incoming.add(const RaftEvent('heartbeat', {'seq': 500}));
-      await Future<void>.delayed(const Duration(milliseconds: 1200));
-      await c.settle();
-      expect(c.client.wire, [
-        'sync 100',
-      ], reason: 'no retry, no heartbeat read');
-      ChannelAccessLoss.of(c.client).clear('chat');
-      expect(ChannelAccessLoss.of(c.client).isLost('chat'), isFalse);
-    });
+    test(
+      '[BP-RT-046] a channel this person lost stops reading /messages/sync',
+      () async {
+        final c = _Case();
+        addTearDown(c.close);
+        await c.seed();
+        c.client.syncFailures.add(
+          RaftApiException.response(
+            'Access denied',
+            status: 403,
+            body: {'error': 'Access denied'},
+          ),
+        );
+        c.live(102);
+        await c.settle();
+        expect(ChannelAccessLoss.of(c.client).isLost('chat'), isTrue);
+        c.client.incoming.add(const RaftEvent('heartbeat', {'seq': 500}));
+        await Future<void>.delayed(const Duration(milliseconds: 1200));
+        await c.settle();
+        expect(c.client.wire, [
+          'sync 100',
+        ], reason: 'no retry, no heartbeat read');
+        ChannelAccessLoss.of(c.client).clear('chat');
+        expect(ChannelAccessLoss.of(c.client).isLost('chat'), isFalse);
+      },
+    );
 
     test('another 403 (not a channel denial) does not mark the channel', () {
       final c = HistoryAuditClient();
@@ -238,7 +241,7 @@ void main() {
     });
 
     test(
-      'a reconnect takes a cursor, then reads the lists after it; the next '
+      '[BP-RT-041] a reconnect takes a cursor, then reads the lists after it; the next '
       'reconnect pulls instead of re-reading the sidebar and channels',
       () async {
         final c = await connected();
@@ -281,7 +284,7 @@ void main() {
       expect(WorkspaceLiveSync.of(c.client).syncSession!.hasCursor, isFalse);
     });
 
-    test('sync:changed pulls at once; a sidebar_order change re-reads it; '
+    test('[BP-RT-077] sync:changed pulls at once; a sidebar_order change re-reads it; '
         'invalid_cursor drops the cursor and reloads the lists', () async {
       final c = await connected();
       c.client.changes.addAll([
@@ -351,90 +354,99 @@ void main() {
   });
 
   group('new socket events', () {
-    test('user:profile-updated patches the signed-in person', () async {
-      final c = _Case();
-      addTearDown(c.close);
-      c.client.user = RaftRecord({
-        'id': _peerA,
-        'name': 'alice',
-        'email': 'kept',
-      });
-      c.w.toString();
-      c.client.incoming.add(
-        const RaftEvent('user:profile-updated', {
-          'serverId': _peerB,
-          'userId': _peerA,
-          'name': 'alice2',
-          'displayName': 'Alice',
-          'avatarUrl': null,
-          'gravatarHash': '',
-        }),
-      );
-      await c.settle();
-      expect(c.client.user!.json['displayName'], 'Alice');
-      expect(c.client.user!.json['name'], 'alice2');
-      expect(c.client.user!.json['email'], 'kept');
-    });
+    test(
+      '[BP-RT-073] user:profile-updated patches the signed-in person',
+      () async {
+        final c = _Case();
+        addTearDown(c.close);
+        c.client.user = RaftRecord({
+          'id': _peerA,
+          'name': 'alice',
+          'email': 'kept',
+        });
+        c.w.toString();
+        c.client.incoming.add(
+          const RaftEvent('user:profile-updated', {
+            'serverId': _peerB,
+            'userId': _peerA,
+            'name': 'alice2',
+            'displayName': 'Alice',
+            'avatarUrl': null,
+            'gravatarHash': '',
+          }),
+        );
+        await c.settle();
+        expect(c.client.user!.json['displayName'], 'Alice');
+        expect(c.client.user!.json['name'], 'alice2');
+        expect(c.client.user!.json['email'], 'kept');
+      },
+    );
 
-    test('appearance:updated patches the server row theme', () async {
-      final c = _Case();
-      addTearDown(c.close);
-      c.w.servers = [
-        RaftRecord({'id': 'server', 'role': 'owner', 'theme': null}),
-      ];
-      c.client.incoming.add(
-        const RaftEvent('appearance:updated', {
-          'serverId': 'server',
-          'theme': 'space',
-          'themeDecor': true,
-        }),
-      );
-      await c.settle();
-      expect(c.w.servers.single.json['theme'], 'space');
-      expect(c.w.servers.single.json['themeDecor'], true);
-    });
+    test(
+      '[BP-RT-074] appearance:updated patches the server row theme',
+      () async {
+        final c = _Case();
+        addTearDown(c.close);
+        c.w.servers = [
+          RaftRecord({'id': 'server', 'role': 'owner', 'theme': null}),
+        ];
+        c.client.incoming.add(
+          const RaftEvent('appearance:updated', {
+            'serverId': 'server',
+            'theme': 'space',
+            'themeDecor': true,
+          }),
+        );
+        await c.settle();
+        expect(c.w.servers.single.json['theme'], 'space');
+        expect(c.w.servers.single.json['themeDecor'], true);
+      },
+    );
 
-    test('thread:reply_updated edits the inline preview in place', () async {
-      final c = _Case();
-      addTearDown(c.close);
-      c.client.summaries = {
-        'm100': {
-          'threadChannelId': 'thread',
-          'replyCount': 1,
-          'latestReplies': [
-            {
-              'messageId': 'r1',
-              'seq': 900,
-              'preview': 'original',
-              'senderId': 'bob',
-              'senderType': 'user',
-              'createdAt': '2026-11-01T00:00:00Z',
-            },
-          ],
-        },
-      };
-      await c.seed();
-      c.client.incoming.add(
-        const RaftEvent('thread:reply_updated', {
-          'id': 'r1',
-          'seq': 900,
-          'channelId': 'thread',
-          'content': 'edited',
-          'updatedAt': '2026-11-02T00:00:00Z',
-          'createdAt': '2026-11-01T00:00:00Z',
-          'conversationContext': {
-            'channelType': 'thread',
-            'parentMessageId': 'm100',
-            'parentChannelId': 'chat',
+    test(
+      '[BP-RT-078] thread:reply_updated edits the inline preview in place',
+      () async {
+        final c = _Case();
+        addTearDown(c.close);
+        c.client.summaries = {
+          'm100': {
+            'threadChannelId': 'thread',
+            'replyCount': 1,
+            'latestReplies': [
+              {
+                'messageId': 'r1',
+                'seq': 900,
+                'preview': 'original',
+                'senderId': 'bob',
+                'senderType': 'user',
+                'createdAt': '2026-11-01T00:00:00Z',
+              },
+            ],
           },
-        }),
-      );
-      await c.settle();
-      final summary =
-          c.w.messageDomain.threadSummariesFor('chat')['m100'] as Map;
-      expect((summary['latestReplies'] as List).single['preview'], 'edited');
-      expect(summary['replyCount'], 1);
-    });
+        };
+        await c.seed();
+        c.client.incoming.add(
+          const RaftEvent('thread:reply_updated', {
+            'id': 'r1',
+            'seq': 900,
+            'channelId': 'thread',
+            'content': 'edited',
+            'updatedAt': '2026-11-02T00:00:00Z',
+            'createdAt': '2026-11-01T00:00:00Z',
+            'conversationContext': {
+              'channelType': 'thread',
+              'parentMessageId': 'm100',
+              'parentChannelId': 'chat',
+            },
+          }),
+        );
+        await c.settle();
+        final summary =
+            c.w.messageDomain.threadSummariesFor('chat')['m100'] as Map;
+        expect((summary['latestReplies'] as List).single['preview'], 'edited');
+        expect(summary['replyCount'], 1);
+      },
+    );
   });
 
   group('POST /actors/resolve (Web actorResolve.ts)', () {
@@ -471,25 +483,28 @@ void main() {
       expect(client.resolved, hasLength(2), reason: 'off after a 404');
     });
 
-    test('actor:updated refreshes the row of the current scope', () async {
-      final c = _Case();
-      addTearDown(c.close);
-      c.w.toString();
-      c.client.incoming.add(
-        const RaftEvent('actor:updated', {
-          'kind': 'agent',
-          'id': _peerA,
-          'homeServerId': _peerB,
-          'name': 'renamed',
-          'displayName': 'Renamed',
-          'avatarUrl': null,
-        }),
-      );
-      await c.settle();
-      expect(
-        ActorDirectory.of(c.client).row('agent', _peerA)!.displayName,
-        'Renamed',
-      );
-    });
+    test(
+      '[BP-RT-072] actor:updated refreshes the row of the current scope',
+      () async {
+        final c = _Case();
+        addTearDown(c.close);
+        c.w.toString();
+        c.client.incoming.add(
+          const RaftEvent('actor:updated', {
+            'kind': 'agent',
+            'id': _peerA,
+            'homeServerId': _peerB,
+            'name': 'renamed',
+            'displayName': 'Renamed',
+            'avatarUrl': null,
+          }),
+        );
+        await c.settle();
+        expect(
+          ActorDirectory.of(c.client).row('agent', _peerA)!.displayName,
+          'Renamed',
+        );
+      },
+    );
   });
 }
