@@ -48,7 +48,28 @@ Map<String, dynamic>? projectThreadReply(
         ? m['senderAvatarUrl']
         : null,
     'createdAt': m['createdAt'] is String ? m['createdAt'] : '',
+    // Web ThreadReplyPreview v1.24: the content version of an edit in place.
+    if (m['updatedAt'] is String) 'updatedAt': m['updatedAt'],
+    'cardRevision': ?messageCardRevision(m['actionMetadata']),
   };
+}
+
+/// Web shared messageCard.ts: the card revision of a card message, else null.
+int? messageCardRevision(dynamic actionMetadata) {
+  final m = _map(actionMetadata);
+  final revision = m?['revision'];
+  return m != null &&
+          m['kind'] == 'message-card' &&
+          revision is int &&
+          revision >= 1 &&
+          m['card'] is Map
+      ? revision
+      : null;
+}
+
+int _contentVersion(Map reply) {
+  final at = reply['updatedAt'] ?? reply['createdAt'];
+  return at is String ? DateTime.tryParse(at)?.millisecondsSinceEpoch ?? 0 : 0;
 }
 
 Map<String, dynamic>? _preview(dynamic value) {
@@ -131,6 +152,46 @@ class ThreadRepliesScope {
     return ThreadRepliesScope(
       replies: window,
       replyCount: nextCount,
+      snapshotSeq: snapshotSeq,
+      historyLimited: historyLimited,
+      epoch: epoch,
+    );
+  }
+}
+
+extension ThreadReplyUpdate on ThreadRepliesScope {
+  /// Web threadRepliesReadModel applyThreadReplyUpdate: edit a retained
+  /// reply (same id and seq) when [updatedAt] is newer and its card revision
+  /// is not older; never insert, reorder or change counts.
+  ThreadRepliesScope applyUpdate({
+    required String messageId,
+    required int seq,
+    required String preview,
+    required String updatedAt,
+    int? cardRevision,
+  }) {
+    final version = DateTime.tryParse(updatedAt)?.millisecondsSinceEpoch;
+    if (version == null) return this;
+    final index = replies.indexWhere(
+      (r) => r['messageId'] == messageId && r['seq'] == seq,
+    );
+    if (index < 0) return this;
+    final existing = replies[index];
+    final held = existing['cardRevision'];
+    if (held is int && cardRevision != null && cardRevision < held) {
+      return this;
+    }
+    if (version <= _contentVersion(existing)) return this;
+    final next = [...replies];
+    next[index] = {
+      ...existing,
+      'preview': preview,
+      'updatedAt': updatedAt,
+      'cardRevision': ?cardRevision,
+    };
+    return ThreadRepliesScope(
+      replies: next,
+      replyCount: replyCount,
       snapshotSeq: snapshotSeq,
       historyLimited: historyLimited,
       epoch: epoch,
@@ -411,6 +472,50 @@ class ThreadRepliesSync {
     );
     _pending[frame.scopeId] = _PendingReplies(request, frame);
     return ThreadRepliesResult('rebaseline_requested', request: request);
+  }
+
+  /// Web threadRepliesSyncDomain consumeThreadReplyUpdateWithSyncCore: a
+  /// thread reply's new copy (`thread:reply_updated`, `message:updated`, a
+  /// sync `message` change) edits its inline preview in place. Returns the
+  /// parent message id and the edited scope, or null when nothing held
+  /// changed.
+  ({String parentMessageId, ThreadRepliesScope scope})? applyReplyUpdate(
+    Map<String, dynamic> message, {
+    required String serverId,
+    required String principalId,
+  }) {
+    final context = _map(message['conversationContext']);
+    final parent = context?['parentMessageId'];
+    final thread = message['channelId'], id = message['id'];
+    final seq = _safe(message['seq']);
+    final updatedAt = message['updatedAt'], content = message['content'];
+    if (context?['channelType'] != 'thread' ||
+        parent is! String ||
+        thread is! String ||
+        id is! String ||
+        seq == null ||
+        updatedAt is! String ||
+        content is! String) {
+      return null;
+    }
+    final scopeKey = scopeId(serverId, principalId, parent, thread);
+    final canonical = scope(scopeKey);
+    final current = canonical ?? _legacy[scopeKey];
+    if (current == null) return null;
+    final updated = current.applyUpdate(
+      messageId: id,
+      seq: seq,
+      preview: content,
+      updatedAt: updatedAt,
+      cardRevision: messageCardRevision(message['actionMetadata']),
+    );
+    if (identical(updated, current)) return null;
+    if (canonical != null &&
+        !core.replaceState(threadRepliesDomain, scopeKey, updated)) {
+      return null;
+    }
+    _legacy[scopeKey] = updated;
+    return (parentMessageId: parent, scope: updated);
   }
 
   void release(ThreadRebaselineRequest request) {

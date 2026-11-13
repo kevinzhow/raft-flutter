@@ -316,6 +316,17 @@ class SyncCore {
       .map((e) => Map<String, dynamic>.unmodifiable(e))
       .toList(growable: false);
   dynamic state(String domain, String scope) => _scopes[domain]?[scope]?.state;
+
+  /// Replace an applied scope's state in place (an edit that moves no seq:
+  /// Web threadRepliesSyncDomain re-ingests it at the applied watermark).
+  /// False when the scope holds no applied state.
+  bool replaceState(String domain, String scope, dynamic state) {
+    final e = _scopes[domain]?[scope];
+    if (e == null || e.appliedSeq == null) return false;
+    e.state = state;
+    return true;
+  }
+
   Iterable<String> scopeIds(String domain) =>
       List.unmodifiable(_scopes[domain]?.keys ?? const <String>[]);
 
