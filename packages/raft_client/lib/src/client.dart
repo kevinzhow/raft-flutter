@@ -366,6 +366,7 @@ class RaftClient {
   static const rwOverloadRetriedPaths = {
     '/channels/unread',
     '/channels/inbox',
+    '/channels/threads/followed',
     '/servers/unread-summary',
   };
   static const rwOverloadDefaultRetryAfter = Duration(seconds: 2);
