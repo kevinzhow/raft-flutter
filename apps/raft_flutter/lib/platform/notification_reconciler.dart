@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../data/activity_attention.dart';
+import '../data/notification_levels.dart';
 import 'account_activity_unread.dart';
 import '../data/resource_row_reconcile.dart' show activityScopeId;
 import '../data/source_activity_unread_store.dart';
@@ -49,7 +50,7 @@ class NotificationReconciler {
   bool _closed = false, _dirty = false;
   Future<void>? _running;
   int _epoch = 0;
-  ({DateTime at, Object? value, Object scope})? _settings;
+  ({DateTime at, BackgroundNotificationPolicy? value, Object scope})? _settings;
 
   /// Notification settings are read again after this long.
   static const settingsFreshness = Duration(seconds: 30);
@@ -195,26 +196,29 @@ class NotificationReconciler {
         if (id != null && !live.containsKey(id)) wanted.add(id);
       }
     }
-    String? mode;
-    var modeRead = false;
-    Future<String?> pushMode() async {
-      if (!modeRead) {
-        mode = await _pushMode(w);
-        modeRead = true;
+    BackgroundNotificationPolicy? policy;
+    var policyRead = false;
+    Future<BackgroundNotificationPolicy?> readPolicy() async {
+      if (!policyRead) {
+        policy = await _policy(w);
+        policyRead = true;
       }
-      return mode;
+      return policy;
     }
 
     if (wanted.isNotEmpty) {
-      if (await pushMode() == null || stale()) return;
+      final rules = await readPolicy();
+      if (rules == null || !rules.anyMentions || stale()) return;
       for (final row in rows) {
         final id = activityScopeId(row);
         if (id == null || !wanted.contains(id)) continue;
+        final level = rules.levelOf(row);
+        if (level == NotificationLevel.none) continue;
         final alert = BackgroundInboxAlert.fromRow(
           row,
           serverId,
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-          mentionsOnly: mode == 'mentions',
+          mentionsOnly: level == NotificationLevel.mentions,
         );
         if (alert == null) continue;
         await notifications.show(
@@ -245,7 +249,9 @@ class NotificationReconciler {
     if (residual == 0) {
       if (had != null) await notifications.cancelConversations([moreKey]);
     } else if (had != residual && (had != null || background)) {
-      if (await pushMode() != 'all' || stale()) return;
+      if ((await readPolicy())?.server != NotificationLevel.all || stale()) {
+        return;
+      }
       await notifications.show(
         title: 'Raft',
         body: notifications
@@ -265,9 +271,10 @@ class NotificationReconciler {
   /// Opens the app, nothing else (it carries no target).
   static const moreNotificationPayload = 'raft-activity';
 
-  /// `all`, `mentions`, or null when the member muted this server's push or
-  /// the setting cannot be read.
-  Future<String?> _pushMode(WorkspaceController w) async {
+  /// The server's levels (and its channels') for the shade restore, cached
+  /// for [settingsFreshness]; null when the server answers neither the
+  /// v1.24 levels nor the older server-wide mode.
+  Future<BackgroundNotificationPolicy?> _policy(WorkspaceController w) async {
     Object currentScope() => (
       notificationScope(w.client),
       w.services.activityUnreadIfBound?.scope,
@@ -275,22 +282,18 @@ class NotificationReconciler {
     );
     final scope = currentScope();
     final cached = _settings;
-    Object? value;
     if (cached != null &&
         cached.scope == scope &&
         _clock().difference(cached.at) < settingsFreshness) {
-      value = cached.value;
-    } else {
-      value = await w.sharedQuery(
-        '/servers/${w.client.serverId}/notification-settings',
-      );
-      if (!_closed && identical(_workspace, w) && scope == currentScope()) {
-        _settings = (at: _clock(), value: value, scope: scope);
-      }
+      return cached.value;
     }
-    if (value is! Map || value['serverPushMuted'] == true) return null;
-    final mode = value['serverPushMode'];
-    return mode == 'all' || mode == 'mentions' ? mode as String : null;
+    final server = w.server;
+    if (server == null) return null;
+    final value = await BackgroundNotificationPolicy.read(w.client, server);
+    if (!_closed && identical(_workspace, w) && scope == currentScope()) {
+      _settings = (at: _clock(), value: value, scope: scope);
+    }
+    return value;
   }
 
   void dispose() {

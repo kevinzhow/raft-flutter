@@ -1,25 +1,33 @@
+// Settings › Notifications v2 (Web v1.24.0 NotificationSettingsSection):
+// this device, pause and schedule, the content every device shows, every
+// server's level, and the link to this server's own. The HTTP fixture answers
+// the v1.24 routes; the requests are asserted exactly.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_flutter/data/notification_levels.dart';
+import 'package:raft_flutter/data/notification_settings_api.dart';
+import 'package:raft_flutter/data/notification_settings_store.dart';
+import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/notification_level_menu.dart';
 import 'package:raft_flutter/features/notification_settings_view.dart';
 import 'package:raft_flutter/platform/battery_optimization.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
+import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-import 'native_notifications_test.dart' show deferredMacNotifications;
+typedef Reply = ({int status, Object body});
 
 class Adapter implements HttpClientAdapter {
   final calls = <RequestOptions>[];
-  FutureOr<Map<String, dynamic>> Function(RequestOptions)? settings;
-  int status = 200;
+  final routes = <String, FutureOr<Reply> Function(RequestOptions)>{};
   @override
   Future<ResponseBody> fetch(
     RequestOptions o,
@@ -27,86 +35,145 @@ class Adapter implements HttpClientAdapter {
     Future<void>? c,
   ) async {
     calls.add(o);
-    final data = o.path == '/auth/login'
-        ? {
-            'accessToken': 'fixture',
-            'refreshToken': 'fixture',
-            'user': {'id': 'alice'},
-          }
-        : await settings!(o);
+    final route = routes['${o.method} ${o.path}'];
+    final Reply reply = o.path == '/auth/login'
+        ? (
+            status: 200,
+            body: {
+              'accessToken': 'fixture',
+              'refreshToken': 'fixture',
+              'user': {'id': 'alice'},
+            },
+          )
+        : route == null
+        ? (status: 404, body: {'error': 'Unexpected'})
+        : await route(o);
     return ResponseBody.fromString(
-      jsonEncode(data),
-      status,
+      jsonEncode(reply.body),
+      reply.status,
       headers: {
         Headers.contentTypeHeader: ['application/json'],
       },
     );
   }
 
+  List<RequestOptions> sent(String method, String path) => [
+    for (final c in calls)
+      if (c.method == method && c.path == path) c,
+  ];
+
   @override
   void close({bool force = false}) {}
 }
 
+Map<String, dynamic> settings({
+  int version = 3,
+  String? pausedUntil,
+  bool quiet = false,
+  String previewMode = 'full',
+  bool sound = true,
+  String mobileDelay = 'inactive',
+  bool followed = true,
+}) => {
+  'pausedUntil': pausedUntil,
+  'quietHours': {
+    'enabled': quiet,
+    'startMinute': 22 * 60,
+    'endMinute': 8 * 60,
+    'timeZone': 'Europe/Berlin',
+  },
+  'previewMode': previewMode,
+  'sound': sound,
+  'mobileDelay': mobileDelay,
+  'followedThreadReplies': followed,
+  'version': version,
+};
+
 class Service extends NativeNotificationService {
   Service({TargetPlatform platform = TargetPlatform.android})
     : super(platform: platform) {
+    addTearDown(dispose);
     available = true;
+    initialized = true;
+    permitted = true;
   }
-  int enables = 0, tests = 0, settings = 0;
-  String? testTitle, testBody;
-  bool testResult = true, grant = true;
-  Completer<void>? gate;
+  int enables = 0, tests = 0, settingsOpened = 0;
+  bool grant = true;
   @override
   Future<void> requestEnable(bool next) async {
     enables++;
-    await (gate?.future ?? Future<void>.value());
     enabled = next && grant;
     permitted = grant;
-    permissionPromptSkipped = !grant;
     notifyListeners();
   }
 
   @override
   Future<bool> test({String? title, String? body}) async {
     tests++;
-    testTitle = title;
-    testBody = body;
-    return testResult;
+    return true;
   }
 
   @override
-  Future<void> openSettings() async {
-    settings++;
-  }
+  Future<void> openSettings() async => settingsOpened++;
 }
 
 class _Battery extends BatteryOptimization {
   _Battery(this.value) : super(supported: true);
   bool? value;
-  int opened = 0;
   @override
   Future<bool?> exempt() async => value;
-  @override
-  Future<bool> openSettings() async {
-    opened++;
-    return true;
-  }
 }
 
-Future<(WorkspaceController, Adapter, Service)> fixture() async {
+Future<(WorkspaceController, Adapter)> fixture(WidgetTester t) async {
   final a = Adapter();
-  final c = RaftClient(
-    origin: 'https://example.invalid',
-    sessionStore: MemorySessionStore(),
-    transport: Dio()..httpClientAdapter = a,
+  final w = (await t.runAsync(() async {
+    final c = RaftClient(
+      origin: 'https://example.invalid',
+      sessionStore: MemorySessionStore(),
+      transport: Dio()..httpClientAdapter = a,
+    );
+    await c.login('fixture', 'fixture');
+    c.selectServer('s1');
+    return WorkspaceController(c);
+  }))!;
+  addTearDown(w.dispose);
+  w.server = RaftRecord({
+    'id': 's1',
+    'slug': 'alpha',
+    'name': 'Alpha',
+    'role': 'member',
+  });
+  w.servers = [
+    RaftRecord({'id': 's2', 'slug': 'beta', 'name': 'Beta', 'role': 'member'}),
+    w.server!,
+  ];
+  w.channels = [
+    RaftChannel({'id': 'c1', 'name': 'general', 'joined': true}),
+  ];
+  a.routes['GET /me/notification-settings'] = (_) => (
+    status: 200,
+    body: {
+      'settings': settings(),
+      'servers': [
+        {'serverId': 's1', 'level': 'all'},
+        {'serverId': 's2', 'level': 'mentions'},
+      ],
+    },
   );
-  await c.login('fixture', 'fixture');
-  c.selectServer('s1');
-  final w = WorkspaceController(c);
-  w.server = RaftRecord({'id': 's1', 'name': 'Fixture', 'role': 'guest'});
-  w.servers = [w.server!];
-  a.settings = (_) => {'serverPushMuted': false, 'prefsVersion': 1};
-  return (w, a, Service());
+  a.routes['GET /notification-levels'] = (o) => (
+    status: 200,
+    body: {
+      'serverId': o.headers['X-Server-Id'],
+      'server': o.headers['X-Server-Id'] == 's2' ? 'mentions' : 'all',
+      'channels': o.headers['X-Server-Id'] == 's1'
+          ? [
+              {'id': 'c1', 'level': 'mentions'},
+            ]
+          : [],
+      'threads': [],
+    },
+  );
+  return (w, a);
 }
 
 Widget host(
@@ -115,509 +182,521 @@ Widget host(
   bool dark = false,
   Locale? locale,
   BatteryOptimization? battery,
+  Future<TestNotificationOutcome> Function()? runDesktopTest,
 }) => MaterialApp(
   locale: locale,
   localizationsDelegates: GlobalMaterialLocalizations.delegates,
   supportedLocales: const [Locale('en'), Locale('zh')],
   theme: raftTheme(dark: dark),
-  home: Scaffold(
-    body: SingleChildScrollView(
-      child: NotificationSettingsView(
-        controller: w,
-        service: s,
-        battery: battery,
+  home: RaftToastHost(
+    child: Scaffold(
+      body: SingleChildScrollView(
+        child: NotificationSettingsView(
+          controller: w,
+          service: s,
+          battery: battery ?? _Battery(true),
+          now: () => DateTime.utc(2026, 11, 14, 10),
+          timeZone: () async => 'Europe/Berlin',
+          runDesktopTest: runDesktopTest,
+        ),
       ),
     ),
   ),
 );
-RaftNotificationSettingsCard card(WidgetTester t) =>
-    t.widget(find.byType(RaftNotificationSettingsCard));
-Future<void> drain(WidgetTester t) async {
-  await t.pump();
-  await t.pump(const Duration(milliseconds: 350));
+
+Future<void> settle(WidgetTester t) async {
+  for (var i = 0; i < 6; i++) {
+    await t.runAsync(() => Future<void>.delayed(Duration.zero));
+    await t.pump(const Duration(milliseconds: 50));
+  }
 }
+
+Map<String, dynamic> body(RequestOptions o) =>
+    Map<String, dynamic>.from(o.data as Map);
 
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
-      'member mute real checkbox/keyboard/save ${dark ? 'dark' : 'light'}',
+      'v2 sections in Web order; account values from the server ${dark ? 'dark' : 'light'}',
       (t) async {
-        final f = (await t.runAsync(fixture))!;
-        final (w, a, s) = f;
-        addTearDown(w.dispose);
-        addTearDown(s.dispose);
-        await t.pumpWidget(host(w, s, dark: dark));
-        await t.pumpAndSettle();
-        expect(card(t).onSave, isNull);
-        expect(card(t).muted, isFalse);
-        await t.tap(find.byType(RaftCheckbox));
-        await drain(t);
-        expect(card(t).onSave, isNotNull);
-        a.settings = (o) {
-          expect(o.method, 'PATCH');
-          expect(o.data, {'serverPushMuted': true});
-          return {'serverPushMuted': true, 'prefsVersion': 2};
-        };
-        await t.ensureVisible(
-          find.byKey(const ValueKey('notification-settings-save')),
-        );
-        await t.tap(find.byKey(const ValueKey('notification-settings-save')));
-        await t.pumpAndSettle();
-        expect(w.server!.json['serverPushMuted'], true);
-        expect(card(t).onSave, isNull);
+        final (w, a) = await fixture(t);
+        await t.pumpWidget(host(w, Service(), dark: dark));
+        await settle(t);
+        double y(String key) => t.getTopLeft(find.byKey(ValueKey(key))).dy;
+        expect(y('push-notifications') < y('notification-pause-card'), isTrue);
         expect(
-          find.text('Notifications from Fixture are muted.'),
-          findsOneWidget,
+          y('notification-pause-card') < y('notification-content-card'),
+          isTrue,
         );
-        expect(a.calls.where((o) => o.method == 'PATCH').length, 1);
-        // Keyboard traversal uses the actual recipe controls, not direct callbacks.
-        await t.sendKeyEvent(LogicalKeyboardKey.tab);
-        await t.pump();
-        await t.sendKeyEvent(LogicalKeyboardKey.space);
-        await drain(t);
-        expect(t.takeException(), isNull);
+        expect(
+          y('notification-content-card') < y('notification-servers-card'),
+          isTrue,
+        );
+        expect(
+          y('notification-servers-card') <
+              y('settings-server-notifications-link'),
+          isTrue,
+        );
+        for (final title in [
+          'This device',
+          'Pause and schedule',
+          'All devices',
+          'Servers',
+          'Pause notifications',
+          'Quiet hours',
+          'Notification preview',
+          'Phone alerts',
+          'Sound',
+          'Replies in threads I follow',
+          'Alpha (current)',
+          'Beta',
+          'Notifications on Alpha',
+        ]) {
+          expect(find.text(title), findsOneWidget, reason: title);
+        }
+        // The current server first; Beta at its own level.
+        expect(
+          y('notification-server-row-s1') < y('notification-server-row-s2'),
+          isTrue,
+        );
+        expect(
+          t
+              .widget<RaftSettingsSelect<NotificationLevelChoice>>(
+                find.byKey(const ValueKey('notification-server-level-s2')),
+              )
+              .value,
+          NotificationLevelChoice.mentions,
+        );
+        expect(a.sent('GET', '/me/notification-settings'), hasLength(1));
+        expect(
+          {
+            for (final c in a.sent('GET', '/notification-levels'))
+              c.headers['X-Server-Id'],
+          },
+          {'s1', 's2'},
+        );
+        // The legacy per-server route is not used any more (API-15 / API-18).
+        expect(a.calls.where((c) => c.path.startsWith('/servers/')), isEmpty);
       },
     );
   }
+
   testWidgets(
-    'server projection seeds the first frame; channel switches keep it without reloading',
+    'pause presets PATCH pausedUntil with the held version; Resume clears it',
     (t) async {
-      final (w, a, s) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      addTearDown(s.dispose);
-      w.server = RaftRecord({
-        ...w.server!.json,
-        'serverPushMuted': true,
-        'notificationPrefsVersion': 4,
+      final (w, a) = await fixture(t);
+      final until = DateTime.utc(2026, 11, 14, 10, 30).toIso8601String();
+      a.routes['PATCH /me/notification-settings'] = (o) => (
+        status: 200,
+        body: {
+          'settings': settings(
+            version: 4,
+            pausedUntil: body(o)['pausedUntil'] as String?,
+          ),
+        },
+      );
+      await t.pumpWidget(host(w, Service()));
+      await settle(t);
+      t
+          .widget<RaftSettingsSelect<Object>>(
+            find.byKey(const ValueKey('notification-pause-select')),
+          )
+          .onChanged!(PausePreset.m30);
+      await settle(t);
+      final patch = a.sent('PATCH', '/me/notification-settings').single;
+      expect(body(patch), {'pausedUntil': until, 'version': 3});
+      expect(
+        find.textContaining('Paused on all your devices until'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('notification-pause-resume')),
+        findsOneWidget,
+      );
+      await t.tap(find.byKey(const ValueKey('notification-pause-resume')));
+      await settle(t);
+      expect(body(a.sent('PATCH', '/me/notification-settings').last), {
+        'pausedUntil': null,
+        'version': 4,
       });
-      w.channel = RaftChannel({'id': 'c1', 'name': 'design', 'joined': true});
-      final gate = Completer<Map<String, dynamic>>();
-      a.settings = (_) => gate.future;
-      await t.pumpWidget(host(w, s));
-      // First frame: final value, editable, no loading state.
-      expect(card(t).muted, true);
-      expect(card(t).status, isNot('Checking…'));
-      expect(card(t).onMutedChanged, isNotNull);
-      int reads() => a.calls
-          .where((o) => o.path.endsWith('/notification-settings'))
-          .length;
-      final before = reads();
-      for (var i = 0; i < 3; i++) {
-        w.channel = RaftChannel({'id': 'c$i', 'name': 'c$i', 'joined': true});
-        w.messageWindows.channelGeneration++;
-        w.messageWindows.threadGeneration++;
-        w.notifyListeners();
-        await t.pump();
-        expect(card(t).muted, true, reason: 'switch $i');
-        expect(card(t).status, isNot('Checking…'), reason: 'switch $i');
-      }
-      expect(reads(), before);
-      gate.complete({'serverPushMuted': true, 'prefsVersion': 4});
-      await t.pumpAndSettle();
-      expect(card(t).muted, true);
-      // An identity change still clears before the new read lands.
-      w.server = RaftRecord({'id': 's1', 'name': 'Fixture', 'role': 'member'});
-      final next = Completer<Map<String, dynamic>>();
-      a.settings = (_) => next.future;
-      w.notifyListeners();
-      await t.pump();
-      expect(card(t).muted, false);
-      expect(card(t).onMutedChanged, isNull);
-      next.complete({'serverPushMuted': false, 'prefsVersion': 1});
-      await t.pumpAndSettle();
-      await t.pumpWidget(const SizedBox());
-    },
-  );
-  testWidgets('late GET cannot undo accepted newer realtime preference', (
-    t,
-  ) async {
-    final (w, a, s) = (await t.runAsync(fixture))!;
-    addTearDown(w.dispose);
-    addTearDown(s.dispose);
-    final gate = Completer<Map<String, dynamic>>();
-    a.settings = (_) => gate.future;
-    await t.pumpWidget(host(w, s));
-    await t.pump();
-    w.server = RaftRecord({
-      ...w.server!.json,
-      'serverPushMuted': true,
-      'notificationPrefsVersion': 8,
-    });
-    w.notifyListeners();
-    await t.pump();
-    expect(card(t).muted, true);
-    gate.complete({'serverPushMuted': false, 'prefsVersion': 3});
-    await t.pumpAndSettle();
-    expect(card(t).muted, true);
-    expect(w.server!.json['notificationPrefsVersion'], 8);
-  });
-  testWidgets(
-    'scope retirement rejects old PATCH and immediately clears checkbox',
-    (t) async {
-      final (w, a, s) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      addTearDown(s.dispose);
-      await t.pumpWidget(host(w, s));
-      await t.pumpAndSettle();
-      await t.tap(find.byType(RaftCheckbox));
-      await drain(t);
-      final gate = Completer<Map<String, dynamic>>();
-      a.settings = (_) => gate.future;
-      await t.tap(find.byKey(const ValueKey('notification-settings-save')));
-      await t.pump();
-      w.server = null;
-      w.notifyListeners();
-      await t.pump();
-      expect(card(t).muteDescription, isNull);
-      expect(card(t).muted, false);
-      gate.complete({'serverPushMuted': true, 'prefsVersion': 9});
-      await t.pumpAndSettle();
-      expect(w.server, isNull);
-      expect(card(t).message, isNull);
-    },
-  );
-  testWidgets(
-    'GET failure retries and PATCH 403 retires verified mutation admission',
-    (t) async {
-      final (w, a, s) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      addTearDown(s.dispose);
-      a.status = 503;
-      a.settings = (_) => {'error': 'unavailable'};
-      await t.pumpWidget(host(w, s));
-      await t.pumpAndSettle();
-      expect(card(t).onMutedChanged, isNull);
-      expect(find.text('Retry'), findsOneWidget);
-      a.status = 200;
-      a.settings = (_) => {'serverPushMuted': false, 'prefsVersion': 1};
-      await t.tap(find.text('Retry'));
-      await t.pumpAndSettle();
-      await t.tap(find.byType(RaftCheckbox));
-      await drain(t);
-      a.status = 403;
-      a.settings = (_) => {'error': 'revoked'};
-      await t.tap(find.byKey(const ValueKey('notification-settings-save')));
-      await t.pumpAndSettle();
-      expect(card(t).onSave, isNull);
-      expect(card(t).onMutedChanged, isNull);
       expect(
-        find.text('Failed to update server notification setting.'),
+        find.byKey(const ValueKey('notification-pause-select')),
         findsOneWidget,
       );
     },
   );
-  testWidgets('phone: enable requests the permission once, then sends a test', (
+
+  testWidgets('a 409 from another device says so and reloads its values', (
     t,
   ) async {
-    final (w, a, s) = (await t.runAsync(fixture))!;
-    addTearDown(w.dispose);
-    addTearDown(s.dispose);
-    await t.pumpWidget(host(w, s));
-    await t.pumpAndSettle();
-    expect(card(t).title, 'Phone notifications');
-    expect(card(t).status, 'Not enabled');
-    expect(card(t).actionLabel, 'Enable Notifications');
-    expect(card(t).hint, contains('on Android, Settings → Apps → Raft'));
-    expect(card(t).hint, isNot(contains('iOS')));
-    s.gate = Completer<void>();
-    await t.tap(find.text('Enable Notifications'));
-    await t.pump();
-    expect(s.enables, 1);
-    expect(card(t).onAction, isNull);
-    expect(card(t).onMutedChanged, isNull);
-    s.gate!.complete();
-    await t.pumpAndSettle();
-    expect(s.settings, 0);
-    expect(card(t).status, 'Enabled');
-    expect(card(t).actionLabel, 'Send Test Notification');
-    await t.tap(find.text('Send Test Notification'));
-    await t.pumpAndSettle();
-    expect(s.tests, 1);
-    expect(card(t).message, contains('Test notification sent'));
-    expect(card(t).error, isNull);
+    final (w, a) = await fixture(t);
+    a.routes['PATCH /me/notification-settings'] = (_) =>
+        (status: 409, body: {'error': 'Version conflict'});
+    await t.pumpWidget(host(w, Service()));
+    await settle(t);
+    a.routes['GET /me/notification-settings'] = (_) => (
+      status: 200,
+      body: {'settings': settings(version: 9, quiet: true), 'servers': []},
+    );
+    t
+        .widget<RaftSwitch>(
+          find.byKey(const ValueKey('notification-quiet-hours-switch')),
+        )
+        .onChanged!(true);
+    await settle(t);
+    expect(
+      find.text(
+        'These settings were just changed on another device. The latest values are shown; try again.',
+      ),
+      findsOneWidget,
+    );
+    expect(a.sent('GET', '/me/notification-settings'), hasLength(2));
+    expect(
+      t
+          .widget<RaftSwitch>(
+            find.byKey(const ValueKey('notification-quiet-hours-switch')),
+          )
+          .value,
+      isTrue,
+    );
   });
+
   testWidgets(
-    'Android: battery optimised shows the notice and opens settings',
+    'quiet hours save in this device\'s zone; times commit on submit',
     (t) async {
-      final (w, a, s) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      addTearDown(s.dispose);
-      final battery = _Battery(false);
-      await t.pumpWidget(host(w, s, battery: battery));
-      await t.pumpAndSettle();
+      final (w, a) = await fixture(t);
+      a.routes['PATCH /me/notification-settings'] = (o) {
+        final quiet = body(o)['quietHours'] as Map;
+        return (
+          status: 200,
+          body: {
+            'settings': {
+              ...settings(version: 5, quiet: quiet['enabled'] == true),
+              'quietHours': quiet,
+            },
+          },
+        );
+      };
+      await t.pumpWidget(host(w, Service()));
+      await settle(t);
+      t
+          .widget<RaftSwitch>(
+            find.byKey(const ValueKey('notification-quiet-hours-switch')),
+          )
+          .onChanged!(true);
+      await settle(t);
+      expect(body(a.sent('PATCH', '/me/notification-settings').single), {
+        'quietHours': {
+          'enabled': true,
+          'startMinute': 1320,
+          'endMinute': 480,
+          'timeZone': 'Europe/Berlin',
+        },
+        'version': 3,
+      });
+      final start = find.descendant(
+        of: find.byKey(const ValueKey('notification-quiet-hours-start')),
+        matching: find.byType(EditableText),
+      );
+      await t.enterText(start, '21:30');
+      await t.testTextInput.receiveAction(TextInputAction.done);
+      await settle(t);
       expect(
-        card(t).description,
-        isNot(contains('checks for new messages periodically')),
+        (body(a.sent('PATCH', '/me/notification-settings').last)['quietHours']
+            as Map)['startMinute'],
+        21 * 60 + 30,
+      );
+    },
+  );
+
+  testWidgets(
+    'All devices: preview, phone alerts, sound and followed replies PATCH one field each',
+    (t) async {
+      final (w, a) = await fixture(t);
+      a.routes['PATCH /me/notification-settings'] = (o) =>
+          (status: 200, body: {'settings': settings(version: 4)});
+      await t.pumpWidget(host(w, Service()));
+      await settle(t);
+      t
+          .widget<RaftSettingsSelect<NotificationPreviewMode>>(
+            find.byKey(const ValueKey('notification-preview-select')),
+          )
+          .onChanged!(NotificationPreviewMode.senderOnly);
+      t
+          .widget<RaftSettingsSelect<NotificationMobileDelay>>(
+            find.byKey(const ValueKey('notification-mobile-delay-select')),
+          )
+          .onChanged!(NotificationMobileDelay.m5);
+      t
+          .widget<RaftSwitch>(
+            find.byKey(const ValueKey('notification-sound-switch')),
+          )
+          .onChanged!(false);
+      t
+          .widget<RaftSwitch>(
+            find.byKey(
+              const ValueKey('notification-followed-thread-replies-switch'),
+            ),
+          )
+          .onChanged!(false);
+      await settle(t);
+      expect(
+        [for (final c in a.sent('PATCH', '/me/notification-settings')) body(c)],
+        [
+          {'previewMode': 'sender_only', 'version': 3},
+          {'mobileDelay': '5m', 'version': 3},
+          {'sound': false, 'version': 3},
+          {'followedThreadReplies': false, 'version': 3},
+        ],
+      );
+    },
+  );
+
+  testWidgets(
+    'a server level PUTs /notification-levels; a customized channel resets to default',
+    (t) async {
+      final (w, a) = await fixture(t);
+      a.routes['PUT /notification-levels'] = (o) => (
+        status: 200,
+        body: {
+          ...body(o),
+          'serverId': o.headers['X-Server-Id'],
+          'effective': body(o)['level'] == 'default' ? 'all' : body(o)['level'],
+          'muted': false,
+          'prefsVersion': 7,
+        },
+      );
+      await t.pumpWidget(host(w, Service()));
+      await settle(t);
+      t
+          .widget<RaftSettingsSelect<NotificationLevelChoice>>(
+            find.byKey(const ValueKey('notification-server-level-s2')),
+          )
+          .onChanged!(NotificationLevelChoice.none);
+      await settle(t);
+      final put = a.sent('PUT', '/notification-levels').single;
+      expect(body(put), {'scope': 'server', 'id': 's2', 'level': 'none'});
+      // "1 channel customized" opens #general (Only what involves me).
+      t
+          .widget<RaftTextLink>(
+            find.byKey(const ValueKey('notification-server-customized-s1')),
+          )
+          .onPressed!();
+      await settle(t);
+      expect(find.text('#general'), findsOneWidget);
+      expect(find.text('Only what involves me'), findsWidgets);
+      t
+          .widget<RaftButton>(
+            find.byKey(const ValueKey('customized-channel-reset-c1')),
+          )
+          .onPressed!();
+      await settle(t);
+      expect(body(a.sent('PUT', '/notification-levels').last), {
+        'scope': 'channel',
+        'id': 'c1',
+        'level': 'default',
+      });
+      expect(find.byKey(const ValueKey('customized-channel-c1')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('notification-server-customized-s1')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'another device\'s change arrives as a frame and replaces the page values; a stale one does not',
+    (t) async {
+      final (w, _) = await fixture(t);
+      await t.pumpWidget(host(w, Service()));
+      await settle(t);
+      final store = NotificationSettingsStore.of(w.client);
+      expect(
+        store.applyPrefsUpdate({
+          'type': 'account',
+          'settings': settings(version: 6, sound: false),
+        }),
+        isTrue,
       );
       expect(
-        card(t).notice,
-        'To receive notifications in the background, turn off battery optimization for Raft.',
+        store.applyPrefsUpdate({
+          'type': 'server',
+          'serverId': 's2',
+          'scopeId': 's2',
+          'level': 'none',
+          'prefsVersion': 2,
+        }),
+        isTrue,
       );
-      expect(
-        find.byKey(const ValueKey('notification-settings-notice')),
-        findsOneWidget,
-      );
-      await t.tap(find.text('Open Battery Settings'));
       await t.pump();
-      expect(battery.opened, 1);
-      // Returning from the system screen with the app now exempt hides it.
-      battery.value = true;
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await t.pumpAndSettle();
-      expect(card(t).notice, isNull);
-      expect(find.text('Open Battery Settings'), findsNothing);
+      expect(
+        t
+            .widget<RaftSwitch>(
+              find.byKey(const ValueKey('notification-sound-switch')),
+            )
+            .value,
+        isFalse,
+      );
+      expect(
+        t
+            .widget<RaftSettingsSelect<NotificationLevelChoice>>(
+              find.byKey(const ValueKey('notification-server-level-s2')),
+            )
+            .value,
+        NotificationLevelChoice.none,
+      );
+      expect(
+        store.applyPrefsUpdate({
+          'type': 'account',
+          'settings': settings(version: 5, sound: true),
+        }),
+        isFalse,
+      );
+      expect(
+        store.applyPrefsUpdate({
+          'type': 'server',
+          'serverId': 's2',
+          'scopeId': 's2',
+          'level': 'all',
+          'prefsVersion': 1,
+        }),
+        isFalse,
+      );
     },
   );
-  testWidgets('Android: exempt or unknown battery status shows no notice', (
-    t,
-  ) async {
-    final (w, a, s) = (await t.runAsync(fixture))!;
-    addTearDown(w.dispose);
-    addTearDown(s.dispose);
-    for (final value in [true, null]) {
-      await t.pumpWidget(host(w, s, battery: _Battery(value)));
-      await t.pumpAndSettle();
-      expect(card(t).notice, isNull);
-    }
-  });
-  testWidgets('iOS never asks about battery optimisation; zh notice wording', (
-    t,
-  ) async {
-    final (w, a, unused) = (await t.runAsync(fixture))!;
-    final ios = Service(platform: TargetPlatform.iOS);
-    addTearDown(w.dispose);
-    addTearDown(unused.dispose);
-    addTearDown(ios.dispose);
-    await t.pumpWidget(host(w, ios, battery: _Battery(false)));
-    await t.pumpAndSettle();
-    expect(card(t).notice, isNull);
-    expect(
-      card(t).description,
-      contains('checks for new messages periodically'),
-    );
-    final android = Service();
-    addTearDown(android.dispose);
-    await t.pumpWidget(
-      host(w, android, battery: _Battery(false), locale: const Locale('zh')),
-    );
-    await t.pumpAndSettle();
-    expect(find.text('要在后台接收通知，请为 Raft 关闭电池优化。'), findsOneWidget);
-    expect(find.text('打开电池设置'), findsOneWidget);
-  });
+
   testWidgets(
-    'phone: a permission the system stops asking about opens settings',
+    '"Notifications on Alpha" opens Settings › On Alpha › Notifications',
     (t) async {
-      final (w, a, s) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      addTearDown(s.dispose);
-      s.grant = false;
-      await t.pumpWidget(host(w, s));
-      await t.pumpAndSettle();
-      await t.tap(find.text('Enable Notifications'));
-      await t.pumpAndSettle();
-      expect(s.enables, 1);
-      expect(s.settings, 1);
-      expect(card(t).status, 'Not enabled');
-      expect(card(t).actionLabel, 'Enable Notifications');
+      final (w, _) = await fixture(t);
+      await t.pumpWidget(host(w, Service()));
+      await settle(t);
+      expect(find.text('All new messages'), findsWidgets);
+      t
+          .widget<RaftListRow>(
+            find.byKey(const ValueKey('settings-server-notifications-link')),
+          )
+          .onPressed!();
+      await t.pump();
+      expect(w.location.route, RaftRoute.settings);
+      expect(w.location.settingsPath, ['server-notifications']);
     },
   );
-  testWidgets('phone: a prompt the person declined does not open settings', (
-    t,
-  ) async {
-    final (w, a, s) = (await t.runAsync(fixture))!;
-    addTearDown(w.dispose);
-    addTearDown(s.dispose);
-    s.grant = false;
-    await t.pumpWidget(host(w, s));
-    await t.pumpAndSettle();
-    s.permissionPromptSkipped = false;
-    // Requested a prompt (answered "deny"): requestEnable leaves the flag unset.
-    final declining = _Declining();
-    addTearDown(declining.dispose);
-    await t.pumpWidget(host(w, declining));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Enable Notifications'));
-    await t.pumpAndSettle();
-    expect(declining.settings, 0);
-  });
-  testWidgets('phone: iOS shows only the iOS path; zh copy and pill', (
-    t,
-  ) async {
-    final (w, a, unused) = (await t.runAsync(fixture))!;
-    final s = Service(platform: TargetPlatform.iOS)..enabled = true;
-    addTearDown(w.dispose);
-    addTearDown(s.dispose);
-    addTearDown(unused.dispose);
-    await t.pumpWidget(host(w, s, locale: const Locale('zh')));
-    await t.pumpAndSettle();
-    expect(find.text('手机通知'), findsOneWidget);
-    expect(find.text('已开启'), findsOneWidget);
-    expect(find.textContaining('iOS 在“设置 → 通知 → Raft”'), findsOneWidget);
-    expect(find.textContaining('Android'), findsNothing);
-    expect(find.text('发一条测试通知'), findsOneWidget);
-    s.enabled = false;
-    s.notifyListeners();
-    await t.pump();
-    expect(find.text('未启用'), findsOneWidget);
-    expect(find.text('开启通知'), findsOneWidget);
-  });
-  testWidgets('phone: unavailable disables the action and says why', (t) async {
-    final (w, a, s) = (await t.runAsync(fixture))!;
-    addTearDown(w.dispose);
-    addTearDown(s.dispose);
-    s.available = false;
-    s.initialized = true;
-    await t.pumpWidget(host(w, s));
-    await t.pumpAndSettle();
-    expect(card(t).status, 'Unavailable');
-    expect(
-      card(t).hint,
-      'System notifications are unavailable on this device.',
-    );
-    expect(card(t).onAction, isNull);
-  });
+
   for (final platform in [
     TargetPlatform.macOS,
     TargetPlatform.linux,
     TargetPlatform.windows,
   ]) {
-    testWidgets('desktop $platform: Web card, no server read, one test', (
-      t,
-    ) async {
-      final (w, a, unused) = (await t.runAsync(fixture))!;
-      final s = Service(platform: platform);
-      addTearDown(w.dispose);
-      addTearDown(s.dispose);
-      addTearDown(unused.dispose);
-      await t.pumpWidget(host(w, s));
-      // First frame is final: no checking state, no server read, no mute form.
-      expect(card(t).status, 'Managed by the system');
-      expect(card(t).title, 'Desktop notifications');
-      expect(card(t).description, startsWith('Raft Desktop shows system'));
-      expect(card(t).muteDescription, isNull);
-      expect(card(t).actionLabel, 'Send a test notification');
-      expect(
-        card(t).hint,
-        contains(switch (platform) {
-          TargetPlatform.macOS =>
-            'macOS → System Settings → Notifications → Raft.',
-          TargetPlatform.windows =>
-            'Windows → Settings → System → Notifications.',
-          _ => "Linux → your desktop environment's notification settings.",
-        }),
-      );
-      expect(card(t).hint, isNot(contains('Raft Desktop.')));
-      if (platform == TargetPlatform.windows) {
-        expect(card(t).hint, isNot(contains('ask for permission')));
-        expect(card(t).hint, contains('directly to the notification center'));
-      }
-      await t.pumpAndSettle();
-      expect(
-        a.calls.where((o) => o.path.contains('notification-settings')),
-        isEmpty,
-      );
-      await t.tap(find.text('Send a test notification'));
-      await t.pumpAndSettle();
-      expect(s.tests, 1);
-      expect(s.enables, 0);
-      expect(s.testTitle, 'Test notification');
-      expect(
-        s.testBody,
-        'Test notification — desktop notifications are working.',
-      );
-      expect(
-        card(t).message,
-        startsWith('Test notification posted to the system.'),
-      );
-      expect(card(t).error, isNull);
-      s.testResult = false;
-      await t.tap(find.text('Send a test notification'));
-      await t.pumpAndSettle();
-      expect(card(t).message, isNull);
-      expect(card(t).error, 'Could not post a test notification.');
-      if (platform == TargetPlatform.windows) {
-        await t.tap(find.text('Open Notification Settings'));
-        await t.pumpAndSettle();
-        expect(s.settings, 1);
-        expect(s.enables, 0);
-      }
-    });
+    testWidgets(
+      'desktop $platform: system-managed card; the test goes through the server',
+      (t) async {
+        final (w, _) = await fixture(t);
+        final outcomes = <TestNotificationOutcome>[
+          (state: TestNotificationState.shown, reason: null),
+          (state: TestNotificationState.notShown, reason: null),
+          (state: TestNotificationState.failed, reason: 'no_socket'),
+        ];
+        final service = Service(platform: platform);
+        await t.pumpWidget(
+          host(w, service, runDesktopTest: () async => outcomes.removeAt(0)),
+        );
+        await settle(t);
+        expect(find.text('Desktop notifications'), findsOneWidget);
+        expect(find.text('Managed by the system'), findsOneWidget);
+        expect(
+          find.byKey(
+            const ValueKey('desktop-open-system-notification-settings'),
+          ),
+          platform == TargetPlatform.linux ? findsNothing : findsOneWidget,
+        );
+        for (final expected in [
+          'Test notification shown on this device.',
+          'The test was sent, but the system didn’t show it. Allow notifications for Raft in the system’s notification settings, and check that Do Not Disturb or Focus is off.',
+          'Couldn’t send the test notification (no_socket).',
+        ]) {
+          await t.tap(find.byKey(const ValueKey('send-test-notification')));
+          await settle(t);
+          expect(find.text(expected), findsOneWidget);
+        }
+        // No local post: the server's notification:desktop is the test.
+        expect(service.tests, 0);
+      },
+    );
   }
-  testWidgets(
-    'macOS deferred authorization keeps the desktop action usable and requests permission on test',
-    (t) async {
-      final (w, a, unused) = (await t.runAsync(fixture))!;
-      final (service, plugin, mac) = deferredMacNotifications();
-      addTearDown(w.dispose);
-      addTearDown(unused.dispose);
-      addTearDown(service.dispose);
-      await service.bind('alice');
-      await t.pumpWidget(host(w, service, locale: const Locale('zh')));
-      expect(find.text('此桌面版本无法显示系统通知。'), findsNothing);
-      expect(card(t).title, 'Desktop notifications');
-      expect(card(t).muteDescription, isNull);
-      expect(card(t).onAction, isNotNull);
-      expect(mac.requests, 0);
-      await t.tap(find.text('发一条测试通知'));
-      await t.pumpAndSettle();
-      expect(mac.requests, 1);
-      expect(service.enabled, true);
-      expect(plugin.sent, ['raft-notification-test']);
-      expect(
-        a.calls.where((call) => call.path.contains('notification-settings')),
-        isEmpty,
-      );
-      expect(t.takeException(), isNull);
-    },
-  );
-  testWidgets('desktop: unavailable build shows Web unavailable copy', (
+
+  testWidgets('desktop: an unavailable build says so and cannot test', (
     t,
   ) async {
-    final (w, a, unused) = (await t.runAsync(fixture))!;
-    final s = Service(platform: TargetPlatform.linux)
-      ..available = false
-      ..initialized = true;
-    addTearDown(w.dispose);
-    addTearDown(s.dispose);
-    addTearDown(unused.dispose);
-    await t.pumpWidget(host(w, s, locale: const Locale('zh')));
-    expect(find.text('不可用'), findsOneWidget);
-    expect(find.text('此桌面版本无法显示系统通知。'), findsOneWidget);
-    expect(card(t).onAction, isNull);
+    final (w, _) = await fixture(t);
+    final service = Service(platform: TargetPlatform.linux)..available = false;
+    await t.pumpWidget(host(w, service));
+    await settle(t);
+    expect(find.text('Unavailable'), findsOneWidget);
+    expect(
+      find.text('This desktop build cannot show system notifications.'),
+      findsOneWidget,
+    );
+    expect(
+      t
+          .widget<RaftButton>(
+            find.byKey(const ValueKey('send-test-notification')),
+          )
+          .onPressed,
+      isNull,
+    );
   });
+
   testWidgets(
-    'same-principal replacement controller rejects retired pending GET',
+    'phone: enable asks for the permission, then the test posts here',
     (t) async {
-      final (old, a, s) = (await t.runAsync(fixture))!;
-      final (next, b, unused) = (await t.runAsync(fixture))!;
-      addTearDown(old.dispose);
-      addTearDown(next.dispose);
-      addTearDown(s.dispose);
-      addTearDown(unused.dispose);
-      final gate = Completer<Map<String, dynamic>>();
-      a.settings = (_) => gate.future;
-      await t.pumpWidget(host(old, s));
-      await t.pump();
-      b.settings = (_) => {'serverPushMuted': false, 'prefsVersion': 4};
-      await t.pumpWidget(host(next, s));
-      await t.pumpAndSettle();
-      expect(card(t).muted, false);
-      expect(next.server!.json['notificationPrefsVersion'], 4);
-      gate.complete({'serverPushMuted': true, 'prefsVersion': 20});
-      await t.pumpAndSettle();
-      expect(card(t).muted, false);
-      expect(next.server!.json['notificationPrefsVersion'], 4);
+      final (w, _) = await fixture(t);
+      final service = Service();
+      await t.pumpWidget(host(w, service, battery: _Battery(false)));
+      await settle(t);
+      expect(find.text('Phone notifications'), findsOneWidget);
+      expect(find.text('Not enabled'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('battery-optimization-notice')),
+        findsOneWidget,
+      );
+      await t.tap(find.byKey(const ValueKey('phone-notifications-enable')));
+      await settle(t);
+      expect(service.enables, 1);
+      expect(find.text('Enabled'), findsOneWidget);
+      await t.tap(find.byKey(const ValueKey('send-test-notification')));
+      await settle(t);
+      expect(service.tests, 1);
+      expect(
+        find.byKey(const ValueKey('test-notification-posted')),
+        findsOneWidget,
+      );
     },
   );
-}
 
-class _Declining extends Service {
-  @override
-  Future<void> requestEnable(bool next) async {
-    enables++;
-    permitted = false;
-    permissionPromptSkipped = false;
-    notifyListeners();
-  }
+  testWidgets('zh: the v2 sections read the Web zh-cn wording', (t) async {
+    final (w, _) = await fixture(t);
+    await t.pumpWidget(
+      host(
+        w,
+        Service(platform: TargetPlatform.iOS),
+        locale: const Locale('zh'),
+      ),
+    );
+    await settle(t);
+    for (final text in [
+      '暂停与时段',
+      '暂停通知',
+      '安静时段',
+      '通知预览',
+      '手机提醒',
+      '我关注的消息列中的回复',
+    ]) {
+      expect(find.text(text), findsOneWidget, reason: text);
+    }
+    expect(
+      find.byKey(const ValueKey('battery-optimization-notice')),
+      findsNothing,
+    );
+  });
 }

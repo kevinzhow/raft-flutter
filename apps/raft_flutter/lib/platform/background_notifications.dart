@@ -145,14 +145,9 @@ Future<bool> _runBackgroundInbox({
       client: client,
       store: store,
       authorize: (target, valid) async {
-        final server = await NativeContentCoordinator.authorizeClient(
-          client!,
-          target,
-          valid,
-        );
-        if (server.flag('serverPushMuted')) {
-          throw const RaftApiException('Notifications are muted.');
-        }
+        // Levels decide in the poller (BackgroundNotificationPolicy); a
+        // channel's own level beats a server at Nothing.
+        await NativeContentCoordinator.authorizeClient(client!, target, valid);
       },
       deliver: (alert, selected) async {
         if (preempted ||

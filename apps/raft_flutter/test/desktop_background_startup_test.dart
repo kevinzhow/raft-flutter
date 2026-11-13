@@ -111,31 +111,37 @@ void main() {
       for (var attempt = 0; attempt < 30 && !notifications.enabled; attempt++) {
         await frames(tester, () {});
       }
-      var prepared = false;
-      coordinator.desktop!.prepared.then((_) => prepared = true);
-      for (var attempt = 0; attempt < 30 && !prepared; attempt++) {
-        await frames(tester, () {});
-      }
-      expect(prepared, isTrue);
       expect(notifications.enabled, isTrue);
-      workspace.activityUnread.acceptWindow({
-        'items': [
-          {
-            'kind': 'channel',
+      // v1.24: the server's notification:desktop is the only source.
+      workspace.servers = [?workspace.server];
+      unawaited(
+        coordinator.desktop!.deliver(workspace.client, {
+          'v': 1,
+          'id': 'background-notification',
+          'kind': 'mention',
+          'event': 'message',
+          'title': 'Background fixture',
+          'body': 'Arrived after background startup',
+          'serverId': workspace.server!.id,
+          'serverName': 'Fixture',
+          'channelId': 'c2',
+          'threadId': null,
+          'parentChannelId': null,
+          'parentMessageId': null,
+          'messageId': 'background-message',
+          'mentioned': true,
+          'sender': null,
+          'url': '/s/fixture/channel/c2',
+          'route': {
+            'type': 'channel',
+            'serverId': workspace.server!.id,
             'channelId': 'c2',
-            'channelName': 'Background fixture',
-            'unreadCount': 1,
-            'hasMention': true,
-            'firstMentionMessageId': 'background-message',
-            'lastMessageId': 'background-message',
-            'lastMessagePreview': 'Arrived after background startup',
-            'lastMessageAt': DateTime.now()
-                .add(const Duration(minutes: 1))
-                .toUtc()
-                .toIso8601String(),
+            'messageId': 'background-message',
           },
-        ],
-      }, scope: workspace.activityUnread.scope);
+          'groupKey': '${workspace.server!.id}:c2',
+          'createdAt': DateTime.now().toUtc().toIso8601String(),
+        }),
+      );
       for (var attempt = 0; attempt < 30 && plugin.sent.isEmpty; attempt++) {
         await frames(tester, () {});
       }
@@ -145,7 +151,6 @@ void main() {
         reason:
             'foreground=${workspace.foreground}, '
             'gate=${notifications.deliveryAllowed?.call()}, '
-            'identity=${coordinator.desktop!.identity}, '
             'rows=${workspace.activityUnread.acceptedRows}, '
             'calls=${api.calls.map((c) => c.path).toList()}',
       );
