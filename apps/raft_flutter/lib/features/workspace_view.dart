@@ -3560,8 +3560,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         ? ''
         : peer.description;
     final source = peer.avatar;
-    final threads = SidebarThreadUnread.of(w)
-        .forChannel(c.id, joined: c.joined);
+    final reads = SidebarRowReads.of(w, c);
     return RaftNavItem(
       key: ValueKey('sidebar-channel-${c.id}'),
       leading: c.type == 'dm'
@@ -3600,22 +3599,18 @@ class _WorkspaceViewState extends State<WorkspaceView>
           ? RaftConversationNavKind.directMessage
           : RaftConversationNavKind.channel,
       selected: w.section == 'chat' && w.channel?.id == c.id,
-      unread: w.conversationReads.unread[c.id] ?? 0,
+      unread: reads.unread,
       joined: c.joined,
-      quietNew: w.conversationReads.newFlags.contains(c.id),
-      markedUnread: w.conversationReads.marks.contains(c.id),
+      quietNew: reads.quietNew,
+      markedUnread: reads.marked,
       providerBadge: c.bridgeProvider == 'slack' ? tr('Slack') : null,
       activityMuted: c.flag('activityMuted'),
       hasDraft: (w.drafts[c.id] ?? '').isNotEmpty,
-      mention:
-          c.type != 'dm' &&
-          (w.conversationReads.mentions.contains(c.id) &&
-                  (w.conversationReads.unread[c.id] ?? 0) > 0 ||
-              threads.hasMention),
-      threadUnread: threads.count,
+      mention: reads.mention,
+      threadUnread: reads.threads.count,
       threadUnreadLabel: raftText(
         context,
-        threads.count == 1
+        reads.threads.count == 1
             ? 'thread with new replies'
             : 'threads with new replies',
       ),
