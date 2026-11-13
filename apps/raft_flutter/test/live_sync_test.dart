@@ -1,6 +1,5 @@
 // WP-LIVE (Web v1.24.0): holes behind live rows, GET /sync/changes, the new
 // socket events the session applies itself, actor resolve and lost channels.
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';

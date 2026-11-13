@@ -7,18 +7,18 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 795 (362 endpoint/network keys, 433 client-side).
+Total capabilities: 798 (365 endpoint/network keys, 433 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 690 |
-| ⚠️ partial | 23 |
+| ✅ covered | 692 |
+| ⚠️ partial | 24 |
 | ❌ missing | 2 |
 | ➖ na | 80 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
-| Messages | 78 | 2 | 0 | 2 |
+| Messages | 79 | 3 | 0 | 2 |
 | Threads | 17 | 0 | 0 | 1 |
 | Channels | 35 | 0 | 0 | 0 |
 | DMs | 6 | 0 | 0 | 0 |
@@ -33,7 +33,7 @@ Total capabilities: 795 (362 endpoint/network keys, 433 client-side).
 | Notifications | 29 | 3 | 0 | 6 |
 | Account and profile | 42 | 0 | 0 | 8 |
 | Onboarding and auth | 35 | 1 | 0 | 6 |
-| Joint channels | 11 | 0 | 0 | 0 |
+| Joint channels | 12 | 0 | 0 | 0 |
 | Public and guest | 19 | 1 | 0 | 4 |
 | Global UI and cross-cutting | 48 | 5 | 1 | 25 |
 
@@ -61,7 +61,8 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Load channel / DM / thread message history pages (initial load, older/newer pagination, jump to thread start, thread search corpus, report-issue context) (bg) | `GET /messages/channel/:id` | ChatPanel / ThreadPanel timeline scroll (load older/newer, Back to bottom, reconnect), ThreadPanel 'Scroll to first message' and 'Search in thread', ReportIssueDialog submit[gate: channel read access (viewChannel)] | workspace_message_replies.dart thread rebaseline; workspace_message_selection.dart / workspace_message_navigation.dart window loads; raft_client messages(); report_issue.dart |  |
 | ⚠️ | Open a message in context (permalink click, message/thread reference chips, quoted permalink card, forwarded-bundle 'Open source message', jump from Search / Saved / Activity, thread deep link) | `GET /messages/context/:id` | MessageItem handleOpenPermalink / handleOpenMessageRef / handleOpenForwardedSource / QuotedMessagePermalinkPreview onOpen \| MainLayout loadContext \| ThreadPanel jump \| useRefNavigation[gate: read access to the target channel] | workspace_controller.dart jumpToMessage / thread context loads via message_history_pages.dart; quoted_message_preview.dart; content_coordinator.dart permalink open | Impact: Anyone reading a forwarded message cannot jump to the original conversation; occasional. Covered for permalinks, reference chips, quoted preview, Search/Saved/Activity jumps. The forwarded-bundle 'Open source message' entry (MessageItem.handleOpenForwardedSource) has no Flutter UI: RaftForwardedBundle has no source-open affordance. Size S |
 | ✅ | Search forward destinations (channels, DMs, people, agents) in the forward composer | `GET /messages/forward/targets/search` | ForwardComposerDialog > 'Search targets' input, Recent list, 'Not joined' / 'New DM' rows[gate: forward-eligible destinations (writable, not read-only Joint)] | forward_composer_page.dart load() |  |
-| ✅ | Fill message gaps after reconnect (sync since seq) (bg) | `GET /messages/sync` | messageStore.syncGap (automatic on reconnect / seq gap)[gate: none] | workspace_message_navigation.dart gap fill loop |  |
+| ✅ | Fill message gaps after reconnect (sync since seq) (bg) | `GET /messages/sync` | messageStore.syncGap (reconnect, heartbeat, and the hole behind a live row across a seq jump: liveGapFill.ts, Web v1.24)[gate: none] | message_gap_sync.dart MessageGapSync.run (window tail, or lower where a live hole is owed; LiveGapFill retries 1-16 s) |  |
+| ✅ | Incremental sync after a reconnect, a resume or sync:changed (cursor, pages, reset, transient-failure rule) (Web v1.24) (bg) | `GET /sync/changes` | socketBridge ensureMainLayoutSync / syncChangesClient.ts SyncChangesSession (background)[gate: none] | workspace_live_sync.dart + raft_sync SyncChangesSession; conversation changes re-read the inbox / unread / followed lists (contract fallback, no in-place patch yet) |  |
 | ✅ | Best-effort product-funnel events for an action card (open, dismiss, execute attempt, execute fail) (bg) | `POST /actions/:id/event` | ActionCard > emitEvent (fired automatically when the verb button opens a dialog, the dialog is dismissed, or create fails)[gate: none (best effort, swallowed on failure)] | message_action_card.dart event() fired from confirm()/dialog callbacks |  |
 | ✅ | Execute an inline action card server-side (Approve agent login, Install marketplace app, Register app, Update app registration, Recover app owner) | `POST /actions/:id/execute` | ActionCard verb button ('Approve Login' / 'Install App' / 'Register App' / 'Update App' / 'Recover Owner') for integration:* actions[gate: canOperateCard, not frozen, source server not read-only] | message_action_card.dart confirm() -> apply('execute') for _inlineActions |  |
 | ✅ | Mark an action card executed after the dialog-driven create succeeded (channel:create, agent:create, channel:add_member) | `POST /actions/:id/mark-executed` | ActionCard > markExecuted after CreateChannelDialog / CreateAgentDialog / AddMembersDialog onCreated[gate: canOperateCard; createChannels/createAgents/add-member permissions] | message_action_card.dart mark() after RaftFormDialog / AddMembersDialog success |  |
@@ -79,6 +80,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Copy selected messages as Markdown / copy image to the clipboard | `RAW utils/selectMarkdown.ts` | selectMarkdown.ts (selection mode: Copy Markdown, Copy image) | message_image_export.dart MessageImageReview uses platform/image_clipboard.dart; Linux GTK owns the reviewed PNG bytes, Android exposes a read-only leased content URI through the existing FileProvider | Markdown copy and reviewed-PNG copy use their existing selection actions. Linux uses GTK image ownership; Android exposes a read-only leased content URI through the existing FileProvider. Existing macOS/iOS/Windows pasteboard paths are unchanged. Capability failures preserve the previous clipboard and expose Download/retry. Persistence after producer exit depends on the system clipboard manager and is not guaranteed. |
 | ✅ | Render selected messages to an image (inlines remote images) | `RAW utils/selectScreenshot.ts` | selectScreenshot.ts (selection mode: Share/Save image) | message_image_export.dart renders natively |  |
 | ✅ | Join a channel realtime room (bg) | `SOCKET emit join:channel` | socketBridge / channelStore / ThreadPanel (background) | raft_client joins channel rooms |  |
+| ⚠️ | Ask the catch-up horizon before the first history read (Web v1.24) (bg) | `SOCKET emit sync:horizon` | socketBridge requestStartingSyncHorizon (background)[gate: none] | Not sent (needs an ack-capable socket emit). The resume rounds carry the horizon the previous answer returned (sync_horizon.dart, resumeSince) | Impact: A message that commits late during the first history load of a session can be missed until the next resume or gap read; later catch-ups are covered. The first catch-up after a page load runs without a horizon, as an older server's resume does; later rounds send sinceHorizon. Size S |
 | ✅ | Resume realtime sync after reconnect with the last sequence number (bg) | `SOCKET emit sync:resume` | socketBridge (background) | raft_client emits sync:resume |  |
 | ✅ | Scroll position per conversation remembered within the session (sessionStorage LRU) and reading anchor kept when content loads (bg) | `ui:global-ui.message-timeline-scroll-memory` | components/message/MessageTimeline.tsx scroll-position memory | features/reading_anchor.dart RaftReadingAnchorController + workspace cache snapshots |  |
 | ✅ | Composer drafts persist per conversation and thread across reloads | `ui:global-ui.pref-drafts` | store/messageStore.ts DRAFTS_STORAGE_KEY slock_drafts (debounced 250ms/3s) | workspace_controller.dart _saveDraftScope / drafts restored on open |  |
@@ -811,6 +813,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | | Capability | Id | Web entry | Flutter entry | Notes |
 | --- | --- | --- | --- | --- | --- |
 | ✅ | Poll a channel-conversion job's status (bg) | `GET /channels/conversion-jobs/:id` | JointConversionSection polling after 'Convert to Joint Channel' (background of the conversion UI)[gate: same as convert-to-joint] | channel_conversion_section.dart poll |  |
+| ✅ | Resolve senders of another server in joint channels (Web v1.24) (bg) | `POST /actors/resolve` | localTables/actorResolve.ts requestActors (background, from message / inbox / task rows)[gate: none] | actor_directory.dart ActorDirectory (batching, asked once per scope, off on 403/404); the rows that read it are WP-MSG / WP-INBOX / WP-TASK2 |  |
 | ✅ | Convert an ordinary/private channel into a joint channel (progress, upload fence) | `POST /channels/:id/convert-to-joint` | Channel settings drawer > JointConversionSection 'Convert to Joint Channel' + progress card[gate: federateChannels on server and channel; feature flag channel-to-joint conversion; not #all; channel/private only] | channel_conversion_section.dart ChannelConversionSection inside the settings panel (same flag gate) |  |
 | ✅ | Disconnect this server from a joint channel | `POST /channels/:id/disconnect` | Joint channel settings drawer > actions > 'Disconnect channel' (Unplug icon) > confirm 'Disconnect' (EditChannelDialog handleDisconnectJointChannel)[gate: deleteChannels capability; completed joint channel; not archived] | channel_settings.dart disconnectFromPanel: settings drawer > 'Disconnect Channel' (unplug glyph) > 'Disconnect Joint Channel' confirm | Same gate as Web (deleteChannels, not archived); the drawer closes and the fallback channel opens. |
 | ✅ | Resend pending joint-channel invitations issued by this server | `POST /channels/:id/joint-invite/resend` | Joint channel settings drawer > 'Connected servers' > 'Resend invite' button (shown when this server has pending invites; button turns 'Sent')[gate: federateChannels capability; not archived; this server issued a pending invite] | channel_joint_section.dart: settings drawer > Connected servers > 'Resend Invite' (shown while this server has invitations out) | Button label turns to 'Invite resent' for 1.5 s like Web; a failure shows the server's text under the button. |
