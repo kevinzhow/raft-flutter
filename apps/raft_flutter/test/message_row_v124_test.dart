@@ -216,6 +216,30 @@ void main() {
     expect(button.pressed, isTrue);
   });
 
+  testWidgets('touch: a tap opens the thread, a double tap the bar', (t) async {
+    final (w, _) = await mount(t);
+    final text =
+        t.getTopLeft(find.textContaining('Hover me', findRichText: true)) +
+        const Offset(6, 6);
+    await t.tapAt(text);
+    await t.pump(const Duration(milliseconds: 80));
+    await t.tapAt(text);
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.byType(RaftQuickReactionPicker), findsOneWidget);
+    expect(w.messageDomain.state.threadParent, isNull);
+    await t.tapAt(const Offset(1100, 850));
+    await t.pump();
+    expect(find.byType(RaftQuickReactionPicker), findsNothing);
+
+    await t.tapAt(text);
+    await t.pump(const Duration(milliseconds: 400));
+    await t.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await t.pump();
+    expect(w.messageDomain.state.threadParent?.id, 'm1');
+  });
+
   test('usage: most count wins, ties go to the newest, 32 kept', () {
     expect(pickFavoriteReaction({}), '👍');
     expect(
