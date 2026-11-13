@@ -6,6 +6,7 @@ import 'idle_work.dart';
 import 'hover_region.dart';
 import 'mermaid_toolbar_recipe.dart';
 import 'message_markdown.dart';
+import 'message_touch_taps.dart';
 import 'markdown_scrollbar.dart';
 import 'message_tokens.dart';
 import 'message_reference_chip.dart';
@@ -634,22 +635,26 @@ class RaftMessageBody extends StatelessWidget {
           // and export controls out of the selection.
           chunk.mermaid
               ? selectable(
-                  RaftMermaidBlock(
-                    source: chunk.text,
-                    onCopy: onCopyCode,
-                    onExport: onExportDiagram,
-                    exportMode: exportMode,
+                  raftMessageTapControlRegion(
+                    RaftMermaidBlock(
+                      source: chunk.text,
+                      onCopy: onCopyCode,
+                      onExport: onExportDiagram,
+                      exportMode: exportMode,
+                    ),
                   ),
                 )
               : anchoredOther(
                   chunk.text,
-                  RaftCodeBlock(
-                    code: chunk.text,
-                    language: chunk.language,
-                    onCopy: onCopyCode,
-                    exportMode: exportMode,
-                    fontSize: fontSize,
-                    joinsSelection: proseSelection,
+                  raftMessageTapControlRegion(
+                    RaftCodeBlock(
+                      code: chunk.text,
+                      language: chunk.language,
+                      onCopy: onCopyCode,
+                      exportMode: exportMode,
+                      fontSize: fontSize,
+                      joinsSelection: proseSelection,
+                    ),
                   ),
                 ),
     ];
@@ -1761,7 +1766,9 @@ class _DisplayMathBuilder extends MarkdownElementBuilder {
     md.Element element,
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
-  ) => RaftDisplayMath(source: element.textContent, style: style);
+  ) => raftMessageTapControlRegion(
+    RaftDisplayMath(source: element.textContent, style: style),
+  );
 }
 
 /// Inline Markdown links need an explicit focus/action widget. The upstream

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -2010,28 +2011,42 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     if (rebuild && mounted) setState(() {});
   }
 
-  void openReactionPicker(RaftMessage message, BuildContext anchor) {
+  /// Opens the reaction bar at [anchor]; with [at] (a double tap's global
+  /// point), at the finger instead (Web positionReactionPickerAtTap).
+  void openReactionPicker(
+    RaftMessage message,
+    BuildContext? anchor, {
+    Offset? at,
+  }) {
     if (!canReact) return;
     if (pickerMessageId == message.id) {
       closeReactionPicker();
       return;
     }
     closeReactionPicker(rebuild: false);
-    final box = anchor.findRenderObject() as RenderBox?;
+    final box = anchor?.findRenderObject() as RenderBox?;
     final overlay = Overlay.of(context);
     final overlayBox = overlay.context.findRenderObject() as RenderBox?;
-    if (box == null || overlayBox == null) return;
-    final bounds =
-        box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
+    if ((box == null && at == null) || overlayBox == null) return;
     final size = overlayBox.size;
-    final x = (bounds.right - 224).clamp(
-      8.0,
-      (size.width - 232).clamp(8.0, double.infinity),
-    );
-    final below = bounds.bottom + 4;
-    final y = below + 42 > size.height - 8 && bounds.top > 54
-        ? bounds.top - 46
-        : below.clamp(8.0, (size.height - 50).clamp(8.0, double.infinity));
+    final maxX = (size.width - 232).clamp(8.0, double.infinity);
+    final double x, y;
+    if (box == null) {
+      final point = overlayBox.globalToLocal(at!);
+      x = (point.dx - 112).clamp(8.0, maxX);
+      final above = point.dy - 24 - 42, below = point.dy + 24;
+      y = above >= 8 || below + 42 > size.height - 8
+          ? math.max(above, 8)
+          : below;
+    } else {
+      final bounds =
+          box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
+      x = (bounds.right - 224).clamp(8.0, maxX);
+      final below = bounds.bottom + 4;
+      y = below + 42 > size.height - 8 && bounds.top > 54
+          ? bounds.top - 46
+          : below.clamp(8.0, (size.height - 50).clamp(8.0, double.infinity));
+    }
     pickerMessageId = message.id;
     pickerAuthority = workspaceAuthority(w);
     reactionPicker = OverlayEntry(
@@ -2708,6 +2723,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           : () {
               if (!pending) _messages.threads.openThread(m);
             },
+      // Web 1.24 touch taps: a tap opens the thread, a double tap the
+      // reaction bar at the finger; not in select mode or on a pending row.
+      onTouchTap: parent || widget.thread || pending || selection.active
+          ? null
+          : () => _messages.threads.openThread(m),
+      onTouchDoubleTap: canReact && !pending && !selection.active
+          ? (at) => openReactionPicker(m, null, at: at)
+          : null,
       threadPreview: inlineThreadReplies(m, parentTile: parent),
       readStatus: dmRead ? const RaftMessageReadStatus() : null,
       taskReference: taskReference(m),

@@ -1560,6 +1560,8 @@ class RaftMessageTile extends StatelessWidget {
     this.continuationTimestamp,
     this.timestampTooltip,
     this.onThread,
+    this.onTouchTap,
+    this.onTouchDoubleTap,
     this.onActions,
     this.onActionsAt,
     this.onLink,
@@ -1657,6 +1659,10 @@ class RaftMessageTile extends StatelessWidget {
   /// Message translation status line, between attachments and footer.
   final Widget? translation;
   final VoidCallback? onThread, onActions, onReact;
+
+  /// See [RaftMessageRow.onTouchTap] and [RaftMessageRow.onTouchDoubleTap].
+  final VoidCallback? onTouchTap;
+  final ValueChanged<Offset>? onTouchDoubleTap;
   final ValueChanged<Offset>? onActionsAt;
   final void Function(String href)? onLink;
   final List<Map<String, dynamic>> attachments, reactions;
@@ -1728,6 +1734,8 @@ class RaftMessageTile extends StatelessWidget {
       onActions: onActions,
       onActionsAt: onActionsAt,
       onTap: onTap,
+      onTouchTap: onTouchTap,
+      onTouchDoubleTap: onTouchDoubleTap,
       rowContext: rowContext,
       continuation: continuation,
       followedBy: followedBy,
