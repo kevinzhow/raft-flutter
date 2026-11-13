@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/mark_unread_outcome.dart';
-import 'package:raft_flutter/data/marked_unread_sync.dart';
+import 'package:raft_flutter/features/marked_unread_sync.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 
 /// Web v1.24 marked-unread (store/markedUnreadStore.ts, readStateSync.ts):

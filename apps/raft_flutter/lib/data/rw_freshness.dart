@@ -8,8 +8,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
-import 'workspace_controller.dart';
-
 /// The RisingWave reads whose answers may be stale: the cross-server unread
 /// summary, this server's channel unread counts, the Activity list and the
 /// followed threads with unread replies.
@@ -74,7 +72,7 @@ class RwFreshnessStore extends ChangeNotifier {
     Map<RwSurface, Future<void> Function()>? refetch,
     bool Function()? visible,
     Random? random,
-  }) : _visible = visible ?? _alwaysVisible,
+  }) : visible = visible ?? _alwaysVisible,
        _random = random ?? Random() {
     if (refetch != null) _refetch.addAll(refetch);
     _serverId = client.serverId;
@@ -94,37 +92,13 @@ class RwFreshnessStore extends ChangeNotifier {
 
   static final _owners = Expando<RwFreshnessStore>();
 
-  /// The store of [w]'s presentation (created on first use). Its surfaces
-  /// re-read through the workspace's own refresh entries.
-  static RwFreshnessStore of(WorkspaceController w) => _owners[w] ??= () {
-    final store = RwFreshnessStore(
-      w.client,
-      refetch: {
-        RwSurface.unread: w.refreshUnread,
-        RwSurface.followed: w.followedThreads.refresh,
-        RwSurface.inbox: () async {
-          // Not loaded: Activity was never opened, and opening it loads it.
-          final inbox = w.activityUnreadIfBound;
-          if (inbox != null && inbox.hasAcceptedWindow) await inbox.refresh();
-        },
-      },
-      visible: () => w.foreground,
-    );
-    // A return to the foreground reads what is out of date at once.
-    void resumed() {
-      if (w.foregroundChanges.value) store.nudge();
-    }
+  /// The store of [client] (created on first use): one per client, shared by
+  /// the presentations that borrow it. Owners register the re-reads.
+  static RwFreshnessStore ofClient(RaftClient client) =>
+      _owners[client] ??= RwFreshnessStore(client);
 
-    w.foregroundChanges.addListener(resumed);
-    w.services.disposeWithSession(() {
-      w.foregroundChanges.removeListener(resumed);
-      store.dispose();
-    });
-    return store;
-  }();
-
-  /// The store of [w] when a surface already asked for it.
-  static RwFreshnessStore? peek(WorkspaceController w) => _owners[w];
+  /// The store of [client] when a surface already asked for it.
+  static RwFreshnessStore? peek(RaftClient client) => _owners[client];
 
   static bool _alwaysVisible() => true;
 
@@ -162,7 +136,9 @@ class RwFreshnessStore extends ChangeNotifier {
   }
 
   final RaftClient client;
-  final bool Function() _visible;
+
+  /// Whether the app is in the foreground (the timer waits otherwise).
+  bool Function() visible;
   final Random _random;
   final _refetch = <RwSurface, Future<void> Function()>{};
   late final Interceptor _observer;
@@ -377,7 +353,7 @@ class RwFreshnessStore extends ChangeNotifier {
       () {
         _timers.remove(surface);
         // In the background: wait; the return to the foreground reads.
-        if (!_visible()) return;
+        if (!visible()) return;
         _run(surface);
       },
     );
