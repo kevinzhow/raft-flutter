@@ -158,7 +158,7 @@ class RaftExternalAgentToken extends StatelessWidget {
       children: [
         RaftCssText(
           tr(
-            'Generate a token for this agent, then use it with Raft CLI login or pass it as the credential to the Raft SDK.',
+            'Generate a token for this agent, then use it with Raft CLI login or pass it as the credential to the Raft SDK (@botiverse/raft-sdk).',
           ),
           style: muted,
         ),
@@ -197,7 +197,7 @@ class RaftExternalAgentToken extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: _smOutline(
               context,
-              state.copied ? 'Copied' : 'Copy Token',
+              state.copied ? 'Copied' : 'Copy token',
               actions.onCopy,
               key: const ValueKey('external-token-copy'),
             ),
@@ -207,7 +207,7 @@ class RaftExternalAgentToken extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: _smOutline(
               context,
-              state.pending ? 'Generating Token…' : 'Generate Login Token',
+              state.pending ? 'Generating Token…' : 'Generate login token',
               busy ? null : actions.onGenerate,
               key: const ValueKey('external-token-generate'),
             ),
@@ -242,7 +242,7 @@ class RaftExternalAgentToken extends StatelessWidget {
                   ),
                   _smOutline(
                     context,
-                    'Refresh Tokens',
+                    'Refresh tokens',
                     state.loading || busy ? null : actions.onRefresh,
                     key: const ValueKey('external-token-refresh'),
                   ),
@@ -262,10 +262,7 @@ class RaftExternalAgentToken extends StatelessWidget {
                 ),
               if (!state.loading && !state.listError) ...[
                 if (state.credentials.isEmpty)
-                  RaftCssText(
-                    tr('No tokens have been issued for this agent.'),
-                    style: _xs(t),
-                  ),
+                  RaftCssText(tr('No tokens issued yet'), style: _xs(t)),
                 for (final c in state.credentials)
                   _credential(context, t, c, busy),
               ],
@@ -338,7 +335,7 @@ class RaftExternalAgentToken extends StatelessWidget {
                 children: [
                   _smOutline(
                     context,
-                    'Confirm Revocation',
+                    'Confirm revocation',
                     busy ? null : () => actions.onConfirmRevoke(c.id),
                     key: const ValueKey('external-token-confirm-revoke'),
                   ),
@@ -355,7 +352,7 @@ class RaftExternalAgentToken extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: _smOutline(
                   context,
-                  'Revoke Token',
+                  'Revoke token',
                   busy ? null : () => actions.onRevoke(c.id),
                   key: ValueKey('external-token-revoke-${c.id}'),
                 ),
@@ -472,7 +469,7 @@ class RaftExternalSetupSection extends StatelessWidget {
                         tr(switch (setupState) {
                           'connected' => 'Connected',
                           'credential_minted' => 'Credential minted',
-                          _ => 'Waiting for login',
+                          _ => 'Waiting for sign-in',
                         }),
                         style: _xs(t, weight: FontWeight.w700, color: t.strong),
                       ),

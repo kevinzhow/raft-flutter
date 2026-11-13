@@ -213,8 +213,8 @@ void main() {
         };
         await mountSettingsWorkspace(t, w, dark, PrivateRouteGuard());
         final openingState = t.state(find.byType(ChannelSettings));
-        await tapSheetAction(t, 'Archive Channel');
-        await submitConfirmation(t, 'Archive Channel');
+        await tapSheetAction(t, 'Archive channel');
+        await submitConfirmation(t, 'Archive channel');
         expect(
           api.calls.where((r) => r.path == '/channels/c1/archive'),
           hasLength(1),
@@ -257,7 +257,7 @@ void main() {
           return {};
         };
         await mountSettingsWorkspace(t, w, dark, PrivateRouteGuard());
-        await tapSheetAction(t, 'Delete Channel');
+        await tapSheetAction(t, 'Delete channel');
         await submitConfirmation(t, 'Delete');
         expect(w.channel?.id, 'c1');
         expect(find.byType(RaftConfirmDialog), findsOneWidget);

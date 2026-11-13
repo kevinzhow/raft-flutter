@@ -94,7 +94,7 @@ final _forms = <_Form>[
     open: (t, context, w, _) => WorkspaceActions.create(context, w),
     field: () => _key('field-name'),
     fill: {() => _key('field-slug'): 'beta'},
-    submit: () => find.widgetWithText(RaftButton, 'Create Server'),
+    submit: () => find.widgetWithText(RaftButton, 'Create server'),
     routes: (api) => api.routes['POST /servers'] = (_) => {'id': 'sx'},
     submitted: (api, _) => _posted(api, 'POST', '/servers'),
   ),
@@ -110,7 +110,7 @@ final _forms = <_Form>[
     open: (t, context, w, _) => WorkspaceActions.leave(context, w),
     field: () => _key('field-confirm'),
     routes: (api) => api.routes['POST /servers/s1/leave'] = (_) => {},
-    submit: () => find.widgetWithText(RaftButton, 'Leave Server'),
+    submit: () => find.widgetWithText(RaftButton, 'Leave server'),
     submitted: (api, _) => _posted(api, 'POST', '/servers/s1/leave'),
   ),
   _Form(
@@ -186,13 +186,13 @@ final _forms = <_Form>[
     open: (t, context, w, _) => showFleetRegistration(context, w),
     field: () => _key('field-name'),
     routes: (api) => api.routes['POST /agents'] = (_) => {'id': 'a9'},
-    submit: () => find.widgetWithText(RaftButton, 'Create External Agent'),
+    submit: () => find.widgetWithText(RaftButton, 'Create external agent'),
     submitted: (api, _) => _posted(api, 'POST', '/agents'),
   ),
   _Form(
     'create agent',
     tall: true,
-    // With no computer the form is one banner; Web's shorter "Add Computer"
+    // With no computer the form is one banner; Web's shorter "Add computer"
     // copy no longer overflows 580 dp, so the check uses a shorter phone.
     keyboardViewportHeight: 520,
     open: (t, context, w, _) => showManagedAgentForm(context, w),

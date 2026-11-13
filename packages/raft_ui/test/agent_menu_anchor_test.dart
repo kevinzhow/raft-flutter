@@ -33,12 +33,12 @@ void main() {
                               onPressed: () => chosen++,
                             ),
                             RaftMenuEntry(
-                              label: 'Stop Agent',
+                              label: 'Stop agent',
                               glyph: RaftGlyph.square,
                               onPressed: () => chosen++,
                             ),
                             RaftMenuEntry(
-                              label: 'Restart / Reset',
+                              label: 'Restart / reset',
                               glyph: RaftGlyph.rotateCcw,
                               onPressed: () => chosen++,
                             ),

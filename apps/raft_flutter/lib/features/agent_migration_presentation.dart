@@ -100,7 +100,7 @@ class MigrationNoticePresentation extends MigrationPresentation {
 
 /// Web state.ts MIGRATION_PROGRESS_STEPS.
 const migrationProgressSteps = <String>[
-  'Stop Agent',
+  'Stop agent',
   'Pack workspace',
   'Transfer files',
   'Start on new computer',
@@ -1014,7 +1014,7 @@ MigrationNoticePresentation migrationNoticePresentation(
       );
     case 'ready':
       return status(
-        MigrationText('The workspace is packed. Sending it to {target}.', {
+        MigrationText('The workspace is uploaded. {target} is downloading it.', {
           'target': target,
         }),
       );

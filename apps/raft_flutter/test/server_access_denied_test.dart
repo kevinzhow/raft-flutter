@@ -87,7 +87,7 @@ void main() {
       'displayLanguage': 'zh-cn',
     };
     await f.mount(t, 'light', 390, uri: Uri(path: '/s/ghost'));
-    expect(find.text('未找到服务器'), findsOneWidget);
+    expect(find.text('找不到这个服务器'), findsOneWidget);
     expect(
       find.textContaining('3 秒后将跳转到 Alpha。', findRichText: true),
       findsOneWidget,

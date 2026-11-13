@@ -111,7 +111,7 @@ void main() {
       await host(t);
       expect(find.text('Conversation'), findsOneWidget);
       expect(find.text('Your server is not set up yet.'), findsOneWidget);
-      expect(find.text('Resume Setup'), findsOneWidget);
+      expect(find.text('Resume setup'), findsOneWidget);
       // At the bottom of the area, 16px from the edge, never wider than 560.
       final bar = t.getRect(
         find.byKey(const ValueKey('server-setup-resume-bar')),
@@ -135,7 +135,7 @@ void main() {
     'Resume Setup starts setup and the setup step replaces the conversation',
     (t) async {
       await host(t);
-      await t.tap(find.text('Resume Setup'));
+      await t.tap(find.text('Resume setup'));
       await _settle(t);
       expect(posts, ['/servers/s/setup-transition start']);
       expect(find.byType(RaftSetupResumeBar), findsNothing);
@@ -149,7 +149,7 @@ void main() {
     (t) async {
       heldStart = Completer<dynamic>();
       await host(t);
-      await t.tap(find.text('Resume Setup'));
+      await t.tap(find.text('Resume setup'));
       await t.pump();
       expect(find.text('Opening…'), findsOneWidget);
       expect(
@@ -175,9 +175,9 @@ void main() {
   testWidgets('a failed start keeps the bar and the conversation', (t) async {
     startError = const RaftApiException('Setup is locked', status: 409);
     await host(t);
-    await t.tap(find.text('Resume Setup'));
+    await t.tap(find.text('Resume setup'));
     await t.pumpAndSettle();
-    expect(find.text('Resume Setup'), findsOneWidget);
+    expect(find.text('Resume setup'), findsOneWidget);
     expect(find.text('Conversation'), findsOneWidget);
     expect(
       t

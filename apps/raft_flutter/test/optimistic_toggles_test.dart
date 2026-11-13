@@ -411,7 +411,7 @@ void main() {
     await t.longPressAt(Offset(rect.left + 2, rect.center.dy));
     await t.pumpAndSettle();
     expect(find.text('Remove from Saved'), findsOneWidget);
-    expect(find.text('Save Message'), findsNothing);
+    expect(find.text('Save'), findsNothing);
     // Unsaving moves the id and the badge; the menu then offers Save again.
     await t.tap(find.text('Remove from Saved'));
     await _settle(t);

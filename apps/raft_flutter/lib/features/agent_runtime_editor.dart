@@ -478,7 +478,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
       if (draft.fastMode != base.fastMode) tr('Mode'),
       if (draft.command.trim() != base.command) tr('Command'),
       if (draft.reasoning != base.reasoning) tr('Reasoning'),
-      if (RuntimeDraft.envChanged(draft, base)) tr('Environment Variables'),
+      if (RuntimeDraft.envChanged(draft, base)) tr('Environment variables'),
     ];
     widget.onClose(
       RuntimeEditorConfirm(
@@ -576,7 +576,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
     }
     label += switch (runtimeAvailabilityKind(id, machineRuntimes)) {
       'comingSoon' => raftText(context, ' (coming soon)'),
-      'updateComputer' => raftText(context, ' (update computer)'),
+      'updateComputer' => raftText(context, ' (update required)'),
       'notInstalled' => raftText(context, ' (not installed)'),
       _ => '',
     };
@@ -840,7 +840,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
             ),
           ),
           RaftStableField(
-            label: 'API Key',
+            label: 'API key',
             required: true,
             error: draft.apiKeyInvalid
                 ? tr('API Key is required for a custom provider.')
@@ -955,7 +955,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
         children: [
           if (supportsRuntimeCommand(runtime))
             RaftStableField(
-              label: 'Claude Command',
+              label: 'Claude command',
               hint: 'Executable path or command name; Slock adds the Claude stream-json runtime arguments.',
               child: _TextField(
                 key: const ValueKey('runtime-editor-command'),
@@ -965,7 +965,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
               ),
             ),
           RaftStableField(
-            label: 'Environment Variables',
+            label: 'Environment variables',
             child: RaftAgentKeyValueRows(
               hint:
                   'Environment variables are injected into the agent runtime.',

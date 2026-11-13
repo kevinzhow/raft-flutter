@@ -39,8 +39,8 @@ RaftMenuEntry communityHelpEntry(
       joining
           ? 'Joining community…'
           : chinese
-          ? 'Join Chinese Community'
-          : 'Join Community',
+          ? 'Join Chinese community'
+          : 'Join community',
     ),
     glyph: RaftGlyph.usersRound,
     onPressed: joining

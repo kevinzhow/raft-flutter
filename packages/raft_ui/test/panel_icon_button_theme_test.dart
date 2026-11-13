@@ -142,7 +142,7 @@ void main() {
               child: RaftPanelIconButton(
                 icon: (size, color) =>
                     SizedBox.square(key: const Key('art'), dimension: size),
-                tooltip: 'Direct Message',
+                tooltip: 'Direct message',
                 onPressed: () {},
               ),
             ),

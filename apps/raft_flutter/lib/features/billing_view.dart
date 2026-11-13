@@ -80,7 +80,7 @@ billingPlanPresentation(
     'Agent migration',
     'Unlimited message history',
     'Higher file upload limits',
-    'Use Joint Channels',
+    'Use external channels',
     'More professional features coming soon',
   ];
   return switch (plan) {
@@ -122,7 +122,7 @@ billingPlanPresentation(
         'Basic observability',
         '30 days of message history',
         '100 MB file uploads/month',
-        'Use Joint Channels (each Joint Channel has 2 free-server slots)',
+        'Host 1 Joint Channel and join others (each Joint Channel has 2 free-server slots)',
       ],
       notIncluded: const [
         'Agent migration',
@@ -751,7 +751,7 @@ class _BillingState extends ManagementState<BillingView> {
         (context) => RaftConfirmDialog(
           surfaceKey: const ValueKey('billing-confirm-dialog'),
           confirmKey: const ValueKey('billing-confirm'),
-          title: tr('Cancel Subscription'),
+          title: tr('Cancel subscription'),
           message: tr(
             'Cancel the whole Pro subscription at the end of the current billing period. The server keeps Pro capacity until the cancellation date, then returns to Free.',
           ),
@@ -914,7 +914,7 @@ class _BillingState extends ManagementState<BillingView> {
     final limitStats = [
       if (plan == 'free')
         RaftBillingStat(
-          tr('Message History'),
+          tr('Message history'),
           '${RaftBillingPlans.freeMessageHistoryDays} ${tr('days')}',
         ),
       if (plan == 'free' && quota != null)
@@ -973,7 +973,7 @@ class _BillingState extends ManagementState<BillingView> {
                   ? tr('Upgrade to Pro')
                   : manageSeatMode
                   ? tr('Manage Seats')
-                  : tr('Manage Plan'),
+                  : tr('Manage plan'),
               checkout: checkoutMode,
               interval: checkoutMode
                   ? RaftBillingInterval(

@@ -28,7 +28,7 @@ class _ConnectionPreview extends StatelessWidget {
 
   Widget launcher(BuildContext context) => Center(
     child: RaftButton(
-      label: 'Add Computer',
+      label: 'Add computer',
       onPressed: () => RaftAddComputerDialog.show(context, dialog),
     ),
   );

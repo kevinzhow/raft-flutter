@@ -983,7 +983,7 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
                   : RaftAgentBanner(
                       status: RaftAgentBannerStatus.warning,
                       description: onboardingLoadError!,
-                      action: 'Try Again',
+                      action: 'Try again',
                       onAction: loadOnboardingMachines,
                     ),
               onCreate: null,
@@ -1070,7 +1070,7 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
                     )
                   else if (!form.loading)
                     RaftAgentDialogButton(
-                      label: 'Try Again',
+                      label: 'Try again',
                       primary: true,
                       onPressed: form.load,
                     ),

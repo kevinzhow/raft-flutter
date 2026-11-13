@@ -120,7 +120,7 @@ class RaftbenchFindings extends StatelessWidget {
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               tr(
-                'Conversation evidence only. Tool outcomes and thread replies are not included. Suggestions need human review and never create or publish skills automatically.',
+                'Based on the selected channels and the thread replies you can read. Task conversations and tool results are not read yet, and very long messages are cut short. Suggestions are for you to review — nothing changes automatically.',
               ),
               style: hint,
             ),
@@ -308,7 +308,7 @@ class _Finding extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    tr('Draft improvement or shared-skill proposal'),
+                    tr('Suggestion'),
                     style: ty.callout(weight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),

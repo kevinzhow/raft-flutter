@@ -209,7 +209,7 @@ void main() {
         ),
       );
       expect(find.text('Local network access is off'), findsOneWidget);
-      expect(find.text('Try Again'), findsNothing);
+      expect(find.text('Try again'), findsNothing);
       await t.tap(find.text('Allow local network access'));
       await t.pump();
       expect(events, ['allow', 'retry']);

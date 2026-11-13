@@ -5,7 +5,7 @@ import 'package:raft_flutter/features/source_feedback_view.dart';
 
 import 'source_feedback_store_test.dart' as fixture;
 
-/// The feedback inbox's "Load More": tapping it appends the next page, and it
+/// The feedback inbox's "Load more": tapping it appends the next page, and it
 /// is gone once the last page is in.
 
 const _third = '33333333-3333-4333-8333-333333333333';
@@ -45,21 +45,21 @@ void main() {
       },
       (cursor) => cursor == null ? 'p2' : null,
     );
-    expect(find.text('Load More'), findsOneWidget);
+    expect(find.text('Load more'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('feedback-ticket-${fixture.second}')),
       findsNothing,
     );
-    await t.tap(find.text('Load More'));
+    await t.tap(find.text('Load more'));
     await t.pumpAndSettle();
     for (final id in [fixture.first, fixture.second, _third]) {
       expect(find.byKey(ValueKey('feedback-ticket-$id')), findsOneWidget);
     }
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('a single page never offers Load more', (t) async {
     await _mount(t, (_) => [fixture.ticket(fixture.first)], (_) => null);
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 }

@@ -9,8 +9,8 @@ import 'package:raft_ui/test_themes.dart';
 /// `TaskStatusBadge` (icon + label), `TimelineItem taskStatus` paints the dot.
 const _statuses = [
   ('todo', RaftMessageTaskStatus.todo, 'Todo'),
-  ('in_progress', RaftMessageTaskStatus.inProgress, 'In Progress'),
-  ('in_review', RaftMessageTaskStatus.inReview, 'In Review'),
+  ('in_progress', RaftMessageTaskStatus.inProgress, 'In progress'),
+  ('in_review', RaftMessageTaskStatus.inReview, 'In review'),
   ('done', RaftMessageTaskStatus.done, 'Done'),
   ('closed', RaftMessageTaskStatus.closed, 'Closed'),
 ];

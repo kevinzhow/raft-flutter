@@ -24,14 +24,14 @@ class _AgentMenuPreviewState extends State<_AgentMenuPreview> {
             tooltip: 'More Actions',
             entries: [
               RaftMenuEntry(
-                label: 'Direct Message',
+                label: 'Direct message',
                 leading: const RaftDirectMessageIcon(size: 14),
-                onPressed: () => setState(() => action = 'Direct Message'),
+                onPressed: () => setState(() => action = 'Direct message'),
               ),
               RaftMenuEntry(
-                label: 'Stop Agent',
+                label: 'Stop agent',
                 glyph: RaftGlyph.square,
-                onPressed: () => setState(() => action = 'Stop Agent'),
+                onPressed: () => setState(() => action = 'Stop agent'),
               ),
             ],
           ),

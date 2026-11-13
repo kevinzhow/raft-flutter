@@ -119,7 +119,7 @@ class RaftChatView extends StatefulWidget {
   /// opens the channel settings the header gear opens.
   final VoidCallback? onOpenChannelSettings;
 
-  /// HistoryLimitBanner's "View Billing" link (Web `nav.toSettings("billing")`).
+  /// HistoryLimitBanner's "View billing" link (Web `nav.toSettings("billing")`).
   final VoidCallback? onViewBilling;
   final bool thread;
 
@@ -1566,7 +1566,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 : task['status'] == 'done'
                 ? item(
                     'task-reopen',
-                    'Reopen Task',
+                    'Reopen task',
                     raftMessageMenuIcon(RaftGlyph.rotateCcw),
                   )
                 : item(
@@ -1589,7 +1589,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             [
               item(
                 'copy-link',
-                'Copy Link',
+                'Copy link',
                 raftMessageMenuIcon(RaftGlyph.link),
               ),
               item(
@@ -1614,7 +1614,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               if (!guest)
                 item(
                   'select',
-                  'Select Message',
+                  'Select message',
                   raftMessageMenuIcon(RaftGlyph.checkCircle),
                 ),
             ],
@@ -1632,19 +1632,19 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 ),
               item(
                 'save',
-                saved ? 'Remove from Saved' : 'Save Message',
+                saved ? 'Remove from Saved' : 'Save',
                 raftMessageMenuIcon(RaftGlyph.bookmark),
               ),
               if (follow)
                 followed
                     ? item(
                         'unfollow',
-                        'Unfollow Thread',
+                        'Unfollow thread',
                         raftMessageMenuIcon(RaftGlyph.messageCircleOff),
                       )
                     : item(
                         'follow',
-                        'Follow Thread',
+                        'Follow thread',
                         raftMessageMenuIcon(RaftGlyph.messageCirclePlus),
                       ),
               // Without the follow divider the task row joins this group.
@@ -2156,7 +2156,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         if (!parent && !widget.thread)
           RaftMessageToolbarAction(
             key: ValueKey('message-thread-${message.id}'),
-            label: raftText(context, 'Reply in Thread'),
+            label: raftText(context, 'Reply in thread'),
             icon: const RaftMessageThreadGlyph(),
             onPressed: presentationActive
                 ? () => _messages.threads.openThread(message)
@@ -2166,7 +2166,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           Builder(
             builder: (anchor) => RaftMessageToolbarAction(
               key: ValueKey('message-react-${message.id}'),
-              label: raftText(context, 'Add Reaction'),
+              label: raftText(context, 'Add reaction'),
               icon: const RaftMessageAddReactionGlyph(),
               popupOpen: pickerMessageId == message.id,
               onPressed: () => openReactionPicker(message, anchor),
@@ -2174,10 +2174,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           ),
         RaftMessageToolbarAction(
           key: ValueKey('message-save-${message.id}'),
-          label: raftText(
-            context,
-            saved ? 'Remove from Saved' : 'Save Message',
-          ),
+          label: raftText(context, saved ? 'Remove from Saved' : 'Save'),
           icon: const RaftIcon(RaftGlyph.bookmark, size: 13),
           active: saved,
           onPressed: presentationActive ? () => saveMessage(message) : null,
@@ -2198,17 +2195,17 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     return [
       if (!parent && !widget.thread && presentationActive)
         RaftMessageSemanticsAction(
-          raftText(context, 'Reply in Thread'),
+          raftText(context, 'Reply in thread'),
           (_) => _messages.threads.openThread(message),
         ),
       if (canReact)
         RaftMessageSemanticsAction(
-          raftText(context, 'Add Reaction'),
+          raftText(context, 'Add reaction'),
           (row) => openReactionPicker(message, row),
         ),
       if (presentationActive)
         RaftMessageSemanticsAction(
-          raftText(context, saved ? 'Remove from Saved' : 'Save Message'),
+          raftText(context, saved ? 'Remove from Saved' : 'Save'),
           (_) => saveMessage(message),
         ),
       RaftMessageSemanticsAction(
@@ -2900,7 +2897,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         ),
         linkLabel: widget.onViewBilling == null
             ? null
-            : raftText(context, 'View Billing'),
+            : raftText(context, 'View billing'),
         onLink: widget.onViewBilling,
       );
     }
@@ -2922,7 +2919,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       ),
       linkLabel: widget.onViewBilling == null
           ? null
-          : raftText(context, 'View Billing'),
+          : raftText(context, 'View billing'),
       onLink: widget.onViewBilling,
     );
   }
@@ -3636,7 +3633,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                     ? RaftComposerTaskToggle(
                         key: const Key('composer-as-task'),
                         checked: alsoCreateTask,
-                        label: raftText(context, 'As Task'),
+                        label: raftText(context, 'As task'),
                         onChanged:
                             presentationActive &&
                                 currentComposer() &&

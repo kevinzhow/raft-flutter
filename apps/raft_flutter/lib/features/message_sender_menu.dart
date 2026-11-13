@@ -35,9 +35,9 @@ Future<void> showMessageSenderMenu(
         onDismiss: () => Navigator.of(menuContext).pop(),
         sections: [
           [
-            item('name', 'Copy Name', name),
+            item('name', 'Copy name', name),
             if (handle != null && handle.isNotEmpty)
-              item('handle', 'Copy Handle', handle),
+              item('handle', 'Copy handle', handle),
           ],
         ],
       ),

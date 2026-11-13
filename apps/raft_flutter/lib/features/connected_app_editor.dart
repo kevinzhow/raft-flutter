@@ -434,7 +434,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       } else if (live) {
         error = failure(
           e,
-          isNew ? 'Failed to register app' : 'Failed to update app',
+          isNew ? 'Failed to create app' : 'Failed to update app',
         );
       }
     } finally {
@@ -626,7 +626,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             ' will stop working immediately. The new secret is shown once after regeneration.',
           ),
         ),
-        confirmLabel: tr('Regenerate client secret'),
+        confirmLabel: tr('Regenerate'),
         cancelLabel: tr('Cancel'),
         loadingLabel: tr('Regenerating...'),
         confirmGlyph: RaftGlyph.alertTriangle,
@@ -1002,7 +1002,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           logo: RaftAppEditorField(
             label: 'Logo',
             hint: app == null
-                ? 'Register the app first, then upload a logo from Edit.'
+                ? 'Create the app first, then upload a logo from Edit.'
                 : 'Upload a square logo, or reset to the deterministic monogram.',
             child: RaftAppEditorLogoWell(
               initials: initials,
@@ -1103,7 +1103,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
         ),
       ),
       RaftAppEditorField(
-        label: 'Agent Manifest URL',
+        label: 'Agent manifest URL',
         optional: true,
         child: input(
           manifest,
@@ -1207,7 +1207,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     final state = notifications;
     if (state?['pending_revision'] != null) {
       return const RaftSettingsRecipeBadge(
-        label: 'Pending App Review',
+        label: 'Pending app review',
         variant: RaftBadgeRecipeVariant.warning,
       );
     }
@@ -1239,7 +1239,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             gap: RaftSpace.x3,
             children: [
               RaftAppEditorSwitchRow(
-                title: 'Enable Webhook',
+                title: 'Enable webhook',
                 description:
                     'Receive selected Raft events at a signed HTTPS webhook.',
                 note: app == null
@@ -1354,7 +1354,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             RaftAppEditorCheckTile(
               label: tr(appNotificationEventLabels[e.key] ?? e.key),
               caption: e.value.length > 1
-                  ? tr('Requires Agent + Computer')
+                  ? tr('Requires agent + computer')
                   : null,
               value: events.contains(e.key),
               enabled: !locked && e.value.every(groups.contains),
@@ -1377,7 +1377,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     final app = editing;
     final status = publishStatus;
     final hint = switch (status) {
-      'publish_requested' || 'in_review' => 'Marketplace review is pending. You can edit this app while it waits, or delete it to withdraw the request.',
+      'publish_requested' || 'in_review' => 'Marketplace review is pending. You can edit this app while it waits, or withdraw the request.',
       'unpublish_requested' => 'Marketplace offline review is pending. The app stays listed and installable until App Admin approves removal. Approval preserves the source Server’s installation and access, but removes them on other Servers.',
       _ => null,
     };
@@ -1414,7 +1414,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
               action: RaftSettingsRecipeButton(
                 label: savingId == '${app['id']}'
                     ? 'Requesting…'
-                    : 'Request Publish',
+                    : 'Request publish',
                 variant: RaftButtonRecipeVariant.accent,
                 size: small,
                 onPressed: whenToUseTooLong || savingId == '${app['id']}'
@@ -1570,7 +1570,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
               key: const ValueKey('connected-app-regenerate-secret-button'),
               label: regenerating
                   ? 'Regenerating...'
-                  : 'Regenerate Client Secret',
+                  : 'Regenerate client secret',
               variant: RaftButtonRecipeVariant.primary,
               size: small,
               onPressed: submitting || regenerating ? null : confirmRegenerate,

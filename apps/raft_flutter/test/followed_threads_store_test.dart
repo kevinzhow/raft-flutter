@@ -409,7 +409,7 @@ void main() {
     final before = a.calls.length;
     await _pumpThreadActions(t, w);
     await _openThreadMenu(t);
-    expect(_followItem(t).label, 'Unfollow Thread');
+    expect(_followItem(t).label, 'Unfollow thread');
     expect(_followItem(t).glyph, RaftGlyph.messageCircleOff);
     expect(_followItem(t).onPressed, isNotNull);
     expect(find.text('Loading thread settings…'), findsNothing);
@@ -426,16 +426,16 @@ void main() {
     a.routes['POST /channels/threads/follow'] = (_) => write.future;
     await _pumpThreadActions(t, w);
     await _openThreadMenu(t);
-    expect(_followItem(t).label, 'Follow Thread');
+    expect(_followItem(t).label, 'Follow thread');
     await t.tap(find.byKey(const Key('thread-follow-menu-item')));
     await t.pump();
     // The label flips before the write is acknowledged.
     await _openThreadMenu(t);
-    expect(_followItem(t).label, 'Unfollow Thread');
+    expect(_followItem(t).label, 'Unfollow thread');
     expect(_followItem(t).onPressed, isNull);
     write.complete(const _Status(500));
     await _settle(t, () => !w.followedThreads.isPending('m'));
-    expect(_followItem(t).label, 'Follow Thread');
+    expect(_followItem(t).label, 'Follow thread');
     expect(_followItem(t).onPressed, isNotNull);
     expect(find.text('Retry'), findsOneWidget);
     expect(w.followedThreads.isFollowing('m'), isFalse);
@@ -450,7 +450,7 @@ void main() {
     await t.runAsync(w.followedThreads.refresh);
     await _pumpThreadActions(t, w);
     await _openThreadMenu(t);
-    expect(_followItem(t).label, 'Follow Thread');
+    expect(_followItem(t).label, 'Follow thread');
     // The server auto-followed the thread when the reply was posted.
     a.routes[_followed] = (_) => {
       'threads': [_row('m', 't1')],
@@ -467,7 +467,7 @@ void main() {
       ),
     );
     await _settle(t, () => w.followedThreads.isFollowing('m'));
-    expect(_followItem(t).label, 'Unfollow Thread');
+    expect(_followItem(t).label, 'Unfollow thread');
     expect(a.count(_followed), 2);
     await t.pumpWidget(const SizedBox());
     w.dispose();

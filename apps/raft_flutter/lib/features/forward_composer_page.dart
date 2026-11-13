@@ -657,7 +657,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
       return [
         RaftForwardSearchStatus(
           message: raftText(context, "Couldn't search destinations."),
-          retryLabel: raftText(context, 'Try Again'),
+          retryLabel: raftText(context, 'Try again'),
           onRetry: () => changedSearch(search.text),
         ),
       ];
@@ -665,7 +665,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
     if (results.isEmpty) {
       return [
         RaftForwardSearchStatus(
-          message: raftText(context, 'No destinations match your search.'),
+          message: raftText(context, 'No destinations match your search'),
         ),
       ];
     }

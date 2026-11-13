@@ -85,7 +85,7 @@ class TaskV2ConversationsFlag {
 }
 
 /// The menu entry for a message without a task: "Create task from message"
-/// with task v2, else "Convert to Task".
+/// with task v2, else "Convert to task".
 RaftMessageContextMenuItem messageTaskMenuItem(
   WorkspaceController w,
   RaftMessageContextMenuItem Function(String, String, Widget) item,
@@ -97,7 +97,7 @@ RaftMessageContextMenuItem messageTaskMenuItem(
       )
     : item(
         'task',
-        'Convert to Task',
+        'Convert to task',
         raftMessageMenuIcon(RaftGlyph.clipboardCheck),
       );
 

@@ -94,7 +94,7 @@ void main() {
     'signed out: Sign in and Create account open the matching auth form',
     (t) async {
       await _signedOut(t, '/s/gamma');
-      await t.tap(find.text('Create Account'));
+      await t.tap(find.text('Create account'));
       await _settle(t);
       expect(find.byType(PublicServerView), findsNothing);
       expect(t.widget<AuthView>(find.byType(AuthView)).initialMode, 'register');

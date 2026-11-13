@@ -341,7 +341,7 @@ final ParityCase _helpPopupCase = ParityCase(
     expect(popup, findsOneWidget);
     final documentation = find.descendant(
       of: popup,
-      matching: find.widgetWithText(RaftMenuItem, 'Raft Documentation'),
+      matching: find.widgetWithText(RaftMenuItem, 'Raft documentation'),
     );
     expect(documentation, findsOneWidget);
     if (ctx.props['helpPopupState'] != 'focus') return;

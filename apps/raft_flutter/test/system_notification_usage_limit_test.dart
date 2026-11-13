@@ -199,7 +199,7 @@ void main() {
 
       await t.tap(find.byType(RaftMobileNotificationButton));
       await t.pump(const Duration(milliseconds: 200));
-      expect(find.text('Claude usage limit reached'), findsOneWidget);
+      expect(find.text('Claude used up'), findsOneWidget);
       expect(
         find.text(
           '2 agents on Studio Mac may pause. Usage is expected to reset '
@@ -213,7 +213,7 @@ void main() {
       // Seen: the dot and the active count go, the entry stays listed.
       expect(find.byType(RaftNotificationAttention), findsNothing);
       expect(find.bySemanticsLabel(RegExp('active')), findsNothing);
-      expect(find.text('Claude usage limit reached'), findsOneWidget);
+      expect(find.text('Claude used up'), findsOneWidget);
 
       // Reopening does not repeat the receipt.
       await t.tapAt(const Offset(12, 600));
@@ -235,7 +235,7 @@ void main() {
     expect(find.byType(RaftNotificationAttention), findsNothing);
     await t.tap(find.byType(RaftMobileNotificationButton));
     await t.pump(const Duration(milliseconds: 200));
-    expect(find.text('Claude usage limit reached'), findsOneWidget);
+    expect(find.text('Claude used up'), findsOneWidget);
     expect(client.writes, isEmpty);
   });
 
@@ -249,11 +249,11 @@ void main() {
     await t.tap(find.text('Dismiss'));
     await t.pump(const Duration(milliseconds: 100));
     expect(client.writes.last, '/servers/s/system-notifications-v2/i1/dismiss');
-    expect(find.text('Claude usage limit reached'), findsNothing);
-    expect(find.text('No notifications right now'), findsOneWidget);
+    expect(find.text('Claude used up'), findsNothing);
+    expect(find.text('No notifications'), findsOneWidget);
     // The next poll reads the server snapshot, which no longer has it.
     await t.pump(const Duration(seconds: 61));
-    expect(find.text('Claude usage limit reached'), findsNothing);
+    expect(find.text('Claude used up'), findsNothing);
   });
 
   testWidgets('legacy entries keep counting as unread next to a seen one', (
@@ -278,7 +278,7 @@ void main() {
     expect(active('1'), findsOneWidget);
     await t.tap(find.byType(RaftMobileNotificationButton));
     await t.pump(const Duration(milliseconds: 200));
-    expect(find.text('Claude usage limit reached'), findsOneWidget);
+    expect(find.text('Claude used up'), findsOneWidget);
     expect(find.text('Plan downgraded to Free'), findsOneWidget);
     expect(find.text('2 items'), findsOneWidget);
     // Opening the center does not clear a legacy entry.
@@ -325,7 +325,7 @@ void main() {
     await boot(t, client, locale: const Locale('zh', 'CN'));
     await t.tap(find.byType(RaftMobileNotificationButton));
     await t.pump(const Duration(milliseconds: 200));
-    expect(find.text('Claude 已达到用量限制'), findsOneWidget);
+    expect(find.text('Claude 已用完'), findsOneWidget);
     expect(
       find.text(
         'Studio Mac 上的 2 个 Agent 可能会暂停。预计 '

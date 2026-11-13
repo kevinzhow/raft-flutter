@@ -6,7 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'source_channel_files_view_test.dart' show fileRow;
 
-/// A failed "Load More" must not take the already loaded files off the screen,
+/// A failed "Load more" must not take the already loaded files off the screen,
 /// and the user must be able to ask for that page again.
 /// Known failing: the view shows only "Could not load files." and its Retry
 /// reloads the first page (source_channel_files_view.dart, error branch).
@@ -63,12 +63,12 @@ void main() {
       ),
     );
     await t.pump();
-    await t.tap(find.text('Load More'));
+    await t.tap(find.text('Load more'));
     await t.pumpAndSettle();
     // The page failed; file a is still there.
     expect(find.byKey(const ValueKey('channel-file-a')), findsOneWidget);
     fail = false;
-    await t.tap(find.text('Load More'));
+    await t.tap(find.text('Load more'));
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('channel-file-a')), findsOneWidget);
     expect(find.byKey(const ValueKey('channel-file-b')), findsOneWidget);

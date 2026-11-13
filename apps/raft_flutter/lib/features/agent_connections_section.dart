@@ -288,7 +288,7 @@ class _AgentConnectionsSectionState extends State<AgentConnectionsSection>
             '{account} is disconnected for every agent on this server that uses it, not only this one. Those agents lose GitHub access until they are switched to another connection.',
             {'account': current.account ?? 'GitHub'},
           ),
-          confirmLabel: 'Disconnect this connection',
+          confirmLabel: 'Disconnect for all agents',
           confirmVariant: RaftButtonRecipeVariant.danger,
           onConfirm: () => _disconnect(current.id),
         ),
@@ -412,7 +412,9 @@ class _AgentConnectionsSectionState extends State<AgentConnectionsSection>
                 RaftCssText(tr('Not connected'), style: body),
               if (status.connected && status.scopes.isNotEmpty)
                 RaftCssText(
-                  fmt('Scopes: {scopes}', {'scopes': status.scopes.join(', ')}),
+                  fmt('GitHub scopes: {scopes}', {
+                    'scopes': status.scopes.join(', '),
+                  }),
                   style: mono,
                 ),
             ],
@@ -423,13 +425,13 @@ class _AgentConnectionsSectionState extends State<AgentConnectionsSection>
               gap: 4,
               children: [
                 RaftCssText(
-                  tr('Use GitHub connection'),
+                  tr('GitHub connection'),
                   style: RaftPanelText.label(t),
                 ),
                 RaftAgentCombobox(
                   key: const ValueKey('agent-connection-select'),
-                  label: 'Use GitHub connection',
-                  semanticLabel: tr('Use GitHub connection'),
+                  label: 'GitHub connection',
+                  semanticLabel: tr('GitHub connection'),
                   placeholder: tr('Choose a connection'),
                   enabled: !_switching,
                   value: status.connectorId ?? '',
@@ -457,7 +459,7 @@ class _AgentConnectionsSectionState extends State<AgentConnectionsSection>
                   key: const ValueKey('agent-connection-connect'),
                   label: tr(
                     connectors.isNotEmpty || status.connected
-                        ? 'Connect a new GitHub account'
+                        ? 'Connect new account'
                         : 'Connect',
                   ),
                   tooltip: fmt(
@@ -480,7 +482,7 @@ class _AgentConnectionsSectionState extends State<AgentConnectionsSection>
                 if (status.connected && current?.canManage == true)
                   RaftRecipeButton(
                     key: const ValueKey('agent-connection-disconnect'),
-                    label: tr('Disconnect this connection'),
+                    label: tr('Disconnect for all agents'),
                     variant: RaftButtonRecipeVariant.outline,
                     size: RaftButtonRecipeSize.sm,
                     onPressed: () => unawaited(_confirmDisconnect(current!)),

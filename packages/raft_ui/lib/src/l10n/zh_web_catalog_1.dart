@@ -6,11 +6,13 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "From {workspace}": "来自 {workspace}",
   "+{count} more": "等 {count} 人",
   "{provider} usage": "{provider} 用量",
+  "{runtime} usage": "{runtime} 用量",
   "Version {version}": "版本 {version}",
   "Account-wide · updated {updated}": "整个账户 · {updated}更新",
   "{percent}% used · resets {reset}": "已用 {percent}% · {reset}后重置",
   "{percent}% used · reset time unavailable": "已用 {percent}% · 重置时间暂不可用",
   "{provider} runtime account usage": "{provider} 运行时账户用量",
+  "{runtime} runtime account usage": "{runtime} 运行时账户用量",
   "Refresh again in ~{seconds}s": "约 {seconds} 秒后可再刷新",
   "Notification settings could not be loaded.": "无法加载通知设置。",
   "Stops notifications from {serverName} for your account. Other servers are unchanged.":
@@ -59,6 +61,8 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
       "你添加的 {count} 台计算机磁盘空间不足",
   "{free} free ({percent}%). Agents may fail to save work or start until space is freed.":
       "剩余 {free}（{percent}%）。腾出空间之前，Agent 可能无法保存工作或启动。",
+  "{free} free of {total}. Agents may fail to save work or start until space is freed.":
+      "剩余 {free}，共 {total}。腾出空间之前，Agent 可能无法保存工作或启动。",
   "{names} is offline": "共 {count} 台计算机离线：{names}",
   "{names} are offline": "共 {count} 台计算机离线：{names}",
   "{count} agent is active on this computer and can't run until it reconnects.":
@@ -180,7 +184,7 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Search Date Range": "搜索时间范围",
   "Any time": "不限时间",
   "Last 7 days": "最近 7 天",
-  "Last 30 days": "近 30 天",
+  "Last 30 days": "最近 30 天",
   "Sort search results": "搜索结果排序",
   "Most recent": "最近",
   "Relevance": "相关程度",
@@ -232,7 +236,7 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Section order": "分组顺序",
   "Pinned sort": "固定项目排序",
   "Joint channel sort": "联合频道排序",
-  "IM bridges": "即时通讯桥接",
+  "IM bridges": "IM Bridges",
   "Finish reviewing the current share first.": "请先完成当前分享内容的确认。",
   "Share link": "分享链接",
   "Could not copy code.": "无法复制代码。",
@@ -320,8 +324,8 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   " (deprecated)": "（已弃用）",
   " (installed)": "（已安装）",
   " (not installed)": "（未安装）",
-  " (offline)": " (离线)",
-  " (update computer)": "（需更新计算机）",
+  " · Offline": " · 离线",
+  " (update required)": "（需要更新）",
   " DATA": " DATA",
   " Upgrade for more.": " 升级以获取更多。",
   " again.": " 。",
@@ -334,7 +338,7 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   " · thread": " · 消息列",
   " — Who you are and your basic profile · no content access.":
       " —— 你是谁和你的基本资料 · 不访问内容。",
-  "#all will disappear from channel lists, and server members and agents will no longer be able to read or post there — including you. Existing history is preserved. To bring it back, go to Settings → Server → System Channels and turn off \"Hide #all channel\".": "#all 将从频道列表中消失，服务器成员和 Agent 将无法在其中阅读或发送消息——包括你自己。已有的历史记录会保留。要恢复它，请前往 设置 → 服务器 → 系统频道，关闭「隐藏 #all 频道」。",
+  '#all will disappear from channel lists, and server members and agents will no longer be able to read or post there — including you. Existing history is preserved. To bring it back, go to Settings → Administration → System Channels and turn off "Hide #all channel".': "#all 将从频道列表中消失，服务器成员和 Agent 将无法在其中阅读或发送消息——包括你自己。已有的历史记录会保留。要恢复它，请前往 设置 → 管理 → 系统频道，关闭「隐藏 #all 频道」。",
   "#all will reappear as the server-wide channel for server members and active agents.":
       "#all 将重新作为面向服务器成员和活跃 Agent 的服务器全局频道出现。",
   "#unknown": "#未知",
@@ -344,14 +348,14 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "(you)": "（你）",
   "). Reviewer points at the offending swatch/instance, and we tune the hex in":
       "）。审查者指出有问题的色块/实例，然后我们在",
-  "+ Create New Server": "+ 创建新服务器",
+  "+ Create new server": "+ 创建新服务器",
   ", ": ", ",
   ", not orange. The orange-tinted card in the design doc":
       "，而非 orange。设计文档中橙色调的卡片",
   "0 B": "0 B",
   "01": "01",
   "02": "02",
-  "1 Agent": "1 个 Agent",
+  "1 agent": "1 个 Agent",
   "1 file": "1 个文件",
   "1 image": "1 张图片",
   "1. Install": "1. 安装",
@@ -366,8 +370,6 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "3. Restart after install": "3. 安装后重启",
   "30 days of message history": "30 天消息历史",
   "5 MB": "5 MB",
-  "<b>Preview truncated.</b> This file is large, so only the beginning is shown — find-in-page (⌘/Ctrl-F) won't match text beyond this preview. Use Download for the full file.":
-      "<b>预览已截断。</b>此文件较大，仅显示开头部分——页面内查找（⌘/Ctrl-F）无法匹配预览之外的文本；请使用「下载」获取完整文件。",
   "<inviter></inviter> invited you to join <server></server> on Raft.":
       "<inviter></inviter> 邀请你加入 Raft 上的 <server></server>。",
   "@ Me": "@我",
@@ -385,15 +387,14 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "A computer is where your agents run. Your server needs at least one online.":
       "计算机是你的 Agent 运行的地方。你的服务器至少需要一台在线。",
   "A default is picked for you.": "已为你选了一个默认头像。",
-  "A friendly name for this computer.": "给这台计算机起一个好记的名称。",
   "A newer version of Raft is available.": "有新版本的 Raft 可用。",
   "A server is the workspace for your people, agents, channels, and computers.":
       "服务器是你的成员、Agent、频道和计算机所在的工作空间。",
   "A shared workspace for humans and agents.": "为人与 Agent 打造的协作空间。",
   "A-Z": "A-Z",
   "AI Providers": "AI Provider",
+  "AI providers": "AI Provider",
   "Providers": "提供方",
-  "API Key": "API 密钥",
   "API Key is required for a custom provider.": "自定义提供方需要 API 密钥。",
   "API Key is required when a built-in provider is selected.":
       "选择内置提供方时需要 API 密钥。",
@@ -410,7 +411,7 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Account": "账户",
   "Account usage is unavailable for this runtime or sign-in method.":
       "此运行时或登录方式暂不支持账户用量查询。",
-  "Action cards": "Action cards",
+  "Action cards": "操作卡片",
   "Action cards can't be forwarded. They must stay where their status and permissions are current.":
       "操作卡片无法转发。它们必须留在状态和权限仍然有效的原位置。",
   "Action in progress": "操作进行中",
@@ -419,15 +420,15 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Active events": "生效中的事件",
   "Activity": "动态",
   "Activity diagnostics": "活动诊断",
-  "Activity is empty": "动态为空",
   "Activity muted": "动态已静音",
   "Activity muted. Direct mentions can still notify you.": "动态已静音。直接提及你时仍会通知。",
+  "Muted. Nothing here notifies you, not even @mentions.":
+      "已静音。这里的任何消息都不会通知你，@你 也不会。",
   "Activity only": "仅动态",
   "Activity tab history": "Activity 标签页历史",
   "Add": "添加",
   "Add API key": "添加 API 密钥",
-  "Add Another": "再加一条",
-  "Create Task": "创建任务",
+  "New task": "新建任务",
   "Create Tasks": "创建任务",
   "Create {count} Tasks": "创建 {count} 个任务",
   "Task {n}": "任务 {n}",
@@ -438,21 +439,20 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Edit {name}": "编辑 {name}",
   "Browser language resolves to {language} for this browser.":
       "浏览器语言在此浏览器解析为 {language}。",
-  "No {status} tasks.": "没有{status}的任务。",
-  "Add Computer": "添加计算机",
+  "No {status} tasks": "没有{status}的任务",
   "Add Header": "添加请求头",
-  "Add Member": "添加成员",
+  "Add member": "添加成员",
   "Add Members": "添加成员",
   "Add Raft to Home Screen": "将 Raft 添加到主屏幕",
   "Add Raft to your Home Screen": "将 Raft 添加到主屏幕",
-  "Add Reaction": "添加回应",
-  "Add Variable": "添加变量",
+  "Add reaction": "添加回应",
+  "Add variable": "添加变量",
   "Add a Streamable HTTP server or start from a recommended integration.":
       "添加 Streamable HTTP 服务器，或从推荐集成开始。",
-  "Add a channel, sender, or time filter, or switch the sort to Recent.":
-      "请添加频道、发送者或时间过滤条件，或将排序切换为“最近”。",
-  "Add a channel, sender, or time filter, switch the sort to Recent, or retry.":
-      "请添加频道、发送者或时间过滤条件、切换为“最近”排序，或重试。",
+  "Add a channel or sender filter, or switch the sort to Recent (a time range works with Recent).":
+      "请添加频道或发送者过滤条件，或将排序切换为“最新”（时间范围需配合“最新”使用）。",
+  "Add a channel or sender filter, switch the sort to Recent (a time range works with Recent), or retry.":
+      "请添加频道或发送者过滤条件、切换为“最新”排序（时间范围需配合“最新”使用），或重试。",
   "Add a note": "添加备注",
   "Add Agent": "添加 Agent",
   "Add All": "全部添加",
@@ -463,7 +463,7 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "All computers are up to date and online.": "所有计算机都已更新且在线。",
   "Add a computer to run agents in this server.": "添加计算机以在此服务器运行 Agent。",
   "Directory could not be loaded.": "无法加载列表。",
-  "Add humans or agents to public/private channels when this agent's server role has channel management authority (slock channel add-member).": "当此 Agent 的服务器角色拥有频道管理权限时，将 human 或 Agent 添加到公开/私有频道（slock channel add-member）。",
+  "Add humans or agents to public/private channels when this agent's server role has channel management authority (slock channel add-member).": "当此 Agent 的服务器角色拥有频道管理权限时，将人类或 Agent 添加到公开/私有频道（slock channel add-member）。",
   "Add members": "添加成员",
   "Add owner/admin": "添加所有者/管理员",
   "Add Server": "添加服务器",
@@ -485,15 +485,14 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Agent DM": "Agent 私信",
   "Agent DM activity": "Agent 私信动态",
   "Agent DMs": "Agent 私信",
-  "Agent Manifest URL": "Agent 清单网址",
-  "Agent Workspaces": "Agent 工作区",
+  "Agent manifest URL": "Agent 清单网址",
+  "Agent workspaces": "Agent 工作区",
   "Agent avatar": "Agent 头像",
   "Agent connection": "Agent 连接",
   "Agent deleted. Workspace retained on disk.": "Agent 已删除。工作区仍保留在磁盘上。",
   "Agent did not start": "Agent 未启动",
   "Agent directory": "Agent 列表",
   "Agent encountered an error": "Agent 遇到错误",
-  "Agent id is required for MCP usage": "MCP 使用记录需要 Agent ID",
   "Agent manifest:": "Agent manifest：",
   "Agent messaging": "Agent 消息",
   "Agent messaging requires Raft Agent Login. Cannot send chat as you, speak as the agent, read messages, or take actions.":
@@ -516,7 +515,7 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Agent unavailable": "Agent 不可用",
   "Agent:": "Agent：",
   "Agents": "Agent",
-  "Agents Stopped": "Agent 已停止",
+  "Agents stopped": "Agent 已停止",
   "Agents cannot add channel members from mention actions. Ask a human member to add them.":
       "Agent 无法通过提及操作添加频道成员。请让人类成员来添加。",
   "Agents keep working after you leave.": "离开后，Agent 仍会继续工作。",

@@ -80,12 +80,12 @@ class ChannelActivityScope {
     title: switch (view) {
       'saved' => 'No saved threads yet',
       'done' => 'Nothing completed yet',
-      'mentions' => 'No mentions yet',
-      'unread' => 'No unread chats',
+      'mentions' => 'No mentions',
+      'unread' => 'No unread conversations',
       'dms' when channelLabel == null => 'No DM activity',
       _ =>
         channelLabel == null
-            ? 'Activity is empty'
+            ? 'No conversations'
             : 'No activity in $channelLabel',
     },
     detail: switch (view) {

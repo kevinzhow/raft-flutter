@@ -845,7 +845,7 @@ class RaftAuthTextLink extends StatelessWidget {
   final VoidCallback? onTap;
   final bool small;
 
-  /// Muted link with `font-bold` (ServerSelector "Log out": `text-sm
+  /// Muted link with `font-bold` (ServerSelector "Sign out": `text-sm
   /// font-bold` over the muted variant).
   final bool bold;
 
@@ -1167,7 +1167,7 @@ class RaftAuthAvatarField extends StatelessWidget {
 }
 
 /// OnboardingSessionFooter: `text-center text-sm text-foreground-muted`,
-/// "Signed in as {name}. " + muted TextLink "Log out".
+/// "Signed in as {name}. " + muted TextLink "Sign out".
 class RaftAuthSessionFooter extends StatelessWidget {
   const RaftAuthSessionFooter({super.key, required this.name, this.onSignOut});
   final String name;
@@ -1193,7 +1193,7 @@ class RaftAuthSessionFooter extends StatelessWidget {
           // `<TextLink variant="muted" inline>`: the underline stays at rest in
           // a sentence of the same colour.
           RaftAuthTextLink(
-            label: raftText(context, 'Log out'),
+            label: raftText(context, 'Sign out'),
             inline: true,
             onTap: onSignOut,
           ),
@@ -1280,16 +1280,16 @@ class RaftAuthPage extends StatelessWidget {
   // Web copy (en.ts pages.login/register/forgotPassword/resetPassword).
   String get _title => switch (mode) {
     RaftAuthMode.register => 'Create your account',
-    RaftAuthMode.forgot => 'Reset Password',
-    RaftAuthMode.reset => 'Set New Password',
+    RaftAuthMode.forgot => 'Reset password',
+    RaftAuthMode.reset => 'Set new password',
     RaftAuthMode.login =>
-      accountLink == null ? 'Sign In' : 'Connect to your existing account',
+      accountLink == null ? 'Sign in' : 'Connect to your existing account',
   };
   String get _submit => switch (mode) {
     RaftAuthMode.register => busy ? 'Creating account…' : 'Continue',
-    RaftAuthMode.forgot => busy ? 'Sending…' : 'Send Reset Link',
-    RaftAuthMode.reset => busy ? 'Resetting…' : 'Reset Password',
-    RaftAuthMode.login => busy ? 'Signing in…' : 'Sign In',
+    RaftAuthMode.forgot => busy ? 'Sending…' : 'Send reset link',
+    RaftAuthMode.reset => busy ? 'Resetting…' : 'Reset password',
+    RaftAuthMode.login => busy ? 'Signing in…' : 'Sign in',
   };
 
   @override
@@ -1533,7 +1533,7 @@ class RaftAuthPage extends StatelessWidget {
             // raft-ui TextLink; the frozen looks keep the v1.21 primary one.
             RaftAuthTextLink(
               key: const Key('auth-back-to-sign-in'),
-              label: tr('Back to Sign In'),
+              label: tr('Back to sign in'),
               primary: !RaftTokens.of(context).textLinksUnderlined,
               sans: true,
               onTap: busy ? null : () => onMode(RaftAuthMode.login),
@@ -1702,7 +1702,7 @@ class RaftAuthVerifyPage extends StatelessWidget {
             ),
           RaftButton(
             key: const Key('verify-resend'),
-            label: resending ? tr('Sending…') : tr('Resend Verification Email'),
+            label: resending ? tr('Sending…') : tr('Resend verification email'),
             glyph: RaftGlyph.refreshCw,
             variant: RaftControlVariant.accent,
             size: RaftButtonRecipeSize.lg,
@@ -1773,7 +1773,7 @@ class RaftAuthVerifyPage extends StatelessWidget {
           const SizedBox(height: 12),
           RaftButton(
             key: const Key('verify-logout'),
-            label: tr('Log out'),
+            label: tr('Sign out'),
             glyph: RaftGlyph.logOut,
             // Web v1.24: `variant="default"` (was ghost / outline).
             variant: RaftControlVariant.surface,

@@ -509,7 +509,7 @@ void main() {
       await t.pumpAndSettle();
       expect(c.sent('DELETE /servers/s1/invites/i1'), hasLength(1));
       expect(find.byKey(const ValueKey('admin-confirm-dialog')), findsNothing);
-      expect(_in('invites', find.text('No pending invites.')), findsOneWidget);
+      expect(_in('invites', find.text('No pending invites')), findsOneWidget);
     });
 
     testWidgets('pending invites: cancel keeps the invite', (t) async {

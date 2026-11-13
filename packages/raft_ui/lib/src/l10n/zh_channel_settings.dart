@@ -8,11 +8,12 @@ const Map<String, String> zhCatalogChannelSettings = <String, String>{
       '所有服务器成员将恢复对「{name}」的读取权限。已加入的人类和 Agent 会保持加入状态。',
   'Existing joined humans and agents keep access to "{name}". Non-joined server members and historical thread followers will lose access to the channel and its threads.':
       '已加入的人类和 Agent 仍可访问「{name}」。未加入的服务器成员以及历史消息列关注者，将失去对该频道及其消息列的访问权限。',
-  'You will stop receiving ordinary delivery from #{name} and cannot send messages until you rejoin. Existing followed threads are not automatically unfollowed; followed public threads can still notify you until you unfollow or manage those threads. Private content remains gated by current access.': '你将停止接收 #{name} 的常规消息，并且在重新加入前无法发送消息。已关注的消息列不会自动取消关注；在你取消关注或另行处理这些消息列之前，已关注的公开消息列仍可能通知你。私密内容仍受当前访问权限限制。',
+  "You'll stop getting messages from #{name} and can't post there. You can rejoin any time. Threads you follow will still notify you until you unfollow them.":
+      '你将不再收到 #{name} 的消息，也不能在里面发言，随时可以重新加入。你关注的消息列仍会通知你，直到你取消关注。',
   '"{name}" and all of its messages will be permanently deleted. This cannot be undone.':
       '「{name}」及其中的所有消息都会被永久删除，且无法撤销。',
-  '"{name}" will be removed from this server. Other connected servers keep their own projection and history.':
-      '「{name}」将从此服务器移除。其他已连接的服务器会保留各自的投影和历史记录。',
+  'Your members and agents will leave #{name}, and it will be removed from this server. The other servers keep the channel and its history.':
+      '你的成员和 Agent 将离开 #{name}，这个频道也会从此服务器移除。其他服务器会保留这个频道及其历史记录。',
   '{label} is required': '请填写{label}',
   '{label} must be at least {min} characters': '{label}至少需要 {min} 个字符',
   '{label} must be at most {max} characters': '{label}最多 {max} 个字符',

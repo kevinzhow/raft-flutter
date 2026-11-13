@@ -16,7 +16,7 @@ void main() {
         theme: raftTheme(),
         home: Scaffold(
           body: RaftDialogShell(
-            title: 'Delete Server',
+            title: 'Delete server',
             surfaceKey: const ValueKey('surface'),
             body: const SizedBox(key: ValueKey('body'), height: 40),
             footer: const [Text('Action')],
@@ -27,11 +27,11 @@ void main() {
     );
     await t.pump();
     final surface = t.getRect(find.byKey(const ValueKey('surface')));
-    final title = t.getRect(find.text('Delete Server'));
+    final title = t.getRect(find.text('Delete server'));
     final body = t.getRect(find.byKey(const ValueKey('body')));
     expect(title.left - surface.left, 20);
     expect(title.top - surface.top, 20);
-    expect(t.widget<Text>(find.text('Delete Server')).style!.fontSize, 17);
+    expect(t.widget<Text>(find.text('Delete server')).style!.fontSize, 17);
     expect(body.left - surface.left, 20);
     expect(body.top - title.bottom, 6);
     final close = t.getRect(

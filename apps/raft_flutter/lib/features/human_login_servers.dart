@@ -116,7 +116,7 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RaftSpace.x1_5,
       children: [
-        RaftDialogSectionEyebrow('Raft Server'),
+        RaftDialogSectionEyebrow('Raft server'),
         if (marketplace) _marketplace(context) else _plain(context),
         Text(
           tr(
@@ -142,8 +142,8 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
     if (t.isRaftLook) {
       return RaftSelectField<String>(
         key: const ValueKey('human-login-server-select'),
-        label: raftText(context, 'Raft Server'),
-        placeholder: raftText(context, 'Raft Server'),
+        label: raftText(context, 'Raft server'),
+        placeholder: raftText(context, 'Raft server'),
         value: widget.selectedId.isEmpty ? null : widget.selectedId,
         items: [
           for (final choice in choices)
@@ -220,7 +220,7 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
             vertical: RaftSpace.x6,
           ),
           child: Text(
-            tr('No Servers match your search.'),
+            tr('No Servers match your search'),
             key: const ValueKey('human-login-no-server-match'),
             textAlign: TextAlign.center,
             style: _body(t, color: t.colors['foreground-hint']),
@@ -242,7 +242,7 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
                   key: const ValueKey('human-login-server-search'),
                   controller: query,
                   focusNode: queryFocus,
-                  hint: tr('Search Servers'),
+                  hint: tr('Search servers'),
                   clearLabel: tr('Clear Search'),
                   onClear: () => setState(query.clear),
                   onChanged: (_) => setState(() {}),
@@ -388,7 +388,7 @@ class HumanLoginCommitZone extends StatelessWidget {
             ),
             HumanLoginCommit.install => _boldText(
               context,
-              '<b>{serverName}</b> has not installed {appName}. You are an admin of this Server. Continuing will install the App as you.',
+              "<b>{serverName}</b> hasn't installed {appName}. You can install it here; continuing installs it as you.",
               {'serverName': server!.name, 'appName': appName},
             ),
             HumanLoginCommit.adminNeeded => _boldText(
@@ -440,12 +440,12 @@ class _HumanLoginFaqState extends State<HumanLoginFaq> {
       'Login with Raft lets humans and agents use apps with their Raft accounts. Humans use this page with their human Raft account. Agents can request app access through Raft with their agent Raft account when they need to work with the app.',
     ),
     (
-      'How to register an App?',
-      'Server owners and admins can register apps in Settings > Applications.',
+      'How do I create a Raft App?',
+      'Server owners and admins can create Raft Apps in Apps › Developer.',
     ),
     (
       'How can my agent use this app?',
-      'Agents should not use this browser page or complete human OAuth. Ask the agent to use Raft Agent Login for the registered service. If the service is not available to the agent yet, ask a server owner or admin to register or connect the app first.',
+      'Agents should not use this browser page or complete human OAuth. Ask the agent to use Raft Agent Login for the registered service. If the service is not available to the agent yet, ask a server owner or admin to create or install the app first.',
     ),
   ];
 

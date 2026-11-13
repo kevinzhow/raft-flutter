@@ -105,7 +105,7 @@ void main() {
           });
           await t.drag(list, const Offset(0, -6000));
           await t.pumpAndSettle();
-          final footer = find.widgetWithText(RaftButton, 'Load More');
+          final footer = find.widgetWithText(RaftButton, 'Load more');
           expect(footer, findsOneWidget);
           final button = t.getRect(footer);
           expect(
@@ -123,7 +123,7 @@ void main() {
           );
           nextPage.complete();
           await t.pumpAndSettle();
-          expect(find.text('Load More'), findsNothing);
+          expect(find.text('Load more'), findsNothing);
           final dynamic state = t.state(find.byType(ResourceView));
           expect(state.rows, hasLength(60));
           expect(t.takeException(), isNull);

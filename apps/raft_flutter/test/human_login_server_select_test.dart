@@ -72,8 +72,8 @@ void main() {
               (server.id, server.label),
           ]);
           expect(select.value, 'alpha');
-          expect(select.label, 'Raft Server');
-          expect(select.placeholder, 'Raft Server');
+          expect(select.label, 'Raft server');
+          expect(select.placeholder, 'Raft server');
           expect(
             select.onChanged,
             isNotNull,

@@ -125,8 +125,9 @@ void main() {
         'reason': 'session_needs_reset',
         'autoRestartPaused': true,
       });
-      expect(reset, startsWith("This agent's conversation no longer fits"));
-      expect(reset, contains('Reset Session & Restart'));
+      // Web 1.24 activity.status.sessionNeedsReset wording.
+      expect(reset, startsWith('The context is too large'));
+      expect(reset, contains('Reset the session and restart'));
       expect(reset, isNot(contains('or restart the agent')));
     });
 
@@ -208,7 +209,10 @@ void main() {
           },
         ),
       );
-      expect(find.textContaining('Reset Session & Restart'), findsOneWidget);
+      expect(
+        find.textContaining('Reset the session and restart'),
+        findsOneWidget,
+      );
       expect(
         find.textContaining('automatic restarts are paused'),
         findsNothing,
@@ -231,7 +235,10 @@ void main() {
         }),
       );
       await t.pumpAndSettle();
-      expect(find.textContaining('Reset Session & Restart'), findsOneWidget);
+      expect(
+        find.textContaining('Reset the session and restart'),
+        findsOneWidget,
+      );
       // A later frame without the carrier clears it.
       c.stream.add(
         const RaftEvent('agent:activity', {

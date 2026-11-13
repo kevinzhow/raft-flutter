@@ -25,8 +25,8 @@ const raftTaskTransitions = <String, List<String>>{
 };
 String raftTaskStatusLabel(String status) => switch (status) {
   'todo' => 'Todo',
-  'in_progress' => 'In Progress',
-  'in_review' => 'In Review',
+  'in_progress' => 'In progress',
+  'in_review' => 'In review',
   'done' => 'Done',
   'closed' => 'Closed',
   _ => status,
@@ -417,7 +417,7 @@ class RaftSliverTaskSection extends StatelessWidget {
   final IndexedWidgetBuilder itemBuilder;
 
   /// Below the rows inside the open panel, with no gap (TaskSection's
-  /// per-lane "Load More" button follows `TaskSectionItems` directly).
+  /// per-lane "Load more" button follows `TaskSectionItems` directly).
   final Widget? footer;
   final bool collapsed;
   final VoidCallback? onToggle;
@@ -892,7 +892,7 @@ class _LaneEmptyPainter extends CustomPainter {
 
 /// TasksPanel lane paging button: `<Button size="sm" variant="outline"
 /// className="box-border h-8 min-h-8 w-full gap-1 py-0 text-xs">`, labelled
-/// `task.panel.loadMore` ("Load More") or `common.loading` ("Loading more…").
+/// `task.panel.loadMore` ("Load more") or `common.loading` ("Loading more…").
 class RaftTaskLoadMoreButton extends StatelessWidget {
   const RaftTaskLoadMoreButton({
     super.key,
@@ -912,7 +912,7 @@ class RaftTaskLoadMoreButton extends StatelessWidget {
       onPressed: loading ? null : onPressed,
       child: Center(
         child: Text(
-          raftText(context, loading ? 'Loading more…' : 'Load More'),
+          raftText(context, loading ? 'Loading more…' : 'Load more'),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12, height: 16 / 12),

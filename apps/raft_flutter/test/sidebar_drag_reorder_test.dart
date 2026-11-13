@@ -577,7 +577,7 @@ void main() {
       // The long press still opens the row menu directly.
       await tester.longPress(row('d2'));
       await tester.pumpAndSettle();
-      expect(find.text('Close Chat'), findsOneWidget);
+      expect(find.text('Close chat'), findsOneWidget);
       expect(patches, isEmpty);
     });
 
@@ -667,7 +667,7 @@ void main() {
             .opacity,
         lessThan(1),
       );
-      expect(find.text('Direct Messages'), findsNWidgets(2));
+      expect(find.text('Direct messages'), findsNWidgets(2));
       // The target marks the edge the section will land on.
       final drop = tester.widget<DecoratedBox>(
         find.byKey(const ValueKey('sidebar-section-drop-system:channels')),
@@ -675,7 +675,7 @@ void main() {
       expect((drop.decoration as BoxDecoration).border, isNotNull);
       await gesture.up();
       await tester.pumpAndSettle();
-      expect(find.text('Direct Messages'), findsOneWidget);
+      expect(find.text('Direct messages'), findsOneWidget);
       expect(patches, hasLength(1));
     });
 

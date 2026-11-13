@@ -93,7 +93,7 @@ class RaftErrorBanner extends StatelessWidget {
     super.key,
     this.small = false,
     this.onRetry,
-    this.retryLabel = 'Try Again',
+    this.retryLabel = 'Try again',
     this.bold = false,
   });
   final String message;

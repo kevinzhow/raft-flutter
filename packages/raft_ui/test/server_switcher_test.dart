@@ -39,13 +39,13 @@ void main() {
                     ),
                   ],
                   actions: [
-                    RaftMenuEntry(label: 'Join Community', onPressed: () {}),
+                    RaftMenuEntry(label: 'Join community', onPressed: () {}),
                     RaftMenuEntry(
-                      label: 'Switch or Create Server',
+                      label: 'Switch or create server',
                       onPressed: () {},
                     ),
                     RaftServerMenuAction(
-                      label: 'Invite Human',
+                      label: 'Invite human',
                       tone: RaftServerMenuActionTone.invite,
                       onPressed: () {},
                     ),
@@ -102,7 +102,7 @@ void main() {
                       ],
                       actions: [
                         RaftMenuEntry(
-                          label: 'Switch or Create Server',
+                          label: 'Switch or create server',
                           onPressed: () {},
                         ),
                       ],
@@ -191,18 +191,18 @@ void main() {
                       ],
                       actions: [
                         RaftMenuEntry(
-                          label: 'Join Community',
+                          label: 'Join community',
                           glyph: RaftGlyph.plus,
                           onPressed: () {},
                         ),
                         RaftMenuEntry(
-                          label: 'Switch or Create Server',
+                          label: 'Switch or create server',
                           glyph: RaftGlyph.plus,
                           onPressed: () => global++,
                         ),
                         RaftServerMenuAction(
                           tone: RaftServerMenuActionTone.invite,
-                          label: 'Invite Human',
+                          label: 'Invite human',
                           glyph: RaftGlyph.userPlus,
                           onPressed: () {},
                         ),
@@ -222,7 +222,7 @@ void main() {
         expect(find.text('88'), findsNothing);
         expect(FocusManager.instance.primaryFocus!.skipTraversal, isTrue);
         final invite = find.byWidgetPredicate(
-          (w) => w is RaftInteractive && w.semanticLabel == 'Invite Human',
+          (w) => w is RaftInteractive && w.semanticLabel == 'Invite human',
         );
         final tokens = RaftTokens.of(t.element(menu));
         final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
@@ -274,7 +274,7 @@ void main() {
         expect(menu, findsNothing);
         await t.tap(find.byKey(const Key('rail-workspace')));
         await t.pumpAndSettle();
-        await t.tap(find.text('Switch or Create Server'));
+        await t.tap(find.text('Switch or create server'));
         await t.pumpAndSettle();
         expect(global, 1);
         expect(menu, findsNothing);
@@ -315,7 +315,7 @@ void main() {
                     ],
                     actions: [
                       RaftMenuEntry(
-                        label: 'Switch or Create Server',
+                        label: 'Switch or create server',
                         onPressed: () {},
                       ),
                     ],
@@ -334,7 +334,7 @@ void main() {
           4,
         ); // Anchored top already inside Source's gutter rule.
         expect(find.text('99+'), findsOneWidget);
-        final footer = t.getRect(find.text('Switch or Create Server'));
+        final footer = t.getRect(find.text('Switch or create server'));
         expect(footer.bottom, lessThanOrEqualTo(240));
         await t.drag(
           find.byKey(const Key('server-menu-list')),
@@ -342,7 +342,7 @@ void main() {
         );
         await t.pumpAndSettle();
         expect(
-          t.getRect(find.text('Switch or Create Server')) == footer,
+          t.getRect(find.text('Switch or create server')) == footer,
           isTrue,
         );
         expect(t.takeException(), isNull);

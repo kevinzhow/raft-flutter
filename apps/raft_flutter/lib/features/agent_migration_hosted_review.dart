@@ -146,7 +146,9 @@ class _AgentMigrationHostedReviewState
             ),
           ]),
           if (skipped.isEmpty)
-            row(tr('Left behind'), [RaftCssText(tr('No files'), style: detail)])
+            row(tr('Left behind'), [
+              RaftCssText(tr('No skipped files'), style: detail),
+            ])
           else
             for (final group in skipped)
               row(

@@ -344,8 +344,8 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
         chinese: Localizations.localeOf(context).languageCode == 'zh',
       );
       return reset.isEmpty
-          ? raftFormat(context, '{plan} · limit reached', {'plan': plan})
-          : raftFormat(context, '{plan} · limit reached, resets {reset}', {
+          ? raftFormat(context, '{plan} · Used up', {'plan': plan})
+          : raftFormat(context, '{plan} · Used up · back {reset}', {
               'plan': plan,
               'reset': reset,
             });

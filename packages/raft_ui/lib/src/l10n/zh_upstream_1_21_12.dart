@@ -10,7 +10,8 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
   "{detail} — automatic restarts are paused until you change the model or API key, or restart the agent":
       "{detail}——已暂停自动重启，改了模型或 API 密钥、或手动重启 Agent 后恢复",
   "Model \"{model}\" is not available for this runtime — it may have been renamed or removed, or its provider has no API key on this computer. Pick another model or fix the key in the agent settings": "该运行时没有可用的模型「{model}」：可能已改名或下架，或它的服务商在这台计算机上没有可用的 API 密钥——请在 Agent 设置里换模型或修正密钥",
-  "This agent's conversation no longer fits its model, and context compaction failed several times in a row, so restarting would fail again. To start a new session, open Restart / Reset and choose Reset Session & Restart (Reset Model for members). Raft messages and workspace files, including MEMORY.md, are kept": "这个 Agent 的对话已经超出模型能容纳的长度，上下文压缩连续失败了好几次，直接重启还会失败。要开新会话，请打开「重启 / 重置」并选择「重置会话并重启」（成员看到的是「重置模型」）。Raft 消息和工作区文件（包括 MEMORY.md）都会保留",
+  "The context is too large and shrinking it automatically didn't fix it. Reset the session and restart; if one message is itself very large, switch to a model with a larger context or split the content.":
+      "上下文太大，自动缩减没能解决。可以重置会话后重启；如果某条消息本身很大，换一个上下文更大的模型，或把内容拆小。",
   // agent.*
   "Set by the cloud provider's administrator for now. Pick a model to use another one.":
       "目前由云端服务的管理员指定。选一个模型即可改用其他模型。",
@@ -29,7 +30,8 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
   "Saved. The agent uses this model from its next turn.": "已保存，Agent 从下一轮开始用这个模型。",
   "Setting up the workspace on {target}.": "正在 {target} 上准备工作区。",
   "The agent migrated to {target} and is now running there.": "Agent 已迁移到 {target}，并已在那里运行。",
-  "The workspace is packed. Sending it to {target}.": "工作区已打包完成，正在发送到 {target}。",
+  "The workspace is uploaded. {target} is downloading it.":
+      "工作区已上传，{target} 正在下载。",
   "Migration complete": "迁移完成",
   "Uploading the workspace from {source} to send to {target}.":
       "正在从 {source} 上传工作区，准备传到 {target}。",
@@ -41,8 +43,8 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
   "Open Computer Settings": "打开计算机设置",
   "Copy migration ID {ref}": "复制迁移编号 {ref}",
   "Migration ID": "迁移编号",
-  "Move this agent and its workspace to another computer. The agent stops while it migrates, then starts again there.":
-      "把这个 Agent 连同工作区迁移到另一台计算机。迁移期间 Agent 会暂停，完成后在新计算机上重新启动。",
+  "Move this agent and its workspace to another computer.":
+      "把这个 Agent 连同工作区迁移到另一台计算机。",
   "done": "已完成",
   "failed": "失败",
   "Not in the current list": "不在当前列表中",
@@ -68,36 +70,16 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
       "在服务器「{server}」中找不到 {invitee}，请检查 handle 或邮箱。",
   "Server \"{server}\" wasn't found. Check the slug.": "找不到服务器「{server}」，请检查 slug。",
   // common.*
-  "Latest updates": "最新动态",
   // desktop.*
   "New message": "新消息",
-  "Enable this Mac": "启用这台 Mac",
-  "Enable this computer": "启用这台计算机",
-  "This app already includes everything needed — no terminal, no install. Enable this Mac to host your agents right here, signed in as you.":
-      "这个应用已经内置了所需的一切，不用终端，也不用安装。启用这台 Mac，就能以你的身份在这里运行你的 Agent。",
-  "This app already includes everything needed — no terminal, no install. Enable this computer to host your agents right here, signed in as you.":
-      "这个应用已经内置了所需的一切，不用终端，也不用安装。启用这台计算机，就能以你的身份在这里运行你的 Agent。",
   "You need admin access on this server to run a computer here.": "你需要这个服务器的管理员权限，才能在这里运行计算机。",
   "Couldn't enable this computer — try again.": "无法启用这台计算机，请重试。",
   "The computer host isn't available in this build.": "这个版本不支持在本机运行计算机。",
   "Network error — try again.": "网络错误，请重试。",
-  "Setting up — this appears below once it's online.": "正在设置，上线后会显示在下方。",
   "Please sign in first.": "请先登录。",
-  "Use this Mac": "使用这台 Mac",
-  "Use this computer": "使用这台计算机",
-  "Managed by the CLI — run: raft-computer attach {slug}":
-      "由 CLI 管理，请运行：raft-computer attach {slug}",
   "You need admin access on this server.": "你需要这个服务器的管理员权限。",
-  "This computer is managed by the Raft Computer CLI — use raft-computer in Terminal.":
-      "这台计算机由 Raft Computer CLI 管理，请在终端里使用 raft-computer。",
-  "Another Computer service on this machine already uses this machine key. Stop it first ({command}), then try again.":
-      "这台计算机上已经有另一个计算机服务在使用同一个计算机密钥。请先停掉它（{command}），再重试。",
-  "Another Computer service on this machine already uses this machine key. Stop that other service first, then try again.":
-      "这台计算机上已经有另一个计算机服务在使用同一个计算机密钥。请先停掉那个服务，再重试。",
   "Couldn't complete that — try again.": "操作没有完成，请重试。",
   "Computer host isn't available.": "本机的计算机服务不可用。",
-  "This computer is signed in to another Raft account via the CLI.":
-      "这台计算机已通过 CLI 登录了另一个 Raft 账号。",
   "The local service isn't reachable.": "无法连接本地服务。",
   "Already up to date.": "已经是最新版本。",
   "This Mac": "这台 Mac",
@@ -125,7 +107,7 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
   "Open Feedback from the Raft app to continue.": "请从 Raft App 打开反馈页。",
   // layout.*
   "Delete this server": "删除这个服务器",
-  "{provider} usage limit reached": "{provider} 已达到用量限制",
+  "{provider} used up": "{provider} 已用完",
   "{count} agent on {computer} may pause until usage is available again.":
       "{computer} 上的 {count} 个 Agent 可能会暂停，直到用量恢复。",
   "{count} agents on {computer} may pause until usage is available again.":
@@ -149,8 +131,8 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
   "{count} skipped.": "{count} 个已跳过。",
   "Change runtime and model for the selected agents": "为选中的 Agent 更换运行时和模型",
   "{plan} · needs attention": "{plan} · 需要处理",
-  "{plan} · limit reached, resets {reset}": "{plan} · 额度已用完，{reset}恢复",
-  "{plan} · limit reached": "{plan} · 额度已用完",
+  "{plan} · Used up · back {reset}": "{plan} · 已用完 · {reset}恢复",
+  "{plan} · Used up": "{plan} · 已用完",
   "{plan} · {percent}% used": "{plan} · 已用 {percent}%",
   "It didn't reconnect after the upgrade to v{version}.": "升级到 v{version} 后没有重新连上。",
   "Upgrading to v{version}. The Computer is restarting and will reconnect when it's done.":
@@ -158,8 +140,8 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
   "If it doesn't reconnect within a few minutes, run {command} on that machine to check.":
       "如果几分钟内没有重新连接，请在那台计算机上运行 {command} 查看。",
   // member.*
-  "Members you invite can DM and give instructions to every agent in this server. Keep personal agents in a separate server of your own.":
-      "被邀请的成员可以私信并指挥这个服务器里的所有 Agent。个人 Agent 请放在你自己单独的服务器里。",
+  "Everyone in this server can message and work with every agent here. For agents that are just for you, use a server of your own.":
+      "这个服务器里的每个人都能私信、使用这里的所有 Agent。只给自己用的 Agent，可以放在你自己的服务器里。",
   // message.*
   "{name} (Slack)": "{name}（Slack）",
   "This link uses the {protocol} protocol and will open in an external application:":
@@ -199,7 +181,7 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
   "Slack authorization didn't complete and nothing was changed. Try again; if it keeps failing, contact Raft support and mention code {code}.":
       "Slack 授权没有完成，也没有做任何改动。请重试；如果一直失败，请联系 Raft 支持并提供代码 {code}。",
   "You authorized a different Slack workspace (or app) than the one this Raft server is already connected to. Authorize the same workspace, or disconnect it first.":
-      "你授权的 Slack 工作区（或应用）和这个 Raft server 已经连接的不一致。请用同一个工作区授权，或者先断开再重新连接。",
+      "你授权的 Slack 工作区（或应用）和这个 Raft 服务器已经连接的不一致。请用同一个工作区授权，或者先断开再重新连接。",
   "Slack was temporarily unavailable. Nothing was changed; try again in a few minutes.":
       "Slack 暂时不可用。没有做任何改动，请几分钟后重试。",
   "Slack authorization didn't finish": "Slack 授权没有完成",

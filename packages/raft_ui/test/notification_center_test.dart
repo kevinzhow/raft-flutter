@@ -44,7 +44,7 @@ void main() {
       );
       expect(find.text('Notifications'), findsOneWidget);
       expect(find.text('all clear'), findsOneWidget);
-      expect(find.text('No notifications right now'), findsOneWidget);
+      expect(find.text('No notifications'), findsOneWidget);
       expect(
         find.text("You'll see things here that need your attention."),
         findsOneWidget,

@@ -382,7 +382,7 @@ void main() {
                   TextField(focusNode: editorFocus),
                   RaftComposerTaskToggle(
                     checked: checked,
-                    label: 'As Task',
+                    label: 'As task',
                     onChanged: (value) {
                       calls++;
                       update(() => checked = value);

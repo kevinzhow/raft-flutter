@@ -118,7 +118,7 @@ void main() {
       );
       expect(find.text("Couldn't load feedback. Try again."), findsOneWidget);
       expect(find.byKey(const Key('feedback-empty')), findsNothing);
-      await tester.tap(find.text('Try Again'));
+      await tester.tap(find.text('Try again'));
       await tester.pumpAndSettle();
       expect(find.text('No feedback yet'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());

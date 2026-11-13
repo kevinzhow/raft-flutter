@@ -172,7 +172,7 @@ void main() {
     api.routes['GET /agents'] = (_) => {'agents': []};
     api.routes['GET /servers/s1/members'] = (_) => {'members': []};
     expect(w.can('federateChannels'), isTrue);
-    await tester.tap(find.bySemanticsLabel('Create Joint Channel'));
+    await tester.tap(find.bySemanticsLabel('Create joint channel'));
     await tester.pumpAndSettle();
     expect(find.byType(CreateJointChannelDialog), findsOneWidget);
     expect(w.section, 'home');
@@ -188,10 +188,10 @@ void main() {
     // SidebarRowContextMenu.tsx:52-58; the two gating flags are retired).
     final labels = [
       'Move to Section',
-      'Mark All as Read',
+      'Mark all as read',
       'Pin',
       'Mute',
-      'Archive Channel',
+      'Archive channel',
     ];
     for (final label in labels) {
       expect(find.text(label), findsOneWidget, reason: label);
@@ -419,7 +419,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(w.channelById('c1')!.flag('activityMuted'), isFalse);
     expect(
-      find.text('Failed to mute Activity for this channel.'),
+      find.text('Failed to mute Activity for this conversation.'),
       findsOneWidget,
     );
     // Let the toast time out.
@@ -430,9 +430,9 @@ void main() {
     await setup(tester, unread: {'d1': 3});
     await longPress(tester, row('d1'));
     expect(find.text('Mute'), findsNothing);
-    expect(find.text('Archive Channel'), findsNothing);
-    expect(find.text('Close Chat'), findsOneWidget);
-    await tester.tap(find.text('Mark as Read'));
+    expect(find.text('Archive channel'), findsNothing);
+    expect(find.text('Close chat'), findsOneWidget);
+    await tester.tap(find.text('Mark as read'));
     await tester.pumpAndSettle();
     expect(posts.map((p) => p['path']), contains('/channels/d1/read-all'));
     expect(w.conversationReads.unread['d1'] ?? 0, 0);
@@ -449,8 +449,8 @@ void main() {
         return {'unreadCount': 2, 'readStateVersion': 3, 'maxReadSeq': '4'};
       };
       await longPress(tester, row('c1'));
-      expect(find.text('Mark as Unread'), findsOneWidget);
-      await tester.tap(find.text('Mark as Unread'));
+      expect(find.text('Mark as unread'), findsOneWidget);
+      await tester.tap(find.text('Mark as unread'));
       await tester.pump();
       // Web v1.21.23 markUnread: nothing is shown before the server finds an
       // eligible message.
@@ -485,7 +485,7 @@ void main() {
     await setup(tester);
     expect(row('d1'), findsOneWidget);
     await longPress(tester, row('d1'));
-    await tester.tap(find.text('Close Chat'));
+    await tester.tap(find.text('Close chat'));
     await tester.pump();
     expect(row('d1'), findsNothing, reason: 'hidden before the reply');
     await tester.pumpAndSettle();
@@ -502,9 +502,9 @@ void main() {
       {'id': 'c2', 'name': 'random', 'joined': true},
     ];
     await longPress(tester, row('c1'));
-    await tester.tap(find.text('Archive Channel'));
+    await tester.tap(find.text('Archive channel'));
     await tester.pumpAndSettle();
-    expect(find.text('Archive Channel'), findsWidgets);
+    expect(find.text('Archive channel'), findsWidgets);
     expect(
       find.textContaining('Archive "general"? Members keep read access'),
       findsOneWidget,
@@ -514,9 +514,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(posts, isEmpty);
     await longPress(tester, row('c1'));
-    await tester.tap(find.text('Archive Channel'));
+    await tester.tap(find.text('Archive channel'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Archive Channel').last);
+    await tester.tap(find.text('Archive channel').last);
     await tester.pumpAndSettle();
     expect(posts.map((p) => p['path']), ['/channels/c1/archive']);
   });
@@ -527,11 +527,11 @@ void main() {
     await setup(tester);
     api.routes.remove('POST /channels/c1/archive');
     await longPress(tester, row('c1'));
-    await tester.tap(find.text('Archive Channel'));
+    await tester.tap(find.text('Archive channel'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Archive Channel').last);
+    await tester.tap(find.text('Archive channel').last);
     await tester.pumpAndSettle();
-    expect(find.text('Archive Channel'), findsWidgets);
+    expect(find.text('Archive channel'), findsWidgets);
     expect(find.text('Unexpected endpoint'), findsOneWidget);
   });
 
@@ -652,7 +652,7 @@ void main() {
       // The server agrees once the read receipt lands.
       api.routes['GET /channels/unread'] = (_) => {'channels': {}};
       await longPress(tester, row('c1'));
-      await tester.tap(find.text('Mark All as Read'));
+      await tester.tap(find.text('Mark all as read'));
       await tester.pumpAndSettle();
       expect(w.conversationReads.mentions, isEmpty);
       expect(
@@ -748,7 +748,7 @@ void main() {
       await setup(tester);
       w.channel = w.dms.first;
       await longPress(tester, row('d1'));
-      await tester.tap(find.text('Close Chat'));
+      await tester.tap(find.text('Close chat'));
       await tester.pumpAndSettle();
       expect(w.section, 'home');
       expect(find.byKey(const Key('workspace-mobile-home')), findsOneWidget);
@@ -822,7 +822,7 @@ void main() {
     testWidgets('a long press on a row still opens its menu', (tester) async {
       await setup(tester);
       await longPress(tester, row('c1'));
-      expect(find.text('Mark as Unread'), findsOneWidget);
+      expect(find.text('Mark as unread'), findsOneWidget);
     });
   });
 }

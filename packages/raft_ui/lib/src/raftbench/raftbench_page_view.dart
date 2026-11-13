@@ -194,14 +194,14 @@ class _RaftbenchAdminViewState extends State<RaftbenchAdminView> {
     final tiles = [
       tile(
         glyph: RaftGlyph.barChart3,
-        title: tr('Tasks and cost'),
-        cue: tr('Database metrics · no AI scan needed'),
+        title: tr('Task and cost context'),
+        cue: tr('Supporting metrics · not a quality score'),
         color: t.colors['info-soft']!,
         target: metricsKey,
       ),
       tile(
         glyph: RaftGlyph.sparkles,
-        title: tr('Conversation insights'),
+        title: tr('Patterns and improvements'),
         cue: tr('Reads selected channels · no DM replies'),
         color: t.colors['success-soft']!,
         target: aiKey,
@@ -233,14 +233,14 @@ class _RaftbenchAdminViewState extends State<RaftbenchAdminView> {
               Semantics(
                 header: true,
                 child: Text(
-                  tr('Workspace efficiency and cost'),
+                  tr('Agent productivity'),
                   style: wide ? ty.display() : ty.title(),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 tr(
-                  'Two views: task metrics from the database and AI insights from conversations.',
+                  'Find repeated friction, understand the evidence, and improve how agents work.',
                 ),
                 style: ty.callout(color: t.muted),
               ),
@@ -267,7 +267,7 @@ class _RaftbenchAdminViewState extends State<RaftbenchAdminView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tr('Task metrics and phrase-scan scope'),
+                      tr('Channel'),
                       style: ty.footnote(
                         weight: FontWeight.w600,
                         color: t.muted,
@@ -276,7 +276,7 @@ class _RaftbenchAdminViewState extends State<RaftbenchAdminView> {
                     const SizedBox(height: 6),
                     RaftSelectField<String>(
                       value: scope.isEmpty ? null : scope,
-                      label: tr('Task metrics and phrase-scan scope'),
+                      label: tr('Channel'),
                       height: 40,
                       placeholder: 'Select a channel',
                       items: [

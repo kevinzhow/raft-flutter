@@ -31,7 +31,7 @@ List<Map<String, dynamic>> jointServerRows(RaftChannel channel) {
       'serverName': channel.firstNonEmpty(const [
         'jointPeerServerName',
         'jointPeerServerSlug',
-      ], 'Connected server'),
+      ], 'Guest server'),
       'serverSlug': peerSlug,
       'status': channel.string('jointPeerStatus') == 'pending'
           ? 'pending'

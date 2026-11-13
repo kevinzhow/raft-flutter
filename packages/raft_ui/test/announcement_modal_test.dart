@@ -67,9 +67,9 @@ void main() {
         await t.pumpWidget(frame(dark));
         expect(t.takeException(), isNull);
         // Web v1.21.12: the title is no longer uppercased, the label is the
-        // default "Latest updates", headings keep their case.
+        // default "What's new", headings keep their case.
         expect(find.text('What is new'), findsOneWidget);
-        expect(find.text('Latest updates'), findsOneWidget);
+        expect(find.text("What's new"), findsOneWidget);
         expect(find.text('inline code'), findsOneWidget);
         expect(find.text('Heading one'), findsOneWidget);
         expect(find.text('First item'), findsOneWidget);
@@ -143,7 +143,7 @@ void main() {
     );
     await t.pump();
     expect(find.text('Release'), findsOneWidget);
-    expect(find.text('Latest updates'), findsNothing);
+    expect(find.text("What's new"), findsNothing);
     final gotIt = t.getRect(find.byKey(const ValueKey('announcement-dismiss')));
     final primary = t.getRect(find.byKey(const ValueKey('announcement-ok')));
     // One row: the link at the start, the CTA at the end (`ml-auto`).
@@ -208,6 +208,6 @@ void main() {
   testWidgets('zh copy', (t) async {
     await t.pumpWidget(frame(false, locale: const Locale('zh', 'CN')));
     expect(find.text('知道了'), findsOneWidget);
-    expect(find.text('最新动态'), findsOneWidget);
+    expect(find.text('更新内容'), findsOneWidget);
   });
 }

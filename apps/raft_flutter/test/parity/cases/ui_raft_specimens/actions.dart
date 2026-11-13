@@ -109,7 +109,7 @@ Widget _buttonSizes(BuildContext context, RaftTokens t) => specimenStack([
   ]),
   specimenFull(
     RaftButton(
-      label: 'Create Account',
+      label: 'Create account',
       uiVariant: RaftButtonVariant.primary,
       uiSize: RaftButtonSize.xl,
       expand: true,

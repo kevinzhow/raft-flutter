@@ -54,7 +54,7 @@ class RaftServerLab {
 enum RaftServerLabsStatus { loading, unavailable, ready, failed }
 
 /// LabsSection: `SectionHeader` (FlaskConical, Labs, lab count) over the
-/// settings card holding the master "Server Labs access" switch row
+/// settings card holding the master "Server labs access" switch row
 /// (`border-b-2 pb-4`, owner-only note) and the `divide-y-2` lab rows
 /// (`grid-cols-[minmax(0,1fr)_44px] gap-4 py-3`), or the loading skeletons,
 /// the unavailable notice, or the warning banner.
@@ -151,7 +151,7 @@ class RaftServerLabsSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        raftText(context, 'Server Labs access'),
+                        raftText(context, 'Server labs access'),
                         style: text.title,
                       ),
                       if (!canSetMaster) ...[
@@ -175,7 +175,7 @@ class RaftServerLabsSection extends StatelessWidget {
                     value: masterEnabled,
                     size: RaftSwitchSize.md,
                     enabled: canSetMaster && !busy,
-                    semanticLabel: raftText(context, 'Server Labs access'),
+                    semanticLabel: raftText(context, 'Server labs access'),
                     onChanged: onMasterChanged,
                   ),
                 ),
@@ -185,7 +185,7 @@ class RaftServerLabsSection extends StatelessWidget {
           const SizedBox(height: 16),
           if (labs.isEmpty)
             Text(
-              raftText(context, 'No Labs are available for this server.'),
+              raftText(context, 'No Labs available for this server'),
               style: description.copyWith(
                 fontStyle: FontStyle.italic,
                 height: 16 / 12,
@@ -376,7 +376,7 @@ class RaftProviderConnectionsFrame extends StatelessWidget {
                     vertical: 42,
                   ),
                   child: Text(
-                    raftText(context, 'No provider connections yet.'),
+                    raftText(context, 'No provider connections yet'),
                     textAlign: TextAlign.center,
                     style: text.bodyMuted.copyWith(color: t.muted),
                   ),

@@ -30,7 +30,8 @@ const Map<String, String> zhCatalogSweep = <String, String>{
       "{label} @{handle} 为保留名，请换一个。",
   "#{raftName} ↔ #{slackName}": "#{raftName} ↔ #{slackName}",
   "{name} will stop receiving ordinary delivery from #{channel} and cannot send messages until they rejoin. Existing followed threads are not automatically unfollowed; followed public threads can still notify them until they unfollow or manage those threads. Private content remains gated by current access.": "{name} 将停止接收 #{channel} 的常规消息，并且在重新加入前无法发送消息。已有的关注消息列不会自动取消关注；关注过的公开消息列仍可通知他们，直到他们自行取消关注或管理这些消息列。私有内容仍受当前访问权限限制。",
-  "{name} is a server owner or admin, so they remain a Channel Admin in every channel. Change their server role in Server Administration first.": "{name} 是服务器 Owner 或 Admin，因此在所有频道中都会保持频道管理员权限。请先在 Server Administration 中修改其服务器角色。",
+  "{name} is a server owner or admin, so they remain a Channel Admin in every channel. Change their server role in Server Administration first.":
+      "{name} 是服务器所有者或管理员，因此在所有频道中都会保持频道管理员权限。请先在服务器管理中修改其服务器角色。",
   "Make {name} a Channel Admin": "将 {name} 设为频道管理员",
   "Remove Channel Admin from {name}": "撤销 {name} 的频道管理员",
   "Archive \"{name}\"? Members keep read access and history, but writes will be frozen and the channel will be hidden from sidebars. You can unarchive it later.":
@@ -65,7 +66,7 @@ const Map<String, String> zhCatalogSweep = <String, String>{
   "Add Selected ({count})": "添加所选（{count}）",
   "Joining...": "正在加入…",
   "Continue with {provider}": "使用 {provider} 继续",
-  "No matches for \"{query}\"": "没有匹配「{query}」的结果",
+  'No members match "{query}"': "没有符合「{query}」的成员",
   "The name <mono>#{name}</mono> is held by an archived channel.":
       "名称 <mono>#{name}</mono> 已被一个已归档的频道占用。",
   "No account?": "还没有账号？",

@@ -96,10 +96,10 @@ void main() {
     await rightClick(tester, find.byKey(const ValueKey('sidebar-channel-c1')));
     for (final label in [
       'Move to Section',
-      'Mark as Unread',
+      'Mark as unread',
       'Pin',
       'Mute',
-      'Archive Channel',
+      'Archive channel',
     ]) {
       expect(find.text(label), findsOneWidget, reason: label);
     }
@@ -136,8 +136,8 @@ void main() {
   testWidgets('[WP1] DM row: Close Chat hides the DM', (tester) async {
     final (_, _, patches) = await setup(tester);
     await rightClick(tester, find.byKey(const ValueKey('sidebar-channel-d1')));
-    expect(find.text('Close Chat'), findsOneWidget);
-    await tester.tap(find.text('Close Chat'));
+    expect(find.text('Close chat'), findsOneWidget);
+    await tester.tap(find.text('Close chat'));
     await tester.pumpAndSettle();
     expect(patches.single, {
       'hiddenDmIds': ['d1'],

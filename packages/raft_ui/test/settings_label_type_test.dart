@@ -14,7 +14,7 @@ Widget _host(RaftThemePack pack) => MaterialApp(
     body: Column(
       children: [
         RaftSettingsSectionHeader(label: 'Account'),
-        RaftSettingsField(label: 'Display Name', child: SizedBox(height: 10)),
+        RaftSettingsField(label: 'Display name', child: SizedBox(height: 10)),
       ],
     ),
   ),
@@ -41,7 +41,7 @@ void main() {
       final eyebrow = _style(t, 'Account');
       expect(eyebrow.fontSize, size);
       expect(eyebrow.height! * eyebrow.fontSize!, closeTo(line, .001));
-      final label = _style(t, 'Display Name');
+      final label = _style(t, 'Display name');
       expect(label.fontSize, 12);
       expect(label.height! * label.fontSize!, closeTo(16, .001));
       if (weight != null) expect(label.fontWeight, weight);

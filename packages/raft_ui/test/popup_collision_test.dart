@@ -92,7 +92,7 @@ void main() {
                   foreground: Colors.black,
                   options: const [
                     RaftInlineBadgeOption(id: 'todo', label: 'To do'),
-                    RaftInlineBadgeOption(id: 'review', label: 'In Review'),
+                    RaftInlineBadgeOption(id: 'review', label: 'In review'),
                     RaftInlineBadgeOption(id: 'done', label: 'Done'),
                   ],
                   onSelect: (id) => selected = id,
@@ -105,7 +105,7 @@ void main() {
                       onPressed: () => selected = 'todo',
                     ),
                     RaftMenuEntry(
-                      label: 'In Review',
+                      label: 'In review',
                       onPressed: () => selected = 'review',
                     ),
                     RaftMenuEntry(
@@ -138,11 +138,11 @@ void main() {
           expect(popup.top, greaterThanOrEqualTo(inline ? 8 : 5));
           expect(popup.right, lessThanOrEqualTo(inline ? 312 : 315));
           expect(popup.left, greaterThanOrEqualTo(inline ? 8 : 5));
-          expect(find.text('In Review').hitTestable(), findsOneWidget);
-          await t.tap(find.text('In Review'));
+          expect(find.text('In review').hitTestable(), findsOneWidget);
+          await t.tap(find.text('In review'));
           await t.pumpAndSettle();
           expect(selected, 'review');
-          expect(find.text('In Review'), findsNothing);
+          expect(find.text('In review'), findsNothing);
           expect(t.takeException(), isNull);
         },
       );
@@ -175,7 +175,7 @@ void main() {
                       background: Colors.yellow,
                       foreground: Colors.black,
                       options: const [
-                        RaftInlineBadgeOption(id: 'review', label: 'In Review'),
+                        RaftInlineBadgeOption(id: 'review', label: 'In review'),
                       ],
                       onSelect: (_) {},
                     ),
@@ -198,7 +198,7 @@ void main() {
       await t.pumpAndSettle();
       final resized = t.getRect(find.byType(RaftInlineBadgeMenu));
       expect(resized.bottom, lessThanOrEqualTo(232));
-      expect(find.text('In Review').hitTestable(), findsOneWidget);
+      expect(find.text('In review').hitTestable(), findsOneWidget);
       expect(t.takeException(), isNull);
     },
   );

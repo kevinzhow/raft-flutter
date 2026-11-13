@@ -80,7 +80,7 @@ class _ChannelPagesPreviewState extends State<_ChannelPagesPreview> {
               t,
               RaftSheetSection('Preferences', [
                 RaftSheetSwitchRow(
-                  title: widget.dm ? 'Pin conversation' : 'Pin Channel',
+                  title: widget.dm ? 'Pin conversation' : 'Pin channel',
                   description:
                       'Keep this conversation at the top of your sidebar.',
                   value: pinned,

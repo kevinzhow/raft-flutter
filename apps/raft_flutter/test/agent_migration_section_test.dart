@@ -139,9 +139,7 @@ void main() {
     expect(find.text('Agent migration'), findsOneWidget);
     expect(find.text('Pro'), findsOneWidget);
     expect(
-      find.text(
-        'Move this agent and its workspace to another computer. The agent stops while it migrates, then starts again there.',
-      ),
+      find.text('Move this agent and its workspace to another computer.'),
       findsOneWidget,
     );
     expect(migrate, findsOneWidget);

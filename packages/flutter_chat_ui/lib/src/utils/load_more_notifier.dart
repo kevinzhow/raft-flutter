@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 /// A [ChangeNotifier] used to track the height and loading state
-/// of the "Load More" indicator widget.
+/// of the "Load more" indicator widget.
 class LoadMoreNotifier extends ChangeNotifier {
   bool _isLoadingOlder = false;
   bool _isLoadingNewer = false;

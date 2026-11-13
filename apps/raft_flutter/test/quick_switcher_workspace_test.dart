@@ -749,10 +749,10 @@ void main() {
         await type(t, 'quarterly');
         expect(find.byKey(const Key('quick-switcher-filters')), findsOneWidget);
         expect(find.text('Clear All'), findsNothing);
-        // Pick "Last 7 Days" in the Time menu.
-        await t.tap(find.text('Any Time'));
+        // Pick "Last 7 days" in the Time menu.
+        await t.tap(find.text('Any time'));
         await t.pumpAndSettle();
-        await t.tap(find.text('Last 7 Days'));
+        await t.tap(find.text('Last 7 days'));
         await t.pumpAndSettle();
         expect(saved().range, '7d');
         expect(find.text('Clear All'), findsOneWidget);
@@ -766,7 +766,7 @@ void main() {
         await t.pumpAndSettle();
         expect(w.section, 'search');
         expect(find.byType(ResourceView), findsOneWidget);
-        expect(find.text('Last 7 Days'), findsOneWidget);
+        expect(find.text('Last 7 days'), findsOneWidget);
         expect(w.location.query('q'), 'quarterly');
       },
       variant: TargetPlatformVariant.only(TargetPlatform.linux),
@@ -778,12 +778,12 @@ void main() {
         await mount(t);
         await globalSearch(t);
         await type(t, 'quarterly');
-        await t.tap(find.text('Any Time'));
+        await t.tap(find.text('Any time'));
         await t.pumpAndSettle();
-        expect(find.text('Last 30 Days'), findsOneWidget);
+        expect(find.text('Last 30 days'), findsOneWidget);
         await key(t, LogicalKeyboardKey.escape);
         await t.pumpAndSettle();
-        expect(find.text('Last 30 Days'), findsNothing);
+        expect(find.text('Last 30 days'), findsNothing);
         expect(find.byType(QuickSwitcher), findsOneWidget);
         await key(t, LogicalKeyboardKey.escape);
         expect(find.byType(QuickSwitcher), findsNothing);

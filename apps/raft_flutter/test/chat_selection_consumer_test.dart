@@ -115,16 +115,16 @@ void main() {
         final rect = t.getRect(target);
         await t.longPressAt(Offset(rect.left + 2, rect.center.dy));
         await t.pumpAndSettle();
-        await t.tap(find.text('Select Message'));
+        await t.tap(find.text('Select message'));
         await t.pumpAndSettle();
         expect(find.text('1 selected'), findsOneWidget);
         expect(handle.active, isTrue);
         expect(
-          find.byTooltip('Select All'),
+          find.byTooltip('Select all'),
           thread ? findsOneWidget : findsNothing,
         );
         if (thread) {
-          await t.tap(find.byTooltip('Select All'));
+          await t.tap(find.byTooltip('Select all'));
         } else {
           final checkbox = find.byWidgetPredicate(
             (w) =>
@@ -165,10 +165,10 @@ void main() {
         final again = t.getRect(target);
         await t.longPressAt(Offset(again.left + 2, again.center.dy));
         await t.pumpAndSettle();
-        await t.tap(find.text('Select Message'));
+        await t.tap(find.text('Select message'));
         await t.pumpAndSettle();
         if (thread) {
-          await t.tap(find.byTooltip('Select All'));
+          await t.tap(find.byTooltip('Select all'));
         } else {
           await t.tap(
             find.byWidgetPredicate(

@@ -311,7 +311,7 @@ class _ConversionSectionState
           ? 'Cancel Conversion'
           : kind == 'retry'
           ? 'Retry Conversion'
-          : 'Convert to Joint Channel',
+          : 'Convert to joint channel',
       kind == 'cancel'
           ? 'Cancel eligible work before audience cutover and restore the original channel. Completed conversion cannot be reversed.'
           : 'Preserve this channel history and members while preparing a shared conversation. Sending may be temporarily unavailable during conversion.',
@@ -409,7 +409,7 @@ class _ConversionSectionState
           ? 'Cancel Conversion'
           : kind == 'retry'
           ? 'Retry Conversion'
-          : 'Convert to Joint Channel',
+          : 'Convert to joint channel',
       cancel: kind == 'cancel' ? 'Keep Conversion' : 'Cancel',
       destructive: kind == 'cancel',
     );

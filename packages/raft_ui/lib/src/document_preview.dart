@@ -803,7 +803,7 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      raftText(context, 'This spreadsheet is empty.'),
+                      raftText(context, 'This spreadsheet is empty'),
                       style: TextStyle(
                         fontFamily: t.headingFont,
                         fontSize: 14,

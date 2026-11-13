@@ -66,14 +66,14 @@ void main() {
 
     final targets = <String, Finder Function()>{
       'server row': () => find.byKey(const ValueKey('global-server-s0')),
-      '+ Create New Server': () =>
+      '+ Create new server': () =>
           find.byKey(const ValueKey('global-server-create-new')),
-      'Log out': () => find.ancestor(
-        of: find.text('Log out'),
+      'Sign out': () => find.ancestor(
+        of: find.text('Sign out'),
         matching: find.byType(RaftInteractive),
       ),
     };
-    final expected = {'server row': 'select s0', 'Log out': 'logout'};
+    final expected = {'server row': 'select s0', 'Sign out': 'logout'};
 
     for (final MapEntry(key: what, value: find_) in targets.entries) {
       testWidgets('$what shows pressed feedback ($theme)', (t) async {
@@ -100,8 +100,8 @@ void main() {
           taps.log.clear();
           await t.tapAt(centre + Offset(0, dy));
           await t.pump(const Duration(milliseconds: 400));
-          if (what == '+ Create New Server') {
-            expect(find.text('Create Server'), findsWidgets, reason: 'dy=$dy');
+          if (what == '+ Create new server') {
+            expect(find.text('Create server'), findsWidgets, reason: 'dy=$dy');
             await t.pumpWidget(const SizedBox());
             await pump(t);
           } else {

@@ -1,7 +1,7 @@
 // Web packages/web/src/components/machine/AddMachineDialog.tsx +
-// ComputerCommandGuide.tsx (raft-source 26f77ef): "Add Computer" (choose
-// Your Computer / Cloud Computer), then "Connect Computer" (install + setup
-// commands per platform while waiting), then "Computer Connected" (name it).
+// ComputerCommandGuide.tsx (raft-source 26f77ef): "Add computer" (choose
+// Your Computer / Cloud Computer), then "Connect computer" (install + setup
+// commands per platform while waiting), then "Computer connected" (name it).
 // The app performs the requests through the callbacks.
 
 import 'dart:async';
@@ -212,10 +212,10 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final title = connectedStep
-        ? 'Computer Connected'
+        ? 'Computer connected'
         : waiting
-        ? 'Connect Computer'
-        : 'Add Computer';
+        ? 'Connect computer'
+        : 'Add computer';
     // Escape and the system back gesture leave through the same path as the
     // X: `cancel` releases an unconnected registration, `done` names the
     // connected Computer.
@@ -263,7 +263,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
         descriptionWeight: FontWeight.w700,
         descriptionTail: error.contains('limit reached')
             ? (
-                label: raftText(context, 'View Plans'),
+                label: raftText(context, 'View plans'),
                 onPressed: () {
                   Navigator.of(context).maybePop();
                   widget.onViewPlans?.call();
@@ -286,8 +286,8 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
           Expanded(
             child: RaftMachineTypeOption(
               glyph: RaftGlyph.monitor,
-              title: 'Your Computer',
-              description: 'Run agents on your own computer',
+              title: 'Your own computer',
+              description: 'A laptop, a desktop or a cloud server (VPS): run one command on it',
               selected: true,
               onPressed: () {},
             ),

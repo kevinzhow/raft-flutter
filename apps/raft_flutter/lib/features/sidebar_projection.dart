@@ -196,7 +196,7 @@ List<SidebarGroup> projectSidebar({
   sort(direct, preferences['dmSortMode']);
   groups['system:joint'] = SidebarGroup(
     'system:joint',
-    'Joint Channels',
+    'Joint channels',
     joint,
   );
   groups['system:channels'] = SidebarGroup(
@@ -204,7 +204,7 @@ List<SidebarGroup> projectSidebar({
     'Channels',
     normal,
   );
-  groups['system:dms'] = SidebarGroup('system:dms', 'Direct Messages', direct);
+  groups['system:dms'] = SidebarGroup('system:dms', 'Direct messages', direct);
   final order = [
     ...(preferences['sectionOrder'] as List? ?? []).whereType<String>(),
     'system:pinned',

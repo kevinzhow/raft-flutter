@@ -121,7 +121,7 @@ void main() {
     await host(t, role: 'owner');
     await t.tap(link);
     await _settle(t);
-    expect(find.text('Delete Server'), findsWidgets);
+    expect(find.text('Delete server'), findsWidgets);
     final confirm = find.byKey(const Key('server-delete-confirm-button'));
     final editor = find.descendant(
       of: find.byKey(const Key('server-delete-slug-input')),

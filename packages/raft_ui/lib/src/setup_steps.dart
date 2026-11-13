@@ -464,7 +464,7 @@ class _SessionFooter extends StatelessWidget {
 }
 
 /// ServerSetupHandoffStep: avatar, title and body centred, then a footer with
-/// the session link and the "Let's Go" button.
+/// the session link and the "Let's go" button.
 class RaftSetupHandoffCard extends StatelessWidget {
   const RaftSetupHandoffCard({
     super.key,
@@ -492,7 +492,7 @@ class RaftSetupHandoffCard extends StatelessWidget {
     final wide = _wide(context, available);
     final done = RaftButton(
       key: const Key('server-setup-handoff-done'),
-      label: starting ? tr('Starting…') : tr("Let's Go"),
+      label: starting ? tr('Starting…') : tr("Let's go"),
       tone: RaftButtonRecipeVariant.accent,
       size: RaftButtonRecipeSize.lg,
       expand: !wide,

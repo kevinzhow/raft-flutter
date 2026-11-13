@@ -954,7 +954,7 @@ class _PublicServerViewState extends State<PublicServerView> {
     final channel = channels.where((c) => c['id'] == selectedId).firstOrNull;
     if (channel == null) {
       return RaftPublicEmptyMessage(
-        'This server has no public channels right now.',
+        'No public channels yet',
         hint: false,
         glyph: RaftGlyph.hash,
       );
@@ -981,7 +981,7 @@ class _PublicServerViewState extends State<PublicServerView> {
                 ? loadingMessages
                       ? const RaftPublicLoadingSpinner(label: 'Loading…')
                       : RaftPublicEmptyMessage(
-                          'No messages have been posted here yet.',
+                          'No messages yet',
                           glyph: RaftGlyph.messageSquare,
                         )
                 // MessageTimeline sparseAnchor="bottom": a short history sits
@@ -1168,7 +1168,7 @@ class _PublicServerViewState extends State<PublicServerView> {
               heading: tr('Help & resources'),
               entries: [
                 RaftMenuEntry(
-                  label: tr('Raft Documentation'),
+                  label: tr('Raft documentation'),
                   leading: const RaftIcon(RaftGlyph.bookOpenText, size: 14),
                   trailing: const RaftIcon(RaftGlyph.arrowUpRight, size: 14),
                   onPressed: () =>
@@ -1212,13 +1212,13 @@ class _PublicServerViewState extends State<PublicServerView> {
         ? const <Widget>[]
         : [
             RaftPublicActionButton(
-              label: tr('Sign In'),
+              label: tr('Sign in'),
               glyph: RaftGlyph.logIn,
               accent: false,
               onPressed: widget.onSignIn,
             ),
             RaftPublicActionButton(
-              label: tr('Create Account'),
+              label: tr('Create account'),
               glyph: RaftGlyph.userPlus,
               accent: true,
               onPressed: widget.onRegister,
@@ -1372,7 +1372,7 @@ class _PublicServerViewState extends State<PublicServerView> {
                 'You are viewing public channels without signing in. Sign in or create an account to continue in Raft.',
               ),
               action: RaftSettingsRecipeButton(
-                label: tr('Sign In'),
+                label: tr('Sign in'),
                 size: RaftButtonRecipeSize.xs,
                 onPressed: widget.onSignIn,
               ),

@@ -27,7 +27,7 @@ void main() {
         'About',
         'Documentation',
         'Feedback',
-        'Release Notes',
+        'Release notes',
       ]) {
         expect(find.text(label), findsWidgets, reason: label);
       }
@@ -39,7 +39,7 @@ void main() {
       expect(top('Appearance'), lessThan(top('About')));
       expect(top('About'), lessThan(top('Documentation')));
       expect(top('Documentation'), lessThan(top('Feedback')));
-      expect(top('Feedback'), lessThan(top('Release Notes')));
+      expect(top('Feedback'), lessThan(top('Release notes')));
       // Opens on Account (`useState(authenticated ? "account" : "about")`).
       expect(
         find.descendant(
@@ -82,7 +82,7 @@ void main() {
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
       expect(find.byType(RaftSettingsPanelHeader), findsOneWidget);
-      await t.tap(find.text('Release Notes').first);
+      await t.tap(find.text('Release notes').first);
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
     });
@@ -102,7 +102,7 @@ void main() {
           'Language & Region',
           'Appearance',
           'Feedback',
-          'Release Notes',
+          'Release notes',
         ]) {
           expect(find.text(label), findsNothing, reason: label);
         }

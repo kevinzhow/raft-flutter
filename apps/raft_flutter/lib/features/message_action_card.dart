@@ -649,7 +649,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
         'Install <n>{client}</n> for <n>@{agent}</n>',
         {'client': action['clientName'], 'agent': action['agentName']},
       ),
-      'integration:register_app' => f('Register app <n>{name}</n>', {
+      'integration:register_app' => f('Create Raft app <n>{name}</n>', {
         'name': action['name'],
       }),
       'integration:update_app_registration' => f(
@@ -736,10 +736,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
           if (description is String && description.isNotEmpty)
             field('Description:', description)
           else
-            const RaftActionNote(
-              'No description prefilled.',
-              tone: RaftActionTone.hint,
-            ),
+            const RaftActionNote('No description', tone: RaftActionTone.hint),
           if (computer is String)
             field(
               action['requiredComputer'] != null
@@ -892,7 +889,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
       }),
       'integration-app-registration' => f(
         result['mode'] == 'register'
-            ? '{client} registered ({clientKey})'
+            ? '{client} created ({clientKey})'
             : '{client} updated ({clientKey})',
         {'client': result['clientName'], 'clientKey': result['clientKey']},
       ),

@@ -1472,11 +1472,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
                       runSpacing: 12,
                       children: [
                         RaftButton(
-                          label: tr('Create Server'),
+                          label: tr('Create server'),
                           onPressed: () => WorkspaceActions.create(context, w),
                         ),
                         RaftButton(
-                          label: tr('Join Server'),
+                          label: tr('Join server'),
                           secondary: true,
                           onPressed: () => WorkspaceActions.join(context, w),
                         ),
@@ -2811,7 +2811,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
             attention: mobileAppBadge.hasAttention,
             entries: [
               RaftMenuEntry(
-                label: tr('Raft Documentation'),
+                label: tr('Raft documentation'),
                 leading: const RaftIcon(RaftGlyph.bookOpenText, size: 14),
                 trailing: const RaftIcon(RaftGlyph.arrowUpRight, size: 14),
                 onPressed: () => unawaited(openDocumentationFromHelp()),
@@ -2919,14 +2919,14 @@ class _WorkspaceViewState extends State<WorkspaceView>
       actions: [
         if (!w.servers.any((server) => server.string('slug') == 'community'))
           RaftMenuEntry(
-            label: tr('Join Community'),
+            label: tr('Join community'),
             glyph: RaftGlyph.plus,
             onPressed: joiningCommunityFromHelp
                 ? null
                 : () => unawaited(openCommunityFromHelp()),
           ),
         RaftMenuEntry(
-          label: tr('Switch or Create Server'),
+          label: tr('Switch or create server'),
           glyph: RaftGlyph.plus,
           onPressed: widget.onChooseServer == null
               ? null
@@ -2939,7 +2939,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         if (w.can('inviteMembers'))
           RaftServerMenuAction(
             tone: RaftServerMenuActionTone.invite,
-            label: tr('Invite Human'),
+            label: tr('Invite human'),
             glyph: RaftGlyph.userPlus,
             onPressed: () => unawaited(inviteFromServerMenu(scope)),
           ),
@@ -3839,7 +3839,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       if (onAdd != null)
         RaftSidebarSectionAction(
           label: id == 'system:joint'
-              ? tr('Create Joint Channel')
+              ? tr('Create joint channel')
               : tr('Create Channel'),
           glyph: RaftGlyph.plus,
           onPressed: () {

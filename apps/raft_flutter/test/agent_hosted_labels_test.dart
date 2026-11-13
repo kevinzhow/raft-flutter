@@ -142,7 +142,7 @@ void main() {
       expect(await label(t, cloud), 'Cloud agent · Free for a limited time');
       expect(
         await label(t, cloud, locale: const Locale('zh')),
-        '云端 agent · 限时免费',
+        '云端 Agent · 限时免费',
       );
     });
 

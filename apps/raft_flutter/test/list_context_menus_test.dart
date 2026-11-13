@@ -68,11 +68,11 @@ void main() {
       // Web db5e InboxContextMenu sets width: 184 without a minWidth override.
       // raft-ui 0.7.0 ContextMenuPopup's min-w-60 therefore wins (240px).
       expect(tester.getSize(menu).width, 240);
-      expect(find.text('Mark as Read'), findsOneWidget);
+      expect(find.text('Mark as read'), findsOneWidget);
       expect(find.text('Done'), findsOneWidget);
       // A channel row has no follow control.
       expect(find.text('Unfollow'), findsNothing);
-      await tester.tap(find.text('Mark as Read'));
+      await tester.tap(find.text('Mark as read'));
       await tester.pumpAndSettle();
       expect(menu, findsNothing);
       final row = (state.rows as List).firstWhere(
@@ -90,8 +90,8 @@ void main() {
         tester,
         find.byKey(const ValueKey('activity-channel-ch0')),
       );
-      expect(find.text('Mark as Read'), findsNothing);
-      await tester.tap(find.text('Mark as Unread'));
+      expect(find.text('Mark as read'), findsNothing);
+      await tester.tap(find.text('Mark as unread'));
       await tester.pumpAndSettle();
       expect(client.posts, contains('POST /channels/ch0/unread'));
     },
@@ -123,7 +123,7 @@ void main() {
       final menu = find.byType(RaftContextMenuContent);
       expect(menu, findsOneWidget);
       expect(tester.getTopLeft(menu), at);
-      expect(find.text('Copy Link'), findsOneWidget);
+      expect(find.text('Copy link'), findsOneWidget);
       expect(find.text('Copy Markdown'), findsOneWidget);
       expect(find.text('Remove from Saved'), findsOneWidget);
       await tester.tap(find.text('Remove from Saved'));

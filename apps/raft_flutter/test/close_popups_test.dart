@@ -464,14 +464,14 @@ void main() {
           tooltip: 'More Actions',
           entries: [
             RaftMenuEntry(label: 'Rename agent', onPressed: () {}),
-            RaftMenuEntry(label: 'Archive Agent', onPressed: () {}),
+            RaftMenuEntry(label: 'Archive agent', onPressed: () {}),
           ],
         ),
       );
       await t.tap(find.byType(RaftOverflowMenuButton));
       await frames(t, 15);
       return SurfaceProbe(
-        isOpen: openWhile(find.text('Archive Agent')),
+        isOpen: openWhile(find.text('Archive agent')),
         scrim: farPoint(size),
       );
     },

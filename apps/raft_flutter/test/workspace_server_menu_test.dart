@@ -143,8 +143,8 @@ void main() {
         expect(find.byKey(const Key('server-switcher-menu')), findsOneWidget);
         expect(find.byType(SimpleDialog), findsNothing);
         expect(find.text('77'), findsNothing);
-        expect(find.text('Invite Human'), findsOneWidget);
-        expect(find.text('Join Community'), findsOneWidget);
+        expect(find.text('Invite human'), findsOneWidget);
+        expect(find.text('Join community'), findsOneWidget);
         await t.tap(find.byKey(const ValueKey('server-menu-row-s1')));
         await t.pumpAndSettle();
         expect(w.location.toString(), uri);
@@ -157,7 +157,7 @@ void main() {
         expect(w.location.toString(), uri);
         await t.tap(find.byKey(const Key('topbar-workspace')));
         await t.pumpAndSettle();
-        await t.tap(find.text('Switch or Create Server'));
+        await t.tap(find.text('Switch or create server'));
         await t.pumpAndSettle();
         expect(choose, 1);
         expect(find.byKey(const Key('server-switcher-menu')), findsNothing);
@@ -199,7 +199,7 @@ void main() {
         await t.pumpAndSettle();
         await t.tap(find.byKey(const Key('topbar-workspace')));
         await t.pumpAndSettle();
-        await t.tap(find.text('Invite Human'));
+        await t.tap(find.text('Invite human'));
         await t.pumpAndSettle();
         expect(find.byKey(const Key('server-switcher-menu')), findsNothing);
         expect(find.byKey(const ValueKey('invite-dialog')), findsOneWidget);
@@ -227,7 +227,7 @@ void main() {
         await frames(t, () {});
         await t.tap(find.byKey(const Key('topbar-workspace')));
         await t.pumpAndSettle();
-        expect(find.text('Invite Human'), findsNothing);
+        expect(find.text('Invite human'), findsNothing);
         await retire(t);
       },
       variant: TargetPlatformVariant.only(TargetPlatform.linux),

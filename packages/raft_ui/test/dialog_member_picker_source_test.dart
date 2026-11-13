@@ -209,7 +209,7 @@ void main() {
         ),
       ),
     );
-    final text = t.widget<Text>(find.text('No matches for "missing"'));
+    final text = t.widget<Text>(find.text('No members match "missing"'));
     expect(text.style!.fontSize, 14);
     expect(text.style!.height, 20 / 14);
     expect(find.byType(RaftCheckboxIndicator), findsNothing);

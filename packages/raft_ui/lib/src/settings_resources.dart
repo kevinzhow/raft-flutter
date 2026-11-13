@@ -264,14 +264,14 @@ class RaftSettingsAbout extends StatelessWidget {
                     children: [
                       RaftButton(
                         key: const ValueKey('mobile-download-android'),
-                        label: 'Download for Android',
+                        label: 'Download Android APK',
                         variant: RaftControlVariant.outline,
                         size: RaftButtonRecipeSize.sm,
                         onPressed: app.onAndroid,
                       ),
                       RaftButton(
                         key: const ValueKey('mobile-download-ios'),
-                        label: 'Get the iOS beta',
+                        label: 'Download on the App Store',
                         variant: RaftControlVariant.outline,
                         size: RaftButtonRecipeSize.sm,
                         onPressed: app.onIos,
@@ -395,7 +395,7 @@ class RaftReleaseNote {
 enum RaftReleaseNotesStatus { loading, error, ready }
 
 /// ReleaseNotesPanel content (`px-5 py-4` is the caller's scroll inset): the
-/// "What's New" eyebrow, then the loading line, the destructive banner with
+/// "What's new" eyebrow, then the loading line, the destructive banner with
 /// "Try again", or one card per release.
 class RaftReleaseNotesView extends StatelessWidget {
   const RaftReleaseNotesView({
@@ -428,7 +428,7 @@ class RaftReleaseNotesView extends StatelessWidget {
               RaftIcon(RaftGlyph.fileText, size: 16, color: text.muted),
               const SizedBox(width: 8),
               Flexible(
-                child: RaftSectionEyebrow(raftText(context, "What's New")),
+                child: RaftSectionEyebrow(raftText(context, "What's new")),
               ),
             ],
           ),
@@ -445,7 +445,7 @@ class RaftReleaseNotesView extends StatelessWidget {
             description: 'Release notes are unavailable right now.',
             action: RaftButton(
               key: const ValueKey('release-notes-retry'),
-              label: 'Try Again',
+              label: 'Try again',
               variant: RaftControlVariant.outline,
               size: RaftButtonRecipeSize.sm,
               onPressed: onRetry,
@@ -466,7 +466,7 @@ class RaftReleaseNotesView extends StatelessWidget {
                     const SizedBox(width: 8),
                     RaftButton(
                       key: const ValueKey('release-notes-refresh-retry'),
-                      label: 'Try Again',
+                      label: 'Try again',
                       variant: RaftControlVariant.ghost,
                       size: RaftButtonRecipeSize.sm,
                       onPressed: onRefreshRetry,
@@ -673,7 +673,7 @@ class _UpdateNotesState extends State<_UpdateNotes> {
               const SizedBox(width: 8),
               RaftButton(
                 key: const ValueKey('settings-about-update-notes-retry'),
-                label: 'Try Again',
+                label: 'Try again',
                 variant: RaftControlVariant.ghost,
                 size: RaftButtonRecipeSize.sm,
                 onPressed: notes.onRetry,

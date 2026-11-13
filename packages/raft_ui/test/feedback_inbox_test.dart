@@ -85,7 +85,7 @@ void main() {
         ),
       ),
     );
-    await t.tap(find.text('Try Again'));
+    await t.tap(find.text('Try again'));
     expect(retried, 1);
     expect(find.text('No feedback yet'), findsNothing);
   });

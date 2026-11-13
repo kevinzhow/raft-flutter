@@ -4,7 +4,7 @@ import '../data/source_read_all_transport.dart';
 import '../data/workspace_controller.dart';
 import 'sidebar_thread_unread.dart';
 
-/// Web `messageStore.markConversationRead`: the sidebar's "Mark All as Read"
+/// Web `messageStore.markConversationRead`: the sidebar's "Mark all as read"
 /// reads a channel together with its followed threads in one request
 /// (`POST /channels/:id/conversation-read-all`). The answer lists every scope it
 /// advanced (`scopes[]` of `scopeId`, `maxReadSeq`, `readStateVersion`); each is
@@ -65,7 +65,7 @@ Future<void> markConversationRead(
 /// Mark as Unread waits for the server's count (no invented badge). A failure
 /// only reloads the unread counts (no message). A joined channel's menu
 /// ([channel]) reads it together with its followed threads
-/// (`conversation-read-all`, "Mark All as Read") and counts the thread unread
+/// (`conversation-read-all`, "Mark all as read") and counts the thread unread
 /// too (Web 1.24 SidebarReadToggleMenuItem.tsx:23).
 class SidebarReadToggle {
   SidebarReadToggle(this.w, this.id, {required bool channel})
@@ -79,7 +79,7 @@ class SidebarReadToggle {
       all && SidebarThreadUnread.of(w).forChannel(id, joined: true).count > 0;
 
   String get label =>
-      unread ? (all ? 'Mark All as Read' : 'Mark as Read') : 'Mark as Unread';
+      unread ? (all ? 'Mark all as read' : 'Mark as read') : 'Mark as unread';
 
   Future<void> run() async {
     final reading = unread;

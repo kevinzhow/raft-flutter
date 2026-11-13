@@ -160,7 +160,7 @@ class RaftChannelMembersModal extends StatelessWidget {
   final VoidCallback? onCreateAgent;
 
   /// The typed search text when it matches nobody: the entry then reads
-  /// "Create Agent “{name}”" and steps up to the primary next action.
+  /// "Create agent “{name}”" and steps up to the primary next action.
   final String? createAgentName;
 
   /// A created agent that could not join the channel (D-state): the banner
@@ -209,7 +209,7 @@ class RaftChannelMembersModal extends StatelessWidget {
           Expanded(
             child: Text(
               addView
-                  ? raftText(context, 'Add Member')
+                  ? raftText(context, 'Add member')
                   : loading
                   ? raftText(context, 'Members')
                   : '${raftText(context, 'Members')} ($total)',
@@ -230,7 +230,7 @@ class RaftChannelMembersModal extends StatelessWidget {
               variant: RaftButtonRecipeVariant.outline,
               size: RaftButtonRecipeSize.sm,
               padding: const EdgeInsets.all(4),
-              tooltip: raftText(context, 'Add Member'),
+              tooltip: raftText(context, 'Add member'),
               disabled: !hasCandidates,
               onPressed: onAdd,
             ),
@@ -428,7 +428,7 @@ class RaftChannelMembersModal extends StatelessWidget {
                         vertical: 16,
                       ),
                       child: Text(
-                        raftFormat(context, 'No matches for "{query}"', {
+                        raftFormat(context, 'No members match "{query}"', {
                           'query': query.trim(),
                         }),
                         textAlign: TextAlign.center,
@@ -469,7 +469,7 @@ class RaftChannelMembersModal extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: RaftRecipeButton(
                 key: const ValueKey('add-member-create-agent-retry-join'),
-                label: 'Retry Joining This Channel',
+                label: 'Retry joining this channel',
                 variant: RaftButtonRecipeVariant.outline,
                 size: RaftButtonRecipeSize.sm,
                 padding: const EdgeInsets.symmetric(
@@ -745,7 +745,7 @@ class _CreateAgentEntry extends StatelessWidget {
     return RaftInteractive(
       onPressed: enabled ? onTap : null,
       semanticLabel: promoted
-          ? raftFormat(context, 'Create Agent “{name}”', {'name': promotedName})
+          ? raftFormat(context, 'Create agent “{name}”', {'name': promotedName})
           : raftText(context, 'Create Agent'),
       builder: (context, st) => Opacity(
         opacity: enabled ? 1 : .5,
@@ -770,7 +770,7 @@ class _CreateAgentEntry extends StatelessWidget {
                   children: [
                     Text(
                       promoted
-                          ? raftFormat(context, 'Create Agent “{name}”', {
+                          ? raftFormat(context, 'Create agent “{name}”', {
                               'name': promotedName,
                             })
                           : raftText(context, 'Create Agent'),
@@ -974,7 +974,7 @@ class _MembersPageState extends State<_MembersPage> {
                 header: true,
                 child: Text(
                   m.addView
-                      ? raftText(context, 'Add Member')
+                      ? raftText(context, 'Add member')
                       : raftText(context, 'Members'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1155,7 +1155,7 @@ class _MembersPageState extends State<_MembersPage> {
                       vertical: 16,
                     ),
                     child: Text(
-                      raftFormat(context, 'No matches for "{query}"', {
+                      raftFormat(context, 'No members match "{query}"', {
                         'query': rosterSearch.text.trim(),
                       }),
                       textAlign: TextAlign.center,
@@ -1178,7 +1178,7 @@ class _MembersPageState extends State<_MembersPage> {
             ),
             child: RaftRecipeButton(
               key: const ValueKey('add-member-open'),
-              label: raftText(context, 'Add Member'),
+              label: raftText(context, 'Add member'),
               glyph: RaftGlyph.plus,
               glyphSize: 14,
               variant: RaftButtonRecipeVariant.outline,

@@ -438,7 +438,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Board'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Load More'));
+      await tester.tap(find.text('Load more'));
       await tester.pump();
       _role(w, 'guest');
       await tester.pumpAndSettle();
@@ -557,7 +557,7 @@ void main() {
       _taskRoutes(w, a);
       await tester.pumpWidget(_host(w, 'tasks', channelId: 'c1'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Create Task'));
+      await tester.tap(find.text('New task'));
       await tester.pumpAndSettle();
       final submit = tester
           .widget<RaftCreateTaskDialogView>(

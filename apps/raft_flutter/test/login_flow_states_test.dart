@@ -61,7 +61,7 @@ final _states = <_State>[
   _State(
     'login',
     prepare: (f) => f.adapter.statuses['GET /auth/me'] = 401,
-    expectText: 'Sign In',
+    expectText: 'Sign in',
   ),
   _State(
     'login-wrong-password',
@@ -162,7 +162,7 @@ final _states = <_State>[
       f.adapter.statuses['POST /servers'] = 409;
     },
     act: (t, f) async {
-      await t.tap(find.text('+ Create New Server'));
+      await t.tap(find.text('+ Create new server'));
       await t.pump();
       await t.enterText(
         find.byKey(const ValueKey('global-server-name')),
@@ -176,7 +176,7 @@ final _states = <_State>[
     'server-create-busy',
     prepare: (f) => _hold(f, 'POST /servers'),
     act: (t, f) async {
-      await t.tap(find.text('+ Create New Server'));
+      await t.tap(find.text('+ Create new server'));
       await t.pump();
       await t.enterText(
         find.byKey(const ValueKey('global-server-name')),
@@ -204,10 +204,10 @@ final _states = <_State>[
   _State(
     'server-create',
     act: (t, f) async {
-      await t.tap(find.text('+ Create New Server'));
+      await t.tap(find.text('+ Create new server'));
       await t.pump();
     },
-    expectText: 'Create Server',
+    expectText: 'Create server',
   ),
   _State(
     'onboarding-profile',

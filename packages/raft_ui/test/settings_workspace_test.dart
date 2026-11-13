@@ -86,7 +86,8 @@ void main() {
     );
     // The header keeps its sentence case (decision 0002: no all caps).
     expect(find.textContaining('LABS'), findsNothing);
-    expect(find.textContaining('Labs'), findsNWidgets(3));
+    // Web 1.24: 'Server labs access' (lower-case labs) is the third label.
+    expect(find.textContaining('Labs'), findsNWidgets(2));
     expect(
       find.text('Only server owners can change the master gate.'),
       findsOneWidget,
@@ -107,7 +108,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('No provider connections yet.'), findsOneWidget);
+    expect(find.text('No provider connections yet'), findsOneWidget);
     expect(find.text('Add provider connection'), findsOneWidget);
   });
 

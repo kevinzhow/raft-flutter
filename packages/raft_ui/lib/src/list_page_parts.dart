@@ -214,7 +214,7 @@ class RaftSearchLoadMore extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 16),
     child: Center(
       child: RaftRecipeButton(
-        label: raftText(context, 'Load More'),
+        label: raftText(context, 'Load more'),
         variant: RaftButtonRecipeVariant.outline,
         size: RaftButtonRecipeSize.sm,
         onPressed: onPressed,

@@ -116,7 +116,7 @@ bool _canEditSourceOwned(String? status) => const {
 
 /// `sourceOwnedConnectedAppStatusHint`.
 String? _statusHint(String? status) => switch (status) {
-  'publish_requested' || 'in_review' => 'Marketplace review is pending. You can edit this app while it waits, or delete it to withdraw the request.',
+  'publish_requested' || 'in_review' => 'Marketplace review is pending. You can edit this app while it waits, or withdraw the request.',
   'unpublish_requested' => 'Marketplace offline review is pending. The app stays listed and installable until App Admin approves removal. Approval preserves the source Server’s installation and access, but removes them on other Servers.',
   _ => null,
 };
@@ -353,7 +353,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
           suffix:
               '${raftText(context, ' again.')}${app['official'] == true ? ' ${raftText(context, 'This also opts this server out of automatic installation. It stays uninstalled until an owner or admin explicitly installs it again.')}' : ''}',
         ),
-        confirmLabel: raftText(context, 'Uninstall app'),
+        confirmLabel: raftText(context, 'Uninstall'),
         cancelLabel: raftText(context, 'Cancel'),
       ),
     );
@@ -491,9 +491,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                         e.key: tr(e.value),
                     },
                     resourceScopes: integrationResourceScopes,
-                    emptyLabel: tr(
-                      'No active grant scopes are currently recorded for this connection.',
-                    ),
+                    emptyLabel: tr('No active grant scopes'),
                   ),
                 ),
                 if (hasSetup && installed)
@@ -617,9 +615,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                     e.key: tr(e.value),
                 },
                 resourceScopes: integrationResourceScopes,
-                emptyLabel: tr(
-                  'No active grant scopes are currently recorded for this connection.',
-                ),
+                emptyLabel: tr('No active grant scopes'),
               ),
               _InstalledAppPermissions(
                 controller: w,
@@ -879,15 +875,15 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
         ? null
         : switch (shownTab) {
             RaftConnectedAppsTab.marketplace when listings.isEmpty => tr(
-              'No third-party marketplace apps match this view.',
+              'No marketplace apps match this view',
             ),
             RaftConnectedAppsTab.installed when installedRows.isEmpty => tr(
-              'No installed apps match this view.',
+              'No installed apps match this view',
             ),
             RaftConnectedAppsTab.myApps when registeredRows.isEmpty =>
               p.registered.isEmpty
-                  ? tr('No registered apps yet.')
-                  : tr('No registered apps match this view.'),
+                  ? tr('No Raft Apps yet')
+                  : tr('No Raft Apps match this view'),
             _ => null,
           };
     return Semantics(
@@ -932,8 +928,8 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
         emptyMessage: empty,
         myAppsIntro: tr(
           canManage
-              ? 'Apps registered by this server are managed here. Edit an app to update metadata or request marketplace review.'
-              : 'Apps registered by this server are shown here. Only server owners and admins can change them.',
+              ? 'Raft Apps this server builds. Edit one to change its details, get its client secret or request Marketplace review.'
+              : 'Raft Apps this server builds. Only server owners and admins can change them.',
         ),
         secretReveal: canManage && !editorOpen ? secretReveal() : null,
         reviewNote: cold
@@ -1118,7 +1114,7 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
           const SizedBox(height: RaftSpace.x3),
           RaftAppPermissionsApproval(
             notice: tr(
-              'This app requests new data access. Review the new data groups before approving the update.',
+              'This app requests new access. Review it before approving the update; until then it keeps the access you approved.',
             ),
             groups: [
               for (final g in newly)

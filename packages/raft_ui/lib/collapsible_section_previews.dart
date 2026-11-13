@@ -75,7 +75,7 @@ class _CollapsibleSectionPreviewState
           children: [
             const RaftSectionHeader(label: 'Actions', count: 2),
             RaftButton(
-              label: 'Restart / Reset',
+              label: 'Restart / reset',
               onPressed: () {},
               tone: RaftButtonRecipeVariant.outline,
             ),

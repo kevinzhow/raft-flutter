@@ -33,7 +33,7 @@ String raftEmojiFromUnified(String unified) => String.fromCharCodes([
 
 /// Category keys in picker order and their `epr` names.
 const _categoryNames = <String, String>{
-  'suggested': 'Frequently Used',
+  'suggested': 'Frequently used',
   'smileys_people': 'Smileys & People',
   'animals_nature': 'Animals & Nature',
   'food_drink': 'Food & Drink',

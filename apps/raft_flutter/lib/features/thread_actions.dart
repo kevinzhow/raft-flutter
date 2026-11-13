@@ -226,7 +226,7 @@ class _ThreadActionsState extends State<ThreadActions> {
                     key: const Key('thread-follow-menu-item'),
                     label: raftText(
                       context,
-                      following == true ? 'Unfollow Thread' : 'Follow Thread',
+                      following == true ? 'Unfollow thread' : 'Follow thread',
                     ),
                     glyph: following == true
                         ? RaftGlyph.messageCircleOff
@@ -310,7 +310,7 @@ class _ThreadActionsState extends State<ThreadActions> {
                   label: Text(
                     raftText(
                       context,
-                      following == true ? 'Unfollow Thread' : 'Follow Thread',
+                      following == true ? 'Unfollow thread' : 'Follow thread',
                     ),
                   ),
                 ),

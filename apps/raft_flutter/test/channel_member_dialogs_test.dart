@@ -236,7 +236,7 @@ void main() {
       'free plan banner, one invite card, Add server grows to the cap',
       (t) async {
         await openJoint(t);
-        expect(find.text('Create Joint Channel'), findsNWidgets(2));
+        expect(find.text('Create joint channel'), findsNWidgets(2));
         expect(
           find.textContaining(
             'Free servers can create and join Joint Channels',
@@ -333,7 +333,7 @@ void main() {
       await t.tap(find.text('Unarchive'));
       await t.pumpAndSettle();
       expect(unarchived, 'old');
-      expect(find.text('Create Joint Channel'), findsNothing);
+      expect(find.text('Create joint channel'), findsNothing);
     });
 
     testWidgets('the free-server limit links to Billing', (t) async {
@@ -356,10 +356,10 @@ void main() {
         find.textContaining('This Joint Channel already has 2 free servers'),
         findsOneWidget,
       );
-      await t.tap(find.text('View Billing'));
+      await t.tap(find.text('View billing'));
       await t.pumpAndSettle();
       expect(billing, 1);
-      expect(find.text('Create Joint Channel'), findsNothing);
+      expect(find.text('Create joint channel'), findsNothing);
     });
   });
 }

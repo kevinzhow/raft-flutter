@@ -1,4 +1,4 @@
-// Agent "Report Issue" (Web components/agent/ReportIssueDialog.tsx +
+// Agent "Report issue" (Web components/agent/ReportIssueDialog.tsx +
 // feedback/agentIssueTicket.ts + feedback/transcriptRequestState.ts +
 // utils/feedbackExportBundle.ts): the app side of RaftReportIssueDialog. It
 // reads the DM history, builds the diagnostic bundle, files it through the

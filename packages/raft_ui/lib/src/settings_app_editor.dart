@@ -960,7 +960,7 @@ class RaftAppEditorSecretReveal extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: RaftSpace.x2,
         children: [
-          RaftSectionEyebrow(raftText(context, 'Client Secret')),
+          RaftSectionEyebrow(raftText(context, 'Client secret')),
           Text(
             raftText(context, 'This secret is only shown once. Copy it now.'),
             style: RaftTypography.body(

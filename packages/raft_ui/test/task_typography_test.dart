@@ -86,7 +86,7 @@ void main() {
         expect(opened, 1);
         await tester.tap(find.text('Todo'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('In Progress'));
+        await tester.tap(find.text('In progress'));
         await tester.pumpAndSettle();
         expect(selected, 'in_progress');
         expect(opened, 1);
@@ -118,7 +118,7 @@ void main() {
         ),
       );
       expect(
-        tester.widget<Text>(find.text('In Progress')).style!.fontFamily,
+        tester.widget<Text>(find.text('In progress')).style!.fontFamily,
         tokens.headingFont,
       );
       // Legacy chips fit the 24px document strut; the current 22px chip plus

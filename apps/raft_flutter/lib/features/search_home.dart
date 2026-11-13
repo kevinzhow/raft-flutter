@@ -136,7 +136,7 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
       children: [
         if (widget.history.isNotEmpty) ...[
           heading(
-            'Search History',
+            'Search history',
             RaftGlyph.clock3,
             actions: [
               if (touch)
@@ -164,7 +164,7 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
           ),
           const SizedBox(height: RaftSearchHomeRecipe.sectionGap),
         ],
-        heading('Frequently Used', RaftGlyph.star),
+        heading('Frequently used', RaftGlyph.star),
         if (widget.frequent.isEmpty)
           CustomPaint(
             foregroundPainter: RaftDashedBorderPainter(homeRecipe.tagBorder, 1),

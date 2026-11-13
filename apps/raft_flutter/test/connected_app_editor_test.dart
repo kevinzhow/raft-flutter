@@ -436,9 +436,9 @@ void main() {
     await t.ensureVisible(button);
     await t.tap(button);
     await t.pumpAndSettle();
-    expect(find.text('Regenerate Client Secret'), findsOneWidget);
-    expect(find.textContaining('Regenerate client secret for'), findsOneWidget);
     expect(find.text('Regenerate client secret'), findsOneWidget);
+    expect(find.textContaining('Regenerate client secret for'), findsOneWidget);
+    expect(find.text('Regenerate'), findsOneWidget);
     await t.tap(
       find.byKey(
         const ValueKey('connected-app-regenerate-secret-confirm-button'),
@@ -479,7 +479,7 @@ void main() {
       hasLength(1),
     );
     expect(find.byKey(editor), findsNothing);
-    expect(find.text('No registered apps yet.'), findsOneWidget);
+    expect(find.text('No Raft Apps yet'), findsOneWidget);
   });
 
   testWidgets('a revoked permission closes the editor and drops private rows', (

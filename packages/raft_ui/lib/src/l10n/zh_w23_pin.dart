@@ -6,7 +6,7 @@
 // adds the flattened singular / plural keys it actually uses.
 const Map<String, String> zhCatalogW23Pin = <String, String>{
   "#{name}": "#{name}",
-  "Verify {name} on a Computer": "在 Computer 上验证 {name}",
+  "Verify {name} on a computer": "在 Computer 上验证 {name}",
   "Service": "服务",
   "Client key": "客户端标识",
   "Redirect URL": "回调地址",
@@ -15,23 +15,22 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Recovery owner": "恢复后的所有者",
   "Required computer": "指定的计算机",
   "Suggested computer": "建议的计算机",
-  "Try Again": "重试",
+  "Try again": "重试",
   "Raft creates the agent in the cloud and connects it for you. No command line needed.":
       "Raft 会在云端创建这个 Agent 并自动完成连接，无需命令行操作。",
   "Runs in the cloud": "在云端运行",
   "Message delivery to this cloud agent is not registered yet.":
-      "尚未为这个云端 agent 注册消息推送。",
+      "尚未为这个云端 Agent 注册消息推送。",
   "This cloud agent no longer exists in the cloud. Connections are unavailable; recreate the agent.":
-      "这个云端 agent 在云端已不存在，连接不可用；请重新创建该 Agent。",
-  "Archive Agent": "归档 Agent",
+      "这个云端 Agent 在云端已不存在，连接不可用；请重新创建该 Agent。",
+  "Archive agent": "归档 Agent",
   "Choose light, dark, or follow your device. Your choice is saved on this device.":
       "选择浅色、深色或跟随设备。选择会保存在此设备上。",
   "Show which agents are working, and what they are doing, at the top of the window and on the Home bar.":
       "在窗口顶部和首页顶栏显示正在工作的 Agent 及其在做的事。",
-  "Regenerate Client Secret": "重新生成客户端密钥",
-  "App Admin must approve before this app is removed from the public marketplace. Until then <code>{clientId}</code> stays listed, installable, and usable by existing connections. If approved, the source Server keeps its installation and access. Other Servers lose their installations, and their grants and tokens are revoked.": "需经应用管理员批准，此应用才会从公开市场移除。在此之前，<code>{clientId}</code> 仍会保持在列表中、可安装，并可被现有连接使用。批准后，来源 Server 的安装和访问权限会保留；其他 Server 的安装会被移除，其授权和令牌会被撤销。",
+  "App Admin must approve before this app is removed from the public marketplace. Until then <code>{clientId}</code> stays listed, installable, and usable by existing connections. If approved, the source Server keeps its installation and access. Other Servers lose their installations, and their grants and tokens are revoked.": "需经应用管理员批准，此应用才会从公开市场移除。在此之前，<code>{clientId}</code> 仍会保持在列表中、可安装，并可被现有连接使用。批准后，来源服务器的安装和访问权限会保留；其他服务器的安装会被移除，其授权和令牌会被撤销。",
   "Raft palette in real surfaces": "真实界面中的 Raft 调色板",
-  "Runs as a cloud agent using its configured model and budget. Each batch reads at most 2,000 messages / 64,000 source characters; unfinished history continues in the background. These are batch limits, not a limit on the analysis range. Per-batch model tokens and cost are not yet available.": "由云端 agent 使用已配置的模型和预算运行。每批最多读取 2,000 条消息 / 64,000 个来源字符，未读完的历史会在后台继续。这是单批限制，不是分析范围的总量上限。暂不提供每批模型 token 和费用。",
+  "Runs as a cloud agent using its configured model and budget. Each batch reads at most 2,000 messages / 64,000 source characters; unfinished history continues in the background. These are batch limits, not a limit on the analysis range. Per-batch model tokens and cost are not yet available.": "由云端 Agent 使用已配置的模型和预算运行。每批最多读取 2,000 条消息 / 64,000 个来源字符，未读完的历史会在后台继续。这是单批限制，不是分析范围的总量上限。暂不提供每批模型 token 和费用。",
   "Evidence: insufficient to determine the outcome": "证据：不足以判断实际结果",
   "Evidence: conversation only; actual task or tool outcome is unverified":
       "证据：仅对话，尚未核实实际任务或工具结果",
@@ -39,12 +38,13 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "{label} {target} · {message}": "{label} {target} · {message}",
   "A source message changed or was deleted. The old result is hidden; the service will analyze refreshed material.":
       "来源消息已编辑或删除，旧结果已隐藏；服务会重新分析最新材料。",
-  "Current cloud agent model: {model}": "云端 agent 当前模型：{model}",
+  "Current cloud agent model: {model}": "云端 Agent 当前模型：{model}",
   "A chunk from {from} to {to} ({count} messages) was not analyzed after 3 failed attempts. Its outcome is unknown.":
       "{from} 至 {to} 的一段材料（{count} 条消息）在 3 次失败后未能分析，实际结果未知。",
-  "This batch: {count, number} messages read": "本批已读取 {count, number} 条消息",
+  "{count, number} new messages read": "已读取 {count, number} 条新消息",
   "This batch has read {count, number} messages. The background scan continues in further batches.":
       "本批已读取 {count, number} 条消息。后台扫描会继续处理后续批次。",
+  "Reading new messages. Findings so far stay visible.": "正在读取新消息，已有发现会保留。",
   "Sources and historical range": "来源和历史范围",
   "Analyze messages since (UTC)": "分析此日期起的消息（UTC）",
   "Past {days} days": "最近 {days} 天",
@@ -54,31 +54,34 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Selected channels: {total, number} messages total; {count, number} in the analysis range.":
       "所选频道共有 {total, number} 条消息，分析范围内有 {count, number} 条。",
   "Newest source message: {time}": "最新源消息时间：{time}",
-  "No messages exist in the selected channels.": "所选频道没有消息。",
+  "No messages in the selected channels": "所选频道没有消息",
   "The selected channels contain {count, number} messages across all history. Start with the newest message's UTC date to see a smaller slice. Restarting replaces current findings and may still require multiple model calls.": "所选频道全部历史共有 {count, number} 条消息。先从最新消息所在的 UTC 日期开始，查看较小范围。重新分析会替换当前发现，仍可能产生多次模型调用。",
   "Analyze the newest source day from {date}": "从 {date} 开始分析最新消息当天",
   "Messages exist, but they are outside this range. Choose an earlier start date to analyze them.":
       "频道中有消息，但都不在此范围内。请选择更早的开始日期。",
   "Read {count, number} of {total, number} messages · {batches, number} batches accepted":
       "累计已读 {count, number} / {total, number} 条消息 · 已处理 {batches, number} 批",
+  "Read {count, number} of {total, number} messages so far":
+      "累计已读 {count, number} / {total, number} 条消息",
   "Read {count, number} messages · {batches, number} batches accepted":
       "累计已读 {count, number} 条消息 · 已处理 {batches, number} 批",
-  "The background scan continues in batches. Accepted findings stay visible while the next batch runs. Batch limits do not cap the total data range.":
-      "后台会分批继续扫描；下一批运行时，已产生的发现仍会保留。单批预算不限制整个数据范围。",
+  "Read {count, number} messages so far": "累计已读 {count, number} 条消息",
+  "New messages are read in the background. Findings so far stay visible.":
+      "后台会持续读取新消息，已有发现会保留。",
   "No new messages in this batch. Earlier accepted findings are kept.":
       "本批没有新消息，已产生的发现仍保留。",
-  "Conversation insights": "对话洞察",
+  "Patterns and improvements": "行为模式与改进",
   "Reads selected channels · no DM replies": "读取所选频道 · 不回复私信",
-  "RaftBench service agent": "RaftBench 专用 agent",
+  "RaftBench service agent": "RaftBench 专用 Agent",
   "This agent reads selected sources and submits dashboard results. It does not reply to DMs. Open its card to inspect it.":
-      "此 agent 只读来源并提交看板结果，不回复私信。点击名称可查看 agent 卡片。",
-  "Create service agent": "创建专用 agent",
+      "此 Agent 只读来源并提交看板结果，不回复私信。点击名称可查看 Agent 卡片。",
+  "Create service agent": "创建专用 Agent",
   "Assigned to this analysis": "已分配给此分析",
   "Ready to assign": "可以分配",
   "Setting up; assignment available when ready": "正在配置，完成后可分配",
-  "Assign agent": "分配 agent",
+  "Assign agent": "分配 Agent",
   "Cloud is available now. Computer assignment will appear when its runner supports this read-only agent profile.":
-      "现在可选云端运行；Computer 运行端支持此只读 agent 类型后才会开放分配。",
+      "现在可选云端运行；Computer 运行端支持此只读 Agent 类型后才会开放分配。",
   "Enable once to analyze collaboration patterns automatically. This AI analysis does not classify sentiment or frustration; the separate legacy phrase scan provides those signals. Results appear here after each run.":
       "启用后自动分析协作模式。本 AI 分析不分类情绪或挫败；相关信号由独立的旧版词句扫描提供。每轮结果会显示在这里。",
   "Disable and clear results": "关闭并清除结果",
@@ -88,13 +91,13 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
       "无法读取或保存分析设置，请检查权限后重试。",
   "Channels to analyze (up to 50)": "分析频道（最多 50 个）",
   "I authorize this read-only agent to analyze these channels on staging. Findings accumulate within this analysis range on staging; disabling or changing the range clears them. No export.":
-      "我授权这个只读 agent 分析 staging 上的这些频道。发现会在本次分析范围内持续积累，关闭或更改范围会清空；不导出。",
+      "我授权这个只读 Agent 分析 staging 上的这些频道。发现会在本次分析范围内持续积累，关闭或更改范围会清空；不导出。",
   "{sources} channels · history continues in background; checks for new messages every {count} minutes":
       "{sources} 个频道 · 后台继续读历史；每 {count} 分钟检查新消息",
   "The analysis agent could not start. An administrator needs to check the cloud agent service.":
-      "分析 agent 未能启动，需要管理员检查云端 agent 服务。",
-  "Starting your analysis agent…": "正在启动分析 agent…",
-  "Waiting for the analysis agent…": "正在等待分析 agent…",
+      "分析 Agent 未能启动，需要管理员检查云端 Agent 服务。",
+  "Starting your analysis agent…": "正在启动分析 Agent…",
+  "Waiting for the analysis agent…": "正在等待分析 Agent…",
   "Reading channel messages…": "正在读取频道消息…",
   "Analyzing the messages read…": "正在分析已读取的消息…",
   "Analysis progress": "分析进度",
@@ -105,9 +108,9 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Partial analysis — coverage is incomplete": "部分分析结果 — 覆盖不完整",
   "Analysis did not finish": "本轮分析未完成",
   "The agent did not finish within 30 minutes. This is a failed run, not a finding of no problems. The service will try a new run.":
-      "agent 未在 30 分钟内完成。这是运行失败，不代表没有问题；服务会重新安排下一轮。",
-  "Conversation evidence only. Tool outcomes and thread replies are not included. Suggestions need human review and never create or publish skills automatically.":
-      "仅依据对话证据，不含工具执行结果和线程回复。建议需要人工复核，不会自动创建或发布技能。",
+      "Agent 未在 30 分钟内完成。这是运行失败，不代表没有问题；服务会重新安排下一轮。",
+  "Based on the selected channels and the thread replies you can read. Task conversations and tool results are not read yet, and very long messages are cut short. Suggestions are for you to review — nothing changes automatically.":
+      "基于所选频道及其可读的消息列回复。task 会话和工具执行结果还没读，很长的消息会被截断。建议仅供你参考，不会自动改动任何东西。",
   "No material in this window": "本窗口没有分析材料",
   "No messages were read in this window; nothing was analyzed. Try a channel with recent messages.":
       "本窗口未读取到消息，未进行分析。可选择近期有消息的频道。",
@@ -124,7 +127,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Source unavailable in this view": "当前视图无法打开此来源",
   "Counterevidence": "反证",
   "{count} counterexamples were considered": "已考虑 {count} 条反证",
-  "Draft improvement or shared-skill proposal": "改进或共享技能建议草稿",
+  "Suggestion": "建议",
   "Analysis result pages": "分析结果分页",
   "Previous page": "上一页",
   "Next page": "下一页",
@@ -161,10 +164,9 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
       "持续 AI 分析接入中，当前总览提供任务与费用统计。",
   "Manual phrase matching only, without AI interpretation. Positive and negative counts are wording matches; unscored does not mean neutral. The same messages and rules produce the same counts.":
       "仅手动匹配短语，没有 AI 理解。正负面数量是措辞命中数，未评分不等于中性；相同消息与规则会得到相同计数。",
-  "Tasks and cost": "任务与费用",
-  "Database metrics · no AI scan needed": "数据库直接统计 · 无需 AI 扫描",
-  "Sources and limits": "来源与口径",
-  "Dashboard sections": "看板分区",
+  "Task and cost context": "任务与费用参考",
+  "Supporting metrics · not a quality score": "辅助指标 · 不代表质量评分",
+  "How this is counted": "统计口径",
   "Task history from the database": "数据库任务历史快照",
   "Current task states across accessible task sources. This is available without starting AI analysis or scanning messages.":
       "直接汇总可访问任务来源中的当前状态；无需启动 AI 分析或扫描消息。",
@@ -172,38 +174,38 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Awaiting review": "等待复核",
   "To do": "待办",
   "{surfaces} accessible task sources · created {first}–{latest} · last task update {updated} (UTC). This is a historical snapshot, not a current activity trend.": "{surfaces} 个可访问任务来源 · 创建于 {first}–{latest} · 最近任务更新 {updated}（UTC）。这是历史快照，不代表近期活动趋势。",
+  "Historical snapshot · last updated {updated} UTC":
+      "历史快照 · 最近更新 {updated}（UTC）",
   "Created by people: {human} · by agents: {agent}.":
       "由人创建：{human} · 由 agent 创建：{agent}。",
   "Creation → done: median {median}, 90th percentile {p90} ({count} valid completed tasks). Calendar time includes waiting.":
       "创建至完成：中位数 {median}，第 90 百分位 {p90}（{count} 个有效完成样本）；日历时间包括等待。",
   "Refresh task and cost metrics": "读取总览",
   "Aggregating all accessible task sources…": "正在汇总所有可访问的任务来源…",
-  "Reading cloud agent billing…": "正在读取云端 agent 费用…",
+  "Reading cloud agent billing…": "正在读取云端 Agent 费用…",
   "Task aggregation is unavailable. No task totals have been inferred from a partial sample.":
       "任务汇总暂不可用，未从部分样本推算任务总量。",
-  "Source aggregation over {count} accessible task surfaces; no task-page cap.":
-      "从 {count} 个可访问任务来源直接汇总，不使用任务分页截断样本。",
+  "Channels you can access: {count}.": "统计你可访问的 {count} 个频道中的任务。",
   "Task efficiency · period comparison": "任务效率 · 同期对比",
-  "No tasks were completed in either comparison period.": "这两个比较时段内没有已完成任务。",
+  "No tasks completed in either period": "两个时段内都没有完成的任务",
   "Task and cost comparison: latest 7 complete UTC days / previous 7 days. Today is excluded. This is separate from the AI historical start date.":
       "任务和费用比较：最近 7 个完整 UTC 日 / 前 7 日，不含今天；与 AI 历史分析起点分别计算。",
-  "Completed · current / previous": "完成任务 · 本期 / 上期",
-  "Median creation → done · current / previous": "创建至完成中位时长 · 本期 / 上期",
-  "Mean creation → done · current / previous": "创建至完成平均时长 · 本期 / 上期",
+  "Completed tasks": "完成任务",
+  "Mean creation → done": "创建至完成平均时长",
   "Duration samples: {current} / {previous}. Calendar time includes waiting. Current done tasks only; reopened tasks and historical backlog are not reconstructed.":
       "时长样本：{current} / {previous}。日历时间含等待；仅按当前完成任务统计，未重建重开任务和历史积压。",
   "Partial task sample: these figures are not workspace totals and cannot establish a trend.":
       "任务样本未读完：这些数值不是工作区总量，不能据此判断趋势。",
   "Pilot results stay inside staging. Export is unavailable.":
       "试点结果仅留在 staging 内，暂不提供导出。",
-  "Cloud agent cost · whole server": "云端 agent 运行费用 · 整个 server",
+  "Cloud agent cost · whole server": "云端 Agent 运行费用 · 整个服务器",
   "Load cost comparison": "读取费用对比",
   "Uses existing billing, separately from task/message reads. Always server-wide, even when a channel is selected.":
-      "独立读取现有 billing，不读取任务或消息。即使选择单个频道，费用也始终覆盖整个 server。",
+      "直接读取现有账单数据，与任务、消息的读取分开。即使选了单个频道，费用也始终按整个服务器统计。",
   "Cloud agent billing is not available for this server. This does not mean zero cost.":
-      "此 server 暂无可用的云端 agent 运行费用数据，不代表零成本。",
+      "此服务器暂无云端 Agent 运行费用数据，不代表费用为零。",
   "PR merges and tokens are not connected. Cloud agent spend excludes other runtimes and is not attributed to tasks; no cost-per-task or savings are inferred. ":
-      "PR 合并数和 tokens 尚未接入。费用只覆盖云端 agent，未归因到任务，不推算单任务成本或节省金额。",
+      "PR 合并数和 tokens 尚未接入。费用只覆盖云端 Agent，未归因到任务，不推算单任务成本或节省金额。",
   "A separate, on-demand task snapshot for the selected scope. No message scan is needed.":
       "按需读取当前范围的任务快照，无需扫描频道消息。",
   "Tasks observed": "已观察任务",
@@ -211,7 +213,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Median creation → done": "创建至完成的中位时长",
   "{value} h": "{value} 小时",
   "Current owners: {user} human · {agent} agent · {unassigned} unassigned":
-      "当前负责人：{user} 人类 · {agent} agent · {unassigned} 未分配",
+      "当前负责人：{user} 人类 · {agent} Agent · {unassigned} 未分配",
   "Elapsed time includes waiting; {samples} completed tasks have valid timestamps. Owner type is not end-to-end execution or quality. Closed is separate from done.":
       "耗时包含等待；{samples} 个完成任务有有效时间。负责人类型不代表全程执行者或质量。关闭与完成分开统计。",
   "All currently accessible task pages read; {count} tasks in this scope. This is an all-time status snapshot, not a time-window completion rate.":
@@ -219,16 +221,15 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Partial snapshot: read cap {limit}. {count} tasks in this scope; counts and durations are incomplete, not workspace totals.":
       "部分快照：读取上限 {limit}。当前范围 {count} 个任务，计数和耗时不完整，不代表工作空间总量。",
   "Open task board": "打开任务看板",
-  "In review": "待复核",
+  "In review": "待确认",
   "Rollout status could not be refreshed. Your current evidence and review are preserved; new reads are paused until the status is confirmed.":
       "暂时无法确认功能开关状态。当前证据与复核备注已保留；确认状态前暂停新的读取。",
   "Channel breakdown": "按频道查看",
-  "Task metrics and phrase-scan scope": "任务指标及短语扫描范围",
   "Workspace overview": "工作区总览",
   "RaftBench": "RaftBench",
-  "Workspace efficiency and cost": "工作区效率与成本",
-  "Two views: task metrics from the database and AI insights from conversations.":
-      "两块内容：数据库任务指标，以及 AI 对话洞察。",
+  "Agent productivity": "Agent 工作效率",
+  "Find repeated friction, understand the evidence, and improve how agents work.":
+      "发现反复出现的阻力，用证据理解原因，改进 Agent 的工作方式。",
   "Back to settings": "返回设置",
   "Scan phrases and repeats": "扫描短语与重复",
   "Refresh phrase scan": "刷新短语扫描",
@@ -239,7 +240,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
       "开始工作区总览，或选择单个频道。仅在开始后读取消息。",
   "Snapshot of {count} messages · {time}": "{count} 条消息快照 · {time}",
   "Each scanned channel covers up to its latest 200 top-level messages. Older history and thread replies are not included.":
-      "每个已扫描频道最多覆盖最近 200 条顶层消息，不含更早历史或线程回复。",
+      "每个已扫描频道最多覆盖最近 200 条顶层消息，不含更早历史或消息列回复。",
   "The server also applied a plan-based history limit.": "服务器还应用了套餐历史记录限制。",
   "Tool execution outcomes are unavailable in channel history; tool failure loops are not assessed.":
       "频道消息不包含工具执行结果，因此不评估工具失败循环。",
@@ -280,7 +281,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
       "规则版本：{version}。仅使用精确重复和短语匹配，可能遗漏语义循环或间接不满。",
   "Select a cue to inspect its original messages.": "选择信号查看原始消息。",
   "{count} cues": "{count} 条信号",
-  "Cloud agent · Free for a limited time": "云端 agent · 限时免费",
+  "Cloud agent · Free for a limited time": "云端 Agent · 限时免费",
   "You're an admin of both {source} and {target}. The connection will be made directly as admin of both, and no email will be sent.":
       "你同时是 {source} 和 {target} 的管理员。将以两边管理员的身份直接建立连接，不会发送邮件。",
   "Connect directly as admin of both servers": "以两边管理员的身份直接建立连接",
@@ -293,28 +294,28 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
       "此优惠码不可用。请检查或移除后继续。",
   "Promotion code: {code}. The final discount is confirmed on Stripe Checkout.":
       "优惠码：{code}。最终优惠以 Stripe 结账页确认为准。",
-  "Cloud agent spend": "云端 agent 费用",
-  "Loading cloud agent spend": "正在加载云端 agent 费用",
-  "Failed to load cloud agent spend": "云端 agent 费用加载失败",
+  "Cloud agent spend": "云端 Agent 费用",
+  "Loading cloud agent spend": "正在加载云端 Agent 费用",
+  "Failed to load cloud agent spend": "云端 Agent 费用加载失败",
   "Today (UTC)": "今天（UTC）",
   "{spent} of the {limit} daily limit": "{spent}，每日限额 {limit}",
   "{spent}, no daily limit": "{spent}，无每日限额",
   "Resets {time}": "{time} 重置",
   "This server has reached its daily limit. Cloud agents' model calls are refused until {time}.":
-      "本服务器已达到每日限额，云端 agent 的模型调用在 {time} 前会被拒绝。",
+      "本服务器已达到每日限额，云端 Agent 的模型调用在 {time} 前会被拒绝。",
   "The platform's daily limit has been reached. Cloud agents' model calls are refused until {time}.":
-      "平台已达到每日限额，云端 agent 的模型调用在 {time} 前会被拒绝。",
+      "平台已达到每日限额，云端 Agent 的模型调用在 {time} 前会被拒绝。",
   "No spend in the last 30 days": "近 30 天没有费用",
-  "By agent": "按 agent",
-  "Deleted agents": "已删除的 agent",
+  "By agent": "按 Agent",
+  "Deleted agents": "已删除的 Agent",
   "Some usage has no price and is not included.": "部分用量没有定价，未计入。",
   "Estimated, in USD by UTC day, as reported by the cloud agent provider. For reference, not a bill.":
-      "估算值，美元，按 UTC 日期统计，数据来自云端 agent 服务方，仅供参考，不是账单。",
+      "估算值，美元，按 UTC 日期统计，数据来自云端 Agent 服务方，仅供参考，不是账单。",
   "In USD by UTC day, as reported by the cloud agent provider. For reference, not a bill.":
-      "美元，按 UTC 日期统计，数据来自云端 agent 服务方，仅供参考，不是账单。",
+      "美元，按 UTC 日期统计，数据来自云端 Agent 服务方，仅供参考，不是账单。",
   "Runs on": "运行位置",
-  "Cloud agent": "云端 agent",
-  "Cloud agent, model {model}": "云端 agent，模型 {model}",
+  "Cloud agent": "云端 Agent",
+  "Cloud agent, model {model}": "云端 Agent，模型 {model}",
   "Confirm again": "需重新确认",
   "Reason": "原因",
   "Permissions ({count})": "权限（{count}）",
@@ -326,7 +327,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Nothing was running.": "当前没有在运行。",
   "Couldn't stop the current turn.": "没能停止当前这一轮。",
   "Cloud agent, runs in the cloud · Free for a limited time":
-      "云端 agent，在云端运行 · 限时免费",
+      "云端 Agent，在云端运行 · 限时免费",
   "{name} couldn't start in the cloud. Connect a computer to run her there instead.":
       "{name} 没能在云端启动。连接一台计算机，改在计算机上运行她。",
   "Couldn't load the models, so the agent starts on the provider's default. You can change its model later in its profile.":
@@ -345,7 +346,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "The agent stops and no longer counts toward your plan's agent limit. Its profile and message history stay visible, read-only.":
       "Agent 会停止运行，不再占用套餐的 Agent 名额。它的资料页和历史消息仍可只读查看。",
   "What should happen to its workspace?": "它的工作区怎么处理？",
-  "Keep it on the Computer": "留在 Computer 上",
+  "Keep it on the computer": "留在 Computer 上",
   "Nothing is deleted. You can browse it read-only while {computer} is online, and delete it later.":
       "不删除任何文件。{computer} 在线时可以只读浏览，之后也可以再删除。",
   "Delete the workspace": "直接删除工作区",
@@ -357,11 +358,11 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Archived on": "归档时间",
   "{date} by {name}": "{date}，由 {name} 归档",
   "On {computer}": "在 {computer} 上",
-  "Deleted from the Computer": "已从 Computer 删除",
+  "Deleted from the computer": "已从 Computer 删除",
   "Deleting from {computer}…": "正在从 {computer} 删除…",
   "Waiting for {computer} to come online.": "等待 {computer} 上线。",
   "its Computer": "原来的 Computer",
-  "Delete workspace from Computer": "从 Computer 删除工作区",
+  "Delete workspace from computer": "从 Computer 删除工作区",
   "The workspace is deleted from {computer}. This cannot be undone.":
       "从 {computer} 删除工作区，无法恢复。",
   "The workspace was not found on the Computer.": "在 Computer 上没有找到这个工作区。",
@@ -405,7 +406,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "{start}–{end}": "{start}–{end}",
   "replying to {sender} in {channel}": "回应 {channel} 里 {sender} 的消息",
   "replying to {sender} in a thread in {channel}":
-      "回应 {channel} 里一个 thread 中 {sender} 的消息",
+      "回应 {channel} 中某个消息列里 {sender} 的消息",
   "replying to a direct message from {peer}": "回应 {peer} 的私信",
   "handling an app event": "处理一条应用通知",
   "woken by a message in {channel}": "被 {channel} 的消息叫醒",
@@ -425,20 +426,21 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "The reply is in a conversation you can't see.": "这条回复所在的对话你看不到。",
   "No message sent this turn": "这一轮没有发消息",
   "No overview yet": "还没有概览",
-  "The overview shows one line per finished turn. The Raft on this agent's computer records turns from the latest version on; if it is older, upgrade it on the computer's page and new turns will show up here.": "概览按轮显示，每完成一轮记一行。这个 agent 所在电脑上的 Raft 要是最新版本才会记录；如果版本较旧，在电脑页面里升级后，新的每一轮都会出现在这里。",
+  "Each finished turn shows here as one line. If new turns don't show up, update Raft on this agent's computer from the computer's page.":
+      "每完成一轮，这里就显示一行。如果新的一轮没有出现，请在电脑页面里更新这个 Agent 所在电脑上的 Raft。",
   "The overview shows one line per finished turn. This agent hasn't reported a finished turn yet.":
-      "概览按轮显示，每完成一轮记一行。这个 agent 还没有报告过完成的一轮。",
+      "概览按轮显示，每完成一轮记一行。这个 Agent 还没有报告过完成的一轮。",
   "Open the computer to upgrade": "打开电脑页面升级",
   "Show raw log": "看原始日志",
   "Show earlier turns": "显示更早的轮次",
   "Couldn't load the overview.": "概览加载失败。",
   "This read-only analysis agent does not reply to DMs. Results appear on the RaftBench page.":
-      "这是只读分析 agent，不会回复私信。结果显示在 RaftBench 页面。",
+      "这是只读分析 Agent，不会回复私信。结果显示在 RaftBench 页面。",
   "Invitation to join #{channel}": "邀请加入 #{channel}",
   "{server} invited this server to a joint channel.": "{server} 邀请本服务器加入联合频道。",
   "Accept": "接受",
-  "Next unread thread ({count})": "下一个未读 thread（{count}）",
-  "Earliest unread thread ({count})": "最早的未读 thread（{count}）",
+  "Next unread thread ({count})": "下一个未读消息列（{count}）",
+  "Earliest unread thread ({count})": "最早的未读消息列（{count}）",
   "Couldn't load this video preview.": "视频预览加载失败。",
   "Retry loading {filename}": "重新加载 {filename}",
   "#{number}": "#{number}",
@@ -456,7 +458,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Reject": "拒绝",
   "Cookie settings": "Cookie 设置",
   "cloud": "云端",
-  "Mark All as Read": "全部已读",
+  "Mark all as read": "全部已读",
   "Choose your display style": "选择你的显示风格",
   "Which style do you prefer?": "你喜欢哪种风格？",
   "Only changes what you see. You can change it anytime in Settings.":
@@ -474,12 +476,9 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "{name} dropped.": "{name} 已放下。",
   "Moving {name} cancelled.": "已取消移动 {name}。",
   "Desktop app": "桌面版",
-  "Get Raft Desktop for your computer.": "在电脑上安装 Raft 桌面版。",
   "Download for Mac": "下载 Mac 版",
   "Download for Mac (Apple silicon)": "下载 Mac 版（Apple 芯片）",
   "Download for Mac (Intel)": "下载 Mac 版（Intel 芯片）",
-  "Mac with an Intel chip? Choose macOS (Intel) below.":
-      "Intel 芯片的 Mac，请选下方的 macOS（Intel 芯片）。",
   "macOS": "macOS",
   "Download for Windows": "下载 Windows 版",
   "Download for Linux": "下载 Linux 版",
@@ -538,7 +537,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Brought over": "会迁过去",
   "Left behind: {reason}": "不会迁过去：{reason}",
   "Left behind": "不会迁过去",
-  "No files": "没有文件",
+  "No skipped files": "没有跳过的文件",
   "and {count, number} more": "还有 {count, number} 个",
   "When you confirm, the agent switches to the cloud and the copy on {source} is archived. This can't be undone.":
       "确认后，Agent 会切换到云端，{source} 上的副本会被归档。此操作无法撤销。",
@@ -546,7 +545,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
       "请在 {deadline} 前确认，否则迁移会停止，Agent 继续留在 {source} 上。",
   "Confirm and move": "确认迁移",
   "Moving…": "正在迁移…",
-  "The cloud agent needs attention": "云端 agent 需要处理",
+  "The cloud agent needs attention": "云端 Agent 需要处理",
   "The agent is already in the cloud.": "Agent 已经在云端。",
   "The cloud couldn't import the workspace files. This can still finish, and the Raft team has been alerted. If you contact support, include the migration ID.":
       "云端没能导入工作区文件。迁移仍有可能完成，Raft 团队已收到提醒。联系支持时请附上迁移编号。",
@@ -572,16 +571,16 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
   "Refused by the cloud": "被云端拒绝",
   "Other reasons": "其他原因",
   "Moving agents to the cloud is not available on this server right now. Try again later, or move the agent to a computer.":
-      "这个服务器暂时无法把 agent 迁到云端。请稍后再试，或者先迁到另一台计算机。",
+      "这个服务器暂时无法把 Agent 迁到云端。请稍后再试，或者先迁到另一台计算机。",
   "This agent has already run in the cloud, so it cannot move there again.":
-      "这个 agent 已经在云端运行过，不能再迁过去。",
+      "这个 Agent 已经在云端运行过，不能再迁过去。",
   "That model is not available for cloud agents on this server. Pick another model, or leave it on the default.":
-      "这个服务器上的云端 agent 不能用这个模型。请换一个模型，或者使用默认模型。",
+      "这个服务器上的云端 Agent 不能用这个模型。请换一个模型，或者使用默认模型。",
   "This migration is not waiting for your confirmation any more. Refresh to see where it stands.":
       "这次迁移已经不在等你确认了。刷新一下看看现在的状态。",
   "The agent's MEMORY.md can't be brought to the cloud: it is too large, is not plain text, or the cloud refused it. Ask the agent to trim MEMORY.md to plain text, then try again.": "Agent 的 MEMORY.md 没法迁到云端：文件太大、不是纯文本，或者被云端拒绝。请让 Agent 把 MEMORY.md 精简成纯文本后再试。",
   "The agent already moved to the cloud, so this migration can no longer be canceled.":
-      "agent 已经迁到云端，这次迁移不能再取消了。",
+      "Agent 已经迁到云端，这次迁移不能再取消了。",
   "The target computer is still detecting its runtimes. Try again in a moment.":
       "目标计算机正在检测运行时，请稍后重试。",
   "The target computer's last runtime detection did not finish for {runtime}. Rescan its runtimes on the Computer page, then try again.":

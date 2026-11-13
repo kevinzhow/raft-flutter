@@ -49,7 +49,7 @@ void main() {
                           emptyTitle: 'No computers yet',
                           emptyDetail:
                               'Add a computer to run agents in this server.',
-                          addLabel: 'Add Computer',
+                          addLabel: 'Add computer',
                           retryLabel: 'Retry',
                           onAdd: () => added++,
                           onRetry: () => retried++,

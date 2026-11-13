@@ -333,10 +333,9 @@ void main() {
       a.routes['POST /billing/cancel'] = (_) => {'ok': true};
       await t.tap(find.byKey(const ValueKey('billing-cancel')));
       await t.pumpAndSettle();
-      // Dialog title keeps Web's `Cancel Subscription`; the button and the
-      // confirm label are Web's `Cancel subscription`.
-      expect(find.text('Cancel Subscription'), findsOneWidget);
-      expect(find.text('Cancel subscription'), findsNWidgets(2));
+      // Web 1.24 says `Cancel subscription` for the button, the dialog title
+      // and the confirm label alike.
+      expect(find.text('Cancel subscription'), findsNWidgets(3));
       await t.tap(find.byKey(const ValueKey('billing-confirm')));
       await t.pumpAndSettle();
       expect(a.posts('/billing/cancel'), hasLength(1));
@@ -643,10 +642,7 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.text('Communication').last);
       await t.pumpAndSettle();
-      expect(
-        find.text('No third-party marketplace apps match this view.'),
-        findsOneWidget,
-      );
+      expect(find.text('No marketplace apps match this view'), findsOneWidget);
     });
 
     testWidgets('listing detail installs to this server', (t) async {

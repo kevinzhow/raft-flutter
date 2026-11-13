@@ -275,7 +275,7 @@ class _Popover extends StatelessWidget {
       RaftFollowersBody.empty => status(
         Text(
           key: const Key('thread-followers-empty'),
-          raftText(context, 'No Agents are following this thread.'),
+          raftText(context, 'No Agents follow this thread'),
           style: placeholder,
           textAlign: TextAlign.center,
         ),
@@ -309,7 +309,7 @@ class _Popover extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  raftText(context, 'Following Agents'),
+                  raftText(context, 'Following agents'),
                   style: TextStyle(
                     fontFamily: t.headingFont,
                     fontSize: 14,

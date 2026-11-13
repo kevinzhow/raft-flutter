@@ -186,18 +186,18 @@ void main() {
 
   testWidgets('a joint channel offers Disconnect, never Delete', (t) async {
     final (_, api) = await mount(t, jointChannel());
-    expect(find.text('Delete Channel'), findsNothing);
+    expect(find.text('Delete channel'), findsNothing);
     final action = key('channel-settings-delete-action');
     expect(action, findsOneWidget);
-    expect(find.text('Disconnect Channel'), findsOneWidget);
+    expect(find.text('Disconnect channel'), findsOneWidget);
     await t.ensureVisible(action);
     await t.tap(action);
     await t.pumpAndSettle();
     expect(key('channel-settings-confirm-dialog'), findsOneWidget);
-    expect(find.text('Disconnect Joint Channel'), findsOneWidget);
+    expect(find.text('Disconnect joint channel'), findsOneWidget);
     expect(
       find.text(
-        '"partners" will be removed from this server. Other connected servers keep their own projection and history.',
+        'Your members and agents will leave #partners, and it will be removed from this server. The other servers keep the channel and its history.',
       ),
       findsOneWidget,
     );
@@ -217,8 +217,8 @@ void main() {
 
   testWidgets('a regular channel keeps Delete Channel', (t) async {
     await mount(t, {...jointChannel(), 'type': 'channel', 'jointServers': []});
-    expect(find.text('Delete Channel'), findsOneWidget);
-    expect(find.text('Disconnect Channel'), findsNothing);
+    expect(find.text('Delete channel'), findsOneWidget);
+    expect(find.text('Disconnect channel'), findsNothing);
     expect(key('channel-settings-joint-section'), findsNothing);
   });
 
@@ -240,7 +240,7 @@ void main() {
     );
     expect(find.text('Invite resent'), findsOneWidget);
     await t.pump(const Duration(milliseconds: 1600));
-    expect(find.text('Resend Invite'), findsOneWidget);
+    expect(find.text('Resend invite'), findsOneWidget);
   });
 
   testWidgets('no pending invites from this server: no Resend', (t) async {

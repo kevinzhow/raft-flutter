@@ -274,7 +274,7 @@ void main() {
   ) async {
     final f = _Fixture();
     await f.mount(t, ProviderConnectionsView(controller: f.w));
-    await t.tap(find.text('Assigned Agents'));
+    await t.tap(find.text('Assigned agents'));
     await t.pumpAndSettle();
     await t.tap(find.text('alpha'));
     await t.pumpAndSettle();
@@ -287,7 +287,7 @@ void main() {
     (t) async {
       final f = _Fixture();
       await f.mount(t, ProviderConnectionsView(controller: f.w));
-      await t.tap(find.text('Assigned Agents'));
+      await t.tap(find.text('Assigned agents'));
       await t.pumpAndSettle();
       await t.tap(find.text('retired'));
       await t.pump();
@@ -306,7 +306,7 @@ void main() {
   ) async {
     final f = _Fixture();
     await f.mount(t, ProviderConnectionsView(controller: f.w));
-    await t.tap(find.text('Assigned Agents'));
+    await t.tap(find.text('Assigned agents'));
     await t.pumpAndSettle();
     f.client.selectServer('other');
     f.w.server = RaftRecord({'id': 'other', 'role': 'owner'});
@@ -372,7 +372,7 @@ void main() {
       isEmpty,
     );
     expect(find.text('Keep Working'), findsOneWidget);
-    await t.tap(find.text('Stop Agent').last);
+    await t.tap(find.text('Stop agent').last);
     await t.pumpAndSettle();
     expect(
       f.w.calls.where((c) => c.$1 == 'POST' && c.$2 == '/agents/a/stop'),

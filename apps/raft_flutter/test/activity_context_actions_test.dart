@@ -134,7 +134,7 @@ void main() {
       // pending mention remains a separate item with the Web's zero unread count.
       w.inbox = [pendingMention(), channelRow(1, unread: 1)];
       await tester.tap(
-        find.widgetWithText(RaftMenuButtonItem, 'Mark as Unread'),
+        find.widgetWithText(RaftMenuButtonItem, 'Mark as unread'),
       );
       await tester.pumpAndSettle();
       expect(client.posts, contains('POST /channels/ch1/unread'));
@@ -159,7 +159,7 @@ void main() {
       await openMenu(tester);
       final stale = tester
           .widget<RaftMenuButtonItem>(
-            find.widgetWithText(RaftMenuButtonItem, 'Mark as Unread'),
+            find.widgetWithText(RaftMenuButtonItem, 'Mark as unread'),
           )
           .onPressed!;
       // Reading the new server's rows may ask which are saved; that is not the

@@ -11,7 +11,7 @@ const Map<String, String> zhCatalogW23Integ = <String, String>{
   "Setup page URL": "配置页面地址",
   // appSetup.urlHint
   "Use an HTTPS page. Raft adds installation and Server identifiers; this is separate from the login callback.":
-      "使用 HTTPS 页面。Raft 会附带安装与 Server 标识；此地址与登录回调分开。",
+      "使用 HTTPS 页面。Raft 会附带安装与服务器标识；此地址与登录回调分开。",
   // appSetup.descriptionLabel
   "Configuration instructions": "配置说明",
   // appSetup.requiredAfterInstall
@@ -28,9 +28,9 @@ const Map<String, String> zhCatalogW23Integ = <String, String>{
   // appSetup.opensAt
   "Opens {domain} in a new tab": "将在新标签页打开 {domain}",
   // appSetup.adminManage
-  "A Server administrator can manage configuration.": "Server 管理员可以管理配置。",
+  "A Server administrator can manage configuration.": "服务器管理员可以管理配置。",
   // appSetup.adminRequired
-  "Ask a Server administrator to complete configuration.": "请 Server 管理员完成配置。",
+  "Ask a Server administrator to complete configuration.": "请服务器管理员完成配置。",
   // appSetup.refresh
   "Refresh status": "刷新状态",
   // appSetup.loadFailed
@@ -49,7 +49,7 @@ const Map<String, String> zhCatalogW23Integ = <String, String>{
   // settings.slackBridge.mentionSyncRestricted
   "Messages sync normally, and typing a Raft member's @name in Slack still reaches them when no one else in the channel has that name. To also list them in Slack's @ menu, a Slack admin needs to let members create user groups: Workspace settings → Permissions → User groups.": "消息同步不受影响；在 Slack 里手动输入 @名字，只要频道里没有同名的人，仍然能 @ 到对应的 Raft 成员。如果想让他们也出现在 Slack 的 @ 列表里，需要 Slack 管理员允许成员创建用户组：工作区设置 → 权限 → 用户组。",
   // settings.slackBridge.mentionSyncMissingScope
-  "Messages sync normally, and typing a Raft member's @name in Slack still reaches them when no one else in the channel has that name. To also list them in Slack's @ menu, Raft needs one more Slack permission: use “Update Slack authorization” below.": "消息同步不受影响；在 Slack 里手动输入 @名字，只要频道里没有同名的人，仍然能 @ 到对应的 Raft 成员。如果想让他们也出现在 Slack 的 @ 列表里，Raft 还需要一项 Slack 权限：请点击下方的“更新 Slack 授权”。",
+  "Messages sync normally, and typing a Raft member's @name in Slack still reaches them when no one else in the channel has that name. To also list them in Slack's @ menu, Raft needs one more Slack permission: use “Update Slack Authorization” below.": "消息同步不受影响；在 Slack 里手动输入 @名字，只要频道里没有同名的人，仍然能 @ 到对应的 Raft 成员。如果想让他们也出现在 Slack 的 @ 列表里，Raft 还需要一项 Slack 权限：请点击下方的“更新 Slack 授权”。",
   // settings.slackBridge.mentionSyncGeneric
   "Messages sync normally, and typing a Raft member's @name in Slack still reaches them when no one else in the channel has that name. Slack refused to list some of them in its @ menu ({code}); Raft keeps retrying.": "消息同步不受影响；在 Slack 里手动输入 @名字，只要频道里没有同名的人，仍然能 @ 到对应的 Raft 成员。Slack 拒绝把其中一些成员放进 @ 列表（{code}），Raft 会继续重试。",
   // settings.slackBridge.mentionSyncNameTaken#one

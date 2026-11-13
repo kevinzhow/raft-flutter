@@ -217,7 +217,7 @@ void main() {
       } else {
         await t.tap(find.byKey(const Key('agent-profile-overflow-trigger')));
         await frames(t, 10);
-        await t.tap(find.text('Direct Message'));
+        await t.tap(find.text('Direct message'));
       }
       await frames(t, 30);
       expect(w.channel?.id, 'dm1');

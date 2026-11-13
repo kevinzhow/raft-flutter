@@ -46,10 +46,10 @@ class SearchFilterBar extends StatelessWidget {
   final String Function(String id)? channelLabel;
 
   static const timeRanges = {
-    'any': 'Any Time',
+    'any': 'Any time',
     'today': 'Today',
-    '7d': 'Last 7 Days',
-    '30d': 'Last 30 Days',
+    '7d': 'Last 7 days',
+    '30d': 'Last 30 days',
   };
   static const sorts = {'relevance': 'Relevant', 'recent': 'Recent'};
 

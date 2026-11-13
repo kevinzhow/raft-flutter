@@ -369,7 +369,7 @@ class _ProviderConnectionsState
                 load: () => _verificationInputs(connection),
                 builder: (dialogContext, inputs, failure) => inputs == null
                     ? RaftFormDialog(
-                        title: 'Verify on Computer',
+                        title: 'Verify on computer',
                         fields: const [],
                         description: failure == null
                             ? 'Loading computers…'
@@ -383,7 +383,7 @@ class _ProviderConnectionsState
                         ),
                       )
                     : RaftFormDialog(
-                        title: 'Verify on Computer',
+                        title: 'Verify on computer',
                         fields: [
                           RaftFormField(
                             'computerId',
@@ -650,14 +650,14 @@ class _ProviderConnectionsState
                               ),
                             ),
                             action(
-                              'Assigned Agents',
+                              'Assigned agents',
                               () => run(
                                 () => assigned(connection),
                                 refresh: false,
                               ),
                             ),
                             action(
-                              'Verify on Computer',
+                              'Verify on computer',
                               () => run(() => verify(connection)),
                             ),
                             action(

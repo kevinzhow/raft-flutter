@@ -1,7 +1,7 @@
 // Channel members: the Web ChannelMembers "modal" presentation
 // (packages/web/src/components/agent/ChannelMembers.tsx) — a header trigger
 // (Users + participant count) opening a Modal Card `max-w-sm p-6` with the
-// roster and the staged multi-select "Add Member" view (search, AGENTS /
+// roster and the staged multi-select "Add member" view (search, AGENTS /
 // HUMANS candidates with CheckMarker + AvatarSlot compact-list, pinned
 // "Create a New Agent" entry, "Add selected (N)").
 import 'dart:async';
@@ -481,13 +481,13 @@ class _ChannelMembersState extends State<ChannelMembers> {
       context,
       RaftConfirmDialog(
         surfaceKey: const ValueKey('channel-member-remove-dialog'),
-        title: raftText(context, 'Remove Member'),
+        title: raftText(context, 'Remove member'),
         message: raftFormat(
           context,
           '{name} will stop receiving ordinary delivery from #{channel} and cannot send messages until they rejoin. Existing followed threads are not automatically unfollowed; followed public threads can still notify them until they unfollow or manage those threads. Private content remains gated by current access.',
           {'name': name, 'channel': channel.name},
         ),
-        confirmLabel: raftText(context, 'Remove Member'),
+        confirmLabel: raftText(context, 'Remove member'),
         cancelLabel: raftText(context, 'Keep Member'),
         loadingLabel: raftText(context, 'Removing…'),
         actionSize: RaftButtonRecipeSize.xs,
@@ -691,7 +691,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
         roleLabel: switch (role) {
           'guest' => raftText(context, 'Guest'),
           'member' => null,
-          _ => raftText(context, 'Channel Admin'),
+          _ => raftText(context, 'Channel admin'),
         },
         guest: role == 'guest',
         label: candidate.label,

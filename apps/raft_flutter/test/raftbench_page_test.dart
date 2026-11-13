@@ -140,7 +140,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Workspace efficiency and cost'), findsNothing);
+      expect(find.text('Agent productivity'), findsNothing);
       expect(
         p.api.calls.where(
           (c) => c.path.startsWith('/raftbench') || c.path.startsWith('/tasks'),
@@ -175,7 +175,7 @@ void main() {
         find.text('RaftBench is not enabled for this server'),
         findsNothing,
       );
-      expect(find.text('Workspace efficiency and cost'), findsNothing);
+      expect(find.text('Agent productivity'), findsNothing);
       await unmount(t);
     },
   );
@@ -188,17 +188,17 @@ void main() {
       t,
     ) async {
       final p = await _mount(t, size: size);
-      expect(find.text('Workspace efficiency and cost'), findsOneWidget);
+      expect(find.text('Agent productivity'), findsOneWidget);
       expect(
         find.text(
-          'Two views: task metrics from the database and AI insights from conversations.',
+          'Find repeated friction, understand the evidence, and improve how agents work.',
         ),
         findsOneWidget,
       );
       // Section links, scope, the two panels and the collapsed legacy rules.
-      expect(find.text('Tasks and cost'), findsWidgets);
-      expect(find.text('Conversation insights'), findsWidgets);
-      expect(find.text('Task metrics and phrase-scan scope'), findsWidgets);
+      expect(find.text('Task and cost context'), findsWidgets);
+      expect(find.text('Patterns and improvements'), findsWidgets);
+      expect(find.text('Channel'), findsWidgets);
       expect(find.text('Workspace overview'), findsWidgets);
       expect(
         find.byKey(const ValueKey('raftbench-task-snapshot')),
@@ -285,7 +285,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Workspace efficiency and cost'), findsOneWidget);
+      expect(find.text('Agent productivity'), findsOneWidget);
       // Analysis data is hidden while reads are paused; no new dashboard read.
       final reads = p.api.calls.where((c) => c.path == '/raftbench').length;
       await t.pump(const Duration(seconds: 6));
@@ -306,7 +306,7 @@ void main() {
 
   testWidgets('Chinese wording (Web zh-cn)', (t) async {
     await _mount(t, locale: const Locale('zh'));
-    expect(find.text('工作区效率与成本'), findsOneWidget);
+    expect(find.text('Agent 工作效率'), findsOneWidget);
     await unmount(t);
   });
 

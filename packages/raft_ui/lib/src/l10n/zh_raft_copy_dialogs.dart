@@ -86,7 +86,6 @@ const Map<String, String> zhCatalogRaftCopyDialogs = <String, String>{
   "Stay Connected": "保持连接",
   "Stay Logged In": "保持登录",
   "Stay in Channel": "留在频道",
-  "Uninstall app": "卸载应用",
   "Uninstall {name}": "卸载 {name}",
   "Confirm and update seats": "确认并更新席位",
   "Verify Connection": "验证连接",
@@ -99,6 +98,6 @@ const Map<String, String> zhCatalogRaftCopyDialogs = <String, String>{
       "确定要撤销发送给 {email} 的邀请吗？他们将无法再使用此邀请链接加入。",
   "This invite link will be revoked. Anyone who still has the URL will stop being able to join with it.":
       "此邀请链接将被撤销，仍持有该链接的任何人都将无法再用它加入。",
-  "Log out of this browser? Your account and data are kept; you can log back in any time.":
+  "Sign out of this browser? Your account and data are kept; you can sign back in any time.":
       "要退出当前浏览器的登录状态吗？你的账户和数据会保留，随时可以重新登录。",
 };

@@ -285,7 +285,7 @@ class RaftLanguageRegionView extends StatelessWidget {
         ),
         const SizedBox(height: 24), // mb-6
         const RaftSettingsSectionHeader(
-          label: 'Date & Time',
+          label: 'Date & time',
           glyph: RaftGlyph.clock,
         ),
         RaftSettingsCard(

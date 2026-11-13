@@ -22,7 +22,7 @@ Widget buildActivityContextMenu(
     entries: [
       if (!thread || following)
         RaftSidebarMenuItem(
-          label: raftText(context, unread ? 'Mark as Read' : 'Mark as Unread'),
+          label: raftText(context, unread ? 'Mark as read' : 'Mark as unread'),
           glyph: unread
               ? RaftGlyph.messageSquareCheck
               : RaftGlyph.messageSquareDot,

@@ -17,8 +17,8 @@ Future<void> confirmDeleteServer(
   final ok = await RaftConfirmDialog.show(
     context,
     RaftConfirmDialog(
-      title: 'Delete Server',
-      confirmLabel: 'Delete Server',
+      title: 'Delete server',
+      confirmLabel: 'Delete server',
       surfaceKey: const ValueKey('server-danger-dialog'),
       confirmKey: const Key('server-delete-confirm-button'),
       content: _DeleteServerConfirm(

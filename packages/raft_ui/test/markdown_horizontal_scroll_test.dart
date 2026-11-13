@@ -610,6 +610,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
         expect(find.text('Copy'), findsOneWidget);
+        // iOS shows the system toolbar's own 'Select All'.
         final selectAll = platform == TargetPlatform.iOS
             ? 'Select All'
             : 'Select all';

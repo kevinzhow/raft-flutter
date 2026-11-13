@@ -144,7 +144,7 @@ Future<void> verifyPreparedActionCard(
     w.setSection('chat');
     await w.jumpToMessage(carrierId, messageId);
     if (setup['postSetup']['handoffPending'] == true) {
-      final handoff = find.text("Let's Go");
+      final handoff = find.text("Let's go");
       for (var i = 0; i < 200 && handoff.evaluate().isEmpty; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

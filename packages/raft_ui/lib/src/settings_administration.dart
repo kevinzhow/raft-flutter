@@ -339,7 +339,7 @@ class RaftAdminsCard extends StatelessWidget {
     );
     final promote = RaftSettingsRecipeButton(
       key: const ValueKey('admin-update-role'),
-      label: promoting ? 'Saving…' : 'Update Role',
+      label: promoting ? 'Saving…' : 'Update role',
       variant: RaftButtonRecipeVariant.accent,
       size: RaftButtonRecipeSize.sm,
       expand: !wide,
@@ -390,7 +390,7 @@ class RaftAdminsCard extends StatelessWidget {
             ),
             child: rows.isEmpty
                 ? RaftCssText(
-                    raftText(context, 'No owners or admins yet.'),
+                    raftText(context, 'No owners or admins yet'),
                     style: raftSettingsBody(
                       t,
                       size: 12,
@@ -620,7 +620,10 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
                       searchController: search,
                       searchPlaceholder: raftText(context, 'Search members...'),
                       onSearchChanged: (_) => setState(() {}),
-                      emptyLabel: raftText(context, 'No matching members'),
+                      emptyLabel: raftText(
+                        context,
+                        'No members match your search',
+                      ),
                       clearLabel: raftText(context, 'Clear'),
                       onClear: selected == null
                           ? null
@@ -704,7 +707,7 @@ class RaftAdminInvitesCard extends StatelessWidget {
       child: invites.isEmpty
           ? loading
                 ? const SizedBox.shrink()
-                : _EmptyLine('No pending invites.')
+                : _EmptyLine('No pending invites')
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -858,7 +861,7 @@ class RaftAdminJoinLinksCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), text = RaftSettingsText(t);
     final maxField = RaftSettingsField(
-      label: 'Max Uses',
+      label: 'Max uses',
       child: RaftRecipeInput(
         fieldKey: const ValueKey('admin-join-link-max-uses'),
         controller: maxUses,
@@ -868,7 +871,7 @@ class RaftAdminJoinLinksCard extends StatelessWidget {
       ),
     );
     final expiresField = RaftSettingsField(
-      label: 'Expires At',
+      label: 'Expires at',
       child: RaftAdminDateTimeField(value: expiresAt, onChanged: onExpiresAt),
     );
     return RaftSettingsCard(
@@ -898,7 +901,7 @@ class RaftAdminJoinLinksCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: RaftSettingsRecipeButton(
               key: const ValueKey('admin-join-link-create'),
-              label: creating ? 'Creating…' : 'Create Invite Link',
+              label: creating ? 'Creating…' : 'Create invite link',
               glyph: RaftGlyph.plus,
               glyphSize: 14,
               variant: RaftButtonRecipeVariant.accent,
@@ -915,7 +918,7 @@ class RaftAdminJoinLinksCard extends StatelessWidget {
             child: links.isEmpty
                 ? loading
                       ? const SizedBox.shrink()
-                      : _EmptyLine('No active invite links.')
+                      : _EmptyLine('No active invite links')
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -1087,7 +1090,7 @@ class RaftAdminDateTimeField extends StatelessWidget {
     return RaftInteractive(
       key: const ValueKey('admin-join-link-expires-at'),
       onPressed: () => pick(context),
-      semanticLabel: raftText(context, 'Expires At'),
+      semanticLabel: raftText(context, 'Expires at'),
       builder: (context, state) {
         final s = RaftInputRecipe.resolve(
           theme: t.recipeTheme,
@@ -1188,7 +1191,7 @@ class RaftAgreementBody extends StatelessWidget {
     final blocks = parse(source);
     if (blocks.isEmpty) {
       return RaftCssText(
-        raftText(context, 'Nothing to preview yet.'),
+        raftText(context, 'Nothing to preview yet'),
         style: base.copyWith(color: Colors.black.withValues(alpha: .5)),
       );
     }
@@ -1484,7 +1487,7 @@ class RaftAdminOnboardingCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           row(
-            'Human Onboarding Agent',
+            'Human onboarding agent',
             'Select one agent for member onboarding flows, or disable automatic onboarding.',
             320,
             RaftSelectField<String>(
@@ -1513,7 +1516,7 @@ class RaftAdminOnboardingCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           row(
-            'New Agent Greeting',
+            'New agents introduce themselves in #all',
             'When enabled, a newly started agent posts a short self-introduction in #all. Existing agents are not affected.',
             112,
             RaftSelectField<String>(
@@ -1771,10 +1774,7 @@ class RaftPublicChannelList extends StatelessWidget {
           border: Border.all(color: t.colors['line-muted']!, width: 1),
         ),
         child: RaftCssText(
-          raftText(
-            context,
-            'No channels are currently marked visible to Guests.',
-          ),
+          raftText(context, 'No channels visible to visitors yet'),
           textAlign: TextAlign.center,
           style: raftSettingsBody(t, size: 12, line: 16, color: t.muted),
         ),

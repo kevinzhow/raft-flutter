@@ -1080,7 +1080,7 @@ class RaftAgentOptionCard extends StatelessWidget {
 }
 
 /// Web `KeyValueInputRow` list + `KeyValueAddButton`: name input, `=`, value
-/// input and a danger icon button per row, then a ghost "Add Variable" button.
+/// input and a danger icon button per row, then a ghost "Add variable" button.
 class RaftAgentKeyValueRows extends StatefulWidget {
   const RaftAgentKeyValueRows({
     super.key,
@@ -1194,7 +1194,7 @@ class _RaftAgentKeyValueRowsState extends State<RaftAgentKeyValueRows> {
           alignment: Alignment.centerLeft,
           child: RaftButton(
             key: const ValueKey('env-add'),
-            label: tr('Add Variable'),
+            label: tr('Add variable'),
             glyph: RaftGlyph.plus,
             tone: RaftButtonRecipeVariant.ghost,
             size: RaftButtonRecipeSize.sm,

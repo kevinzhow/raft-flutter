@@ -261,7 +261,7 @@ void main() {
     await mount(t, locale: const Locale('zh'), query: '自动更新');
     expect(find.text('不限时间'), findsOneWidget);
     expect(find.text('相关度'), findsOneWidget);
-    expect(find.text('Any Time'), findsNothing);
+    expect(find.text('Any time'), findsNothing);
     expect(find.text('Relevant'), findsNothing);
     expect(find.text('没有找到“自动更新”的结果'), findsOneWidget);
     expect(find.text('试试其他关键词或更短的短语。'), findsOneWidget);

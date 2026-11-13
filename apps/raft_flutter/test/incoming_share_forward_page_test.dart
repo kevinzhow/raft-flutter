@@ -225,7 +225,7 @@ void main() {
     await _pump(t);
     await t.enterText(find.byType(TextField), 'zzzz');
     await t.pumpAndSettle();
-    expect(find.text('No destinations match your search.'), findsOneWidget);
+    expect(find.text('No destinations match your search'), findsOneWidget);
     await t.enterText(find.byType(TextField), 'gen');
     await t.pumpAndSettle();
     expect(find.text('general'), findsOneWidget);

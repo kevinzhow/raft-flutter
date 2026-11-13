@@ -491,7 +491,7 @@ void main() {
       await mount(tester);
       expect(find.text('Migrating to Target'), findsOneWidget);
       for (final step in [
-        'Stop Agent',
+        'Stop agent',
         'Pack workspace',
         'Transfer files',
         'Start on new computer',
@@ -671,7 +671,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await mount(tester);
-      final first = tester.getTopLeft(find.text('Stop Agent'));
+      final first = tester.getTopLeft(find.text('Stop agent'));
       final second = tester.getTopLeft(find.text('Pack workspace'));
       expect(second.dy, greaterThan(first.dy));
       expect(second.dx, first.dx);
@@ -851,7 +851,7 @@ void main() {
       );
       expect(find.text('Open Computer Settings'), findsOneWidget);
       // The submit action now reads Try again.
-      expect(find.widgetWithText(RaftButton, 'Try Again'), findsOneWidget);
+      expect(find.widgetWithText(RaftButton, 'Try again'), findsOneWidget);
       expect(_dialogMigrate, findsNothing);
     });
 

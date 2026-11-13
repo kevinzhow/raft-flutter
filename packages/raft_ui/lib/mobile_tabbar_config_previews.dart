@@ -195,7 +195,7 @@ class MobileSettingsRootPreview extends StatelessWidget {
                         RaftGlyph.bookOpenText,
                       ),
                       e('feedback', 'Feedback', RaftGlyph.messageSquare),
-                      e('release-notes', 'Release Notes', RaftGlyph.fileText),
+                      e('release-notes', 'Release notes', RaftGlyph.fileText),
                     ]),
                   ],
                 ),

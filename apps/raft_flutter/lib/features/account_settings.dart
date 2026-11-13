@@ -358,7 +358,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
             const SizedBox(height: RaftSpace.x3),
           ],
           RaftSettingsField(
-            label: 'Display Name',
+            label: 'Display name',
             child: RaftRecipeInput(
               fieldKey: const Key('account-profile-display-name'),
               controller: profileName,
@@ -437,7 +437,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                   ? 'Saving...'
                   : profileSaved
                   ? 'Saved'
-                  : 'Save Profile',
+                  : 'Save profile',
               glyph: profileSaved && !profileBusy ? RaftGlyph.check : null,
               glyphSize: 14,
               size: RaftButtonRecipeSize.sm,
@@ -513,12 +513,12 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
           glyph: RaftGlyph.logOut,
         ),
         RaftSettingsActionCard(
-          title: 'Log out',
-          description: 'Log out of this browser. Your account and data stay; you can log back in any time.',
+          title: 'Sign out',
+          description: 'Sign out of this browser. Your account and data stay; you can sign back in any time.',
           // `variant="warning" size="md"`, text only.
           action: RaftSettingsRecipeButton(
             key: const Key('account-logout'),
-            label: 'Log out',
+            label: 'Sign out',
             variant: RaftButtonRecipeVariant.warning,
             onPressed: widget.onLogout == null
                 ? null
@@ -536,9 +536,9 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     final ok = await RaftConfirmDialog.show(
       context,
       const RaftConfirmDialog(
-        title: 'Log out',
-        message: 'Log out of this browser? Your account and data are kept; you can log back in any time.',
-        confirmLabel: 'Log out',
+        title: 'Sign out',
+        message: 'Sign out of this browser? Your account and data are kept; you can sign back in any time.',
+        confirmLabel: 'Sign out',
         cancelLabel: 'Cancel',
         surfaceKey: ValueKey('account-logout-dialog'),
         // confirmColor="bg-brutal-orange" -> warning tone.

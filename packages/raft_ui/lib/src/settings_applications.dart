@@ -273,7 +273,7 @@ class RaftConnectedAppsSection extends StatelessWidget {
                 ),
                 (
                   RaftConnectedAppsTab.myApps,
-                  'My apps',
+                  'Developer',
                   counts.myApps,
                   'my-apps',
                 ),

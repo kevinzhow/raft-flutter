@@ -1,5 +1,5 @@
 // Web components/machine/RuntimeAccountUsageChip.tsx: the runtime chip on
-// Computer detail "Detected Runtimes" and the agent Runtime Config row. A
+// Computer detail "Detected runtimes" and the agent Runtime Config row. A
 // usage provider chip reads the Computer's private usage snapshot, shows its
 // health Status and opens the usage card on hover / focus / click.
 import 'dart:async';

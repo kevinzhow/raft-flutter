@@ -37,7 +37,7 @@ Widget computerDirectoryInsetPreview() => Builder(
             child: RaftMobileComputerList(
               emptyTitle: 'No computers yet',
               emptyDetail: 'Add a computer',
-              addLabel: 'Add Computer',
+              addLabel: 'Add computer',
               retryLabel: 'Retry',
               rows: [
                 for (var i = 1; i <= 16; i++)
@@ -90,9 +90,9 @@ class _ComputersPreviewState extends State<_ComputersPreview> {
           emptyTitle: 'No computers yet',
           emptyDetail: 'Add a computer to run agents in this server.',
           retryLabel: 'Retry',
-          addLabel: 'Add Computer',
+          addLabel: 'Add computer',
           onRetry: () => setState(() => state = 'loaded'),
-          onAdd: () => setState(() => result = 'Add Computer'),
+          onAdd: () => setState(() => result = 'Add computer'),
           rows: state == 'empty' || state == 'loading'
               ? []
               : [

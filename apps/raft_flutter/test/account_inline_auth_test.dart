@@ -80,7 +80,7 @@ void main() {
       client.pendingMethods = Completer<dynamic>();
       await mount(t, AccountConnectionsView(controller: w, inline: true));
       await t.pump();
-      expect(find.text('Change Password'), findsNothing);
+      expect(find.text('Change password'), findsNothing);
       expect(find.text('Set password by email'), findsNothing);
       client.pendingMethods!.complete(client.methods);
       await t.pumpAndSettle();
@@ -146,7 +146,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Google'), findsOneWidget);
       expect(find.text('GitHub'), findsNothing);
-      expect(find.text('Change Password'), findsNothing);
+      expect(find.text('Change password'), findsNothing);
       expect(find.text('Set password by email'), findsOneWidget);
       await t.tap(find.text('Disconnect'));
       await t.pumpAndSettle();

@@ -353,7 +353,7 @@ final ParityCase _shareSelection = ParityCase(
     await _longPressRow(t, 0);
     await t.tap(
       find.text(
-        raftText(t.element(find.byType(Scaffold).first), 'Select Message'),
+        raftText(t.element(find.byType(Scaffold).first), 'Select message'),
       ),
     );
     for (var i = 0; i < 12; i++) {

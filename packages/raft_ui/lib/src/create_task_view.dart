@@ -3,7 +3,7 @@ import 'overlays/dialog.dart' show RaftDialog;
 // Presentation of the Web CreateTaskDialog
 // (packages/web/src/components/task/CreateTaskDialog.tsx): DialogCard with one
 // title Input per row (a ghost icon button once there are several), an outline
-// "Add Another" button and Cancel / Create Task(s). The app adapter owns the
+// "Add another" button and Cancel / Create Task(s). The app adapter owns the
 // rows' controllers and the create command.
 import 'dart:async';
 
@@ -69,7 +69,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
             ? (batch ? 'Create tasks from message' : 'Create task from message')
             : batch
             ? 'Create Tasks'
-            : 'Create Task',
+            : 'New task',
         onClose: onClose,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -137,7 +137,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                   child: legacy
                       ? RaftRecipeButton(
                           key: const ValueKey('create-task-add-row'),
-                          label: 'Add Another',
+                          label: 'Add another',
                           glyph: RaftGlyph.plus,
                           variant: RaftButtonRecipeVariant.outline,
                           size: RaftButtonRecipeSize.sm,
@@ -153,7 +153,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                         )
                       : RaftButton(
                           key: const ValueKey('create-task-add-row'),
-                          label: 'Add Another',
+                          label: 'Add another',
                           glyph: RaftGlyph.plus,
                           glyphSize: 16,
                           // Web passes a plain Lucide Plus, without the
@@ -192,7 +192,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
               label: submitting
                   ? 'Creating…'
                   : (batch ? filledCount : 1) == 1
-                  ? 'Create Task'
+                  ? 'New task'
                   : raftFormat(context, 'Create {count} Tasks', {
                       'count': filledCount,
                     }),

@@ -15,7 +15,7 @@ import 'system_inset.dart';
 /// justify-between gap-3 rounded-lg border border-line-muted bg-primary-soft
 /// px-4 py-3 shadow-raft-md`; brutal: square, `border-2 border-black
 /// bg-soft-signal shadow-brutal`): the "not set up yet" sentence and an
-/// outline "Resume Setup" button ("Opening…" while the request is in flight).
+/// outline "Resume setup" button ("Opening…" while the request is in flight).
 ///
 /// Place it at the bottom of the area it floats over (a [Stack]).
 class RaftSetupResumeBar extends StatelessWidget {
@@ -59,7 +59,7 @@ class RaftSetupResumeBar extends StatelessWidget {
           ),
           RaftButton(
             key: const ValueKey('server-setup-resume'),
-            label: raftText(context, loading ? 'Opening…' : 'Resume Setup'),
+            label: raftText(context, loading ? 'Opening…' : 'Resume setup'),
             variant: RaftControlVariant.outline,
             size: RaftButtonRecipeSize.md,
             onPressed: loading ? null : onResume,

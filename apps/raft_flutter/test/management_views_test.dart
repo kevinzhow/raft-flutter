@@ -560,9 +560,9 @@ void main() {
       };
       await tester.pumpWidget(host(ProviderConnectionsView(controller: w)));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Verify on Computer'));
+      await tester.ensureVisible(find.text('Verify on computer'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Verify on Computer'));
+      await tester.tap(find.text('Verify on computer'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Verify Connection'));
       await tester.pumpAndSettle();
@@ -764,7 +764,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Conversation fixture'), findsNothing);
-      await tester.tap(find.text("Let's Go"));
+      await tester.tap(find.text("Let's go"));
       await tester.pumpAndSettle();
       expect(find.text('Conversation fixture'), findsOneWidget);
       expect(a.calls.where((o) => o.path.endsWith('/setup-handoff')).length, 1);
@@ -792,7 +792,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Conversation fixture'), findsNothing);
     expect(find.text('Tell Cindy about you'), findsOneWidget);
-    expect(find.text("Let's Go"), findsNothing);
+    expect(find.text("Let's go"), findsNothing);
     // The Web survey step: one chip per role and per referral source.
     expect(find.byKey(const Key('signup-role-design')), findsOneWidget);
     expect(find.byKey(const Key('signup-source-search')), findsOneWidget);

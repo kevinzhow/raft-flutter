@@ -201,7 +201,7 @@ class _HostState extends State<_Host> {
             : RaftComposerTaskToggle(
                 key: const Key('composer-as-task'),
                 checked: alsoCreateTask,
-                label: raftText(context, 'As Task'),
+                label: raftText(context, 'As task'),
                 onChanged: (checked) =>
                     setState(() => alsoCreateTask = checked),
               ),

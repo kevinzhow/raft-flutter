@@ -15,7 +15,7 @@ import 'theme.dart';
 /// Modal (`RaftModalBackdrop`) holding a `max-w-lg p-5` Card: title and
 /// "Version {n}" with a close button, the scrollable agreement box
 /// (`max-h-[50vh] border-2 p-4 text-sm`), a warning banner after a failed join
-/// and the Cancel / "Agree & Continue" buttons.
+/// and the Cancel / "Agree & continue" buttons.
 class RaftCommunityAgreementDialog extends StatefulWidget {
   const RaftCommunityAgreementDialog({
     super.key,
@@ -172,7 +172,7 @@ class _RaftCommunityAgreementDialogState
                   ),
                   RaftRecipeButton(
                     key: const ValueKey('community-agreement-agree'),
-                    label: submitting ? 'Joining…' : 'Agree & Continue',
+                    label: submitting ? 'Joining…' : 'Agree & continue',
                     variant: RaftButtonRecipeVariant.accent,
                     size: RaftButtonRecipeSize.sm,
                     padding: const EdgeInsets.symmetric(

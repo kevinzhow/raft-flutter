@@ -351,7 +351,7 @@ void main() {
         expect(workspace.dmQueries.last, containsPair('offset', 30));
         expect(workspace.dmQueries.last, containsPair('filter', 'all'));
         expect(state.rows, hasLength(32));
-        expect(find.text('Load More'), findsNothing);
+        expect(find.text('Load more'), findsNothing);
         expect(
           state.rows.any((dynamic row) => row['parentChannelType'] == 'dm'),
           isTrue,

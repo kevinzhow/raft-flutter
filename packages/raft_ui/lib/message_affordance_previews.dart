@@ -32,12 +32,12 @@ class _AffordancesState extends State<_Affordances> {
             toolbar: RaftMessageToolbar(
               children: [
                 RaftMessageToolbarAction(
-                  label: 'Reply in Thread',
+                  label: 'Reply in thread',
                   icon: const RaftMessageThreadGlyph(),
                   onPressed: () => setState(() => result = 'Thread callback'),
                 ),
                 RaftMessageToolbarAction(
-                  label: 'Add Reaction',
+                  label: 'Add reaction',
                   icon: const RaftMessageAddReactionGlyph(),
                   onPressed: () =>
                       setState(() => result = 'Reaction picker callback'),

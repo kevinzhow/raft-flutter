@@ -29,9 +29,9 @@ class _RaftReleaseNotesLinkState extends State<RaftReleaseNotesLink> {
     final t = RaftTokens.of(context);
     return RaftInteractive(
       onPressed: () => showRaftComputerReleaseNotes(context, widget.notes),
-      semanticLabel: raftText(context, "What's new"),
+      semanticLabel: raftText(context, "View what's new"),
       builder: (context, state) => RaftCssText(
-        raftText(context, "What's new"),
+        raftText(context, "View what's new"),
         key: const ValueKey('computer-release-notes-open'),
         underline: state.hovered || state.focusVisible,
         style: RaftTypography.body(

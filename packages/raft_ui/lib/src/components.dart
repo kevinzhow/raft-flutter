@@ -1941,7 +1941,7 @@ class RaftMessageTile extends StatelessWidget {
                         Builder(
                           builder: (anchor) => RaftMountedReactionAdd(
                             key: const ValueKey('message-reaction-add'),
-                            label: raftText(context, 'Add Reaction'),
+                            label: raftText(context, 'Add reaction'),
                             onPressed: () {
                               if (onReactionAdd != null) {
                                 onReactionAdd!(anchor);
@@ -1961,7 +1961,7 @@ class RaftMessageTile extends StatelessWidget {
                     onPressed: onThread,
                     icon: const Icon(Icons.forum_outlined, size: 15),
                     label: Text(
-                      threadLabel ?? raftText(context, 'Reply in Thread'),
+                      threadLabel ?? raftText(context, 'Reply in thread'),
                     ),
                   ),
               ],

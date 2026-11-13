@@ -525,7 +525,7 @@ void main() {
         final pending = Completer<dynamic>();
         await f.mount(t, theme, 390);
         f.adapter.routes['POST /servers'] = (_) => pending.future;
-        await t.tap(find.text('+ Create New Server'));
+        await t.tap(find.text('+ Create new server'));
         await t.pump();
         await t.enterText(
           find.byKey(const ValueKey('global-server-name')),
@@ -853,7 +853,7 @@ void main() {
       (t) async {
         final f = RootFixture();
         await f.mount(t, theme, 390);
-        await t.tap(find.text('+ Create New Server'));
+        await t.tap(find.text('+ Create new server'));
         await t.pump();
         final name = find.byKey(const ValueKey('global-server-name'));
         final slug = find.byKey(const ValueKey('global-server-slug'));
@@ -873,7 +873,7 @@ void main() {
         await t.tap(
           find.descendant(
             of: find.byType(RaftAuthSubmit),
-            matching: find.text('Create Server'),
+            matching: find.text('Create server'),
           ),
         );
         await t.pump();
@@ -909,7 +909,7 @@ void main() {
           });
           return {'id': 'new', 'name': 'New Team', 'slug': 'new-team'};
         };
-        await t.tap(find.text('+ Create New Server'));
+        await t.tap(find.text('+ Create new server'));
         await t.pump();
         await t.enterText(
           find.byKey(const ValueKey('global-server-name')),
@@ -943,7 +943,7 @@ void main() {
       final held = Completer<dynamic>();
       f.adapter.routes['POST /servers'] = (_) => held.future;
       f.adapter.statuses['POST /servers'] = 403;
-      await t.tap(find.text('+ Create New Server'));
+      await t.tap(find.text('+ Create new server'));
       await t.pump();
       await t.enterText(
         find.byKey(const ValueKey('global-server-name')),

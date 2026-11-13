@@ -65,7 +65,7 @@ Future<void> openMemberRowMenu(
             ),
             RaftSidebarMenuItem(
               itemKey: const ValueKey('member-menu-reset'),
-              label: raftText(menuContext, 'Restart / Reset'),
+              label: raftText(menuContext, 'Restart / reset'),
               glyph: RaftGlyph.rotateCcw,
               onPressed: () => command(MemberAgentCommand.restartReset),
             ),

@@ -699,7 +699,7 @@ abstract final class RaftPanelText {
 }
 
 /// A `<span>` placeholder inside a block whose own text is the 16/24 body
-/// (HumanDetailPanel "No created agents"): the line box is 24px and the 14px
+/// (HumanDetailPanel "No agents created yet"): the line box is 24px and the 14px
 /// text sits 4px below its top.
 class RaftSpanPlaceholder extends StatelessWidget {
   const RaftSpanPlaceholder(this.text, {super.key});
@@ -1257,7 +1257,7 @@ class _RaftActivityLogViewState extends State<RaftActivityLogView> {
                   size: RaftButtonRecipeSize.iconXs,
                   glyph: RaftGlyph.copy,
                   glyphSize: 12,
-                  tooltip: raftText(context, 'Copy Diagnostic Info'),
+                  tooltip: raftText(context, 'Copy diagnostic info'),
                   foreground: t.colors['foreground-muted'],
                   onPressed: onCopy,
                 ),
@@ -1856,7 +1856,7 @@ class _RaftSkillsSectionState extends State<RaftSkillsSection> {
               'Global',
               RaftGlyph.globe,
               widget.global,
-              'No global skills installed on this computer',
+              'No global skills on this computer yet',
             ),
             _group(
               context,
@@ -1864,7 +1864,7 @@ class _RaftSkillsSectionState extends State<RaftSkillsSection> {
               'Workspace',
               RaftGlyph.folderOpen,
               widget.workspace,
-              "No skills in this agent's workspace",
+              "No skills in this agent's workspace yet",
             ),
           ],
         ),
@@ -3166,7 +3166,7 @@ class RaftEnvVarsBlock extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      RaftSectionEyebrow(raftText(context, 'Environment Variables')),
+      RaftSectionEyebrow(raftText(context, 'Environment variables')),
       const SizedBox(height: 4),
       RaftEnvVarChips(vars: vars),
     ],

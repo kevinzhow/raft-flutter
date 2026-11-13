@@ -486,7 +486,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     await showRaftForm<void>(
       context,
       builder: (_) => RaftFormDialog(
-        title: 'Edit Channel',
+        title: 'Edit channel',
         fields: [
           if (c.name != 'all')
             RaftFormField('name', 'Name', initial: c.name, required: true),
@@ -619,7 +619,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           ]),
         RaftSheetSection('Preferences', [
           RaftSheetSwitchRow(
-            title: 'Pin Channel',
+            title: 'Pin channel',
             description: 'Keep this channel pinned to the top of your sidebar.',
             value: pinned,
             pending: !known.contains('sidebar'),
@@ -633,8 +633,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                   notification['activityMuted'] is bool))
             RaftSheetSwitchRow(
               title: 'Mute activity',
-              description:
-                  'Mute ordinary activity from this channel. Only affects you.',
+              description: 'Nothing in this conversation notifies you, not even @mentions.',
               value: notification['activityMuted'] == true,
               pending: !known.contains('notification'),
               onChanged: (value) => run(() async {
@@ -686,38 +685,38 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       actions: [
         if (showLeave)
           RaftSheetAction(
-            'Leave Channel',
+            'Leave channel',
             RaftGlyph.logOut,
             RaftButtonRecipeVariant.warning,
             () => confirm(
-              'Leave Channel',
+              'Leave channel',
               'You can rejoin a public channel later.',
               'POST',
               '/channels/${c.id}/leave',
-              submit: 'Leave Channel',
+              submit: 'Leave channel',
               cancel: 'Stay in Channel',
             ),
           ),
         if (showVisibility)
           RaftSheetAction(
-            private ? 'Make Public' : 'Make Private',
+            private ? 'Make public' : 'Make private',
             private ? RaftGlyph.hash : RaftGlyph.lock,
             RaftButtonRecipeVariant.warning,
             () => confirm(
-              private ? 'Make Public' : 'Make Private',
+              private ? 'Make public' : 'Make private',
               private
                   ? 'Everyone in this server can read this channel.'
                   : 'Only channel members can read this channel.',
               'PATCH',
               '/channels/${c.id}',
-              submit: private ? 'Make Public' : 'Make Private',
+              submit: private ? 'Make public' : 'Make private',
               data: {'visibility': private ? 'public' : 'private'},
             ),
           ),
         if (!all && cap('archiveChannels'))
           archived
               ? RaftSheetAction(
-                  'Unarchive Channel',
+                  'Unarchive channel',
                   RaftGlyph.archiveRestore,
                   RaftButtonRecipeVariant.success,
                   () => run(() async {
@@ -725,21 +724,21 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                   }),
                 )
               : RaftSheetAction(
-                  'Archive Channel',
+                  'Archive channel',
                   RaftGlyph.archive,
                   RaftButtonRecipeVariant.warning,
                   () => confirm(
-                    'Archive Channel',
+                    'Archive channel',
                     'Archived channels retain history and stop new messages.',
                     'POST',
                     '/channels/${c.id}/archive',
-                    submit: 'Archive Channel',
+                    submit: 'Archive channel',
                     cancel: 'Keep Channel',
                   ),
                 ),
         if (showStopAgents)
           RaftSheetAction(
-            'Stop All Agents',
+            'Stop all agents',
             RaftGlyph.circleStop,
             RaftButtonRecipeVariant.outline,
             stopAgents,
@@ -749,14 +748,14 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           // action is Disconnect (Web `showCompletedJointSettings`).
           if (joint)
             RaftSheetAction(
-              'Disconnect Channel',
+              'Disconnect channel',
               RaftGlyph.unplug,
               RaftButtonRecipeVariant.danger,
               disconnectFromPanel,
             )
           else
             RaftSheetAction(
-              'Delete Channel',
+              'Delete channel',
               RaftGlyph.trash2,
               RaftButtonRecipeVariant.danger,
               deleteChannel,
@@ -999,13 +998,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final c = channel;
     var failed = false;
     final ok = await confirmAction(
-      title: 'Archive Channel',
+      title: 'Archive channel',
       message: raftFormat(
         context,
         'Members keep read access to "{name}" and its history, but posting will stop and the channel will be hidden from sidebars. You can unarchive it later.',
         {'name': c.name},
       ),
-      confirmLabel: 'Archive Channel',
+      confirmLabel: 'Archive channel',
       cancelLabel: 'Keep Channel',
       loadingLabel: 'Archiving…',
       action: () async {
@@ -1046,13 +1045,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     var failed = false;
     final label = all
         ? (toPublic ? 'Restore #all' : 'Hide #all')
-        : (toPublic ? 'Make Public' : 'Make Private');
+        : (toPublic ? 'Make public' : 'Make private');
     final ok = await confirmAction(
       title: label,
       message: all
           ? (toPublic
                 ? '#all will reappear as the server-wide channel for server members and active agents.'
-                : '#all will disappear from channel lists, and server members and agents will no longer be able to read or post there — including you. Existing history is preserved. To bring it back, go to Settings → Server → System Channels and turn off "Hide #all channel".')
+                : '#all will disappear from channel lists, and server members and agents will no longer be able to read or post there — including you. Existing history is preserved. To bring it back, go to Settings → Administration → System Channels and turn off "Hide #all channel".')
           : raftFormat(
               context,
               toPublic
@@ -1062,7 +1061,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             ),
       confirmLabel: all
           ? (toPublic ? 'Restore #all' : 'Hide #all')
-          : (toPublic ? 'Make Public' : 'Make Private'),
+          : (toPublic ? 'Make public' : 'Make private'),
       loadingLabel: 'Updating…',
       action: () async {
         setState(() {
@@ -1103,13 +1102,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   Future<void> leave() async {
     final c = channel;
     final ok = await confirmAction(
-      title: 'Leave Channel',
+      title: 'Leave channel',
       message: raftFormat(
         context,
-        'You will stop receiving ordinary delivery from #{name} and cannot send messages until you rejoin. Existing followed threads are not automatically unfollowed; followed public threads can still notify you until you unfollow or manage those threads. Private content remains gated by current access.',
+        "You'll stop getting messages from #{name} and can't post there. You can rejoin any time. Threads you follow will still notify you until you unfollow them.",
         {'name': c.name},
       ),
-      confirmLabel: 'Leave Channel',
+      confirmLabel: 'Leave channel',
       cancelLabel: 'Stay in Channel',
       loadingLabel: 'Leaving…',
       confirmKey: const ValueKey('channel-overflow-leave-confirm'),
@@ -1129,10 +1128,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   Future<void> disconnectFromPanel() async {
     final c = channel;
     final ok = await confirmAction(
-      title: 'Disconnect Joint Channel',
+      title: 'Disconnect joint channel',
       message: raftFormat(
         context,
-        '"{name}" will be removed from this server. Other connected servers keep their own projection and history.',
+        'Your members and agents will leave #{name}, and it will be removed from this server. The other servers keep the channel and its history.',
         {'name': c.name},
       ),
       confirmLabel: 'Disconnect',
@@ -1152,7 +1151,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   Future<void> deleteFromPanel() async {
     final c = channel;
     final ok = await confirmAction(
-      title: 'Delete Channel',
+      title: 'Delete channel',
       message: raftFormat(
         context,
         '"{name}" and all of its messages will be permanently deleted. This cannot be undone.',
@@ -1160,7 +1159,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       ),
       confirmLabel: RaftTokens.of(context).isRaftLook
           ? 'Delete'
-          : 'Delete Channel',
+          : 'Delete channel',
       cancelLabel: RaftTokens.of(context).isRaftLook
           ? 'Cancel'
           : 'Keep Channel',
@@ -1328,7 +1327,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final preferences = RaftSheetSection('Preferences', [
       RaftSheetSwitchRow(
         key: const ValueKey('channel-settings-pin-switch'),
-        title: 'Pin Channel',
+        title: 'Pin channel',
         description: 'Keep this channel pinned to the top of your sidebar.',
         value: pinned,
         pending: !known.contains('sidebar'),
@@ -1343,7 +1342,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           key: const ValueKey('channel-overflow-mute-switch'),
           title: 'Mute activity',
           description:
-              'Mute ordinary activity from this channel. Only affects you.',
+              'Nothing in this conversation notifies you, not even @mentions.',
           value: notification['activityMuted'] == true,
           pending: !known.contains('notification'),
           onChanged: (value) => run(() async {
@@ -1395,7 +1394,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
               ? 'Updating…'
               : all
               ? (private ? 'Restore #all' : 'Hide #all')
-              : (private ? 'Make Public' : 'Make Private'),
+              : (private ? 'Make public' : 'Make private'),
           glyph: all
               ? (private ? RaftGlyph.eye : RaftGlyph.eyeOff)
               : (private ? RaftGlyph.hash : RaftGlyph.lock),
@@ -1406,7 +1405,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         if (archived)
           RaftOverflowAction(
             id: 'channel-settings-archive-action',
-            label: archiveBusy ? 'Unarchiving…' : 'Unarchive Channel',
+            label: archiveBusy ? 'Unarchiving…' : 'Unarchive channel',
             glyph: RaftGlyph.archiveRestore,
             disabled: archiveBusy,
             onPressed: unarchive,
@@ -1414,21 +1413,21 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         else
           RaftOverflowAction(
             id: 'channel-settings-archive-action',
-            label: 'Archive Channel',
+            label: 'Archive channel',
             glyph: RaftGlyph.archive,
             onPressed: archive,
           ),
       if (showLeave)
         RaftOverflowAction(
           id: 'channel-overflow-leave',
-          label: 'Leave Channel',
+          label: 'Leave channel',
           glyph: RaftGlyph.logOut,
           onPressed: leave,
         ),
       if (showStopAgents)
         RaftOverflowAction(
           id: 'channel-overflow-stop-agents',
-          label: 'Stop All Agents',
+          label: 'Stop all agents',
           semanticLabel: 'Stop All Agents in This Channel',
           glyph: RaftGlyph.circleStop,
           onPressed: stopAgents,
@@ -1436,7 +1435,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       if (deleteRow)
         RaftOverflowAction(
           id: 'channel-settings-delete-action',
-          label: joint ? 'Disconnect Channel' : 'Delete Channel',
+          label: joint ? 'Disconnect channel' : 'Delete channel',
           glyph: joint ? RaftGlyph.unplug : RaftGlyph.trash2,
           danger: true,
           onPressed: joint ? disconnectFromPanel : deleteFromPanel,
@@ -1525,7 +1524,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                               key: const ValueKey(
                                 'channel-settings-guest-visible-switch',
                               ),
-                              title: 'Visible to Guests',
+                              title: 'Visible to guests',
                               description: 'Guests can read this channel without joining. If this server is public, it also appears on the public page.',
                               value: c.flag('guestVisible'),
                               onChanged: (v) => updateGuestPolicy(
@@ -1596,7 +1595,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           : private
           ? 'Private'
           : c.type == 'joint'
-          ? 'Joint Channel'
+          ? 'External'
           : 'Public',
       badgeTone: dm
           ? RaftBadgeRecipeVariant.muted
@@ -1694,11 +1693,11 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       context: context,
       barrierDismissible: false,
       builder: (_) => RaftFormDialog(
-        title: 'Delete Channel',
+        title: 'Delete channel',
         description:
             'Delete #${channel.name} and its messages. This cannot be undone.',
         fields: [],
-        submitLabel: 'Delete Channel',
+        submitLabel: 'Delete channel',
         cancelLabel: 'Keep Channel',
         destructive: true,
         onSubmit: (_) async {

@@ -52,7 +52,7 @@ void main() {
   ) async {
     final (f, _) = await mount(t, row(label: 'Release'));
     expect(find.text('Release'), findsOneWidget);
-    expect(find.text('Latest updates'), findsNothing);
+    expect(find.text("What's new"), findsNothing);
     expect(find.text('Got it'), findsOneWidget);
     expect(find.byKey(const ValueKey('announcement-dismiss')), findsNothing);
     expect(f.count('POST'), 0);

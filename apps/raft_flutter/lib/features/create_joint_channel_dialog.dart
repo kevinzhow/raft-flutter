@@ -59,7 +59,7 @@ class CreateJointChannelDialog extends StatefulWidget {
   final String? origin;
   final VoidCallback? onViewBilling;
 
-  /// The sidebar's Joint channels "+" and "Create Joint Channel" menu items
+  /// The sidebar's Joint channels "+" and "Create joint channel" menu items
   /// (Web Sidebar `openCreateJointChannelDialog`): the dialog opens in place
   /// over the current page, like Create Channel. Mutations stay bound to the
   /// server and the federateChannels capability that opened it.

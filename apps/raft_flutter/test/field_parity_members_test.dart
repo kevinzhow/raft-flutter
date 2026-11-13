@@ -358,7 +358,7 @@ void main() {
         expect(find.text('Status'), findsOneWidget);
         expect(find.text('Removed'), findsOneWidget);
         expect(find.text('Role'), findsNothing);
-        expect(find.text('Remove Member'), findsNothing);
+        expect(find.text('Remove member'), findsNothing);
         expect(find.byTooltip('Message'), findsNothing);
         expect(find.text('Li Helper'), findsOneWidget);
       },
@@ -373,8 +373,8 @@ void main() {
         expect(find.text('Partner Studio'), findsOneWidget);
         expect(eyebrow('Info'), findsNothing);
         expect(find.byType(RaftSectionHeader), findsNothing);
-        expect(find.text('No created agents'), findsNothing);
-        expect(find.text('Remove Member'), findsNothing);
+        expect(find.text('No agents created yet'), findsNothing);
+        expect(find.text('Remove member'), findsNothing);
         expect(find.byTooltip('Message'), findsNothing);
       },
     );
@@ -402,7 +402,7 @@ void main() {
         'role': 'member',
         'displayName': 'Li Wen',
       });
-      expect(find.text('Remove Member'), findsOneWidget);
+      expect(find.text('Remove member'), findsOneWidget);
       expect(find.text('Li Wen'), findsWidgets);
     });
   });

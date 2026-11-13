@@ -376,7 +376,7 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
       expect(find.byType(MessageImageReview), findsOneWidget);
-      await tester.tap(find.text('Save Image'));
+      await tester.tap(find.text('Save image'));
       await tester.pump();
       expect(files.requested.isCompleted, isTrue);
       authorized = false;

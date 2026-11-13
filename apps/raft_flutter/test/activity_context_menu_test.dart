@@ -27,16 +27,16 @@ void main() {
   for (final (dark) in [(false), (true)]) {
     for (final touch in [false, true]) {
       for (final (label, row, labels) in [
-        ('unread channel', channelRow(1, unread: 2), ['Mark as Read', 'Done']),
-        ('read channel', channelRow(1), ['Mark as Unread', 'Done']),
+        ('unread channel', channelRow(1, unread: 2), ['Mark as read', 'Done']),
+        ('read channel', channelRow(1), ['Mark as unread', 'Done']),
         (
           'direct message',
           {...channelRow(1), 'kind': 'dm', 'channelType': 'dm'},
-          ['Mark as Unread', 'Done'],
+          ['Mark as unread', 'Done'],
         ),
-        ('followed thread', thread(), ['Mark as Read', 'Done', 'Unfollow']),
+        ('followed thread', thread(), ['Mark as read', 'Done', 'Unfollow']),
         ('unfollowed thread', thread(following: false), ['Done', 'Follow']),
-        ('pending mention', pendingMention(), ['Mark as Unread', 'Done']),
+        ('pending mention', pendingMention(), ['Mark as unread', 'Done']),
       ]) {
         testWidgets(
           '${dark ? 'dark' : 'light'} ${touch ? 'touch long press' : 'mouse right click'} $label matches Web menu',

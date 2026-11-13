@@ -275,7 +275,7 @@ class _InteractivePreviewState extends State<_InteractivePreview> {
               legacyMaterial: true,
               context: context,
               builder: (_) => RaftFormDialog(
-                title: 'Create Task',
+                title: 'New task',
                 submitLabel: 'Create',
                 fields: const [
                   RaftFormField('title', 'Title', required: true),
@@ -1057,18 +1057,18 @@ class _ServerSwitcherPreviewState extends State<_ServerSwitcherPreview> {
         ],
         actions: [
           RaftMenuEntry(
-            label: 'Join Community',
+            label: 'Join community',
             glyph: RaftGlyph.plus,
             onPressed: () {},
           ),
           RaftMenuEntry(
-            label: 'Switch or Create Server',
+            label: 'Switch or create server',
             glyph: RaftGlyph.plus,
             onPressed: () {},
           ),
           RaftServerMenuAction(
             tone: RaftServerMenuActionTone.invite,
-            label: 'Invite Human',
+            label: 'Invite human',
             glyph: RaftGlyph.userPlus,
             onPressed: () {},
           ),

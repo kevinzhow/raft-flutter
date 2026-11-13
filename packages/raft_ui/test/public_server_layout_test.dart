@@ -163,16 +163,14 @@ void main() {
     await mount(
       tester,
       const RaftPublicEmptyMessage(
-        'No messages have been posted here yet.',
+        'No messages yet',
         glyph: RaftGlyph.messageSquare,
       ),
     );
     expect(tester.widget<RaftIcon>(find.byType(RaftIcon)).size, 36);
-    expect(find.text('No messages have been posted here yet.'), findsOneWidget);
+    expect(find.text('No messages yet'), findsOneWidget);
     final icon = tester.getRect(find.byType(RaftIcon));
-    final title = tester.getRect(
-      find.text('No messages have been posted here yet.'),
-    );
+    final title = tester.getRect(find.text('No messages yet'));
     expect(title.top - icon.bottom, closeTo(8, 1));
   });
 

@@ -542,7 +542,7 @@ void main() {
       find.byKey(const ValueKey('task-load-more-in_progress')),
       findsNothing,
     );
-    expect(find.text('Load More'), findsOneWidget);
+    expect(find.text('Load more'), findsOneWidget);
     await tester.tap(more);
     await tester.pumpAndSettle();
     expect(lane(state, 'todo'), hasLength(60));

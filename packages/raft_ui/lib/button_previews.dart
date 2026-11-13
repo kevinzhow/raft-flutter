@@ -59,11 +59,7 @@ class _ButtonPreviewState extends State<_ButtonPreview> {
           runSpacing: 12,
           children: [
             const RaftButton(label: 'Disabled'),
-            RaftButton(
-              label: 'Save changes',
-              busy: busy,
-              onPressed: activateAction,
-            ),
+            RaftButton(label: 'Save', busy: busy, onPressed: activateAction),
             RaftButton(
               label: busy ? 'Stop loading' : 'Show loading',
               uiVariant: RaftButtonVariant.outline,

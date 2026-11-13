@@ -35,7 +35,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Stop Agents'), findsNWidgets(2));
+      expect(find.text('Stop agents'), findsNWidgets(2));
       expect(
         find.text(
           'All running agents in #release will stop immediately. You can provide new guidance before resuming them.',
@@ -49,7 +49,7 @@ void main() {
       expect(_onPressed(tester, 'sos-stop'), isNull);
       stop.complete(null);
       await tester.pumpAndSettle();
-      expect(find.text('Agents Stopped'), findsOneWidget);
+      expect(find.text('Agents stopped'), findsOneWidget);
       expect(find.text('All agents have been stopped.'), findsOneWidget);
       // Resume requires non-blank guidance.
       expect(_onPressed(tester, 'sos-resume'), isNull);
@@ -97,7 +97,7 @@ void main() {
     );
     await tester.tap(_button('sos-stop'));
     await tester.pumpAndSettle();
-    expect(find.text('Stop Agents'), findsNWidgets(2));
+    expect(find.text('Stop agents'), findsNWidgets(2));
     expect(find.byKey(const ValueKey('sos-error')), findsNothing);
     expect(_onPressed(tester, 'sos-stop'), isNotNull);
     await tester.tap(_button('sos-cancel'));

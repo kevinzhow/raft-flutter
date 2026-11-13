@@ -152,7 +152,7 @@ void main() {
     final (w, a) = (await t.runAsync(_fixture))!;
     addTearDown(w.dispose);
     await _openMenu(t, w);
-    await t.tap(find.text('Convert to Task'));
+    await t.tap(find.text('Convert to task'));
     await _settle(t);
     expect(
       a.calls.where((c) => c.path == '/tasks/convert-message'),
@@ -178,14 +178,14 @@ void main() {
     // Opening a menu sends nothing; the action reads the flag first and, on a
     // task v2 server, creates from the message without converting.
     expect(a.calls.where((c) => c.path == '/feature-flags/evaluate'), isEmpty);
-    await t.tap(find.text('Convert to Task'));
+    await t.tap(find.text('Convert to task'));
     await _settle(t);
     await _createFromDialog(t, a);
     expect(a.calls.where((c) => c.path == '/tasks/convert-message'), isEmpty);
     // Known now: the next menu offers it by its task v2 name.
     t.widget<RaftMessageTile>(find.byType(RaftMessageTile)).onActions!();
     await t.pump(const Duration(milliseconds: 400));
-    expect(find.text('Convert to Task'), findsNothing);
+    expect(find.text('Convert to task'), findsNothing);
     expect(find.text('Create task from message'), findsOneWidget);
     await t.pumpWidget(const SizedBox());
   });

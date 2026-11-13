@@ -176,7 +176,7 @@ void main() {
         findsNothing,
       );
       // Save and Copy stay.
-      expect(find.text('Save Image'), findsOneWidget);
+      expect(find.text('Save image'), findsOneWidget);
       expect(find.text('Copy image'), findsOneWidget);
       await t.pumpAndSettle();
       expect(

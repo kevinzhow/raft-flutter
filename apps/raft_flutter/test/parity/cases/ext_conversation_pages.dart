@@ -426,7 +426,7 @@ Future<void> _selectRows(WidgetTester t, {required bool second}) async {
   for (var i = 0; i < 12; i++) {
     await t.pump(const Duration(milliseconds: 50));
   }
-  await t.tap(find.text('Select Message'));
+  await t.tap(find.text('Select message'));
   for (var i = 0; i < 12; i++) {
     await t.pump(const Duration(milliseconds: 50));
   }

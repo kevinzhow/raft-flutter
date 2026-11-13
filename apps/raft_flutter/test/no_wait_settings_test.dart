@@ -81,7 +81,7 @@ void main() {
       (
         'pending invites keep their empty line',
         (api) => api.routes['GET /servers/s1/invites'] = (_) => [],
-        () => expect(find.text('No pending invites.'), findsOneWidget),
+        () => expect(find.text('No pending invites'), findsOneWidget),
       ),
       (
         'invite links keep their rows',
@@ -173,7 +173,7 @@ void main() {
   group('provider dialogs open before their data arrives', () {
     final cases = <(String, String, String, String)>[
       (
-        'Assigned Agents',
+        'Assigned agents',
         'Agents using Provider fixture',
         'agents',
         'Loading agents…',
@@ -185,8 +185,8 @@ void main() {
         'Loading verification history…',
       ),
       (
-        'Verify on Computer',
-        'Verify on Computer',
+        'Verify on computer',
+        'Verify on computer',
         'verify',
         'Loading computers…',
       ),

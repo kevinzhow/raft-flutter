@@ -4,7 +4,7 @@ import 'overlays/dialog.dart' show RaftDialog;
 // (packages/web/src/components/agent/ReportIssueDialog.tsx): a `DialogCard`
 // (`max-w-sm`) with the agent card, the description field, the `Include`
 // checkboxes, the sensitive-data banner with the consent checkbox, and the
-// "Report Submitted" confirmation. The app adapter owns the upload (scope
+// "Report submitted" confirmation. The app adapter owns the upload (scope
 // attestation, feedback-export worker, ticket) and passes it in as callbacks.
 // Tailwind classes written in the Web JSX are resolved in comments.
 import 'raft/checkbox.dart' show RaftCheckbox;
@@ -293,7 +293,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
     final muted12 = _text(t, size: 12, line: 16, color: _muted(t));
     return RaftDialog.card(
       key: const ValueKey('report-issue-dialog'),
-      title: 'Report Issue',
+      title: 'Report issue',
       footerGap: 0,
       titleGlyph: RaftGlyph.bug,
       maxWidth: 384,
@@ -428,7 +428,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                         padding: const EdgeInsets.only(left: 24),
                         child: RaftCssText(
                           tr(
-                            "The agent's computer is asked for its session record; it may not have one.",
+                            "Taken from the agent's computer; it may not have one.",
                           ),
                           style: muted12,
                         ),
@@ -549,7 +549,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
           ),
           RaftRecipeButton(
             key: const ValueKey('report-issue-submit'),
-            label: tr(loading ? 'Submitting…' : 'Report Issue'),
+            label: tr(loading ? 'Submitting…' : 'Report issue'),
             variant: RaftButtonRecipeVariant.accent,
             size: RaftButtonRecipeSize.sm,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -572,7 +572,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
     final ticket = r.ticketId;
     return RaftDialog.card(
       key: const ValueKey('report-issue-submitted'),
-      title: 'Report Submitted',
+      title: 'Report submitted',
       maxWidth: 384,
       onClose: widget.onClose,
       child: Column(
@@ -645,7 +645,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                               ),
                               tr(switch (state) {
                                 RaftTranscriptRequestState.pending => "Requesting the session record from the agent's computer…",
-                                RaftTranscriptRequestState.requested => "The agent's computer was asked for its session record. This screen can't tell whether one was found.",
+                                RaftTranscriptRequestState.requested => "The agent's computer was asked for its session record. Whether one was attached shows here if it answers.",
                                 RaftTranscriptRequestState.requestFailed =>
                                   'Session record request failed.',
                                 RaftTranscriptRequestState.requestUnconfirmed => "Couldn't confirm that the session record request reached the server.",

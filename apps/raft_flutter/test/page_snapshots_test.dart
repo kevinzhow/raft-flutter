@@ -534,10 +534,10 @@ void main() {
     List<Finder> layout() => [
       find.byType(RaftDialogTextInput).first,
       find.text('Guest access'),
-      find.text('Pin Channel'),
+      find.text('Pin channel'),
       find.text('Mute activity'),
       find.text('Collapse long messages'),
-      find.text('Leave Channel'),
+      find.text('Leave channel'),
     ];
 
     Future<(WorkspaceController, _Adapter)> opened(WidgetTester t) async {
@@ -570,8 +570,8 @@ void main() {
       await t.pumpWidget(_host(sheet(w, w.channels.first)));
       expect(find.byType(RaftSpinner), findsNothing);
       expect(_rects(t, layout()).values.toList(), settled.values.toList());
-      expect(switchShown(t, 'Pin Channel'), isTrue);
-      expect(t.widget<RaftSwitch>(rowSwitch('Pin Channel')).value, isTrue);
+      expect(switchShown(t, 'Pin channel'), isTrue);
+      expect(t.widget<RaftSwitch>(rowSwitch('Pin channel')).value, isTrue);
       expect(switchShown(t, 'Collapse long messages'), isTrue);
       await _settleStable(t, a, settled, done: () => true);
     });

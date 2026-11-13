@@ -29,7 +29,7 @@ class SourceTaskSurface extends StatefulWidget {
   /// swaps the modal's task); null when the host has no task slot.
   final ChatTaskOpener? onTask;
 
-  /// The discussion's plan banner "View Billing" link; null hides it.
+  /// The discussion's plan banner "View billing" link; null hides it.
   final VoidCallback? onViewBilling;
   final VoidCallback? onCleanupDelete;
   final VoidCallback? onBack;

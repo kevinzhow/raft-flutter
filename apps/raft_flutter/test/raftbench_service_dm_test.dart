@@ -135,7 +135,7 @@ void main() {
       locale: const Locale('zh'),
     );
     expect(
-      find.text('这是只读分析 agent，不会回复私信。结果显示在 RaftBench 页面。'),
+      find.text('这是只读分析 Agent，不会回复私信。结果显示在 RaftBench 页面。'),
       findsOneWidget,
     );
     await unmount(t);

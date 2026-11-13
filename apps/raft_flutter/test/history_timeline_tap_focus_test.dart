@@ -103,9 +103,9 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Copy Link'), findsOneWidget);
+    expect(find.text('Copy link'), findsOneWidget);
     expect(_timeline(tester).hasFocus, isFalse);
-    final menuRoute = ModalRoute.of(tester.element(find.text('Copy Link')));
+    final menuRoute = ModalRoute.of(tester.element(find.text('Copy link')));
     expect(menuRoute?.isCurrent, isTrue);
   });
 
@@ -120,7 +120,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Copy Link'), findsOneWidget);
+    expect(find.text('Copy link'), findsOneWidget);
     expect(_timeline(tester).hasFocus, isFalse);
     expect(_timeline(tester).hasPrimaryFocus, isFalse);
   });

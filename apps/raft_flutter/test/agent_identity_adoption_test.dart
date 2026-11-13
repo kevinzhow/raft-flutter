@@ -207,7 +207,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('identity-grants-admin')), findsNothing);
-    expect(find.text('Update identity'), findsOneWidget);
+    expect(find.text('Update'), findsOneWidget);
   });
 
   testWidgets('Confirm applies it and the button goes away', (t) async {
@@ -258,6 +258,6 @@ void main() {
       find.text('This will grant the onboarding agent admin permissions.'),
       findsOneWidget,
     );
-    expect(find.text('Update identity and role'), findsOneWidget);
+    expect(find.text('Update'), findsOneWidget);
   });
 }
