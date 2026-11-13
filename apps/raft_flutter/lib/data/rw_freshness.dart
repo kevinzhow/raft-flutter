@@ -93,9 +93,22 @@ class RwFreshnessStore extends ChangeNotifier {
   static final _owners = Expando<RwFreshnessStore>();
 
   /// The store of [client] (created on first use): one per client, shared by
-  /// the presentations that borrow it. Owners register the re-reads.
-  static RwFreshnessStore ofClient(RaftClient client) =>
-      _owners[client] ??= RwFreshnessStore(client);
+  /// the presentations that borrow it. Owners register the re-reads; each
+  /// [acquire] is paired with a [release], and the last release disposes it.
+  static RwFreshnessStore acquire(RaftClient client) {
+    final store = _owners[client] ??= RwFreshnessStore(client);
+    store._holds++;
+    return store;
+  }
+
+  int _holds = 0;
+
+  /// Gives back one [acquire]; the last one disposes the store.
+  void release() {
+    if (_disposed || --_holds > 0) return;
+    if (identical(_owners[client], this)) _owners[client] = null;
+    dispose();
+  }
 
   /// The store of [client] when a surface already asked for it.
   static RwFreshnessStore? peek(RaftClient client) => _owners[client];
