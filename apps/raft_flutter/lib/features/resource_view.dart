@@ -3514,11 +3514,9 @@ class _ResourceViewState extends State<ResourceView> {
                 {
                   'userId': channel?.string('peerId'),
                   'avatarUrl': channel?.string('peerAvatarUrl'),
-                  'gravatarHash': channel?.string('peerGravatarHash'),
                 },
               ]
             : const [],
-        requestSize: 20,
       );
       return RaftActivityGroup(
         id: g['channelId'],
@@ -3538,7 +3536,6 @@ class _ResourceViewState extends State<ResourceView> {
                       ? RaftAvatarContentKind.agent
                       : RaftAvatarContentKind.human,
                   uploadedUrl: avatar.uploadedUrl,
-                  gravatarUrl: avatar.gravatarUrl,
                   pixelKey: avatar.pixelKey,
                 ),
               )
@@ -4077,7 +4074,6 @@ class _ResourceViewState extends State<ResourceView> {
       carriedAvatarUrl: row['senderAvatarUrl'] is String
           ? row['senderAvatarUrl'] as String
           : null,
-      requestSize: 14,
     );
     final label = dm
         ? '@$sender'
@@ -4117,7 +4113,6 @@ class _ResourceViewState extends State<ResourceView> {
                       },
                       pixelKey: projection.pixelKey,
                       uploadedUrl: projection.uploadedUrl,
-                      gravatarUrl: projection.gravatarUrl,
                       fallback: projection.kind == 'human'
                           ? Center(
                               child: RaftIcon(

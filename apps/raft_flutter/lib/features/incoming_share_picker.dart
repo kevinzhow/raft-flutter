@@ -614,9 +614,6 @@ class _IncomingSharePickerState extends State<IncomingSharePicker> {
                 avatarUrl: channel?.json['peerAvatarUrl'] is String
                     ? channel!.json['peerAvatarUrl'] as String
                     : null,
-                gravatarHash: channel?.json['peerGravatarHash'] is String
-                    ? channel!.json['peerGravatarHash'] as String
-                    : null,
               ),
               // Web `targetPickerLabel`: channels show the bare name.
               label: channel != null && channel.type != 'dm'

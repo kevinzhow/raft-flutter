@@ -808,7 +808,6 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
       agents: data.agents,
       members: data.members,
       currentUser: data.currentUser,
-      requestSize: 32,
     );
     return RaftAvatar(
       name: entity.title,
@@ -818,14 +817,12 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
         name: entity.title,
         kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
         uploadedUrl: projection.uploadedUrl,
-        gravatarUrl: projection.gravatarUrl,
         pixelKey: agent ? projection.pixelKey ?? 'robot' : null,
         fallback: RaftMountedAvatarFallback(
           avatarContext: RaftMountedAvatarContext.sidebarList,
           identity: agent
               ? RaftMountedAvatarIdentity.agent
               : RaftMountedAvatarIdentity.human,
-          gravatar: projection.gravatarUrl != null,
           initials: entity.title,
         ),
       ),

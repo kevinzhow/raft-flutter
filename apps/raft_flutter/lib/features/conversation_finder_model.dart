@@ -21,7 +21,7 @@ class ConversationMatch {
   final String? sublabel;
   final bool private, peerIsAgent;
 
-  /// The row's own avatar facts (`avatarUrl`, `gravatarHash`) for the sidebar
+  /// The row's own avatar facts (`avatarUrl`) for the sidebar
   /// list avatar, from the DM peer, agent or member.
   final Map<String, dynamic> avatar;
   String get key => '$kind:$id';
@@ -72,10 +72,7 @@ List<ConversationMatch> buildFinderResults({
         label: dm.firstNonEmpty(const ['peerDisplayName', 'peerName', 'name']),
         sublabel: agent ? agentTag : null,
         peerIsAgent: agent,
-        avatar: {
-          'avatarUrl': dm.json['peerAvatarUrl'],
-          'gravatarHash': dm.json['peerGravatarHash'],
-        },
+        avatar: {'avatarUrl': dm.json['peerAvatarUrl']},
       ),
     );
   }
@@ -103,10 +100,7 @@ List<ConversationMatch> buildFinderResults({
         id: id,
         label: display.isEmpty ? name : display,
         sublabel: name.isNotEmpty && display.isNotEmpty ? '@$name' : null,
-        avatar: {
-          'avatarUrl': member['avatarUrl'],
-          'gravatarHash': member['gravatarHash'],
-        },
+        avatar: {'avatarUrl': member['avatarUrl']},
       ),
     );
   }

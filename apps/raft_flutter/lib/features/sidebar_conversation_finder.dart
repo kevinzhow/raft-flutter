@@ -329,7 +329,6 @@ class _FinderResults extends StatelessWidget {
       carriedAvatarUrl: result.avatar['avatarUrl'] is String
           ? result.avatar['avatarUrl'] as String
           : null,
-      requestSize: 32,
     );
     return RaftAvatar(
       name: result.label,
@@ -339,14 +338,12 @@ class _FinderResults extends StatelessWidget {
         name: result.label,
         kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
         uploadedUrl: projection.uploadedUrl,
-        gravatarUrl: projection.gravatarUrl,
         pixelKey: agent ? projection.pixelKey ?? 'robot' : null,
         fallback: RaftMountedAvatarFallback(
           avatarContext: RaftMountedAvatarContext.sidebarList,
           identity: agent
               ? RaftMountedAvatarIdentity.agent
               : RaftMountedAvatarIdentity.human,
-          gravatar: projection.gravatarUrl != null,
           initials: result.label,
         ),
       ),

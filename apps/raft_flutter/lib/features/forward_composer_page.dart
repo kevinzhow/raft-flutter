@@ -61,7 +61,6 @@ Widget forwardTargetIcon(
   bool agent = false,
   String? peerId,
   String? avatarUrl,
-  String? gravatarHash,
 }) {
   final person = type == 'dm' || type == 'human' || type == 'agent';
   if (!person) return raftForwardTargetIcon(name: name, type: type);
@@ -75,10 +74,8 @@ Widget forwardTargetIcon(
       if (isAgent) {'id': id, 'avatarUrl': avatarUrl},
     ],
     members: [
-      if (!isAgent)
-        {'userId': id, 'avatarUrl': avatarUrl, 'gravatarHash': gravatarHash},
+      if (!isAgent) {'userId': id, 'avatarUrl': avatarUrl},
     ],
-    requestSize: 40,
   );
   return raftForwardTargetIcon(
     name: name,
@@ -86,7 +83,6 @@ Widget forwardTargetIcon(
     agent: isAgent,
     pixelKey: projection.pixelKey,
     uploadedUrl: projection.uploadedUrl,
-    gravatarUrl: projection.gravatarUrl,
   );
 }
 
@@ -744,9 +740,6 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
         peerId: c.json['peerId'] is String ? c.json['peerId'] as String : null,
         avatarUrl: c.json['peerAvatarUrl'] is String
             ? c.json['peerAvatarUrl'] as String
-            : null,
-        gravatarHash: c.json['peerGravatarHash'] is String
-            ? c.json['peerGravatarHash'] as String
             : null,
       ),
       label: forwardTargetPickerLabel(c),

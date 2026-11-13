@@ -1,21 +1,21 @@
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
-
 import 'public_avatar_url.dart';
 
-/// Permitted presentation fields only. URLs/hashes are transient discovery data,
+/// Permitted presentation fields only. URLs are transient discovery data,
 /// never persisted or logged; the pure renderer performs public image requests.
+///
+/// No Gravatar: server v1.24 retired `gravatarHash` (always empty,
+/// shared actorResolveContract.ts DEPRECATED_GRAVATAR_HASH) and Web v1.24
+/// deleted GravatarAvatar, ignoring a hash an older server still sends. A
+/// person without an uploaded avatar draws the placeholder on every server.
 class SenderAvatarProjection {
   const SenderAvatarProjection({
     required this.identity,
     required this.kind,
     this.uploadedUrl,
-    this.gravatarUrl,
     this.pixelKey,
   });
   final String identity, kind;
-  final String? uploadedUrl, gravatarUrl, pixelKey;
+  final String? uploadedUrl, pixelKey;
 }
 
 bool raftUploadedHumanAvatar(String? value) {
@@ -27,6 +27,21 @@ bool raftUploadedHumanAvatar(String? value) {
       ).hasMatch(uri.path);
 }
 
+/// How a person's avatar is drawn (Web utils/humanAvatar.ts
+/// `humanAvatarSource`, v1.24): their uploaded photo, their built pixel
+/// avatar (`pixel-human:v1:...`, shared humanAvatar.ts), or the User
+/// placeholder (none, or one Raft doesn't draw, such as an older social
+/// provider's profile URL).
+enum RaftHumanAvatarSource { uploaded, pixel, placeholder }
+
+RaftHumanAvatarSource raftHumanAvatarSource(String? avatarUrl) {
+  if (raftUploadedHumanAvatar(avatarUrl)) return RaftHumanAvatarSource.uploaded;
+  if (avatarUrl != null && avatarUrl.startsWith('pixel-human:v1:')) {
+    return RaftHumanAvatarSource.pixel;
+  }
+  return RaftHumanAvatarSource.placeholder;
+}
+
 SenderAvatarProjection projectSenderAvatar({
   required String origin,
   required String senderId,
@@ -35,10 +50,6 @@ SenderAvatarProjection projectSenderAvatar({
   required List<Map<String, dynamic>> members,
   Map<String, dynamic>? currentUser,
   Map<String, dynamic>? externalAuthor,
-  double requestSize = 80,
-  // TasksPanel IdentityOption carries the already-authorized member email.
-  // Other consumers retain the historical own-user-only fallback by default.
-  bool allowMemberEmailFallback = false,
   // Message-carried `senderAvatarUrl`: the first-paint source when the
   // directory has no row for this sender yet (never overrides a directory row).
   String? carriedAvatarUrl,
@@ -85,32 +96,14 @@ SenderAvatarProjection projectSenderAvatar({
           : null,
     );
   }
-  var hash = resolved?['gravatarHash'];
-  dynamic email = allowMemberEmailFallback ? (resolved?['email']) : null;
-  if (currentUser?['id'] == senderId) {
-    // Own identity is permitted even before the member directory arrives.
-    resolved ??= currentUser;
-    hash ??= resolved?['gravatarHash'];
-    email = currentUser?['email'];
-  }
-  if (allowMemberEmailFallback && hash == '') hash = null;
-  if (hash == null && email is String && email.trim().isNotEmpty) {
-    hash = sha256.convert(utf8.encode(email.trim().toLowerCase())).toString();
-  }
+  // Own identity is permitted even before the member directory arrives.
+  if (currentUser?['id'] == senderId) resolved ??= currentUser;
   final humanUrl = resolved == null ? carriedAvatarUrl : resolved['avatarUrl'];
   return SenderAvatarProjection(
     identity: 'user:$senderId',
     kind: 'human',
     uploadedUrl: humanUrl is String && raftUploadedHumanAvatar(humanUrl)
         ? raftPublicAvatarUrl(origin, humanUrl)
-        : null,
-    gravatarUrl:
-        hash is String &&
-            RegExp(r'^[0-9a-f]{64}$', caseSensitive: false).hasMatch(hash)
-        ? Uri.https('www.gravatar.com', '/avatar/${hash.toLowerCase()}', {
-            's': '${requestSize.round()}',
-            'd': '404',
-          }).toString()
         : null,
   );
 }
@@ -133,7 +126,5 @@ Map<String, SenderAvatarProjection> projectTaskFilterAvatars({
         agents: agents,
         members: members,
         currentUser: currentUser,
-        requestSize: 16,
-        allowMemberEmailFallback: true,
       ),
 };

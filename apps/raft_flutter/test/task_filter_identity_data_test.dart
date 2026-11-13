@@ -207,11 +207,8 @@ void main() {
         expect(product.kind, RaftAvatarContentKind.agent);
         final designer = content('user:designer');
         expect(designer.uploadedUrl, isNull);
-        expect(Uri.parse(designer.gravatarUrl!).host, 'www.gravatar.com');
-        expect(Uri.parse(designer.gravatarUrl!).queryParameters, {
-          's': '16',
-          'd': '404',
-        });
+        // Server v1.24 retired Gravatar: a hash or an email draws no image.
+        expect(designer.gravatarUrl, isNull);
         final uploaded = content('user:uploaded');
         expect(
           uploaded.uploadedUrl,
@@ -219,7 +216,7 @@ void main() {
         );
         final provider = content('user:provider');
         expect(provider.uploadedUrl, isNull);
-        expect(provider.gravatarUrl, isNotNull);
+        expect(provider.gravatarUrl, isNull);
         final row = find.byKey(
           const ValueKey('task-filter-Assignee-agent:product'),
         );

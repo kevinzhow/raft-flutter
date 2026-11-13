@@ -2274,11 +2274,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         _ => RaftAvatarContentKind.human,
       },
       uploadedUrl: source.uploadedUrl,
-      gravatarUrl: source.gravatarUrl,
       pixelKey: source.pixelKey,
       fallback: RaftMountedAvatarFallback(
         avatarContext: avatarContext,
-        gravatar: source.gravatarUrl != null,
         initials: message.author,
         identity: switch (kind) {
           RaftAvatarKind.agent => RaftMountedAvatarIdentity.agent,

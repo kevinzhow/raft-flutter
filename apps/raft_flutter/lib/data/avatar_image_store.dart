@@ -23,7 +23,7 @@ import 'attachment_disk_cache.dart';
 /// picture. (Entries from before validators existed are the 8-byte expiry and
 /// the picture; they still read.) The expiry is the server's `Cache-Control`
 /// freshness (`/api/avatars/**` is `public, max-age=31536000, immutable`;
-/// Gravatar is minutes; `external-avatars` is `public, no-cache,
+/// `external-avatars` is `public, no-cache,
 /// must-revalidate` with a strong `ETag`), capped at [ttl], and [unknownTtl]
 /// when the server said nothing. `no-cache` and expired entries that carry a
 /// validator stay as stale entries (for [staleRetention]) so the next use can

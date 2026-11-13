@@ -243,7 +243,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       agents: agent ? [value] : const [],
       members: agent ? const [] : [value],
       currentUser: w.client.user?.json,
-      requestSize: 16,
     );
     final target = DesktopContentTarget(kind, id);
     final sourceAuthority = authority;
@@ -285,14 +284,12 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
                     ? RaftAvatarContentKind.agent
                     : RaftAvatarContentKind.human,
                 uploadedUrl: avatar.uploadedUrl,
-                gravatarUrl: avatar.gravatarUrl,
                 pixelKey: avatar.pixelKey,
                 fallback: RaftMountedAvatarFallback(
                   avatarContext: RaftMountedAvatarContext.sidebarList,
                   identity: agent
                       ? RaftMountedAvatarIdentity.agent
                       : RaftMountedAvatarIdentity.human,
-                  gravatar: avatar.gravatarUrl != null,
                 ),
               ),
             ),
