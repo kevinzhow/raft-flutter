@@ -763,7 +763,14 @@ void main() {
       expect(find.text('Show Joined Channels Only'), findsOneWidget);
       final menu = tester.getRect(find.byType(RaftSidebarContextMenu));
       expect(menu.width, 240, reason: 'Sidebar.tsx section popup w-60');
-      expect(menu.height, 359, reason: 'generated label line boxes are 16px');
+      // Web v1.24 SidebarSectionContextMenu + raft-ui 0.95.3: seven 36px
+      // options, two pt-2/pb-1 labels with 16px caption lines, three my-1
+      // hairlines, and p-1 around the popup (its ring takes no layout space).
+      expect(
+        menu.height,
+        7 * 36 + 2 * (8 + 16 + 4) + 3 * (4 + 1 + 4) + 2 * 4,
+        reason: 'current Web section menu geometry from raft-ui 0.95.3',
+      );
       expect(menu.left, greaterThanOrEqualTo(8));
       expect(menu.right, lessThanOrEqualTo(390 - 8));
     });

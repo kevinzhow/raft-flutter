@@ -55,6 +55,7 @@ Future<void> _openDestination(WidgetTester t, String id) async {
     await t.drag(find.byType(RaftSettingsSidebarList), const Offset(0, -400));
     await t.pumpAndSettle();
   }
+  expect(row.hitTestable(), findsOneWidget);
   await t.tap(row);
   for (var i = 0; i < 10; i++) {
     await t.pump(const Duration(milliseconds: 100));
@@ -350,13 +351,9 @@ void main() {
       final update = android();
       addTearDown(update.dispose);
       final f = await openSettings(t, update);
-      await t.tap(
-        find.byKey(const ValueKey('workspace-settings-nav-release-notes')),
-      );
-      await f.flush(t);
-      for (var i = 0; i < 10; i++) {
-        await t.pump(const Duration(milliseconds: 100));
-      }
+      // The source-derived sidebar spacing can put this final row below the
+      // phone's fold. Scroll it clear of the bottom bar before tapping it.
+      await _openDestination(t, 'release-notes');
       expect(find.text('Phone notes arrive'), findsOneWidget);
       expect(
         find.text('Release notes are unavailable right now.'),

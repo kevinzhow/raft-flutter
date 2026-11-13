@@ -10,6 +10,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'message_presentation_test.dart' show MessageAdapter, fixture;
 import 'support/app_services_fixture.dart';
 
+// Current ContextMenu source: seven rows, two pt-2/pb-1 caption labels,
+// three my-1 hairlines and popup p-1. DS0 keeps the public 36px option helper;
+// desktop width/pointer token consumption remains in DS1.
+const _sectionMenuHeight =
+    7 * 36.0 + 2 * (8 + 16 + 4) + 3 * (4 + 1 + 4) + 2 * 4;
+
 /// Sidebar.tsx context menus: channel / DM rows, section headers, the sidebar
 /// surface and the section dialog, with the Source actions
 /// (PATCH /servers/:id/sidebar-order, POST /channels/:id/read-all|unread).
@@ -155,7 +161,7 @@ void main() {
     // Fixed Sidebar.tsx:4608 mounts the section popup with w-60.
     expect(
       tester.getSize(find.byType(RaftSidebarContextMenu)),
-      const Size(240, 359),
+      const Size(240, _sectionMenuHeight),
     );
     for (final label in [
       'Create Channel',
@@ -225,7 +231,7 @@ void main() {
       }
       final menu = tester.getRect(find.byType(RaftSidebarContextMenu));
       expect(menu.width, 240);
-      if (section) expect(menu.height, 359);
+      if (section) expect(menu.height, _sectionMenuHeight);
       expect(menu.left, greaterThanOrEqualTo(8));
       expect(menu.right, lessThanOrEqualTo(900 - 8));
     });
