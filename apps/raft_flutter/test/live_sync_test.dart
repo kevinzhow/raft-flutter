@@ -55,6 +55,10 @@ class _LiveClient extends HistoryAuditClient {
   }
 
   @override
+  void resumeSince(BigInt seq, String? sinceHorizon) =>
+      wire.add('resume $seq $sinceHorizon');
+
+  @override
   Future<dynamic> getForServer(
     String server,
     String path, {
@@ -316,6 +320,33 @@ void main() {
       await c.settle();
       expect(c.client.wire, containsAll(['changes c1', 'sidebar', 'channels']));
       expect(WorkspaceLiveSync.of(c.client).syncSession!.hasCursor, isFalse);
+    });
+  });
+
+  group('sync horizon (server v1.24 syncResume.ts)', () {
+    test('[BP-RT-039] the next resume round sends the horizon the last answer '
+        'carried; horizonReset re-reads the visible scopes', () async {
+      final c = _Case();
+      addTearDown(c.close);
+      await c.seed();
+      c.client.incoming.add(const RaftEvent('rooms:joined', {}));
+      await c.settle();
+      expect(c.client.wire, contains('resume 100 null'));
+      c.client.incoming.add(
+        const RaftEvent('sync:resume:response', {
+          'messages': [],
+          'currentSeq': 100,
+          'hasMore': false,
+          'horizon': 'h-1',
+          'horizonReset': true,
+        }),
+      );
+      await c.settle();
+      expect(c.client.wire, contains('sync 100'), reason: 'horizonReset');
+      c.client.wire.clear();
+      c.client.incoming.add(const RaftEvent('rooms:joined', {}));
+      await c.settle();
+      expect(c.client.wire, contains('resume 100 h-1'));
     });
   });
 

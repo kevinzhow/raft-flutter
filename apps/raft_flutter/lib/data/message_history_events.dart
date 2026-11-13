@@ -8,6 +8,7 @@ import 'history_capacity.dart';
 import 'local_error_diagnostics.dart';
 import 'history_read_policy.dart';
 import 'message_history_pages.dart';
+import 'sync_horizon.dart';
 import 'message_history_verification.dart';
 import 'workspace_message_host.dart';
 import 'workspace_message_windows.dart';
@@ -369,7 +370,10 @@ class MessageHistoryEvents {
         current = _current(w);
     if (db == null) {
       if (w.ledger.watermark > BigInt.zero) {
-        w.transport.client.resume(w.ledger.watermark);
+        w.transport.client.resumeSince(
+          w.ledger.watermark,
+          SyncHorizon.of(w.ledger),
+        );
       }
       return;
     }
@@ -383,7 +387,9 @@ class MessageHistoryEvents {
       final seq = committed > BigInt.zero
           ? committed
           : db.receiver.checkpointLimit(scope, w.ledger.watermark);
-      if (current() && seq > BigInt.zero) w.transport.client.resume(seq);
+      if (current() && seq > BigInt.zero) {
+        w.transport.client.resumeSince(seq, SyncHorizon.of(w.ledger));
+      }
     } catch (cause, trace) {
       if (current()) {
         _saveFailed(w, cause, trace, LocalErrorOperation.resumeCursor);
@@ -427,6 +433,8 @@ class MessageHistoryEvents {
         row['id']: w.ledger.message('${row['channelId']}', '${row['id']}'),
     };
     final cursor = BigInt.tryParse('${payload['currentSeq']}');
+    // The next round's first resume starts from this round's horizon.
+    SyncHorizon.accept(w.ledger, payload['horizon']);
     Future<void> apply() async {
       var committed = db == null, unresolved = false;
       try {
@@ -487,6 +495,10 @@ class MessageHistoryEvents {
         w.transport.client.resume(cursor);
       }
       refreshUnread();
+      // Too many messages committed late to send: re-read the visible scopes.
+      if (payload['horizonReset'] == true) {
+        unawaited(w.navigation.syncVisibleScopes());
+      }
       w.context.changed();
     }
 
