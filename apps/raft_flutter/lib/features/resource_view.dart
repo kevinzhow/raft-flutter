@@ -4233,12 +4233,13 @@ class _ResourceViewState extends State<ResourceView> {
     String scope,
     Offset at,
   ) async {
-    final unread = (row['unreadCount'] as num? ?? 0) > 0;
+    final unread = activityRowShowsUnread(w, row);
     await scopedMenu<void>(scope, at, (context) {
       void close() => closeOwnedDialog(context, scope);
       return buildActivityContextMenu(
         context,
         row,
+        unread: unread,
         onDismiss: close,
         onAction: (action) {
           if (!accepts(scope)) return;

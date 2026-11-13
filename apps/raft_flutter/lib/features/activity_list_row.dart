@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/marked_unread_sync.dart';
+import '../data/resource_row_reconcile.dart' show activityScopeId;
 import '../data/workspace_controller.dart';
 import 'activity_card_row.dart';
 import 'activity_rollout_flags.dart';
@@ -150,7 +152,10 @@ class ActivityListRowView extends StatelessWidget {
       ...w.channels,
       ...w.dms,
     ].any((c) => c.id == mutedId && c.flag('activityMuted'));
-    final strong = unread > 0 && !muted;
+    // InboxRow `markedUnread`: marked unread with nothing countable shows
+    // unread with a dot and no number.
+    final marked = unread == 0 && activityRowMarkedUnread(w, row);
+    final strong = (unread > 0 || marked) && !muted;
     final senderType = _mention
         ? 'system'
         : row[_thread ? 'latestActivitySenderType' : 'lastMessageSenderType'];
@@ -298,6 +303,13 @@ class ActivityListRowView extends StatelessWidget {
               KeyedSubtree(
                 key: const ValueKey('conversation-card-new-badge'),
                 child: RaftSidebarUnreadCount(count: unread),
+              )
+            else if (marked)
+              KeyedSubtree(
+                key: const ValueKey('conversation-card-marked-unread'),
+                child: RaftSidebarQuietNewDot(
+                  label: raftText(context, 'Marked as unread'),
+                ),
               ),
           ],
           action: row['kind'] == 'mention_action'
@@ -321,3 +333,15 @@ class ActivityListRowView extends StatelessWidget {
     );
   }
 }
+
+/// Whether an Activity [row] of [w] is marked unread with no count (Web
+/// `useScopeMarkedUnread(inboxItemChannelId(item))`).
+bool activityRowMarkedUnread(WorkspaceController w, Map row) {
+  MarkedUnreadSync.of(w);
+  return w.conversationReads.marks.contains(activityScopeId(row));
+}
+
+/// InboxContextMenu `showsUnread`: the row's count or its marked-unread flag,
+/// so Mark as Read clears a mark.
+bool activityRowShowsUnread(WorkspaceController w, Map row) =>
+    (row['unreadCount'] as num? ?? 0) > 0 || activityRowMarkedUnread(w, row);
