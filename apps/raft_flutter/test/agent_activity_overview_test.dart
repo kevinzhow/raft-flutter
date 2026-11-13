@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_flutter/features/agent_activity_pane.dart';
 import 'package:raft_flutter/features/agent_activity_summaries.dart';
 import 'package:raft_flutter/features/agent_detail_view.dart';
 
@@ -113,42 +112,49 @@ void main() {
   });
 
   group('Activity tab', () {
-    testWidgets('without the flag it is the raw log, as before', (
+    // Web 1.24 AgentActivityLog.tsx:647, 704 (`activity_overview_web_v0` is
+    // retired): a server that still answers it off gets the Overview too.
+    testWidgets('the retired flag answered off still opens on the Overview', (
       tester,
     ) async {
-      await _open(tester, flags: const {});
-      expect(find.byKey(const ValueKey('activity-view')), findsNothing);
-      expect(find.byKey(const ValueKey('activity-overview')), findsNothing);
+      await _open(
+        tester,
+        flags: const {},
+        queryRoutes: _summaries([
+          [_turn('t1')],
+        ]),
+      );
+      expect(find.byKey(const ValueKey('activity-view')), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity-overview')), findsOneWidget);
     });
 
-    testWidgets(
-      'with the flag it opens on the Overview, the raw log one toggle away',
-      (tester) async {
-        await _open(
-          tester,
-          queryRoutes: _summaries([
-            [_turn('t1')],
-          ]),
-          routes: {
-            '/agents/a/activity-log': () => [
-              {
-                'timestamp': _t0,
-                'entry': {'kind': 'thinking', 'text': 'pondering'},
-              },
-            ],
-          },
-        );
-        expect(find.byKey(const ValueKey('activity-view')), findsOneWidget);
-        expect(find.byKey(const ValueKey('activity-overview')), findsOneWidget);
-        await tester.tap(find.byKey(const ValueKey('activity-view-raw')));
-        await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('activity-overview')), findsNothing);
-        expect(find.text('pondering'), findsOneWidget);
-        await tester.tap(find.byKey(const ValueKey('activity-view-overview')));
-        await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('activity-overview')), findsOneWidget);
-      },
-    );
+    testWidgets('it opens on the Overview, the raw log one toggle away', (
+      tester,
+    ) async {
+      await _open(
+        tester,
+        queryRoutes: _summaries([
+          [_turn('t1')],
+        ]),
+        routes: {
+          '/agents/a/activity-log': () => [
+            {
+              'timestamp': _t0,
+              'entry': {'kind': 'thinking', 'text': 'pondering'},
+            },
+          ],
+        },
+      );
+      expect(find.byKey(const ValueKey('activity-view')), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity-overview')), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('activity-view-raw')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('activity-overview')), findsNothing);
+      expect(find.text('pondering'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('activity-view-overview')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('activity-overview')), findsOneWidget);
+    });
 
     testWidgets(
       'each turn: time range, outcome, trigger, actions and the last reply',
@@ -407,13 +413,16 @@ void main() {
       expect(find.text("Couldn't load the overview."), findsNothing);
     });
 
-    testWidgets('the flag is read from the server', (tester) async {
+    testWidgets('no flag is read from the server', (tester) async {
       final (_, client) = await _open(tester, queryRoutes: _summaries([[]]));
       expect(
-        client.writes.where((w) => w.$2 == '/feature-flags/evaluate'),
-        isNotEmpty,
+        client.writes.where(
+          (w) =>
+              w.$2 == '/feature-flags/evaluate' &&
+              '${w.$3}'.contains('activity_overview_web_v0'),
+        ),
+        isEmpty,
       );
-      expect(activityOverviewWebFlag, 'activity_overview_web_v0');
     });
   });
 
@@ -454,6 +463,8 @@ void main() {
         ],
       },
     );
+    await tester.tap(find.byKey(const ValueKey('activity-view-raw')));
+    await tester.pumpAndSettle();
     expect(find.text('Subagent: Explore', findRichText: true), findsOneWidget);
     // The expandable (long) row keeps its badge too.
     expect(find.text('Subagent: Plan', findRichText: true), findsOneWidget);

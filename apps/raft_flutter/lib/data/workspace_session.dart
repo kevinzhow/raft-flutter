@@ -78,21 +78,6 @@ class WorkspaceSession
   RaftRecord? get server => _serverDirectory.server;
   set server(RaftRecord? value) => _serverDirectory.server = value;
   bool connected = false;
-  @override
-  bool get syncCoreNotificationPrefsEnabled =>
-      _features.syncCoreNotificationPrefsEnabled;
-  set syncCoreNotificationPrefsEnabled(bool value) =>
-      _features.syncCoreNotificationPrefsEnabled = value;
-  bool get remoteComputerUpgradeEnabled =>
-      _features.remoteComputerUpgradeEnabled;
-  set remoteComputerUpgradeEnabled(bool value) =>
-      _features.remoteComputerUpgradeEnabled = value;
-  bool get agentMigrationEnabled => _features.agentMigrationEnabled;
-  set agentMigrationEnabled(bool value) =>
-      _features.agentMigrationEnabled = value;
-  bool get runtimeFormV2WebEnabled => _features.runtimeFormV2WebEnabled;
-  set runtimeFormV2WebEnabled(bool value) =>
-      _features.runtimeFormV2WebEnabled = value;
   // ignore: raft_lints/avoid_unreleased_resource -- The composition root disposes this notifier at the original ordered disposal stage.
   final resumes = ValueNotifier<int>(0);
   late final StreamSubscription<RaftEvent> subscription;
@@ -101,11 +86,6 @@ class WorkspaceSession
   final _burstAt = BurstReads();
   int get planRevision => _serverDirectory.planRevision;
   set planRevision(int value) => _serverDirectory.planRevision = value;
-  static const remoteComputerUpgradeFlag =
-      WorkspaceSessionFeatures.remoteComputerUpgradeFlag;
-  static const agentMigrationFlag = WorkspaceSessionFeatures.agentMigrationFlag;
-  static const runtimeFormV2WebFlag =
-      WorkspaceSessionFeatures.runtimeFormV2WebFlag;
   static const _burstFreshness = Duration(seconds: 15);
   static const _membershipResumeFreshness = Duration(seconds: 60);
   static const presenceEvents = {
@@ -246,7 +226,6 @@ class WorkspaceSession
     server = null;
     sidebarOrder = {};
     error = null;
-    _features.invalidateRequests();
     if (ownsClient) client.selectServer(null);
     loading = false;
     messages.closeServerLoading();

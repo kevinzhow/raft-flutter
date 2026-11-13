@@ -6,7 +6,6 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/plain_listenable.dart';
 import '../data/workspace_controller.dart';
-import 'attachment_comments_flag.dart';
 import '../data/personal_presentation.dart' show PersonalPresentationScope;
 
 // Web MessageItem `AttachmentCommentRefChip` and `handleJumpToCommentHost`: a
@@ -121,8 +120,8 @@ Future<void> _openHost(
 }
 
 /// The message [body] with the `re:` chip (and the anchor's quote) above it
-/// when the message comments on an attachment and the server has attachment
-/// comments on. [body] is returned as it is otherwise.
+/// when the message comments on an attachment. [body] is returned as it is
+/// otherwise.
 Widget withAttachmentCommentRef(
   BuildContext context,
   WorkspaceController w,
@@ -135,33 +134,21 @@ Widget withAttachmentCommentRef(
     context,
     w.client.user?.string('preferredMessageBodyFontSize'),
   );
-  final gate = AttachmentCommentsGate.of(w);
-  return ListenableBuilder(
-    listenable: gate,
-    builder: (context, _) {
-      if (!gate.enabled) {
-        // Learn the flag (cached for the next first frame); until it is on,
-        // the message reads as a plain one.
-        unawaited(gate.ensure());
-        return body;
-      }
-      final host = commentHostOf(ref);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          RaftAttachmentCommentRef(
-            filename: ref['filename'] as String,
-            anchorLabel: ref['anchorLabel'] as String?,
-            anchorQuote: ref['anchorQuote'] as String?,
-            fontSize: fontSize,
-            onJump: host == null
-                ? null
-                : () => unawaited(_openHost(w, ref, host)),
-          ),
-          body,
-        ],
-      );
-    },
+  // Attachment comments are on for everyone since Web 1.24 (the
+  // `attachment_comments_v0` gate is retired).
+  final host = commentHostOf(ref);
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      RaftAttachmentCommentRef(
+        filename: ref['filename'] as String,
+        anchorLabel: ref['anchorLabel'] as String?,
+        anchorQuote: ref['anchorQuote'] as String?,
+        fontSize: fontSize,
+        onJump: host == null ? null : () => unawaited(_openHost(w, ref, host)),
+      ),
+      body,
+    ],
   );
 }

@@ -119,7 +119,6 @@ Future<(WorkspaceController, _Client)> _open(
   WidgetTester tester, {
   Map<String, dynamic>? agent,
   void Function(_Client)? setup,
-  bool v2Flag = false,
   bool openEditor = true,
 }) async {
   SharedPreferences.setMockInitialValues({});
@@ -129,8 +128,7 @@ Future<(WorkspaceController, _Client)> _open(
   final c = _Client(agent ?? _agent())..selectServer('s');
   setup?.call(c);
   final w = WorkspaceController(c)
-    ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
-    ..runtimeFormV2WebEnabled = v2Flag;
+    ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'});
   addTearDown(() async {
     w.dispose();
     await c.stream.close();
@@ -289,7 +287,7 @@ void main() {
     );
   });
 
-  testWidgets('without the v2 flag the legacy fields are presented', (
+  testWidgets('without the runtime marker the legacy fields are presented', (
     tester,
   ) async {
     await _open(tester);
@@ -312,41 +310,13 @@ void main() {
     expect(_saveEnabled(tester), isFalse);
   });
 
-  testWidgets(
-    'the flag without the runtime marker stays on the legacy fields',
-    (tester) async {
-      await _open(tester, v2Flag: true);
-      expect(_k('runtime-editor-model'), findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    'the runtime marker without the flag stays on the legacy fields',
-    (tester) async {
-      final (_, client) = await _open(
-        tester,
-        setup: (c) => c.runtimeOptions = {
-          'options': [
-            {
-              'runtimeId': 'codex',
-              'canSelectInThisContext': true,
-              'runtimeFormV2': {'protocolVersion': 2},
-            },
-          ],
-        },
-      );
-      expect(_k('runtime-editor-model'), findsOneWidget);
-      expect(
-        client.calls.where((c) => c.$2 == '/agents/a1/runtime-form'),
-        isEmpty,
-      );
-    },
-  );
-
-  testWidgets('flag and marker present the protocol-v2 form', (tester) async {
+  // Web 1.24 CreateAgentDialog.tsx:433 / AgentProfileInfo.tsx:206: the
+  // runtime's marker alone decides (`runtime_form_v2_web` is retired).
+  testWidgets('the runtime marker alone presents the protocol-v2 form', (
+    tester,
+  ) async {
     final (_, client) = await _open(
       tester,
-      v2Flag: true,
       setup: (c) {
         c.runtimeOptions = {
           'options': [
@@ -381,7 +351,6 @@ void main() {
   testWidgets('a v2 form that cannot be loaded says so', (tester) async {
     await _open(
       tester,
-      v2Flag: true,
       setup: (c) {
         c.runtimeOptions = {
           'options': [
@@ -732,7 +701,6 @@ void main() {
   group('Move to Another Computer', () {
     Future<_Client> profile(
       WidgetTester tester, {
-      required bool flag,
       Map<String, dynamic>? migration,
     }) async {
       SharedPreferences.setMockInitialValues({});
@@ -743,8 +711,7 @@ void main() {
         ..selectServer('s')
         ..migration = migration;
       final w = WorkspaceController(c)
-        ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
-        ..agentMigrationEnabled = flag;
+        ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'});
       addTearDown(() async {
         w.dispose();
         await c.stream.close();
@@ -786,7 +753,7 @@ void main() {
     testWidgets('shows the migration inline and disables Move while it runs', (
       tester,
     ) async {
-      await profile(tester, flag: true, migration: active);
+      await profile(tester, migration: active);
       expect(find.text('Migrating to m2'), findsOneWidget);
       expect(find.text('Transferring workspace to m2.'), findsOneWidget);
       // Web: the progress block owns the only action (Cancel) while it runs.
@@ -803,7 +770,7 @@ void main() {
     testWidgets('no migration shows nothing and keeps Move enabled', (
       tester,
     ) async {
-      await profile(tester, flag: true);
+      await profile(tester);
       expect(find.textContaining('Migrating to'), findsNothing);
       expect(moveEnabled(tester), isTrue);
     });
@@ -813,7 +780,6 @@ void main() {
     ) async {
       await profile(
         tester,
-        flag: true,
         migration: {...active, 'state': 'failed', 'failureReason': 'x'},
       );
       expect(find.text('Migration to m2 needs attention'), findsOneWidget);
@@ -830,7 +796,7 @@ void main() {
     testWidgets(
       'a migration push re-reads and the 2s poll covers a missed push',
       (tester) async {
-        final c = await profile(tester, flag: true, migration: active);
+        final c = await profile(tester, migration: active);
         int reads() =>
             c.calls.where((x) => x.$2 == '/agents/a1/migration').length;
         final first = reads();
@@ -861,12 +827,10 @@ void main() {
       },
     );
 
-    testWidgets('is offered only while agent_migration_v0 is on', (
-      tester,
-    ) async {
-      await profile(tester, flag: false);
-      expect(find.text('Agent migration', skipOffstage: false), findsNothing);
-      await profile(tester, flag: true);
+    // Web 1.24 AgentMigrationSection.tsx:70, AgentDetailPanel.tsx:873: a
+    // computer and the permission (`agent_migration_v0` is retired).
+    testWidgets('is offered without a flag', (tester) async {
+      await profile(tester);
       expect(find.text('Agent migration', skipOffstage: false), findsOneWidget);
     });
   });

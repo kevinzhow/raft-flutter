@@ -116,6 +116,14 @@ void main() {
         return {'unreadCount': 1, 'seq': '5', 'maxReadSeq': '5'};
       };
     }
+    api.routes['POST /channels/c1/conversation-read-all'] = (o) {
+      posts.add({'path': o.path});
+      return {
+        'scopes': [
+          {'scopeId': 'c1', 'maxReadSeq': '5', 'readStateVersion': 1},
+        ],
+      };
+    };
     api.routes['POST /channels/c1/archive'] = (o) {
       posts.add({'path': o.path});
       return {'id': 'c1', 'archivedAt': '2026-10-12T00:00:00Z'};
@@ -176,9 +184,11 @@ void main() {
   ) async {
     await setup(tester, unread: {'c1': 2});
     await longPress(tester, row('c1'));
+    // A joined channel's menu reads it with its threads (Web 1.24
+    // SidebarRowContextMenu.tsx:52-58; the two gating flags are retired).
     final labels = [
       'Move to Section',
-      'Mark as Read',
+      'Mark All as Read',
       'Pin',
       'Mute',
       'Archive Channel',
@@ -642,7 +652,7 @@ void main() {
       // The server agrees once the read receipt lands.
       api.routes['GET /channels/unread'] = (_) => {'channels': {}};
       await longPress(tester, row('c1'));
-      await tester.tap(find.text('Mark as Read'));
+      await tester.tap(find.text('Mark All as Read'));
       await tester.pumpAndSettle();
       expect(w.conversationReads.mentions, isEmpty);
       expect(

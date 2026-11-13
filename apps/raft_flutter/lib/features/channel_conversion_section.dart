@@ -468,17 +468,14 @@ class _ConversionSectionState
     if (!manager || !enabled || channel['name'] == 'all') {
       return const SizedBox.shrink();
     }
-    if (!{'channel', 'private'}.contains(channel['type']) &&
-        snapshot.status == 'idle' &&
-        pending == null) {
-      return const SizedBox.shrink();
-    }
-    final canStart =
-        w.can('federateChannels', resource: currentChannel) &&
-        pending == null &&
-        !snapshot.active &&
-        snapshot.job['status'] != 'failed' &&
-        {'channel', 'private'}.contains(channel['type']);
+    // Web 1.24 EditChannelDialog.tsx:220, 401: the section only follows a
+    // conversion under way (awaiting its receipt, pending, running or failed);
+    // starting one is retired on every server, so there is no offer.
+    final inProgress =
+        pending != null ||
+        snapshot.active ||
+        snapshot.job['status'] == 'failed';
+    if (!inProgress) return const SizedBox.shrink();
     return RaftPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -540,12 +537,6 @@ class _ConversionSectionState
           Wrap(
             spacing: 8,
             children: [
-              if (canStart)
-                action(
-                  'Convert to Joint Channel',
-                  guard(() => command('start')),
-                  glyph: RaftGlyph.gitBranch,
-                ),
               if (pending == null && snapshot.job['status'] == 'failed')
                 action('Retry Conversion', guard(() => command('retry'))),
               if (pending == null && snapshot.canCancel)

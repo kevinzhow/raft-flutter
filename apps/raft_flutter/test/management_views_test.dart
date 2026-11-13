@@ -843,7 +843,8 @@ void main() {
           'effective': enrolled,
         },
         {
-          'labKey': 'inline_thread_replies_v0',
+          // Web 1.24 serverLabsSettings.ts:57-58 hides this retired key.
+          'labKey': 'attachment_comments_v0',
           'name': 'Retired',
           'description': '',
           'state': 'retired',

@@ -1,10 +1,8 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/features/channel_conversion_section.dart';
 
 import 'support/joint_channel_fixture.dart' show fixture, host;
@@ -122,7 +120,7 @@ void main() {
     );
   });
   testWidgets(
-    'default-off or unknown flag never reads job or renders conversion action',
+    'external channels off or unknown never reads a job or renders the section',
     (t) async {
       final (w, a) = (await t.runAsync(fixture))!;
       addTearDown(w.dispose);
@@ -145,120 +143,30 @@ void main() {
       );
     },
   );
+  // Web 1.24: converting to a joint channel is retired on every server
+  // (EditChannelDialog.tsx:184-188; the server answers 404
+  // joint_conversion_retired), and the section only follows a conversion
+  // under way where external_channels_v1 is on (channels.ts:867-876).
   testWidgets(
-    'observable command uses UUID and waits for actual job progress through mounted GET',
+    'an idle channel gets no convert offer with external channels on',
     (t) async {
       final (w, a) = (await t.runAsync(fixture))!;
       addTearDown(w.dispose);
       w.channels = [RaftChannel(channel())];
-      a.routes['POST /feature-flags/evaluate'] = (_) => {
+      a.routes['POST /feature-flags/evaluate'] = (o) => {
         'evaluations': [
-          {'key': channelConversionFlag, 'enabled': true},
+          for (final key in (o.data as Map)['keys'] as List)
+            {'key': key, 'enabled': true},
         ],
       };
       a.routes['GET /channels/c1'] = (_) => channel();
-      a.routes['GET /attachments/upload-sessions/c1/active'] = (_) => {
-        'uploads': [],
-      };
-      String? commandId;
-      a.routes['POST /channels/c1/convert-to-joint'] = (o) {
-        commandId = o.data['commandId'];
-        return {
-          'conversionState': {
-            'status': 'pending',
-            'command': {'id': commandId, 'kind': 'start', 'status': 'pending'},
-            'job': null,
-          },
-        };
-      };
       await t.pumpWidget(
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      await confirm(t, 'Convert to Joint Channel');
-      final call = a.calls.singleWhere(
-        (c) => c.path.endsWith('/convert-to-joint'),
-      );
-      expect(call.data, {'commandId': commandId, 'observeProgress': true});
-      expect(find.text('Waiting for server confirmation.'), findsOneWidget);
+      expect(channelConversionFlag, 'external_channels_v1');
       expect(find.text('Convert to Joint Channel'), findsNothing);
-      a.routes['GET /channels/c1'] = (_) => channel(
-        job: job('running'),
-        command: {
-          'id': commandId,
-          'kind': 'start',
-          'status': 'completed',
-          'jobId': 'j1',
-        },
-      );
-      await t.tap(find.text('Check Conversion Status'));
-      await flush(t);
-      expect(find.text('Cancel Conversion'), findsOneWidget);
-      a.routes['GET /channels/conversion-jobs/j1'] = (_) => {
-        'channel': channel(type: 'joint', job: job('done')),
-        'conversionJob': job('done'),
-      };
-      await t.pump(const Duration(seconds: 1));
-      await flush(t);
-      expect(find.text('Conversion complete'), findsOneWidget);
-      expect(
-        a.calls.any((c) => c.path == '/channels/conversion-jobs/j1'),
-        true,
-      );
-      await t.pumpWidget(const SizedBox());
-    },
-  );
-  testWidgets(
-    'admission upload rejection exposes actual recoverable sessions and cancels by opaque coordinate',
-    (t) async {
-      final (w, a) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      w.channels = [RaftChannel(channel())];
-      a.routes['POST /feature-flags/evaluate'] = (_) => {
-        'evaluations': [
-          {'key': channelConversionFlag, 'enabled': true},
-        ],
-      };
-      a.routes['GET /channels/c1'] = (_) => channel();
-      a.routes['POST /channels/c1/convert-to-joint'] = (_) => {
-        'error': 'Attachment uploads are still in flight',
-        'code': 'channel_conversion_uploads_in_flight',
-        'uploadCount': 1,
-      };
-      a.statuses['POST /channels/c1/convert-to-joint'] = 409;
-      a.routes['GET /attachments/upload-sessions/c1/active'] = (_) => {
-        'uploads': [
-          {
-            'uploadId': 'u1',
-            'filename': 'Notes.pdf',
-            'state': 'pending',
-            'sizeBytes': 12,
-            'mimeType': 'application/pdf',
-            'expiresAt': '2026-10-08T23:00:00Z',
-          },
-        ],
-      };
-      a.routes['DELETE /attachments/upload-sessions/u1'] = (_) => {
-        'uploadId': 'u1',
-        'state': 'canceled',
-      };
-      await t.pumpWidget(
-        host(ChannelConversionSection(controller: w, channelId: 'c1')),
-      );
-      await flush(t);
-      await confirm(t, 'Convert to Joint Channel');
-      expect(find.text('Notes.pdf'), findsOneWidget);
-      expect(find.text('u1'), findsNothing);
-      await confirm(t, 'Cancel Upload');
-      expect(find.text('Notes.pdf'), findsNothing);
-      expect(
-        a.calls.any(
-          (c) =>
-              c.method == 'DELETE' &&
-              c.path == '/attachments/upload-sessions/u1',
-        ),
-        true,
-      );
+      expect(find.text('Chat with members from other servers'), findsNothing);
       await t.pumpWidget(const SizedBox());
     },
   );
@@ -302,125 +210,6 @@ void main() {
     },
   );
   testWidgets(
-    'lost response stays uncertain across remount and ignores historical done receipt',
-    (t) async {
-      final (w, a) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      w.channels = [RaftChannel(channel())];
-      final previous = channel(
-        job: job('done'),
-        command: {
-          'id': 'old',
-          'kind': 'start',
-          'status': 'completed',
-          'jobId': 'j1',
-        },
-      );
-      a.routes['POST /feature-flags/evaluate'] = (_) => {
-        'evaluations': [
-          {'key': channelConversionFlag, 'enabled': true},
-        ],
-      };
-      a.routes['GET /channels/c1'] = (_) => previous;
-      a.routes['GET /channels/conversion-jobs/j1'] = (_) => {
-        'channel': previous,
-        'conversionJob': job('done'),
-      };
-      a.routes['GET /attachments/upload-sessions/c1/active'] = (_) => {
-        'uploads': [],
-      };
-      a.routes['POST /channels/c1/convert-to-joint'] = (o) =>
-          throw DioException(
-            requestOptions: o,
-            type: DioExceptionType.connectionError,
-          );
-      await t.pumpWidget(
-        host(ChannelConversionSection(controller: w, channelId: 'c1')),
-      );
-      await flush(t);
-      await confirm(t, 'Convert to Joint Channel');
-      expect(find.text('Conversion outcome is not confirmed.'), findsOneWidget);
-      expect(find.text('Conversion complete'), findsNothing);
-      await t.pumpWidget(
-        host(
-          ChannelConversionSection(
-            key: const ValueKey('remount'),
-            controller: w,
-            channelId: 'c1',
-          ),
-        ),
-      );
-      await flush(t);
-      expect(find.text('Convert to Joint Channel'), findsNothing);
-      expect(find.text('Conversion complete'), findsNothing);
-      expect(
-        a.calls.where((c) => c.path.endsWith('/convert-to-joint')).length,
-        1,
-      );
-      await t.pumpWidget(const SizedBox());
-    },
-  );
-  testWidgets(
-    'role downgrade closes confirmation and retained submit cannot start conversion',
-    (t) async {
-      final (w, a) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      w.channels = [RaftChannel(channel())];
-      a.routes['POST /feature-flags/evaluate'] = (_) => {
-        'evaluations': [
-          {'key': channelConversionFlag, 'enabled': true},
-        ],
-      };
-      a.routes['GET /channels/c1'] = (_) => channel();
-      await t.pumpWidget(
-        host(ChannelConversionSection(controller: w, channelId: 'c1')),
-      );
-      await flush(t);
-      await t.tap(find.text('Convert to Joint Channel'));
-      await flush(t);
-      final retained = t.widget<RaftFormDialog>(find.byType(RaftFormDialog));
-      w.server = RaftRecord({'id': 's1', 'role': 'member'});
-      w.notifyListeners();
-      await flush(t);
-      expect(find.byType(RaftFormDialog), findsNothing);
-      await expectLater(retained.onSubmit({}), throwsStateError);
-      expect(
-        a.calls.where((c) => c.path.endsWith('/convert-to-joint')),
-        isEmpty,
-      );
-    },
-  );
-  testWidgets(
-    'fresh kill switch closes an open form before any conversion POST',
-    (t) async {
-      final (w, a) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      w.channels = [RaftChannel(channel())];
-      bool allowed = true;
-      a.routes['POST /feature-flags/evaluate'] = (_) => {
-        'evaluations': [
-          {'key': channelConversionFlag, 'enabled': allowed},
-        ],
-      };
-      a.routes['GET /channels/c1'] = (_) => channel();
-      await t.pumpWidget(
-        host(ChannelConversionSection(controller: w, channelId: 'c1')),
-      );
-      await flush(t);
-      await t.tap(find.text('Convert to Joint Channel'));
-      await flush(t);
-      allowed = false;
-      await t.tap(find.text('Convert to Joint Channel').last);
-      await flush(t);
-      expect(find.byType(RaftFormDialog), findsNothing);
-      expect(find.text('Chat with members from other servers'), findsNothing);
-      expect(
-        a.calls.where((c) => c.path.endsWith('/convert-to-joint')),
-        isEmpty,
-      );
-    },
-  );
-  testWidgets(
     'cancel acknowledgement cannot be overwritten by an older running poll',
     (t) async {
       final (w, a) = (await t.runAsync(fixture))!;
@@ -454,54 +243,19 @@ void main() {
       a.routes['POST /channels/conversion-jobs/j1/cancel'] = (_) => canceled;
       a.routes['GET /channels/conversion-jobs/j1'] = (_) => canceled;
       await confirm(t, 'Cancel Conversion');
-      expect(find.text('Conversion canceled'), findsOneWidget);
       expect(a.calls.singleWhere((c) => c.path.endsWith('/cancel')).data.keys, [
         'commandId',
       ]);
+      // Canceled is no longer under way: the section goes (Web 1.24
+      // EditChannelDialog.tsx:220, 401), and the older poll cannot bring the
+      // running job back.
+      expect(find.text('Cancel Conversion'), findsNothing);
       oldPoll.complete({
         'channel': channel(job: job('running')),
         'conversionJob': job('running'),
       });
       await flush(t);
-      expect(find.text('Conversion canceled'), findsOneWidget);
       expect(find.text('Cancel Conversion'), findsNothing);
-      await t.pumpWidget(const SizedBox());
-    },
-  );
-
-  testWidgets(
-    'late failed-job conflict cannot restore private recovery controls after role loss',
-    (t) async {
-      final (w, a) = (await t.runAsync(fixture))!;
-      addTearDown(w.dispose);
-      w.channels = [RaftChannel(channel())];
-      a.routes['POST /feature-flags/evaluate'] = (_) => {
-        'evaluations': [
-          {'key': channelConversionFlag, 'enabled': true},
-        ],
-      };
-      a.routes['GET /channels/c1'] = (_) => channel();
-      final late = Completer<dynamic>();
-      a.routes['POST /channels/c1/convert-to-joint'] = (_) => late.future;
-      a.statuses['POST /channels/c1/convert-to-joint'] = 409;
-      await t.pumpWidget(
-        host(ChannelConversionSection(controller: w, channelId: 'c1')),
-      );
-      await flush(t);
-      await confirm(t, 'Convert to Joint Channel');
-      expect(find.byType(RaftFormDialog), findsOneWidget);
-      w.server = RaftRecord({'id': 's1', 'role': 'member'});
-      w.notifyListeners();
-      await flush(t);
-      late.complete({
-        'error': 'Private conversion receipt',
-        'conversionJob': {...job('failed'), 'error': 'Private recovery detail'},
-      });
-      await flush(t);
-      expect(find.byType(RaftFormDialog), findsNothing);
-      expect(find.text('Private recovery detail'), findsNothing);
-      expect(find.text('Private conversion receipt'), findsNothing);
-      expect(find.text('Retry Conversion'), findsNothing);
       await t.pumpWidget(const SizedBox());
     },
   );

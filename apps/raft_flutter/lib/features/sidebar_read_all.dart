@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import '../data/server_error_code.dart';
 import '../data/source_read_all_transport.dart';
 import '../data/workspace_controller.dart';
-import 'activity_rollout_flags.dart';
 import 'sidebar_thread_unread.dart';
 
 /// Web `messageStore.markConversationRead`: the sidebar's "Mark All as Read"
@@ -12,10 +10,6 @@ import 'sidebar_thread_unread.dart';
 /// advanced (`scopes[]` of `scopeId`, `maxReadSeq`, `readStateVersion`); each is
 /// folded into the read ledger as an acknowledged frontier, then the unread
 /// counts and the followed-thread list are read again.
-///
-/// A server that no longer has `sidebar_mark_all_read_v0` answers 404
-/// `sidebar_mark_all_read_disabled`: the flags are evaluated again and only the
-/// channel itself is read, as the plain "Mark as Read" would have.
 Future<void> markConversationRead(
   WorkspaceController w,
   String channelId,
@@ -60,13 +54,9 @@ Future<void> markConversationRead(
     settleThreads();
     await Future.wait([w.refreshUnread(), w.followedThreads.refresh()]);
     settleThreads();
-  } catch (error) {
+  } catch (_) {
+    // A failure after the account or server changed belongs to nobody.
     if (w.services.isDisposed() || !identity.current(w.client)) return;
-    if (serverErrorCode(error) == 'sidebar_mark_all_read_disabled') {
-      ActivityRolloutFlags.of(w).reevaluate();
-      await w.conversationReads.markAllRead(channelId, identity: identity);
-      return;
-    }
     rethrow;
   }
 }
@@ -75,8 +65,8 @@ Future<void> markConversationRead(
 /// Mark as Unread waits for the server's count (no invented badge). A failure
 /// only reloads the unread counts (no message). A joined channel's menu
 /// ([channel]) reads it together with its followed threads
-/// (`conversation-read-all`, "Mark All as Read") while `thread_unread_badge_v0`
-/// and `sidebar_mark_all_read_v0` are on, and then counts the thread unread too.
+/// (`conversation-read-all`, "Mark All as Read") and counts the thread unread
+/// too (Web 1.24 SidebarReadToggleMenuItem.tsx:23).
 class SidebarReadToggle {
   SidebarReadToggle(this.w, this.id, {required bool channel})
     : all = channel && SidebarThreadUnread.of(w).readsConversation;

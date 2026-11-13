@@ -172,8 +172,7 @@ Future<_Client> _mount(WidgetTester t) async {
   addTearDown(t.view.reset);
   final c = _Client();
   final w = WorkspaceController(c)
-    ..server = RaftRecord({'id': 's', 'role': 'owner'})
-    ..runtimeFormV2WebEnabled = true;
+    ..server = RaftRecord({'id': 's', 'role': 'owner'});
   addTearDown(() async {
     await t.pumpWidget(const SizedBox.shrink());
     for (final gate in [c.admissions, c.models, c.definition, c.optionSource]) {

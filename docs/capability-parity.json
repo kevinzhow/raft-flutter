@@ -3360,7 +3360,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "Channel members row hover action 'Make admin' / 'Demote'; 'Can't demote server admins' dialog",
-   "gate": "feature flag channel_manager_role_actions_v0 + canChangeChannelRole on the member; not #all, not archived",
+   "gate": "canChangeChannelRole on the member, or the channel's changeChannelMemberRoles capability for the protected-admin explanation (Web 1.24 MemberRoleActions.tsx:41-48; channel_manager_role_actions_v0 is retired); not #all, not archived",
    "flutterEntry": "channel_members.dart roleAction 'Make admin' / 'Demote' + protectedDemote dialog (same flag)",
    "flutterRefs": [
     {
@@ -3369,7 +3369,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/channel_members.dart",
-     "needle": "channel_manager_role_actions_v0"
+     "needle": "changeChannelMemberRoles"
     }
    ],
    "justification": "",
@@ -5502,7 +5502,7 @@
    "background": true,
    "status": "covered",
    "webEntry": "Profile > AgentMigrationSection (between Skills and Actions) button label ('Migrate' / 'Try migration again') + MigrationProgressPanel",
-   "gate": "agent_migration_v0 flag",
+   "gate": "agent has a computer + canManageAgent (agent_migration_v0 is retired in Web 1.24)",
    "flutterEntry": "agent_migration_section.dart AgentMigrationSection (reads on mount, realtime listener, polling via agent_migration_status.dart) + agent_migration_panel.dart MigrationProgressPanel",
    "flutterRefs": [
     {
@@ -5554,7 +5554,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "AgentDetailPanel > 'Edit runtime config' modal (v2 mode)",
-   "gate": "canManageAgent; flag runtime_form_v2_web + marker",
+   "gate": "canManageAgent; admission marker runtimeFormV2.protocolVersion 2 (runtime_form_v2_web is retired in Web 1.24)",
    "flutterEntry": "runtime_form_dialog.dart (editing branch) opened from agent_runtime_editor.dart",
    "flutterRefs": [
     {
@@ -5563,7 +5563,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_runtime_editor.dart",
-     "needle": "runtimeFormV2WebEnabled"
+     "needle": "marker['protocolVersion'] == 2"
     }
    ],
    "justification": "",
@@ -5806,7 +5806,7 @@
    "background": false,
    "status": "na",
    "webEntry": "CreateAgentDialog / Edit runtime config (RuntimeConfigFields schemaBacked mode via useRuntimeFormDefinitionCatalog)",
-   "gate": "runtime option carries formDefinitionRef; applies when runtime_form_v2_web is off or runtime lacks v2 marker",
+   "gate": "runtime option carries formDefinitionRef; applies when the runtime lacks the v2 marker",
    "flutterEntry": "",
    "flutterRefs": [],
    "justification": "Owner decision (plan section 1, 2026-10-21; recorded on this row 2026-10-24): Flutter uses the v2 runtime form protocol (runtime-forms/v2) for create and edit and never the v1 schema-backed path. Web uses v1 only while runtime_form_v2_web (default off) is off or a runtime lacks the v2 marker; the v2 route serves every runtime the app can create (checked against a local v1.21.23 server: claude, codex, builtin, pi, opencode, kimi-sdk, gemini and grok all answer a v2 form with live or static option sources).",
@@ -5836,7 +5836,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "CreateAgentDialog runtime fields (v2 mode)",
-   "gate": "runtime_form_v2_web flag + admission marker (Web); Flutter always uses v2",
+   "gate": "admission marker (Web; runtime_form_v2_web is retired in Web 1.24); Flutter always uses v2",
    "flutterEntry": "runtime_form_dialog.dart RuntimeFormController.load() from create_agent_dialog.dart selectRuntime()",
    "flutterRefs": [
     {
@@ -5860,7 +5860,7 @@
    "background": true,
    "status": "covered",
    "webEntry": "CreateAgentDialog / Edit runtime config v2 form fields (select/dependent_select with retry)",
-   "gate": "runtime_form_v2_web flag + admission marker",
+   "gate": "admission marker (runtime_form_v2_web is retired in Web 1.24)",
    "flutterEntry": "runtime_form_dialog.dart RuntimeFormController.source()",
    "flutterRefs": [
     {
@@ -6199,8 +6199,8 @@
    "background": false,
    "status": "covered",
    "webEntry": "AgentDetailPanel > Profile > AgentMigrationSection > 'Migrate' (AgentMigrationDialog; AgentMigrationUpgradeDialog when plan is not Pro)",
-   "gate": "agent_migration_v0 flag, agent has computer, canManageAgent, plan Pro",
-   "flutterEntry": "agent_migration_section.dart AgentMigrationSection + agent_migration_start_dialog.dart (flag w.agentMigrationEnabled and migrateAgents capability in fleet_views.dart canMigrate)",
+   "gate": "agent has computer, canManageAgent, plan Pro (agent_migration_v0 is retired in Web 1.24)",
+   "flutterEntry": "agent_migration_section.dart AgentMigrationSection + agent_migration_start_dialog.dart (migrateAgents capability and a computer in fleet_views.dart canMigrate)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_migration_section.dart",
@@ -6208,7 +6208,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/fleet_views.dart",
-     "needle": "agentMigrationEnabled"
+     "needle": "canMigrate:"
     }
    ],
    "justification": "",
@@ -6223,7 +6223,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "AgentMigrationSection / MigrationProgressPanel > 'Cancel' action (AgentMigrationCancelDialog)",
-   "gate": "agent_migration_v0 flag + agent has a computer + canManageAgent",
+   "gate": "agent has a computer + canManageAgent (agent_migration_v0 is retired in Web 1.24)",
    "flutterEntry": "agent_migration_section.dart cancel() ('Cancel migration?')",
    "flutterRefs": [
     {
@@ -6694,7 +6694,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "Profile > AgentMigrationSection (between Skills and Actions)",
-   "gate": "agent_migration_v0 + computer + canManageAgent",
+   "gate": "computer + canManageAgent (agent_migration_v0 is retired in Web 1.24)",
    "flutterEntry": "agent_detail_view.dart canMigrate -> agent_migration_section.dart AgentMigrationSection",
    "flutterRefs": [
     {
@@ -11160,7 +11160,7 @@
    "status": "covered",
    "webEntry": "AttachmentCommentsPanel inside the lightbox / document / HTML / video preview shell ('Comments' toggle)",
    "gate": "server feature flag attachment comments; viewer.canComment gates posting (archived / not a member / read-only plan)",
-   "flutterEntry": "attachment_comments_view.dart in attachment_preview_dialog.dart, attachment_html_preview.dart and media_image_page.dart comments aside; the panel is offered only while `attachment_comments_v0` is on (attachment_comments_flag.dart)",
+   "flutterEntry": "attachment_comments_view.dart in attachment_preview_dialog.dart, attachment_html_preview.dart and media_image_page.dart comments aside (the attachment_comments_v0 gate is retired in Web 1.24)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/attachment_comments_view.dart",
@@ -11622,7 +11622,7 @@
      "needle": "class RaftAttachmentCommentRef"
     }
    ],
-   "justification": "Web AttachmentCommentRefChip + handleJumpToCommentHost; gated by `attachment_comments_v0`. Web's same-surface 'transient focus' is the ordinary message jump here.",
+   "justification": "Web AttachmentCommentRefChip + handleJumpToCommentHost; ungated since Web 1.24 retired `attachment_comments_v0`. Web's same-surface 'transient focus' is the ordinary message jump here.",
    "impact": "",
    "size": "S"
   },
@@ -12443,7 +12443,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "useUsageLimitAttention.ts (Notification Center, usage-limit attention cards)",
-   "gate": "flag usage_limit_attention_v0 on the current server",
+   "gate": "current server (usage_limit_attention_v0 is retired in Web 1.24)",
    "flutterEntry": "system_notification_store.dart refreshUsageLimit() (parseUsageLimitSnapshot, 60 s poll, fail closed)",
    "flutterRefs": [
     {
@@ -12579,7 +12579,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "useUsageLimitAttention.dismiss",
-   "gate": "flag usage_limit_attention_v0 on the current server",
+   "gate": "current server (usage_limit_attention_v0 is retired in Web 1.24)",
    "flutterEntry": "system_notification_store.dart _receipt(... 'dismiss')",
    "flutterRefs": [
     {
@@ -12599,7 +12599,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "useUsageLimitAttention.markSeen",
-   "gate": "flag usage_limit_attention_v0 on the current server",
+   "gate": "current server (usage_limit_attention_v0 is retired in Web 1.24)",
    "flutterEntry": "system_notification_store.dart _receipt(... 'seen')",
    "flutterRefs": [
     {
@@ -12643,7 +12643,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "Sidebar.tsx ChannelRow (useParentThreadUnread, ChannelUnreadSegments); utils/threadUnreadByParent.ts",
-   "gate": "flag thread_unread_badge_v0",
+   "gate": "joined channel (thread_unread_badge_v0 is retired in Web 1.24)",
    "flutterEntry": "workspace_view.dart channelItem -> SidebarThreadUnread.forChannel (features/sidebar_thread_unread.dart, data/thread_unread_by_parent.dart) -> RaftNavItem threadUnread -> RaftSidebarThreadUnreadCount",
    "flutterRefs": [
     {
@@ -12691,7 +12691,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "components/message/ThreadUnreadJumpPill.tsx rendered by ChatPanel.tsx (channels only)",
-   "gate": "flag thread_unread_badge_v0",
+   "gate": "a channel, not a DM or thread (thread_unread_badge_v0 is retired in Web 1.24)",
    "flutterEntry": "chat_view.dart ChatBottomControls (features/thread_unread_jump.dart): the built rows are measured against their viewport, RaftThreadUnreadJumpPill beside Back to bottom (below) or at the top (above); a click calls jumpToMessage",
    "flutterRefs": [
     {
@@ -15951,7 +15951,7 @@
    "flutterEntry": "Flutter evaluates flags per surface via featureFlagEvaluateBody",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/data/workspace_session_features.dart",
+     "file": "apps/raft_flutter/lib/features/activity_rollout_flags.dart",
      "needle": "/feature-flags/evaluate"
     },
     {
@@ -17620,9 +17620,9 @@
    "capability": "Agent Activity overview: paged summaries of what an agent did",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentActivityOverview (flag activity_overview_web_v0)",
-   "gate": "feature flag activity_overview_web_v0 (default off); canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_activity_pane.dart (flag activity_overview_web_v0, Overview / Raw log toggle) -> agent_activity_overview.dart",
+   "webEntry": "AgentActivityOverview",
+   "gate": "canViewAgentPrivateSurfaces (activity_overview_web_v0 is retired in Web 1.24)",
+   "flutterEntry": "agent_activity_pane.dart (Overview / Raw log toggle) -> agent_activity_overview.dart",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_activity_overview.dart",
@@ -17630,7 +17630,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_activity_pane.dart",
-     "needle": "activity_overview_web_v0"
+     "needle": "ValueKey('activity-view')"
     }
    ],
    "justification": "",
@@ -17960,12 +17960,12 @@
    "kind": "endpoint",
    "id": "POST /channels/:id/conversation-read-all",
    "area": "messages",
-   "capability": "Sidebar \"Mark All as Read\" over the channel and its threads (flag sidebar_mark_all_read_v0; 404 sidebar_mark_all_read_disabled when off)",
+   "capability": "Sidebar \"Mark All as Read\" over the channel and its threads",
    "background": false,
    "status": "covered",
    "webEntry": "messageStore markConversationRead",
-   "gate": "flag sidebar_mark_all_read_v0 + thread_unread_badge_v0",
-   "flutterEntry": "Sidebar channel row menu 'Mark All as Read' (workspace_view_sidebar_menus.dart _readItem -> SidebarReadToggle.run -> markConversationRead, features/sidebar_read_all.dart); a 404 sidebar_mark_all_read_disabled re-evaluates the flags and falls back to read-all",
+   "gate": "joined channel (sidebar_mark_all_read_v0 and thread_unread_badge_v0 are retired in Web 1.24)",
+   "flutterEntry": "Sidebar channel row menu 'Mark All as Read' (workspace_view_sidebar_menus.dart _readItem -> SidebarReadToggle.run -> markConversationRead, features/sidebar_read_all.dart)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/sidebar_read_all.dart",

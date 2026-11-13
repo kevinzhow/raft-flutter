@@ -1,5 +1,5 @@
 // Web components/agent/AgentActivityOverview.tsx: the Activity tab's
-// "Overview" (flag `activity_overview_web_v0`): what the agent is doing now,
+// "Overview" (the tab's default view): what the agent is doing now,
 // then one block per finished turn, newest first, from the per-turn summaries
 // (`GET /agents/:id/activity-summaries`). Detail stays in the raw log.
 import 'dart:async';

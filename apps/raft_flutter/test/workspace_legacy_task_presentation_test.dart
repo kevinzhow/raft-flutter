@@ -162,7 +162,7 @@ void main() {
             expect(
               api.calls.where(
                 (r) =>
-                    r.path.contains('/threads/') ||
+                    _threadRead(r.path) ||
                     r.path.endsWith('/history') ||
                     r.path.startsWith('/messages/context/'),
               ),
@@ -422,8 +422,7 @@ void main() {
           );
           expect(
             api.calls.where(
-              (r) =>
-                  r.path.contains('/threads/') || r.path.endsWith('/history'),
+              (r) => _threadRead(r.path) || r.path.endsWith('/history'),
             ),
             isEmpty,
           );
@@ -486,7 +485,7 @@ void main() {
         );
         expect(
           api.calls.where(
-            (r) => r.path.endsWith('/history') || r.path.contains('/threads/'),
+            (r) => r.path.endsWith('/history') || _threadRead(r.path),
           ),
           isEmpty,
         );
@@ -632,3 +631,8 @@ void main() {
     }
   }
 }
+
+/// A thread read of the panel. The followed-thread list is the sidebar's own
+/// read (every server since Web 1.24 retired `thread_unread_badge_v0`).
+bool _threadRead(String path) =>
+    path.contains('/threads/') && path != '/channels/threads/followed';

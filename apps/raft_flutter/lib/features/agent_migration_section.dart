@@ -26,8 +26,8 @@ import 'billing_view.dart' show RaftBillingPlans;
 import 'management_support.dart';
 
 /// Mounted by the agent detail only where the viewer can manage a non-external
-/// agent that has a computer (Web: `canManageAgent && !isExternalAgent`, the
-/// `agent_migration_v0` flag and `agent.machineId`).
+/// agent that has a computer (Web: `canManageAgent && !isExternalAgent` and
+/// `agent.machineId`; the `agent_migration_v0` flag is retired in Web 1.24).
 class AgentMigrationSection extends StatefulWidget {
   const AgentMigrationSection({
     super.key,

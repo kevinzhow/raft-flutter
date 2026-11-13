@@ -141,11 +141,6 @@ Widget _detail(ParityContext ctx) => ScreenWorkspaceHost(
               : ComputerDetailPanel(
                   controller: w,
                   machine: machine,
-                  remoteUpgradeV2:
-                      ctx.props['flags'] is Map &&
-                      (ctx.props['flags']
-                              as Map)['remote_computer_upgrade_v2'] ==
-                          true,
                   // The React host is the Vite dev server (VITE_DEPLOYMENT_ENV
                   // unset): commands carry no --server-url, exactly as
                   // production does for its default server.

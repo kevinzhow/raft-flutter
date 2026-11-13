@@ -1972,7 +1972,7 @@
     },
     {
       "id": "agent.activity-overview",
-      "title": "Agent detail: Activity tab Overview (flag activity_overview_web_v0)",
+      "title": "Agent detail: Activity tab Overview",
       "webEntry": "packages/web/src/components/agent/AgentActivityOverview.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/agent_activity_overview.dart",
       "states": [
@@ -40110,19 +40110,19 @@
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7842/METHOD:build@21345/FUNCTION:externalRow@21675": {
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7699/METHOD:build@20257/FUNCTION:externalRow@20587": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7842/METHOD:build@21345/FUNCTION:item@27440": {
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7699/METHOD:build@20257/FUNCTION:item@26352": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7842/METHOD:build@21345/FUNCTION:row@22608": {
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7699/METHOD:build@20257/FUNCTION:row@21520": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",

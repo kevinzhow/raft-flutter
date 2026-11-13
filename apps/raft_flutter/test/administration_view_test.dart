@@ -343,11 +343,13 @@ void main() {
       );
     });
 
-    testWidgets('product analytics follows its server flag', (t) async {
+    // Web 1.24 UsageDataSettings.tsx:117-125 (`product_analytics_settings_v0`
+    // is retired): a server that still answers it off shows the section too.
+    testWidgets('product analytics needs no flag', (t) async {
       final (w, c) = _workspace(_routes());
       addTearDown(w.dispose);
       await _pump(t, w);
-      expect(_section('product-analytics'), findsNothing);
+      expect(_section('product-analytics'), findsOneWidget);
 
       final (w2, c2) = _workspace(_routes(analytics: true));
       addTearDown(w2.dispose);

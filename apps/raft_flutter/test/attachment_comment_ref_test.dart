@@ -1,14 +1,13 @@
-// Web AttachmentCommentRefChip + handleJumpToCommentHost + the
-// `attachment_comments_v0` gate: a comment message reads "re: file · anchor"
-// above its body, its chip jumps to the attachment's message, and nothing of
-// this exists while the server has attachment comments off.
+// Web AttachmentCommentRefChip + handleJumpToCommentHost: a comment message
+// reads "re: file · anchor" above its body and its chip jumps to the
+// attachment's message. Web 1.24 retired the `attachment_comments_v0` gate
+// (the comment routes, attachments.ts:1016-1083, no longer check it).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/attachment_comment_ref.dart';
-import 'package:raft_flutter/features/attachment_comments_flag.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 class _Client extends RaftClient {
@@ -27,7 +26,7 @@ class _Client extends RaftClient {
       if (failing) throw const RaftApiException('down');
       return {
         'evaluations': [
-          {'key': attachmentCommentsFlag, 'enabled': flag},
+          {'key': 'attachment_comments_v0', 'enabled': flag},
         ],
       };
     }
@@ -172,9 +171,7 @@ void main() {
       },
     };
 
-    testWidgets('with the flag on the chip and the quote sit above the body', (
-      t,
-    ) async {
+    testWidgets('the chip and the quote sit above the body', (t) async {
       await pump(t, _message(channelRef));
       await t.pump();
       await t.pump();
@@ -187,29 +184,16 @@ void main() {
       );
     });
 
-    testWidgets('with the flag off the message reads as a plain one', (
-      t,
-    ) async {
-      client.flag = false;
-      await pump(t, _message(channelRef));
-      await t.pump();
-      await t.pump();
-      expect(find.textContaining('re:'), findsNothing);
-      expect(find.text('the body'), findsOneWidget);
-    });
-
     testWidgets(
-      'a failed flag read leaves it off; no commentRef asks nothing',
+      'a server answering the retired flag off still shows the chip, unasked',
       (t) async {
-        client.failing = true;
+        client.flag = false;
         await pump(t, _message(channelRef));
         await t.pump();
-        expect(find.textContaining('re:'), findsNothing);
-        final asked = client.evaluations.length;
-        await pump(t, _message(null));
         await t.pump();
-        expect(client.evaluations.length, asked);
+        expect(find.text('re: report.csv · Row 3'), findsOneWidget);
         expect(find.text('the body'), findsOneWidget);
+        expect(client.evaluations, isEmpty);
       },
     );
 
@@ -276,30 +260,6 @@ void main() {
       await t.tap(find.text('re: report.csv · Row 3'));
       await t.pump();
       expect(w.calls, isEmpty);
-    });
-  });
-
-  group('AttachmentCommentsGate', () {
-    test('is off until the server says on, then tells its listeners', () async {
-      final client = _Client()..user = RaftRecord({'id': 'alice'});
-      client.selectServer('server');
-      final w = _Workspace(client)
-        ..server = RaftRecord({'id': 'server', 'role': 'owner'});
-      final gate = AttachmentCommentsGate.of(w);
-      expect(gate.enabled, isFalse);
-      var heard = 0;
-      gate.addListener(() => heard++);
-      await gate.ensure();
-      await gate.ensure();
-      expect(gate.enabled, isTrue);
-      expect(heard, 1);
-      expect(
-        client.evaluations,
-        hasLength(1),
-        reason: 'asked once per identity',
-      );
-      w.dispose();
-      await client.dispose();
     });
   });
 }

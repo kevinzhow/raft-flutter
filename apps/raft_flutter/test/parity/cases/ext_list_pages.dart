@@ -410,7 +410,6 @@ Widget _mDetail(ParityContext ctx) => ScreenWorkspaceHost(
               : ComputerDetailPanel(
                   controller: w,
                   machine: machine,
-                  remoteUpgradeV2: false,
                   deployment: 'development',
                 );
         },

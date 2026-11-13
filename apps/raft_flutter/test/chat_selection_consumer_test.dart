@@ -55,7 +55,10 @@ void main() {
           },
         ];
         w.messageDomain.ledger.switchServer('s1');
-        w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
         w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
         w.messageDomain.visibleIds['t1'] = {'reply'};
         if (thread) {
@@ -125,7 +128,8 @@ void main() {
         } else {
           final checkbox = find.byWidgetPredicate(
             (w) =>
-                w is RaftCheckbox && w.semanticLabel == 'Select message by Alice',
+                w is RaftCheckbox &&
+                w.semanticLabel == 'Select message by Alice',
           );
           expect(checkbox, findsNWidgets(2));
           // Pick the unselected row by state, not tree order: the bottom-
@@ -167,7 +171,9 @@ void main() {
           await t.tap(find.byTooltip('Select All'));
         } else {
           await t.tap(
-            find.byWidgetPredicate((w) => w is RaftCheckbox && w.value == false),
+            find.byWidgetPredicate(
+              (w) => w is RaftCheckbox && w.value == false,
+            ),
           );
         }
         await t.pumpAndSettle();
@@ -197,7 +203,12 @@ void main() {
         final retained = t.widget<RaftSelectionToolbar>(
           find.byType(RaftSelectionToolbar),
         );
-        final before = a.calls.length;
+        // The followed-thread list reloads for the new role on its own (it is
+        // read for every server since Web 1.24 retired `thread_unread_badge_v0`);
+        // what is fenced here is the retained toolbar's actions.
+        int actionCalls() =>
+            a.calls.where((c) => c.path != '/channels/threads/followed').length;
+        final before = actionCalls();
         w.server = RaftRecord({'id': 's1', 'role': 'removed'});
         w.setError(null);
         await t.pumpAndSettle();
@@ -209,7 +220,7 @@ void main() {
         retained.onForward!();
         await t.pump();
         expect(writes, hasLength(1));
-        expect(a.calls.length, before);
+        expect(actionCalls(), before);
         expect(t.takeException(), isNull);
       },
     );

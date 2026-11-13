@@ -16,9 +16,8 @@ import '../data/attachment_image_store.dart';
 import '../data/workspace_controller.dart';
 import '../platform/attachment_html.dart';
 import '../platform/attachment_html_webview.dart';
-import 'attachment_comments_flag.dart';
 import 'attachment_comments_view.dart';
-import 'management_support.dart' show pageIdentity, cachedServerFlag;
+import 'management_support.dart' show pageIdentity;
 
 class HtmlAttachmentPreviewDialog extends StatefulWidget {
   const HtmlAttachmentPreviewDialog({
@@ -89,46 +88,29 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   bool get webView => wantsWebView && dependency == null;
   bool get current => mounted && source == identity && widget.authorized();
   bool accepts(int ticket) => current && ticket == request;
-  bool get commentsEnabled =>
-      current &&
-      gate.enabled &&
-      cachedServerFlag(widget.controller, attachmentCommentsFlag) == true;
+
+  /// On for everyone since Web 1.24 (`attachment_comments_v0` is retired).
+  bool get commentsEnabled => current;
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(scopeChanged);
-    gate.addListener(gateChanged);
-    unawaited(gate.ensure());
     unawaited(load());
   }
-
-  /// Attachment comments exist only while the server has them on.
-  late AttachmentCommentsGate gate = AttachmentCommentsGate.of(
-    widget.controller,
-  );
 
   @override
   void didUpdateWidget(HtmlAttachmentPreviewDialog old) {
     super.didUpdateWidget(old);
     if (old.controller != widget.controller) {
       old.controller.removeListener(scopeChanged);
-      gate.removeListener(gateChanged);
-      gate = AttachmentCommentsGate.of(widget.controller)
-        ..addListener(gateChanged);
       widget.controller.addListener(scopeChanged);
-      unawaited(gate.ensure());
     }
     if (source != identity) {
       source = identity;
-      unawaited(gate.ensure());
       unawaited(load());
     } else if (!widget.authorized()) {
       scopeChanged();
     }
-  }
-
-  void gateChanged() {
-    if (mounted) setState(() {});
   }
 
   void scopeChanged() {
@@ -424,7 +406,6 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   @override
   void dispose() {
     widget.controller.removeListener(scopeChanged);
-    gate.removeListener(gateChanged);
     cancel.cancel();
     html = null;
     progress.dispose();

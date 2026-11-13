@@ -86,7 +86,7 @@ class _Client extends RaftClient {
       flagReads++;
       return {
         'evaluations': [
-          {'key': usageLimitAttentionFlag, 'enabled': flag},
+          {'key': 'usage_limit_attention_v0', 'enabled': flag},
         ],
       };
     }
@@ -286,13 +286,17 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('flag off: nothing is read and the bell stays quiet', (t) async {
+  // Web 1.24 useUsageLimitAttention.ts:19-34: `usage_limit_attention_v0` is
+  // retired, so a server that still answers "off" for it changes nothing.
+  testWidgets('the retired flag is not asked and does not hide the feed', (
+    t,
+  ) async {
     final client = _Client(flag: false);
     await boot(t, client);
     await t.pump(const Duration(seconds: 61));
-    expect(client.reads, isEmpty);
-    expect(find.byType(RaftNotificationAttention), findsNothing);
-    expect(client.flagReads, 1, reason: 'a resolved flag is evaluated once');
+    expect(client.reads, isNotEmpty);
+    expect(find.byType(RaftNotificationAttention), findsOneWidget);
+    expect(client.flagReads, 0);
   });
 
   testWidgets('polls every 60 seconds and on app resume', (t) async {

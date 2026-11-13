@@ -181,8 +181,6 @@ class _Fixture extends Fake
   }
 
   @override
-  bool syncCoreNotificationPrefsEnabled = false;
-  @override
   void ensureSyncIdentity() => trace.add('ensureIdentity');
   @override
   void patchServerRows(RaftRecord Function(RaftRecord) patch) {
@@ -395,7 +393,6 @@ void main() {
       final f = _Fixture(), w = f.owner;
       w.channels = [_channel('one')];
       f.channel = w.channels.single;
-      f.syncCoreNotificationPrefsEnabled = true;
       Map<String, dynamic> payload(bool muted) => {
         'serverId': 's',
         'scopeId': 'one',

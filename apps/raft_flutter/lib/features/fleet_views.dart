@@ -1546,16 +1546,16 @@ class _FleetDetailState extends State<FleetDetail> {
         onMessage: !access.boundedPublic && row['deletedAt'] == null
             ? () => action(message)
             : null,
-        // Web `AgentMigrationSection`: `agent_migration_v0` and a computer.
+        // Web 1.24 `AgentMigrationSection` (AgentMigrationSection.tsx:70,
+        // AgentDetailPanel.tsx:873): a computer and the permission; the
+        // `agent_migration_v0` flag is retired.
         canMigrate:
             access.canManage &&
             allowed('migrateAgents') &&
-            w.agentMigrationEnabled &&
             row['machineId'] is String,
         canShowCloudArrival:
             access.canManage &&
             allowed('migrateAgents') &&
-            w.agentMigrationEnabled &&
             external &&
             row['hostedRuntime'] is Map,
         onReportIssue:

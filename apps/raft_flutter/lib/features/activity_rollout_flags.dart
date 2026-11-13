@@ -8,11 +8,15 @@ import '../data/device_preferences.dart';
 import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 
-/// The three Web v1.21.23 flags that gate the unread surfaces of the sidebar
-/// and Activity (`serverFeatureFlags.ts`): followed-thread unread folded onto
-/// the parent channel, the sidebar "Mark All as Read" and the Activity
-/// conversation list. Every one defaults off until evaluated. A missing or
+/// The Web v1.21.23 flag that gates the Activity conversation list
+/// (`serverFeatureFlags.ts`). It defaults off until evaluated. A missing or
 /// invalid evaluation keeps the last accepted value instead of turning it off.
+///
+/// Web 1.24 no longer reads the other two this class evaluated:
+/// followed-thread unread on the parent channel (`thread_unread_badge_v0`,
+/// ChannelRow.tsx:63, ThreadUnreadJumpPill.tsx:95) and the sidebar "Mark All as
+/// Read" (`sidebar_mark_all_read_v0`, SidebarReadToggleMenuItem.tsx:23; the
+/// server's channels.ts:5735 no longer refuses) are on for everyone.
 ///
 /// One evaluation per server identity, remembered on the device so the first
 /// frame of the next launch already has the final layout. A transient failure
@@ -40,14 +44,8 @@ class ActivityRolloutFlags extends ChangeNotifier {
   /// painting their rows. Child controls can read it without starting work.
   static ActivityRolloutFlags? peek(WorkspaceController w) => _owners[w];
 
-  static const threadUnreadBadgeKey = 'thread_unread_badge_v0';
-  static const sidebarMarkAllReadKey = 'sidebar_mark_all_read_v0';
   static const activityConversationListKey = 'activity_conversation_list_v0';
-  static const keys = [
-    threadUnreadBadgeKey,
-    sidebarMarkAllReadKey,
-    activityConversationListKey,
-  ];
+  static const keys = [activityConversationListKey];
 
   final WorkspaceController w;
   StreamSubscription<RaftEvent>? _events;
@@ -56,8 +54,6 @@ class ActivityRolloutFlags extends ChangeNotifier {
   bool _ended = false;
   Map<String, bool> _enabled = const {};
 
-  bool get threadUnreadBadge => _enabled[threadUnreadBadgeKey] ?? false;
-  bool get sidebarMarkAllRead => _enabled[sidebarMarkAllReadKey] ?? false;
   bool get activityConversationList =>
       _enabled[activityConversationListKey] ?? false;
 
@@ -108,8 +104,7 @@ class ActivityRolloutFlags extends ChangeNotifier {
     }
   }
 
-  /// Evaluates again now, for example after the server answered 404
-  /// `sidebar_mark_all_read_disabled` to a flag this client believed on.
+  /// Evaluates again now.
   void reevaluate() => changed(reevaluate: true);
 
   Future<void> _load(String authority, int ticket, String server) async {

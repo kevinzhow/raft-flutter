@@ -173,20 +173,15 @@ void main() {
     );
   }
   testWidgets(
-    'flag-off has no comment capture entry and read-only never posts',
+    'the retired flag answered off still offers the comment capture entry',
     (t) async {
       final client = CommentsClient()..flag = false;
       await openProduction(t, provided: client);
       expect(
         find.byKey(const ValueKey('attachment-preview-mode')),
-        findsNothing,
+        findsOneWidget,
       );
-      await t.tap(
-        find.textContaining('Tap this paragraph', findRichText: true).first,
-      );
-      await t.pump();
       expect(client.writes, isEmpty);
-      expect(find.byType(RaftComposer), findsNothing);
     },
   );
   testWidgets(

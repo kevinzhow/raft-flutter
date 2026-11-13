@@ -16,8 +16,10 @@ class LabsView extends StatefulWidget {
   State<LabsView> createState() => _LabsViewState();
 }
 
-/// Retired Lab keys the Web hides (serverLabsSettings.ts).
-const _retiredLabs = {'inline_thread_replies_v0'};
+/// Retired Lab keys the Web hides (Web 1.24 serverLabsSettings.ts:57-58:
+/// attachment comments are on for everyone, but older apps still read the
+/// key, so the server keeps it).
+const _retiredLabs = {'attachment_comments_v0'};
 
 class _LabsViewState extends ManagementState<LabsView> {
   @override

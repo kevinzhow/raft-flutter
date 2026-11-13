@@ -16,9 +16,6 @@ typedef SystemNotificationGet = Future<dynamic> Function(
 /// A receiver-scoped write (`POST`) with no body.
 typedef SystemNotificationPost = Future<dynamic> Function(String path);
 
-/// Whether `usage_limit_attention_v0` is on for the current server.
-typedef UsageLimitGate = Future<bool> Function();
-
 class SystemNotificationContext {
   const SystemNotificationContext({
     required this.scope,
@@ -61,7 +58,6 @@ class SystemNotificationStore extends ChangeNotifier {
     DateTime Function()? clock,
     this.entities,
     this.post,
-    this.usageLimitGate,
   }) : storage = storage ?? PreferencesSearchMemoryStorage(),
        clock = clock ?? DateTime.now;
   final SystemNotificationGet get;
@@ -72,13 +68,12 @@ class SystemNotificationStore extends ChangeNotifier {
   /// their revalidation) and [refresh] reads only the feedback count.
   final SystemNotificationEntities Function()? entities;
 
-  /// Usage-limit attention (`system-notifications-v2`) needs both: without
-  /// them the feed stays off, as when the flag is off.
+  /// Usage-limit attention (`system-notifications-v2`) needs it: without it
+  /// the feed stays off. Web 1.24 reads the feed for everyone
+  /// (useUsageLimitAttention.ts:19-34; `usage_limit_attention_v0` is retired).
   final SystemNotificationPost? post;
-  final UsageLimitGate? usageLimitGate;
   SystemNotificationContext? context;
   UsageLimitSnapshot? _usage;
-  bool? _usageGate;
   int _usageRevision = 0;
   UsageLimitSnapshot? get usageLimits => _usage;
   List<PendingJointInvite> _jointInvites = const [];
@@ -172,7 +167,6 @@ class SystemNotificationStore extends ChangeNotifier {
     _agents = [];
     _machineReady = false;
     _usage = null;
-    _usageGate = null;
     ++_usageRevision;
     _jointInvites = const [];
     ++_jointRevision;
@@ -319,21 +313,15 @@ class SystemNotificationStore extends ChangeNotifier {
   }
 
   /// Reads the replace-snapshot of usage-limit attention. Like Web
-  /// `useUsageLimitAttention`: a flag that is off or unresolved, or a failed
-  /// read, clears the feed (a stale card never outlives the authority), and a
-  /// snapshot with another contract version is ignored.
+  /// `useUsageLimitAttention`: a failed read clears the feed (a stale card
+  /// never outlives the authority), and a snapshot with another contract
+  /// version is ignored.
   Future<void> refreshUsageLimit() async {
-    final c = context, gate = usageLimitGate;
-    if (closed || c?.server == null || gate == null || post == null) return;
+    final c = context;
+    if (closed || c?.server == null || post == null) return;
     final scope = c!.scope, ticket = ++_usageRevision;
     final serverId = c.server!['id'];
     try {
-      _usageGate ??= await gate();
-      if (!_acceptsUsage(scope, ticket)) return;
-      if (_usageGate != true) {
-        _setUsage(null);
-        return;
-      }
       final raw = await get('/servers/$serverId/system-notifications-v2');
       if (!_acceptsUsage(scope, ticket)) return;
       final next = parseUsageLimitSnapshot(raw);

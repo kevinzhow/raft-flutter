@@ -12,15 +12,12 @@ import 'administration_model.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
 import 'management_support.dart'
     show
-        cachedServerFlag,
         managementMap,
         managementRows,
         pageIdentity,
         readPageSnapshot,
-        rememberServerFlag,
         writePageSnapshot;
 import 'server_setup_gate.dart' show refreshServerSetup;
-import '../data/feature_flag_client_facts.dart';
 
 /// Settings > Workspace > Administration: SettingsPanel.tsx
 /// AdministrationTabContent. Each section owns its data and requests like the
@@ -35,7 +32,7 @@ import '../data/feature_flag_client_facts.dart';
 /// | Pre-join Agreement | editServerSettings | GET /servers/:id/agreement |
 /// | Onboarding | editServerSettings | GET /servers/:id/settings + setup-projection |
 /// | Translation | (server) | translation store gate |
-/// | Product analytics | editServerSettings + product_analytics_settings_v0 | GET .../product-analytics-settings |
+/// | Product analytics | editServerSettings | GET .../product-analytics-settings |
 /// | Member Permissions | (server); edit needs editServerSettings | server `hideHumansFromMembers` |
 ///
 /// Revisits paint each section's last accepted reads (in-memory page
@@ -1157,12 +1154,10 @@ class _ProductAnalyticsSection extends StatefulWidget {
 
 class _ProductAnalyticsState extends State<_ProductAnalyticsSection>
     with _SectionLoad<_ProductAnalyticsSection> {
-  static const flag = 'product_analytics_settings_v0';
   @override
   WorkspaceController get w => widget.w;
   @override
   String get snapshotKey => 'admin:product-analytics';
-  late bool flagEnabled = cachedServerFlag(w, flag) ?? false;
   Map<String, dynamic>? settings;
   bool saving = false, failed = false;
 
@@ -1173,32 +1168,11 @@ class _ProductAnalyticsState extends State<_ProductAnalyticsSection>
   void initState() {
     super.initState();
     settings = readSnapshot()?['settings'] as Map<String, dynamic>?;
-    evaluate();
     load(
       () => w.query('/servers/${w.server!.id}/product-analytics-settings'),
       (value) => settings = managementMap(value),
       failed: (_) => failed = true,
     );
-  }
-
-  Future<void> evaluate() async {
-    final identity = pageIdentity(w);
-    try {
-      final result = managementMap(
-        await w.client.post(
-          '/feature-flags/evaluate',
-          data: featureFlagEvaluateBody(keys: [flag], serverId: w.server?.id),
-        ),
-      );
-      final enabled = managementRows(result['evaluations'])
-          .any((f) => f['key'] == flag && f['enabled'] == true);
-      rememberServerFlag(w, flag, enabled, identity);
-      if (mounted && identity == pageIdentity(w) && enabled != flagEnabled) {
-        setState(() => flagEnabled = enabled);
-      }
-    } catch (_) {
-      // An unresolved flag keeps the section hidden.
-    }
   }
 
   Future<void> change(bool checked) async {
@@ -1225,7 +1199,6 @@ class _ProductAnalyticsState extends State<_ProductAnalyticsSection>
 
   @override
   Widget build(BuildContext context) {
-    if (!flagEnabled) return const SizedBox.shrink();
     final s = settings;
     return RaftAdminSection(
       regionKey: _region('product-analytics'),

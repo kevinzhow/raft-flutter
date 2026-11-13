@@ -12,8 +12,6 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/freshness.dart';
 import '../data/system_notification_projection.dart';
 import '../data/system_notification_store.dart';
-import '../data/usage_limit_attention.dart';
-import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'fleet_views.dart';
@@ -97,7 +95,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
           get: w.query,
           entities: directoryEntities,
           post: (path) => w.command('POST', path),
-          usageLimitGate: usageLimitEnabled,
         );
     unawaited(bind());
     store.addListener(updated);
@@ -131,27 +128,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       unawaited(store.refreshJointInvites());
     });
     WidgetsBinding.instance.addObserver(this);
-  }
-
-  /// `usage_limit_attention_v0` for the current server. An unresolved
-  /// evaluation throws, which leaves the feed off and is retried on the next
-  /// read (Web `useServerFeatureFlag` fails closed).
-  Future<bool> usageLimitEnabled() async {
-    final result = await w.client.post(
-      '/feature-flags/evaluate',
-      data: featureFlagEvaluateBody(
-        keys: [usageLimitAttentionFlag],
-        serverId: w.server?.id,
-      ),
-    );
-    final evaluations = result is Map ? result['evaluations'] : null;
-    return evaluations is List &&
-        evaluations.any(
-          (f) =>
-              f is Map &&
-              f['key'] == usageLimitAttentionFlag &&
-              f['enabled'] == true,
-        );
   }
 
   Future<void> bind() => store.bind(

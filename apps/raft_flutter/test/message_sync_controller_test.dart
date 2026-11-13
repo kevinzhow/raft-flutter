@@ -47,10 +47,6 @@ class _Transport implements HttpClientAdapter {
       body = {
         'evaluations': [
           {'key': 'sync_core_messages_v0', 'enabled': enabled},
-          {
-            'key': WorkspaceController.remoteComputerUpgradeFlag,
-            'enabled': true,
-          },
         ],
       };
     } else {
@@ -93,7 +89,6 @@ void main() {
       final w = await _fixture(_Transport());
       addTearDown(w.dispose);
       await w.refreshMessageSyncFlag();
-      expect(w.remoteComputerUpgradeEnabled, true);
 
       final c = w.client as _Client;
       c.stream.add(RaftEvent('message:new', message('a', 2)));
@@ -137,15 +132,18 @@ void main() {
     },
   );
   test(
-    'obsolete message flag is not evaluated and late ingress remains accepted',
+    'retired session flags are not evaluated and late ingress remains accepted',
     () async {
       final t = _Transport()..enabled = false;
       final w = await _fixture(t);
       addTearDown(w.dispose);
       await w.refreshMessageSyncFlag();
+      // Web 1.24 reads none of `sync_core_messages_v0`,
+      // `sync_core_notification_prefs_v0`, `remote_computer_upgrade_v2`,
+      // `agent_migration_v0` or `runtime_form_v2_web`: nothing is asked.
       expect(
-        (t.requests.last.data as Map)['keys'],
-        isNot(contains('sync_core_messages_v0')),
+        t.requests.where((r) => r.path == '/feature-flags/evaluate'),
+        isEmpty,
       );
       final c = w.client as _Client;
       c.stream.add(RaftEvent('message:new', message('new', 99)));
@@ -156,24 +154,4 @@ void main() {
       ]);
     },
   );
-  for (final signOut in [false, true]) {
-    test(
-      'late feature evaluation cannot enable ${signOut ? 'a signed-out principal' : 'another workspace'}',
-      () async {
-        final t = _Transport()..pending = Completer<void>();
-        final w = await _fixture(t);
-        addTearDown(w.dispose);
-        final evaluation = w.refreshMessageSyncFlag();
-        if (signOut) {
-          w.client.user = null;
-        } else {
-          w.client.selectServer('s2');
-        }
-        t.pending!.complete();
-        await evaluation;
-        expect(w.remoteComputerUpgradeEnabled, false);
-        expect(w.messageSync.core.state('messages', 'c1'), isNull);
-      },
-    );
-  }
 }

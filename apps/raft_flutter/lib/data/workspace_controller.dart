@@ -471,10 +471,6 @@ class WorkspaceController extends ChangeNotifier
   @override
   NotificationPrefsSync get notificationPrefsSync =>
       _channels.notificationPrefsSync;
-  bool get syncCoreNotificationPrefsEnabled =>
-      _session.syncCoreNotificationPrefsEnabled;
-  set syncCoreNotificationPrefsEnabled(bool value) =>
-      _session.syncCoreNotificationPrefsEnabled = value;
 
 
 
@@ -482,32 +478,6 @@ class WorkspaceController extends ChangeNotifier
 
 
 
-
-  /// Web serverFeatureFlags `remote_computer_upgrade_v2`: whether the
-  /// Computer detail may offer the one-click upgrade (fail-closed).
-  static const remoteComputerUpgradeFlag =
-      WorkspaceSession.remoteComputerUpgradeFlag;
-  bool get remoteComputerUpgradeEnabled =>
-      _session.remoteComputerUpgradeEnabled;
-  set remoteComputerUpgradeEnabled(bool value) =>
-      _session.remoteComputerUpgradeEnabled = value;
-
-  /// Web `AGENT_MIGRATION_FEATURE_FLAG_KEY` (`useAgentMigrationUiEnabled`):
-  /// the "Move to another computer" action exists only while it is on.
-  static const agentMigrationFlag = WorkspaceSession.agentMigrationFlag;
-
-  /// Web `RUNTIME_FORM_V2_WEB_FLAG_KEY` (default off): the agent runtime
-  /// editor presents the protocol-v2 server form only while it is on.
-  static const runtimeFormV2WebFlag = WorkspaceSession.runtimeFormV2WebFlag;
-
-  /// Both fail closed and ride the same evaluation as the sync flags (no
-  /// request of their own).
-  bool get agentMigrationEnabled => _session.agentMigrationEnabled;
-  set agentMigrationEnabled(bool value) =>
-      _session.agentMigrationEnabled = value;
-  bool get runtimeFormV2WebEnabled => _session.runtimeFormV2WebEnabled;
-  set runtimeFormV2WebEnabled(bool value) =>
-      _session.runtimeFormV2WebEnabled = value;
 
   @override
   Future<void> refreshMessageSyncFlag() => _session.refreshMessageSyncFlag();

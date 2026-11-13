@@ -490,11 +490,15 @@ void main() {
     },
   );
 
-  testWidgets('server flag off hides the bulk model entry', (tester) async {
+  // Web 1.24 MachineAgentList.tsx:232, 421 (`bulk_change_model_web_v0` is
+  // retired): a server that still answers it off changes nothing.
+  testWidgets('the retired flag answered off still offers bulk Change model', (
+    tester,
+  ) async {
     client.flag = false;
     rememberServerFlag(
       workspace,
-      bulkModelFlag,
+      'bulk_change_model_web_v0',
       false,
       pageIdentity(workspace),
     );
@@ -503,7 +507,7 @@ void main() {
     await tap(tester, 'computer-agent-a1');
     expect(
       find.byKey(const ValueKey('computer-bulk-change-model')),
-      findsNothing,
+      findsOneWidget,
     );
   });
 

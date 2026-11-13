@@ -22,14 +22,11 @@ import 'composer_directory.dart'
     show cachedChannelRoster, rememberChannelRoster;
 import 'create_channel_dialog.dart';
 import 'fleet_views.dart';
-import 'management_support.dart'
-    show cachedServerFlag, pageIdentity, rememberServerFlag;
 import 'managed_agent_launcher.dart';
 import 'member_profile_view.dart';
 import 'agent_metadata_catalog.dart' show sourceAgentActivities;
 import 'agent_metadata_projection.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
-import '../data/feature_flag_client_facts.dart';
 
 /// Web `ChannelMembers` participant count: agents + humans + Slack bridge
 /// participants (`externalMembers`).
@@ -270,10 +267,6 @@ class _ChannelMembersState extends State<ChannelMembers> {
   final selected = <String>{};
   final search = TextEditingController();
 
-  /// `useServerFeatureFlag(channel_manager_role_actions_v0)`: the hover
-  /// `Make admin` / `Demote` actions only exist behind it.
-  late bool roleActionsEnabled = cachedServerFlag(w, _roleActionsFlag) ?? false;
-  static const _roleActionsFlag = 'channel_manager_role_actions_v0';
   String? roleChanging;
 
   /// The members page's profile stack top (`kind:id`): a row opens its member's
@@ -296,7 +289,6 @@ class _ChannelMembersState extends State<ChannelMembers> {
     // roster in place, so a newly joined agent appears while the view is open.
     _events = w.client.events.listen(_event);
     load();
-    loadRoleActionsFlag();
   }
 
   void _directoryChanged() {
@@ -315,31 +307,6 @@ class _ChannelMembersState extends State<ChannelMembers> {
     _reload = Timer(const Duration(milliseconds: 150), () {
       if (mounted) unawaited(load());
     });
-  }
-
-  Future<void> loadRoleActionsFlag() async {
-    final server = w.server?.id;
-    if (server == null) return;
-    final identity = pageIdentity(w);
-    try {
-      final result = await w.command(
-        'POST',
-        '/feature-flags/evaluate',
-        data: featureFlagEvaluateBody(
-          keys: [_roleActionsFlag],
-          serverId: server,
-        ),
-      );
-      final on =
-          result is Map &&
-          (result['evaluations'] as List? ?? []).whereType<Map>().any(
-            (f) => f['key'] == _roleActionsFlag && f['enabled'] == true,
-          );
-      rememberServerFlag(w, _roleActionsFlag, on, identity);
-      if (mounted && on != roleActionsEnabled) {
-        setState(() => roleActionsEnabled = on);
-      }
-    } catch (_) {}
   }
 
   @override
@@ -600,7 +567,9 @@ class _ChannelMembersState extends State<ChannelMembers> {
         effective != 'member';
     final canChange =
         !channel.archived && !isAllChannel && m['canChangeChannelRole'] == true;
-    if (!roleActionsEnabled || !(canChange || canExplain)) return null;
+    // Web 1.24 MemberRoleActions.tsx:48 (`channel_manager_role_actions_v0`
+    // is retired; the channel's own capability decides the explanation).
+    if (!(canChange || canExplain)) return null;
     return (
       nextRole: effective == 'member' ? 'admin' : 'member',
       protectedDemote: canExplain,

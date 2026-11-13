@@ -134,14 +134,19 @@ void main() {
     expect(find.text('2'), findsOneWidget);
   });
 
-  testWidgets('flag off: the preview has no comments', (t) async {
+  // Web 1.24 (`attachment_comments_v0` is retired, attachments.ts:1016-1083
+  // no longer check it): a server that still answers it off has comments.
+  testWidgets('the retired flag answered off still offers comments', (t) async {
     client.flag = false;
     await open(t);
     expect(
       find.byKey(const ValueKey('attachment-preview-download')),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('attachment-preview-mode')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('attachment-preview-mode')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('capture a line, comment on it, and jump back to it', (t) async {
