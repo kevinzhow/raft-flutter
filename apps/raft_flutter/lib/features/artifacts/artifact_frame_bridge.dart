@@ -250,15 +250,8 @@ abstract final class ArtifactHostCalls {
     required String contentDomain,
     required bool dark,
     Map<String, String> theme = const {},
-  }) => 'RaftArtifactHost.mount(${jsonEncode({
-    'location': location.toJson(),
-    'id': artifactId,
-    'version': version,
-    'title': title,
-    'contentDomain': contentDomain,
-    'scheme': dark ? 'dark' : 'light',
-    'theme': theme,
-  })})';
+  }) =>
+      'RaftArtifactHost.mount(${jsonEncode({'location': location.toJson(), 'id': artifactId, 'version': version, 'title': title, 'contentDomain': contentDomain, 'scheme': dark ? 'dark' : 'light', 'theme': theme})})';
 
   static String answer(int id, {required bool ok, Object? value}) =>
       'RaftArtifactHost.answer($id, $ok, ${jsonEncode(value)})';

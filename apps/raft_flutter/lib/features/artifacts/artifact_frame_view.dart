@@ -179,8 +179,9 @@ class _ArtifactFrameViewState extends State<ArtifactFrameView> {
     final ArtifactFrameLocation? location;
     try {
       location = await _located();
-    } catch (error) {
-      _status(ArtifactFrameStatus.failed, 'locate: $error');
+    } catch (_) {
+      // ART1: the route's code (artifactErrorCode), as Web shows it.
+      _status(ArtifactFrameStatus.failed, 'locate failed');
       return;
     }
     if (location == null) {
@@ -219,11 +220,7 @@ class _ArtifactFrameViewState extends State<ArtifactFrameView> {
     );
     _status(ArtifactFrameStatus.starting);
     await web.loadHtmlString(
-      artifactWrapperHtml(
-        contentSource: source,
-        gate: gate,
-        dark: widget.dark,
-      ),
+      artifactWrapperHtml(contentSource: source, gate: gate, dark: widget.dark),
       baseUrl: widget.appOrigin.toString(),
     );
   }
@@ -277,8 +274,8 @@ class _ArtifactFrameViewState extends State<ArtifactFrameView> {
             ok: location != null,
             value: location?.toJson() ?? {'code': 'CONTENT_UNAVAILABLE'},
           );
-        } catch (error) {
-          await _answer(id, ok: false, value: {'code': '$error'});
+        } catch (_) {
+          await _answer(id, ok: false, value: {'code': 'CONTENT_UNAVAILABLE'});
         }
       case ArtifactBridgeMessageType.openLink when id != null:
         final uri = artifactFrameLink(detail['url']);

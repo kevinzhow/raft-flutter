@@ -68,7 +68,8 @@ void main() {
         'url': 'http://w-$uuid.artifacts.localhost:18787/_raft/open?ticket=t',
         'origin': 'http://w-$uuid.artifacts.localhost:18787',
         'door': {
-          'url': 'http://w-$uuid.artifacts.localhost:18787/__porthole/door/_raft',
+          'url':
+              'http://w-$uuid.artifacts.localhost:18787/__porthole/door/_raft',
         },
       })!;
       String? check(bool loopback) => artifactFrameContentSource(
@@ -127,7 +128,12 @@ void main() {
       expect(ok?.callId, 3);
       // What content in any frame can send: the channel without the nonce.
       expect(
-        gate.accept(jsonEncode({'type': 'openLink', 'detail': {'id': 1}})),
+        gate.accept(
+          jsonEncode({
+            'type': 'openLink',
+            'detail': {'id': 1},
+          }),
+        ),
         isNull,
       );
       expect(
