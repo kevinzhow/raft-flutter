@@ -441,6 +441,33 @@ class _RaftAuthBrowserHelpState extends State<RaftAuthBrowserHelp> {
   }
 }
 
+/// Web v1.24 `LegalAcceptanceUsageDataNotice`: `text-center text-footnote
+/// text-foreground-muted`, a notice under the sign-up Continue (privacy
+/// 2026-10-14), not something to agree to.
+class RaftAuthUsageDataNotice extends StatelessWidget {
+  const RaftAuthUsageDataNotice({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Text(
+      raftText(
+        context,
+        'Raft collects usage data to improve the product. You can turn it off anytime in Settings.',
+      ),
+      key: const Key('legal-usage-data-notice'),
+      textAlign: TextAlign.center,
+      style: RaftTypography.heading(
+        t,
+        size: 12,
+        line: 16,
+        weight: FontWeight.w400,
+        color: t.muted,
+      ),
+    );
+  }
+}
+
 /// `<Button type="submit" size="lg" variant="accent" className="w-full">`.
 class RaftAuthSubmit extends StatelessWidget {
   const RaftAuthSubmit({super.key, required this.label, this.onPressed});
@@ -1304,26 +1331,12 @@ class RaftAuthPage extends StatelessWidget {
               onTap: () => onMode(RaftAuthMode.forgot),
             ),
           ],
-          // RegisterPage (task #724): a disabled Continue says why. A
-          // persistent line under the button while the legal box is unchecked
-          // (`text-center text-xs text-foreground-muted
-          // theme-brutal:text-black/50`, form `space-y-4`).
-          if (mode == RaftAuthMode.register && !accepted && !busy) ...[
+          // Web v1.24 RegisterPage: LegalAcceptanceUsageDataNotice sits
+          // directly under Continue (form `space-y-4`); it replaced the
+          // v1.21 "agree to continue" hint.
+          if (mode == RaftAuthMode.register) ...[
             const SizedBox(height: 16),
-            Text(
-              tr(
-                'Agree to the Terms of Service and acknowledge the Privacy Policy to continue.',
-              ),
-              key: const Key('register-legal-hint'),
-              textAlign: TextAlign.center,
-              style: RaftTypography.heading(
-                RaftTokens.of(context),
-                size: 12,
-                line: 16,
-                weight: FontWeight.w400,
-                color: RaftTokens.of(context).muted,
-              ),
-            ),
+            const RaftAuthUsageDataNotice(),
           ],
           if (providers.isNotEmpty && social && !(link?.terminal ?? false)) ...[
             RaftAuthOrDivider(label: tr('or')),

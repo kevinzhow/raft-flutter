@@ -1,18 +1,24 @@
 import 'client.dart';
 
-/// The terms and privacy versions an explicit acceptance names. Web sends its
-/// own `CURRENT_LEGAL_ACCEPTANCE`; a native client asks the server instead
-/// (the rejection carries `legal`) so the versions cannot drift from it.
+/// The terms and privacy versions an explicit acceptance names. Web sends
+/// `CURRENT_LEGAL_ACCEPTANCE` from `@botiverse/raft-shared` (legalAcceptance
+/// .ts), built into the same release as its server; it never reads them at
+/// runtime. A native client ships that release's constants as [current] and,
+/// because it outlives the server it was built against, takes the versions
+/// the server names in a `TERMS_CHANGED` rejection (`legal`) for the next
+/// explicit acceptance ([fromError]).
 class LegalVersions {
   const LegalVersions({
     required this.termsVersion,
     required this.privacyVersion,
   });
 
-  /// What this build shipped with (`CURRENT_TERMS_VERSION`).
+  /// Raft v1.24.0 `CURRENT_TERMS_VERSION` / `CURRENT_PRIVACY_VERSION`. The
+  /// 2026-10-14 privacy version adds the usage-data notice the sign-up pages
+  /// show under Continue.
   static const current = LegalVersions(
     termsVersion: '2026-05-12',
-    privacyVersion: '2026-05-12',
+    privacyVersion: '2026-10-14',
   );
 
   final String termsVersion, privacyVersion;

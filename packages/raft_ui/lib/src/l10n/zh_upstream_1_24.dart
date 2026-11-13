@@ -56,4 +56,7 @@ const Map<String, String> zhCatalogUpstream124 = <String, String>{
   "Create link": "创建链接",
   // Task v2: create a task from a message (task.create.fromMessageHeading).
   "Create tasks from message": "从消息创建任务",
+  // Sign-up usage-data notice (auth.legalAcceptance.usageDataNotice, privacy 2026-10-14).
+  "Raft collects usage data to improve the product. You can turn it off anytime in Settings.":
+      "Raft 会收集使用数据来改进产品，你可以随时在设置中关闭。",
 };

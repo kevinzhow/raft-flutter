@@ -71,8 +71,9 @@ void main() {
       'email': 'a@example.invalid',
       'password': ' password ',
       'acceptTerms': true,
+      // Raft v1.24.0 CURRENT_LEGAL_ACCEPTANCE (shared legalAcceptance.ts).
       'termsVersion': '2026-05-12',
-      'privacyVersion': '2026-05-12',
+      'privacyVersion': '2026-10-14',
       'legalAcceptanceSource': 'signup',
     });
     expect(client.user?.json['emailVerified'], false);
