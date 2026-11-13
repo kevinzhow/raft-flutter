@@ -6424,7 +6424,7 @@
         "owner": "Choice9 design-system alignment",
         "reason": "Reviewed production choice composition/delegation, not a thin-wrapper/no-paint claim or a visual PASS."
       },
-      "apps/raft_flutter/lib/features/auth_view.dart#local-function:CLASS:_AuthState@3694/METHOD:build@27060/FUNCTION:bars@29597": {
+      "apps/raft_flutter/lib/features/auth_view.dart#local-function:CLASS:_AuthState@4513/METHOD:build@27879/FUNCTION:bars@30416": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

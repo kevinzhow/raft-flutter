@@ -46,11 +46,24 @@ String authFailureText(Object error, String fallback, {String? where}) =>
     : userErrorText(
         error,
         fallback: fallback,
-        codeText: const {
+        codeText: {
           'AUTH_INVALID_CREDENTIALS': 'Incorrect email or password.',
+          // Server v1.24 legacy_mobile_oauth_upgrade_required_v0: the native
+          // social sign-in / old sign-up answers 426 with this sentence
+          // (services/legacyMobileOAuthUpgrade.ts). Shown in the app's own
+          // language even though the request sent no Accept-Language.
+          'APP_UPDATE_REQUIRED': where == 'auth register'
+              ? appUpdateRequiredRegisterText
+              : appUpdateRequiredText,
         },
         where: where,
       );
+
+/// Server v1.24 `APP_UPDATE_REQUIRED_MESSAGES.en` / `REGISTER_UPDATE_REQUIRED_MESSAGES.en`.
+const appUpdateRequiredText =
+    'This version of Raft is no longer supported. Download the latest version at app.raft.build/download, then sign in.';
+const appUpdateRequiredRegisterText =
+    'Please refresh the page, or download the latest Raft at app.raft.build/download, to sign up.';
 
 String authLinkToken(String value, {String parameter = 'token'}) {
   final uri = Uri.tryParse(value);
