@@ -41,6 +41,12 @@ class RaftClaimedText extends md.Text {
 /// only these forms are refs (`[x](#general)` is not).
 const raftAngleLinkAttribute = 'raft-angle';
 
+/// Web 1.24 `isRetiredResourceRef`: `<computer:…>` / `<app:…>` belonged to the
+/// dropped composer resource references. Such text, well-formed or not, is
+/// never a link, chip or mention.
+bool raftIsRetiredResourceRef(String target) =>
+    RegExp(r'^\s*(?:computer|app):', caseSensitive: false).hasMatch(target);
+
 /// Attribute set on `del` written with a single tilde.
 const raftSingleTildeAttribute = 'raft-single-tilde';
 
@@ -116,7 +122,9 @@ class _RaftAutolinkSyntax extends md.AutolinkSyntax {
   @override
   bool onMatch(md.InlineParser parser, Match match) {
     final url = match[1]!;
-    if (raftParseRefTarget(url) == null) return super.onMatch(parser, match);
+    if (raftParseRefTarget(url) == null && !raftIsRetiredResourceRef(url)) {
+      return super.onMatch(parser, match);
+    }
     parser.addNode(
       md.Element.text('a', url)
         ..attributes['href'] = url

@@ -543,26 +543,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
             ),
     ];
     final items = <({String id, WidgetBuilder build})>[
-      // Sidebar.tsx people tab: the accent `Graph` item (GitBranch 14) above
-      // Agents, shown while the workspace grid is off.
-      if (!widget.computers)
-        (
-          id: 'directory-graph',
-          build: (_) => RaftNavItem(
-            key: const ValueKey('desktop-directory-graph'),
-            label: raftText(context, 'Graph'),
-            glyph: RaftGlyph.gitBranch,
-            glyphSize: 14,
-            selected: widget.selected?.kind == DesktopContentKind.graph,
-            onTap: () {
-              if (mounted) {
-                widget.onSelected(
-                  const DesktopContentTarget(DesktopContentKind.graph, 'graph'),
-                );
-              }
-            },
-          ),
-        ),
       if (w.can('viewAgents'))
         ...section(
           'Agents',

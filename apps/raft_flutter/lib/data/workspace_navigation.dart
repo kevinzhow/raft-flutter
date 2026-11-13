@@ -392,10 +392,7 @@ class WorkspaceNavigation {
   };
   static String sectionFor(RaftLocation value) => switch (value.route) {
     RaftRoute.channel || RaftRoute.dm => 'chat',
-    RaftRoute.agent ||
-    RaftRoute.human ||
-    RaftRoute.memberGraph ||
-    RaftRoute.members => 'members',
+    RaftRoute.agent || RaftRoute.human || RaftRoute.members => 'members',
     RaftRoute.computer || RaftRoute.computers => 'computers',
     RaftRoute.settings =>
       value.settingsPath.isEmpty ||

@@ -6,16 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/data/workspace_entity_directory.dart';
 import 'package:raft_flutter/features/attachment_comments_view.dart';
 import 'package:raft_flutter/features/attachment_preview_dialog.dart';
 import 'package:raft_flutter/features/attachment_preview_gate.dart';
 import 'package:raft_flutter/features/attachment_view.dart';
-import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/source_channel_files_actions.dart';
 import 'package:raft_flutter/data/source_channel_files_store.dart';
-import 'package:raft_flutter/features/management_support.dart'
-    show pageIdentity, rememberServerFlag;
 import 'package:raft_flutter/features/message_action_card.dart';
 import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/features/message_presentation.dart';
@@ -28,14 +24,11 @@ import 'activity_incremental_refresh_test.dart'
 import 'message_presentation_test.dart' show card, host;
 import 'task_snapshot_navigation_test.dart' show taskRow;
 import 'support/close_support.dart';
-import 'support/no_wait_support.dart';
 import 'flutter_test_config.dart' show leakDebt;
 
 final _png = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
 );
-
-const _flag = 'composer_resource_references_v0';
 
 /// Activity, Saved, Search and Tasks reads that can be held open.
 class _Content extends ActivityWorkspace {
@@ -95,55 +88,37 @@ void main() {
   // Leak debt (dialog notifier): see docs/development.md, Leak tracking.
   leakDebt(const ['ValueNotifier<Map<String, dynamic>?>']);
   group('message links and references open from what is loaded', () {
-    testWidgets('computer: opens the machine detail from the directory', (
-      t,
-    ) async {
+    testWidgets('computer: and app: references are retired (Web 1.24): '
+        'opening one reads nothing and navigates nowhere', (t) async {
       final (w, api) = await mountWorkspace(t, const Size(1280, 800));
-      api.routes['GET /servers/s1/machines'] = (_) => {
-        'machines': [
-          {'id': 'box1', 'name': 'Box', 'isComputer': true, 'status': 'online'},
-        ],
-      };
-      await t.runAsync(
-        () => w.entityDirectory.refresh(
-          WorkspaceEntityKind.computers,
-          force: true,
-        ),
+      final before = w.section;
+      final calls = api.calls.length;
+      final external = <String>[];
+      final presentation = MessagePresentation(
+        controller: w,
+        message: RaftMessage({
+          'id': 'link-host',
+          'channelId': 'c1',
+          'content': 'see links',
+        }),
+        onExternalLink: external.add,
       );
-      rememberServerFlag(w, _flag, true, pageIdentity(w));
-      final machineReads = api.calls
-          .where((c) => c.path == '/servers/s1/machines')
-          .length;
-      final held = await expectOpensWithoutNetwork(
-        t,
-        w,
-        api,
-        open: (context) => _presentation(w).open(context, 'computer:box1'),
-        surface: find.byType(FleetDetail),
-      );
-      // The flag and the machines list were not needed to open it.
-      expect(
-        api.calls.where((c) => c.path == '/servers/s1/machines').length,
-        machineReads,
-        reason: 'the machines read was not needed to open the detail',
-      );
-      expect(find.text('Box'), findsWidgets);
-      expect(held, isNonNegative);
-    });
-
-    testWidgets('app: opens Integrations at once; the apps read only vouches', (
-      t,
-    ) async {
-      final (w, api) = await mountWorkspace(t, const Size(1280, 800));
-      rememberServerFlag(w, _flag, true, pageIdentity(w));
-      api.hangAll = true;
-      unawaited(
-        _presentation(w)
-            .open(t.element(find.byType(WorkspaceView)), 'app:github'),
-      );
+      final context = t.element(find.byType(WorkspaceView));
+      await presentation.open(context, 'computer:box1');
+      await presentation.open(context, 'app:github');
       await frames(t, 3);
-      expect(w.section, 'settings', reason: 'Integrations lives in Settings');
-      api.hangAll = false;
+      expect(w.section, before);
+      expect(
+        api.calls
+            .skip(calls)
+            .where(
+              (c) =>
+                  c.path == '/feature-flags/evaluate' ||
+                  c.path.endsWith('/apps') ||
+                  c.path.endsWith('/machines'),
+            ),
+        isEmpty,
+      );
     });
 
     testWidgets('a task reference opens its dialog before the task arrives', (

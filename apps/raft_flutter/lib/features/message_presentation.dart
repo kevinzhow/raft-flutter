@@ -12,22 +12,17 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
-import '../data/workspace_entity_directory.dart';
-import 'management_support.dart'
-    show cachedServerFlag, pageIdentity, rememberServerFlag;
 import '../platform/attachment_files.dart';
 import '../platform/content_links.dart';
 import 'foreign_permalink.dart';
 import 'message_action_card.dart';
 import 'attachment_view.dart';
-import 'fleet_views.dart';
 import 'private_route_guard.dart';
 import 'profile_preview.dart';
 import 'composer_directory.dart' show cachedExternalMembers;
 import 'external_mentions.dart';
 import 'agent_read_badge.dart';
 import 'forwarded_source.dart';
-import '../data/feature_flag_client_facts.dart';
 
 /// Full MessageDTO uses `user`; legacy/native human rows use `human`.
 /// Presentation consumers use one identity kind without altering transport data.
@@ -165,33 +160,6 @@ class _ReferenceInputs {
     identityHashCode(dms),
     dmCount,
   );
-}
-
-const _resourceReferencesFlag = 'composer_resource_references_v0';
-
-/// Evaluates whether `computer:` / `app:` references open on this server and
-/// remembers the answer under [identity] for the next open.
-Future<bool> _evaluateResourceReferences(
-  BuildContext context,
-  WorkspaceController w,
-  String identity,
-) async {
-  final flag = await w.client.post(
-    '/feature-flags/evaluate',
-    data: featureFlagEvaluateBody(
-      keys: [_resourceReferencesFlag],
-      serverId: w.server!.id,
-      platform: Theme.of(context).platform,
-    ),
-  );
-  final enabled =
-      flag is Map &&
-      flag['evaluations'] is List &&
-      (flag['evaluations'] as List).whereType<Map>().any(
-        (f) => f['key'] == _resourceReferencesFlag && f['enabled'] == true,
-      );
-  rememberServerFlag(w, _resourceReferencesFlag, enabled, identity);
-  return enabled;
 }
 
 /// Resolves message references only in the current authority. Structured
@@ -430,95 +398,6 @@ class MessagePresentation extends StatelessWidget {
 
   Future<void> open(BuildContext context, String href) async {
     final uri = Uri.tryParse(href);
-    if (uri != null && ['computer', 'app'].contains(uri.scheme)) {
-      if (!localAuthority || exportMode) return;
-      final w = controller, authority = workspaceAuthority(controller);
-      bool current() => context.mounted && authority == workspaceAuthority(w);
-      try {
-        // A flag this device has already seen enabled opens the reference at
-        // once and is revalidated behind it; only a flag never seen (or seen
-        // disabled) is evaluated before opening.
-        final identity = pageIdentity(w);
-        if (cachedServerFlag(w, _resourceReferencesFlag) == true) {
-          unawaited(
-            _evaluateResourceReferences(
-              context,
-              w,
-              identity,
-            ).catchError((_) => false),
-          );
-        } else if (!await _evaluateResourceReferences(context, w, identity) ||
-            !current()) {
-          return;
-        }
-        if (uri.scheme == 'computer' && w.can('viewMachines')) {
-          // The workspace directory already holds the machines read.
-          final directory = w.services.entityDirectory;
-          final known = directory.state(WorkspaceEntityKind.computers).loaded
-              ? directory.computer(uri.path)
-              : null;
-          Map<String, dynamic>? machine = known?['isComputer'] == true
-              ? known
-              : null;
-          if (machine == null) {
-            final out = await w.query('/servers/${w.server!.id}/machines');
-            if (!current() || !context.mounted) return;
-            final rows = out is List ? out : out['machines'] as List? ?? [];
-            final fetched = rows
-                .whereType<Map>()
-                .where((r) => r['id'] == uri.path && r['isComputer'] == true)
-                .firstOrNull;
-            if (fetched != null) machine = Map<String, dynamic>.from(fetched);
-          }
-          if (machine == null) {
-            throw const RaftApiException(
-              'The referenced resource is unavailable.',
-            );
-          }
-          final initial = machine;
-          if (!context.mounted) return;
-          await showRaftDialog(
-            legacyMaterial: true,
-            context: context,
-            builder: (_) => FleetDetail(
-              controller: w,
-              computers: true,
-              initial: Map<String, dynamic>.from(initial),
-            ),
-          );
-        } else if (uri.scheme == 'app' && w.canVisitSection('integrations')) {
-          // The Integrations page opens at once; the installed-apps read only
-          // vouches for the reference behind it.
-          w.setSection('integrations');
-          final out = await w.query('/servers/${w.server!.id}/apps');
-          if (authority != workspaceAuthority(w)) return;
-          final rows = out is Map ? out['apps'] as List? ?? [] : const [];
-          if (!rows.whereType<Map>().any((r) => r['appId'] == uri.path)) {
-            throw const RaftApiException(
-              'The referenced resource is unavailable.',
-            );
-          }
-        } else {
-          throw const RaftApiException(
-            'The referenced resource is unavailable.',
-          );
-        }
-      } catch (e) {
-        // Web MessageItem: `toast.error(sourceUnavailable)`.
-        if (current() && context.mounted) {
-          showRaftToast(
-            context,
-            userErrorText(
-              e,
-              fallback:
-                  'Unable to open source. It may be unavailable or deleted.',
-              where: 'open resource reference',
-            ),
-          );
-        }
-      }
-      return;
-    }
     if (uri?.scheme != 'raft-ref') {
       // Web handleOpenPermalink: a message link of this server opens in the
       // app, any other link opens externally.

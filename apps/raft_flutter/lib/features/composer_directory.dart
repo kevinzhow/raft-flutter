@@ -5,14 +5,12 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
-import '../data/workspace_entity_directory.dart';
 import 'agent_avatar_projection.dart';
 import 'agent_metadata_projection.dart';
 import 'message_agent_presentation.dart';
 import 'private_route_guard.dart';
 import 'sender_avatar_projection.dart';
 import 'external_mentions.dart';
-import '../data/feature_flag_client_facts.dart';
 import 'route_transition_gate.dart';
 
 /// One channel roster as returned by `/channels/:id/members`, together with
@@ -30,8 +28,8 @@ Map<String, dynamic> _channelAuthority(RaftChannel channel) => {
 };
 
 /// Server-scoped composer data shared by every composer over the same entity
-/// directory (main chat, thread, borrowed editors): per-channel rosters and
-/// the resource-reference flag/apps. Everything is cleared only when the
+/// directory (main chat, thread, borrowed editors): per-channel rosters.
+/// Everything is cleared only when the
 /// server-level identity ([directoryAuthority]) changes; a roster is dropped
 /// when its channel authority is reduced. Revalidation keeps the accepted
 /// roster until the replacement is accepted; stale responses are rejected.
@@ -40,9 +38,6 @@ class _ComposerShared extends ChangeNotifier {
   int epoch = 0, revision = 0, _ticket = 0;
   final rosters = <String, _ComposerRoster>{};
   final _pending = <String, (int, Future<void>)>{};
-  bool? resources;
-  Future<void>? _resourcesPending;
-  List<Map<String, dynamic>> apps = const [];
 
   /// Adopts [next]; returns true when the previous identity's data was cleared.
   bool sync(String next) {
@@ -51,9 +46,6 @@ class _ComposerShared extends ChangeNotifier {
     epoch++;
     rosters.clear();
     _pending.clear();
-    resources = null;
-    _resourcesPending = null;
-    apps = const [];
     revision++;
     return true;
   }
@@ -133,65 +125,6 @@ class _ComposerShared extends ChangeNotifier {
     })();
     _pending[id] = (ticket, pending);
     return pending;
-  }
-
-  /// Source useServerFeatureFlag + installed apps: once per server identity.
-  Future<void> loadResources(WorkspaceController w) {
-    final authority = directoryAuthority(w);
-    sync(authority);
-    final server = w.server;
-    if (server == null) return Future.value();
-    final epoch = this.epoch;
-    bool current() => epoch == this.epoch && directoryAuthority(w) == authority;
-    return _resourcesPending ??= (() async {
-      try {
-        final flags = await w.client.post(
-          '/feature-flags/evaluate',
-          data: featureFlagEvaluateBody(
-            keys: ['composer_resource_references_v0'],
-            serverId: server.id,
-          ),
-        );
-        if (!current()) return;
-        final enabled =
-            flags is Map &&
-            flags['evaluations'] is List &&
-            (flags['evaluations'] as List).whereType<Map>().any(
-              (f) =>
-                  f['key'] == 'composer_resource_references_v0' &&
-                  f['enabled'] == true,
-            );
-        resources = enabled;
-        if (!enabled) {
-          _changed();
-          return;
-        }
-        if (w.can('viewMachines')) {
-          final computers = w.services.entityDirectory.state(
-            WorkspaceEntityKind.computers,
-          );
-          if (!computers.loaded) {
-            await w.services.entityDirectory.refresh(
-              WorkspaceEntityKind.computers,
-            );
-            if (!current()) return;
-          }
-        }
-        _changed();
-        final out = await w.query('/servers/${server.id}/apps');
-        if (!current()) return;
-        apps = [
-          for (final row
-              in (out is Map ? out['apps'] as List? ?? [] : const [])
-                  .whereType<Map>())
-            if (row['appId'] is String) Map<String, dynamic>.from(row),
-        ];
-        _changed();
-      } catch (_) {
-        /* Enabled but unreadable resources do not become suggestions. */
-        if (current()) _resourcesPending = null;
-      }
-    })();
   }
 }
 
@@ -273,8 +206,8 @@ void rememberChannelRoster(
 /// grouping and private/joint eligibility) is per channel. Rosters are read
 /// when a channel is opened, cached per channel and revalidated in place, so
 /// an open popup never reflows while data is replaced. Private/joint surfaces
-/// use only their current membership projection; resource references require
-/// the real server flag before either computers or installed apps are shown.
+/// use only their current membership projection. Computer and app references
+/// are retired (server v1.24.0, Web 1.24), so no resource is suggested.
 class ComposerDirectory extends ChangeNotifier {
   ComposerDirectory(this.w, {this.agentPresentation, this.thread = false})
     : _shared = _sharedComposerData[w.services.entityDirectory] ??=
@@ -341,10 +274,8 @@ class ComposerDirectory extends ChangeNotifier {
         });
       }
     }
-    final resources = _shared.resources == true;
     final recency = threadRecency(channel);
-    // Agent presence patches leave every input below unchanged; skip copying
-    // the computer rows for them.
+    // Agent presence patches leave every input below unchanged.
     final inputs = (
       authority,
       channel?.id,
@@ -353,15 +284,10 @@ class ComposerDirectory extends ChangeNotifier {
       w.services.entityDirectory.authorRevision,
       w.services.entityDirectory.computerRevision,
       _shared.revision,
-      resources,
-      w.can('viewMachines'),
       recency,
     );
     if (inputs == checked) return;
     checked = inputs;
-    final computers = resources && w.can('viewMachines')
-        ? w.services.entityDirectory.rows(WorkspaceEntityKind.computers)
-        : const <Map<String, dynamic>>[];
     final next = (
       authority,
       channel?.id,
@@ -369,15 +295,11 @@ class ComposerDirectory extends ChangeNotifier {
       w.client.user?.json['name'],
       w.services.entityDirectory.authorRevision,
       _shared.revision,
-      resources,
-      Object.hashAll([for (final c in computers) '${c['id']}:${c['name']}']),
       recency,
     );
     if (next == stamp) return;
     stamp = next;
-    people = channel == null
-        ? []
-        : build(authority, channel, computers, recent: _recent);
+    people = channel == null ? [] : build(authority, channel, recent: _recent);
     notifyListeners();
   }
 
@@ -428,8 +350,7 @@ class ComposerDirectory extends ChangeNotifier {
   /// then the channel roster (which only marks/extends existing entries).
   List<RaftComposerSuggestion> build(
     String authority,
-    RaftChannel channel,
-    List<Map<String, dynamic>> computers, {
+    RaftChannel channel, {
     Map<String, int> recent = const {},
   }) {
     final entries = <String, RaftComposerSuggestion>{};
@@ -537,34 +458,6 @@ class ComposerDirectory extends ChangeNotifier {
         if (candidate != null) entries['external:${candidate.id}'] = candidate;
       }
     }
-    if (_shared.resources == true) {
-      for (final row in computers) {
-        if (row['isComputer'] != true ||
-            row['id'] is! String ||
-            row['name'] is! String) {
-          continue;
-        }
-        final name = row['name'] as String;
-        entries['computer:${row['id']}'] = RaftComposerSuggestion(
-          type: 'computer',
-          id: row['id'],
-          name: name,
-          referenceText: '[@${_label(name)}](<computer:${row['id']}>)',
-        );
-      }
-      for (final row in _shared.apps) {
-        final name = row['displayName'] is String
-            ? row['displayName'] as String
-            : row['appId'] as String;
-        entries['app:${row['appId']}'] = RaftComposerSuggestion(
-          type: 'app',
-          id: row['appId'],
-          name: row['appId'],
-          title: name,
-          referenceText: '[@${_label(name)}](<app:${row['appId']}>)',
-        );
-      }
-    }
     return entries.values.toList();
   }
 
@@ -576,11 +469,8 @@ class ComposerDirectory extends ChangeNotifier {
     if (!_shared.rosters.containsKey(channel.id)) {
       unawaited(_shared.loadRoster(w, channel));
     }
-    if (_shared.resources == null) unawaited(_shared.loadResources(w));
   }
 
-  static String _label(String s) =>
-      s.replaceAll('\\', '\\\\').replaceAll('[', r'\[').replaceAll(']', r'\]');
   @override
   void dispose() {
     ended = true;

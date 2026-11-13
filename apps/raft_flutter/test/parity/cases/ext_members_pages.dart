@@ -17,7 +17,6 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
-import 'package:raft_flutter/features/member_graph_view.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_flutter/features/workspace_menu_invite.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
@@ -159,22 +158,6 @@ class _ShellState extends State<_Shell> {
 /// `FleetDetail` route over the page below, like the official screens.* cases.
 Widget _phoneDetail(ParityContext ctx) {
   final route = ctx.props['route'] as String;
-  if (route == '/members/graph') {
-    // The phone page `/members/graph`: the graph route over the members page.
-    return ScreenWorkspaceHost(
-      create: () => _workspace(ctx, mobile: true)..loadSidebar(),
-      builder: (context, w) => ScreenRouteStack(
-        pages: [
-          (_) => const SizedBox.expand(),
-          (_) => MemberGraphPage(
-            controller: w,
-            sectionLabel: 'Connections',
-            onBack: () {},
-          ),
-        ],
-      ),
-    );
-  }
   final id = route.split('/').last;
   const webTabs = {'integrations': AgentDetailTab.apps};
   final tabName = (ctx.props['routeQuery'] as String?)?.split('=').last;
@@ -281,9 +264,7 @@ ParityCase _case(String kind) => ParityCase(
   build: (ctx) => switch (ctx.props['extKind']) {
     'main' =>
       ctx.props['platform'] == 'mobile' &&
-              RegExp(
-                r'^/(human/|agent/|members/graph)',
-              ).hasMatch('${ctx.props['route']}')
+              RegExp(r'^/(human/|agent/)').hasMatch('${ctx.props['route']}')
           ? _phoneDetail(ctx)
           : _Shell(ctx: ctx),
     'invite' => _InviteHost(ctx: ctx),

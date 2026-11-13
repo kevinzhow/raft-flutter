@@ -67,23 +67,6 @@ ROUTES[f'GET /agents/{EXTERNAL["id"]}/credentials'] = {
 ROUTES[f'GET /agents/{EXTERNAL["id"]}/external-status'] = {
     'setupState': 'credential_minted', 'credentialLastUsedAt': None}
 
-# Member graph (GET /servers/:id/member-graph): humans, agents, channels and who is in which channel.
-GRAPH_HUMANS = [{'type': 'human', 'id': h['userId'], 'name': h['name'], 'displayName': h['displayName'],
-                 'avatarUrl': None, 'gravatarHash': '', 'role': h['role'],
-                 'channelIds': ['ch-design', 'ch-release'] if i < 3 else ['ch-design']}
-                for i, h in enumerate(base.HUMANS)]
-GRAPH_AGENTS = [{'type': 'agent', 'id': a['id'], 'name': a['name'], 'displayName': a['displayName'], 'avatarUrl': a['avatarUrl'],
-                 'status': 'active', 'runtime': a['runtime'], 'channelIds': ['ch-design'] if i % 2 else ['ch-release']}
-                for i, a in enumerate(base.ROSTER[:4])]
-GRAPH_CHANNELS = [
-    {'id': 'ch-design', 'name': 'design', 'type': 'channel', 'archivedAt': None, 'humanCount': 5, 'agentCount': 2, 'memberCount': 7},
-    {'id': 'ch-release', 'name': 'release-gates', 'type': 'channel', 'archivedAt': None, 'humanCount': 3, 'agentCount': 2, 'memberCount': 5},
-]
-ROUTES[f'GET /servers/{SID}/member-graph'] = {
-    'humans': GRAPH_HUMANS, 'agents': GRAPH_AGENTS, 'channels': GRAPH_CHANNELS,
-    'edges': [{'channelId': cid, 'memberType': m['type'], 'memberId': m['id']}
-              for m in GRAPH_HUMANS + GRAPH_AGENTS for cid in m['channelIds']]}
-
 # Runtime config editor needs the runtime catalog / machine runtimes the profile already loads; nothing extra.
 
 # Report issue dialog reads the agent's recent activity for the diagnostic bundle.
@@ -316,10 +299,6 @@ for platform in ('desktop', 'phone'):
     agent_main(platform, 'agent.profile-fast-mode', 'Agent profile: Runtime Config rows with Fast mode (runtimeConfig.mode)',
                agent=FAST['id'], props={'roster': 'fast'}, route_set='roster-fast')
 
-    # ---- 7.25 member graph
-    add(platform, 'graph', 'Member graph (/members/graph)', 'main', selector=MAIN if not phone else VIEW,
-        android_key='desktop-content-detail' if not phone else None, hint=SRC + 'settings/MemberGraphSection.tsx',
-        props={'route': '/members/graph'}, android_interactions=[tap('desktop-directory-graph')] if not phone else [])
 
 # ---- 7.06 invite dialog states (both platforms; the dialog is mounted alone like the official host)
 INVITE_HINT = SRC + 'member/InviteHumanDialog.tsx'

@@ -421,7 +421,6 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
   "Server configuration updated": "服务器配置已更新",
   "Server entities": "服务器内容",
   "Server information": "服务器基本信息",
-  "Server member connection graph": "服务器成员连接图",
   "Server name": "服务器名称",
   "Server not found": "未找到服务器",
   "Server owners and admins can register apps in Settings > Applications.":

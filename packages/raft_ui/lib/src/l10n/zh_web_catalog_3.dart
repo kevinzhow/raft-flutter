@@ -441,7 +441,6 @@ const Map<String, String> zhCatalogWeb3 = <String, String>{
   "Failed to install this Marketplace app.": "无法安装这个应用市场 App。",
   "Failed to invite server": "邀请服务器失败",
   "Failed to join community server": "加入社区服务器失败",
-  "Failed to join this public server": "无法加入此公开服务器",
   "Failed to load Activity mute setting.": "加载活动静音设置失败。",
   "Failed to load App Notifications settings": "加载 App 通知设置失败",
   "Failed to load Labs settings.": "加载 Labs 设置失败。",
@@ -458,7 +457,6 @@ const Map<String, String> zhCatalogWeb3 = <String, String>{
   "Failed to load image": "图片加载失败",
   "Failed to load installed App Notifications settings": "加载已安装的 App 通知设置失败",
   "Failed to load invite link. Try again.": "加载邀请链接失败，请重试。",
-  "Failed to load member graph": "加载成员关系图失败",
   "Failed to load message display settings.": "加载消息显示设置失败。",
   "Failed to load official identity": "加载官方身份失败",
   "Failed to load onboarding settings": "加载引导设置失败",
@@ -513,7 +511,6 @@ const Map<String, String> zhCatalogWeb3 = <String, String>{
   "Failed to unmute Activity for this conversation.": "为此会话取消静音活动失败。",
   "Failed to update #all channel setting": "更新 #all 频道设置失败",
   "Failed to update Guest access": "更新访客访问权限失败",
-  "Failed to update Guest joining": "无法更新访客加入设置",
   "Failed to update Labs settings.": "更新 Labs 设置失败。",
   "Failed to update app": "更新应用失败",
 };

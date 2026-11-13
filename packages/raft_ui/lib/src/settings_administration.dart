@@ -1865,7 +1865,7 @@ class RaftPublicChannelList extends StatelessWidget {
 
 /// SettingsPanel.tsx PublicVisibilitySection's card (Server Profile tab,
 /// owner only behind `public_server_v0`): the public switch, the public page
-/// URL with Copy, the Guest-join switch (`server_guest_v0`), the exposed
+/// URL with Copy, the exposed
 /// channel list and the error banner.
 class RaftPublicVisibilityCard extends StatelessWidget {
   const RaftPublicVisibilityCard({
@@ -1876,8 +1876,6 @@ class RaftPublicVisibilityCard extends StatelessWidget {
     this.publicUrl,
     this.copied = false,
     this.onCopy,
-    this.guestJoin,
-    this.onGuestJoin,
     this.searchEngines = false,
     this.onSearchEngines,
     this.loading = false,
@@ -1891,10 +1889,6 @@ class RaftPublicVisibilityCard extends StatelessWidget {
   final String? publicUrl;
   final bool copied;
   final VoidCallback? onCopy;
-
-  /// Null hides the Guest-join row (`server_guest_v0` off).
-  final bool? guestJoin;
-  final ValueChanged<bool>? onGuestJoin;
 
   /// Allow search engines to list the public channels
   /// (`publicSearchEnabled`); only meaningful while the server is public.
@@ -1997,21 +1991,6 @@ class RaftPublicVisibilityCard extends StatelessWidget {
                   onPressed: onCopy,
                 ),
               ],
-            ),
-          ],
-          // Second level: indented under the setting it depends on, with a
-          // guide line (`ml-1 border-l border-line-hairline pl-4`).
-          if (guestJoin case final guest?) ...[
-            const SizedBox(height: 16),
-            secondLevel(
-              const ValueKey('public-guest-join-setting'),
-              switchRow(
-                'Allow visitors to join as Guest',
-                'Signed-in visitors can join the server as read-only Guests, follow channels open to Guests, and be invited into other channels.',
-                guest,
-                onGuestJoin,
-                const ValueKey('public-guest-join-switch'),
-              ),
             ),
           ],
           // Public server SEO: also second level. It never makes anything

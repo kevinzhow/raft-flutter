@@ -5,6 +5,5 @@
 const Map<String, String> zhCatalogPagesLane = <String, String>{
   "Something went wrong": "出了点问题",
   "Reload app": "重新加载应用",
-  "Join this server?": "加入此服务器？",
   "Look": "外观风格",
 };

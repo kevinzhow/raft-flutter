@@ -256,7 +256,6 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "You can customize the agent again after updating its identity.":
       "更新身份后，你仍可再次自定义该 Agent。",
   "You do not have access to any Raft Servers.": "你无权访问任何 Raft 服务器。",
-  "You joined this server. Refresh the page to open it.": "你已加入此服务器。请刷新页面以打开它。",
   "You marked these channels visible to Guests earlier. That choice will now apply to everyone, not only the Guests you invited. You will not be asked again for each channel.":
       "这些频道是你此前标记为「对访客可见」的。该选择现在将对所有人生效，不再仅限你邀请的访客；系统不会再逐个频道询问。",
   "You may contact me about this feedback": "可以就此反馈联系我",

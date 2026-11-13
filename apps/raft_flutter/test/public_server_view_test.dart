@@ -119,7 +119,6 @@ Future<void> _mount(
   VoidCallback? onRegister,
   VoidCallback? onUnavailable,
   PublicServerAccount? account,
-  Future<void> Function()? onJoined,
   String? channel,
   Size size = const Size(1280, 800),
   String themeId = raftThemePackId,
@@ -134,7 +133,6 @@ Future<void> _mount(
         slug: 'raft-design',
         initialChannelId: channel,
         account: account,
-        onJoined: onJoined,
         onSignIn: onSignIn ?? () {},
         onRegister: onRegister ?? () {},
         onUnavailable: onUnavailable ?? () {},
@@ -153,56 +151,43 @@ void main() {
     elegantThemePackId,
     brutalThemePackId,
   ], look: raftLookOf)) {
-    testWidgets(
-      '$themeId preserves account time and join confirmation behavior',
-      (t) async {
-        final client = _PublicClient(
-          _routes(),
-          user: {
-            'id': 'u1',
-            'preferredTimezone': 'Asia/Kathmandu',
-            'preferredTimeFormat': '24h',
-          },
-        );
-        await _mount(
-          t,
-          client,
-          account: PublicServerAccount(servers: const [], onSelect: (_) {}),
-          themeId: themeId,
-        );
-        addTearDown(() async {
-          await t.pumpWidget(const SizedBox.shrink());
-          await t.pumpAndSettle();
-        });
-        final timestamp = t
-            .widget<RaftMessageTile>(
-              find.byKey(const ValueKey('public-message-m1')),
-            )
-            .timestamp;
-        await t.tap(find.byKey(const ValueKey('public-join-guest')));
+    testWidgets('$themeId preserves account time and offers no guest join', (
+      t,
+    ) async {
+      final client = _PublicClient(
+        _routes(),
+        user: {
+          'id': 'u1',
+          'preferredTimezone': 'Asia/Kathmandu',
+          'preferredTimeFormat': '24h',
+        },
+      );
+      await _mount(
+        t,
+        client,
+        account: PublicServerAccount(servers: const [], onSelect: (_) {}),
+        themeId: themeId,
+      );
+      addTearDown(() async {
+        await t.pumpWidget(const SizedBox.shrink());
         await t.pumpAndSettle();
-        final questionTitle = t
-            .widget<RaftConfirmDialog>(find.byType(RaftConfirmDialog))
-            .title;
-        // Frozen packs uppercase the same copy through dialogShellTitle.
-        final questionVisible =
-            find.text('Join this server?').evaluate().length +
-                find.text('JOIN THIS SERVER?').evaluate().length ==
-            1;
-        await t.tap(find.text('Cancel'));
-        await t.pumpAndSettle();
-        expect(
-          (timestamp.endsWith('14:57'), questionTitle, questionVisible),
-          (true, 'Join this server?', true),
-          reason:
-              '$themeId rendered "$timestamp"; theme selection must not change account preferences or copy.',
-        );
-        expect(client.calls, isNot(contains('POST $_base/join-as-guest')));
-      },
-    );
+      });
+      final timestamp = t
+          .widget<RaftMessageTile>(
+            find.byKey(const ValueKey('public-message-m1')),
+          )
+          .timestamp;
+      expect(find.byKey(const ValueKey('public-join-guest')), findsNothing);
+      expect(
+        timestamp.endsWith('14:57'),
+        isTrue,
+        reason: '$themeId "$timestamp"',
+      );
+      expect(client.calls, isNot(contains('POST $_base/join-as-guest')));
+    });
   }
   testWidgets(
-    'signed out: channels, the first channel messages and the join banner',
+    'signed out: channels, the first channel messages and the view-only banner',
     (t) async {
       final client = _PublicClient(_routes());
       var signIn = 0, register = 0;
@@ -217,7 +202,9 @@ void main() {
       expect(find.text('general'), findsWidgets);
       expect(find.text('Welcome to the community'), findsOneWidget);
       expect(
-        find.text('Sign in to join Raft Design and be part of the discussion.'),
+        find.text(
+          'Raft Design is view only. Create a Raft account to build a server of your own.',
+        ),
         findsOneWidget,
       );
       expect(
@@ -375,132 +362,44 @@ void main() {
     );
   });
 
+  // Public Guest join is retired (server v1.24.0 removed
+  // POST /public/servers/:slug/join-as-guest; Web 1.24 PublicServerPage: "a
+  // signed-in visitor who is not a member only reads"). Even a server that
+  // still answers canJoinAsGuest must not bring the button back.
   group('signed in nonmember', () {
     PublicServerAccount account() =>
         PublicServerAccount(servers: const [], onSelect: (_) {});
     final user = {'id': 'u1'};
 
-    testWidgets('Join as Guest asks for confirmation, joins and hands over', (
-      t,
-    ) async {
-      final client = _PublicClient(_routes(), user: user);
-      var joined = 0;
-      await _mount(
-        t,
-        client,
-        account: account(),
-        onJoined: () async => joined++,
-      );
-      expect(find.text('Sign In'), findsNothing);
-      await t.tap(find.byKey(const ValueKey('public-join-guest')));
-      await t.pumpAndSettle();
-      // The banner button and the dialog's confirm; the dialog is titled as the
-      // v1.21.23 question.
-      expect(find.text('Join as Guest'), findsNWidgets(2));
-      expect(find.text('Join this server?'), findsOneWidget);
-      await t.tap(find.byKey(const ValueKey('public-join-confirm')));
-      await t.pumpAndSettle();
-      expect(client.calls, contains('POST $_base/join-as-guest'));
-      expect(joined, 1);
-      expect(find.text('Join as Guest'), findsOneWidget);
-    });
-
-    testWidgets('cancelling the confirm joins nothing', (t) async {
+    testWidgets('is view only: no Join as Guest, no join request', (t) async {
       final client = _PublicClient(_routes(), user: user);
       await _mount(t, client, account: account());
-      await t.tap(find.byKey(const ValueKey('public-join-guest')));
-      await t.pumpAndSettle();
-      await t.tap(find.text('Cancel'));
-      await t.pumpAndSettle();
-      expect(client.calls, isNot(contains('POST $_base/join-as-guest')));
-    });
-
-    testWidgets('a failed join keeps the dialog open with the error', (
-      t,
-    ) async {
-      final routes = _routes();
-      routes['POST $_base/join-as-guest'] = (_, _) => throw RaftApiException(
-        'Failed to join this public server',
-        status: 500,
+      expect(find.byKey(const ValueKey('public-join-guest')), findsNothing);
+      expect(find.text('Join as Guest'), findsNothing);
+      expect(find.text('Sign In'), findsNothing);
+      expect(
+        find.textContaining(
+          "is view only. You can read its public channels, but can't send messages here.",
+        ),
+        findsOneWidget,
       );
-      await _mount(t, _PublicClient(routes, user: user), account: account());
-      await t.tap(find.byKey(const ValueKey('public-join-guest')));
-      await t.pumpAndSettle();
-      await t.tap(find.byKey(const ValueKey('public-join-confirm')));
-      await t.pumpAndSettle();
-      expect(find.text('Failed to join this public server'), findsWidgets);
-      // The banner button and the dialog's confirm; the dialog is titled as the
-      // v1.21.23 question.
-      expect(find.text('Join as Guest'), findsNWidgets(2));
-      expect(find.text('Join this server?'), findsOneWidget);
+      expect(client.calls.where((c) => c.contains('join-as-guest')), isEmpty);
     });
+  });
 
-    testWidgets(
-      'a refresh failure after joining never reads as a failed join',
-      (t) async {
-        await _mount(
-          t,
-          _PublicClient(_routes(), user: user),
-          account: account(),
-          onJoined: () async => throw StateError('server list unavailable'),
-        );
-        await t.tap(find.byKey(const ValueKey('public-join-guest')));
-        await t.pumpAndSettle();
-        await t.tap(find.byKey(const ValueKey('public-join-confirm')));
-        await t.pumpAndSettle();
-        expect(
-          find.text('You joined this server. Refresh the page to open it.'),
-          findsOneWidget,
-        );
-      },
+  testWidgets('signed out with a joinable-looking answer: Sign In and Create '
+      'Account, the view-only copy', (t) async {
+    final client = _PublicClient(_routes());
+    await _mount(t, client);
+    expect(find.text('Sign In'), findsOneWidget);
+    expect(find.text('Create Account'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'is view only. Create a Raft account to build a server of your own.',
+      ),
+      findsOneWidget,
     );
-
-    testWidgets(
-      'a required agreement is shown and agreeing joins with its id',
-      (t) async {
-        final routes = _routes();
-        Object? sent;
-        var first = true;
-        routes['POST $_base/join-as-guest'] = (_, data) {
-          sent = data;
-          if (first) {
-            first = false;
-            throw RaftApiException.response(
-              'agreement_required',
-              status: 409,
-              body: {
-                'error': 'agreement_required',
-                'agreement': {
-                  'id': 'ag1',
-                  'title': 'Community agreement',
-                  'version': 3,
-                  'bodyMarkdown': '1. Be kind',
-                },
-              },
-            );
-          }
-          return {'ok': true};
-        };
-        var joined = 0;
-        await _mount(
-          t,
-          _PublicClient(routes, user: user),
-          account: account(),
-          onJoined: () async => joined++,
-        );
-        await t.tap(find.byKey(const ValueKey('public-join-guest')));
-        await t.pumpAndSettle();
-        await t.tap(find.byKey(const ValueKey('public-join-confirm')));
-        await t.pumpAndSettle();
-        expect(find.text('Community agreement'), findsOneWidget);
-        expect(find.text('Version 3'), findsOneWidget);
-        await t.tap(find.byKey(const ValueKey('community-agreement-agree')));
-        await t.pumpAndSettle();
-        expect(sent, {'agreementId': 'ag1'});
-        expect(joined, 1);
-        expect(find.text('Community agreement'), findsNothing);
-      },
-    );
+    expect(find.textContaining('Sign in to join'), findsNothing);
   });
 }
 

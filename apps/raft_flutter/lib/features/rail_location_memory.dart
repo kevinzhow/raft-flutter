@@ -27,10 +27,7 @@ String? railModeOfLocation(RaftLocation location) => switch (location.route) {
   RaftRoute.dm ||
   RaftRoute.saved => 'chat',
   RaftRoute.tasks => 'tasks',
-  RaftRoute.members ||
-  RaftRoute.agent ||
-  RaftRoute.human ||
-  RaftRoute.memberGraph => 'members',
+  RaftRoute.members || RaftRoute.agent || RaftRoute.human => 'members',
   RaftRoute.computers || RaftRoute.computer => 'computers',
   RaftRoute.settings || RaftRoute.releaseNotes => 'settings',
   _ => null,
@@ -84,7 +81,11 @@ class RailLocationMemory {
     if (key == null || stored == null || stored.isEmpty) return null;
     RaftLocation? location;
     try {
-      location = RaftLocation.parse(stored);
+      // A slot written before the member graph page was removed still reads
+      // `/members/graph`; Web redirects it to Members (canonicalLegacy).
+      location = RaftLocation.fromUri(
+        RaftLocation.canonicalLegacy(Uri.parse(stored)),
+      );
     } catch (_) {
       location = null;
     }

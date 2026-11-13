@@ -5,7 +5,8 @@
 // Settings > Applications on the 390x844 phone viewport: the Slack Bridge
 // listing carries a pending outbound-permission revision, so its app detail
 // shows the "Permission update pending review" badge, the requested data
-// groups / events and the reviewer-only "Approve update" action. Data mirrors
+// groups / events. The reviewer-only "Approve update" action is gone (server
+// v1.24.0 removed its route; Web 1.24 has no such action). Data mirrors
 // react-provider.spec.ts (marketplace: Slack Bridge + installed GitHub
 // Issues; clients: server-local Slack Bridge; overview empty).
 import 'package:flutter/material.dart';
@@ -135,7 +136,7 @@ final Map<String, ParityCase> settingsIntegrationsCases = {
       await t.tap(find.byKey(const ValueKey('connected-app-market_slack')));
       await t.pump(const Duration(milliseconds: 400));
       expect(find.text('PERMISSION UPDATE PENDING REVIEW'), findsOneWidget);
-      expect(find.text('Approve update'), findsOneWidget);
+      expect(find.text('Approve update'), findsNothing);
     },
   ),
 };

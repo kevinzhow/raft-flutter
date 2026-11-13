@@ -122,7 +122,10 @@ Future<(WorkspaceController, _Adapter)> _mountApps(
 }
 
 void main() {
-  group('Permission update review', () {
+  // Server v1.24.0 removed POST /integrations/clients/:id/app-notifications/
+  // permissions/review and Web 1.24 has no reviewer action: the marketplace
+  // detail only shows the pending request (AppNotificationRequestSummary).
+  group('Permission update pending review (no reviewer action)', () {
     Map<String, dynamic> pending({bool reviewer = true}) => _listing(
       'rev',
       extra: {
@@ -134,100 +137,35 @@ void main() {
       },
     );
 
-    testWidgets('reviewer sees the requested groups and approves that revision', (
-      t,
-    ) async {
-      var current = pending();
-      final (_, a) = await _mountApps(t, () => [current]);
-      a.routes['POST /integrations/clients/rev/app-notifications/permissions/review'] =
-          (_) {
-            current = _listing(
-              'rev',
-              extra: {
-                'appNotificationGroups': ['server', 'agent'],
-                'canReviewAppNotifications': true,
-              },
-            );
-            return {'revision': 2};
-          };
-      await t.tap(find.byKey(const ValueKey('connected-app-rev')));
-      await t.pumpAndSettle();
-      expect(find.text('Permission update pending review'), findsOneWidget);
-      expect(find.text('Requested data groups'), findsOneWidget);
-      expect(find.text('Requested notification events'), findsOneWidget);
-      expect(
-        find.text('A marketplace reviewer can approve this permission update.'),
-        findsOneWidget,
-      );
-      await t.tap(
-        find.byKey(const ValueKey('app-notifications-review-approve')),
-      );
-      await t.pumpAndSettle();
-      final posts = a.of(
-        'POST',
-        '/integrations/clients/rev/app-notifications/permissions/review',
-      );
-      expect(posts, hasLength(1));
-      expect(posts.single.data, {
-        'expected_revision_id': 'rev-seen-by-reviewer',
+    for (final reviewer in [true, false]) {
+      testWidgets('shows the requested groups but no Approve update '
+          '(canReviewAppNotifications: $reviewer)', (t) async {
+        final (_, a) = await _mountApps(t, () => [pending(reviewer: reviewer)]);
+        await t.tap(find.byKey(const ValueKey('connected-app-rev')));
+        await t.pumpAndSettle();
+        expect(find.text('Permission update pending review'), findsOneWidget);
+        expect(find.text('Requested data groups'), findsOneWidget);
+        expect(find.text('Requested notification events'), findsOneWidget);
+        expect(find.text('Approve update'), findsNothing);
+        expect(
+          find.byKey(const ValueKey('app-notifications-review-approve')),
+          findsNothing,
+        );
+        expect(
+          find.text(
+            'A marketplace reviewer can approve this permission update.',
+          ),
+          findsNothing,
+        );
+        expect(
+          a.of(
+            'POST',
+            '/integrations/clients/rev/app-notifications/permissions/review',
+          ),
+          isEmpty,
+        );
       });
-      // The listing reloaded: no pending state left.
-      expect(find.text('Permission update pending review'), findsNothing);
-      expect(find.text('Data groups'), findsOneWidget);
-      expect(find.text('Approve update'), findsNothing);
-    });
-
-    testWidgets('a stale revision (409) surfaces the server message', (
-      t,
-    ) async {
-      final (_, a) = await _mountApps(t, () => [pending()]);
-      const path =
-          'POST /integrations/clients/rev/app-notifications/permissions/review';
-      a.routes[path] = (_) => {
-        'error': 'The displayed permission request has been replaced.',
-        'code': 'permission_revision_stale',
-      };
-      a.statuses[path] = 409;
-      await t.tap(find.byKey(const ValueKey('connected-app-rev')));
-      await t.pumpAndSettle();
-      await t.tap(
-        find.byKey(const ValueKey('app-notifications-review-approve')),
-      );
-      await t.pumpAndSettle();
-      expect(
-        find.text('The displayed permission request has been replaced.'),
-        findsOneWidget,
-      );
-      expect(find.text('Permission update pending review'), findsOneWidget);
-    });
-
-    testWidgets('a non-reviewer sees the pending request but no action', (
-      t,
-    ) async {
-      await _mountApps(t, () => [pending(reviewer: false)]);
-      await t.tap(find.byKey(const ValueKey('connected-app-rev')));
-      await t.pumpAndSettle();
-      expect(find.text('Permission update pending review'), findsOneWidget);
-      expect(find.text('Requested data groups'), findsOneWidget);
-      expect(find.text('Approve update'), findsNothing);
-    });
-
-    testWidgets('without a displayed revision id the action stays disabled', (
-      t,
-    ) async {
-      final listing = pending()..['appNotificationPendingRevisionId'] = null;
-      await _mountApps(t, () => [listing]);
-      await t.tap(find.byKey(const ValueKey('connected-app-rev')));
-      await t.pumpAndSettle();
-      expect(
-        t
-            .widget<RaftSettingsRecipeButton>(
-              find.byKey(const ValueKey('app-notifications-review-approve')),
-            )
-            .onPressed,
-        isNull,
-      );
-    });
+    }
   });
 
   group('When to use counter', () {

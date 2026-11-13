@@ -91,7 +91,6 @@ Widget _page(ParityContext ctx) {
     onSignIn: () {},
     onRegister: () {},
     onUnavailable: () {},
-    onJoined: () async {},
   );
   return Builder(
     builder: (context) =>

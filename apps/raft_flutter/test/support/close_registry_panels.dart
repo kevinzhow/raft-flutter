@@ -124,13 +124,4 @@ const panelSurfaces = <CloseSurface>[
     status: 'fixed',
     fix: 'MemberProfileView.onBack in a Search / Activity slot',
   ),
-  CloseSurface(
-    'member-graph-page',
-    kind: SurfaceKind.page,
-    web: 'MemberGraphSection.tsx MemberGraphRoute (/members/graph): PanelHeader mobileBackProps Back md:hidden, no desktop close (route page)',
-    phone: {_back, _sys},
-    fold: {_sys},
-    desktop: {_sys},
-    files: ['lib/features/member_graph_view.dart'],
-  ),
 ];

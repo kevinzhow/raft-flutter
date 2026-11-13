@@ -329,9 +329,34 @@ void main() {
       await _mount(t, _Client(translation: false), size: const Size(620, 900));
       final banner = find.byKey(const ValueKey('public-server-bottom-action'));
       expect(t.getSize(banner).width, 620);
-      // One row: the 32px Button `sm` (raft-ui 0.7.0 `h-8`) plus the banner
-      // padding; stacked copy over actions is taller than 100.
-      expect(t.getSize(banner).height, lessThan(88));
+      // One row: the actions sit beside the copy, not under it. Measured on
+      // geometry, not on the banner height: since Web v1.24 retired Guest join
+      // a signed-out visitor always gets the 80-character view-only sentence
+      // (PublicServerPage.tsx:664-669, pages.publicServer.viewOnlyAnonymousBanner),
+      // which the Ahem test font wraps over several lines; Web keeps copy and
+      // actions on one row above ~400px (PublicServerPage.tsx:680-689).
+      final copy = t.getRect(
+        find.descendant(
+          of: banner,
+          matching: find.textContaining('is view only'),
+        ),
+      );
+      final buttons = [
+        for (final e
+            in find
+                .descendant(
+                  of: banner,
+                  matching: find.byType(RaftPublicActionButton),
+                )
+                .evaluate())
+          t.getRect(find.byWidget(e.widget)),
+      ];
+      expect(buttons, hasLength(2));
+      for (final b in buttons) {
+        expect(b.left, greaterThanOrEqualTo(copy.right));
+        expect(b.top, lessThan(copy.bottom));
+        expect(b.bottom, greaterThan(copy.top));
+      }
     });
   });
 

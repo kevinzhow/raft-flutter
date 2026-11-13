@@ -72,7 +72,6 @@ import 'desktop_directory_view.dart';
 import 'desktop_activity_flag.dart';
 import 'resource_search.dart';
 import 'quick_switcher_host.dart';
-import 'member_graph_view.dart';
 import 'member_profile_view.dart';
 import 'fleet_views.dart';
 import 'private_route_guard.dart';
@@ -2607,14 +2606,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final key = ValueKey(
       'desktop-detail-$mobileAuthority-${target.kind}-${target.id}',
     );
-    if (target.kind == DesktopContentKind.graph) {
-      return MemberGraphPage(
-        key: key,
-        controller: w,
-        sectionLabel: raftText(context, 'Connections'),
-        onBack: closeDesktopDetail,
-      );
-    }
     // Web `renderContentSlot` hands Search / Activity agent and human details
     // `onBack=closeSlot` with `backButtonVisibility="always"`: Back at every
     // width. A directory / route detail keeps Back below `md` only (the phone

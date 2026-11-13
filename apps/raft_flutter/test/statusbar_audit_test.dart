@@ -312,7 +312,6 @@ const pages = <Page>[
   Page('22-server-not-found', '/s/unknown', headerless: true),
   Page('23-agent-detail', '/s/alpha/agent/missing'),
   Page('24-computer-detail', '/s/alpha/computer/computer-1'),
-  Page('25-member-graph', '/s/alpha/members/graph'),
   Page('26-settings-appearance', '/s/alpha/settings/appearance'),
   Page('27-settings-notifications', '/s/alpha/settings/notifications'),
   Page('28-settings-language', '/s/alpha/settings/language-region'),

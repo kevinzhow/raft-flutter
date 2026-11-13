@@ -99,10 +99,6 @@ void main() {
         '/members',
         '/human/bob',
       ]);
-      expect(paths(stack(at(RaftRoute.memberGraph))), [
-        '/members',
-        '/members/graph',
-      ]);
       expect(paths(stack(at(RaftRoute.computer, id: 'm1'))), [
         '/settings',
         '/computer/m1',

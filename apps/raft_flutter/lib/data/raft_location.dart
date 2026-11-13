@@ -10,7 +10,6 @@ enum RaftRoute {
   computer,
   human,
   members,
-  memberGraph,
   computers,
   search,
   settings,
@@ -159,7 +158,7 @@ class RaftLocation {
   factory RaftLocation.parse(String path) =>
       RaftLocation.fromUri(Uri.parse(path));
 
-  /// useRailLegacyRedirect.ts:29–64. Folds the older rail-mode shapes
+  /// useRailLegacyRedirect.ts:29–64 plus LegacyMemberGraphRedirect. Folds the older rail-mode shapes
   /// (`/machine/:id`, `?sidebarTab=`, `?tab=machines|messages`) into the canonical
   /// path; every other query key and the fragment are preserved.
   static Uri canonicalLegacy(Uri uri) {
@@ -181,6 +180,13 @@ class RaftLocation {
         ? 'computers'
         : null;
     if (mode != null) path = '${root![1]}/$mode';
+    // Web LegacyMemberGraphRedirect: the member graph page was removed (server
+    // v1.24.0 dropped GET /servers/:id/member-graph); its old URL is Members.
+    final graph = RegExp(r'^(/s/[^/]+)/members/graph/?$').firstMatch(path);
+    if (graph != null) {
+      path = '${graph[1]}/members';
+      changed = true;
+    }
     if (!changed) return uri;
     final query = {
       for (final entry in uri.queryParametersAll.entries)
@@ -213,8 +219,6 @@ class RaftLocation {
       'computer' || 'machine' when entity != null => RaftRoute.computer,
       'human' when entity != null => RaftRoute.human,
       'members' when rest.length == 1 => RaftRoute.members,
-      'members' when rest.length == 2 && rest[1] == 'graph' =>
-        RaftRoute.memberGraph,
       'computers' when rest.length == 1 => RaftRoute.computers,
       'search' when rest.length == 1 => RaftRoute.search,
       'settings' => RaftRoute.settings,
@@ -268,7 +272,6 @@ class RaftLocation {
         entityId == null || entityId.isEmpty
             ? throw ArgumentError('Entity routes require an ID')
             : [route.name, entityId],
-      RaftRoute.memberGraph => ['members', 'graph'],
       RaftRoute.settings => ['settings', ...settingsPath],
       RaftRoute.releaseNotes => ['release-notes'],
       RaftRoute.unknown => throw ArgumentError(
@@ -323,8 +326,7 @@ class RaftLocation {
     RaftRoute.tasks => RaftMobileTab.tasks,
     RaftRoute.agent ||
     RaftRoute.human ||
-    RaftRoute.members ||
-    RaftRoute.memberGraph => RaftMobileTab.members,
+    RaftRoute.members => RaftMobileTab.members,
     RaftRoute.computer ||
     RaftRoute.computers ||
     RaftRoute.settings ||

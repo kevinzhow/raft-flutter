@@ -29,7 +29,6 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
       "允许 Agent 为你准备快速提交卡片。提交权限始终属于 human，Agent 不会自行执行该操作。",
   "Allow this agent to prepare quick-commit action cards (channel / agent / member additions) for you to click and commit.":
       "允许此 Agent 准备快速提交 action cards（频道 / Agent / 成员添加），供你点击并提交。",
-  "Allow visitors to join as Guest": "允许已登录的用户以访客身份加入",
   "Allowed channels, DMs, and tasks. No server-level settings, channels, or membership management.":
       "允许的频道、私信与任务。无服务器级设置、频道或成员管理权限。",
   "Already have an account? <signin>Sign in</signin>":
@@ -499,7 +498,6 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
   "Connecting…": "连接中…",
   "Connection": "连接",
   "Connection name": "连接名称",
-  "Connections": "关系",
   "Content & Creative": "内容与创意",
   "Context Compaction Finished": "上下文压缩已完成",
   "Context Compaction Started": "上下文压缩已开始",

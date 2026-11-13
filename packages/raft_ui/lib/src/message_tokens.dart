@@ -242,6 +242,7 @@ const _skippedTags = {'a', 'code', 'pre', 'mark'};
 final _literalNewline = RegExp(r'\\n');
 final _strongWithSpace = RegExp(r'\*\*([^*\n]*?\S)([ \t]+)\*\*');
 final _angleTarget = RegExp(r'<([^<>\n]+)>');
+
 final _dmBefore = RegExp(r'dm:@[\w.-]+$');
 
 /// Runs Web's message passes over [nodes], a freshly parsed tree, in place:
@@ -357,16 +358,20 @@ class _TokenPass {
   /// its label as plain text.
   md.Node? _angleLink(md.Element link) {
     final href = link.attributes['href'];
-    final target = href == null ? null : raftParseRefTarget(href);
-    if (target == null ||
-        target.kind == RaftRefKind.computer ||
-        target.kind == RaftRefKind.app) {
-      return null;
-    }
     final autolink =
         link.children?.length == 1 &&
         link.children!.single is md.Text &&
         link.children!.single.textContent == href;
+    if (href != null && raftIsRetiredResourceRef(href)) {
+      // Web 1.24 `isRetiredResourceRef`: the source reads as typed.
+      return RaftClaimedText(
+        autolink
+            ? '<$href>'
+            : '[${link.textContent.replaceAllMapped(RegExp(r'[\\\[\]]'), (m) => '\\${m[0]}')}](<$href>)',
+      );
+    }
+    final target = href == null ? null : raftParseRefTarget(href);
+    if (target == null) return null;
     final resolved = refFor(target);
     final label = autolink
         ? resolved?.$2 ?? target.text
@@ -478,12 +483,10 @@ class _TokenPass {
   /// `<target>`: `\<target>` is the escape; it stays literal text and no later
   /// matcher may claim part of it.
   List<Object>? _angleRefs(_Piece p) => _split(p, _angleTarget, (m, escaped) {
+    if (raftIsRetiredResourceRef(m[1]!)) return [RaftClaimedText(m[0]!)];
     final target = raftParseRefTarget(m[1]!);
     if (target == null) return null;
     if (escaped) return [RaftClaimedText(m[0]!)];
-    if (target.kind == RaftRefKind.computer || target.kind == RaftRefKind.app) {
-      return null;
-    }
     final resolved = refFor(target);
     return [
       resolved == null

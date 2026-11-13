@@ -826,12 +826,6 @@ class _ComposerSuggestionsPreviewState
             id: 'preview-channel',
             name: 'design',
           ),
-          RaftComposerSuggestion(
-            type: 'computer',
-            id: 'preview-computer',
-            name: 'K8',
-            referenceText: '[@K8](<computer:preview-computer>)',
-          ),
         ],
         onSendWithMentions: (text, mentions) async {
           setState(

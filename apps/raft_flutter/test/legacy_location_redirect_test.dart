@@ -8,6 +8,7 @@ import 'app_global_server_selector_test.dart' show RootFixture;
 //   /s/<slug>?sidebarTab=members    -> /s/<slug>/members
 //   /s/<slug>?sidebarTab=computers  -> /s/<slug>/computers
 //   /s/<slug>?tab=machines          -> /s/<slug>/computers
+//   /s/<slug>/members/graph         -> /s/<slug>/members (Web LegacyMemberGraphRedirect)
 //   any other path: drop sidebarTab and tab=machines|messages
 // All other query keys stay intact. Driven through the actual RaftApp with
 // its initial platform route and a later engine pushRouteInformation.
@@ -16,6 +17,7 @@ const _cases = [
   ('/s/alpha?sidebarTab=members&keep=one', '/s/alpha/members?keep=one'),
   ('/s/alpha?sidebarTab=computers', '/s/alpha/computers'),
   ('/s/alpha?tab=machines&keep=one', '/s/alpha/computers?keep=one'),
+  ('/s/alpha/members/graph?keep=one', '/s/alpha/members?keep=one'),
   (
     '/s/alpha/channel/ca?sidebarTab=members&keep=one&q=two',
     '/s/alpha/channel/ca?keep=one&q=two',

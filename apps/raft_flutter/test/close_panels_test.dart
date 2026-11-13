@@ -161,13 +161,6 @@ void main() {
         back: find.byTooltip('Back'),
       );
     },
-    'member-graph-page': (t, size) async {
-      final w = await mountAt(t, size, '/s/demo/members/graph');
-      return SurfaceProbe(
-        isOpen: () => w.location.route == RaftRoute.memberGraph,
-        back: find.byKey(const ValueKey('member-graph-mobile-back')),
-      );
-    },
     'search-agent-slot': (t, size) async {
       final w = await mountAt(t, size, '/s/demo/search?open=agent:a1');
       return SurfaceProbe(
