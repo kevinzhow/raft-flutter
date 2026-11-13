@@ -17,6 +17,9 @@ import 'package:raft_sync/raft_sync.dart';
 final _fixturePath = Platform.environment['RAFT_LIVE_STACK_FIXTURE'];
 final _origin = Platform.environment['RAFT_LIVE_STACK_ORIGIN'];
 
+/// Set when the server has `sync_changes_api` turned off.
+final _syncOff = Platform.environment['RAFT_LIVE_SYNC_OFF'] == '1';
+
 Future<void> _until(bool Function() done, {int seconds = 15}) async {
   final end = DateTime.now().add(Duration(seconds: seconds));
   while (!done()) {
@@ -25,6 +28,10 @@ Future<void> _until(bool Function() done, {int seconds = 15}) async {
   }
 }
 
+/// The test binding answers every HTTP request with 400; this suite talks
+/// to a real server.
+class _RealNetwork extends HttpOverrides {}
+
 void main() {
   final skip = _fixturePath == null || _origin == null
       ? 'set RAFT_LIVE_STACK_FIXTURE and RAFT_LIVE_STACK_ORIGIN'
@@ -32,7 +39,7 @@ void main() {
 
   test(
     'live v1.24 stack: sync cursor, profile, theme, gap fill, actors',
-    () async {
+    () => HttpOverrides.runWithHttpOverrides(() async {
       final fixture = jsonDecode(File(_fixturePath!).readAsStringSync()) as Map;
       final owner = fixture['accounts']['owner'] as Map;
       final serverId = fixture['server']['id'] as String;
@@ -59,29 +66,47 @@ void main() {
         app.connect();
         await _until(() => events.contains('rooms:joined'));
 
-        // 1. GET /sync/changes: the contract answers a cursor, then changes.
-        final first =
-            await other.getForServer(serverId, '/sync/changes') as Map;
-        report['syncCursor'] = first['cursor'] is String;
-        final plan = planSyncChanges(
-          ((await other.getForServer(
-                serverId,
-                '/sync/changes',
-                query: {'since': first['cursor']},
-              )) as Map)['changes']
-              as List,
-        );
-        report['syncEmptyPlan'] = plan.snapshots.isEmpty;
-        // A reconnect takes the session's cursor.
-        app.suspendConnection();
-        await _until(() => !app.connected);
-        events.clear();
-        app.connect();
-        await _until(() => events.contains('rooms:joined'));
-        await _until(
-          () => WorkspaceLiveSync.of(app).syncSession?.hasCursor == true,
-        );
-        report['reconnectTookCursor'] = true;
+        // 1. GET /sync/changes: the contract answers a cursor, then changes;
+        // with `sync_changes_api` off it answers 404 and no cursor is held.
+        if (_syncOff) {
+          try {
+            await other.getForServer(serverId, '/sync/changes');
+            report['syncOffAnswer'] = 'served';
+          } on RaftApiException catch (e) {
+            report['syncOffAnswer'] = '${e.status} ${e.code}';
+          }
+          app.suspendConnection();
+          await _until(() => !app.connected);
+          events.clear();
+          app.connect();
+          await _until(() => events.contains('rooms:joined'));
+          await Future<void>.delayed(const Duration(seconds: 1));
+          report['reconnectTookCursor'] =
+              WorkspaceLiveSync.of(app).syncSession?.hasCursor ?? false;
+        } else {
+          final first =
+              await other.getForServer(serverId, '/sync/changes') as Map;
+          report['syncCursor'] = first['cursor'] is String;
+          final plan = planSyncChanges(
+            ((await other.getForServer(
+                  serverId,
+                  '/sync/changes',
+                  query: {'since': first['cursor']},
+                )) as Map)['changes']
+                as List,
+          );
+          report['syncEmptyPlan'] = plan.snapshots.isEmpty;
+          // A reconnect takes the session's cursor.
+          app.suspendConnection();
+          await _until(() => !app.connected);
+          events.clear();
+          app.connect();
+          await _until(() => events.contains('rooms:joined'));
+          await _until(
+            () => WorkspaceLiveSync.of(app).syncSession?.hasCursor == true,
+          );
+          report['reconnectTookCursor'] = true;
+        }
 
         // 2. user:profile-updated from the other device.
         final name = 'Live ${DateTime.now().millisecondsSinceEpoch % 100000}';
@@ -123,7 +148,8 @@ void main() {
         await other.patch('/auth/me', data: {'displayName': me['displayName']});
         await other.patch(
           '/servers/$serverId/appearance-settings',
-          data: {'theme': appearance['theme']},
+          // The API takes no null theme; Raft is what a null shows.
+          data: {'theme': appearance['theme'] ?? 'raft'},
         );
         // ignore: avoid_print
         print('live-stack: ${jsonEncode(report)}');
@@ -132,12 +158,17 @@ void main() {
         await app.dispose();
         await other.dispose();
       }
-      expect(report['syncCursor'], isTrue);
-      expect(report['reconnectTookCursor'], isTrue);
+      if (_syncOff) {
+        expect(report['syncOffAnswer'], '404 sync_changes_off');
+        expect(report['reconnectTookCursor'], isFalse);
+      } else {
+        expect(report['syncCursor'], isTrue);
+        expect(report['reconnectTookCursor'], isTrue);
+      }
       expect(report['profileFollowed'], isTrue);
       expect(report['themeFollowed'], isTrue);
       expect(report['gapFilled'], isTrue);
-    },
+    }, _RealNetwork()),
     skip: skip,
     timeout: const Timeout(Duration(minutes: 2)),
   );
