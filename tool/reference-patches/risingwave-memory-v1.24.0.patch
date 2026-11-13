@@ -1,0 +1,17 @@
+--- a/scripts/dev/raftdev.ts
++++ b/scripts/dev/raftdev.ts
+@@ -504,9 +504,13 @@
+   opts: { owner?: string; memoryBytes?: number; configFile?: string } = {},
+ ): string[] {
+   const memoryBytes = opts.memoryBytes ?? DEFAULT_RISINGWAVE_MEMORY_BYTES;
+-  const dockerLimit = String(memoryBytes + RISINGWAVE_DOCKER_HEADROOM_BYTES);
++  // Local fixture: the ephemeral state store lives in a 2 GiB tmpfs (RAM, counted in the
++  // container limit) so checkpoints do not wait on fsync of a shared, busy disk.
++  const stateTmpfsBytes = 2 * 1024 * 1024 * 1024;
++  const dockerLimit = String(memoryBytes + RISINGWAVE_DOCKER_HEADROOM_BYTES + stateTmpfsBytes);
+   return [
+     "run", "-d", "--pull=always", "--name", e.RISINGWAVE_CONTAINER,
++    "--tmpfs", `/root/.risingwave:rw,size=${stateTmpfsBytes}`,
+     "--label", RAFTDEV_MANAGED_LABEL_ARG,
+     ...(opts.owner ? ["--label", `${RAFTDEV_OWNER_LABEL}=${opts.owner}`] : []),
+     ...(network ? ["--network", network] : []),

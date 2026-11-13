@@ -27,8 +27,14 @@ class ArgsTest(unittest.TestCase):
         config, action = stack.parse_args(['--config', '/x/y.json', 'flags'])
         self.assertEqual((config, action), (pathlib.Path('/x/y.json'), 'flags'))
 
+    def test_flags_on_and_off_take_keys(self):
+        self.assertEqual(stack.parse_args(['--config', 'c.json', 'flags', 'on', 'a_v0', 'b_v0']),
+                         (pathlib.Path('c.json'), 'flags', ('on', ['a_v0', 'b_v0'])))
+        self.assertEqual(stack.parse_args(['flags', 'off', 'a_v0'])[2], ('off', ['a_v0']))
+
     def test_bad_usage_exits(self):
-        for argv in ([], ['restart'], ['--config'], ['--config', 'a.json'], ['start', 'stop']):
+        for argv in ([], ['restart'], ['--config'], ['--config', 'a.json'], ['start', 'stop'],
+                     ['flags', 'on'], ['flags', 'toggle', 'a_v0'], ['start', 'on', 'a_v0']):
             with self.assertRaises(SystemExit):
                 stack.parse_args(argv)
 
@@ -50,6 +56,9 @@ class PatchSelectionTest(unittest.TestCase):
         self.assertTrue(any(m.name.startswith('antiproton-local') for m in manifests))
         for manifest in manifests:
             data = json.loads(manifest.read_text())
+            if data.get('upstream'):
+                self.assertFalse(manifest.with_suffix('.patch').exists(), manifest.name)
+                continue
             self.assertTrue(manifest.with_suffix('.patch').exists(), manifest.name)
             for item in data.get('files') or [data]:
                 self.assertEqual(len(item['beforeSHA256']), 64, manifest.name)
@@ -60,6 +69,10 @@ class PatchSelectionTest(unittest.TestCase):
         config = {'sourceVersion': 'v1.21.23', 'patches': ['seed-history', 'risingwave-memory', 'antiproton-local']}
         self.assertEqual(stack.select_patches(config), ['seed-history', 'risingwave-memory-v1.21.23', 'antiproton-local-v1.21.23'])
         self.assertEqual(stack.select_patches({'sourceVersion': 'v1.21.23'}), ['seed-history', 'risingwave-memory-v1.21.23'])
+
+    def test_v1_24_selects_its_own_patches(self):
+        self.assertEqual(stack.select_patches({'sourceVersion': 'v1.24.0'}),
+                         ['seed-history-v1.24.0', 'risingwave-memory-v1.24.0'])
 
 
 class ApplyPatchesTest(unittest.TestCase):
@@ -92,6 +105,11 @@ class ApplyPatchesTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             stack.apply_patches(self.source, ['p'], self.patches)
         self.assertEqual(self.target.read_text(), 'something else\n')
+
+    def test_upstream_manifest_applies_nothing(self):
+        (self.patches / 'u.json').write_text(json.dumps({'upstream': 'already in the source'}))
+        self.assertEqual(stack.apply_patches(self.source, ['u'], self.patches), [])
+        self.assertEqual(self.target.read_text(), 'one\ntwo\nthree\n')
 
 
 class ApplyMultiFilePatchTest(unittest.TestCase):
@@ -135,6 +153,7 @@ class ServerEnvTest(unittest.TestCase):
         self.assertEqual(first['RAFTBENCH_LOCAL_SERVER_ID'], self.SERVER)
         self.assertEqual(len(__import__('base64').b64decode(first['SLOCK_PROVIDER_CREDENTIAL_KEY'])), 32)
         self.assertEqual(len(__import__('base64').b64decode(first['RAFT_APP_WEBHOOK_ENCRYPTION_KEY'])), 32)
+        self.assertEqual(len(__import__('base64').b64decode(first['RAFT_TOTP_SECRET_ENCRYPTION_KEY'])), 32)
         again = stack.server_env_values(self.CONFIG, dict(first, ANTIPROTON_PROVISIONING_TOKEN='t'), self.SERVER)
         self.assertEqual(again['SLOCK_PROVIDER_CREDENTIAL_KEY'], first['SLOCK_PROVIDER_CREDENTIAL_KEY'])
         self.assertEqual(again['ANTIPROTON_PROVISIONING_TOKEN'], 't')
@@ -165,9 +184,11 @@ class ServerEnvTest(unittest.TestCase):
                 stack.prepare_server_env(config, source)
             self.assertEqual(link.read_text(), 'FOREIGN=1\n')
 
-    def test_antiproton_url_is_required_with_env_file(self):
-        with self.assertRaises(SystemExit):
-            stack.prepare_server_env({'environment': 'e', 'serverEnvFile': '/tmp/x'}, pathlib.Path('/nonexistent'))
+    def test_without_antiproton_no_antiproton_values(self):
+        values = stack.server_env_values({'environment': 'e'}, {}, self.SERVER)
+        self.assertNotIn('ANTIPROTON_BASE_URL_OVERRIDE', values)
+        self.assertNotIn('RAFTBENCH_LOCAL_SERVER_ID', values)
+        self.assertIn('RAFT_TOTP_SECRET_ENCRYPTION_KEY', values)
         self.assertFalse(stack.prepare_server_env({'environment': 'e'}, pathlib.Path('/nonexistent')))
 
 
@@ -215,6 +236,28 @@ class FlagSqlTest(unittest.TestCase):
             stack.fixture_plan_sql("pro'; DROP TABLE servers;--", self.SERVER)
         with self.assertRaises(SystemExit):
             stack.fixture_plan_sql('pro', "x' OR '1'='1")
+
+    def test_toggle_sql_puts_the_fixture_rule_first(self):
+        sql = stack.feature_flag_toggle_sql(['task_v2_conversations_v0'], ['agent_lounge_v0'], self.SERVER)
+        self.assertIn("'task_v2_conversations_v0', 'server', -1000, 'allow'", sql)
+        self.assertIn("'agent_lounge_v0', 'server', -1000, 'deny'", sql)
+        self.assertNotIn("VALUES ('agent_lounge_v0'", sql)
+        self.assertIn('feature_flag_config_versions', sql)
+        self.assertTrue(sql.startswith('BEGIN;') and sql.rstrip().endswith('COMMIT;'))
+        with self.assertRaises(SystemExit):
+            stack.feature_flag_toggle_sql([], ["x'--"], self.SERVER)
+        with self.assertRaises(SystemExit):
+            stack.feature_flag_state_sql(["x'--"], self.SERVER)
+
+    def test_toggle_moves_keys_between_config_lists(self):
+        config = {'featureFlags': ['a_v0', 'b_v0'], 'other': 1}
+        off = stack.toggle_config_flags(config, 'off', ['b_v0'])
+        self.assertEqual((off['featureFlags'], off['featureFlagsOff'], off['other']), (['a_v0'], ['b_v0'], 1))
+        on = stack.toggle_config_flags(off, 'on', ['b_v0'])
+        self.assertEqual(on['featureFlags'], ['a_v0', 'b_v0'])
+        self.assertNotIn('featureFlagsOff', on)
+        with self.assertRaises(SystemExit):
+            stack.toggle_config_flags(config, 'on', ['Bad-Key'])
 
     def test_rejects_unsafe_input(self):
         with self.assertRaises(SystemExit):

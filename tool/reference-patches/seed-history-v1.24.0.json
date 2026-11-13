@@ -1,0 +1,6 @@
+{
+  "path": "packages/server/scripts/seed.ts",
+  "beforeSHA256": "55d682aa452ff8d9b01e2abe9a6e88866a25d8dfec646dbf82a19dda6b758926",
+  "afterSHA256": "a6eca24dfe8bdf652a1f2786431ec01da0cba3e124f52b35445dd625dcc69f59",
+  "reason": "Same fixture SQL and #all greeting as seed-history, placed before the v1.24.0 seed's own created_at-order guard. Source v1.24.0 already back-dates channel joins (SEED_JOINED_AT) and refuses out-of-order history, so the joined_at and latest-row statements are expected to be no-ops there; legacy task rows still lack the message task badge, which the last statement mirrors. No product read semantics changes."
+}

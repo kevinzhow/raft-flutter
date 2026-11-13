@@ -184,3 +184,35 @@ v1.21.2 快照的 verifier 导入已经移除的 `__testRisingWaveInboxFailSoft`
 - `wrangler dev` 的日志把 `.dev.vars` 的值显示为 `(hidden)`；日志、状态目录都在权限 700 的 `runDir` 下，仍不要提交或粘贴。
 - 本地 antiproton 不是线上服务：没有 Run9 沙箱容器、没有 Cloudflare Access/GitHub 登录（UI 允许匿名，只绑定 127.0.0.1）、没有 ScopeDB 追踪转发。依赖这些的 agent 能力在本地不可验证。
 - `tool/raft-stack` 的 `sync` 与 `start` 要求 `serverEnvFile` 指向的 `.env` 链接位置没有别的普通文件；有则拒绝覆盖。
+
+## v1.24.0 环境（2026-11-13）
+
+源码 tag `v1.24.0-source.1`（commit `1d689caf34442247cab70580d7feac1b8c302d60`）。源码 pin Node 24.22.1 / pnpm 12.15.0；用户级 Node 24.22.0 + corepack 取得的 pnpm 12.15.0 可以 `pnpm install --frozen-lockfile`。配置写法与 v1.21.23 相同，`sourceVersion` 写 `v1.24.0`，环境名换一个（端口由环境名推导，偏移不同的两套环境端口不重叠；用 `tool/raft-stack --config … ports` 先查）。
+
+### 兼容补丁
+
+- `seed-history-v1.24.0`：v1.24.0 的 seed 已经把频道加入时间提前（`SEED_JOINED_AT`），并且自带“同一频道按 seq 的 created_at 不得倒退”的检查，所以前两条 SQL 在这里预计不改任何行；旧版任务行仍没有消息上的任务徽标，最后一条 SQL 仍然需要。补丁位置移到 seed 自带检查之前，内容与旧版相同，并保留 primary #all 的参照消息。
+- `risingwave-memory-v1.24.0`：v1.24.0 的 raftdev 已自带 RisingWave 内存上限（预算 2 GiB，`RAFTDEV_RW_MEMORY_BYTES` 可调高、不能调低；容器上限比预算多 1 GiB，不加 swap；compactor 上限由挂载的配置文件设定），旧补丁的 2 GiB 容器 / 1.5 GiB 预算低于上游下限，不再移植。本地仍需要的一点：把临时的 state store（`raftdev stop` 本来就会删）放进 2 GiB tmpfs，并把这 2 GiB 加进容器上限。原因：在多人共用、写入繁忙的数据盘上，checkpoint 的 fsync 让 54 步 MV bootstrap 每一步都比上一步慢几分钟（第 25、26 步分别约 215 s、437 s，第 27 步超过 15 分钟仍未完成）；放进 tmpfs 后每步约 0.3 s，整个启动约 7 分钟。
+- `antiproton-local` 没有移植（v1.24.0 中有两个文件变了，补丁对不上；本地 antiproton 会调用付费模型）。不列出这个补丁的配置照常启动。
+- 补丁清单新增一种写法：`{"upstream": "<原因>"}`，表示该版本源码已经做了补丁做的事，什么也不应用。
+
+### 服务端环境文件
+
+`serverEnvFile` 不再要求 `antiprotonUrl`；没有 `antiprotonUrl` 时不写 `ANTIPROTON_BASE_URL_OVERRIDE` 和 `RAFTBENCH_LOCAL_SERVER_ID`。文件里总会生成 `RAFT_TOTP_SECRET_ENCRYPTION_KEY`（base64 32 字节）：v1.24.0 开启两步验证时要用它加密 TOTP 密钥，没有它 `POST /api/auth/second-factor/totp/setup` 会失败。
+
+### 功能开关
+
+- v1.24.0 开发栈的 PostgreSQL 已有约 50 条 `feature_flags` 行（迁移写入，几乎都默认关闭、没有规则），不再只有三条。
+- `tool/raft-stack --config … flags on KEY...` / `flags off KEY...`：把开关键在配置的 `featureFlags` 与新配置项 `featureFlagsOff` 之间移动（配置文件写回，权限 600），并立即写入数据库。实现是 fixture 主服务器自己的一条 `server` 阶段规则，`priority -1000`，`allow` 或 `deny`；同一阶段按 priority 先匹配者生效，所以它压过别的允许名单规则。`on` 在缺少开关行时才建行（默认关闭，按 server 随机化）；`off` 不建行。不带参数的 `flags` 重新应用两个列表。每次都打印涉及的开关在数据库里的状态。
+- 写入后同一事务把 `feature_flag_config_versions` 加一（表存在时），服务端每 2 秒轮询它并向在线客户端发 `server:features-changed`；服务端自己的开关读取缓存最多 30 秒。实测 `flags off`/`on` 后约 30 秒内 `POST /api/feature-flags/evaluate` 的结果随之变化。
+- 不要打开会调用付费外部服务的开关：`antiproton_hosted_runtime`、`personal_assistant`（托管运行时）、`raftbench_overview_v0`（AI 分析）、`pro_prepaid` / `pro_seat_add`（计费）、`claude_limit_reset`、`slack_bridge_v0`。
+
+### 两步验证 fixture 账户
+
+v1.24.0 有 TOTP 两步验证（`/api/auth/second-factor/*`：`reauth/password` → `totp/setup` → `totp/confirm` → `enable` 返回 10 个备用码；之后密码登录返回 `secondFactorRequired` 与 `challenge`，再用 `POST /api/auth/second-factor/verify {challenge, code}` 完成）。SHA1、6 位、30 秒一步；同一步的验证码只能用一次，确认与开启之间要等到下一步。fixture 账户的密钥、备用码只放在被忽略的私有 fixture 文件里。
+
+### 其他注意事项（v1.24.0 实测）
+
+- 服务器范围的接口（`/api/channels`、`/api/channels/inbox`、`/api/messages/channel/<id>` 等）不带 `X-Server-Id` 请求头时返回 400，带上后 owner/admin/member 均为 200。
+- seed 多了一个 `viewer` 成员账户（不在 seed 输出的 fixture JSON 里）。
+- `GET /api/version` 在开发栈上仍是 503 `build_identity_unavailable`。
