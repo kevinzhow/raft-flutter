@@ -3777,10 +3777,7 @@ class _ResourceViewState extends State<ResourceView> {
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     final count = totalCount ?? rows.length;
     if (widget.mobileRoot && mobile && widget.section == 'activity') {
-      return activityStaleNotice(
-        w,
-        const RaftMobileRootHeader(title: 'Activity'),
-      );
+      return activityRootHeader(w);
     }
     final header = RaftPageHeader(
       background: widget.section == 'activity' || widget.section == 'saved'
@@ -4268,9 +4265,7 @@ class _ResourceViewState extends State<ResourceView> {
       markActivityRead(row, scope);
       return;
     }
-    final id = row['kind'] == 'thread'
-        ? row['threadChannelId']
-        : row['channelId'];
+    final id = row[row['kind'] == 'thread' ? 'threadChannelId' : 'channelId'];
     if (id is! String) return;
     final controller = w;
     var projected = false;
