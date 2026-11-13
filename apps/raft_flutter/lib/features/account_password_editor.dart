@@ -5,6 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import 'second_factor_step_up.dart';
 
 /// Source SettingsPanel inline password form. Credentials remain in controllers
 /// only and are cleared on collapse, accepted save, account change and disposal.
@@ -129,9 +130,15 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
       attempted = false;
     });
     try {
-      await widget.controller.client.patch(
-        '/auth/me',
-        data: {'currentPassword': current.text, 'newPassword': next.text},
+      final client = widget.controller.client;
+      await withSecondFactorStepUp(
+        context,
+        client,
+        () => client.patch(
+          '/auth/me',
+          data: {'currentPassword': current.text, 'newPassword': next.text},
+        ),
+        reason: StepUpReason.signInMethod,
       );
       if (!accepts(captured)) return;
       clearCredentials();
@@ -142,7 +149,7 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
       });
       widget.onUpdated?.call();
     } catch (cause) {
-      if (accepts(captured)) {
+      if (accepts(captured) && !isSecondFactorStepUpCancelled(cause)) {
         setState(
           () => error = userErrorText(
             cause,

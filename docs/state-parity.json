@@ -260,6 +260,36 @@
       ]
     },
     {
+      "id": "auth.second-factor",
+      "title": "Two-step verification sign-in step (server v1.24 secondFactorRequired)",
+      "webEntry": "packages/web/src/components/auth/SecondFactorSignInStep.tsx",
+      "flutterEntry": "packages/raft_ui/lib/src/auth_second_factor_page.dart",
+      "states": [
+        {
+          "state": "error",
+          "variant": "wrong / used code under the field",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "justification": "The parity reference is still Web 1.21.23, which has no second step; widget evidence in apps/raft_flutter/test/second_factor_sign_in_test.dart only.",
+          "size": "S"
+        },
+        {
+          "state": "error",
+          "variant": "ended: expired / too many tries / locked / passkey only",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "justification": "As above: no Web 1.24 parity case yet; second_factor_sign_in_test.dart covers expired and passkey-only.",
+          "size": "S"
+        }
+      ]
+    },
+    {
       "id": "auth.register",
       "title": "Register",
       "webEntry": "packages/web/src/components/auth/RegisterPage.tsx",
@@ -3601,6 +3631,96 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "packages/raft_ui/lib/auth_second_factor_previews.dart#class:_SecondFactor": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/auth_second_factor_previews.dart#class:_SecondFactorState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/auth_second_factor_previews.dart#function:authSecondFactorExpiredPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/auth_second_factor_previews.dart#function:authSecondFactorPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/auth_second_factor_previews.dart#function:authSecondFactorWrongCodePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/auth_second_factor_previews.dart#method:_SecondFactor.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/auth_second_factor_previews.dart#method:_SecondFactorState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/auth_view.dart#method:_AuthState.secondFactorPage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/second_factor_step_up.dart#class:_VerifyItsYouDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/second_factor_step_up.dart#class:_VerifyItsYouDialogState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/second_factor_step_up.dart#function:_verifyItsYou": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/second_factor_step_up.dart#method:_VerifyItsYouDialog.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/second_factor_step_up.dart#method:_VerifyItsYouDialogState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/auth_second_factor_page.dart#class:RaftAuthSecondFactorPage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/auth_second_factor_page.dart#method:RaftAuthSecondFactorPage.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
       "apps/raft_flutter/lib/app_root.dart#class:RaftApp": {
         "role": "unresolved",
         "familyRefs": [],
@@ -4075,7 +4195,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/account_password_editor.dart#local-function:CLASS:_AccountPasswordEditorState@673/METHOD:build@4491/FUNCTION:field@4722": {
+      "apps/raft_flutter/lib/features/account_password_editor.dart#local-function:CLASS:_AccountPasswordEditorState@710/METHOD:build@4727/FUNCTION:field@4958": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -6278,7 +6398,7 @@
         "owner": "Choice9 design-system alignment",
         "reason": "Reviewed production choice composition/delegation, not a thin-wrapper/no-paint claim or a visual PASS."
       },
-      "apps/raft_flutter/lib/features/auth_view.dart#local-function:CLASS:_AuthState@3649/METHOD:build@17888/FUNCTION:bars@20037": {
+      "apps/raft_flutter/lib/features/auth_view.dart#local-function:CLASS:_AuthState@3694/METHOD:build@26017/FUNCTION:bars@28554": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -8680,7 +8800,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/management_support.dart#local-function:CLASS:ManagementState@3844/METHOD:_scopedRoute@12127/FUNCTION:scoped@12840": {
+      "apps/raft_flutter/lib/features/management_support.dart#local-function:CLASS:ManagementState@3881/METHOD:_scopedRoute@12293/FUNCTION:scoped@13006": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -9128,13 +9248,13 @@
         "owner": "Choice9 design-system alignment",
         "reason": "Reviewed production choice composition/delegation, not a thin-wrapper/no-paint claim or a visual PASS."
       },
-      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@2118/METHOD:_body@23414/FUNCTION:field@23455": {
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@2155/METHOD:_body@23704/FUNCTION:field@23745": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@2118/METHOD:_body@23414/FUNCTION:maybe@23558": {
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@2155/METHOD:_body@23704/FUNCTION:maybe@23848": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -43787,6 +43907,15 @@
       }
     },
     "entries": {
+      "surface:_verifyItsYou": {
+        "owner": "design-system alignment",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/second_factor_step_up.dart#function:_verifyItsYou"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (server v1.24 compatibility); no real-entry capture acceptance is inferred."
+      },
       "screen:settings.linux-dependencies": {
         "owner": "Cody task308",
         "kind": "route_or_panel_candidate",
@@ -43838,6 +43967,16 @@
         "declarationRefs": [],
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+      },
+      "screen:auth.second-factor": {
+        "owner": "server v1.24 compatibility",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "auth.second-factor",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/auth_second_factor_page.dart#class:RaftAuthSecondFactorPage"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "AuthView shows it after a password or social sign-in answers secondFactorRequired. Widget evidence only; no visual PASS is asserted."
       },
       "screen:auth.register": {
         "owner": "Choice9 design-system alignment",

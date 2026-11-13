@@ -16,6 +16,7 @@ import 'integrations_views.dart'
 import 'managed_agent_launcher.dart';
 import 'management_support.dart' show managementLaunch;
 import 'private_route_guard.dart';
+import 'second_factor_step_up.dart';
 
 const _inlineActions = {
   'integration:approve_agent_login',
@@ -362,10 +363,15 @@ class _MessageActionCardState extends State<MessageActionCard> {
         return;
       }
       if (_inlineActions.contains(type)) {
-        await apply('execute', {
-          'expectedState': 'prepared',
-          'expectedConfirmationVersion': version,
-        }, authority);
+        await withSecondFactorStepUp(
+          context,
+          w.client,
+          () => apply('execute', {
+            'expectedState': 'prepared',
+            'expectedConfirmationVersion': version,
+          }, authority),
+          reason: StepUpReason.actionCard,
+        );
         return;
       }
       // A best-effort product event never gates the dialog.
@@ -548,7 +554,9 @@ class _MessageActionCardState extends State<MessageActionCard> {
       );
       if (accepted != true && !submitted) await event('action_card.dismiss');
     } catch (e) {
-      if (current(authority)) {
+      // Closing "Verify it's you" is not a failure (Web
+      // isSecondFactorStepUpCancelled): nothing ran.
+      if (current(authority) && !isSecondFactorStepUpCancelled(e)) {
         // Web ActionCard: the server's text, else `actionCard.reconfirmationFailed`
         // / `actionCard.executeFailed`.
         setState(

@@ -12,6 +12,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/server_error_code.dart';
+import '../data/source_time_formatter.dart';
 import '../data/user_error.dart';
 import 'auth_account_link.dart';
 import 'management_support.dart';
@@ -129,6 +130,16 @@ class _AuthState extends State<AuthView> {
   String? linkFailure;
   Timer? providerDebounce;
   int providerRequest = 0;
+
+  /// Web SecondFactorSignInStep: the first step passed and the server asks
+  /// for the second (password or social sign-in). Memory only, like Web.
+  SecondFactorRequired? secondFactor;
+  RaftSecondFactorCodeMethod? secondFactorMethod;
+  final secondFactorCode = TextEditingController();
+  Timer? secondFactorExpiry;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Each clears when the code is edited, on submit, on a method switch and when the step starts or ends.
+  String? secondFactorFieldError, secondFactorBanner, secondFactorEnded;
+
   @override
   void initState() {
     super.initState();
@@ -259,7 +270,9 @@ class _AuthState extends State<AuthView> {
   void socialFailed(Object e, OAuthHandoff? handoff, String provider) {
     final conflict = PendingAccountLink.fromError(e);
     legal = null;
-    if (conflict != null) {
+    if (e is SecondFactorRequired) {
+      startSecondFactor(e);
+    } else if (conflict != null) {
       startLink(conflict);
     } else if (handoff != null && isLegalAcceptanceRejection(e)) {
       legal = SocialLegalStep(
@@ -299,6 +312,148 @@ class _AuthState extends State<AuthView> {
       if (mounted) setState(() => busy = false);
     }
   }
+
+  /// Web `startSecondFactorSignIn` + SecondFactorSignInStep: start with the
+  /// first usable method; at the challenge's end the page says it expired
+  /// (no countdown).
+  void startSecondFactor(SecondFactorRequired pending) {
+    final usable = usableSecondFactorMethods(pending.challenge.methods);
+    secondFactorExpiry?.cancel();
+    secondFactor = pending;
+    secondFactorMethod = usable.methods.isEmpty
+        ? null
+        : _codeMethod(usable.methods.first);
+    secondFactorCode.clear();
+    secondFactorFieldError = secondFactorBanner = secondFactorEnded = null;
+    error = null;
+    final remaining = pending.challenge.expiresAt.difference(DateTime.now());
+    secondFactorExpiry = Timer(
+      remaining.isNegative ? Duration.zero : remaining,
+      () {
+        if (!mounted || !identical(secondFactor, pending)) return;
+        setState(
+          () =>
+              secondFactorEnded ??= 'This sign-in has expired. Sign in again.',
+        );
+      },
+    );
+  }
+
+  static RaftSecondFactorCodeMethod _codeMethod(SecondFactorMethod method) =>
+      method == SecondFactorMethod.backupCode
+      ? RaftSecondFactorCodeMethod.backupCode
+      : RaftSecondFactorCodeMethod.totp;
+
+  /// "Back to sign in": drop this sign-in (Web `clearSecondFactorSignIn`).
+  void endSecondFactor() {
+    secondFactorExpiry?.cancel();
+    secondFactorExpiry = null;
+    secondFactor = null;
+    secondFactorMethod = null;
+    secondFactorCode.clear();
+    secondFactorFieldError = secondFactorBanner = secondFactorEnded = null;
+  }
+
+  void switchSecondFactor(RaftSecondFactorCodeMethod next) {
+    if (busy) return;
+    setState(() {
+      secondFactorMethod = next;
+      secondFactorCode.clear();
+      secondFactorFieldError = null;
+      secondFactorBanner = null;
+    });
+  }
+
+  /// Web SecondFactorSignInStep `submit` -> POST /auth/second-factor/verify;
+  /// its answer signs in exactly as the first step would have.
+  Future<void> verifySecondFactor() async {
+    final pending = secondFactor, method = secondFactorMethod;
+    final run = widget.authenticate;
+    final entered = normalizeSecondFactorCode(secondFactorCode.text);
+    if (pending == null ||
+        method == null ||
+        entered.isEmpty ||
+        busy ||
+        secondFactorEnded != null) {
+      return;
+    }
+    setState(() {
+      busy = true;
+      secondFactorBanner = null;
+      secondFactorFieldError = null;
+    });
+    try {
+      if (run == null) throw const RaftApiException('Sign-in failed');
+      final totp = method == RaftSecondFactorCodeMethod.totp;
+      await run(
+        base.text.trim(),
+        (c) => c.verifySecondFactor(
+          pending,
+          code: totp ? entered : null,
+          backupCode: totp ? null : entered,
+        ),
+      );
+      if (mounted && identical(secondFactor, pending)) {
+        setState(endSecondFactor);
+      }
+    } catch (e) {
+      if (mounted && identical(secondFactor, pending)) {
+        setState(() => secondFactorFailed(e, method));
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  /// Web `useCodeFailure`: a wrong or used code under the field; an expired
+  /// challenge, too many tries or a lock end this sign-in; anything else in
+  /// the banner. A pending account link that failed returns to its page.
+  void secondFactorFailed(Object e, RaftSecondFactorCodeMethod method) {
+    if (link != null && isAccountLinkFailure(e)) {
+      endSecondFactor();
+      linkFailure = serverErrorCode(e);
+      return;
+    }
+    final failure = SecondFactorFailure.of(e);
+    final backup = method == RaftSecondFactorCodeMethod.backupCode;
+    switch (failure.code) {
+      case 'second_factor_code_invalid':
+        secondFactorFieldError = backup
+            ? "That backup code didn't work. Check it and try again."
+            : "That code didn't work. Check your authenticator app and try again.";
+      case 'backup_code_used':
+        secondFactorFieldError = 'That backup code was already used. Each code works once, so try another one.';
+      case 'challenge_expired':
+        secondFactorEnded = 'This sign-in has expired. Sign in again.';
+      case 'challenge_attempts_exhausted':
+        secondFactorEnded =
+            'Too many wrong codes for this sign-in. Sign in again.';
+      case 'second_factor_locked':
+        secondFactorEnded = raftFormat(
+          context,
+          "Too many wrong tries. The second step is paused until {time}, and we've emailed you.",
+          {
+            'time': failure.lockedUntil == null
+                ? ''
+                : _clock(failure.lockedUntil!),
+          },
+        );
+      case 'second_factor_unavailable':
+        secondFactorBanner =
+            "Two-step verification isn't available right now. Try again later.";
+      default:
+        secondFactorBanner = 'Sign-in failed';
+    }
+  }
+
+  /// Web `formatClock` before sign-in: no account preference yet, so the
+  /// locale and the system's 12/24-hour setting decide.
+  String _clock(DateTime value) => SourceTimeFormatter(
+    locale: Localizations.localeOf(context).toLanguageTag(),
+    systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
+        ? SourceTimeFormat.twentyFourHour
+        : null,
+  ).clock(value);
 
   /// The server asked to sign in to the account that owns this email: the
   /// page becomes "Connect to your existing account" (Web `accountLink`).
@@ -352,6 +507,8 @@ class _AuthState extends State<AuthView> {
   @override
   void dispose() {
     providerDebounce?.cancel();
+    secondFactorExpiry?.cancel();
+    secondFactorCode.dispose();
     unawaited(broker?.cancel() ?? Future<void>.value());
     base.dispose();
     email.dispose();
@@ -468,7 +625,11 @@ class _AuthState extends State<AuthView> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          if (mode == 'login' && link != null && isAccountLinkFailure(e)) {
+          if (mode == 'login' && e is SecondFactorRequired) {
+            startSecondFactor(e);
+          } else if (mode == 'login' &&
+              link != null &&
+              isAccountLinkFailure(e)) {
             linkFailure = serverErrorCode(e);
           } else {
             error = authFailureText(e, switch (mode) {
@@ -553,9 +714,68 @@ class _AuthState extends State<AuthView> {
     await submit();
   }
 
+  Widget secondFactorPage(BuildContext context, SecondFactorRequired pending) {
+    String tr(String s) => raftText(context, s);
+    final usable = usableSecondFactorMethods(pending.challenge.methods);
+    final method = secondFactorMethod;
+    final totp = method == RaftSecondFactorCodeMethod.totp;
+    return RaftAuthSecondFactorPage(
+      maskedEmail: pending.challenge.maskedEmail,
+      expiresAt: _clock(pending.challenge.expiresAt),
+      method: method,
+      ended: secondFactorEnded == null ? null : tr(secondFactorEnded!),
+      passkeyUnsupported: usable.passkeyUnsupported,
+      banner: secondFactorBanner == null ? null : tr(secondFactorBanner!),
+      fieldError: secondFactorFieldError == null
+          ? null
+          : tr(secondFactorFieldError!),
+      busy: busy,
+      canVerify: normalizeSecondFactorCode(secondFactorCode.text).isNotEmpty,
+      onVerify: verifySecondFactor,
+      onBack: () {
+        if (busy) return;
+        setState(endSecondFactor);
+      },
+      codeField: method == null
+          ? null
+          : RaftTextInput(
+              key: ValueKey('second-factor-code-${method.name}'),
+              controller: secondFactorCode,
+              autofocus: true,
+              mono: true,
+              enabled: !busy,
+              invalid: secondFactorFieldError != null,
+              keyboardType: totp ? TextInputType.number : TextInputType.text,
+              autofillHints: totp ? const [AutofillHints.oneTimeCode] : null,
+              hintText: totp ? '123456' : 'xxxxx-xxxxx',
+              semanticLabel: tr(totp ? 'Authenticator code' : 'Backup code'),
+              onChanged: (_) => setState(() => secondFactorFieldError = null),
+              onSubmitted: (_) => verifySecondFactor(),
+            ),
+      switches: [
+        for (final other in usable.methods)
+          if (_codeMethod(other) != method)
+            RaftSecondFactorSwitch(
+              _codeMethod(other),
+              () => switchSecondFactor(_codeMethod(other)),
+            ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     String tr(String s) => raftText(context, s);
+    final pendingSecondFactor = secondFactor;
+    if (pendingSecondFactor != null) {
+      final t = RaftTokens.of(context);
+      final page = secondFactorPage(context, pendingSecondFactor);
+      return LayoutBuilder(
+        builder: (context, box) => box.hasBoundedHeight
+            ? RaftSystemBarSurface(statusBarFallback: t.canvas, child: page)
+            : page,
+      );
+    }
     final step = legal;
     if (step != null) {
       return RaftAuthLegalPage(

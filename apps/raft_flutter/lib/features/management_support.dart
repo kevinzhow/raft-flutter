@@ -8,6 +8,7 @@ import '../data/device_preferences.dart';
 import '../data/resource_snapshot_cache.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import 'second_factor_step_up.dart';
 
 Map<String, dynamic> managementMap(dynamic value) =>
     value is Map ? Map<String, dynamic>.from(value) : {};
@@ -310,6 +311,8 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
         }
       }
     } catch (e) {
+      // Closing "Verify it's you" is not a failure: nothing was sent again.
+      if (isSecondFactorStepUpCancelled(e)) return;
       if (accepts(generation) && authority == sourceAuthority) {
         invalidateDeniedMutation(e);
         setState(
