@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:raft_client/raft_client.dart';
 
-import 'workspace_controller.dart';
+import '../data/workspace_controller.dart';
 
 /// Feeds the marked-unread flags ([ConversationReadRepository.marks]) from
 /// live `read_state:updated` / `read_state:updated_bulk` frames (Web
