@@ -59,4 +59,6 @@ const Map<String, String> zhCatalogUpstream124 = <String, String>{
   // Sign-up usage-data notice (auth.legalAcceptance.usageDataNotice, privacy 2026-10-14).
   "Raft collects usage data to improve the product. You can turn it off anytime in Settings.":
       "Raft 会收集使用数据来改进产品，你可以随时在设置中关闭。",
+  // SSO_REQUIRED (pages.ssoCallback.title).
+  "Sign in with SSO": "使用 SSO 登录",
 };

@@ -38,6 +38,7 @@ import 'features/public_server_view.dart';
 import 'features/workspace_history_controls.dart';
 import 'features/workspace_view.dart';
 import 'features/auth_view.dart';
+import 'features/sso_required_page.dart';
 import 'features/session_recovery_view.dart';
 import 'features/account_onboarding.dart';
 import 'features/private_route_guard.dart';
@@ -1824,8 +1825,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         authenticate: authenticate,
       );
     }
+    if (active!.ssoRequired != null) return SsoRequiredPage(active, logout);
     if (invite != null) return inviteHome(true);
-    if (accountNeedsOnboarding(active!.user)) {
+    if (accountNeedsOnboarding(active.user)) {
       return AccountOnboardingView(
         client: active,
         onComplete: () => finishOnboarding(active),
@@ -1985,6 +1987,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
               'Server membership changed. Choose an available server again.';
         }
         if (directoryLoading) unawaited(discoverServers());
+        setState(() {});
+      }
+      if (e.name == 'auth:sso-required' && mounted && identical(c, client)) {
         setState(() {});
       }
       if (e.name == 'session:ended' && mounted && identical(c, client)) {

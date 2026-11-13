@@ -400,6 +400,25 @@ class RaftClient {
   final Dio http;
   Session? _session;
   RaftRecord? user;
+
+  /// Server v1.24 enterprise SSO enforcement: a Server that requires its
+  /// single sign-on refuses every request of this session with 403
+  /// `SSO_REQUIRED` (and the socket handshake with `SSO_REQUIRED`). Web sends
+  /// the person to that Server's SSO sign-in (utils/ssoSignIn.ts); this
+  /// client has no SSO sign-in, so it records the server's sentence here and
+  /// emits `auth:sso-required` once for the app to say so and offer signing
+  /// out (the one route the server still accepts).
+  String? ssoRequired;
+  static const ssoRequiredText =
+      'Your organization requires you to sign in with its single sign-on.';
+
+  void _noteSsoRequired(String message) {
+    if (ssoRequired != null) return;
+    ssoRequired = message.isEmpty ? ssoRequiredText : message;
+    _audit('sso_required', 'refused');
+    _emit(RaftEvent('auth:sso-required', {'message': ssoRequired}));
+  }
+
   String? serverId;
   int _generation = 0;
   int _authenticationGeneration = 0;
@@ -1657,6 +1676,12 @@ class RaftClient {
               : hint;
         }
       }
+      if (authorized &&
+          status == 403 &&
+          body is Map &&
+          body['code'] == 'SSO_REQUIRED') {
+        _noteSsoRequired('${body['error'] ?? ''}');
+      }
       throw RaftApiException.response(
         body is Map
             ? (body['error'] ?? body['message'] ?? 'Request failed').toString()
@@ -1902,6 +1927,12 @@ class RaftClient {
         }),
       );
       final lower = text.toLowerCase();
+      if (text.contains('SSO_REQUIRED')) {
+        // Refused until this session signs in with the Server's SSO: no
+        // retry, the app says so (Web socketBridge connectRejected).
+        _noteSsoRequired('');
+        return;
+      }
       if (lower.contains('token')) {
         // "Invalid or expired token" / "Invalid token type": ask the refresh
         // endpoint. Only its definitive answer can end the session.

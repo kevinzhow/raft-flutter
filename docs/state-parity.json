@@ -529,6 +529,23 @@
       ]
     },
     {
+      "id": "auth.sso-required",
+      "title": "SSO required (403 SSO_REQUIRED on every request)",
+      "webEntry": "packages/web/src/utils/ssoSignIn.ts",
+      "flutterEntry": "apps/raft_flutter/lib/features/sso_required_page.dart",
+      "states": [
+        {
+          "state": "error",
+          "variant": "Sign in with SSO (server text) + Log out",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "intentional",
+          "justification": "Web never renders this state: it leaves for the Server's SSO sign-in (goToServerSsoSignIn). Flutter has no SSO sign-in yet (app-login handoff is a follow-up), so it shows the server's sentence and Log out instead of a silent failure. Covered by apps/raft_flutter/test/sso_required_test.dart."
+        }
+      ]
+    },
+    {
       "id": "public-server",
       "title": "Public server preview (signed out)",
       "webEntry": "packages/web/src/pages/PublicServerPage.tsx",
@@ -3631,6 +3648,18 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "apps/raft_flutter/lib/features/sso_required_page.dart#class:SsoRequiredPage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/sso_required_page.dart#method:SsoRequiredPage.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/auth_page.dart#class:RaftAuthUsageDataNotice": {
         "role": "unresolved",
         "familyRefs": [],
@@ -43955,6 +43984,16 @@
       }
     },
     "entries": {
+      "screen:auth.sso-required": {
+        "owner": "server v1.24 compatibility",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "auth.sso-required",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/sso_required_page.dart#class:SsoRequiredPage"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Mounted by app_root when the session's RaftClient.ssoRequired is set; reuses RaftAuthResultPage. Widget evidence only (sso_required_test.dart); no visual PASS is asserted."
+      },
       "surface:_verifyItsYou": {
         "owner": "design-system alignment",
         "kind": "dialog",
