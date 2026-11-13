@@ -255,7 +255,9 @@ void main() {
   testWidgets('the app editor keeps its App Notifications settings on a '
       'revisit', (t) async {
     final (w, api) = await _workspace(t);
-    api.routes['GET /integrations/clients/app-1/share-link'] = (_) => {};
+    api.routes['GET /integrations/clients/app-1/share-links'] = (_) => {
+      'links': <dynamic>[],
+    };
     api.routes['GET /integrations/clients/app-1/app-notifications'] = (_) => {
       'request_revision': 0,
       'current_groups': ['server'],

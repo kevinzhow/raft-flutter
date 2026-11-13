@@ -710,10 +710,9 @@ void main() {
       a.routes['GET /integrations/clients'] = (_) => [app];
       a.routes['GET /integrations/marketplace'] = (_) => <dynamic>[];
       a.routes['GET /integrations/overview'] = (_) => <dynamic>[];
-      a.routes['GET /integrations/clients/app-1/share-link'] = (_) => {
-        'error': 'none',
+      a.routes['GET /integrations/clients/app-1/share-links'] = (_) => {
+        'links': <dynamic>[],
       };
-      a.statuses['GET /integrations/clients/app-1/share-link'] = 404;
       a.routes['GET /integrations/clients/app-1/app-notifications'] = (_) => {
         'request_revision': 0,
         'current_groups': ['server'],

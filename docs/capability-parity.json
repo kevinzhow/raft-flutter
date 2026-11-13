@@ -8221,11 +8221,11 @@
    "status": "covered",
    "webEntry": "Editor > Distribution > 'Revoke'",
    "gate": "manageIntegrations; status private or rejected",
-   "flutterEntry": "connected_app_editor.dart revokeShare()",
+   "flutterEntry": "connected_app_editor.dart revokeShare(link) -> DELETE $base/share-links/:linkId (server v1.24.0 replaced this route with /integrations/clients/:id/share-links: one link per target server slug, listed; Web ConnectedAppShareLinks)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
-     "needle": "w.client.delete('$base/share-link')"
+     "needle": "'$base/share-links/${Uri.encodeComponent(id)}'"
     },
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
@@ -8513,11 +8513,11 @@
    "status": "covered",
    "webEntry": "Editor > Distribution > 'Private share link' card (state load)",
    "gate": "manageIntegrations; app status private or rejected",
-   "flutterEntry": "connected_app_editor.dart loadShare()",
+   "flutterEntry": "connected_app_editor.dart loadShare() -> GET $base/share-links (server v1.24.0 replaced this route with /integrations/clients/:id/share-links: one link per target server slug, listed; Web ConnectedAppShareLinks)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
-     "needle": "$base/share-link"
+     "needle": "'$base/share-links'"
     },
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
@@ -8993,11 +8993,11 @@
    "status": "covered",
    "webEntry": "Editor > Distribution > 'Create link' / 'Regenerate' + Copy",
    "gate": "manageIntegrations; status private or rejected",
-   "flutterEntry": "connected_app_editor.dart createShare()",
+   "flutterEntry": "connected_app_editor.dart createShare() -> POST $base/share-links {targetServerSlug} (server v1.24.0 replaced this route with /integrations/clients/:id/share-links: one link per target server slug, listed; Web ConnectedAppShareLinks)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
-     "needle": "$base/share-link"
+     "needle": "'targetServerSlug': slug"
     },
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
