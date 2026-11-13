@@ -267,7 +267,7 @@ void main() {
       },
     );
 
-    test('a server with sync off (404) keeps the old reloads', () async {
+    test('a server with sync off (404) keeps the old reloads and freshness', () async {
       final c = await connected();
       c.client.changes.add(
         RaftApiException.response(
@@ -279,7 +279,10 @@ void main() {
       c.client.wire.clear();
       c.client.incoming.add(const RaftEvent('connected', null));
       await c.settle();
-      expect(c.client.wire, containsAll(['changes null', 'sidebar']));
+      expect(c.client.wire, contains('changes null'));
+      // The skipped reads run under their usual freshness (read just now at
+      // the first connect, so not again).
+      expect(c.client.wire, isNot(contains('sidebar')));
       expect(WorkspaceLiveSync.of(c.client).syncSession!.hasCursor, isFalse);
     });
 
