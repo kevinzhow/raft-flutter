@@ -55,6 +55,7 @@ Future<void> _openDestination(WidgetTester t, String id) async {
     await t.drag(find.byType(RaftSettingsSidebarList), const Offset(0, -400));
     await t.pumpAndSettle();
   }
+  expect(row.hitTestable(), findsOneWidget);
   await t.tap(row);
   for (var i = 0; i < 10; i++) {
     await t.pump(const Duration(milliseconds: 100));

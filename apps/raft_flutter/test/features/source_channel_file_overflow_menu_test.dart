@@ -15,11 +15,13 @@ const _download = 'Download file';
 const _trigger = ValueKey('channel-file-overflow-a');
 const _popup = ValueKey('channel-file-overflow-menu-a');
 
-// Real Web db5e399f ChannelFileOverflowMenu: the published DropdownMenu
+// Real Web v1.24 ChannelFileOverflowMenu: the published DropdownMenu
 // recipe, not Web MenuItem's product action recipe. Its content is min-w-60,
-// p-1.5, and two min-h-9 items; bottom/end with sideOffset4. These assertions
+// p-1, and two min-h-option items; bottom/end with sideOffset4. These assertions
 // inspect rendered geometry and real callbacks, without requiring a particular
 // canonical widget class to exist.
+const _normalMenuHeight = 2 * 36.0 + 2 * 4;
+
 Finder _menu() => find.byWidgetPredicate(
   (widget) =>
       widget is Semantics && widget.properties.role == SemanticsRole.menu,
@@ -151,8 +153,8 @@ void main() {
         );
         expect(
           popup.height,
-          closeTo(84, .01),
-          reason: 'p-1.5 plus two min-h-9 rows',
+          closeTo(_normalMenuHeight, .01),
+          reason: 'current source p-1 plus two phone min-h-option rows',
         );
         // Published floating placement rounds the computed popup origin.
         // Its fixed 240px width therefore keeps this end edge integral too.
@@ -170,7 +172,7 @@ void main() {
         expect(
           anchor.size,
           const Size(32, 32),
-          reason: 'source ghost icon-sm trigger',
+          reason: 'source ghost icon-md trigger (published narrow aliases)',
         );
         final more = find.descendant(
           of: find.byKey(_trigger),
@@ -285,7 +287,7 @@ void main() {
           final popup = tester.getRect(_menu());
           expect(
             popup.height,
-            greaterThan(84),
+            greaterThan(_normalMenuHeight),
             reason: 'rows grow with content text',
           );
           expect(popup.left, greaterThanOrEqualTo(0));
