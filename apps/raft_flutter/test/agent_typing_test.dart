@@ -158,8 +158,7 @@ void main() {
         ),
       ),
     );
-    String sentence(List<String> names) =>
-        agentTypingSentence(context, AgentTypingSentence.typing, names);
+    String sentence(List<String> names) => agentTypingSentence(context, names);
     expect(sentence([]), '');
     expect(sentence(['Niko']), 'Niko is typing…');
     expect(sentence(['Niko', 'Kirby']), 'Niko and Kirby are typing…');

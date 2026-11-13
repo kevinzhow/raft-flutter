@@ -7,51 +7,33 @@ import '../data/personal_presentation.dart';
 import '../data/workspace_controller.dart';
 import 'sender_avatar_projection.dart';
 
-/// Which sentence: `typing` for the line, `replying` for the hint under a
-/// parent message.
-enum AgentTypingSentence { typing, replying }
-
-/// Web `formatAgentTypingSentence`: "Niko is typing…", "Niko and Kirby are
-/// typing…", "Niko, Kirby and Tenny are typing…", "Niko, Kirby and 3 other
-/// agents are typing…". Empty for nobody.
-String agentTypingSentence(
-  BuildContext context,
-  AgentTypingSentence kind,
-  List<String> names,
-) {
-  final typing = kind == AgentTypingSentence.typing;
+/// Web `formatAgentTypingSentence` (`typing`): "Niko is typing…", "Niko and
+/// Kirby are typing…", "Niko, Kirby and Tenny are typing…", "Niko, Kirby and 3
+/// other agents are typing…". Empty for nobody.
+String agentTypingSentence(BuildContext context, List<String> names) {
   final others = names.length - 2;
   final (key, values) = switch (names) {
     [] => ('', const <String, Object>{}),
-    [final first] => (
-      typing ? '{first} is typing…' : '{first} is replying',
-      {'first': first},
-    ),
+    [final first] => ('{first} is typing…', {'first': first}),
     [final first, final second] => (
-      typing
-          ? '{first} and {second} are typing…'
-          : '{first} and {second} are replying',
+      '{first} and {second} are typing…',
       {'first': first, 'second': second},
     ),
     [final first, final second, final third] => (
-      typing
-          ? '{first}, {second} and {third} are typing…'
-          : '{first}, {second} and {third} are replying',
+      '{first}, {second} and {third} are typing…',
       {'first': first, 'second': second, 'third': third},
     ),
     [final first, final second, ...] => (
-      typing
-          ? others == 1
-                ? '{first}, {second} and {others} other agent are typing…'
-                : '{first}, {second} and {others} other agents are typing…'
-          : others == 1
-          ? '{first}, {second} and {others} other agent are replying'
-          : '{first}, {second} and {others} other agents are replying',
+      others == 1
+          ? '{first}, {second} and {others} other agent are typing…'
+          : '{first}, {second} and {others} other agents are typing…',
       {
         'first': first,
         'second': second,
-        'others': others,
-        'count': names.length,
+        // Web zh-cn counts every agent ("等 5 个 Agent"), en the others.
+        'others': Localizations.localeOf(context).languageCode == 'zh'
+            ? names.length
+            : others,
       },
     ),
   };
@@ -208,7 +190,7 @@ class AgentTypingLineHost extends StatelessWidget {
         child: IgnorePointer(
           child: RaftAgentTypingLine(
             agents: agents,
-            sentence: agentTypingSentence(context, AgentTypingSentence.typing, [
+            sentence: agentTypingSentence(context, [
               for (final agent in agents) agent.name,
             ]),
           ),
