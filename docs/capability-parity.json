@@ -12951,24 +12951,24 @@
    "kind": "ui",
    "id": "ui:notifications.desktop-native",
    "area": "notifications",
-   "capability": "Desktop OS notifications for DMs, mentions and followed-thread replies while the window is unfocused; Settings has a 'Send test notification' and OS-permission guidance",
+   "capability": "Desktop OS notifications for every server of the account, authored by the server (notification:desktop): the same audience as push (levels, mutes, pause, quiet hours), nothing while the window is attended, each id once; delivered alerts are acked so the phone stays quiet; Settings has 'Send test notification' through the server",
    "background": false,
    "status": "covered",
-   "webEntry": "utils/desktopNativeNotifications.ts + components/settings/SettingsPanel.tsx (settings.notifications.desktop.*), utils/notificationChannel.ts kind desktop-native",
+   "webEntry": "notifications/desktopNative/serverNotificationStream.ts + notificationGate.ts + desktopNotificationConsumer.ts; components/settings/notifications/ThisDeviceCard.tsx DesktopDeviceCard + TestNotificationButton.tsx; utils/desktopNativeNotifications.ts runDesktopTestNotification",
    "gate": "Desktop app",
-   "flutterEntry": "platform/desktop_inbox_notifications.dart + native_notifications.dart; macOS asks once after entering an authenticated workspace, reports current OS permission and offers 'Open notification settings'; Windows/Linux behavior unchanged",
+   "flutterEntry": "platform/desktop_server_notifications.dart (parse, stale / membership / attended gates, dedupe, ack with socketId, test ack) + native_notifications.dart; notification_settings_view.dart desktop card with the server test (POST /notifications/test, poll, banner). The local inbox path (desktop_inbox_notifications.dart) is removed, as on Web",
    "flutterRefs": [
     {
+     "file": "apps/raft_flutter/lib/platform/desktop_server_notifications.dart",
+     "needle": "event.name != 'notification:desktop'"
+    },
+    {
      "file": "apps/raft_flutter/lib/features/notification_settings_view.dart",
-     "needle": "Send a test notification"
+     "needle": "Send test notification"
     },
     {
-     "file": "apps/raft_flutter/lib/platform/native_notifications.dart",
-     "needle": "class NativeNotificationService"
-    },
-    {
-     "file": "apps/raft_flutter/lib/platform/native_notifications.dart",
-     "needle": "bindAuthenticatedWorkspace"
+     "file": "apps/raft_flutter/lib/data/notification_settings_api.dart",
+     "needle": "'/notifications/test'"
     }
    ],
    "justification": "",
@@ -12982,13 +12982,13 @@
    "capability": "Guidance that OS Notification permission / Focus mode decides whether banners appear (with per-OS path)",
    "background": false,
    "status": "covered",
-   "webEntry": "settings.notifications.desktop.systemHint in SettingsPanel.tsx",
+   "webEntry": "components/settings/notifications/ThisDeviceCard.tsx DesktopDeviceCard (settings.notifications.desktop.systemHint / systemHintOther, openSystemSettings)",
    "gate": "",
-   "flutterEntry": "notification_settings_view.dart per-platform path text (macOS System Settings, Windows Settings, Android/iOS app settings, battery settings link)",
+   "flutterEntry": "notification_settings_view.dart desktopHint (macOS path; Windows / Linux systemHintOther) and phoneHint; Open System Settings on macOS / Windows",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/notification_settings_view.dart",
-     "needle": "Do Not Disturb may send notifications directly"
+     "needle": "Do Not Disturb may hold banners back."
     }
    ],
    "justification": "",
@@ -13043,16 +13043,20 @@
    "kind": "ui",
    "id": "ui:notifications.mute-server",
    "area": "notifications",
-   "capability": "'Mute this server' switch: stops push notifications from the current server for your account",
+   "capability": "A server's notification level (All new messages / Only what involves me / Nothing; Nothing replaces 'Mute this server'), in Settings › Notifications › Servers and Settings › On {server} › Notifications",
    "background": false,
    "status": "covered",
-   "webEntry": "components/settings/SettingsPanel.tsx settings.notifications.muteServer*; localStorage event slock:server-notification-prefs-updated",
+   "webEntry": "components/settings/notifications/ServersCard.tsx (ServersCard, CurrentServerNotificationsCard) + components/notifications/NotificationLevelMenu.tsx; PUT /notification-levels",
    "gate": "",
-   "flutterEntry": "notification_settings_view.dart mute switch ('Notifications from {serverName} are muted.')",
+   "flutterEntry": "notification_settings_cards.dart NotificationServersCard + notification_level_menu.dart NotificationLevelSelect; workspace_settings.dart server-notifications destination",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/notification_settings_view.dart",
-     "needle": "Notifications from {serverName} are muted."
+     "file": "apps/raft_flutter/lib/features/notification_settings_cards.dart",
+     "needle": "class NotificationServersCard"
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/notification_settings_api.dart",
+     "needle": "'/notification-levels'"
     }
    ],
    "justification": "",
@@ -13090,9 +13094,9 @@
    "capability": "Enable/Disable push notifications, Send Test Push, status chips (Enabled/Ready/Denied/Unsupported) for DMs, direct mentions and followed-thread replies; delivery works with the tab closed",
    "background": false,
    "status": "partial",
-   "webEntry": "components/settings/SettingsPanel.tsx notifications section + utils/pushNotifications.ts (VAPID web push) + public/sw.js push handler",
+   "webEntry": "components/settings/notifications/ThisDeviceCard.tsx BrowserDeviceCard + utils/pushNotifications.ts (VAPID web push) + public/sw.js push handler",
    "gate": "",
-   "flutterEntry": "native_notifications.dart bindAuthenticatedWorkspace requests OS permission once per installation on iOS/Android (Android runtime dialog on 13+); notification_settings_view.dart shows permission status, system settings and test controls; live socket / iOS BGAppRefresh delivery, no FCM/APNs/UnifiedPush registration",
+   "flutterEntry": "notification_settings_view.dart phone card (permission status, Enable, local test, system settings); content_coordinator.dart posts the server's notification:push (phoneAlert false while a computer is in use); background_inbox.dart polls with the v1.24 levels, pause and quiet hours; presence_report.dart reports presence:activity. No FCM/APNs registration",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/notification_settings_view.dart",
@@ -13101,9 +13105,13 @@
     {
      "file": "apps/raft_flutter/lib/platform/background_inbox.dart",
      "needle": "class BackgroundInboxPoller"
+    },
+    {
+     "file": "apps/raft_flutter/lib/platform/content_coordinator.dart",
+     "needle": "p['phoneAlert'] == false"
     }
    ],
-   "justification": "docs/background-inbox.md: Android has no background fetch (owner decision 2026-10-13) and iOS BGAppRefresh timing is OS-controlled; no server-pushed delivery when the app is killed. Web push (VAPID/service worker) mechanics themselves are na.",
+   "justification": "docs/background-inbox.md: Android has no background fetch (owner decision 2026-10-13) and iOS BGAppRefresh timing is OS-controlled; no server-pushed delivery when the app is killed. Web push (VAPID/service worker) mechanics themselves are na. v1.24 'Phone alerts' delays (1-10 min) are held by the server and sent only through FCM/APNs, so this app never receives a held alert (docs/parity.md decision 3).",
    "impact": "All mobile users: messages/mentions do not notify reliably when the app is not running (Android) or only at OS-chosen intervals (iOS); the biggest notification gap. Needs FCM/APNs.",
    "size": "L",
    "topGap": 2
@@ -13175,7 +13183,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/notification_settings_view.dart",
-     "needle": "Test notification"
+     "needle": "Test notification shown on this device."
     }
    ],
    "justification": "Equivalent permission + test controls exist, but they drive local OS notifications fed by background polling, not server push; with the app fully closed delivery is best-effort (docs/background-inbox.md).",
@@ -18113,6 +18121,98 @@
    "justification": "Not a server call: `fetch(dataUrl)` turns a canvas data URL into a blob. The native image export has no canvas pixel budget; the budget copy is tracked in the share work (WP-MSGB).",
    "impact": "",
    "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:notifications.levels",
+   "area": "notifications",
+   "capability": "Notification levels: a channel overrides its server's level (All new messages / Only what involves me / Mute, Mute being the Activity mute) from its ⋯ settings and the sidebar row menu's Notifications ▸; customized channels listed per server with Reset to default; realtime notification_prefs:updated frames",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/notifications/NotificationLevelMenu.tsx (NotificationLevelSelect, NotificationLevelSubmenu) + store/notificationSettingsStore.ts + components/channel/ChannelPreferencesSection.tsx + features/sidebar/menus/SidebarRowContextMenu.tsx",
+   "gate": "",
+   "flutterEntry": "notification_level_menu.dart (model, select, sidebar submenu) + data/notification_settings_store.dart (optimistic writes, versioned frames) + channel_settings.dart Notifications row + workspace_view_sidebar_menus.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/notification_level_menu.dart",
+     "needle": "class NotificationLevelModel"
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/notification_settings_store.dart",
+     "needle": "bool applyPrefsUpdate"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:notifications.pause-and-schedule",
+   "area": "notifications",
+   "capability": "Pause notifications (30 min / 1 h / 2 h / until tomorrow 9:00 / custom; Resume) and daily quiet hours, account-wide; a moon in the top bar while paused resumes them",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/settings/notifications/PauseAndScheduleCard.tsx + notifications/pause.ts + components/notifications/PausedNotificationsIndicator.tsx",
+   "gate": "",
+   "flutterEntry": "notification_settings_cards.dart PauseScheduleCard + paused_notifications_indicator.dart (workspace_browser_header.dart)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/notification_settings_cards.dart",
+     "needle": "class PauseScheduleCard"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/paused_notifications_indicator.dart",
+     "needle": "class PausedNotificationsIndicator"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:notifications.content-settings",
+   "area": "notifications",
+   "capability": "All devices: notification preview (sender and message / sender only / hidden), Phone alerts while a computer is in use, Sound, Replies in threads I follow",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/settings/notifications/ContentCard.tsx",
+   "gate": "",
+   "flutterEntry": "notification_settings_cards.dart NotificationContentCard",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/notification_settings_cards.dart",
+     "needle": "class NotificationContentCard"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:notifications.presence-and-badge",
+   "area": "notifications",
+   "capability": "presence:activity reports (desktop: input in the window, ackAlerts; phone: foreground) so the server alerts only the device in use; the app badge skips servers at level Nothing; push.* notification copy in the display language",
+   "background": true,
+   "status": "partial",
+   "webEntry": "notifications/presenceReport.ts + notifications/badge.ts + notifications/localizeNotification.ts",
+   "gate": "",
+   "flutterEntry": "platform/presence_report.dart + platform/account_activity_unread.dart / data/activity_attention.dart (silencedServerIds) + platform/notification_localization.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/platform/presence_report.dart",
+     "needle": "class PresenceReporter"
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/activity_attention.dart",
+     "needle": "silencedServerIds"
+    }
+   ],
+   "justification": "A Flutter desktop sees only input in its own window, not system-wide input as Raft Desktop's shell does, so a person working in another app counts as away after 3 minutes (the approximation Web documents for a browser tab); this only ever lets a phone alert through.",
+   "impact": "Desktop users working in other apps may get phone alerts Raft Desktop would have held back.",
+   "size": "M"
   }
  ]
 }
