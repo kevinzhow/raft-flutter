@@ -71,8 +71,12 @@ void main() {
             final label = t.getRect(
               find.text(chinese ? '开启通知' : 'Enable Notifications'),
             );
-            final close = t.getRect(find.byType(RaftCloseButton));
-            expect(close.size, const Size(32, 32));
+            // v1.24: a ghost Dismiss before the action, no ×.
+            final close = t.getRect(
+              find.byKey(const ValueKey('notification-activation-dismiss')),
+            );
+            expect(find.byType(RaftCloseButton), findsNothing);
+            expect(close.center.dy, closeTo(button.center.dy, .5));
             Map<String, double> rect(Rect r) => {
               'x': r.left,
               'y': r.top,
