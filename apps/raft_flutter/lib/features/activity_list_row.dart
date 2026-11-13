@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/marked_unread_sync.dart';
 import '../data/resource_row_reconcile.dart' show activityScopeId;
 import '../data/workspace_controller.dart';
 import 'activity_card_row.dart';
 import 'activity_rollout_flags.dart';
+import 'marked_unread_sync.dart';
 import 'resource_view.dart' show activityRowTitle, activityThreadSubtitle;
 import 'sender_avatar_projection.dart';
 
