@@ -23,6 +23,7 @@ class OAuthCallbackFailure extends RaftApiException {
     : code = _token.hasMatch(code ?? '') ? code!.toLowerCase() : null,
       super('Authentication was not completed. Return to Raft and try again.');
   static final _token = RegExp(r'^[A-Za-z0-9_.-]{1,64}$');
+  @override
   final String? code;
 }
 
