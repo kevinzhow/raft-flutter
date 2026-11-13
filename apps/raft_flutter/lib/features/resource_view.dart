@@ -3777,7 +3777,10 @@ class _ResourceViewState extends State<ResourceView> {
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     final count = totalCount ?? rows.length;
     if (widget.mobileRoot && mobile && widget.section == 'activity') {
-      return const RaftMobileRootHeader(title: 'Activity');
+      return activityStaleNotice(
+        w,
+        const RaftMobileRootHeader(title: 'Activity'),
+      );
     }
     final header = RaftPageHeader(
       background: widget.section == 'activity' || widget.section == 'saved'
