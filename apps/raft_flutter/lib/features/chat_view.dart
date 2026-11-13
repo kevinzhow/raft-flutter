@@ -42,6 +42,7 @@ import 'media_items.dart';
 import 'attachment_shape.dart';
 import 'message_presentation.dart';
 import 'message_saved_action.dart';
+import 'message_task_actions.dart';
 import 'message_sender_menu.dart';
 import 'message_preparation.dart';
 import 'pending_mention_actions.dart';
@@ -1561,11 +1562,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         final taskItems = [
           if (!threadReply && supportsTasks)
             task == null
-                ? item(
-                    'task',
-                    'Convert to Task',
-                    raftMessageMenuIcon(RaftGlyph.clipboardCheck),
-                  )
+                ? messageTaskMenuItem(w, item)
                 : task['status'] == 'done'
                 ? item(
                     'task-reopen',
@@ -1691,12 +1688,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       if (choice.startsWith('react:')) {
         await react(message, choice.substring(6));
       }
-      if (choice == 'task') {
-        await w.command(
-          'POST',
-          '/tasks/convert-message',
-          data: {'messageId': message.id},
-        );
+      if ((choice == 'task' || choice == 'task-from-message') && mounted) {
+        await runMessageTaskAction(context, w, message, choice);
       }
       if ((choice == 'task-done' || choice == 'task-reopen') && task != null) {
         await w.command(

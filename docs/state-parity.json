@@ -3631,6 +3631,30 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "apps/raft_flutter/lib/features/message_task_actions.dart#function:messageTaskMenuItem": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/message_task_actions.dart#function:runMessageTaskAction": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/create_task_view.dart#class:_SourceMessageQuote": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/create_task_view.dart#method:_SourceMessageQuote.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
       "apps/raft_flutter/lib/features/connected_app_editor.dart#method:_ConnectedAppEditorState.shareLinkRow": {
         "role": "unresolved",
         "familyRefs": [],
@@ -43273,19 +43297,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4462/METHOD:attachmentGallery@69007/FUNCTION:view@70161": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4498/METHOD:attachmentGallery@68890/FUNCTION:view@70044": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4462/METHOD:senderAvatar@80657/FUNCTION:avatar@83217": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4498/METHOD:senderAvatar@80540/FUNCTION:avatar@83100": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4462/METHOD:buildTimeline@115994/FUNCTION:timelineFor@119493": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4498/METHOD:buildTimeline@115877/FUNCTION:timelineFor@119376": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",

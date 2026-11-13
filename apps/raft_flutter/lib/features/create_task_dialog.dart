@@ -12,28 +12,45 @@ import '../data/user_error.dart';
 
 import '../data/workspace_controller.dart';
 
+/// Task v2 "Create task from message" (Web CreateTaskSourceMessage): the
+/// tasks hang under this message (`sourceMessageId`).
+typedef CreateTaskSourceMessage = ({String id, String senderName, String text});
+
+/// Web `titleFromMessage`: the message on one line, at most 200 characters.
+String taskTitleFromMessage(String text) {
+  const max = 200;
+  final single = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return single.length <= max
+      ? single
+      : '${single.substring(0, max - 1).trimRight()}…';
+}
+
 class CreateTaskDialog extends StatefulWidget {
   const CreateTaskDialog({
     super.key,
     required this.controller,
     required this.channelId,
     this.onCreated,
+    this.sourceMessage,
   });
   final WorkspaceController controller;
   final String channelId;
   final Future<void> Function()? onCreated;
+  final CreateTaskSourceMessage? sourceMessage;
 
   static Future<void> show(
     BuildContext context, {
     required WorkspaceController controller,
     required String channelId,
     Future<void> Function()? onCreated,
+    CreateTaskSourceMessage? sourceMessage,
   }) => showRaftForm<void>(
     context,
     builder: (_) => CreateTaskDialog(
       controller: controller,
       channelId: channelId,
       onCreated: onCreated,
+      sourceMessage: sourceMessage,
     ),
   );
 
@@ -42,7 +59,13 @@ class CreateTaskDialog extends StatefulWidget {
 }
 
 class _CreateTaskDialogState extends State<CreateTaskDialog> {
-  final titles = <TextEditingController>[TextEditingController()];
+  late final titles = <TextEditingController>[
+    TextEditingController(
+      text: widget.sourceMessage == null
+          ? ''
+          : taskTitleFromMessage(widget.sourceMessage!.text),
+    ),
+  ];
   bool submitting = false;
 
   /// A failed submit (server text or lost channel access); the next submit
@@ -103,14 +126,22 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
       error = null;
       titleRequired.clear();
     });
+    final source = widget.sourceMessage;
     try {
       await widget.controller.command(
         'POST',
         '/tasks/channel/${widget.channelId}',
         data: {
           'tasks': [
-            for (final title in nonEmpty) {'title': title},
+            for (final title in nonEmpty)
+              {
+                'title': title,
+                if (source != null) 'sourceMessageId': source.id,
+              },
           ],
+          // Web createTasks: task v2 sends the create status (the dialog's
+          // default, Todo).
+          if (source != null) 'status': 'todo',
         },
       );
       if (!mounted) return;
@@ -148,5 +179,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     onRemoveRow: (i) => setState(() {
       titles.removeAt(i).dispose();
     }),
+    sourceSender: widget.sourceMessage?.senderName,
+    sourceText: widget.sourceMessage?.text,
   );
 }

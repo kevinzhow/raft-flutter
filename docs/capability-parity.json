@@ -1232,14 +1232,18 @@
    "status": "partial",
    "webEntry": "MessageItem ctx menu task item",
    "gate": "only top-level messages (not thread replies) in non-thread channels, and not external (Slack-projected) messages",
-   "flutterEntry": "chat_view.dart actions() taskItems -> POST /tasks/convert-message and PATCH /tasks/:id/status",
+   "flutterEntry": "chat_view.dart actions() taskItems -> messageTaskMenuItem (Convert to Task, or Create task from message with task v2) -> POST /tasks/convert-message; PATCH /tasks/:id/status. Server v1.24 task v2 (task_v2_conversations_v0): \"Create task from message\" -> CreateTaskDialog with sourceMessageId; a 409 task_v2_use_create from convert opens the same dialog (message_task_actions.dart).",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "needle": "messageTaskMenuItem(w, item)"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
      "needle": "'Convert to Task'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
      "needle": "'/tasks/convert-message'"
     }
    ],
@@ -10449,14 +10453,14 @@
    "status": "covered",
    "webEntry": "MessageItem context menu 'Convert to Task' (top-level channel messages, not thread replies/external)",
    "gate": "Channel type not thread; member with write access",
-   "flutterEntry": "chat_view.dart message menu 'Convert to Task'",
+   "flutterEntry": "chat_view.dart message menu -> message_task_actions.dart runMessageTaskAction. Server v1.24 task v2 (task_v2_conversations_v0): \"Create task from message\" -> CreateTaskDialog with sourceMessageId; a 409 task_v2_use_create from convert opens the same dialog (message_task_actions.dart).",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
      "needle": "/tasks/convert-message"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
      "needle": "Convert to Task"
     }
    ],
@@ -10665,15 +10669,15 @@
    "status": "covered",
    "webEntry": "MessageItem ctx menu (top-level channel message, not external)",
    "gate": "member with write access",
-   "flutterEntry": "chat_view.dart message menu",
+   "flutterEntry": "chat_view.dart message menu -> message_task_actions.dart messageTaskMenuItem. Server v1.24 task v2 (task_v2_conversations_v0): \"Create task from message\" -> CreateTaskDialog with sourceMessageId; a 409 task_v2_use_create from convert opens the same dialog (message_task_actions.dart).",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
      "needle": "Convert to Task"
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "'task'"
+     "needle": "choice == 'task'"
     }
    ],
    "justification": "",

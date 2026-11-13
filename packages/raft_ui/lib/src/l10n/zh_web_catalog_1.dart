@@ -147,7 +147,7 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Conversation": "会话",
   "Apply": "应用",
   "React 👍": "回应 👍",
-  "Create task from message": "将消息创建为任务",
+  "Create task from message": "从消息创建任务",
   "Choose a channel or direct message to start.": "选择频道或私信以开始会话。",
   "Start the conversation": "开始会话",
   "Send a message to this channel.": "向此频道发送消息。",
