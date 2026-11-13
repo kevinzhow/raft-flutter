@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../data/rw_freshness.dart';
 import '../data/workspace_controller.dart';
 
@@ -8,7 +6,7 @@ final _bound = Expando<RwFreshnessStore>();
 /// The RisingWave freshness of [w]'s client, with [w]'s own re-reads (Web
 /// rwStaleCounts `refetch`) and foreground state bound while [w] lives.
 RwFreshnessStore rwFreshnessOf(WorkspaceController w) => _bound[w] ??= () {
-  final store = RwFreshnessStore.ofClient(w.client);
+  final store = RwFreshnessStore.acquire(w.client);
   Future<void> inbox() async {
     // Not loaded: Activity was never opened, and opening it loads it.
     final store = w.activityUnreadIfBound;
@@ -31,6 +29,7 @@ RwFreshnessStore rwFreshnessOf(WorkspaceController w) => _bound[w] ??= () {
   w.services.disposeWithSession(() {
     w.foregroundChanges.removeListener(resumed);
     refetch.forEach(store.unregister);
+    store.release();
   });
   return store;
 }();
