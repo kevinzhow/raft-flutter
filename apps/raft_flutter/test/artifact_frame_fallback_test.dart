@@ -11,7 +11,9 @@ void main() {
     tester,
   ) async {
     final opened = <Uri>[];
-    final page = Uri.parse('https://app.example/artifacts/U5YUUwNcK8gqGo5mEh76Ms');
+    final page = Uri.parse(
+      'https://app.example/artifacts/U5YUUwNcK8gqGo5mEh76Ms',
+    );
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme(),

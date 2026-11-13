@@ -40,7 +40,12 @@ Future<void> main() async {
   client.selectServer(server);
   final viewers = [
     for (final id in artifact.split(','))
-      (id: id, data: Map<String, Object?>.from(await client.get('/artifacts/$id') as Map)),
+      (
+        id: id,
+        data: Map<String, Object?>.from(
+          await client.get('/artifacts/$id') as Map,
+        ),
+      ),
   ];
   runApp(_Spike(client: client, viewers: viewers));
 }
@@ -124,31 +129,31 @@ class _SpikeState extends State<_Spike> {
       artifactFrameSupportFor(Platform.operatingSystem);
 
   Widget _body(BuildContext context) => support == ArtifactFrameSupport.browser
-        ? ArtifactOpenInBrowser(
-            title: title,
-            pageUrl: Uri.parse(
-              '${artifactData['url'] ?? '$appOrigin/artifacts/$id'}',
-            ),
-            open: (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
-          )
-        : ArtifactFrameView(
-            key: ValueKey(id),
-            artifactId: id,
-            version: version,
-            title: title,
-            appOrigin: Uri.parse(appOrigin),
-            contentDomain: contentDomain,
-            dark: dark,
-            theme: artifactPageTheme(RaftTokens.of(context).colors),
-            controller: frame,
-            host: host,
-            hostScript: () =>
-                rootBundle.loadString('assets/artifacts/porthole_host.js'),
-            locate: () => widget.client.post(
-              '/artifacts/$id/frame',
-              data: <String, Object?>{},
-            ),
-          );
+      ? ArtifactOpenInBrowser(
+          title: title,
+          pageUrl: Uri.parse(
+            '${artifactData['url'] ?? '$appOrigin/artifacts/$id'}',
+          ),
+          open: (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
+        )
+      : ArtifactFrameView(
+          key: ValueKey(id),
+          artifactId: id,
+          version: version,
+          title: title,
+          appOrigin: Uri.parse(appOrigin),
+          contentDomain: contentDomain,
+          dark: dark,
+          theme: artifactPageTheme(RaftTokens.of(context).colors),
+          controller: frame,
+          host: host,
+          hostScript: () =>
+              rootBundle.loadString('assets/artifacts/porthole_host.js'),
+          locate: () => widget.client.post(
+            '/artifacts/$id/frame',
+            data: <String, Object?>{},
+          ),
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +197,10 @@ class _SpikeState extends State<_Spike> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                button(panel ? 'hide' : 'log', () => setState(() => panel = !panel)),
+                button(
+                  panel ? 'hide' : 'log',
+                  () => setState(() => panel = !panel),
+                ),
                 button('find', () => frame.find(findQuery)),
                 button('next', () => frame.find(findQuery, direction: 'next')),
                 button('clear', frame.clearFind),
@@ -222,7 +230,10 @@ class _SpikeState extends State<_Spike> {
                       'received=${frame.received}',
                       ...frame.log.reversed.take(12).toList().reversed,
                     ].join('\n'),
-                    style: const TextStyle(fontSize: 10, fontFamily: 'monospace'),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
               ),

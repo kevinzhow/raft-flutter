@@ -5900,6 +5900,50 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#class:ArtifactFrameView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#class:_ArtifactFrameViewState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#method:ArtifactFrameView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#method:_ArtifactFrameViewState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#method:_ArtifactFrameViewState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_open_in_browser.dart#class:ArtifactOpenInBrowser": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_open_in_browser.dart#method:ArtifactOpenInBrowser.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART0 spike fallback (Linux, Windows): canonical RaftEmptyState with one RaftButton that opens Raft Web's page for the Artifact in the browser. Visual acceptance pending (ART1)."
+      },
       "apps/raft_flutter/lib/features/artifact_viewer.dart#class:ArtifactViewer": {
         "role": "unresolved",
         "familyRefs": [],
