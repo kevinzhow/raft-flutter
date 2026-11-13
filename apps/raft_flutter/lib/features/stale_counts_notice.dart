@@ -7,6 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/rw_freshness.dart';
 import '../data/workspace_controller.dart';
+import 'rw_freshness_owner.dart';
 
 /// One notice under a panel head while the counts it shows may be out of
 /// date: the last known values stay, unchanged, and this says so once.
@@ -49,14 +50,14 @@ class StaleCountsNotice extends StatefulWidget {
 }
 
 class _StaleCountsNoticeState extends State<StaleCountsNotice> {
-  late RwFreshnessStore store = RwFreshnessStore.of(widget.controller)..watch();
+  late RwFreshnessStore store = rwFreshnessOf(widget.controller)..watch();
 
   @override
   void didUpdateWidget(StaleCountsNotice old) {
     super.didUpdateWidget(old);
     if (identical(old.controller, widget.controller)) return;
     store.unwatch();
-    store = RwFreshnessStore.of(widget.controller)..watch();
+    store = rwFreshnessOf(widget.controller)..watch();
   }
 
   @override

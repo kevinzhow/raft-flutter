@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import '../data/marked_unread_sync.dart';
 import '../data/thread_unread_by_parent.dart';
 import '../data/workspace_controller.dart';
 import 'activity_rollout_flags.dart';
+import 'marked_unread_sync.dart';
 
 /// What a sidebar channel row asks about followed-thread unread: the roll-up of
 /// the followed-thread list behind the `thread_unread_badge_v0` gate
