@@ -173,6 +173,7 @@ void main() {
 
   test('a 401 for a wrong password is not refreshed or resent', () async {
     final (client, adapter) = await _client((o) {
+      if (o.path == '/auth/me') return (200, {'id': 'u1'});
       if (o.path == '/auth/refresh') {
         return (200, {'accessToken': 'a2', 'refreshToken': 'r2'});
       }
@@ -181,6 +182,8 @@ void main() {
         {'error': 'Password is incorrect', 'code': 'password_incorrect'},
       );
     });
+    await client.restore();
+    adapter.calls.clear();
     await expectLater(
       client.post('/me/account/deletion', data: {'password': 'wrong'}),
       throwsA(isA<RaftApiException>().having((e) => e.status, 'status', 401)),
