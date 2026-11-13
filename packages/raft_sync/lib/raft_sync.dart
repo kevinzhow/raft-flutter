@@ -8,6 +8,7 @@ export 'src/reaction_viewer.dart';
 export 'src/messages.dart';
 export 'src/thread_replies.dart';
 export 'src/notification_prefs.dart';
+export 'src/sync_changes.dart';
 
 import 'src/messages.dart';
 
