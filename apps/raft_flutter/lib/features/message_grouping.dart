@@ -1,6 +1,8 @@
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'delegated_message.dart';
+
 /// Source `messageGrouping.ts` computeMessageGrouping: [message] continues
 /// [previous]'s sender group when both are chat rows from the same sender on
 /// the same calendar day and neither is [standalone] (a thread reply or a task
@@ -21,8 +23,25 @@ bool messageContinuesGroup(
     return false;
   }
   if (standalone(previous) || standalone(message)) return false;
-  return previous.string('senderType') == message.string('senderType') &&
-      previous.string('senderId') == message.string('senderId');
+  return sameMessageSender(previous, message);
+}
+
+/// Source `messageGrouping.ts` isSameSender: same sender and the same
+/// assistant sending for them, if any (RFC 077); an external author is the
+/// same only with the same shown name and picture (a bot can change them per
+/// message).
+bool sameMessageSender(RaftMessage a, RaftMessage b) {
+  if (a.string('senderType') != b.string('senderType') ||
+      a.string('senderId') != b.string('senderId') ||
+      delegatedGroupKey(a) != delegatedGroupKey(b)) {
+    return false;
+  }
+  if (a.string('senderType') != 'external_projection') return true;
+  final left = a.json['externalAuthor'], right = b.json['externalAuthor'];
+  if (left is! Map || right is! Map) return left is! Map && right is! Map;
+  return left['displayName'] == right['displayName'] &&
+      left['avatarUrl'] == right['avatarUrl'] &&
+      left['avatarDigest'] == right['avatarDigest'];
 }
 
 /// Source `messageGrouping.ts` followedByFor: the kind of row that follows

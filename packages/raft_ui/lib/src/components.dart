@@ -26,6 +26,8 @@ import 'selected_text_quote.dart';
 import 'message_body.dart' show raftBodyEndsInCode;
 import 'message_row_recipe.dart';
 import 'message_content_tokens.dart';
+import 'raft/ui_tokens.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'mounted_reaction_recipe.dart';
 import 'composer_recipe.dart';
 import 'system_inset.dart';
@@ -1575,6 +1577,7 @@ class RaftMessageTile extends StatelessWidget {
     this.departureLabel,
     this.modelLabel,
     this.subtitle,
+    this.delegatedLabel,
     this.avatar,
     this.attachments = const [],
     this.translation,
@@ -1632,6 +1635,10 @@ class RaftMessageTile extends StatelessWidget {
 
   /// Permitted adapter-projected label; this component performs no model lookup.
   final String? modelLabel, subtitle;
+
+  /// RFC 077 "sent by Friday": after the sender in a header, or "(sent by
+  /// Friday)" under the body of a continuation row (Web DelegatedByLabel).
+  final String? delegatedLabel;
   final Widget? avatar;
   final bool collapseLongMessages;
 
@@ -1691,6 +1698,26 @@ class RaftMessageTile extends StatelessWidget {
   final RaftMessageFollowedBy? followedBy;
   final bool followsSystem;
 
+  /// A continuation row's "(sent by Friday)" ends its body (Web
+  /// `message-delegated-continuation`).
+  Widget withContinuationLabel(BuildContext context, Widget content) {
+    final label = delegatedLabel;
+    if (label == null || !continuation) return content;
+    final t = RaftTokens.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        content,
+        RaftCssText(
+          label,
+          key: const ValueKey('message-delegated-continuation'),
+          style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundMuted),
+        ),
+      ],
+    );
+  }
+
   /// The default Markdown body in a compact row contributes only its links.
   Widget compactProse(Widget prose) => compactSemantics
       ? RaftMessageProseSemantics(
@@ -1748,7 +1775,11 @@ class RaftMessageTile extends StatelessWidget {
       toolbar: hoverToolbar,
       selectionLeading: selectionLeading,
       subtitle: subtitle,
-      metadata: modelLabel == null && badge == null && departureLabel == null
+      metadata:
+          modelLabel == null &&
+              badge == null &&
+              departureLabel == null &&
+              (delegatedLabel == null || continuation)
           ? null
           : Row(
               mainAxisSize: MainAxisSize.min,
@@ -1815,48 +1846,69 @@ class RaftMessageTile extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (delegatedLabel != null && !continuation)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: RaftCssText(
+                        delegatedLabel!,
+                        key: const ValueKey('message-delegated-by'),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        // `text-caption text-foreground-muted`.
+                        style: t.scale(
+                          RaftTypeScale.caption,
+                          color: t.ui.foregroundMuted,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-      content: RaftCollapsible(
-        enabled: collapseLongMessages,
-        initiallyExpanded: initiallyExpanded,
-        onExpandedChanged: onMessageExpanded,
-        child:
-            body ??
-            compactProse(
-              RaftSelectionArea(
-                child: MarkdownBody(
-                  data: content,
-                  scrollbarBuilder: buildMarkdownScrollbar,
-                  inlineSyntaxes: [
-                    ...raftCjkEmphasisSyntaxes(),
-                    RaftBareUrlSyntax(),
-                  ],
-                  onTapLink: (_, href, _) {
-                    if (href != null) onLink?.call(href);
-                  },
-                  styleSheet:
-                      MessageContentRecipe(
-                            t,
-                            fontSize: effectiveBodyFontSize,
-                            mountedMessage: true,
-                          )
-                          .stylesheet(context)
-                          .copyWith(
-                            code: TextStyle(
-                              fontFamily: t.monoFont,
-                              fontSize: 12,
-                              color: t.ink,
-                              backgroundColor: t.sidebar,
+      content: withContinuationLabel(
+        context,
+        RaftCollapsible(
+          enabled: collapseLongMessages,
+          initiallyExpanded: initiallyExpanded,
+          onExpandedChanged: onMessageExpanded,
+          child:
+              body ??
+              compactProse(
+                RaftSelectionArea(
+                  child: MarkdownBody(
+                    data: content,
+                    scrollbarBuilder: buildMarkdownScrollbar,
+                    inlineSyntaxes: [
+                      ...raftCjkEmphasisSyntaxes(),
+                      RaftBareUrlSyntax(),
+                    ],
+                    onTapLink: (_, href, _) {
+                      if (href != null) onLink?.call(href);
+                    },
+                    styleSheet:
+                        MessageContentRecipe(
+                              t,
+                              fontSize: effectiveBodyFontSize,
+                              mountedMessage: true,
+                            )
+                            .stylesheet(context)
+                            .copyWith(
+                              code: TextStyle(
+                                fontFamily: t.monoFont,
+                                fontSize: 12,
+                                color: t.ink,
+                                backgroundColor: t.sidebar,
+                              ),
+                              codeblockDecoration: BoxDecoration(
+                                color: t.sidebar,
+                                borderRadius: BorderRadius.circular(t.radius),
+                              ),
                             ),
-                            codeblockDecoration: BoxDecoration(
-                              color: t.sidebar,
-                              borderRadius: BorderRadius.circular(t.radius),
-                            ),
-                          ),
+                  ),
                 ),
               ),
-            ),
+        ),
       ),
       attachments: attachments.isEmpty
           ? null

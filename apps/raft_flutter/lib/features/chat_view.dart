@@ -44,6 +44,7 @@ import 'attachment_shape.dart';
 import 'message_presentation.dart';
 import 'message_saved_action.dart';
 import 'message_hover_toolbar.dart';
+import 'delegated_message.dart';
 import 'agent_typing_line_host.dart';
 import 'message_context_menu_sections.dart';
 import '../data/reaction_favorite.dart';
@@ -2625,7 +2626,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     // Optimistic rows share the final row's key and widget shape; only the
     // actions that need a server message id stay inert until it arrives.
     final key = _messages.messageKey(m);
-    final pending = WorkspaceMessages.isPendingSend(m);
+    m = withoutRetractedParts(m);
+    final pending = WorkspaceMessages.isPendingSend(m) || m.retracted;
     if (m.string('messageType') == 'system') {
       return RaftSystemMessage(
         key: ValueKey('message-$key'),
@@ -2673,16 +2675,19 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       translation: translationStatus(m, translation),
       modelLabel: currentAgentModel(m),
       subtitle: senderSubtitle(m),
+      delegatedLabel: delegatedByLabel(context, m, continuation: continuation),
       onAuthor: senderMention(m),
       onAuthorMenu: senderMenuOf(context, referenceDirectory, m),
       savedIndicator: savedIndicatorOf(w, m, saveMessage),
-      hoverToolbar: IgnorePointer(
-        ignoring: pending,
-        child: ExcludeFocus(
-          excluding: pending,
-          child: messageToolbar(m, parent: parent),
-        ),
-      ),
+      hoverToolbar: m.retracted
+          ? null
+          : IgnorePointer(
+              ignoring: pending,
+              child: ExcludeFocus(
+                excluding: pending,
+                child: messageToolbar(m, parent: parent),
+              ),
+            ),
       compactSemantics: true,
       semanticsContent:
           m.json['actionMetadata'] is Map &&
