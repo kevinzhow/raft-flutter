@@ -3,6 +3,8 @@ import 'dart:convert' show LineSplitter;
 import 'package:markdown/markdown.dart' as md;
 
 import 'markdown_autolink.dart';
+import 'markdown_cjk_emphasis.dart';
+import 'markdown_math.dart';
 import 'message_ref_target.dart';
 
 /// How a Markdown source is parsed (Web `MarkdownContent` density and the
@@ -213,17 +215,22 @@ md.ExtensionSet _extensions(RaftMarkdownMode mode) {
       _RaftAutolinkSyntax(),
       _RaftStrikethroughSyntax(),
     ],
+    // Web 1.24 remarkRaftMath and remark-cjk-friendly, in every mode.
+    RaftMathTextSyntax(),
+    ...raftCjkEmphasisSyntaxes(),
     RaftBareUrlSyntax(),
     ...gfm.inlineSyntaxes,
   ];
   if (mode == RaftMarkdownMode.document) {
     return md.ExtensionSet([
       const _SourceHeadingSyntax(),
+      const RaftMathFlowSyntax(),
       ...gfm.blockSyntaxes,
     ], inline);
   }
   // The standard block syntaxes without the indented code block.
   return md.ExtensionSet([
+    const RaftMathFlowSyntax(),
     ...gfm.blockSyntaxes,
     const md.EmptyBlockSyntax(),
     const md.HtmlBlockSyntax(),

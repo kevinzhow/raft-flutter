@@ -6,6 +6,8 @@ Bundled Space Grotesk and Space Mono (the Raft Design System faces, raft-ui 0.7.
 
 The dependency versions are fixed in `pubspec.lock`. Flutter includes package license notices in its generated native assets; dependency source and licenses remain in the package cache. Native Mermaid rendering uses `mermaid_flutter` and its Dart dependencies; it does not bundle the Web Mermaid JavaScript runtime.
 
+TeX formulas in Markdown (`$…$`, `$$…$$`) render with flutter_math_fork 0.7.4 (Apache-2.0, copyright simpleclub GmbH and the flutter_math authors), a Dart port of KaTeX; it bundles the KaTeX fonts (MIT, copyright 2018 Khan Academy; license in the package's `lib/katex_fonts/LICENSE`). It does not bundle the KaTeX JavaScript runtime. The CJK character table in `packages/raft_ui/lib/src/markdown_cjk_ranges.dart` is generated (`tool/gen-cjk-ranges.mjs`) from get-east-asian-width 1.6.0 (MIT, copyright Sindre Sorhus) with the rule of micromark-extension-cjk-friendly-util 3.0.1 (MIT, copyright Tatsunori Uchino).
+
 The Windows host uses the system's Windows.UI.Notifications Toast API. It does not bundle Microsoft.WindowsAppSDK or require Windows App Runtime.
 
 Exact icon geometry from the pinned Web dependency lucide-react 1.55.0 (also imported by raft-ui 0.5.52) carries its ISC and Feather MIT notices in `docs/licenses/lucide-1.55.0-ISC.txt` and `packages/raft_ui/LICENSE-LUCIDE`.

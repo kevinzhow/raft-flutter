@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import 'markdown_autolink.dart';
+import 'markdown_cjk_emphasis.dart';
 import 'raft_underline.dart';
 import 'dialog_card.dart';
 import 'panel_layout.dart'
@@ -82,7 +83,7 @@ class _RaftAnnouncementMarkdownState extends State<RaftAnnouncementMarkdown> {
     final data = widget.data, onLink = widget.onLink;
     final nodes = raftFlattenNestedLinks(
       md.Document(
-        inlineSyntaxes: [RaftBareUrlSyntax()],
+        inlineSyntaxes: [...raftCjkEmphasisSyntaxes(), RaftBareUrlSyntax()],
         extensionSet: md.ExtensionSet.gitHubFlavored,
         encodeHtml: false,
       ).parse(data),
