@@ -85,6 +85,7 @@ export 'src/dialog_surface.dart';
 export 'src/control_typography.dart';
 export 'src/indicators.dart';
 export 'src/working_agents.dart';
+export 'src/agent_typing_line.dart';
 export 'src/form_controls.dart';
 export 'src/list_items.dart';
 export 'src/list_page_parts.dart';

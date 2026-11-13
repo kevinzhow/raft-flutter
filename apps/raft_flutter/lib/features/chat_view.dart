@@ -44,6 +44,7 @@ import 'attachment_shape.dart';
 import 'message_presentation.dart';
 import 'message_saved_action.dart';
 import 'message_hover_toolbar.dart';
+import 'agent_typing_line_host.dart';
 import 'message_context_menu_sections.dart';
 import '../data/reaction_favorite.dart';
 import 'message_task_actions.dart';
@@ -3293,7 +3294,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 header: header,
                 history: history,
                 forward: forward,
-                footer: const RaftTimelineFooter(),
+                footer: AgentTypingListEnd(
+                  controller: w,
+                  thread: widget.thread,
+                ),
               ),
               hasOlder: widget.thread
                   ? w.threadHasMore
@@ -3502,15 +3506,21 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   child: currentTimeline,
                 ),
                 MessageHistoryGapMonitor(controller: w, thread: widget.thread),
-                ChatBottomControls(
+                AgentTypingLineHost(controller: w, thread: thread),
+                AgentTypingInset(
                   controller: w,
                   thread: thread,
-                  rows: rows,
-                  hasNewer: historyWindow,
-                  scroll: viewport,
-                  showBottom: historyWindow || !atBottom || newMessageCount > 0,
-                  bottomCount: bottomCount,
-                  onBottom: returnToBottom,
+                  child: ChatBottomControls(
+                    controller: w,
+                    thread: thread,
+                    rows: rows,
+                    hasNewer: historyWindow,
+                    scroll: viewport,
+                    showBottom:
+                        historyWindow || !atBottom || newMessageCount > 0,
+                    bottomCount: bottomCount,
+                    onBottom: returnToBottom,
+                  ),
                 ),
               ],
             ),
