@@ -579,13 +579,11 @@ Widget _avatar(
       name: name,
       kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
       uploadedUrl: source.uploadedUrl,
-      gravatarUrl: source.gravatarUrl,
       pixelKey: source.pixelKey,
       fallback: Opacity(
         opacity: muted && !agent ? .5 : 1,
         child: RaftMountedAvatarFallback(
           avatarContext: RaftMountedAvatarContext.compactList,
-          gravatar: source.gravatarUrl != null,
           identity: agent
               ? RaftMountedAvatarIdentity.agent
               : RaftMountedAvatarIdentity.human,

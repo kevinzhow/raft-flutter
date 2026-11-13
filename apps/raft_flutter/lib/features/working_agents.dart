@@ -38,7 +38,6 @@ RaftWorkingAgent? _entry(
     senderType: 'agent',
     agents: [agent],
     members: const [],
-    requestSize: 54,
   );
   return RaftWorkingAgent(
     id: work.agentId,

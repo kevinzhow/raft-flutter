@@ -433,9 +433,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
           context,
           controller: w,
           channel: channel,
-          dmName: channel.type == 'dm'
-              ? dmPeer(channel, requestSize: 36).name
-              : null,
+          dmName: channel.type == 'dm' ? dmPeer(channel).name : null,
         ),
       );
     } else {
@@ -3197,7 +3195,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   /// agent's status from the server-scoped agent directory.
   Widget dmHeader({bool mobile = false}) {
     final c = w.channel!;
-    final peer = dmPeer(c, requestSize: 36);
+    final peer = dmPeer(c);
     return WorkspaceDmHeader(
       headerKey: Key(
         mobile ? 'workspace-mobile-detail-header' : 'workspace-channel-header',
@@ -3353,14 +3351,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
       name: name,
       kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
       uploadedUrl: source.uploadedUrl,
-      gravatarUrl: source.gravatarUrl,
       pixelKey: source.pixelKey,
       fallback: RaftMountedAvatarFallback(
         avatarContext: avatarContext,
         identity: agent
             ? RaftMountedAvatarIdentity.agent
             : RaftMountedAvatarIdentity.human,
-        gravatar: source.gravatarUrl != null,
       ),
     ),
   );
@@ -3387,7 +3383,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
       senderType: 'agent',
       agents: [agent],
       members: const [],
-      requestSize: 16,
     );
     final description = '${agent['description'] ?? ''}';
     return RaftNavItem(
@@ -3498,7 +3493,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     Map<String, dynamic>? profile,
     SenderAvatarProjection avatar,
   })
-  dmPeer(RaftChannel c, {double requestSize = 16}) {
+  dmPeer(RaftChannel c) {
     final agent = c.type == 'dm' && c.string('peerType') == 'agent';
     final profile = agent
         ? w.services.entityDirectory.agent(c.string('peerId')) ??
@@ -3534,13 +3529,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
       ],
       members: [
         if (!agent)
-          {
-            'userId': c.string('peerId'),
-            'avatarUrl': c.json['peerAvatarUrl'],
-            'gravatarHash': c.json['peerGravatarHash'],
-          },
+          {'userId': c.string('peerId'), 'avatarUrl': c.json['peerAvatarUrl']},
       ],
-      requestSize: requestSize,
     );
     return (
       agent: agent,
@@ -3872,9 +3862,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       context,
       controller: w,
       channel: channel,
-      dmName: channel.type == 'dm'
-          ? dmPeer(channel, requestSize: 36).name
-          : null,
+      dmName: channel.type == 'dm' ? dmPeer(channel).name : null,
     );
   }
 
@@ -3932,7 +3920,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                         isPanel: true,
                         page: true,
                         dmName: channel.type == 'dm'
-                            ? dmPeer(channel, requestSize: 36).name
+                            ? dmPeer(channel).name
                             : null,
                         onClose: dismissPanel,
                         onMembers: () =>

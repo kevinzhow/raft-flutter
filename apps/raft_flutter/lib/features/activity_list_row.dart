@@ -101,17 +101,11 @@ class ActivityListRowView extends StatelessWidget {
         if (agent) {...?host.agentFor(peerId), 'id': peerId},
       ],
       members: [
-        if (!agent)
-          {
-            'userId': peerId,
-            'avatarUrl': dm.json['peerAvatarUrl'],
-            'gravatarHash': dm.json['peerGravatarHash'],
-          },
+        if (!agent) {'userId': peerId, 'avatarUrl': dm.json['peerAvatarUrl']},
       ],
       carriedAvatarUrl: dm.json['peerAvatarUrl'] is String
           ? dm.json['peerAvatarUrl'] as String
           : null,
-      requestSize: 36,
     );
     return _slot(context, name, avatar, RaftAvatarSlotContext.panelHeader);
   }
@@ -135,7 +129,6 @@ class ActivityListRowView extends StatelessWidget {
       },
       pixelKey: avatar.pixelKey,
       uploadedUrl: avatar.uploadedUrl,
-      gravatarUrl: avatar.gravatarUrl,
       fallback: avatar.kind == 'human'
           ? Center(
               child: RaftIcon(
@@ -190,7 +183,6 @@ class ActivityListRowView extends StatelessWidget {
               agents: host.agents,
               members: host.people,
               currentUser: w.client.user?.json,
-              requestSize: 20,
             ),
             RaftAvatarSlotContext.compactList,
           )

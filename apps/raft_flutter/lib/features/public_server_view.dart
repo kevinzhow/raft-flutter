@@ -806,11 +806,9 @@ class _PublicServerViewState extends State<PublicServerView> {
           _ => RaftAvatarContentKind.human,
         },
         uploadedUrl: source.uploadedUrl,
-        gravatarUrl: source.gravatarUrl,
         pixelKey: source.pixelKey,
         fallback: RaftMountedAvatarFallback(
           avatarContext: avatarContext,
-          gravatar: source.gravatarUrl != null,
           identity: identity,
         ),
       ),

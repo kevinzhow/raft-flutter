@@ -39,11 +39,6 @@ void main() {
       value.uploadedUrl,
       'https://active.invalid/api/avatars/users/c.webp',
     );
-    expect(Uri.parse(value.gravatarUrl!).host, 'www.gravatar.com');
-    expect(Uri.parse(value.gravatarUrl!).queryParameters, {
-      's': '80',
-      'd': '404',
-    });
     final legacyProvider = project(
       members: [
         {
@@ -54,34 +49,35 @@ void main() {
       ],
     );
     expect(legacyProvider.uploadedUrl, isNull);
-    expect(legacyProvider.gravatarUrl, isNotNull);
+    expect(legacyProvider.pixelKey, isNull);
   });
-  test('only own email may derive a fallback hash, no display-name or other-user email lookup', () {
+  test('own identity overlays the directory; email never derives an image', () {
     final own = project(
-      user: {'id': 'person', 'email': ' Alice@Example.Invalid '},
+      user: {
+        'id': 'person',
+        'email': ' Alice@Example.Invalid ',
+        'avatarUrl': '/api/avatars/users/d.webp',
+      },
     );
-    expect(own.gravatarUrl, isNotNull);
+    expect(own.uploadedUrl, 'https://active.invalid/api/avatars/users/d.webp');
+    final emailOnly = project(
+      user: {'id': 'person', 'email': 'Alice@Example.Invalid'},
+    );
+    expect(emailOnly.uploadedUrl, isNull);
+    expect(emailOnly.pixelKey, isNull);
     expect(
-      project(user: {'id': 'other', 'email': 'Alice@Example.Invalid'})
-          .gravatarUrl,
-      isNull,
+      raftHumanAvatarSource('pixel-human:v1:eyes=round'),
+      RaftHumanAvatarSource.pixel,
     );
     expect(
-      project(
-        members: [
-          {'userId': 'person', 'email': 'Alice@Example.Invalid'},
-        ],
-      ).gravatarUrl,
-      isNull,
+      raftHumanAvatarSource('https://www.gravatar.com/avatar/x'),
+      RaftHumanAvatarSource.placeholder,
     );
     expect(
-      project(
-        members: [
-          {'userId': 'person', 'gravatarHash': 'invalid/hash'},
-        ],
-      ).gravatarUrl,
-      isNull,
+      raftHumanAvatarSource('/avatars/users/0a.webp'),
+      RaftHumanAvatarSource.uploaded,
     );
+    expect(raftHumanAvatarSource(null), RaftHumanAvatarSource.placeholder);
   });
   test(
     'agent pixel/custom and external app avatar stay explicit and public',
@@ -107,7 +103,6 @@ void main() {
         custom.uploadedUrl,
         'https://active.invalid/api/avatars/agent/c.webp',
       );
-      expect(custom.gravatarUrl, isNull);
       expect(
         project(
           type: 'external_projection',
@@ -152,7 +147,6 @@ void main() {
       resolved.uploadedUrl,
       'https://active.invalid/api/avatars/users/b.webp',
     );
-    expect(resolved.gravatarUrl, contains('/avatar/${'c' * 64}'));
     final agent = projectSenderAvatar(
       origin: 'https://active.invalid',
       senderId: 'bot',

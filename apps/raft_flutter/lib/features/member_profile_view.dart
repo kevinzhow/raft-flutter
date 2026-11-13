@@ -430,8 +430,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
   }
 
   /// `humanAvatar.ts` / `projectSenderAvatar`: only an uploaded
-  /// `/(api/)avatars/users/<hex>.webp` preempts Gravatar; legacy provider URLs
-  /// are ignored. Self uses the signed-in user's own record.
+  /// `/(api/)avatars/users/<hex>.webp` is drawn, else the placeholder; legacy
+  /// provider URLs are ignored. Self uses the signed-in user's own record.
   SenderAvatarProjection _avatar() {
     final id = '${profile['userId'] ?? widget.userId}';
     return projectSenderAvatar(
@@ -443,7 +443,6 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
         {...profile, 'userId': id},
       ],
       currentUser: w.client.user?.json,
-      requestSize: 64,
     );
   }
 
@@ -482,7 +481,6 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
               content: RaftAvatarContent(
                 name: name,
                 uploadedUrl: avatar.uploadedUrl,
-                gravatarUrl: avatar.gravatarUrl,
                 fallback: const Center(
                   child: RaftIcon(RaftGlyph.user, size: 18),
                 ),

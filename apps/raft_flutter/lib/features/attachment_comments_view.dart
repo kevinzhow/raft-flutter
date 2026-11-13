@@ -317,11 +317,7 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
       members: agent
           ? const []
           : [
-              {
-                'userId': c['senderId'],
-                'avatarUrl': c['senderAvatarUrl'],
-                'gravatarHash': c['senderGravatarHash'],
-              },
+              {'userId': c['senderId'], 'avatarUrl': c['senderAvatarUrl']},
             ],
     );
     return RaftAvatar(
@@ -333,11 +329,9 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
         name: '${c['senderName']}',
         kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
         uploadedUrl: source.uploadedUrl,
-        gravatarUrl: source.gravatarUrl,
         pixelKey: source.pixelKey,
         fallback: RaftMountedAvatarFallback(
           avatarContext: RaftMountedAvatarContext.compactList,
-          gravatar: source.gravatarUrl != null,
           identity: agent
               ? RaftMountedAvatarIdentity.agent
               : RaftMountedAvatarIdentity.human,

@@ -127,13 +127,11 @@ void main() {
         rosterReply.complete(roster());
         await settle(t);
         // The roster arrived later: the mounted rows rebuilt with the peer's
-        // uploaded avatar (resolved against the active origin) and gravatar.
+        // uploaded avatar (resolved against the active origin); its gravatar
+        // hash is ignored (retired in server v1.24, as Web does).
         final pat = contentOf(t, 'Pat (Acme)');
         expect(pat.uploadedUrl, 'https://example.invalid$_peerAvatar');
-        expect(
-          pat.gravatarUrl,
-          startsWith('https://www.gravatar.com/avatar/2222'),
-        );
+        expect(pat.gravatarUrl, isNull);
         // A peer agent comes from the same roster (`pixel:` artwork).
         expect(contentOf(t, 'acme-bot').pixelKey, 'robot');
         // Fetched once per channel, never per row.

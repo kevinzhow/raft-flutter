@@ -101,7 +101,6 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
         name: name,
         kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
         uploadedUrl: projection.uploadedUrl,
-        gravatarUrl: projection.gravatarUrl,
         pixelKey: projection.pixelKey,
       ),
     );

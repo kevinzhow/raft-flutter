@@ -245,7 +245,6 @@ Widget searchHitSenderAvatar({
     carriedAvatarUrl: row['senderAvatarUrl'] is String
         ? row['senderAvatarUrl'] as String
         : null,
-    requestSize: 14,
   );
   return RaftAvatar(
     name: sender,
@@ -264,7 +263,6 @@ Widget searchHitSenderAvatar({
           ? RaftAvatarContentKind.app
           : RaftAvatarContentKind.human,
       uploadedUrl: projection.uploadedUrl,
-      gravatarUrl: projection.gravatarUrl,
       pixelKey: type == 'agent' ? projection.pixelKey ?? 'robot' : null,
       fallback: RaftMountedAvatarFallback(
         avatarContext: RaftMountedAvatarContext.previewMini,
@@ -273,7 +271,6 @@ Widget searchHitSenderAvatar({
             : type == 'external_projection'
             ? RaftMountedAvatarIdentity.app
             : RaftMountedAvatarIdentity.human,
-        gravatar: projection.gravatarUrl != null,
         initials: sender,
       ),
     ),

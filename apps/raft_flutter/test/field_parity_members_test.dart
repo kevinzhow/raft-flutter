@@ -200,22 +200,26 @@ void main() {
   });
 
   group('human avatar projection (humanAvatar.ts)', () {
-    test('legacy provider avatarUrl is ignored, gravatar used', () {
-      final p = projectSenderAvatar(
-        origin: 'https://fixture.test',
-        senderId: me['id'] as String,
-        senderType: 'user',
-        agents: const [],
-        members: [
-          {...me, 'userId': me['id']},
-        ],
-      );
-      expect(p.uploadedUrl, isNull);
-      expect(
-        p.gravatarUrl,
-        contains('gravatar.com/avatar/${me['gravatarHash']}'),
-      );
-    });
+    test(
+      'legacy provider avatarUrl and the gravatar hash draw the placeholder',
+      () {
+        final p = projectSenderAvatar(
+          origin: 'https://fixture.test',
+          senderId: me['id'] as String,
+          senderType: 'user',
+          agents: const [],
+          members: [
+            {...me, 'userId': me['id']},
+          ],
+        );
+        expect(p.uploadedUrl, isNull);
+        expect(p.pixelKey, isNull);
+        expect(
+          raftHumanAvatarSource(me['avatarUrl'] as String?),
+          RaftHumanAvatarSource.placeholder,
+        );
+      },
+    );
 
     test(
       'uploaded avatar resolves against origin and preempts nothing else',
