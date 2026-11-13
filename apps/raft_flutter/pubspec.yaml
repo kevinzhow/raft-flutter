@@ -90,3 +90,6 @@ dev_dependencies:
   analyzer: ^12.1.0
 flutter:
   uses-material-design: true
+  assets:
+    # WP-ART0 spike: Porthole's host for Artifact frames (tool/artifact-porthole-host).
+    - assets/artifacts/porthole_host.js
