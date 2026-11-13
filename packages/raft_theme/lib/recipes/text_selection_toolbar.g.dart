@@ -1,14 +1,14 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `messageTextSelectionToolbar`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `textSelectionToolbar`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
 import 'recipe_utilities.g.dart';
 
-/// Resolved slots of [RaftMessageTextSelectionToolbarRecipe].
-class RaftMessageTextSelectionToolbarRecipeStyle {
-  const RaftMessageTextSelectionToolbarRecipeStyle({
+/// Resolved slots of [RaftTextSelectionToolbarRecipe].
+class RaftTextSelectionToolbarRecipeStyle {
+  const RaftTextSelectionToolbarRecipeStyle({
     required this.toolbar,
     required this.button,
     required this.separator,
@@ -30,18 +30,18 @@ class RaftMessageTextSelectionToolbarRecipeStyle {
   };
 }
 
-/// raft-ui recipe `messageTextSelectionToolbar` (`src/components/message-item/message-text-selection-toolbar.recipe.ts`, index.mjs:7838).
+/// raft-ui recipe `textSelectionToolbar` (`dist/components/text-selection-toolbar/text-selection-toolbar.recipe.mjs`, index.mjs:3215).
 ///
-/// Used by: MessageTextSelectionToolbar, MessageTextSelectionToolbarButton, MessageTextSelectionToolbarSeparator.
+/// Used by: TextSelectionToolbar, TextSelectionToolbarButton, TextSelectionToolbarSeparator.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
-abstract final class RaftMessageTextSelectionToolbarRecipe {
-  static const String recipeName = 'messageTextSelectionToolbar';
+abstract final class RaftTextSelectionToolbarRecipe {
+  static const String recipeName = 'textSelectionToolbar';
   static const List<String> slotNames = ['toolbar', 'button', 'separator'];
   static const List<RaftRecipeAxis> axes = [];
 
-  static RaftMessageTextSelectionToolbarRecipeStyle resolve({
+  static RaftTextSelectionToolbarRecipeStyle resolve({
     RaftRecipeStates states = RaftRecipeStates.none,
     RaftTokenResolver? tokens,
   }) {
@@ -56,7 +56,7 @@ abstract final class RaftMessageTextSelectionToolbarRecipe {
       recipeName: recipeName,
       slotNames: slotNames,
     );
-    return RaftMessageTextSelectionToolbarRecipeStyle(
+    return RaftTextSelectionToolbarRecipeStyle(
       toolbar: s[0],
       button: s[1],
       separator: s[2],
@@ -86,38 +86,44 @@ abstract final class RaftMessageTextSelectionToolbarRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      965,
-      1484,
-      1319,
-      1727,
-      1020,
-      1584,
-      1710,
-      1600,
-      1821,
-      1008,
-      602,
-      1694,
-      1698,
-      1737,
+      1400,
+      2116,
+      1864,
+      2483,
+      1464,
+      2253,
+      2462,
+      2261,
+      2591,
+      1449,
+      915,
+      2445,
+      2449,
+      2447,
+      2496,
     ],
     [
-      965,
-      1319,
-      1022,
-      1577,
-      1893,
-      1188,
-      1710,
+      1400,
+      2499,
+      1864,
+      1465,
+      2247,
+      2675,
       1659,
-      1822,
-      1272,
-      427,
-      996,
-      280,
-      294,
+      2461,
+      2042,
+      2077,
+      2402,
+      2729,
+      2598,
+      1785,
+      697,
+      1439,
+      478,
+      474,
+      492,
     ],
-    [1931, 1519, 1183, 604],
+    [2727, 2499, 1656, 918],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

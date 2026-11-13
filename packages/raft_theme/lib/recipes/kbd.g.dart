@@ -1,10 +1,21 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `kbd`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `kbd`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
 import 'recipe_utilities.g.dart';
+
+/// `size` axis of `kbd` (default `sm`).
+enum RaftKbdRecipeSize {
+  sm('sm'),
+  md('md');
+
+  const RaftKbdRecipeSize(this.css);
+
+  /// Variant value as written in the raft-ui source.
+  final String css;
+}
 
 /// Resolved slots of [RaftKbdRecipe].
 class RaftKbdRecipeStyle {
@@ -19,7 +30,7 @@ class RaftKbdRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root, 'group': group};
 }
 
-/// raft-ui recipe `kbd` (`src/components/kbd/kbd.tsx`, index.mjs:3699).
+/// raft-ui recipe `kbd` (`dist/components/kbd/kbd.mjs`, index.mjs:5544).
 ///
 /// Used by: Kbd, KbdGroup.
 ///
@@ -28,9 +39,12 @@ class RaftKbdRecipeStyle {
 abstract final class RaftKbdRecipe {
   static const String recipeName = 'kbd';
   static const List<String> slotNames = ['root', 'group'];
-  static const List<RaftRecipeAxis> axes = [];
+  static const List<RaftRecipeAxis> axes = [
+    RaftRecipeAxis('size', ['sm', 'md'], 'sm', false),
+  ];
 
   static RaftKbdRecipeStyle resolve({
+    RaftKbdRecipeSize? size,
     RaftRecipeStates states = RaftRecipeStates.none,
     RaftTokenResolver? tokens,
   }) {
@@ -39,7 +53,7 @@ abstract final class RaftKbdRecipe {
       axes,
       _lists,
       _combos,
-      [],
+      [size?.css],
       states,
       tokens,
       recipeName: recipeName,
@@ -71,34 +85,59 @@ abstract final class RaftKbdRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      1630,
-      1305,
-      1928,
-      1740,
-      1319,
-      1324,
-      1021,
-      1933,
-      1727,
-      275,
-      263,
-      1488,
-      1705,
-      1656,
-      1014,
-      1839,
-      1015,
-      1824,
-      1309,
-      1311,
-      1293,
-      1292,
+      2346,
+      1847,
+      2724,
+      2499,
+      1864,
+      1869,
+      1464,
+      2729,
+      2483,
+      472,
+      1454,
+      1455,
+      1851,
+      1854,
+      458,
+      2119,
+      2458,
+      2399,
+      2616,
+      2600,
+      1807,
+      1806,
     ],
-    [1305, 1319, 1021],
+    [1847, 1864, 1464],
+    [
+      2346,
+      1847,
+      2724,
+      2499,
+      1864,
+      1869,
+      1464,
+      2729,
+      2483,
+      472,
+      1454,
+      1455,
+      1851,
+      1854,
+      459,
+      1658,
+      2124,
+      2471,
+      2400,
+      2615,
+      2603,
+      895,
+    ],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
     [0, 1],
+    [2, 1],
   ];
 }

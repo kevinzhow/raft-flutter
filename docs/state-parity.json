@@ -798,7 +798,7 @@
           "flutter": "missing",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web shows \"Loading newer messages…\" (message.chatPanel.loadingNewer) while a newer window loads after a jump; no Flutter string and no case.",
+          "justification": "Web shows \"Loading newer messages\u2026\" (message.chatPanel.loadingNewer) while a newer window loads after a jump; no Flutter string and no case.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -1245,7 +1245,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web popover shows \"Loading followers…\" (thread-followers-loading) and \"No agents are following\" (thread-followers-empty); only the error and populated popovers have cases.",
+          "justification": "Web popover shows \"Loading followers\u2026\" (thread-followers-loading) and \"No agents are following\" (thread-followers-empty); only the error and populated popovers have cases.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -1273,7 +1273,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web card shows \"Loading…\" for the activity line and a \"profile unavailable\" minimal body (message.profilePreview.unavailable...); cases only render the loaded agent / human card.",
+          "justification": "Web card shows \"Loading\u2026\" for the activity line and a \"profile unavailable\" minimal body (message.profilePreview.unavailable...); cases only render the loaded agent / human card.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -1625,7 +1625,7 @@
           "flutter": "partial",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web auto-loads the next page and shows a \"Loading more…\" row (thread.loadingMore); Flutter shows a \"Load more\" TextButton (resource_view.dart:2905 / 4869) and never renders the loading row (ActivityInboxLoadingMore recipe unused). No case.",
+          "justification": "Web auto-loads the next page and shows a \"Loading more\u2026\" row (thread.loadingMore); Flutter shows a \"Load more\" TextButton (resource_view.dart:2905 / 4869) and never renders the loading row (ActivityInboxLoadingMore recipe unused). No case.",
           "size": "S",
           "gapKind": "impl-diff"
         }
@@ -1836,7 +1836,7 @@
             "screens.members.agent-detail.profile.loading-state"
           ],
           "status": "gap",
-          "justification": "Web shows panel chrome + centred \"Loading…\" for both agent and human until the profile resolves (ProfilePanel.tsx:349); only the agent profile has an official phone case, nothing for the human profile or on desktop.",
+          "justification": "Web shows panel chrome + centred \"Loading\u2026\" for both agent and human until the profile resolves (ProfilePanel.tsx:349); only the agent profile has an official phone case, nothing for the human profile or on desktop.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -1846,7 +1846,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "intentional",
-          "justification": "Web has no profile load error (it waits forever on \"Loading…\"); Flutter SourceProfileLoadingPanel adds \"Profile could not be loaded.\" + Retry. Deliberate usability addition."
+          "justification": "Web has no profile load error (it waits forever on \"Loading\u2026\"); Flutter SourceProfileLoadingPanel adds \"Profile could not be loaded.\" + Retry. Deliberate usability addition."
         }
       ]
     },
@@ -1887,7 +1887,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Embedded skills block (AgentSkills): \"Loading skills…\", \"Failed to load skills\" + Retry, \"No global skills installed on this computer\", \"No skills in this agent's workspace\". The populated list is collapsed by default (owner decision 2026-10-18), so a case must expand it before comparing cards; no case drives the loading / error / empty copy yet.",
+          "justification": "Embedded skills block (AgentSkills): \"Loading skills\u2026\", \"Failed to load skills\" + Retry, \"No global skills installed on this computer\", \"No skills in this agent's workspace\". The populated list is collapsed by default (owner decision 2026-10-18), so a case must expand it before comparing cards; no case drives the loading / error / empty copy yet.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -2048,7 +2048,7 @@
           "flutter": "partial",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web keeps both section headers (Channels, Agent DMs) and shows \"Loading agent channels…\" / \"Loading agent DMs…\" per section; Flutter shows one centred \"Loading…\" panel message (agent_detail_view.dart:1571) until either list arrives. Request-driven in Web, so a $pending route reproduces it.",
+          "justification": "Web keeps both section headers (Channels, Agent DMs) and shows \"Loading agent channels\u2026\" / \"Loading agent DMs\u2026\" per section; Flutter shows one centred \"Loading\u2026\" panel message (agent_detail_view.dart:1571) until either list arrives. Request-driven in Web, so a $pending route reproduces it.",
           "size": "M",
           "gapKind": "impl-diff"
         },
@@ -2086,7 +2086,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web shows bold \"Loading…\" above the list while loading; Flutter does the same. No case.",
+          "justification": "Web shows bold \"Loading\u2026\" above the list while loading; Flutter does the same. No case.",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -2199,7 +2199,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web shows \"Loading…\" for grants / pending requests / events; Flutter (agent_apps_view.dart) has equivalents. Only the populated tab has a case (components.members-ext.agent.apps, screens.members.agent-detail.apps).",
+          "justification": "Web shows \"Loading\u2026\" for grants / pending requests / events; Flutter (agent_apps_view.dart) has equivalents. Only the populated tab has a case (components.members-ext.agent.apps, screens.members.agent-detail.apps).",
           "size": "S",
           "gapKind": "case-missing"
         },
@@ -2630,7 +2630,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "intentional",
-          "justification": "Web \"Checking…\" push status and enable / disable spinners are browser web push only; the native client has no equivalent flow."
+          "justification": "Web \"Checking\u2026\" push status and enable / disable spinners are browser web push only; the native client has no equivalent flow."
         },
         {
           "state": "error",
@@ -2786,7 +2786,7 @@
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web \"Loading…\" (settings.common.loading) and error Banner \"Failed to load connected apps\"; Flutter has the string; no case.",
+          "justification": "Web \"Loading\u2026\" (settings.common.loading) and error Banner \"Failed to load connected apps\"; Flutter has the string; no case.",
           "size": "S",
           "gapKind": "case-missing"
         }
@@ -2827,7 +2827,7 @@
             "components.wp6.settings.provider-edit-error"
           ],
           "status": "gap",
-          "justification": "Edit modal failure is covered; the list \"Provider connections could not be loaded.\" banner and the assigned-agents loading / error / empty block have no case and \"Loading assigned Agents…\" / \"No Agent holds this assignment anymore\" / \"Models could not be refreshed\" have no Flutter strings.",
+          "justification": "Edit modal failure is covered; the list \"Provider connections could not be loaded.\" banner and the assigned-agents loading / error / empty block have no case and \"Loading assigned Agents\u2026\" / \"No Agent holds this assignment anymore\" / \"Models could not be refreshed\" have no Flutter strings.",
           "size": "M",
           "gapKind": "impl-diff"
         }
@@ -2857,7 +2857,7 @@
           "flutter": "missing",
           "parityCase": [],
           "status": "gap",
-          "justification": "Web \"Loading Slack bridge setup…\" (settings.slackBridge.loading) is absent in Flutter; no case.",
+          "justification": "Web \"Loading Slack bridge setup\u2026\" (settings.slackBridge.loading) is absent in Flutter; no case.",
           "size": "S",
           "gapKind": "impl-diff"
         }
@@ -2964,7 +2964,7 @@
             "components.ext-settings.feedback.loading"
           ],
           "status": "gap",
-          "justification": "React capture of feedback.loading shows the \"No feedback yet\" empty state (the pending route does not produce a loading UI); Web has \"Loading feedback…\" only in the lazy dialog host (settings.about.feedbackWorkspaceLoading, absent in Flutter).",
+          "justification": "React capture of feedback.loading shows the \"No feedback yet\" empty state (the pending route does not produce a loading UI); Web has \"Loading feedback\u2026\" only in the lazy dialog host (settings.about.feedbackWorkspaceLoading, absent in Flutter).",
           "size": "S",
           "gapKind": "invalid-case",
           "caseValidity": "invalid"
@@ -14474,12 +14474,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_theme/lib/recipes/recipe_runtime.dart#local-function:CLASS:RaftSlotStyle@39239/METHOD:border@49619/FUNCTION:side@49762": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_theme/lib/recipes/recipe_runtime.dart#method:RaftMixedColor.resolve": {
         "role": "unresolved",
@@ -38310,18 +38304,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:toolbar@2992": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/text_selection_toolbar.dart#method:RaftTextSelectionToolbar.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -43765,6 +43747,32 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_theme/lib/recipes/recipe_runtime.dart#local-function:CLASS:RaftSlotStyle@39239/METHOD:border@50208/FUNCTION:side@50351": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:toolbar@3610": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/button.dart#function:_resolveButtonSlots": {
+        "role": "unresolved",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-DS1 Button/TextLink compatibility",
+        "reason": "Shared source resolver bridges the retired Button link/inline axes to published TextLink slots; full real-entry/family/state visual acceptance remains unreviewed."
       }
     },
     "entries": {
@@ -48131,7 +48139,7 @@
         "entryId": "screen:agent.profile",
         "applicability": "required",
         "owner": "Choice9 design-system alignment",
-        "reason": "Model list delegates through RuntimeModelCombobox→RaftAgentCombobox→RaftComboboxPanel.items.",
+        "reason": "Model list delegates through RuntimeModelCombobox\u2192RaftAgentCombobox\u2192RaftComboboxPanel.items.",
         "reviewState": "legacy editor model closed/open/search/selected",
         "familyRefs": [
           "combobox",
@@ -48185,7 +48193,7 @@
         "entryId": "screen:agent.profile",
         "applicability": "required",
         "owner": "Choice9 design-system alignment",
-        "reason": "Legacy reasoning field is RaftAgentSelect→RaftSelectField, distinct from searchable model.",
+        "reason": "Legacy reasoning field is RaftAgentSelect\u2192RaftSelectField, distinct from searchable model.",
         "reviewState": "derived reasoning select",
         "familyRefs": [
           "combobox",
@@ -48845,7 +48853,7 @@
         "entryId": "screen:agent.profile",
         "applicability": "required",
         "owner": "Choice9 design-system alignment",
-        "reason": "Actual AgentDetail visible catalog and value feed canonical PanelTabBar→TabButton; Web ConversationPanelTabs+SortableTabsList.",
+        "reason": "Actual AgentDetail visible catalog and value feed canonical PanelTabBar\u2192TabButton; Web ConversationPanelTabs+SortableTabsList.",
         "reviewState": "selected tab/allowed visible tabs",
         "familyRefs": [
           "tabs"
@@ -50303,26 +50311,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
       "packages/raft_ui/lib/src/text_selection_toolbar.dart#method:RaftTextSelectionToolbar.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
         "applicability": "unknown",
         "owner": "design-system alignment",
@@ -51463,6 +51451,26 @@
         "applicability": "unknown",
         "owner": "task289 menu/dialog state audit",
         "reason": "Resolved state atom data-selected is emitted by this source owner; exact real-entry/state applicability and matching reference capture remain unverified."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       }
     },
     "evidence": {},

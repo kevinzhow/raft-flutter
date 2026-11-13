@@ -1,7 +1,11 @@
 # Design tokens
 
-The Flutter tokens are a deterministic translation of the raft-ui design-system
-CSS, tuned so Flutter paints the same bytes as the parity Chromium:
+The current Raft look is generated from the published `@botiverse/raft-ui`
+**0.95.3** package used by Web v1.24.0. Elegant and Brutal retain their frozen
+0.5.52 sources and recipes. The two source sets have separate responsibilities;
+updating Raft does not regenerate the frozen looks.
+
+The historical colour pipeline was calibrated against parity Chromium:
 
 - Opaque colours come from a conversion rule that reproduces Chromium 147
   bit-exactly (695/695 sampled opaque tokens, 77/77 opaque recipe literals).
@@ -9,8 +13,10 @@ CSS, tuned so Flutter paints the same bytes as the parity Chromium:
   (`tool/design-source/chrome-oracle.json`), because Chromium's compositing is
   not a plain `c·a + d·(1−a)` (see "Translucent colours").
 
-The older canvas-readback snapshots in `docs/theme-tokens/*.json` are kept as a
-second, legacy oracle.
+These counts describe that oracle's frozen source set. They do not establish
+pixel equality for newly published 0.95.3 colours or for complete components.
+The older canvas-readback snapshots in `docs/theme-tokens/*.json` remain a
+second legacy oracle.
 
 ## Flow
 
@@ -19,6 +25,11 @@ tool/design-source/                       (vendored, sha256-pinned in manifest.j
   raft-ui-0.5.52/foundation.css           raw ramps + theme blocks
   raft-ui-0.5.52/styles.css               Tailwind @theme / @theme inline aliases
   raft-ui-0.5.52/fonts.css                per-theme font stacks
+  raft-ui-0.95.3/tokens.json              current DTCG light/dark tokens and desktop metrics
+  raft-ui-0.95.3/styles.css               current type scale, radii and responsive CSS
+  raft-ui-0.95.3/foundation.css           current token declarations
+  raft-ui-0.95.3/{fonts,themes}.css       current font stacks and theme definitions
+  raft-ui-0.95.3/token-names.mjs          published migration map for removed aliases
   tailwindcss-4.3.3/theme.css             Tailwind default scale
   raft-web-a98ae00/index.css              Web product @theme overrides, :root.dark
   component-roles.css                     AUTHORED: recipe roles as plain CSS
@@ -31,8 +42,8 @@ packages/raft_ui/lib/src/tokens/
   component_colors.g.dart   RaftComponentColors   tier 3 field schema
   shadows.g.dart            RaftCssShadow, RaftShadow, RaftThemeShadows (schema), RaftProductShadows
   metrics.g.dart            RaftThemeMetrics (schema), RaftScale, RaftTextStep
-  raft_tokens.g.dart        RaftLight / RaftDark (raft-ui 0.7.1 tokens.json), RaftRadius, ...
-  raft_token_mapping.dart   HAND-WRITTEN old-name -> 0.7.1-token tables
+  raft_tokens.g.dart        RaftLight / RaftDark / RaftDesktopMetrics, RaftRadius, ...
+  raft_token_mapping.dart   HAND-WRITTEN compatibility role -> current token tables
   token_set.dart            HAND-WRITTEN RaftThemeId {light, dark}, RaftTokenSet.light / .dark
   tokens.dart               barrel (hand-written), exported by package:raft_ui
         │
@@ -54,7 +65,8 @@ active tokens instead of `RaftLight`/`RaftDark`.
 The 0.5.52 tiers are only field schemas now (the names components still read).
 `RaftTokenSet.light` / `.dark` fill every field from `RaftLight` / `RaftDark`
 through `raft_token_mapping.dart`, chosen by what each colour is for, never by
-name alone (see "raft-ui 0.7.1 single look"). Brutal and Elegant no longer exist:
+name alone (see "Current Raft look"). Upstream has only the Raft look; Flutter
+also retains Elegant and Brutal through frozen packs and recipes.
 `raftTheme(dark:)` installs `RaftTokens.theme(dark:)`. From a `RaftTokens` you get:
 
 | Getter | Type | Content |
@@ -70,11 +82,11 @@ name alone (see "raft-ui 0.7.1 single look"). Brutal and Elegant no longer exist
 `RaftPrimitiveColors`, `RaftScale` and `RaftProductShadows` are theme-invariant
 static classes.
 
-## raft-ui 0.7.1 single look
+## Current Raft look
 
-The Raft Design System 0.7.x has no theme axis: one look, light and dark. Its
-official token file is vendored in `tool/design-source/raft-ui-0.7.1/`
-(`tokens.json`, `styles.css`, `foundation.css`, MIT `LICENSE`; sha256-pinned in
+The Raft Design System has one look, light and dark. Its current
+official sources are vendored in `tool/design-source/raft-ui-0.95.3/`
+(`tokens.json`, CSS, migration codemod and MIT `LICENSE`; sha256-pinned in
 `manifest.json`) and `tool/gen-tokens` emits it as
 `packages/raft_ui/lib/src/tokens/raft_tokens.g.dart`, next to the 0.5.52 files
 above. `RaftTokens` reads it through `RaftTokenSet` and the tables in
@@ -82,18 +94,20 @@ above. `RaftTokens` reads it through `RaftTokenSet` and the tables in
 
 | Generated | Content |
 | --- | --- |
-| `RaftLight`, `RaftDark` | every colour (225), shadow (`elevation-float`, `elevation-sticker`, `focus-ring`) and metric (`field-*`, `card-title-*`) token, as `static const` plus `colors` / `shadows` / `metrics` maps keyed by CSS name |
-| `RaftDeprecatedTokenNames` | the 159 former names `tokens.json` keeps until raft-ui 1.0 (old CSS name to current name; `removed` for the three `theme-shadow-xs/sm/md`) |
+| `RaftLight`, `RaftDark` | 238 colours, three shadows, 36 dimensions, two font weights, opacity, a duration and a cubic easing; typed constants and lookup maps |
+| `RaftDesktopMetrics` | published desktop dimensions, including references such as `header-height = control-height + 2 * header-air` |
+| `RaftDeprecatedTokenNames` | empty for 0.95.3: upstream removed its deprecated token group in 0.57.0 |
 | `RaftRadius`, `RaftTypeScale`, `RaftEase` | metrics that live only in `styles.css` `@theme`: radii, the type styles, `ease-slide` |
 
 Rules:
 
-- **Names are the official 0.7.1 names**, camelCased like the older tiers
+- **Names are the official current names**, camelCased like the older tiers
   (`--layer-canvas` becomes `layerCanvas`, `--task-status-in-progress-soft`
   becomes `taskStatusInProgressSoft`, `--palette-yellow-50` becomes
   `paletteYellow50`). Never map by name alone from 0.5.52: today's
   `layer-canvas` is the old `layer-panel`, and the old `layer-canvas` has no
-  successor. Go through `RaftDeprecatedTokenNames`.
+  successor. Compatibility mappings follow the published `token-names.mjs`
+  codemod and the existing explicit role tables; removed names are not new tokens.
 - **Modes.** A token without `modes.dark` has the same value in both modes.
   `{aliases}` and `color-mix(in srgb, ...)` resolve inside the mode of the token
   that holds them (as the CSS cascade does), so `foreground-on-frame` is the
@@ -103,14 +117,19 @@ Rules:
   fitted against a Chrome oracle: `chrome-oracle.json` was sampled for the
   0.5.52 CSS and no Dart test compares against it any more. Re-sampling is
   pending.
-- Refresh: `tool/gen-tokens --import-raft-ui-071 <unpacked @botiverse/raft-ui dir>`,
+- **Dimensions.** Base control metrics apply to touch input at every width.
+  Desktop overrides require both width >= 768px and `pointer: fine` (for example,
+  control height 44 -> 34). Width-only rules stay distinct: column margins grow
+  to 20px on wide touch screens. Recipe utilities preserve these conditions;
+  a component must supply its real viewport, container and input state to use them.
+- Refresh: `tool/gen-tokens --import-raft-ui <unpacked @botiverse/raft-ui@0.95.3 dir>`,
   then `tool/gen-tokens`.
 - Checks: `packages/raft_ui/test/raft_tokens_test.dart` recomputes every value
   from the vendored `tokens.json` with its own port of the conversion and compares
   it with the generated constants in both modes (plus shadows, metrics, the
   former-name table and the `styles.css` scales). `tool/tests/test_gen_tokens.py`
-  (`RaftUi071Tokens`) also checks that the generated cascade gives the same bytes
-  as upstream's generated `foundation.css` for all 450 colour resolutions, and
+  (`RaftUi095Tokens`) also checks that the generated cascade gives the same bytes
+  as upstream's generated `foundation.css` in both modes, and
   that the generated file is current.
 
 ### How the old names are filled
@@ -122,7 +141,7 @@ holds the explicit tables, one entry per field, and
 `packages/raft_ui/test/raft_token_mapping_test.dart` fails when a field has no
 entry or an entry points at a token that does not exist:
 
-- Renames follow `RaftDeprecatedTokenNames` (`primary-*` to `brand-*`, `accent-*`
+- Historical renames follow the published migration map (`primary-*` to `brand-*`, `accent-*`
   to `attention-*`, `secondary-*` to `palette-stone-*`, `line` to `line-seam`,
   `line-muted` to `line-hairline`, `layer-canvas-muted` to `layer-sidebar`,
   `layer-inset` to `fill-muted`, ...).
@@ -135,13 +154,11 @@ entry or an entry points at a token that does not exist:
   to `sticker-paper`, the dark input ring to `line-hairline`.
 - Shadows: `theme-shadow-xs/sm/md` are empty (controls cast no shadow),
   `theme-shadow-lg/xl` are `elevation-float`.
-- Metrics: `field-*` / `card-title-*` are 16/24 and 16/24/600 in 0.7.1; see "Fonts, type scale and the 0.7.1
-  token helpers" for what `RaftTokenSet` carries now.
-- `RaftTokens.brutal` is always false: the ~1900 remaining `brutal ? a : b` sites
-  resolve to their Elegant side until follow-up changes convert them to the Raft
-  structure cluster by cluster.
+- Old field-schema metrics and component-specific role bindings remain compatibility
+  data. Family migrations must use the current conditional recipes instead of
+  assuming those old values describe every input mode.
 
-## Fonts, type scale and the 0.7.1 token helpers
+## Fonts, type scale and current token helpers
 
 - **Fonts.** Space Grotesk (variable, wght 300-700) and Space Mono (400, 700) are bundled in
   `packages/raft_ui/assets/fonts/` (families `SpaceGrotesk`, `SpaceMono` in the package pubspec), unmodified from
@@ -157,24 +174,37 @@ entry or an entry points at a token that does not exist:
   `RaftTokens.scale(RaftTypeScale.footnote, weight:, color:, mono:)` in `lib/src/raft/ui_tokens.dart`: Space
   Grotesk or Space Mono, CSS half-leading (`leadingDistribution: even`), the scale's weight and tracking unless
   overridden.
-- **0.7.1 colours.** `RaftTokens.ui` (`RaftUiColors`) reads the official token names (`sticker-ink`,
-  `fill-pressed`, `presence-online`, ...) straight from `RaftLight` / `RaftDark`. The ported components
-  (`lib/src/raft/`) use it; older code still reads the 0.5.52 field schemas through the mapping tables.
+- **Colours.** `RaftTokens.ui` (`RaftUiColors`) reads current roles from the active theme
+  pack. Existing components also read the compatibility schemas through the mapping tables.
+- **Responsive type.** `RaftTypeScale` supplies base styles. The generated recipe utilities
+  also carry the source's desktop typography, such as body 16/24 -> 14/22 only
+  for a wide viewport with a fine pointer. Regenerating utilities does not make
+  existing hand-ported components pass this context automatically.
 - **Borders.** `raftControlBorderPx(context, 1.5)` snaps a CSS border width the way Blink does (whole device
   pixels). The parity reference is captured with an emulated device scale factor, where Blink floors to whole CSS
   pixels (1.5px paints 1px), so the parity harness sets `RaftBorderSnap.emulatedDeviceScaleFactor`. Rings and inset
   rings (`ring-*`, `inset-ring-*`, the focus ring) are not snapped.
 
-## Core components: hand-ported, not generated
+## Generated recipes and component adapters
 
 Button, Badge, Status, Avatar, IconTile, Input, Switch, Checkbox, Tabs, SegmentedControl and ListRow live in
-`packages/raft_ui/lib/src/raft/` and read the 0.7.1 tokens directly. They are not emitted by `tool/recipes`: that
-pipeline targets raft-ui 0.5.52 (`docs/component-recipes.md`, a theme axis on every recipe), its extractor cannot
-evaluate the helper-composed class lists of 0.7.1 (`sticker("bg-danger")`, `outline(...)`), and regenerating it would
-flip all 121 recipes (and every component not yet ported) at once. Each ported component is pinned instead by a
-pixel diff against the real React specimen (`tool/parity-ui`, docs/parity.md) and by widget tests of the
-numbers (heights 32 / 44 / 52, sticker fills, disabled and press colours). The remaining generated recipes keep
-serving the other components until their ports land.
+`packages/raft_ui/lib/src/raft/`. Their widget implementations are hand-ported;
+their source recipes are generated by `tool/recipes` from the current published
+stable and WIP entry points, plus mounted Web compositions. The extractor
+supports modular exports, helper-composed class lists and recipe-slot references.
+Unknown recipe expressions and unexplained missing CSS fail generation.
+
+Tailwind 4.3.3 utilities retain flat selectors, media/container predicates and
+conditional theme variables. `raft_ui` recipe routers select this current set
+for Raft and the independent frozen set for Elegant and Brutal. Source data
+generation is one step; adapting each family's state, layout and compatibility
+bindings is separate work. See `docs/component-recipes.md` for family coverage.
+Validate changed adapters against the current Web's real rendering; frozen-look
+comparisons establish preservation only.
+
+`tool/gen-glyphs` imports lucide-react 1.72.0 and `@botiverse/ricons` 0.1.1.
+Existing glyph names retain their earlier geometry for frozen looks; current
+Raft icons use the new geometry, including ricons' below-18px mark variant.
 
 ## Typography policy token
 
@@ -207,20 +237,24 @@ the manifest. Order after a source change: `tool/recipes/run` →
 `tool/gen-tokens --sample-chrome` → `tool/recipes/run` (picks up new literal
 fits) → tests.
 
-To move to a new raft-ui / product revision, refresh the vendored copies (this
+To refresh the current pinned raft-ui package, import its published copies (this
 rewrites `tool/design-source/manifest.json`), then regenerate and run the tests:
 
 ```
-tool/gen-tokens --import-sources --raft-ui <raft-ui package dir> --raft-source <raft-source checkout>
+tool/gen-tokens --import-raft-ui <unpacked @botiverse/raft-ui@0.95.3 dir>
 tool/gen-tokens
+tool/theme-adapters/build_raft_pack.py
 ```
 
-`--raft-source` also locates `node_modules/.pnpm/tailwindcss@*/` unless
-`--tailwind <dir>` is given. Never hand-edit vendored files: the generator
-refuses to run when their hashes differ from the manifest. Update the version
-directory names in `SOURCES` (top of `tool/gen-tokens`) when versions change.
+Never hand-edit vendored files: the generator refuses to run when their hashes
+differ from the manifest. A version upgrade changes the explicit current pin
+and imports that release. The older `--import-sources` path refreshes the
+historical field-schema/oracle inputs; it is not the current-look upgrade command.
 
-## Mapping rules
+## Historical field-schema and oracle rules
+
+The following cascade and calibration details describe the frozen 0.5.52
+inputs. Current Raft tokens use their own published sources as described above.
 
 **Cascade.** The Web app sets `data-theme` and the `.light`/`.dark` class on
 `<html>` (`AppThemeProvider.tsx`), so every block applies to the same element

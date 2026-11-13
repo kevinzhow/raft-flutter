@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `tasksPanel`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `tasksPanel`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -60,7 +60,7 @@ class RaftTasksPanelRecipeStyle {
   };
 }
 
-/// raft-ui recipe `tasksPanel` (`src/components/tasks/tasks-panel.recipe.ts`, index.mjs:15421).
+/// raft-ui recipe `tasksPanel` (`dist/components/tasks/tasks-panel.recipe.mjs`, index.mjs:23417).
 ///
 /// Used by: TasksPanelEmpty, TasksPanelRoot, TasksPanelToolbar, TasksPanelToolbarFilters, TasksPanelToolbarGroup, TasksPanelToolbarLabel, TasksPanelToolbarNewTask, TasksPanelToolbarView, TasksPanelViewport.
 ///
@@ -131,50 +131,52 @@ abstract final class RaftTasksPanelRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1468, 1484, 966, 967, 595, 1822],
+    [198, 1400, 2098, 2116, 1401, 1404, 910, 2598],
     [
-      1040,
-      1740,
-      1044,
-      1319,
-      1023,
-      1440,
-      1442,
-      1455,
+      1489,
+      2499,
+      1495,
+      1864,
+      1466,
+      247,
+      248,
+      249,
+      250,
+      2096,
+      942,
+      954,
+      910,
+      2396,
+      2419,
+      2013,
+      214,
+    ],
+    [1400, 1408, 1864, 1466],
+    [988, 2476, 1872, 1400, 1408, 1864, 1466],
+    [983, 2477, 2116, 2225, 2226, 251, 1400, 1408, 1864, 1466],
+    [989, 2476, 1871, 1400, 1408, 1864, 1466],
+    [
+      1847,
+      1864,
+      477,
+      474,
+      325,
+      1661,
+      2042,
+      1465,
+      2463,
+      2402,
+      933,
+      1851,
+      1855,
       1456,
-      1472,
-      623,
-      634,
-      595,
-      1663,
-      1673,
-      1392,
+      2597,
+      1457,
+      2603,
+      2729,
     ],
-    [965, 971, 1319, 1023],
-    [657, 1721, 1327, 965, 971, 1319, 1023],
-    [653, 1722, 1484, 1555, 1556, 1460, 965, 971, 1319, 1023],
-    [658, 1721, 1326, 965, 971, 1319, 1023],
-    [
-      1305,
-      1319,
-      279,
-      277,
-      158,
-      1188,
-      1022,
-      1710,
-      1659,
-      615,
-      1309,
-      1312,
-      1016,
-      1821,
-      1017,
-      1827,
-      1933,
-    ],
-    [1468, 966, 1581, 1589, 1597, 1610, 595, 1663, 1392],
-    [965, 1198, 967, 1319, 1324],
+    [2098, 1401, 2265, 2282, 910, 2396, 214],
+    [1400, 1678, 1404, 1864, 1869],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

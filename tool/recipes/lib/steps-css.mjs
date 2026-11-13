@@ -10,7 +10,7 @@ export const STEPS_SLOTS = ['root','item','main','indicator','icon','content','t
 const CLASSES = new Set(['r-steps','r-steps--horizontal','r-steps--vertical','r-step',...['wait','process','finish','error','clickable','disabled'].map(s=>'r-step--'+s),...['main','indicator','content','title','description','connector','status','button'].map(s=>'r-step__'+s)]);
 const PROPERTIES = new Set(('display line-height list-style margin padding min-width position gap align-items background border border-radius box-shadow box-sizing color flex font-family font-size font-variant-numeric font-weight height justify-content transition width padding-top white-space margin-top clip-path overflow appearance cursor text-align content inset outline border-color border-style border-width align-content grid-template-columns grid-column grid-row align-self margin-inline-start margin-inline border-top-width flex-wrap row-gap padding-inline-end overflow-wrap flex-direction padding-bottom border-inline-start-width bottom inset-inline-start top').split(' '));
 const INHERITS = new Set(['color','font-family','font-size','font-weight','font-variant-numeric','line-height','text-align','white-space','list-style-type','list-style-position']);
-const mediaKey = s => s.startsWith('width') || s==='hover-none' || s==='not:hover-none' || s==='motion-reduce';
+const mediaKey = s => s.startsWith('width') || s.startsWith('container-width') || s==='hover-none' || s==='not:hover-none' || s==='motion-reduce';
 function need(ok,message){if(!ok)throw Error('Steps CSS: '+message);}
 function checkCompound(c,where){
   need(c.comb===null||c.comb===' '||c.comb==='>',`unsupported combinator in ${where}`);
@@ -18,6 +18,7 @@ function checkCompound(c,where){
     if(s.kind==='class')need(CLASSES.has(s.name),`unknown class ${s.name} in ${where}`);
     else if(s.kind==='type')need(s.name==='svg',`unsupported element ${s.name} in ${where}`);
     else if(s.kind==='pseudo-class'){
+      if(s.name==='not'&&s.args===':where(:root[data-input-modality="pointer"] *)')continue;
       need(['is','not','hover','focus-visible','disabled','last-child'].includes(s.name),`unsupported pseudo ${s.name} in ${where}`);
       if(s.name==='is'||s.name==='not')for(const alt of splitTopLevel(s.args)){
         const cs=parseComplex(alt);need(cs.length===1,`complex ${s.name} in ${where}`);checkCompound(cs[0],where);
@@ -32,7 +33,7 @@ export function parseStepsCss(text){
     if(node.type==='comment')return;
     if(node.type==='root'){for(const child of node.nodes)walk(child,parents,media);return;}
     if(node.type==='atrule'){
-      need(node.name==='media',`unsupported @${node.name} at line${node.source.start.line}`);
+      need(['media','container'].includes(node.name),`unsupported @${node.name} at line${node.source.start.line}`);
       const ctx={unknown:[]},atoms=atRuleAtoms(node.name,node.params,ctx);
       if(node.params.replace(/[()]/g,'').trim()==='hover: hover')atoms.push('not:hover-none');
       need(!ctx.unknown.length&&atoms.every(mediaKey),`unsupported media ${node.params}`);
@@ -46,7 +47,7 @@ export function parseStepsCss(text){
     const decls=[];
     for(const d of node.nodes??[])if(d.type==='decl'){
       need(!d.important,`unbound !important declaration at line${d.source.start.line}`);
-      need(d.prop.startsWith('--r-step')||PROPERTIES.has(d.prop),`unsupported property ${d.prop} at line${d.source.start.line}`);
+      need(d.prop.startsWith('--r-step')||PROPERTIES.has(d.prop)||['container-type','inline-size'].includes(d.prop),`unsupported property ${d.prop} at line${d.source.start.line}`);
       decls.push({prop:d.prop,value:parseValue(d.value),important:false});
     }
     if(decls.length)for(const selector of selectors){
@@ -64,6 +65,9 @@ function compoundMatches(compound,node,env){
     if(s.kind==='type'&&node.tag!==s.name)return false;
     if(s.kind==='pseudo-element'&&node.pseudo!==s.name)return false;
     if(s.kind==='pseudo-class'){
+      if(s.name==='not'&&s.args===':where(:root[data-input-modality="pointer"] *)'){
+        if(env.flags.has('input-pointer'))return false;continue;
+      }
       if(s.name==='last-child'&&!node.last)return false;
       if(s.name==='disabled'&&!node.disabled)return false;
       if(s.name==='hover'&&!env.flags.has('hover'))return false;
@@ -135,9 +139,10 @@ export function stepsEnvironments(rules){
   const atoms=[...new Set([...rules.flatMap(r=>r.atoms),...rules.filter(r=>r.selector.includes(':hover')).map(()=> 'hover'),...rules.filter(r=>r.selector.includes(':focus-visible')).map(()=> 'focus-visible')])].sort();
   const boundaries=[...new Set(atoms.map(a=>/width(?:<|>=)([\d.]+)/.exec(a)?.[1]).filter(Boolean).map(Number))];
   const widths=[undefined,0,...boundaries.flatMap(n=>[n-1,n,n+1])];
-  const flags=['hover','hover-none','focus-visible','motion-reduce'];const unique=new Map();
+  if(rules.some(r=>r.selector.includes('data-input-modality')))atoms.push('input-pointer');
+  const flags=['hover','hover-none','focus-visible','motion-reduce','input-pointer'];const unique=new Map();
   for(const width of widths)for(let bits=0;bits<1<<flags.length;bits++){
-    const env={width,flags:new Set(flags.filter((_,i)=>bits&(1<<i)))};
+    const env={width,containerWidth:width,flags:new Set(flags.filter((_,i)=>bits&(1<<i)))};
     const key=atoms.map(a=>atomMatches(a,env)?a:'not:'+a).join('|');
     if(!unique.has(key))unique.set(key,{...env,atoms:key.split('|').filter(Boolean)});
   }

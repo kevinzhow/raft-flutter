@@ -11,6 +11,7 @@
 // shape as the old single-file bundle.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { buildSync } from 'esbuild';
 
 const IMPORT_LINE = /^import [^\n]*;[ \t]*$/;
 const CHUNK_IMPORT = /^import \{([^}]*)\} from "\.\/([^"]+\.mjs)";[ \t]*$/;
@@ -24,6 +25,19 @@ function pairs(list) {
 
 export function loadBundle(sourceRoot) {
   const indexText = readFileSync(join(sourceRoot, 'dist/index.mjs'), 'utf8');
+  // 0.95 publishes one module per component. Bundle only relative imports;
+  // packages stay external and no product code is executed during extraction.
+  if (/^export \* from /m.test(indexText)) {
+    const result = buildSync({
+      stdin: {contents: 'export * from "./dist/index.mjs";\nexport * from "./dist/wip.mjs";',
+        resolveDir: sourceRoot, sourcefile: 'recipe-entry.mjs'}, absWorkingDir: sourceRoot,
+      bundle: true, packages: 'external', format: 'esm', platform: 'neutral',
+      write: false, treeShaking: false, legalComments: 'none', metafile: true, ignoreAnnotations: true,
+    });
+    const files = Object.keys(result.metafile.inputs).filter((f) => f !== 'recipe-entry.mjs').sort();
+    const code = result.outputFiles[0].text.replace(/^\/\/ (dist\/[^\n]+\.mjs)$/gm, '//#region $1');
+    return { code, files, aliasToLocal: new Map(), texts: files.map((f) => readFileSync(join(sourceRoot, f), 'utf8')) };
+  }
   const lines = indexText.split('\n');
   const chunkImports = [];
   for (const line of lines) {

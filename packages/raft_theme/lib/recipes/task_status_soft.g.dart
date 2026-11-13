@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `taskStatusSoft`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `taskStatusSoft`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -8,6 +8,7 @@ import 'recipe_utilities.g.dart';
 
 /// `status` axis of `taskStatusSoft`.
 enum RaftTaskStatusSoftRecipeStatus {
+  backlog('backlog'),
   todo('todo'),
   inProgress('in-progress'),
   inReview('in-review'),
@@ -30,7 +31,7 @@ class RaftTaskStatusSoftRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'base': base};
 }
 
-/// raft-ui recipe `taskStatusSoft` (`src/components/tasks/task-status.recipe.ts`, index.mjs:14824).
+/// raft-ui recipe `taskStatusSoft` (`dist/components/tasks/task-status.recipe.mjs`, index.mjs:20772).
 ///
 /// Used by: TaskCardStatus.
 ///
@@ -42,7 +43,7 @@ abstract final class RaftTaskStatusSoftRecipe {
   static const List<RaftRecipeAxis> axes = [
     RaftRecipeAxis(
       'status',
-      ['todo', 'in-progress', 'in-review', 'done', 'closed'],
+      ['backlog', 'todo', 'in-progress', 'in-review', 'done', 'closed'],
       null,
       true,
     ),
@@ -90,11 +91,12 @@ abstract final class RaftTaskStatusSoftRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [],
-    [614],
-    [612],
-    [613],
-    [611],
-    [610],
+    [933, 1851, 1854],
+    [932],
+    [930],
+    [931],
+    [929],
+    [928],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
@@ -105,5 +107,6 @@ abstract final class RaftTaskStatusSoftRecipe {
     [3],
     [4],
     [5],
+    [6],
   ];
 }

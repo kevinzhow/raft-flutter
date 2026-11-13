@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/popover.g.dart'
 
 /// Router for recipe `RaftPopoverRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `size`; Raft-only slots: body, actions.
 abstract final class RaftPopoverRecipe {
   static const String recipeName = legacy.RaftPopoverRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftPopoverRecipe.slotNames;

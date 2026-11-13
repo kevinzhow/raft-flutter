@@ -16,6 +16,8 @@ export 'package:raft_theme/recipes/legacy/message_multi_select.g.dart'
 
 /// Router for recipe `RaftMessageMultiSelectRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only slots: toolbarActions.
 abstract final class RaftMessageMultiSelectRecipe {
   static const String recipeName =
       legacy.RaftMessageMultiSelectRecipe.recipeName;

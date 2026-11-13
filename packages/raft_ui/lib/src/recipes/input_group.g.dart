@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/input_group.g.dart'
 
 /// Router for recipe `RaftInputGroupRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `size`; Raft-only slots: textInner.
 abstract final class RaftInputGroupRecipe {
   static const String recipeName = legacy.RaftInputGroupRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftInputGroupRecipe.slotNames;

@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `progress`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `progress`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -72,9 +72,9 @@ class RaftProgressRecipeStyle {
   };
 }
 
-/// raft-ui recipe `progress` (`src/components/progress/progress.tsx`, index.mjs:9612).
+/// raft-ui recipe `progress` (`dist/components/progress/progress.mjs`, index.mjs:14717).
 ///
-/// Used by: ComposerAttachmentUploadProgressBar, Progress, ProgressHeader, ProgressIndicator, ProgressLabel, ProgressTrack, ProgressValue, ToastProgress, toast.
+/// Used by: Progress, ProgressHeader, ProgressIndicator, ProgressLabel, ProgressTrack, ProgressValue.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -147,15 +147,30 @@ abstract final class RaftProgressRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1155, 1040, 1929, 1484, 1022, 347, 353, 1016, 823, 343, 349],
-    [965, 1484, 1319, 1323, 1025],
-    [1484, 1897, 1821, 1017, 1822],
-    [1740, 1783, 1014, 1839, 1824],
-    [1682, 1929, 1583, 567, 1178, 1091, 1081, 1716],
-    [618, 1198, 566, 1891, 943, 950, 863, 697, 867, 865, 864, 1706, 1310, 1313],
-    [1155, 1040, 1929, 1484, 1022, 347, 353, 1016, 823, 344, 350],
-    [1155, 1040, 1929, 1484, 1022, 347, 353, 1016, 823, 345, 351],
-    [1155, 1040, 1929, 1484, 1022, 347, 353, 1016, 823, 342, 348],
+    [1618, 1489, 2725, 2116, 1465, 573, 574, 1456, 1169, 570],
+    [1400, 2116, 1864, 1868, 1468],
+    [2116, 2681, 2597, 1457, 2598],
+    [2499, 2556, 1454, 2616, 2600],
+    [2433, 2725, 2252, 877, 1650, 1539, 1530, 2471],
+    [
+      937,
+      1678,
+      876,
+      2673,
+      1367,
+      1376,
+      1243,
+      1033,
+      1247,
+      1245,
+      1244,
+      2459,
+      1853,
+      1856,
+    ],
+    [1618, 1489, 2725, 2116, 1465, 573, 574, 1456, 1169, 571],
+    [1618, 1489, 2725, 2116, 1465, 573, 574, 1456, 1169, 572],
+    [1618, 1489, 2725, 2116, 1465, 573, 574, 1456, 1169, 568],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

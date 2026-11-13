@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `profilePanel`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `profilePanel`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -35,7 +35,7 @@ class RaftProfilePanelRecipeStyle {
   };
 }
 
-/// raft-ui recipe `profilePanel` (`src/components/profile-panel/profile-panel.recipe.ts`, index.mjs:14192).
+/// raft-ui recipe `profilePanel` (`dist/components/profile-panel/profile-panel.recipe.mjs`, index.mjs:20217).
 ///
 /// Used by: ProfilePanel, ProfilePanelHeader, ProfilePanelHeaderContent, ProfilePanelSection.
 ///
@@ -96,10 +96,10 @@ abstract final class RaftProfilePanelRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1198, 1468, 1484, 966, 967, 340, 1682, 595, 1016, 1822],
+    [1400, 1678, 2098, 2116, 1401, 1404, 566, 2433, 910, 1456, 2598],
     [],
-    [1322, 1019],
-    [633, 1663, 1675],
+    [1867, 1462],
+    [953, 2396, 2421],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

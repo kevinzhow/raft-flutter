@@ -13,6 +13,8 @@ export 'package:raft_theme/recipes/legacy/kbd.g.dart' hide RaftKbdRecipe;
 
 /// Router for recipe `RaftKbdRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `size`.
 abstract final class RaftKbdRecipe {
   static const String recipeName = legacy.RaftKbdRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftKbdRecipe.slotNames;

@@ -1,10 +1,21 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `popover`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `popover`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
 import 'recipe_utilities.g.dart';
+
+/// `size` axis of `popover`.
+enum RaftPopoverRecipeSize {
+  default_('default'),
+  item('item');
+
+  const RaftPopoverRecipeSize(this.css);
+
+  /// Variant value as written in the raft-ui source.
+  final String css;
+}
 
 /// Resolved slots of [RaftPopoverRecipe].
 class RaftPopoverRecipeStyle {
@@ -13,6 +24,8 @@ class RaftPopoverRecipeStyle {
     required this.positioner,
     required this.content,
     required this.header,
+    required this.body,
+    required this.actions,
     required this.separator,
     required this.title,
     required this.description,
@@ -33,6 +46,12 @@ class RaftPopoverRecipeStyle {
 
   /// Slot `header`.
   final RaftSlotStyle header;
+
+  /// Slot `body`.
+  final RaftSlotStyle body;
+
+  /// Slot `actions`.
+  final RaftSlotStyle actions;
 
   /// Slot `separator`.
   final RaftSlotStyle separator;
@@ -60,6 +79,8 @@ class RaftPopoverRecipeStyle {
     'positioner': positioner,
     'content': content,
     'header': header,
+    'body': body,
+    'actions': actions,
     'separator': separator,
     'title': title,
     'description': description,
@@ -70,9 +91,9 @@ class RaftPopoverRecipeStyle {
   };
 }
 
-/// raft-ui recipe `popover` (`src/components/popover/popover.tsx`, index.mjs:4707).
+/// raft-ui recipe `popover` (`dist/components/popover/popover.mjs`, index.mjs:7057).
 ///
-/// Used by: PopoverArrow, PopoverBackdrop, PopoverClose, PopoverContent, PopoverDescription, PopoverHeader, PopoverPopup, PopoverSeparator, PopoverTitle, PopoverTrigger, PopoverViewport.
+/// Used by: PopoverActions, PopoverArrow, PopoverBackdrop, PopoverBody, PopoverClose, PopoverContent, PopoverDescription, PopoverHeader, PopoverPopup, PopoverSeparator, PopoverTitle, PopoverTrigger, PopoverViewport.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -83,6 +104,8 @@ abstract final class RaftPopoverRecipe {
     'positioner',
     'content',
     'header',
+    'body',
+    'actions',
     'separator',
     'title',
     'description',
@@ -91,9 +114,12 @@ abstract final class RaftPopoverRecipe {
     'backdrop',
     'viewport',
   ];
-  static const List<RaftRecipeAxis> axes = [];
+  static const List<RaftRecipeAxis> axes = [
+    RaftRecipeAxis('size', ['default', 'item'], null, true),
+  ];
 
   static RaftPopoverRecipeStyle resolve({
+    RaftPopoverRecipeSize? size,
     RaftRecipeStates states = RaftRecipeStates.none,
     RaftTokenResolver? tokens,
   }) {
@@ -102,7 +128,7 @@ abstract final class RaftPopoverRecipe {
       axes,
       _lists,
       _combos,
-      [],
+      [size?.css],
       states,
       tokens,
       recipeName: recipeName,
@@ -113,13 +139,15 @@ abstract final class RaftPopoverRecipe {
       positioner: s[1],
       content: s[2],
       header: s[3],
-      separator: s[4],
-      title: s[5],
-      description: s[6],
-      close: s[7],
-      arrow: s[8],
-      backdrop: s[9],
-      viewport: s[10],
+      body: s[4],
+      actions: s[5],
+      separator: s[6],
+      title: s[7],
+      description: s[8],
+      close: s[9],
+      arrow: s[10],
+      backdrop: s[11],
+      viewport: s[12],
     );
   }
 
@@ -145,39 +173,44 @@ abstract final class RaftPopoverRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1727],
-    [1317, 1944, 1577],
-    [1358, 1496, 1583, 1577, 1709, 602, 1822, 1737, 1694, 1698],
-    [965, 1319, 1323, 1660, 1470, 1023, 1669, 1636, 1622],
-    [639, 633],
-    [1357, 1016, 1833, 1008, 1822],
-    [1357, 1016, 1821, 1827],
+    [2483],
+    [1862, 2746, 2247],
+    [1911, 2128, 2252, 2247, 2462, 915, 2598, 2496, 2445, 2449],
+    [1400, 1864, 1868, 2403, 2100, 1466, 2415, 2356, 2302],
+    [1400, 2116, 1404, 1465, 2405, 2384, 2276, 1877],
+    [1400, 1408, 1864, 1870, 1466, 2405, 2276, 1877],
+    [960, 953],
+    [1907, 1456, 2609, 1449, 2598],
+    [1907, 1456, 2597, 2603],
     [
-      1305,
-      1319,
-      1324,
-      1577,
-      1893,
-      1188,
-      1494,
-      1710,
-      1657,
-      1016,
-      1821,
-      1008,
-      1822,
-      1272,
-      427,
-      996,
-      281,
+      1847,
+      1864,
+      1869,
+      2247,
+      2675,
+      1661,
+      2126,
+      2461,
+      2400,
+      1456,
+      2597,
+      1449,
+      2598,
+      1785,
+      697,
+      1439,
+      479,
     ],
-    [1750, 1700, 630, 639, 634, 602],
-    [964, 1307, 615],
-    [618],
+    [2513, 2451, 950, 960, 954, 915],
+    [1399, 1849, 933],
+    [937],
+    [1911, 2128, 2252, 2247, 2462, 915, 2598, 2496, 2445, 2449, 2716, 1952],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    [0, 1, 13, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   ];
 }

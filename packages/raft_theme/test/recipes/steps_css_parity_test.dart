@@ -63,7 +63,7 @@ void main() {
     final data = jsonDecode(_stepsFixture().readAsStringSync()) as Map;
     expect(data['source']['sha256'], RaftStepsCssRecipe.sourceSha256);
     final cases = data['cases'] as List;
-    expect(cases.length, 3072);
+    expect(cases.length, 4096);
     final pool = data['stylePool'] as List;
     final failures = <String>[];
     for (var index = 0; index < cases.length; index++) {
@@ -80,6 +80,8 @@ void main() {
         states: RaftRecipeStates(
           (c['flags'] as List).cast<String>().toSet(),
           (c['width'] as num?)?.toDouble(),
+          null,
+          (c['containerWidth'] as num?)?.toDouble(),
         ),
       );
       for (final name in RaftStepsCssRecipe.slotNames) {

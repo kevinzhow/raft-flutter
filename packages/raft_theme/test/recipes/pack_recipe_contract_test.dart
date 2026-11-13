@@ -73,7 +73,7 @@ void main() {
         'webXlsxTabsLayout',
       };
       expect(raftRecipes.keys.toSet().intersection(products), products);
-      expect(raftRecipes.keys.toSet().difference(products), hasLength(124));
+      expect(raftRecipes.keys.toSet().difference(products), hasLength(152));
       for (final recipe in raftRecipes.entries) {
         final slots = recipe.value(const {});
         expect(slots, isNotEmpty, reason: recipe.key);

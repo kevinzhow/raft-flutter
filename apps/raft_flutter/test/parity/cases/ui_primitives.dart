@@ -18,15 +18,11 @@ import '../parity_harness.dart';
 final Map<String, ParityCase> uiPrimitiveCases = {
   'components.ui.segmented-control.states': _segmentedControl,
   'components.ui.button.states': _button,
-  'components.ui.button.states.elegant': _button,
   'components.ui.card.states': _card,
-  'components.ui.card.states.elegant': _card,
   'components.ui.form-field.states': _formField,
-  'components.ui.form-field.states.elegant': _formField,
   'components.ui.textarea.states': _textarea,
-  'components.ui.textarea.states.elegant': _textarea,
   'components.ui.checkbox.states': _checkbox,
-  'components.ui.checkbox.states.elegant': _checkbox,
+  'components.ui.typography.specimen': _typography,
   'components.ui.check-marker.states': _checkMarker,
   'components.ui.attention-dot.states': _attentionDot,
   'components.ui.status-dot.states': _statusDot,
@@ -44,7 +40,73 @@ final Map<String, ParityCase> uiPrimitiveCases = {
   'components.ui.avatar-list-row.states': _avatarListRow,
 };
 
+// Retired from the current Web official manifest. The frozen look suite keeps
+// their original builders and reference images independently of that manifest.
+final Map<String, ParityCase> uiFrozenPrimitiveCases = {
+  'components.ui.button.states.elegant': _button,
+  'components.ui.card.states.elegant': _card,
+  'components.ui.form-field.states.elegant': _formField,
+  'components.ui.textarea.states.elegant': _textarea,
+  'components.ui.checkbox.states.elegant': _checkbox,
+};
+
 final Map<String, ParityUncovered> uiPrimitiveUncovered = {};
+
+// Source: v1.24.0-source.1 VisualTestingCases.tsx ui-typography-specimen.
+// Draw the product's current token/typography path. Any missing responsive
+// behavior remains visible in the comparison; this fixture does not repair it.
+final ParityCase _typography = ParityCase(
+  widgets: const ['raft_ui:RaftTokens'],
+  build: (ctx) => Builder(
+    builder: (context) {
+      final t = RaftTokens.of(context);
+      const lines = [
+        ('Headline 17', 'headline', null),
+        ('Body 16 400', 'body', FontWeight.w400),
+        ('Body 16 500', 'body', FontWeight.w500),
+        ('Body 16 600', 'body', FontWeight.w600),
+        ('Body 16 700', 'body', FontWeight.w700),
+        ('Subhead 15', 'subhead', null),
+        ('Callout 14', 'callout', null),
+        ('Footnote 13', 'footnote', null),
+        ('Caption 12 500', 'caption', null),
+        ('Label 11 600', 'label', null),
+        ('Mono meta 12', 'mono-meta', null),
+        ('Mono code 13', 'mono-code', null),
+      ];
+      // The source case owns one 16px inset and the active canvas colour.
+      // The shared historical frame has a white background and its own inset.
+      return ctx.frame(
+        width: 342,
+        height: 300,
+        background: t.ui.layerCanvas,
+        child: DefaultTextStyle.merge(
+          style: TextStyle(
+            color: t.ui.foreground,
+            decoration: TextDecoration.none,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final (label, slot, weight) in lines)
+                Text(
+                  '$label 排版 Aa 0123',
+                  maxLines: 1,
+                  softWrap: false,
+                  style: t.scale(
+                    t.typeSlot(slot),
+                    weight: weight,
+                    mono: slot.startsWith('mono-'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    },
+  ),
+);
 
 // ---------------------------------------------------------------------------
 // Fixture scaffolding helpers (frame + plain markup text), not product UI.

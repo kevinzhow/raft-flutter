@@ -65,7 +65,7 @@ const webTheme = !process.argv.includes('--raft-ui-only');
 const compiler = await createCompiler(sourceRoot, { webTheme });
 const sortedClasses = [...allClasses].sort();
 const css = compiler.build(sortedClasses);
-const { utilities: twUtilities, themeVars, registered: registeredRaw } = splitOutput(css);
+const { utilities: twUtilities, themeVars, conditionalThemeVars, registered: registeredRaw } = splitOutput(css, allClasses);
 
 // Foundation tokens: every custom property declared by foundation.css, plus
 // the font-family tokens of fonts.css (--heading-font, --sans-font, --mono-font).
@@ -90,7 +90,10 @@ const themeCtx = {
   isToken,
   partial: true,
 };
-const fold = (text) => evaluate(parseValue(text), themeCtx);
+const fold = (text, overrides = null) => evaluate(parseValue(text), overrides ? {
+  ...themeCtx,
+  lookupVar: (name) => overrides.has(name) ? parseValue(overrides.get(name)) : themeCtx.lookupVar(name),
+} : themeCtx);
 
 const registered = new Map();
 for (const [name, init] of [...registeredRaw].sort(([a], [b]) => a.localeCompare(b))) registered.set(name, init == null ? null : fold(init));
@@ -105,17 +108,21 @@ for (const name of sortedClasses) {
   if (u) {
     const seen = new Set();
     for (const layer of u.layers) {
+      for (const context of [{atoms: [], vars: null}, ...conditionalThemeVars]) {
       const decls = [];
       for (const d of layer.decls) {
-        const value = fold(d.value);
+        const value = fold(d.value, context.vars);
+        if (context.vars && JSON.stringify(value) === JSON.stringify(fold(d.value, context.inheritedVars))) continue;
         if (d.prop.startsWith('--')) decls.push({ prop: d.prop, value, important: d.important });
         else for (const [prop, v] of expand(d.prop, value)) decls.push({ prop, value: v, important: d.important });
       }
-      const atoms = [...layer.atoms].sort();
+      if (!decls.length) continue;
+      const atoms = [...new Set([...layer.atoms, ...context.atoms])].sort();
       const key = JSON.stringify([layer.target, atoms, decls]);
       if (seen.has(key)) continue; // e.g. dark: selector + prefers-color-scheme fallback
       seen.add(key);
       entry.layers.push({ target: layer.target, atoms, spec: layer.specificity, decls });
+      }
     }
     const targets = new Set(entry.layers.map((l) => l.target));
     entry.status = [...targets].some((t) => t === 'self' || t.startsWith('::')) ? 'resolved' : 'descendant';
@@ -238,6 +245,8 @@ const coverage = (() => {
     descendant: by.descendant ?? [],
   };
 })();
+const unexpected = coverage.noCss.filter(c => !c.reason);
+if (unexpected.length) throw new Error(`Unrecognised CSS classes (never silently dropped): ${unexpected.map(c => c.class).join(', ')}`);
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const model = {

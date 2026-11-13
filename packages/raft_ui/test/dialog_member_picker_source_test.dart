@@ -90,11 +90,12 @@ void main() {
         await t.pumpWidget(
           host(SizedBox(width: 408, child: picker(search)), dark: dark),
         );
-        // Actual Web: card p1.5+border, two30px headers, three36px rows =182px.
+        // 0.95.3 ChoiceList: p1+border, two28px headings, three36px rows,
+        // and four2px grid row gaps =182px.
         expect(t.getSize(find.byType(RaftCard)).height, 182);
         final agents = t.widget<Text>(find.text('Agents'));
-        expect(agents.style!.fontSize, 13);
-        expect(agents.style!.height, 18 / 13);
+        expect(agents.style!.fontSize, 12);
+        expect(agents.style!.height, 16 / 12);
         expect(t.takeException(), isNull);
         await t.pumpWidget(const SizedBox.shrink());
       },
@@ -180,7 +181,8 @@ void main() {
         ),
       ),
     );
-    expect(t.getSize(find.byType(RaftCard)).height, 192);
+    // search="always" selects scroll=true: max-h-72 (288) + frame border2.
+    expect(t.getSize(find.byType(RaftCard)).height, 290);
     await t.ensureVisible(find.text('Agent 19'));
     await t.pumpAndSettle();
     await t.tap(find.text('Agent 19'));

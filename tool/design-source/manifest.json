@@ -35,6 +35,38 @@
     "raft-ui-0.7.1/LICENSE": {
       "origin": "raft-ui@0.7.1:LICENSE",
       "sha256": "a1d02f0b3564fef2e7cbe7494377350e531429ef50f787bd824342402916e0e3"
+    },
+    "raft-ui-0.95.3/tokens.json": {
+      "origin": "raft-ui@0.95.3:dist/tokens.json",
+      "sha256": "58c0c11a8f1ea92da19695cf85f397e911ed8716e1e5f6829181c0c47014686c"
+    },
+    "raft-ui-0.95.3/styles.css": {
+      "origin": "raft-ui@0.95.3:dist/styles.css",
+      "sha256": "c10307d056bdd62d944550b55969fd05723589fecf34c51505510bb84f60154b"
+    },
+    "raft-ui-0.95.3/foundation.css": {
+      "origin": "raft-ui@0.95.3:dist/foundation.css",
+      "sha256": "716eff94d3baf445ec0d5bebd1e1545854ddcf053ae1f5937aac4e54ea991ce1"
+    },
+    "raft-ui-0.95.3/LICENSE": {
+      "origin": "raft-ui@0.95.3:LICENSE",
+      "sha256": "a1d02f0b3564fef2e7cbe7494377350e531429ef50f787bd824342402916e0e3"
+    },
+    "raft-ui-0.95.3/themes.css": {
+      "origin": "raft-ui@0.95.3:dist/themes.css",
+      "sha256": "d676bb4b3ad783cfbe81a1428939d76783f2bee1b9ed1ec5d3913e661b65093d"
+    },
+    "raft-ui-0.95.3/fonts.css": {
+      "origin": "raft-ui@0.95.3:dist/fonts.css",
+      "sha256": "9dad5c00acd351c91f46f106e450d65101e756f90538e4597bf79c3ea70a9133"
+    },
+    "raft-ui-0.95.3/token-names.mjs": {
+      "origin": "raft-ui@0.95.3:codemods/token-names.mjs",
+      "sha256": "586ae9f8d60bd987d263d33f2a3093e58196fb8428f10d57bdd5dec2c0b2dbd5"
+    },
+    "raft-ui-0.95.3/chrome-opaque-literals.json": {
+      "origin": "Chromium 151.0.7922.34 canvas opaque swatches from published raft-ui 0.95.3 recipe CSS",
+      "sha256": "403b884cb544bd7a4e0013ea94ab4b364f2f2bc4f133ca73e5f6a337561dbdeb"
     }
   }
 }

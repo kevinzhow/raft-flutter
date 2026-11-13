@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `composerSuggestionList`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `composerSuggestionList`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -84,7 +84,7 @@ class RaftComposerSuggestionListRecipeStyle {
   };
 }
 
-/// raft-ui recipe `composerSuggestionList` (`src/components/composer/composer-suggestion-list.tsx`, index.mjs:11819).
+/// raft-ui recipe `composerSuggestionList` (`dist/components/composer/composer-suggestion-list.mjs`, index.mjs:16691).
 ///
 /// Used by: ComposerSuggestionAside, ComposerSuggestionContent, ComposerSuggestionGroup, ComposerSuggestionGroupLabel, ComposerSuggestionIcon, ComposerSuggestionList, ComposerSuggestionMeta, ComposerSuggestionOption, ComposerSuggestionTitle.
 ///
@@ -168,55 +168,54 @@ abstract final class RaftComposerSuggestionListRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      422,
-      1314,
-      649,
-      1927,
-      1587,
-      1432,
-      1362,
-      1586,
-      1709,
-      1594,
-      602,
-      1822,
-      1694,
-      1698,
-      1737,
+      691,
+      1858,
+      974,
+      2723,
+      1989,
+      1914,
+      2255,
+      2462,
+      2261,
+      915,
+      2598,
+      2445,
+      2449,
+      2496,
     ],
-    [965, 967, 98, 1512, 639, 633, 1657, 1644],
-    [1669, 1659, 1645, 1604, 1016, 1814, 1008, 1824],
+    [1400, 1404, 177, 2145, 960, 953, 2399, 2379],
+    [2415, 2402, 2381, 2274, 1456, 2588, 1449, 2600],
     [
-      965,
-      1929,
-      1319,
-      1836,
-      1480,
-      664,
-      1024,
-      1710,
-      1659,
-      1668,
-      1016,
-      1813,
+      1400,
+      2725,
+      1864,
+      2613,
+      2113,
+      997,
+      1467,
+      2461,
+      2402,
+      2414,
+      1456,
+      2587,
+      1453,
+      2598,
+      1783,
+      1029,
+      1009,
       1013,
-      1822,
-      1270,
-      693,
-      677,
-      681,
-      678,
+      1010,
     ],
-    [965, 1484, 966, 1319, 1022, 1836],
-    [1740],
-    [1484, 1897],
-    [1499, 965, 1411, 1484, 1740, 1319, 1325],
-    [1814, 1824, 1484, 966, 508, 1897],
-    [1484, 1897, 1014, 1839, 1824],
-    [1740, 965, 1762, 1319, 1324, 1716, 581, 1827, 288],
-    [1740, 94, 1751, 1824],
-    [1740, 965, 1752, 1319, 1324, 279, 1824],
-    [965, 967],
+    [1400, 2116, 1401, 1864, 1465, 2613],
+    [2499],
+    [2116, 2681],
+    [2132, 1400, 1966, 2116, 2499, 1864, 1870],
+    [2588, 2600, 2116, 1401, 804, 2681],
+    [2116, 2681, 1454, 2616, 2600],
+    [2499, 1400, 2527, 1864, 1869, 2471, 895, 2603, 486],
+    [2499, 172, 2515, 2600],
+    [2499, 1400, 2516, 1864, 1869, 477, 2600],
+    [1400, 1404],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

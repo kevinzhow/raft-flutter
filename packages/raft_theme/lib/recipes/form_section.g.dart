@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `formSection`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `formSection`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -40,7 +40,7 @@ class RaftFormSectionRecipeStyle {
   };
 }
 
-/// raft-ui recipe `formSection` (`src/components/form-section/form-section.tsx`, index.mjs:1248).
+/// raft-ui recipe `formSection` (`dist/components/form-section/form-section.mjs`, index.mjs:3173).
 ///
 /// Used by: FormSection.
 ///
@@ -103,11 +103,11 @@ abstract final class RaftFormSectionRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 967, 1025, 1675, 959, 403, 402],
-    [965, 1484, 967, 1020],
-    [965, 1484, 1319, 1023],
-    [1357, 1484, 966, 1016, 1821, 1008, 1827],
-    [1357, 1016, 1821, 1824],
+    [1400, 1404, 1460, 2429, 1394, 642, 641],
+    [1400, 2116, 1404, 1463],
+    [1400, 2116, 1864, 1466],
+    [1907, 2116, 1401, 1456, 2597, 1449, 2603],
+    [1907, 1456, 2597, 2600],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

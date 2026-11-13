@@ -4,7 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/recipes/message_text_selection_toolbar.g.dart';
+import 'package:raft_ui/src/recipes/text_selection_toolbar.g.dart';
 
 void main() {
   testWidgets('Android input Copy uses Raft menu typography and copies text', (
@@ -44,7 +44,7 @@ void main() {
     expect(copy, findsOneWidget);
     expect(
       DefaultTextStyle.of(tester.element(copy)).style.fontWeight,
-      // raft-ui 0.7.0 menu rows are bold 13px (0.6 sets them to w700).
+      // Current TextSelectionToolbar uses text-control13/18 and font-bold.
       FontWeight.w700,
     );
     await tester.tap(copy);
@@ -69,8 +69,7 @@ void main() {
           final theme = raftTheme(dark: dark)
               .copyWith(platform: TargetPlatform.android);
           final tokens = theme.extension<RaftTokens>()!;
-          final recipe = RaftMessageTextSelectionToolbarRecipe.resolve(
-            theme: tokens.recipeTheme,
+          final recipe = RaftTextSelectionToolbarRecipe.resolve(
             states: tokens.recipeStates(),
             tokens: tokens.recipeTokens,
           );
@@ -156,8 +155,8 @@ void main() {
           expect(rect.right, lessThanOrEqualTo(312));
           expect(
             rect.bottom,
-            lessThanOrEqualTo(473),
-          ); // 13px rows in raft-ui 0.7.0
+            lessThanOrEqualTo(640 - 160),
+          ); // Stay above this fixture's keyboard, at every text scale.
           await tester.tap(share);
           expect(actions, [0, 4]);
           expect(
@@ -460,7 +459,7 @@ void main() {
           .style;
       expect(style.decoration, TextDecoration.none);
       expect(style.fontFamily, theme.extension<RaftTokens>()!.bodyFont);
-      expect(style.fontSize, 13); // raft-ui 0.7.0 menu rows
+      expect(style.fontSize, 13); // current text-control base scale
     },
   );
   testWidgets(

@@ -33,7 +33,7 @@ for(const [ci,c]of configs.entries()){
  for(const env of envs){
   const styles=resolveSteps(rules,c,env,n=>tokens.has(n),hits,globals);
   for(const slot of STEPS_SLOTS)bySlot[slot].push({atoms:env.atoms,decls:Object.entries(styles[slot]).map(([p,v])=>[p,intern(v)])});
-  fixtures.push({config:c,width:env.width??null,flags:[...env.flags],expected:Object.fromEntries(Object.entries(styles).map(([slot,style])=>[slot,internStyle(style)]))});
+  fixtures.push({config:c,width:env.width??null,containerWidth:env.containerWidth??null,flags:[...env.flags],expected:Object.fromEntries(Object.entries(styles).map(([slot,style])=>[slot,internStyle(style)]))});
  }
  const list=[];
  for(const slot of STEPS_SLOTS){

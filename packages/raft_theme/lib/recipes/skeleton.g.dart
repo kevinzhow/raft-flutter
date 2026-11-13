@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `skeleton`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `skeleton`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -28,7 +28,7 @@ class RaftSkeletonRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root};
 }
 
-/// raft-ui recipe `skeleton` (`src/components/skeleton/skeleton.tsx`, index.mjs:12213).
+/// raft-ui recipe `skeleton` (`dist/components/skeleton/skeleton.mjs`, index.mjs:17982).
 ///
 /// Used by: Skeleton.
 ///
@@ -82,9 +82,9 @@ abstract final class RaftSkeletonRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [473, 1502, 1630, 789, 788, 787, 786, 1180],
-    [473, 1502, 1630, 789, 788, 787, 786],
-    [473, 1502, 1630, 789, 788, 787, 786, 1716, 581],
+    [764, 2135, 2346, 1115, 1114, 1113, 1112, 1652],
+    [764, 2135, 2346, 1115, 1114, 1113, 1112],
+    [764, 2135, 2346, 1115, 1114, 1113, 1112, 2471, 895],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

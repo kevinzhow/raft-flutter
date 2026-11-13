@@ -1,0 +1,1000 @@
+@import "./components/combobox-select/combobox-select.css";
+@import "./foundation.css";
+@import "./components/timeline/timeline.css";
+@import "./components/steps/steps.css";
+@import "./components/steps/otter-indicator.css";
+@import "./components/virtual-list/styles/virtual-list.css";
+@import "./components/scroll-area/scroll-area.css";
+/* The small-size marks of ricons' icons (packages/icons), so an app that loads
+   this stylesheet needs no import of ricons' own. */
+@import "@botiverse/ricons/styles.css";
+
+/* `dark:` follows the nearest explicit mode class, and before hydration the
+   system preference. A `.light` island inside a dark page re-enters light
+   context for its subtree (one level of nesting). */
+@custom-variant dark {
+  &:where(:is(.dark, .dark *):not(:where(.dark .light, .dark .light *))) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(
+      :is(:root:not(.light):not(.dark), :root:not(.light):not(.dark) *):not(
+        :where(:root:not(.light):not(.dark) .light, :root:not(.light):not(.dark) .light *)
+      )
+    ) {
+      @slot;
+    }
+  }
+}
+
+/* Focus indicators show only after keyboard navigation
+   (design/foundations/states.md#focus). installInputModality, which
+   ThemeProvider runs, keeps `data-input-modality` on the root: "pointer" after
+   a click or a tap, "keyboard" after a navigation key. While it says "pointer"
+   the focus ring is empty; with no attribute at all (no script, or the tracker
+   not installed) every ring shows. Each selector outranks a scope that declares
+   --focus-ring in foundation.css: a mode class on the root, the system-dark
+   fallback (:root:not(.light):not(.dark)), and a light or dark island. */
+:root[data-input-modality="pointer"],
+:root[data-input-modality="pointer"]:not(.light):not(.dark),
+:root[data-input-modality="pointer"] :is(.light, .dark) {
+  --focus-ring: 0 0 transparent;
+}
+
+/* The same gate for a focus indicator not drawn with --focus-ring (an outline,
+   an inset ring): it matches unless the last input was a pointer. Stack it on
+   the state, `focus-visible:keyboard:outline-2`. Anchored on the element's own
+   class, so it costs WebKit no ancestor dependency on unrelated elements. */
+@custom-variant keyboard (&:not(:where(:root[data-input-modality="pointer"] *)));
+
+@theme {
+  --color-black: oklch(0 0 0);
+  --color-white: oklch(1 0 0);
+
+  /* Bare palette utilities (`bg-palette-yellow`). The numbered ramps
+     (`--palette-yellow-400`) are plain variables in foundation.css and
+     deliberately not utilities; reach for semantic tokens first. */
+  --color-palette-yellow: var(--palette-yellow-400);
+  --color-palette-lavender: var(--palette-lavender-400);
+  --color-palette-pink: var(--palette-pink-400);
+  --color-palette-cyan: var(--palette-cyan-400);
+  --color-palette-orange: var(--palette-orange-400);
+  --color-palette-lime: var(--palette-lime-400);
+  --color-palette-red: var(--palette-red-400);
+  --color-palette-stone: var(--palette-stone-400);
+  --color-palette-cream: var(--palette-cream-200);
+
+  --ease-slide: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Raft Design System shape scale: pixels are hard, containers are soft.
+     sticker = avatars, channel tiles, checkboxes, counts, inline marks;
+     chip = chips, a popup's highlighted item, and every control embedded in
+     another component's frame (a field's buttons, the composer's, a floating
+     toolbar's, a card's corner action); control = buttons, fields and rows
+     that stand on their own; container = cards, menus, composer, banners;
+     dialog = dialogs and sheet tops. Round (rounded-full) is only for
+     switches, radios and grab handles, and for two exceptions: a task's
+     completion control and the Android pull-to-refresh disc. A frame keeps
+     its radius whatever it holds: the element keeps its own, and the space
+     around it adapts (design/foundations/shape.md#inside-a-frame). */
+  --radius-sticker: 4px;
+  --radius-chip: 6px;
+  --radius-control: 8px;
+  --radius-container: 10px;
+  --radius-dialog: 16px;
+
+  /* Raft Design System type styles (size / line-height / weight). Grotesk is
+     what people say; pair the mono styles with `font-mono` for what machines
+     write (ids, times, counts, events, code). These are the phone values; the
+     desktop block below the theme sets the working sizes again on a desktop
+     (from 768px with a mouse or trackpad). */
+  --text-hero: 40px;
+  --text-hero--line-height: 44px;
+  --text-hero--font-weight: 700;
+  --text-hero--letter-spacing: -0.03em;
+  --text-display: 34px;
+  --text-display--line-height: 40px;
+  --text-display--font-weight: 700;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 22px;
+  --text-title--line-height: 28px;
+  --text-title--font-weight: 700;
+  --text-title--letter-spacing: -0.01em;
+  --text-headline: 17px;
+  --text-headline--line-height: 22px;
+  --text-headline--font-weight: 700;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-subhead: 15px;
+  --text-subhead--line-height: 20px;
+  --text-callout: 14px;
+  --text-callout--line-height: 20px;
+  --text-footnote: 13px;
+  --text-footnote--line-height: 18px;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-caption--font-weight: 500;
+  --text-label: 11px;
+  --text-label--line-height: 13px;
+  --text-label--font-weight: 600;
+  --text-mono-meta: 12px;
+  --text-mono-meta--line-height: 16px;
+  --text-mono-code: 13px;
+  --text-mono-code--line-height: 20px;
+  /* The label of a 32px control: a Button at `md`, a panel action, a filter
+     trigger. Its own style, because on a phone it is footnote's 13px and on a
+     desktop it is 14px, where footnote drops to 12. */
+  --text-control: 13px;
+  --text-control--line-height: 18px;
+}
+
+/* A column's content margin (design/foundations/alignment.md#usage): 16px on a
+   phone, 20px from 768px (`md`) on a touch screen, 16px with a mouse. Heads, notices and footers pad by it
+   (lib/head-edges.ts). A column of list cells sets it to where its rows'
+   content starts (`listColumnMargin`): 20px at every width by touch (8px shape
+   inset + 12px), the 16px page inset with a mouse (8 + 8), so its head,
+   toolbar and rows share one line on a phone too. */
+@layer theme {
+  :root,
+  :host {
+    /* A surface's own padding (a dialog, a drawer, a panel section): 20px, the
+       page inset (16px) with a mouse on a desktop. One variable, so a caller's
+       `px-0` still replaces it (stdrc, 2026-11-05). */
+    --surface-inset: 20px;
+    --column-margin: 16px;
+    /* The sidebar's two axes with a mouse on a desktop (stdrc, 2026-11-05,
+       option B): glyphs (a row's icon or avatar, a section's title) start on
+       the glyph axis, a row's text on the text axis; a row's shape is the
+       box inset from the sidebar's edges, its content 8px inside it. */
+    --sidebar-glyph-axis: var(--page-inset);
+    --sidebar-text-axis: calc(var(--sidebar-glyph-axis) + 24px);
+  }
+  @media (width >= 48rem) {
+    :root,
+    :host {
+      --column-margin: 20px;
+    }
+  }
+  /* With a mouse on a desktop 16px, the page inset: the compact heads and the
+     content under them share one tighter edge (stdrc, 2026-11-05). */
+  @media (width >= 48rem) and (pointer: fine) {
+    :root,
+    :host {
+      --column-margin: var(--page-inset);
+      --surface-inset: var(--page-inset);
+    }
+  }
+}
+
+/* Desktop type: from 768px (Tailwind's `md`, where the desktop layout begins)
+   with a mouse or trackpad, the same query as the desktop metrics in
+   foundation.css. Feishu's PC scale, 14/22 for reading, 12px for notes (on an
+   18px line, see typography.md), 16/24 for titles. A phone, and a touch
+   screen at any width, keep the theme's values, Feishu's mobile scale. The
+   type utilities read these variables (`font-size: var(--text-body)`), so
+   every component follows without a breakpoint of its own. This block comes
+   after Tailwind's theme output, so it also wins over an app's own `@theme`
+   values for these names: an app that changes one sets it inside this query
+   as well. Hero, display, title and label stay as they are: setup pages and
+   the phone tab bar. */
+@layer theme {
+  @media (width >= 48rem) and (pointer: fine) {
+    :root,
+    :host {
+      --text-headline: 16px;
+      --text-headline--line-height: 24px;
+      --text-body: 14px;
+      --text-body--line-height: 22px;
+      --text-subhead: 14px;
+      --text-subhead--line-height: 22px;
+      --text-callout: 14px;
+      --text-callout--line-height: 22px;
+      --text-footnote: 12px;
+      --text-footnote--line-height: 18px;
+      --text-caption: 12px;
+      --text-caption--line-height: 18px;
+      --text-mono-meta: 12px;
+      --text-mono-meta--line-height: 18px;
+      --text-mono-code: 13px;
+      --text-mono-code--line-height: 20px;
+      --text-control: 14px;
+      --text-control--line-height: 22px;
+    }
+  }
+}
+
+/* Raft Design System layer order (design/foundations/elevation.md#layer-order).
+   Each name is an ordinary Tailwind `z-*` utility (`z-raised`, `max-md:z-chrome`,
+   `before:z-below`) and a variable for CSS (`var(--z-index-sticky)`). In-page
+   layers stay below 50, where the overlays begin; nothing sits above toasts or
+   the drag lift. `z-below`, `z-base` and `z-raised` are local: the component's
+   root is `isolate`, so they rank parts inside it only. A component that needs
+   a third local layer orders it by DOM order inside its own `isolate`.
+   Static, so every variable exists for an app's own CSS whether or not a
+   utility uses it. `z-index-named.test.ts` keeps the order. */
+@theme static {
+  --z-index-below: -1;
+  --z-index-base: 0;
+  --z-index-raised: 1;
+  --z-index-control: 10;
+  --z-index-sticky: 20;
+  --z-index-float: 30;
+  --z-index-chrome: 35;
+  --z-index-cover: 40;
+  --z-index-app: 45;
+  --z-index-scrollbar: 49;
+  --z-index-popup: 50;
+  --z-index-dialog: 50;
+  --z-index-dialog-layer: 60;
+  --z-index-lightbox: 70;
+  --z-index-toast: 80;
+  --z-index-drag: 999;
+}
+
+@theme inline {
+  /* A drag settling: the drop and cancel glide, siblings sliding apart, a
+     layout reflowing on a drop (design/foundations/motion.md). */
+  --ease-drag-settle: var(--motion-drag-settle-easing);
+
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-hint: var(--foreground-hint);
+  --color-foreground-disabled: var(--foreground-disabled);
+  --color-foreground-inverse: var(--foreground-inverse);
+  --color-foreground-active: var(--foreground-active);
+  --color-foreground-hover: var(--foreground-hover);
+
+  --color-layer-canvas: var(--layer-canvas);
+  --color-layer-sidebar: var(--layer-sidebar);
+  --color-layer-popover: var(--layer-popover);
+  --color-layer-backdrop: var(--layer-backdrop);
+  --color-layer-backdrop-nested: var(--layer-backdrop-nested);
+  --color-layer-veil: var(--layer-veil);
+  --color-layer-card: var(--layer-card);
+  --color-layer-hud: var(--layer-hud);
+  --color-foreground-on-hud: var(--foreground-on-hud);
+  --color-foreground-on-hud-muted: var(--foreground-on-hud-muted);
+
+  --color-fill-muted: var(--fill-muted);
+  --color-fill-strong: var(--fill-strong);
+
+  --color-line-strong: var(--line-strong);
+  --color-line-hairline: var(--line-hairline);
+  --color-line-field: var(--line-field);
+  --color-line-field-hover: var(--line-field-hover);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-4: var(--ink-4);
+  --color-ink-6: var(--ink-6);
+  --color-ink-8: var(--ink-8);
+  --color-ink-10: var(--ink-10);
+  --color-ink-16: var(--ink-16);
+  --color-ink-20: var(--ink-20);
+  --color-ink-30: var(--ink-30);
+  --color-ink-40: var(--ink-40);
+
+  --color-brand: var(--brand-400);
+  --color-brand-edge: var(--brand-edge);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-selection: var(--selection);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-active: var(--brand-active);
+  --color-you: var(--you);
+  --color-selected: var(--selected);
+
+  --color-attention: var(--attention-400);
+  --color-attention-50: var(--attention-50);
+  --color-attention-100: var(--attention-100);
+  --color-attention-200: var(--attention-200);
+  --color-attention-300: var(--attention-300);
+  --color-attention-400: var(--attention-400);
+  --color-attention-500: var(--attention-500);
+  --color-attention-600: var(--attention-600);
+  --color-attention-700: var(--attention-700);
+  --color-attention-800: var(--attention-800);
+  --color-attention-900: var(--attention-900);
+  --color-attention-950: var(--attention-950);
+  --color-attention-strong: var(--attention-strong);
+  --color-attention-soft: var(--attention-soft);
+  --color-attention-hover: var(--attention-hover);
+  --color-attention-active: var(--attention-active);
+
+  --color-info: var(--info);
+  --color-info-strong: var(--info-strong);
+  --color-info-muted: var(--info-muted);
+  --color-info-soft: var(--info-soft);
+  --color-info-hover: var(--info-hover);
+  --color-info-active: var(--info-active);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-strong: var(--success-strong);
+  --color-success-muted: var(--success-muted);
+  --color-success-soft: var(--success-soft);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-strong: var(--warning-strong);
+  --color-warning-muted: var(--warning-muted);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-graphic: var(--warning-graphic);
+  --color-warning-hover: var(--warning-hover);
+  --color-warning-active: var(--warning-active);
+
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-strong: var(--danger-strong);
+  --color-danger-muted: var(--danger-muted);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-active: var(--danger-active);
+
+  --color-inactive: var(--inactive);
+  --color-inactive-foreground: var(--inactive-foreground);
+  --color-inactive-soft: var(--inactive-soft);
+
+  /* Raft Design System roles (stamped by every theme scope). */
+  --color-line-seam: var(--line-seam);
+  --color-layer-frame: var(--layer-frame);
+  --color-layer-frame-active: var(--layer-frame-active);
+  --color-line-frame-active: var(--line-frame-active);
+  --color-foreground-on-frame: var(--foreground-on-frame);
+  --color-foreground-on-frame-muted: var(--foreground-on-frame-muted);
+  --color-foreground-on-frame-active: var(--foreground-on-frame-active);
+  --color-fill-subtle: var(--fill-subtle);
+  --color-fill-medium: var(--fill-medium);
+  --color-fill-frame-medium: var(--fill-frame-medium);
+  --color-fill-cell-hover: var(--fill-cell-hover);
+  --color-fill-cell-press: var(--fill-cell-press);
+  --color-fill-cell-selected: var(--fill-cell-selected);
+  --color-layer-code: var(--layer-code);
+  --color-foreground-link: var(--foreground-link);
+  --color-sticker-ink: var(--sticker-ink);
+  --color-sticker-paper: var(--sticker-paper);
+  --color-sticker-edge: var(--sticker-edge);
+  --color-sticker-medium: var(--sticker-medium);
+  --color-sticker-ink-medium: var(--sticker-ink-medium);
+  --color-presence-online: var(--presence-online);
+  --color-presence-busy: var(--presence-busy);
+  --color-presence-busy-soft: var(--presence-busy-soft);
+  --color-presence-error: var(--presence-error);
+  --color-presence-offline: var(--presence-offline);
+  --color-presence-external: var(--presence-external);
+  --color-read-mark: var(--read-mark);
+
+  /* Task-status scale for Tailwind (`bg-task-status-todo`, `text-task-status-*`,
+     …). One slot per state plus its soft wash / strong ink; all four theme
+     scopes in foundation.css define the underlying values. */
+  --color-task-status-todo: var(--task-status-todo);
+  --color-task-status-todo-soft: var(--task-status-todo-soft);
+  --color-task-status-todo-strong: var(--task-status-todo-strong);
+  --color-task-status-in-progress: var(--task-status-in-progress);
+  --color-task-status-in-progress-soft: var(--task-status-in-progress-soft);
+  --color-task-status-in-progress-strong: var(--task-status-in-progress-strong);
+  --color-task-status-in-review: var(--task-status-in-review);
+  --color-task-status-in-review-soft: var(--task-status-in-review-soft);
+  --color-task-status-in-review-strong: var(--task-status-in-review-strong);
+  --color-task-status-done: var(--task-status-done);
+  --color-task-status-done-soft: var(--task-status-done-soft);
+  --color-task-status-done-strong: var(--task-status-done-strong);
+  --color-task-status-closed: var(--task-status-closed);
+  --color-task-status-closed-soft: var(--task-status-closed-soft);
+  --color-task-status-closed-strong: var(--task-status-closed-strong);
+
+  --shadow-float: var(--elevation-float);
+  --shadow-sticker: var(--elevation-sticker);
+  --shadow-focus: var(--focus-ring);
+
+  --font-heading: var(--heading-font, system-ui, sans-serif);
+  --font-sans: var(--sans-font, system-ui, sans-serif);
+  --font-mono: var(--mono-font, ui-monospace, monospace);
+  /* ─── Field metric axis ─────────────────────────────────────────────────────
+     The first non-colour token axis in this file. It exists because a form
+     field had no declared metrics at all: `Input` got its height from `py-2`
+     plus inherited line-height, `SelectTrigger` borrowed the Button size scale
+     because it is built on Button, and a Select popup declared its own
+     typography with no relation to the field it belongs to. Three components,
+     three different sizes for the same value.
+
+     Consumers: `Input`, `Textarea`, the field variant of `SelectTrigger`, and
+     Select popup options. Textarea shares the Input typography contract while
+     retaining its independent min-height and resize behavior. Options share
+     font-size/weight/line-height with the trigger so a value does not change
+     size when the list opens; their height and padding stay independent,
+     because a list row is not a control and must not be stretched to the
+     field's height.
+
+     Raft's Select contract, not an industry rule — both conventions exist. */
+  --text-field: var(--field-font-size);
+  --text-field--line-height: var(--field-line-height);
+  --font-weight-field: var(--field-font-weight);
+  /* ─── Card-title metric axis ────────────────────────────────────────────────
+     Same pattern as the field axis, for CardTitle. Consumers that vertically
+     align a control (radio, checkbox) with a card title need the title's
+     line-height to size the alignment container — without it, the value must
+     be hard-coded per theme and drifts when the title recipe changes.
+
+     Consumers: `CardTitle`, plus any composition that lays a control beside a
+     card title (radio-card and checkbox-card patterns in the Raft web app). */
+  --text-card-title: var(--card-title-font-size);
+  --text-card-title--line-height: var(--card-title-line-height);
+  --font-weight-card-title: var(--card-title-font-weight);
+  /* ─── Control metric axis ───────────────────────────────────────────────────
+     The height of a default control: 44px on a phone and on a touch screen,
+     32px from 768px with a mouse or trackpad (Feishu's PC default). The
+     tokens switch in foundation.css, so a recipe writes `h-control` /
+     `size-control` and never a breakpoint. A button at this height keeps a 44px hit area with
+     `after:-inset-y-control-hit`, which is 0 on a phone.
+
+     Consumers: `Input`, `InputGroup`, `SelectTrigger`,
+     `ComboboxControl`, `ComboboxChips`, `ComboboxSelect`, `PanelAction`, and
+     Button at `lg`, `xl` (`h-control-cta`) and `icon-lg` (`size-control-icon`
+     for its icon). */
+  --spacing-control: var(--control-height);
+  --spacing-control-cta: var(--control-height-cta);
+  --spacing-control-icon: var(--control-icon-size);
+  --spacing-control-hit: var(--control-hit-inset);
+  /* A chip or a button embedded in a frame sits `embedded-inset` (6px) inside
+     the frame's outer edge on every side and from its sibling; in a field it
+     is `control-embedded` tall, 22px on a desktop and 32px on a phone, so the
+     field keeps the control height (design/foundations/shape.md#inside-a-frame).
+     Consumers: `ComboboxChips`, `ComboboxControl`, `ComboboxSelect`,
+     InputGroup's end addon, the composer, CodeBlock and the corner actions of
+     MessageAttachment. */
+  --spacing-control-embedded: var(--control-embedded-size);
+  --spacing-embedded-inset: var(--control-embedded-inset);
+  /* ─── Timeline rhythm ───────────────────────────────────────────────────────
+     Two steps between the lines of a conversation, measured from text to text
+     (design/foundations/spacing.md#timeline-rhythm): `timeline-message` (16px)
+     between turns, `timeline-section` (24px) at a boundary. Every row carries
+     `timeline-row` (4px) above and below its text, the reach of its highlight;
+     a turn's first row adds `timeline-turn` (8px, a transparent border the
+     highlight doesn't paint) above that, so it starts `timeline-lead` (12px)
+     above its text. A date line takes those insets back out of its own
+     padding, so it sits a section from the text on both sides.
+     A product uses only two of them, around its list: `timeline-start`
+     over the first row (a section less the lead every row brings, the
+     notice included) and `timeline-end` under the last row (a section less
+     its row inset); `turn` and `lead` stay inside the components.
+
+     Consumers: MessageItem, SystemMessage, MessageListDateDivider,
+     MessageListNotice, ThreadPanelReplySummary, and the product's list top
+     and end. */
+  --spacing-timeline-message: var(--timeline-gap-message);
+  --spacing-timeline-section: var(--timeline-gap-section);
+  --spacing-timeline-row: var(--timeline-row-inset);
+  --spacing-timeline-turn: calc(var(--timeline-gap-message) - 2 * var(--timeline-row-inset));
+  --spacing-timeline-lead: calc(var(--timeline-gap-message) - var(--timeline-row-inset));
+  --spacing-timeline-end: calc(var(--timeline-gap-section) - var(--timeline-row-inset));
+  --spacing-timeline-start: calc(
+    var(--timeline-gap-section) - var(--timeline-gap-message) + var(--timeline-row-inset)
+  );
+  /* ─── Option metric axis ────────────────────────────────────────────────────
+     An option in a popup list (a Select, Combobox or ComboboxSelect option, a
+     menu item) is as tall as its content, with the same space above and below
+     its text whatever that content is (design/patterns/forms.md#option-height).
+     `py-option-inset` is that space: what a 36px row leaves around one line of the
+     option's own type (`1lh`, so 7px around a 22px line, 8px around 20px, 6px
+     around 24px). One line is exactly 36px; a second line, wrapped or a
+     description, adds its own height and nothing else. `min-h-option` is the
+     floor for an option with no text line, such as an empty one.
+
+     Consumers: `SelectItem`, `ComboboxItem`, the menu items of `DropdownMenu`
+     and `ContextMenu`, and `.r-combobox-select__option` (which writes the same
+     calc in its CSS). */
+  --spacing-option: var(--option-height);
+  --spacing-option-inset: calc((var(--option-height) - 1lh) / 2);
+  /* ─── Icon inset ────────────────────────────────────────────────────────────
+     How far a frameless icon button's icon box sits inside its edge:
+     (button - icon) / 2. 7px for a 32px button with an 18px icon, 11px for a
+     44px one with a 22px icon. The button declares it (`--icon-inset`, see
+     lib/head-edges.ts) and a head pulls its first and last child outward by
+     it (`-ml-icon-inset`, `-mr-icon-inset`), so the icon box, not the button,
+     lands on the head's content margin at every button size
+     (design/foundations/alignment.md#the-ends-of-a-header). A shape or text
+     declares nothing and stays on the margin. */
+  --spacing-icon-inset: var(--icon-inset);
+
+  /* A former utility name, still used outside raft-ui: use `bg-fill-subtle`. */
+  --color-fill-row-hover: var(--fill-subtle);
+}
+
+/* Not inherited, so a wrapper never takes its button's inset: only the element
+   that declares it moves. */
+@property --icon-inset {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* A reference chip's own type size, kept as a length so a smaller note inside
+   it can measure itself against the label (message-reference.recipe.ts). */
+@property --message-reference-em {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+*,
+::before,
+::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  position: relative;
+}
+
+/* Browser autofill paints its own fill over a field (Chrome's pale blue,
+   Safari's yellow), so a filled-in login form showed fields that matched no
+   other field (design/foundations/states.md#autofill). The browser sets that
+   fill !important, so it can't be overridden; delaying the transition into it
+   keeps the field on its own surface, and the text keeps the field's ink.
+   box-shadow keeps the fields' own transition (the focus ring). The delay
+   also holds the field's own background while it stays autofilled: switching
+   light and dark mode then keeps the old surface until the field is edited. */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  transition:
+    background-color 0s 600000s,
+    color 0s 600000s,
+    box-shadow 90ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+input:-webkit-autofill:disabled,
+textarea:-webkit-autofill:disabled {
+  -webkit-text-fill-color: var(--foreground-disabled);
+}
+
+/* The passages comments are on, painted with the CSS Custom Highlight API so
+   the document's DOM is never changed (setCommentHighlights registers the
+   ranges; design/patterns/comments.md). Every commented passage gets the soft
+   yellow of a highlight and a 2px yellow underline; the passage of the open
+   discussion gets the full yellow with ink type, like a search hit, in both
+   modes. `--brand-400` is the `brand` role (what `bg-brand` paints):
+   `--color-brand` is an inline theme value and emits no variable. In dark
+   mode the wash is `--selection` (brand at 22%), kept in one place. The wash
+   is environment and follows the theme; the open passage is addressed to you,
+   so it takes `--you` and stays yellow in every theme (themes.md). */
+::highlight(raft-comment) {
+  background-color: light-dark(
+    color-mix(in oklch, var(--brand-400) 35%, transparent),
+    var(--selection)
+  );
+  text-decoration-line: underline;
+  text-decoration-color: var(--brand-400);
+  text-decoration-thickness: 2px;
+}
+
+::highlight(raft-comment-active) {
+  background-color: var(--you);
+  color: var(--sticker-ink);
+  text-decoration-line: none;
+}
+
+/* Located: the item a jump took someone to (a link to a message, Back to the
+   results, a comment's anchor, the rows a bulk change touched) shows
+   `info-soft` at once, holds it 1.2s, fades out over 0.8s and is gone at 2s
+   (design/foundations/states.md#located). The fill is a registered colour so
+   it can animate; it is painted as a layer over the item's own fill, so a
+   row's surface stays underneath and comes back as the cyan fades.
+   - Stronger marks win: an item that is selected, active, current, a search
+     match, checked, or has its popup open isn't painted; its own mark already
+     says where it is.
+   - Unlayered, so it beats the hover utilities (a located item doesn't answer
+     hover: the pointer often rests where the item lands, and a grey would
+     hide the cyan). Not while pressed: :active lets the press tier show.
+   - The app sets data-located through useLocated (lib/located.ts), which
+     drops it after LOCATED_MS. Setting the attribute again while it is on
+     doesn't restart the animation; it restarts only after it was removed
+     for a frame, which useLocated does. Left on, the end state is a
+     transparent layer that still hides hover, so don't set it by hand.
+   - A message row takes the fill as --mi-row-fill instead: its resting
+     fill is var(--located-fill), so its own marks (an open menu, a search
+     match, a checked box) override it like any other state, with no has-selector
+     here, and the delegated face's ring keeps matching the row
+     (message-item.recipe.ts). */
+@property --located-fill {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
+@keyframes raft-located {
+  0%,
+  60% {
+    --located-fill: var(--located-tint, var(--info-soft));
+    animation-timing-function: ease-out;
+  }
+  100% {
+    --located-fill: transparent;
+  }
+}
+
+@keyframes raft-located-still {
+  from,
+  to {
+    --located-fill: var(--located-tint, var(--info-soft));
+  }
+}
+
+/* The shorthand replaces any animation of the element's own while it is
+   located; no raft-ui row has one. It runs on every located item, marked or
+   not, so a mark that comes and goes (a popup opened and closed) doesn't
+   start the highlight over. A list cell runs it on its shape instead (below). */
+[data-located]:not(.list-cell) {
+  animation: var(--located-animation, raft-located) 2s linear;
+}
+
+[data-located]:not(
+  [data-message-item],
+  .list-cell,
+  :active,
+  [data-selected]:not([data-selected="false"]),
+  [data-active="true"],
+  [aria-selected="true"],
+  [aria-current]:not([aria-current="false"]),
+  [data-popup-open]
+) {
+  background-image: linear-gradient(var(--located-fill), var(--located-fill));
+}
+
+/* A list cell (lib/list-cell.ts, marked with the `list-cell` class, which
+   survives a row rendered through another part's `render`, where its
+   data-slot doesn't) draws its states on its inset ::before shape and leaves
+   the row transparent, so its located fill is painted there too, in the
+   cell's selected tint (fill-cell-selected, stronger in dark). The animation
+   runs on the shape: the registered fill doesn't inherit. */
+.list-cell[data-located]::before {
+  --located-tint: var(--fill-cell-selected);
+  animation: var(--located-animation, raft-located) 2s linear;
+}
+
+.list-cell[data-located]:not(
+    :active,
+    [data-selected]:not([data-selected="false"]),
+    [data-active]:not([data-active="false"]),
+    [aria-selected="true"],
+    [aria-current]:not([aria-current="false"]),
+    [data-popup-open]
+  )::before {
+  background-image: linear-gradient(var(--located-fill), var(--located-fill));
+}
+
+/* Reduced motion: the same 2s, held still, then off without a fade. */
+@media (prefers-reduced-motion: reduce) {
+  [data-located] {
+    --located-animation: raft-located-still;
+  }
+}
+
+/* Dimmed: something present but not active, deleted, offline or still
+   pending, at 60% (design/foundations/states.md#dimmed). Lighter than the 40%
+   of a drag origin, which says "it was here", not "it is here, inactive". */
+@utility opacity-dimmed {
+  opacity: var(--opacity-dimmed);
+}
+
+/* Content fades (design/foundations/spacing.md#edges-fade): a mask, never a
+   colour gradient, so whatever is behind the content (a row's hover or
+   located fill, a card, a tint) shows through the fade unchanged.
+   mask-fade-t / mask-fade-b fade the top or bottom edge over fade-content
+   (48px), where content is cut: a fold, a glimpse. mask-fade-x fades the
+   sides of a strip that scrolls sideways over fade-edge (24px), on the side
+   its data-overflow names (start, end or both) and nowhere without it.
+   mask-fade-t-edge / mask-fade-b-edge take the edge length instead, for a
+   fold too short to give 48px to the fade. */
+@utility mask-fade-t {
+  mask-image: linear-gradient(to bottom, transparent, oklch(0 0 0) var(--fade-content));
+}
+
+@utility mask-fade-t-edge {
+  mask-image: linear-gradient(to bottom, transparent, oklch(0 0 0) var(--fade-edge));
+}
+
+@utility mask-fade-b {
+  mask-image: linear-gradient(to top, transparent, oklch(0 0 0) var(--fade-content));
+}
+
+@utility mask-fade-b-edge {
+  mask-image: linear-gradient(to top, transparent, oklch(0 0 0) var(--fade-edge));
+}
+
+@utility mask-fade-x {
+  &[data-overflow="start"] {
+    mask-image: linear-gradient(to right, transparent, oklch(0 0 0) var(--fade-edge));
+  }
+  &[data-overflow="end"] {
+    mask-image: linear-gradient(to left, transparent, oklch(0 0 0) var(--fade-edge));
+  }
+  &[data-overflow="both"] {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      oklch(0 0 0) var(--fade-edge),
+      oklch(0 0 0) calc(100% - var(--fade-edge)),
+      transparent
+    );
+  }
+}
+
+/* Drag and drop (design/patterns/drag-and-drop.md). While something is
+   lifted, DragLift sets data-dragging on the root, and DragRefusalHint sets
+   data-drag-refused while the place under the hand refuses it: the cursor
+   says so over everything, whatever the element under it would show. The
+   item a drag came from carries data-drag-origin and stays in place at 40%
+   until something else takes its place, and a container it has moved into
+   carries data-drag-into. Unlayered, so no utility on the
+   item overrides the one value. */
+:root[data-dragging],
+:root[data-dragging] * {
+  cursor: grabbing !important;
+}
+
+:root[data-drag-refused],
+:root[data-drag-refused] * {
+  cursor: not-allowed !important;
+}
+
+[data-drag-origin] {
+  opacity: 0.4;
+}
+
+/* A container the dragged item has moved into (another sidebar section, a
+   row it drops onto) takes the subtle hover tier while the item is in it. */
+[data-drag-into] {
+  background-color: var(--fill-subtle);
+}
+
+/* MessageItemTrailing (message-item.md#trailing): no column of its own. The
+   slot finds its body's last block itself and stamps it, so every rule ends in
+   an attribute (packages/ui/CLAUDE.md, Selector Cost; no parent-of selector
+   either, #386):
+   - data-trailing-line on the last text block (a paragraph, a heading, a
+     list's last item, a quote's last paragraph): it keeps an inline spacer as
+     wide as the slot (--message-trailing-width, set on the body), so the slot
+     sits at the end of the last line and the text wraps under it only when
+     that line is full;
+   - data-trailing="block" on the body when it ends with any other block (a
+     code block, a table, an image): the body keeps one line under it, where
+     the slot sits.
+   The body is the slot's containing block; the last block's bottom margin
+   still collapses out of it, so the slot stays on the last line. */
+[data-slot="message-item-body"][data-trailing] {
+  position: relative;
+}
+[data-slot="message-item-body"][data-trailing="block"] {
+  padding-block-end: 1lh;
+}
+[data-trailing-line]::after {
+  content: "";
+  display: inline-block;
+  inline-size: var(--message-trailing-width, 0px);
+  block-size: 1px;
+}
+
+@utility image-transparency-bg {
+  --checker-cell: light-dark(oklch(0.1813 0.00497 17.62 / 0.12), oklch(1 0 0 / 0.1));
+  background-color: light-dark(oklch(1 0 0), oklch(0.23 0 0));
+  background-image:
+    linear-gradient(45deg, var(--checker-cell) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-cell) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-cell) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-cell) 75%);
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+  background-size: 16px 16px;
+}
+
+/* Raft Design System hover and press: two tiers, each a translucent ink
+   layer over the resting colour instead of a swap, so a control keeps its
+   identity and the step looks the same on white, the yellowish sidebar and a
+   card (design/foundations/states.md#hover-and-press).
+   overlay-subtle: hover on large things people read (rows, messages, readable
+   cards) and a row whose menu is open.
+   overlay-medium: hover on small controls and press on everything; on a colour
+   sticker overlay-sticker-medium, on the frame overlay-frame-medium.
+   Use the bg-fill-* colours instead on a transparent control whose fill fades
+   in with transition-colors. */
+/* Theme decorations on the frame (themes.css): the theme's sprites on the top
+   bar's right and above the rail's foot; none without a decorated theme. */
+/* The top bar's strip (190px) ends --frame-decor-top-end (72px if unset)
+   left of the bar's right-hand controls' safe area, --raft-frame-inset-end
+   (the window's caption buttons on a desktop shell; 0 on the web). The bar
+   must reach the window's right edge: the position counts from its padding
+   box, so padding that reserves the same corner is not counted twice. The
+   consumer sets --frame-decor-top-end to its trailing actions' width plus
+   16px, measured from inside the safe area, and sets --frame-decor-top: none
+   on the bar when the room between the search field and those actions can't
+   hold the whole strip with 16px on each side; never half a strip. Only from
+   1024px, where the centred search field leaves room for it. */
+@utility frame-decor-top {
+  background-repeat: no-repeat;
+  background-position: right
+    calc(var(--frame-decor-top-end, 72px) + var(--raft-frame-inset-end, 0px)) center;
+  @media (width >= 1024px) {
+    background-image: var(--frame-decor-top, none);
+  }
+}
+
+/* The rail's strip (48×112), for the nav's last flex item: laid out after
+   the items, so it never sits behind one, and clipped from the top when the
+   rail has less room than the strip. */
+@utility frame-decor-rail {
+  background-image: var(--frame-decor-rail, none);
+  background-repeat: no-repeat;
+  background-position: center bottom;
+}
+
+@utility overlay-subtle {
+  background-image: linear-gradient(var(--fill-subtle), var(--fill-subtle));
+}
+
+@utility overlay-medium {
+  background-image: linear-gradient(var(--fill-medium), var(--fill-medium));
+}
+
+@utility overlay-sticker-medium {
+  background-image: linear-gradient(var(--sticker-medium), var(--sticker-medium));
+}
+
+@utility overlay-sticker-ink-medium {
+  background-image: linear-gradient(var(--sticker-ink-medium), var(--sticker-ink-medium));
+}
+
+@utility overlay-frame-medium {
+  background-image: linear-gradient(var(--fill-frame-medium), var(--fill-frame-medium));
+}
+
+/* A mark that leads a line of text: the icon at the start of a banner, a
+   toast or a panel notice, or the status light of a chip, sits on the first
+   line of its text, centred on it, and stays there when the text wraps
+   (design/foundations/alignment.md#a-mark-that-leads-text). In Space
+   Grotesk's metrics the centre of the line box is the centre of the cap
+   height (to 0.006em); Chromium's rounding can lift the letters 0.5px, which
+   is left alone, as the alignment page explains. Only
+   the place is shared: each component keeps its own icon size and gap.
+
+   `lead-icon` centres an icon of any size on the line its parent sets, by
+   moving it half a line down and back up by half its own height. Set the
+   type on the row that holds the mark and the text, as PanelNotice does:
+   the mark reads `1lh` from it.
+
+   `lead-dot` places a status light the same way, in a box one line tall,
+   and keeps it at its one size beside text, 10px with a 1.5px ink edge
+   (status.md#sizes). It is kept at 10px inside components (Badge,
+   PanelActivity, a panel header); when placing Status yourself, don't pass
+   a size. A notice never uses a status light to say what kind of notice
+   it is; it leads with its intent's icon (status.md#sizes). */
+@utility lead-icon {
+  flex-shrink: 0;
+  align-self: start;
+  translate: 0 calc(0.5lh - 50%);
+}
+@utility lead-dot {
+  --lead-dot: 10px;
+  flex-shrink: 0;
+  width: var(--lead-dot);
+  height: var(--lead-dot);
+  border-width: 1.5px;
+  margin-block: calc((1lh - var(--lead-dot)) / 2);
+}
+
+/* The marker of a list cell (lib/list-cell.ts), read by the located rules
+   above. */
+@utility list-cell {
+  --list-cell: 1;
+}
+
+/* For a native scroller of list cells that can't be a ScrollArea
+   (design/patterns/lists.md; raft-ui's own list scrollers are ScrollAreas,
+   whose overlay scrollbar takes no room): an 8px classic scrollbar with a 4px thumb, so a cell's
+   end inset can come out of the scrollbar's own width and its fill sits 8px
+   from both edges of the list. Styling ::-webkit-scrollbar makes Chromium
+   draw this classic, always-visible 8px bar even where the platform's own
+   scrollbar would overlay (a phone, macOS by default), so the bar takes 8px
+   of room wherever the list scrolls. Pair it with useScrollbarSize, which
+   publishes the width the bar really takes (8px, or 0 where it doesn't
+   show), so the shape stays 8px from both edges either way. scrollbar-width and
+   scrollbar-color stay auto: either one switches Chromium off the
+   ::-webkit-scrollbar styling. Firefox takes its thin scrollbar, 8px. */
+@utility scrollbar-list {
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    min-height: 32px;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    background: color-mix(in oklch, var(--foreground) 24%, transparent);
+    background-clip: padding-box;
+  }
+  @media (hover: hover) {
+    &:hover::-webkit-scrollbar-thumb {
+      background-color: color-mix(in oklch, var(--foreground) 36%, transparent);
+    }
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 24%, transparent) transparent;
+  }
+}
+
+/* Space and rules between siblings: stack-y-* / stack-x-* and rule-y / rule-x
+   / rule-<colour>. Use these, never Tailwind's space-* and divide-*.
+
+   Tailwind v4 compiles space-* and divide-* to `:where(.x > :not(:last-child))`.
+   Its rightmost part has no class, so WebKit (every iOS browser) tests it
+   against every element and marks every parent as depending on which child is
+   last. Appending or removing a last child anywhere then restyles the previous
+   last child's whole subtree: 180-430ms when a chat's bottom controls mount
+   after its timeline. Chromium does not pay this, so it only shows on iOS.
+   The owl `> * + *` depends only on the previous sibling, so appending at the
+   end restyles nothing. Zero specificity, like Tailwind's, so a child's own
+   margin or border class still wins. */
+@utility stack-y-* {
+  :where(& > * + *) {
+    margin-block-start: calc(var(--spacing) * --value(number));
+    margin-block-start: --value([length]);
+  }
+}
+@utility stack-y-px {
+  :where(& > * + *) {
+    margin-block-start: 1px;
+  }
+}
+@utility stack-x-* {
+  :where(& > * + *) {
+    margin-inline-start: calc(var(--spacing) * --value(number));
+    margin-inline-start: --value([length]);
+  }
+}
+@utility -stack-x-* {
+  :where(& > * + *) {
+    margin-inline-start: calc(var(--spacing) * --value(number) * -1);
+    margin-inline-start: calc(--value([length]) * -1);
+  }
+}
+@utility rule-y {
+  :where(& > * + *) {
+    border-block-start-width: 1px;
+    border-block-start-style: solid;
+  }
+}
+@utility rule-x {
+  :where(& > * + *) {
+    border-inline-start-width: 1px;
+    border-inline-start-style: solid;
+  }
+}
+@utility rule-* {
+  :where(& > * + *) {
+    border-color: --value(--color-*, [color]);
+  }
+}

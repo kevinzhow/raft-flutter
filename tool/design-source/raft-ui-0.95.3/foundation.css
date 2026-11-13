@@ -1,0 +1,709 @@
+/* Generated from tokens.json by scripts/build-tokens.mjs. Do not edit this
+   file: change tokens.json, then run `vp run @botiverse/raft-ui#build:tokens`.
+
+   ─── Token grammar ──────────────────────────────────────────────────────────
+   Neutrals:  {role}(-{purpose})(-{intensity})
+     role      = foreground | layer | line | fill
+     purpose   = frame, sidebar, canvas, card, popover, code, hud, on-frame,
+                 on-hud, link, inverse, disabled, field, ...
+                 (unordered axis — names say where the token is used)
+     intensity = (bare default) > muted > hint for foreground;
+                 hairline < seam < strong for line
+     layer = places on the elevation ladder; fill = neutral interaction fills
+     (resting/hover/active/disabled surfaces): fill-muted and fill-strong are
+     opaque, the two hover tiers are translucent ink laid over a surface:
+     fill-subtle (hover on rows, messages and readable cards, and a row whose
+     menu is open, lighter than any selection tint) and fill-medium (hover on
+     small controls, press on everything; fill-frame-medium on the frame,
+     sticker-medium on a colour sticker).
+   Families:  {family}(-{slot})
+     family = brand | attention | info | success | warning | danger | inactive
+     slot   = -strong (deep shade: readable text, rings) > bare (solid fill)
+              > -muted (strong wash) > -soft (soft wash)
+              | -foreground (text on the solid)
+              | -hover / -active (derived interaction pair, opt-in per family;
+                an opted-in family always gets both)
+   Signals:   you | selected — the yellow of "addressed to you" and of the
+              selected sticker, with their own value so no theme grays them.
+   Washes:    ink-{alpha%} (2..40) — neutral overlays, hairlines, hover fills.
+   Opacity rule: layer tokens are opaque in every theme, except the two
+   backdrops and the veil (overlays by contract: a scrim under a modal
+   surface, a cover over something busy in place); among fills only the
+   hover tiers (fill-subtle, fill-medium, fill-frame-medium) are translucent.
+   Interaction fills: transparent resting → ink-N directly; solid family fill →
+   the family's -hover/-active pair; neutral or tinted surface → step up its ladder.
+   Escape hatches: ink ramp for one-off washes; inline oklch() literals for
+   one-off precision values (tokenize on the third repeat). */
+
+/* Raw brand ramps (the website palette) — variables only, no utility registration. Consumed by the
+   Tailwind aliases in styles.css, the brand ramps, and state families below. Then the
+   mode-independent values: the fade lengths (design/foundations/spacing.md), the dimmed
+   opacity (design/foundations/states.md) and motion (design/foundations/motion.md). */
+:where(:root) {
+  --palette-yellow-50: oklch(0.984 0.017 84.56);
+  --palette-yellow-100: oklch(0.975 0.027 85.64);
+  --palette-yellow-200: oklch(0.94 0.066 86.23);
+  --palette-yellow-300: oklch(0.913 0.103 88.02);
+  --palette-yellow-400: oklch(0.883 0.162 91.89);
+  --palette-yellow-500: oklch(0.759 0.155 92.93);
+  --palette-yellow-600: oklch(0.637 0.13 92.64);
+  --palette-yellow-700: oklch(0.508 0.104 92.9);
+  --palette-yellow-800: oklch(0.388 0.08 93.41);
+  --palette-yellow-900: oklch(0.26 0.053 92.86);
+  --palette-yellow-950: oklch(0.199 0.041 93.21);
+  --palette-lavender-50: oklch(0.976 0.008 294.09);
+  --palette-lavender-100: oklch(0.949 0.018 296.72);
+  --palette-lavender-200: oklch(0.891 0.037 294.17);
+  --palette-lavender-300: oklch(0.84 0.056 294.36);
+  --palette-lavender-400: oklch(0.783 0.078 294.55);
+  --palette-lavender-500: oklch(0.682 0.117 294);
+  --palette-lavender-600: oklch(0.575 0.157 293.61);
+  --palette-lavender-700: oklch(0.475 0.168 293);
+  --palette-lavender-800: oklch(0.367 0.131 293.06);
+  --palette-lavender-900: oklch(0.25 0.09 293.19);
+  --palette-lavender-950: oklch(0.195 0.07 292.41);
+  --palette-pink-50: oklch(0.968 0.017 359.4);
+  --palette-pink-100: oklch(0.936 0.034 2.02);
+  --palette-pink-200: oklch(0.871 0.073 0.34);
+  --palette-pink-300: oklch(0.808 0.116 0.76);
+  --palette-pink-400: oklch(0.749 0.162 0.71);
+  --palette-pink-500: oklch(0.662 0.244 0.59);
+  --palette-pink-600: oklch(0.565 0.226 0.56);
+  --palette-pink-700: oklch(0.456 0.182 0.91);
+  --palette-pink-800: oklch(0.354 0.142 0.38);
+  --palette-pink-900: oklch(0.246 0.098 0.96);
+  --palette-pink-950: oklch(0.198 0.08 359.99);
+  --palette-cyan-50: oklch(0.974 0.016 226.9);
+  --palette-cyan-100: oklch(0.945 0.033 226.27);
+  --palette-cyan-200: oklch(0.892 0.07 224.23);
+  --palette-cyan-300: oklch(0.835 0.114 220.86);
+  --palette-cyan-400: oklch(0.783 0.135 219.2);
+  --palette-cyan-500: oklch(0.672 0.116 219.07);
+  --palette-cyan-600: oklch(0.569 0.099 219.95);
+  --palette-cyan-700: oklch(0.46 0.079 219.13);
+  --palette-cyan-800: oklch(0.348 0.06 219.02);
+  --palette-cyan-900: oklch(0.246 0.043 221.18);
+  --palette-cyan-950: oklch(0.185 0.032 217.82);
+  --palette-orange-50: oklch(0.976 0.011 45.81);
+  --palette-orange-100: oklch(0.941 0.028 40.23);
+  --palette-orange-200: oklch(0.892 0.053 43.23);
+  --palette-orange-300: oklch(0.835 0.087 46.56);
+  --palette-orange-400: oklch(0.785 0.123 50.11);
+  --palette-orange-500: oklch(0.685 0.145 54.68);
+  --palette-orange-600: oklch(0.57 0.121 54.53);
+  --palette-orange-700: oklch(0.465 0.099 54.58);
+  --palette-orange-800: oklch(0.361 0.076 55.55);
+  --palette-orange-900: oklch(0.246 0.052 55.54);
+  --palette-orange-950: oklch(0.191 0.042 54.31);
+  --palette-lime-50: oklch(0.98 0.029 132.52);
+  --palette-lime-100: oklch(0.949 0.081 130.41);
+  --palette-lime-200: oklch(0.91 0.149 130.12);
+  --palette-lime-300: oklch(0.867 0.142 130.1);
+  --palette-lime-400: oklch(0.827 0.135 130.07);
+  --palette-lime-500: oklch(0.715 0.118 130.4);
+  --palette-lime-600: oklch(0.596 0.099 130.36);
+  --palette-lime-700: oklch(0.485 0.08 129.92);
+  --palette-lime-800: oklch(0.366 0.06 130.11);
+  --palette-lime-900: oklch(0.256 0.041 130.57);
+  --palette-lime-950: oklch(0.196 0.032 130.49);
+  --palette-red-50: oklch(0.968 0.014 22.88);
+  --palette-red-100: oklch(0.926 0.034 20.05);
+  --palette-red-200: oklch(0.854 0.072 22.92);
+  --palette-red-300: oklch(0.781 0.118 25.18);
+  --palette-red-400: oklch(0.711 0.168 28.04);
+  --palette-red-500: oklch(0.627 0.209 32.98);
+  --palette-red-600: oklch(0.528 0.176 33.04);
+  --palette-red-700: oklch(0.431 0.144 33.03);
+  --palette-red-800: oklch(0.331 0.11 33.1);
+  --palette-red-900: oklch(0.243 0.081 33.19);
+  --palette-red-950: oklch(0.185 0.061 34.2);
+  --palette-stone-50: oklch(0.974 0.002 67.9);
+  --palette-stone-100: oklch(0.947 0.003 67.83);
+  --palette-stone-200: oklch(0.896 0.008 73.73);
+  --palette-stone-300: oklch(0.845 0.014 71.31);
+  --palette-stone-400: oklch(0.789 0.014 71.29);
+  --palette-stone-500: oklch(0.682 0.012 76.55);
+  --palette-stone-600: oklch(0.569 0.01 67.63);
+  --palette-stone-700: oklch(0.466 0.008 67.63);
+  --palette-stone-800: oklch(0.354 0.007 67.62);
+  --palette-stone-900: oklch(0.249 0.005 67.61);
+  --palette-stone-950: oklch(0.187 0.003 67.68);
+  --palette-cream-50: oklch(0.995 0.006 87.5);
+  --palette-cream-100: oklch(0.991 0.01 87.41);
+  --palette-cream-200: oklch(0.986 0.015 86.39);
+  --palette-cream-300: oklch(0.946 0.041 88);
+  --palette-cream-400: oklch(0.871 0.09 91);
+  --palette-cream-500: oklch(0.766 0.158 95.1);
+  --palette-cream-600: oklch(0.646 0.133 95);
+  --palette-cream-700: oklch(0.521 0.107 95.2);
+  --palette-cream-800: oklch(0.396 0.082 95);
+  --palette-cream-900: oklch(0.276 0.057 95.1);
+  --palette-cream-950: oklch(0.19 0.039 94.7);
+  --fade-edge: 24px;
+  --fade-content: 48px;
+  --opacity-dimmed: 0.6;
+  --motion-drag-settle-duration: 160ms;
+  --motion-drag-settle-easing: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Raft Design System, light: yellow frame -> cream sidebar -> white paper; ink
+   lines say "control", seams split regions, hairlines sit inside content; every
+   colour block is a sticker with an ink edge and ink type. Values are the
+   system's tokens re-authored in oklch. A `.light` element is a light island
+   inside a dark page (a preview, a portal from a light scope). */
+:where(:root),
+.light {
+  color-scheme: light;
+
+  --foreground: oklch(0.1813 0.005 17.62);
+  --foreground-muted: oklch(0.1813 0.005 17.62 / 0.678);
+  --foreground-hint: oklch(0.1813 0.005 17.62 / 0.62);
+  --foreground-disabled: oklch(0.1813 0.005 17.62 / 0.302);
+  --foreground-inverse: oklch(1 0 0);
+  --foreground-on-hud: oklch(0.9647 0.0027 286.35);
+  /* Secondary text on the HUD: the shortcut in a tooltip, the detail line of a
+     toast. */
+  --foreground-on-hud-muted: oklch(0.9647 0.0027 286.35 / 0.7);
+  --foreground-on-frame: var(--sticker-ink);
+  --foreground-on-frame-muted: oklch(0.4082 0.0679 93.96);
+  --foreground-on-frame-active: var(--sticker-ink);
+  --foreground-link: oklch(0.4327 0.1282 256.54);
+  --layer-canvas: oklch(1 0 0);
+  --layer-sidebar: oklch(0.986 0.0154 86.42);
+  --layer-popover: oklch(1 0 0);
+  --layer-backdrop: oklch(0 0 0 / 0.651);
+  --layer-backdrop-nested: oklch(0 0 0 / 0.4);
+  /* The cover over something busy or loading in place: an image uploading or
+     that failed, a preview being prepared. The page at 80%, so what is under it
+     shows through, dimmed, and a default-colour Spinner on it reads in both
+     modes. Translucent by contract, like the two backdrops. */
+  --layer-veil: oklch(1 0 0 / 0.8);
+  --layer-card: oklch(1 0 0);
+  --layer-hud: oklch(0.2634 0.0093 294.92);
+  --layer-frame: oklch(0.8829 0.1623 91.9);
+  --layer-frame-active: oklch(1 0 0);
+  --layer-code: oklch(1 0 0);
+  --fill-muted: oklch(0.9642 0 0);
+  --fill-strong: oklch(0.936 0.0006 17.62);
+  /* Hover tier subtle (light): hover on large things people read, a row, a
+     message, a readable card, and a row whose menu is open. About 2.5 to 3 OKLab
+     dE in both modes, on paper, the sidebar and cards alike, under every
+     selection tint, so text keeps its contrast. */
+  --fill-subtle: oklch(0.1813 0.005 17.62 / 0.04);
+  /* Hover tier medium: hover on small controls (buttons, icon buttons, chips,
+     tabs, segment items) and press on everything, on paper-coloured surfaces.
+     About 5.5 to 6.5 OKLab dE; dark is lighter than light because the same ink
+     alpha shows more on a dark surface. */
+  --fill-medium: oklch(0.1813 0.005 17.62 / 0.078);
+  /* Hover tier medium on the frame (rail items, on-frame buttons, the workspace
+     button): hover and press. Its own alphas because ink shows differently on
+     the yellow and on the near-black frame: 10% on the yellow and 6% on the dark
+     frame land on the medium step, about 6 OKLab dE. */
+  --fill-frame-medium: oklch(0.1813 0.005 17.62 / 0.1);
+  /* A list cell's hover and its menu-open fill (lib/list-cell.ts), drawn on the
+     cell's inset shape. fill-subtle in light. In dark it steps up to 7.5% ink,
+     so the rounded shape reads on a dark surface, where fill-subtle's 3% barely
+     shows. Rows only: the global tiers don't change. */
+  --fill-cell-hover: var(--fill-subtle);
+  /* A list cell's press fill, the same with a mouse and on a touch screen.
+     fill-medium in light. In dark 12% ink, a clear step over the cell's dark
+     hover. */
+  --fill-cell-press: var(--fill-medium);
+  /* A list cell that is selected or open beside its list (an active InboxItem, a
+     selected ListRow), and the located highlight on a cell. info-soft in light.
+     In dark the cyan at 38% instead of 18%, so a selected cell stands out from a
+     hovered one. */
+  --fill-cell-selected: var(--info-soft);
+  --line-strong: oklch(0.1813 0.005 17.62);
+  --line-seam: oklch(0.1813 0.005 17.62 / 0.451);
+  --line-hairline: oklch(0.1813 0.005 17.62 / 0.149);
+  --line-frame-active: var(--sticker-ink);
+  --ink-2: oklch(0.1813 0.005 17.62 / 0.02);
+  --ink-4: oklch(0.1813 0.005 17.62 / 0.04);
+  --ink-6: oklch(0.1813 0.005 17.62 / 0.06);
+  --ink-8: oklch(0.1813 0.005 17.62 / 0.08);
+  --ink-10: oklch(0.1813 0.005 17.62 / 0.1);
+  --ink-16: oklch(0.1813 0.005 17.62 / 0.16);
+  --ink-20: oklch(0.1813 0.005 17.62 / 0.2);
+  --ink-30: oklch(0.1813 0.005 17.62 / 0.3);
+  --ink-40: oklch(0.1813 0.005 17.62 / 0.4);
+  --ink: oklch(0.1813 0.005 17.62);
+  --brand-50: var(--palette-yellow-50);
+  --brand-100: var(--palette-yellow-100);
+  --brand-200: var(--palette-yellow-200);
+  --brand-300: var(--palette-yellow-300);
+  --brand-400: oklch(0.8829 0.1623 91.9);
+  --brand-500: var(--palette-yellow-500);
+  --brand-600: var(--palette-yellow-600);
+  --brand-700: var(--palette-yellow-700);
+  --brand-800: var(--palette-yellow-800);
+  --brand-900: var(--palette-yellow-900);
+  --brand-950: var(--palette-yellow-950);
+  --brand-strong: oklch(0.4082 0.0679 93.96);
+  --brand-soft: oklch(0.9547 0.0674 93.62);
+  --brand-edge: var(--sticker-ink);
+  --brand-glow: oklch(0.8829 0.1623 91.9);
+  /* Hovering or pressing a sticker lays sticker-medium (10% ink) over its
+     colour. */
+  --brand-hover: color-mix(in srgb, var(--brand-400) 90%, var(--sticker-ink));
+  --brand-active: var(--brand-hover);
+  /* Raft yellow for what is addressed to you: a mention of you, the sidebar's @
+     marker, a search hit, the passage of the comment you opened. Its own value,
+     not brand, so a theme that grays the brand (Boring Gray) keeps it yellow. */
+  --you: oklch(0.8829 0.1623 91.9);
+  /* Raft yellow for the selected sticker: where you are (the active sidebar row,
+     a segment, a tab, the tab bar's item, the current step) and what is on (a
+     switch, a toggle, a pressed panel action). Its own value, not brand, so a
+     theme that grays the brand (Boring Gray) keeps it yellow. */
+  --selected: oklch(0.8829 0.1623 91.9);
+  --attention-50: var(--palette-pink-50);
+  --attention-100: var(--palette-pink-100);
+  --attention-200: var(--palette-pink-200);
+  --attention-300: var(--palette-pink-300);
+  --attention-400: oklch(0.7999 0.1308 354.26);
+  --attention-500: var(--palette-pink-400);
+  --attention-600: var(--palette-pink-600);
+  --attention-700: var(--palette-pink-700);
+  --attention-800: var(--palette-pink-800);
+  --attention-900: var(--palette-pink-900);
+  --attention-950: var(--palette-pink-950);
+  --attention-strong: oklch(0.52 0.215 359.77);
+  --attention-soft: oklch(0.9141 0.0482 358.59);
+  --attention-hover: color-mix(in srgb, var(--attention-400) 90%, var(--sticker-ink));
+  --attention-active: var(--attention-hover);
+  /* Every solid is a sticker: ink type on the colour in both modes. */
+  --info: oklch(0.7833 0.1353 219.21);
+  --info-strong: var(--palette-cyan-800);
+  --info-muted: var(--palette-cyan-200);
+  --info-soft: oklch(0.9452 0.0326 226.3);
+  --info-hover: color-mix(in srgb, var(--info) 90%, var(--sticker-ink));
+  --info-active: var(--info-hover);
+  --success: oklch(0.8272 0.1354 130.07);
+  --success-foreground: var(--sticker-ink);
+  --success-strong: var(--palette-lime-800);
+  --success-muted: var(--palette-lime-200);
+  --success-soft: oklch(0.9492 0.0809 130.43);
+  --warning: oklch(0.7855 0.1227 50.11);
+  --warning-foreground: var(--sticker-ink);
+  --warning-strong: var(--palette-orange-800);
+  --warning-muted: var(--palette-orange-200);
+  --warning-soft: oklch(0.9413 0.0275 40.2);
+  /* A failure or warning drawn as a graphic in data visualisation: the fill or
+     stroke of a chart mark, such as a failed route in a migration chart. The
+     warning orange, deep enough in light mode and bright in dark mode to stand
+     at least 3:1 against the canvas, sidebar, card and popover (WCAG 1.4.11).
+     Never text: warning text takes warning-strong. */
+  --warning-graphic: oklch(0.64 0.16 50);
+  --warning-hover: color-mix(in srgb, var(--warning) 90%, var(--sticker-ink));
+  --warning-active: var(--warning-hover);
+  /* danger = the destructive sticker (red fill, ink type); danger-strong is the
+     error ink for invalid fields and destructive menu items. */
+  --danger: oklch(0.711 0.1682 28.04);
+  --danger-foreground: var(--sticker-ink);
+  --danger-strong: oklch(0.5154 0.1715 32.56);
+  --danger-muted: var(--palette-red-200);
+  --danger-soft: oklch(0.9259 0.0344 20);
+  --danger-hover: color-mix(in srgb, var(--danger) 90%, var(--sticker-ink));
+  --danger-active: var(--danger-hover);
+  --inactive: oklch(0.7892 0.0137 71.29);
+  --inactive-foreground: var(--sticker-ink);
+  --inactive-soft: oklch(0.8962 0.0081 73.74);
+  --task-status-todo: oklch(0.7855 0.1227 50.11);
+  --task-status-todo-soft: oklch(0.9413 0.0275 40.2);
+  --task-status-todo-strong: var(--palette-orange-800);
+  --task-status-in-progress: oklch(0.7833 0.1353 219.21);
+  --task-status-in-progress-soft: oklch(0.9452 0.0326 226.3);
+  --task-status-in-progress-strong: var(--palette-cyan-800);
+  --task-status-in-review: oklch(0.783 0.0783 294.53);
+  --task-status-in-review-soft: oklch(0.9492 0.0176 296.63);
+  --task-status-in-review-strong: var(--palette-lavender-800);
+  --task-status-done: oklch(0.8272 0.1354 130.07);
+  --task-status-done-soft: oklch(0.9492 0.0809 130.43);
+  --task-status-done-strong: var(--palette-lime-800);
+  --task-status-closed: oklch(0.7892 0.0137 71.29);
+  --task-status-closed-soft: oklch(0.8962 0.0081 73.74);
+  --task-status-closed-strong: var(--palette-stone-800);
+  /* Controls never cast a shadow; only overlays float. */
+  --elevation-float:
+    0 1px 0 oklch(0.1813 0.005 17.62 / 0.039), 0 12px 32px -12px oklch(0.1813 0.005 17.62 / 0.322);
+  --elevation-sticker: 4px 4px 0 oklch(0.1813 0.005 17.62);
+  /* The focus indicator. It shows only after keyboard navigation: styles.css
+     empties it while the root carries data-input-modality="pointer", which
+     installInputModality sets after a click or a tap. */
+  --focus-ring: 0 0 0 2px oklch(1 0 0), 0 0 0 4px oklch(0.1813 0.005 17.62);
+  /* Selected text (::selection). brand-soft in light mode; in dark mode brand
+     over the page at 22%, the wash of a commented passage, because brand-soft
+     left a selection almost the same as the page. */
+  --selection: var(--brand-soft);
+  --field-font-size: 16px;
+  --field-font-weight: 400;
+  --field-line-height: 24px;
+  /* Between two fields of a form, and between the parts of a form section: two
+     airs. */
+  --field-gap: calc(2 * var(--control-air));
+  --card-title-font-size: 16px;
+  --card-title-font-weight: 600;
+  --card-title-line-height: 24px;
+  /* A default control: a field, a select, a Button, a tab, a selected segment, a
+     menu option, a sidebar row. A finger's 44px on a phone; 34px on a desktop,
+     the one desktop size for all of them (stdrc, 2026-11-04; Feishu's 32px
+     before). */
+  --control-height: 44px;
+  /* The full-width call to action across a sign-in, sign-up or setup form
+     (Button xl). */
+  --control-height-cta: 52px;
+  /* The icon in a control-height icon button. */
+  --control-icon-size: 22px;
+  /* How far a control-height button's hit area reaches past its top and bottom,
+     to keep 44px. */
+  --control-hit-inset: 0px;
+  /* How far a chip or a button embedded in a field, the composer or a corner
+     sits inside its frame's outer edge, and from its sibling. */
+  --control-embedded-inset: 6px;
+  /* A chip or a button embedded in a field: the control height less the embedded
+     inset above and below, so the field keeps its height. */
+  --control-embedded-size: 32px;
+  /* The air of the size chain: between a label, its control and its help, around
+     a control in a bar, and half of the gap between two fields. Every step below
+     is the control height plus or minus a number of airs. */
+  --control-air: 6px;
+  /* The corner of a control at the control height (a field, a Select, a Button
+     at lg and icon-lg), about a quarter of its height: 10px at 44 on a phone and
+     a touch screen, 8px at 34 on a desktop. */
+  --control-radius: 10px;
+  /* Every header: a panel, a sidebar or a thread head, a dialog's bar, a
+     drawer's head, a rail head. The control height with the header air above and
+     below, so the seams of a screen line up. */
+  --header-height: calc(var(--control-height) + 2 * var(--header-air));
+  /* The air above and below the control in a header: one control air on a phone
+     and a touch screen (44 + 12 = 56); 5px on a desktop, so a 34px control and
+     its head make 44 (34 + 10). */
+  --header-air: var(--control-air);
+  /* Every header in a window shorter than 600px. On a desktop, a bar button with
+     one air above and below (28 + 12 = 40). */
+  --header-height-short: 48px;
+  /* An icon button in a bar: a head's actions and its x, the composer's icons, a
+     row's actions. The control height on a phone and a touch screen; 28px on a
+     desktop, the size of the header's icon tile, so a head's tile and buttons
+     share one size and one centre line. Its hit area still reaches 44px. */
+  --bar-button-size: var(--control-height);
+  /* The corner of a bar button, about a quarter of its height: 10px at 44 on a
+     phone and a touch screen, 6px at the 28px bar button with a mouse on a
+     desktop. */
+  --bar-button-radius: 10px;
+  /* An item on the frame: the top bar's and the title bar's buttons, the
+     workspace button and the search box. 36px on a phone and a touch screen; the
+     control height on a desktop, so the top bar is a header (34 + 2 x 5 = 44
+     with a mouse). */
+  --frame-item-height: 36px;
+  /* The switch's track: 50 x 30 on a phone and a touch screen, macOS's regular
+     38 x 22 on a desktop. Its knob is the track height less 8px (a 1.5px border
+     and 2.5px of padding each side, so the 1px of track between the knob's ring
+     and the border stays) and travels the width less the height. */
+  --switch-width: 50px;
+  /* The switch's track height. */
+  --switch-height: 30px;
+  /* A sidebar row from 768px, 2px apart; its highlight fills the row. On a
+     desktop the control height (34px): one size for a sidebar item, a menu
+     option, a compact list row, a field, a select, a Button, a tab and a
+     selected segment (stdrc, 2026-11-04). A phone list of places keeps 44px. */
+  --row-height: 38px;
+  /* An option of a popup list or a menu item with one line: 36px on a phone and
+     a touch screen, the row height (34px, the control height) on a desktop. */
+  --option-height: 2.25rem;
+  /* Above and below the tallest part of a settings row (ListRow plain): two
+     airs. */
+  --settings-row-inset: calc(2 * var(--control-air));
+  /* Between two sections of a form (FormSection), half above and half below the
+     hairline between them: 32px on a phone and a touch screen, two field gaps
+     (24px) on a desktop. */
+  --section-gap: 32px;
+  /* From a head's seam to the first thing of the content under it: the page
+     inset on a phone and a touch screen; 12px on a desktop, so the content sits
+     close under its compact head (stdrc, 2026-11-05). */
+  --page-top: var(--page-inset);
+  /* The inset of a column's content, a settings page, a drawer's body and a
+     dialog's form: 16px on a phone and a touch screen; 16px with a mouse on a
+     desktop too (20 before 2026-11-05), where the column margin, the list cells'
+     content and the heads follow it, one edge. */
+  --page-inset: 16px;
+  /* The rail, its 1px seam included: 57px on a touch screen, 49px on a desktop
+     (48 + 1, the short window's rail). Its own size, not the header's. */
+  --rail-width: 57px;
+  /* A rail item: 40px on a touch screen, 36px on a desktop. */
+  --rail-item: 40px;
+  /* The rail in a window shorter than 600px, its 1px seam included; with a mouse
+     the rail is always this width (48 + 1). */
+  --rail-width-short: 49px;
+  /* A rail item in a window shorter than 600px; with a mouse rail items are
+     always this size. */
+  --rail-item-short: 36px;
+  /* The message step of a timeline: from the last line of one turn to the first
+     line of the next (a sender line, an event line). Every row keeps the row
+     inset above and below its text; the first row of a turn adds the rest above
+     it. */
+  --timeline-gap-message: 16px;
+  /* The section step of a timeline, one step wider than the message step: either
+     side of a date line, from the top of the list to the first line, and from
+     the last line to the composer, so a boundary reads as one and the last
+     message never sits on the composer. */
+  --timeline-gap-section: 24px;
+  /* How far a timeline row's hover and selected highlight reaches above and
+     below its text. Two rows of one turn sit two insets apart. */
+  --timeline-row-inset: 4px;
+  --sticker-ink: oklch(0.1813 0.005 17.62);
+  --sticker-paper: oklch(1 0 0);
+  --sticker-edge: oklch(0.1813 0.005 17.62 / 0);
+  /* Hover tier medium on a colour sticker (primary, warning and danger buttons,
+     colour badges, the selected segment on press): hover and press, 10% ink in
+     both modes. */
+  --sticker-medium: oklch(0.1813 0.005 17.62 / 0.1);
+  /* Hover tier medium on an ink sticker (the server tile in the rail or the
+     sidebar header): hover, press and open, 6% paper in both modes, since ink
+     laid over ink doesn't show. */
+  --sticker-ink-medium: oklch(1 0 0 / 0.06);
+  --presence-online: oklch(0.8272 0.1354 130.07);
+  /* Yellow for an agent at work, and for Status variant="primary". The value of
+     brand in Raft Yellow, but its own, so a theme that grays the brand (Boring
+     Gray) keeps a working agent yellow. */
+  --presence-busy: oklch(0.8829 0.1623 91.9);
+  /* The tint of the Working chip (Badge variant="busy"). The value of brand-soft
+     in Raft Yellow, but its own, so Boring Gray keeps it yellow. */
+  --presence-busy-soft: oklch(0.9547 0.0674 93.62);
+  --presence-error: oklch(0.7855 0.1227 50.11);
+  --presence-offline: oklch(0.7892 0.0137 71.29);
+  --presence-external: oklch(0.7833 0.1353 219.21);
+  /* The check after a mention once the agent mentioned has read the message
+     (MessageReferenceReadMark). A bare check has no ink box around it, so it
+     takes a lime dark enough to read on the page: palette-lime-700 in light mode
+     (6.2:1 on white; the online lime is 1.64:1), the online lime in dark mode
+     (10.5:1 on the dark canvas). */
+  --read-mark: var(--palette-lime-700);
+}
+
+/* Raft Design System, dark: content stays lighter than the frame and sidebar
+   (#0d0d0b); stickers keep their colours and ink type and gain a die-cut edge. */
+.dark {
+  color-scheme: dark;
+
+  --foreground: oklch(0.9211 0.004 106.48);
+  --foreground-muted: oklch(0.8195 0.0041 106.49);
+  --foreground-hint: oklch(0.6984 0.0043 106.51);
+  --foreground-disabled: oklch(0.4987 0.0047 106.57);
+  --foreground-inverse: oklch(0.2213 0.0038 106.71);
+  --foreground-on-hud: oklch(0.9211 0.004 106.48);
+  --foreground-on-hud-muted: var(--foreground-muted);
+  --foreground-on-frame: oklch(0.9211 0.004 106.48);
+  --foreground-on-frame-muted: oklch(0.6984 0.0043 106.51);
+  --foreground-link: oklch(0.717 0.1183 253.58);
+  --layer-canvas: oklch(0.2213 0.0038 106.71);
+  --layer-sidebar: oklch(0.1582 0.0041 106.86);
+  --layer-popover: oklch(0.2802 0.0036 106.63);
+  --layer-backdrop: oklch(0 0 0 / 0.6);
+  --layer-backdrop-nested: oklch(0 0 0 / 0.4);
+  --layer-veil: oklch(0.2213 0.0038 106.71 / 0.8);
+  --layer-card: oklch(0.2596 0.0037 106.65);
+  --layer-hud: oklch(0.2802 0.0036 106.63);
+  --layer-frame: oklch(0.1582 0.0041 106.86);
+  --layer-frame-active: oklch(0.8829 0.1623 91.9);
+  --layer-code: oklch(0.154 0.0092 264.28);
+  --fill-muted: oklch(0.3161 0.0052 106.7);
+  --fill-strong: oklch(0.3474 0.0051 106.66);
+  --fill-subtle: oklch(0.9843 0.004 106.47 / 0.03);
+  --fill-medium: oklch(0.9843 0.004 106.47 / 0.065);
+  --fill-frame-medium: oklch(0.9843 0.004 106.47 / 0.06);
+  --fill-cell-hover: oklch(0.9843 0.004 106.47 / 0.075);
+  --fill-cell-press: oklch(0.9843 0.004 106.47 / 0.12);
+  --fill-cell-selected: oklch(0.452 0.0862 225.67 / 0.38);
+  --line-strong: oklch(0.9211 0.004 106.48);
+  --line-seam: oklch(0.9843 0.004 106.47 / 0.259);
+  --line-hairline: oklch(0.9843 0.004 106.47 / 0.102);
+  --ink-2: oklch(0.9843 0.004 106.47 / 0.02);
+  --ink-4: oklch(0.9843 0.004 106.47 / 0.04);
+  --ink-6: oklch(0.9843 0.004 106.47 / 0.06);
+  --ink-8: oklch(0.9843 0.004 106.47 / 0.08);
+  --ink-10: oklch(0.9843 0.004 106.47 / 0.1);
+  --ink-16: oklch(0.9843 0.004 106.47 / 0.16);
+  --ink-20: oklch(0.9843 0.004 106.47 / 0.2);
+  --ink-30: oklch(0.9843 0.004 106.47 / 0.3);
+  --ink-40: oklch(0.9843 0.004 106.47 / 0.4);
+  --ink: oklch(0.9843 0.004 106.47);
+  --brand-strong: oklch(0.8829 0.1623 91.9);
+  --brand-soft: oklch(0.5501 0.0999 91.5 / 0.2);
+  --attention-strong: oklch(0.84 0.11 0);
+  --attention-soft: oklch(0.5997 0.1805 359.83 / 0.161);
+  --info-strong: oklch(0.8 0.1 220);
+  --info-muted: oklch(0.52 0.1 222 / 0.28);
+  --info-soft: oklch(0.452 0.0862 225.67 / 0.18);
+  --success-strong: oklch(0.86 0.12 130);
+  --success-muted: oklch(0.52 0.13 153 / 0.28);
+  --success-soft: oklch(0.4997 0.1193 153.22 / 0.18);
+  --warning-strong: oklch(0.82 0.12 55);
+  --warning-muted: oklch(0.55 0.13 50 / 0.28);
+  --warning-soft: oklch(0.5204 0.1197 50.16 / 0.18);
+  --warning-graphic: oklch(0.77 0.135 50);
+  --danger-strong: oklch(0.7996 0.1009 24.79);
+  --danger-muted: oklch(0.58 0.19 29 / 0.3);
+  --danger-soft: oklch(0.5509 0.1903 29.01 / 0.18);
+  --inactive-soft: oklch(0.3161 0.0052 106.7);
+  --task-status-todo: oklch(0.6996 0.202 44.44);
+  --task-status-todo-soft: oklch(0.5204 0.1197 50.16 / 0.18);
+  --task-status-todo-strong: oklch(0.82 0.12 55);
+  --task-status-in-progress-soft: oklch(0.452 0.0862 225.67 / 0.18);
+  --task-status-in-progress-strong: oklch(0.8 0.1 220);
+  --task-status-in-review: oklch(0.682 0.117 293.99);
+  --task-status-in-review-soft: oklch(0.4995 0.1202 294.19 / 0.239);
+  --task-status-in-review-strong: var(--palette-lavender-300);
+  --task-status-done: oklch(0.714 0.176 153.03);
+  --task-status-done-soft: oklch(0.4997 0.1193 153.22 / 0.18);
+  --task-status-done-strong: oklch(0.8 0.14 153);
+  --task-status-closed: oklch(0.6494 0.0029 106.48);
+  --task-status-closed-soft: oklch(0.3161 0.0052 106.7);
+  --task-status-closed-strong: oklch(0.6984 0.0043 106.51);
+  --elevation-float:
+    0 0 0 1px oklch(0.9843 0.004 106.47 / 0.078), 0 16px 40px -12px oklch(0 0 0 / 0.8);
+  --elevation-sticker: 4px 4px 0 oklch(0 0 0);
+  --focus-ring: 0 0 0 2px oklch(0.2213 0.0038 106.71), 0 0 0 4px oklch(0.9211 0.004 106.48);
+  --selection: color-mix(in oklch, var(--brand-400) 22%, transparent);
+  --sticker-edge: oklch(0.9843 0.004 106.47 / 0.349);
+  --presence-busy-soft: oklch(0.5501 0.0999 91.5 / 0.2);
+  --read-mark: var(--presence-online);
+}
+
+/* Pre-hydration system fallback; explicit mode classes opt out. Generated from
+   the same list as the explicit dark block above. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    color-scheme: dark;
+
+    --foreground: oklch(0.9211 0.004 106.48);
+    --foreground-muted: oklch(0.8195 0.0041 106.49);
+    --foreground-hint: oklch(0.6984 0.0043 106.51);
+    --foreground-disabled: oklch(0.4987 0.0047 106.57);
+    --foreground-inverse: oklch(0.2213 0.0038 106.71);
+    --foreground-on-hud: oklch(0.9211 0.004 106.48);
+    --foreground-on-hud-muted: var(--foreground-muted);
+    --foreground-on-frame: oklch(0.9211 0.004 106.48);
+    --foreground-on-frame-muted: oklch(0.6984 0.0043 106.51);
+    --foreground-link: oklch(0.717 0.1183 253.58);
+    --layer-canvas: oklch(0.2213 0.0038 106.71);
+    --layer-sidebar: oklch(0.1582 0.0041 106.86);
+    --layer-popover: oklch(0.2802 0.0036 106.63);
+    --layer-backdrop: oklch(0 0 0 / 0.6);
+    --layer-backdrop-nested: oklch(0 0 0 / 0.4);
+    --layer-veil: oklch(0.2213 0.0038 106.71 / 0.8);
+    --layer-card: oklch(0.2596 0.0037 106.65);
+    --layer-hud: oklch(0.2802 0.0036 106.63);
+    --layer-frame: oklch(0.1582 0.0041 106.86);
+    --layer-frame-active: oklch(0.8829 0.1623 91.9);
+    --layer-code: oklch(0.154 0.0092 264.28);
+    --fill-muted: oklch(0.3161 0.0052 106.7);
+    --fill-strong: oklch(0.3474 0.0051 106.66);
+    --fill-subtle: oklch(0.9843 0.004 106.47 / 0.03);
+    --fill-medium: oklch(0.9843 0.004 106.47 / 0.065);
+    --fill-frame-medium: oklch(0.9843 0.004 106.47 / 0.06);
+    --fill-cell-hover: oklch(0.9843 0.004 106.47 / 0.075);
+    --fill-cell-press: oklch(0.9843 0.004 106.47 / 0.12);
+    --fill-cell-selected: oklch(0.452 0.0862 225.67 / 0.38);
+    --line-strong: oklch(0.9211 0.004 106.48);
+    --line-seam: oklch(0.9843 0.004 106.47 / 0.259);
+    --line-hairline: oklch(0.9843 0.004 106.47 / 0.102);
+    --ink-2: oklch(0.9843 0.004 106.47 / 0.02);
+    --ink-4: oklch(0.9843 0.004 106.47 / 0.04);
+    --ink-6: oklch(0.9843 0.004 106.47 / 0.06);
+    --ink-8: oklch(0.9843 0.004 106.47 / 0.08);
+    --ink-10: oklch(0.9843 0.004 106.47 / 0.1);
+    --ink-16: oklch(0.9843 0.004 106.47 / 0.16);
+    --ink-20: oklch(0.9843 0.004 106.47 / 0.2);
+    --ink-30: oklch(0.9843 0.004 106.47 / 0.3);
+    --ink-40: oklch(0.9843 0.004 106.47 / 0.4);
+    --ink: oklch(0.9843 0.004 106.47);
+    --brand-strong: oklch(0.8829 0.1623 91.9);
+    --brand-soft: oklch(0.5501 0.0999 91.5 / 0.2);
+    --attention-strong: oklch(0.84 0.11 0);
+    --attention-soft: oklch(0.5997 0.1805 359.83 / 0.161);
+    --info-strong: oklch(0.8 0.1 220);
+    --info-muted: oklch(0.52 0.1 222 / 0.28);
+    --info-soft: oklch(0.452 0.0862 225.67 / 0.18);
+    --success-strong: oklch(0.86 0.12 130);
+    --success-muted: oklch(0.52 0.13 153 / 0.28);
+    --success-soft: oklch(0.4997 0.1193 153.22 / 0.18);
+    --warning-strong: oklch(0.82 0.12 55);
+    --warning-muted: oklch(0.55 0.13 50 / 0.28);
+    --warning-soft: oklch(0.5204 0.1197 50.16 / 0.18);
+    --warning-graphic: oklch(0.77 0.135 50);
+    --danger-strong: oklch(0.7996 0.1009 24.79);
+    --danger-muted: oklch(0.58 0.19 29 / 0.3);
+    --danger-soft: oklch(0.5509 0.1903 29.01 / 0.18);
+    --inactive-soft: oklch(0.3161 0.0052 106.7);
+    --task-status-todo: oklch(0.6996 0.202 44.44);
+    --task-status-todo-soft: oklch(0.5204 0.1197 50.16 / 0.18);
+    --task-status-todo-strong: oklch(0.82 0.12 55);
+    --task-status-in-progress-soft: oklch(0.452 0.0862 225.67 / 0.18);
+    --task-status-in-progress-strong: oklch(0.8 0.1 220);
+    --task-status-in-review: oklch(0.682 0.117 293.99);
+    --task-status-in-review-soft: oklch(0.4995 0.1202 294.19 / 0.239);
+    --task-status-in-review-strong: var(--palette-lavender-300);
+    --task-status-done: oklch(0.714 0.176 153.03);
+    --task-status-done-soft: oklch(0.4997 0.1193 153.22 / 0.18);
+    --task-status-done-strong: oklch(0.8 0.14 153);
+    --task-status-closed: oklch(0.6494 0.0029 106.48);
+    --task-status-closed-soft: oklch(0.3161 0.0052 106.7);
+    --task-status-closed-strong: oklch(0.6984 0.0043 106.51);
+    --elevation-float:
+      0 0 0 1px oklch(0.9843 0.004 106.47 / 0.078), 0 16px 40px -12px oklch(0 0 0 / 0.8);
+    --elevation-sticker: 4px 4px 0 oklch(0 0 0);
+    --focus-ring: 0 0 0 2px oklch(0.2213 0.0038 106.71), 0 0 0 4px oklch(0.9211 0.004 106.48);
+    --selection: color-mix(in oklch, var(--brand-400) 22%, transparent);
+    --sticker-edge: oklch(0.9843 0.004 106.47 / 0.349);
+    --presence-busy-soft: oklch(0.5501 0.0999 91.5 / 0.2);
+    --read-mark: var(--presence-online);
+  }
+}
+
+/* Aliases of tokens that change with the mode. A custom property resolves
+   var() where it is declared, so each mode scope declares them again to
+   resolve against its own values (a `.dark` island under a light root would
+   otherwise inherit the light ones). */
+:where(:root),
+.light,
+.dark {
+  --foreground-active: var(--foreground);
+  --foreground-hover: var(--foreground);
+  --line-field: var(--line-strong);
+  --line-field-hover: var(--line-strong);
+}
+
+/* Desktop: from 768px (Tailwind's `md`, where the desktop layout begins)
+   with a mouse or trackpad. The metrics that follow Feishu's PC specs. A
+   phone, and a touch screen at any width, keep the values above. The same
+   query as the desktop type in styles.css. */
+@media (width >= 48rem) and (pointer: fine) {
+  :where(:root),
+  .light {
+    --field-font-size: 14px;
+    --field-line-height: 22px;
+    --card-title-font-size: 14px;
+    --card-title-line-height: 22px;
+    --control-height: 34px;
+    --control-height-cta: 40px;
+    --control-icon-size: 18px;
+    --control-hit-inset: 5px;
+    --control-embedded-size: 22px;
+    --control-radius: 8px;
+    --header-air: 5px;
+    --header-height-short: calc(var(--bar-button-size) + 2 * var(--control-air));
+    --bar-button-size: 28px;
+    --bar-button-radius: 6px;
+    --frame-item-height: var(--control-height);
+    --switch-width: 38px;
+    --switch-height: 22px;
+    --row-height: var(--control-height);
+    --option-height: var(--row-height);
+    --section-gap: calc(2 * var(--field-gap));
+    --page-top: 12px;
+    --page-inset: 16px;
+    --rail-width: var(--rail-width-short);
+    --rail-item: var(--rail-item-short);
+  }
+}

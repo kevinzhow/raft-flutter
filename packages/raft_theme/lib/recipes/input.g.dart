@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `input`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `input`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -16,9 +16,9 @@ class RaftInputRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root};
 }
 
-/// raft-ui recipe `input` (`src/components/input/input.recipe.ts`, index.mjs:5051).
+/// raft-ui recipe `input` (`dist/components/input/input.recipe.mjs`, index.mjs:7506).
 ///
-/// Used by: ComboboxInput, ComposerInput, Input.
+/// Used by: Input.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -97,31 +97,31 @@ abstract final class RaftInputRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      1174,
-      1929,
-      1660,
-      1666,
-      1012,
-      1820,
-      1011,
-      1577,
-      1710,
-      622,
-      635,
-      596,
-      1822,
-      1628,
-      1738,
-      1895,
-      947,
-      950,
-      1006,
-      869,
-      928,
-      925,
-      922,
-      938,
-      934,
+      1674,
+      2725,
+      2403,
+      2412,
+      1452,
+      2596,
+      1451,
+      2247,
+      2454,
+      941,
+      952,
+      911,
+      2598,
+      2311,
+      2497,
+      2677,
+      1373,
+      1376,
+      1439,
+      1252,
+      1353,
+      1350,
+      1347,
+      1363,
+      1359,
     ],
   ];
 

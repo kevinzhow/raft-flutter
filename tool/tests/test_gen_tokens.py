@@ -178,6 +178,9 @@ class ChromeOracle(unittest.TestCase):
 
     def test_recipe_opaque_literals_equal_chrome_bytes(self):
         literals = self.oracle['literals']
+        current = json.loads((gen.SRC / 'raft-ui-0.95.3/chrome-opaque-literals.json').read_text())
+        self.assertEqual(current['source']['version'], gen.RAFT_UI_VERSION)
+        self.assertEqual(current['source']['stylesSha256'], gen.sha256(gen.SRC / gen.RAFT_UI_CURRENT['styles']))
         compared = 0
         for path in gen.recipe_files():
             for argb, src in re.findall(r"CssColor\(0x([0-9A-Fa-f]{8}), '([^']+)'", path.read_text()):
@@ -185,7 +188,8 @@ class ChromeOracle(unittest.TestCase):
                 if v >> 24 != 255:
                     continue
                 with self.subTest(literal=src):
-                    self.assertEqual([(v >> 16) & 255, (v >> 8) & 255, v & 255], literals[src]['brutal']['white'])
+                    expected = literals[src]['brutal']['white'] if src in literals else current['pixels'][src][:3]
+                    self.assertEqual([(v >> 16) & 255, (v >> 8) & 255, v & 255], expected)
                 compared += 1
         self.assertGreaterEqual(compared, 77)
 
@@ -205,14 +209,14 @@ class LegacyReadbackOracle(unittest.TestCase):
                 self.assertEqual(r['readbackDelta'], 0)
 
 
-class RaftUi071Tokens(unittest.TestCase):
-    """tokens.json of @botiverse/raft-ui 0.7.1 -> raft_tokens.g.dart (RaftLight / RaftDark)."""
+class RaftUi095Tokens(unittest.TestCase):
+    """tokens.json of @botiverse/raft-ui 0.95.3 -> raft_tokens.g.dart (RaftLight / RaftDark)."""
 
     @classmethod
     def setUpClass(cls):
         cls.m = gen.RaftUiModel()
         cls.text = gen.emit_raft_tokens()
-        rules = gen.parse_rules(gen.strip_comments((gen.SRC / gen.RAFT_UI_071['foundation']).read_text()))
+        rules = gen.parse_rules(gen.strip_comments((gen.SRC / gen.RAFT_UI_CURRENT['foundation']).read_text()))
         blocks = {}
         for r in rules:  # `:where(:root)` appears twice (ramps, deprecated palette names): merge
             blocks.setdefault(gen.norm_sel(r.prelude), {}).update(gen.declarations(r.body))
@@ -221,11 +225,16 @@ class RaftUi071Tokens(unittest.TestCase):
                    'dark': {**root, **blocks['.dark'], **blocks[':where(:root), .light, .dark']}}
 
     def test_token_counts(self):
-        # 393 tokens in the file: 225 colours, 3 shadows, 6 metrics, 159 former names.
-        self.assertEqual(len(self.m.names('color')), 225)
+        # Published 0.95.3 adds sizing/motion tokens and has removed the aliases.
+        self.assertEqual(len(self.m.names('color')), 238)
+        self.assertTrue({'you', 'selected', 'selection', 'read-mark'} <= self.m.tokens.keys())
         self.assertEqual(self.m.names('shadow'), ['elevation-float', 'elevation-sticker', 'focus-ring'])
-        self.assertEqual(len(self.m.names('dimension')) + len(self.m.names('fontWeight')), 6)
-        self.assertEqual(len(self.m.deprecated), 159)
+        self.assertEqual(len(self.m.names('dimension')), 36)
+        self.assertEqual(len(self.m.names('fontWeight')), 2)
+        self.assertEqual(self.m.names('number'), ['opacity-dimmed'])
+        self.assertEqual(self.m.names('duration'), ['motion-drag-settle-duration'])
+        self.assertEqual(self.m.names('cubicBezier'), ['motion-drag-settle-easing'])
+        self.assertEqual(len(self.m.deprecated), 0)
 
     def test_every_token_is_emitted_for_both_modes(self):
         for cls in ('RaftLight', 'RaftDark'):
@@ -250,7 +259,9 @@ class RaftUi071Tokens(unittest.TestCase):
 
     def test_names_are_not_mapped_from_0552(self):
         # layer-canvas is the old layer-panel; the old layer-canvas has no successor.
-        self.assertEqual(self.m.deprecated['layer-panel']['to'], 'layer-canvas')
+        self.assertNotIn('layer-panel', self.m.tokens)
+        old = json.loads((gen.SRC / 'raft-ui-0.7.1/tokens.json').read_text())
+        self.assertEqual(old['deprecated']['layer-panel']['$value'], '{layer.canvas}')
         self.assertNotIn('layer-canvas', self.m.deprecated)
         self.assertEqual(self.m.color('light', 'layer-canvas').bytes(), (255, 255, 255))
         self.assertEqual(self.m.color('dark', 'layer-canvas').bytes(), (0x1b, 0x1b, 0x19))
@@ -261,7 +272,7 @@ class RaftUi071Tokens(unittest.TestCase):
         self.assertEqual(self.m.color('light', 'foreground-on-frame').bytes(), self.m.color('light', 'sticker-ink').bytes())
         self.assertEqual(self.m.color('dark', 'foreground-on-frame').bytes(), (0xe5, 0xe5, 0xe2))
         # brand-hover = color-mix(in srgb, brand-400 88%, sticker-ink); brand-active aliases it.
-        self.assertEqual(self.m.color('light', 'brand-hover').bytes(), (0xe3, 0xbd, 0x3a))
+        self.assertEqual(self.m.color('light', 'brand-hover').bytes(), (0xe7, 0xc1, 0x3b))
         self.assertEqual(self.m.color('light', 'brand-active').bytes(), self.m.color('light', 'brand-hover').bytes())
 
     def test_translucent_colours_keep_the_authored_alpha(self):
@@ -276,11 +287,18 @@ class RaftUi071Tokens(unittest.TestCase):
         self.assertEqual(self.m.type_styles()['hero'][:4], (40.0, 44.0, 700, -0.03))
         self.assertEqual(self.m.eases()['slide'][0], [0.32, 0.72, 0.0, 1.0])
 
+    def test_source_dimensions_include_desktop_and_symbolic_values(self):
+        self.assertEqual(gen.dimension_px(self.m.tokens['header-height'].light, self.m), 56)
+        self.assertEqual(gen.dimension_px(self.m.tokens['header-height'].light, self.m, desktop=True), 44)
+        self.assertIn('static const double controlHeight = 34.0;', self.text.split('class RaftDesktopMetrics')[1])
+        self.assertIn('static const double opacityDimmed = 0.6;', self.text)
+        self.assertIn('Duration(microseconds: 160000)', self.text)
+
     def test_vendored_license_is_pinned(self):
         manifest = json.loads((gen.SRC / 'manifest.json').read_text())['files']
-        for rel in gen.RAFT_UI_071.values():
+        for rel in gen.RAFT_UI_CURRENT.values():
             self.assertIn(rel, manifest)
-        self.assertTrue((gen.SRC / gen.RAFT_UI_071['license']).read_text().startswith('MIT License'))
+        self.assertTrue((gen.SRC / gen.RAFT_UI_CURRENT['license']).read_text().startswith('MIT License'))
 
 
 class Freshness(unittest.TestCase):

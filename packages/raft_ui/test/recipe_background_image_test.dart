@@ -24,9 +24,8 @@ Future<List<int>> pixel(
 }))!;
 
 void main() {
-  // Published raft-ui 0.7.0 SearchTrigger: bg-layer-card and
-  // hover/active:press-overlay. Both states use the same single background
-  // image, whose two color stops are --fill-pressed.
+  // Published raft-ui 0.95.3 SearchTrigger: bg-layer-card and active-only
+  // overlay-medium. Hover keeps the card colour; active uses --fill-pressed.
   for (final dark in [false, true]) {
     for (final flags in [
       <String>{},
@@ -34,7 +33,7 @@ void main() {
       {'active'},
       {'hover', 'active'},
     ]) {
-      testWidgets('generated search $dark/$flags paints one source overlay', (
+      testWidgets('generated search $dark/$flags paints the source overlay', (
         t,
       ) async {
         const key = Key('recipe-paint');
@@ -54,7 +53,7 @@ void main() {
                       states: tokens.recipeStates(extra: flags),
                     );
                     final paper = tokens.colors['layer-card']!;
-                    expected = flags.isEmpty
+                    expected = !flags.contains('active')
                         ? paper
                         : Color.alphaBlend(
                             tokens.colors['fill-pressed']!,

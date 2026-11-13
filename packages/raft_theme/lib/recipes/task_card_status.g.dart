@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `taskCardStatus`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `taskCardStatus`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -16,7 +16,7 @@ class RaftTaskCardStatusRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'base': base};
 }
 
-/// raft-ui recipe `taskCardStatus` (`src/components/task-card/task-card-status.recipe.ts`, index.mjs:14841).
+/// raft-ui recipe `taskCardStatus` (`dist/components/task-card/task-card-status.recipe.mjs`, index.mjs:20790).
 ///
 /// Used by: TaskCardStatus.
 ///
@@ -68,45 +68,44 @@ abstract final class RaftTaskCardStatusRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      1305,
-      1484,
-      1740,
-      1869,
-      1319,
-      1886,
-      941,
-      1577,
-      672,
-      669,
-      671,
-      670,
-      1191,
-      1022,
-      1708,
-      621,
+      1847,
+      2116,
+      2499,
+      2650,
+      1864,
+      2667,
+      1365,
+      2247,
+      1005,
+      1002,
+      1004,
+      1003,
       1666,
-      1636,
-      1617,
-      1016,
-      1798,
-      1336,
-      1017,
-      1822,
-      116,
-      43,
-      44,
-      237,
-      275,
-      277,
-      278,
-      272,
-      273,
-      413,
-      415,
-      414,
-      927,
-      931,
-      996,
+      1465,
+      2461,
+      940,
+      2410,
+      2412,
+      1456,
+      2574,
+      1882,
+      1457,
+      2598,
+      255,
+      70,
+      71,
+      412,
+      472,
+      474,
+      476,
+      468,
+      469,
+      663,
+      667,
+      665,
+      1352,
+      1356,
+      1439,
     ],
   ];
 

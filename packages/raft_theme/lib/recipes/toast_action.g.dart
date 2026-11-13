@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `toastAction`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `toastAction`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -30,7 +30,7 @@ class RaftToastActionRecipeStyle {
   };
 }
 
-/// raft-ui recipe `toastAction` (`src/components/toast/toast.tsx`, index.mjs:12901).
+/// raft-ui recipe `toastAction` (`dist/components/toast/toast.mjs`, index.mjs:18837).
 ///
 /// Used by: ToastAction.
 ///
@@ -86,48 +86,48 @@ abstract final class RaftToastActionRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      1682,
-      1565,
-      1305,
-      1740,
-      1319,
-      1324,
-      1933,
-      1727,
-      621,
-      615,
-      1592,
-      1016,
-      1813,
-      1008,
-      1829,
-      1898,
-      915,
-      1900,
-      442,
-      435,
-      441,
-      461,
-      450,
-      423,
-      1573,
-      1578,
-      1580,
-      982,
-      984,
-      935,
-      932,
-      485,
-      490,
-      701,
-      703,
-      275,
-      277,
-      55,
-      263,
+      2433,
+      2235,
+      1847,
+      2499,
+      1864,
+      1869,
+      2729,
+      2483,
+      940,
+      933,
+      2260,
+      1456,
+      2587,
+      1449,
+      2605,
+      1338,
+      2684,
+      2200,
+      723,
+      711,
+      717,
+      751,
+      729,
+      692,
+      2243,
+      2248,
+      2250,
+      1424,
+      1426,
+      1360,
+      1357,
+      777,
+      781,
+      1039,
+      1041,
+      472,
+      474,
+      74,
+      458,
     ],
-    [1682, 1940, 1305, 1319, 1324, 1030, 702],
-    [1630, 422, 1307, 1940, 965, 1319, 1324],
+    [2433, 2747, 1847, 1864, 1869, 1474, 1040],
+    [2346, 691, 1849, 2747, 1400, 1864, 1869],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

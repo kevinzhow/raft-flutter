@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `checkbox`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `checkbox`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -22,9 +22,9 @@ class RaftCheckboxRecipeStyle {
   };
 }
 
-/// raft-ui recipe `checkbox` (`src/components/checkbox/checkbox.tsx`, index.mjs:2501).
+/// raft-ui recipe `checkbox` (`dist/components/checkbox/checkbox.mjs`, index.mjs:4345).
 ///
-/// Used by: Checkbox, MarkdownCheckbox, MessageMultiSelectCheckbox.
+/// Used by: Checkbox.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -74,23 +74,26 @@ abstract final class RaftCheckboxRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      1682,
-      1305,
-      1754,
-      1740,
+      2433,
+      1847,
+      2519,
+      2499,
+      2650,
+      1864,
       1869,
-      1319,
-      1324,
-      1577,
-      1716,
-      996,
-      831,
-      442,
-      437,
-      440,
-      450,
+      2247,
+      2471,
+      1439,
+      1181,
+      723,
+      713,
+      715,
+      729,
+      2321,
+      683,
+      681,
     ],
-    [1630],
+    [2346],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

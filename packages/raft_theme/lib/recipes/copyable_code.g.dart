@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `copyableCode`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `copyableCode`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -51,7 +51,7 @@ class RaftCopyableCodeRecipeStyle {
   };
 }
 
-/// raft-ui recipe `copyableCode` (`src/components/copyable-code/copyable-code.tsx`, index.mjs:2299).
+/// raft-ui recipe `copyableCode` (`dist/components/copyable-code/copyable-code.mjs`, index.mjs:4138).
 ///
 /// Used by: CopyableCode, CopyableCodeAction, CopyableCodeRoot.
 ///
@@ -117,38 +117,38 @@ abstract final class RaftCopyableCodeRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1141, 965, 1929, 1484, 1319, 1023],
-    [1484, 966, 1014, 1710, 620, 633, 599, 1838, 1822, 1660, 1338, 1678],
-    [618, 1929, 1484, 1424, 651],
-    [1740, 8, 7, 221],
+    [1601, 1400, 2725, 2116, 1864, 1466],
+    [2116, 1401, 1454, 2463, 939, 953, 912, 2615, 2598, 2403, 1883, 2425],
+    [937, 2725, 2116, 1980, 977],
+    [2499, 17, 11, 396],
     [
-      1682,
-      1306,
-      12,
-      16,
-      15,
-      19,
-      13,
-      14,
-      20,
-      1500,
-      783,
-      782,
-      784,
-      781,
-      780,
-      779,
-      774,
-      773,
-      778,
-      777,
-      776,
-      775,
-      1753,
-      17,
-      18,
+      2433,
+      1848,
+      21,
+      25,
+      24,
+      28,
+      22,
+      23,
+      29,
+      2133,
+      1108,
+      1107,
+      1109,
+      1106,
+      1105,
+      1104,
+      1099,
+      1098,
+      1103,
+      1102,
+      1101,
+      1100,
+      2517,
+      26,
+      27,
     ],
-    [1484, 966, 1014, 1710, 620, 633, 599, 1838, 1822, 1660, 1338, 1469, 1680],
+    [2116, 1401, 1454, 2463, 939, 953, 912, 2615, 2598, 2403, 1883, 2099, 2426],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

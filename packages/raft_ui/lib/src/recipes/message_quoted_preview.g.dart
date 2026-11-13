@@ -16,6 +16,8 @@ export 'package:raft_theme/recipes/legacy/message_quoted_preview.g.dart'
 
 /// Router for recipe `RaftMessageQuotedPreviewRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only slots: authorDelegatedBy.
 abstract final class RaftMessageQuotedPreviewRecipe {
   static const String recipeName =
       legacy.RaftMessageQuotedPreviewRecipe.recipeName;

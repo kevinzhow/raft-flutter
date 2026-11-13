@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `messageForwardedBundle`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `messageForwardedBundle`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -60,7 +60,7 @@ class RaftMessageForwardedBundleRecipeStyle {
   };
 }
 
-/// raft-ui recipe `messageForwardedBundle` (`src/components/message-forwarded-bundle/message-forwarded-bundle.recipe.ts`, index.mjs:9184).
+/// raft-ui recipe `messageForwardedBundle` (`dist/components/message-forwarded-bundle/message-forwarded-bundle.recipe.mjs`, index.mjs:14146).
 ///
 /// Used by: MessageForwardedBundle, MessageForwardedBundleFooterAction, MessageForwardedBundleHeader, MessageForwardedBundleHeaderContent, MessageForwardedBundleHeaderCount, MessageForwardedBundleHeaderLabel, MessageForwardedBundleItems, MessageForwardedBundleSource, MessageForwardedBundleSourceLabel.
 ///
@@ -136,48 +136,34 @@ abstract final class RaftMessageForwardedBundleRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1511, 1422],
-    [965, 971, 1319, 1323, 1023],
-    [965, 1484, 1319, 1023],
-    [1305, 1740, 1319, 1021, 1821, 1008, 1827, 279],
-    [1740, 1014, 1839, 1824],
+    [2145],
+    [1400, 1408, 1864, 1868, 1466],
+    [1400, 2116, 1864, 1466],
+    [1847, 2499, 1864, 1464, 2597, 1449, 2603, 477],
+    [2499, 1454, 2616, 2600],
     [
-      1484,
-      1897,
-      1305,
-      1319,
-      1021,
-      1704,
-      1814,
-      1017,
-      1824,
-      915,
-      1900,
-      1285,
-      1288,
-      1577,
-      996,
-      279,
+      2116,
+      2681,
+      1847,
+      1864,
+      1464,
+      2457,
+      2588,
+      1457,
+      2600,
+      1338,
+      2684,
+      1798,
+      1800,
+      2247,
+      1439,
+      477,
     ],
-    [1484, 1897, 1305, 1319, 1021, 1814, 1824, 279],
-    [1682],
-    [
-      1305,
-      1319,
-      1021,
-      1704,
-      1821,
-      1017,
-      1822,
-      1898,
-      915,
-      1900,
-      1281,
-      1577,
-      996,
-    ],
-    [1682, 1360, 1582, 458, 442, 455, 449, 453, 444, 785, 452, 466, 464],
-    [1511, 1929, 1427],
+    [2116, 2681, 1847, 1864, 1464, 2588, 2600, 477],
+    [2433],
+    [1847, 1864, 1464, 2457, 2597, 1457, 2598, 1338, 2684, 1800, 2247, 1439],
+    [2433, 1913, 2251, 1909, 1333],
+    [2145, 2725, 1983],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

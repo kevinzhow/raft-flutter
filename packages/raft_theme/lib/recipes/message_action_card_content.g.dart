@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `messageActionCardContent`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `messageActionCardContent`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -17,6 +17,7 @@ class RaftMessageActionCardContentRecipeStyle {
     required this.propertyValue,
     required this.scopeList,
     required this.scopeListViewport,
+    required this.scopeListViewportContent,
     required this.scopeListLabel,
     required this.scope,
     required this.scopeName,
@@ -52,6 +53,9 @@ class RaftMessageActionCardContentRecipeStyle {
 
   /// Slot `scopeListViewport`.
   final RaftSlotStyle scopeListViewport;
+
+  /// Slot `scopeListViewportContent`.
+  final RaftSlotStyle scopeListViewportContent;
 
   /// Slot `scopeListLabel`.
   final RaftSlotStyle scopeListLabel;
@@ -92,6 +96,7 @@ class RaftMessageActionCardContentRecipeStyle {
     'propertyValue': propertyValue,
     'scopeList': scopeList,
     'scopeListViewport': scopeListViewport,
+    'scopeListViewportContent': scopeListViewportContent,
     'scopeListLabel': scopeListLabel,
     'scope': scope,
     'scopeName': scopeName,
@@ -105,7 +110,7 @@ class RaftMessageActionCardContentRecipeStyle {
   };
 }
 
-/// raft-ui recipe `messageActionCardContent` (`src/components/message-action-card/message-action-card-content.recipe.ts`, index.mjs:8363).
+/// raft-ui recipe `messageActionCardContent` (`dist/components/message-action-card/message-action-card-content.recipe.mjs`, index.mjs:13503).
 ///
 /// Used by: MessageActionCardActions, MessageActionCardActionsNote, MessageActionCardCompletion, MessageActionCardContent, MessageActionCardHint, MessageActionCardHintLabel, MessageActionCardNotice, MessageActionCardProperties, MessageActionCardProperty, MessageActionCardPropertyLabel, MessageActionCardPropertyValue, MessageActionCardScope, MessageActionCardScopeDescription, MessageActionCardScopeList, MessageActionCardScopeListLabel, MessageActionCardScopeListViewport, MessageActionCardScopeName.
 ///
@@ -122,6 +127,7 @@ abstract final class RaftMessageActionCardContentRecipe {
     'propertyValue',
     'scopeList',
     'scopeListViewport',
+    'scopeListViewportContent',
     'scopeListLabel',
     'scope',
     'scopeName',
@@ -159,16 +165,17 @@ abstract final class RaftMessageActionCardContentRecipe {
       propertyValue: s[5],
       scopeList: s[6],
       scopeListViewport: s[7],
-      scopeListLabel: s[8],
-      scope: s[9],
-      scopeName: s[10],
-      scopeDescription: s[11],
-      hintLabel: s[12],
-      hint: s[13],
-      notice: s[14],
-      completion: s[15],
-      actions: s[16],
-      actionsNote: s[17],
+      scopeListViewportContent: s[8],
+      scopeListLabel: s[9],
+      scope: s[10],
+      scopeName: s[11],
+      scopeDescription: s[12],
+      hintLabel: s[13],
+      hint: s[14],
+      notice: s[15],
+      completion: s[16],
+      actions: s[17],
+      actionsNote: s[18],
     );
   }
 
@@ -194,42 +201,43 @@ abstract final class RaftMessageActionCardContentRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1596, 965, 967, 1023, 1660, 1642, 1607],
-    [1166, 1583, 1887, 943, 950, 1505, 905, 845],
-    [1357, 1040, 1401, 1400, 1047, 1319, 1035, 1037],
-    [659],
-    [1403, 1484, 1938, 1821, 1013, 1824],
-    [1357, 1484, 1938, 1479, 1669, 1813, 1822],
-    [1509, 1776],
-    [1587, 1589, 1364, 1776, 1634],
-    [1821, 1013, 1824],
-    [1484, 620, 1594, 1710, 633, 596, 1659, 1671],
-    [651, 1014, 1839, 1015, 1822],
-    [1510, 1821, 1840, 1827],
-    [631, 634, 1619, 1821, 1827, 406],
+    [1400, 1404, 1466, 2378],
+    [1632, 2252, 2668, 1367, 1376, 2138, 1324, 1197],
+    [1907, 1489, 1319, 1498, 1863, 1482, 1485],
+    [992],
+    [1957, 2116, 2734, 2597, 1453, 2600, 651],
+    [1907, 2116, 2734, 2107, 2415, 2587, 2598, 652, 653],
+    [2143, 2542],
+    [1917],
+    [2542, 2355],
+    [2597, 1453, 2600],
+    [2116, 939, 2262, 2463, 953, 911, 2402, 2417],
+    [977, 1454, 2616, 1455, 2598],
+    [2144, 2597, 2617, 2603],
+    [951, 954, 2299, 2597, 2603, 647],
     [
-      965,
-      1321,
-      1023,
-      179,
-      177,
-      1429,
-      1710,
-      581,
-      1659,
-      1671,
-      1821,
-      1827,
-      171,
-      189,
+      1400,
+      1866,
+      1466,
+      351,
+      348,
+      1986,
+      2463,
+      895,
+      2402,
+      2417,
+      2597,
+      2603,
+      341,
+      360,
     ],
-    [1305, 1319, 1022, 1821, 1827, 180, 177, 187],
-    [965, 971, 1319, 1325, 1511, 1023],
-    [1484, 966, 509, 1821, 1827],
+    [1847, 1864, 1465, 2597, 2603, 352, 348, 358],
+    [2145],
+    [2116, 805, 2597, 2603],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 8, 12, 13, 14, 15, 16],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 9, 13, 14, 15, 16, 17],
   ];
 }

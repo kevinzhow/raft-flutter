@@ -16,7 +16,7 @@ export 'package:raft_theme/recipes/legacy/message_reference.g.dart'
 /// Router for recipe `RaftMessageReferenceRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
 ///
-/// Raft set differences: legacy slots empty in the Raft set: badge.
+/// Raft set differences: Raft-only axis `capped`; legacy slots empty in the Raft set: badge; Raft-only slots: suffix, icon, readMark.
 abstract final class RaftMessageReferenceRecipe {
   static const String recipeName = legacy.RaftMessageReferenceRecipe.recipeName;
   static const List<String> slotNames =

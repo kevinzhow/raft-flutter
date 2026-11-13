@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `webHelpMenu`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `webHelpMenu`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -19,7 +19,7 @@ class RaftWebHelpMenuRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root, 'header': header};
 }
 
-/// raft-ui recipe `webHelpMenu` (`Web src/components/layout/LeftRail.tsx sha256:8f07356a3b551527195df117f28d0681c9edf514d381045209996896e0adbde2`, index.mjs:1).
+/// raft-ui recipe `webHelpMenu` (`Web src/components/layout/HelpMenu.tsx sha256:3f20913bcc441b04b4663d78702227c2d4683c584e3386ce918281cbd9e38698`, index.mjs:1).
 ///
 /// Used by: HelpMenu.
 ///
@@ -70,8 +70,8 @@ abstract final class RaftWebHelpMenuRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1915, 1583, 1592],
-    [965, 1319, 623, 633, 1660, 1671],
+    [2709, 2252, 2260],
+    [1400, 1864, 942, 953, 2403, 2417],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

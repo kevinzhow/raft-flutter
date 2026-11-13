@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import 'theme.dart' show RaftTokens;
+import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 
 part 'glyphs.g.dart';
 part 'reaction_sprite.dart';
@@ -77,6 +78,7 @@ class RaftIcon extends StatelessWidget {
                 ? strokeWidth * 24 / constraints.maxWidth
                 : strokeWidth,
             filled: filled ?? glyph.filled,
+            legacy: RaftTokens.of(context).recipeSet == RaftRecipeSet.legacy,
           ),
         ),
       ),
@@ -94,6 +96,7 @@ class RaftGlyphPainter extends CustomPainter {
     required this.color,
     this.strokeWidth = 2,
     this.filled = false,
+    this.legacy = false,
   }) : _nodes = glyph._nodes;
 
   /// Paints raw lucide `iconNode` elements (`[tag, attributes]`, SVG attribute
@@ -107,6 +110,7 @@ class RaftGlyphPainter extends CustomPainter {
     this.strokeWidth = 2,
     this.filled = false,
   }) : glyph = null,
+       legacy = false,
        _nodes = [for (final (tag, a) in nodes) _LucideNode.fromSvg(tag, a)];
 
   /// Null only for [RaftGlyphPainter.debugNodes].
@@ -117,6 +121,7 @@ class RaftGlyphPainter extends CustomPainter {
   /// Stroke width in viewBox units.
   final double strokeWidth;
   final bool filled;
+  final bool legacy;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -131,10 +136,16 @@ class RaftGlyphPainter extends CustomPainter {
     final fill = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
-    for (final node in _nodes) {
+    final nodes = legacy
+        ? glyph?._legacyNodes ?? _nodes
+        : size.width < 18
+        ? glyph?._smallNodes ?? _nodes
+        : _nodes;
+    for (final node in nodes) {
       final path = node.path;
       if (filled || node.fill) canvas.drawPath(path, fill);
-      if (strokeWidth > 0) canvas.drawPath(path, stroke);
+      stroke.strokeWidth = node.strokeWidth ?? strokeWidth;
+      if (stroke.strokeWidth > 0) canvas.drawPath(path, stroke);
     }
     canvas.restore();
   }
@@ -145,6 +156,7 @@ class RaftGlyphPainter extends CustomPainter {
       !identical(old._nodes, _nodes) ||
       old.color != color ||
       old.strokeWidth != strokeWidth ||
+      old.legacy != legacy ||
       old.filled != filled;
 }
 
@@ -154,10 +166,17 @@ enum _LucideKind { path, circle, ellipse, rect, line, polyline, polygon }
 /// circle cx cy r; ellipse cx cy rx ry; rect x y width height rx ry (resolved
 /// by the generator); line x1 y1 x2 y2; polyline/polygon the point list.
 class _LucideNode {
-  const _LucideNode(this.kind, this.values, {this.d = '', this.fill = false});
+  const _LucideNode(
+    this.kind,
+    this.values, {
+    this.d = '',
+    this.fill = false,
+    this.strokeWidth,
+  });
   const _LucideNode.path(this.d)
     : kind = _LucideKind.path,
       values = const [],
+      strokeWidth = null,
       fill = false;
 
   /// Mirrors tool/gen-glyphs `dart_node` (SVG attribute defaults, rect auto radii).
@@ -194,6 +213,7 @@ class _LucideNode {
 
   /// Element-level `fill="currentColor"`.
   final bool fill;
+  final double? strokeWidth;
 
   static final _cache = Expando<Path>('lucide path');
   Path get path => _cache[this] ??= _build();

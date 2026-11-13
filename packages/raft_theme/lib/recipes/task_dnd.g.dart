@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `taskDnd`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `taskDnd`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -30,7 +30,7 @@ class RaftTaskDndRecipeStyle {
   };
 }
 
-/// raft-ui recipe `taskDnd` (`src/components/task-dnd/task-dnd.recipe.ts`, index.mjs:15025).
+/// raft-ui recipe `taskDnd` (`dist/components/task-dnd/task-dnd.recipe.mjs`, index.mjs:20977).
 ///
 /// Used by: TaskDragOverlay, TaskDraggable, TaskDropPlaceholder.
 ///
@@ -85,9 +85,25 @@ abstract final class RaftTaskDndRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1161, 1682, 662, 1870, 428, 1577, 686, 685, 677, 682, 1709, 996],
-    [1160, 1630, 1941, 45],
-    [1265, 1929, 1740, 1169, 1709, 622, 626, 635, 615, 689],
+    [
+      1625,
+      2433,
+      1862,
+      995,
+      2650,
+      2483,
+      603,
+      698,
+      2247,
+      1018,
+      1017,
+      1009,
+      1014,
+      2462,
+      1439,
+    ],
+    [1624, 2346, 2538, 2459],
+    [1776, 2725, 2499, 1641, 2462, 1021],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

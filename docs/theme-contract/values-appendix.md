@@ -129,21 +129,21 @@ Raft from the vendored raft-ui 0.7.1 `tokens.json` through the explicit
 | `task-status-closed-soft` | #e0dcd7 | #f4f4f3 | #32322f | #e0dcd7 | #32322f | `task-status-closed-soft` |
 | `task-status-closed-strong` | #3e3b38 | #9f9f9a | #8f8f8c | #3e3b38 | #9e9e9b | `task-status-closed-strong` |
 | `primary-strong` | #655000 | #655000 | #f6d56b | #564919 | #ffd440 | `brand-strong` |
-| `primary-soft` | #fff0bd | #fff0bd | #866d1c / 0.16 | #fff0bd | #876f1f / 0.16 | `brand-soft` |
+| `primary-soft` | #fff0bd | #fff0bd | #866d1c / 0.16 | #fff0bd | #876f1f / 0.20 | `brand-soft` |
 | `primary-edge` | #e8c54e / 0.70 | #e8c54e / 0.70 | #f9d452 / 0.40 | #141111 | #141111 | `brand-edge` |
 | `primary-glow` | #f4c931 | #f4c931 | #f4c931 | #ffd440 | #ffd440 | `brand-glow` |
 | `accent-strong` | #c00064 | #c00064 | #ffacc7 | #c00064 | #ffacc7 | `attention-strong` |
 | `accent-soft` | #ffd6e2 | #ffd6e2 | #cb4279 / 0.16 | #ffd6e2 | #d0457c / 0.16 | `attention-soft` |
-| `primary-hover` | #f6cc3e | #f3e4b3 | #d5b559 / 0.35 | #e3bd3a | #e3bd3a | `brand-hover` |
-| `primary-active` | #ecc43b | #ecc43c | #fedb7a | #e3bd3a | #e3bd3a | `brand-active` |
-| `accent-hover` | #f578a2 | #f8cad8 | #f290b0 / 0.35 | #e389ae | #e389ae | `attention-hover` |
-| `accent-active` | #eb739b | #eb749c | #fd9bb8 | #e389ae | #e389ae | `attention-active` |
-| `info-hover` | #24bde1 | #26bde1 | #73d4f4 | #25b6d8 | #25b6d8 | `info-hover` |
-| `info-active` | #22b4d7 | #25b5d7 | #88d8f4 | #25b6d8 | #25b6d8 | `info-active` |
-| `warning-hover` | #ec6100 | #ec6104 | #fe8e6c | #dd9064 | #dd9064 | `warning-hover` |
-| `warning-active` | #e25c00 | #e25d06 | #fe9d82 | #dd9064 | #dd9064 | `warning-active` |
-| `danger-hover` | #e5061d | #e50b1e | #f86e70 | #de665a | #de665a | `danger-hover` |
-| `danger-active` | #db051b | #db0c1e | #f88485 | #de665a | #de665a | `danger-active` |
+| `primary-hover` | #f6cc3e | #f3e4b3 | #d5b559 / 0.35 | #e7c13b | #e7c13b | `brand-hover` |
+| `primary-active` | #ecc43b | #ecc43c | #fedb7a | #e7c13b | #e7c13b | `brand-active` |
+| `accent-hover` | #f578a2 | #f8cad8 | #f290b0 / 0.35 | #e78bb1 | #e78bb1 | `attention-hover` |
+| `accent-active` | #eb739b | #eb749c | #fd9bb8 | #e78bb1 | #e78bb1 | `attention-active` |
+| `info-hover` | #24bde1 | #26bde1 | #73d4f4 | #25b9dc | #25b9dc | `info-hover` |
+| `info-active` | #22b4d7 | #25b5d7 | #88d8f4 | #25b9dc | #25b9dc | `info-active` |
+| `warning-hover` | #ec6100 | #ec6104 | #fe8e6c | #e19366 | #e19366 | `warning-hover` |
+| `warning-active` | #e25c00 | #e25d06 | #fe9d82 | #e19366 | #e19366 | `warning-active` |
+| `danger-hover` | #e5061d | #e50b1e | #f86e70 | #e2685c | #e2685c | `danger-hover` |
+| `danger-active` | #db051b | #db0c1e | #f88485 | #e2685c | #e2685c | `danger-active` |
 
 ## Colour · product aliases
 
@@ -173,11 +173,11 @@ Raft from the vendored raft-ui 0.7.1 `tokens.json` through the explicit
 | `brutal-cream` | #fffaef | #fffaef | #fffaef | #fffaef | #fffaef | `palette-cream-200` |
 | `button-default-fill` | #141110 | #191815 | #fafaf7 | #141111 | #fafaf7 | `ink` |
 | `button-default-hover` | #31312d | #31312d | #e5e5e2 | #141111 | #e5e5e2 | `foreground-hover` |
-| `button-primary-hover` | #f6cc3e | #f3e4b3 | #d5b559 / 0.35 | #e3bd3a | #e3bd3a | `brand-hover` |
-| `button-accent-hover` | #f578a2 | #f8cad8 | #f290b0 / 0.35 | #e389ae | #e389ae | `attention-hover` |
+| `button-primary-hover` | #f6cc3e | #f3e4b3 | #d5b559 / 0.35 | #e7c13b | #e7c13b | `brand-hover` |
+| `button-accent-hover` | #f578a2 | #f8cad8 | #f290b0 / 0.35 | #e78bb1 | #e78bb1 | `attention-hover` |
 | `button-accent-edge` | #c10064 / 0.28 | #c10064 / 0.28 | #ffacc7 / 0.28 | #141111 | #141111 | `sticker-ink` |
 | `button-danger-fill` | #f70720 | #f70720 | #db2c2b | #f97264 | #f97264 | `danger` |
-| `button-danger-hover` | #e5061d | #e50b1e | #e63935 | #de665a | #de665a | `danger-hover` |
+| `button-danger-hover` | #e5061d | #e50b1e | #e63935 | #e2685c | #e2685c | `danger-hover` |
 | `button-danger-foreground` | #ffffff | #ffffff | #fafaf7 | #141111 | #141111 | `danger-foreground` |
 | `button-danger-high-contrast` | #8e2510 | #8e2510 | #8e2510 | #b5321a | #f8a49d | `danger-strong` |
 | `button-danger-high-contrast-foreground` | #ffffff | #ffffff | #ffffff | #ffffff | #1b1b19 | `foreground-inverse` |

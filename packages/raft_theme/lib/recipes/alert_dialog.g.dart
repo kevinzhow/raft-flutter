@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `alertDialog`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `alertDialog`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -50,7 +50,7 @@ class RaftAlertDialogRecipeStyle {
   };
 }
 
-/// raft-ui recipe `alertDialog` (`src/components/alert-dialog/alert-dialog.tsx`, index.mjs:511).
+/// raft-ui recipe `alertDialog` (`dist/components/alert-dialog/alert-dialog.mjs`, index.mjs:662).
 ///
 /// Used by: AlertDialogBody, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, AlertDialogTitle.
 ///
@@ -67,9 +67,12 @@ abstract final class RaftAlertDialogRecipe {
     'title',
     'description',
   ];
-  static const List<RaftRecipeAxis> axes = [];
+  static const List<RaftRecipeAxis> axes = [
+    RaftRecipeAxis('nested', ['false', 'true'], null, true),
+  ];
 
   static RaftAlertDialogRecipeStyle resolve({
+    bool? nested,
     RaftRecipeStates states = RaftRecipeStates.none,
     RaftTokenResolver? tokens,
   }) {
@@ -78,7 +81,7 @@ abstract final class RaftAlertDialogRecipe {
       axes,
       _lists,
       _combos,
-      [],
+      [nested?.toString()],
       states,
       tokens,
       recipeName: recipeName,
@@ -117,34 +120,52 @@ abstract final class RaftAlertDialogRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [964, 1307, 1944, 594],
+    [1399, 1849, 2741, 908],
     [
-      964,
-      1865,
-      1351,
-      1944,
-      1040,
-      1921,
-      1413,
-      107,
-      1577,
-      1582,
-      1711,
-      602,
-      1822,
-      1737,
-      1694,
-      1698,
+      1399,
+      2642,
+      1897,
+      2741,
+      1489,
+      2717,
+      190,
+      2247,
+      1954,
+      2251,
+      2464,
+      915,
+      2598,
+      2496,
+      2445,
+      2449,
     ],
-    [1040, 1046, 1319, 1484, 1023, 1663, 1649],
-    [1484, 1663, 1644, 1609, 962, 1016, 1845, 1827],
-    [965, 1319, 1325, 1023, 1663, 1609, 962, 394],
-    [1357, 1484, 1822, 1016, 1833, 1008],
-    [1357, 1016, 1845, 1827],
+    [1489, 1497, 1864, 2116, 1466, 2396, 2377, 265, 267],
+    [2116, 2396, 2380, 2271, 1393, 1456, 2622, 2603],
+    [
+      1400,
+      2116,
+      1864,
+      1870,
+      1318,
+      1320,
+      1316,
+      1317,
+      2188,
+      1466,
+      2396,
+      2271,
+      1393,
+      630,
+    ],
+    [1907, 2116, 2598, 1456, 2609, 1449],
+    [1907, 1456, 2622, 2603],
+    [1399, 1849, 2741, 909],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
     [0, 1, 2, 3, 4, 5, 6],
+    [0, 1, 2, 3, 4, 5, 6],
+    [7, 1, 2, 3, 4, 5, 6],
   ];
 }
