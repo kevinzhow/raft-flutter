@@ -229,12 +229,8 @@ void main() {
   });
 
   group('detail page', () {
-    Widget detail(Map<String, dynamic> m) => ComputerDetailPanel(
-      controller: w,
-      machine: m,
-      remoteUpgradeV2: true,
-      now: () => now,
-    );
+    Widget detail(Map<String, dynamic> m) =>
+        ComputerDetailPanel(controller: w, machine: m, now: () => now);
 
     scenario('restart for an upgrade replaces the offline recovery card', (
       t,

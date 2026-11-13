@@ -1,8 +1,9 @@
 // The agent profile's "Edit runtime config" modal (Web AgentDetailPanel
 // `editingRuntimeConfig` + RuntimeConfigFields). Web picks the editor by
-// capability: the protocol-v2 server form only while the server flag
-// `runtime_form_v2_web` (default off) is on AND the runtime's admission option
-// carries `runtimeFormV2.protocolVersion === 2`; otherwise it presents the
+// capability: the protocol-v2 server form whenever the runtime's admission
+// option carries `runtimeFormV2.protocolVersion === 2` (Web 1.24
+// CreateAgentDialog.tsx:433, AgentProfileInfo.tsx:206; the
+// `runtime_form_v2_web` flag is retired); otherwise it presents the
 // legacy Runtime / Provider / Model / Reasoning / Mode fields, which this file
 // ports for every runtime except Built-in Pi, Pi and Kimi Code (those keep
 // the v2 form here). Saving follows Web: nothing changed closes, an idle agent
@@ -217,14 +218,13 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
   Map<String, dynamic>? admission(String runtime) =>
       admissions?.where((o) => o['runtimeId'] == runtime).firstOrNull;
 
-  /// Web `v2EditEligible`: the flag, the runtime's v2 marker, the draft still
-  /// on the agent's saved runtime. Runtimes without a legacy form stay v2.
+  /// Web `v2EditEligible`: the runtime's v2 marker, the draft still on the
+  /// agent's saved runtime. Runtimes without a legacy form stay v2.
   bool get v2Active {
     if (!legacyRuntimeEditorSupports(agentRuntime)) return true;
     final option = admission(agentRuntime);
     final marker = option?['runtimeFormV2'];
-    return w.runtimeFormV2WebEnabled &&
-        draft.runtime == agentRuntime &&
+    return draft.runtime == agentRuntime &&
         marker is Map &&
         marker['protocolVersion'] == 2;
   }

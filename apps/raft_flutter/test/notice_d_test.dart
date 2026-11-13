@@ -248,7 +248,6 @@ void main() {
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
         final (w, c) = await _controller();
-        w.runtimeFormV2WebEnabled = true;
         c.answer = (method, path) {
           if (path == '/agents') return [agent];
           if (path == '/agents/a1') return agent;

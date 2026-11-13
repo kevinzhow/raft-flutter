@@ -530,8 +530,8 @@ void main() {
         )
         .visible;
 
+    // No convert-to-joint offer: Web 1.24 retired it on every server.
     List<Finder> layout() => [
-      find.text('Chat with members from other servers'),
       find.byType(RaftDialogTextInput).first,
       find.text('Guest access'),
       find.text('Pin Channel'),
@@ -584,12 +584,9 @@ void main() {
         a.gate = Completer<void>();
         await t.pumpWidget(_host(sheet(w, w.channels.last)));
         expect(find.byType(RaftSpinner), findsNothing);
-        // Flags are server-level: guest and conversion sections are final.
+        // Flags are server-level: the guest section is final.
         expect(find.text('Guest access'), findsOneWidget);
-        expect(
-          find.text('Chat with members from other servers'),
-          findsOneWidget,
-        );
+        expect(find.text('Chat with members from other servers'), findsNothing);
         // Per-channel values are in flight: rows hold their space.
         expect(switchShown(t, 'Mute activity'), isFalse);
         expect(switchShown(t, 'Collapse long messages'), isFalse);

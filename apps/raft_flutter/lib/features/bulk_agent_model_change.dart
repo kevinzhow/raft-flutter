@@ -3,8 +3,6 @@
 import 'agent_runtime_draft.dart';
 import 'agent_runtime_catalog.dart';
 
-const bulkModelFlag = 'bulk_change_model_web_v0';
-
 class BulkModelTarget {
   const BulkModelTarget(this.runtime, this.model, this.reasoning);
   final String runtime, model;

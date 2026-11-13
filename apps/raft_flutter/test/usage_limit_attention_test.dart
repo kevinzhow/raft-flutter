@@ -151,7 +151,6 @@ void main() {
     SystemNotificationStore build({
       required Future<dynamic> Function(String path) get,
       Future<dynamic> Function(String path)? post,
-      Future<bool> Function()? gate,
       DateTime Function()? clock,
     }) => SystemNotificationStore(
       storage: _Storage(),
@@ -163,28 +162,12 @@ void main() {
         return {'unread_total': 0};
       },
       post: post ?? (path) async => {'ok': true},
-      usageLimitGate: gate ?? () async => true,
     );
 
-    test('flag off: no read, no entries', () async {
-      final calls = <String>[];
-      final store = build(
-        gate: () async => false,
-        get: (path) async {
-          calls.add(path);
-          return snapshot([incident('a')]);
-        },
-      );
-      await store.bind(scope('one'));
-      await flush();
-      await flush();
-      expect(calls, isEmpty);
-      expect(store.entries.where((n) => n.incidentId != null), isEmpty);
-      store.dispose();
-    });
-
     test(
-      'flag on: reads the receiver snapshot and counts only unread',
+      // Web 1.24 useUsageLimitAttention.ts:19-34 (`usage_limit_attention_v0`
+      // is retired): no gate, the feed is read for everyone.
+      'reads the receiver snapshot and counts only unread',
       () async {
         final calls = <String>[];
         final store = build(
@@ -368,29 +351,6 @@ void main() {
       store.dispose();
     });
 
-    test(
-      'an unresolved flag stays off and is evaluated again on the next read',
-      () async {
-        var evaluations = 0;
-        final store = build(
-          gate: () async {
-            if (++evaluations == 1) throw StateError('flags down');
-            return true;
-          },
-          get: (path) async => snapshot([incident('a')]),
-        );
-        await store.bind(scope('one'));
-        await flush();
-        await flush();
-        expect(store.unreadCount, 0);
-        await store.refreshUsageLimit();
-        expect(store.unreadCount, 1);
-        await store.refreshUsageLimit();
-        expect(evaluations, 2, reason: 'a resolved flag is not re-evaluated');
-        store.dispose();
-      },
-    );
-
     test('a read that finishes after a scope change is discarded', () async {
       final late = Completer<dynamic>();
       var first = true;
@@ -415,7 +375,7 @@ void main() {
       store.dispose();
     });
 
-    test('without a gate and post the feed stays off', () async {
+    test('without post the feed stays off', () async {
       final calls = <String>[];
       final store = SystemNotificationStore(
         storage: _Storage(),

@@ -1,5 +1,5 @@
-// The pure side of the agent "Edit runtime config" modal when the server's
-// `runtime_form_v2_web` flag is off (Web `RuntimeConfigFields` legacy fields +
+// The pure side of the agent "Edit runtime config" modal for a runtime without
+// a protocol-v2 form (Web `RuntimeConfigFields` legacy fields +
 // AgentDetailPanel draft state, utils/runtimeConfigForm.ts,
 // hooks/useRuntimeModels.ts, utils/reasoningEffortOptions.ts): hydrate the
 // draft from the agent, the machine model source states, reasoning

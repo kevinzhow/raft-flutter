@@ -160,10 +160,10 @@ class WorkspaceChannels
         client.user == null) {
       return;
     }
-    if (sessionEffects.syncCoreNotificationPrefsEnabled) {
-      update = notificationPrefsSync.consume(update);
-      if (update == null) return;
-    }
+    // Web 1.24 socketBridge.ts:1113 always consumes through sync-core
+    // (`sync_core_notification_prefs_v0` is retired).
+    update = notificationPrefsSync.consume(update);
+    if (update == null) return;
     final accepted = update;
     if (accepted['type'] == 'server') {
       final version = accepted['prefsVersion'];

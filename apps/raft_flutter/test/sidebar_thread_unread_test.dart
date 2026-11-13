@@ -1,14 +1,8 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/thread_unread_by_parent.dart';
-import 'package:raft_flutter/features/activity_rollout_flags.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -34,41 +28,10 @@ Map<String, dynamic> _thread(
   'lastReplyAt': ?lastReplyAt,
 };
 
-/// Answers the conversation-read-all request with a refusal, like a server
-/// whose `sidebar_mark_all_read_v0` is off.
-class _Refusing implements HttpClientAdapter {
-  _Refusing(this.inner);
-  final HttpClientAdapter inner;
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions o,
-    Stream<Uint8List>? s,
-    Future<void>? c,
-  ) {
-    if (o.path.endsWith('/conversation-read-all')) {
-      return Future.value(
-        ResponseBody.fromString(
-          jsonEncode({
-            'error': 'Conversation read-all is not enabled',
-            'code': 'sidebar_mark_all_read_disabled',
-          }),
-          404,
-          headers: {
-            Headers.contentTypeHeader: ['application/json'],
-          },
-        ),
-      );
-    }
-    return inner.fetch(o, s, c);
-  }
-
-  @override
-  void close({bool force = false}) => inner.close(force: force);
-}
-
-/// Web v1.21.23 `thread_unread_badge_v0` and `sidebar_mark_all_read_v0`:
-/// followed-thread unread rolls up onto the parent channel's sidebar row, and
+/// Followed-thread unread rolls up onto the parent channel's sidebar row, and
 /// the channel menu's "Mark All as Read" reads the channel with its threads.
+/// Web 1.24 retired the two flags that gated them in v1.21.23
+/// (`thread_unread_badge_v0`, `sidebar_mark_all_read_v0`): on for everyone.
 void main() {
   group('roll-up of the followed threads', () {
     test('counts threads, not replies, and folds the @ mark per channel', () {
@@ -116,7 +79,6 @@ void main() {
       WidgetTester tester, {
       Set<String> enabled = const {},
       List<Map<String, dynamic>> followed = const [],
-      bool refuse = false,
       bool stale = false,
     }) async {
       SharedPreferences.setMockInitialValues({});
@@ -129,11 +91,6 @@ void main() {
       w = made.$1;
       api = made.$2;
       addTearDown(w.dispose);
-      if (refuse) {
-        w.client.http.httpClientAdapter = _Refusing(
-          w.client.http.httpClientAdapter,
-        );
-      }
       w.loading = false;
       w.messageDomain.ledger.switchServer('s1');
       w.channels = [
@@ -198,8 +155,7 @@ void main() {
       // The flags and the followed list answer after the first frame.
       await tester.runAsync(() async {
         for (var i = 0; i < 200; i++) {
-          final on = ActivityRolloutFlags.peek(w)?.threadUnreadBadge == true;
-          if (enabled.isEmpty || on && w.followedThreads.settled) break;
+          if (w.followedThreads.settled) break;
           await Future<void>.delayed(const Duration(milliseconds: 25));
         }
         await Future<void>.delayed(const Duration(milliseconds: 25));
@@ -293,13 +249,14 @@ void main() {
       );
     });
 
-    sidebarTest('a server with the flag off keeps the plain row', (
-      tester,
-    ) async {
-      await setup(tester, followed: [_thread('a', 'c1', mention: true)]);
-      expect(threadMark('c1'), findsNothing);
-      expect(mention('c1'), findsNothing);
-    });
+    sidebarTest(
+      'a server answering the retired flags off still lights the row',
+      (tester) async {
+        await setup(tester, followed: [_thread('a', 'c1', mention: true)]);
+        expect(threadMark('c1'), findsOneWidget);
+        expect(mention('c1'), findsOneWidget);
+      },
+    );
 
     sidebarTest('reading the thread takes the mark away again', (tester) async {
       await setup(
@@ -377,29 +334,23 @@ void main() {
       },
     );
 
-    sidebarTest('without the mark-all flag the menu stays Mark as Read', (
-      tester,
-    ) async {
-      await setup(
-        tester,
-        enabled: {'thread_unread_badge_v0'},
-        followed: [_thread('a', 'c1')],
-      );
+    sidebarTest('Mark All as Read needs no flag', (tester) async {
+      await setup(tester, followed: [_thread('a', 'c1')]);
       w.conversationReads.unread = {'c1': 2};
       w.notifyListeners();
       await tester.pumpAndSettle();
       await rightClick(tester, row('c1'));
-      expect(find.text('Mark as Read'), findsOneWidget);
-      expect(find.text('Mark All as Read'), findsNothing);
-      await tester.tap(find.text('Mark as Read'));
-      await tester.pumpAndSettle();
+      expect(find.text('Mark All as Read'), findsOneWidget);
+      expect(find.text('Mark as Read'), findsNothing);
       expect(
-        api.calls.where((c) => c.path == '/channels/c1/conversation-read-all'),
+        api.calls
+            .where((c) => c.path == '/feature-flags/evaluate')
+            .where(
+              (c) => ((c.data as Map)['keys'] as List).contains(
+                'sidebar_mark_all_read_v0',
+              ),
+            ),
         isEmpty,
-      );
-      expect(
-        api.calls.where((c) => c.path == '/channels/c1/read-all'),
-        hasLength(1),
       );
     });
 
@@ -414,43 +365,5 @@ void main() {
       expect(find.text('Mark All as Read'), findsNothing);
       expect(find.text('Mark as Read'), findsOneWidget);
     });
-
-    sidebarTest(
-      '404 sidebar_mark_all_read_disabled falls back to the plain read',
-      (tester) async {
-        await setup(
-          tester,
-          enabled: both,
-          followed: [_thread('a', 'c1')],
-          refuse: true,
-        );
-        final evaluations = api.calls
-            .where((c) => c.path == '/feature-flags/evaluate')
-            .length;
-        // The server turned the flag off since this client evaluated it.
-        flags = {};
-        await rightClick(tester, row('c1'));
-        await tester.tap(find.text('Mark All as Read'));
-        await tester.pumpAndSettle();
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 300)),
-        );
-        await tester.pumpAndSettle();
-        expect(
-          api.calls.where((c) => c.path == '/channels/c1/read-all'),
-          hasLength(1),
-        );
-        expect(
-          api.calls.where((c) => c.path == '/feature-flags/evaluate').length,
-          greaterThan(evaluations),
-          reason: 'the flags are evaluated again',
-        );
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 300)),
-        );
-        await tester.pumpAndSettle();
-        expect(threadMark('c1'), findsNothing, reason: 'flag now off');
-      },
-    );
   });
 }

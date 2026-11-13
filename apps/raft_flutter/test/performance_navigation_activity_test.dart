@@ -45,6 +45,12 @@ void main() {
       api.routes['GET /servers/unread-summary'] = (_) => [];
       // An owner reads the pending joint invites (Web usePendingJointInvites).
       api.routes['GET /channels/joint-invites'] = (_) => {'invites': []};
+      // The usage-limit feed is read for everyone since Web 1.24
+      // (`usage_limit_attention_v0` is retired).
+      api.routes['GET /servers/s1/system-notifications-v2'] = (_) => {
+        'contractVersion': 'server-system-attention-v1',
+        'incidents': [],
+      };
       api.routes['GET /product-feedback/tickets'] = (_) => {
         'unread_total': 0,
         'tickets': [],

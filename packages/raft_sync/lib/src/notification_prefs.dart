@@ -5,7 +5,6 @@ library;
 import 'core.dart';
 import 'read_state.dart';
 
-const notificationPrefsFlag = 'sync_core_notification_prefs_v0';
 const notificationPrefsDomain = 'notification_prefs';
 
 Map<String, dynamic>? readNotificationPrefsUpdate(dynamic payload) {

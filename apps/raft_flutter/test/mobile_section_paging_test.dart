@@ -137,10 +137,15 @@ void main() {
             .value,
         AgentDetailTab.activity,
       );
-      expect(
-        api.calls.where((r) => r.path == '/agents/a1/activity-log'),
-        hasLength(1),
-      );
+      // The Activity tab opens on the Overview (Web 1.24, the
+      // `activity_overview_web_v0` gate is retired); its raw log is one toggle
+      // away and is the part that refreshes on its own.
+      await t.tap(find.byKey(const ValueKey('activity-view-raw')));
+      await settle(t);
+      final reads = api.calls
+          .where((r) => r.path == '/agents/a1/activity-log')
+          .length;
+      expect(reads, greaterThanOrEqualTo(1));
       await swipe(t);
       expect(
         t
@@ -158,12 +163,12 @@ void main() {
       await settle(t);
       expect(
         api.calls.where((r) => r.path == '/agents/a1/activity-log'),
-        hasLength(1),
+        hasLength(reads),
       );
       await swipe(t, back: true);
       expect(
         api.calls.where((r) => r.path == '/agents/a1/activity-log'),
-        hasLength(2),
+        hasLength(reads + 1),
       );
       await mount(t, panel(false));
       expect(find.byType(AgentActivityTab), findsNothing);

@@ -30,7 +30,6 @@ class _Transport implements HttpClientAdapter {
   Completer<void>? snapshot;
   final snapshotStarted = Completer<void>();
   var snapshotReads = 0;
-  bool prefsEnabled = true;
   Completer<void>? flags;
   Map<String, dynamic> channelPage = {
     'messages': <dynamic>[],
@@ -55,7 +54,6 @@ class _Transport implements HttpClientAdapter {
       body = {
         'evaluations': [
           {'key': 'sync_core_messages_v0', 'enabled': false},
-          {'key': notificationPrefsFlag, 'enabled': prefsEnabled},
         ],
       };
     } else if (o.path == '/messages/channel/thread' ||
@@ -321,17 +319,16 @@ void main() {
     });
     expect(w.messageDomain.threadSummaries['parent']['replyCount'], 4);
   });
-  test('real preference flag/query and socket projection reject regression and wrong server', () async {
+  // Web 1.24 socketBridge.ts:1113 always consumes notification prefs through
+  // sync-core (`sync_core_notification_prefs_v0` is retired): no flag is asked.
+  test('preference socket projection rejects regression and wrong server without a flag', () async {
     final t = _Transport(), w = await _fixture(t);
     addTearDown(w.dispose);
     await w.refreshMessageSyncFlag();
-    expect(w.syncCoreNotificationPrefsEnabled, true);
-    expect(t.requests.last.data['keys'], [
-      notificationPrefsFlag,
-      WorkspaceController.remoteComputerUpgradeFlag,
-      WorkspaceController.agentMigrationFlag,
-      WorkspaceController.runtimeFormV2WebFlag,
-    ]);
+    expect(
+      t.requests.where((r) => r.path == '/feature-flags/evaluate'),
+      isEmpty,
+    );
     final c = w.client as _Client;
     c.stream.add(RaftEvent('notification_prefs:updated', _prefs(2)));
     expect(w.channels.single.json['activityMuted'], true);
@@ -355,16 +352,5 @@ void main() {
     );
     expect(w.server!.json['serverPushMuted'], true);
     expect(w.server!.json['notificationPrefsVersion'], 8);
-  });
-  test('late preference flag response cannot enable same-generation role or workspace', () async {
-    final t = _Transport()..flags = Completer<void>();
-    final w = await _fixture(t);
-    addTearDown(w.dispose);
-    final pending = w.refreshMessageSyncFlag();
-    w.server = RaftRecord({'id': 'server', 'role': 'member'});
-    w.notifyListeners();
-    t.flags!.complete();
-    await pending;
-    expect(w.syncCoreNotificationPrefsEnabled, false);
   });
 }

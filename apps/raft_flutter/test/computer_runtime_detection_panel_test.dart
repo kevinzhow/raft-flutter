@@ -118,11 +118,7 @@ void main() {
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         theme: raftTheme(),
         home: Scaffold(
-          body: ComputerDetailPanel(
-            controller: w,
-            machine: m,
-            remoteUpgradeV2: true,
-          ),
+          body: ComputerDetailPanel(controller: w, machine: m),
         ),
       ),
     );

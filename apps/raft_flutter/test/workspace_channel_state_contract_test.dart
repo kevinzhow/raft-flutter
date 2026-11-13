@@ -267,7 +267,10 @@ void main() {
     expect(source.unreadRefreshes, 0);
   });
 
-  test('legacy notification patches rows and selection before unread; old versions still refresh unread', () {
+  // Web 1.24 socketBridge.ts:1113: every update goes through sync-core
+  // (`sync_core_notification_prefs_v0` is retired), so an older version is
+  // dropped before it can refresh unread.
+  test('notification patches rows and selection before unread; an older version is dropped', () {
     final f = _Fixture(), w = f.root;
     w.channel = _row('c1');
     w.onUnread = () {
@@ -282,13 +285,12 @@ void main() {
     );
     expect(identical(w.channels.first, accepted), isTrue);
     expect(w.channel!.json['prefsVersion'], 3);
-    expect(w.trace, ['unread', 'notify', 'unread', 'notify']);
+    expect(w.trace, ['unread', 'notify', 'notify']);
     expect(w.dms.single.json['activityMuted'], isFalse);
   });
 
   test('sync-core notification duplicate keeps the event notification but skips unread', () {
     final f = _Fixture(), w = f.root;
-    w.syncCoreNotificationPrefsEnabled = true;
     f.client.emit('notification_prefs:updated', _notification('c1', 3));
     final accepted = w.channels;
     f.client.emit(
@@ -333,7 +335,8 @@ void main() {
       expect(w.server!.json['serverPushMuted'], isTrue);
       expect(w.servers.single.json['notificationPrefsVersion'], 4);
       expect(identical(w.channels, held), isTrue);
-      expect(w.trace, ['unread', 'notify', 'unread', 'notify']);
+      // The older server version is dropped by sync-core (no second unread).
+      expect(w.trace, ['unread', 'notify', 'notify']);
     },
   );
 

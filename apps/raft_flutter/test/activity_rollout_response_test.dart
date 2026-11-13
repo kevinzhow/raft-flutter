@@ -75,7 +75,7 @@ void main() {
     'invalid evaluations type': {'evaluations': 'unavailable'},
     'omitted requested key': {
       'evaluations': [
-        {'key': ActivityRolloutFlags.threadUnreadBadgeKey, 'enabled': true},
+        {'key': 'thread_unread_badge_v0', 'enabled': true},
       ],
     },
     'invalid boolean': {
@@ -145,21 +145,20 @@ void main() {
     expect(FeatureFlagMemory.read(_scope, _flag), isFalse);
   });
 
-  test('partial response updates only its one valid requested key', () async {
+  // Web 1.24 retired `thread_unread_badge_v0` and `sidebar_mark_all_read_v0`:
+  // they are neither asked nor taken from an answer that still carries them.
+  test('retired and unrequested keys in the answer change nothing', () async {
+    expect(ActivityRolloutFlags.keys, [_flag]);
     client.pending.single.complete({
       'evaluations': [
-        {'key': ActivityRolloutFlags.threadUnreadBadgeKey, 'enabled': false},
+        {'key': 'thread_unread_badge_v0', 'enabled': false},
+        {'key': 'sidebar_mark_all_read_v0', 'enabled': false},
         {'key': 'unrequested_flag', 'enabled': true},
       ],
     });
     await _settle();
-    expect(flags.threadUnreadBadge, isFalse);
-    expect(flags.sidebarMarkAllRead, isTrue);
     expect(flags.activityConversationList, isTrue);
-    expect(
-      FeatureFlagMemory.read(_scope, ActivityRolloutFlags.threadUnreadBadgeKey),
-      isFalse,
-    );
+    expect(FeatureFlagMemory.read(_scope, 'thread_unread_badge_v0'), isNull);
     expect(FeatureFlagMemory.read(_scope, _flag), isTrue);
     expect(FeatureFlagMemory.read(_scope, 'unrequested_flag'), isNull);
   });

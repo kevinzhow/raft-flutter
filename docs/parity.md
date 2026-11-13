@@ -2179,7 +2179,7 @@ Not owner decisions yet; each is listed so a reviewer can accept or send it back
 * Anchors are captured by a tap or a drag over the numbered lines (text) or rows (CSV/XLSX) while the comment panel is open; Web captures a text selection on desktop (and a tap only on touch screens). The pending rows are tinted (`fill-muted`); Web shows only the native selection. The quote is the text of the rows (cells tab-separated), capped at 400 characters.
 * HTML-region anchors are not captured and a stored one does not jump: the preview WebView has no JavaScript channel by design (nothing in an uploaded document reaches the app) and Web offers region capture on fine pointers only. Markdown-section anchors are not captured either.
 * The video "Add timestamp" button floats above the control bar (Web's sits over the `<video>` controls); a paused video in comment mode captures its time on pause and on a paused scrub like Web, and a jump seeks it paused without capturing the seek back.
-* The `re:` chip and the comment panel exist only while `attachment_comments_v0` is on; the flag is read once per identity and remembered, so the first frame after a cold start follows the last answer. The chip's quote rule uses `line-muted` until the `line-seam` token lands with the theme work.
+* The `re:` chip and the comment panel are always offered: Web 1.24 retired `attachment_comments_v0` (the comment routes no longer check it). The chip's quote rule uses `line-muted` until the `line-seam` token lands with the theme work.
 * A same-surface jump from the chip is the ordinary message jump (Web uses a transient focus without a URL change).
 
 ## Navigation, search and platform vs Web v1.21.23 (cindy/w23-nav): open differences

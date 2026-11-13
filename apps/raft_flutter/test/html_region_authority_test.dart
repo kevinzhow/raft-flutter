@@ -151,8 +151,8 @@ void main() {
       await t.pumpAndSettle();
       final toggle = find.byKey(const ValueKey('attachment-preview-mode'));
       if (scenario == 'flag-off') {
-        expect(toggle, findsNothing);
-        expect(find.byKey(const ValueKey('html-region-capture')), findsNothing);
+        // The flag is retired in Web 1.24: answering it off changes nothing.
+        expect(toggle, findsOneWidget);
         return;
       }
       await t.tap(toggle);

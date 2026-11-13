@@ -1,6 +1,12 @@
 import 'dart:math';
 
-const channelConversionFlag = 'channel_to_joint_conversion_v0';
+/// The flag a channel conversion follows. Web 1.24 retired
+/// `channel_to_joint_conversion_v0`: converting to a joint channel is no longer
+/// offered on any server, and a conversion already under way (its job, Retry,
+/// Cancel) is followed where `external_channels_v1` is on (server
+/// channels.ts:867-876 answers 404 `channel_to_joint_conversion_disabled`
+/// otherwise; Web EditChannelDialog.tsx:184-188, 401).
+const channelConversionFlag = 'external_channels_v1';
 Map<String, dynamic> _map(dynamic value) =>
     value is Map ? Map<String, dynamic>.from(value) : {};
 

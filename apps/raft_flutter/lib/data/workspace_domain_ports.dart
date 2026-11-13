@@ -217,7 +217,6 @@ abstract interface class WorkspaceReadCommandsPort {
 /// D1 owns feature evaluation and identity-reset ordering. D2 owns the prefs
 /// reducer. Patches are applied to servers then selected server, with no notify.
 abstract interface class WorkspaceSessionEffectsPort {
-  bool get syncCoreNotificationPrefsEnabled;
   void ensureSyncIdentity();
   void patchServerRows(RaftRecord Function(RaftRecord) patch);
 }

@@ -7,7 +7,6 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/thread_unread_by_parent.dart';
 import '../data/workspace_controller.dart';
-import 'activity_rollout_flags.dart';
 
 /// Where a message row is relative to what the timeline shows right now
 /// (Web `MessagePlacement`).
@@ -135,7 +134,7 @@ measureTimelineRows(Element scope) {
 }
 
 /// The timeline's bottom controls: "Back to Bottom" and, in a channel with
-/// unread followed threads (`thread_unread_badge_v0`), the one jump pill.
+/// unread followed threads, the one jump pill (Web 1.24 ThreadUnreadJumpPill.tsx:95).
 /// - threads below the viewport: "Next unread thread (N)" beside "Back to
 ///   bottom" goes to the nearest one below;
 /// - only above: "Earliest unread thread (N)" at the top goes to the topmost.
@@ -195,8 +194,7 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
     return !widget.thread &&
         channel != null &&
         channel.type != 'dm' &&
-        channel.type != 'thread' &&
-        ActivityRolloutFlags.peek(w)?.threadUnreadBadge == true;
+        channel.type != 'thread';
   }
 
   List<Map<String, dynamic>> get _threads => _eligible

@@ -1,9 +1,5 @@
 import 'system_notification_projection.dart';
 
-/// Feature flag gating the durable usage-limit attention feed (Web
-/// `USAGE_LIMIT_ATTENTION_FEATURE_FLAG_KEY`).
-const usageLimitAttentionFlag = 'usage_limit_attention_v0';
-
 /// `SERVER_SYSTEM_ATTENTION_CONTRACT_VERSION`: a snapshot with any other
 /// version is dropped, never partly read.
 const serverSystemAttentionContract = 'server-system-attention-v1';

@@ -28,7 +28,6 @@ import '../platform/mp4_hdr_probe.dart';
 import '../platform/native_sharing.dart';
 import '../platform/system_bars.dart';
 import '../data/attachment_transfer.dart';
-import 'attachment_comments_flag.dart';
 import 'attachment_comments_view.dart';
 import 'attachment_video_comments.dart';
 import 'attachment_transfer_view.dart';
@@ -284,10 +283,9 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
   late final transferView = AttachmentTransferView(transfer);
   Future<void>? cleanup;
 
-  /// The comment session of the shell (Web `PreviewCommentModeContext`), the
-  /// flag that gates comments, and a video's timestamp anchors.
+  /// The comment session of the shell (Web `PreviewCommentModeContext`) and a
+  /// video's timestamp anchors.
   final commentSession = RaftAttachmentCommentState();
-  late final gate = AttachmentCommentsGate.of(widget.controller);
   VideoCommentAnchors? videoComments;
   String get kind => attachmentPreviewKind(widget.metadata) ?? 'unsupported';
   bool get current =>
@@ -297,8 +295,6 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(scopeChanged);
-    gate.addListener(gateChanged);
-    unawaited(gate.ensure());
     if (kind == 'video') {
       videoComments = VideoCommentAnchors(
         session: commentSession,
@@ -307,10 +303,6 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
       );
     }
     load();
-  }
-
-  void gateChanged() {
-    if (mounted) setState(() {});
   }
 
   void scopeChanged() {
@@ -1032,7 +1024,6 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     cancel.cancel();
     transfer.dispose();
     widget.controller.removeListener(scopeChanged);
-    gate.removeListener(gateChanged);
     videoComments?.dispose();
     commentSession.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -1181,13 +1172,9 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     // Web VideoPreviewBody: a solid black stage.
     dark: kind == 'video',
     commentSession: commentSession,
-    // Web suppresses attachment comments for PDF and image surfaces, and
-    // everywhere while the server has them off (`attachment_comments_v0`).
-    commentsBuilder:
-        current &&
-            gate.enabled &&
-            kind != 'pdf' &&
-            widget.metadata['id'] is String
+    // Web suppresses attachment comments for PDF and image surfaces (the
+    // `attachment_comments_v0` gate is retired in Web 1.24).
+    commentsBuilder: current && kind != 'pdf' && widget.metadata['id'] is String
         ? (_, sheet) => AttachmentCommentsView(
             controller: widget.controller,
             attachmentId: widget.metadata['id'] as String,

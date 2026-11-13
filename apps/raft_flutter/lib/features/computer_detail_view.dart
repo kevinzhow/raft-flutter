@@ -12,7 +12,6 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/computer_upgrade_in_flight.dart';
 import '../data/raft_location.dart' show RaftProfileKind;
 import '../data/user_error.dart';
-import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
@@ -25,12 +24,7 @@ import 'runtime_usage_chip.dart';
 import 'bulk_agent_model_change.dart';
 import 'bulk_agent_model_dialog.dart';
 import 'management_support.dart'
-    show
-        cachedServerFlag,
-        rememberServerFlag,
-        pageIdentity,
-        readPageSnapshot,
-        writePageSnapshot;
+    show pageIdentity, readPageSnapshot, writePageSnapshot;
 import '../data/runtime_account_usage.dart';
 
 // ------------------------------------------------------------------ model
@@ -239,7 +233,6 @@ class ComputerDetailPanel extends StatefulWidget {
     this.onClose,
     this.onOpenAgent,
     this.onCreateAgent,
-    this.remoteUpgradeV2,
     this.now,
     this.deployment = const String.fromEnvironment(
       'RAFT_DEPLOYMENT_ENV',
@@ -252,9 +245,6 @@ class ComputerDetailPanel extends StatefulWidget {
   final VoidCallback? onClose;
   final ValueChanged<String>? onOpenAgent;
   final VoidCallback? onCreateAgent;
-
-  /// `remote_computer_upgrade_v2` override; null = the controller's flag.
-  final bool? remoteUpgradeV2;
   final DateTime Function()? now;
 
   /// VITE_DEPLOYMENT_ENV equivalent for the command bundle.
@@ -276,8 +266,11 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   /// A refused one-click upgrade (Web upgradeRefusalFromCode), held until
   /// the machine changes.
   String? upgradeRefusal;
+
+  /// The identity the page last drew for; a change rebuilds it. Bulk
+  /// "Change model" is on for everyone (Web 1.24 MachineAgentList.tsx:232,
+  /// 421; `bulk_change_model_web_v0` is retired).
   late String bulkScope;
-  bool bulkModelEnabled = false;
   final receiptTimer = RaftIdleTimer(yieldToAnimation: false);
   String get receiptKey => 'bulk-model-receipt:$id';
   BulkModelReceipt? get receipt =>
@@ -293,8 +286,6 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     // session loads once (Web watchModelLabelCatalog); this page only reads.
     modelLabels = ModelLabelCatalogStore.of(w)..addListener(_changed);
     bulkScope = pageIdentity(w);
-    bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
-    unawaited(_evaluateBulkModel());
     _scheduleReceipt();
   }
 
@@ -314,8 +305,6 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     }
     if (pageIdentity(w) != bulkScope || !identical(old.controller, w)) {
       bulkScope = pageIdentity(w);
-      bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
-      unawaited(_evaluateBulkModel());
     }
     _scheduleReceipt();
     if (old.machine['id'] != id ||
@@ -335,48 +324,13 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
 
   void _changed() {
     if (!mounted) return;
-    if (bulkScope != pageIdentity(w)) {
-      bulkScope = pageIdentity(w);
-      bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
-      unawaited(_evaluateBulkModel());
-    }
+    if (bulkScope != pageIdentity(w)) bulkScope = pageIdentity(w);
     _scheduleReceipt();
     setState(() {});
   }
 
   void _authorityChanged() {
     if (mounted && bulkScope != pageIdentity(w)) _changed();
-  }
-
-  Future<void> _evaluateBulkModel() async {
-    final identity = pageIdentity(w), controller = w;
-    try {
-      final value = await controller.client.post(
-        '/feature-flags/evaluate',
-        data: featureFlagEvaluateBody(
-          keys: [bulkModelFlag],
-          serverId: w.server?.id,
-        ),
-      );
-      if (!mounted ||
-          !identical(w, controller) ||
-          identity != pageIdentity(w)) {
-        return;
-      }
-      final evaluations = value is Map ? value['evaluations'] : null;
-      final enabled =
-          evaluations is List &&
-          evaluations.any(
-            (v) =>
-                v is Map && v['key'] == bulkModelFlag && v['enabled'] == true,
-          );
-      rememberServerFlag(w, bulkModelFlag, enabled, identity);
-      if (enabled != bulkModelEnabled) {
-        setState(() => bulkModelEnabled = enabled);
-      }
-    } catch (_) {
-      // A never-evaluated flag fails closed; an accepted cached value survives.
-    }
   }
 
   void _scheduleReceipt() {
@@ -408,7 +362,6 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         identical(w, controller) &&
         id == machineId &&
         identity == pageIdentity(w) &&
-        bulkModelEnabled &&
         canManage;
     if (!authorized()) return false;
     final selectedIds = selected.toSet();
@@ -435,7 +388,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
 
   Widget? _modelNotice() {
     final value = receipt;
-    if (!bulkModelEnabled || value == null || !value.visibleAt(_now())) {
+    if (value == null || !value.visibleAt(_now())) {
       return null;
     }
     final count = value.changed.length;
@@ -535,8 +488,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         policy is Map &&
         (policy['reasonCode'] == 'broadcast_disabled' ||
             policy['reasonCode'] == 'broadcast_gate_unavailable');
-    final webUpgradeOn =
-        (widget.remoteUpgradeV2 ?? w.remoteComputerUpgradeEnabled) && !gated;
+    // Web 1.24 useComputerUpgradeCard.ts:179-182: `webUpgradeOn = !broadcastGated`
+    // (`remote_computer_upgrade_v2` is retired; the server's policy decides).
+    final webUpgradeOn = !gated;
     final oneClickTarget =
         m['computerUpgradeAvailable'] == true &&
             policy is Map &&
@@ -702,9 +656,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           : RaftComputerUpgradeLink.none,
       upgradeVersion: reconnect.targetVersion,
       requestOutcome: computerUpgradeRequestOutcome(m),
-      highlightedAgentIds: bulkModelEnabled
-          ? receipt?.highlightsAt(_now()) ?? const {}
-          : const {},
+      highlightedAgentIds: receipt?.highlightsAt(_now()) ?? const {},
     );
   }
 
@@ -922,7 +874,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       openAgent: widget.onOpenAgent,
       createAgent: widget.onCreateAgent,
       runtimeChip: _runtimeChip,
-      changeModel: bulkModelEnabled && canManage ? _changeModels : null,
+      changeModel: canManage ? _changeModels : null,
       rescanRuntimes: _rescanRuntimes,
       openCreator: switch (m['creator']) {
         {'id': final String creator} => () => w.openProfile(

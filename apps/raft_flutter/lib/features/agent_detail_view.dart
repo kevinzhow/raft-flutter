@@ -135,8 +135,7 @@ class AgentDetailActions {
   final bool canArchive;
 
   /// Mount the Agent migration section (Web `AgentMigrationSection`: the
-  /// viewer manages a non-external agent that has a computer and
-  /// `agent_migration_v0` is on).
+  /// viewer manages a non-external agent that has a computer).
   final bool canMigrate;
 
   /// A cloud agent the viewer manages: mount the migration section to show the

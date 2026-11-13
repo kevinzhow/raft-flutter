@@ -162,8 +162,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.runAsync(() async {
         for (var i = 0; i < 200; i++) {
-          final on = ActivityRolloutFlags.peek(w)?.threadUnreadBadge == enabled;
-          if (on && (!enabled || w.followedThreads.settled)) break;
+          if (w.followedThreads.settled) break;
           await Future<void>.delayed(const Duration(milliseconds: 25));
         }
         await Future<void>.delayed(const Duration(milliseconds: 25));
@@ -215,10 +214,13 @@ void main() {
       },
     );
 
-    testWidgets('a server with the flag off shows no pill', (tester) async {
+    // Web 1.24 ThreadUnreadJumpPill.tsx:95 (`thread_unread_badge_v0` is
+    // retired): a server that still answers it off changes nothing.
+    testWidgets('the retired flag answered off still shows the pill', (
+      tester,
+    ) async {
       await mount(tester, followed: [_thread(3), _thread(4)], enabled: false);
-      expect(pill('top'), findsNothing);
-      expect(find.byType(RaftThreadUnreadJumpPill), findsNothing);
+      expect(pill('top'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
 

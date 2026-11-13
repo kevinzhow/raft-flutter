@@ -1,22 +1,16 @@
-// Web AgentActivityLog (default export): the Activity tab. Behind
-// `activity_overview_web_v0` it opens on the per-turn Overview with the raw log
-// one toggle away; without the flag it is the raw log, as before.
+// Web AgentActivityLog (default export): the Activity tab. It opens on the
+// per-turn Overview with the raw log one toggle away (Web 1.24
+// AgentActivityLog.tsx:647, 704; `activity_overview_web_v0` is retired).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import 'agent_activity_overview.dart';
 import 'agent_detail_view.dart'
     show AgentActivityTab, agentCachedActivityEntries;
 import 'agent_trajectory_log.dart' show admittedAgentTrajectoryRows;
-import 'management_support.dart'
-    show cachedServerFlag, pageIdentity, rememberServerFlag;
-
-/// Web `ACTIVITY_OVERVIEW_WEB_FLAG_KEY`.
-const activityOverviewWebFlag = 'activity_overview_web_v0';
 
 class AgentActivityPane extends StatefulWidget {
   const AgentActivityPane({
@@ -41,7 +35,6 @@ class AgentActivityPane extends StatefulWidget {
 
 class _AgentActivityPaneState extends State<AgentActivityPane> {
   WorkspaceController get w => widget.controller;
-  late bool enabled = cachedServerFlag(w, activityOverviewWebFlag) ?? false;
 
   /// Web `view`: the Overview first.
   bool overview = true;
@@ -54,48 +47,13 @@ class _AgentActivityPaneState extends State<AgentActivityPane> {
   @override
   void initState() {
     super.initState();
-    unawaited(_evaluate());
-    if (enabled) unawaited(_loadRawKnown());
+    unawaited(_loadRawKnown());
   }
 
   @override
   void dispose() {
     _request++;
     super.dispose();
-  }
-
-  Future<void> _evaluate() async {
-    final identity = pageIdentity(w), controller = w;
-    try {
-      final value = await controller.client.post(
-        '/feature-flags/evaluate',
-        data: featureFlagEvaluateBody(
-          keys: [activityOverviewWebFlag],
-          serverId: w.server?.id,
-        ),
-      );
-      if (!mounted ||
-          !identical(w, controller) ||
-          identity != pageIdentity(w)) {
-        return;
-      }
-      final evaluations = value is Map ? value['evaluations'] : null;
-      final on =
-          evaluations is List &&
-          evaluations.any(
-            (v) =>
-                v is Map &&
-                v['key'] == activityOverviewWebFlag &&
-                v['enabled'] == true,
-          );
-      rememberServerFlag(w, activityOverviewWebFlag, on, identity);
-      if (on != enabled) {
-        setState(() => enabled = on);
-        if (on) unawaited(_loadRawKnown());
-      }
-    } catch (_) {
-      // A never-evaluated flag fails closed; an accepted cached value survives.
-    }
   }
 
   Future<void> _loadRawKnown() async {
@@ -122,7 +80,6 @@ class _AgentActivityPaneState extends State<AgentActivityPane> {
 
   @override
   Widget build(BuildContext context) {
-    if (!enabled) return _raw();
     final hasRaw =
         rawKnown ??
         (widget.initialEntries.isNotEmpty ||
