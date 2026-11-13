@@ -303,9 +303,43 @@ class UploadCancellation {
 }
 
 class RaftEvent {
-  const RaftEvent(this.name, this.payload);
+  const RaftEvent(this.name, this.payload, {this.ack});
   final String name;
   final dynamic payload;
+
+  /// Set only when the server sent the event with an acknowledgement
+  /// (socket.io `emit(..., callback)`, e.g. `notification:desktop` to a
+  /// desktop that reports `ackAlerts`). Calling it sends [data] back to the
+  /// server once; later calls are ignored. Null for every other event.
+  final void Function(Object? data)? ack;
+
+  /// The event socket.io's `onAny` hands over. An event sent with an ack
+  /// arrives as `(name, [payload, ackFn])` (or `(name, ackFn)` without a
+  /// payload): the payload is unwrapped and the callback kept as [ack]. Any
+  /// other shape (no ack) is passed through unchanged.
+  factory RaftEvent.fromSocket(String name, [dynamic data]) {
+    if (data is Function) {
+      return RaftEvent(name, null, ack: _socketAck(data));
+    }
+    if (data is List && data.isNotEmpty && data.last is Function) {
+      final rest = data.sublist(0, data.length - 1);
+      return RaftEvent(
+        name,
+        rest.length == 1 ? rest.single : rest,
+        ack: _socketAck(data.last as Function),
+      );
+    }
+    return RaftEvent(name, data);
+  }
+
+  static void Function(Object? data) _socketAck(Function callback) {
+    var sent = false;
+    return (Object? data) {
+      if (sent) return;
+      sent = true;
+      Function.apply(callback, [data]);
+    };
+  }
 }
 
 /// Human API transport; refresh rotation is shared by HTTP and socket recovery.
@@ -455,6 +489,26 @@ class RaftClient {
   final _events = StreamController<RaftEvent>.broadcast();
   Stream<RaftEvent> get events => _events.stream;
   bool get connected => _socket?.connected ?? false;
+
+  /// The id the server knows this connection by (socket.io `socket.id`),
+  /// or null while it is not connected. `POST /notifications/test` names the
+  /// desktop socket to deliver to with it.
+  String? get socketId {
+    final socket = _socket;
+    return socket != null && socket.connected ? socket.id : null;
+  }
+
+  /// Sends [event] with [payload] on the live connection (for example
+  /// `presence:activity`). Never queued: false, and nothing is sent, while
+  /// the socket is not connected; the caller re-sends on the next
+  /// `connected` event.
+  bool emitSocketEvent(String event, [Object? payload]) {
+    final socket = _socket;
+    if (_closed || socket == null || !socket.connected) return false;
+    socket.emit(event, payload);
+    return true;
+  }
+
   bool restoredOffline = false;
 
   /// The session is kept but the server has not confirmed it recently
@@ -1912,7 +1966,7 @@ class RaftClient {
     );
     _socket = socket;
     socket.onAny((String event, [dynamic payload]) {
-      if (epoch == _generation) _emit(RaftEvent(event, payload));
+      if (epoch == _generation) _emit(RaftEvent.fromSocket(event, payload));
     });
     socket.onConnect((_) {
       if (epoch != _generation) return;
