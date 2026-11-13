@@ -1,5 +1,6 @@
 import 'hover_region.dart';
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,7 @@ import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 import 'recipe_surface.dart' show RaftCssBoxDecoration;
+import 'raft/ui_tokens.dart';
 
 /// Where the row sits: legacy thread panels use their original inline inset.
 /// The current Raft header keeps its timestamp at the trailing edge.
@@ -1337,7 +1339,13 @@ class RaftMessageToolbar extends StatelessWidget {
 
 /// Fine-pointer toolbar action. Icon geometry remains a caller-supplied slot,
 /// so missing source ThreadIcon/SmilePlus paths cannot silently become Material glyphs.
-class RaftMessageToolbarAction extends StatelessWidget {
+///
+/// Web 1.24 MessageHoverToolbar's reaction button also uses [pressed] (the
+/// person already reacted with its emoji: attention-soft, as the reaction
+/// chip), [onRest] (the pointer rested on it for [restDelay]: open every
+/// reaction), [onTouchPressed] (a tap by touch opens the picker instead of
+/// reacting) and a [tooltip] of its own shown after [tooltipDelay].
+class RaftMessageToolbarAction extends StatefulWidget {
   const RaftMessageToolbarAction({
     super.key,
     required this.label,
@@ -1345,20 +1353,76 @@ class RaftMessageToolbarAction extends StatelessWidget {
     this.onPressed,
     this.active = false,
     this.popupOpen = false,
+    this.pressed = false,
+    this.tooltip,
+    this.tooltipDelay,
+    this.onRest,
+    this.onTouchPressed,
   });
   final String label;
   final Widget icon;
   final VoidCallback? onPressed;
   final bool active, popupOpen;
+
+  /// `aria-pressed`: the toggle is on.
+  final bool pressed;
+
+  /// Replaces [label] as the hover hint (the accessible name stays [label]).
+  final String? tooltip;
+  final Duration? tooltipDelay;
+
+  /// Web `REACTION_HOVER_OPEN_DELAY_MS`.
+  static const restDelay = Duration(milliseconds: 500);
+  final VoidCallback? onRest;
+  final VoidCallback? onTouchPressed;
+
+  @override
+  State<RaftMessageToolbarAction> createState() =>
+      _RaftMessageToolbarActionState();
+}
+
+class _RaftMessageToolbarActionState extends State<RaftMessageToolbarAction> {
+  Timer? rest;
+  PointerDeviceKind? pressKind;
+
+  void cancelRest() {
+    rest?.cancel();
+    rest = null;
+  }
+
+  @override
+  void didUpdateWidget(covariant RaftMessageToolbarAction oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.popupOpen || widget.onRest == null) cancelRest();
+  }
+
+  @override
+  void dispose() {
+    cancelRest();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final raft = t.option('messageToolbar.style', or: 'recipe') == 'raft';
     final extent = raft ? 32.0 : 28.0;
-    return RaftControl(
-      onPressed: onPressed,
-      tooltip: label,
-      semanticLabel: label,
+    final onPressed = widget.onPressed;
+    final custom =
+        widget.tooltip != null ||
+        widget.onRest != null ||
+        widget.onTouchPressed != null;
+    Widget control = RaftControl(
+      onPressed: onPressed == null
+          ? null
+          : () {
+              cancelRest();
+              final touch = pressKind == PointerDeviceKind.touch;
+              pressKind = null;
+              (touch ? widget.onTouchPressed ?? onPressed : onPressed)();
+            },
+      tooltip: custom ? null : widget.label,
+      semanticLabel: widget.label,
       visualHeight: extent,
       visualWidth: extent,
       minimumTargetSize: extent,
@@ -1366,11 +1430,51 @@ class RaftMessageToolbarAction extends StatelessWidget {
       shadow: true,
       recipe: _MessageActionRecipe(
         t,
-        active: active,
-        popupOpen: popupOpen,
+        active: widget.active,
+        popupOpen: widget.popupOpen,
+        pressed: widget.pressed,
         raft: raft,
       ),
-      child: SizedBox.square(dimension: raft ? 18 : 13, child: icon),
+      child: SizedBox.square(dimension: raft ? 18 : 13, child: widget.icon),
+    );
+    if (!custom) return control;
+    control = Semantics(
+      toggled: widget.pressed,
+      child: Listener(
+        // A press is a click, not a rest: only leaving and coming back
+        // starts the wait again.
+        onPointerDown: (event) {
+          cancelRest();
+          pressKind = event.kind;
+        },
+        onPointerCancel: (_) => pressKind = null,
+        child: MouseRegion(
+          onEnter: (event) {
+            if (event.kind == PointerDeviceKind.touch ||
+                widget.popupOpen ||
+                widget.onRest == null) {
+              return;
+            }
+            cancelRest();
+            rest = Timer(RaftMessageToolbarAction.restDelay, () {
+              rest = null;
+              if (mounted) widget.onRest?.call();
+            });
+          },
+          onExit: (_) => cancelRest(),
+          child: control,
+        ),
+      ),
+    );
+    final tooltip = widget.tooltip;
+    if (tooltip == null) return control;
+    // The picker that opens over the button takes the pointer, which closes
+    // the hint (Web disables it while the picker is open).
+    return RaftTooltip(
+      message: tooltip,
+      delay: widget.tooltipDelay,
+      excludeFromSemantics: true,
+      child: control,
     );
   }
 }
@@ -1380,9 +1484,10 @@ class _MessageActionRecipe extends RaftControlRecipe {
     super.tokens, {
     required this.active,
     required this.popupOpen,
+    this.pressed = false,
     this.raft = false,
   }) : super(variant: RaftControlVariant.ghost);
-  final bool active, popupOpen, raft;
+  final bool active, popupOpen, pressed, raft;
   @override
   bool get transformsOnInteraction => false;
   @override
@@ -1401,9 +1506,20 @@ class _MessageActionRecipe extends RaftControlRecipe {
       ? tokens.strong
       : tokens.colors['foreground-icon']!;
   @override
-  Color backgroundFor({bool hovered = false}) => hovered || popupOpen
-      ? tokens.colors[raft ? 'fill-pressed' : 'fill-muted']!
-      : Colors.transparent;
+  Color backgroundFor({bool hovered = false}) {
+    if (pressed) {
+      // `bg-attention-soft hover:overlay-medium`: the chip of a reaction you
+      // added.
+      final soft = tokens.ui['attention-soft'];
+      return hovered && !popupOpen
+          ? Color.alphaBlend(tokens.ui.fillPressed, soft)
+          : soft;
+    }
+    return hovered || popupOpen
+        ? tokens.colors[raft ? 'fill-pressed' : 'fill-muted']!
+        : Colors.transparent;
+  }
+
   @override
   Color get focusRing => tokens.colors['primary-500']!;
   @override

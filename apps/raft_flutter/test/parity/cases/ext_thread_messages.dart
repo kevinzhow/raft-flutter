@@ -179,10 +179,10 @@ ParityCase _rowCase() => ParityCase(
       case 'toolbar-button-hover':
         await mouse.moveTo(t.getCenter(reaction()));
       case 'picker' || 'picker-emoji-hover':
+        // Web 1.24: the picker opens when the pointer rests on the button
+        // (REACTION_HOVER_OPEN_DELAY_MS); a click adds the favorite.
         await mouse.moveTo(t.getCenter(reaction()));
-        await t.pump(const Duration(milliseconds: 50));
-        await mouse.down(t.getCenter(reaction()));
-        await mouse.up();
+        await t.pump(const Duration(milliseconds: 600));
         await _pumpFrames(t);
         if (state == 'picker-emoji-hover') {
           await mouse.moveTo(

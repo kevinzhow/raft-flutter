@@ -42,6 +42,9 @@ import 'media_items.dart';
 import 'attachment_shape.dart';
 import 'message_presentation.dart';
 import 'message_saved_action.dart';
+import 'message_hover_toolbar.dart';
+import 'message_context_menu_sections.dart';
+import '../data/reaction_favorite.dart';
 import 'message_task_actions.dart';
 import 'message_sender_menu.dart';
 import 'message_preparation.dart';
@@ -1547,113 +1550,24 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     await showRaftMessageContextMenu<void>(
       context: context,
       anchor: origin,
-      builder: (menuContext) {
-        RaftMessageContextMenuItem item(
-          String value,
-          String label,
-          Widget icon,
-        ) => RaftMessageContextMenuItem(
-          key: ValueKey('message-menu-$value'),
-          label: raftText(menuContext, label),
-          icon: icon,
-          onPressed: () => pick(menuContext, value),
-        );
-        final follow = canFollow && hasThreadConversation;
-        final taskItems = [
-          if (!threadReply && supportsTasks)
-            task == null
-                ? messageTaskMenuItem(w, item)
-                : task['status'] == 'done'
-                ? item(
-                    'task-reopen',
-                    'Reopen task',
-                    raftMessageMenuIcon(RaftGlyph.rotateCcw),
-                  )
-                : item(
-                    'task-done',
-                    'Mark as Done',
-                    raftMessageMenuIcon(RaftGlyph.checkCircle),
-                  ),
-        ];
-        return RaftMessageContextMenu(
-          onDismiss: () => Navigator.of(menuContext).pop(),
-          reactionLabel: (emoji) =>
-              raftFormat(menuContext, 'React with {emoji}', {'emoji': emoji}),
-          onReact: canReact
-              ? (emoji) {
-                  result = 'react:$emoji';
-                  Navigator.of(menuContext).pop();
-                }
-              : null,
-          sections: [
-            [
-              item(
-                'copy-link',
-                'Copy link',
-                raftMessageMenuIcon(RaftGlyph.link),
-              ),
-              item(
-                'copy-markdown',
-                'Copy Markdown',
-                raftMessageMenuIcon(RaftGlyph.copy),
-              ),
-              // Web: manual mode offers Translate (Translating… while the
-              // request is pending) after Copy Markdown.
-              if (translation.manualAction)
-                RaftMessageContextMenuItem(
-                  key: const ValueKey('message-menu-translate'),
-                  label: raftText(
-                    menuContext,
-                    translation.manualPending ? 'Translating…' : 'Translate',
-                  ),
-                  icon: raftMessageMenuIcon(RaftGlyph.languages),
-                  onPressed: translation.manualPending
-                      ? null
-                      : () => pick(menuContext, 'translate'),
-                ),
-              if (!guest)
-                item(
-                  'select',
-                  'Select message',
-                  raftMessageMenuIcon(RaftGlyph.checkCircle),
-                ),
-            ],
-            [
-              if (!hideThreadActions)
-                item(
-                  'thread',
-                  'Open Thread',
-                  Builder(
-                    builder: (c) => RaftMessageThreadGlyph(
-                      size: 14,
-                      color: DefaultTextStyle.of(c).style.color,
-                    ),
-                  ),
-                ),
-              item(
-                'save',
-                saved ? 'Remove from Saved' : 'Save',
-                raftMessageMenuIcon(RaftGlyph.bookmark),
-              ),
-              if (follow)
-                followed
-                    ? item(
-                        'unfollow',
-                        'Unfollow thread',
-                        raftMessageMenuIcon(RaftGlyph.messageCircleOff),
-                      )
-                    : item(
-                        'follow',
-                        'Follow thread',
-                        raftMessageMenuIcon(RaftGlyph.messageCirclePlus),
-                      ),
-              // Without the follow divider the task row joins this group.
-              if (!follow) ...taskItems,
-            ],
-            if (follow) taskItems,
-          ],
-        );
-      },
+      builder: (menuContext) => messageContextMenu(
+        menuContext,
+        w,
+        pick: (value) => pick(menuContext, value),
+        onReact: canReact
+            ? (emoji) {
+                result = 'react:$emoji';
+                Navigator.of(menuContext).pop();
+              }
+            : null,
+        taskItems: !threadReply && supportsTasks,
+        task: task,
+        translate: translation.manualAction ? translation.manualPending : null,
+        select: !guest,
+        thread: !hideThreadActions,
+        saved: saved,
+        follow: canFollow && hasThreadConversation ? followed : null,
+      ),
     );
     if (mounted) setState(() => menuMessageId = null);
     final choice = result;
@@ -1723,8 +1637,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         mounted &&
         revision == bindingRevision &&
         authority == workspaceAuthority(w);
+    final adding = !ownReactions(m).contains(emoji);
     try {
       await w.toggleReaction(m, emoji);
+      // Every reaction added counts toward the toolbar button's emoji.
+      if (adding) {
+        recordReactionUsage(w.client.origin, w.client.user?.id, emoji);
+      }
       if (current() && reactionFailures[m.id] == emoji) {
         reactionFailureTimers.remove(m.id)?.cancel();
         setState(() => reactionFailures.remove(m.id));
@@ -2149,39 +2068,49 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     setState(() {});
   }
 
-  Widget messageToolbar(RaftMessage message, {required bool parent}) {
-    final saved = SavedCountStore.of(w).isSaved(message.id);
-    return RaftMessageToolbar(
-      children: [
-        if (!parent && !widget.thread)
-          RaftMessageToolbarAction(
-            key: ValueKey('message-thread-${message.id}'),
-            label: raftText(context, 'Reply in thread'),
-            icon: const RaftMessageThreadGlyph(),
-            onPressed: presentationActive
-                ? () => _messages.threads.openThread(message)
-                : null,
-          ),
-        if (canReact)
-          Builder(
-            builder: (anchor) => RaftMessageToolbarAction(
-              key: ValueKey('message-react-${message.id}'),
-              label: raftText(context, 'Add reaction'),
-              icon: const RaftMessageAddReactionGlyph(),
-              popupOpen: pickerMessageId == message.id,
-              onPressed: () => openReactionPicker(message, anchor),
-            ),
-          ),
-        RaftMessageToolbarAction(
-          key: ValueKey('message-save-${message.id}'),
-          label: raftText(context, saved ? 'Remove from Saved' : 'Save'),
-          icon: const RaftIcon(RaftGlyph.bookmark, size: 13),
-          active: saved,
-          onPressed: presentationActive ? () => saveMessage(message) : null,
-        ),
-      ],
-    );
-  }
+  Widget messageToolbar(RaftMessage message, {required bool parent}) =>
+      MessageHoverToolbar(
+        messageId: message.id,
+        saved: SavedCountStore.of(w).isSaved(message.id),
+        favorite: () =>
+            currentFavoriteReaction(w.client.origin, w.client.user?.id),
+        reacted: (emoji) => ownReactions(message).contains(emoji),
+        reactionOpen: pickerMessageId == message.id,
+        moreOpen: menuMessageId == message.id,
+        onThread: !parent && !widget.thread && presentationActive
+            ? () => _messages.threads.openThread(message)
+            : null,
+        onReact: canReact ? (emoji) => react(message, emoji) : null,
+        onReactionPicker: canReact
+            ? (anchor) => openReactionPicker(message, anchor)
+            : null,
+        onForward: presentationActive && messageForwardable(message)
+            ? () => forwardMessages(context, w, [message])
+            : null,
+        onSave: presentationActive ? () => saveMessage(message) : null,
+        onMore: selection.active
+            ? null
+            : (anchor) {
+                final box = anchor.findRenderObject();
+                actions(
+                  message,
+                  anchor: box is RenderBox && box.hasSize
+                      ? box.localToGlobal(box.size.bottomLeft(Offset.zero))
+                      : null,
+                  parentTile: parent,
+                );
+              },
+      );
+
+  /// The viewer's own reactions on [m], with toggles in flight applied.
+  Set<String> ownReactions(RaftMessage m) => withPendingReactions(
+    projectedOwnReactions(
+      principal: w.client.user?.id,
+      reactions: m.json['reactions'] as List? ?? const [],
+      completeViewer: w.reactionViewer.reacted(m.id),
+    ),
+    w.pendingReactionTargets(m.id),
+  );
 
   /// Screen-reader row actions: the hover toolbar's actions (same conditions),
   /// copy, and the message menu that holds every other action.
@@ -2809,14 +2738,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList(),
-      reactedEmojis: withPendingReactions(
-        projectedOwnReactions(
-          principal: w.client.user?.id,
-          reactions: m.json['reactions'] as List? ?? const [],
-          completeViewer: w.reactionViewer.reacted(m.id),
-        ),
-        w.pendingReactionTargets(m.id),
-      ),
+      reactedEmojis: ownReactions(m),
       failedReactionEmojis: reactionFailures[m.id] == null
           ? const {}
           // ignore: raft_lints/avoid_render_index_assertion -- Guarded by `reactionFailures[m.id] == null ? const {} : ...` on the line above.
