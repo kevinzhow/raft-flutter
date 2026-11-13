@@ -36,6 +36,7 @@ export 'src/adaptive_workspace.dart';
 export 'src/panel_edge.dart';
 export 'src/localization.dart';
 export 'src/message_body.dart';
+export 'src/math_formula.dart';
 export 'src/raft_underline.dart';
 export 'src/font_warm_up.dart';
 export 'src/idle_work.dart';

@@ -1,4 +1,6 @@
 import 'markdown_comment_anchors.dart';
+import 'markdown_math.dart';
+import 'math_formula.dart';
 import 'interaction.dart';
 import 'idle_work.dart';
 import 'hover_region.dart';
@@ -570,6 +572,7 @@ class RaftMessageBody extends StatelessWidget {
         permalinkAppearance: permalinkAppearance,
       ),
       'code': _MessageInlineCodeBuilder(highlight: highlight),
+      raftMathDisplayTag: _DisplayMathBuilder(recipe.body),
       if (highlight.isNotEmpty) 'mark': _SearchMarkBuilder(t),
     };
     final bulletStyle = recipe.body;
@@ -1689,6 +1692,15 @@ class _MessageInlineCodeBuilder extends MarkdownElementBuilder {
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) {
+    if (element is md.Element && raftIsInlineMath(element)) {
+      // Web InlineMath: the formula sits in the prose, not in code style.
+      return Text.rich(
+        raftInlineMathSpan(
+          element.textContent,
+          parentStyle ?? DefaultTextStyle.of(context).style,
+        ),
+      );
+    }
     final style = (parentStyle ?? DefaultTextStyle.of(context).style).merge(
       preferredStyle,
     );
@@ -1733,6 +1745,23 @@ class _MessageInlineCodeBuilder extends MarkdownElementBuilder {
       ),
     );
   }
+}
+
+/// Web DisplayMath for `$$` on its own lines (raftMathDisplayTag).
+class _DisplayMathBuilder extends MarkdownElementBuilder {
+  _DisplayMathBuilder(this.style);
+  final TextStyle style;
+
+  @override
+  bool isBlockElement() => true;
+
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) => RaftDisplayMath(source: element.textContent, style: style);
 }
 
 /// Inline Markdown links need an explicit focus/action widget. The upstream
