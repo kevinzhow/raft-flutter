@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Run an isolated local comparison stack without changing global tools.
 
-Usage: tool/raft-stack [--config PATH] start|stop|status|ports|flags|sync
+Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync
+       tool/raft-stack [--config PATH] flags [on|off KEY...]
 
 Each config (default .local/stack.json) describes one source checkout and one
 raftdev environment, so several Raft versions can run side by side from one
@@ -15,9 +16,14 @@ worktree. Config keys (all paths may start with ~):
                   default: npx-provided node 24.21.0 / pnpm 10.29.3 (toolchain-paths.txt)
   risingwaveImage override of the pinned RisingWave image
   featureFlags    flag keys enabled for the fixture server after start (or via the
-                  flags action): dev stacks seed no raftbench_* rows, so a flag row
+                  flags action): dev stacks seed few flag rows, so a missing flag row
                   plus a server-stage allow rule is written to the environment's
                   PostgreSQL container
+  featureFlagsOff flag keys forced off for the fixture server (a server-stage deny rule;
+                  a flag with no row is already off). `flags on KEY...` / `flags off
+                  KEY...` move keys between the two lists in the config file and apply
+                  the change at once; plain `flags` re-applies both lists. Every flags
+                  run prints the stored state of the keys it touched
   fixturePlan     optional: set the fixture server's plan (free|founder|partner|pro) when
                   flags are applied. Creating a hosted agent counts against the plan's seats
                   and the fixture server's "pro" plan has one, so hosted-agent work needs
@@ -26,15 +32,20 @@ worktree. Config keys (all paths may start with ~):
                   <sourceDir>/packages/server/.env (the server loads it with dotenv;
                   raftdev itself only forwards a fixed list of variables). Created on
                   start/sync with generated keys, see below
-  antiprotonUrl   required with serverEnvFile: http://localhost:<port> of the local
+                  The file always gets generated SLOCK_PROVIDER_CREDENTIAL_KEY,
+                  RAFT_APP_WEBHOOK_ENCRYPTION_KEY and RAFT_TOTP_SECRET_ENCRYPTION_KEY
+                  (v1.24+ refuses to store an authenticator secret without the last)
+  antiprotonUrl   optional with serverEnvFile: http://localhost:<port> of the local
                   antiproton (tool/antiproton-local); written as
-                  ANTIPROTON_BASE_URL_OVERRIDE
+                  ANTIPROTON_BASE_URL_OVERRIDE, together with RAFTBENCH_LOCAL_SERVER_ID
 The sync action re-applies patches, the server env file and flags to a running stack;
 the server (node --watch) is restarted so it re-reads the env file. With
 the antiproton-local-<version> patch the hosted-agent path works locally (RaftBench
 analysis, Cloud agents): RAFTBENCH_LOCAL_SERVER_ID is the fixture server, the provider
 token comes from `tool/antiproton-local mint-token`, and add antiproton_hosted_runtime
 to featureFlags.
+A patch manifest may say {"upstream": "<why>"} instead of listing files: the source
+version already does what the patch did, so nothing is applied for that name.
 Logs are private files .local/<config stem>-<action>.log (stack-<action>.log for
 the default config).
 """
@@ -56,15 +67,19 @@ PATCH_DIR = ROOT / 'tool/reference-patches'
 ACTIONS = {'start', 'stop', 'status', 'ports', 'flags', 'sync'}
 DEFAULT_PATCHES = ('seed-history', 'risingwave-memory')
 DEFAULT_IMAGE = 'mirror.gcr.io/risingwavelabs/risingwave@sha256:ba5915a5e85c938a3ec62d76c63c6e4cb37d4f4e3c5c30886f0d2eff61b70073'
-USAGE = 'Usage: tool/raft-stack [--config PATH] start|stop|status|ports|flags|sync'
+USAGE = ('Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync\n'
+         '       tool/raft-stack [--config PATH] flags [on|off KEY...]')
 
 
 def parse_args(argv):
+    """Return (config path, action), plus (mode, keys) for `flags on|off KEY...`."""
     args = list(argv)
     config = LOCAL / 'stack.json'
     if args[:1] == ['--config'] and len(args) >= 2:
         config = Path(args[1]).expanduser()
         args = args[2:]
+    if args[:1] == ['flags'] and len(args) >= 3 and args[1] in ('on', 'off'):
+        return config, 'flags', (args[1], args[2:])
     if len(args) != 1 or args[0] not in ACTIONS:
         raise SystemExit(USAGE)
     return config, args[0]
@@ -91,6 +106,8 @@ def apply_patches(source, names, patch_dir=PATCH_DIR):
     applied = []
     for name in names:
         repair = json.loads((patch_dir / (name + '.json')).read_text())
+        if repair.get('upstream'):
+            continue
         files = repair.get('files') or [repair]
         digests = [hashlib.sha256((source / item['path']).read_bytes()).hexdigest() for item in files]
         patch = patch_dir / (name + '.patch')
@@ -139,6 +156,77 @@ def feature_flag_sql(keys, server_id):
     return '\n'.join(statements) + '\n'
 
 
+# Our own rules sort first among server-stage rules (first match by priority wins), so a
+# toggle beats any allowlist rule a seed may have written for the same server.
+TOGGLE_PRIORITY = -1000
+BUMP_CONFIG_VERSION_SQL = (
+    # v1.24+: every replica polls this row and sends `server:features-changed`, so open
+    # clients re-read their flags; older sources have no such table.
+    "DO $$ BEGIN IF to_regclass('feature_flag_config_versions') IS NOT NULL THEN "
+    "INSERT INTO feature_flag_config_versions (scope, version) VALUES ('global', 1) "
+    "ON CONFLICT (scope) DO UPDATE SET version = feature_flag_config_versions.version + 1, "
+    "updated_at = now(); END IF; END $$;")
+
+
+def feature_flag_toggle_sql(on_keys, off_keys, server_id):
+    """Idempotent SQL: the fixture server's own server-stage rule says allow (on) or deny (off).
+
+    A missing flag row is created (default off, server-randomised) only for an on key.
+    """
+    if not UUID_RE.match(server_id):
+        raise SystemExit('Fixture server id is not a UUID.')
+    statements = ['BEGIN;']
+    for key, decision in [(k, 'allow') for k in on_keys] + [(k, 'deny') for k in off_keys]:
+        if not FLAG_KEY_RE.match(key):
+            raise SystemExit('Invalid feature flag key: ' + key)
+        if decision == 'allow':
+            statements.append(
+                'INSERT INTO feature_flags (key, description, enabled, kill_switch, randomization_unit, default_enabled, salt) '
+                f"VALUES ('{key}', 'Local fixture flag', true, false, 'server', false, '{key}') ON CONFLICT (key) DO NOTHING;")
+        statements.append(
+            f"DELETE FROM feature_flag_rules WHERE flag_key = '{key}' AND stage = 'server' "
+            f"AND \"values\" = '[\"{server_id}\"]'::jsonb;")
+        statements.append(
+            'INSERT INTO feature_flag_rules (id, flag_key, stage, priority, decision, "values") '
+            f"SELECT gen_random_uuid(), '{key}', 'server', {TOGGLE_PRIORITY}, '{decision}', '[\"{server_id}\"]'::jsonb "
+            f"WHERE EXISTS (SELECT 1 FROM feature_flags WHERE key = '{key}');")
+    statements.append(BUMP_CONFIG_VERSION_SQL)
+    statements.append('COMMIT;')
+    return '\n'.join(statements) + '\n'
+
+
+def feature_flag_state_sql(keys, server_id):
+    """One line per key: key|row enabled|kill switch|default|this server's own rule decision."""
+    if not UUID_RE.match(server_id):
+        raise SystemExit('Fixture server id is not a UUID.')
+    for key in keys:
+        if not FLAG_KEY_RE.match(key):
+            raise SystemExit('Invalid feature flag key: ' + key)
+    listed = ', '.join(f"('{key}')" for key in keys)
+    return (
+        f"SELECT k.key, coalesce(f.enabled::text, 'no row'), coalesce(f.kill_switch::text, '-'), "
+        f"coalesce(f.default_enabled::text, '-'), coalesce((SELECT r.decision FROM feature_flag_rules r "
+        f"WHERE r.flag_key = k.key AND r.stage = 'server' AND r.\"values\" = '[\"{server_id}\"]'::jsonb "
+        f"ORDER BY r.priority LIMIT 1), '-') FROM (VALUES {listed}) AS k(key) "
+        f"LEFT JOIN feature_flags f ON f.key = k.key ORDER BY k.key;\n")
+
+
+def toggle_config_flags(config, mode, keys):
+    """Move keys into featureFlags (on) or featureFlagsOff (off); returns the new config."""
+    for key in keys:
+        if not FLAG_KEY_RE.match(key):
+            raise SystemExit('Invalid feature flag key: ' + key)
+    on = [k for k in config.get('featureFlags') or [] if k not in keys]
+    off = [k for k in config.get('featureFlagsOff') or [] if k not in keys]
+    (on if mode == 'on' else off).extend(keys)
+    updated = dict(config, featureFlags=on)
+    if off:
+        updated['featureFlagsOff'] = off
+    else:
+        updated.pop('featureFlagsOff', None)
+    return updated
+
+
 FIXTURE_PLANS = ('free', 'founder', 'partner', 'pro')
 
 
@@ -150,22 +238,35 @@ def fixture_plan_sql(plan, server_id):
     return f"UPDATE servers SET plan = '{plan}' WHERE id = '{server_id}';\n"
 
 
-def run_psql(config, sql):
-    subprocess.run(['docker', 'exec', '-i', f"slock-dev-{config['environment']}-pg",
-                    'psql', '-U', 'postgres', '-d', 'slock', '-v', 'ON_ERROR_STOP=1', '-q'],
-                   input=sql, text=True, check=True, stdout=subprocess.DEVNULL)
+def run_psql(config, sql, capture=False):
+    result = subprocess.run(['docker', 'exec', '-i', f"slock-dev-{config['environment']}-pg",
+                             'psql', '-U', 'postgres', '-d', 'slock', '-v', 'ON_ERROR_STOP=1', '-q']
+                            + (['-At', '-F', '|'] if capture else []),
+                            input=sql, text=True, check=True,
+                            stdout=subprocess.PIPE if capture else subprocess.DEVNULL)
+    return result.stdout if capture else None
+
+
+def print_flag_state(config, keys, server_id):
+    print('flag | row enabled | kill switch | default | fixture server rule')
+    print(run_psql(config, feature_flag_state_sql(keys, server_id), capture=True).rstrip())
 
 
 def apply_feature_flags(config, source):
     """Flags and (optionally) the fixture server's plan, both written to the environment's PostgreSQL."""
     keys = config.get('featureFlags') or []
+    off_keys = config.get('featureFlagsOff') or []
     plan = config.get('fixturePlan')
-    if not keys and not plan:
+    if not keys and not off_keys and not plan:
         return
     fixture = json.loads((source / f".dev-env-{config['environment']}.json").read_text())
     if keys:
         run_psql(config, feature_flag_sql(keys, fixture['server']['id']))
-        print('feature flags enabled for the fixture server: ' + ', '.join(keys))
+    if keys or off_keys:
+        run_psql(config, feature_flag_toggle_sql(keys, off_keys, fixture['server']['id']))
+        print('feature flags for the fixture server: on ' + (', '.join(keys) or '-')
+              + '; off ' + (', '.join(off_keys) or '-'))
+        print_flag_state(config, keys + off_keys, fixture['server']['id'])
     if plan:
         run_psql(config, fixture_plan_sql(plan, fixture['server']['id']))
         print('fixture server plan set to ' + plan)
@@ -184,14 +285,16 @@ def server_env_values(config, existing, server_id):
     refreshed from the config and fixture.
     """
     values = dict(existing)
-    values['ANTIPROTON_BASE_URL_OVERRIDE'] = config['antiprotonUrl'].rstrip('/')
+    if config.get('antiprotonUrl'):
+        values['ANTIPROTON_BASE_URL_OVERRIDE'] = config['antiprotonUrl'].rstrip('/')
     # Not the canary setup: a canary server is frozen to canary RaftBench provisions and could
     # not also host Cloud agents. Drop it (and its token) if an earlier version of this file had it.
     for stale in ('RAFTBENCH_CANARY_SERVER_ID', 'ANTIPROTON_CANARY_PROVISIONING_TOKEN'):
         values.pop(stale, None)
-    if server_id:
+    if server_id and config.get('antiprotonUrl'):
         values['RAFTBENCH_LOCAL_SERVER_ID'] = server_id
-    for key in ('SLOCK_PROVIDER_CREDENTIAL_KEY', 'RAFT_APP_WEBHOOK_ENCRYPTION_KEY'):
+    for key in ('SLOCK_PROVIDER_CREDENTIAL_KEY', 'RAFT_APP_WEBHOOK_ENCRYPTION_KEY',
+                'RAFT_TOTP_SECRET_ENCRYPTION_KEY'):
         values.setdefault(key, random_b64())
     return values
 
@@ -203,8 +306,6 @@ def prepare_server_env(config, source):
     """
     if not config.get('serverEnvFile'):
         return False
-    if not config.get('antiprotonUrl'):
-        raise SystemExit('antiprotonUrl is required with serverEnvFile.')
     env_file = Path(config['serverEnvFile']).expanduser()
     existing = read_env_file(env_file)
     values = server_env_values(config, existing, fixture_server_id(config, source))
@@ -221,6 +322,14 @@ def prepare_server_env(config, source):
     if not link.exists():
         link.symlink_to(env_file)
     return changed
+
+
+def write_private_json(path, data):
+    tmp = path.with_name(path.name + '.tmp')
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, 'w') as handle:
+        handle.write(json.dumps(data, indent=2) + '\n')
+    os.replace(tmp, path)
 
 
 def restart_server_watch(source):
@@ -266,10 +375,14 @@ def build_env(config, base_env, wrapper_dir=None):
 
 def main(argv):
     LOCAL.mkdir(mode=0o700, exist_ok=True)
-    config_path, action = parse_args(argv)
+    parsed = parse_args(argv)
+    config_path, action = parsed[:2]
     if not config_path.exists():
         raise SystemExit(f'Create {config_path} using docs/local-test-stack.md first.')
     config = json.loads(config_path.read_text())
+    if len(parsed) == 3:
+        config = toggle_config_flags(config, *parsed[2])
+        write_private_json(config_path, config)
     source = Path(config['sourceDir']).expanduser()
     actual = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
     if actual != config['sourceCommit']:
