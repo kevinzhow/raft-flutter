@@ -8,7 +8,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/activity_attention.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/platform/macos_dock_unread.dart';
-import 'package:raft_flutter/platform/desktop_inbox_notifications.dart';
+import 'package:raft_flutter/platform/desktop_server_notifications.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_flutter/platform/notification_reconciler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -141,10 +141,32 @@ class FixtureClient extends RaftClient {
   Object settings = {'serverPushMode': 'all', 'serverPushMuted': false};
   final requests = <String>[];
   List<Object> summary = [];
+
+  /// Server v1.24 levels from the same fixture settings (muted = Nothing).
+  @override
+  Future<dynamic> getForServer(
+    String server,
+    String path, {
+    Map<String, dynamic>? query,
+  }) async {
+    if (path == '/notification-levels') {
+      requests.add(path);
+      final s = settings as Map;
+      return {
+        'serverId': server,
+        'server': s['serverPushMuted'] == true ? 'none' : s['serverPushMode'],
+        'channels': [],
+        'threads': [],
+      };
+    }
+    return get(path, query: query);
+  }
+
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
     requests.add(path);
     if (path == '/servers/unread-summary') return summary;
+    if (path == '/me/notification-settings') return {};
     if (path.endsWith('/notification-settings')) {
       return settings;
     }
@@ -619,7 +641,8 @@ void main() {
       plugin: FixturePlugin(),
       platform: TargetPlatform.android,
     );
-    final desktop = DesktopInboxNotifications(notifications: service)..bind(w);
+    final desktop = DesktopServerNotifications(notifications: service)
+      ..bind(w.client);
     final reconciler = NotificationReconciler(notifications: service)..bind(w);
     final badge = MacOSDockUnread(
       platform: TargetPlatform.iOS,

@@ -30,9 +30,23 @@ class RaftSheetSwitchRow {
     this.onChanged,
     this.pending = false,
     this.key,
-  });
+  }) : control = null;
+
+  /// A row whose control sits under its title (ChannelPreferencesSection's
+  /// Notifications select: "a select of phrases sits under the row's text").
+  const RaftSheetSwitchRow.control({
+    required this.title,
+    required Widget this.control,
+    this.description = '',
+    this.key,
+  }) : value = false,
+       onChanged = null,
+       pending = false;
   final String title, description;
   final Key? key;
+
+  /// The control under the title, instead of the trailing switch.
+  final Widget? control;
   final bool value;
   final ValueChanged<bool>? onChanged;
 
@@ -444,13 +458,12 @@ Widget raftSheetSwitchRow(
   RaftSheetSwitchRow row, {
   bool busy = false,
   String? family,
-}) => Padding(
-  padding: const EdgeInsets.symmetric(vertical: 12),
-  child: Row(
-    children: [
-      Expanded(
+}) => row.control != null
+    ? Padding(
+        key: row.key,
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               raftText(context, row.title),
@@ -461,37 +474,70 @@ Widget raftSheetSwitchRow(
                 color: t.strong,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              raftText(context, row.description),
-              style: raftCssTextStyle(
-                family: family ?? t.headingFont,
-                step: RaftTextSteps.xs,
-                color: t.colors['foreground-muted'],
+            if (row.description.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                raftText(context, row.description),
+                style: raftCssTextStyle(
+                  family: family ?? t.headingFont,
+                  step: RaftTextSteps.xs,
+                  color: t.colors['foreground-muted'],
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            row.control!,
+          ],
+        ),
+      )
+    : Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    raftText(context, row.title),
+                    style: raftCssTextStyle(
+                      family: family ?? t.headingFont,
+                      step: RaftTextSteps.sm,
+                      weight: FontWeight.w500,
+                      color: t.strong,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    raftText(context, row.description),
+                    style: raftCssTextStyle(
+                      family: family ?? t.headingFont,
+                      step: RaftTextSteps.xs,
+                      color: t.colors['foreground-muted'],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Visibility(
+              visible: !row.pending,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: RaftSwitch(
+                key: row.key,
+                value: row.value,
+                size: RaftSwitchSize.md,
+                semanticLabel: raftText(context, row.title),
+                // The row keeps CSS geometry; the switch is its own tap target.
+                minimumTargetSize: 0,
+                onChanged: busy || row.pending ? null : row.onChanged,
               ),
             ),
           ],
         ),
-      ),
-      const SizedBox(width: 12),
-      Visibility(
-        visible: !row.pending,
-        maintainSize: true,
-        maintainAnimation: true,
-        maintainState: true,
-        child: RaftSwitch(
-          key: row.key,
-          value: row.value,
-          size: RaftSwitchSize.md,
-          semanticLabel: raftText(context, row.title),
-          // The row keeps CSS geometry; the switch is its own tap target.
-          minimumTargetSize: 0,
-          onChanged: busy || row.pending ? null : row.onChanged,
-        ),
-      ),
-    ],
-  ),
-);
+      );
 
 /// `<section className="mt-5">`: `h3 text-base font-bold`, optional
 /// description / usage paragraphs, then `mt-2 divide-y divide-black/10` rows.

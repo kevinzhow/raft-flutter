@@ -4,17 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/windows_tray_settings.dart';
 
 import 'native_notifications_test.dart' show deferredMacNotifications;
-import 'notification_settings_view_test.dart' show host, fixture, card;
+import 'notification_settings_view_test.dart' show host, fixture;
 
 void main() {
   for (final (dark) in [(false), (true)]) {
     testWidgets(
-      'macOS denied permission links to system settings and clears after a grant ${dark ? 'dark' : 'light'}',
+      'macOS: the system owns the switch; Open System Settings opens it ${dark ? 'dark' : 'light'}',
       (t) async {
-        final (w, _, unused) = (await t.runAsync(fixture))!;
+        final (w, _) = await fixture(t);
         final (service, _, permission) = deferredMacNotifications();
-        addTearDown(w.dispose);
-        addTearDown(unused.dispose);
         addTearDown(service.dispose);
         addTearDown(() async {
           await t.pumpWidget(const SizedBox());
@@ -41,30 +39,18 @@ void main() {
           host(w, service, dark: dark, locale: const Locale('zh')),
         );
         await t.pumpAndSettle();
-        expect(card(t).status, 'Off in system settings');
+        // Web v1.24 DesktopDeviceCard: "Managed by the system", whatever the
+        // OS switch says; the system settings are one click away.
+        expect(find.text('桌面通知'), findsOneWidget);
+        expect(find.text('由系统管理'), findsOneWidget);
         expect(find.byType(WindowsTraySettings), findsNothing);
-        expect(card(t).hint, isNot(contains('首次发出通知')));
-        expect(find.text('系统里没开'), findsOneWidget);
-        final settings = find.text('打开通知设置');
+        final settings = find.text('打开系统设置');
         expect(settings, findsOneWidget);
         await t.ensureVisible(settings);
         await t.tap(settings);
         await t.pumpAndSettle();
         expect(opened, 1);
         expect(permission.requests, 0);
-        permission.allowed = true;
-        await service.refreshPermission();
-        await t.pumpAndSettle();
-        expect(card(t).status, 'Enabled');
-        expect(find.text('系统里没开'), findsNothing);
-        await t.pumpWidget(const SizedBox());
-        await t.pumpWidget(
-          host(w, service, dark: dark, locale: const Locale('zh')),
-        );
-        await t.pumpAndSettle();
-        expect(card(t).status, 'Enabled');
-        expect(card(t).error, isNull);
-        expect(find.text('系统里没开'), findsNothing);
       },
     );
   }

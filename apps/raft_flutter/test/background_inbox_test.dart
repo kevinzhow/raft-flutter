@@ -38,9 +38,30 @@ class _Client extends RaftClient {
       [
         RaftRecord({'id': 's', 'serverPushMuted': muted}),
       ];
+
+  /// Server v1.24: the server's level (a muted server is at `none`).
+  @override
+  Future<dynamic> getForServer(
+    String server,
+    String path, {
+    Map<String, dynamic>? query,
+  }) async {
+    if (path == '/notification-levels') {
+      reads.add(path);
+      return {
+        'serverId': server,
+        'server': muted ? 'none' : mode,
+        'channels': [],
+        'threads': [],
+      };
+    }
+    return get(path, query: query);
+  }
+
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
     reads.add(path);
+    if (path == '/me/notification-settings') return {};
     if (path.endsWith('/notification-settings')) {
       return {'serverPushMode': mode};
     }
@@ -227,6 +248,7 @@ void main() {
         (p) =>
             p == '/channels/inbox' ||
             p == '/servers/unread-summary' ||
+            p == '/notification-levels' ||
             p.endsWith('/notification-settings'),
       ),
       true,
@@ -285,7 +307,9 @@ void main() {
     () async {
       client.muted = true;
       await poller.run();
-      expect(client.reads, isEmpty);
+      // v1.24: the levels are read; a server at Nothing reads no inbox.
+      expect(client.reads.where((p) => p == '/channels/inbox'), isEmpty);
+      client.reads.clear();
       client.muted = false;
       client.user = RaftRecord({'id': 'bob'});
       await poller.run();

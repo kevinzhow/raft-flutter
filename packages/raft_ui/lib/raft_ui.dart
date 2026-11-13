@@ -265,6 +265,7 @@ export 'src/channel_header.dart';
 export 'src/agent_avatar_picker.dart';
 
 export 'src/notification_settings_card.dart';
+export 'src/notification_settings_rows.dart';
 export 'src/cindy_setup_screen.dart';
 export 'src/setup_steps.dart';
 export 'src/toast.dart';

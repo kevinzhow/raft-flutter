@@ -474,7 +474,20 @@ extension _SidebarContextMenus on _WorkspaceViewState {
           close,
           () => _togglePinned('channel', c.id, [('channel', c.id)]),
         ),
-        if (canMute)
+        // Web NotificationLevelSubmenu: the level and the Activity mute are
+        // one choice, in place of the bare Mute row.
+        if (channelNotificationSubmenu(
+              context: context,
+              workspace: w,
+              channel: c,
+              canMute: canMute,
+              toggleMute: () => _toggleMute(c),
+              close: close,
+              onFailed: (message) => rowToast.show(tr(message)),
+            )
+            case final item?)
+          item
+        else if (canMute)
           _item(
             c.flag('activityMuted') ? 'Unmute' : 'Mute',
             c.flag('activityMuted') ? RaftGlyph.bell : RaftGlyph.bellOff,

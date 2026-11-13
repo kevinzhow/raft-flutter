@@ -4,6 +4,8 @@ import 'package:crypto/crypto.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/notification_levels.dart';
+import '../data/notification_settings_api.dart';
 import 'content_target.dart';
 import 'account_activity_unread.dart';
 
@@ -205,6 +207,73 @@ class BackgroundInboxAlert {
 
 /// The server's unread Activity projection owns eligibility, mute and Done.
 /// A poll never changes read cursors. Each alert rechecks visible context.
+/// The account settings and one server's levels a background poll applies
+/// (Web v1.24 `resolveEffectiveLevel`, `isNotificationQuiet`).
+class BackgroundNotificationPolicy {
+  const BackgroundNotificationPolicy({
+    required this.server,
+    required this.channels,
+    required this.account,
+  });
+  final NotificationLevel server;
+  final Map<String, NotificationLevel> channels;
+  final NotificationAccountSettings? account;
+
+  /// GET /me/notification-settings and /notification-levels; null when the
+  /// server answers neither (an older server keeps its own serverPushMode).
+  static Future<BackgroundNotificationPolicy?> read(
+    RaftClient client,
+    RaftRecord server,
+  ) async {
+    final api = NotificationSettingsApi(client);
+    final levels = await api
+        .fetchServerLevels(server.id)
+        .catchError((Object _) => null);
+    if (levels == null) {
+      // A server before the unified notifications: its server-wide mode.
+      final legacy = await client
+          .get('/servers/${server.id}/notification-settings')
+          .catchError((Object _) => null);
+      final mode = legacy is Map
+          ? NotificationLevel.parse(legacy['serverPushMode'])
+          : null;
+      if (mode == null) return null;
+      return BackgroundNotificationPolicy(
+        server: mode,
+        channels: const {},
+        account: null,
+      );
+    }
+    final account = await api.fetchAccount().catchError((Object _) => null);
+    return BackgroundNotificationPolicy(
+      server: levels.server,
+      channels: levels.channels,
+      account: account?.settings,
+    );
+  }
+
+  bool quiet(DateTime now) => account?.quietAt(now) ?? false;
+
+  bool get anyAll =>
+      server == NotificationLevel.all ||
+      channels.values.contains(NotificationLevel.all);
+  bool get anyMentions =>
+      anyAll ||
+      server == NotificationLevel.mentions ||
+      channels.values.contains(NotificationLevel.mentions);
+
+  /// An Activity row's level: a thread follows its parent channel (threads
+  /// have no level of their own); a DM inherits the server's.
+  NotificationLevel levelOf(Map row) {
+    final channel =
+        row[row['kind'] == 'thread' ? 'parentChannelId' : 'channelId'];
+    return resolveEffectiveLevel(
+      server: server,
+      channel: channel is String ? channels[channel] : null,
+    );
+  }
+}
+
 class BackgroundInboxPoller {
   BackgroundInboxPoller({
     required this.client,
@@ -212,7 +281,9 @@ class BackgroundInboxPoller {
     required this.deliver,
     required this.authorize,
     this.suppress,
+    this.clock = DateTime.now,
   });
+  final DateTime Function() clock;
   final RaftClient client;
   final BackgroundInboxStore store;
   final Future<bool> Function(BackgroundInboxAlert alert, String scope) deliver;
@@ -245,13 +316,21 @@ class BackgroundInboxPoller {
     final servers = await client.servers();
     if (!await current()) return true;
     final server = servers.where((s) => s.id == client.serverId).firstOrNull;
-    if (server == null || server.flag('serverPushMuted')) return true;
-    final preferences = await client.get(
-      '/servers/${client.serverId}/notification-settings',
-    );
-    if (!await current() || preferences is! Map) return true;
-    final mode = preferences['serverPushMode'];
-    if (mode != 'all' && mode != 'mentions') return true;
+    if (server == null) return true;
+    // Server v1.24 decides who is notified from the account settings and the
+    // levels (docs/contracts/notifications.md §1); a poll that stands in for
+    // push applies the same rules: nothing while paused or in quiet hours,
+    // then each conversation's effective level.
+    final policy = await BackgroundNotificationPolicy.read(client, server);
+    if (!await current() || policy == null || policy.quiet(clock())) {
+      return true;
+    }
+    final mode = policy.anyAll
+        ? 'all'
+        : policy.anyMentions
+        ? 'mentions'
+        : null;
+    if (mode == null) return true;
     // Bounded fetch: latest 100 conversations, at most five alerts per wake.
     final page = await client.get(
       '/channels/inbox',
@@ -271,11 +350,13 @@ class BackgroundInboxPoller {
     if (!await current()) return true;
     var count = 0;
     for (final row in (page['items'] as List).whereType<Map>()) {
+      final level = policy.levelOf(row);
+      if (level == NotificationLevel.none) continue;
       final alert = BackgroundInboxAlert.fromRow(
         row,
         client.serverId!,
         since,
-        mentionsOnly: mode == 'mentions',
+        mentionsOnly: level == NotificationLevel.mentions,
       );
       if (alert == null || await store.seen(scope, alert.target.messageId!)) {
         continue;
@@ -305,18 +386,20 @@ class BackgroundInboxPoller {
                   r,
                   client.serverId!,
                   since,
-                  mentionsOnly: mode == 'mentions',
+                  mentionsOnly: level == NotificationLevel.mentions,
                 )?.target.messageId ==
                 alert.target.messageId,
           )) {
         continue;
       }
-      final latestPreferences = await client.get(
-        '/servers/${client.serverId}/notification-settings',
+      final latestPolicy = await BackgroundNotificationPolicy.read(
+        client,
+        server,
       );
       if (!await current() ||
-          latestPreferences is! Map ||
-          latestPreferences['serverPushMode'] != mode) {
+          latestPolicy == null ||
+          latestPolicy.quiet(clock()) ||
+          latestPolicy.levelOf(row) != level) {
         return true;
       }
       if (await deliver(alert, scope)) {

@@ -277,6 +277,18 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
               ],
             ),
           ),
+        // Web useSidebarRoute "On {serverName}": the member's own settings in
+        // this server (its level and customized channels).
+        if (w.server != null)
+          RaftSettingsDestination(
+            'server-notifications',
+            'Notifications',
+            RaftGlyph.bell,
+            (_) => ServerNotificationSettingsView(controller: w),
+            group: raftFormat(context, 'On {serverName}', {
+              'serverName': w.server!.name,
+            }),
+          ),
         if (w.server != null) ...[
           RaftSettingsDestination(
             'server',
@@ -286,6 +298,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
             group: WorkspaceSettings.workspace,
             scroll: false,
           ),
+
           // Sidebar.tsx shows the row for an owner / admin on an enrolled
           // server; the /raftbench URL itself still opens its own notice.
           if ((raftbench.navEnabled &&

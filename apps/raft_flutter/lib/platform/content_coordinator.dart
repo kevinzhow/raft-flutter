@@ -6,12 +6,15 @@ import 'package:flutter/widgets.dart'
     show WidgetsBinding, WidgetsBindingObserver, AppLifecycleState;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/gestures.dart'
+    show GestureBinding, PointerDownEvent, PointerEvent, PointerScrollEvent;
 import 'package:flutter/services.dart';
 
 import 'package:app_links/app_links.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/activity_attention.dart';
+import '../data/notification_settings_store.dart';
 import '../data/workspace_controller.dart';
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
@@ -24,7 +27,9 @@ import 'raft_app_links.dart';
 import 'native_notifications.dart';
 import 'background_inbox.dart';
 import 'background_notifications.dart';
-import 'desktop_inbox_notifications.dart';
+import 'desktop_server_notifications.dart';
+import 'notification_localization.dart';
+import 'presence_report.dart';
 import 'macos_dock_unread.dart';
 import 'notification_reconciler.dart';
 import 'native_sharing.dart';
@@ -69,7 +74,14 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   final Stream<Uri>? links;
   void Function()? onIncomingShare;
   final background = BackgroundNotificationScheduler();
-  DesktopInboxNotifications? desktop;
+
+  /// Raft Desktop's only notification source: the server's
+  /// `notification:desktop` stream (Web desktopNotificationConsumer).
+  DesktopServerNotifications? desktop;
+
+  /// `presence:activity` for this device (Web presenceReport.ts).
+  late final presence = PresenceReporter(mobile: !_isDesktop);
+  bool _inputHooked = false;
   bool? _appForeground;
 
   bool get _isDesktop => const {
@@ -145,9 +157,14 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         !(_appForeground ?? _workspace?.foreground ?? true);
     notifications.addListener(_notificationSettingsChanged);
     if (_isDesktop) {
-      desktop = DesktopInboxNotifications(notifications: notifications);
-      desktop!.bind(_workspace);
+      desktop = DesktopServerNotifications(notifications: notifications);
+      _bindDesktop(_workspace);
+      presence.setAckAlerts(true);
+      _hookInput();
     }
+    presence
+      ..setAttended(appForeground)
+      ..bind(_workspace?.client);
     unawaited(background.initialize().catchError((Object _) {}));
     _linkSubscription = (links ?? AppLinks().uriLinkStream).listen(
       receiveLink,
@@ -239,7 +256,8 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     _workspace = workspace;
     _liveRecovery?.bind(workspace);
     if (!appForeground) workspace?.setForeground(false);
-    desktop?.bind(workspace);
+    _bindDesktop(workspace);
+    if (ownsSystemIntegration) presence.bind(workspace?.client);
     if (ownsSystemIntegration) {
       dockUnread.bind(workspace);
       reconciler.bind(workspace);
@@ -264,7 +282,20 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     return '${c!.origin}\n${c.user!.id}\n${c.serverId}';
   }
 
+  List<RaftChannel>? _seededChannels;
+
+  /// Channel payloads carry their explicit `notificationLevel` (Web
+  /// NotificationRuntime seeds the store from the channel lists).
+  void _seedLevels() {
+    final w = _workspace, server = w?.server?.id;
+    if (w == null || server == null || w.client.user == null) return;
+    if (identical(_seededChannels, w.channels)) return;
+    _seededChannels = w.channels;
+    NotificationSettingsStore.of(w.client).seedChannels(server, w.channels);
+  }
+
   void _changed() {
+    _seedLevels();
     if (!ownsSystemIntegration) return;
     unawaited(tray.configure(notifications.localize));
     final scope = currentScope;
@@ -320,12 +351,8 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     return BackgroundInboxPoller(
       client: w.client,
       store: background.store,
-      authorize: (target, _) async {
-        final server = await authorize(w, target, valid);
-        if (server.flag('serverPushMuted')) {
-          throw const RaftApiException('Notifications are muted.');
-        }
-      },
+      // Levels decide in the poller (BackgroundNotificationPolicy).
+      authorize: (target, _) async => authorize(w, target, valid),
       suppress: (_) => w.foreground,
       deliver: (alert, selected) async {
         if (!valid() || selected != scope || !notifications.enabled) {
@@ -468,6 +495,9 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     final w = _workspace, scope = _scope, epoch = _epoch;
     if (w == null || scope == null) return;
     final p = event.payload as Map;
+    // The device plan (contract §1.3): while a computer is in use, or the
+    // alert is held for "Phone alerts", the phone only updates its state.
+    if (p['phoneAlert'] == false) return;
     final target = ContentTarget.fromNotification(p);
     if (target == null ||
         target.serverId != w.client.serverId ||
@@ -502,7 +532,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         timeout: freshCap,
       );
       // Socket room delivery is an eligibility decision, not lasting authority.
-      final memberServer = await authorize(
+      await authorize(
         w,
         target,
         () => !_closed && _workspace == w && _scope == scope && epoch == _epoch,
@@ -516,28 +546,44 @@ class NativeContentCoordinator with WidgetsBindingObserver {
           return;
         }
       }
-      if (memberServer.flag('serverPushMuted') ||
-          w.foreground ||
-          notifications.deliveryAllowed?.call() == false) {
+      // The server applied the levels, mutes, pause and quiet hours.
+      if (w.foreground || notifications.deliveryAllowed?.call() == false) {
         return;
       }
       _delivered.add(key);
       if (_delivered.length > 1000) _delivered.remove(_delivered.first);
       // The conversation's Activity count after the window reached this
       // message: the number the in-app badge and the launcher badge show.
+      // The fixed phrases in the display language (contract §1.5): `title`
+      // is `title · subtitle`, so a translated title joins the subtitle.
+      final subtitle = p['subtitle'] is String ? p['subtitle'] as String : null;
+      final localized = localizeNotificationText(
+        (
+          title: subtitle == null
+              ? p['title'] as String
+              : (p['title'] as String).endsWith(' · $subtitle')
+              ? (p['title'] as String).substring(
+                  0,
+                  (p['title'] as String).length - subtitle.length - 3,
+                )
+              : p['title'] as String,
+          subtitle: subtitle,
+          body: p['body'] as String,
+        ),
+        p['localization'],
+        notifications.localize,
+      );
+      final text = (
+        title: joinNotificationTitle(localized.title, localized.subtitle),
+        body: localized.body,
+      );
       final unread = activityRowUnread(
         w.services.activityUnreadIfBound?.acceptedRows ?? const [],
         p['channelId'] as String,
       );
       await notifications.show(
-        title: (p['title'] as String).substring(
-          0,
-          (p['title'] as String).length.clamp(0, 160),
-        ),
-        body: (p['body'] as String).substring(
-          0,
-          (p['body'] as String).length.clamp(0, 512),
-        ),
+        title: text.title.substring(0, text.title.length.clamp(0, 160)),
+        body: text.body.substring(0, text.body.length.clamp(0, 512)),
         payload: jsonEncode({
           'origin': w.client.origin,
           'principal': w.client.user!.id,
@@ -804,16 +850,43 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     return (server, RaftChannel(Map<String, dynamic>.from(channel)));
   }
 
+  void _bindDesktop(WorkspaceController? workspace) => desktop?.bind(
+    workspace?.client,
+    isMemberOf: (id) =>
+        workspace != null && workspace.servers.any((s) => s.id == id),
+  );
+
+  /// Desktop presence counts what a person does in the window: a press, a
+  /// key, a wheel turn (Web WEB_PRESENCE_INPUT_EVENTS; not pointer moves or
+  /// scrolls the timeline makes by itself).
+  void _hookInput() {
+    if (_inputHooked) return;
+    _inputHooked = true;
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_pointer);
+    HardwareKeyboard.instance.addHandler(_key);
+  }
+
+  void _pointer(PointerEvent event) {
+    if (event is PointerDownEvent || event is PointerScrollEvent) {
+      presence.input();
+    }
+  }
+
+  bool _key(KeyEvent event) {
+    if (event is KeyDownEvent) presence.input();
+    return false;
+  }
+
   void _setAppForeground(bool active) {
     final resumed = active && _appForeground != true;
     _appForeground = active;
+    if (ownsSystemIntegration) presence.setAttended(active);
     if (resumed && ownsSystemIntegration) {
       unawaited(dockUnread.resync());
       unawaited(dockUnread.refresh());
     }
     if (!active) _workspace?.setForeground(false);
     onForegroundChanged?.call();
-    desktop?.sync();
   }
 
   @override
@@ -835,6 +908,11 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     onForegroundChanged = null;
     WidgetsBinding.instance.removeObserver(this);
     desktop?.dispose();
+    presence.dispose();
+    if (_inputHooked) {
+      GestureBinding.instance.pointerRouter.removeGlobalRoute(_pointer);
+      HardwareKeyboard.instance.removeHandler(_key);
+    }
     reconciler.dispose();
     if (ownsSystemIntegration) {
       await dockUnread.dispose();

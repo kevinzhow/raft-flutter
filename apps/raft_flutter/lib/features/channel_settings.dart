@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'notification_level_menu.dart';
+
 import '../data/resource_snapshot_cache.dart' show stableValue;
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
@@ -323,6 +325,69 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     }
   }
 
+  /// The channel's Notifications select (Web NotificationLevelSelect with
+  /// the Activity mute as its third choice).
+  RaftSheetSwitchRow notificationLevelRow(
+    RaftChannel c,
+    String serverId,
+    int generation,
+  ) {
+    final canMute =
+        channelCanToggleActivityMute(c) &&
+        (!known.contains('notification') ||
+            notification['activityMuted'] is bool);
+    return RaftSheetSwitchRow.control(
+      key: const ValueKey('channel-settings-notification-level'),
+      title: 'Notifications',
+      control: NotificationLevelSelect(
+        client: w.client,
+        serverId: serverId,
+        channelId: c.id,
+        serverRow: w.server,
+        disabled: busy || canMute && !known.contains('notification'),
+        label: raftText(context, 'Notifications'),
+        onFailed: (message) => showRaftToast(context, message),
+        mute: canMute
+            ? NotificationMuteControl(
+                muted: notification['activityMuted'] == true,
+                setMuted: (value) async {
+                  final fresh = [
+                    ...w.channels,
+                    ...w.dms,
+                  ].where((next) => next.id == c.id).firstOrNull;
+                  if (w.client.generation != generation ||
+                      w.server?.id != serverId ||
+                      fresh == null ||
+                      !fresh.joined ||
+                      !channelCanToggleActivityMute(fresh) ||
+                      !w.can('viewChannel', resource: fresh)) {
+                    setState(
+                      () => error =
+                          'Channel activity preference is no longer available.',
+                    );
+                    return false;
+                  }
+                  var ok = true;
+                  await run(() async {
+                    try {
+                      await w.command(
+                        'PATCH',
+                        '/channels/${c.id}/notification-settings',
+                        data: {'activityMuted': value},
+                      );
+                    } catch (_) {
+                      ok = false;
+                      rethrow;
+                    }
+                  });
+                  return ok;
+                },
+              )
+            : null,
+      ),
+    );
+  }
+
   Future<void> run(Future<void> Function() action) async {
     if (busy) return;
     setState(() {
@@ -625,39 +690,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             pending: !known.contains('sidebar'),
             onChanged: pin,
           ),
-          if (widget.isPanel &&
-              !dm &&
-              c.joined &&
-              channelCanToggleActivityMute(c) &&
-              (!known.contains('notification') ||
-                  notification['activityMuted'] is bool))
-            RaftSheetSwitchRow(
-              title: 'Mute activity',
-              description: 'Nothing in this conversation notifies you, not even @mentions.',
-              value: notification['activityMuted'] == true,
-              pending: !known.contains('notification'),
-              onChanged: (value) => run(() async {
-                final fresh = [
-                  ...w.channels,
-                  ...w.dms,
-                ].where((next) => next.id == c.id).firstOrNull;
-                if (w.client.generation != generation ||
-                    w.server?.id != serverId ||
-                    fresh == null ||
-                    !fresh.joined ||
-                    !channelCanToggleActivityMute(fresh) ||
-                    !w.can('viewChannel', resource: fresh)) {
-                  throw RaftUserError(
-                    'Channel activity preference is no longer available.',
-                  );
-                }
-                await w.command(
-                  'PATCH',
-                  '/channels/${c.id}/notification-settings',
-                  data: {'activityMuted': value},
-                );
-              }),
-            ),
+          // ChannelPreferencesSection: the channel's level and its mute are
+          // one choice (All / Only what involves me / Mute).
+          if (widget.isPanel && !dm && c.joined && serverId != null)
+            notificationLevelRow(c, serverId, generation),
           if (widget.collapseLongMessages &&
               (!known.contains('display') ||
                   display.containsKey('collapseLongMessages')))
@@ -1333,40 +1369,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         pending: !known.contains('sidebar'),
         onChanged: pin,
       ),
-      if (!dm &&
-          c.joined &&
-          channelCanToggleActivityMute(c) &&
-          (!known.contains('notification') ||
-              notification['activityMuted'] is bool))
-        RaftSheetSwitchRow(
-          key: const ValueKey('channel-overflow-mute-switch'),
-          title: 'Mute activity',
-          description:
-              'Nothing in this conversation notifies you, not even @mentions.',
-          value: notification['activityMuted'] == true,
-          pending: !known.contains('notification'),
-          onChanged: (value) => run(() async {
-            final fresh = [
-              ...w.channels,
-              ...w.dms,
-            ].where((next) => next.id == c.id).firstOrNull;
-            if (w.client.generation != generation ||
-                w.server?.id != serverId ||
-                fresh == null ||
-                !fresh.joined ||
-                !channelCanToggleActivityMute(fresh) ||
-                !w.can('viewChannel', resource: fresh)) {
-              throw RaftUserError(
-                'Channel activity preference is no longer available.',
-              );
-            }
-            await w.command(
-              'PATCH',
-              '/channels/${c.id}/notification-settings',
-              data: {'activityMuted': value},
-            );
-          }),
-        ),
+      if (!dm && c.joined && serverId != null)
+        notificationLevelRow(c, serverId, generation),
       if (widget.collapseLongMessages &&
           (!known.contains('display') ||
               display.containsKey('collapseLongMessages')))

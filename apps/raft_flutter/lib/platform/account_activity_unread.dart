@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/activity_attention.dart';
+import '../data/notification_levels.dart';
+import '../data/notification_settings_store.dart';
 import '../data/source_activity_unread_store.dart';
 import '../data/workspace_controller.dart';
 
@@ -55,7 +57,36 @@ class AccountActivityUnread extends ChangeNotifier {
       currentTotal: _activity?.totalUnreadCount,
       memberServerIds: _members,
       summary: _counts,
+      silencedServerIds: _silenced(),
     );
+  }
+
+  /// Member servers at notification level `none` (the badge skips them).
+  Set<String> _silenced() {
+    final client = _client;
+    final store = client == null
+        ? null
+        : NotificationSettingsStore.peek(client);
+    final rows = {for (final s in _workspace?.servers ?? const []) s.id: s};
+    return {
+      for (final id in _members)
+        if ((store?.serverLevel(id, row: rows[id]) ??
+                (rows[id]?.flag('serverPushMuted') == true
+                    ? NotificationLevel.none
+                    : NotificationLevel.all)) ==
+            NotificationLevel.none)
+          id,
+    };
+  }
+
+  NotificationSettingsStore? _levels;
+
+  /// The badge follows level changes (Web `startNotificationBadge`).
+  void _bindLevels(RaftClient? client) {
+    final next = client == null ? null : NotificationSettingsStore.of(client);
+    if (identical(next, _levels)) return;
+    _levels?.removeListener(notifyListeners);
+    _levels = next?..addListener(notifyListeners);
   }
 
   Future<void> get settled async {
@@ -76,6 +107,7 @@ class AccountActivityUnread extends ChangeNotifier {
     _pending = null;
     ++_revision;
     _client = next;
+    _bindLevels(key == null ? null : next);
     _account = key;
     _members = {};
     _counts = {};
@@ -313,12 +345,23 @@ Future<int?> backgroundActivityBadge(
     final counts = activitySummaryCounts(await client.accountUnreadSummary());
     if (counts == null) return null;
     // The pre-inbox membership snapshot cannot authorize a later badge.
-    final ids = {for (final server in await client.accountServers()) server.id};
+    final servers = await client.accountServers();
+    final ids = {for (final server in servers) server.id};
+    final store = NotificationSettingsStore.peek(client);
     return knownActivityBadgeTotal(
       currentServerId: client.serverId,
       currentTotal: selectedTotal,
       memberServerIds: ids,
       summary: counts,
+      silencedServerIds: {
+        for (final server in servers)
+          if ((store?.serverLevel(server.id, row: server) ??
+                  (server.flag('serverPushMuted')
+                      ? NotificationLevel.none
+                      : NotificationLevel.all)) ==
+              NotificationLevel.none)
+            server.id,
+      },
     );
   } catch (_) {
     return null;

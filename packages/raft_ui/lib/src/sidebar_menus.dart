@@ -32,6 +32,9 @@ class RaftSidebarMenuItem extends RaftSidebarMenuEntry {
     this.submenu = false,
     this.onHover,
     this.itemKey,
+    this.submenuEntries,
+    this.submenuLabel,
+    this.submenuWidth,
   });
   final String label;
 
@@ -46,6 +49,20 @@ class RaftSidebarMenuItem extends RaftSidebarMenuEntry {
   final bool submenu;
   final VoidCallback? onHover;
   final Key? itemKey;
+
+  /// This row's own submenu (Sidebar.tsx `NotificationLevelSubmenu`). Without
+  /// it a `submenu` row opens the menu's [RaftSidebarContextMenu.submenuEntries]
+  /// ("Move to section").
+  final List<RaftSidebarMenuEntry>? submenuEntries;
+  final String? submenuLabel;
+  final double? submenuWidth;
+}
+
+/// A wrapping note in a menu (`ContextMenuLabel className="whitespace-normal
+/// font-normal text-foreground-muted"`): the Mute note under the levels.
+class RaftSidebarMenuNote extends RaftSidebarMenuEntry {
+  const RaftSidebarMenuNote(this.text);
+  final String text;
 }
 
 class RaftSidebarMenuHeading extends RaftSidebarMenuEntry {
@@ -112,11 +129,25 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
   final mainKey = GlobalKey();
   final portal = OverlayPortalController();
 
-  void setOpen(bool open) {
-    if (open == submenuOpen) return;
-    setState(() => submenuOpen = open);
+  /// The row whose submenu is open, and each submenu row's position.
+  RaftSidebarMenuItem? openItem;
+  final rowKeys = <RaftSidebarMenuItem, GlobalKey>{};
+
+  void setOpen(bool open, [RaftSidebarMenuItem? item]) {
+    final next = open ? item : null;
+    if (open == submenuOpen && identical(next, openItem)) return;
+    setState(() {
+      submenuOpen = open;
+      openItem = next;
+    });
     open ? portal.show() : portal.hide();
   }
+
+  bool get _hasSubmenu =>
+      widget.submenuEntries != null ||
+      widget.entries.any(
+        (e) => e is RaftSidebarMenuItem && e.submenuEntries != null,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -130,12 +161,15 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
         primary: true,
       ),
     );
-    final sub = widget.submenuEntries;
-    if (sub == null) return menu;
+    if (!_hasSubmenu) return menu;
     return OverlayPortal(
       controller: portal,
-      overlayChildBuilder: (overlayContext) =>
-          _submenu(overlayContext, context, sub),
+      overlayChildBuilder: (overlayContext) {
+        final item = openItem;
+        final sub = item?.submenuEntries ?? widget.submenuEntries;
+        if (sub == null) return const SizedBox.shrink();
+        return _submenu(overlayContext, context, sub, item);
+      },
       child: menu,
     );
   }
@@ -148,6 +182,7 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
     BuildContext overlayContext,
     BuildContext menuContext,
     List<RaftSidebarMenuEntry> sub,
+    RaftSidebarMenuItem? item,
   ) {
     final main = mainKey.currentContext?.findRenderObject();
     final overlay = Overlay.of(overlayContext).context.findRenderObject();
@@ -164,20 +199,27 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
       tokens: RaftRecipeTokens(t),
     ).content;
     final origin = main.localToGlobal(Offset.zero, ancestor: overlay);
+    // Level with the trigger row; "Move to section" is the first row, below
+    // the popup's border and padding.
+    final row = item?.submenuEntries == null
+        ? null
+        : rowKeys[item]?.currentContext?.findRenderObject();
+    final top = row is RenderBox && row.attached
+        ? row.localToGlobal(Offset.zero, ancestor: overlay).dy
+        : origin.dy + content.borderWidth.top + content.padding.top;
     return CustomSingleChildLayout(
       delegate: _SubmenuLayout(
         left: origin.dx,
         right: origin.dx + main.size.width,
-        // The trigger row's top: below the popup's border and padding.
-        top: origin.dy + content.borderWidth.top + content.padding.top,
+        top: top,
       ),
       child: Material(
         type: MaterialType.transparency,
         child: _menu(
           menuContext,
           sub,
-          widget.submenuWidth,
-          widget.submenuLabel,
+          item?.submenuWidth ?? widget.submenuWidth,
+          item?.submenuLabel ?? widget.submenuLabel,
         ),
       ),
     );
@@ -248,9 +290,24 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
                       ).copyWith(color: t.colors['foreground-muted']),
                     ),
                   ),
+          RaftSidebarMenuNote(:final text) => RaftRecipeBox(
+            style: s.label,
+            tokens: resolver,
+            child: Text(
+              text,
+              softWrap: true,
+              style: TextStyle(
+                fontWeight: FontWeight.w400,
+                color: t.colors['foreground-muted'],
+              ),
+            ),
+          ),
           RaftSidebarMenuItem() => RaftHoverRegion(
+            key: primary && entry.submenu
+                ? rowKeys.putIfAbsent(entry, GlobalKey.new)
+                : null,
             onEnter: (_) {
-              if (primary) setOpen(entry.submenu);
+              if (primary) setOpen(entry.submenu, entry);
               entry.onHover?.call();
             },
             child: RaftMenuButtonItem(
@@ -272,7 +329,7 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
                   ? const RaftIcon(RaftGlyph.chevronRight, size: 14)
                   : null,
               onPressed: entry.submenu
-                  ? () => setOpen(true)
+                  ? () => setOpen(true, entry)
                   : (entry.onPressed ?? () {}),
             ),
           ),

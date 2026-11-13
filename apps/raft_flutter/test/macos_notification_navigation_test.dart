@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -66,6 +67,44 @@ Map<String, dynamic> _row(String kind) => {
     'lastMessagePreview': 'Message fixture body',
     'lastMessageAt': DateTime.now().toUtc().toIso8601String(),
   },
+};
+
+/// The server's `notification:desktop` for the same message (v1.24: Raft
+/// Desktop's only notification source).
+Map<String, dynamic> _desktop(String kind) => {
+  'v': 1,
+  'id': 'n-$kind',
+  'kind': kind,
+  'event': 'message',
+  'title': 'Message fixture',
+  'body': 'Message fixture body',
+  'serverId': 's1',
+  'serverName': 'Alpha',
+  'channelId': kind == 'thread' ? 't1' : (kind == 'dm' ? 'd1' : 'c2'),
+  'threadId': kind == 'thread' ? 't1' : null,
+  'parentChannelId': kind == 'thread' ? 'c2' : null,
+  'parentMessageId': kind == 'thread' ? 'parent' : null,
+  'messageId': kind == 'thread' ? 'reply' : (kind == 'dm' ? 'direct' : 'm2'),
+  'mentioned': kind == 'channel',
+  'sender': null,
+  'url': '/s/demo/channel/c2',
+  'route': kind == 'thread'
+      ? {
+          'type': 'thread',
+          'serverId': 's1',
+          'parentChannelId': 'c2',
+          'parentChannelType': 'channel',
+          'parentMessageId': 'parent',
+          'messageId': 'reply',
+        }
+      : {
+          'type': kind,
+          'serverId': 's1',
+          'channelId': kind == 'dm' ? 'd1' : 'c2',
+          'messageId': kind == 'dm' ? 'direct' : 'm2',
+        },
+  'groupKey': 's1:c2',
+  'createdAt': DateTime.now().toUtc().toIso8601String(),
 };
 
 NotificationResponse _response(String payload) => NotificationResponse(
@@ -186,10 +225,8 @@ void main() {
               coordinator.didChangeAppLifecycleState(AppLifecycleState.paused);
               w.setForeground(false);
               await frames(t, () {});
-              await coordinator.desktop!.prepared;
-              w.activityUnread.acceptWindow({
-                'items': [_row(kind)],
-              }, scope: w.activityUnread.scope);
+              w.servers = [w.server!];
+              unawaited(coordinator.desktop!.deliver(w.client, _desktop(kind)));
               await _until(t, () => plugin.sent.isNotEmpty);
               expect(plugin.sent, hasLength(1));
               expect(
@@ -235,8 +272,7 @@ void main() {
                   (uri) => Uri.parse(uri).path == '/s/demo/channel/c2',
                 ),
                 everyElement(contains('thread=c2%3Aparent')),
-                reason:
-                    'A notification never publishes an intermediate channel page.',
+                reason: 'A notification never publishes an intermediate channel page.',
               );
             } else {
               expect(w.location.thread, isNull);

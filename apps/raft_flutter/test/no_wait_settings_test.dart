@@ -292,32 +292,31 @@ void main() {
     expect(jsonEncode(kept), isNot(contains('whsec_never_cached')));
   });
 
-  testWidgets('notification settings keep the accepted mute switch on a '
+  testWidgets('notification settings keep the accepted account values on a '
       'revisit', (t) async {
-    final (w, a, service) = await t.runAsync(notif.fixture) as dynamic;
-    addTearDown(w.dispose);
+    final (w, a) = await notif.fixture(t);
+    final service = notif.Service();
     Widget page() => MaterialApp(
       theme: raftTheme(),
       home: Scaffold(
         body: SingleChildScrollView(
-          child: NotificationSettingsView(
-            controller: w as WorkspaceController,
-            service: service,
-          ),
+          child: NotificationSettingsView(controller: w, service: service),
         ),
       ),
     );
     await t.pumpWidget(page());
-    await frames(t, 10);
+    await notif.settle(t);
     await t.pumpWidget(const SizedBox());
-    final never = Completer<Map<String, dynamic>>();
-    (a as notif.Adapter).settings = (_) => never.future;
+    final never = Completer<notif.Reply>();
+    a.routes['GET /me/notification-settings'] = (_) => never.future;
     await t.pumpWidget(page());
     await frames(t, 3);
-    final card = t.widget<RaftNotificationSettingsCard>(
-      find.byType(RaftNotificationSettingsCard),
+    final sound = t.widget<RaftSwitch>(
+      find.byKey(const ValueKey('notification-sound-switch')),
     );
-    expect(card.onMutedChanged, isNotNull, reason: 'the switch is live');
+    expect(sound.value, isTrue);
+    expect(sound.onChanged, isNotNull, reason: 'the switch is live');
+    await t.pumpWidget(const SizedBox());
   });
 
   testWidgets('the invite page returns with its details after sign-in', (
