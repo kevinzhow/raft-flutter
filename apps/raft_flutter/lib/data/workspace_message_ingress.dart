@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
+import 'message_gap_sync.dart';
+import 'thread_reply_updates.dart';
 import 'workspace_message_windows.dart';
+import 'workspace_messages.dart';
 import 'workspace_session_context.dart';
 
 /// Live presentation facts and existing side effects for message ingress.
@@ -30,9 +33,17 @@ bool consumeWorkspaceMessageEvent(
   RaftEvent event, {
   required WorkspaceSessionContext context,
   required WorkspaceMessageIngressPort presentation,
-  required MessageLedger ledger,
-  required WorkspaceMessageWindows windows,
+  required WorkspaceMessages messages,
 }) {
+  final ledger = messages.ledger, windows = messages.messageWindows;
+  // Web liveGapFill setGapFillReader: a scheduled fill reads its channel.
+  LiveGapFill.of(ledger).reader ??= (id) =>
+      unawaited(MessageGapSync.run(messages, id));
+  if (event.name == ThreadReplyUpdatedEvent.name) {
+    final update = ThreadReplyUpdatedEvent.read(event.payload);
+    // Merge-only: the inline preview, never the conversation's rows.
+    return update != null && applyThreadReplyUpdate(messages, update.message);
+  }
   if ((event.name == 'message:new' || event.name == 'message:updated') &&
       event.payload is Map) {
     final row = Map<String, dynamic>.from(event.payload);
@@ -51,6 +62,7 @@ bool consumeWorkspaceMessageEvent(
         return false;
       }
       presentation.overlayMessageReactions(row);
+      applyThreadReplyUpdate(messages, row);
     } else {
       // Server-wide sequences are sparse within a channel, and a later frame
       // may arrive before an earlier one. The ledger owns identity de-duplication.
@@ -63,6 +75,13 @@ bool consumeWorkspaceMessageEvent(
       if (event.name == 'message:new' && id == presentation.channel?.id) {
         if (windows.fillWindowGap(id, row['id'])) {
           unawaited(presentation.revalidateMessageTail(id));
+        }
+        // Web liveGapFill: shown at once across a seq jump; the hole behind
+        // it is read in the background from the window tail.
+        final tail = windows.newestVisibleSequence(id);
+        final seq = BigInt.tryParse('${row['seq']}');
+        if (tail > BigInt.zero && seq != null && seq > tail + BigInt.one) {
+          LiveGapFill.of(ledger).remember(id, row['id'], tail);
         }
       }
       windows.reveal(liveWindowWrite, id, [row['id']]);

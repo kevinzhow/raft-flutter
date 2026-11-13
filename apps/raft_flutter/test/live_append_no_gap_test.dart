@@ -124,8 +124,26 @@ class _Case extends HistoryAuditCase {
   Future<void> expectQuiet() async {
     await settle();
     final scope = MessageHistoryPages.scope(w, 'chat')!;
-    expect(client.wire, isEmpty, reason: 'no history/sync request');
-    expect(_reads(), baseline, reason: 'no gap/verification read counted');
+    if (client.stride == 1) {
+      expect(client.wire, isEmpty, reason: 'no history/sync request');
+    } else {
+      // Web v1.24 liveGapFill (Kevin 2654e77c): a row shown across a seq
+      // jump has the hole behind it read in the background, one
+      // GET /messages/sync from the window tail; no history page, no gap.
+      expect(
+        client.wire,
+        everyElement(startsWith('GET /messages/sync {since_seq: ')),
+      );
+      expect(client.wire.length, lessThanOrEqualTo(3));
+    }
+    expect(
+      {..._reads()}..remove(HistoryReadReason.gap),
+      baseline,
+      reason: 'no verification read counted',
+    );
+    if (client.stride == 1) {
+      expect(_reads(), baseline, reason: 'no gap read counted');
+    }
     expect(await cache.messageHistory.gaps.readSaved(scope), isEmpty);
     for (final message in w.messageDomain.messages) {
       expect(recovery!.contains(message.id), isFalse, reason: message.id);

@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_sync/raft_sync.dart' show LiveEvent, ListChangedEvent;
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/freshness.dart';
@@ -55,7 +56,8 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   /// Machines and agents the notices project from. Agent presence patches
   /// (activity, last seen) do not change them.
   WorkspaceEntitySelection? entities;
-  Timer? coalesce, closeDelay;
+  Timer? coalesce, closeDelay, jointInvitesPing;
+  bool roomsJoinedBefore = false;
   RaftForegroundPeriodic? poll;
   final resumeRefresh = Freshness(const Duration(seconds: 20));
   OverlayEntry? popup;
@@ -122,6 +124,22 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
           e.name.startsWith('server:member')) {
         coalesce?.cancel();
         coalesce = Timer(const Duration(milliseconds: 150), store.refresh);
+      }
+      // Web v1.24 listChangedSocket: `joint-invites:changed` re-reads the
+      // pending joint invites (pings within 100 ms read once); a reconnect's
+      // `rooms:joined` asks once, since pings sent while away are lost.
+      final ping = LiveEvent.read(e.name, e.payload);
+      final reconnected = e.name == 'rooms:joined' && roomsJoinedBefore;
+      if (e.name == 'rooms:joined') roomsJoinedBefore = true;
+      if (reconnected ||
+          ping is ListChangedEvent &&
+              ping.event == ListChangedEvent.jointInvites &&
+              ping.serverId == w.client.serverId) {
+        jointInvitesPing?.cancel();
+        jointInvitesPing = Timer(
+          const Duration(milliseconds: 100),
+          () => unawaited(store.refreshJointInvites()),
+        );
       }
     });
     // Stops while hidden/paused; resume refreshes (didChangeAppLifecycleState).
@@ -234,6 +252,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     poll?.dispose();
     coalesce?.cancel();
     closeDelay?.cancel();
+    jointInvitesPing?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     if (owner.store == null) store.dispose();
   }

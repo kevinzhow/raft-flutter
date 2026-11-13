@@ -12,6 +12,7 @@ import 'thread_agent_followers.dart';
 import 'thread_search.dart';
 import 'workspace_entity_directory.dart';
 import 'live_connection_state.dart';
+import 'workspace_live_sync.dart';
 
 /// Composition inputs; each constructed store sees only its own authority.
 abstract interface class WorkspaceServiceAuthority
@@ -76,6 +77,11 @@ class WorkspaceServices {
                 : null;
           },
         );
+    // GET /sync/changes re-reads the followed threads through their owner.
+    if (source == null) {
+      WorkspaceLiveSync.of(authority.client).refreshFollowedThreads =
+          this.followedThreads.refresh;
+    }
     this.entityDirectory =
         entityDirectory ??
         WorkspaceEntityDirectory(

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_sync/raft_sync.dart'
+    show AgentActivityStateEvent, UserProfileUpdatedEvent;
 
 import '../features/agent_metadata_catalog.dart';
 import 'computer_release_notes.dart';
@@ -1099,6 +1101,35 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         if (payload['ok'] == true) {
           _scheduleReload(const {WorkspaceEntityKind.computers});
         }
+      // Web v1.24 agentActivityState: the coarse state of an agent this
+      // socket gets no detailed push for takes the same path, no detail.
+      case AgentActivityStateEvent.name when agents:
+        final state = AgentActivityStateEvent.read(payload);
+        if (state == null) return;
+        receive(
+          RaftEvent('agent:activity', {
+            'agentId': state.agentId,
+            'activity': state.activity,
+            'serverSeq': ?state.serverSeq,
+            'timestamp': ?state.timestamp,
+          }),
+        );
+      // Web v1.24 userProfileUpdated.ts: patch that one member in place (no
+      // member-list read); every other member keeps its object.
+      case UserProfileUpdatedEvent.name
+          when scope.allows(WorkspaceEntityKind.members):
+        final update = UserProfileUpdatedEvent.read(payload);
+        final members = _rows[WorkspaceEntityKind.members];
+        final row = update == null ? null : members?[update.userId];
+        if (update == null ||
+            row == null ||
+            update.profile.entries.every((e) => row[e.key] == e.value)) {
+          return;
+        }
+        members![update.userId] = {...row, ...update.profile};
+        _authorsChanged(WorkspaceEntityKind.members, update.userId);
+        _persist(WorkspaceEntityKind.members);
+        notifyListeners();
       // Source refreshMembersForServer: re-read members of the current server.
       case 'server:member-added' ||
               'server:member:left' ||

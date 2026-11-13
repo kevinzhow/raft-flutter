@@ -9,6 +9,7 @@ export 'src/messages.dart';
 export 'src/thread_replies.dart';
 export 'src/notification_prefs.dart';
 export 'src/live_events.dart';
+export 'src/live_gap_fill.dart';
 export 'src/sync_changes.dart';
 
 import 'src/messages.dart';
