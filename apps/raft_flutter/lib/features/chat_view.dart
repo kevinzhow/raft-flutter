@@ -44,6 +44,7 @@ import 'attachment_shape.dart';
 import 'message_presentation.dart';
 import 'message_saved_action.dart';
 import 'message_hover_toolbar.dart';
+import 'external_sender.dart';
 import 'delegated_message.dart';
 import 'agent_typing_line_host.dart';
 import 'message_context_menu_sections.dart';
@@ -2666,7 +2667,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       continuation: continuation,
       followedBy: followedBy,
       followsSystem: followsSystem,
-      author: m.author,
+      author: messageSenderName(context, m),
       avatar: senderAvatar(m),
       selectionLeading: selectionLeading,
       content: translation.translatedContent ?? m.content,
