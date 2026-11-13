@@ -5,7 +5,8 @@
 //
 // The real NotificationSettingsView is mounted with the desktop service
 // (macOS: Web's own hint names macOS, so the OS path matches). The capture is
-// the card block (`capture.androidKey` notification-settings-card).
+// "This device": the section header and its card (`capture.androidKey`
+// push-notifications; Web v1.24 ThisDeviceCard's `#push-notifications`).
 import 'package:flutter/material.dart';
 import 'package:raft_flutter/features/notification_settings_view.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
@@ -53,7 +54,7 @@ Widget _build(ParityContext ctx) {
 ParityCase _case() => const ParityCase(
   widgets: [
     'raft_flutter:NotificationSettingsView',
-    'raft_ui:RaftNotificationSettingsCard',
+    'raft_ui:RaftSettingsRowGroup',
   ],
   notes: 'Extension suite (not official).',
   settle: Duration(milliseconds: 300),
