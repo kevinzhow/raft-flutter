@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/notification_levels.dart';
+import 'package:raft_flutter/data/notification_settings_api.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/main.dart';
 import 'package:raft_flutter/platform/content_coordinator.dart';
@@ -32,15 +34,19 @@ Future<void> verifyNativeNotificationFlow(
     origin: w.client.origin,
     sessionStore: MemorySessionStore(),
   );
-  final prefs = await w.client.get('/servers/$server/notification-settings');
+  // Server v1.24: the server's level through /notification-levels.
+  final api = NotificationSettingsApi(w.client);
+  final before = (await api.fetchServerLevels(server))?.server;
   StreamSubscription<RaftEvent>? subscription;
   Map? event;
   final proof =
       'Native OS notification proof ${DateTime.now().microsecondsSinceEpoch}';
   try {
-    await w.client.patch(
-      '/servers/$server/notification-settings',
-      data: {'serverPushMode': 'all'},
+    await api.putLevel(
+      scope: 'server',
+      id: server,
+      level: NotificationLevel.all,
+      serverId: server,
     );
     await sender.login(otherEmail, otherPassword);
     sender.selectServer(server);
@@ -120,15 +126,14 @@ Future<void> verifyNativeNotificationFlow(
     await service.requestEnable(enabledBefore);
     w.setForeground(foregroundBefore);
     if (selectedBefore != null) await w.selectChannel(selectedBefore);
-    await w.client.patch(
-      '/servers/$server/notification-settings',
-      data: prefs is Map && prefs['serverPushMode'] is String
-          ? {'serverPushMode': prefs['serverPushMode']}
-          : {
-              'serverPushMuted':
-                  prefs is Map && prefs['serverPushMuted'] == true,
-            },
-    );
+    if (before != null) {
+      await api.putLevel(
+        scope: 'server',
+        id: server,
+        level: before,
+        serverId: server,
+      );
+    }
     await sender.dispose();
   }
 }

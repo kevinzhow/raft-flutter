@@ -209,16 +209,21 @@ class _ActivationBannerState extends State<NotificationActivationBanner> {
                   alignment: WrapAlignment.end,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: RaftSpace.x2,
+                  // Web v1.24: a banner with a button closes with a ghost
+                  // Dismiss just before it, never a × (DS › Banner).
                   children: [
                     RaftButton(
-                      size: RaftButtonRecipeSize.sm,
-                      tone: RaftButtonRecipeVariant.accent,
+                      key: const ValueKey('notification-activation-dismiss'),
+                      size: RaftButtonRecipeSize.md,
+                      tone: RaftButtonRecipeVariant.ghost,
+                      label: 'Dismiss',
+                      onPressed: dismiss,
+                    ),
+                    RaftButton(
+                      size: RaftButtonRecipeSize.md,
+                      tone: RaftButtonRecipeVariant.outline,
                       label: busy ? 'Enabling…' : 'Enable Notifications',
                       onPressed: busy ? null : enable,
-                    ),
-                    RaftCloseButton(
-                      tooltip: 'Hide Notification Reminder for This Session',
-                      onPressed: dismiss,
                     ),
                   ],
                 ),

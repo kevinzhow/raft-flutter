@@ -2608,7 +2608,7 @@
     {
       "id": "settings.notifications",
       "title": "Settings: Notifications",
-      "webEntry": "packages/web/src/components/settings/AppNotificationsControls.tsx",
+      "webEntry": "packages/web/src/components/settings/notifications/NotificationSettingsSection.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/notification_settings_view.dart",
       "states": [
         {
@@ -2640,6 +2640,47 @@
           "parityCase": [],
           "status": "intentional",
           "justification": "Native macOS/iOS/Android permission status and system-settings action; browser push fixtures cannot exercise an OS dialog. Covered by macos_notification_permission_settings_test and iOS/Android explicit-opt-in regressions; native acceptance is separate."
+        },
+        {
+          "state": "error",
+          "variant": "account settings save failed or changed on another device (409)",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "PauseAndScheduleCard banner / ContentCard toast \"Couldn’t save notification settings\" and the 409 \"changed on another device\" text; Flutter shows the same (notification_settings_view_test \"a 409 from another device\"); no parity case renders a failed PATCH yet."
+        },
+        {
+          "state": "loading",
+          "variant": "account settings not loaded yet",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Web disables the pause / content controls until GET /me/notification-settings answers (`disabled = !account`); Flutter does the same; no case captures the disabled first frame. A revisit shows the store's held values at once (no_wait_settings_test)."
+        }
+      ]
+    },
+    {
+      "id": "settings.server-notifications",
+      "title": "Settings: On {server} › Notifications",
+      "webEntry": "packages/web/src/components/settings/notifications/ServersCard.tsx#CurrentServerNotificationsCard",
+      "flutterEntry": "apps/raft_flutter/lib/features/notification_settings_view.dart#ServerNotificationSettingsView",
+      "states": [
+        {
+          "state": "empty",
+          "variant": "no customized channels",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Without channel overrides the row shows only the server level (no \"N channels customized\" link), in Web and Flutter alike; no parity case yet (the v1.24 visual case components.settings.notifications.page covers the personal page)."
         }
       ]
     },
@@ -3602,6 +3643,9 @@
       ],
       "raftbench": [
         "settings.raftbench"
+      ],
+      "server-notifications": [
+        "settings.server-notifications"
       ]
     }
   },
