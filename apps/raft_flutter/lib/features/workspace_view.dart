@@ -3410,6 +3410,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
           entry.channel != null &&
           w.channel?.id == entry.channel!.id,
       unread: w.conversationReads.unread[entry.channel?.id] ?? 0,
+      markedUnread: w.conversationReads.marks.contains(entry.channel?.id),
       hasDraft: (w.drafts[entry.channel?.id] ?? '').isNotEmpty,
       onTap: () => chooseSidebarAgent(entry),
     );
@@ -3601,6 +3602,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       unread: w.conversationReads.unread[c.id] ?? 0,
       joined: c.joined,
       quietNew: w.conversationReads.newFlags.contains(c.id),
+      markedUnread: w.conversationReads.marks.contains(c.id),
       providerBadge: c.bridgeProvider == 'slack' ? tr('Slack') : null,
       activityMuted: c.flag('activityMuted'),
       hasDraft: (w.drafts[c.id] ?? '').isNotEmpty,

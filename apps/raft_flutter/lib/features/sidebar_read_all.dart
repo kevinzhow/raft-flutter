@@ -74,8 +74,10 @@ class SidebarReadToggle {
   final String id;
   final bool all;
 
+  // Marked unread with no count reads as unread: Mark as Read clears it.
   bool get unread =>
       (w.conversationReads.unread[id] ?? 0) > 0 ||
+      w.conversationReads.marks.contains(id) ||
       all && SidebarThreadUnread.of(w).forChannel(id, joined: true).count > 0;
 
   String get label =>
