@@ -871,11 +871,14 @@ class RaftAppEditorActionRow extends StatelessWidget {
     super.key,
     required this.title,
     required this.description,
-    required this.action,
+    this.action,
     this.extra,
   });
   final String title, description;
-  final Widget action;
+
+  /// Web `ConnectedAppEditorActionRow` without an `action` (a row whose
+  /// controls sit under the copy) draws the copy alone.
+  final Widget? action;
 
   /// A line under the copy (`Active link expires …`).
   final String? extra;
@@ -906,6 +909,8 @@ class RaftAppEditorActionRow extends StatelessWidget {
         ],
       ],
     );
+    final action = this.action;
+    if (action == null) return copy;
     return raftBreakpointWidth(context) >= 640
         ? Row(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -41,4 +41,17 @@ const Map<String, String> zhCatalogUpstream124 = <String, String>{
   "Too many wrong codes. Try again after {time}.": "验证码输错次数太多。请在 {time} 之后再试。",
   "This sign-in can't be verified. Sign in again, then try once more.":
       "无法验证当前登录。请重新登录后再试一次。",
+  // App private share links (settings.connectedApps.*, ConnectedAppShareLinks).
+  "Let one other server install this app without listing it in the public marketplace. Each link works once, only on the server you name, for one of its owners or admins.":
+      "让另一个服务器安装此应用，而无需在公共市场中列出。每个链接只能使用一次，只能安装到你指定的服务器，并且只能由该服务器的所有者或管理员使用。",
+  "Target server": "目标服务器",
+  "The server's slug, from its address after /s/. Raft doesn't say whether that server exists, so check the slug: a link for the wrong one never works.": "服务器的 slug，即其地址中 /s/ 之后的部分。Raft 不会告诉你该服务器是否存在，所以请核对 slug：slug 写错的链接永远无法使用。",
+  "Enter a server slug: lowercase letters, digits and hyphens, starting with a letter.":
+      "请输入服务器 slug：小写字母、数字和连字符，以字母开头。",
+  "Link for {slug}. Copy it now: it's shown only once.":
+      "{slug} 的链接。请现在复制：它只显示这一次。",
+  "Expires {when}": "过期时间：{when}",
+  "Revoke the link for {slug}": "撤销 {slug} 的链接",
+  "Working...": "处理中…",
+  "Create link": "创建链接",
 };

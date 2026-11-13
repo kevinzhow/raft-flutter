@@ -85,10 +85,9 @@ void _routes(_Adapter a, List<Map<String, dynamic>> apps) {
   a.routes['GET /integrations/clients'] = (_) => apps;
   a.routes['GET /integrations/marketplace'] = (_) => <dynamic>[];
   a.routes['GET /integrations/overview'] = (_) => <dynamic>[];
-  a.routes['GET /integrations/clients/app-1/share-link'] = (_) => {
-    'error': 'none',
+  a.routes['GET /integrations/clients/app-1/share-links'] = (_) => {
+    'links': <dynamic>[],
   };
-  a.statuses['GET /integrations/clients/app-1/share-link'] = 404;
   a.routes['GET /integrations/clients/app-1/app-notifications'] = (_) => {
     'request_revision': 0,
     'current_groups': ['server'],
@@ -284,6 +283,121 @@ void main() {
     expect(patch.data['name'], 'db9 Drive v2');
     expect(patch.data['returnUrl'], 'https://db9.example/cb');
     expect(find.byKey(editor), findsNothing);
+  });
+
+  testWidgets('private share links: list, create for a target slug, revoke', (
+    t,
+  ) async {
+    // Server v1.24.0 / Web ConnectedAppShareLinks: GET/POST
+    // /integrations/clients/:id/share-links, DELETE .../share-links/:linkId;
+    // the old single /share-link routes are gone.
+    Future<void> tapVisible(Finder target) async {
+      await t.ensureVisible(target);
+      await t.pumpAndSettle();
+      await t.tap(target);
+      await t.pumpAndSettle();
+    }
+
+    t.view
+      ..physicalSize = const Size(1280, 1600)
+      ..devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final (w, a) = (await t.runAsync(_fixture))!;
+    addTearDown(w.dispose);
+    _routes(a, [Map<String, dynamic>.from(_app)]);
+    a.routes['GET /integrations/clients/app-1/share-links'] = (_) => {
+      'links': [
+        {
+          'id': 'link-acme',
+          'clientId': 'app-1',
+          'targetServerSlug': 'acme',
+          'expiresAt': null,
+          'revokedAt': null,
+          'createdAt': '2026-11-01T00:00:00.000Z',
+        },
+      ],
+    };
+    a.routes['POST /integrations/clients/app-1/share-links'] = (_) => {
+      'link': {
+        'id': 'link-beta',
+        'clientId': 'app-1',
+        'targetServerSlug': 'beta',
+        'expiresAt': null,
+        'revokedAt': null,
+        'createdAt': '2026-11-13T00:00:00.000Z',
+      },
+      'token': 'invite-token',
+      'client': _app,
+    };
+    a.routes['DELETE /integrations/clients/app-1/share-links/link-acme'] = (
+      _,
+    ) => {'ok': true};
+    await _mount(t, w);
+    await t.tap(find.byKey(const ValueKey('connected-app-action-app-1')));
+    await t.pumpAndSettle();
+    final input = find.byKey(
+      const ValueKey('connected-app-share-target-input'),
+    );
+    await t.ensureVisible(input);
+    await t.pumpAndSettle();
+    expect(find.text('Target server'), findsOneWidget);
+    expect(find.text('acme'), findsOneWidget);
+    expect(find.text('Expires never'), findsOneWidget);
+
+    await t.enterText(
+      find.descendant(of: input, matching: find.byType(EditableText)),
+      'Not A Slug!',
+    );
+    await t.pump();
+    await tapVisible(
+      find.byKey(const ValueKey('connected-app-share-create-button')),
+    );
+    expect(
+      find.text(
+        'Enter a server slug: lowercase letters, digits and hyphens, starting with a letter.',
+      ),
+      findsOneWidget,
+    );
+    bool sharePost(RequestOptions c) =>
+        c.method == 'POST' && c.path.contains('/share-link');
+    expect(a.calls.where(sharePost), isEmpty);
+
+    await t.enterText(
+      find.descendant(of: input, matching: find.byType(EditableText)),
+      ' Beta ',
+    );
+    await t.pump();
+    await tapVisible(
+      find.byKey(const ValueKey('connected-app-share-create-button')),
+    );
+    final post = a.calls.singleWhere(sharePost);
+    expect(post.path, '/integrations/clients/app-1/share-links');
+    expect(post.data, {'targetServerSlug': 'beta'});
+    expect(
+      find.text("Link for beta. Copy it now: it's shown only once."),
+      findsOneWidget,
+    );
+    expect(
+      find.text('https://example.invalid/integration-invites/invite-token'),
+      findsOneWidget,
+    );
+    expect(find.text('beta'), findsOneWidget);
+
+    await tapVisible(
+      find.descendant(
+        of: find.byKey(
+          const ValueKey('connected-app-share-link-row-link-acme'),
+        ),
+        matching: find.text('Revoke'),
+      ),
+    );
+    expect(
+      a.calls.where((c) => c.method == 'DELETE').single.path,
+      '/integrations/clients/app-1/share-links/link-acme',
+    );
+    expect(find.text('acme'), findsNothing);
+    expect(find.text('beta'), findsOneWidget);
+    expect(a.calls.where((c) => c.path.endsWith('/share-link')), isEmpty);
   });
 
   testWidgets('the rail jumps to a section and marks it current', (t) async {

@@ -9,6 +9,7 @@ import 'package:dio/dio.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -142,9 +143,16 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
   List<String> groups = [], events = [];
   Map<String, dynamic>? notifications;
   bool notificationsLoading = false, configOpen = false;
-  Map<String, dynamic>? shareLink;
-  String shareUrl = '';
+
+  /// Web ConnectedAppShareLinks (server v1.24 `/share-links`): one link per
+  /// target server slug, listed by the slug as typed; the URL of a new link
+  /// is shown once.
+  List<Map<String, dynamic>> shareLinks = [];
+  final shareTarget = TextEditingController();
+  ({String linkId, String slug, String url})? shareCreated;
   bool shareLoading = false, shareCopied = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the target is edited and on the next create.
+  String? shareTargetError;
   bool submitting = false, logoUploading = false, regenerating = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- error clears when the next save or guarded action starts or a confirm dialog retries; webhookSecret is a one-time value cleared on disable and with the editor.
   String? savingId, error, webhookBusy, webhookSecret;
@@ -183,6 +191,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       returnUrl,
       manifest,
       setupUrl,
+      shareTarget,
     ]) {
       c.addListener(refresh);
     }
@@ -209,6 +218,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       setupUrl,
       setupDescription,
       endpoint,
+      shareTarget,
     ]) {
       c.dispose();
     }
@@ -233,8 +243,12 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
   Future<void> loadShare() async {
     setState(() => shareLoading = true);
     try {
-      final data = await w.client.get('$base/share-link');
-      if (live) shareLink = managementMap(data);
+      final data = await w.client.get('$base/share-links');
+      if (live) {
+        shareLinks = data is Map && data['links'] is List
+            ? managementRows(data['links'])
+            : [];
+      }
     } on RaftApiException catch (e) {
       if (live && e.status != 404) {
         error = failure(e, 'Failed to load private share link');
@@ -513,29 +527,68 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     busy: (b) => logoUploading = b,
   );
 
+  /// Web `normalizeShareTargetSlug`: the slug as the server stores it, or
+  /// null when it is not slug-shaped (`^[a-z][a-z0-9-]*$`).
+  static String? normalizeShareTargetSlug(String raw) {
+    final slug = raw.trim().toLowerCase();
+    return RegExp(r'^[a-z][a-z0-9-]*$').hasMatch(slug) ? slug : null;
+  }
+
   Future<void> createShare() async {
+    if (shareLoading) return;
+    final slug = normalizeShareTargetSlug(shareTarget.text);
+    if (slug == null) {
+      setState(
+        () => shareTargetError = 'Enter a server slug: lowercase letters, digits and hyphens, starting with a letter.',
+      );
+      return;
+    }
     await guarded(
       () async {
-        final data = managementMap(await w.client.post('$base/share-link'));
+        final data = managementMap(
+          await w.client.post(
+            '$base/share-links',
+            data: {'targetServerSlug': slug},
+          ),
+        );
         if (!live) return;
         if (data['client'] is Map) editing = managementMap(data['client']);
-        shareLink = managementMap(data['link']);
-        shareUrl =
-            '${ContentLinks.originFor(w.client.origin).origin}/integration-invites/${Uri.encodeComponent('${data['token']}')}';
+        final link = managementMap(data['link']);
+        final target = '${link['targetServerSlug'] ?? slug}';
+        // The new link replaces this target's previous one.
+        shareLinks = [
+          link,
+          for (final other in shareLinks)
+            if (other['targetServerSlug'] != link['targetServerSlug']) other,
+        ];
+        shareCreated = (
+          linkId: '${link['id']}',
+          slug: target,
+          url:
+              '${ContentLinks.originFor(w.client.origin).origin}/integration-invites/${Uri.encodeComponent('${data['token']}')}',
+        );
         shareCopied = false;
+        shareTarget.clear();
+        shareTargetError = null;
       },
       'Failed to create private share link',
       busy: (b) => shareLoading = b,
     );
   }
 
-  Future<void> revokeShare() => guarded(
+  Future<void> revokeShare(Map<String, dynamic> link) => guarded(
     () async {
-      await w.client.delete('$base/share-link');
+      final id = '${link['id']}';
+      await w.client.delete('$base/share-links/${Uri.encodeComponent(id)}');
       if (live) {
-        shareLink = null;
-        shareUrl = '';
-        shareCopied = false;
+        shareLinks = [
+          for (final other in shareLinks)
+            if ('${other['id']}' != id) other,
+        ];
+        if (shareCreated?.linkId == id) {
+          shareCreated = null;
+          shareCopied = false;
+        }
       }
     },
     'Failed to revoke private share link',
@@ -1329,7 +1382,6 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       _ => null,
     };
     final shareable = status == 'private' || status == 'rejected';
-    final expires = shareLink?['expiresAt'];
     return RaftAppEditorStack(
       children: [
         if (app == null)
@@ -1345,53 +1397,11 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             child: RaftAppEditorStack(
               gap: RaftSpace.x3,
               children: [
-                RaftAppEditorActionRow(
+                const RaftAppEditorActionRow(
                   title: 'Private share link',
-                  description: 'Invite another server owner or admin to install this app without listing it in the public marketplace.',
-                  extra: shareLink == null
-                      ? null
-                      : raftFormat(context, 'Active link expires {when}.', {
-                          'when': expires is String && expires.isNotEmpty
-                              ? expires
-                              : tr('never'),
-                        }),
-                  action: Wrap(
-                    spacing: RaftSpace.x2,
-                    runSpacing: RaftSpace.x2,
-                    alignment: WrapAlignment.end,
-                    children: [
-                      RaftSettingsRecipeButton(
-                        label: shareLoading
-                            ? 'Creating Link…'
-                            : shareLink != null
-                            ? 'Regenerate'
-                            : 'Create Link',
-                        size: small,
-                        onPressed: shareLoading ? null : createShare,
-                      ),
-                      if (shareLink != null)
-                        RaftSettingsRecipeButton(
-                          label: 'Revoke',
-                          size: small,
-                          onPressed: shareLoading ? null : revokeShare,
-                        ),
-                    ],
-                  ),
+                  description: 'Let one other server install this app without listing it in the public marketplace. Each link works once, only on the server you name, for one of its owners or admins.',
                 ),
-                if (shareUrl.isNotEmpty)
-                  RaftAppEditorCopyRow(
-                    value: shareUrl,
-                    copied: shareCopied,
-                    label: 'Private share URL',
-                    onCopy: () {
-                      copy(shareUrl, done: () => shareCopied = true);
-                      shareCopyReset?.cancel();
-                      shareCopyReset = Timer(
-                        const Duration(milliseconds: 1500),
-                        () => refreshCopied(),
-                      );
-                    },
-                  ),
+                shareLinksControls(),
               ],
             ),
           ),
@@ -1418,6 +1428,120 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             'This app is published in the Marketplace. Offline approval preserves the source Server’s installation and access, but removes installations and access on other Servers.',
             tone: RaftAppEditorCalloutTone.success,
           ),
+      ],
+    );
+  }
+
+  /// Web ConnectedAppShareLinks: the target slug field with Create link, the
+  /// one-time URL of the link just created, and a row per link with Revoke.
+  Widget shareLinksControls() {
+    final created = shareCreated;
+    return Column(
+      key: const ValueKey('connected-app-share-links'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: RaftSpace.x3,
+      children: [
+        RaftAppEditorField(
+          label: 'Target server',
+          hint: "The server's slug, from its address after /s/. Raft doesn't say whether that server exists, so check the slug: a link for the wrong one never works.",
+          error: shareTargetError == null ? null : tr(shareTargetError!),
+          child: Row(
+            spacing: RaftSpace.x2,
+            children: [
+              Expanded(
+                child: RaftTextInput(
+                  key: const ValueKey('connected-app-share-target-input'),
+                  controller: shareTarget,
+                  mono: true,
+                  hintText: 'server-slug',
+                  invalid: shareTargetError != null,
+                  semanticLabel: tr('Target server'),
+                  onChanged: (_) {
+                    if (shareTargetError != null) {
+                      setState(() => shareTargetError = null);
+                    }
+                  },
+                  onSubmitted: (_) => unawaited(createShare()),
+                ),
+              ),
+              RaftSettingsRecipeButton(
+                key: const ValueKey('connected-app-share-create-button'),
+                label: shareLoading ? 'Working...' : 'Create link',
+                size: RaftButtonRecipeSize.lg,
+                onPressed: shareLoading || shareTarget.text.trim().isEmpty
+                    ? null
+                    : () => unawaited(createShare()),
+              ),
+            ],
+          ),
+        ),
+        if (created != null)
+          Column(
+            key: const ValueKey('connected-app-share-created'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: RaftSpace.x2,
+            children: [
+              RaftAppEditorFootnote(
+                raftFormat(
+                  context,
+                  "Link for {slug}. Copy it now: it's shown only once.",
+                  {'slug': created.slug},
+                ),
+              ),
+              RaftAppEditorCopyRow(
+                value: created.url,
+                copied: shareCopied,
+                label: 'Private share URL',
+                onCopy: () {
+                  copy(created.url, done: () => shareCopied = true);
+                  shareCopyReset?.cancel();
+                  shareCopyReset = Timer(
+                    const Duration(milliseconds: 1500),
+                    () => refreshCopied(),
+                  );
+                },
+              ),
+            ],
+          ),
+        if (shareLinks.isNotEmpty)
+          RaftListRowGroup(
+            key: const ValueKey('connected-app-share-link-list'),
+            children: [for (final link in shareLinks) shareLinkRow(link)],
+          ),
+      ],
+    );
+  }
+
+  Widget shareLinkRow(Map<String, dynamic> link) {
+    final slug = '${link['targetServerSlug'] ?? ''}';
+    final expires = DateTime.tryParse('${link['expiresAt'] ?? ''}');
+    return RaftListRow(
+      key: ValueKey('connected-app-share-link-row-${link['id']}'),
+      variant: RaftListRowVariant.plain,
+      interactive: false,
+      children: [
+        RaftListRowBody(
+          children: [
+            RaftListRowTitle(slug),
+            RaftListRowDescription(
+              raftFormat(context, 'Expires {when}', {
+                'when': expires == null
+                    ? tr('never')
+                    : DateFormat.yMd(
+                        Localizations.localeOf(context).toLanguageTag(),
+                      ).format(expires.toLocal()),
+              }),
+            ),
+          ],
+        ),
+        RaftSettingsRecipeButton(
+          label: 'Revoke',
+          variant: RaftButtonRecipeVariant.ghost,
+          semanticLabel: raftFormat(context, 'Revoke the link for {slug}', {
+            'slug': slug,
+          }),
+          onPressed: shareLoading ? null : () => unawaited(revokeShare(link)),
+        ),
       ],
     );
   }

@@ -340,7 +340,9 @@ void main() {
       a.routes['POST /integrations/clients'] = (_) => {
         'client': {'id': 'new'},
       };
-      a.routes['GET /integrations/clients/app-1/share-link'] = (_) => {};
+      a.routes['GET /integrations/clients/app-1/share-links'] = (_) => {
+        'links': <dynamic>[],
+      };
       a.routes['GET /integrations/clients/app-1/app-notifications'] = (_) => {
         'request_revision': 0,
         'current_groups': ['server'],
