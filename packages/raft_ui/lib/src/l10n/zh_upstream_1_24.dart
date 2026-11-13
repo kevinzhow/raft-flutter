@@ -61,4 +61,9 @@ const Map<String, String> zhCatalogUpstream124 = <String, String>{
       "Raft 会收集使用数据来改进产品，你可以随时在设置中关闭。",
   // SSO_REQUIRED (pages.ssoCallback.title).
   "Sign in with SSO": "使用 SSO 登录",
+  // 426 APP_UPDATE_REQUIRED (server legacyMobileOAuthUpgrade.ts zh-cn text).
+  "This version of Raft is no longer supported. Download the latest version at app.raft.build/download, then sign in.":
+      "当前版本过旧，请访问 app.raft.build/download 下载最新版 Raft 后再登录。",
+  "Please refresh the page, or download the latest Raft at app.raft.build/download, to sign up.":
+      "请刷新页面，或访问 app.raft.build/download 下载最新版 Raft 后再注册。",
 };
