@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import 'markdown_autolink.dart';
+import 'markdown_cjk_emphasis.dart';
 import 'raft_underline.dart';
 import 'flex_shrink_row.dart';
 import 'icons.dart';
@@ -25,7 +26,7 @@ InlineSpan raftInlineMarkdownSpan(
 }) {
   final nodes = raftFlattenNestedLinks(
     md.Document(
-      inlineSyntaxes: [RaftBareUrlSyntax()],
+      inlineSyntaxes: [...raftCjkEmphasisSyntaxes(), RaftBareUrlSyntax()],
       extensionSet: md.ExtensionSet.gitHubFlavored,
       encodeHtml: false,
     ).parseLines(source.replaceAll('\r\n', '\n').split('\n')),

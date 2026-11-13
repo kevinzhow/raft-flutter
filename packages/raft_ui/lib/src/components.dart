@@ -19,6 +19,7 @@ import 'composer_expand.dart';
 import 'presentation.dart';
 import 'markdown_editing.dart';
 import 'markdown_autolink.dart';
+import 'markdown_cjk_emphasis.dart';
 import 'markdown_scrollbar.dart';
 import 'message_semantics.dart';
 import 'selected_text_quote.dart';
@@ -1819,7 +1820,10 @@ class RaftMessageTile extends StatelessWidget {
                 child: MarkdownBody(
                   data: content,
                   scrollbarBuilder: buildMarkdownScrollbar,
-                  inlineSyntaxes: [RaftBareUrlSyntax()],
+                  inlineSyntaxes: [
+                    ...raftCjkEmphasisSyntaxes(),
+                    RaftBareUrlSyntax(),
+                  ],
                   onTapLink: (_, href, _) {
                     if (href != null) onLink?.call(href);
                   },
