@@ -37,7 +37,7 @@ the desktop (`ui:server.public-page-live-globe`).
 | 2026-10-24 | Default appearance is Web's "Raft" look; Elegant and Brutal stay as selectable themes (plan item 1). The theme was merged when no case scored below the previous client; remaining low-similarity pages are being fixed against the official 96% pass bar (task #228) | Kevin, `18e37fbf` (plan approved), `367b04d0` (merge, continue the low pages) | PR #424 (integration `24d0c88e`); release v1.21.23+1 |
 | 2026-10-24 | Build the cloud (hosted) agent family, verified against a local antiproton server (plan item 2) | Kevin, `0b62aedd` | the cloud-agent rows are ✅ in `capability-parity.json` (`POST /agents` note, `GET /agents/:id/hosted-runtime`) |
 | 2026-10-23 | Build RaftBench in full (plan item 4; the plan had suggested ➖) | Kevin, `b9c81968` | section "RaftBench vs Web v1.21.23" below; RaftBench rows ✅ |
-| 2026-10-23 | Live sequence jumps keep no gap fetch (intended difference) | Kevin, `9c047186` | section "Live sequence jumps do not trigger a gap fetch"; `BP-READ-021`, `BP-RT-030` |
+| 2026-10-23 | Live sequence jumps keep no gap fetch (intended difference). **Withdrawn 2026-11-13**: the app follows Web v1.24 `liveGapFill.ts` (Kevin, `2654e77c`, WP-LIVE) | Kevin, `9c047186`; `2654e77c` | section "Live sequence jumps fill the hole behind them"; `BP-READ-021`, `BP-RT-030` |
 | 2026-10-21 | No floating Share / Download icons on attachment cards | Kevin, PR #295 | section "Attachment cards"; `ui:files.attachment-card-download` ➖ |
 | 2026-10-17 | Video cards are posters on every platform | Kevin | section "Video cards"; `ui:files.video-audio-preview` ➖ |
 | 2026-10-17 | Forms are bottom sheets below 768 px and dialogs from 768 px (`RaftPresentationPolicy.form`) | product owner, commit `49315d69` | `docs/close-affordances.md` (the "approved" rows of the dialog family); not a capability row |
@@ -2150,15 +2150,17 @@ it as an intentional difference). What still differs, for a reviewer to accept o
 * A failed dashboard read or save is the one generic message, like Web; the server's `raftbench_*` code is not shown. The hosted-agent model line polls every 60 seconds like Web.
 * Sparkles and Wallet glyphs are vendored by hand (`FLUTTER_ADDED` in `tool/gen-glyphs`) because a full `--import-sources` needs the raft-ui 0.7.0 pin.
 
-## Live sequence jumps do not trigger a gap fetch: intended difference from Web (owner decision 2026-10-23)
+## Live sequence jumps fill the hole behind them (Web v1.24, owner decision 2026-11-13)
 
-Web treats a live `message:new` whose `seq` is past the open window's tail as a
-gap: it holds the message in a pending-gap list, calls `syncGap` and stitches
-the window when the gap fills (BP-READ-021, BP-RT-030). Owner decision
-2026-10-23 (Kevin, `9c047186`, after the v1.21.23 read-path port): **keep the difference**.
-Channel `seq` is sparse in the sync core, so a jump does not prove a missing
-message; the client heals real gaps through the heartbeat, `rooms:joined` and
-resume reads instead.
+The 2026-10-23 intended difference ("live sequence jumps do not trigger a gap
+fetch", Kevin `9c047186`) is withdrawn: Kevin `2654e77c` (2026-11-13) asked to
+follow Web v1.24 `liveGapFill.ts`. A live `message:new` in the open channel
+whose `seq` is past the window tail is shown at once; the hole behind it is
+read in the background with `GET /messages/sync` from the tail, retried after
+1, 2, 4, 8 and 16 s, and a heartbeat re-reads a scope that still owes a fill
+(BP-READ-021, BP-RT-030; `packages/raft_sync/lib/src/live_gap_fill.dart`,
+`apps/raft_flutter/lib/data/message_gap_sync.dart`). Not ported yet: Web does
+not auto-read a live row while its hole is unconfirmed (WP-READ).
 
 ## Attachments and large files vs Web v1.21.23 (cindy/w23-files): differences
 
