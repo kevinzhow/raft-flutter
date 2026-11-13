@@ -186,18 +186,82 @@
    "capability": "Fill message gaps after reconnect (sync since seq)",
    "background": true,
    "status": "covered",
-   "webEntry": "messageStore.syncGap (automatic on reconnect / seq gap)",
+   "webEntry": "messageStore.syncGap (reconnect, heartbeat, and the hole behind a live row across a seq jump: liveGapFill.ts, Web v1.24)",
    "gate": "none",
-   "flutterEntry": "workspace_message_navigation.dart gap fill loop",
+   "flutterEntry": "message_gap_sync.dart MessageGapSync.run (window tail, or lower where a live hole is owed; LiveGapFill retries 1-16 s)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/data/workspace_message_navigation.dart",
+     "file": "apps/raft_flutter/lib/data/message_gap_sync.dart",
      "needle": "'/messages/sync'"
     }
    ],
    "justification": "",
    "impact": "",
    "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /sync/changes",
+   "area": "messages",
+   "capability": "Incremental sync after a reconnect, a resume or sync:changed (cursor, pages, reset, transient-failure rule) (Web v1.24)",
+   "background": true,
+   "status": "covered",
+   "webEntry": "socketBridge ensureMainLayoutSync / syncChangesClient.ts SyncChangesSession (background)",
+   "gate": "none",
+   "flutterEntry": "workspace_live_sync.dart + raft_sync SyncChangesSession; conversation changes re-read the inbox / unread / followed lists (contract fallback, no in-place patch yet)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/workspace_live_sync.dart",
+     "needle": "'/sync/changes'"
+    },
+    {
+     "file": "packages/raft_sync/lib/src/sync_changes.dart",
+     "needle": "class SyncChangesSession"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /actors/resolve",
+   "area": "joint-channels",
+   "capability": "Resolve senders of another server in joint channels (Web v1.24)",
+   "background": true,
+   "status": "covered",
+   "webEntry": "localTables/actorResolve.ts requestActors (background, from message / inbox / task rows)",
+   "gate": "none",
+   "flutterEntry": "actor_directory.dart ActorDirectory (batching, asked once per scope, off on 403/404); the rows that read it are WP-MSG / WP-INBOX / WP-TASK2",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/actor_directory.dart",
+     "needle": "'/actors/resolve'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "SOCKET emit sync:horizon",
+   "area": "messages",
+   "capability": "Ask the catch-up horizon before the first history read (Web v1.24)",
+   "background": true,
+   "status": "partial",
+   "webEntry": "socketBridge requestStartingSyncHorizon (background)",
+   "gate": "none",
+   "flutterEntry": "Not sent (needs an ack-capable socket emit). The resume rounds carry the horizon the previous answer returned (sync_horizon.dart, resumeSince)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/sync_horizon.dart",
+     "needle": "abstract final class SyncHorizon"
+    }
+   ],
+   "justification": "The first catch-up after a page load runs without a horizon, as an older server's resume does; later rounds send sinceHorizon.",
+   "impact": "A message that commits late during the first history load of a session can be missed until the next resume or gap read; later catch-ups are covered.",
+   "size": "S"
   },
   {
    "kind": "endpoint",
