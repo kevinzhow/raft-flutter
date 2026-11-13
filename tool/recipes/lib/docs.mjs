@@ -23,13 +23,16 @@ export function writeDocs(path, model, coverage) {
     `${model.source.version} (\`dist/index.mjs\` sha256 \`${model.source.sha256.slice(0, 12)}\`) with tailwindcss ${model.source.tailwindcss}. Do not edit.`);
   L.push('');
   L.push(`Tailwind input CSS: \`${model.source.inputCss.trim().replace(/\n/g, ' ')}\`` +
-    (model.source.webThemeSha256 ? ' (`raft-web-theme.css` = the Web client\'s `@theme` overrides, `tool/recipes/web-theme.css`).' : '.'));
+    (model.source.webThemeSha256 ? ' (`raft-web-theme.css` keeps the Web client\'s themes, utilities and helper rules, `tool/recipes/web-theme.css`).' : '.'));
   L.push('');
   L.push('Every `tv()` recipe is evaluated with the real tailwind-variants + raft-ui `cn` (tailwind-merge) for every variant');
   L.push('combination, and every resulting class is compiled by Tailwind v4 with raft-ui `styles.css` as input. Values below are');
   L.push('after cascade and `var()` resolution: lengths in logical px, `token(x)` = foundation token `--x` in lowerCamelCase');
   L.push('(resolved per theme at runtime), literal colours as `#AARRGGBB`. State rows show only properties that change.');
   L.push('Authoritative data: `build/recipes/recipes.json`; Dart: `packages/raft_theme/lib/recipes/`.');
+  L.push('The stable and WIP module graphs are both read. Responsive custom properties retain their source conditions: width-only margins, desktop width + pointer density, and dark rules.');
+  L.push('Product compositions include SelectionPopover content/trigger width and DialogCard centered/sheet × description, including the scrolling body padding. Keyboard viewport behavior remains a family adapter concern.');
+  L.push('This generated inventory proves source coverage, not product visual parity. Family adapters still own current states, named-container context and pack bindings; Elegant/Brutal use the untouched frozen 0.5.52 recipe set.');
   L.push('');
   L.push('## Coverage');
   L.push('');

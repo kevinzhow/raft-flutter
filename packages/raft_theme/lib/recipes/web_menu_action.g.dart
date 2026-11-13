@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `webMenuAction`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `webMenuAction`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -16,7 +16,7 @@ class RaftWebMenuActionRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root};
 }
 
-/// raft-ui recipe `webMenuAction` (`Web src/components/ui/MenuItem.tsx sha256:3cd601e7b3a45d7ec37cd5d88acedc4ee339d981789fa87ed791530cbbb14597`, index.mjs:1).
+/// raft-ui recipe `webMenuAction` (`Web src/components/ui/MenuItem.tsx sha256:5145ea935211fc2387b15fa861a24a976707ca016f6c440561c9eace935e4f59`, index.mjs:1).
 ///
 /// Used by: MenuItem.
 ///
@@ -68,30 +68,31 @@ abstract final class RaftWebMenuActionRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      965,
-      1480,
-      1929,
-      1319,
-      1024,
-      1710,
-      1659,
-      1669,
-      1836,
-      386,
-      390,
-      1016,
-      1813,
-      1013,
-      1822,
-      1577,
-      1893,
-      953,
-      952,
-      177,
-      157,
-      928,
-      938,
-      917,
+      1400,
+      2113,
+      2725,
+      1864,
+      1467,
+      2461,
+      2402,
+      2430,
+      2613,
+      610,
+      614,
+      1456,
+      2587,
+      1453,
+      2598,
+      2247,
+      2675,
+      1383,
+      1382,
+      348,
+      323,
+      324,
+      1353,
+      1363,
+      1343,
     ],
   ];
 

@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/message_embed.g.dart'
 
 /// Router for recipe `RaftMessageEmbedRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `size`.
 abstract final class RaftMessageEmbedRecipe {
   static const String recipeName = legacy.RaftMessageEmbedRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftMessageEmbedRecipe.slotNames;

@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `searchTrigger`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `searchTrigger`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -30,7 +30,7 @@ class RaftSearchTriggerRecipeStyle {
   };
 }
 
-/// raft-ui recipe `searchTrigger` (`src/components/search/search-trigger.tsx`, index.mjs:16808).
+/// raft-ui recipe `searchTrigger` (`dist/components/search/search-trigger.mjs`, index.mjs:24820).
 ///
 /// Used by: SearchTrigger, SearchTriggerLabel, SearchTriggerShortcut.
 ///
@@ -86,48 +86,47 @@ abstract final class RaftSearchTriggerRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      1682,
-      1305,
-      1189,
-      1924,
-      1424,
-      1484,
-      1740,
-      1319,
-      1023,
-      1660,
-      1710,
-      622,
-      635,
-      596,
-      1836,
-      1016,
-      1810,
-      1015,
-      1824,
-      1727,
-      1577,
-      1893,
+      2433,
+      1847,
+      1634,
+      2720,
+      1980,
+      2116,
+      2499,
+      1864,
+      1466,
+      2403,
+      2463,
       941,
-      1283,
-      429,
-      996,
-      928,
-      925,
-      922,
-      923,
-      938,
-      485,
-      483,
-      480,
-      481,
-      492,
-      275,
-      277,
-      161,
+      952,
+      911,
+      2613,
+      1456,
+      2585,
+      1455,
+      2600,
+      2483,
+      2247,
+      2675,
+      1365,
+      699,
+      1439,
+      1353,
+      1350,
+      1347,
+      1348,
+      1363,
+      777,
+      775,
+      772,
+      773,
+      783,
+      472,
+      474,
+      329,
     ],
-    [1484, 966, 1897],
-    [1499, 1740],
+    [2116, 1401, 2681],
+    [2132, 2499],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

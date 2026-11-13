@@ -1,5 +1,5 @@
 // GENERATED — do not edit. Regenerate with `tool/gen-tokens`.
-// Source: raft-ui-0.7.1/tokens.json, raft-ui-0.7.1/styles.css (@botiverse/raft-ui 0.7.1, MIT)
+// Source: raft-ui-0.95.3/tokens.json, raft-ui-0.95.3/styles.css (@botiverse/raft-ui 0.95.3, MIT)
 // dart format off
 // ignore_for_file: constant_identifier_names, lines_longer_than_80_chars
 
@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 
 import 'shadows.g.dart';
 
-/// Every raft-ui 0.7.1 token resolved for the light mode (`tokens.json`).
+/// Every raft-ui 0.95.3 token resolved for the light mode (`tokens.json`).
 ///
 /// Names are the official token names in lowerCamel (`--layer-canvas` ->
 /// [layerCanvas]), not the 0.5.52 names; see [RaftDeprecatedTokenNames]. Opaque colours
@@ -234,8 +234,8 @@ abstract final class RaftLight {
   static const Color foregroundOnFrameMuted = Color(0xff564919);
   /// `--foreground-on-frame-active`: `{sticker.ink}`
   static const Color foregroundOnFrameActive = Color(0xff141111);
-  /// `--foreground-link`: `oklch(0.4878 0.2432 264.4)`
-  static const Color foregroundLink = Color(0xff1447e6);
+  /// `--foreground-link`: `oklch(0.4327 0.1282 256.54)`
+  static const Color foregroundLink = Color(0xff184f95);
   /// `--foreground-active`: `{foreground.$root}`
   static const Color foregroundActive = Color(0xff141111);
   /// `--foreground-hover`: `{foreground.$root}`
@@ -248,6 +248,10 @@ abstract final class RaftLight {
   static const Color layerPopover = Color(0xffffffff);
   /// `--layer-backdrop`: `oklch(0 0 0 / 0.651)`
   static const Color layerBackdrop = Color.fromRGBO(0, 0, 0, 0.651);
+  /// `--layer-backdrop-nested`: `oklch(0 0 0 / 0.4)`
+  static const Color layerBackdropNested = Color.fromRGBO(0, 0, 0, 0.4);
+  /// `--layer-veil`: `oklch(1 0 0 / 0.8)` — The cover over something busy or loading in place: an image uploading or that failed, a preview being prepared. The page at 80%, so what is under it shows through, dimmed, and a default-colour Spinner on it reads in both modes. Translucent by contract, like the two backdrops.
+  static const Color layerVeil = Color.fromRGBO(255, 255, 255, 0.8);
   /// `--layer-card`: `oklch(1 0 0)`
   static const Color layerCard = Color(0xffffffff);
   /// `--layer-hud`: `oklch(0.2634 0.0093 294.92)`
@@ -262,10 +266,18 @@ abstract final class RaftLight {
   static const Color fillMuted = Color(0xfff3f3f3);
   /// `--fill-strong`: `oklch(0.936 0.0006 17.62)`
   static const Color fillStrong = Color(0xffeaeaea);
-  /// `--fill-frame-pressed`: `oklch(0.1813 0.005 17.62 / 0.122)`
-  static const Color fillFramePressed = Color.fromRGBO(20, 17, 17, 0.122);
-  /// `--fill-pressed`: `oklch(0.1813 0.005 17.62 / 0.078)`
-  static const Color fillPressed = Color.fromRGBO(20, 17, 17, 0.078);
+  /// `--fill-subtle`: `oklch(0.1813 0.005 17.62 / 0.04)` — Hover tier subtle (light): hover on large things people read, a row, a message, a readable card, and a row whose menu is open. About 2.5 to 3 OKLab dE in both modes, on paper, the sidebar and cards alike, under every selection tint, so text keeps its contrast.
+  static const Color fillSubtle = Color.fromRGBO(20, 17, 17, 0.04);
+  /// `--fill-medium`: `oklch(0.1813 0.005 17.62 / 0.078)` — Hover tier medium: hover on small controls (buttons, icon buttons, chips, tabs, segment items) and press on everything, on paper-coloured surfaces. About 5.5 to 6.5 OKLab dE; dark is lighter than light because the same ink alpha shows more on a dark surface.
+  static const Color fillMedium = Color.fromRGBO(20, 17, 17, 0.078);
+  /// `--fill-frame-medium`: `oklch(0.1813 0.005 17.62 / 0.1)` — Hover tier medium on the frame (rail items, on-frame buttons, the workspace button): hover and press. Its own alphas because ink shows differently on the yellow and on the near-black frame: 10% on the yellow and 6% on the dark frame land on the medium step, about 6 OKLab dE.
+  static const Color fillFrameMedium = Color.fromRGBO(20, 17, 17, 0.1);
+  /// `--fill-cell-hover`: `{fill.subtle}` — A list cell's hover and its menu-open fill (lib/list-cell.ts), drawn on the cell's inset shape. fill-subtle in light. In dark it steps up to 7.5% ink, so the rounded shape reads on a dark surface, where fill-subtle's 3% barely shows. Rows only: the global tiers don't change.
+  static const Color fillCellHover = Color.fromRGBO(20, 17, 17, 0.04);
+  /// `--fill-cell-press`: `{fill.medium}` — A list cell's press fill, the same with a mouse and on a touch screen. fill-medium in light. In dark 12% ink, a clear step over the cell's dark hover.
+  static const Color fillCellPress = Color.fromRGBO(20, 17, 17, 0.078);
+  /// `--fill-cell-selected`: `{info.soft}` — A list cell that is selected or open beside its list (an active InboxItem, a selected ListRow), and the located highlight on a cell. info-soft in light. In dark the cyan at 38% instead of 18%, so a selected cell stands out from a hovered one.
+  static const Color fillCellSelected = Color(0xffd7f2fe);
   /// `--line-strong`: `oklch(0.1813 0.005 17.62)`
   static const Color lineStrong = Color(0xff141111);
   /// `--line-seam`: `oklch(0.1813 0.005 17.62 / 0.451)`
@@ -274,7 +286,7 @@ abstract final class RaftLight {
   static const Color lineHairline = Color.fromRGBO(20, 17, 17, 0.149);
   /// `--line-frame-active`: `{sticker.ink}`
   static const Color lineFrameActive = Color(0xff141111);
-  /// `--line-field`: `{line.strong}`
+  /// `--line-field`: `{line.strong}` — The frame of a field and the composer: the ink and width of line-strong, drawn 1.5px.
   static const Color lineField = Color(0xff141111);
   /// `--line-field-hover`: `{line.strong}`
   static const Color lineFieldHover = Color(0xff141111);
@@ -328,10 +340,14 @@ abstract final class RaftLight {
   static const Color brandEdge = Color(0xff141111);
   /// `--brand-glow`: `oklch(0.8829 0.1623 91.9)`
   static const Color brandGlow = Color(0xffffd440);
-  /// `--brand-hover`: `color-mix(in srgb, var(--brand-400) 88%, var(--sticker-ink))` — Pressing a sticker lays sticker-pressed (12% ink) over its colour.
-  static const Color brandHover = Color(0xffe3bd3a);
+  /// `--brand-hover`: `color-mix(in srgb, var(--brand-400) 90%, var(--sticker-ink))` — Hovering or pressing a sticker lays sticker-medium (10% ink) over its colour.
+  static const Color brandHover = Color(0xffe7c13b);
   /// `--brand-active`: `{brand.hover}`
-  static const Color brandActive = Color(0xffe3bd3a);
+  static const Color brandActive = Color(0xffe7c13b);
+  /// `--you`: `oklch(0.8829 0.1623 91.9)` — Raft yellow for what is addressed to you: a mention of you, the sidebar's @ marker, a search hit, the passage of the comment you opened. Its own value, not brand, so a theme that grays the brand (Boring Gray) keeps it yellow.
+  static const Color you = Color(0xffffd440);
+  /// `--selected`: `oklch(0.8829 0.1623 91.9)` — Raft yellow for the selected sticker: where you are (the active sidebar row, a segment, a tab, the tab bar's item, the current step) and what is on (a switch, a toggle, a pressed panel action). Its own value, not brand, so a theme that grays the brand (Boring Gray) keeps it yellow.
+  static const Color selected = Color(0xffffd440);
   /// `--attention-50`: `{palette.pink.50}`
   static const Color attention50 = Color(0xfffff0f4);
   /// `--attention-100`: `{palette.pink.100}`
@@ -358,10 +374,10 @@ abstract final class RaftLight {
   static const Color attentionStrong = Color(0xffc00064);
   /// `--attention-soft`: `oklch(0.9141 0.0482 358.59)`
   static const Color attentionSoft = Color(0xffffd6e2);
-  /// `--attention-hover`: `color-mix(in srgb, var(--attention-400) 88%, var(--sticker-ink))`
-  static const Color attentionHover = Color(0xffe389ae);
+  /// `--attention-hover`: `color-mix(in srgb, var(--attention-400) 90%, var(--sticker-ink))`
+  static const Color attentionHover = Color(0xffe78bb1);
   /// `--attention-active`: `{attention.hover}`
-  static const Color attentionActive = Color(0xffe389ae);
+  static const Color attentionActive = Color(0xffe78bb1);
   /// `--info`: `oklch(0.7833 0.1353 219.21)` — Every solid is a sticker: ink type on the colour in both modes.
   static const Color info = Color(0xff27ccf3);
   /// `--info-strong`: `{palette.cyan.800}`
@@ -370,10 +386,10 @@ abstract final class RaftLight {
   static const Color infoMuted = Color(0xffa9e6fe);
   /// `--info-soft`: `oklch(0.9452 0.0326 226.3)`
   static const Color infoSoft = Color(0xffd7f2fe);
-  /// `--info-hover`: `color-mix(in srgb, var(--info) 88%, var(--sticker-ink))`
-  static const Color infoHover = Color(0xff25b6d8);
+  /// `--info-hover`: `color-mix(in srgb, var(--info) 90%, var(--sticker-ink))`
+  static const Color infoHover = Color(0xff25b9dc);
   /// `--info-active`: `{info.hover}`
-  static const Color infoActive = Color(0xff25b6d8);
+  static const Color infoActive = Color(0xff25b9dc);
   /// `--success`: `oklch(0.8272 0.1354 130.07)`
   static const Color success = Color(0xffa9d877);
   /// `--success-foreground`: `{sticker.ink}`
@@ -394,10 +410,12 @@ abstract final class RaftLight {
   static const Color warningMuted = Color(0xfffbd1c0);
   /// `--warning-soft`: `oklch(0.9413 0.0275 40.2)`
   static const Color warningSoft = Color(0xfffde6de);
-  /// `--warning-hover`: `color-mix(in srgb, var(--warning) 88%, var(--sticker-ink))`
-  static const Color warningHover = Color(0xffdd9064);
+  /// `--warning-graphic`: `oklch(0.64 0.16 50)` — A failure or warning drawn as a graphic in data visualisation: the fill or stroke of a chart mark, such as a failed route in a migration chart. The warning orange, deep enough in light mode and bright in dark mode to stand at least 3:1 against the canvas, sidebar, card and popover (WCAG 1.4.11). Never text: warning text takes warning-strong.
+  static const Color warningGraphic = Color(0xffd66919);
+  /// `--warning-hover`: `color-mix(in srgb, var(--warning) 90%, var(--sticker-ink))`
+  static const Color warningHover = Color(0xffe19366);
   /// `--warning-active`: `{warning.hover}`
-  static const Color warningActive = Color(0xffdd9064);
+  static const Color warningActive = Color(0xffe19366);
   /// `--danger`: `oklch(0.711 0.1682 28.04)` — danger = the destructive sticker (red fill, ink type); danger-strong is the error ink for invalid fields and destructive menu items.
   static const Color danger = Color(0xfff97264);
   /// `--danger-foreground`: `{sticker.ink}`
@@ -408,10 +426,10 @@ abstract final class RaftLight {
   static const Color dangerMuted = Color(0xfffbbdb9);
   /// `--danger-soft`: `oklch(0.9259 0.0344 20)`
   static const Color dangerSoft = Color(0xfffddedd);
-  /// `--danger-hover`: `color-mix(in srgb, var(--danger) 88%, var(--sticker-ink))`
-  static const Color dangerHover = Color(0xffde665a);
+  /// `--danger-hover`: `color-mix(in srgb, var(--danger) 90%, var(--sticker-ink))`
+  static const Color dangerHover = Color(0xffe2685c);
   /// `--danger-active`: `{danger.hover}`
-  static const Color dangerActive = Color(0xffde665a);
+  static const Color dangerActive = Color(0xffe2685c);
   /// `--inactive`: `oklch(0.7892 0.0137 71.29)`
   static const Color inactive = Color(0xffc0b9b1);
   /// `--inactive-foreground`: `{sticker.ink}`
@@ -448,24 +466,32 @@ abstract final class RaftLight {
   static const Color taskStatusClosedSoft = Color(0xffe0dcd7);
   /// `--task-status-closed-strong`: `{palette.stone.800}`
   static const Color taskStatusClosedStrong = Color(0xff3e3b38);
+  /// `--selection`: `{brand.soft}` — Selected text (::selection). brand-soft in light mode; in dark mode brand over the page at 22%, the wash of a commented passage, because brand-soft left a selection almost the same as the page.
+  static const Color selection = Color(0xfffff0bd);
   /// `--sticker-ink`: `oklch(0.1813 0.005 17.62)`
   static const Color stickerInk = Color(0xff141111);
   /// `--sticker-paper`: `oklch(1 0 0)`
   static const Color stickerPaper = Color(0xffffffff);
   /// `--sticker-edge`: `oklch(0.1813 0.005 17.62 / 0)`
   static const Color stickerEdge = Color(0x00141111);
-  /// `--sticker-pressed`: `oklch(0.1813 0.005 17.62 / 0.122)`
-  static const Color stickerPressed = Color.fromRGBO(20, 17, 17, 0.122);
+  /// `--sticker-medium`: `oklch(0.1813 0.005 17.62 / 0.1)` — Hover tier medium on a colour sticker (primary, warning and danger buttons, colour badges, the selected segment on press): hover and press, 10% ink in both modes.
+  static const Color stickerMedium = Color.fromRGBO(20, 17, 17, 0.1);
+  /// `--sticker-ink-medium`: `oklch(1 0 0 / 0.06)` — Hover tier medium on an ink sticker (the server tile in the rail or the sidebar header): hover, press and open, 6% paper in both modes, since ink laid over ink doesn't show.
+  static const Color stickerInkMedium = Color.fromRGBO(255, 255, 255, 0.06);
   /// `--presence-online`: `oklch(0.8272 0.1354 130.07)`
   static const Color presenceOnline = Color(0xffa9d877);
-  /// `--presence-busy`: `oklch(0.8829 0.1623 91.9)`
+  /// `--presence-busy`: `oklch(0.8829 0.1623 91.9)` — Yellow for an agent at work, and for Status variant="primary". The value of brand in Raft Yellow, but its own, so a theme that grays the brand (Boring Gray) keeps a working agent yellow.
   static const Color presenceBusy = Color(0xffffd440);
+  /// `--presence-busy-soft`: `oklch(0.9547 0.0674 93.62)` — The tint of the Working chip (Badge variant="busy"). The value of brand-soft in Raft Yellow, but its own, so Boring Gray keeps it yellow.
+  static const Color presenceBusySoft = Color(0xfffff0bd);
   /// `--presence-error`: `oklch(0.7855 0.1227 50.11)`
   static const Color presenceError = Color(0xfff8a16f);
   /// `--presence-offline`: `oklch(0.7892 0.0137 71.29)`
   static const Color presenceOffline = Color(0xffc0b9b1);
   /// `--presence-external`: `oklch(0.7833 0.1353 219.21)`
   static const Color presenceExternal = Color(0xff27ccf3);
+  /// `--read-mark`: `{palette.lime.700}` — The check after a mention once the agent mentioned has read the message (MessageReferenceReadMark). A bare check has no ink box around it, so it takes a lime dark enough to read on the page: palette-lime-700 in light mode (6.2:1 on white; the online lime is 1.64:1), the online lime in dark mode (10.5:1 on the dark canvas).
+  static const Color readMark = Color(0xff506836);
   /// `--elevation-float`: `0 1px 0 oklch(0.1813 0.005 17.62 / 0.039), 0 12px 32px -12px oklch(0.1813 0.005 17.62 / 0.322)` — Controls never cast a shadow; only overlays float.
   static const RaftShadow elevationFloat = RaftShadow([
     RaftCssShadow(inset: false, offset: Offset(0.0, 1.0), blur: 0.0, spread: 0.0, color: Color.fromRGBO(20, 17, 17, 0.039)),
@@ -475,24 +501,98 @@ abstract final class RaftLight {
   static const RaftShadow elevationSticker = RaftShadow([
     RaftCssShadow(inset: false, offset: Offset(4.0, 4.0), blur: 0.0, spread: 0.0, color: Color(0xff141111)),
   ]);
-  /// `--focus-ring`: `0 0 0 2px oklch(1 0 0), 0 0 0 4px oklch(0.1813 0.005 17.62)`
+  /// `--focus-ring`: `0 0 0 2px oklch(1 0 0), 0 0 0 4px oklch(0.1813 0.005 17.62)` — The focus indicator. It shows only after keyboard navigation: styles.css empties it while the root carries data-input-modality="pointer", which installInputModality sets after a click or a tap.
   static const RaftShadow focusRing = RaftShadow([
     RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 2.0, color: Color(0xffffffff)),
     RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 4.0, color: Color(0xff141111)),
   ]);
+  /// `--fade-edge`: `24px`
+  static const double fadeEdge = 24.0;
+  /// `--fade-content`: `48px`
+  static const double fadeContent = 48.0;
   /// `--field-font-size`: `16px`
   static const double fieldFontSize = 16.0;
   /// `--field-line-height`: `24px`
   static const double fieldLineHeight = 24.0;
+  /// `--field-gap`: `calc(2 * var(--control-air))`
+  static const double fieldGap = 12.0;
   /// `--card-title-font-size`: `16px`
   static const double cardTitleFontSize = 16.0;
   /// `--card-title-line-height`: `24px`
   static const double cardTitleLineHeight = 24.0;
+  /// `--control-height`: `44px`
+  static const double controlHeight = 44.0;
+  /// `--control-height-cta`: `52px`
+  static const double controlHeightCta = 52.0;
+  /// `--control-icon-size`: `22px`
+  static const double controlIconSize = 22.0;
+  /// `--control-hit-inset`: `0px`
+  static const double controlHitInset = 0.0;
+  /// `--control-embedded-inset`: `6px`
+  static const double controlEmbeddedInset = 6.0;
+  /// `--control-embedded-size`: `32px`
+  static const double controlEmbeddedSize = 32.0;
+  /// `--control-air`: `6px`
+  static const double controlAir = 6.0;
+  /// `--control-radius`: `10px`
+  static const double controlRadius = 10.0;
+  /// `--header-height`: `calc(var(--control-height) + 2 * var(--header-air))`
+  static const double headerHeight = 56.0;
+  /// `--header-air`: `var(--control-air)`
+  static const double headerAir = 6.0;
+  /// `--header-height-short`: `48px`
+  static const double headerHeightShort = 48.0;
+  /// `--bar-button-size`: `var(--control-height)`
+  static const double barButtonSize = 44.0;
+  /// `--bar-button-radius`: `10px`
+  static const double barButtonRadius = 10.0;
+  /// `--frame-item-height`: `36px`
+  static const double frameItemHeight = 36.0;
+  /// `--switch-width`: `50px`
+  static const double switchWidth = 50.0;
+  /// `--switch-height`: `30px`
+  static const double switchHeight = 30.0;
+  /// `--row-height`: `38px`
+  static const double rowHeight = 38.0;
+  /// `--option-height`: `2.25rem`
+  static const double optionHeight = 36.0;
+  /// `--settings-row-inset`: `calc(2 * var(--control-air))`
+  static const double settingsRowInset = 12.0;
+  /// `--section-gap`: `32px`
+  static const double sectionGap = 32.0;
+  /// `--page-top`: `var(--page-inset)`
+  static const double pageTop = 16.0;
+  /// `--page-inset`: `16px`
+  static const double pageInset = 16.0;
+  /// `--rail-width`: `57px`
+  static const double railWidth = 57.0;
+  /// `--rail-item`: `40px`
+  static const double railItem = 40.0;
+  /// `--rail-width-short`: `49px`
+  static const double railWidthShort = 49.0;
+  /// `--rail-item-short`: `36px`
+  static const double railItemShort = 36.0;
+  /// `--timeline-gap-message`: `16px`
+  static const double timelineGapMessage = 16.0;
+  /// `--timeline-gap-section`: `24px`
+  static const double timelineGapSection = 24.0;
+  /// `--timeline-row-inset`: `4px`
+  static const double timelineRowInset = 4.0;
   /// `--field-font-weight`: `400` (CSS weight)
   static const double fieldFontWeight = 400.0;
   /// `--card-title-font-weight`: `600` (CSS weight)
   static const double cardTitleFontWeight = 600.0;
+  /// `--opacity-dimmed`: `0.6` (CSS weight)
+  static const double opacityDimmed = 0.6;
 
+  static const Duration motionDragSettleDuration = Duration(microseconds: 160000);
+  static const Cubic motionDragSettleEasing = Cubic(0.25, 1.0, 0.5, 1.0);
+  static const Map<String, Duration> durations = {
+    'motion-drag-settle-duration': motionDragSettleDuration,
+  };
+  static const Map<String, Cubic> easings = {
+    'motion-drag-settle-easing': motionDragSettleEasing,
+  };
   /// Every colour keyed by its CSS custom-property name (without `--`).
   static const Map<String, Color> colors = {
     'palette-yellow-50': paletteYellow50,
@@ -611,6 +711,8 @@ abstract final class RaftLight {
     'layer-sidebar': layerSidebar,
     'layer-popover': layerPopover,
     'layer-backdrop': layerBackdrop,
+    'layer-backdrop-nested': layerBackdropNested,
+    'layer-veil': layerVeil,
     'layer-card': layerCard,
     'layer-hud': layerHud,
     'layer-frame': layerFrame,
@@ -618,8 +720,12 @@ abstract final class RaftLight {
     'layer-code': layerCode,
     'fill-muted': fillMuted,
     'fill-strong': fillStrong,
-    'fill-frame-pressed': fillFramePressed,
-    'fill-pressed': fillPressed,
+    'fill-subtle': fillSubtle,
+    'fill-medium': fillMedium,
+    'fill-frame-medium': fillFrameMedium,
+    'fill-cell-hover': fillCellHover,
+    'fill-cell-press': fillCellPress,
+    'fill-cell-selected': fillCellSelected,
     'line-strong': lineStrong,
     'line-seam': lineSeam,
     'line-hairline': lineHairline,
@@ -653,6 +759,8 @@ abstract final class RaftLight {
     'brand-glow': brandGlow,
     'brand-hover': brandHover,
     'brand-active': brandActive,
+    'you': you,
+    'selected': selected,
     'attention-50': attention50,
     'attention-100': attention100,
     'attention-200': attention200,
@@ -684,6 +792,7 @@ abstract final class RaftLight {
     'warning-strong': warningStrong,
     'warning-muted': warningMuted,
     'warning-soft': warningSoft,
+    'warning-graphic': warningGraphic,
     'warning-hover': warningHover,
     'warning-active': warningActive,
     'danger': danger,
@@ -711,15 +820,19 @@ abstract final class RaftLight {
     'task-status-closed': taskStatusClosed,
     'task-status-closed-soft': taskStatusClosedSoft,
     'task-status-closed-strong': taskStatusClosedStrong,
+    'selection': selection,
     'sticker-ink': stickerInk,
     'sticker-paper': stickerPaper,
     'sticker-edge': stickerEdge,
-    'sticker-pressed': stickerPressed,
+    'sticker-medium': stickerMedium,
+    'sticker-ink-medium': stickerInkMedium,
     'presence-online': presenceOnline,
     'presence-busy': presenceBusy,
+    'presence-busy-soft': presenceBusySoft,
     'presence-error': presenceError,
     'presence-offline': presenceOffline,
     'presence-external': presenceExternal,
+    'read-mark': readMark,
   };
 
   /// Every shadow (`elevation-*`, `focus-ring`) keyed by CSS name.
@@ -731,16 +844,49 @@ abstract final class RaftLight {
 
   /// Every dimension / font-weight token keyed by CSS name (px or CSS weight).
   static const Map<String, double> metrics = {
+    'fade-edge': fadeEdge,
+    'fade-content': fadeContent,
     'field-font-size': fieldFontSize,
     'field-line-height': fieldLineHeight,
+    'field-gap': fieldGap,
     'card-title-font-size': cardTitleFontSize,
     'card-title-line-height': cardTitleLineHeight,
+    'control-height': controlHeight,
+    'control-height-cta': controlHeightCta,
+    'control-icon-size': controlIconSize,
+    'control-hit-inset': controlHitInset,
+    'control-embedded-inset': controlEmbeddedInset,
+    'control-embedded-size': controlEmbeddedSize,
+    'control-air': controlAir,
+    'control-radius': controlRadius,
+    'header-height': headerHeight,
+    'header-air': headerAir,
+    'header-height-short': headerHeightShort,
+    'bar-button-size': barButtonSize,
+    'bar-button-radius': barButtonRadius,
+    'frame-item-height': frameItemHeight,
+    'switch-width': switchWidth,
+    'switch-height': switchHeight,
+    'row-height': rowHeight,
+    'option-height': optionHeight,
+    'settings-row-inset': settingsRowInset,
+    'section-gap': sectionGap,
+    'page-top': pageTop,
+    'page-inset': pageInset,
+    'rail-width': railWidth,
+    'rail-item': railItem,
+    'rail-width-short': railWidthShort,
+    'rail-item-short': railItemShort,
+    'timeline-gap-message': timelineGapMessage,
+    'timeline-gap-section': timelineGapSection,
+    'timeline-row-inset': timelineRowInset,
     'field-font-weight': fieldFontWeight,
     'card-title-font-weight': cardTitleFontWeight,
+    'opacity-dimmed': opacityDimmed,
   };
 }
 
-/// Every raft-ui 0.7.1 token resolved for the dark mode (`tokens.json`).
+/// Every raft-ui 0.95.3 token resolved for the dark mode (`tokens.json`).
 ///
 /// Names are the official token names in lowerCamel (`--layer-canvas` ->
 /// [layerCanvas]), not the 0.5.52 names; see [RaftDeprecatedTokenNames]. Opaque colours
@@ -966,8 +1112,8 @@ abstract final class RaftDark {
   static const Color foregroundOnFrameMuted = Color(0xff9e9e9b);
   /// `--foreground-on-frame-active`: `{sticker.ink}`
   static const Color foregroundOnFrameActive = Color(0xff141111);
-  /// `--foreground-link`: `oklch(0.8071 0.1007 250.45)`
-  static const Color foregroundLink = Color(0xff8ec5ff);
+  /// `--foreground-link`: `oklch(0.717 0.1183 253.58)`
+  static const Color foregroundLink = Color(0xff6da7ec);
   /// `--foreground-active`: `{foreground.$root}`
   static const Color foregroundActive = Color(0xffe5e5e2);
   /// `--foreground-hover`: `{foreground.$root}`
@@ -980,6 +1126,10 @@ abstract final class RaftDark {
   static const Color layerPopover = Color(0xff292927);
   /// `--layer-backdrop`: `oklch(0 0 0 / 0.6)`
   static const Color layerBackdrop = Color.fromRGBO(0, 0, 0, 0.6);
+  /// `--layer-backdrop-nested`: `oklch(0 0 0 / 0.4)`
+  static const Color layerBackdropNested = Color.fromRGBO(0, 0, 0, 0.4);
+  /// `--layer-veil`: `oklch(0.2213 0.0038 106.71 / 0.8)` — The cover over something busy or loading in place: an image uploading or that failed, a preview being prepared. The page at 80%, so what is under it shows through, dimmed, and a default-colour Spinner on it reads in both modes. Translucent by contract, like the two backdrops.
+  static const Color layerVeil = Color.fromRGBO(27, 27, 25, 0.8);
   /// `--layer-card`: `oklch(0.2596 0.0037 106.65)`
   static const Color layerCard = Color(0xff242422);
   /// `--layer-hud`: `oklch(0.2802 0.0036 106.63)`
@@ -994,10 +1144,18 @@ abstract final class RaftDark {
   static const Color fillMuted = Color(0xff32322f);
   /// `--fill-strong`: `oklch(0.3474 0.0051 106.66)`
   static const Color fillStrong = Color(0xff3a3a37);
-  /// `--fill-frame-pressed`: `oklch(0.9843 0.004 106.47 / 0.078)`
-  static const Color fillFramePressed = Color.fromRGBO(250, 250, 247, 0.078);
-  /// `--fill-pressed`: `oklch(0.9843 0.004 106.47 / 0.078)`
-  static const Color fillPressed = Color.fromRGBO(250, 250, 247, 0.078);
+  /// `--fill-subtle`: `oklch(0.9843 0.004 106.47 / 0.03)` — Hover tier subtle (light): hover on large things people read, a row, a message, a readable card, and a row whose menu is open. About 2.5 to 3 OKLab dE in both modes, on paper, the sidebar and cards alike, under every selection tint, so text keeps its contrast.
+  static const Color fillSubtle = Color.fromRGBO(250, 250, 247, 0.03);
+  /// `--fill-medium`: `oklch(0.9843 0.004 106.47 / 0.065)` — Hover tier medium: hover on small controls (buttons, icon buttons, chips, tabs, segment items) and press on everything, on paper-coloured surfaces. About 5.5 to 6.5 OKLab dE; dark is lighter than light because the same ink alpha shows more on a dark surface.
+  static const Color fillMedium = Color.fromRGBO(250, 250, 247, 0.065);
+  /// `--fill-frame-medium`: `oklch(0.9843 0.004 106.47 / 0.06)` — Hover tier medium on the frame (rail items, on-frame buttons, the workspace button): hover and press. Its own alphas because ink shows differently on the yellow and on the near-black frame: 10% on the yellow and 6% on the dark frame land on the medium step, about 6 OKLab dE.
+  static const Color fillFrameMedium = Color.fromRGBO(250, 250, 247, 0.06);
+  /// `--fill-cell-hover`: `oklch(0.9843 0.004 106.47 / 0.075)` — A list cell's hover and its menu-open fill (lib/list-cell.ts), drawn on the cell's inset shape. fill-subtle in light. In dark it steps up to 7.5% ink, so the rounded shape reads on a dark surface, where fill-subtle's 3% barely shows. Rows only: the global tiers don't change.
+  static const Color fillCellHover = Color.fromRGBO(250, 250, 247, 0.075);
+  /// `--fill-cell-press`: `oklch(0.9843 0.004 106.47 / 0.12)` — A list cell's press fill, the same with a mouse and on a touch screen. fill-medium in light. In dark 12% ink, a clear step over the cell's dark hover.
+  static const Color fillCellPress = Color.fromRGBO(250, 250, 247, 0.12);
+  /// `--fill-cell-selected`: `oklch(0.452 0.0862 225.67 / 0.38)` — A list cell that is selected or open beside its list (an active InboxItem, a selected ListRow), and the located highlight on a cell. info-soft in light. In dark the cyan at 38% instead of 18%, so a selected cell stands out from a hovered one.
+  static const Color fillCellSelected = Color.fromRGBO(0, 95, 122, 0.38);
   /// `--line-strong`: `oklch(0.9211 0.004 106.48)`
   static const Color lineStrong = Color(0xffe5e5e2);
   /// `--line-seam`: `oklch(0.9843 0.004 106.47 / 0.259)`
@@ -1006,7 +1164,7 @@ abstract final class RaftDark {
   static const Color lineHairline = Color.fromRGBO(250, 250, 247, 0.102);
   /// `--line-frame-active`: `{sticker.ink}`
   static const Color lineFrameActive = Color(0xff141111);
-  /// `--line-field`: `{line.strong}`
+  /// `--line-field`: `{line.strong}` — The frame of a field and the composer: the ink and width of line-strong, drawn 1.5px.
   static const Color lineField = Color(0xffe5e5e2);
   /// `--line-field-hover`: `{line.strong}`
   static const Color lineFieldHover = Color(0xffe5e5e2);
@@ -1054,16 +1212,20 @@ abstract final class RaftDark {
   static const Color brand950 = Color(0xff1c1500);
   /// `--brand-strong`: `oklch(0.8829 0.1623 91.9)`
   static const Color brandStrong = Color(0xffffd440);
-  /// `--brand-soft`: `oklch(0.5501 0.0999 91.5 / 0.161)`
-  static const Color brandSoft = Color.fromRGBO(135, 111, 31, 0.161);
+  /// `--brand-soft`: `oklch(0.5501 0.0999 91.5 / 0.2)`
+  static const Color brandSoft = Color.fromRGBO(135, 111, 31, 0.2);
   /// `--brand-edge`: `{sticker.ink}`
   static const Color brandEdge = Color(0xff141111);
   /// `--brand-glow`: `oklch(0.8829 0.1623 91.9)`
   static const Color brandGlow = Color(0xffffd440);
-  /// `--brand-hover`: `color-mix(in srgb, var(--brand-400) 88%, var(--sticker-ink))` — Pressing a sticker lays sticker-pressed (12% ink) over its colour.
-  static const Color brandHover = Color(0xffe3bd3a);
+  /// `--brand-hover`: `color-mix(in srgb, var(--brand-400) 90%, var(--sticker-ink))` — Hovering or pressing a sticker lays sticker-medium (10% ink) over its colour.
+  static const Color brandHover = Color(0xffe7c13b);
   /// `--brand-active`: `{brand.hover}`
-  static const Color brandActive = Color(0xffe3bd3a);
+  static const Color brandActive = Color(0xffe7c13b);
+  /// `--you`: `oklch(0.8829 0.1623 91.9)` — Raft yellow for what is addressed to you: a mention of you, the sidebar's @ marker, a search hit, the passage of the comment you opened. Its own value, not brand, so a theme that grays the brand (Boring Gray) keeps it yellow.
+  static const Color you = Color(0xffffd440);
+  /// `--selected`: `oklch(0.8829 0.1623 91.9)` — Raft yellow for the selected sticker: where you are (the active sidebar row, a segment, a tab, the tab bar's item, the current step) and what is on (a switch, a toggle, a pressed panel action). Its own value, not brand, so a theme that grays the brand (Boring Gray) keeps it yellow.
+  static const Color selected = Color(0xffffd440);
   /// `--attention-50`: `{palette.pink.50}`
   static const Color attention50 = Color(0xfffff0f4);
   /// `--attention-100`: `{palette.pink.100}`
@@ -1090,10 +1252,10 @@ abstract final class RaftDark {
   static const Color attentionStrong = Color(0xffffacc7);
   /// `--attention-soft`: `oklch(0.5997 0.1805 359.83 / 0.161)`
   static const Color attentionSoft = Color.fromRGBO(208, 69, 124, 0.161);
-  /// `--attention-hover`: `color-mix(in srgb, var(--attention-400) 88%, var(--sticker-ink))`
-  static const Color attentionHover = Color(0xffe389ae);
+  /// `--attention-hover`: `color-mix(in srgb, var(--attention-400) 90%, var(--sticker-ink))`
+  static const Color attentionHover = Color(0xffe78bb1);
   /// `--attention-active`: `{attention.hover}`
-  static const Color attentionActive = Color(0xffe389ae);
+  static const Color attentionActive = Color(0xffe78bb1);
   /// `--info`: `oklch(0.7833 0.1353 219.21)` — Every solid is a sticker: ink type on the colour in both modes.
   static const Color info = Color(0xff27ccf3);
   /// `--info-strong`: `oklch(0.8 0.1 220)`
@@ -1102,10 +1264,10 @@ abstract final class RaftDark {
   static const Color infoMuted = Color.fromRGBO(0, 117, 146, 0.28);
   /// `--info-soft`: `oklch(0.452 0.0862 225.67 / 0.18)`
   static const Color infoSoft = Color.fromRGBO(0, 95, 122, 0.18);
-  /// `--info-hover`: `color-mix(in srgb, var(--info) 88%, var(--sticker-ink))`
-  static const Color infoHover = Color(0xff25b6d8);
+  /// `--info-hover`: `color-mix(in srgb, var(--info) 90%, var(--sticker-ink))`
+  static const Color infoHover = Color(0xff25b9dc);
   /// `--info-active`: `{info.hover}`
-  static const Color infoActive = Color(0xff25b6d8);
+  static const Color infoActive = Color(0xff25b9dc);
   /// `--success`: `oklch(0.8272 0.1354 130.07)`
   static const Color success = Color(0xffa9d877);
   /// `--success-foreground`: `{sticker.ink}`
@@ -1126,10 +1288,12 @@ abstract final class RaftDark {
   static const Color warningMuted = Color.fromRGBO(172, 87, 29, 0.28);
   /// `--warning-soft`: `oklch(0.5204 0.1197 50.16 / 0.18)`
   static const Color warningSoft = Color.fromRGBO(158, 81, 30, 0.18);
-  /// `--warning-hover`: `color-mix(in srgb, var(--warning) 88%, var(--sticker-ink))`
-  static const Color warningHover = Color(0xffdd9064);
+  /// `--warning-graphic`: `oklch(0.77 0.135 50)` — A failure or warning drawn as a graphic in data visualisation: the fill or stroke of a chart mark, such as a failed route in a migration chart. The warning orange, deep enough in light mode and bright in dark mode to stand at least 3:1 against the canvas, sidebar, card and popover (WCAG 1.4.11). Never text: warning text takes warning-strong.
+  static const Color warningGraphic = Color(0xfff89961);
+  /// `--warning-hover`: `color-mix(in srgb, var(--warning) 90%, var(--sticker-ink))`
+  static const Color warningHover = Color(0xffe19366);
   /// `--warning-active`: `{warning.hover}`
-  static const Color warningActive = Color(0xffdd9064);
+  static const Color warningActive = Color(0xffe19366);
   /// `--danger`: `oklch(0.711 0.1682 28.04)` — danger = the destructive sticker (red fill, ink type); danger-strong is the error ink for invalid fields and destructive menu items.
   static const Color danger = Color(0xfff97264);
   /// `--danger-foreground`: `{sticker.ink}`
@@ -1140,10 +1304,10 @@ abstract final class RaftDark {
   static const Color dangerMuted = Color.fromRGBO(211, 60, 48, 0.3);
   /// `--danger-soft`: `oklch(0.5509 0.1903 29.01 / 0.18)`
   static const Color dangerSoft = Color.fromRGBO(201, 49, 38, 0.18);
-  /// `--danger-hover`: `color-mix(in srgb, var(--danger) 88%, var(--sticker-ink))`
-  static const Color dangerHover = Color(0xffde665a);
+  /// `--danger-hover`: `color-mix(in srgb, var(--danger) 90%, var(--sticker-ink))`
+  static const Color dangerHover = Color(0xffe2685c);
   /// `--danger-active`: `{danger.hover}`
-  static const Color dangerActive = Color(0xffde665a);
+  static const Color dangerActive = Color(0xffe2685c);
   /// `--inactive`: `oklch(0.7892 0.0137 71.29)`
   static const Color inactive = Color(0xffc0b9b1);
   /// `--inactive-foreground`: `{sticker.ink}`
@@ -1180,24 +1344,32 @@ abstract final class RaftDark {
   static const Color taskStatusClosedSoft = Color(0xff32322f);
   /// `--task-status-closed-strong`: `oklch(0.6984 0.0043 106.51)`
   static const Color taskStatusClosedStrong = Color(0xff9e9e9b);
+  /// `--selection`: `color-mix(in oklch, var(--brand-400) 22%, transparent)` — Selected text (::selection). brand-soft in light mode; in dark mode brand over the page at 22%, the wash of a commented passage, because brand-soft left a selection almost the same as the page.
+  static const Color selection = Color.fromRGBO(255, 212, 64, 0.22);
   /// `--sticker-ink`: `oklch(0.1813 0.005 17.62)`
   static const Color stickerInk = Color(0xff141111);
   /// `--sticker-paper`: `oklch(1 0 0)`
   static const Color stickerPaper = Color(0xffffffff);
   /// `--sticker-edge`: `oklch(0.9843 0.004 106.47 / 0.349)`
   static const Color stickerEdge = Color.fromRGBO(250, 250, 247, 0.349);
-  /// `--sticker-pressed`: `oklch(0.1813 0.005 17.62 / 0.122)`
-  static const Color stickerPressed = Color.fromRGBO(20, 17, 17, 0.122);
+  /// `--sticker-medium`: `oklch(0.1813 0.005 17.62 / 0.1)` — Hover tier medium on a colour sticker (primary, warning and danger buttons, colour badges, the selected segment on press): hover and press, 10% ink in both modes.
+  static const Color stickerMedium = Color.fromRGBO(20, 17, 17, 0.1);
+  /// `--sticker-ink-medium`: `oklch(1 0 0 / 0.06)` — Hover tier medium on an ink sticker (the server tile in the rail or the sidebar header): hover, press and open, 6% paper in both modes, since ink laid over ink doesn't show.
+  static const Color stickerInkMedium = Color.fromRGBO(255, 255, 255, 0.06);
   /// `--presence-online`: `oklch(0.8272 0.1354 130.07)`
   static const Color presenceOnline = Color(0xffa9d877);
-  /// `--presence-busy`: `oklch(0.8829 0.1623 91.9)`
+  /// `--presence-busy`: `oklch(0.8829 0.1623 91.9)` — Yellow for an agent at work, and for Status variant="primary". The value of brand in Raft Yellow, but its own, so a theme that grays the brand (Boring Gray) keeps a working agent yellow.
   static const Color presenceBusy = Color(0xffffd440);
+  /// `--presence-busy-soft`: `oklch(0.5501 0.0999 91.5 / 0.2)` — The tint of the Working chip (Badge variant="busy"). The value of brand-soft in Raft Yellow, but its own, so Boring Gray keeps it yellow.
+  static const Color presenceBusySoft = Color.fromRGBO(135, 111, 31, 0.2);
   /// `--presence-error`: `oklch(0.7855 0.1227 50.11)`
   static const Color presenceError = Color(0xfff8a16f);
   /// `--presence-offline`: `oklch(0.7892 0.0137 71.29)`
   static const Color presenceOffline = Color(0xffc0b9b1);
   /// `--presence-external`: `oklch(0.7833 0.1353 219.21)`
   static const Color presenceExternal = Color(0xff27ccf3);
+  /// `--read-mark`: `{presence.online}` — The check after a mention once the agent mentioned has read the message (MessageReferenceReadMark). A bare check has no ink box around it, so it takes a lime dark enough to read on the page: palette-lime-700 in light mode (6.2:1 on white; the online lime is 1.64:1), the online lime in dark mode (10.5:1 on the dark canvas).
+  static const Color readMark = Color(0xffa9d877);
   /// `--elevation-float`: `0 0 0 1px oklch(0.9843 0.004 106.47 / 0.078), 0 16px 40px -12px oklch(0 0 0 / 0.8)` — Controls never cast a shadow; only overlays float.
   static const RaftShadow elevationFloat = RaftShadow([
     RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 1.0, color: Color.fromRGBO(250, 250, 247, 0.078)),
@@ -1207,24 +1379,98 @@ abstract final class RaftDark {
   static const RaftShadow elevationSticker = RaftShadow([
     RaftCssShadow(inset: false, offset: Offset(4.0, 4.0), blur: 0.0, spread: 0.0, color: Color(0xff000000)),
   ]);
-  /// `--focus-ring`: `0 0 0 2px oklch(0.2213 0.0038 106.71), 0 0 0 4px oklch(0.9211 0.004 106.48)`
+  /// `--focus-ring`: `0 0 0 2px oklch(0.2213 0.0038 106.71), 0 0 0 4px oklch(0.9211 0.004 106.48)` — The focus indicator. It shows only after keyboard navigation: styles.css empties it while the root carries data-input-modality="pointer", which installInputModality sets after a click or a tap.
   static const RaftShadow focusRing = RaftShadow([
     RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 2.0, color: Color(0xff1b1b19)),
     RaftCssShadow(inset: false, offset: Offset(0.0, 0.0), blur: 0.0, spread: 4.0, color: Color(0xffe5e5e2)),
   ]);
+  /// `--fade-edge`: `24px`
+  static const double fadeEdge = 24.0;
+  /// `--fade-content`: `48px`
+  static const double fadeContent = 48.0;
   /// `--field-font-size`: `16px`
   static const double fieldFontSize = 16.0;
   /// `--field-line-height`: `24px`
   static const double fieldLineHeight = 24.0;
+  /// `--field-gap`: `calc(2 * var(--control-air))`
+  static const double fieldGap = 12.0;
   /// `--card-title-font-size`: `16px`
   static const double cardTitleFontSize = 16.0;
   /// `--card-title-line-height`: `24px`
   static const double cardTitleLineHeight = 24.0;
+  /// `--control-height`: `44px`
+  static const double controlHeight = 44.0;
+  /// `--control-height-cta`: `52px`
+  static const double controlHeightCta = 52.0;
+  /// `--control-icon-size`: `22px`
+  static const double controlIconSize = 22.0;
+  /// `--control-hit-inset`: `0px`
+  static const double controlHitInset = 0.0;
+  /// `--control-embedded-inset`: `6px`
+  static const double controlEmbeddedInset = 6.0;
+  /// `--control-embedded-size`: `32px`
+  static const double controlEmbeddedSize = 32.0;
+  /// `--control-air`: `6px`
+  static const double controlAir = 6.0;
+  /// `--control-radius`: `10px`
+  static const double controlRadius = 10.0;
+  /// `--header-height`: `calc(var(--control-height) + 2 * var(--header-air))`
+  static const double headerHeight = 56.0;
+  /// `--header-air`: `var(--control-air)`
+  static const double headerAir = 6.0;
+  /// `--header-height-short`: `48px`
+  static const double headerHeightShort = 48.0;
+  /// `--bar-button-size`: `var(--control-height)`
+  static const double barButtonSize = 44.0;
+  /// `--bar-button-radius`: `10px`
+  static const double barButtonRadius = 10.0;
+  /// `--frame-item-height`: `36px`
+  static const double frameItemHeight = 36.0;
+  /// `--switch-width`: `50px`
+  static const double switchWidth = 50.0;
+  /// `--switch-height`: `30px`
+  static const double switchHeight = 30.0;
+  /// `--row-height`: `38px`
+  static const double rowHeight = 38.0;
+  /// `--option-height`: `2.25rem`
+  static const double optionHeight = 36.0;
+  /// `--settings-row-inset`: `calc(2 * var(--control-air))`
+  static const double settingsRowInset = 12.0;
+  /// `--section-gap`: `32px`
+  static const double sectionGap = 32.0;
+  /// `--page-top`: `var(--page-inset)`
+  static const double pageTop = 16.0;
+  /// `--page-inset`: `16px`
+  static const double pageInset = 16.0;
+  /// `--rail-width`: `57px`
+  static const double railWidth = 57.0;
+  /// `--rail-item`: `40px`
+  static const double railItem = 40.0;
+  /// `--rail-width-short`: `49px`
+  static const double railWidthShort = 49.0;
+  /// `--rail-item-short`: `36px`
+  static const double railItemShort = 36.0;
+  /// `--timeline-gap-message`: `16px`
+  static const double timelineGapMessage = 16.0;
+  /// `--timeline-gap-section`: `24px`
+  static const double timelineGapSection = 24.0;
+  /// `--timeline-row-inset`: `4px`
+  static const double timelineRowInset = 4.0;
   /// `--field-font-weight`: `400` (CSS weight)
   static const double fieldFontWeight = 400.0;
   /// `--card-title-font-weight`: `600` (CSS weight)
   static const double cardTitleFontWeight = 600.0;
+  /// `--opacity-dimmed`: `0.6` (CSS weight)
+  static const double opacityDimmed = 0.6;
 
+  static const Duration motionDragSettleDuration = Duration(microseconds: 160000);
+  static const Cubic motionDragSettleEasing = Cubic(0.25, 1.0, 0.5, 1.0);
+  static const Map<String, Duration> durations = {
+    'motion-drag-settle-duration': motionDragSettleDuration,
+  };
+  static const Map<String, Cubic> easings = {
+    'motion-drag-settle-easing': motionDragSettleEasing,
+  };
   /// Every colour keyed by its CSS custom-property name (without `--`).
   static const Map<String, Color> colors = {
     'palette-yellow-50': paletteYellow50,
@@ -1343,6 +1589,8 @@ abstract final class RaftDark {
     'layer-sidebar': layerSidebar,
     'layer-popover': layerPopover,
     'layer-backdrop': layerBackdrop,
+    'layer-backdrop-nested': layerBackdropNested,
+    'layer-veil': layerVeil,
     'layer-card': layerCard,
     'layer-hud': layerHud,
     'layer-frame': layerFrame,
@@ -1350,8 +1598,12 @@ abstract final class RaftDark {
     'layer-code': layerCode,
     'fill-muted': fillMuted,
     'fill-strong': fillStrong,
-    'fill-frame-pressed': fillFramePressed,
-    'fill-pressed': fillPressed,
+    'fill-subtle': fillSubtle,
+    'fill-medium': fillMedium,
+    'fill-frame-medium': fillFrameMedium,
+    'fill-cell-hover': fillCellHover,
+    'fill-cell-press': fillCellPress,
+    'fill-cell-selected': fillCellSelected,
     'line-strong': lineStrong,
     'line-seam': lineSeam,
     'line-hairline': lineHairline,
@@ -1385,6 +1637,8 @@ abstract final class RaftDark {
     'brand-glow': brandGlow,
     'brand-hover': brandHover,
     'brand-active': brandActive,
+    'you': you,
+    'selected': selected,
     'attention-50': attention50,
     'attention-100': attention100,
     'attention-200': attention200,
@@ -1416,6 +1670,7 @@ abstract final class RaftDark {
     'warning-strong': warningStrong,
     'warning-muted': warningMuted,
     'warning-soft': warningSoft,
+    'warning-graphic': warningGraphic,
     'warning-hover': warningHover,
     'warning-active': warningActive,
     'danger': danger,
@@ -1443,15 +1698,19 @@ abstract final class RaftDark {
     'task-status-closed': taskStatusClosed,
     'task-status-closed-soft': taskStatusClosedSoft,
     'task-status-closed-strong': taskStatusClosedStrong,
+    'selection': selection,
     'sticker-ink': stickerInk,
     'sticker-paper': stickerPaper,
     'sticker-edge': stickerEdge,
-    'sticker-pressed': stickerPressed,
+    'sticker-medium': stickerMedium,
+    'sticker-ink-medium': stickerInkMedium,
     'presence-online': presenceOnline,
     'presence-busy': presenceBusy,
+    'presence-busy-soft': presenceBusySoft,
     'presence-error': presenceError,
     'presence-offline': presenceOffline,
     'presence-external': presenceExternal,
+    'read-mark': readMark,
   };
 
   /// Every shadow (`elevation-*`, `focus-ring`) keyed by CSS name.
@@ -1463,184 +1722,137 @@ abstract final class RaftDark {
 
   /// Every dimension / font-weight token keyed by CSS name (px or CSS weight).
   static const Map<String, double> metrics = {
+    'fade-edge': fadeEdge,
+    'fade-content': fadeContent,
     'field-font-size': fieldFontSize,
     'field-line-height': fieldLineHeight,
+    'field-gap': fieldGap,
     'card-title-font-size': cardTitleFontSize,
     'card-title-line-height': cardTitleLineHeight,
+    'control-height': controlHeight,
+    'control-height-cta': controlHeightCta,
+    'control-icon-size': controlIconSize,
+    'control-hit-inset': controlHitInset,
+    'control-embedded-inset': controlEmbeddedInset,
+    'control-embedded-size': controlEmbeddedSize,
+    'control-air': controlAir,
+    'control-radius': controlRadius,
+    'header-height': headerHeight,
+    'header-air': headerAir,
+    'header-height-short': headerHeightShort,
+    'bar-button-size': barButtonSize,
+    'bar-button-radius': barButtonRadius,
+    'frame-item-height': frameItemHeight,
+    'switch-width': switchWidth,
+    'switch-height': switchHeight,
+    'row-height': rowHeight,
+    'option-height': optionHeight,
+    'settings-row-inset': settingsRowInset,
+    'section-gap': sectionGap,
+    'page-top': pageTop,
+    'page-inset': pageInset,
+    'rail-width': railWidth,
+    'rail-item': railItem,
+    'rail-width-short': railWidthShort,
+    'rail-item-short': railItemShort,
+    'timeline-gap-message': timelineGapMessage,
+    'timeline-gap-section': timelineGapSection,
+    'timeline-row-inset': timelineRowInset,
     'field-font-weight': fieldFontWeight,
     'card-title-font-weight': cardTitleFontWeight,
+    'opacity-dimmed': opacityDimmed,
   };
 }
 
-/// Former token names that raft-ui 0.7.x keeps as aliases until 1.0 (`tokens.json`
+/// Legacy aliases published in the current source (removed upstream in 0.57).
 /// `deprecated`), keyed by CSS name without `--` -> the current name. Resolve through
 /// this table; never rename by hand: `layer-panel` is now `layer-canvas`, while the old
 /// `layer-canvas` has no successor.
 abstract final class RaftDeprecatedTokenNames {
   static const Map<String, String> byCssName = {
-    'layer-panel': 'layer-canvas',
-    'layer-inset': 'fill-muted',
-    'layer-canvas-muted': 'layer-sidebar',
-    'layer-hud-foreground': 'foreground-on-hud',
-    'foreground-strong': 'foreground',
-    'foreground-icon': 'foreground-muted',
-    'foreground-placeholder': 'foreground-hint',
-    'line': 'line-seam',
-    'line-muted': 'line-hairline',
-    'primary-50': 'brand-50',
-    'primary-100': 'brand-100',
-    'primary-200': 'brand-200',
-    'primary-300': 'brand-300',
-    'primary-400': 'brand-400',
-    'primary-500': 'brand-500',
-    'primary-600': 'brand-600',
-    'primary-700': 'brand-700',
-    'primary-800': 'brand-800',
-    'primary-900': 'brand-900',
-    'primary-950': 'brand-950',
-    'primary-strong': 'brand-strong',
-    'primary-soft': 'brand-soft',
-    'primary-edge': 'brand-edge',
-    'primary-glow': 'brand-glow',
-    'primary-hover': 'brand-hover',
-    'primary-active': 'brand-active',
-    'accent-50': 'attention-50',
-    'accent-100': 'attention-100',
-    'accent-200': 'attention-200',
-    'accent-300': 'attention-300',
-    'accent-400': 'attention-400',
-    'accent-500': 'attention-500',
-    'accent-600': 'attention-600',
-    'accent-700': 'attention-700',
-    'accent-800': 'attention-800',
-    'accent-900': 'attention-900',
-    'accent-950': 'attention-950',
-    'accent-strong': 'attention-strong',
-    'accent-soft': 'attention-soft',
-    'accent-hover': 'attention-hover',
-    'accent-active': 'attention-active',
-    'theme-shadow-lg': 'elevation-float',
-    'theme-shadow-xl': 'elevation-float',
-    'theme-shadow-float': 'elevation-float',
-    'theme-shadow-sticker': 'elevation-sticker',
-    'theme-focus-ring': 'focus-ring',
-    'color-brutal-yellow-50': 'palette-yellow-50',
-    'color-brutal-yellow-100': 'palette-yellow-100',
-    'color-brutal-yellow-200': 'palette-yellow-200',
-    'color-brutal-yellow-300': 'palette-yellow-300',
-    'color-brutal-yellow-400': 'palette-yellow-400',
-    'color-brutal-yellow-500': 'palette-yellow-500',
-    'color-brutal-yellow-600': 'palette-yellow-600',
-    'color-brutal-yellow-700': 'palette-yellow-700',
-    'color-brutal-yellow-800': 'palette-yellow-800',
-    'color-brutal-yellow-900': 'palette-yellow-900',
-    'color-brutal-yellow-950': 'palette-yellow-950',
-    'color-brutal-purple-50': 'palette-lavender-50',
-    'color-brutal-purple-100': 'palette-lavender-100',
-    'color-brutal-purple-200': 'palette-lavender-200',
-    'color-brutal-purple-300': 'palette-lavender-300',
-    'color-brutal-purple-400': 'palette-lavender-400',
-    'color-brutal-purple-500': 'palette-lavender-500',
-    'color-brutal-purple-600': 'palette-lavender-600',
-    'color-brutal-purple-700': 'palette-lavender-700',
-    'color-brutal-purple-800': 'palette-lavender-800',
-    'color-brutal-purple-900': 'palette-lavender-900',
-    'color-brutal-purple-950': 'palette-lavender-950',
-    'color-brutal-pink-50': 'palette-pink-50',
-    'color-brutal-pink-100': 'palette-pink-100',
-    'color-brutal-pink-200': 'palette-pink-200',
-    'color-brutal-pink-300': 'palette-pink-300',
-    'color-brutal-pink-400': 'palette-pink-400',
-    'color-brutal-pink-500': 'palette-pink-500',
-    'color-brutal-pink-600': 'palette-pink-600',
-    'color-brutal-pink-700': 'palette-pink-700',
-    'color-brutal-pink-800': 'palette-pink-800',
-    'color-brutal-pink-900': 'palette-pink-900',
-    'color-brutal-pink-950': 'palette-pink-950',
-    'color-brutal-cyan-50': 'palette-cyan-50',
-    'color-brutal-cyan-100': 'palette-cyan-100',
-    'color-brutal-cyan-200': 'palette-cyan-200',
-    'color-brutal-cyan-300': 'palette-cyan-300',
-    'color-brutal-cyan-400': 'palette-cyan-400',
-    'color-brutal-cyan-500': 'palette-cyan-500',
-    'color-brutal-cyan-600': 'palette-cyan-600',
-    'color-brutal-cyan-700': 'palette-cyan-700',
-    'color-brutal-cyan-800': 'palette-cyan-800',
-    'color-brutal-cyan-900': 'palette-cyan-900',
-    'color-brutal-cyan-950': 'palette-cyan-950',
-    'color-brutal-orange-50': 'palette-orange-50',
-    'color-brutal-orange-100': 'palette-orange-100',
-    'color-brutal-orange-200': 'palette-orange-200',
-    'color-brutal-orange-300': 'palette-orange-300',
-    'color-brutal-orange-400': 'palette-orange-400',
-    'color-brutal-orange-500': 'palette-orange-500',
-    'color-brutal-orange-600': 'palette-orange-600',
-    'color-brutal-orange-700': 'palette-orange-700',
-    'color-brutal-orange-800': 'palette-orange-800',
-    'color-brutal-orange-900': 'palette-orange-900',
-    'color-brutal-orange-950': 'palette-orange-950',
-    'color-brutal-lime-50': 'palette-lime-50',
-    'color-brutal-lime-100': 'palette-lime-100',
-    'color-brutal-lime-200': 'palette-lime-200',
-    'color-brutal-lime-300': 'palette-lime-300',
-    'color-brutal-lime-400': 'palette-lime-400',
-    'color-brutal-lime-500': 'palette-lime-500',
-    'color-brutal-lime-600': 'palette-lime-600',
-    'color-brutal-lime-700': 'palette-lime-700',
-    'color-brutal-lime-800': 'palette-lime-800',
-    'color-brutal-lime-900': 'palette-lime-900',
-    'color-brutal-lime-950': 'palette-lime-950',
-    'color-brutal-red-50': 'palette-red-50',
-    'color-brutal-red-100': 'palette-red-100',
-    'color-brutal-red-200': 'palette-red-200',
-    'color-brutal-red-300': 'palette-red-300',
-    'color-brutal-red-400': 'palette-red-400',
-    'color-brutal-red-500': 'palette-red-500',
-    'color-brutal-red-600': 'palette-red-600',
-    'color-brutal-red-700': 'palette-red-700',
-    'color-brutal-red-800': 'palette-red-800',
-    'color-brutal-red-900': 'palette-red-900',
-    'color-brutal-red-950': 'palette-red-950',
-    'color-brutal-stone-50': 'palette-stone-50',
-    'color-brutal-stone-100': 'palette-stone-100',
-    'color-brutal-stone-200': 'palette-stone-200',
-    'color-brutal-stone-300': 'palette-stone-300',
-    'color-brutal-stone-400': 'palette-stone-400',
-    'color-brutal-stone-500': 'palette-stone-500',
-    'color-brutal-stone-600': 'palette-stone-600',
-    'color-brutal-stone-700': 'palette-stone-700',
-    'color-brutal-stone-800': 'palette-stone-800',
-    'color-brutal-stone-900': 'palette-stone-900',
-    'color-brutal-stone-950': 'palette-stone-950',
-    'color-brutal-cream-50': 'palette-cream-50',
-    'color-brutal-cream-100': 'palette-cream-100',
-    'color-brutal-cream-200': 'palette-cream-200',
-    'color-brutal-cream-300': 'palette-cream-300',
-    'color-brutal-cream-400': 'palette-cream-400',
-    'color-brutal-cream-500': 'palette-cream-500',
-    'color-brutal-cream-600': 'palette-cream-600',
-    'color-brutal-cream-700': 'palette-cream-700',
-    'color-brutal-cream-800': 'palette-cream-800',
-    'color-brutal-cream-900': 'palette-cream-900',
-    'color-brutal-cream-950': 'palette-cream-950',
-    'secondary-50': 'palette-stone-50',
-    'secondary-100': 'palette-stone-100',
-    'secondary-200': 'palette-stone-200',
-    'secondary-300': 'palette-stone-300',
-    'secondary-400': 'palette-stone-400',
-    'secondary-500': 'palette-stone-500',
-    'secondary-600': 'palette-stone-600',
-    'secondary-700': 'palette-stone-700',
-    'secondary-800': 'palette-stone-800',
-    'secondary-900': 'palette-stone-900',
-    'secondary-950': 'palette-stone-950',
   };
 
   /// Former names that were dropped without a successor (controls cast no shadow).
   static const Set<String> removed = {
-    'theme-shadow-xs',
-    'theme-shadow-sm',
-    'theme-shadow-md',
+  };
+}
+
+/// Published desktop dimension overrides: width >= 768px AND pointer: fine.
+/// Touch screens retain the base metrics at every width.
+abstract final class RaftDesktopMetrics {
+  static const double fadeEdge = 24.0;
+  static const double fadeContent = 48.0;
+  static const double fieldFontSize = 14.0;
+  static const double fieldLineHeight = 22.0;
+  static const double fieldGap = 12.0;
+  static const double cardTitleFontSize = 14.0;
+  static const double cardTitleLineHeight = 22.0;
+  static const double controlHeight = 34.0;
+  static const double controlHeightCta = 40.0;
+  static const double controlIconSize = 18.0;
+  static const double controlHitInset = 5.0;
+  static const double controlEmbeddedInset = 6.0;
+  static const double controlEmbeddedSize = 22.0;
+  static const double controlAir = 6.0;
+  static const double controlRadius = 8.0;
+  static const double headerHeight = 44.0;
+  static const double headerAir = 5.0;
+  static const double headerHeightShort = 40.0;
+  static const double barButtonSize = 28.0;
+  static const double barButtonRadius = 6.0;
+  static const double frameItemHeight = 34.0;
+  static const double switchWidth = 38.0;
+  static const double switchHeight = 22.0;
+  static const double rowHeight = 34.0;
+  static const double optionHeight = 34.0;
+  static const double settingsRowInset = 12.0;
+  static const double sectionGap = 24.0;
+  static const double pageTop = 12.0;
+  static const double pageInset = 16.0;
+  static const double railWidth = 49.0;
+  static const double railItem = 36.0;
+  static const double railWidthShort = 49.0;
+  static const double railItemShort = 36.0;
+  static const double timelineGapMessage = 16.0;
+  static const double timelineGapSection = 24.0;
+  static const double timelineRowInset = 4.0;
+  static const Map<String, double> byCssName = {
+    'fade-edge': fadeEdge,
+    'fade-content': fadeContent,
+    'field-font-size': fieldFontSize,
+    'field-line-height': fieldLineHeight,
+    'field-gap': fieldGap,
+    'card-title-font-size': cardTitleFontSize,
+    'card-title-line-height': cardTitleLineHeight,
+    'control-height': controlHeight,
+    'control-height-cta': controlHeightCta,
+    'control-icon-size': controlIconSize,
+    'control-hit-inset': controlHitInset,
+    'control-embedded-inset': controlEmbeddedInset,
+    'control-embedded-size': controlEmbeddedSize,
+    'control-air': controlAir,
+    'control-radius': controlRadius,
+    'header-height': headerHeight,
+    'header-air': headerAir,
+    'header-height-short': headerHeightShort,
+    'bar-button-size': barButtonSize,
+    'bar-button-radius': barButtonRadius,
+    'frame-item-height': frameItemHeight,
+    'switch-width': switchWidth,
+    'switch-height': switchHeight,
+    'row-height': rowHeight,
+    'option-height': optionHeight,
+    'settings-row-inset': settingsRowInset,
+    'section-gap': sectionGap,
+    'page-top': pageTop,
+    'page-inset': pageInset,
+    'rail-width': railWidth,
+    'rail-item': railItem,
+    'rail-width-short': railWidthShort,
+    'rail-item-short': railItemShort,
+    'timeline-gap-message': timelineGapMessage,
+    'timeline-gap-section': timelineGapSection,
+    'timeline-row-inset': timelineRowInset,
   };
 }
 
@@ -1704,6 +1916,8 @@ abstract final class RaftTypeScale {
   static const RaftTypeStyle monoMeta = RaftTypeStyle(12.0, 16.0);
   /// `--text-mono-code`
   static const RaftTypeStyle monoCode = RaftTypeStyle(13.0, 20.0);
+  /// `--text-control`
+  static const RaftTypeStyle control = RaftTypeStyle(13.0, 18.0);
   static const Map<String, RaftTypeStyle> byName = {
     'hero': hero,
     'display': display,
@@ -1717,6 +1931,7 @@ abstract final class RaftTypeScale {
     'label': label,
     'mono-meta': monoMeta,
     'mono-code': monoCode,
+    'control': control,
   };
 }
 

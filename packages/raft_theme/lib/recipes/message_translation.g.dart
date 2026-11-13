@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `messageTranslation`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `messageTranslation`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -50,7 +50,7 @@ class RaftMessageTranslationRecipeStyle {
   };
 }
 
-/// raft-ui recipe `messageTranslation` (`src/components/message-translation/message-translation.recipe.ts`, index.mjs:9720).
+/// raft-ui recipe `messageTranslation` (`dist/components/message-translation/message-translation.recipe.mjs`, index.mjs:14824).
 ///
 /// Used by: MessageItemTranslationAction, MessageItemTranslationFailedStatus, MessageItemTranslationOriginal, MessageItemTranslationOriginalLabel, MessageItemTranslationProgressTrack, MessageItemTranslationRetryAction, MessageItemTranslationStatus.
 ///
@@ -117,26 +117,25 @@ abstract final class RaftMessageTranslationRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1551, 1511],
-    [1430, 1014, 1839, 1824],
-    [1305, 1319, 1022, 1511, 1014, 1839, 1824, 278],
-    [1305, 1319, 1022, 1511, 1014, 1839, 1856, 278],
-    [1172],
+    [2204, 2145],
+    [1987, 1454, 2616, 2600],
+    [1847, 1864, 1465, 2145, 1454, 2616, 2600, 476],
+    [1847, 1864, 1465, 2145, 1454, 2616, 2633, 476],
+    [1646],
     [
-      1305,
-      1319,
-      1021,
-      1898,
-      1704,
-      1016,
-      1814,
-      1017,
-      1822,
-      915,
-      1900,
-      1281,
-      1577,
-      996,
+      1847,
+      1864,
+      1464,
+      2457,
+      1456,
+      2588,
+      1457,
+      2598,
+      1338,
+      2684,
+      1800,
+      2247,
+      1439,
     ],
   ];
 

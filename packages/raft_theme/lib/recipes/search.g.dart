@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `search`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `search`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -50,9 +50,9 @@ class RaftSearchRecipeStyle {
   };
 }
 
-/// raft-ui recipe `search` (`src/components/search/search.recipe.ts`, index.mjs:16347).
+/// raft-ui recipe `search` (`dist/components/search/search.recipe.mjs`, index.mjs:24339).
 ///
-/// Used by: SearchResultsList, SearchResultsSection, SearchResultsSectionHeading, SearchResultsSummary, SearchShellFilters, SearchShellRoot, SearchShellViewport, ThreadPanelSearch.
+/// Used by: SearchResultsList, SearchResultsSection, SearchResultsSectionHeading, SearchResultsSummary, SearchShellFilters, SearchShellRoot, SearchShellViewport.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -117,13 +117,13 @@ abstract final class RaftSearchRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1198, 1468, 966, 967, 595, 1822],
-    [1740, 623, 634, 595, 1662, 1673],
-    [1468, 966, 1587, 1597, 595, 1654, 1642, 1608],
-    [618, 1429, 1662, 1645, 1016, 1821, 1824],
-    [1429],
-    [1671, 965, 1319, 1023, 1662, 1649, 1606, 1016, 1821, 1008, 1824],
-    [965, 967, 1019],
+    [1400, 1678, 2098, 1401, 1404, 910, 2598, 508, 2018],
+    [2499, 942, 954, 910, 2394, 2419, 2074],
+    [2098, 1401, 2265, 910, 2397, 2378, 2277],
+    [937, 1986, 2396, 2381, 1456, 2597, 2600],
+    [1986],
+    [2417, 1400, 1864, 1466, 2396, 2383, 2272, 1456, 2597, 1449, 2600],
+    [1400, 1404, 1463, 2417],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

@@ -13,6 +13,8 @@ export 'package:raft_theme/recipes/legacy/panel.g.dart' hide RaftPanelRecipe;
 
 /// Router for recipe `RaftPanelRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only slots: nativeScrollViewport.
 abstract final class RaftPanelRecipe {
   static const String recipeName = legacy.RaftPanelRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftPanelRecipe.slotNames;

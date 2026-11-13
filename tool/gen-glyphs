@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Generate the Lucide glyph set the Raft Web client renders, as Flutter geometry.
+"""Generate the published Lucide and ricons glyphs as Flutter geometry.
 
-Two import sites reach the Web screen; both resolve to one pinned build
-(lucide-react 1.55.0 in raft-source v1.21.12, pnpm-lock integrity
-sha512-bSozQHiI3/8q7JvgoqVRGOYUi7fYT3siAZwmZsljjsOH2Husp/2ODdFf/leD+ZC/2yKfn7r8oh6yeoR3ITR5vA==):
+Two import sites reach the Web v1.24 screen; both resolve to lucide-react 1.72.0:
   Web product code        packages/web/src/**/*.ts[x]
-  raft-ui 0.5.52 itself   dist/index.mjs + dist/wip.mjs, so every icon drawn
-                          INSIDE a raft-ui component comes from the same build
+  raft-ui 0.95.3 itself   dist/**/*.mjs, including the stable and WIP entry points
+The separate @botiverse/ricons 0.1.1 package supplies the conversation, object
+and action glyphs, including its below-18px mark geometry.
 Before v1.21.x the two sites resolved to different builds (0.575.0 vs 1.48.0).
 The generator still models them separately: when the pins differ, a name imported
 by both whose geometry differs gets a second `RaftUi`-suffixed value.
@@ -17,6 +16,9 @@ Pipeline:
       imported name through the pinned package's export map, read each icon's
       iconNode array from dist/esm/icons/<icon>.js(.mjs), and vendor the result
       (nodes, file sha256, usage file:line) in tool/design-source/lucide/glyphs.json
+      Render the pure published ricons SVG components with React server rendering,
+      validate their elements, and normalise their viewBoxes to 24 units.
+      Keep the existing names and geometry separately for the frozen looks.
   tool/gen-glyphs           write packages/raft_ui/lib/src/glyphs.g.dart from the vendored JSON
   tool/gen-glyphs --vendor-host DIR
       add the HOST_ADDED glyphs (raft-ui 0.7.1 parity specimens: app-window, octagon-alert) from the parity
@@ -31,7 +33,8 @@ both whose geometry differs between the two builds gets a second value with the
 `RaftUi` suffix carrying the RAFT_UI_LUCIDE geometry. LEGACY keeps older Flutter enum
 names compiling; they resolve through the WEB_LUCIDE export map like a Web import.
 
-Stdlib only.
+Emission/check uses Python's standard library. Import also uses Node, React and
+react-dom/server from the pinned Web checkout; it starts no browser or product session.
 """
 from __future__ import annotations
 
@@ -41,15 +44,18 @@ import json
 import os
 import re
 import sys
+import subprocess
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 VENDOR = ROOT / 'tool/design-source/lucide/glyphs.json'
 OUT = ROOT / 'packages/raft_ui/lib/src/glyphs.g.dart'
 
-WEB_LUCIDE = '1.55.0'
-RAFT_UI_LUCIDE = '1.55.0'
-RAFT_UI_VERSION = '0.5.52'
+WEB_LUCIDE = '1.72.0'
+RAFT_UI_LUCIDE = '1.72.0'
+RAFT_UI_VERSION = '0.95.3'
+RICONS_VERSION = '0.1.1'
 # raft-ui/wip is imported by Web since 1.21.x (AnnouncementModal, AgentMigrationDialog).
 # dist/dialog-*.mjs only imports X, which Web code imports as well.
 RAFT_UI_ENTRIES = ['dist/index.mjs', 'dist/wip.mjs']
@@ -237,6 +243,8 @@ def sha256(path: Path):
 
 
 def import_sources(raft_source: Path, raft_ui: Path | None):
+    previous = json.loads(VENDOR.read_text())
+    frozen_entries, _ = build_model(previous)
     web = raft_source / 'packages/web'
     web_lucide = Path(os.path.realpath(web / 'node_modules/lucide-react'))
     raft_ui = Path(os.path.realpath(raft_ui or web / 'node_modules/raft-ui'))
@@ -262,7 +270,8 @@ def import_sources(raft_source: Path, raft_ui: Path | None):
         for path in sorted((feedback / 'src').rglob('*.tsx')):
             for name, where in scan_imports(path, f'{label}/{path.relative_to(feedback)}'):
                 usages['web'].setdefault(name, []).append(where)
-    for entry_name in RAFT_UI_ENTRIES:
+    entries = sorted(str(p.relative_to(raft_ui)) for p in (raft_ui / 'dist').rglob('*.mjs'))
+    for entry_name in entries:
         entry = raft_ui / entry_name
         entry_lines = entry.read_text().split('\n')
         for name, where in scan_imports(entry, f'raft-ui@{RAFT_UI_VERSION}/{entry_name}'):
@@ -313,17 +322,90 @@ def import_sources(raft_source: Path, raft_ui: Path | None):
         'sources': {
             'raftSourceCommit': _git_head(raft_source),
             'webLucide': {'version': WEB_LUCIDE, 'package': str(web_lucide.relative_to(raft_source))},
-            'raftUi': {'version': RAFT_UI_VERSION, 'entries': {e: sha256(raft_ui / e) for e in RAFT_UI_ENTRIES}},
+            'raftUi': {'version': RAFT_UI_VERSION, 'entries': {e: sha256(raft_ui / e) for e in entries}},
             'raftUiLucide': {'version': RAFT_UI_LUCIDE, 'package': str(rui_lucide.relative_to(raft_source))},
         },
         'usages': usages,
         'resolved': resolved,
         'icons': dict(sorted(icons.items())),
     }
+    # Existing names retain the original geometry for the frozen looks. Also
+    # preserve names no longer imported by Web so source call sites still compile.
+    doc['resolved']['frozen'] = previous['resolved'].get('frozen', {e['name']: e['key'] for e in frozen_entries})
+    doc['icons'].update(previous['icons'])
+    import_ricons(raft_source, raft_ui, doc)
     VENDOR.parent.mkdir(parents=True, exist_ok=True)
     VENDOR.write_text(json.dumps(doc, indent=1, sort_keys=False) + '\n')
     print(f'vendored {len(icons)} icon geometries '
           f'(web names {len(resolved["web"])}, raft-ui names {len(resolved["raftUi"])}) -> {VENDOR.relative_to(ROOT)}')
+
+
+def scale_svg_path(text, factor):
+    command = None
+    index = 0
+    arities = {'m': 2, 'l': 2, 'h': 1, 'v': 1, 'c': 6, 's': 4, 'q': 4, 't': 2, 'a': 7, 'z': 0}
+    def item(match):
+        nonlocal command, index
+        token = match[0]
+        if token.isalpha():
+            command, index = token.lower(), 0
+            if command not in arities: raise GlyphError(f'unsupported SVG path command {token}')
+            return token
+        if command is None or not arities[command]: raise GlyphError('SVG coordinate without command')
+        keep = command == 'a' and index % 7 in (2, 3, 4)
+        index += 1
+        return format(float(token) * (1 if keep else factor), '.12g')
+    return ' '.join(item(m) for m in re.finditer(r'[a-df-zA-DF-Z]|[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?', text))
+
+
+def import_ricons(raft_source, raft_ui, doc):
+    pkg = (raft_source / 'packages/web/node_modules/@botiverse/ricons').resolve()
+    if pkg_version(pkg) != RICONS_VERSION: raise GlyphError('ricons version does not match pin')
+    css = (pkg / 'dist/styles.css').read_text()
+    if '@container (width < 18px)' not in css or '[data-icon-mark="small"]' not in css:
+        raise GlyphError('unsupported ricons responsive-mark CSS')
+    rendered = json.loads(subprocess.check_output(['node', str(ROOT / 'tool/recipes/import-ricons.mjs'), str(raft_source)], text=True))
+    uses = {}
+    pattern = re.compile(r'import\s*\{([^}]+)\}\s*from\s*[\'\"]@botiverse/ricons[\'\"]', re.S)
+    for base in (raft_source / 'packages/web/src', raft_ui / 'dist'):
+        for path in sorted(base.rglob('*')):
+            if path.suffix not in ('.ts', '.tsx', '.mjs'): continue
+            text = path.read_text()
+            for match in pattern.finditer(text):
+                for spec in match[1].split(','):
+                    name = spec.strip().split(' as ')[0]
+                    if not name or name.startswith('type '): continue
+                    if name not in rendered: raise GlyphError(f'unknown ricons export {name}')
+                    uses.setdefault(name, []).append(f'{path.relative_to(base)}:{text.count(chr(10), 0, match.start()) + 1}')
+    doc['resolved']['ricons'] = {}
+    doc['usages']['ricons'] = uses
+    for name, svg in rendered.items():
+        root = ET.fromstring(svg)
+        view = [float(x) for x in root.attrib['viewBox'].split()]
+        if view[:2] != [0, 0] or view[2] != view[3]: raise GlyphError(f'unsupported ricons viewBox {view}')
+        factor = 24 / view[2]
+        normal, small = [], []
+        for node in root:
+            tag = node.tag.split('}')[-1]
+            if tag not in NODE_ATTRS: raise GlyphError(f'unsupported ricons SVG node {tag}')
+            unknown = set(node.attrib) - NODE_ATTRS[tag] - {'data-icon-mark', 'display', 'stroke-width'}
+            if unknown: raise GlyphError(f'unsupported ricons SVG attributes {unknown}')
+            attrs = {}
+            for key in NODE_ATTRS[tag] & node.attrib.keys():
+                value = node.attrib[key]
+                attrs[key] = scale_svg_path(value, factor) if key == 'd' else ' '.join(format(float(x) * factor, '.12g') for x in re.findall(r'[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?', value))
+            entry = {'tag': tag, 'attrs': attrs}
+            if 'stroke-width' in node.attrib: entry['strokeWidth'] = float(node.attrib['stroke-width']) * factor
+            mark = node.attrib.get('data-icon-mark')
+            if mark != 'small': normal.append(entry)
+            if mark != 'default': small.append(entry)
+        icon = 'ricons-' + re.sub(r'(?<!^)([A-Z])', r'-\1', name.removesuffix('Icon')).lower()
+        key = f'{icon}@{RICONS_VERSION}'
+        doc['resolved']['ricons'][name] = key
+        doc['icons'][key] = {'icon': icon, 'version': RICONS_VERSION, 'sha256': hashlib.sha256(svg.encode()).hexdigest(), 'nodes': normal,
+                             **({'smallNodes': small} if small != normal else {})}
+    doc['sources']['ricons'] = {'version': RICONS_VERSION, 'stylesSha256': sha256(pkg / 'dist/styles.css'),
+        'files': {str(p.relative_to(pkg)): sha256(p) for p in sorted((pkg / 'dist').glob('*.mjs'))}}
 
 
 def vendor_added(pkg: Path):
@@ -433,10 +515,15 @@ def build_model(doc):
         name = lower_camel(export)
         if name not in entries:
             add(name, key, flutter=True, host=True)
+    for export, key in doc['resolved'].get('ricons', {}).items():
+        add(lower_camel(export), key, web=doc['usages']['ricons'].get(export, []))
     for name, (export, cites) in FILLED.items():
         add(name, doc['resolved']['legacy'][export], filled=True, citations=cites)
+    for name, key in doc['resolved'].get('frozen', {}).items():
+        if name not in entries: add(name, key, legacy=True)
+        entries[name]['legacyKey'] = key
     ordered = [entries[n] for n in sorted(entries, key=lambda n: (n.lower(), n))]
-    used = sorted({e['key'] for e in ordered})
+    used = sorted({key for e in ordered for key in (e['key'], e.get('legacyKey', e['key']))})
     return ordered, used
 
 
@@ -462,9 +549,10 @@ def dart_node(node):
     """One `_LucideNode` const expression. Numeric kinds carry SVG attribute order."""
     tag, a = node['tag'], node['attrs']
     fill = ', fill: true' if node.get('fill') == 'currentColor' else ''
+    stroke = f", strokeWidth: {node['strokeWidth']}" if 'strokeWidth' in node else ''
     if tag == 'path':
-        if fill:
-            return f"_LucideNode(_LucideKind.path, [], d: {dart_str(a['d'])}{fill})"
+        if fill or stroke:
+            return f"_LucideNode(_LucideKind.path, [], d: {dart_str(a['d'])}{fill}{stroke})"
         return f"_LucideNode.path({dart_str(a['d'])})"
     if tag in ('polyline', 'polygon'):
         values = _points(a['points'])
@@ -477,7 +565,7 @@ def dart_node(node):
         order = {'circle': ('cx', 'cy', 'r'), 'ellipse': ('cx', 'cy', 'rx', 'ry'),
                  'line': ('x1', 'y1', 'x2', 'y2')}[tag]
         values = [_num(a.get(k, '0')) for k in order]
-    return f"_LucideNode(_LucideKind.{tag}, [{', '.join(values)}]{fill})"
+    return f"_LucideNode(_LucideKind.{tag}, [{', '.join(values)}]{fill}{stroke})"
 
 
 def geometry_ident(key):
@@ -527,11 +615,14 @@ def render(doc):
         args = [geometry_ident(e['key']), dart_str(icon['icon']), dart_str(icon['version'])]
         if e['filled']:
             args.append('filled: true')
+        if 'smallNodes' in icon: args.append(f'smallNodes: {geometry_ident(e["key"])}Small')
+        if e.get('legacyKey', e['key']) != e['key']: args.append(f'legacyNodes: {geometry_ident(e["legacyKey"])}')
         lines.append(f"  {e['name']}({', '.join(args)}){';' if i == len(entries) - 1 else ','}")
     lines += [
         '',
-        '  const RaftGlyph(this._nodes, this.lucideName, this.lucideVersion, {this.filled = false});',
+        '  const RaftGlyph(this._nodes, this.lucideName, this.lucideVersion, {this.filled = false, List<_LucideNode>? smallNodes, List<_LucideNode>? legacyNodes}) : _smallNodes = smallNodes, _legacyNodes = legacyNodes;',
         '  final List<_LucideNode> _nodes;',
+        '  final List<_LucideNode>? _smallNodes, _legacyNodes;',
         '',
         '  /// Lucide icon file name (kebab-case) the geometry comes from.',
         '  final String lucideName;',
@@ -551,6 +642,10 @@ def render(doc):
         for node in icon['nodes']:
             lines.append(f'  {dart_node(node)},')
         lines.append('];')
+        if 'smallNodes' in icon:
+            lines.append(f'const {geometry_ident(key)}Small = <_LucideNode>[')
+            lines += [f'  {dart_node(node)},' for node in icon['smallNodes']]
+            lines.append('];')
     return '\n'.join(lines) + '\n'
 
 

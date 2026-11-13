@@ -14,7 +14,7 @@ export 'package:raft_theme/recipes/legacy/dialog.g.dart' hide RaftDialogRecipe;
 /// Router for recipe `RaftDialogRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
 ///
-/// Raft set differences: Raft-only axis `bar`.
+/// Raft set differences: Raft-only axis `placement`; Raft-only axis `keyboard`; Raft-only axis `bar`; Raft-only axis `nested`; Raft-only axis `start`; Raft-only slots: footerNote, footerActions.
 abstract final class RaftDialogRecipe {
   static const String recipeName = legacy.RaftDialogRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftDialogRecipe.slotNames;

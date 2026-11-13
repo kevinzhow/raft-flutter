@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/combobox.g.dart'
 
 /// Router for recipe `RaftComboboxRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only slots: listFrame.
 abstract final class RaftComboboxRecipe {
   static const String recipeName = legacy.RaftComboboxRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftComboboxRecipe.slotNames;

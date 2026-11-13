@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/inbox_item.g.dart'
 
 /// Router for recipe `RaftInboxItemRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `density`; Raft-only axis `reveal`; Raft-only slots: itemLeading, itemLeadingBadge, itemStatusWord, itemStatusPixel, itemListGroup, itemListHeading, itemMarks, itemHoverTarget, itemLine.
 abstract final class RaftInboxItemRecipe {
   static const String recipeName = legacy.RaftInboxItemRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftInboxItemRecipe.slotNames;

@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `conversationPanelEmptyState`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `conversationPanelEmptyState`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -30,7 +30,7 @@ class RaftConversationPanelEmptyStateRecipeStyle {
   };
 }
 
-/// raft-ui recipe `conversationPanelEmptyState` (`src/components/conversation-panel/conversation-panel-empty-state.tsx`, index.mjs:3646).
+/// raft-ui recipe `conversationPanelEmptyState` (`dist/components/conversation-panel/conversation-panel-empty-state.mjs`, index.mjs:5335).
 ///
 /// Used by: ConversationPanelEmptyState, ConversationPanelEmptyStateBrand, ConversationPanelEmptyStateBrandMark.
 ///
@@ -86,26 +86,26 @@ abstract final class RaftConversationPanelEmptyStateRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      965,
-      1198,
-      1468,
-      1484,
-      966,
-      967,
-      1319,
-      1324,
-      1816,
-      1023,
-      1663,
-      1677,
-      1016,
-      1833,
-      1008,
-      1529,
-      1827,
+      1400,
+      1678,
+      2098,
+      2116,
+      1401,
+      1404,
+      1864,
+      1869,
+      2590,
+      1466,
+      2396,
+      2423,
+      1456,
+      2609,
+      1449,
+      2165,
+      2603,
     ],
-    [1740, 1431, 1305, 1714, 1592, 1824],
-    [1682, 965, 1319, 1324, 174, 193, 1758, 1584, 1714, 182, 186],
+    [2499, 1988, 1847, 2468, 2260, 2600],
+    [2433, 1400, 1864, 1869, 345, 365, 2523, 2253, 2468, 354, 357],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

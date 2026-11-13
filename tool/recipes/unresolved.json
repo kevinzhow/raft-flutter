@@ -1,9 +1,8 @@
 {
-  "comment": "Recipe classes for which Tailwind v4 (4.2.2, the Web's version) emits no CSS. They are inert on the Web too, so the Flutter recipes correctly ignore them. tool/recipes/test asserts this list matches the pipeline output exactly.",
+  "comment": "Recipe classes for which the pinned Web Tailwind 4.3.3 compiler emits no CSS. New unrecognised classes fail generation.",
   "classes": {
     "blur-0": "Tailwind v4 has no `blur-0` (v4 spells it `blur-none`).",
     "data-[state=copied]:[&_[data-icon=check]]:blur-0": "Wraps `blur-0`, which is not a v4 utility.",
-    "data-[state=idle]:[&_[data-icon=copy]]:blur-0": "Wraps `blur-0`, which is not a v4 utility.",
-    "scrollbar-none": "No `scrollbar-*` utility/plugin in raft-ui or the Web build."
+    "data-[state=idle]:[&_[data-icon=copy]]:blur-0": "Wraps `blur-0`, which is not a v4 utility."
   }
 }

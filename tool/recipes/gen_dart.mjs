@@ -305,7 +305,8 @@ write(
 // Remove stale generated files.
 for (const f of readdirSync(outDir)) {
   const p = join(outDir, f);
-  if (f.endsWith('.g.dart') && !written.has(p)) rmSync(p);
+  // Steps belongs to its CSS adapter, not this tv() generator.
+  if (f.endsWith('.g.dart') && f !== 'steps_css.g.dart' && !written.has(p)) rmSync(p);
 }
 
 // ------------------------------------------------------- parity fixture

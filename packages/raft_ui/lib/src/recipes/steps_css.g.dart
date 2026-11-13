@@ -1,2 +1,2 @@
-// Published-CSS Steps; Raft look only. Frozen paint stays in steps_frozen.dart.
+// Raft-only recipe; the router has nothing to choose.
 export 'package:raft_theme/recipes/steps_css.g.dart';

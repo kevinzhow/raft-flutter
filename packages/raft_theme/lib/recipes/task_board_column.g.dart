@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `taskBoardColumn`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `taskBoardColumn`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -75,7 +75,7 @@ class RaftTaskBoardColumnRecipeStyle {
   };
 }
 
-/// raft-ui recipe `taskBoardColumn` (`src/components/task-board/task-board-column.recipe.ts`, index.mjs:14619).
+/// raft-ui recipe `taskBoardColumn` (`dist/components/task-board/task-board-column.recipe.mjs`, index.mjs:20567).
 ///
 /// Used by: TaskBoardColumn, TaskBoardColumnBadge, TaskBoardColumnChevron, TaskBoardColumnCount, TaskBoardColumnEmpty, TaskBoardColumnEmptyAllowed, TaskBoardColumnEmptyBlocked, TaskBoardColumnEmptyIdle, TaskBoardColumnHeading, TaskBoardColumnItems, TaskBoardColumnPanel, TaskBoardColumnTrigger.
 ///
@@ -152,52 +152,53 @@ abstract final class RaftTaskBoardColumnRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1050, 965, 1740, 1731, 967, 1916, 1164, 1709, 1592, 687, 688],
+    [1503, 1400, 2499, 2489, 1404, 2712, 1628, 2462, 2260, 1019, 1020],
     [
-      1050,
-      965,
-      1929,
+      1503,
+      1400,
+      2725,
+      2650,
+      1864,
+      1868,
+      2613,
+      2247,
+      2107,
+      2052,
+      1466,
+      2463,
+      1456,
+      2597,
+      1449,
+      2603,
+      1059,
+      1439,
+    ],
+    [1400, 2116, 1864, 1466],
+    [1847, 1864, 1466, 2260, 1456, 2597, 1449, 2603, 348],
+    [1454, 2616, 1455, 2600],
+    [1847, 2499, 187, 1864, 2678, 477, 1571, 2138, 2600, 1590],
+    [1198],
+    [1400, 1404, 1466],
+    [
+      2403,
+      1510,
+      1400,
+      2102,
+      1864,
       1869,
-      1319,
-      1323,
-      1836,
-      1577,
-      1479,
-      1023,
-      1710,
-      1016,
-      1821,
-      1008,
-      1827,
-      730,
-      996,
+      2419,
+      2462,
+      939,
+      945,
+      954,
+      2590,
+      2597,
+      2600,
+      1513,
     ],
-    [965, 1484, 1319, 1023],
-    [1305, 1319, 1023, 1592, 1016, 1821, 1008, 1827, 177],
-    [1014, 1839, 1015, 1824],
-    [1305, 1740, 104, 1319, 1896, 279, 1120, 1505, 1824, 1131],
-    [846],
-    [965, 967, 1023],
-    [
-      1660,
-      1054,
-      965,
-      1473,
-      1319,
-      1324,
-      1673,
-      1709,
-      620,
-      626,
-      634,
-      1816,
-      1821,
-      1824,
-      1057,
-    ],
-    [1054, 1056],
-    [1265, 1053],
-    [1265, 1055],
+    [1510, 1512],
+    [1776, 1509],
+    [1776, 1511],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_theme/raft_theme.dart';
+import 'package:raft_theme/recipes.dart' show RaftThemeRecipeTokens;
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart';
 import 'package:raft_ui/test_themes.dart';
@@ -118,6 +122,29 @@ const _fonts = ['headingFont', 'monoFont', 'sansFont'];
 // Full theme matrix on purpose (theme/token/recipe test): never sampled, see
 // package:raft_ui/test_themes.dart.
 void main() {
+  test('CSS source metrics honor the active pack in both resolvers', () {
+    final pack = RaftThemePack.parse(
+      jsonEncode({
+        'format': 'raft-theme/1',
+        'id': 'css-metrics',
+        'name': {'en': 'CSS metrics'},
+        'version': '1.0.0',
+        'extends': 'raft',
+        'modes': {
+          'light': {
+            'geometry': {'css.control-height': 58},
+          },
+          'dark': {},
+        },
+      }),
+    );
+    final engine = RaftThemeRecipeTokens(
+      pack.resolve(dark: false, base: builtInRaftTheme),
+    );
+    final ui = RaftRecipeTokens(RaftTokens.theme(pack: pack));
+    expect(engine.number('controlHeight'), 58);
+    expect(ui.number('controlHeight'), engine.number('controlHeight'));
+  });
   final themes = {
     'light': RaftTokens.theme(),
     'dark': RaftTokens.theme(dark: true),

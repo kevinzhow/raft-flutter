@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `panel`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `panel`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -24,6 +24,7 @@ class RaftPanelRecipeStyle {
     required this.header,
     required this.body,
     required this.scrollViewport,
+    required this.nativeScrollViewport,
     required this.scrollContent,
     required this.section,
     required this.footer,
@@ -41,6 +42,9 @@ class RaftPanelRecipeStyle {
   /// Slot `scrollViewport`.
   final RaftSlotStyle scrollViewport;
 
+  /// Slot `nativeScrollViewport`.
+  final RaftSlotStyle nativeScrollViewport;
+
   /// Slot `scrollContent`.
   final RaftSlotStyle scrollContent;
 
@@ -55,15 +59,16 @@ class RaftPanelRecipeStyle {
     'header': header,
     'body': body,
     'scrollViewport': scrollViewport,
+    'nativeScrollViewport': nativeScrollViewport,
     'scrollContent': scrollContent,
     'section': section,
     'footer': footer,
   };
 }
 
-/// raft-ui recipe `panel` (`src/components/panel/panel.recipe.ts`, index.mjs:3462).
+/// raft-ui recipe `panel` (`dist/components/panel/panel.recipe.mjs`, index.mjs:5141).
 ///
-/// Used by: ActivityInboxPanel, MessageActionCardContent, Panel, PanelBody, PanelFooter, PanelHeaderRoot, PanelScrollContent, PanelScrollViewport, PanelSection, ResizablePanel, TabsPanel, TaskBoardColumnPanel, TaskSectionPanel.
+/// Used by: MessageList, Panel, PanelBody, PanelFooter, PanelHeaderRoot, PanelScrollContent, PanelScrollViewport, PanelSection.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -74,6 +79,7 @@ abstract final class RaftPanelRecipe {
     'header',
     'body',
     'scrollViewport',
+    'nativeScrollViewport',
     'scrollContent',
     'section',
     'footer',
@@ -103,9 +109,10 @@ abstract final class RaftPanelRecipe {
       header: s[1],
       body: s[2],
       scrollViewport: s[3],
-      scrollContent: s[4],
-      section: s[5],
-      footer: s[6],
+      nativeScrollViewport: s[4],
+      scrollContent: s[5],
+      section: s[6],
+      footer: s[7],
     );
   }
 
@@ -131,21 +138,22 @@ abstract final class RaftPanelRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [341, 595, 1822],
-    [385],
-    [1682, 1468, 966, 1583],
-    [1198, 1468, 1587, 1589, 420, 380],
-    [1483],
-    [639, 1663, 1675, 633],
-    [1682, 965, 1740, 1319, 1647, 595, 1663, 1392, 1611, 1387],
-    [341, 595, 1822, 1154],
-    [341, 595, 1822, 1154, 630, 634, 1379],
+    [567, 910, 2598],
+    [609],
+    [2433, 2098, 1401, 2252],
+    [1678, 2098, 685],
+    [1678, 2098, 2256, 2258, 685, 602],
+    [2112],
+    [960, 2396, 2421, 953],
+    [2433, 1400, 2499, 1864, 2383, 910, 2394, 2284, 1943],
+    [567, 910, 2598, 1617],
+    [567, 910, 2598, 1617, 950, 954, 1933],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 4, 5, 6],
-    [7, 1, 2, 3, 4, 5, 6],
-    [8, 1, 2, 3, 4, 5, 6],
+    [0, 1, 2, 3, 4, 5, 6, 7],
+    [8, 1, 2, 3, 4, 5, 6, 7],
+    [9, 1, 2, 3, 4, 5, 6, 7],
   ];
 }

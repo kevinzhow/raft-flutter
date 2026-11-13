@@ -1,5 +1,5 @@
 // The single Button entry point. All visual states of the Raft look resolve
-// the complete raft-ui 0.7.0 Button recipe; compatibility wrappers retain only
+// the current raft-ui Button recipe; compatibility wrappers retain only
 // frozen legacy paint and delegate their interaction to this component.
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsRole;
@@ -11,6 +11,7 @@ import '../localization.dart';
 import '../recipes/button_variants.g.dart';
 import '../recipes/recipe_router.dart';
 import '../recipes/recipe_runtime.dart';
+import '../recipes/text_link_variants.g.dart';
 import '../recipe_surface.dart';
 import '../text_scaling.dart' show RaftScaled;
 import '../raft_underline.dart';
@@ -122,6 +123,30 @@ enum RaftButtonSize {
   };
 }
 
+bool _usesTextLink(RaftButtonSize size, RaftButtonVariant variant) =>
+    size == RaftButtonSize.inline || variant == RaftButtonVariant.link;
+
+// raft-ui 0.8 retired Button link/inline in favour of TextLink. Keep the old
+// public entry points on the same interaction/surface until their family
+// migration, and resolve both metrics and paint through this one bridge.
+Map<String, RaftSlotStyle> _resolveButtonSlots({
+  required RaftButtonSize size,
+  required RaftButtonVariant variant,
+  required RaftRecipeStates states,
+  required RaftTokenResolver tokens,
+}) {
+  if (_usesTextLink(size, variant)) {
+    return {
+      'root': RaftTextLinkRecipe.resolve(states: states, tokens: tokens).base,
+    };
+  }
+  return RaftButtonRecipe.resolveProps(
+    {'variant': variant.css, 'size': size.css},
+    states: states,
+    tokens: tokens,
+  );
+}
+
 /// The geometry of one size (and the on-frame compound that makes xs/sm/md 36px).
 class RaftButtonMetrics {
   const RaftButtonMetrics({
@@ -176,8 +201,9 @@ class RaftButtonMetrics {
     final tokens = t.recipeTokens;
     if (!usesLegacyRecipes(tokens)) {
       Map<String, RaftSlotStyle> resolve([Iterable<String> extra = const []]) =>
-          RaftButtonRecipe.resolveProps(
-            {'variant': variant.css, 'size': size.css},
+          _resolveButtonSlots(
+            size: size,
+            variant: variant,
             states: t.recipeStates(extra: extra),
             tokens: tokens,
           );
@@ -577,8 +603,9 @@ class RaftButton extends StatelessWidget {
           RaftRecipeStates.motionReduce,
       ],
     );
-    final slots = RaftButtonRecipe.resolveProps(
-      {'variant': resolvedVariant.css, 'size': resolvedSize.css},
+    final slots = _resolveButtonSlots(
+      size: resolvedSize,
+      variant: resolvedVariant,
       states: states,
       tokens: tokens,
     );
@@ -586,8 +613,9 @@ class RaftButton extends StatelessWidget {
     // Theme-authored structural roles refine the source shape without selecting
     // another Button variant. Every rounded source size uses rounded-control.
     final shapeRadius = recipeRoot.borderRadius;
-    final radius = t.themeValues?.geometry['radius.control'];
-    final stroke = t.themeValues?.geometry['stroke.control'];
+    final textLink = _usesTextLink(resolvedSize, resolvedVariant);
+    final radius = textLink ? null : t.themeValues?.geometry['radius.control'];
+    final stroke = textLink ? null : t.themeValues?.geometry['stroke.control'];
     recipeRoot = recipeRoot.copyWith(
       properties: {
         ...recipeRoot.properties,
@@ -627,7 +655,8 @@ class RaftButton extends StatelessWidget {
     var root = styleBuilder?.call(context, state, recipeRoot) ?? recipeRoot;
     // Theme-authored variant colour roles remain independent of the source's
     // motion and edge axes. The built-in look uses the generated overlay.
-    if (t.option('button.hoverSurface', or: 'overlay') == 'variant') {
+    if (!textLink &&
+        t.option('button.hoverSurface', or: 'overlay') == 'variant') {
       final colors = RaftButtonColors.themed(
         t,
         resolvedVariant,

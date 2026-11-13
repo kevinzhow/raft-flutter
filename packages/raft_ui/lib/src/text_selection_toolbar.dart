@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'control_typography.dart';
 import 'recipe_surface.dart';
 import 'recipes/message_text_selection_toolbar.g.dart';
+import 'recipes/recipe_router.dart';
 import 'recipes/recipe_runtime.dart';
+import 'recipes/text_selection_toolbar.g.dart';
 import 'theme.dart';
 
 /// Raft's Android selection menu skin, using Flutter's original toolbar layout.
@@ -53,18 +55,33 @@ class RaftTextSelectionToolbar extends StatelessWidget {
     if (buttonItems.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final t = RaftTokens.of(context), rt = t.recipeTokens;
-    RaftMessageTextSelectionToolbarRecipeStyle recipe(
-      Set<WidgetState> states,
-    ) => RaftMessageTextSelectionToolbarRecipe.resolve(
-      theme: t.recipeTheme,
-      states: t.recipeStates(
+    RaftMessageTextSelectionToolbarRecipeStyle recipe(Set<WidgetState> states) {
+      final flags = t.recipeStates(
         hovered: states.contains(WidgetState.hovered),
         pressed: states.contains(WidgetState.pressed),
         focusVisible: states.contains(WidgetState.focused),
         disabled: states.contains(WidgetState.disabled),
-      ),
-      tokens: rt,
-    );
+      );
+      if (usesLegacyRecipes(rt)) {
+        return RaftMessageTextSelectionToolbarRecipe.resolve(
+          theme: t.recipeTheme,
+          states: flags,
+          tokens: rt,
+        );
+      }
+      // The former message-only recipe was replaced by TextSelectionToolbar.
+      // Share the existing native anchoring/actions with its current slots.
+      final current = RaftTextSelectionToolbarRecipe.resolve(
+        states: flags,
+        tokens: rt,
+      );
+      return RaftMessageTextSelectionToolbarRecipeStyle(
+        toolbar: current.toolbar,
+        button: current.button,
+        separator: current.separator,
+      );
+    }
+
     final skin = recipe({});
     // Selection overlays may inherit a link/code/fallback style from the text.
     final base = skin.toolbar.text(

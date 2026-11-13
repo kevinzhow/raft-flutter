@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `codeBlock`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `codeBlock`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -50,7 +50,7 @@ class RaftCodeBlockRecipeStyle {
   };
 }
 
-/// raft-ui recipe `codeBlock` (`src/components/code-block/code-block.recipe.ts`, index.mjs:6670).
+/// raft-ui recipe `codeBlock` (`dist/components/code-block/code-block.recipe.mjs`, index.mjs:11332).
 ///
 /// Used by: CodeBlock, CodeBlockAction, CodeBlockActions, CodeBlockBody, CodeBlockHeader, CodeBlockTitle.
 ///
@@ -117,27 +117,48 @@ abstract final class RaftCodeBlockRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1139, 1682, 1524, 1484, 301, 1582, 1654, 1602, 1709, 620, 633, 599, 1822],
-    [965, 1165, 1319, 1023, 623, 633, 1634, 1620, 1014, 1839, 1824],
-    [1484, 966, 1897, 1014, 1839],
-    [1499, 965, 1319, 1023, 395, 397, 396, 398],
-    [1630, 422, 1941, 1744, 793, 792, 790, 791, 1265],
-    [1682, 1484, 1585, 1597, 1014, 1660, 1671, 1838, 1822, 246, 666],
+    [1599, 2433, 2159, 2116, 507, 2251, 2397, 2272, 2462, 939, 953, 912, 2598],
+    [1400, 1631, 1864, 1466, 942, 953, 2367, 2300, 1454, 2616, 2600],
+    [2116, 1401, 2681, 1454, 2616],
+    [2132, 1400, 1864, 1464, 631, 635, 636, 632, 634, 633],
+    [2346, 691, 2747, 2507, 1119, 1118, 1116, 1117, 1776],
     [
-      1305,
-      1740,
-      1319,
-      1324,
-      1885,
-      986,
-      1757,
-      1710,
-      1822,
-      1272,
-      427,
-      991,
-      996,
-      266,
+      2433,
+      1489,
+      2116,
+      1495,
+      1866,
+      85,
+      2265,
+      1454,
+      440,
+      439,
+      436,
+      437,
+      2403,
+      2417,
+      2615,
+      2598,
+      441,
+      999,
+    ],
+    [
+      1847,
+      2499,
+      1864,
+      1869,
+      2666,
+      1432,
+      2522,
+      2461,
+      2082,
+      2077,
+      2598,
+      1785,
+      697,
+      1435,
+      1439,
+      461,
     ],
   ];
 

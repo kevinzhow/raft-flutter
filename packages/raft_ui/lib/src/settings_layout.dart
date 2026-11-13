@@ -158,11 +158,7 @@ extension on RaftSettingsSidebarList {
       children: [
         for (final group in visible) ...[
           Padding(
-            // Web paints the 13/18 label glyphs one pixel below Flutter's line box.
-            padding: labelSlot.padding.copyWith(
-              top: labelSlot.padding.top + 1,
-              bottom: labelSlot.padding.bottom - 1,
-            ),
+            padding: labelSlot.padding,
             child: RaftCssText(
               // Web v1.21.23 names the group `Workspace`.
               _groupLabel(context, group.label),

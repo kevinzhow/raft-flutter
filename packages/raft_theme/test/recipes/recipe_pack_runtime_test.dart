@@ -221,7 +221,7 @@ void main() {
       RaftInputRecipe.resolve(
         tokens: RaftThemeRecipeTokens(t.values, bindComponents: false),
       ).root.borderRadius,
-      BorderRadius.circular(8),
+      BorderRadius.circular(10),
     );
   });
 

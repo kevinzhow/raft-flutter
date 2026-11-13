@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `searchThread`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `searchThread`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -45,7 +45,7 @@ class RaftSearchThreadRecipeStyle {
   };
 }
 
-/// raft-ui recipe `searchThread` (`src/components/search/search-thread.recipe.ts`, index.mjs:16715).
+/// raft-ui recipe `searchThread` (`dist/components/search/search-thread.recipe.mjs`, index.mjs:24726).
 ///
 /// Used by: SearchThreadResult, SearchThreadResultHeader, SearchThreadResultMessages, SearchThreadResultMeta, SearchThreadResultTimestamp, SearchThreadResultTitle.
 ///
@@ -110,27 +110,12 @@ abstract final class RaftSearchThreadRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [
-      1583,
-      1893,
-      1682,
-      1714,
-      621,
-      615,
-      1822,
-      1738,
-      1543,
-      1550,
-      1549,
-      1547,
-      1546,
-      1545,
-    ],
-    [1671, 1662, 1647, 1604],
-    [965, 971, 1319, 1430, 1022, 1014, 1839, 1015, 1824],
-    [1529, 1499],
-    [1016, 1813, 1017, 1822],
-    [965, 967, 123, 640, 615],
+    [2252, 2433, 2468, 940, 933, 2598, 2497],
+    [2417, 2396, 2383, 2272],
+    [1400, 1408, 1864, 1987, 1465, 1454, 2616, 1455, 2600],
+    [2165, 2132],
+    [1456, 2587, 1457, 2598],
+    [1400, 1404, 1463, 2417, 962, 933],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

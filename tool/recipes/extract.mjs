@@ -12,6 +12,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as acorn from 'acorn';
 import { loadBundle } from './lib/bundle.mjs';
+import { extractWeb124Compositions } from './lib/web124-compositions.mjs';
+import ts from 'typescript';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../..');
@@ -154,16 +156,30 @@ function evaluate(node, ctx, path) {
       // Parameter of a class helper currently being inlined (see CallExpression).
       if (ctx.env?.has(node.name)) return ctx.env.get(node.name);
       const decl = topLevel.get(node.name);
-      if (decl && decl.kind === 'const' && decl.node.init) {
+      if (decl && ['const', 'var'].includes(decl.kind) && decl.node.init) {
         ctx.resolvedIdentifiers.push({ path, name: node.name });
         return evaluate(decl.node.init, ctx, path);
       }
+      break;
+    }
+    case 'MemberExpression': {
+      const object = evaluate(node.object, ctx, path);
+      const key = node.computed ? evaluate(node.property, ctx, path) : node.property.name;
+      if (object && typeof object === 'object' && key in object) return object[key];
       break;
     }
     case 'CallExpression':
       if (node.callee.type === 'Identifier' && TV_CALLEES.has(node.callee.name)) {
         const inner = callNames.get(node);
         return { $recipe: inner };
+      }
+      if (node.callee.type === 'MemberExpression' && node.callee.object.type === 'CallExpression') {
+        const call = node.callee.object;
+        if (call.callee.type === 'Identifier' && callNamesByBinding.has(call.callee.name) && node.arguments.length === 0) {
+          return { $recipeSlot: callNamesByBinding.get(call.callee.name),
+            props: call.arguments.length ? evaluate(call.arguments[0], ctx, path) : {},
+            slot: node.callee.computed ? evaluate(node.callee.property, ctx, path) : node.callee.property.name };
+        }
       }
       // raft-ui 0.7.0 factors repeated class lists into top-level helpers
       // (`const sticker = (fill) => [...]`, `outline`, `chip`, `linkChip`).
@@ -172,7 +188,7 @@ function evaluate(node, ctx, path) {
       // recipe sees exactly the class list the Web runtime builds.
       if (node.callee.type === 'Identifier') {
         const decl = topLevel.get(node.callee.name);
-        const fn = decl?.kind === 'const' ? decl.node.init : null;
+        const fn = ['const', 'var'].includes(decl?.kind) ? decl.node.init : null;
         if (
           fn?.type === 'ArrowFunctionExpression' &&
           fn.expression &&
@@ -224,6 +240,7 @@ for (const { node, parents } of calls) {
 }
 
 // Pass 2: usages of recipe bindings in top-level functions/consts.
+const callNamesByBinding = new Map([...callNames.values()].map((name) => [name, name]));
 function enclosingTopLevel(parents) {
   for (const p of parents) {
     if (p.type === 'FunctionDeclaration' && p.id && topLevel.get(p.id.name)?.node === p) return p.id.name;
@@ -317,7 +334,12 @@ const webCss = process.env.RAFT_WEB_CSS;
 let productRecipeCount = 0;
 if (webCss) {
   const web = dirname(dirname(resolve(webCss)));
-  for (const family of ['menu', 'dialog', 'member-picker', 'choice']) {
+  if (pkg.version === '0.95.3') {
+    const products = extractWeb124Compositions(web, ts);
+    recipes.push(...products);
+    productRecipeCount += products.length;
+  }
+  for (const family of pkg.version === '0.95.3' ? ['choice'] : ['menu', 'dialog', 'member-picker', 'choice']) {
     const products = JSON.parse(execFileSync(process.execPath, [
       join(here, `${family}-compositions.mjs`), '--web', web, '--raw',
     ], { encoding: 'utf8' }));
@@ -336,6 +358,13 @@ const tvWrapperSource = wrapperDecl ? src(wrapperDecl.node.init) : null;
 const tvImport = ast.body
   .filter((s) => s.type === 'ImportDeclaration' && s.specifiers.some((x) => x.local.name === 'tv'))
   .map((s) => src(s))[0] ?? null;
+
+if (!calls.length || !tvWrapperSource || !tvImport) {
+  throw new Error(`Unsupported raft-ui bundle: ${calls.length} recipes, wrapper=${!!tvWrapperSource}, import=${!!tvImport}`);
+}
+if (recipes.some((r) => r.nonLiteral.length)) {
+  throw new Error(`Unsupported recipe expressions: ${recipes.filter((r) => r.nonLiteral.length).map((r) => `${r.name}: ${JSON.stringify(r.nonLiteral)}`).join('\n')}`);
+}
 
 const out = {
   source: {

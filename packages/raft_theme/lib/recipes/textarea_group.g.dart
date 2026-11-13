@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `textareaGroup`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `textareaGroup`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -16,7 +16,7 @@ class RaftTextareaGroupRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root};
 }
 
-/// raft-ui recipe `textareaGroup` (`src/components/textarea/textarea.tsx`, index.mjs:6282).
+/// raft-ui recipe `textareaGroup` (`dist/components/textarea/textarea.mjs`, index.mjs:10784).
 ///
 /// Used by: TextareaGroup.
 ///
@@ -67,7 +67,7 @@ abstract final class RaftTextareaGroupRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1929, 965, 967, 1320, 1022],
+    [2725, 1400, 1404, 1865, 1465],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

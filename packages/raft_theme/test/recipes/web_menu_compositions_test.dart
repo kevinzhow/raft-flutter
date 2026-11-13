@@ -39,7 +39,7 @@ void main() {
         expect(normal.fontWeight, FontWeight.w500);
         expect(
           normal.padding,
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         );
         expect(compact.minHeight, 32);
         expect(
@@ -146,7 +146,8 @@ void main() {
         expect(panel.search.height, 40);
         expect(panel.searchIcon.width, 16);
         expect(panel.list.maxHeight, 256);
-        expect(panel.list.padding, const EdgeInsets.all(6));
+        expect(panel.list.padding, EdgeInsets.zero);
+        expect(panel.content.padding, const EdgeInsets.all(4));
       },
     );
   }
